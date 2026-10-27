@@ -34,9 +34,11 @@ type PluginCommand struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
 	// ContentTypes are the types of the files the command runs over; `*/*` is a file of any type.
-	// None is a command over no file.
-	ContentTypes []domain.ContentType    `json:"contentTypes,omitempty"`
-	Arguments    []PluginCommandArgument `json:"arguments,omitempty"`
+	// A command that names no content type and no note type runs over no file.
+	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
+	// NoteTypes are the plugin's own note types of the notes the command runs over.
+	NoteTypes []string                `json:"noteTypes,omitempty"`
+	Arguments []PluginCommandArgument `json:"arguments,omitempty"`
 	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
 	// same thing another way. The command line still offers it.
 	IsHiddenInPalette bool `json:"hiddenInPalette,omitempty"`
@@ -52,12 +54,13 @@ type PluginCommandArgument struct {
 
 // HasFiles reports whether the command runs over a file.
 func (c PluginCommand) HasFiles() bool {
-	return len(c.ContentTypes) > 0
+	return len(c.ContentTypes) > 0 || len(c.NoteTypes) > 0
 }
 
-// CanRunOn reports whether the command runs over a file of the type.
-func (c PluginCommand) CanRunOn(contentType domain.ContentType) bool {
-	return isAnyMatching(c.ContentTypes, contentType)
+// CanRunOn reports whether the command runs over a file of the content type, or a note of the note
+// type.
+func (c PluginCommand) CanRunOn(contentType domain.ContentType, noteType domain.NoteType) bool {
+	return isAnyMatching(c.ContentTypes, contentType) || slices.Contains(c.NoteTypes, string(noteType))
 }
 
 // GetArgument returns the declaration of the argument of the name, and false where none is declared.
@@ -89,6 +92,7 @@ func (m PluginManifest) listCommandIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
 		}
 		issues = append(issues, listContentTypesIssues(ErrInvalidCommand, command.ContentTypes)...)
+		issues = append(issues, m.listUndeclaredNoteTypes(ErrInvalidCommand, command.NoteTypes)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
 	}
 	return issues

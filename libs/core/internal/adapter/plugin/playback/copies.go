@@ -34,26 +34,38 @@ func NewCopies(host Host, stores pluginport.PluginStores) Copies {
 	return Copies{host: host, stores: stores}
 }
 
-// getKeepers is the ids of the enabled plugins that keep copies of files of the path's type, in the
-// order of their ids.
-func (c Copies) getKeepers(path string) []string {
+// getKeepers is the ids of the enabled plugins that keep copies of files of the path's type or of
+// notes of the note type, in the order of their ids.
+func (c Copies) getKeepers(path string, noteType domain.NoteType) []string {
 	contentType := c.host.GetContentType(path)
 	var out []string
 	for _, info := range c.host.GetPluginInfos() {
 		found, ok := c.host.GetPlugin(info.ID)
-		if ok && found.Manifest.Playback != nil && found.Manifest.Playback.IsCopying(contentType) {
+		if ok && found.Manifest.Playback != nil && found.Manifest.Playback.IsCopying(contentType, noteType) {
 			out = append(out, info.ID)
 		}
 	}
 	return out
 }
 
-func (c Copies) IsCopied(path string) bool { return len(c.getKeepers(path)) > 0 }
+func (c Copies) IsCopied(path string, noteType domain.NoteType) bool {
+	return len(c.getKeepers(path, noteType)) > 0
+}
+
+func (c Copies) IsCopyingNotes() bool {
+	for _, info := range c.host.GetPluginInfos() {
+		found, ok := c.host.GetPlugin(info.ID)
+		if ok && found.Manifest.Playback != nil && found.Manifest.Playback.HasNoteTypes() {
+			return true
+		}
+	}
+	return false
+}
 
 // OpenCopy opens the first copy named `<hash><ext>`, where the extension is of an audio or video
-// type, in the folder of a plugin that keeps copies of the path's type.
-func (c Copies) OpenCopy(ctx context.Context, v domain.Vault, path, hash string) (playbackport.Copy, error) {
-	for _, pluginID := range c.getKeepers(path) {
+// type, in the folder of a plugin that keeps copies of the path's type or of the note type.
+func (c Copies) OpenCopy(ctx context.Context, v domain.Vault, path string, noteType domain.NoteType, hash string) (playbackport.Copy, error) {
+	for _, pluginID := range c.getKeepers(path, noteType) {
 		store, err := c.stores.Open(v, pluginID)
 		if err != nil {
 			return playbackport.Copy{}, err

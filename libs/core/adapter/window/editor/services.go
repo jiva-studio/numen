@@ -87,7 +87,7 @@ func createServices(state *State) *Services {
 		Vaults:      &vaultsHandler{state: state},
 		Settings:    settings.NewHandler(),
 		Agent:       newAgentHandler(state),
-		Command:     command.NewHandler(plugincommand.NewCommands(nil, nil)),
+		Command:     command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil)),
 		Media:       &mediaHandler{state: state},
 		TextVersion: textmenu.NewHandler(state, nil),
 		Text:        texts.NewHandler(state, nil),

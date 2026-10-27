@@ -74,7 +74,7 @@ func newScene(t *testing.T) *scene {
 			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "teh", "the")}}
 		}}
 	providers := providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, providers, steppingClock())
+	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, providers, fileReaders(s.files), steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,5 +512,20 @@ func TestCreateTextMarksMenuRunsUserStarted(t *testing.T) {
 	}
 	if !slices.Equal(s.ocr.isUserStarted, []bool{true}) {
 		t.Errorf("the recogniser run from the menu was asked as %v, want user-started", s.ocr.isUserStarted)
+	}
+}
+
+func TestCreateTextAcceptsANoteOfADeclaredNoteType(t *testing.T) {
+	s := newScene(t)
+	const linker = "org.numen.tools-links"
+	s.plugins.all = append(s.plugins.all, textport.TextPlugin{ID: linker, Name: "Links", NoteTypes: []domain.NoteType{"link"}})
+	s.files["links/talk.md"] = []byte("---\ntype: link\nurl: https://video.example/talk\n---\n")
+	s.files["notes/plain.md"] = []byte("# A plain note\n")
+
+	if err := s.versions.CreateText(t.Context(), s.vault, linker, "links/talk.md", ""); errors.Is(err, textport.ErrSourceNotAccepted) {
+		t.Fatalf("a link note was refused to the plugin of links: %v", err)
+	}
+	if err := s.versions.CreateText(t.Context(), s.vault, linker, "notes/plain.md", ""); !errors.Is(err, textport.ErrSourceNotAccepted) {
+		t.Fatalf("a plain note was taken by the plugin of links: got %v", err)
 	}
 }

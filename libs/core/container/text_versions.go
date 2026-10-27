@@ -31,7 +31,7 @@ func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
 		plugins = textproviderbridge.NewPlugins(c.PluginHost)
 	}
 	repos := indexVersions{repo: db.db.TextVersions()}
-	return textversion.NewVersions(repos, textfiles.Stores{Options: c.vaultOptions()}, plugins, plugins, c.Clock())
+	return textversion.NewVersions(repos, textfiles.Stores{Options: c.vaultOptions()}, plugins, plugins, c.VaultReaders(), c.Clock())
 }
 
 // getTextReaders is the text versions sources are read from, or nil where the

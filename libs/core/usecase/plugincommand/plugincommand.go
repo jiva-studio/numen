@@ -16,6 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 )
 
 // The ports' words for a command, which a driving adapter reaches here.
@@ -54,10 +56,15 @@ type Commands struct {
 	Run  Run
 }
 
-// NewCommands makes both scenarios over the commands, which may be nothing, and the table that
-// gives a file its type.
-func NewCommands(commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable) Commands {
-	return Commands{List: List{commands: commands, types: types}, Run: Run{commands: commands, types: types}}
+// NewCommands makes both scenarios over the commands, which may be nothing, the table that gives a
+// file its type, and the vault files a note's type is read from.
+func NewCommands(
+	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
+) Commands {
+	return Commands{
+		List: List{commands: commands, types: types},
+		Run:  Run{commands: commands, types: types, readers: readers},
+	}
 }
 
 // List lists the commands the enabled plugins declare.
@@ -89,11 +96,12 @@ func (u List) Find(id string) (Entry, bool) {
 type Run struct {
 	commands pluginport.PluginCommands
 	types    contenttypeport.ContentTypeTable
+	readers  vaultport.VaultReaders
 }
 
-// Execute checks the call against the declaration and runs it. A call that does not meet the declaration is ErrBadArguments, saying what is wrong,
-// and nothing is run.
-func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
+// Execute checks the call against the declaration and runs it over the vault. A call that does not
+// meet the declaration is ErrBadArguments, saying what is wrong, and nothing is run.
+func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, error) {
 	if u.commands == nil {
 		return Result{}, ErrUnavailable
 	}
@@ -105,7 +113,7 @@ func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
 	declared := entries[index].Command
-	if err := u.checkCall(declared, call); err != nil {
+	if err := u.checkCall(ctx, v, declared, call); err != nil {
 		return Result{}, err
 	}
 	normalized := call
@@ -114,12 +122,13 @@ func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
 }
 
 // checkCall reports the first way the call does not meet the declaration.
-func (u Run) checkCall(declared Command, call Call) error {
+func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call Call) error {
 	switch {
 	case declared.HasFiles() && (call.Path == "" || strings.HasSuffix(call.Path, "/")):
 		return fmt.Errorf("%w: %s runs over a file", ErrBadArguments, declared.ID)
-	case declared.HasFiles() && !declared.CanRunOn(u.getContentType(call.Path)):
-		return fmt.Errorf("%w: %s runs over files of %v, and %s is none", ErrBadArguments, declared.ID, declared.ContentTypes, call.Path)
+	case declared.HasFiles() && !declared.CanRunOn(u.getContentType(call.Path), u.readNoteType(ctx, v, declared, call.Path)):
+		return fmt.Errorf("%w: %s runs over files of %v and notes of types %v, and %s is none",
+			ErrBadArguments, declared.ID, declared.ContentTypes, declared.NoteTypes, call.Path)
 	case !declared.HasFiles() && call.Path != "":
 		return fmt.Errorf("%w: %s runs over no file", ErrBadArguments, declared.ID)
 	}
@@ -171,6 +180,20 @@ func (u Run) getContentType(path string) domain.ContentType {
 		return domain.UnknownContentType
 	}
 	return u.types.GetContentType(path)
+}
+
+// readNoteType is the type of the note at the path where the command runs over notes of some type,
+// and no type where it runs over none, where the vault has no readers, or where the note cannot be
+// read.
+func (u Run) readNoteType(ctx context.Context, v domain.Vault, declared Command, path string) domain.NoteType {
+	if len(declared.NoteTypes) == 0 || u.readers == nil {
+		return ""
+	}
+	noteType, err := file.ReadNoteType(ctx, u.readers, v, path)
+	if err != nil {
+		return ""
+	}
+	return noteType
 }
 
 // ListExtensions lists, lowercase and without the dot, the extensions that give a file a type the

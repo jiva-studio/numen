@@ -12,6 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 )
 
 // Versions is the text versions of vault files: what plugins report, what is
@@ -21,6 +23,7 @@ type Versions struct {
 	files     textport.TextFileStores
 	plugins   textport.TextPlugins
 	providers textport.TextProviders
+	readers   vaultport.VaultReaders
 	clock     machineport.Clock
 
 	mu        sync.Mutex
@@ -37,20 +40,22 @@ type request struct {
 }
 
 // NewVersions is the versions recorded in repos with their files in files, the
-// plugins that make text and their providers, and the clock a new version is
-// dated by. A change is reported to no one until SetListener names a listener.
+// plugins that make text and their providers, the vault files a note's type is
+// read from, and the clock a new version is dated by. A change is reported to
+// no one until SetListener names a listener.
 func NewVersions(
 	repos textport.VersionRepositories,
 	files textport.TextFileStores,
 	plugins textport.TextPlugins,
 	providers textport.TextProviders,
+	readers vaultport.VaultReaders,
 	clock machineport.Clock,
 ) (*Versions, error) {
-	if repos == nil || files == nil || plugins == nil || providers == nil || clock == nil {
-		return nil, errors.New("text versions need a repository, files, plugins, providers and a clock")
+	if repos == nil || files == nil || plugins == nil || providers == nil || readers == nil || clock == nil {
+		return nil, errors.New("text versions need a repository, files, plugins, providers, vault readers and a clock")
 	}
 	return &Versions{
-		repos: repos, files: files, plugins: plugins, providers: providers, clock: clock,
+		repos: repos, files: files, plugins: plugins, providers: providers, readers: readers, clock: clock,
 		listener: noListener{}, requested: map[request]bool{},
 	}, nil
 }
@@ -293,7 +298,7 @@ func (u *Versions) createText(ctx context.Context, v domain.Vault, req textport.
 	if !ok {
 		return fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
 	}
-	if source == "" && !plugin.Files.IsFileAccepted(path) {
+	if source == "" && !u.isTaking(ctx, v, plugin, path) {
 		return fmt.Errorf("%w: %s does not read %s", textport.ErrSourceNotAccepted, pluginID, path)
 	}
 	if source != "" {
@@ -387,4 +392,17 @@ func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {
 
 func hasVersion(versions []domain.TextVersion, id domain.TextVersionID) bool {
 	return indexOf(versions, id) >= 0
+}
+
+// isTaking reports whether the plugin's text input takes the file at the path: a file of its
+// content types, or a note of its note types.
+func (u *Versions) isTaking(ctx context.Context, v domain.Vault, plugin textport.TextPlugin, path string) bool {
+	if plugin.Files.IsFileAccepted(path) {
+		return true
+	}
+	if len(plugin.NoteTypes) == 0 {
+		return false
+	}
+	noteType, err := file.ReadNoteType(ctx, u.readers, v, path)
+	return err == nil && slices.Contains(plugin.NoteTypes, noteType)
 }

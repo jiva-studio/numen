@@ -21,11 +21,15 @@ type Copy struct {
 }
 
 // Copies are the copies the enabled plugins keep of the vault's files, each played in place of its
-// file.
+// file. A file is matched by its content type, and a note also by its note type; a file that is no
+// note has the empty note type.
 type Copies interface {
-	// IsCopied reports whether an enabled plugin keeps copies of files of the type of the path.
-	IsCopied(path string) bool
+	// IsCopyingNotes reports whether an enabled plugin keeps copies of notes of some type.
+	IsCopyingNotes() bool
+	// IsCopied reports whether an enabled plugin keeps copies of files of the type of the path, or
+	// of notes of the note type.
+	IsCopied(path string, noteType domain.NoteType) bool
 	// OpenCopy opens the copy kept of the file at the path whose content has the hash, or returns
 	// ErrNoCopy.
-	OpenCopy(ctx context.Context, v domain.Vault, path, hash string) (Copy, error)
+	OpenCopy(ctx context.Context, v domain.Vault, path string, noteType domain.NoteType, hash string) (Copy, error)
 }

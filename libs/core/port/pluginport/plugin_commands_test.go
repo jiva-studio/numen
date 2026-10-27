@@ -38,7 +38,7 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 	if !pages.IsRequired || pages.Type != pluginport.CommandArgumentNumber || again.IsRequired {
 		t.Errorf("the arguments came out as %+v", command.Arguments)
 	}
-	if !command.CanRunOn("application/pdf") || !command.CanRunOn("image/vnd.djvu") || command.CanRunOn("application/epub+zip") || command.CanRunOn(domain.UnknownContentType) {
+	if !command.CanRunOn("application/pdf", "") || !command.CanRunOn("image/vnd.djvu", "") || command.CanRunOn("application/epub+zip", "") || command.CanRunOn(domain.UnknownContentType, "") {
 		t.Error("the command runs over the wrong files")
 	}
 }
@@ -51,7 +51,7 @@ func TestACommandOverAnyFileRunsOverEveryFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	command := m.Commands[0]
-	if !command.HasFiles() || !command.CanRunOn("audio/vnd.wave") || !command.CanRunOn(domain.UnknownContentType) {
+	if !command.HasFiles() || !command.CanRunOn("audio/vnd.wave", "") || !command.CanRunOn(domain.UnknownContentType, "") {
 		t.Error("the command runs over the wrong files")
 	}
 }

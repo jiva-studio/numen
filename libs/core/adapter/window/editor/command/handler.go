@@ -15,25 +15,33 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 )
 
-// Handler answers CommandService over the scenarios of the plugin commands.
+// VaultProvider names the vault the window shows. A window showing none answers a vault with no ID.
+type VaultProvider interface {
+	GetCurrentVault() domain.Vault
+}
+
+// Handler answers CommandService over the scenarios of the plugin commands, run over the shown vault.
 type Handler struct {
-	list plugincommand.List
-	run  plugincommand.Run
+	vaults VaultProvider
+	list   plugincommand.List
+	run    plugincommand.Run
 }
 
 // NewHandler makes the handler over both scenarios.
-func NewHandler(commands plugincommand.Commands) *Handler {
-	return &Handler{list: commands.List, run: commands.Run}
+func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler {
+	return &Handler{vaults: vaults, list: commands.List, run: commands.Run}
 }
 
-// ListCommands lists the commands of every enabled plugin that the palette offers.
+// ListCommands lists the commands of every enabled plugin that the palette offers. The palette
+// tells a file by its extension, so a command over notes of a type is offered by its plugin's own
+// view and not listed.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
 	entries := h.list.Execute()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		if one.Command.IsHiddenInPalette {
+		if one.Command.IsHiddenInPalette || len(one.Command.NoteTypes) > 0 {
 			continue
 		}
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
@@ -46,7 +54,7 @@ func (h *Handler) ListCommands(
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
-	result, err := h.run.Execute(ctx, plugincommand.Call{
+	result, err := h.run.Execute(ctx, h.vaults.GetCurrentVault(), plugincommand.Call{
 		PluginID:  r.Msg.GetPluginId(),
 		Command:   r.Msg.GetCommand(),
 		Path:      r.Msg.GetPath(),

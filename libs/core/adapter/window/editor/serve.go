@@ -341,7 +341,7 @@ func (o *Installation) wireUseCases() {
 
 	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
-	services.Command = command.NewHandler(made.GetPluginCommands())
+	services.Command = command.NewHandler(o.State, made.GetPluginCommands())
 	if menu := made.OpenFileMenu(); menu != nil {
 		services.TextVersion = textmenu.NewHandler(o.State, menu)
 	}

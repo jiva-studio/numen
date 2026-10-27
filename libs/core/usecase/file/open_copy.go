@@ -30,20 +30,29 @@ type CopyFile struct {
 }
 
 // Execute opens the copy kept of the file at the path as it now reads, and answers false where no
-// copy of it is kept.
+// copy of it is kept. A note is matched by the type its frontmatter carries, so a plugin that keeps
+// copies of notes of its own type keeps none of an ordinary note.
 func (u *OpenCopy) Execute(ctx context.Context, v domain.Vault, path string) (CopyFile, bool, error) {
-	if !u.copies.IsCopied(path) {
+	var raw []byte
+	var noteType domain.NoteType
+	if IsNote(path) && u.copies.IsCopyingNotes() {
+		read, err := u.read(ctx, v, path)
+		if err != nil {
+			return CopyFile{}, false, err
+		}
+		raw, noteType = read, getNoteType(read)
+	}
+	if !u.copies.IsCopied(path, noteType) {
 		return CopyFile{}, false, nil
 	}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return CopyFile{}, false, err
+	if raw == nil {
+		read, err := u.read(ctx, v, path)
+		if err != nil {
+			return CopyFile{}, false, err
+		}
+		raw = read
 	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return CopyFile{}, false, err
-	}
-	found, err := u.copies.OpenCopy(ctx, v, path, domain.HashContent(raw))
+	found, err := u.copies.OpenCopy(ctx, v, path, noteType, domain.HashContent(raw))
 	if errors.Is(err, playbackport.ErrNoCopy) {
 		return CopyFile{}, false, nil
 	}
@@ -51,4 +60,12 @@ func (u *OpenCopy) Execute(ctx context.Context, v domain.Vault, path string) (Co
 		return CopyFile{}, false, err
 	}
 	return CopyFile{Body: found.Body, Size: found.Size, MediaType: found.MediaType}, true, nil
+}
+
+func (u *OpenCopy) read(ctx context.Context, v domain.Vault, path string) ([]byte, error) {
+	reader, err := u.readers.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return reader.Read(ctx, path)
 }

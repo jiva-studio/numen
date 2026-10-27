@@ -18,6 +18,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 )
 
+// shownVault is a window showing one vault.
+type shownVault struct{}
+
+func (shownVault) GetCurrentVault() domain.Vault { return domain.Vault{ID: "v1", Name: "v1"} }
+
 // pluginCommands declares one command and answers every run with the outcome it is given.
 type pluginCommands struct {
 	result plugincommand.Result
@@ -33,6 +38,7 @@ func (p pluginCommands) ListCommands() []plugincommand.Entry {
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
 		}},
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
 	}
 }
 
@@ -42,15 +48,15 @@ func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (pluginc
 
 func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequest) *v1.RunPluginCommandResponse {
 	t.Helper()
-	res, err := command.NewHandler(plugincommand.NewCommands(commands, fileTypes{".md": "text/markdown"})).RunPluginCommand(t.Context(), connect.NewRequest(request))
+	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(commands, fileTypes{".md": "text/markdown"}, nil)).RunPluginCommand(t.Context(), connect.NewRequest(request))
 	if err != nil {
 		t.Fatal(err)
 	}
 	return res.Msg
 }
 
-func TestTheCommandsAreListedWithoutThoseHiddenInThePalette(t *testing.T) {
-	res, err := command.NewHandler(plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"})).ListCommands(
+func TestTheCommandsAreListedWithoutThoseHiddenInThePaletteOrOverNotesOfAType(t *testing.T) {
+	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)

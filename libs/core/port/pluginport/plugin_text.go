@@ -48,11 +48,7 @@ func (m PluginManifest) listTextInputIssues() []error {
 	if len(in.ContentTypes) == 0 && len(in.Kinds) == 0 && len(in.NoteTypes) == 0 {
 		issues = append(issues, fmt.Errorf("%w: it names no content type, no kind and no note type", ErrInvalidTextInput))
 	}
-	for _, noteType := range in.NoteTypes {
-		if _, ok := m.GetNoteType(noteType); !ok {
-			issues = append(issues, fmt.Errorf("%w: %q is no note type the plugin declares", ErrInvalidTextInput, noteType))
-		}
-	}
+	issues = append(issues, m.listUndeclaredNoteTypes(ErrInvalidTextInput, in.NoteTypes)...)
 	issues = append(issues, listContentTypesIssues(ErrInvalidTextInput, in.ContentTypes)...)
 	for _, kind := range in.Kinds {
 		if strings.TrimSpace(string(kind)) == "" {

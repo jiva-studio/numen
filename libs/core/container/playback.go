@@ -22,8 +22,10 @@ func (c Config) Copies() playbackport.Copies {
 // noCopies is an installation where no plugin keeps a copy.
 type noCopies struct{}
 
-func (noCopies) IsCopied(string) bool { return false }
+func (noCopies) IsCopyingNotes() bool { return false }
 
-func (noCopies) OpenCopy(context.Context, domain.Vault, string, string) (playbackport.Copy, error) {
+func (noCopies) IsCopied(string, domain.NoteType) bool { return false }
+
+func (noCopies) OpenCopy(context.Context, domain.Vault, string, domain.NoteType, string) (playbackport.Copy, error) {
 	return playbackport.Copy{}, playbackport.ErrNoCopy
 }

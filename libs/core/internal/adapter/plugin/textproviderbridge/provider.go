@@ -46,6 +46,9 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 		plugin := textport.TextPlugin{
 			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(in.ContentTypes), Kinds: in.Kinds, IsAutoRun: in.IsAutoRun,
 		}
+		for _, one := range in.NoteTypes {
+			plugin.NoteTypes = append(plugin.NoteTypes, domain.NoteType(one))
+		}
 		if in.MenuEntry != nil {
 			plugin.Menu = textport.MenuItem{Title: in.MenuEntry.Title, Icon: in.MenuEntry.Icon}
 		}

@@ -5,25 +5,40 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 const playbackManifestHead = `{"id":"org.example.copies","name":"A","version":"1.0.0",` +
-	`"backend":{"type":"process","entrypoint":"bin/copies"}`
+	`"backend":{"type":"process","entrypoint":"bin/copies"},"noteTypes":[{"type":"link"}]`
 
 func TestReadManifestReadsPlaybackContentTypes(t *testing.T) {
 	m, err := pluginport.ReadManifest(strings.NewReader(playbackManifestHead + `,
-		"playback": {"contentTypes": ["text/markdown"]}}`))
+		"playback": {"contentTypes": ["video/*"]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !m.Playback.IsCopying("text/markdown") || m.Playback.IsCopying("audio/mpeg") {
+	if !m.Playback.IsCopying("video/mp4", "") || m.Playback.IsCopying("audio/mpeg", "") {
 		t.Error("IsCopying answers for the wrong types")
 	}
 }
 
-func TestReadManifestRejectsPlaybackByExtension(t *testing.T) {
-	for _, playback := range []string{`{"contentTypes": []}`, `{"contentTypes": [".url"]}`, `{"files": [".url"]}`} {
+func TestReadManifestReadsPlaybackNoteTypes(t *testing.T) {
+	m, err := pluginport.ReadManifest(strings.NewReader(playbackManifestHead + `,
+		"playback": {"noteTypes": ["link"]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !m.Playback.IsCopying("text/markdown", "link") || m.Playback.IsCopying("text/markdown", domain.TypeNote) {
+		t.Error("IsCopying answers for the wrong notes")
+	}
+}
+
+func TestReadManifestRejectsPlaybackByExtensionOrOfAnUndeclaredNoteType(t *testing.T) {
+	for _, playback := range []string{
+		`{"contentTypes": []}`, `{"contentTypes": [".url"]}`, `{"files": [".url"]}`, `{"noteTypes": ["deck"]}`,
+	} {
 		_, err := pluginport.ReadManifest(strings.NewReader(playbackManifestHead + `, "playback": ` + playback + `}`))
 		if !errors.Is(err, pluginport.ErrInvalidPlayback) {
 			t.Errorf("playback %s read as %v; want ErrInvalidPlayback", playback, err)

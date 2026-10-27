@@ -110,7 +110,7 @@ func runPluginCommand(
 	if declared.HasFiles() {
 		call.Path = positional[1]
 	}
-	result, err := run.Execute(ctx, call)
+	result, err := run.Execute(ctx, v, call)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -66,12 +65,14 @@ func TestGetMediaSourceRejectsMissingFile(t *testing.T) {
 	}
 }
 
-// keptCopies keeps a copy of each note, under the hash of the note's content.
+// keptCopies keeps a copy of each link note, under the hash of the note's content.
 type keptCopies map[string][]byte
 
-func (keptCopies) IsCopied(path string) bool { return strings.HasSuffix(path, ".md") }
+func (keptCopies) IsCopyingNotes() bool { return true }
 
-func (k keptCopies) OpenCopy(_ context.Context, _ domain.Vault, _, hash string) (playbackport.Copy, error) {
+func (keptCopies) IsCopied(_ string, noteType domain.NoteType) bool { return noteType == "link" }
+
+func (k keptCopies) OpenCopy(_ context.Context, _ domain.Vault, _ string, _ domain.NoteType, hash string) (playbackport.Copy, error) {
 	content, ok := k[hash]
 	if !ok {
 		return playbackport.Copy{}, playbackport.ErrNoCopy
@@ -87,12 +88,14 @@ const (
 	clip      = "videos/clip.md"
 	clipLink  = "---\ntype: link\nurl: https://videos.example/clip\n---\n"
 	clipBytes = "the bytes of a copy of a video, long enough to ask for a piece of"
+	plain     = "notes/plain.md"
+	plainNote = "# A plain note\n"
 )
 
 // newCopyClient is the media of a window whose vault holds a note a plugin keeps a copy of.
 func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceClient {
 	t.Helper()
-	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound})
+	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound, plain: plainNote})
 	api := newBareServices()
 	readers := vaultreader.Readers{}
 	api.readFiles(readers, file.NewOpenCopy(readers, copies))
@@ -164,5 +167,17 @@ func TestAFileWithNoCopyIsPlayedAsItself(t *testing.T) {
 	}
 	if answer.Msg.GetMediaType() != "audio/mpeg" {
 		t.Errorf("a recording is played as %q, want audio/mpeg", answer.Msg.GetMediaType())
+	}
+}
+
+func TestGetMediaSourcePlaysAPlainNoteAsItself(t *testing.T) {
+	client := newCopyClient(t, keptCopies{domain.HashContent([]byte(plainNote)): []byte(clipBytes)})
+
+	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: plain}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetMediaType() == "video/mp4" {
+		t.Error("a plain note is played from a copy, and no plugin keeps copies of plain notes")
 	}
 }
