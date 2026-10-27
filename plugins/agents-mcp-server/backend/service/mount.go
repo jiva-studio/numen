@@ -44,17 +44,10 @@ func Mount(s *server.Server) error {
 		}
 
 		newCfg := readConfig(values)
-		if newCfg.VaultRoot != "" {
-			srv.config.VaultRoot = newCfg.VaultRoot
-		}
-		if newCfg.DiscoveryPath != "" {
-			srv.config.DiscoveryPath = newCfg.DiscoveryPath
-		}
 		if newCfg.Token != "" {
 			srv.config.Token = newCfg.Token
 		}
 
-		srv.writeDiscoveryInfo()
 		_ = srv.aggregator.SyncTools(ctx)
 		return nil
 	})

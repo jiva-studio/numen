@@ -16,7 +16,6 @@ import (
 func TestMountAndConfigure(t *testing.T) {
 	t.Parallel()
 
-	tmpDir := t.TempDir()
 	s := server.New(server.WithPort(0))
 
 	if err := Mount(s); err != nil {
@@ -25,7 +24,6 @@ func TestMountAndConfigure(t *testing.T) {
 
 	_, err := s.Lifecycle().Configure(context.Background(), connect.NewRequest(&numenv1.ConfigureRequest{
 		Values: map[string]string{
-			"root":            tmpDir,
 			"token":           "configured-token",
 			"NUMEN_HOST_PORT": "12345",
 		},

@@ -5,12 +5,10 @@ import (
 	"strings"
 )
 
-// Config configures the MCP server listener and discovery paths.
+// Config configures the MCP server listener.
 type Config struct {
-	Addr          string
-	Token         string
-	VaultRoot     string
-	DiscoveryPath string
+	Addr  string
+	Token string
 }
 
 // readConfig builds a configuration from values and environment variables.
@@ -35,26 +33,8 @@ func readConfig(values map[string]string) Config {
 		token = os.Getenv("MCP_TOKEN")
 	}
 
-	root := values["root"]
-	if root == "" {
-		root = values["vault"]
-	}
-	if root == "" {
-		root = values["vault_root"]
-	}
-	if root == "" {
-		root = os.Getenv("NUMEN_VAULT_ROOT")
-	}
-
-	discoveryPath := values["discovery_path"]
-	if discoveryPath == "" {
-		discoveryPath = os.Getenv("MCP_DISCOVERY_PATH")
-	}
-
 	return Config{
-		Addr:          strings.TrimSpace(addr),
-		Token:         strings.TrimSpace(token),
-		VaultRoot:     strings.TrimSpace(root),
-		DiscoveryPath: strings.TrimSpace(discoveryPath),
+		Addr:  strings.TrimSpace(addr),
+		Token: strings.TrimSpace(token),
 	}
 }

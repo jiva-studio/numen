@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"net/http"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -21,8 +19,6 @@ func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func TestServerLifecycleAndToolCall(t *testing.T) {
 	t.Parallel()
-
-	tmpDir := t.TempDir()
 
 	hostClient := &fakeToolClient{
 		tools: []*numenv1.PluginTool{
@@ -42,9 +38,8 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	}
 
 	cfg := Config{
-		Addr:      "127.0.0.1:0",
-		Token:     "test-token-123",
-		VaultRoot: tmpDir,
+		Addr:  "127.0.0.1:0",
+		Token: "test-token-123",
 	}
 
 	srv, err := NewServer(cfg, hostClient)
@@ -58,12 +53,6 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	defer func() {
 		_ = srv.Close(context.Background())
 	}()
-
-	// Verify discovery files exist
-	agentPath := filepath.Join(tmpDir, ".numen", "agent.json")
-	if _, err := os.Stat(agentPath); err != nil {
-		t.Fatalf("expected discovery file at %s: %v", agentPath, err)
-	}
 
 	sseURL := srv.GetSSEURL()
 	if sseURL == "" {
@@ -83,9 +72,6 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 
 	if err := srv.Close(context.Background()); err != nil {
 		t.Fatalf("srv.Close failed: %v", err)
-	}
-	if _, err := os.Stat(agentPath); !os.IsNotExist(err) {
-		t.Fatal("expected discovery file to be removed after close")
 	}
 }
 

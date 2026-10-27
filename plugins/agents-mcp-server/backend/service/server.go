@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +13,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// Server coordinates the MCP server, HTTP transport, authentication, and discovery.
+// Server coordinates the MCP server, HTTP transport, and authentication.
 type Server struct {
 	config     Config
 	mcpServer  *sdk.Server
@@ -144,8 +143,6 @@ func (s *Server) Serve(ln net.Listener) error {
 	s.actualAddr = ln.Addr().String()
 	s.mu.Unlock()
 
-	s.writeDiscoveryInfo()
-
 	go func() {
 		_ = s.httpServer.Serve(ln)
 	}()
@@ -153,33 +150,7 @@ func (s *Server) Serve(ln net.Listener) error {
 	return nil
 }
 
-// writeDiscoveryInfo writes discovery metadata to the configured target location.
-func (s *Server) writeDiscoveryInfo() {
-	discoveryTarget := s.config.DiscoveryPath
-	if discoveryTarget == "" {
-		discoveryTarget = s.config.VaultRoot
-	}
-	if discoveryTarget == "" {
-		return
-	}
-
-	info := DiscoveryInfo{
-		Name:      "numen",
-		Version:   "1.0.0",
-		URL:       s.GetURL(),
-		SSEURL:    s.GetSSEURL(),
-		HTTPURL:   s.GetHTTPURL(),
-		Token:     s.config.Token,
-		Transport: "sse",
-		Headers: map[string]string{
-			"Authorization": "Bearer " + s.config.Token,
-		},
-		PID: os.Getpid(),
-	}
-	_ = writeDiscovery(discoveryTarget, info)
-}
-
-// Close gracefully stops the server and cleans up discovery files.
+// Close gracefully stops the server.
 func (s *Server) Close(ctx context.Context) error {
 	s.mu.Lock()
 	if s.isClosed {
@@ -188,12 +159,6 @@ func (s *Server) Close(ctx context.Context) error {
 	}
 	s.isClosed = true
 	s.mu.Unlock()
-
-	discoveryTarget := s.config.DiscoveryPath
-	if discoveryTarget == "" {
-		discoveryTarget = s.config.VaultRoot
-	}
-	_ = removeDiscovery(discoveryTarget)
 
 	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
 		var cancel context.CancelFunc
