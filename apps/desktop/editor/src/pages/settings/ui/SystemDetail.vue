@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Dedicated settings view for system settings: window appearance, theme, scale,
- * filename syncing, and direct access to numen.json configuration file.
+ * filename syncing, and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'
@@ -26,10 +26,6 @@ const installation = computed(() => props.state.installation)
 function onBack(): void {
   emit('back')
 }
-
-function onOpenFile(): void {
-  installation.value.openFile()
-}
 </script>
 
 <template>
@@ -40,9 +36,6 @@ function onOpenFile(): void {
 
     <div class="system-detail__where">
       <p class="system-detail__file">{{ installation.file.value || words.file }}</p>
-      <Button variant="outline" size="small" @click="onOpenFile">
-        {{ words.opens }}
-      </Button>
     </div>
 
     <WindowSettingsSection :state="props.state" />

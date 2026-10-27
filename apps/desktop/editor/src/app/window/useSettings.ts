@@ -26,7 +26,6 @@ import {
 import { formatErrorMessage } from '@numen/wire'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
-import { createSettingsFileTabKind } from '@/pages/settings-file'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -157,12 +156,11 @@ interface SettingsTabConfigDeps {
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
-  file: { openSettingsFile: () => void }
   core: SettingsPort
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, rest, secrets, retry, file, core } = deps
+  const { appearance, sync, rest, secrets, retry, core } = deps
   return {
     themes: appearance.list,
     applied: appearance.applied,
@@ -202,7 +200,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     },
     plugins: rest.plugins,
     file: rest.path,
-    openFile: () => file.openSettingsFile(),
   }
 }
 
@@ -258,18 +255,16 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
-  const file = createSettingsFileTabKind(windowTabs.handle, core, () => void rest.start())
-
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, file, core }),
+    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, core }),
   )
 
   watch(appearance.sized, () => onSizeChanged())
 
   const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
 
-  const kinds = [configured.kind, file.kind]
+  const kinds = [configured.kind]
 
   const start = async () => {
     void appearance.start()
@@ -287,7 +282,6 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     sync,
     oneName: sync,
     rest,
-    file,
     configured,
     paletteLists: retainedItem,
     kinds,

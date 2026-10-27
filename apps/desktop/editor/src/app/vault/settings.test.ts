@@ -3,13 +3,12 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { CAPABILITY_AGENT_PROVIDER, CompletionConsent, ErrorCode, Presence } from '@numen/protocol'
+import { CAPABILITY_AGENT_PROVIDER, CompletionConsent, Presence } from '@numen/protocol'
 import { settingsCore as core } from './settings'
 
 const request = vi.hoisted(() => ({
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
-  writeSettingsFile: vi.fn(),
   writePluginSecret: vi.fn(),
   deletePluginSecret: vi.fn(),
   retryPlugin: vi.fn(),
@@ -33,7 +32,6 @@ const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 beforeEach(() => {
   request.getSettings.mockReset()
   request.writeSettings.mockReset().mockResolvedValue({})
-  request.writeSettingsFile.mockReset().mockResolvedValue({})
 })
 
 describe('keeping a title and its file name in line', () => {
@@ -213,29 +211,6 @@ describe('every setting', () => {
     expect(writtenLast()).toStrictEqual({
       settings: [{ at: ['performance', 'profile'], value: '"eco"' }],
     })
-  })
-})
-
-describe('the settings file written whole', () => {
-  it('presents the file as it was last read', async () => {
-    await core.saveSettingsFile('{}', 'fingerprint')
-
-    expect(request.writeSettingsFile).toHaveBeenCalledWith({
-      written: '{}',
-      baseline: 'fingerprint',
-    })
-  })
-
-  it('presents nothing where nothing was read', async () => {
-    await core.saveSettingsFile('{}', null)
-
-    expect(request.writeSettingsFile).toHaveBeenCalledWith({ written: '{}' })
-  })
-
-  it('says the file had changed where the vault answers it is stale', async () => {
-    request.writeSettingsFile.mockResolvedValue({ error: ErrorCode.STALE })
-
-    expect(await core.saveSettingsFile('{}', 'fingerprint')).toStrictEqual({ isChanged: true })
   })
 })
 

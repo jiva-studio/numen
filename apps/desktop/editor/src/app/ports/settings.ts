@@ -15,12 +15,6 @@ export interface SettingsPort {
   /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
-  /** The settings file as its person wrote it, and at its current position. */
-  getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
-  saveSettingsFile(
-    content: string,
-    expectedVersion: string | null,
-  ): Promise<{ readonly isChanged: boolean }>
   /**
    * The key of a secret a plugin declares, stored in the system keychain and
    * never in the settings file. A machine without a keychain refuses it.

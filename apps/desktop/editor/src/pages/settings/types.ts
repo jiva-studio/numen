@@ -60,8 +60,6 @@ export interface Installation {
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
-  /** That file opened whole, in a tab of its own. */
-  openFile(): void
 }
 
 /** What the settings tab holds. */

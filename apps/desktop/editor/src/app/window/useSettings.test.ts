@@ -16,8 +16,6 @@ const createSettings = () => {
   const writers: string[] = []
   const core = {
     getSettings: async () => ({ written: '{}', path: '/vault/.numen/settings.json', models: [] }),
-    getSettingsFile: async () => ({ written: '{}', path: '/vault/.numen/settings.json' }),
-    saveSettingsFile: async () => ({ isChanged: false }),
   } as unknown as SettingsPort
   const log = {
     getWriter: (name: string) => {
@@ -53,7 +51,7 @@ describe('the settings as they are put together', () => {
   it('opens the settings tab as kind of tab', () => {
     const { settings } = createSettings()
 
-    expect(settings.kinds).toStrictEqual([settings.configured.kind, settings.file.kind])
+    expect(settings.kinds).toStrictEqual([settings.configured.kind])
   })
 
   it('puts the appearance away when it is put away', () => {
@@ -63,14 +61,6 @@ describe('the settings as they are put together', () => {
     settings.close()
 
     expect(close).toHaveBeenCalledOnce()
-  })
-
-  it('opens the settings file alongside the current tab', async () => {
-    const { settings, handle } = createSettings()
-    await settings.rest.start()
-    settings.file.openSettingsFile()
-
-    expect(handle.openTabBeside).toHaveBeenCalledWith('settings-file')
   })
 })
 
@@ -168,15 +158,6 @@ describe('the settings tab', () => {
     expect(installation.getSetting(['performance', 'profile'])).toBe('eco')
     expect(installation.getModels(['indexing'])).toStrictEqual([model()])
     expect(write).toHaveBeenCalledWith(edits)
-  })
-
-  it('opens the settings file in a tab of its own', () => {
-    const { settings } = createSettings()
-    const open = vi.spyOn(settings.file, 'openSettingsFile').mockImplementation(vi.fn())
-
-    settings.configured.state.installation.openFile()
-
-    expect(open).toHaveBeenCalledOnce()
   })
 
   it('generates palette commands for installed plugins with palette: true regardless of isActive', () => {

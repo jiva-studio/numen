@@ -7,7 +7,6 @@ export const WORDS = {
   settings: 'Settings',
   /** Shown in place of the settings file path until the path is known. */
   file: 'numen.json in the configuration folder',
-  opens: 'Open file',
   /** Group headings, in display order. */
   window: 'Window',
   naming: 'Note names',

@@ -42,7 +42,6 @@ const installation = (): Installation =>
     getModels: () => [],
     write: vi.fn(),
     file: ref('/vaults/Physics/.numen/settings.json'),
-    openFile: vi.fn(),
   }) satisfies Installation
 
 describe('the settings tab', () => {

@@ -83,7 +83,6 @@ const installation: Installation = {
   choosePath: fn(async () => ''),
   plugins: ref(PLUGINS),
   file: ref('/numen.json'),
-  openFile: fn(),
   themes: ref([]),
   applied: ref('preset:numen'),
   mode: ref('system'),

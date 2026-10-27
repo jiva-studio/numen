@@ -168,9 +168,6 @@ const INSTALLATION: Installation = {
   },
   file: ref('/numen.json'),
   plugins: ref(PLUGINS),
-  openFile: () => {
-    DONE.push('open')
-  },
 }
 
 /** The settings of the window and of every plugin installed, each reached from its row. */

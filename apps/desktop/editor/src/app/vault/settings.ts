@@ -5,7 +5,7 @@ import { settingsService } from '@/shared/clients'
 import { consented, fetched } from './words'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
-import { formatErrorMessage, isStaleAnswer } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
@@ -133,17 +133,6 @@ export const settingsCore: SettingsPort = {
     await settingsService.writeSettings({
       settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
     })
-  },
-  getSettingsFile: async () => {
-    const answer = await settingsService.readSettingsFile({})
-    return { written: answer.written, path: answer.path }
-  },
-  saveSettingsFile: async (text, observed) => {
-    const answer = await settingsService.writeSettingsFile({
-      written: text,
-      ...(observed === null ? {} : { baseline: observed }),
-    })
-    return { isChanged: isStaleAnswer(answer) }
   },
   writePluginSecret: async (pluginId, name, key) => {
     await settingsService.writePluginSecret({ pluginId, name, key })

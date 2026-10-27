@@ -14,7 +14,6 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   choosePath: fn(async () => ''),
   plugins: ref([]),
   file: ref('/numen.json'),
-  openFile: fn(),
   themes: ref([]),
   applied: ref('preset:numen'),
   mode: ref('system'),

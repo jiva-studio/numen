@@ -88,9 +88,6 @@ const createTab = (
       content.push(...response)
     },
     file: ref('/numen.json'),
-    openFile: () => {
-      isDone.push('opens the file')
-    },
     themes: ref([
       { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
       { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
@@ -232,13 +229,11 @@ describe('the settings tab', () => {
     expect(recorded).toStrictEqual(['syncing false'])
   })
 
-  it('names the file the settings stand in, and opens it whole', async () => {
-    const { tab, recorded } = createTab()
+  it('names the file the settings stand in, and offers no tab to edit it', async () => {
+    const { tab } = createTab()
     await openSystemSettings(tab)
     expect(tab.get('.system-detail__file').text()).toBe('/numen.json')
-
-    await tab.get('.system-detail__where button').trigger('click')
-    expect(recorded).toStrictEqual(['opens the file'])
+    expect(tab.find('.system-detail__where button').exists()).toBe(false)
   })
 
   it('carries no pencil, and no editor spliced under a row', async () => {

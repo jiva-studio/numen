@@ -93,7 +93,6 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     retryPlugin: vi.fn(),
     choosePath: vi.fn(async () => ''),
     file: ref('/test/settings.json'),
-    openFile: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AgentSettingsSection, { props: { state } })

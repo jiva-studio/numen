@@ -64,7 +64,6 @@ const createSection = (
     choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
     file: ref('/numen.json'),
-    openFile: vi.fn(),
     themes: ref([]),
     applied: ref('preset:numen'),
     mode: ref('system'),

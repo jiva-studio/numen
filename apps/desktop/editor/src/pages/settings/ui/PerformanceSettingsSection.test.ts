@@ -18,7 +18,6 @@ const createSection = (file: Record<string, unknown> = {}) => {
       content.push(...response)
     },
     file: ref('/numen.json'),
-    openFile: vi.fn(),
     themes: ref([]),
     applied: ref('preset:numen'),
     mode: ref('system'),
