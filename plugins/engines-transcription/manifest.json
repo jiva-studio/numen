@@ -122,7 +122,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/engines-transcription",
-    "serviceName": "numen.v1.TranscriptService"
+    "serviceName": "numen.v1.TextProviderService"
   },
   "settings": [
     {

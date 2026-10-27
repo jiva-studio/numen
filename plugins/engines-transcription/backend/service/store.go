@@ -2,54 +2,50 @@ package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
+	"encoding/json"
 	"errors"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
-// editPrefix starts the key of a version a person made by editing another.
-const editPrefix = "edit-"
+// textKind is the kind of the text versions the plugin makes.
+const textKind domain.TextKind = "transcript"
 
 // getTranscriptionKey is the key of what the model heard in a recording: the hash of its bytes.
 func getTranscriptionKey(fileHash string) string { return fileHash }
 
-// getEditKey is the key of a person's edit of a version. One version has one edit, rewritten as the
-// person edits it again.
-func getEditKey(input domain.TextVersionID) string {
-	sum := sha256.Sum256([]byte(input))
-	return editPrefix + hex.EncodeToString(sum[:8])
-}
-
-// isEditKey reports whether a key names a person's edit.
-func isEditKey(key string) bool { return strings.HasPrefix(key, editPrefix) }
-
-// transcripts are the transcripts kept in the plugin's folder of a vault's store: `<key>.vtt` whole,
-// and `<key>.partial.vtt` while a transcription is under way, which holds a note of how far it got
-// after every batch of cues it claims.
+// transcripts are the transcripts kept in the plugin's folder of a vault's store, in the common
+// format of text versions: `<key>.jsonl` whole, and `<key>.partial.jsonl` while a transcription is
+// under way. `<key>.reached` records how far the partial transcript got and how many of its bytes
+// that is, after every batch of cues it claims.
 type transcripts struct {
 	store host.Store
 }
 
-func getFileName(key string) string    { return key + ".vtt" }
-func getPartialName(key string) string { return key + ".partial.vtt" }
+func getFileName(key string) string    { return key + ".jsonl" }
+func getPartialName(key string) string { return key + ".partial.jsonl" }
+func getReachedName(key string) string { return key + ".reached" }
+
+// reached is how far a partial transcript got: the millisecond of the recording, and the size of
+// the partial file at that moment.
+type reached struct {
+	MS   int   `json:"ms"`
+	Size int64 `json:"size"`
+}
 
 // readCues is the cues kept under the key: the whole transcript, else the part a transcription has
 // written, else host.ErrNotExist.
 func (t transcripts) readCues(ctx context.Context, key string) ([]transcript.Cue, error) {
-	raw, err := t.store.Read(ctx, getFileName(key))
+	segments, err := host.ReadTextFile(ctx, t.store, getFileName(key))
 	if errors.Is(err, host.ErrNotExist) {
-		raw, err = t.store.Read(ctx, getPartialName(key))
+		segments, err = host.ReadTextFile(ctx, t.store, getPartialName(key))
 	}
 	if err != nil {
 		return nil, err
 	}
-	_, cues := transcript.Parse(raw)
-	return cues, nil
+	return transcript.GetCues(segments), nil
 }
 
 // hasWhole reports whether the whole transcript is kept under the key.
@@ -61,77 +57,55 @@ func (t transcripts) hasWhole(ctx context.Context, key string) (bool, error) {
 	return err == nil, err
 }
 
-// readReached is how far a transcription before this one got, in milliseconds, with the bytes past
-// the last note cut away: those are a batch that did not land whole.
+// readReached is how far a transcription before this one got, in milliseconds. The bytes of the
+// partial transcript past the size recorded with it are a batch that did not land whole, and are
+// cut away. A partial transcript with no record of its progress starts again from zero.
 func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
-	raw, err := t.store.Read(ctx, getPartialName(key))
+	raw, err := t.store.Read(ctx, getReachedName(key))
 	if errors.Is(err, host.ErrNotExist) {
-		return 0, nil
+		return 0, t.store.Delete(ctx, getPartialName(key))
 	}
 	if err != nil {
 		return 0, err
 	}
-	ms, end := transcript.ReadReached(raw)
-	if end < len(raw) {
-		if err := t.store.Write(ctx, getPartialName(key), raw[:end]); err != nil {
+	var progress reached
+	if err := json.Unmarshal(raw, &progress); err != nil {
+		return 0, errors.Join(t.store.Delete(ctx, getPartialName(key)), t.store.Delete(ctx, getReachedName(key)))
+	}
+	partial, err := t.store.Read(ctx, getPartialName(key))
+	if errors.Is(err, host.ErrNotExist) {
+		return 0, t.store.Delete(ctx, getReachedName(key))
+	}
+	if err != nil {
+		return 0, err
+	}
+	if int64(len(partial)) > progress.Size {
+		if err := t.store.Write(ctx, getPartialName(key), partial[:progress.Size]); err != nil {
 			return 0, err
 		}
 	}
-	return ms, nil
+	return progress.MS, nil
 }
 
-// appendBatch adds a batch of cues to the partial transcript, and the note that it reached the
-// millisecond given after them.
-func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcript.Cue, reached int, isFirst bool) error {
-	body := transcript.Marshal(cues)
-	if !isFirst {
-		body = body[len(transcript.Head)+1:]
+// appendBatch adds a batch of cues to the partial transcript, and records that it reached the
+// millisecond given.
+func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcript.Cue, ms int) error {
+	if err := host.AppendText(ctx, t.store, getPartialName(key), transcript.GetSegments(cues)); err != nil {
+		return err
 	}
-	return t.store.Append(ctx, getPartialName(key), append(body, transcript.GetReachMarker(reached)...))
-}
-
-// finish writes the partial transcript whole under the key and removes the partial one.
-func (t transcripts) finish(ctx context.Context, key string) ([]transcript.Cue, error) {
-	cues, err := t.readCues(ctx, key)
+	partial, err := t.store.Read(ctx, getPartialName(key))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := t.write(ctx, key, cues); err != nil {
-		return nil, err
-	}
-	return cues, t.store.Delete(ctx, getPartialName(key))
+	// A struct of two numbers always marshals.
+	raw, _ := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
+	return t.store.Write(ctx, getReachedName(key), raw)
 }
 
-// write keeps the cues whole under the key.
-func (t transcripts) write(ctx context.Context, key string, cues []transcript.Cue) error {
-	return t.store.Write(ctx, getFileName(key), transcript.Marshal(cues))
-}
-
-// remove takes away everything kept under the key.
-func (t transcripts) remove(ctx context.Context, key string) error {
-	return errors.Join(t.store.Delete(ctx, getFileName(key)), t.store.Delete(ctx, getPartialName(key)))
-}
-
-// writeParts is the cues as the parts of a timed text, one line to a cue.
-func writeParts(cues []transcript.Cue) []domain.TextPart {
-	parts := make([]domain.TextPart, len(cues))
-	for i, cue := range cues {
-		text := cue.Text
-		if i < len(cues)-1 {
-			text += "\n"
-		}
-		parts[i] = domain.TextPart{Text: text, Place: domain.TextPlace{
-			Start: msToDuration(cue.From), End: msToDuration(cue.To),
-		}}
+// finish keeps the partial transcript whole under the key and removes the record of its progress.
+func (t transcripts) finish(ctx context.Context, key string) error {
+	if err := t.store.Rename(ctx, getPartialName(key), getFileName(key)); err != nil {
+		return err
 	}
-	return parts
-}
-
-// hashCues is the hash of the text the cues are as parts.
-func hashCues(cues []transcript.Cue) string {
-	var b strings.Builder
-	for _, part := range writeParts(cues) {
-		b.WriteString(part.Text)
-	}
-	return domain.HashContent([]byte(b.String()))
+	return t.store.Delete(ctx, getReachedName(key))
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -192,14 +191,14 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err := t.hearSegments(ctx, j, model, recording); err != nil {
 		return err
 	}
-	cues, err := j.store.finish(ctx, j.key)
+	err = j.store.finish(ctx, j.key)
 	if errors.Is(err, host.ErrNotExist) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	return t.putVersion(ctx, j, cues)
+	return t.putVersion(ctx, j, getFileName(j.key))
 }
 
 // putWholeVersion puts the version of a transcript a run before this one finished, where the host
@@ -214,16 +213,13 @@ func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 			return nil
 		}
 	}
-	cues, err := j.store.readCues(ctx, j.key)
-	if err != nil {
-		return err
-	}
-	return t.putVersion(ctx, j, cues)
+	return t.putVersion(ctx, j, getFileName(j.key))
 }
 
-func (t *Transcriber) putVersion(ctx context.Context, j *job, cues []transcript.Cue) error {
+// putVersion records the transcript in the file of the plugin's folder named.
+func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error {
 	_, err := t.texts.PutVersion(ctx, host.TextPut{
-		Path: j.path, Key: j.key, Format: domain.TextFormatTimed, InputHash: j.fileHash, Hash: hashCues(cues),
+		Path: j.path, Key: j.key, Kind: textKind, SourceHash: j.fileHash, File: file,
 	})
 	return err
 }
@@ -249,7 +245,6 @@ func (t *Transcriber) hearSegments(ctx context.Context, j *job, model engine.Tra
 		return err
 	}
 	length := recording.GetDuration()
-	isFirst := from == 0
 	for {
 		t.reportProgress(ctx, j.path, from, length)
 		cues, reached, err := hearBatch(ctx, model, recording, j.path, from)
@@ -259,15 +254,11 @@ func (t *Transcriber) hearSegments(ctx context.Context, j *job, model engine.Tra
 		if reached <= from {
 			return nil
 		}
-		if err := j.store.appendBatch(ctx, j.key, cues, reached, isFirst); err != nil {
+		if err := j.store.appendBatch(ctx, j.key, cues, reached); err != nil {
 			return err
 		}
-		isFirst, from = false, reached
-		heard, err := j.store.readCues(ctx, j.key)
-		if err != nil {
-			return err
-		}
-		if err := t.putVersion(ctx, j, heard); err != nil {
+		from = reached
+		if err := t.putVersion(ctx, j, getPartialName(j.key)); err != nil {
 			return err
 		}
 		if err := t.yieldTurn(ctx, j); err != nil {
@@ -326,7 +317,3 @@ func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 func (t *Transcriber) finishTask(ctx context.Context, path string) {
 	_ = t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path))
 }
-
-func msToDuration(ms int) time.Duration { return time.Duration(ms) * time.Millisecond }
-
-func durationToMS(d time.Duration) int { return int(d / time.Millisecond) }

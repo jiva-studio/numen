@@ -1,6 +1,6 @@
 // Package service is the backend of the transcription plugin: it hears the recordings a person asks
-// for, keeps their transcripts in the plugin's own folder of the vault's store, gives them to the
-// host as timed text versions, and serves TranscriptService to the player.
+// for, writes their transcripts into the plugin's own folder of the vault's store in the common
+// format of text versions, and records each with the host as a version of kind "transcript".
 package service
 
 import (
@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 )
 
@@ -133,14 +132,13 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 	return cfg
 }
 
-// Mount registers the text provider and the transcript service on s over the host given. The model
+// Mount registers the text provider on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
 	model := &models{cfg: cfg, isMock: isMock, open: openParakeet}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
-	s.Register(host.NewTextProviderHandler(provider{stores: hosted.Store, transcriber: transcriber}, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewTranscriptServiceHandler(transcriptServer{stores: hosted.Store, texts: hosted.Texts}, s.HandlerOptions()...))
+	s.Register(host.NewTextProviderHandler(provider{transcriber: transcriber}, s.HandlerOptions()...))
 	commands := command.New()
 	// The registry is new, so the one id cannot be added twice.
 	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))

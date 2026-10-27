@@ -1,201 +1,45 @@
 package transcript_test
 
 import (
-	"bytes"
-	"fmt"
 	"slices"
-	"strings"
 	"testing"
-	"time"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
-// What is written is read back as the same cues, and the words come back
-// without a timing in them.
-func TestWhatIsSavedIsReadBack(t *testing.T) {
-	content := transcript.Marshal([]transcript.Cue{
-		{Text: "первая реплика", From: 1500, To: 4200},
-		{Text: "вторая реплика", From: 4200, To: 9100},
+func TestCuesBecomeSegmentsWithTheirSpanInSeconds(t *testing.T) {
+	segments := transcript.GetSegments([]transcript.Cue{
+		{Text: "Good morning.", From: 1500, To: 4200},
+		{Text: "   ", From: 4200, To: 5000},
+		{Text: "The river is high.", From: 5000, To: 9100},
 	})
-
-	if !strings.HasPrefix(string(content), transcript.Head) {
-		t.Fatalf("the file does not begin with %s:\n%s", transcript.Head, content)
+	want := []domain.TextSegment{
+		{Text: "Good morning.\n", Selector: `{"t":[1.5,4.2]}`},
+		{Text: "The river is high.\n", Selector: `{"t":[5,9.1]}`},
 	}
-
-	response, cues := transcript.Parse(content)
-	if response != "первая реплика\nвторая реплика" {
-		t.Errorf("the words read back as %q", response)
-	}
-	if len(cues) != 2 {
-		t.Fatalf("read back %d cues, want 2", len(cues))
-	}
-	if cues[0].From != 1500 || cues[0].To != 4200 {
-		t.Errorf("the first cue spans %d-%d", cues[0].From, cues[0].To)
-	}
-	if response[cues[1].Offset:cues[1].Offset+len(cues[1].Text)] != "вторая реплика" {
-		t.Errorf("the second cue does not stand where it says it does")
+	if !slices.Equal(segments, want) {
+		t.Fatalf("got %+v, want %+v", segments, want)
 	}
 }
 
-// A cue carrying no words is not a moment the recording had.
-func TestSilenceIsNotSaved(t *testing.T) {
-	content := transcript.Marshal([]transcript.Cue{
-		{Text: "  ", From: 0, To: 1000},
-		{Text: "said", From: 1000, To: 2000},
-	})
-	response, cues := transcript.Parse(content)
-	if response != "said" || len(cues) != 1 {
-		t.Errorf("silence was written down: %q, %d cues", response, len(cues))
+func TestSegmentsReadBackAsTheCuesTheyWere(t *testing.T) {
+	cues := []transcript.Cue{{Text: "Good morning.", From: 1500, To: 4200}, {Text: "Again.", From: 62500, To: 63001}}
+	if got := transcript.GetCues(transcript.GetSegments(cues)); !slices.Equal(got, cues) {
+		t.Fatalf("got %+v, want %+v", got, cues)
 	}
 }
 
-// A note says how far a run got, and is not part of the transcript.
-func TestANoteIsNotSpeech(t *testing.T) {
-	content := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
-	content = append(content, transcript.GetReachMarker(2000)...)
-
-	response, cues := transcript.Parse(content)
-	if response != "said" || len(cues) != 1 {
-		t.Errorf("the note was read as speech: %q", response)
-	}
-	if ms, end := transcript.ReadReached(content); ms != 2000 || end != len(content) {
-		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(content))
-	}
-}
-
-// A batch that did not land whole is one no note claims, and the run before it
-// is what the next run takes up.
-func TestABatchNoNoteClaims(t *testing.T) {
-	whole := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
-	whole = append(whole, transcript.GetReachMarker(2000)...)
-	divided := slices.Concat(whole, []byte("\n00:00:02.000 --> 00:00:0"))
-
-	ms, end := transcript.ReadReached(divided)
-	if ms != 2000 {
-		t.Errorf("the last note says %d ms", ms)
-	}
-	if string(divided[:end]) != string(whole) {
-		t.Errorf("cutting back to the note leaves %q", divided[:end])
-	}
-}
-
-// The hours are optional in the format, and other tools write them out.
-func TestTimingsOtherToolsWrite(t *testing.T) {
-	response, cues := transcript.Parse([]byte("WEBVTT\n\n01:02.500 --> 00:01:03.000\nsaid\n"))
-	if response != "said" || len(cues) != 1 {
-		t.Fatalf("read %q and %d cues", response, len(cues))
-	}
-	if cues[0].From != 62500 || cues[0].To != 63000 {
-		t.Errorf("the cue spans %d-%d, want 62500-63000", cues[0].From, cues[0].To)
-	}
-}
-
-func TestStampIsWhatTheFormatWrites(t *testing.T) {
+func TestFormatTimestampWritesHoursMinutesSecondsAndThousandths(t *testing.T) {
 	for ms, want := range map[int]string{
 		0:        "00:00:00.000",
 		9100:     "00:00:09.100",
 		3723456:  "01:02:03.456",
 		86399999: "23:59:59.999",
+		-5:       "00:00:00.000",
 	} {
 		if got := transcript.FormatTimestamp(ms); got != want {
 			t.Errorf("%d ms is written %q, want %q", ms, got, want)
 		}
-	}
-}
-
-// How far a run got is a note of its own. A cue saying the same words is
-// speech, and nothing is cut away behind it.
-func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
-	claimed := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
-	claimed = append(claimed, transcript.GetReachMarker(2000)...)
-
-	// A batch that did not land whole, speaking the words a note is written in.
-	cuesData := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
-	whole := slices.Concat(claimed, bytes.TrimPrefix(cuesData, []byte(transcript.Head+"\n")))
-
-	ms, end := transcript.ReadReached(whole)
-	if ms != 2000 {
-		t.Errorf("the run is said to have reached %d ms", ms)
-	}
-	if string(whole[:end]) != string(claimed) {
-		t.Errorf("cutting back to the note leaves %q", whole[:end])
-	}
-}
-
-// cue say nothing about how far a run got.
-func TestANoteInsideALineIsNotANote(t *testing.T) {
-	whole := transcript.Marshal([]transcript.Cue{
-		{Text: "he said NOTE heard 999 and sat down", From: 0, To: 2000},
-	})
-	whole = append(whole, transcript.GetReachMarker(2000)...)
-
-	if ms, end := transcript.ReadReached(whole); ms != 2000 || end != len(whole) {
-		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(whole))
-	}
-}
-
-// A file carrying the words of a note inside every one of its cues is read in
-// one pass over it.
-func TestReachedReadsALargeTranscriptAtOnce(t *testing.T) {
-	var file strings.Builder
-	file.WriteString(transcript.Head + "\n")
-	for i := range 200_000 {
-		fmt.Fprintf(&file, "\n00:00:0%d.000 --> 00:00:0%d.000\nNOTE heard %d said\n", i%9, i%9+1, i)
-	}
-	raw := []byte(file.String())
-
-	isDone := make(chan int, 1)
-	go func() {
-		ms, _ := transcript.ReadReached(raw)
-		isDone <- ms
-	}()
-	select {
-	case ms := <-isDone:
-		if ms != 0 {
-			t.Errorf("a note inside a cue said %d ms", ms)
-		}
-	case <-time.After(30 * time.Second):
-		t.Error("reading a transcript of 10 MB did not finish")
-	}
-}
-
-func makeBenchmarkCues(n int) []transcript.Cue {
-	cues := make([]transcript.Cue, n)
-	for i := range n {
-		cues[i] = transcript.Cue{
-			Text: "This is a sample cue text recorded during the recording session.",
-			From: i * 3000,
-			To:   (i + 1) * 3000,
-		}
-	}
-	return cues
-}
-
-func BenchmarkParse(b *testing.B) {
-	for _, n := range []int{100, 1000} {
-		cues := makeBenchmarkCues(n)
-		raw := transcript.Marshal(cues)
-		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
-			b.SetBytes(int64(len(raw)))
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				_, _ = transcript.Parse(raw)
-			}
-		})
-	}
-}
-
-func BenchmarkMarshal(b *testing.B) {
-	for _, n := range []int{100, 1000} {
-		cues := makeBenchmarkCues(n)
-		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
-			b.ReportAllocs()
-			b.ResetTimer()
-			for b.Loop() {
-				_ = transcript.Marshal(cues)
-			}
-		})
 	}
 }
