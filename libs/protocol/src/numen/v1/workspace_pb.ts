@@ -195,7 +195,7 @@ export const ReadOpenTabsResponseSchema: GenMessage<ReadOpenTabsResponse> = /*@_
  */
 export type Tab = Message<"numen.v1.Tab"> & {
   /**
-   * Id is what the window calls this tab, which the front is named by.
+   * Id is what the window calls this tab, which the active id names.
    *
    * @generated from field: string id = 1;
    */
@@ -261,7 +261,7 @@ export const WorkspaceService: GenService<{
   },
   /**
    * WriteOpenTabs says what currently open — every tab of the window, and
-   * which of them is in front. The client says so again whenever any of it
+   * which of them is active. The client says so again whenever any of it
    * changes, and an agent working the vault beside them reads what it last
    * said.
    *

@@ -405,7 +405,7 @@ func (x *ReadOpenTabsResponse) GetActiveId() string {
 // does not know the kind knows a tab of that kind is open and no more.
 type Tab struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id is what the window calls this tab, which the front is named by.
+	// Id is what the window calls this tab, which the active id names.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Kind is the registered name of the tab kind.
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`

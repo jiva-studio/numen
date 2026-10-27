@@ -59,7 +59,7 @@ type WorkspaceServiceClient interface {
 	// caller listens. What travelling there looks like is the client's.
 	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest]) (*connect.ServerStreamForClient[v1.WatchFocusResponse], error)
 	// WriteOpenTabs says what currently open — every tab of the window, and
-	// which of them is in front. The client says so again whenever any of it
+	// which of them is active. The client says so again whenever any of it
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
 	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
@@ -143,7 +143,7 @@ type WorkspaceServiceHandler interface {
 	// caller listens. What travelling there looks like is the client's.
 	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest], *connect.ServerStream[v1.WatchFocusResponse]) error
 	// WriteOpenTabs says what currently open — every tab of the window, and
-	// which of them is in front. The client says so again whenever any of it
+	// which of them is active. The client says so again whenever any of it
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
 	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
