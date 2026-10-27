@@ -213,12 +213,12 @@ func (o *Installation) DraftingLocation(ctx context.Context, path, text string) 
 	if err != nil || contents.Outcome != note.Ok {
 		return 0, 0, false
 	}
-	pos, _ := markdown.FindSpans(contents.Body, text)
+	pos, _ := markdown.FindRanges(contents.Body, text)
 	if len(pos) != 1 {
 		return 0, 0, false
 	}
-	return markdown.CountUTF16(contents.Body, pos[0].From),
-		markdown.CountUTF16(contents.Body, pos[0].To), true
+	return markdown.CountUTF16(contents.Body, pos[0].Start),
+		markdown.CountUTF16(contents.Body, pos[0].End), true
 }
 
 // Refresh brings named notes up to date. Whatever changes a note calls it, so

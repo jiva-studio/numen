@@ -8,35 +8,35 @@ package domain
 // beginning.
 type Place struct {
 	Path string
-	// Spans are the runs, over the text the source is read as.
-	Spans []ByteSpan
+	// Ranges are the runs, over the text the source is read as.
+	Ranges []ByteRange
 }
 
-// A ByteSpan is a run of text, by where it begins and where it ends, counted in
+// A ByteRange is a run of text, by where it begins and where it ends, counted in
 // bytes of the text as the vault stores it. It is what the core measures with.
-type ByteSpan struct {
-	From int
-	To   int
+type ByteRange struct {
+	Start int
+	End   int
 }
 
 // Empty is a span naming no run at all.
-func (s ByteSpan) Empty() bool { return s.To <= s.From }
+func (s ByteRange) Empty() bool { return s.End <= s.Start }
 
 // Len is how many bytes the span covers.
-func (s ByteSpan) Len() int { return s.To - s.From }
+func (s ByteRange) Len() int { return s.End - s.Start }
 
-// A UnitSpan is a run of text counted the way a client counts text: in UTF-16
+// A UnitRange is a run of text counted the way a client counts text: in UTF-16
 // way across.
-type UnitSpan struct {
-	From int
-	To   int
+type UnitRange struct {
+	Start int
+	End   int
 }
 
 // Empty is a span naming no run at all.
-func (s UnitSpan) Empty() bool { return s.To <= s.From }
+func (s UnitRange) Empty() bool { return s.End <= s.Start }
 
 // Len is how many code units the span covers.
-func (s UnitSpan) Len() int { return s.To - s.From }
+func (s UnitRange) Len() int { return s.End - s.Start }
 
 // MostHighlights is how many spans of one source are highlighted at once.
 //

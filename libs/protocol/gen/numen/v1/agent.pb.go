@@ -1057,8 +1057,8 @@ type ToolCall struct {
 	// files it under. Empty for a call that is working on no one file.
 	Path string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
 	// The run of that source's text the call names, counted in bytes. An empty
-	// span is a call that named the source and no place inside it.
-	Span *Span `protobuf:"bytes,5,opt,name=span,proto3" json:"span,omitempty"`
+	// range is a call that named the source and no place inside it.
+	Range *Range `protobuf:"bytes,5,opt,name=range,proto3" json:"range,omitempty"`
 	// What the agent named this call. Every report of one call carries the same name.
 	Call string `protobuf:"bytes,6,opt,name=call,proto3" json:"call,omitempty"`
 	// What a call of this tool does to the vault: read, edit, remove, move or search. Empty is a call
@@ -1126,9 +1126,9 @@ func (x *ToolCall) GetPath() string {
 	return ""
 }
 
-func (x *ToolCall) GetSpan() *Span {
+func (x *ToolCall) GetRange() *Range {
 	if x != nil {
-		return x.Span
+		return x.Range
 	}
 	return nil
 }
@@ -1630,13 +1630,13 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\redit_progress\x18\x06 \x01(\v2\x16.numen.v1.EditProgressH\x00R\feditProgressB\x06\n" +
 	"\x04step\"\x0e\n" +
 	"\fToolFinished\"\x0e\n" +
-	"\fModelStarted\"\xac\x01\n" +
+	"\fModelStarted\"\xaf\x01\n" +
 	"\bToolCall\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x16\n" +
 	"\x06length\x18\x03 \x01(\x05R\x06length\x12\x12\n" +
-	"\x04path\x18\x04 \x01(\tR\x04path\x12\"\n" +
-	"\x04span\x18\x05 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
+	"\x04path\x18\x04 \x01(\tR\x04path\x12%\n" +
+	"\x05range\x18\x05 \x01(\v2\x0f.numen.v1.RangeR\x05range\x12\x12\n" +
 	"\x04call\x18\x06 \x01(\tR\x04call\x12\x12\n" +
 	"\x04kind\x18\a \x01(\tR\x04kind\"`\n" +
 	"\fEditProgress\x12\x12\n" +
@@ -1711,7 +1711,7 @@ var file_numen_v1_agent_proto_goTypes = []any{
 	nil,                                // 23: numen.v1.AskAgentRequest.ContextEntry
 	nil,                                // 24: numen.v1.AskAgentRequest.OptionsEntry
 	(*ReasoningLevel)(nil),             // 25: numen.v1.ReasoningLevel
-	(*Span)(nil),                       // 26: numen.v1.Span
+	(*Range)(nil),                      // 26: numen.v1.Range
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
 	23, // 0: numen.v1.AskAgentRequest.context:type_name -> numen.v1.AskAgentRequest.ContextEntry
@@ -1725,7 +1725,7 @@ var file_numen_v1_agent_proto_depIdxs = []int32{
 	12, // 8: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
 	13, // 9: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
 	15, // 10: numen.v1.AskAgentResponse.edit_progress:type_name -> numen.v1.EditProgress
-	26, // 11: numen.v1.ToolCall.span:type_name -> numen.v1.Span
+	26, // 11: numen.v1.ToolCall.range:type_name -> numen.v1.Range
 	16, // 12: numen.v1.RegisterToolRequest.tool:type_name -> numen.v1.AgentToolDefinition
 	16, // 13: numen.v1.GetAgentToolsResponse.tools:type_name -> numen.v1.AgentToolDefinition
 	2,  // 14: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest

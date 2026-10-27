@@ -5,11 +5,14 @@
  * evaluates to in the port is written down once. The window makes the client; this
  * says what its answers mean.
  */
-import type { AskAgentResponse, Span } from '@numen/protocol'
+import type { AskAgentResponse, Range } from '@numen/protocol'
 import type { AgentPort, AgentQuery, AgentStep } from '@numen/plugin-sdk'
 
-/** The span a call named, and one naming no place inside the source. */
-const normalizeSpan = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
+/** The range a call named, and an empty one for a call naming no place inside the source. */
+const normalizeRange = (range: Range | undefined) => ({
+  start: range?.start ?? 0,
+  end: range?.end ?? 0,
+})
 
 /** The reason a stopped step gives when the agent stopped because it was done. */
 const STOPPED_DONE = 'done'
@@ -71,7 +74,7 @@ const getAgentStep = (step: AskAgentResponse): AgentStep | undefined => {
         subject: toolCall.about,
         written: toolCall.length,
         ...(toolCall.path
-          ? { place: { path: toolCall.path, span: normalizeSpan(toolCall.span) } }
+          ? { place: { path: toolCall.path, range: normalizeRange(toolCall.range) } }
           : {}),
       }
     }

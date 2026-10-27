@@ -189,7 +189,7 @@ import (
 type Reader interface {
 	Read(page image.Image) ([]ocrartifact.Block, error)
 	Boxes() []hl.Box
-	Span() domain.ByteSpan
+	Range() domain.ByteRange
 	Bounds(page image.Image) image.Rectangle
 }
 `, 0)

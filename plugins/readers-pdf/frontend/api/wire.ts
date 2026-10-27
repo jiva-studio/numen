@@ -41,7 +41,7 @@ export const documents: Documents = {
     `${PLUGIN_ROUTE}/pages/${pageNumber}?path=${encodeURIComponent(path)}&wide=${width}&${getBytesQuery(stat)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() =>
-      client.documents.getHighlights({ path, spans: [...spans] }),
+      client.documents.getHighlights({ path, ranges: [...spans] }),
     )
     return spans.map((_, index) => {
       const run = answer.runs[index]

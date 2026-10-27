@@ -189,7 +189,7 @@ type GetHighlightsRequest struct {
 	// The file, as the vault holds it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The runs of the live text version to return places of, in bytes of its text.
-	Spans         []*v1.Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
+	Ranges        []*v1.Range `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -231,9 +231,9 @@ func (x *GetHighlightsRequest) GetPath() string {
 	return ""
 }
 
-func (x *GetHighlightsRequest) GetSpans() []*v1.Span {
+func (x *GetHighlightsRequest) GetRanges() []*v1.Range {
 	if x != nil {
-		return x.Spans
+		return x.Ranges
 	}
 	return nil
 }
@@ -463,10 +463,10 @@ const file_numen_pdf_v1_document_proto_rawDesc = "" +
 	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat\"4\n" +
 	"\x04Page\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
-	"\x06height\x18\x02 \x01(\x01R\x06height\"P\n" +
+	"\x06height\x18\x02 \x01(\x01R\x06height\"S\n" +
 	"\x14GetHighlightsRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
-	"\x05spans\x18\x02 \x03(\v2\x0e.numen.v1.SpanR\x05spans\"F\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
+	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\"F\n" +
 	"\x15GetHighlightsResponse\x12-\n" +
 	"\x04runs\x18\x01 \x03(\v2\x19.numen.pdf.v1.DocumentRunR\x04runs\"B\n" +
 	"\vDocumentRun\x123\n" +
@@ -506,12 +506,12 @@ var file_numen_pdf_v1_document_proto_goTypes = []any{
 	(*DocumentPlace)(nil),         // 6: numen.pdf.v1.DocumentPlace
 	(*DocumentRect)(nil),          // 7: numen.pdf.v1.DocumentRect
 	(*v1.FileStat)(nil),           // 8: numen.v1.FileStat
-	(*v1.Span)(nil),               // 9: numen.v1.Span
+	(*v1.Range)(nil),              // 9: numen.v1.Range
 }
 var file_numen_pdf_v1_document_proto_depIdxs = []int32{
 	2, // 0: numen.pdf.v1.GetDocumentResponse.pages:type_name -> numen.pdf.v1.Page
 	8, // 1: numen.pdf.v1.GetDocumentResponse.stat:type_name -> numen.v1.FileStat
-	9, // 2: numen.pdf.v1.GetHighlightsRequest.spans:type_name -> numen.v1.Span
+	9, // 2: numen.pdf.v1.GetHighlightsRequest.ranges:type_name -> numen.v1.Range
 	5, // 3: numen.pdf.v1.GetHighlightsResponse.runs:type_name -> numen.pdf.v1.DocumentRun
 	6, // 4: numen.pdf.v1.DocumentRun.places:type_name -> numen.pdf.v1.DocumentPlace
 	7, // 5: numen.pdf.v1.DocumentPlace.rects:type_name -> numen.pdf.v1.DocumentRect

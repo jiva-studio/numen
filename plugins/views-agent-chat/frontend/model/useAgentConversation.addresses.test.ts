@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '../thread'
 import { useAgentConversation } from './useAgentConversation'
-import type { Span } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 import { createLinkResolver } from '../fixtures/links'
 
 /** A line of an answer. */
@@ -24,7 +24,7 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
     finish: () => {},
   }
   const requests: string[] = []
-  const openedCalls: [string, readonly Span[]][] = []
+  const openedCalls: [string, readonly TextRange[]][] = []
   const besideItems: string[] = []
   const resolveLinks = createLinkResolver(notes)
   const state = useAgentConversation(conversation, {
@@ -174,8 +174,8 @@ describe('a link inside an answer', () => {
       [
         'Source.pdf',
         [
-          { from: 10, to: 14 },
-          { from: 90, to: 92 },
+          { start: 10, end: 14 },
+          { start: 90, end: 92 },
         ],
       ],
     ])

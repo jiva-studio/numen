@@ -26,8 +26,8 @@ describe('the transcript of a recording', () => {
 
   it('finds the moment the segment at a span begins', () => {
     const segments = getSegments(cues)
-    expect(findSegmentTime(segments, { from: 20, to: 25 })).toBe(1500)
-    expect(findSegmentTime(segments, { from: 500, to: 501 })).toBeNull()
+    expect(findSegmentTime(segments, { start: 20, end: 25 })).toBe(1500)
+    expect(findSegmentTime(segments, { start: 500, end: 501 })).toBeNull()
   })
 
   it('reads the live transcript and saves an edit as a version made from it', async () => {

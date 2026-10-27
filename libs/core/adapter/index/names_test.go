@@ -45,10 +45,10 @@ func describeMatch(m domain.NameMatch) string {
 	runes := []rune(text)
 	// The runs come in order and do not overlap, so they are put in from the
 	// end and no offset moves before it is used.
-	for pos := len(m.Spans) - 1; pos >= 0; pos-- {
-		span := m.Spans[pos]
-		runes = append(runes[:span.From],
-			append([]rune("["+string(runes[span.From:span.To])+"]"), runes[span.To:]...)...)
+	for pos := len(m.Ranges) - 1; pos >= 0; pos-- {
+		span := m.Ranges[pos]
+		runes = append(runes[:span.Start],
+			append([]rune("["+string(runes[span.Start:span.End])+"]"), runes[span.End:]...)...)
 	}
 	return string(runes)
 }
@@ -240,7 +240,7 @@ func TestARunIsCountedTheWayAClientCountsText(t *testing.T) {
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1", len(found))
 	}
-	if len(found[0].Spans) != 1 || found[0].Spans[0] != (domain.UnitSpan{From: 3, To: 10}) {
-		t.Errorf("the run is at %+v, want one run from 3 to 10", found[0].Spans)
+	if len(found[0].Ranges) != 1 || found[0].Ranges[0] != (domain.UnitRange{Start: 3, End: 10}) {
+		t.Errorf("the run is at %+v, want one run from 3 to 10", found[0].Ranges)
 	}
 }

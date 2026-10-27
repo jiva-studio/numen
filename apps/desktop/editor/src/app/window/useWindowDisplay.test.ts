@@ -9,7 +9,7 @@ import { asValue } from '@numen/wire'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 import type { Neighbourhood } from '@/entities/note'
 
 const answer = (path: string): Neighbourhood => ({
@@ -88,7 +88,10 @@ const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
  * note is wanted in front of the person. What each tab does about either is
  * asked where that tab is.
  */
-const createDisplay = (core: Core, openFileAt?: (path: string, spans: readonly Span[]) => void) => {
+const createDisplay = (
+  core: Core,
+  openFileAt?: (path: string, spans: readonly TextRange[]) => void,
+) => {
   const changed: string[] = []
   const travelled: string[] = []
   const showed = useWindowDisplay(core, {
@@ -346,7 +349,7 @@ describe('a note requested for from outside the window', () => {
   it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
       watchFocus: async function* () {
-        yield { path: 'Wanted.md', spans: [] }
+        yield { path: 'Wanted.md', ranges: [] }
       },
     })
     const one = createDisplay(core)
@@ -362,7 +365,7 @@ describe('a place inside a source requested for from outside the window', () => 
   const createRecordingWindow = (core: Core) => {
     const openedWindows: string[] = []
     const one = createDisplay(core, (path, spans) =>
-      openedWindows.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
+      openedWindows.push(`${path} ${spans.map((one) => `${one.start} ${one.end}`).join(' ')}`),
     )
     return { window: one.window, opened: openedWindows, travelled: one.travelled }
   }
@@ -370,7 +373,7 @@ describe('a place inside a source requested for from outside the window', () => 
   it('opens the document it remains in, and asks for no note at all', async () => {
     const core = fake({
       watchFocus: async function* () {
-        yield { path: 'library/mahabharata.epub', spans: [{ from: 40_512, to: 40_543 }] }
+        yield { path: 'library/mahabharata.epub', ranges: [{ start: 40_512, end: 40_543 }] }
       },
     })
     const { window, opened, travelled } = createRecordingWindow(core)
@@ -386,11 +389,11 @@ describe('a place inside a source requested for from outside the window', () => 
       watchFocus: async function* () {
         yield {
           path: 'library/mahabharata.epub',
-          spans: [
-            { from: 40_512, to: 40_543 },
-            { from: 41_000, to: 41_020 },
+          ranges: [
+            { start: 40_512, end: 40_543 },
+            { start: 41_000, end: 41_020 },
             // A span reaching nowhere is no place, and is not lit.
-            { from: 42_000, to: 42_000 },
+            { start: 42_000, end: 42_000 },
           ],
         }
       },
@@ -405,7 +408,7 @@ describe('a place inside a source requested for from outside the window', () => 
   it('asks for the note itself where the focus names no run of a source', async () => {
     const core = fake({
       watchFocus: async function* () {
-        yield { path: 'Wanted.md', spans: [{ from: 0, to: 0 }] }
+        yield { path: 'Wanted.md', ranges: [{ start: 0, end: 0 }] }
       },
     })
     const { window, opened, travelled } = createRecordingWindow(core)
@@ -643,7 +646,7 @@ describe('the first note shown', () => {
     const edit = {
       change: 'c1',
       path: 'Note.md',
-      span: { from: 0, to: 4 },
+      span: { start: 0, end: 4 },
       text: 'Leaf',
       isComplete: false,
     }

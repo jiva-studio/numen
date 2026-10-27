@@ -219,8 +219,8 @@ message ToolCall {
   string path = 4;
 
   // The run of that source's text the call names, counted in bytes. An empty
-  // span is a call that named the source and no place inside it.
-  Span span = 5;
+  // range is a call that named the source and no place inside it.
+  Range range = 5;
 
   // What the agent named this call. Every report of one call carries the same name.
   string call = 6;

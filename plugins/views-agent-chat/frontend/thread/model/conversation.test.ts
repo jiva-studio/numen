@@ -361,7 +361,7 @@ describe('a wait that explains itself', () => {
 describe('a call that was working on a place', () => {
   const place: SourceLocation = {
     path: 'library/gardening.epub',
-    span: { from: 40_512, to: 40_543 },
+    range: { start: 40_512, end: 40_543 },
   }
 
   it('makes the line about it one a person can press, and says where it goes', async () => {
@@ -391,7 +391,7 @@ describe('a call that was working on a place', () => {
     const target = new Promise<void>((go) => {
       release = go
     })
-    const whole: SourceLocation = { path: 'notes/heat.md', span: { from: 0, to: 0 } }
+    const whole: SourceLocation = { path: 'notes/heat.md', range: { start: 0, end: 0 } }
     const conversation = useConversation(
       createPort([createToolStep('Read a note', 'notes/heat.md', 0, whole)], target),
       words,

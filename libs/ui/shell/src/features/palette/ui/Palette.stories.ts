@@ -12,7 +12,7 @@ import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@
 import Palette from './Palette.vue'
 import { keyChord } from '@numen/ui'
 import type { PaletteGroup } from '../lib/item'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import {
   ARABIC,
   DEVANAGARI,
@@ -61,13 +61,13 @@ const EVERYTHING = [
 /**
  * fixture's own arithmetic: the palette is told where the runs are.
  */
-const marks = (text: string, word: string): Span[] => {
+const marks = (text: string, word: string): TextRange[] => {
   if (!word) return []
-  const out: Span[] = []
+  const out: TextRange[] = []
   const haystack = text.toLowerCase()
   const needle = word.toLowerCase()
   for (let pos = haystack.indexOf(needle); pos >= 0; pos = haystack.indexOf(needle, pos + 1)) {
-    out.push({ from: pos, to: pos + needle.length })
+    out.push({ start: pos, end: pos + needle.length })
   }
   return out
 }
@@ -808,7 +808,7 @@ export const Graphemes: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          { id: 'whole', title: GRAPHEMES, at: [{ from: 0, to: 1 }], actions: TRAVEL },
+          { id: 'whole', title: GRAPHEMES, at: [{ start: 0, end: 1 }], actions: TRAVEL },
           createItem('mixed', `Waving 👋🏽 at the reader`, 'reader'),
         ],
       },

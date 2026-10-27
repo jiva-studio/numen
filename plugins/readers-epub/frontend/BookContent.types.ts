@@ -1,13 +1,13 @@
-import type { Span } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 
 export interface BookContentProps {
   markup: string
   path: string
-  documentSpan: Span
-  bookSpan: Span
+  documentSpan: TextRange
+  bookSpan: TextRange
   offset: number
-  highlights: readonly Span[]
-  otherHighlights: readonly Span[]
+  highlights: readonly TextRange[]
+  otherHighlights: readonly TextRange[]
   chapter: string
   isListingOpen: boolean
 }

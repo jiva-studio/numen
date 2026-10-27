@@ -116,11 +116,11 @@ func (u Write) Execute(
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}
-		if pos.From != pos.To || insert != "" {
+		if pos.Start != pos.End || insert != "" {
 			ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 				Path: path,
-				From: markdown.CountUTF16(was, pos.From),
-				To:   markdown.CountUTF16(was, pos.To),
+				From: markdown.CountUTF16(was, pos.Start),
+				To:   markdown.CountUTF16(was, pos.End),
 				Text: insert,
 			})
 		}

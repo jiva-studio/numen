@@ -21,8 +21,8 @@ func TestADeclaredCallIsShownByItsTitleEffectAndPath(t *testing.T) {
 	if got.GetAbout() != "Ideas/Plan.md" || got.GetPath() != "Ideas/Plan.md" {
 		t.Errorf("about %q path %q", got.GetAbout(), got.GetPath())
 	}
-	if got.GetSpan().GetFrom() != 4 || got.GetSpan().GetTo() != 7 {
-		t.Errorf("span %+v", got.GetSpan())
+	if got.GetRange().GetStart() != 4 || got.GetRange().GetEnd() != 7 {
+		t.Errorf("span %+v", got.GetRange())
 	}
 }
 
@@ -45,8 +45,8 @@ func TestAnUndeclaredCallIsReadByItsCommonArguments(t *testing.T) {
 	if got.GetTool() != "search" || got.GetAbout() != "algebra" || got.GetPath() != "notes/math.md" {
 		t.Errorf("got %+v", got)
 	}
-	if got.GetSpan().GetFrom() != 10 || got.GetSpan().GetTo() != 15 {
-		t.Errorf("span %+v", got.GetSpan())
+	if got.GetRange().GetStart() != 10 || got.GetRange().GetEnd() != 15 {
+		t.Errorf("span %+v", got.GetRange())
 	}
 
 	file := Describe(nil, "open", "c", `{"file":"notes/file.md"}`)
@@ -61,8 +61,8 @@ func TestAnUndeclaredCallIsReadAsItArrives(t *testing.T) {
 		t.Errorf("got %+v", got)
 	}
 	spanned := Describe(nil, "read", "c", `{"path":"a.md","start":"2","length":"3","x`)
-	if spanned.GetSpan().GetFrom() != 2 || spanned.GetSpan().GetTo() != 5 {
-		t.Errorf("span %+v", spanned.GetSpan())
+	if spanned.GetRange().GetStart() != 2 || spanned.GetRange().GetEnd() != 5 {
+		t.Errorf("span %+v", spanned.GetRange())
 	}
 }
 
@@ -84,7 +84,7 @@ func TestPartialFieldIsReadAtEveryTruncation(t *testing.T) {
 
 func TestASpanOutsideTheTextIsNoSpan(t *testing.T) {
 	for _, args := range []string{`{"path":"a.md","start":-4,"length":3}`, `{"path":"a.md","start":2147483647,"length":3}`} {
-		if span := Describe(testWords, "note_edit", "c", args).GetSpan(); span != nil {
+		if span := Describe(testWords, "note_edit", "c", args).GetRange(); span != nil {
 			t.Errorf("%s: span %+v", args, span)
 		}
 	}

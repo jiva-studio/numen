@@ -432,7 +432,7 @@ message WatchEditsResponse {
   string path = 2;
   // The run being replaced, counted the way a client counts text: in UTF-16
   // code units over the prose a read answers with.
-  Span span = 3;
+  Range range = 3;
   // What is going in where that span stands.
   string text = 4;
   // The last report of this change, which arrives whether the change landed or

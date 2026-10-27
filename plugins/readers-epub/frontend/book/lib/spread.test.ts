@@ -21,7 +21,7 @@ import {
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, goToPage, dragPage, pressPage, swipePage } from './pageStep'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */
@@ -341,20 +341,20 @@ describe('dragPage', () => {
 
 describe('createPages', () => {
   const flow = { contentWidth: 10 * WIDE, width: WIDE, gap: GAP, columns: 2 }
-  const document = { from: 2000, to: 3000 }
-  const book = { from: 0, to: 10_000 }
+  const document = { start: 2000, end: 3000 }
+  const book = { start: 0, end: 10_000 }
 
   const createMarks = (columns: number): Mark[] =>
     Array.from({ length: columns }, (_, column) => ({
-      at: document.from + column,
+      at: document.start + column,
       x: column * (columnWidth(flow) + GAP),
     }))
 
   const marks = createMarks(columnsInAll(flow))
   const here = marks.length
-  const perColumn = (document.to - document.from) / here
-  const before = Math.round((document.from - book.from) / perColumn)
-  const pages = (b: Span, d: Span, spread: number, m: readonly Mark[] = marks) =>
+  const perColumn = (document.end - document.start) / here
+  const before = Math.round((document.start - book.start) / perColumn)
+  const pages = (b: TextRange, d: TextRange, spread: number, m: readonly Mark[] = marks) =>
     createPages({ book: b, document: d, flow, spread, marks: m })
 
   it('advances page count by columns rendered per spread', () => {
@@ -365,7 +365,7 @@ describe('createPages', () => {
 
   it('calculates page number based on byte distribution', () => {
     expect(pages(book, document, 0).page).toBe(before + 1)
-    expect(pages(book, document, 0).pages).toBe(Math.round((book.to - book.from) / perColumn))
+    expect(pages(book, document, 0).pages).toBe(Math.round((book.end - book.start) / perColumn))
   })
 
   it('counts only columns with actual content', () => {
@@ -407,8 +407,8 @@ describe('BOOK_WORDS', () => {
 })
 
 describe('goToPage', () => {
-  const span = { from: 400, to: 900 }
-  const book = { from: 0, to: 1400 }
+  const span = { start: 400, end: 900 }
+  const book = { start: 0, end: 1400 }
   const to = (way: PageNavigationAction, spread: number, count: number, s = span, b = book) =>
     goToPage(way, { spread, count, span: s, book: b })
 
@@ -424,7 +424,7 @@ describe('goToPage', () => {
     expect(to('next', 2, 3)).toStrictEqual({ offset: 900 })
     expect(to('back', 0, 3)).toStrictEqual({ offset: 399 })
     expect(to('back', 1, 3)).toStrictEqual({ spread: 0 })
-    expect(to('back', 0, 3, span, { from: 399, to: 1400 })).toStrictEqual({ offset: 399 })
+    expect(to('back', 0, 3, span, { start: 399, end: 1400 })).toStrictEqual({ offset: 399 })
   })
 
   it('returns empty result at start or end of book', () => {
@@ -460,9 +460,9 @@ describe('createPages with byte distribution', () => {
   ]
 
   it('calculates page count when document has zero bytes', () => {
-    const empty = { from: 100, to: 100 }
+    const empty = { start: 100, end: 100 }
     expect(
-      createPages({ book: { from: 100, to: 5000 }, document: empty, flow, spread: 0, marks }),
+      createPages({ book: { start: 100, end: 5000 }, document: empty, flow, spread: 0, marks }),
     ).toStrictEqual({
       page: 1,
       pages: 2,
@@ -470,17 +470,17 @@ describe('createPages with byte distribution', () => {
   })
 
   it('clamps active page index to minimum 1', () => {
-    const empty = { from: 100, to: 100 }
+    const empty = { start: 100, end: 100 }
     expect(
-      createPages({ book: { from: 0, to: 1000 }, document: empty, flow, spread: -1, marks }).page,
+      createPages({ book: { start: 0, end: 1000 }, document: empty, flow, spread: -1, marks }).page,
     ).toBe(1)
   })
 
   it('ensures total pages covers document end position', () => {
     expect(
       createPages({
-        book: { from: 0, to: 550 },
-        document: { from: 500, to: 1000 },
+        book: { start: 0, end: 550 },
+        document: { start: 500, end: 1000 },
         flow,
         spread: 0,
         marks,

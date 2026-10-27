@@ -8,7 +8,7 @@
  * furniture; it ships to nobody.
  */
 import { countBytes } from '../lib/bytes'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 
 /** One run of a document. */
 export interface Run {
@@ -23,7 +23,7 @@ export interface Run {
 /** One document of a book, and at its current position in the book's text. */
 export interface Chapter {
   readonly markup: string
-  readonly span: Span
+  readonly span: TextRange
 }
 
 const escapeHtml = (text: string): string =>
@@ -44,7 +44,7 @@ export function createChapter(runs: readonly Run[], from = 0): Chapter {
     )
     offset += countBytes(text)
   }
-  return { markup: content.join('\n'), span: { from, to: offset } }
+  return { markup: content.join('\n'), span: { start: from, end: offset } }
 }
 
 /** A page of Sanskrit in Devanagari, its transliteration and its rendering. */

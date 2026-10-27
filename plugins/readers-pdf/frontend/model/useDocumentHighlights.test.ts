@@ -96,7 +96,7 @@ describe('useDocumentHighlights', () => {
     const getHighlights = vi.fn<Documents['getHighlights']>(async () => [pageHighlights])
     const { hl, onGoToPage } = createHighlightsOf(createDocumentsOf(getHighlights), () => false)
 
-    await hl.focusSpans({ from: 0, to: 4 })
+    await hl.focusSpans({ start: 0, end: 4 })
 
     expect(getHighlights).not.toHaveBeenCalled()
     expect(onGoToPage).not.toHaveBeenCalled()
@@ -112,7 +112,7 @@ describe('useDocumentHighlights', () => {
       () => open,
     )
 
-    await hl.focusSpans({ from: 0, to: 4 })
+    await hl.focusSpans({ start: 0, end: 4 })
 
     expect(hl.highlights.value).toStrictEqual([])
     expect(onGoToPage).not.toHaveBeenCalled()
@@ -128,7 +128,7 @@ describe('useDocumentHighlights', () => {
       () => open,
     )
 
-    await hl.focusSpans({ from: 0, to: 4 })
+    await hl.focusSpans({ start: 0, end: 4 })
 
     expect(error.value).toBe('')
   })

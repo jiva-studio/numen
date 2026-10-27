@@ -32,7 +32,7 @@ func (MockRecogniser) Recognise(ctx context.Context, page image.Image) ([]Block,
 	return []Block{{
 		Label: "text",
 		Text:  MockText,
-		Boxes: []Box{{Rect: rect, Span: ByteSpan{To: len(MockText)}}},
+		Boxes: []Box{{Rect: rect, Range: ByteRange{End: len(MockText)}}},
 	}}, nil
 }
 

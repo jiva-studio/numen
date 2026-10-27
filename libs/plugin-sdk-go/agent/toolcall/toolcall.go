@@ -39,7 +39,7 @@ func Describe(words map[string]Declaration, name, call, args string) *numenv1.To
 	declared, isDeclared := words[name]
 	described := &numenv1.ToolCall{Tool: name, Call: call, Length: int32(len([]rune(args)))}
 	if !isDeclared {
-		described.About, described.Path, described.Span = readCallDetails(args)
+		described.About, described.Path, described.Range = readCallDetails(args)
 		return described
 	}
 	if declared.Title != "" {
@@ -52,13 +52,13 @@ func Describe(words map[string]Declaration, name, call, args string) *numenv1.To
 	}
 	described.About = readAbout(declared, args)
 	if declared.About == "path" {
-		described.Path, described.Span = described.About, readSpan(args)
+		described.Path, described.Range = described.About, readRange(args)
 	}
 	return described
 }
 
-// readSpan is the run of a source's text a call names, read once the arguments parse whole.
-func readSpan(args string) *numenv1.Span {
+// readRange is the run of a source's text a call names, read once the arguments parse whole.
+func readRange(args string) *numenv1.Range {
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return nil
@@ -68,7 +68,7 @@ func readSpan(args string) *numenv1.Span {
 	if length <= 0 || start < 0 || start > math.MaxInt32-length {
 		return nil
 	}
-	return &numenv1.Span{From: int32(start), To: int32(start + length)}
+	return &numenv1.Range{Start: int32(start), End: int32(start + length)}
 }
 
 // readAbout is what a call is about, read from the arguments as far as they have arrived.
@@ -116,7 +116,7 @@ func describeCollection(value []any, inside string) string {
 
 // readCallDetails is what an undeclared call is about, the file it names and the span inside it,
 // read from the arguments whole or as far as they have arrived.
-func readCallDetails(args string) (string, string, *numenv1.Span) {
+func readCallDetails(args string) (string, string, *numenv1.Range) {
 	if args == "" {
 		return "", "", nil
 	}
@@ -140,20 +140,20 @@ func readCallDetails(args string) (string, string, *numenv1.Span) {
 		about = path
 	}
 
-	var span *numenv1.Span
+	var span *numenv1.Range
 	start, err := strconv.ParseInt(ReadPartialField(args, "start"), 10, 32)
 	if err != nil {
 		return about, path, nil
 	}
 	length, err := strconv.ParseInt(ReadPartialField(args, "length"), 10, 32)
 	if err == nil && start >= 0 && length >= 0 && start <= math.MaxInt32-length {
-		span = &numenv1.Span{From: int32(start), To: int32(start + length)}
+		span = &numenv1.Range{Start: int32(start), End: int32(start + length)}
 	}
 	return about, path, span
 }
 
 // readWholeCallDetails is readCallDetails for arguments that parse whole.
-func readWholeCallDetails(parsed map[string]any, args string) (string, string, *numenv1.Span) {
+func readWholeCallDetails(parsed map[string]any, args string) (string, string, *numenv1.Range) {
 	var about, path string
 	if p, ok := parsed["path"].(string); ok {
 		path = p
@@ -183,5 +183,5 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 	if from < 0 || length < 0 || from > math.MaxInt32-length {
 		return about, path, nil
 	}
-	return about, path, &numenv1.Span{From: int32(from), To: int32(from + length)}
+	return about, path, &numenv1.Range{Start: int32(from), End: int32(from + length)}
 }

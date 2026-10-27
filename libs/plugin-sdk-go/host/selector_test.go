@@ -31,12 +31,12 @@ func TestGetBoxesReturnsTheBoxesOfTheSegmentsARunOverlaps(t *testing.T) {
 		{Text: "gamma", Selector: host.Selector{T: []float64{1, 2}}.Encode()},
 	})
 
-	boxes := host.GetBoxes(text, domain.ByteSpan{From: 3, To: 16})
+	boxes := host.GetBoxes(text, domain.ByteRange{Start: 3, End: 16})
 
-	if len(boxes) != 2 || boxes[0].Page != 0 || boxes[1].Page != 1 || boxes[1].From != 6 || boxes[1].To != 11 || boxes[1].MinX != 0.3 {
+	if len(boxes) != 2 || boxes[0].Page != 0 || boxes[1].Page != 1 || boxes[1].Start != 6 || boxes[1].End != 11 || boxes[1].MinX != 0.3 {
 		t.Errorf("boxes = %+v, want one on each page, none for the segment without a page", boxes)
 	}
-	if got := host.GetBoxes(text, domain.ByteSpan{From: 4, To: 4}); got != nil {
+	if got := host.GetBoxes(text, domain.ByteRange{Start: 4, End: 4}); got != nil {
 		t.Errorf("an empty run has boxes %+v", got)
 	}
 }

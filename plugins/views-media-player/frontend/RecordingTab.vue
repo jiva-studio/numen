@@ -11,7 +11,7 @@ import MediaLayout from './MediaLayout.vue'
 import { recordings as servedRecordings } from './api/wire'
 import { useTranscript, type TranscriptOptions } from './model/transcript'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
-import type { Recordings, Span } from './types'
+import type { Recordings, TextRange } from './types'
 import { createTimeSelector, getSelectorStart } from './lib/place'
 import { DELETE_TEXT, PROOFREAD, WORDS as words } from './words'
 
@@ -42,7 +42,7 @@ const menuItems = computed(() => [
 onMounted(() => {
   if (props.state) {
     const shared = props.state as Record<string, unknown>
-    shared.focusSpans = (...spans: readonly Span[]) => tab.navigation.reach(...spans)
+    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.reach(...spans)
   }
 })
 

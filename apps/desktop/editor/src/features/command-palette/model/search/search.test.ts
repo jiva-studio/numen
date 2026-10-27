@@ -68,7 +68,7 @@ const createNameMatch = (override: Partial<NameMatch> = {}): NameMatch => ({
   title: 'Entropy',
   heading: '',
   line: -1,
-  at: [{ from: 0, to: 3 }],
+  at: [{ start: 0, end: 3 }],
   type: 'note',
   ...override,
 })
@@ -83,7 +83,7 @@ const passage = (override: Partial<Passage> = {}): Passage => ({
   start: 0,
   length: 0,
   line: 0,
-  at: [{ from: 3, to: 9 }],
+  at: [{ start: 3, end: 9 }],
   ...override,
 })
 

@@ -1,4 +1,4 @@
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import type { BookWords } from './words'
 
 /** What one document of a book reaches the reader as. */
@@ -11,15 +11,15 @@ export interface BookProps {
   markup?: string
   /** The document being drawn, as the book's archive names it. */
   path?: string
-  span?: Span
+  span?: TextRange
   /** Where the book itself runs between, in bytes. */
-  book?: Span
+  book?: TextRange
   /** The offset in front, in bytes of the book's text. */
   at?: number
   /** The runs highlighted where they stand, in bytes of the book's text. */
-  highlights?: readonly Span[]
+  highlights?: readonly TextRange[]
   /** The other runs named, apart from the one the reader was opened at. */
-  otherHighlights?: readonly Span[]
+  otherHighlights?: readonly TextRange[]
   /** How large the text is set, as a multiple of the size prose is read at. */
   textSize?: number
   /** What the book calls the place in front, drawn over the text it names. */
@@ -31,11 +31,11 @@ export interface BookProps {
 export interface SettledBookProps {
   readonly markup: string
   readonly path: string
-  readonly span: Span
-  readonly book: Span
+  readonly span: TextRange
+  readonly book: TextRange
   readonly at: number
-  readonly highlights: readonly Span[]
-  readonly otherHighlights: readonly Span[]
+  readonly highlights: readonly TextRange[]
+  readonly otherHighlights: readonly TextRange[]
   readonly textSize: number
   readonly chapter: string
   readonly words: BookWords

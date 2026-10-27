@@ -4,7 +4,7 @@
  */
 import type { LiveText, TextSegment, VaultTexts } from '@numen/plugin-sdk'
 import type { Cue } from '../lib/cues'
-import type { Recordings, Span } from '../types'
+import type { Recordings, TextRange } from '../types'
 
 /** The cues of a live text: its segments that name a span of the recording. */
 export const getCues = (segments: readonly TextSegment[]): readonly Cue[] =>
@@ -22,11 +22,14 @@ export const getSegments = (cues: readonly Cue[]): readonly TextSegment[] =>
  * The millisecond the segment at a span's start begins, and null where no segment holds it. The
  * span counts UTF-16 code units of the joined text, as a JavaScript string does.
  */
-export const findSegmentTime = (segments: readonly TextSegment[], span: Span): number | null => {
+export const findSegmentTime = (
+  segments: readonly TextSegment[],
+  span: TextRange,
+): number | null => {
   let offset = 0
   for (const segment of segments) {
     const end = offset + segment.text.length
-    if (span.from < end) {
+    if (span.start < end) {
       const t = segment.selector?.t
       return t === undefined ? null : toMS(t[0])
     }

@@ -203,7 +203,7 @@ type NameMatch struct {
 	// Where in that name the words stand, counted the way a client counts text:
 	// in UTF-16 code units.
 	// A word reached by its prefix is marked whole.
-	Spans []*Span `protobuf:"bytes,3,rep,name=spans,proto3" json:"spans,omitempty"`
+	Ranges []*Range `protobuf:"bytes,3,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
 	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -254,9 +254,9 @@ func (x *NameMatch) GetHeading() *Heading {
 	return nil
 }
 
-func (x *NameMatch) GetSpans() []*Span {
+func (x *NameMatch) GetRanges() []*Range {
 	if x != nil {
-		return x.Spans
+		return x.Ranges
 	}
 	return nil
 }
@@ -388,13 +388,13 @@ type Passage struct {
 	// Where in that text the words typed stand, counted the way a client counts
 	// text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
 	// word in particular.
-	Spans []*Span `protobuf:"bytes,4,rep,name=spans,proto3" json:"spans,omitempty"`
+	Ranges []*Range `protobuf:"bytes,4,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	// What the source's own numbering calls the place, empty when the format
 	// offered none.
 	Location string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
 	// counted in bytes. With the path above it is the place this opens, and a hit
 	// in a note carries it as every other hit does.
-	Span *Span `protobuf:"bytes,6,opt,name=span,proto3" json:"span,omitempty"`
+	Range *Range `protobuf:"bytes,6,opt,name=range,proto3" json:"range,omitempty"`
 	// Where the chunk that matched stands, counted from the first line of the
 	// source's prose. It is the line a note opens on, and the caret stands there.
 	Line int32 `protobuf:"varint,7,opt,name=line,proto3" json:"line,omitempty"`
@@ -459,9 +459,9 @@ func (x *Passage) GetText() string {
 	return ""
 }
 
-func (x *Passage) GetSpans() []*Span {
+func (x *Passage) GetRanges() []*Range {
 	if x != nil {
-		return x.Spans
+		return x.Ranges
 	}
 	return nil
 }
@@ -473,9 +473,9 @@ func (x *Passage) GetLocation() string {
 	return ""
 }
 
-func (x *Passage) GetSpan() *Span {
+func (x *Passage) GetRange() *Range {
 	if x != nil {
-		return x.Span
+		return x.Range
 	}
 	return nil
 }
@@ -510,11 +510,11 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
 	"\x13SearchNamesResponse\x12)\n" +
-	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xa7\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xaa\x01\n" +
 	"\tNameMatch\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
-	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12$\n" +
-	"\x05spans\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12\x12\n" +
+	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12'\n" +
+	"\x06ranges\x18\x03 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04typeB\n" +
 	"\n" +
 	"\b_heading\"m\n" +
@@ -523,14 +523,14 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x93\x02\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x99\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\x12$\n" +
-	"\x05spans\x18\x04 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12\x1a\n" +
-	"\blocation\x18\x05 \x01(\tR\blocation\x12\"\n" +
-	"\x04span\x18\x06 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12'\n" +
+	"\x06ranges\x18\x04 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\x12\x1a\n" +
+	"\blocation\x18\x05 \x01(\tR\blocation\x12%\n" +
+	"\x05range\x18\x06 \x01(\v2\x0f.numen.v1.RangeR\x05range\x12\x12\n" +
 	"\x04line\x18\a \x01(\x05R\x04line\x12\x12\n" +
 	"\x04type\x18\b \x01(\tR\x04type\x12\x1a\n" +
 	"\bselector\x18\n" +
@@ -572,18 +572,18 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(*Passage)(nil),                // 6: numen.v1.Passage
 	(*Note)(nil),                   // 7: numen.v1.Note
 	(*Heading)(nil),                // 8: numen.v1.Heading
-	(*Span)(nil),                   // 9: numen.v1.Span
+	(*Range)(nil),                  // 9: numen.v1.Range
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
 	7,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
 	8,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
-	9,  // 3: numen.v1.NameMatch.spans:type_name -> numen.v1.Span
+	9,  // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
 	0,  // 4: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
 	6,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
 	7,  // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
-	9,  // 7: numen.v1.Passage.spans:type_name -> numen.v1.Span
-	9,  // 8: numen.v1.Passage.span:type_name -> numen.v1.Span
+	9,  // 7: numen.v1.Passage.ranges:type_name -> numen.v1.Range
+	9,  // 8: numen.v1.Passage.range:type_name -> numen.v1.Range
 	1,  // 9: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
 	4,  // 10: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
 	2,  // 11: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse

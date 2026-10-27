@@ -112,13 +112,13 @@ export async function* pendingStream(): AsyncGenerator<never> {
  * person, and the stream the window hears them on.
  */
 export const outside = (() => {
-  const queue: { path: string; spans: { from: number; to: number }[] }[] = []
+  const queue: { path: string; ranges: { start: number; end: number }[] }[] = []
   let wake: (() => void) | null = null
   return {
     ask: (target: { path: string; start: number; length: number }) => {
       queue.push({
         path: target.path,
-        spans: [{ from: target.start, to: target.start + target.length }],
+        ranges: [{ start: target.start, end: target.start + target.length }],
       })
       wake?.()
       wake = null

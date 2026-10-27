@@ -29,7 +29,7 @@ function book(
     },
     getPageUrl: (path, pageNumber, width) => `${path} ${pageNumber} ${width}`,
     getHighlights: async (path, requestedSpans) => {
-      for (const one of requestedSpans) spans.push(`${path} ${one.from} ${one.to}`)
+      for (const one of requestedSpans) spans.push(`${path} ${one.start} ${one.end}`)
       return requestedSpans.map((_, i) => where[i] ?? [])
     },
   }
@@ -179,7 +179,7 @@ describe('a document opened at a place in its text', () => {
     const readItem = useDocumentReader(documents, 'Book.pdf')
     readItem.widen(800)
 
-    await readItem.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ start: 40_512, end: 40_543 })
 
     expect(spans).toStrictEqual(['Book.pdf 40512 40543'])
     expect(readItem.pageNumber.value).toBe(1)
@@ -199,9 +199,9 @@ describe('a document opened at a place in its text', () => {
     readItem.widen(800)
 
     await readItem.focusSpans(
-      { from: 40_512, to: 40_543 },
-      { from: 41_000, to: 41_020 },
-      { from: 90_000, to: 90_012 },
+      { start: 40_512, end: 40_543 },
+      { start: 41_000, end: 41_020 },
+      { start: 90_000, end: 90_012 },
     )
 
     expect(spans).toStrictEqual([
@@ -221,7 +221,7 @@ describe('a document opened at a place in its text', () => {
     const readItem = useDocumentReader(documents, 'Book.pdf')
     readItem.widen(800)
 
-    await readItem.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ start: 40_512, end: 40_543 })
 
     expect(readItem.pageNumber.value).toBe(0)
     expect(readItem.highlighted.value).toStrictEqual([])
@@ -236,7 +236,7 @@ describe('a document opened at a place in its text', () => {
     const readItem = useDocumentReader(documents, 'Book.pdf')
     readItem.widen(800)
 
-    await readItem.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ start: 40_512, end: 40_543 })
 
     expect(readItem.error.value).toContain('Numen is not responding')
     expect(readItem.error.value).not.toContain('the layer is being written')
@@ -328,7 +328,7 @@ describe('a document tab closed after the layout landed', () => {
     await readItem.goToPage(0)
 
     readItem.close()
-    await readItem.focusSpans({ from: 40_512, to: 40_543 })
+    await readItem.focusSpans({ start: 40_512, end: 40_543 })
 
     expect(spans).toStrictEqual([])
   })

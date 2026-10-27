@@ -45,12 +45,12 @@ export interface VaultPort {
   watchTasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /**
    * The places something else asked to be put in front of the person: a
-   * source, and the span of its own text meant, counted in bytes. A length
+   * source, and the ranges of its own text meant, counted in bytes. A length
    * of zero names the source and no place inside it.
    */
   watchFocus(signal: AbortSignal): AsyncIterable<{
     path: string
-    spans: readonly { from: number; to: number }[]
+    ranges: readonly { start: number; end: number }[]
   }>
   /** What currently open, said again whenever any of it changes. */
   writeOpenTabs(open: OpenTabs): Promise<void>

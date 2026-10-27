@@ -11,7 +11,7 @@ import {
   mapNoteResult,
   mapWriteResult,
   roles,
-  run,
+  mapRange,
   writes,
 } from './words'
 import type { NotePort } from '@/app/ports/notes'
@@ -41,7 +41,7 @@ export const notesCore: NoteOperations = {
       yield {
         change: update.change,
         path: update.path,
-        span: run(update.span ?? { from: 0, to: 0 }),
+        span: mapRange(update.range ?? { start: 0, end: 0 }),
         text: update.text,
         isComplete: update.isFinal,
       }

@@ -46,10 +46,10 @@ describe('a book', () => {
 
     expect(await books.getBook('Anabasis.epub')).toEqual({
       title: 'Anabasis',
-      span: { from: 0, to: 4000 },
+      span: { start: 0, end: 4000 },
       documents: [
-        { path: 'one.xhtml', span: { from: 0, to: 1500 } },
-        { path: 'two.xhtml', span: { from: 1500, to: 4000 } },
+        { path: 'one.xhtml', span: { start: 0, end: 1500 } },
+        { path: 'two.xhtml', span: { start: 1500, end: 4000 } },
       ],
       parts: [{ title: 'Book I', offset: 0, level: 1 }],
       printedPages: [{ label: 'iv', offset: 120 }],

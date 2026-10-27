@@ -4,7 +4,7 @@ import type { VaultPort } from '@/app/ports/vault'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 import { formatErrorMessage } from '@numen/wire'
 import { createWindowStreams } from './useWindowStreams'
 
@@ -33,7 +33,7 @@ export interface DisplayOptions {
    * What opens a document at spans of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
-  openFileAt?(path: string, spans: readonly Span[]): void
+  openFileAt?(path: string, spans: readonly TextRange[]): void
   /** What draws the page again, once another vault is under this window. */
   reload?(): void
 }

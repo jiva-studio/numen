@@ -32,7 +32,7 @@ describe('a name searched for', () => {
         {
           note: { path: 'Llama.md', title: 'Llama' },
           heading: { text: 'Diet', line: 4 },
-          spans: [],
+          ranges: [],
         },
       ],
     })
@@ -43,7 +43,7 @@ describe('a name searched for', () => {
   })
 
   it('is at no note and no heading where the answer names neither', async () => {
-    search.searchNames.mockResolvedValue({ found: [{ spans: [] }] })
+    search.searchNames.mockResolvedValue({ found: [{ ranges: [] }] })
 
     expect(await searchCore.names('lla', 8)).toMatchObject([
       { path: '', title: '', heading: '', line: -1 },
@@ -71,9 +71,9 @@ describe('a passage searched for', () => {
           path: 'Llama.md',
           note: { title: 'Llama' },
           text: 'eats grass',
-          span: { from: 3, to: 10 },
+          range: { start: 3, end: 10 },
           line: 2,
-          spans: [],
+          ranges: [],
         },
       ],
     })
@@ -85,7 +85,7 @@ describe('a passage searched for', () => {
 
   it('is untitled and empty where the answer names no note and no run', async () => {
     search.searchPassages.mockResolvedValue({
-      found: [{ path: 'library/book.epub', text: 'grass', line: 0, spans: [] }],
+      found: [{ path: 'library/book.epub', text: 'grass', line: 0, ranges: [] }],
     })
 
     expect(await searchCore.search('grass', 'words', 8)).toMatchObject([

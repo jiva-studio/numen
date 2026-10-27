@@ -4,7 +4,7 @@
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { ContentsEntry } from '../book'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 import type { MessageWriter } from './useBookDocument'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 import { useBookDocument } from './useBookDocument'
@@ -42,7 +42,7 @@ const getChapterTitle = (contents: readonly ContentsEntry[], offset: number): st
 
 interface BookNavigationDeps {
   documents: ShallowRef<readonly SpineDocument[]>
-  span: Ref<Span>
+  span: Ref<TextRange>
   bookDocument: ReturnType<typeof useBookDocument>
   getShape: () => Promise<void>
   isOpen: () => boolean
@@ -54,8 +54,8 @@ function useBookNavigation(deps: BookNavigationDeps) {
   const goToOffset = async (targetOffset: number) => {
     await deps.getShape()
     if (!deps.isOpen() || deps.documents.value.length === 0) return
-    const last = Math.max(deps.span.value.to - 1, deps.span.value.from)
-    offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.from), last)
+    const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
+    offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.start), last)
     const doc = getDocumentAtOffset(deps.documents.value, offset.value)
     if (doc) await deps.bookDocument.draw(doc)
   }
@@ -64,7 +64,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
     await deps.getShape()
     const targetDoc = deps.documents.value.find((one: SpineDocument) => one.path === target)
     if (!targetDoc) return
-    await goToOffset(targetDoc.span.from)
+    await goToOffset(targetDoc.span.start)
   }
 
   return { offset, goToOffset, followLink }
@@ -74,7 +74,7 @@ async function loadBookData(
   target: { books: Books; path: string },
   state: {
     title: Ref<string>
-    span: Ref<Span>
+    span: Ref<TextRange>
     documents: ShallowRef<readonly SpineDocument[]>
     pages: Ref<number>
     pageBytes: Ref<number>
@@ -99,8 +99,8 @@ async function loadBookData(
     state.pageBytes.value = book.pageBytes
     state.contents.value = getContents(book, deps.words)
     state.stat.value = book.stat
-    state.offset.value = book.span.from
-    const doc = getDocumentAtOffset(book.documents, book.span.from)
+    state.offset.value = book.span.start
+    const doc = getDocumentAtOffset(book.documents, book.span.start)
     if (doc) await deps.drawDocument(doc)
   } catch (error) {
     if (!deps.isOpen()) return
@@ -110,7 +110,7 @@ async function loadBookData(
 
 function useBookState() {
   const title = ref('')
-  const span = ref<Span>({ from: 0, to: 0 })
+  const span = ref<TextRange>({ start: 0, end: 0 })
   const documents = shallowRef<readonly SpineDocument[]>([])
   const contents = shallowRef<readonly ContentsEntry[]>([])
   const pages = ref(0)
@@ -181,7 +181,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
 
   const { page, chapter } = useBookProgress(state, nav.offset)
   const marks = useBookHighlights(nav.goToOffset, () => isOpen)
-  const focusSpans = async (...spans: readonly Span[]) => {
+  const focusSpans = async (...spans: readonly TextRange[]) => {
     await shape
     await marks.focusSpans(...spans)
   }

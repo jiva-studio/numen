@@ -290,11 +290,11 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 		}
 	case *v1.AskAgentResponse_ToolCall:
 		tc := s.ToolCall
-		var spans []domain.ByteSpan
-		if tc.GetSpan() != nil {
-			spans = []domain.ByteSpan{{
-				From: int(tc.GetSpan().GetFrom()),
-				To:   int(tc.GetSpan().GetTo()),
+		var spans []domain.ByteRange
+		if tc.GetRange() != nil {
+			spans = []domain.ByteRange{{
+				Start: int(tc.GetRange().GetStart()),
+				End:   int(tc.GetRange().GetEnd()),
 			}}
 		}
 		return agentport.Step{
@@ -304,8 +304,8 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 			About: tc.GetAbout(),
 			Count: int(tc.GetLength()),
 			Place: domain.Place{
-				Path:  tc.GetPath(),
-				Spans: spans,
+				Path:   tc.GetPath(),
+				Ranges: spans,
 			},
 		}
 	case *v1.AskAgentResponse_ToolFinished:

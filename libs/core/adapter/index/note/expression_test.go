@@ -12,22 +12,22 @@ func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {
 	for _, c := range []struct {
 		marked     string
 		name       string
-		targetPath []domain.UnitSpan
+		targetPath []domain.UnitRange
 	}{
 		{"Entropy", "Entropy", nil},
-		{"\x02Entropy\x03", "Entropy", []domain.UnitSpan{{From: 0, To: 7}}},
-		{"The \x02Carnot\x03 cycle", "The Carnot cycle", []domain.UnitSpan{{From: 4, To: 10}}},
+		{"\x02Entropy\x03", "Entropy", []domain.UnitRange{{Start: 0, End: 7}}},
+		{"The \x02Carnot\x03 cycle", "The Carnot cycle", []domain.UnitRange{{Start: 4, End: 10}}},
 		{
 			"\x02Heat\x03 and \x02work\x03",
 			"Heat and work",
-			[]domain.UnitSpan{{From: 0, To: 4}, {From: 9, To: 13}},
+			[]domain.UnitRange{{Start: 0, End: 4}, {Start: 9, End: 13}},
 		},
 		// A run with nothing in it says nothing, and is not one.
 		{"\x02\x03Entropy", "Entropy", nil},
 		// A character outside the basic plane is two code units to a client,
 		// and a run after one begins that much further along.
-		{"👋 \x02Entropy\x03", "👋 Entropy", []domain.UnitSpan{{From: 3, To: 10}}},
-		{"\x02👋\x03 Entropy", "👋 Entropy", []domain.UnitSpan{{From: 0, To: 2}}},
+		{"👋 \x02Entropy\x03", "👋 Entropy", []domain.UnitRange{{Start: 3, End: 10}}},
+		{"\x02👋\x03 Entropy", "👋 Entropy", []domain.UnitRange{{Start: 0, End: 2}}},
 	} {
 		name, pos := parseMarkedName(c.marked)
 		if name != c.name {
@@ -62,9 +62,9 @@ func BenchmarkSplit(b *testing.B) {
 	}
 }
 
-func splitReference(marked string) (string, []domain.UnitSpan) {
+func splitReference(marked string) (string, []domain.UnitRange) {
 	var name strings.Builder
-	var offset []domain.UnitSpan
+	var offset []domain.UnitRange
 
 	units, from := 0, -1
 	for _, r := range marked {
@@ -73,7 +73,7 @@ func splitReference(marked string) (string, []domain.UnitSpan) {
 			from = units
 		case '\x03':
 			if from >= 0 && units > from {
-				offset = append(offset, domain.UnitSpan{From: from, To: units})
+				offset = append(offset, domain.UnitRange{Start: from, End: units})
 			}
 			from = -1
 		default:

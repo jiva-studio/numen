@@ -2108,7 +2108,7 @@ type WatchEditsResponse struct {
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The run being replaced, counted the way a client counts text: in UTF-16
 	// code units over the prose a read answers with.
-	Span *Span `protobuf:"bytes,3,opt,name=span,proto3" json:"span,omitempty"`
+	Range *Range `protobuf:"bytes,3,opt,name=range,proto3" json:"range,omitempty"`
 	// What is going in where that span stands.
 	Text string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
 	// The last report of this change, which arrives whether the change landed or
@@ -2161,9 +2161,9 @@ func (x *WatchEditsResponse) GetPath() string {
 	return ""
 }
 
-func (x *WatchEditsResponse) GetSpan() *Span {
+func (x *WatchEditsResponse) GetRange() *Range {
 	if x != nil {
-		return x.Span
+		return x.Range
 	}
 	return nil
 }
@@ -2315,11 +2315,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_movedB\b\n" +
 	"\x06_error\"\x13\n" +
-	"\x11WatchEditsRequest\"\x93\x01\n" +
+	"\x11WatchEditsRequest\"\x96\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\"\n" +
-	"\x04span\x18\x03 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12%\n" +
+	"\x05range\x18\x03 \x01(\v2\x0f.numen.v1.RangeR\x05range\x12\x12\n" +
 	"\x04text\x18\x04 \x01(\tR\x04text\x12\x19\n" +
 	"\bis_final\x18\x05 \x01(\bR\aisFinal*v\n" +
 	"\bRelation\x12\x18\n" +
@@ -2413,7 +2413,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(ErrorCode)(0),                   // 36: numen.v1.ErrorCode
 	(*FileStat)(nil),                 // 37: numen.v1.FileStat
 	(*MoveResult)(nil),               // 38: numen.v1.MoveResult
-	(*Span)(nil),                     // 39: numen.v1.Span
+	(*Range)(nil),                    // 39: numen.v1.Range
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
@@ -2444,7 +2444,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	2,  // 25: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
 	38, // 26: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
 	36, // 27: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
-	39, // 28: numen.v1.WatchEditsResponse.span:type_name -> numen.v1.Span
+	39, // 28: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
 	4,  // 29: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
 	6,  // 30: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
 	9,  // 31: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest

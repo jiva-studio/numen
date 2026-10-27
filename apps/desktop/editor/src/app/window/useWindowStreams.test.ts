@@ -197,7 +197,7 @@ describe('following the edits', () => {
 describe('following the focus', () => {
   it('travels nowhere on a focus that names no path', async () => {
     const deps = setup({
-      core: { ...setup().core, watchFocus: () => yielding({ path: '', spans: [] }) },
+      core: { ...setup().core, watchFocus: () => yielding({ path: '', ranges: [] }) },
     })
 
     await createWindowStreams(deps).watch()
@@ -212,9 +212,9 @@ describe('following the focus', () => {
         ...setup().core,
         watchFocus: () =>
           yielding(
-            { path: 'a.md', spans: [] },
-            { path: 'b.md', spans: [{ from: 3, to: 3 }] },
-            { path: 'c.md', spans: [{ from: 2, to: 9 }] },
+            { path: 'a.md', ranges: [] },
+            { path: 'b.md', ranges: [{ start: 3, end: 3 }] },
+            { path: 'c.md', ranges: [{ start: 2, end: 9 }] },
           ),
       },
     })
@@ -225,7 +225,7 @@ describe('following the focus', () => {
     expect(deps.travelTo).toHaveBeenNthCalledWith(1, 'a.md')
     expect(deps.travelTo).toHaveBeenNthCalledWith(2, 'b.md')
     expect(deps.openFileAt).toHaveBeenCalledTimes(1)
-    expect(deps.openFileAt).toHaveBeenCalledWith('c.md', [{ from: 2, to: 9 }])
+    expect(deps.openFileAt).toHaveBeenCalledWith('c.md', [{ start: 2, end: 9 }])
   })
 })
 

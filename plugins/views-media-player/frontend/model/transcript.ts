@@ -9,7 +9,7 @@ import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'
 import { usePlayback } from './playback'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
-import type { MenuEntry, Recordings, Span } from '../types'
+import type { MenuEntry, Recordings, TextRange } from '../types'
 import { WORDS } from '../words'
 
 export type TranscriptState = ReturnType<typeof useTranscript>
@@ -141,7 +141,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   })
 
   /** The person is taken to the moment the first of the spans was said at. */
-  const reach = async (...spans: readonly Span[]) => {
+  const reach = async (...spans: readonly TextRange[]) => {
     await firstRead
     if (!isOpen || spans.length === 0) return
     try {

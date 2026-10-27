@@ -8,8 +8,8 @@ import (
 // fraction of the page it covers.
 func Box(page, from, to int, finished domain.Rect) domain.HighlightBox {
 	return domain.HighlightBox{
-		Page:     page,
-		ByteSpan: domain.ByteSpan{From: from, To: to},
-		Rect:     finished,
+		Page:      page,
+		ByteRange: domain.ByteRange{Start: from, End: to},
+		Rect:      finished,
 	}
 }

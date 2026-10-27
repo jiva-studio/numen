@@ -15,13 +15,13 @@ const (
 
 // parseMarkedName is a marked name as it actually reads, and the runs the index marked in
 // it, counted the way a client counts text: in UTF-16 code units.
-func parseMarkedName(marked string) (string, []domain.UnitSpan) {
+func parseMarkedName(marked string) (string, []domain.UnitRange) {
 	var name strings.Builder
 	name.Grow(len(marked))
 
-	var pos []domain.UnitSpan
+	var pos []domain.UnitRange
 	if n := strings.Count(marked, "\x02"); n > 0 {
-		pos = make([]domain.UnitSpan, 0, n)
+		pos = make([]domain.UnitRange, 0, n)
 	}
 
 	units, from := 0, -1
@@ -31,7 +31,7 @@ func parseMarkedName(marked string) (string, []domain.UnitSpan) {
 			from = units
 		case '\x03':
 			if from >= 0 && units > from {
-				pos = append(pos, domain.UnitSpan{From: from, To: units})
+				pos = append(pos, domain.UnitRange{Start: from, End: units})
 			}
 			from = -1
 		default:

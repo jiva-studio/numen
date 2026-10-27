@@ -13,7 +13,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
 import { GAP } from '../lib/spread'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import { countBytes } from '../lib/bytes'
 import { PROSE, VERSE, VERSES, createChapter, type Chapter } from '../fixtures/book'
 
@@ -71,11 +71,11 @@ const UNBROKEN =
   'Sarvabhutahitaratahsarvabhutasthitasyatathasarvatragamacintyarupamavyaktamniravadyampada'
 
 const activeReading =
-  (chapter: Chapter, highlights: readonly Span[] = []): Render =>
+  (chapter: Chapter, highlights: readonly TextRange[] = []): Render =>
   () => ({
     components: { Book },
     setup() {
-      const offset = ref(chapter.span.from)
+      const offset = ref(chapter.span.start)
       // How large the text is set belongs to whatever holds the reader, so the
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
@@ -131,7 +131,7 @@ const outOfSight =
   () => ({
     components: { Book },
     setup() {
-      const offset = ref(chapter.span.from)
+      const offset = ref(chapter.span.start)
       const room = ref(false)
       const markup = ref('')
       onMounted(() => {
@@ -453,7 +453,7 @@ export const OneLine: Story = {
  */
 export const NoTextAtAll: Story = {
   decorators: [WIDE],
-  render: activeReading({ markup: '', span: { from: 0, to: 0 } }),
+  render: activeReading({ markup: '', span: { start: 0, end: 0 } }),
   play: async ({ canvasElement }) => {
     await expect(getPaper(canvasElement)).toBeInTheDocument()
     await expect(getRunsOf(canvasElement)).toHaveLength(0)
@@ -513,8 +513,8 @@ export const Marked: Story = {
   decorators: [WIDE],
   render: (() => {
     const chapter = createChapter(VERSES)
-    const second = chapter.span.from + countBytes(VERSES[0]!.text!)
-    return activeReading(chapter, [{ from: second, to: second + 30 }])
+    const second = chapter.span.start + countBytes(VERSES[0]!.text!)
+    return activeReading(chapter, [{ start: second, end: second + 30 }])
   })(),
 }
 

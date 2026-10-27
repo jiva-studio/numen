@@ -1,6 +1,6 @@
 /** A line of a row split into the runs the words stand in, as plain values. */
 import { isLeading, isTrailing } from '@numen/ui'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 
 /** One run of a line, and whether it is why the item is here. */
 export interface PalettePart {
@@ -16,14 +16,17 @@ export interface PalettePart {
  * outwards, so no run ends on half of one.
  */
 // Stryker disable next-line ArrayDeclaration: the mutated default is ["Stryker was here"], whose one entry has no span bounds and is dropped as empty.
-export const getParts = (text: string, spans: readonly Span[] = []): readonly PalettePart[] => {
-  const runs = mergeSpans(text, spans)
+export const getParts = (
+  text: string,
+  spans: readonly TextRange[] = [],
+): readonly PalettePart[] => {
+  const runs = mergeRanges(text, spans)
   const out: PalettePart[] = []
   let readItem = 0
   for (const run of runs) {
-    if (run.from > readItem) out.push({ text: text.slice(readItem, run.from), isHit: false })
-    out.push({ text: text.slice(run.from, run.to), isHit: true })
-    readItem = run.to
+    if (run.start > readItem) out.push({ text: text.slice(readItem, run.start), isHit: false })
+    out.push({ text: text.slice(run.start, run.end), isHit: true })
+    readItem = run.end
   }
   if (readItem < text.length) out.push({ text: text.slice(readItem), isHit: false })
   return out
@@ -33,20 +36,20 @@ export const getParts = (text: string, spans: readonly Span[] = []): readonly Pa
  * The spans as runs of this text: inside it, in order, none of them empty, and
  * no two of them touching.
  */
-const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
+const mergeRanges = (text: string, at: readonly TextRange[]): TextRange[] => {
   const retainedAt = at
     .map((span) => ({
-      from: whole(text, clampToText(text, Math.min(span.from, span.to)), -1),
-      to: whole(text, clampToText(text, Math.max(span.from, span.to)), 1),
+      start: whole(text, clampToText(text, Math.min(span.start, span.end)), -1),
+      end: whole(text, clampToText(text, Math.max(span.start, span.end)), 1),
     }))
-    .filter((span) => span.from < span.to)
-    .sort((one, other) => one.from - other.from)
+    .filter((span) => span.start < span.end)
+    .sort((one, other) => one.start - other.start)
 
-  const out: Span[] = []
+  const out: TextRange[] = []
   for (const span of retainedAt) {
     const last = out[out.length - 1]
-    if (last && span.from <= last.to) {
-      out[out.length - 1] = { from: last.from, to: Math.max(last.to, span.to) }
+    if (last && span.start <= last.end) {
+      out[out.length - 1] = { start: last.start, end: Math.max(last.end, span.end) }
       continue
     }
     out.push(span)

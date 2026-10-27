@@ -13,16 +13,16 @@ type Rect struct {
 	MinX, MinY, MaxX, MaxY float32
 }
 
-// A ByteSpan is a half-open range of byte offsets in the text.
-type ByteSpan struct {
-	From, To int
+// A ByteRange is a half-open range of byte offsets in the text.
+type ByteRange struct {
+	Start, End int
 }
 
 // A HighlightBox is one run of prose and where it was read: the page it is on,
 // the run of bytes in the text, and the rectangle it covers.
 type HighlightBox struct {
 	Page int
-	ByteSpan
+	ByteRange
 	Rect
 }
 
@@ -205,8 +205,8 @@ func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPos
 	x0, y0 := p.getPagePoint(word.Left, word.Top)
 	x1, y1 := p.getPagePoint(word.Right, word.Bottom)
 	return HighlightBox{
-		Page:     page,
-		ByteSpan: ByteSpan{From: start, To: start + length},
+		Page:      page,
+		ByteRange: ByteRange{Start: start, End: start + length},
 		Rect: Rect{
 			MinX: clampToPage(min(x0, x1)),
 			MinY: clampToPage(min(y0, y1)),

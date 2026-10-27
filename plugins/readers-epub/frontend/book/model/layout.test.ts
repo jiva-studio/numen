@@ -93,8 +93,8 @@ const room = (options: Options = {}) => {
   const props = reactive({
     markup: '<p>one</p>',
     path: 'ch1.xhtml',
-    span: { from: 100, to: 200 },
-    book: { from: 0, to: 500 },
+    span: { start: 100, end: 200 },
+    book: { start: 0, end: 500 },
     at: 120,
     highlights: [],
     otherHighlights: [],

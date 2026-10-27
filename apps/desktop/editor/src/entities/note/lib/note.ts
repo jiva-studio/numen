@@ -1,7 +1,7 @@
 import type { Result } from '@numen/wire'
 import type { NoteContents } from '../model/buffer'
 import type { ErrorCode } from '@/shared/errors'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 import type { MoveResult, NoteType } from '@/entities/file/@x/note'
 
 export type { NoteContents }
@@ -13,7 +13,7 @@ export type { NoteContents }
 export interface NoteEdit {
   readonly change: string
   readonly path: string
-  readonly span: Span
+  readonly span: TextRange
   readonly text: string
   readonly isComplete: boolean
 }

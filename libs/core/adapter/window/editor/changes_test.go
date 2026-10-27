@@ -1156,7 +1156,7 @@ func TestANoteIsFoundByName(t *testing.T) {
 	if first.GetHeading() != nil {
 		t.Errorf("a title matched, and the answer carries heading %+v", first.GetHeading())
 	}
-	if len(first.GetSpans()) == 0 {
+	if len(first.GetRanges()) == 0 {
 		t.Error("the answer says nothing about where it matched")
 	}
 }
@@ -1325,7 +1325,7 @@ func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
 	if first.GetPath() == "" {
 		t.Error("the passage says nothing about where it came from")
 	}
-	if len(first.GetSpans()) == 0 {
+	if len(first.GetRanges()) == 0 {
 		t.Error("the passage says nothing about where the word typed is in it")
 	}
 }
@@ -1349,12 +1349,12 @@ func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 		t.Fatal("nothing found")
 	}
 	first := found[0]
-	pos := first.GetSpan()
-	if pos.GetTo() <= pos.GetFrom() {
-		t.Errorf("the passage is over no text: %d to %d", pos.GetFrom(), pos.GetTo())
+	pos := first.GetRange()
+	if pos.GetEnd() <= pos.GetStart() {
+		t.Errorf("the passage is over no text: %d to %d", pos.GetStart(), pos.GetEnd())
 	}
-	if pos.GetFrom() < 0 {
-		t.Errorf("the passage begins at %d", pos.GetFrom())
+	if pos.GetStart() < 0 {
+		t.Errorf("the passage begins at %d", pos.GetStart())
 	}
 }
 

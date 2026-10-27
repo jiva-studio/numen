@@ -125,10 +125,10 @@ func TestAJoinedWordPreservesTheHyphenBoxOneByteShorter(t *testing.T) {
 	if len(spans) != 2 {
 		t.Fatalf("wrote %d spans, want 2", len(spans))
 	}
-	if got := text[spans[0].Span.From:spans[0].Span.To]; got != "under" {
+	if got := text[spans[0].Range.Start:spans[0].Range.End]; got != "under" {
 		t.Errorf("the first box reads %q, want %q", got, "under")
 	}
-	if got := text[spans[1].Span.From:spans[1].Span.To]; got != "standing follows" {
+	if got := text[spans[1].Range.Start:spans[1].Range.End]; got != "standing follows" {
 		t.Errorf("the second box reads %q, want %q", got, "standing follows")
 	}
 }
@@ -148,10 +148,10 @@ func TestAJoinedWordPreservesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 			if len(spans) != 2 {
 				t.Fatalf("wrote %d spans, want 2", len(spans))
 			}
-			if got := text[spans[0].Span.From:spans[0].Span.To]; got != "Viśvakoṣa" {
+			if got := text[spans[0].Range.Start:spans[0].Range.End]; got != "Viśvakoṣa" {
 				t.Errorf("the first box reads %q", got)
 			}
-			if got := text[spans[1].Span.From:spans[1].Span.To]; got != "ṭīkā follows" {
+			if got := text[spans[1].Range.Start:spans[1].Range.End]; got != "ṭīkā follows" {
 				t.Errorf("the second box reads %q", got)
 			}
 		})
@@ -232,13 +232,13 @@ func assembleByRegexp(lines []Line) (string, []Box) {
 			out.Reset()
 			out.WriteString(oldHyphen.ReplaceAllString(joined, "$1"))
 			if n := len(retained); n > 0 {
-				retained[n-1].Span.To -= len(joined) - out.Len()
+				retained[n-1].Range.End -= len(joined) - out.Len()
 			}
 		} else if joined != "" {
 			out.WriteString(" ")
 		}
 		pos := out.Len()
-		retained = append(retained, Box{Rect: l.Box, Span: ByteSpan{From: pos, To: pos + len(text)}})
+		retained = append(retained, Box{Rect: l.Box, Range: ByteRange{Start: pos, End: pos + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), retained
@@ -435,7 +435,7 @@ func TestAssembleMatchesTheListGrouping(t *testing.T) {
 		// Every box's span reads back one of the words, in grouped order.
 		var got []string
 		for _, b := range boxes {
-			got = append(got, strings.TrimSuffix(text[b.Span.From:b.Span.To], "-")+"-")
+			got = append(got, strings.TrimSuffix(text[b.Range.Start:b.Range.End], "-")+"-")
 		}
 		if !slices.Equal(got, want) {
 			t.Fatalf("case %d: boxes read %q, want %q", i, got, want)

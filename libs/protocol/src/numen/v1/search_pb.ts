@@ -11,7 +11,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Heading, Note } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
-import type { Span } from "./shared_pb.js";
+import type { Range } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIosBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIdCgVzcGFucxgDIAMoCzIOLm51bWVuLnYxLlNwYW4SDAoEdHlwZRgEIAEoCUIKCghfaGVhZGluZyJZChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSIgoEbW9kZRgDIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUiOgoWU2VhcmNoUGFzc2FnZXNSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui1AEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSHQoFc3BhbnMYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEhwKBHNwYW4YBiABKAsyDi5udW1lbi52MS5TcGFuEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZUoECAkQCiqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIo0BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLYAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIfCgZyYW5nZXMYBCADKAsyDy5udW1lbi52MS5SYW5nZRIQCghsb2NhdGlvbhgFIAEoCRIeCgVyYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZUoECAkQCiqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -92,9 +92,9 @@ export type NameMatch = Message<"numen.v1.NameMatch"> & {
    * in UTF-16 code units.
    * A word reached by its prefix is marked whole.
    *
-   * @generated from field: repeated numen.v1.Span spans = 3;
+   * @generated from field: repeated numen.v1.Range ranges = 3;
    */
-  spans: Span[];
+  ranges: Range[];
 
   /**
    * The `type` key of the note's frontmatter, so a client draws a note as what it is.
@@ -193,9 +193,9 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
    * word in particular.
    *
-   * @generated from field: repeated numen.v1.Span spans = 4;
+   * @generated from field: repeated numen.v1.Range ranges = 4;
    */
-  spans: Span[];
+  ranges: Range[];
 
   /**
    * What the source's own numbering calls the place, empty when the format
@@ -209,9 +209,9 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * counted in bytes. With the path above it is the place this opens, and a hit
    * in a note carries it as every other hit does.
    *
-   * @generated from field: numen.v1.Span span = 6;
+   * @generated from field: numen.v1.Range range = 6;
    */
-  span?: Span | undefined;
+  range?: Range | undefined;
 
   /**
    * Where the chunk that matched stands, counted from the first line of the

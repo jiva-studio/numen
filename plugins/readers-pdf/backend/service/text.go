@@ -235,7 +235,7 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 	for len(boxes) > 0 && boxes[0].Page <= page {
 		box := boxes[0]
 		boxes = boxes[1:]
-		start, end := max(box.From, pos), min(box.To, to)
+		start, end := max(box.Start, pos), min(box.End, to)
 		if box.Page < page || start >= end {
 			continue
 		}

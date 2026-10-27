@@ -47,9 +47,9 @@ func NewReplace(
 type ReplaceResult struct {
 	// FileStat is of the file this write produced.
 	FileStat domain.FileStat
-	// Span is where the span stood, as byte offsets into the prose a read hands
+	// Range is where the span stood, as byte offsets into the prose a read hands
 	// out.
-	Span markdown.Span
+	Range markdown.Range
 	// Matched is the span as the note held it, which is not always the text the
 	// caller asked for.
 	Matched string
@@ -108,7 +108,7 @@ func (u Replace) Execute(
 	pos, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
 
-		where, plainly := markdown.FindSpans(body, current)
+		where, plainly := markdown.FindRanges(body, current)
 		if len(where) > 1 {
 			return AmbiguousSpan{Places: len(where)}
 		}
@@ -120,7 +120,7 @@ func (u Replace) Execute(
 		}
 
 		span := where[0]
-		content := body[:span.From] + becomes + body[span.To:]
+		content := body[:span.Start] + becomes + body[span.End:]
 		if err := doc.SetBody(content); err != nil {
 			return err
 		}
@@ -129,13 +129,13 @@ func (u Replace) Execute(
 		// somewhere else in prose that is not ASCII.
 		ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 			Path: path,
-			From: markdown.CountUTF16(body, span.From),
-			To:   markdown.CountUTF16(body, span.To),
+			From: markdown.CountUTF16(body, span.Start),
+			To:   markdown.CountUTF16(body, span.End),
 			Text: becomes,
 		})
 
-		isDone.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
-		isDone.Matched = body[span.From:span.To]
+		isDone.Range = markdown.Range{Start: span.Start, End: span.Start + len(becomes)}
+		isDone.Matched = body[span.Start:span.End]
 		isDone.IsPlain = plainly
 		return nil
 	})
@@ -157,9 +157,9 @@ func newMissingSpan(body, state string) MissingSpan {
 		pos += width
 		ends = append(ends, pos)
 	}
-	var first markdown.Span
+	var first markdown.Range
 	count := sort.Search(len(ends), func(i int) bool {
-		offset, _ := markdown.FindSpans(body, state[:ends[i]])
+		offset, _ := markdown.FindRanges(body, state[:ends[i]])
 		if len(offset) == 0 {
 			return true
 		}
@@ -169,9 +169,9 @@ func newMissingSpan(body, state string) MissingSpan {
 	if count == 0 {
 		return MissingSpan{}
 	}
-	end := min(first.From+len(state), len(body))
+	end := min(first.Start+len(state), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return MissingSpan{Matched: state[:ends[count-1]], Instead: body[first.From:end]}
+	return MissingSpan{Matched: state[:ends[count-1]], Instead: body[first.Start:end]}
 }

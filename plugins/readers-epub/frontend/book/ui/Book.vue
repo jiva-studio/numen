@@ -22,8 +22,8 @@ import BookHead from './BookHead.vue'
 const props = withDefaults(defineProps<BookProps>(), {
   markup: '',
   path: '',
-  span: () => ({ from: 0, to: 0 }),
-  book: () => ({ from: 0, to: 0 }),
+  span: () => ({ start: 0, end: 0 }),
+  book: () => ({ start: 0, end: 0 }),
   at: 0,
   highlights: () => [],
   otherHighlights: () => [],

@@ -60,8 +60,11 @@ export const relationByWire: Record<Relations, NoteRelation | null> = {
 /** What a note is, where the schema leaves it empty for a plain note. */
 export const mapNoteType = (of: string): NoteType => of || 'note'
 
-/** A run of text, kept as the plain pair the window carries it as. */
-export const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
+/** Copies a wire range into the plain pair the window carries. */
+export const mapRange = (range: { start: number; end: number }) => ({
+  start: range.start,
+  end: range.end,
+})
 
 /** A link in the shape the schema carries it. */
 export const mapLink = (link: Link) => ({

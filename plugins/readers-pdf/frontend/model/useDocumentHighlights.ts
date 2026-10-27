@@ -3,7 +3,7 @@
  */
 import { computed, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '../types'
+import type { TextRange } from '../types'
 import type { Documents, PageHighlight, Rect } from '../types'
 
 export interface DocumentHighlightsOptions {
@@ -39,7 +39,7 @@ export function useDocumentHighlights(
     if (first) await onGoToPage(first.page)
   }
 
-  const focusSpans = async (...spans: readonly Span[]) => {
+  const focusSpans = async (...spans: readonly TextRange[]) => {
     if (!isOpen() || spans.length === 0) return
     try {
       const where = await documents.getHighlights(path, spans)

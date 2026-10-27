@@ -6,8 +6,8 @@ import { ref } from 'vue'
 import { useBookDocument, type MessageWriter } from './useBookDocument'
 import type { Books, SpineDocument } from '../types'
 
-const FIRST: SpineDocument = { path: 'text/one.xhtml', span: { from: 0, to: 100 } }
-const SECOND: SpineDocument = { path: 'text/two.xhtml', span: { from: 100, to: 200 } }
+const FIRST: SpineDocument = { path: 'text/one.xhtml', span: { start: 0, end: 100 } }
+const SECOND: SpineDocument = { path: 'text/two.xhtml', span: { start: 100, end: 200 } }
 
 type Pending = { resolve: (markup: string) => void; reject: (reason: Error) => void }
 
@@ -41,7 +41,7 @@ describe('a book with nothing drawn', () => {
   it('reads nowhere and names no document', () => {
     const { doc } = create()
 
-    expect(doc.documentSpan.value).toStrictEqual({ from: 0, to: 0 })
+    expect(doc.documentSpan.value).toStrictEqual({ start: 0, end: 0 })
     expect(doc.renderedChapter.value).toBe('')
     expect(doc.markup.value).toBe('')
   })

@@ -5,13 +5,13 @@ import (
 	"unicode/utf8"
 )
 
-// Span is a run of prose, by where it begins and where it ends, as byte offsets
+// Range is a run of prose, by where it begins and where it ends, as byte offsets
 // into the text it was found in. Where a client is told about a run it is told
-// in the units a client counts in, which is domain.UnitSpan, and CountUTF16 is
+// in the units a client counts in, which is domain.UnitRange, and CountUTF16 is
 // the way across; nothing crosses that boundary unconverted.
-type Span struct {
-	From int
-	To   int
+type Range struct {
+	Start int
+	End   int
 }
 
 // currently, then punctuation and spacing read as the marks they stand for,
@@ -23,7 +23,7 @@ type Span struct {
 //
 // isApproximate is true when the span was found only once punctuation or
 // spacing were allowed to differ.
-func FindSpans(text, wanted string) (spans []Span, isApproximate bool) {
+func FindRanges(text, wanted string) (spans []Range, isApproximate bool) {
 	if wanted == "" {
 		return nil, false
 	}
@@ -39,9 +39,9 @@ func FindSpans(text, wanted string) (spans []Span, isApproximate bool) {
 		if len(found) == 0 {
 			continue
 		}
-		foundSpans := make([]Span, 0, len(found))
+		foundSpans := make([]Range, 0, len(found))
 		for _, span := range found {
-			foundSpans = append(foundSpans, Span{From: target.offsets[span.From], To: target.offsets[span.To]})
+			foundSpans = append(foundSpans, Range{Start: target.offsets[span.Start], End: target.offsets[span.End]})
 		}
 		return foundSpans, true
 	}
@@ -49,14 +49,14 @@ func FindSpans(text, wanted string) (spans []Span, isApproximate bool) {
 }
 
 // stepped over, so two reported spans never overlap.
-func occurrences(text, wanted string) []Span {
-	var foundSpans []Span
+func occurrences(text, wanted string) []Range {
+	var foundSpans []Range
 	for from := 0; from <= len(text); {
 		next := strings.Index(text[from:], wanted)
 		if next < 0 {
 			return foundSpans
 		}
-		foundSpans = append(foundSpans, Span{From: from + next, To: from + next + len(wanted)})
+		foundSpans = append(foundSpans, Range{Start: from + next, End: from + next + len(wanted)})
 		from += next + len(wanted)
 	}
 	return foundSpans
@@ -140,9 +140,9 @@ func getPlainRune(r rune) rune {
 // What the two share at either end is left out, so replacing one whole note's
 // prose with another names the sentence that changed. The span is widened to
 // whole words, and two texts that are the same name no span at all.
-func Diff(was, now string) (Span, string) {
+func Diff(was, now string) (Range, string) {
 	if was == now {
-		return Span{From: len(was), To: len(was)}, ""
+		return Range{Start: len(was), End: len(was)}, ""
 	}
 
 	head := 0
@@ -162,7 +162,7 @@ func Diff(was, now string) (Span, string) {
 		tail--
 	}
 
-	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
+	return Range{Start: head, End: len(was) - tail}, now[head : len(now)-tail]
 }
 
 // canSpanBeginAt reports whether a span may begin at `at`: at the start of the text,

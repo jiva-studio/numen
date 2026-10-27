@@ -96,8 +96,8 @@ func TestACallNamingARunOfTextCarriesItsSpan(t *testing.T) {
 	steps, _ := parseLines(t, testWords,
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_edit","input":{"path":"N.md","start":4,"length":6}}]}}`)
 
-	span := toolCalls(steps)[0].GetSpan()
-	if span.GetFrom() != 4 || span.GetTo() != 10 {
+	span := toolCalls(steps)[0].GetRange()
+	if span.GetStart() != 4 || span.GetEnd() != 10 {
 		t.Fatalf("span %+v", span)
 	}
 }

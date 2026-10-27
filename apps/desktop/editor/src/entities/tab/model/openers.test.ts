@@ -165,7 +165,7 @@ describe('a path opened', () => {
 
     await expect(tabOpeners.openFile('talks/Ants.bin')).resolves.toBeUndefined()
     await expect(
-      tabOpeners.openFileAt('talks/Ants.bin', [{ from: 22, to: 28 }]),
+      tabOpeners.openFileAt('talks/Ants.bin', [{ start: 22, end: 28 }]),
     ).resolves.toBeUndefined()
   })
 
@@ -200,7 +200,7 @@ describe('a file opened at runs of its text', () => {
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFileAt('Entropy.md', [{ from: 1, to: 4 }])
+    await tabOpeners.openFileAt('Entropy.md', [{ start: 1, end: 4 }])
 
     expect(activeEditors).toStrictEqual(['note Entropy.md — here —'])
   })
@@ -210,7 +210,7 @@ describe('a file opened at runs of its text', () => {
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFileAt('Physics.bin', [{ from: 1, to: 4 }])
+    await tabOpeners.openFileAt('Physics.bin', [{ start: 1, end: 4 }])
 
     expect(activeEditors).toStrictEqual(['reader Physics.bin null'])
   })

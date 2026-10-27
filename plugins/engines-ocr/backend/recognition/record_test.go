@@ -11,11 +11,11 @@ import (
 func TestNewPageSplitsBlocksByBox(t *testing.T) {
 	bounds := image.Rect(0, 0, 100, 200)
 	blocks := []engine.Block{
-		{Text: "Chapter One", IsHeading: true, Boxes: []engine.Box{{Rect: image.Rect(10, 0, 90, 20), Span: engine.ByteSpan{To: 11}}}},
+		{Text: "Chapter One", IsHeading: true, Boxes: []engine.Box{{Rect: image.Rect(10, 0, 90, 20), Range: engine.ByteRange{End: 11}}}},
 		{Text: ""},
 		{Text: "first line second line", Boxes: []engine.Box{
-			{Rect: image.Rect(0, 100, 100, 150), Span: engine.ByteSpan{From: 11, To: 22}},
-			{Rect: image.Rect(0, 50, 100, 100), Span: engine.ByteSpan{From: 0, To: 10}},
+			{Rect: image.Rect(0, 100, 100, 150), Range: engine.ByteRange{Start: 11, End: 22}},
+			{Rect: image.Rect(0, 50, 100, 100), Range: engine.ByteRange{Start: 0, End: 10}},
 		}},
 		{Text: "a caption nothing placed"},
 	}

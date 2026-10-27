@@ -75,7 +75,7 @@ describe('where a run of text is placed', () => {
       ],
     })
 
-    expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([
+    expect(await documents.getHighlights('Book.pdf', [{ start: 0, end: 9 }])).toEqual([
       [
         {
           page: 2,
@@ -89,14 +89,14 @@ describe('where a run of text is placed', () => {
     ])
     expect(request.getHighlights).toHaveBeenCalledWith({
       path: 'Book.pdf',
-      spans: [{ from: 0, to: 9 }],
+      ranges: [{ start: 0, end: 9 }],
     })
   })
 
   it('places a run nowhere when the answer lists no places', async () => {
     request.getHighlights.mockResolvedValue({ runs: [{ places: [] }] })
 
-    expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([[]])
+    expect(await documents.getHighlights('Book.pdf', [{ start: 0, end: 9 }])).toEqual([[]])
   })
 
   it('answers one span at a time, and nothing for a span the answer skipped', async () => {
@@ -106,8 +106,8 @@ describe('where a run of text is placed', () => {
 
     expect(
       await documents.getHighlights('Book.pdf', [
-        { from: 0, to: 9 },
-        { from: 10, to: 20 },
+        { start: 0, end: 9 },
+        { start: 10, end: 20 },
       ]),
     ).toEqual([[{ page: 1, rects: [{ minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 }] }], []])
   })

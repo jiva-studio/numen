@@ -159,7 +159,7 @@ function createConversationLinkFollower(
       )
       deps.openFileAt(
         here.path,
-        ...[here, ...named].map(({ start, length }) => ({ from: start, to: start + length })),
+        ...[here, ...named].map(({ start, length }) => ({ start, end: start + length })),
       )
       return
     }
@@ -284,7 +284,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
 
   const openTurnSource = (turn: Turn) => {
     const location = conversation.getSourceLocation(turn.id)
-    if (location) deps.openFileAt(location.path, location.span)
+    if (location) deps.openFileAt(location.path, location.range)
   }
 
   // eslint-disable-next-line numen/max-composable-return-properties

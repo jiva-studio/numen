@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqqAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIUChBFUlJPUl9DT0RFX1NUQUxFEA0iBAgJEAkiBAgKEAoiBAgLEAsiBAgMEAxCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqqAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIUChBFUlJPUl9DT0RFX1NUQUxFEA0iBAgJEAkiBAgKEAoiBAgLEAsiBAgMEAxCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -56,28 +56,28 @@ export const FileStatSchema: GenMessage<FileStat> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 0);
 
 /**
- * A Span is a run of text, by where it begins and where it ends. What it counts
+ * Range is a run of text, by where it begins and where it ends. What it counts
  * in is the field carrying it.
  *
- * @generated from message numen.v1.Span
+ * @generated from message numen.v1.Range
  */
-export type Span = Message<"numen.v1.Span"> & {
+export type Range = Message<"numen.v1.Range"> & {
   /**
-   * @generated from field: int32 from = 1;
+   * @generated from field: int32 start = 1;
    */
-  from: number;
+  start: number;
 
   /**
-   * @generated from field: int32 to = 2;
+   * @generated from field: int32 end = 2;
    */
-  to: number;
+  end: number;
 };
 
 /**
- * Describes the message numen.v1.Span.
- * Use `create(SpanSchema)` to create a new message.
+ * Describes the message numen.v1.Range.
+ * Use `create(RangeSchema)` to create a new message.
  */
-export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
+export const RangeSchema: GenMessage<Range> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 1);
 
 /**

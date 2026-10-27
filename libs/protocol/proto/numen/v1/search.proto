@@ -54,7 +54,7 @@ message NameMatch {
   // Where in that name the words stand, counted the way a client counts text:
   // in UTF-16 code units.
   // A word reached by its prefix is marked whole.
-  repeated Span spans = 3;
+  repeated Range ranges = 3;
 
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   string type = 4;
@@ -113,7 +113,7 @@ message Passage {
   // Where in that text the words typed stand, counted the way a client counts
   // text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
   // word in particular.
-  repeated Span spans = 4;
+  repeated Range ranges = 4;
 
   // What the source's own numbering calls the place, empty when the format
   // offered none.
@@ -121,7 +121,7 @@ message Passage {
 
   // counted in bytes. With the path above it is the place this opens, and a hit
   // in a note carries it as every other hit does.
-  Span span = 6;
+  Range range = 6;
 
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.

@@ -122,9 +122,9 @@ describe('a recording tab', () => {
     await flush()
 
     const focus = (
-      state as { focusSpans?: (...spans: { from: number; to: number }[]) => Promise<void> }
+      state as { focusSpans?: (...spans: { start: number; end: number }[]) => Promise<void> }
     ).focusSpans
-    await focus?.({ from: 22, to: 30 })
+    await focus?.({ start: 22, end: 30 })
 
     expect(seeks.at(-1)?.[1]).toBe(83_000)
     tab.unmount()

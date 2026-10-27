@@ -12,7 +12,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { FileStat, Span } from "@numen/protocol/numen/v1/shared_pb.js";
+import type { FileStat, Range } from "@numen/protocol/numen/v1/shared_pb.js";
 import { file_numen_v1_shared } from "@numen/protocol/numen/v1/shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -20,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/pdf/v1/document.proto.
  */
 export const file_numen_pdf_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi9wZGYvdjEvZG9jdW1lbnQucHJvdG8SDG51bWVuLnBkZi52MSIiChJHZXREb2N1bWVudFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJaChNHZXREb2N1bWVudFJlc3BvbnNlEiEKBXBhZ2VzGAEgAygLMhIubnVtZW4ucGRmLnYxLlBhZ2USIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IiUKBFBhZ2USDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBIkMKFEdldEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoFc3BhbnMYAiADKAsyDi5udW1lbi52MS5TcGFuIkAKFUdldEhpZ2hsaWdodHNSZXNwb25zZRInCgRydW5zGAEgAygLMhkubnVtZW4ucGRmLnYxLkRvY3VtZW50UnVuIjoKC0RvY3VtZW50UnVuEisKBnBsYWNlcxgBIAMoCzIbLm51bWVuLnBkZi52MS5Eb2N1bWVudFBsYWNlIkgKDURvY3VtZW50UGxhY2USDAoEcGFnZRgBIAEoBRIpCgVyZWN0cxgCIAMoCzIaLm51bWVuLnBkZi52MS5Eb2N1bWVudFJlY3QiSgoMRG9jdW1lbnRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCMr8BCg9Eb2N1bWVudFNlcnZpY2USUgoLR2V0RG9jdW1lbnQSIC5udW1lbi5wZGYudjEuR2V0RG9jdW1lbnRSZXF1ZXN0GiEubnVtZW4ucGRmLnYxLkdldERvY3VtZW50UmVzcG9uc2USWAoNR2V0SGlnaGxpZ2h0cxIiLm51bWVuLnBkZi52MS5HZXRIaWdobGlnaHRzUmVxdWVzdBojLm51bWVuLnBkZi52MS5HZXRIaWdobGlnaHRzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3JlYWRlcnMtcGRmL2dlbi9udW1lbi9wZGYvdjE7cGRmdjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChtudW1lbi9wZGYvdjEvZG9jdW1lbnQucHJvdG8SDG51bWVuLnBkZi52MSIiChJHZXREb2N1bWVudFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJaChNHZXREb2N1bWVudFJlc3BvbnNlEiEKBXBhZ2VzGAEgAygLMhIubnVtZW4ucGRmLnYxLlBhZ2USIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IiUKBFBhZ2USDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBIkUKFEdldEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHwoGcmFuZ2VzGAIgAygLMg8ubnVtZW4udjEuUmFuZ2UiQAoVR2V0SGlnaGxpZ2h0c1Jlc3BvbnNlEicKBHJ1bnMYASADKAsyGS5udW1lbi5wZGYudjEuRG9jdW1lbnRSdW4iOgoLRG9jdW1lbnRSdW4SKwoGcGxhY2VzGAEgAygLMhsubnVtZW4ucGRmLnYxLkRvY3VtZW50UGxhY2UiSAoNRG9jdW1lbnRQbGFjZRIMCgRwYWdlGAEgASgFEikKBXJlY3RzGAIgAygLMhoubnVtZW4ucGRmLnYxLkRvY3VtZW50UmVjdCJKCgxEb2N1bWVudFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIyvwEKD0RvY3VtZW50U2VydmljZRJSCgtHZXREb2N1bWVudBIgLm51bWVuLnBkZi52MS5HZXREb2N1bWVudFJlcXVlc3QaIS5udW1lbi5wZGYudjEuR2V0RG9jdW1lbnRSZXNwb25zZRJYCg1HZXRIaWdobGlnaHRzEiIubnVtZW4ucGRmLnYxLkdldEhpZ2hsaWdodHNSZXF1ZXN0GiMubnVtZW4ucGRmLnYxLkdldEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvcmVhZGVycy1wZGYvZ2VuL251bWVuL3BkZi92MTtwZGZ2MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.pdf.v1.GetDocumentRequest
@@ -107,9 +107,9 @@ export type GetHighlightsRequest = Message<"numen.pdf.v1.GetHighlightsRequest"> 
   /**
    * The runs of the live text version to return places of, in bytes of its text.
    *
-   * @generated from field: repeated numen.v1.Span spans = 2;
+   * @generated from field: repeated numen.v1.Range ranges = 2;
    */
-  spans: Span[];
+  ranges: Range[];
 };
 
 /**

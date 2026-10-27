@@ -99,7 +99,7 @@ describe('a stretch of the book marked at its current position', () => {
   it('runs over the nodes the markup carries, counted in bytes of them', () => {
     const paper = createMarkupPaper(TWO)
 
-    const [range] = rangesOver(getRuns(paper), [{ from: 0, to: 8 }])
+    const [range] = rangesOver(getRuns(paper), [{ start: 0, end: 8 }])
 
     expect(range?.toString()).toBe('Один')
   })
@@ -109,7 +109,7 @@ describe('a stretch of the book marked at its current position', () => {
     // and the stretch closes one letter into the second.
     const paper = createMarkupPaper(TWO)
 
-    const [range] = rangesOver(getRuns(paper), [{ from: 4, to: 10 }])
+    const [range] = rangesOver(getRuns(paper), [{ start: 4, end: 10 }])
 
     expect(range?.toString()).toBe('инд')
   })
@@ -117,17 +117,17 @@ describe('a stretch of the book marked at its current position', () => {
   it('is left out where it reaches past the text the document holds', () => {
     const paper = createMarkupPaper(TWO)
 
-    expect(rangesOver(getRuns(paper), [{ from: 100, to: 110 }])).toStrictEqual([])
+    expect(rangesOver(getRuns(paper), [{ start: 100, end: 110 }])).toStrictEqual([])
   })
 
   it('is left out where it begins before the first run', () => {
     const paper = createMarkupPaper('<p data-offset="900">Вторая глава</p>')
 
-    expect(rangesOver(getRuns(paper), [{ from: 10, to: 20 }])).toStrictEqual([])
+    expect(rangesOver(getRuns(paper), [{ start: 10, end: 20 }])).toStrictEqual([])
   })
 
   it('is nothing at all in a document with no runs in it', () => {
-    expect(rangesOver([], [{ from: 0, to: 8 }])).toStrictEqual([])
+    expect(rangesOver([], [{ start: 0, end: 8 }])).toStrictEqual([])
   })
 })
 
@@ -180,7 +180,7 @@ describe('a stretch of the book over a run of several nodes', () => {
   it('begins in the node holding its first byte, counted from the run', () => {
     const paper = createMarkupPaper(several)
 
-    const [range] = rangesOver(getRuns(paper), [{ from: 10, to: 12 }])
+    const [range] = rangesOver(getRuns(paper), [{ start: 10, end: 12 }])
 
     expect(range?.toString()).toBe('в')
   })
@@ -188,7 +188,7 @@ describe('a stretch of the book over a run of several nodes', () => {
   it('closes at the end of the node its last byte ends', () => {
     const paper = createMarkupPaper(several)
 
-    const [range] = rangesOver(getRuns(paper), [{ from: 0, to: 8 }])
+    const [range] = rangesOver(getRuns(paper), [{ start: 0, end: 8 }])
 
     expect(range?.endContainer.textContent).toBe('Один')
     expect(range?.endOffset).toBe(4)
@@ -197,7 +197,7 @@ describe('a stretch of the book over a run of several nodes', () => {
   it('begins at the end of the node its first byte is the end of', () => {
     const paper = createMarkupPaper(several)
 
-    const [range] = rangesOver(getRuns(paper), [{ from: 8, to: 12 }])
+    const [range] = rangesOver(getRuns(paper), [{ start: 8, end: 12 }])
 
     expect(range?.startContainer.textContent).toBe('Один')
     expect(range?.startOffset).toBe(4)
@@ -206,7 +206,7 @@ describe('a stretch of the book over a run of several nodes', () => {
   it('runs from inside a later run, counted from where that run begins', () => {
     const paper = createMarkupPaper(TWO)
 
-    const [range] = rangesOver(getRuns(paper), [{ from: 10, to: 12 }])
+    const [range] = rangesOver(getRuns(paper), [{ start: 10, end: 12 }])
 
     expect(range?.toString()).toBe('в')
   })
@@ -214,12 +214,12 @@ describe('a stretch of the book over a run of several nodes', () => {
   it('is left out where it begins past the text of its run and ends in a later one', () => {
     const paper = createMarkupPaper('<p data-offset="0">Один</p><p data-offset="20">два</p>')
 
-    expect(rangesOver(getRuns(paper), [{ from: 12, to: 22 }])).toStrictEqual([])
+    expect(rangesOver(getRuns(paper), [{ start: 12, end: 22 }])).toStrictEqual([])
   })
 
   it('is left out where it ends before every run it could begin in', () => {
     const paper = createMarkupPaper('<p data-offset="5">Один</p>')
 
-    expect(rangesOver(getRuns(paper), [{ from: 0, to: 8 }])).toStrictEqual([])
+    expect(rangesOver(getRuns(paper), [{ start: 0, end: 8 }])).toStrictEqual([])
   })
 })

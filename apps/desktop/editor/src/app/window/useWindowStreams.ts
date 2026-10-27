@@ -8,7 +8,7 @@ import type { VaultPort } from '@/app/ports/vault'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 
 export interface WindowStreamsDeps {
   readonly core: Pick<VaultPort, 'watchVaultChanges' | 'watchFocus' | 'watchTasks'> &
@@ -29,7 +29,7 @@ export interface WindowStreamsDeps {
   readonly ask: () => Promise<unknown>
   readonly reportChange: (edit: NoteEdit) => void
   readonly travelTo: (path: string) => Promise<void> | void
-  readonly openFileAt: (path: string, spans: readonly Span[]) => void
+  readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
 }
 
 interface VaultChangeData {
@@ -57,16 +57,16 @@ async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDep
 }
 
 async function handleFocusChange(
-  request: { path?: string; spans: readonly Span[] },
+  request: { path?: string; ranges: readonly TextRange[] },
   travelTo: (path: string) => Promise<void> | void,
-  openFileAt: (path: string, spans: readonly Span[]) => void,
+  openFileAt: (path: string, spans: readonly TextRange[]) => void,
 ): Promise<void> {
   if (!request.path) return
-  const spans = request.spans
-    .map((one) => ({ from: one.from, to: one.to }))
-    .filter((one) => one.to > one.from)
-  if (!spans.length) return void (await travelTo(request.path))
-  openFileAt(request.path, spans)
+  const ranges = request.ranges
+    .map((one) => ({ start: one.start, end: one.end }))
+    .filter((one) => one.end > one.start)
+  if (!ranges.length) return void (await travelTo(request.path))
+  openFileAt(request.path, ranges)
 }
 
 export function createWindowStreams(deps: WindowStreamsDeps) {

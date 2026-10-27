@@ -5,7 +5,7 @@
  *
  * lifted again means is a decision, and a test asks it without a browser.
  */
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
 
 /** Minimum horizontal distance in CSS pixels for a swipe gesture. */
@@ -57,8 +57,8 @@ export interface Destination {
 export interface TurnContext {
   readonly spread: number
   readonly count: number
-  readonly span: Span
-  readonly book: Span
+  readonly span: TextRange
+  readonly book: TextRange
 }
 
 /**
@@ -73,7 +73,7 @@ export function goToPage(way: PageNavigationAction, context: TurnContext): Desti
   const to = context.spread + (way === 'next' ? 1 : -1)
   if (to >= 0 && to < context.count) return { spread: to }
 
-  const offset = way === 'next' ? context.span.to : context.span.from - 1
-  if (offset >= context.book.from && offset < context.book.to) return { offset }
+  const offset = way === 'next' ? context.span.end : context.span.start - 1
+  if (offset >= context.book.start && offset < context.book.end) return { offset }
   return {}
 }

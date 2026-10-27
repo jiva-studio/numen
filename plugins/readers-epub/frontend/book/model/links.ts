@@ -45,7 +45,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
       listeners.reportFollow(place.path)
       return
     }
-    listeners.reportMove(findFragmentOffset(place.fragment) ?? props.span.from)
+    listeners.reportMove(findFragmentOffset(place.fragment) ?? props.span.start)
   }
 
   return { takeLed, follow }

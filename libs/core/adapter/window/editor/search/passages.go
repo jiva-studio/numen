@@ -15,14 +15,14 @@ import (
 // Case is folded and nothing else is. A span begins where a word begins, and
 // ends where one ends; the last word typed may still be growing, so it matches
 // a word by its opening, which is the rule the index matched it by.
-func spans(text, query string) []domain.UnitSpan {
+func spans(text, query string) []domain.UnitRange {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
 		return nil
 	}
 	folded, units := getFoldedRunes(text)
 
-	var offset []domain.UnitSpan
+	var offset []domain.UnitRange
 	for i, word := range words {
 		wanted, _ := getFoldedRunes(word)
 		if len(wanted) == 0 {
@@ -37,10 +37,10 @@ func spans(text, query string) []domain.UnitSpan {
 			if !isWordStart(folded, from) || (whole && !isWordEnd(folded, to)) {
 				continue
 			}
-			offset = append(offset, domain.UnitSpan{From: units[from], To: units[to]})
+			offset = append(offset, domain.UnitRange{Start: units[from], End: units[to]})
 		}
 	}
-	return mergeSpans(offset)
+	return mergeRanges(offset)
 }
 
 // isWordRune is what a word is made of, so that what stands either side of one is
@@ -61,19 +61,19 @@ func isWordStart(runes []rune, pos int) bool { return pos == 0 || !isWordRune(ru
 
 func isWordEnd(runes []rune, pos int) bool { return pos == len(runes) || !isWordRune(runes[pos]) }
 
-// mergeSpans is the spans in the order they stand, with ones that touch or overlap
+// mergeRanges is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
-func mergeSpans(pos []domain.UnitSpan) []domain.UnitSpan {
+func mergeRanges(pos []domain.UnitRange) []domain.UnitRange {
 	if len(pos) < 2 {
 		return pos
 	}
-	slices.SortFunc(pos, func(a, b domain.UnitSpan) int { return a.From - b.From })
+	slices.SortFunc(pos, func(a, b domain.UnitRange) int { return a.Start - b.Start })
 
 	out := pos[:1]
 	for _, span := range pos[1:] {
 		last := &out[len(out)-1]
-		if span.From <= last.To {
-			last.To = max(last.To, span.To)
+		if span.Start <= last.End {
+			last.End = max(last.End, span.End)
 			continue
 		}
 		out = append(out, span)
@@ -120,7 +120,7 @@ const (
 //
 // The spans move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
-func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []domain.UnitSpan) {
+func getTextAround(text string, spans []domain.UnitRange, from int) (string, []domain.UnitRange) {
 	runes, units := getRunes(text)
 	total := units[len(runes)]
 	if total <= glancing {
@@ -131,7 +131,7 @@ func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []do
 	// itself stands when no word matched at all.
 	point := from
 	if len(spans) > 0 {
-		point = spans[0].From
+		point = spans[0].Start
 	}
 
 	opens := 0
@@ -144,13 +144,13 @@ func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []do
 	first, last := getOpeningRune(units, opens), getClosingRune(units, to)
 	shift := units[first]
 
-	var clippedSpans []domain.UnitSpan
+	var clippedSpans []domain.UnitRange
 	for _, span := range spans {
-		clipped := domain.UnitSpan{From: max(span.From, units[first]), To: min(span.To, units[last])}
-		if clipped.From >= clipped.To {
+		clipped := domain.UnitRange{Start: max(span.Start, units[first]), End: min(span.End, units[last])}
+		if clipped.Start >= clipped.End {
 			continue
 		}
-		clippedSpans = append(clippedSpans, domain.UnitSpan{From: clipped.From - shift, To: clipped.To - shift})
+		clippedSpans = append(clippedSpans, domain.UnitRange{Start: clipped.Start - shift, End: clipped.End - shift})
 	}
 
 	snippet := string(runes[first:last])
@@ -159,7 +159,7 @@ func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []do
 		// in it begins one unit further along.
 		snippet = "…" + snippet
 		for i := range clippedSpans {
-			clippedSpans[i] = domain.UnitSpan{From: clippedSpans[i].From + 1, To: clippedSpans[i].To + 1}
+			clippedSpans[i] = domain.UnitRange{Start: clippedSpans[i].Start + 1, End: clippedSpans[i].End + 1}
 		}
 	}
 	if last < len(runes) {

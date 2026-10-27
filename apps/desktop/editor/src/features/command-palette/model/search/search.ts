@@ -17,10 +17,10 @@ import {
   type SearchHit,
   type SearchRow,
 } from './lookup'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type { Span, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
+export type { TextRange, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
 
 /**
  * How a search over the text is asked. Each mode is an order of its own, and

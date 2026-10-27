@@ -1,9 +1,9 @@
 /**
  * Types and interfaces for PDF document viewing and navigation.
  */
-import type { Span } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 
-export type { Span }
+export type { TextRange }
 
 /** Bounding rectangle on a page, in normalized fractions (0 to 1). */
 export interface Rect {
@@ -40,7 +40,7 @@ export interface Documents {
   /** Retrieves highlights for given text spans. */
   getHighlights(
     path: string,
-    spans: readonly Span[],
+    spans: readonly TextRange[],
   ): Promise<readonly (readonly PageHighlight[])[]>
 }
 

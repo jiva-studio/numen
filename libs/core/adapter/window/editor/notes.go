@@ -481,7 +481,7 @@ func (h *noteHandler) WatchEdits(
 			if err := out.Send(&v1.WatchEditsResponse{
 				Change:  response.Change,
 				Path:    response.Path,
-				Span:    &v1.Span{From: int32(response.From), To: int32(response.To)},
+				Range:   &v1.Range{Start: int32(response.From), End: int32(response.To)},
 				Text:    response.Text,
 				IsFinal: response.IsDone,
 			}); err != nil {

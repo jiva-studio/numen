@@ -254,7 +254,7 @@ describe('the parts of the window', () => {
 
   it('are requested to open a file at the spans through the openers', () => {
     useWindow()
-    const spans = [{ from: 1, to: 2 }]
+    const spans = [{ start: 1, end: 2 }]
 
     h.args.display.openFileAt('a.md', spans)
 

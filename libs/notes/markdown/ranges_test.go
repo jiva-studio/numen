@@ -9,37 +9,37 @@ import (
 // the bytes the person wrote.
 func TestASpanIsFoundWhereItExists(t *testing.T) {
 	text := "the aggressor is named"
-	spans, plainly := FindSpans(text, "aggressor")
+	spans, plainly := FindRanges(text, "aggressor")
 	if plainly {
 		t.Error("a span that stands exactly was read plainly")
 	}
 	if len(spans) != 1 {
 		t.Fatalf("found %d places, wanted one", len(spans))
 	}
-	if got := text[spans[0].From:spans[0].To]; got != "aggressor" {
+	if got := text[spans[0].Start:spans[0].End]; got != "aggressor" {
 		t.Errorf("the offsets cover %q", got)
 	}
 }
 
 // Two of the same span are two answers, and a caller may refuse them.
 func TestASpanSavedTwiceIsFoundTwice(t *testing.T) {
-	spans, _ := FindSpans("a foe, and another foe", "foe")
+	spans, _ := FindRanges("a foe, and another foe", "foe")
 	if len(spans) != 2 {
 		t.Fatalf("found %d places, wanted two", len(spans))
 	}
-	if spans[0].From != 2 || spans[1].From != 19 {
-		t.Errorf("found at %d and %d", spans[0].From, spans[1].From)
+	if spans[0].Start != 2 || spans[1].Start != 19 {
+		t.Errorf("found at %d and %d", spans[0].Start, spans[1].Start)
 	}
 }
 
 // A span inside a span is stepped over, so nothing overlaps.
 func TestPlacesFoundDoNotOverlap(t *testing.T) {
-	spans, _ := FindSpans("aaaa", "aa")
+	spans, _ := FindRanges("aaaa", "aa")
 	if len(spans) != 2 {
 		t.Fatalf("found %d places, wanted two", len(spans))
 	}
-	if spans[0].To != spans[1].From {
-		t.Errorf("the first ends at %d and the second begins at %d", spans[0].To, spans[1].From)
+	if spans[0].End != spans[1].Start {
+		t.Errorf("the first ends at %d and the second begins at %d", spans[0].End, spans[1].Start)
 	}
 }
 
@@ -58,15 +58,15 @@ func TestPunctuationIsReadAsTheMarkItExistsFor(t *testing.T) {
 		"an ideographic space": {"Seed　shed opens", "Seed shed opens"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			spans, plainly := FindSpans(c.text, c.wanted)
+			spans, plainly := FindRanges(c.text, c.wanted)
 			if len(spans) != 1 {
 				t.Fatalf("found %d places, wanted one", len(spans))
 			}
 			if !plainly {
 				t.Error("the reading was not reported")
 			}
-			if spans[0].From != 0 || spans[0].To != len(c.text) {
-				t.Errorf("the offsets cover %q, wanted the whole of it", c.text[spans[0].From:spans[0].To])
+			if spans[0].Start != 0 || spans[0].End != len(c.text) {
+				t.Errorf("the offsets cover %q, wanted the whole of it", c.text[spans[0].Start:spans[0].End])
 			}
 		})
 	}
@@ -76,21 +76,21 @@ func TestPunctuationIsReadAsTheMarkItExistsFor(t *testing.T) {
 // a replacement leaves the bytes around it as the person wrote them.
 func TestOffsetsAreIntoTheTextAsItExists(t *testing.T) {
 	text := "before «дa» after"
-	spans, _ := FindSpans(text, "\"дa\"")
+	spans, _ := FindRanges(text, "\"дa\"")
 	if len(spans) != 1 {
 		t.Fatalf("found %d places, wanted one", len(spans))
 	}
-	if got := text[spans[0].From:spans[0].To]; got != "«дa»" {
+	if got := text[spans[0].Start:spans[0].End]; got != "«дa»" {
 		t.Errorf("the offsets cover %q", got)
 	}
-	if remaining := text[:spans[0].From]; remaining != "before " {
+	if remaining := text[:spans[0].Start]; remaining != "before " {
 		t.Errorf("what stands before is %q", remaining)
 	}
 }
 
 // editor is still found.
 func TestARunOfSpacingInsideALineIsOneSpace(t *testing.T) {
-	spans, plainly := FindSpans("the  foe\tadvances", "the foe advances")
+	spans, plainly := FindRanges("the  foe\tadvances", "the foe advances")
 	if len(spans) != 1 {
 		t.Fatalf("found %d places, wanted one", len(spans))
 	}
@@ -102,7 +102,7 @@ func TestARunOfSpacingInsideALineIsOneSpace(t *testing.T) {
 // A break between lines is spacing of its own. A caller asking for one line
 // does not get two.
 func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
-	if spans, _ := FindSpans("the foe\nadvances", "the foe advances"); spans != nil {
+	if spans, _ := FindRanges("the foe\nadvances", "the foe advances"); spans != nil {
 		t.Errorf("found %d places across a break", len(spans))
 	}
 }
@@ -110,28 +110,28 @@ func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
 // A span that stands exactly is never reported where it only nearly stands.
 func TestWhatExistsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
 	text := "he said \"yes\" and he said “yes”"
-	spans, plainly := FindSpans(text, "\"yes\"")
+	spans, plainly := FindRanges(text, "\"yes\"")
 	if plainly {
 		t.Error("a span standing exactly was read plainly")
 	}
 	if len(spans) != 1 {
 		t.Fatalf("found %d places, wanted one", len(spans))
 	}
-	if spans[0].From != 8 {
-		t.Errorf("found at %d, wanted the one that stands exactly", spans[0].From)
+	if spans[0].Start != 8 {
+		t.Errorf("found at %d, wanted the one that stands exactly", spans[0].Start)
 	}
 }
 
 // Nothing is what an empty span finds. Every place would be the alternative.
 func TestAnEmptySpanFindsNothing(t *testing.T) {
-	if spans, _ := FindSpans("some prose", ""); spans != nil {
+	if spans, _ := FindRanges("some prose", ""); spans != nil {
 		t.Errorf("found %d places for nothing", len(spans))
 	}
 }
 
 // A span nobody wrote is not found, however it is read.
 func TestASpanThatIsNotThereIsNotFound(t *testing.T) {
-	if spans, _ := FindSpans("the aggressor is named", "the poisoner"); spans != nil {
+	if spans, _ := FindRanges("the aggressor is named", "the poisoner"); spans != nil {
 		t.Errorf("found %d places", len(spans))
 	}
 }
@@ -143,8 +143,8 @@ func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
 	now := "# Title\n\nAn axe is named.\n\nAnd nothing else.\n"
 
 	span, insert := Diff(was, now)
-	if was[span.From:span.To] != "A hedgehog" {
-		t.Errorf("the span is %q", was[span.From:span.To])
+	if was[span.Start:span.End] != "A hedgehog" {
+		t.Errorf("the span is %q", was[span.Start:span.End])
 	}
 	if insert != "An axe" {
 		t.Errorf("what goes in is %q", insert)
@@ -154,8 +154,8 @@ func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
 // Two texts that are the same name no span at all.
 func TestTextThatDidNotChangeAnswersAnEmptySpan(t *testing.T) {
 	span, insert := Diff("the same", "the same")
-	if span.From != span.To || insert != "" {
-		t.Errorf("answered %d..%d with %q", span.From, span.To, insert)
+	if span.Start != span.End || insert != "" {
+		t.Errorf("answered %d..%d with %q", span.Start, span.End, insert)
 	}
 }
 
@@ -165,8 +165,8 @@ func TestASpanNeverSplitsARune(t *testing.T) {
 	if !utf8.ValidString(insert) {
 		t.Errorf("what goes in is not text: %q", insert)
 	}
-	if !utf8.RuneStart("сказал «да» сразу"[span.From]) {
-		t.Errorf("the span begins inside a rune, at %d", span.From)
+	if !utf8.RuneStart("сказал «да» сразу"[span.Start]) {
+		t.Errorf("the span begins inside a rune, at %d", span.Start)
 	}
 }
 

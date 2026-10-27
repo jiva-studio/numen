@@ -9,7 +9,7 @@
  * one beginning at or before it.
  */
 import { countBytes, getUnitOffset } from './bytes'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import type { Mark } from './spread'
 
 /** Single contiguous text run in rendered book. */
@@ -107,12 +107,12 @@ const getPlaceInRun = (
 }
 
 /** One stretch of the book's text as a range over the nodes the markup carries. */
-const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
-  const opens = findRun(runs, span.from)
-  const closes = findRun(runs, span.to)
+const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
+  const opens = findRun(runs, span.start)
+  const closes = findRun(runs, span.end)
   if (!opens || !closes) return undefined
-  const from = getPlaceInRun(opens.element, span.from - opens.at)
-  const to = getPlaceInRun(closes.element, span.to - closes.at)
+  const from = getPlaceInRun(opens.element, span.start - opens.at)
+  const to = getPlaceInRun(closes.element, span.end - closes.at)
   if (!from || !to) return undefined
   const range = document.createRange()
   range.setStart(from.node, from.offset)
@@ -121,7 +121,7 @@ const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
 }
 
 /** The stretches that fall in the drawn document, as ranges over its nodes. */
-export function rangesOver(runs: readonly Run[], spans: readonly Span[]): Range[] {
+export function rangesOver(runs: readonly Run[], spans: readonly TextRange[]): Range[] {
   const renderedRanges: Range[] = []
   for (const span of spans) {
     const range = rangeOver(runs, span)

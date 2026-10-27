@@ -2,7 +2,7 @@
  * What a palette is, as plain values. No DOM, no measurement, no clock.
  */
 import { stepTo } from '@numen/ui'
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import type { PaletteKeys } from '@numen/ui'
 import type { PaletteAction } from '../types'
 
@@ -17,11 +17,11 @@ export interface PaletteItem {
   /** What it is called. */
   readonly title: string
   /** Where in the title the words stand. */
-  readonly at?: readonly Span[]
+  readonly at?: readonly TextRange[]
   /** A second line: where the item stands, or the words it was found among. */
   readonly detail?: string
   /** Where the words stand in that line. */
-  readonly detailAt?: readonly Span[]
+  readonly detailAt?: readonly TextRange[]
   readonly actions?: readonly PaletteAction[]
   /**
    * The keystroke that reaches this item away from the palette, as the caller

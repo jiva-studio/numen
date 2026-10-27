@@ -15,9 +15,9 @@ describe('pagination and document lookup', () => {
 
   it('finds spine document containing offset', () => {
     const docs: SpineDocument[] = [
-      { path: 'ch1.xhtml', span: { from: 0, to: 1000 } },
-      { path: 'ch2.xhtml', span: { from: 1000, to: 2500 } },
-      { path: 'ch3.xhtml', span: { from: 2500, to: 4000 } },
+      { path: 'ch1.xhtml', span: { start: 0, end: 1000 } },
+      { path: 'ch2.xhtml', span: { start: 1000, end: 2500 } },
+      { path: 'ch3.xhtml', span: { start: 2500, end: 4000 } },
     ]
 
     expect(getDocumentAtOffset(docs, 0)?.path).toBe('ch1.xhtml')
@@ -30,7 +30,7 @@ describe('pagination and document lookup', () => {
     const words = { page: 'Page' }
     const bookWithParts: Book = {
       title: 'T',
-      span: { from: 0, to: 1000 },
+      span: { start: 0, end: 1000 },
       documents: [],
       parts: [{ title: 'Chapter 1', offset: 0, level: 0 }],
       printedPages: [],
@@ -43,7 +43,7 @@ describe('pagination and document lookup', () => {
 
     const bookWithPrinted: Book = {
       title: 'T',
-      span: { from: 0, to: 1000 },
+      span: { start: 0, end: 1000 },
       documents: [],
       parts: [],
       printedPages: [{ label: 'iv', offset: 50 }],
@@ -59,8 +59,8 @@ describe('pagination and document lookup', () => {
 describe('the name of a document of the spine', () => {
   const book = (path: string): Book => ({
     title: 'T',
-    span: { from: 0, to: 10 },
-    documents: [{ path, span: { from: 0, to: 10 } }],
+    span: { start: 0, end: 10 },
+    documents: [{ path, span: { start: 0, end: 10 } }],
     parts: [],
     printedPages: [],
     pages: 1,

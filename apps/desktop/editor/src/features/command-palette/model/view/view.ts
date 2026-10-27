@@ -28,7 +28,7 @@ export function getPaletteView(state: ViewState) {
     return {
       id: one.id,
       title: one.text,
-      ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
+      ...(found < 0 ? {} : { at: [{ start: found, end: found + word.length }] }),
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },

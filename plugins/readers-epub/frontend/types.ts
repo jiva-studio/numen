@@ -1,14 +1,14 @@
 /**
  * Types and interfaces for book reading and navigation.
  */
-import type { Span } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 
-export type { Span }
+export type { TextRange }
 
 /** One document of a book spine and its text range. */
 export interface SpineDocument {
   readonly path: string
-  readonly span: Span
+  readonly span: TextRange
 }
 
 /** One section or chapter named by a book. */
@@ -27,7 +27,7 @@ export interface PrintedPage {
 /** Book manifest and metadata. */
 export interface Book {
   readonly title: string
-  readonly span: Span
+  readonly span: TextRange
   readonly documents: readonly SpineDocument[]
   readonly parts: readonly BookPart[]
   readonly printedPages: readonly PrintedPage[]

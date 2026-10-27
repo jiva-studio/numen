@@ -52,7 +52,7 @@ export function createRecordings(
       return state.cues
     },
     writeTranscript: async (_, next) => void state.writes.push(next),
-    findCueTime: async (_, span) => state.cueTimes.get(span.from) ?? null,
+    findCueTime: async (_, span) => state.cueTimes.get(span.start) ?? null,
     getMenu: async () => state.menu,
     runMenuEntry: async (_, entry) => void state.runs.push(entry),
     watchWork: (_, onChange) => {

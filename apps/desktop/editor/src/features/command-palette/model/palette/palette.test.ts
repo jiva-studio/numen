@@ -39,7 +39,7 @@ const name = (
   title,
   heading,
   line: heading ? 4 : -1,
-  at: [{ from: 0, to: 1 }],
+  at: [{ start: 0, end: 1 }],
   type,
 })
 
@@ -200,7 +200,7 @@ describe('the commands as they open', () => {
     void commands.setTyped('child')
 
     expect(getItemIds(commands.groups)).toStrictEqual({ note: ['child'] })
-    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ from: 4, to: 9 }])
+    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 4, end: 9 }])
   })
 })
 
@@ -614,7 +614,7 @@ describe('a command that offers a list the window holds', () => {
     await commands.setTyped('rac')
 
     expect(getItemIds(commands.groups)).toStrictEqual({ shipping: ['preset:dracula'], owned: [] })
-    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ from: 1, to: 4 }])
+    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 1, end: 4 }])
   })
 
   it('draws a row the window says cannot be chosen, and chooses nothing by it', () => {
@@ -1371,7 +1371,7 @@ describe('what a step draws', () => {
       {
         id: 'physics/Entropy.md',
         title: 'Entropy',
-        at: [{ from: 0, to: 1 }],
+        at: [{ start: 0, end: 1 }],
         actions: [{ id: 'pick', text: words.travel }],
       },
       {
@@ -1382,7 +1382,7 @@ describe('what a step draws', () => {
       {
         id: 'Untitled.md',
         title: 'Untitled.md',
-        at: [{ from: 0, to: 1 }],
+        at: [{ start: 0, end: 1 }],
         actions: [{ id: 'pick', text: words.travel }],
       },
     ])
@@ -1484,7 +1484,7 @@ describe('a row of a list the window holds', () => {
     await commands.setTyped('num')
 
     expect(commands.groups.value[0]?.items.map((item) => item.at)).toStrictEqual([
-      [{ from: 0, to: 3 }],
+      [{ start: 0, end: 3 }],
     ])
   })
 
@@ -1495,7 +1495,7 @@ describe('a row of a list the window holds', () => {
     await commands.setTyped('  rac  ')
 
     expect(commands.groups.value[0]?.items.map((item) => item.at)).toStrictEqual([
-      [{ from: 1, to: 4 }],
+      [{ start: 1, end: 4 }],
     ])
   })
 })

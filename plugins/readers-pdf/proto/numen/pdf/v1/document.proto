@@ -53,7 +53,7 @@ message GetHighlightsRequest {
   string path = 1;
 
   // The runs of the live text version to return places of, in bytes of its text.
-  repeated numen.v1.Span spans = 2;
+  repeated numen.v1.Range ranges = 2;
 }
 
 message GetHighlightsResponse {

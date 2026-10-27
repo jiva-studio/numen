@@ -40,7 +40,7 @@ const SECTIONS: PaletteGroup[] = [
     id: 'names',
     title: 'Names',
     items: [
-      { id: 'entropy', title: 'Entropy', at: [{ from: 0, to: 3 }], actions: BOTH },
+      { id: 'entropy', title: 'Entropy', at: [{ start: 0, end: 3 }], actions: BOTH },
       { id: 'enthalpy', title: 'Enthalpy', actions: BOTH },
     ],
   },

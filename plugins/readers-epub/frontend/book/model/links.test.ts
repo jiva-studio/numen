@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SettledBookProps } from '../lib/props'
 import { createBookLinks } from './links'
 
-const props = { path: 'text/one.xhtml', span: { from: 40, to: 90 } } as SettledBookProps
+const props = { path: 'text/one.xhtml', span: { start: 40, end: 90 } } as SettledBookProps
 
 const setUp = () => {
   const reportMove = vi.fn<(pos: number) => void>()

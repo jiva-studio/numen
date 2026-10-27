@@ -156,7 +156,7 @@ func ParseSelector(selector domain.Selector) (Selector, error) {
 // GetBoxes returns the rectangles of the segments a run of a version's text overlaps, in the order
 // of the segments. Each box carries the page its selector names, counted from zero, and the run of
 // the segment it covers. A segment whose selector names no page has no boxes.
-func GetBoxes(text domain.VersionText, run domain.ByteSpan) []domain.HighlightBox {
+func GetBoxes(text domain.VersionText, run domain.ByteRange) []domain.HighlightBox {
 	if run.Empty() {
 		return nil
 	}
@@ -164,11 +164,11 @@ func GetBoxes(text domain.VersionText, run domain.ByteSpan) []domain.HighlightBo
 	from := 0
 	for _, segment := range text.GetSegments() {
 		to := from + len(segment.Text)
-		if to > run.From && from < run.To {
+		if to > run.Start && from < run.End {
 			if selector, err := ParseSelector(segment.Selector); err == nil && selector.Page > 0 {
 				for _, box := range selector.Boxes {
 					boxes = append(boxes, domain.HighlightBox{
-						Page: selector.Page - 1, ByteSpan: domain.ByteSpan{From: from, To: to},
+						Page: selector.Page - 1, ByteRange: domain.ByteRange{Start: from, End: to},
 						Rect: domain.Rect{MinX: box[0], MinY: box[1], MaxX: box[2], MaxY: box[3]},
 					})
 				}

@@ -49,7 +49,7 @@ export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
 export { Prose } from './shared/ui/prose'
 export type { LinkPiece } from './shared/lib/text/marks'
 
-export type { Span } from './shared/lib/text/span'
+export type { TextRange } from './shared/lib/text/textRange'
 
 /** The size, room and placement a component outside this module lays itself out by. */
 export type { Position, Size } from './shared/lib/math/geometry'

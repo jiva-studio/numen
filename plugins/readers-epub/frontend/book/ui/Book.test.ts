@@ -9,7 +9,7 @@ import { countBytes } from '../lib/bytes'
  * document after it.
  */
 const CHAPTER = createChapter([{ tag: 'p', text: 'Один абзац, и глава окончена.' }], 400)
-const BOOK = { from: 0, to: CHAPTER.span.to + 500 }
+const BOOK = { start: 0, end: CHAPTER.span.end + 500 }
 
 /**
  * A book reader in a room nothing has laid out. jsdom measures nothing, so the
@@ -18,7 +18,7 @@ const BOOK = { from: 0, to: CHAPTER.span.to + 500 }
  */
 const reader = async (book = BOOK) => {
   const wrapper = mount(Book, {
-    props: { markup: CHAPTER.markup, span: CHAPTER.span, book, at: CHAPTER.span.from },
+    props: { markup: CHAPTER.markup, span: CHAPTER.span, book, at: CHAPTER.span.start },
     attachTo: document.body,
   })
   const area = wrapper.find('.book__area').element as HTMLElement
@@ -70,7 +70,7 @@ describe('turning past the end of a document', () => {
 
     expect(pressKey(target, 'ArrowRight')).toBe(true)
 
-    expect(getMoves(target)).toEqual([CHAPTER.span.to])
+    expect(getMoves(target)).toEqual([CHAPTER.span.end])
   })
 
   it('asks for the offset before this document, turning back', async () => {
@@ -78,7 +78,7 @@ describe('turning past the end of a document', () => {
 
     expect(pressKey(target, 'ArrowLeft')).toBe(true)
 
-    expect(getMoves(target)).toEqual([CHAPTER.span.from - 1])
+    expect(getMoves(target)).toEqual([CHAPTER.span.start - 1])
   })
 
   it('asks for nothing past either end of the book itself', async () => {
@@ -105,7 +105,7 @@ describe('turning past the end of a document', () => {
 describe('a document with no text at all', () => {
   it('is drawn, and says nothing', async () => {
     const wrapper = mount(Book, {
-      props: { markup: '', span: { from: 0, to: 0 }, book: BOOK },
+      props: { markup: '', span: { start: 0, end: 0 }, book: BOOK },
       attachTo: document.body,
     })
     await wrapper.vm.$nextTick()
@@ -139,7 +139,7 @@ const mountPointing = async () => {
       path: 'OEBPS/first.xhtml',
       span: POINTING.span,
       book: BOOK,
-      at: POINTING.span.from,
+      at: POINTING.span.start,
     },
     attachTo: document.body,
   })
@@ -180,7 +180,7 @@ describe('a link inside a book', () => {
 
     await press(target, 'the note')
 
-    expect(getMoves(target)).toEqual([POINTING.span.to - countBytes('The note pointed down to.')])
+    expect(getMoves(target)).toEqual([POINTING.span.end - countBytes('The note pointed down to.')])
   })
 
   it('asks for nothing of the book, where the link leads out of it', async () => {
@@ -235,7 +235,7 @@ const mountBook = async () => {
       markup: LAID.markup,
       span: LAID.span,
       book: BOOK,
-      at: LAID.span.from,
+      at: LAID.span.start,
     },
     attachTo: document.body,
   })
@@ -284,7 +284,7 @@ describe('a document the browser has laid out', () => {
     expect(pressKey(target, 'ArrowRight')).toBe(true)
 
     expect(getTranslate(target)).toBe('-1100px 0')
-    expect(getMoves(target)).toEqual([LAID.span.from + countBytes('Первая строка.')])
+    expect(getMoves(target)).toEqual([LAID.span.start + countBytes('Первая строка.')])
 
     target.unmount()
   })
@@ -315,7 +315,7 @@ describe('a document the browser has laid out', () => {
   it('is stood where an offset from outside asks, while the offset is inside it', async () => {
     const target = await mountBook()
 
-    await target.setProps({ at: LAID.span.from + countBytes('Первая строка.Вторая.') })
+    await target.setProps({ at: LAID.span.start + countBytes('Первая строка.Вторая.') })
     await target.vm.$nextTick()
 
     expect(getTranslate(target)).toBe('0px 0')
@@ -325,7 +325,7 @@ describe('a document the browser has laid out', () => {
 })
 
 /** A second document of the book, which a turn past the end of the first opens. */
-const NEXT = createChapter([{ tag: 'p', text: 'Следующая глава.' }], LAID.span.to)
+const NEXT = createChapter([{ tag: 'p', text: 'Следующая глава.' }], LAID.span.end)
 
 describe('a document replaced while a later spread of the one before is in front', () => {
   it('stays out of sight until its spread is stood', async () => {
@@ -333,7 +333,7 @@ describe('a document replaced while a later spread of the one before is in front
     pressKey(target, 'ArrowRight')
     expect(getTranslate(target)).toBe('-1100px 0')
 
-    await target.setProps({ markup: NEXT.markup, span: NEXT.span, at: NEXT.span.from })
+    await target.setProps({ markup: NEXT.markup, span: NEXT.span, at: NEXT.span.start })
 
     // The frame that stands the new document has not come yet, and the text
     // carried to the old spread is not shown in the meantime.

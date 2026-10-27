@@ -25,7 +25,7 @@ export const client = {
 /** One document of the spine, as the window carries it. */
 const readSpineDocument = (one: SpineDocumentMessage): SpineDocument => ({
   path: one.path,
-  span: { from: one.offset, to: one.offset + one.length },
+  span: { start: one.offset, end: one.offset + one.length },
 })
 
 /** The answer of a call about a place, and null where the book names no such place. */
@@ -44,7 +44,7 @@ export const books: Books = {
     const answer = await retryWhileBusy(() => client.books.getBook({ path }))
     return {
       title: answer.title,
-      span: { from: 0, to: answer.textBytes },
+      span: { start: 0, end: answer.textBytes },
       documents: answer.documents.map(readSpineDocument),
       parts: answer.parts.map((one) => ({
         title: one.title,

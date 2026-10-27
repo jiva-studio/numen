@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 import { resolveImageUrls } from '../lib/markup'
 import type { Books, SpineDocument } from '../types'
 
@@ -20,7 +20,7 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
   const markup = ref('')
   const drawnDocument = shallowRef<SpineDocument | undefined>(undefined)
 
-  const documentSpan = computed<Span>(() => drawnDocument.value?.span ?? { from: 0, to: 0 })
+  const documentSpan = computed<TextRange>(() => drawnDocument.value?.span ?? { start: 0, end: 0 })
   const picture = computed(() => drawnDocument.value?.path ?? '')
 
   /** Which ask for markup is the current one. An older answer is dropped. */

@@ -499,17 +499,17 @@ func TestAssembleMultipleLinesAndHyphenation(t *testing.T) {
 	if len(boxes) != 3 {
 		t.Fatalf("got %d boxes, want 3", len(boxes))
 	}
-	if got, want := text[boxes[0].Span.From:boxes[0].Span.To], "the"; got != want {
+	if got, want := text[boxes[0].Range.Start:boxes[0].Range.End], "the"; got != want {
 		t.Errorf("box 0 span text = %q, want %q", got, want)
 	}
-	if got, want := text[boxes[1].Span.From:boxes[1].Span.To], "anti"; got != want {
+	if got, want := text[boxes[1].Range.Start:boxes[1].Range.End], "anti"; got != want {
 		t.Errorf("box 1 span text = %q, want %q", got, want)
 	}
-	if got, want := text[boxes[2].Span.From:boxes[2].Span.To], "gravity."; got != want {
+	if got, want := text[boxes[2].Range.Start:boxes[2].Range.End], "gravity."; got != want {
 		t.Errorf("box 2 span text = %q, want %q", got, want)
 	}
-	if boxes[2].Span.From < boxes[1].Span.To {
-		t.Errorf("box 2 span from %d < box 1 span to %d", boxes[2].Span.From, boxes[1].Span.To)
+	if boxes[2].Range.Start < boxes[1].Range.End {
+		t.Errorf("box 2 span from %d < box 1 span to %d", boxes[2].Range.Start, boxes[1].Range.End)
 	}
 }
 
@@ -537,9 +537,9 @@ func TestAssembleSingleCharacterWords(t *testing.T) {
 	if len(boxes) != 3 {
 		t.Fatalf("got %d boxes, want 3", len(boxes))
 	}
-	if boxes[0].Span != (ByteSpan{From: 0, To: 1}) ||
-		boxes[1].Span != (ByteSpan{From: 2, To: 3}) ||
-		boxes[2].Span != (ByteSpan{From: 4, To: 5}) {
+	if boxes[0].Range != (ByteRange{Start: 0, End: 1}) ||
+		boxes[1].Range != (ByteRange{Start: 2, End: 3}) ||
+		boxes[2].Range != (ByteRange{Start: 4, End: 5}) {
 		t.Errorf("spans = %+v", boxes)
 	}
 }
@@ -762,7 +762,7 @@ func TestAssembleHyphenation(t *testing.T) {
 				t.Fatalf("got %d boxes, want %d", len(boxes), len(tc.wantSpans))
 			}
 			for i, wantSpan := range tc.wantSpans {
-				if got := text[boxes[i].Span.From:boxes[i].Span.To]; got != wantSpan {
+				if got := text[boxes[i].Range.Start:boxes[i].Range.End]; got != wantSpan {
 					t.Errorf("box %d span text = %q, want %q", i, got, wantSpan)
 				}
 			}

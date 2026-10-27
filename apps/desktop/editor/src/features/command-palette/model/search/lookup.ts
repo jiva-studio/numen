@@ -4,7 +4,7 @@
 import type { PaletteItem } from '@numen/shell'
 import type { Selector } from '@numen/plugin-sdk'
 import type { NoteType } from '@/entities/file'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'
 
 /**
@@ -16,7 +16,7 @@ export interface NameMatch {
   heading: string
   /** Where that heading stands, counted from the first line of the prose. */
   line: number
-  at: readonly Span[]
+  at: readonly TextRange[]
   type: NoteType
 }
 
@@ -41,7 +41,7 @@ export interface Passage {
   start: number
   length: number
   line: number
-  at: readonly Span[]
+  at: readonly TextRange[]
 }
 
 /**

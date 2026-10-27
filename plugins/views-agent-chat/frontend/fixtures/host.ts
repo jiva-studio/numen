@@ -8,7 +8,7 @@ import type {
   AgentModel,
   NoteRef,
   OpenFileOptions,
-  Span,
+  TextRange,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AgentChatHost } from '../model/tabDeps'
@@ -37,7 +37,7 @@ export function createHost({
 }: HostOptions = {}) {
   const recorded = {
     opened: [] as [string, OpenFileOptions | undefined][],
-    openedAt: [] as [string, readonly Span[]][],
+    openedAt: [] as [string, readonly TextRange[]][],
     settings: [] as [readonly string[], unknown][],
     finished: [] as string[],
     resolved: [] as string[],

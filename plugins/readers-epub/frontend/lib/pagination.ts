@@ -16,7 +16,7 @@ export function getDocumentAtOffset(
 ): SpineDocument | undefined {
   let found: SpineDocument | undefined
   for (const one of documents) {
-    if (one.span.from > offset) break
+    if (one.span.start > offset) break
     found = one
   }
   return found
@@ -45,7 +45,7 @@ export function getContents(book: Book, words: BookWords): readonly ContentsEntr
   }
   return book.documents.map((one) => ({
     title: getDocumentTitle(one),
-    at: one.span.from,
+    at: one.span.start,
     level: 0,
   }))
 }

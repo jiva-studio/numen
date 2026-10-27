@@ -3,7 +3,7 @@ import { createWorkLine } from './work'
 import type { Turn } from '../lib/turn'
 import type { SourceLocation } from '@numen/plugin-sdk'
 
-const PLACE: SourceLocation = { path: 'notes/a.md', span: { from: 2, to: 9 } }
+const PLACE: SourceLocation = { path: 'notes/a.md', range: { start: 2, end: 9 } }
 
 const create = () => {
   const sendTurn = vi.fn<(turn: Turn) => void>()
@@ -74,7 +74,7 @@ describe('the line that says what the agent has in hand', () => {
     line.reach({
       tool: 't',
       subject: 's',
-      location: { path: 'a', span: { from: 4, to: 4 } },
+      location: { path: 'a', range: { start: 4, end: 4 } },
       written: 0,
     })
     expect(locations.has('work')).toBe(false)

@@ -8,7 +8,7 @@ import { createAgentPort } from './agent'
 import type { AgentClient } from './agent'
 
 /** A tool call as the service sends one, working on a place or on none. */
-const call = (place?: { path: string; span: { from: number; to: number } }): AskAgentResponse =>
+const call = (place?: { path: string; range: { start: number; end: number } }): AskAgentResponse =>
   create(AskAgentResponseSchema, {
     step: {
       case: 'toolCall',
@@ -80,14 +80,14 @@ describe('createAgentPort', () => {
   })
 
   it('carries the place a call names', async () => {
-    const place = { path: 'notes/Leaf mould.md', span: { from: 40, to: 48 } }
+    const place = { path: 'notes/Leaf mould.md', range: { start: 40, end: 48 } }
     expect(await steps([call(place)])).toEqual([
       {
         kind: 'toolCall',
         tool: 'read',
         subject: 'notes/Leaf mould.md',
         written: 12,
-        place: { path: 'notes/Leaf mould.md', span: { from: 40, to: 48 } },
+        place: { path: 'notes/Leaf mould.md', range: { start: 40, end: 48 } },
       },
     ])
   })

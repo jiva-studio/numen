@@ -2,7 +2,7 @@ import type { VaultChangeEvent } from '@numen/plugin-sdk'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { CommandTarget } from '@/features/command-palette'
 import type { PathRename } from '@/shared/paths'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 import type { useCommands } from '../commands/useCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
@@ -28,7 +28,8 @@ export function createDisplayOptions(deps: DisplayWiring) {
     },
     reportChange: editing.changes.reportChange,
     travelTo: (path: string) => getKinds().travel(path),
-    openFileAt: (path: string, spans: readonly Span[]) => void tabOpeners.openFileAt(path, spans),
+    openFileAt: (path: string, spans: readonly TextRange[]) =>
+      void tabOpeners.openFileAt(path, spans),
     reload: () => getVaults().reload(),
   }
 }

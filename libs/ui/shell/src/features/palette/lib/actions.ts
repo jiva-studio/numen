@@ -51,7 +51,7 @@ export const placeActions = (
     out.push({
       action,
       at: out.length,
-      name: getParts(action.text, [{ from: found, to: found + word.length }]),
+      name: getParts(action.text, [{ start: found, end: found + word.length }]),
       key: PALETTE_KEYS[proposed] ?? null,
     })
   }

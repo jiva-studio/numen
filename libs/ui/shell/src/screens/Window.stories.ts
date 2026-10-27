@@ -14,7 +14,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
 import { ref } from 'vue'
 import { Tree, keyChord } from '@numen/ui'
-import type { PaletteKeys, Row, Span } from '@numen/ui'
+import type { PaletteKeys, Row, TextRange } from '@numen/ui'
 import {
   WorkspaceLayout,
   branch,
@@ -220,11 +220,11 @@ const renderPage = (page: number): string => {
 }
 
 /** Where a run of a title stands, every time it stands there. */
-const marks = (title: string, word: string): Span[] => {
-  const spans: Span[] = []
+const marks = (title: string, word: string): TextRange[] => {
+  const spans: TextRange[] = []
   const lower = title.toLowerCase()
   for (let pos = lower.indexOf(word); pos >= 0; pos = lower.indexOf(word, pos + 1)) {
-    spans.push({ from: pos, to: pos + word.length })
+    spans.push({ start: pos, end: pos + word.length })
   }
   return spans
 }

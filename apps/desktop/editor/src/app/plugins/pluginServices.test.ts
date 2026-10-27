@@ -127,9 +127,9 @@ describe('the window a plugin opens files and reads the note in focus through', 
   it('opens a file with the runs of its text marked', () => {
     const { workspace, deps } = createWorkspace()
 
-    workspace.openFileAt('Source.pdf', [{ from: 3, to: 9 }])
+    workspace.openFileAt('Source.pdf', [{ start: 3, end: 9 }])
 
-    expect(deps.tabOpeners.openFileAt).toHaveBeenCalledWith('Source.pdf', [{ from: 3, to: 9 }])
+    expect(deps.tabOpeners.openFileAt).toHaveBeenCalledWith('Source.pdf', [{ start: 3, end: 9 }])
   })
 
   it('says why a file could not be opened with its runs marked', async () => {

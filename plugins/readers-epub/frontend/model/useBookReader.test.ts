@@ -30,11 +30,11 @@ beforeEach(() => {
 
 const BOOK: Book = {
   title: 'Mahābhārata',
-  span: { from: 0, to: 9_000 },
+  span: { start: 0, end: 9_000 },
   documents: [
-    { path: 'text/part0001.xhtml', span: { from: 0, to: 3_000 } },
-    { path: 'text/part0002.xhtml', span: { from: 3_000, to: 6_000 } },
-    { path: 'text/part0003.xhtml', span: { from: 6_000, to: 9_000 } },
+    { path: 'text/part0001.xhtml', span: { start: 0, end: 3_000 } },
+    { path: 'text/part0002.xhtml', span: { start: 3_000, end: 6_000 } },
+    { path: 'text/part0003.xhtml', span: { start: 6_000, end: 9_000 } },
   ],
   parts: [
     { title: 'Ādi Parva', offset: 0, level: 0 },
@@ -184,7 +184,7 @@ describe('a book opened', () => {
     expect(readItem.offset.value).toBe(0)
     expect(readItem.pages.value).toBe(3)
     expect(readItem.page.value).toBe(1)
-    expect(readItem.documentSpan.value).toStrictEqual({ from: 0, to: 3_000 })
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
     expect(markupCalls).toStrictEqual([
       'library/Mahabharata.epub text/part0001.xhtml 20480 1700000000000000000 mahabharata.epub',
     ])
@@ -234,7 +234,7 @@ describe('where the person is standing', () => {
     await readItem.goToOffset(6_500)
     await readItem.goToOffset(6_600)
 
-    expect(readItem.documentSpan.value).toStrictEqual({ from: 6_000, to: 9_000 })
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 6_000, end: 9_000 })
     expect(markupCalls).toHaveLength(2)
     expect(markupCalls[1]).toContain('text/part0003.xhtml')
   })
@@ -275,21 +275,21 @@ describe('a passage reached', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.focusSpans({ from: 3_600, to: 3_642 })
+    await readItem.focusSpans({ start: 3_600, end: 3_642 })
 
     expect(readItem.offset.value).toBe(3_600)
-    expect(readItem.documentSpan.value).toStrictEqual({ from: 3_000, to: 6_000 })
-    expect(readItem.highlights.value).toStrictEqual([{ from: 3_600, to: 3_642 }])
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+    expect(readItem.highlights.value).toStrictEqual([{ start: 3_600, end: 3_642 }])
   })
 
   it('leaves the other spans somewhere else to look', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.focusSpans({ from: 100, to: 110 }, { from: 6_500, to: 6_520 })
+    await readItem.focusSpans({ start: 100, end: 110 }, { start: 6_500, end: 6_520 })
 
     expect(readItem.offset.value).toBe(100)
-    expect(readItem.otherHighlights.value).toStrictEqual([{ from: 6_500, to: 6_520 }])
+    expect(readItem.otherHighlights.value).toStrictEqual([{ start: 6_500, end: 6_520 }])
   })
 
   it('is nowhere at all when nothing was requested about', async () => {
@@ -369,7 +369,7 @@ describe('a book before it lands', () => {
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     expect(readItem.title.value).toBe('')
-    expect(readItem.span.value).toStrictEqual({ from: 0, to: 0 })
+    expect(readItem.span.value).toStrictEqual({ start: 0, end: 0 })
     expect(readItem.contents.value).toStrictEqual([])
   })
 })

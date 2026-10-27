@@ -49,8 +49,8 @@ func (p *pages) Recognise(_ context.Context, page image.Image) ([]engine.Block, 
 	return []engine.Block{
 		{Label: "doc_title", Text: "Heading", IsHeading: true},
 		{Label: "text", Text: text, Boxes: []engine.Box{
-			{Rect: image.Rect(0, 0, b.Dx(), b.Dy()/2), Span: engine.ByteSpan{To: len(first)}},
-			{Rect: image.Rect(0, b.Dy()/2, b.Dx(), b.Dy()), Span: engine.ByteSpan{From: len(first) + 1, To: len(text)}},
+			{Rect: image.Rect(0, 0, b.Dx(), b.Dy()/2), Range: engine.ByteRange{End: len(first)}},
+			{Rect: image.Rect(0, b.Dy()/2, b.Dx(), b.Dy()), Range: engine.ByteRange{Start: len(first) + 1, End: len(text)}},
 		}},
 	}, nil
 }

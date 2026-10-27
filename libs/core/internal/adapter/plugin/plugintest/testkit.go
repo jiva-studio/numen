@@ -157,7 +157,7 @@ func (s *MockAgentServer) AskAgent(
 				About:  "query",
 				Length: 10,
 				Path:   "notes/test.md",
-				Span:   &v1.Span{From: 0, To: 100},
+				Range:  &v1.Range{Start: 0, End: 100},
 			},
 		},
 	})

@@ -9,6 +9,6 @@ type Rect struct {
 // the run of bytes in the text, and the rectangle it covers.
 type HighlightBox struct {
 	Page int
-	ByteSpan
+	ByteRange
 	Rect
 }

@@ -224,7 +224,7 @@ describe('a note followed', () => {
 
   it('has its edits read under the signal of the window, and a missing span read as the start', async () => {
     const edits = [
-      { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isFinal: false },
+      { change: 1, path: 'a.md', range: { start: 2, end: 5 }, text: 'abc', isFinal: false },
       { change: 2, path: 'a.md', text: 'x', isFinal: true },
     ]
     asked.watchEdits.mockImplementation(async function* () {
@@ -237,8 +237,8 @@ describe('a note followed', () => {
 
     expect(asked.watchEdits.mock.calls.at(-1)).toEqual([{}, { signal }])
     expect(observed).toEqual([
-      { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isComplete: false },
-      { change: 2, path: 'a.md', span: { from: 0, to: 0 }, text: 'x', isComplete: true },
+      { change: 1, path: 'a.md', span: { start: 2, end: 5 }, text: 'abc', isComplete: false },
+      { change: 2, path: 'a.md', span: { start: 0, end: 0 }, text: 'x', isComplete: true },
     ])
   })
 })

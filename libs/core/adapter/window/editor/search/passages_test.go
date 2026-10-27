@@ -13,7 +13,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 		name  string
 		text  string
 		query string
-		want  []domain.UnitSpan
+		want  []domain.UnitRange
 	}{
 		{name: "nothing typed", text: "no engine is more efficient", query: "  "},
 		{name: "nothing to read", text: "", query: "engine"},
@@ -21,19 +21,19 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "one word, wherever it stands",
 			text:  "no engine beats a reversible engine",
 			query: "engine",
-			want:  []domain.UnitSpan{{From: 3, To: 9}, {From: 29, To: 35}},
+			want:  []domain.UnitRange{{Start: 3, End: 9}, {Start: 29, End: 35}},
 		},
 		{
 			name:  "each word typed, in the order the spans stand",
 			text:  "heat and work",
 			query: "work heat",
-			want:  []domain.UnitSpan{{From: 0, To: 4}, {From: 9, To: 13}},
+			want:  []domain.UnitRange{{Start: 0, End: 4}, {Start: 9, End: 13}},
 		},
 		{
 			name:  "case is folded and nothing else is",
 			text:  "Entropy is not entropy",
 			query: "ENTROPY",
-			want:  []domain.UnitSpan{{From: 0, To: 7}, {From: 15, To: 22}},
+			want:  []domain.UnitRange{{Start: 0, End: 7}, {Start: 15, End: 22}},
 		},
 		{
 			// The index matched a word. A run of the same letters inside another
@@ -49,25 +49,25 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "the last word typed matches a word by its opening",
 			text:  "a reversible engine",
 			query: "revers",
-			want:  []domain.UnitSpan{{From: 2, To: 8}},
+			want:  []domain.UnitRange{{Start: 2, End: 8}},
 		},
 		{
 			name:  "a word before the last one is matched whole",
 			text:  "a reversible engine",
 			query: "revers engine",
-			want:  []domain.UnitSpan{{From: 13, To: 19}},
+			want:  []domain.UnitRange{{Start: 13, End: 19}},
 		},
 		{
 			name:  "two words naming the same characters come back as one span",
 			text:  "entropy again",
 			query: "ent entropy",
-			want:  []domain.UnitSpan{{From: 0, To: 7}},
+			want:  []domain.UnitRange{{Start: 0, End: 7}},
 		},
 		{
 			name:  "the spans come back in the order they stand",
 			text:  "engine and entropy",
 			query: "entropy engine",
-			want:  []domain.UnitSpan{{From: 0, To: 6}, {From: 11, To: 18}},
+			want:  []domain.UnitRange{{Start: 0, End: 6}, {Start: 11, End: 18}},
 		},
 		{
 			name:  "a word the person did not type is not marked",
@@ -80,7 +80,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "past a character of two code units",
 			text:  "👋 engine",
 			query: "engine",
-			want:  []domain.UnitSpan{{From: 3, To: 9}},
+			want:  []domain.UnitRange{{Start: 3, End: 9}},
 		},
 		{
 			// Folding a whole string can change how many characters it holds;
@@ -88,7 +88,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "a letter whose lower case is longer",
 			text:  "İstanbul and engine",
 			query: "engine",
-			want:  []domain.UnitSpan{{From: 13, To: 19}},
+			want:  []domain.UnitRange{{Start: 13, End: 19}},
 		},
 		{
 			// Han characters either side of a match are letters by
@@ -96,7 +96,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "a Chinese word with no space around it",
 			text:  "这是一个测试",
 			query: "测试",
-			want:  []domain.UnitSpan{{From: 4, To: 6}},
+			want:  []domain.UnitRange{{Start: 4, End: 6}},
 		},
 		{
 			// Hangul syllables are letters the same way Han characters are, and
@@ -105,7 +105,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "a Korean word with no space around it",
 			text:  "이것은테스트입니다",
 			query: "테스트",
-			want:  []domain.UnitSpan{{From: 3, To: 6}},
+			want:  []domain.UnitRange{{Start: 3, End: 6}},
 		},
 		{
 			// Japanese mixes Hiragana, Katakana and Han with no space between
@@ -113,7 +113,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "a Japanese word mixing scripts with no space around it",
 			text:  "これは日本語のテストです",
 			query: "テスト",
-			want:  []domain.UnitSpan{{From: 7, To: 10}},
+			want:  []domain.UnitRange{{Start: 7, End: 10}},
 		},
 		{
 			// A Han run stands directly against a Latin word with no space
@@ -122,7 +122,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "a Latin word standing against a Chinese run with no space",
 			text:  "测试test",
 			query: "test",
-			want:  []domain.UnitSpan{{From: 2, To: 6}},
+			want:  []domain.UnitRange{{Start: 2, End: 6}},
 		},
 		{
 			// A run of the same letters inside a Latin word is not that word:
@@ -180,7 +180,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 		if len(retainedVal) != 1 {
 			t.Fatalf("kept %+v spans, want the one that is inside the window", retainedVal)
 		}
-		if got := string([]rune(trimmedVal)[retainedVal[0].From:retainedVal[0].To]); got != "engine" {
+		if got := string([]rune(trimmedVal)[retainedVal[0].Start:retainedVal[0].End]); got != "engine" {
 			t.Errorf("the span is on %q, want it still on the word", got)
 		}
 		if !strings.HasPrefix(trimmedVal, "…") || !strings.HasSuffix(trimmedVal, "…") {
@@ -213,11 +213,11 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 		}
 		// The mark for what was left off stands before the text, so the span
 		// begins one unit further along than the words before it.
-		if retainedRecord[0].From > leading+1 {
+		if retainedRecord[0].Start > leading+1 {
 			t.Errorf("the span opens %d units in, want no more than %d",
-				retainedRecord[0].From, leading+1)
+				retainedRecord[0].Start, leading+1)
 		}
-		if got := string([]rune(trimmedRecord)[retainedRecord[0].From:retainedRecord[0].To]); got != "engine" {
+		if got := string([]rune(trimmedRecord)[retainedRecord[0].Start:retainedRecord[0].End]); got != "engine" {
 			t.Errorf("the span is on %q, want it still on the word", got)
 		}
 		if !strings.HasSuffix(trimmedRecord, "ends here") {
@@ -232,7 +232,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 		if len(retainedEntry) != 1 {
 			t.Fatalf("kept %+v spans, want the one that matched", retainedEntry)
 		}
-		if got := string([]rune(trimmedEntry)[retainedEntry[0].From:retainedEntry[0].To]); got != "дышать" {
+		if got := string([]rune(trimmedEntry)[retainedEntry[0].Start:retainedEntry[0].End]); got != "дышать" {
 			t.Errorf("the span is on %q, want it still on the word", got)
 		}
 	})
@@ -259,7 +259,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 		}
 		// Read back through UTF-16, which is what the client slices with.
 		units := utf16.Encode([]rune(trimmedData))
-		if got := string(utf16.Decode(units[retained1[0].From:retained1[0].To])); got != "engine" {
+		if got := string(utf16.Decode(units[retained1[0].Start:retained1[0].End])); got != "engine" {
 			t.Errorf("the span reads %q through UTF-16, want %q", got, "engine")
 		}
 	})

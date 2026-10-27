@@ -160,13 +160,13 @@ describe('a recording firstRead at a place in its words', () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)
     const { tab, seeks } = open(setup)
-    await tab.navigation.reach({ from: 22, to: 30 })
+    await tab.navigation.reach({ start: 22, end: 30 })
     expect(seeks.at(-1)).toStrictEqual([TALK_URL, 83_000])
   })
 
   it('keeps the position when no cue holds the span', async () => {
     const { tab, seeks } = open()
-    await tab.navigation.reach({ from: 900, to: 910 })
+    await tab.navigation.reach({ start: 900, end: 910 })
     expect(seeks).toStrictEqual([])
   })
 })

@@ -3,7 +3,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '../types'
+import type { TextRange } from '../types'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'
 import { useDocumentHighlights } from './useDocumentHighlights'
@@ -30,7 +30,7 @@ function createDocumentReaderNavigation(
   const goToNextPage = async () => goToPage(navigation.pageNumber.value + 1)
   const goToPreviousPage = async () => goToPage(navigation.pageNumber.value - 1)
 
-  const focusSpans = async (...spans: readonly Span[]) => {
+  const focusSpans = async (...spans: readonly TextRange[]) => {
     await getLayoutPromise()
     await highlights.focusSpans(...spans)
   }

@@ -6,7 +6,7 @@
  * of text falls in and how far into a run a byte offset reaches are arithmetic,
  * and a test asks them without a browser.
  */
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 
 /** Where one run of the text stands, once the document is laid out. */
 export interface Mark {
@@ -130,8 +130,8 @@ export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[
  * when the reading area does, which is what a page measured on the screen does.
  */
 export interface PagesQuery {
-  readonly book: Span
-  readonly document: Span
+  readonly book: TextRange
+  readonly document: TextRange
   readonly flow: Flow
   readonly spread: number
   readonly marks: readonly Mark[]
@@ -141,12 +141,12 @@ export function createPages(query: PagesQuery): Pages {
   const { book, document, flow, spread, marks } = query
   const here = countFilledColumns(marks, flow)
   const first = spread * flow.columns + 1
-  const bytes = document.to - document.from
+  const bytes = document.end - document.start
   if (bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
 
   const perColumn = bytes / here
-  const before = Math.round((document.from - book.from) / perColumn)
-  const all = Math.round((book.to - book.from) / perColumn)
+  const before = Math.round((document.start - book.start) / perColumn)
+  const all = Math.round((book.end - book.start) / perColumn)
   return {
     page: Math.max(before + first, 1),
     pages: Math.max(all, before + here, 1),

@@ -186,30 +186,30 @@ func (x *FileStat) GetMtime() int64 {
 	return 0
 }
 
-// A Span is a run of text, by where it begins and where it ends. What it counts
+// Range is a run of text, by where it begins and where it ends. What it counts
 // in is the field carrying it.
-type Span struct {
+type Range struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          int32                  `protobuf:"varint,1,opt,name=from,proto3" json:"from,omitempty"`
-	To            int32                  `protobuf:"varint,2,opt,name=to,proto3" json:"to,omitempty"`
+	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
+	End           int32                  `protobuf:"varint,2,opt,name=end,proto3" json:"end,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Span) Reset() {
-	*x = Span{}
+func (x *Range) Reset() {
+	*x = Range{}
 	mi := &file_numen_v1_shared_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Span) String() string {
+func (x *Range) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Span) ProtoMessage() {}
+func (*Range) ProtoMessage() {}
 
-func (x *Span) ProtoReflect() protoreflect.Message {
+func (x *Range) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_shared_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -221,21 +221,21 @@ func (x *Span) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Span.ProtoReflect.Descriptor instead.
-func (*Span) Descriptor() ([]byte, []int) {
+// Deprecated: Use Range.ProtoReflect.Descriptor instead.
+func (*Range) Descriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Span) GetFrom() int32 {
+func (x *Range) GetStart() int32 {
 	if x != nil {
-		return x.From
+		return x.Start
 	}
 	return 0
 }
 
-func (x *Span) GetTo() int32 {
+func (x *Range) GetEnd() int32 {
 	if x != nil {
-		return x.To
+		return x.End
 	}
 	return 0
 }
@@ -356,10 +356,10 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\bFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
-	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"*\n" +
-	"\x04Span\x12\x12\n" +
-	"\x04from\x18\x01 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x05R\x02to\"2\n" +
+	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"/\n" +
+	"\x05Range\x12\x14\n" +
+	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x10\n" +
+	"\x03end\x18\x02 \x01(\x05R\x03end\"2\n" +
 	"\x06Bounds\x12\x14\n" +
 	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
 	"\x04most\x18\x02 \x01(\x01R\x04most\":\n" +
@@ -397,7 +397,7 @@ var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_numen_v1_shared_proto_goTypes = []any{
 	(ErrorCode)(0),         // 0: numen.v1.ErrorCode
 	(*FileStat)(nil),       // 1: numen.v1.FileStat
-	(*Span)(nil),           // 2: numen.v1.Span
+	(*Range)(nil),          // 2: numen.v1.Range
 	(*Bounds)(nil),         // 3: numen.v1.Bounds
 	(*ReasoningLevel)(nil), // 4: numen.v1.ReasoningLevel
 }

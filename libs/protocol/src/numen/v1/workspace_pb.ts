@@ -10,7 +10,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Span } from "./shared_pb.js";
+import type { Range } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIjgKEERldGFjaFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEgkKAXgYAiABKAUSCQoBeRgDIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJBChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iQgoUV3JpdGVPcGVuVGFic1JlcXVlc3QSGwoEdGFicxgBIAMoCzINLm51bWVuLnYxLlRhYhINCgVmcm9udBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJCChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIksKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSDQoFc3RhdGUYBSABKAkyxAIKEFdvcmtzcGFjZVNlcnZpY2USSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlEk0KDFJlYWRPcGVuVGFicxIdLm51bWVuLnYxLlJlYWRPcGVuVGFic1JlcXVlc3QaHi5udW1lbi52MS5SZWFkT3BlblRhYnNSZXNwb25zZRJECglEZXRhY2hUYWISGi5udW1lbi52MS5EZXRhY2hUYWJSZXF1ZXN0GhsubnVtZW4udjEuRGV0YWNoVGFiUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIjgKEERldGFjaFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEgkKAXgYAiABKAUSCQoBeRgDIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJDChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIfCgZyYW5nZXMYAiADKAsyDy5udW1lbi52MS5SYW5nZSJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSIVChNSZWFkT3BlblRhYnNSZXF1ZXN0IkIKFFJlYWRPcGVuVGFic1Jlc3BvbnNlEhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiSwoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRINCgVzdGF0ZRgFIAEoCTLEAgoQV29ya3NwYWNlU2VydmljZRJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2USTQoMUmVhZE9wZW5UYWJzEh0ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVxdWVzdBoeLm51bWVuLnYxLlJlYWRPcGVuVGFic1Jlc3BvbnNlEkQKCURldGFjaFRhYhIaLm51bWVuLnYxLkRldGFjaFRhYlJlcXVlc3QaGy5udW1lbi52MS5EZXRhY2hUYWJSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.DetachTabRequest
@@ -94,9 +94,9 @@ export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
    * taken to the first and the rest are shown where they fall. None at all
    * names the source and no place inside it, which is what a note arrives with.
    *
-   * @generated from field: repeated numen.v1.Span spans = 2;
+   * @generated from field: repeated numen.v1.Range ranges = 2;
    */
-  spans: Span[];
+  ranges: Range[];
 };
 
 /**

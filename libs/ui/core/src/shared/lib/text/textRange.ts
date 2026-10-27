@@ -5,7 +5,7 @@
  * draws in UTF-16 code units, and a call working in a source counts that
  * source's text in bytes.
  */
-export interface Span {
-  readonly from: number
-  readonly to: number
+export interface TextRange {
+  readonly start: number
+  readonly end: number
 }

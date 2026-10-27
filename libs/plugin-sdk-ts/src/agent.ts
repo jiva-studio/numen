@@ -1,9 +1,9 @@
-import type { Span } from './types'
+import type { TextRange } from './types'
 
 // SourceLocation is where a call was working: a file, and the run of its text the call named.
 export interface SourceLocation {
   readonly path: string
-  readonly span: Span
+  readonly range: TextRange
 }
 
 // AgentStep is one thing the agent said, did, or stopped for.

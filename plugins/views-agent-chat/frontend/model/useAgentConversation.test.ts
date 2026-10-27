@@ -7,14 +7,14 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref, shallowRef } from 'vue'
 import type { Conversation, Turn } from '../thread'
-import type { AgentModel, Span } from '@numen/plugin-sdk'
+import type { AgentModel, TextRange } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 import { createLinkResolver } from '../fixtures/links'
 
 type Model = AgentModel & { readonly nameAt: readonly string[] }
 
 /** A conversation that records what it was asked, and where its lines point. */
-const createConversation = (locations: Record<string, { path: string; span: Span }> = {}) => {
+const createConversation = (locations: Record<string, { path: string; range: TextRange }> = {}) => {
   const request: [string, string][] = []
   const stopCalls: string[] = []
   const turn = ref<Turn[]>([])
@@ -36,11 +36,11 @@ const createConversation = (locations: Record<string, { path: string; span: Span
  * with the notes it was handed, and reaches nothing for every other address.
  */
 const tab = (
-  locations: Record<string, { path: string; span: Span }> = {},
+  locations: Record<string, { path: string; range: TextRange }> = {},
   notes: Record<string, string> = {},
 ) => {
   const fake = createConversation(locations)
-  const openedCalls: [string, readonly Span[]][] = []
+  const openedCalls: [string, readonly TextRange[]][] = []
   const besideItems: string[] = []
   const state = useAgentConversation(fake.conversation, {
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
@@ -82,11 +82,11 @@ describe('a question sent', () => {
 
 describe('a line about work pressed', () => {
   it('opens the place that call was on', () => {
-    const one = tab({ call: { path: 'Source.pdf', span: { from: 10, to: 14 } } })
+    const one = tab({ call: { path: 'Source.pdf', range: { start: 10, end: 14 } } })
 
     one.state.openTurnSource(turn('call', 'read Source.pdf'))
 
-    expect(one.opened).toEqual([['Source.pdf', [{ from: 10, to: 14 }]]])
+    expect(one.opened).toEqual([['Source.pdf', [{ start: 10, end: 14 }]]])
   })
 
   it('opens nothing for a line that names no place', () => {
@@ -118,8 +118,8 @@ describe('a link inside an answer', () => {
       [
         'Source.pdf',
         [
-          { from: 10, to: 14 },
-          { from: 90, to: 92 },
+          { start: 10, end: 14 },
+          { start: 90, end: 92 },
         ],
       ],
     ])

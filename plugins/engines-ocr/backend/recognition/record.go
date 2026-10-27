@@ -126,15 +126,15 @@ func newPage(bounds image.Rectangle, blocks []engine.Block) []part {
 // newBlockParts returns the parts of one non-empty block, split at the start of each box.
 func newBlockParts(bounds image.Rectangle, block engine.Block) []part {
 	boxes := append([]engine.Box(nil), block.Boxes...)
-	sort.SliceStable(boxes, func(i, j int) bool { return boxes[i].Span.From < boxes[j].Span.From })
+	sort.SliceStable(boxes, func(i, j int) bool { return boxes[i].Range.Start < boxes[j].Range.Start })
 	var out []part
 	for i, box := range boxes {
 		from, to := 0, len(block.Text)
 		if i > 0 {
-			from = clampSpan(box.Span.From, len(block.Text))
+			from = clampSpan(box.Range.Start, len(block.Text))
 		}
 		if i+1 < len(boxes) {
-			to = clampSpan(boxes[i+1].Span.From, len(block.Text))
+			to = clampSpan(boxes[i+1].Range.Start, len(block.Text))
 		}
 		if to > from {
 			out = append(out, part{Text: block.Text[from:to], Rects: [][4]float32{getFractions(bounds, box.Rect)}})

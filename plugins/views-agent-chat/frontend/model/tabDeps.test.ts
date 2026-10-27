@@ -9,14 +9,14 @@ describe('what an agent tab asks of the window', () => {
   it('opens a file with the runs of its text marked', () => {
     const { host, recorded } = createHost()
 
-    createAgentTabDeps(host).openFileAt('Source.pdf', { from: 1, to: 4 }, { from: 9, to: 12 })
+    createAgentTabDeps(host).openFileAt('Source.pdf', { start: 1, end: 4 }, { start: 9, end: 12 })
 
     expect(recorded.openedAt).toStrictEqual([
       [
         'Source.pdf',
         [
-          { from: 1, to: 4 },
-          { from: 9, to: 12 },
+          { start: 1, end: 4 },
+          { start: 9, end: 12 },
         ],
       ],
     ])

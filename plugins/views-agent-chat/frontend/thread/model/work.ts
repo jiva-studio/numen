@@ -84,7 +84,7 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
       subject = call.subject
       // A call naming a run of a source's text names somewhere the line can be
       // pressed to open.
-      if (call.location && call.location.span.to > call.location.span.from) {
+      if (call.location && call.location.range.end > call.location.range.start) {
         locations.set(workId, call.location)
       } else {
         locations.delete(workId)

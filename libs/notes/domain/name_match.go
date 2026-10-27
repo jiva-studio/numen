@@ -21,7 +21,7 @@ type NameMatch struct {
 	// prose. Zero for a title, which relies on no line of the prose at all.
 	Line int
 
-	// Spans are where in the name that matched the words typed stand, counted
+	// Ranges are where in the name that matched the words typed stand, counted
 	// the way a client counts text: in UTF-16 code units.
-	Spans []UnitSpan
+	Ranges []UnitRange
 }

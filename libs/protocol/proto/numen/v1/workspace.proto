@@ -54,7 +54,7 @@ message WatchFocusResponse {
   // The runs of that source's text to open on, counted in bytes. The person is
   // taken to the first and the rest are shown where they fall. None at all
   // names the source and no place inside it, which is what a note arrives with.
-  repeated Span spans = 2;
+  repeated Range ranges = 2;
 }
 
 message WriteOpenTabsRequest {

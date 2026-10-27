@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'vue'
 import type { Selector } from './texts'
-import type { Span } from './types'
+import type { TextRange } from './types'
 
 // NoteRef is one note of the vault: where it is filed, and what it is called.
 export interface NoteRef {
@@ -100,7 +100,7 @@ export interface WorkspaceHost {
   setDraggedPaths(paths: readonly string[]): void
   openFile(path: string, options?: OpenFileOptions): void
   // A file opened with the runs of its text marked.
-  openFileAt(path: string, spans: readonly Span[]): void
+  openFileAt(path: string, ranges: readonly TextRange[]): void
   // The note the tool tab the person was last in relies on, and empty strings where none relies on one.
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.

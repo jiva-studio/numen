@@ -64,9 +64,9 @@ func (h *Handler) SearchNames(
 	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found))}
 	for _, m := range found {
 		titled := &v1.NameMatch{
-			Note:  &v1.Note{Path: m.Path, Title: m.Title},
-			Spans: convertUnitSpansToWire(m.Spans),
-			Type:  convertNoteTypeToWire(m.Type),
+			Note:   &v1.Note{Path: m.Path, Title: m.Title},
+			Ranges: convertUnitRangesToWire(m.Ranges),
+			Type:   convertNoteTypeToWire(m.Type),
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -132,9 +132,9 @@ func (h *Handler) SearchPassages(
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
-			Spans:    convertUnitSpansToWire(pos),
+			Ranges:   convertUnitRangesToWire(pos),
 			Location: p.Location,
-			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
+			Range:    &v1.Range{Start: int32(p.Start), End: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
 			Selector: string(p.Selector),
 		}
@@ -197,10 +197,10 @@ func getPassageSources(found []domain.Passage) []string {
 	return out
 }
 
-func convertUnitSpansToWire(pos []domain.UnitSpan) []*v1.Span {
-	out := make([]*v1.Span, 0, len(pos))
+func convertUnitRangesToWire(pos []domain.UnitRange) []*v1.Range {
+	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
-		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
+		out = append(out, &v1.Range{Start: int32(span.Start), End: int32(span.End)})
 	}
 	return out
 }

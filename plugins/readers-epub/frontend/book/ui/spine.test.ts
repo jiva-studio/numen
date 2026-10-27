@@ -44,13 +44,13 @@ const span = () => {
   const all = getRuns()
   const first = all[0]!
   const last = all[all.length - 1]!
-  return { from: first.at, to: last.at + countBytes(last.text) }
+  return { start: first.at, end: last.at + countBytes(last.text) }
 }
 
 /** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
 const readSpine = async () => {
   const wrapper = mount(Book, {
-    props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().from },
+    props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().start },
     attachTo: document.body,
   })
   ;(wrapper.find('.book__area').element as HTMLElement).scrollTo = () => {}
@@ -86,7 +86,7 @@ describe('the markup a spine document arrives as', () => {
   })
 
   it('begins where the document does, and not at nothing', () => {
-    expect(span().from).toBeGreaterThan(0)
+    expect(span().start).toBeGreaterThan(0)
   })
 })
 
@@ -98,7 +98,7 @@ describe('a reader handed that markup', () => {
     await press(target, 'the note')
 
     expect(getMoves(target)).toEqual([Number(note)])
-    expect(getMoves(target)).not.toEqual([span().from])
+    expect(getMoves(target)).not.toEqual([span().start])
   })
 
   it('asks for the document a link names, as the archive names it', async () => {

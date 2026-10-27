@@ -65,7 +65,7 @@ function getRowItem(one: StepRow, word: string, words: Words): PaletteItem | nul
   return {
     id: one.id,
     title: one.title,
-    ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
+    ...(found < 0 ? {} : { at: [{ start: found, end: found + word.length }] }),
     ...(one.detail ? { detail: one.detail } : {}),
     ...(one.isDisabled ? { isDisabled: true } : {}),
     actions: [{ id: CHOSEN, text: words.chooses }],

@@ -14,7 +14,7 @@ func TestMockRecogniserReturnsTextInsidePage(t *testing.T) {
 		t.Fatalf("read %+v (%v)", blocks, err)
 	}
 	box := blocks[0].Boxes[0]
-	if !box.Rect.In(page.Bounds()) || box.Rect.Empty() || box.Span.To != len(MockText) {
+	if !box.Rect.In(page.Bounds()) || box.Rect.Empty() || box.Range.End != len(MockText) {
 		t.Errorf("the box %+v does not cover the text inside the page", box)
 	}
 }

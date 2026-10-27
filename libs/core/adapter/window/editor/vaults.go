@@ -303,8 +303,8 @@ func (h *workspaceHandler) WatchFocus(
 				return nil
 			}
 			if err := out.Send(&v1.WatchFocusResponse{
-				Path:  pos.Path,
-				Spans: convertByteSpansToWire(pos.Spans),
+				Path:   pos.Path,
+				Ranges: convertByteRangesToWire(pos.Ranges),
 			}); err != nil {
 				return err
 			}
@@ -312,10 +312,10 @@ func (h *workspaceHandler) WatchFocus(
 	}
 }
 
-func convertByteSpansToWire(pos []domain.ByteSpan) []*v1.Span {
-	out := make([]*v1.Span, 0, len(pos))
+func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
+	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
-		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
+		out = append(out, &v1.Range{Start: int32(span.Start), End: int32(span.End)})
 	}
 	return out
 }

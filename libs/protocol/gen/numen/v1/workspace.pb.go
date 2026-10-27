@@ -169,7 +169,7 @@ type WatchFocusResponse struct {
 	// The runs of that source's text to open on, counted in bytes. The person is
 	// taken to the first and the rest are shown where they fall. None at all
 	// names the source and no place inside it, which is what a note arrives with.
-	Spans         []*Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
+	Ranges        []*Range `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,9 +211,9 @@ func (x *WatchFocusResponse) GetPath() string {
 	return ""
 }
 
-func (x *WatchFocusResponse) GetSpans() []*Span {
+func (x *WatchFocusResponse) GetRanges() []*Range {
 	if x != nil {
-		return x.Spans
+		return x.Ranges
 	}
 	return nil
 }
@@ -497,10 +497,10 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
 	"\x01y\x18\x03 \x01(\x05R\x01y\"\x13\n" +
 	"\x11DetachTabResponse\"\x13\n" +
-	"\x11WatchFocusRequest\"N\n" +
+	"\x11WatchFocusRequest\"Q\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
-	"\x05spans\x18\x02 \x03(\v2\x0e.numen.v1.SpanR\x05spans\"O\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
+	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\"O\n" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
@@ -545,10 +545,10 @@ var file_numen_v1_workspace_proto_goTypes = []any{
 	(*ReadOpenTabsRequest)(nil),   // 6: numen.v1.ReadOpenTabsRequest
 	(*ReadOpenTabsResponse)(nil),  // 7: numen.v1.ReadOpenTabsResponse
 	(*Tab)(nil),                   // 8: numen.v1.Tab
-	(*Span)(nil),                  // 9: numen.v1.Span
+	(*Range)(nil),                 // 9: numen.v1.Range
 }
 var file_numen_v1_workspace_proto_depIdxs = []int32{
-	9, // 0: numen.v1.WatchFocusResponse.spans:type_name -> numen.v1.Span
+	9, // 0: numen.v1.WatchFocusResponse.ranges:type_name -> numen.v1.Range
 	8, // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
 	8, // 2: numen.v1.ReadOpenTabsResponse.tabs:type_name -> numen.v1.Tab
 	2, // 3: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest

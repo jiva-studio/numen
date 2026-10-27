@@ -82,7 +82,7 @@ func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
 				About:  step.About,
 				Length: int32(step.Count),
 				Path:   step.Place.Path,
-				Span:   convertSpan(step.Place.Spans),
+				Range:  convertRange(step.Place.Ranges),
 			},
 		}}}
 	case domain.StepToolDone:
@@ -96,11 +96,11 @@ func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
 	}
 }
 
-// convertSpan is the one span a call names, and nothing where it named the source
+// convertRange is the one span a call names, and nothing where it named the source
 // and no place inside it.
-func convertSpan(spans []domain.ByteSpan) *v1.Span {
+func convertRange(spans []domain.ByteRange) *v1.Range {
 	if len(spans) == 0 {
 		return nil
 	}
-	return &v1.Span{From: int32(spans[0].From), To: int32(spans[0].To)}
+	return &v1.Range{Start: int32(spans[0].Start), End: int32(spans[0].End)}
 }

@@ -8,7 +8,7 @@
 import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
 import type { FileKind, NoteType } from '@/entities/file/@x/tab'
-import type { Span } from '@/shared/span'
+import type { TextRange } from '@/shared/textRange'
 
 /** What a file the window opens is opened as: which type of note it is, or the kind a plugin registers. */
 export type EditorKind = NoteType
@@ -145,7 +145,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 
   /** A file put in front of the person with runs of a note's text marked. */
-  const openFileAt = async (path: string, _spans: readonly Span[]): Promise<void> => {
+  const openFileAt = async (path: string, _spans: readonly TextRange[]): Promise<void> => {
     const kind = await fetchFileKind(vault, path)
     if (kind?.isNote) return void openNewFile(path, '', kind.type)
     readFile(path, null)

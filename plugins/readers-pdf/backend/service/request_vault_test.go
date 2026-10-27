@@ -48,7 +48,7 @@ func (v twoVaults) getCurrentRoot() string { return v.current.Vault().Path }
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
 	documents := NewDocumentServer(v.current, v.getCurrentRoot, v.texts)
-	req := connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: "tiny.pdf", Spans: []*numenv1.Span{{From: 0, To: 4}}})
+	req := connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: "tiny.pdf", Ranges: []*numenv1.Range{{Start: 0, End: 4}}})
 	req.Header().Set("Numen-Vault", "Chemistry")
 
 	res, err := documents.GetHighlights(t.Context(), req)

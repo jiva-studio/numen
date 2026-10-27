@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, reactive, shallowRef } from 'vue'
 
-import type { Span } from '@numen/ui'
+import type { TextRange } from '@numen/ui'
 import type { SettledBookProps } from '../lib/props'
 import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
 import { useBookMarks } from './marks'
@@ -32,7 +32,11 @@ const createPaper = (markup: string, left: readonly number[] = []): HTMLElement 
   return paper
 }
 
-const setUp = (paper: HTMLElement | null, highlights: Span[] = [], others: Span[] = []) => {
+const setUp = (
+  paper: HTMLElement | null,
+  highlights: TextRange[] = [],
+  others: TextRange[] = [],
+) => {
   const state = reactive({ highlights, otherHighlights: others })
   const props = state as unknown as SettledBookProps
   let marks!: ReturnType<typeof useBookMarks>
@@ -105,7 +109,7 @@ describe('the place a name remains at', () => {
 
 describe('the runs marked', () => {
   it('are none before the runs are gathered', () => {
-    const { marks } = setUp(createPaper(MARKUP), [{ from: 1, to: 3 }])
+    const { marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }])
 
     marks.markRuns()
 
@@ -113,7 +117,11 @@ describe('the runs marked', () => {
   })
 
   it('put the highlights and the others each into their own entry', () => {
-    const { marks, props } = setUp(createPaper(MARKUP), [{ from: 1, to: 3 }], [{ from: 7, to: 10 }])
+    const { marks, props } = setUp(
+      createPaper(MARKUP),
+      [{ start: 1, end: 3 }],
+      [{ start: 7, end: 10 }],
+    )
     marks.gather()
 
     marks.markRuns()
@@ -130,7 +138,7 @@ describe('the runs marked', () => {
     const { marks, state } = setUp(createPaper(MARKUP))
     marks.gather()
 
-    state.highlights = [{ from: 0, to: 2 }]
+    state.highlights = [{ start: 0, end: 2 }]
     await nextTick()
 
     expect(
@@ -142,7 +150,7 @@ describe('the runs marked', () => {
     const { marks, state } = setUp(createPaper(MARKUP))
     marks.gather()
 
-    state.otherHighlights = [{ from: 6, to: 8 }]
+    state.otherHighlights = [{ start: 6, end: 8 }]
     await nextTick()
 
     expect(

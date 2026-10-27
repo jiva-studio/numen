@@ -8,9 +8,9 @@ export interface RecordingSource {
 }
 
 /** A run of the transcript's text, as the window counts it. */
-export interface Span {
-  readonly from: number
-  readonly to: number
+export interface TextRange {
+  readonly start: number
+  readonly end: number
 }
 
 /** What an entry of a file's menu does: a plugin makes text, or the owner of a version deletes it. */
@@ -36,7 +36,7 @@ export interface Recordings {
   /** The words as a person has edited them, kept against the recording. */
   writeTranscript(path: string, cues: readonly Cue[]): Promise<void>
   /** The millisecond a span of the words is played from, and null where no cue holds it. */
-  findCueTime(path: string, span: Span): Promise<number | null>
+  findCueTime(path: string, span: TextRange): Promise<number | null>
   /** What the file's menu offers about its text. */
   getMenu(path: string): Promise<readonly MenuEntry[]>
   /** Carries out one entry of the file's menu. */

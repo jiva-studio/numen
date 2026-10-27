@@ -12,10 +12,10 @@ export interface Disposable {
   dispose(): void
 }
 
-// Span describes a run of text by start and end boundaries.
-export interface Span {
-  readonly from: number
-  readonly to: number
+// TextRange is a run of text, by where it begins and where it ends.
+export interface TextRange {
+  readonly start: number
+  readonly end: number
 }
 
 // Result is the discriminated outcome of a fallible operation.

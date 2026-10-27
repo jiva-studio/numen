@@ -71,7 +71,7 @@ describe('one list drawn in groups', () => {
   it('splits every line it draws, so the view works nothing out', () => {
     const placedSections = placePalette([
       group('names', [
-        item('one', { title: 'Entropy', at: [{ from: 0, to: 3 }], detail: 'in: Ent' }),
+        item('one', { title: 'Entropy', at: [{ start: 0, end: 3 }], detail: 'in: Ent' }),
       ]),
     ])
 
@@ -343,34 +343,34 @@ describe('marking why an item is here', () => {
   })
 
   it('draws nothing at all for a line with nothing on it', () => {
-    expect(getParts('', [{ from: 0, to: 3 }])).toEqual([])
+    expect(getParts('', [{ start: 0, end: 3 }])).toEqual([])
   })
 
   it('marks a run at the start, in the middle and at the end', () => {
-    expect(getParts('abcdef', [{ from: 0, to: 2 }])).toEqual([
+    expect(getParts('abcdef', [{ start: 0, end: 2 }])).toEqual([
       { text: 'ab', isHit: true },
       { text: 'cdef', isHit: false },
     ])
-    expect(getParts('abcdef', [{ from: 2, to: 4 }])).toEqual([
+    expect(getParts('abcdef', [{ start: 2, end: 4 }])).toEqual([
       { text: 'ab', isHit: false },
       { text: 'cd', isHit: true },
       { text: 'ef', isHit: false },
     ])
-    expect(getParts('abcdef', [{ from: 4, to: 6 }])).toEqual([
+    expect(getParts('abcdef', [{ start: 4, end: 6 }])).toEqual([
       { text: 'abcd', isHit: false },
       { text: 'ef', isHit: true },
     ])
   })
 
   it('marks the whole line as one run when the whole line is why', () => {
-    expect(getParts('abc', [{ from: 0, to: 3 }])).toEqual([{ text: 'abc', isHit: true }])
+    expect(getParts('abc', [{ start: 0, end: 3 }])).toEqual([{ text: 'abc', isHit: true }])
   })
 
   it('draws two runs that do not touch as two', () => {
     expect(
       getParts('abcdef', [
-        { from: 0, to: 1 },
-        { from: 4, to: 5 },
+        { start: 0, end: 1 },
+        { start: 4, end: 5 },
       ]),
     ).toEqual([
       { text: 'a', isHit: true },
@@ -383,8 +383,8 @@ describe('marking why an item is here', () => {
   it('reads the runs in whatever order they arrive', () => {
     expect(
       getParts('abcdef', [
-        { from: 4, to: 5 },
-        { from: 0, to: 1 },
+        { start: 4, end: 5 },
+        { start: 0, end: 1 },
       ]),
     ).toEqual([
       { text: 'a', isHit: true },
@@ -397,8 +397,8 @@ describe('marking why an item is here', () => {
   it('folds runs that overlap or touch into one', () => {
     expect(
       getParts('abcdef', [
-        { from: 0, to: 3 },
-        { from: 2, to: 4 },
+        { start: 0, end: 3 },
+        { start: 2, end: 4 },
       ]),
     ).toEqual([
       { text: 'abcd', isHit: true },
@@ -406,8 +406,8 @@ describe('marking why an item is here', () => {
     ])
     expect(
       getParts('abcdef', [
-        { from: 0, to: 2 },
-        { from: 2, to: 4 },
+        { start: 0, end: 2 },
+        { start: 2, end: 4 },
       ]),
     ).toEqual([
       { text: 'abcd', isHit: true },
@@ -416,7 +416,7 @@ describe('marking why an item is here', () => {
   })
 
   it('reads a run given back to front', () => {
-    expect(getParts('abcdef', [{ from: 4, to: 2 }])).toEqual([
+    expect(getParts('abcdef', [{ start: 4, end: 2 }])).toEqual([
       { text: 'ab', isHit: false },
       { text: 'cd', isHit: true },
       { text: 'ef', isHit: false },
@@ -424,22 +424,22 @@ describe('marking why an item is here', () => {
   })
 
   it('brings a run that runs off either end back inside the line', () => {
-    expect(getParts('abc', [{ from: -5, to: 99 }])).toEqual([{ text: 'abc', isHit: true }])
+    expect(getParts('abc', [{ start: -5, end: 99 }])).toEqual([{ text: 'abc', isHit: true }])
   })
 
   it('drops a run with nothing in it', () => {
-    expect(getParts('abc', [{ from: 1, to: 1 }])).toEqual([{ text: 'abc', isHit: false }])
+    expect(getParts('abc', [{ start: 1, end: 1 }])).toEqual([{ text: 'abc', isHit: false }])
   })
 
   it('never ends a run on half a character', () => {
     // The emoji is two code units, and the run names one of them.
     const text = 'a👋b'
-    expect(getParts(text, [{ from: 1, to: 2 }])).toEqual([
+    expect(getParts(text, [{ start: 1, end: 2 }])).toEqual([
       { text: 'a', isHit: false },
       { text: '👋', isHit: true },
       { text: 'b', isHit: false },
     ])
-    expect(getParts(text, [{ from: 2, to: 3 }])).toEqual([
+    expect(getParts(text, [{ start: 2, end: 3 }])).toEqual([
       { text: 'a', isHit: false },
       { text: '👋', isHit: true },
       { text: 'b', isHit: false },
@@ -509,7 +509,7 @@ describe('where the half of a pair is moved off', () => {
 
   /** The run a span on the second unit of `first` + `second` picks out, in `x...y`. */
   const picked = (first: string, second: string) =>
-    getParts(`x${first}${second}y`, [{ from: 2, to: 3 }])
+    getParts(`x${first}${second}y`, [{ start: 2, end: 3 }])
 
   it('moves outwards from the middle of a pair at either end of the surrogate ranges', () => {
     for (const [first, second] of [

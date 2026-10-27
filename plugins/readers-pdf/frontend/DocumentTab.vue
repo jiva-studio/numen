@@ -8,7 +8,7 @@ import { LoadingIndicator } from '@numen/ui'
 import { Reader } from './reader'
 import { WORDS as words } from './words'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
-import type { Span } from './types'
+import type { TextRange } from './types'
 import type { DocumentTabState } from './model/useDocumentTab'
 import { useDocumentTab } from './model/useDocumentTab'
 import { useDocumentReader } from './model/useDocumentReader'
@@ -61,7 +61,7 @@ onMounted(() => {
     const s = props.state as Record<string, unknown>
     s.focusTab = () => rootElement.value?.focus()
     s.handleKeyPress = (e: KeyboardEvent) => activeState.value?.handleKeyPress(e) ?? false
-    s.focusSpans = (...spans: readonly Span[]) => activeState.value?.focusSpans(...spans)
+    s.focusSpans = (...spans: readonly TextRange[]) => activeState.value?.focusSpans(...spans)
   }
 })
 

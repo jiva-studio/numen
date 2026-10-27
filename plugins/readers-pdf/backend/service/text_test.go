@@ -95,7 +95,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 	text := readLive(t, texts, "tiny.pdf")
 
 	from := strings.Index(text.Text, "Delta")
-	boxes := host.GetBoxes(text, domain.ByteSpan{From: from, To: from + len("Delta epsilon")})
+	boxes := host.GetBoxes(text, domain.ByteRange{Start: from, End: from + len("Delta epsilon")})
 
 	if len(boxes) != 2 {
 		t.Fatalf("%d boxes, want one a word of the two: %+v", len(boxes), boxes)
@@ -216,9 +216,9 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: "tiny.pdf",
-		Spans: []*numenv1.Span{
-			{From: int32(zeta), To: int32(zeta + len("zeta"))},
-			{From: int32(beta), To: int32(zeta + len("zeta"))},
+		Ranges: []*numenv1.Range{
+			{Start: int32(zeta), End: int32(zeta + len("zeta"))},
+			{Start: int32(beta), End: int32(zeta + len("zeta"))},
 		},
 	}))
 	if err != nil {
@@ -246,7 +246,7 @@ func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 	documents := newDocumentServer(server, texts)
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
-		Path: "tiny.pdf", Spans: []*numenv1.Span{{From: 0, To: 5}},
+		Path: "tiny.pdf", Ranges: []*numenv1.Range{{Start: 0, End: 5}},
 	}))
 	if err != nil {
 		t.Fatalf("GetHighlights: %v", err)

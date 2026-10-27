@@ -100,19 +100,19 @@ func (s *DocumentServer) GetHighlights(
 	if _, err := s.vaults.getFilePath(ctx, req.Header(), path); err != nil {
 		return nil, err
 	}
-	spans := req.Msg.GetSpans()
+	spans := req.Msg.GetRanges()
 	if len(spans) == 0 || len(spans) > mostSpans {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("ask about between one and %d runs, not %d", mostSpans, len(spans)))
 	}
-	runs := make([]domain.ByteSpan, 0, len(spans))
+	runs := make([]domain.ByteRange, 0, len(spans))
 	end := 0
 	for _, one := range spans {
-		run := domain.ByteSpan{From: int(one.GetFrom()), To: int(one.GetTo())}
-		if run.From < 0 || run.To <= run.From {
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%d..%d is not a run of the text", run.From, run.To))
+		run := domain.ByteRange{Start: int(one.GetStart()), End: int(one.GetEnd())}
+		if run.Start < 0 || run.End <= run.Start {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%d..%d is not a run of the text", run.Start, run.End))
 		}
 		runs = append(runs, run)
-		end = max(end, run.To)
+		end = max(end, run.End)
 	}
 
 	texts := s.texts

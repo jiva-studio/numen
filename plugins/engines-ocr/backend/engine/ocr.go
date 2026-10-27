@@ -26,16 +26,16 @@ type Line struct {
 	Score float32
 }
 
-// ByteSpan represents a byte offset range.
-type ByteSpan struct {
-	From int
-	To   int
+// ByteRange represents a byte offset range.
+type ByteRange struct {
+	Start int
+	End   int
 }
 
 // Box is one box of a region: the rectangle it covers on the page, and the run of bytes it produced.
 type Box struct {
-	Rect image.Rectangle
-	Span ByteSpan
+	Rect  image.Rectangle
+	Range ByteRange
 }
 
 // Block is one region of a page, written out.
@@ -120,15 +120,15 @@ func Assemble(lines []Line) (string, []Box) {
 			out = out[:len(out)-n]
 			// gomutants:disable-next-line INTEGER_DECREMENT reason="len(kept) is at least 1 whenever out holds text"
 			if k := len(assembledBoxes); k > 0 {
-				assembledBoxes[k-1].Span.To -= n
+				assembledBoxes[k-1].Range.End -= n
 			}
 		} else if len(out) > 0 {
 			out = append(out, ' ')
 		}
 		pos := len(out)
 		for _, box := range boxes {
-			box.Span.From += pos
-			box.Span.To += pos
+			box.Range.Start += pos
+			box.Range.End += pos
 			assembledBoxes = append(assembledBoxes, box)
 		}
 		out = append(out, text...)
@@ -215,7 +215,7 @@ func writeLine(line []Line) (string, []Box) {
 			out.WriteString(" ")
 		}
 		pos := out.Len()
-		lineBoxes = append(lineBoxes, Box{Rect: one.Box, Span: ByteSpan{From: pos, To: pos + len(text)}})
+		lineBoxes = append(lineBoxes, Box{Rect: one.Box, Range: ByteRange{Start: pos, End: pos + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), lineBoxes

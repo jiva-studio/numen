@@ -69,7 +69,7 @@ describe('the commands as the words typed leave them', () => {
 
     const readItem = getNoteGroup(view, front(), word)?.items.find((item) => item.id === 'read')
 
-    expect(readItem?.at).toStrictEqual([{ from: 0, to: 3 }])
+    expect(readItem?.at).toStrictEqual([{ start: 0, end: 3 }])
   })
 
   it('lights the words typed where they stand inside the text of a command', () => {
@@ -77,7 +77,7 @@ describe('the commands as the words typed leave them', () => {
       (item) => item.id === 'read',
     )
 
-    expect(readItem?.at).toStrictEqual([{ from: 1, to: 3 }])
+    expect(readItem?.at).toStrictEqual([{ start: 1, end: 3 }])
   })
 
   it('leaves out every command the words typed are not in', () => {

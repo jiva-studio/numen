@@ -3,7 +3,7 @@
  */
 import { search } from '@/shared/clients'
 import type { Selector } from '@numen/plugin-sdk'
-import { modes, mapNoteType, run } from './words'
+import { modes, mapNoteType, mapRange } from './words'
 import type { SearchDeps } from '@/features/command-palette'
 
 /** The selector of a hit, parsed from its JSON, and null where it has none. */
@@ -25,7 +25,7 @@ export const searchCore: SearchDeps = {
       title: one.note?.title ?? '',
       heading: one.heading?.text ?? '',
       line: one.heading?.line ?? -1,
-      at: one.spans.map(run),
+      at: one.ranges.map(mapRange),
       type: mapNoteType(one.type),
     }))
   },
@@ -38,10 +38,10 @@ export const searchCore: SearchDeps = {
       type: mapNoteType(one.type),
       selector: parseSelector(one.selector),
       text: one.text,
-      start: one.span?.from ?? 0,
-      length: (one.span?.to ?? 0) - (one.span?.from ?? 0),
+      start: one.range?.start ?? 0,
+      length: (one.range?.end ?? 0) - (one.range?.start ?? 0),
       line: one.line,
-      at: one.spans.map(run),
+      at: one.ranges.map(mapRange),
     }))
   },
 }

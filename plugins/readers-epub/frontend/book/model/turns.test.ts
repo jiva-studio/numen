@@ -38,8 +38,8 @@ const paperWithStyle = () => {
 const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
   const { paper, writes } = paperWithStyle()
   const props = {
-    book: { from: 0, to: 400 },
-    span: { from: 0, to: 400 },
+    book: { start: 0, end: 400 },
+    span: { start: 0, end: 400 },
     at: offset,
   } as SettledBookProps
   const onMove = vi.fn<(pos: number) => void>()
