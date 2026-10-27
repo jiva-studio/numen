@@ -62,6 +62,7 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{
 		Prompt: "Where does it live?", Focus: "decks/animals.md", Conversation: "c-1",
+		Context: map[string]string{"md.example.cards/card": "k7"},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +78,7 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 		t.Errorf("the agent said %q", text)
 	}
 	if task := <-agent.tasks; task.Question != "Where does it live?" || task.Focus != "decks/animals.md" ||
-		task.Conversation != "c-1" || task.Agent != "" {
+		task.Conversation != "c-1" || task.Agent != "" || task.Context["md.example.cards/card"] != "k7" {
 		t.Errorf("the agent was given %+v", task)
 	}
 

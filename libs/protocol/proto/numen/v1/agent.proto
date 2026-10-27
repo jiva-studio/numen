@@ -60,11 +60,11 @@ message AskAgentRequest {
   // given to a second one for as long as the application is running. Empty is
   // no conversation, and a question asked under it is answered on its own.
   string conversation = 3;
-  // The card in focus, for a window that asks about one: the mark its deck
-  // writes it under, and the face it is being shown through. The deck is the
-  // note in focus. Both empty in a window that asks about notes.
-  string mark = 4;
-  string face = 5;
+  // What the asking view shows, for the tools the agent calls: each one is given it as
+  // CallToolRequest.context. Each key starts with the id of the plugin that wrote it and a
+  // slash, as MCP `_meta` keys do: "md.numen.views.flashcards.studio/card".
+  map<string, string> context = 4;
+  reserved 5;
 
   // Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
   string agent = 6;

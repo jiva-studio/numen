@@ -131,10 +131,10 @@ export type CallToolRequest = Message<"numen.v1.CallToolRequest"> & {
   arguments: Uint8Array;
 
   /**
-   * What the person is looking at in the window the agent was started from, as
-   * that window names it: focus, mark and face for the window cards are reviewed
-   * in. It is data about the call and no part of the arguments, and it is empty
-   * for a call made from a window that shows the person nothing in particular.
+   * The context of the AskAgentRequest the call was made under: what the asking
+   * view shows, under keys that start with the id of the plugin that wrote them
+   * and a slash. It is data about the call and no part of the arguments, and it
+   * is empty for a question asked with none.
    *
    * @generated from field: map<string, string> context = 3;
    */

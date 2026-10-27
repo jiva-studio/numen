@@ -311,6 +311,7 @@ func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
 		Options:  map[string]string{"k": "true"},
 		Endpoint: agentport.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
+		Context:  map[string]string{"md.example.cards/card": "k7"},
 		ToolDeclarations: []agentport.ToolDeclaration{
 			{Name: "note_edit", Title: "Edit a note", Kind: domain.StepEdit, About: "path", Match: "stood", Text: "becomes"},
 			{Name: "note_read", Kind: domain.StepToolCall, Element: "path"},
@@ -323,7 +324,8 @@ func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 		t.Errorf("the question is %v", got)
 	}
 	if got.GetRoot() != "/vault" || !slices.Equal(got.GetCommand(), []string{"/bin/one"}) ||
-		got.GetOptions()["k"] != "true" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" {
+		got.GetOptions()["k"] != "true" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" ||
+		got.GetContext()["md.example.cards/card"] != "k7" {
 		t.Errorf("what the agent is given is %v", got)
 	}
 	declared := got.GetToolDeclarations()

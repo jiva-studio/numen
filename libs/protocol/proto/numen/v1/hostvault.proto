@@ -87,10 +87,6 @@ service HostVaultService {
   // WriteCache replaces what the plugin keeps for this vault under a name.
   rpc WriteCache(WriteCacheRequest) returns (WriteCacheResponse);
 
-  // SetVaultInUse tells the window that the plugin is working the vault for the person: a session
-  // of review has begun on it. The window may act on it, as by pointing an agent at the vault.
-  rpc SetVaultInUse(SetVaultInUseRequest) returns (SetVaultInUseResponse);
-
   // WatchMoves tells that something moved in some vault of the installation,
   // until the caller goes. It says nothing of what moved. The first message is
   // sent at once, so that the caller knows the watch is on.
@@ -168,12 +164,6 @@ message EnsureVaultIndexedResponse {
   HostVaultErrorCode error = 1;
   HostIndexState state = 2;
   string reason = 3;
-}
-
-message SetVaultInUseRequest {}
-
-message SetVaultInUseResponse {
-  HostVaultErrorCode error = 1;
 }
 
 message WatchMovesRequest {}

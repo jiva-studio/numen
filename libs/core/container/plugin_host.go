@@ -231,8 +231,6 @@ type PluginVaultHooks struct {
 	// IndexState starts reading a vault into the index when it is not there and says where that
 	// stands. Left nil, a vault the index carries is indexed and any other is being indexed.
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
-	// InUse is told that a plugin is working a vault for the person.
-	InUse func(ctx context.Context, v domain.Vault)
 	// Moved tells that something moved in some vault. Left nil, it is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
 }
@@ -278,7 +276,6 @@ func (c Config) OpenPluginVault(
 			}
 			return found, nil
 		},
-		InUse:      hooks.InUse,
 		IndexState: hooks.IndexState,
 		Moved:      hooks.Moved,
 		Index: func(ctx context.Context, v domain.Vault, paths []string) error {

@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // errPlainToken is a tool server the token would reach unencrypted.
@@ -24,6 +26,8 @@ var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
 type toolbox struct {
 	session *mcp.ClientSession
 	tools   []functionTool
+	// meta is the context of the task, sent as the `_meta` of every call.
+	meta mcp.Meta
 }
 
 // bearer presents the token on every request to the tool server.
@@ -39,9 +43,10 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 	return b.base.RoundTrip(req)
 }
 
-// openToolbox connects to the tool server at url and lists the tools of it the task names. An
+// openToolbox connects to the tool server of the task and lists the tools of it the task names. An
 // empty url, or a task naming no tool, is a run with no tools, and no connection is made.
-func openToolbox(ctx context.Context, url, token string, named []string) (*toolbox, error) {
+func openToolbox(ctx context.Context, task *numenv1.AskAgentRequest) (*toolbox, error) {
+	url, named := task.GetToolsUrl(), task.GetTools()
 	if url == "" || len(named) == 0 {
 		return &toolbox{}, nil
 	}
@@ -50,7 +55,7 @@ func openToolbox(ctx context.Context, url, token string, named []string) (*toolb
 	}
 	transport := &mcp.StreamableClientTransport{
 		Endpoint:             url,
-		HTTPClient:           &http.Client{Transport: bearer{token: token, base: http.DefaultTransport}, CheckRedirect: refuseDowngrade},
+		HTTPClient:           &http.Client{Transport: bearer{token: task.GetToolsToken(), base: http.DefaultTransport}, CheckRedirect: refuseDowngrade},
 		DisableStandaloneSSE: true,
 	}
 	client := mcp.NewClient(&mcp.Implementation{Name: "numen-agent", Version: "1.0.0"}, nil)
@@ -59,7 +64,7 @@ func openToolbox(ctx context.Context, url, token string, named []string) (*toolb
 		return nil, fmt.Errorf("connect to the vault's tools: %w", err)
 	}
 
-	box := &toolbox{session: session}
+	box := &toolbox{session: session, meta: readMeta(task.GetContext())}
 	for tool, err := range session.Tools(ctx, nil) {
 		if err != nil {
 			_ = session.Close()
@@ -100,7 +105,7 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if !json.Valid(args) {
 		return "error: the arguments are not JSON"
 	}
-	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: args})
+	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{Meta: b.meta, Name: name, Arguments: args})
 	if err != nil {
 		return fmt.Sprintf("error: %v", err)
 	}
@@ -136,4 +141,16 @@ func (b *toolbox) close() {
 	if b.session != nil {
 		_ = b.session.Close()
 	}
+}
+
+// readMeta is the context of a task as MCP `_meta`, nil for a task with none.
+func readMeta(values map[string]string) mcp.Meta {
+	if len(values) == 0 {
+		return nil
+	}
+	meta := make(mcp.Meta, len(values))
+	for key, value := range values {
+		meta[key] = value
+	}
+	return meta
 }

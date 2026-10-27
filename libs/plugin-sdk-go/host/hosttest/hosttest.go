@@ -34,7 +34,6 @@ type Vault struct {
 	watches    []chan host.Change
 	unknown    bool
 	state      host.IndexState
-	inUse      int
 	moves      []chan struct{}
 	folder     *folder
 	kinds      sourceKinds
@@ -580,23 +579,6 @@ func (v *Vault) EnsureIndexed(ctx context.Context) (host.IndexState, error) {
 		return host.IndexState{}, err
 	}
 	return v.state, nil
-}
-
-// InUse says how many times the plugin told the window it was working the vault.
-func (v *Vault) InUse() int {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	return v.inUse
-}
-
-func (v *Vault) SetInUse(ctx context.Context) error {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
-		return err
-	}
-	v.inUse++
-	return nil
 }
 
 func (v *Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {

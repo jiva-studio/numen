@@ -138,7 +138,7 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	defer s.registry.Remove(work)
 	defer work.End()
 
-	tools, err := openToolbox(taskCtx, task.GetToolsUrl(), task.GetToolsToken(), task.GetTools())
+	tools, err := openToolbox(taskCtx, task)
 	if err != nil {
 		if taskCtx.Err() != nil {
 			return nil

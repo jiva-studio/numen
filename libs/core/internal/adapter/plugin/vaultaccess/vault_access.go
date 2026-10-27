@@ -36,8 +36,6 @@ type Vault struct {
 	// IndexState starts reading a vault into the index when it is not there and says where that
 	// stands. Without it every vault is taken to be in the index.
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
-	// InUse is told that a plugin is working a vault for the person. Without it nothing is done.
-	InUse func(ctx context.Context, v domain.Vault)
 	// Moved tells that something moved in some vault. Without it nothing is told.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
 	// Written is told after a plugin has changed the vault.
@@ -90,17 +88,6 @@ func (a Vault) EnsureIndexed(ctx context.Context) (pluginport.PluginIndexState, 
 		return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil
 	}
 	return a.IndexState(ctx, v)
-}
-
-func (a Vault) SetInUse(ctx context.Context) error {
-	v, err := a.open()
-	if err != nil {
-		return err
-	}
-	if a.InUse != nil {
-		a.InUse(ctx, v)
-	}
-	return nil
 }
 
 func (a Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {

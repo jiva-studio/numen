@@ -119,9 +119,8 @@ func TestToolAggregatorExecuteSuccess(t *testing.T) {
 	}
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
-	agg.SetContext(map[string]string{"vault": "test-vault"})
-
-	result, err := agg.ExecuteTool(context.Background(), "note_read", json.RawMessage(`{"path":"a.md"}`))
+	result, err := agg.ExecuteTool(context.Background(), "note_read", json.RawMessage(`{"path":"a.md"}`),
+		map[string]string{"md.example.cards/card": "k7"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -139,8 +138,8 @@ func TestToolAggregatorExecuteSuccess(t *testing.T) {
 	if !ok || string(rawStructured) != `{"found":true}` {
 		t.Fatalf("unexpected structured content: %v", result.StructuredContent)
 	}
-	if client.lastCall.GetContext()["vault"] != "test-vault" {
-		t.Fatalf("expected context 'vault' to be passed, got: %v", client.lastCall.GetContext())
+	if client.lastCall.GetContext()["md.example.cards/card"] != "k7" {
+		t.Fatalf("the call was given the context %v", client.lastCall.GetContext())
 	}
 }
 
@@ -158,7 +157,7 @@ func TestToolAggregatorExecuteMarksDeniedResultAsError(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	result, err := agg.ExecuteTool(context.Background(), "note_read", nil)
+	result, err := agg.ExecuteTool(context.Background(), "note_read", nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -178,7 +177,7 @@ func TestToolAggregatorExecuteToolErrors(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	result, err := agg.ExecuteTool(context.Background(), "unknown_tool", nil)
+	result, err := agg.ExecuteTool(context.Background(), "unknown_tool", nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -189,7 +188,7 @@ func TestToolAggregatorExecuteToolErrors(t *testing.T) {
 	client.callResp = &numenv1.CallToolResponse{
 		Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS,
 	}
-	result, err = agg.ExecuteTool(context.Background(), "note_read", []byte(`invalid-json`))
+	result, err = agg.ExecuteTool(context.Background(), "note_read", []byte(`invalid-json`), nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -207,7 +206,7 @@ func TestToolAggregatorExecuteTransportFailure(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	_, err := agg.ExecuteTool(context.Background(), "note_read", nil)
+	_, err := agg.ExecuteTool(context.Background(), "note_read", nil, nil)
 	if err == nil {
 		t.Fatal("expected error on transport failure")
 	}
@@ -269,5 +268,45 @@ func TestSanitizeInputSchema(t *testing.T) {
 			result := sanitizeInputSchema(tc.input)
 			tc.validate(t, result)
 		})
+	}
+}
+
+// The `_meta` keys a plugin wrote reach the host as the context of the call; keys MCP reserves do not.
+func TestTheMetaOfACallReachesTheHostAsItsContext(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeToolClient{tools: []*numenv1.PluginTool{{Name: "card_current"}}}
+	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
+	agg := NewToolAggregator(client, mcpServer)
+	if err := agg.SyncTools(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	serverSide, clientSide := sdk.NewInMemoryTransports()
+	if _, err := mcpServer.Connect(t.Context(), serverSide, nil); err != nil {
+		t.Fatal(err)
+	}
+	session, err := sdk.NewClient(&sdk.Implementation{Name: "agent"}, nil).Connect(t.Context(), clientSide, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = session.Close() })
+
+	_, err = session.CallTool(t.Context(), &sdk.CallToolParams{
+		Name: "card_current",
+		Meta: sdk.Meta{
+			"md.example.cards/card":           "k7",
+			"io.modelcontextprotocol/related": "r",
+			"progressToken":                   "p",
+			"md.example.cards/count":          3,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	if got := client.lastCall.GetContext(); len(got) != 1 || got["md.example.cards/card"] != "k7" {
+		t.Errorf("the host was given the context %v", got)
 	}
 }

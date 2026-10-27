@@ -72,9 +72,6 @@ func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcard
 		return nil, err
 	}
 	h.runs.store(v, run)
-	if err := h.vault.With(v.ID).SetInUse(ctx); err != nil && !errors.Is(err, host.ErrUnknownVault) {
-		return nil, err
-	}
 	return run, nil
 }
 

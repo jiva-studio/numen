@@ -38,7 +38,6 @@ type memoryVault struct {
 	// others are the vaults beside the shown one, by identity.
 	others map[domain.VaultID]*memoryVault
 	state  pluginport.PluginIndexState
-	inUse  int
 	moves  chan struct{}
 	// storeRoot is the folder the plugins' folders of the store are kept under.
 	storeRoot string
@@ -88,13 +87,6 @@ func (m *memoryVault) With(id domain.VaultID) (pluginport.PluginVault, error) {
 
 func (m *memoryVault) EnsureIndexed(context.Context) (pluginport.PluginIndexState, error) {
 	return m.state, nil
-}
-
-func (m *memoryVault) SetInUse(context.Context) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.inUse++
-	return nil
 }
 
 func (m *memoryVault) WatchMoves(context.Context) (<-chan struct{}, error) {

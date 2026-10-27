@@ -75,6 +75,7 @@ func newAskRequest(task agentport.Task) *v1.AskAgentRequest {
 		Options:          task.Options,
 		ToolsUrl:         task.Endpoint.URL,
 		ToolsToken:       task.Endpoint.Token,
+		Context:          task.Context,
 	}
 }
 

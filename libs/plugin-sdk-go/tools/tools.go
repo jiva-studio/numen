@@ -184,10 +184,9 @@ func (r *Registry) CallTool(
 
 type askedKey struct{}
 
-// Asked is what the person is looking at in the window the agent was started from, as the host names
-// it: focus, mark and face for the window cards are reviewed in. It is empty for a call made from a
-// window that shows the person nothing in particular. A tool reads it as data about the call, and it
-// is no part of the arguments.
+// Asked is the context of the question the call was made under: what the asking view shows, under
+// keys that start with the id of the plugin that wrote them and a slash. It is empty for a question
+// asked with none. A tool reads it as data about the call, and it is no part of the arguments.
 func Asked(ctx context.Context) map[string]string {
 	request, _ := ctx.Value(askedKey{}).(map[string]string)
 	return request

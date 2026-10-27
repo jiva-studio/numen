@@ -433,10 +433,10 @@ type CallToolRequest struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The arguments, as a JSON object that meets the tool's input schema.
 	Arguments []byte `protobuf:"bytes,2,opt,name=arguments,proto3" json:"arguments,omitempty"`
-	// What the person is looking at in the window the agent was started from, as
-	// that window names it: focus, mark and face for the window cards are reviewed
-	// in. It is data about the call and no part of the arguments, and it is empty
-	// for a call made from a window that shows the person nothing in particular.
+	// The context of the AskAgentRequest the call was made under: what the asking
+	// view shows, under keys that start with the id of the plugin that wrote them
+	// and a slash. It is data about the call and no part of the arguments, and it
+	// is empty for a question asked with none.
 	Context       map[string]string `protobuf:"bytes,3,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

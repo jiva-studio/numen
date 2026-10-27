@@ -399,14 +399,6 @@ func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
 	return out, nil
 }
 
-func (c *Client) SetInUse(ctx context.Context) error {
-	res, err := c.rpc.SetVaultInUse(ctx, request(c, &v1.SetVaultInUseRequest{}))
-	if err != nil {
-		return readError(err)
-	}
-	return fail(res.Msg.GetError())
-}
-
 func (c *Client) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 	stream, err := c.rpc.WatchMoves(ctx, request(c, &v1.WatchMovesRequest{}))
 	if err != nil {

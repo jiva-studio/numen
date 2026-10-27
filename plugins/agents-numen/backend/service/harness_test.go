@@ -173,6 +173,7 @@ func newTextReply(text string) message {
 type fakeVault struct {
 	mu    sync.Mutex
 	calls []string
+	metas []mcp.Meta
 }
 
 func (v *fakeVault) serve(t *testing.T) string {
@@ -183,6 +184,7 @@ func (v *fakeVault) serve(t *testing.T) string {
 		func(_ context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			v.mu.Lock()
 			v.calls = append(v.calls, string(req.Params.Arguments))
+			v.metas = append(v.metas, req.Params.GetMeta())
 			v.mu.Unlock()
 			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: "Plan: water the garden."}}}, nil
 		})
@@ -854,3 +856,19 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	}
 }
 
+// The context of the task reaches every tool the model calls as the `_meta` of the call.
+func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
+	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("ok")}}
+	vault := &fakeVault{}
+	s := newServer(model.serve(t).URL)
+	task := newTask(vault.serve(t), "What is on this card?")
+	task.Context = map[string]string{"md.example.cards/card": "k7"}
+
+	ask(t, s, task)
+
+	vault.mu.Lock()
+	defer vault.mu.Unlock()
+	if len(vault.metas) != 1 || vault.metas[0]["md.example.cards/card"] != "k7" {
+		t.Errorf("the calls carried %v", vault.metas)
+	}
+}

@@ -201,20 +201,6 @@ func (e *vaultEndpoint) EnsureVaultIndexed(
 	return connect.NewResponse(out), nil
 }
 
-func (e *vaultEndpoint) SetVaultInUse(
-	ctx context.Context, req *connect.Request[v1.SetVaultInUseRequest],
-) (*connect.Response[v1.SetVaultInUseResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.SetVaultInUseResponse{Error: noVault}), nil
-	}
-	code, err := answer(ctx, vault.SetInUse(ctx))
-	return connect.NewResponse(&v1.SetVaultInUseResponse{Error: code}), err
-}
-
 func (e *vaultEndpoint) WatchMoves(
 	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
 ) error {

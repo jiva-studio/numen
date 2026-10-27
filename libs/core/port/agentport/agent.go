@@ -57,6 +57,9 @@ type Task struct {
 	Options map[string]string
 	// Endpoint is where the agent reaches the vault's tools. Empty gives it none.
 	Endpoint ToolEndpoint
+	// Context is what the asking view shows, which every tool the agent calls is given. Each key
+	// starts with the id of the plugin that wrote it and a slash.
+	Context map[string]string
 	// written.
 	ToolDeclarations []ToolDeclaration
 }

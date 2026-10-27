@@ -71,6 +71,7 @@ func (h *AgentHandler) AskAgent(
 		Agent:        r.Msg.GetAgent(),
 		Model:        r.Msg.GetModel(),
 		Reasoning:    r.Msg.GetReasoning(),
+		Context:      r.Msg.GetContext(),
 		Root:         root,
 	}
 	return StreamAgentTask(ctx, taking, task, stream)

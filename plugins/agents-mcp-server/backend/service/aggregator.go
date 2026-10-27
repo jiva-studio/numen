@@ -22,42 +22,43 @@ type ToolClient interface {
 
 // ToolAggregator discovers tools from the host and exposes them through an MCP server.
 type ToolAggregator struct {
-	client      ToolClient
-	mcpServer   *sdk.Server
-	mu          sync.RWMutex
-	registered  map[string]bool
-	contextData map[string]string
+	client     ToolClient
+	mcpServer  *sdk.Server
+	mu         sync.RWMutex
+	registered map[string]bool
 }
 
 // NewToolAggregator creates a tool aggregator for the given host client and MCP server.
 func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator {
 	return &ToolAggregator{
-		client:      client,
-		mcpServer:   mcpServer,
-		registered:  make(map[string]bool),
-		contextData: make(map[string]string),
+		client:     client,
+		mcpServer:  mcpServer,
+		registered: make(map[string]bool),
 	}
 }
 
-// SetContext updates context values passed to tool invocations.
-func (a *ToolAggregator) SetContext(values map[string]string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.contextData = make(map[string]string, len(values))
-	for k, v := range values {
-		a.contextData[k] = v
+// readCallContext is the context of a call: the string values of its `_meta` whose keys start with
+// a plugin id and a slash. Keys with no prefix, and prefixes whose second label is
+// "modelcontextprotocol" or "mcp", are reserved by MCP.
+func readCallContext(meta sdk.Meta) map[string]string {
+	callContext := make(map[string]string, len(meta))
+	for key, value := range meta {
+		text, isText := value.(string)
+		if isText && isPluginKey(key) {
+			callContext[key] = text
+		}
 	}
+	return callContext
 }
 
-// GetContext returns a copy of current context values.
-func (a *ToolAggregator) GetContext() map[string]string {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	copied := make(map[string]string, len(a.contextData))
-	for k, v := range a.contextData {
-		copied[k] = v
+// isPluginKey says whether a `_meta` key is one a plugin wrote.
+func isPluginKey(key string) bool {
+	prefix, _, hasPrefix := strings.Cut(key, "/")
+	if !hasPrefix || prefix == "" {
+		return false
 	}
-	return copied
+	labels := strings.Split(prefix, ".")
+	return len(labels) < 2 || (labels[1] != "modelcontextprotocol" && labels[1] != "mcp")
 }
 
 // GetRegisteredTools returns the sorted list of currently registered tool names.
@@ -110,10 +111,12 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 		toolName := name
 		a.mcpServer.AddTool(declared, func(callCtx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			var args json.RawMessage
+			var callContext map[string]string
 			if req.Params != nil {
 				args = req.Params.Arguments
+				callContext = readCallContext(req.Params.GetMeta())
 			}
-			return a.ExecuteTool(callCtx, toolName, args)
+			return a.ExecuteTool(callCtx, toolName, args, callContext)
 		})
 	}
 
@@ -131,8 +134,11 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	return nil
 }
 
-// ExecuteTool forwards a tool call to the host and translates the response.
-func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json.RawMessage) (*sdk.CallToolResult, error) {
+// ExecuteTool forwards a tool call, with the context it was made under, to the host and translates
+// the response.
+func (a *ToolAggregator) ExecuteTool(
+	ctx context.Context, name string, args json.RawMessage, callContext map[string]string,
+) (*sdk.CallToolResult, error) {
 	if a.client == nil {
 		return &sdk.CallToolResult{
 			IsError: true,
@@ -143,7 +149,7 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 	req := &numenv1.CallToolRequest{
 		Name:      name,
 		Arguments: []byte(args),
-		Context:   a.GetContext(),
+		Context:   callContext,
 	}
 
 	res, err := a.client.CallTool(ctx, connect.NewRequest(req))
