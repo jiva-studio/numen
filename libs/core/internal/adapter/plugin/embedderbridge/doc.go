@@ -1,2 +1,3 @@
-// Package embedderbridge reaches the embedding service of a plugin.
+// Package embedderbridge reaches the embedding provider: the enabled plugin
+// that declares the embedding capability and serves numen.v1.EmbeddingService.
 package embedderbridge

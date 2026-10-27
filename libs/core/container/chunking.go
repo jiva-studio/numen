@@ -47,10 +47,8 @@ func (c Config) Scan(db *Index) vault.Scan {
 func (c Config) ReadWholeVault(
 	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault,
 ) (vault.ReadWholeVault, error) {
-	if embedder != nil {
-		if err := c.syncVectorIndex(ctx, db, embedder.GetModel()); err != nil {
-			return vault.ReadWholeVault{}, err
-		}
+	if err := c.FitIndex(db).Execute(ctx, embedder); err != nil {
+		return vault.ReadWholeVault{}, err
 	}
 	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
@@ -63,23 +61,12 @@ func (c Config) ReadWholeVault(
 	return vault.NewReadWholeVault(c.Scan(db), books, embed), nil
 }
 
-// syncVectorIndex fits the vector index to the model's width, and on a rebuild
-// drops the vectors of other recipes.
-func (c Config) syncVectorIndex(ctx context.Context, db *Index, model embeddingport.EmbeddingModel) error {
-	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
-		return err
-	}
-	if !c.ShouldRebuildIndex {
-		return nil
-	}
-	if _, err := db.DeleteVectorsOfOtherRecipes(ctx, model.Recipe()); err != nil {
-		return err
-	}
-	// A failed compaction is reported and the rows stay deleted.
-	if err := db.Compact(ctx); err != nil {
-		c.handleError(err)
-	}
-	return nil
+// FitIndex sets the vector index to the model of the embedding provider.
+func (c Config) FitIndex(db *Index) vectors.FitIndex {
+	fit := vectors.NewFitIndex(db)
+	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
+	fit.ErrorHandler = c.handleError
+	return fit
 }
 
 // Embed gives a vault's chunks the vectors they owe.

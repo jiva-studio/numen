@@ -21,7 +21,7 @@ type Host interface {
 	pluginport.PluginActivator
 }
 
-// Embedder connects port.Embedder calls to an out-of-process embedding plugin via Connect-RPC.
+// Embedder is the embedding provider seen as an embeddingport.Embedder.
 type Embedder struct {
 	host        pluginport.PluginActivator
 	pluginID    string
@@ -31,7 +31,7 @@ type Embedder struct {
 	concurrency int
 }
 
-// Open activates or connects to the embedding plugin and returns a port.Embedder.
+// Open activates the plugin that declares the embedding capability and reads its model.
 func Open(ctx context.Context, host Host) (*Embedder, error) {
 	plugin, err := host.ResolveCapability(bridge.CapabilityEmbedding)
 	if err != nil {

@@ -104,3 +104,75 @@ func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
 		t.Errorf("expected 0 results on empty index, got %d", len(results))
 	}
 }
+
+// writeEmbeddingPlugin installs a plugin with the manifest given and returns
+// the host that discovered it.
+func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
+	t.Helper()
+	tmp := t.TempDir()
+	pDir := filepath.Join(tmp, "embeddings")
+	if err := os.MkdirAll(pDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	host := plugin.NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatal(err)
+	}
+	return host
+}
+
+// The provider is the plugin that declares the capability. A plugin that only
+// names the embedding service is not asked for vectors.
+func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
+	host := writeEmbeddingPlugin(t, `{
+		"id": "test.vectors",
+		"name": "Vectors",
+		"version": "1.0.0",
+		"targets": ["desktop.editor"],
+		"backend": {"type": "process", "entrypoint": "bin/vectors", "serviceName": "numen.v1.EmbeddingService"}
+	}`)
+	cfg := container.Config{PluginHost: host}
+
+	if cfg.EmbedderReady() {
+		t.Error("a plugin without the embedding capability is the provider")
+	}
+	embedder, _, why := cfg.Embedder(t.Context())
+	if why != nil || embedder != nil {
+		t.Errorf("got embedder %v, error %v; want neither", embedder, why)
+	}
+}
+
+// With the provider disabled, the vault is read and searched by its words.
+func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
+	host := writeEmbeddingPlugin(t, `{
+		"id": "test.vectors",
+		"name": "Vectors",
+		"version": "1.0.0",
+		"capabilities": ["embedding"],
+		"targets": ["desktop.editor"],
+		"backend": {"type": "process", "entrypoint": "bin/vectors"}
+	}`)
+	host.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
+	cfg, vault := makeScannedVault(t)
+	cfg.PluginHost = host
+
+	embedder, closer, why := cfg.Embedder(t.Context())
+	if why != nil || embedder != nil {
+		t.Fatalf("got embedder %v, error %v; want neither", embedder, why)
+	}
+	defer closer()
+	db := read(t, cfg)
+	if _, err := cfg.ReadWholeVault(t.Context(), db, embedder, vault); err != nil {
+		t.Fatal(err)
+	}
+	found, err := cfg.NewSearch(db, embedder, nil).Execute(t.Context(), vault, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Source != "Entropy.md" {
+		t.Errorf("the words answered with %+v", found)
+	}
+}
