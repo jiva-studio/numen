@@ -105,11 +105,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     move: async (from, to) => void recorded.made.push(`move ${from} ${to}`),
     createFolder: async (path) => void recorded.made.push(`folder ${path}`),
     createNote: record('note'),
-    importUrl: record('url'),
-    importUrls: async (folder, urls) => {
-      recorded.made.push(`urls ${folder} ${urls.join(' ')}`)
-      return urls
-    },
   }
 
   const host: FileTreeHost = { workspace, files }

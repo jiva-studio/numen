@@ -34,8 +34,6 @@ const createServices = () => {
     move: vi.fn(() => Promise.resolve()),
     createFolder: vi.fn(() => Promise.resolve()),
     createNote: vi.fn(() => Promise.resolve('a.md')),
-    importUrl: vi.fn(() => Promise.resolve('u.md')),
-    importUrls: vi.fn(() => Promise.resolve(['u.md'])),
   } as unknown as VaultFiles
   const agent = {
     ask: vi.fn(),
@@ -85,8 +83,6 @@ const FILE_WRITES: Record<string, Call> = {
   move: (c) => c.files!.move('a.md', 'b.md'),
   createFolder: (c) => c.files!.createFolder('dir'),
   createNote: (c) => c.files!.createNote('dir'),
-  importUrl: (c) => c.files!.importUrl('dir', 'https://example.test'),
-  importUrls: (c) => c.files!.importUrls('dir', ['https://example.test']),
 }
 
 describe('a note a plugin writes', () => {

@@ -28,7 +28,6 @@ import type { DeclaredCommands } from './declaredCommands'
 import type { FileMenuCommands } from './fileMenuCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
-import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
 import { createPluginSettingCommands } from '../window/useSettings'
@@ -51,7 +50,6 @@ export interface CommandsDepsOptions {
   runs: RunSupport
   coverage: () => IndexCoverage
   making: NoteCreator
-  made: ReturnType<typeof createFileCreators>
   setVaultName: (vault: VaultRef) => void
   reload: () => void
   reached: Notes

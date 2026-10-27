@@ -78,7 +78,7 @@ describe('a path a files tab selects', () => {
 })
 
 describe('what else a files tab asks of the window', () => {
-  it('runs a command over the paths and makes, moves and imports through the files of the vault', async () => {
+  it('runs a command over the paths and makes and moves through the files of the vault', async () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
@@ -86,19 +86,11 @@ describe('what else a files tab asks of the window', () => {
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
     expect(await deps.createNote('dir/')).toBe('dir/note')
-    expect(await deps.importUrl('dir/', 'https://a.test')).toBe('dir/https://a.test')
-    expect(await deps.importUrls('dir/', ['https://b.test'])).toStrictEqual(['https://b.test'])
 
     expect(recorded.commands).toStrictEqual([
       ['remove', { paths: ['a.md', 'b.md'], name: 'a', source: 'note', isFolder: false }],
     ])
-    expect(recorded.made).toStrictEqual([
-      'move a.md dir/a.md',
-      'folder dir',
-      'note dir/',
-      'url dir/ https://a.test',
-      'urls dir/ https://b.test',
-    ])
+    expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir', 'note dir/'])
   })
 
   it('shares what is dragged, says what failed and draws through the window', () => {

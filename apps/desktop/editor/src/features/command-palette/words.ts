@@ -70,8 +70,6 @@ export interface Words extends EmptyWords {
   readonly destroy: string
   readonly copy: string
   readonly newNote: string
-  /** The note that points at a web address, made from the address. */
-  readonly importUrl: string
   readonly close: string
   /**
    * The four commands over how the window is drawn: the theme, the halves, and
@@ -115,14 +113,6 @@ export interface Words extends EmptyWords {
   /** A value a command asks for, and the two things its step offers. */
   readonly givesIt: string
   readonly leavesOut: string
-  /**
-   * what is said of words that are no address.
-   */
-  readonly url: string
-  readonly address?: string
-  readonly typeAddress: string
-  readonly importIt: string
-  readonly notAnAddress: string
   /** A note asked for, over the names in the vault. */
   readonly names: string
   readonly typeNote: string

@@ -25,31 +25,15 @@ const target = {
 }
 
 const setup = () => {
-  const writeMessage = vi.fn()
-  const openNewFile = vi.fn()
-  const createFileOfKind = vi.fn()
   const createUntitled = vi.fn()
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
-  const createdItem = createFileMakers({
-    tabOpeners: { openNewFile } as never,
-    windowTabs: { createFileOfKind },
-    writeMessage,
-  })
   const files = createVaultFiles({
     core: { list: (folder) => Promise.resolve([{ path: `${folder}/a.md` }] as never) },
-    made: createdItem,
     making: { createUntitled } as never,
     getTarget: () => target as never,
     commandDeps: commandDeps as never,
   })
-  return {
-    files,
-    writeMessage,
-    openNewFile,
-    createFileOfKind,
-    createUntitled,
-    commandDeps,
-  }
+  return { files, createUntitled, commandDeps }
 }
 
 beforeEach(() => {
@@ -94,23 +78,6 @@ describe('the files of the vault a plugin is handed', () => {
     expect(await files.createNote('dir')).toBe('dir/Untitled.md')
     expect(await files.createNote('dir')).toBe('')
     expect(createUntitled).toHaveBeenCalledWith('dir', [])
-  })
-
-  it('import several addresses without opening tabs, and one into a tab of its own', async () => {
-    const { files, createFileOfKind, openNewFile } = setup()
-    createFileOfKind
-      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/A.url' } })
-      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/B.url' } })
-      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/C.url' } })
-
-    expect(await files.importUrls('dir', ['https://a.test', 'https://b.test'])).toEqual([
-      'dir/A.url',
-      'dir/B.url',
-    ])
-    expect(createFileOfKind).toHaveBeenCalledWith('url', 'dir', 'https://a.test')
-    expect(openNewFile).not.toHaveBeenCalled()
-    expect(await files.importUrls('dir', ['https://c.test'])).toEqual(['dir/C.url'])
-    expect(openNewFile).toHaveBeenCalledWith('dir/C.url', '', 'url')
   })
 })
 

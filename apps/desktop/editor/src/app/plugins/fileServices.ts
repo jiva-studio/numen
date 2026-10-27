@@ -101,14 +101,13 @@ export function createFileMakers({
 /** What the files of the vault are listed, made and moved through. */
 export interface VaultFilesDeps {
   readonly core: Pick<FilePort, 'list'>
-  readonly made: ReturnType<typeof createFileMakers>
   readonly making: NoteCreator
   readonly getTarget: () => CommandTarget
   readonly commandDeps: () => CommandDeps
 }
 
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
-  const { core, made, making, getTarget, commandDeps } = deps
+  const { core, making, getTarget, commandDeps } = deps
   const run = (id: string, target: CommandTarget, name: string) =>
     runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
   return {
@@ -116,8 +115,6 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     move: (from, to) => run('move', { ...getTarget(), path: from }, to),
     createFolder: (path) => run('createFolder', getTarget(), path),
     createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
-    importUrl: (folder, url) => made.createUrl(folder, url),
-    importUrls: (folder, urls) => made.createUrls(folder, urls),
   }
 }
 

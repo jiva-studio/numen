@@ -57,7 +57,6 @@ export const WORDS = {
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
   newNote: 'New note',
   /** The note that points at a web address. */
-  importUrl: 'Import link',
   close: 'Close tab',
   appearance: 'Change theme',
   mode: 'Light or dark',
@@ -99,10 +98,6 @@ export const WORDS = {
   callIt: 'Name it',
   givesIt: 'Set',
   leavesOut: 'Clear',
-  url: 'Link',
-  typeAddress: 'Paste a link',
-  importIt: 'Import',
-  notAnAddress: 'Not a valid link',
   typeNote: 'Search notes',
   /** One of a list the window holds: the field, and what Enter does. */
   typeChoice: 'Search',

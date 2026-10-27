@@ -117,12 +117,6 @@ const window = (
         return answers.folderError ?? null
       },
     },
-    makers: {
-      createUrl: async (folder, address) => {
-        isDone.push(`imports ${folder || '—'} ${address}`)
-        return folder ? `${folder}/note.md` : 'note.md'
-      },
-    },
     notes: {
       getTabAt: (path) => (path === targetPath ? 'active' : null),
       getPath: (id) => (id === 'active' || id === 'held' ? targetPath : id),
@@ -963,24 +957,6 @@ describe('a note made in a relation of another', () => {
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
     expect(one.calls).toStrictEqual([['', undefined]])
-  })
-})
-
-describe('an address made', () => {
-  it('is nothing at all where nothing was typed', async () => {
-    const one = window()
-
-    await carry(createInvocation('importUrl', front(), ''), one.on)
-
-    expect(one.actions).toStrictEqual([])
-  })
-
-  it('is a note at the address that was typed, at the top of the vault', async () => {
-    const one = window()
-
-    await carry(createInvocation('importUrl', front(), 'https://example.org'), one.on)
-
-    expect(one.actions).toStrictEqual(['imports — https://example.org'])
   })
 })
 

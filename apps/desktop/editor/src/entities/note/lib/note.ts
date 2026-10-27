@@ -1,10 +1,10 @@
 import type { Result } from '@numen/wire'
-import type { LinkAddress, NoteContents } from '../model/buffer'
+import type { NoteContents } from '../model/buffer'
 import type { ErrorCode } from '@/shared/errors'
 import type { Span } from '@/shared/span'
 import type { MoveResult, NoteType } from '@/entities/file/@x/note'
 
-export type { LinkAddress, NoteContents }
+export type { NoteContents }
 
 /**
  * One report of a change being made to the prose of a note, while it is being

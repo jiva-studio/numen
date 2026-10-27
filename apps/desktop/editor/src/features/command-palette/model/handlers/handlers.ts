@@ -80,34 +80,6 @@ export const commands = {
 
 export const registerCommand = commands.registerCommand
 
-const DYNAMIC_CREATORS: Record<
-  string,
-  (makers: CommandDeps['makers'], name: string) => Promise<unknown>
-> = {
-  importUrl: (makers, name) =>
-    'createAndOpenFile' in makers &&
-    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
-      ? (
-          makers as {
-            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
-          }
-        ).createAndOpenFile('url', '', name)
-      : makers.createUrl('', name),
-}
-
-function resolveDynamicHandler(id: string): CommandHandler | undefined {
-  const creatorOp = DYNAMIC_CREATORS[id]
-  if (creatorOp) {
-    return async (invocation, on) => {
-      if (invocation.name) {
-        await creatorOp(on.makers, invocation.name)
-      }
-    }
-  }
-
-  return undefined
-}
-
 async function handlePluginInvocation(
   invocation: CommandInvocation,
   on: CommandDeps,
@@ -130,10 +102,7 @@ export async function runInvocation(
 ): Promise<void> {
   if (!invocation) return
   const isPlugin = invocation.id.startsWith('plugin-setting:')
-  const handler =
-    commandRegistry.get(invocation.id) ??
-    HANDLERS[invocation.id] ??
-    resolveDynamicHandler(invocation.id)
+  const handler = commandRegistry.get(invocation.id) ?? HANDLERS[invocation.id]
   if (!isPlugin && !handler) return
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)

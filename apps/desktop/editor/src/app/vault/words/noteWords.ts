@@ -79,17 +79,13 @@ export const mapNoteResult = (from: {
   body?: string | undefined
   error?: ProtoErrorCode | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
-  url?: string | undefined
-  embed?: string | undefined
 }): NoteResult => {
   const error = findErrorCode(from)
   if (error) return asFailure(error)
   const fingerprint = formatFingerprint(from.at)
-  const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return asValue({
     body: from.body ?? '',
     ...(fingerprint === undefined ? {} : { at: fingerprint }),
-    ...(link === undefined ? {} : { link }),
   })
 }
 

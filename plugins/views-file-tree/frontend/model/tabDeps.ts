@@ -33,8 +33,6 @@ export function createFilesTabDeps({ workspace, files }: FileTreeHost, id: strin
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
     createFolder: (path) => files.createFolder(path),
     createNote: (folder) => files.createNote(folder),
-    importUrl: (folder, url) => files.importUrl(folder, url),
-    importUrls: (folder, urls) => files.importUrls(folder, urls),
     showError: (text) => workspace.showError(text),
     getPathCommands: (row) => workspace.getPathCommands(row),
     getCommandIcon: (command) => workspace.getCommandIcon(command),

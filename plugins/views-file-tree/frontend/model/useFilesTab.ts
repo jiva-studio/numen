@@ -212,10 +212,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     drop: () => deps.setDraggedPaths([]),
     createFolder: creators.createFolder,
     createNote: creators.createNote,
-    importUrl: (url) =>
-      deps.importUrl(create.getFolderFor(list, list.selectedPaths.value[0] ?? null), url),
-    importUrls: (urls) =>
-      deps.importUrls(create.getFolderFor(list, list.selectedPaths.value[0] ?? null), urls),
     openMenu: fileMenu.openMenu,
     dismissMenu: fileMenu.dismissMenu,
     chooseMenuItem: fileMenu.chooseMenuItem,

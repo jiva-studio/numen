@@ -4,17 +4,9 @@
 import type { Result } from '@numen/wire'
 import type { NoteBaseline, NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
-/** Where a link note points: the web address (URL) and embed player URL. */
-export interface LinkAddress {
-  readonly url: string
-  readonly embed: string
-}
-
 /** The prose a read gave back, and what the vault says came with it. */
 export interface NoteContents {
   readonly body: string
-  /** Where a link note points, and nothing on every other note. */
-  readonly link?: LinkAddress
   /** The file the prose came out of, as the next write presents it again. */
   readonly at?: string
 }

@@ -1,7 +1,7 @@
 /**
- * What a step of a command draws while it asks: a name to give, an address to
- * point at, the notes or the vaults to pick from, a list the window holds, and
- * the two answers of a confirmation.
+ * What a step of a command draws while it asks: a name to give, the notes or the
+ * vaults to pick from, a list the window holds, and the two answers of a
+ * confirmation.
  *
  * Nothing here decides anything or asks the application for anything:
  * `palette.ts` holds the steps and does that.
@@ -9,7 +9,6 @@
 import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import type { NoteType } from '@/entities/file'
 import type { Vault } from '@/entities/vault'
-import { isWebUrl } from '../../lib/url/url'
 import {
   CHOSEN,
   EXACT,
@@ -58,24 +57,6 @@ function getArgumentGroup(step: PendingStep, text: string, words: Words): Palett
   else if (prompt && !prompt.isRequired)
     items = [item(`${words.leavesOut} ${title}`, words.leavesOut)]
   return { id: 'arguments', title, items, silence: title }
-}
-
-function getAddressGroup(text: string, words: Words): PaletteGroup {
-  const raw = text.trim()
-  return {
-    id: 'address',
-    title: words.url,
-    items: isWebUrl(raw)
-      ? [
-          {
-            id: NAME,
-            title: `${words.importIt} “${raw}”`,
-            actions: [{ id: NAME, text: words.importIt }],
-          },
-        ]
-      : [],
-    silence: raw ? words.notAnAddress : words.typeAddress,
-  }
 }
 
 function getRowItem(one: StepRow, word: string, words: Words): PaletteItem | null {
@@ -250,7 +231,6 @@ export function createStepGroups(state: ViewState) {
   return {
     getNamingGroup: (text: string) => getNamingGroup(text, words),
     getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
-    getAddressGroup: (text: string) => getAddressGroup(text, words),
     getPickingGroup,
     getChoosingGroups,
     getVaultsGroup,

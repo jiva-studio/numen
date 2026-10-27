@@ -162,8 +162,6 @@ export interface VaultFiles {
   createFolder(path: string): Promise<void>
   // Each answers with the path of what was made, and empty where nothing was.
   createNote(folder: string): Promise<string>
-  importUrl(folder: string, url: string): Promise<string>
-  importUrls(folder: string, urls: readonly string[]): Promise<readonly string[]>
 }
 
 // PathRename is a file that is no longer where it was, and where it now is.

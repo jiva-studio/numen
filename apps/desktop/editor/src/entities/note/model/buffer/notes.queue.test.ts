@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from './results'
-import type { LinkAddress } from './types'
 import type { Event } from './tab'
 import type { Notes } from './types'
 import { createNoteQueue, convertErrorCode } from './queue'
@@ -24,11 +23,8 @@ describe('what a failed call is reported as', () => {
 })
 
 describe('the queue of an open note', () => {
-  const link: LinkAddress = { url: 'https://example.test/a', embed: 'https://example.test/e' }
-
   const setup = (notes: Partial<Notes> = {}, hasTab = true) => {
     const turned: [string, Event][] = []
-    const addresses: [string, LinkAddress | null][] = []
     const resumed: string[] = []
     const queue = createNoteQueue(
       {
@@ -39,11 +35,10 @@ describe('the queue of an open note', () => {
       {
         dispatch: (id, event) => turned.push([id, event]),
         hasTab: () => hasTab,
-        setAddress: (id, address) => addresses.push([id, address]),
         resumeClosing: (id) => resumed.push(id),
       },
     )
-    return { queue, turned, addresses, resumed }
+    return { queue, turned, resumed }
   }
 
   beforeEach(() => {
@@ -161,36 +156,33 @@ describe('the queue of an open note', () => {
   })
 
   describe('a read', () => {
-    it('passes the body, the file it came from and the link to the tab', async () => {
-      const { queue, turned, addresses } = setup({
-        read: async () => asValue({ body: 'text', at: 'v1', link }),
+    it('passes the body and the file it came from to the tab', async () => {
+      const { queue, turned } = setup({
+        read: async () => asValue({ body: 'text', at: 'v1' }),
       })
 
       await queue.read('a', 'Note.md', 3)
 
-      expect(addresses).toEqual([['a', link]])
       expect(turned).toEqual([
         ['a', { kind: 'read', generation: 3, answer: { kind: 'body', body: 'text', at: 'v1' } }],
       ])
     })
 
-    it('passes an empty file mark and no link where the note has neither', async () => {
-      const { queue, turned, addresses } = setup({ read: async () => asValue({ body: 'text' }) })
+    it('passes an empty file mark where the note has none', async () => {
+      const { queue, turned } = setup({ read: async () => asValue({ body: 'text' }) })
 
       await queue.read('a', 'Note.md', 1)
 
-      expect(addresses).toEqual([['a', null]])
       expect(turned).toEqual([
         ['a', { kind: 'read', generation: 1, answer: { kind: 'body', body: 'text', at: '' } }],
       ])
     })
 
-    it('reports a note that is not there as missing, with no link', async () => {
-      const { queue, turned, addresses } = setup({ read: async () => asFailure('missing') })
+    it('reports a note that is not there as missing', async () => {
+      const { queue, turned } = setup({ read: async () => asFailure('missing') })
 
       await queue.read('a', 'Note.md', 2)
 
-      expect(addresses).toEqual([['a', null]])
       expect(turned).toEqual([['a', { kind: 'read', generation: 2, answer: { kind: 'missing' } }]])
     })
 
@@ -205,7 +197,7 @@ describe('the queue of an open note', () => {
     })
 
     it('reports a call that threw as unreachable', async () => {
-      const { queue, turned, addresses } = setup({
+      const { queue, turned } = setup({
         read: async () => {
           throw new Error('down')
         },
@@ -213,7 +205,6 @@ describe('the queue of an open note', () => {
 
       await queue.read('a', 'Note.md', 4)
 
-      expect(addresses).toEqual([])
       expect(turned).toEqual([
         ['a', { kind: 'read', generation: 4, answer: { kind: 'error', error: 'unreachable' } }],
       ])

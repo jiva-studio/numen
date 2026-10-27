@@ -551,64 +551,6 @@ describe('closing a note that could not be written', () => {
   })
 })
 
-describe('a note that points somewhere', () => {
-  const linked = {
-    body: 'What I made of it.',
-    at: getFingerprint('What I made of it.'),
-    link: {
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
-    },
-  }
-
-  it('carries the link, alongside the prose it was read with', async () => {
-    const { core } = fake({ read: async () => asValue(linked) })
-    const notes = openNotes(core, { limits: quick })
-
-    notes.open('Entropy.md')
-    await settle()
-
-    expect(notes.link('Entropy.md')).toStrictEqual(linked.link)
-    expect(notes.getOpenNote('Entropy.md').body).toBe('What I made of it.')
-  })
-
-  it('points nowhere once a read says it points nowhere', async () => {
-    let link: (typeof linked)['link'] | undefined = linked.link
-    const { core } = fake({
-      read: async () =>
-        asValue({
-          body: '',
-          at: getFingerprint(''),
-          ...(link ? { link } : {}),
-        }),
-    })
-    const notes = openNotes(core, { limits: quick })
-
-    notes.open('Entropy.md')
-    await settle()
-    expect(notes.link('Entropy.md')).not.toBeNull()
-
-    link = undefined
-    notes.applyPathChanges(['Entropy.md'])
-    await settle()
-
-    expect(notes.link('Entropy.md')).toBeNull()
-  })
-})
-
-describe('a note that points nowhere', () => {
-  it('says so, which is what draws no player over its prose', async () => {
-    const { core, files } = fake()
-    files.set('Heat.md', 'entropy grows')
-    const notes = openNotes(core, { limits: quick })
-
-    notes.open('Heat.md')
-    await settle()
-
-    expect(notes.link('Heat.md')).toBeNull()
-  })
-})
-
 describe('reloading a note', () => {
   it('clears previous body and reloads new path', async () => {
     const { core, files } = fake()
@@ -807,15 +749,6 @@ describe('a note replaced by what its file holds', () => {
 })
 
 describe('reloading a note that retained something', () => {
-  const linked = {
-    body: 'What I made of it.',
-    at: getFingerprint('What I made of it.'),
-    link: {
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
-    },
-  }
-
   it('shows an empty file as empty', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'first body')
@@ -828,18 +761,6 @@ describe('reloading a note that retained something', () => {
     await settle()
 
     expect(notes.getOpenNote('Heat.md').body).toBe('')
-  })
-
-  it('drops the link at once, before the new file has answered', async () => {
-    const { core } = fake({ read: async () => asValue(linked) })
-    const notes = openNotes(core, { limits: quick })
-    notes.open('Entropy.md')
-    await settle()
-    expect(notes.link('Entropy.md')).not.toBeNull()
-
-    notes.reload('Entropy.md')
-
-    expect(notes.link('Entropy.md')).toBeNull()
   })
 
   it('leaves no timer running for the text typed before it', async () => {
@@ -881,23 +802,20 @@ describe('closing a note', () => {
     }
   })
 
-  it('leaves neither its text nor its link behind', async () => {
+  it('leaves no text behind', async () => {
     const { core } = fake({
       read: async () =>
         asValue({
           body: 'What I made of it.',
           at: getFingerprint('What I made of it.'),
-          link: { url: 'https://example.com/v', embed: 'https://example.com/e' },
         }),
     })
     const notes = openNotes(core, { limits: quick })
     notes.open('Entropy.md')
     await settle()
-    expect(notes.link('Entropy.md')).not.toBeNull()
 
     await notes.close('Entropy.md')
 
-    expect(notes.link('Entropy.md')).toBeNull()
     expect(notes.getOpenNote('Entropy.md').body).toBe('')
   })
 

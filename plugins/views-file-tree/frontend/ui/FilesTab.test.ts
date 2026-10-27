@@ -42,11 +42,6 @@ const mountFiles = async (open: readonly string[] = []) => {
     setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => void isDone.push(`makes ${path}`),
     createNote: async (folderPath) => `${folderPath}Untitled note.md`,
-    importUrl: async (folderPath, url) => void isDone.push(`imports ${folderPath} ${url}`) as never,
-    importUrls: async (folderPath, urls) => {
-      isDone.push(`imports-multi ${folderPath || '/'} ${urls.join(' ')}`)
-      return []
-    },
     showError: (text) => void isDone.push(`says ${text}`),
   })
   await list.openFolder(ROOT)
@@ -262,8 +257,6 @@ describe('a folder that could not be read', () => {
       setDraggedPaths: () => {},
       createFolder: async () => {},
       createNote: async () => '',
-      importUrl: async () => '',
-      importUrls: async () => [],
       showError: () => {},
     })
     await list.openFolder(ROOT)
@@ -278,13 +271,5 @@ describe('a folder that could not be read', () => {
     const { window } = await mountFiles()
 
     expect(window.find('.caution').exists()).toBe(false)
-  })
-})
-
-describe('several addresses imported into the files tab', () => {
-  it('imports all addresses into the folder', async () => {
-    const { recorded, tab } = await mountFiles()
-    await tab.importUrls(['https://first.org/', 'https://second.org/'])
-    expect(recorded).toContain('imports-multi / https://first.org/ https://second.org/')
   })
 })

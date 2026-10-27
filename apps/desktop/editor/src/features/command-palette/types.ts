@@ -34,15 +34,7 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
  * of a command's `prompts`, a step to each.
  */
 export type Step =
-  | 'commands'
-  | 'naming'
-  | 'address'
-  | 'picking'
-  | 'vaults'
-  | 'choosing'
-  | 'asking'
-  | 'exactly'
-  | 'arguments'
+  'commands' | 'naming' | 'picking' | 'vaults' | 'choosing' | 'asking' | 'exactly' | 'arguments'
 
 /**
  * One value a command asks for under its own name, typed in a step of its own.

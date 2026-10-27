@@ -1,7 +1,7 @@
 /**
  * Save timers, flush coordination, and read/write execution for open notes.
  */
-import type { LinkAddress, Notes, NoteResult, WriteResult as CoreWriteResult } from './types'
+import type { Notes, NoteResult, WriteResult as CoreWriteResult } from './types'
 import type { Event, NoteBaseline, NoteErrorCode, ReadResult, WriteResult } from './tab'
 
 /** The codes a tab holds as its own. */
@@ -27,7 +27,6 @@ export const convertErrorCode = (from: string): NoteErrorCode =>
 export interface NoteQueueDeps {
   dispatch: (id: string, event: Event) => void
   hasTab: (id: string) => boolean
-  setAddress: (id: string, address: LinkAddress | null) => void
   resumeClosing: (id: string) => void
 }
 
@@ -76,7 +75,7 @@ function createQueueTimers(dispatch: NoteQueueDeps['dispatch']) {
 }
 
 export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
-  const { dispatch, hasTab, setAddress, resumeClosing } = deps
+  const { dispatch, hasTab, resumeClosing } = deps
   const { startTimer, cancelTimer } = createQueueTimers(dispatch)
   const flushWaiters = new Map<string, () => void>()
 
@@ -101,7 +100,6 @@ export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
       dispatch(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    setAddress(id, reply.ok ? (reply.value.link ?? null) : null)
     dispatch(id, { kind: 'read', generation, answer: toReadResult(reply) })
   }
 

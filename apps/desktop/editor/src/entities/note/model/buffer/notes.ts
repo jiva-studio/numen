@@ -14,7 +14,7 @@ import {
   type Move,
   type Tab,
 } from './tab'
-import type { LinkAddress, OpenNote, Notes, OpenNotesOptions } from './types'
+import type { OpenNote, Notes, OpenNotesOptions } from './types'
 import { createNoteQueue } from './queue'
 import { createConflictCoordinator } from './conflict'
 
@@ -23,7 +23,6 @@ export * from './types'
 interface NoteStoreContext {
   tabs: Map<string, Tab>
   bodies: Map<string, string>
-  addresses: Map<string, LinkAddress>
   reportedIds: Set<string>
   closeCallbacks: Map<string, (removed: boolean) => void>
   queue: ReturnType<typeof createNoteQueue>
@@ -34,7 +33,6 @@ function discardTab(context: NoteStoreContext, id: string): void {
   context.queue.discard(id)
   context.tabs.delete(id)
   context.bodies.delete(id)
-  context.addresses.delete(id)
   context.closeCallbacks.get(id)?.(true)
   context.closeCallbacks.delete(id)
   context.reportedIds.delete(id)
@@ -102,24 +100,17 @@ function createNoteStoreContext(
 ) {
   const tabs = shallowReactive(new Map<string, Tab>())
   const bodies = shallowReactive(new Map<string, string>())
-  const addresses = shallowReactive(new Map<string, LinkAddress>())
   const reportedIds = new Set<string>()
   const closeCallbacks = new Map<string, (removed: boolean) => void>()
 
   const context: NoteStoreContext = {
     tabs,
     bodies,
-    addresses,
     reportedIds,
     closeCallbacks,
     queue: createNoteQueue(core, {
       dispatch: (id, event) => dispatch(id, event),
       hasTab: (id) => tabs.has(id),
-      setAddress: (id, addr) => {
-        // Stryker disable next-line ConditionalExpression: deleted key and key set to undefined both evaluate to null via link() fallback.
-        if (addr) addresses.set(id, addr)
-        else addresses.delete(id)
-      },
       resumeClosing: (id) => {
         if (closeCallbacks.has(id)) dispatch(id, { kind: 'close' })
       },
@@ -142,7 +133,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const now = how.now ?? (() => performance.now())
 
   const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
-  const { tabs, bodies, addresses, queue, reportedIds, closeCallbacks } = context
+  const { tabs, bodies, queue, reportedIds, closeCallbacks } = context
 
   const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))
   const getOpenIds = (): readonly string[] => [...tabs.keys()]
@@ -190,7 +181,6 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
         error: tab?.error ?? null,
       }
     },
-    link: (id: string): LinkAddress | null => addresses.get(id) ?? null,
     getOpenIds,
     getErrorMessage: conflicts.getErrorMessage,
     stale: conflicts.stale,

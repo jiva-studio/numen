@@ -53,9 +53,6 @@ const createWindow = (
       move: unused,
       createFolder: unused,
     },
-    makers: {
-      createUrl: unused,
-    },
     vaults: {
       list: async () => ({ vaults: [], showing: '' }),
       choose: async () => answers.chose ?? '/vaults/Heat',

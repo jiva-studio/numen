@@ -7,25 +7,13 @@ import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
 const file = { path: 'Note.md', size: 12n, mtime: 34n }
 
 describe('mapNoteResult', () => {
-  it('carries the body, the file it came out of and the page it was fetched from', () => {
-    expect(
-      mapNoteResult({ body: 'text', at: file, url: 'https://a.example', embed: '<b>' }),
-    ).toEqual(
-      asValue({
-        body: 'text',
-        at: '12 34 Note.md',
-        link: { url: 'https://a.example', embed: '<b>' },
-      }),
+  it('carries the body and the file it came out of', () => {
+    expect(mapNoteResult({ body: 'text', at: file })).toEqual(
+      asValue({ body: 'text', at: '12 34 Note.md' }),
     )
   })
 
-  it('leaves an absent embed empty', () => {
-    expect(mapNoteResult({ url: 'https://a.example' })).toStrictEqual(
-      asValue({ body: '', link: { url: 'https://a.example', embed: '' } }),
-    )
-  })
-
-  it('leaves out the file and the page an answer does not name', () => {
+  it('leaves out the file an answer does not name', () => {
     expect(mapNoteResult({ body: 'text' })).toStrictEqual(asValue({ body: 'text' }))
     expect(mapNoteResult({})).toStrictEqual(asValue({ body: '' }))
   })

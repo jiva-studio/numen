@@ -99,7 +99,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       today: () => formatLocalDate(new Date()),
     }),
     notes: createVaultNotes({ core, search: core, making: editing.making }),
-    files: createVaultFiles({ ...deps, made: createdItem, making: editing.making }),
+    files: createVaultFiles({ ...deps, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
   }

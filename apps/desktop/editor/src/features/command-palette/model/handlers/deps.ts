@@ -36,16 +36,6 @@ export interface VaultWriter {
   createFolder(path: string): Promise<ErrorCode | null>
 }
 
-/** The files a command makes from nothing, each put in front of the person. */
-export interface FileMakers {
-  /**
-   * A note pointing at an address, named by the address until what is at it
-   * says what it is called. The path it landed at, and nothing where none was
-   * made.
-   */
-  createUrl(folder: string, address: string): Promise<string>
-}
-
 /** The vaults this installation holds, as a command changes which one shows. */
 export interface VaultSwitcher extends Vaults {
   /** One vault of the list under the name it was just given. */
@@ -98,10 +88,9 @@ export interface Voice {
   readonly writeMessage: MessageWriter
 }
 
-/** The vault a command reaches: what it writes, what it makes, and which one shows. */
+/** The vault a command reaches: what it writes, and which one shows. */
 export interface VaultContext {
   readonly files: VaultWriter
-  readonly makers: FileMakers
   readonly vaults: VaultSwitcher
 }
 

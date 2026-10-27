@@ -7,7 +7,6 @@ import type {
   VaultWriter,
 } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
 import { write, type SettingEdit } from '@/entities/settings'
@@ -16,7 +15,6 @@ export interface CommandDepsOptions {
   core: VaultCore
   windowTabs: ReturnType<typeof useWindowTabs>
   making: NoteCreator
-  made: ReturnType<typeof createFileCreators>
   setVaultName: (vault: VaultRef) => void
   reload: () => void
   reached: Notes
@@ -137,12 +135,10 @@ export function createCommandNotes(
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, made, setVaultName, reload, reached, windowTabs, runs, writeMessage } =
-    options
+  const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage } = options
 
   return {
     files: createFileCommands(core, making),
-    makers: made,
     vaults: {
       ...vaults,
       setVaultName,

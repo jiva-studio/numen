@@ -24,9 +24,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
       requestClose: record('requestClose'),
     } as never,
     making: { createWithTitle: record('createWithTitle', 'created') } as never,
-    made: {
-      createUrl: record('createUrl', 'pointed'),
-    } as never,
     setVaultName: record('setVaultName'),
     reload: record('reload'),
     reached: {} as never,
@@ -98,13 +95,6 @@ describe('the commands reach the window', () => {
       ['move', 'Llama.md', 'zoo/Llama.md'],
       ['createFolder', 'zoo'],
     ])
-  })
-
-  it('makes every file as the makers make it', async () => {
-    const { deps, calls } = createOptions()
-
-    expect(await deps.makers.createUrl('links', 'example.org')).toBe('pointed')
-    expect(calls).toStrictEqual([['createUrl', 'links', 'example.org']])
   })
 
   it('names and reloads the vault through the window, and lists vaults through the service', () => {

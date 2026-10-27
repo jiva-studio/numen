@@ -1,6 +1,6 @@
 /**
- * What making a file of a kind or a note pointing at an address asks of the vault, and what it says when the
- * vault refuses or cannot be asked at all.
+ * What making a file of a kind asks of the vault, and what it says when the vault
+ * refuses or cannot be asked at all.
  */
 import { describe, expect, it } from 'vitest'
 import type { ErrorCode } from '@/shared/errors'
@@ -24,7 +24,7 @@ const maker = (
   return {
     requests: request,
     createFile: (kind, title, folder) => {
-      request.push(`${kind === 'url' ? 'link' : kind} ${folder || '—'} ${title}`)
+      request.push(`${kind} ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
   }
@@ -145,71 +145,5 @@ describe('a file made and put in front of the person', () => {
     await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')
 
     expect(titles).toStrictEqual([''])
-  })
-})
-
-describe('a note pointing at an address made', () => {
-  it('is requested of the vault under the address and folder, and put in front of the person', async () => {
-    const vault = maker()
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const openedTabs: string[] = []
-    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
-    const createdItem = createCreators(vault, tabOpeners)
-
-    const path = await createdItem.createUrl('links', 'example.org')
-
-    expect(vault.requests).toStrictEqual(['link links example.org'])
-    expect(path).toBe('links/example.org.md')
-    expect(openedTabs).toStrictEqual(['links/example.org.md'])
-  })
-
-  it('answers nothing, and opens nothing, where the vault rejected', async () => {
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const openedTabs: string[] = []
-    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
-    const createdItem = createCreators(maker('occupied'), tabOpeners)
-
-    expect(await createdItem.createUrl('links', 'example.org')).toBe('')
-    expect(openedTabs).toStrictEqual([])
-  })
-})
-
-describe('several notes pointing at addresses made', () => {
-  it('opens the single file when given one address', async () => {
-    const vault = maker()
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const openedTabs: string[] = []
-    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
-    const createdItem = createCreators(vault, tabOpeners)
-
-    const paths = await createdItem.createUrls('links', ['example.org'])
-
-    expect(vault.requests).toStrictEqual(['link links example.org'])
-    expect(paths).toStrictEqual(['links/example.org.md'])
-    expect(openedTabs).toStrictEqual(['links/example.org.md'])
-  })
-
-  it('creates every note and opens none when given several addresses', async () => {
-    const vault = maker()
-    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
-    const openedTabs: string[] = []
-    tabOpeners.registerEditor('url', (path) => openedTabs.push(path))
-    const createdItem = createCreators(vault, tabOpeners)
-
-    const paths = await createdItem.createUrls('links', ['first.org', 'second.org'])
-
-    expect(vault.requests).toStrictEqual(['link links first.org', 'link links second.org'])
-    expect(paths).toStrictEqual(['links/first.org.md', 'links/second.org.md'])
-    expect(openedTabs).toStrictEqual([])
-  })
-
-  it('answers nothing when given an empty list', async () => {
-    const vault = maker()
-    const createdItem = createCreators(vault)
-
-    const paths = await createdItem.createUrls('links', [])
-
-    expect(vault.requests).toStrictEqual([])
-    expect(paths).toStrictEqual([])
   })
 })

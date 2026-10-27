@@ -5,7 +5,6 @@ export { parseFileConflict, type FileConflict } from './conflict'
 export { ERROR_MESSAGES, STALE_CONFLICT } from './words'
 export type {
   ConflictWords,
-  LinkAddress,
   NoteContents,
   Notes as NoteCore,
   NoteResult as NoteReadResult,

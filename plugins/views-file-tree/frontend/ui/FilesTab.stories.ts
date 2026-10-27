@@ -46,8 +46,6 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
     setDraggedPaths: () => {},
     createFolder: async () => {},
     createNote: async (folder) => `${folder}Untitled note.md`,
-    importUrl: async () => '',
-    importUrls: async () => [],
     showError: () => {},
   })
 

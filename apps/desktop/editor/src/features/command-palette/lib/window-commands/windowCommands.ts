@@ -15,13 +15,6 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     needs: 'naming',
     isOffered: (target) => target.isReady,
   },
-  {
-    id: 'importUrl',
-    text: words.importUrl,
-    group: 'window',
-    needs: 'address',
-    isOffered: (target) => target.isReady,
-  },
 ]
 
 export const createWindowNavigationCommands = (words: Words, agent: string): readonly Command[] => [

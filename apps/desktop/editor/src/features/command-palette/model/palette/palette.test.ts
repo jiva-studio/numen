@@ -155,7 +155,6 @@ describe('the commands as they open', () => {
       note: ['read', 'child', 'parent', 'jump', 'title', 'remove', 'copy'],
       window: [
         'note',
-        'importUrl',
         'close',
         'find',
         'appearance',
@@ -351,48 +350,6 @@ describe('a command that asks for a name', () => {
     commands.startCommand('title', front())
 
     expect(commands.typed.value).toBe('Ontology')
-  })
-})
-
-describe('a command that asks for an address', () => {
-  it('relies on a step of its own', () => {
-    const { commands } = createPalette()
-
-    expect(commands.startCommand('importUrl', front())).toBeNull()
-    expect(commands.crumb.value).toBe(words.importUrl)
-    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['address'])
-  })
-
-  it('offers what was typed where a browser would go there', () => {
-    const { commands } = createPalette()
-    commands.startCommand('importUrl', front())
-
-    expect(commands.groups.value[0]?.items).toStrictEqual([])
-
-    void commands.setTyped('  https://youtu.be/dQw4w9WgXcQ  ')
-
-    expect(commands.groups.value[0]?.items[0]?.title).toBe('Import “https://youtu.be/dQw4w9WgXcQ”')
-  })
-
-  it('offers nothing for words no browser would go to, and says so', () => {
-    const { commands } = createPalette()
-    commands.startCommand('importUrl', front())
-
-    for (const inputValue of ['Entropy', 'file:///etc/passwd', 'example.com/a', 'https://']) {
-      void commands.setTyped(inputValue)
-
-      expect(commands.groups.value[0]?.items, inputValue).toStrictEqual([])
-      expect(commands.groups.value[0]?.silence, inputValue).toBe(words.notAnAddress)
-      expect(commands.chooseItem('name', 'name'), inputValue).toBeNull()
-    }
-  })
-
-  it('carries the address to whatever makes the note', () => {
-    const { commands } = createPalette()
-    commands.startCommand('importUrl', front())
-    void commands.setTyped('https://example.com/a')
-
-    expect(commands.chooseItem('name', 'name')?.name).toBe('https://example.com/a')
   })
 })
 
@@ -1400,17 +1357,6 @@ describe('a command requested for while a step remains open', () => {
 })
 
 describe('what a step draws', () => {
-  it('offers an address under the one action that imports it', () => {
-    const { commands } = createPalette()
-    commands.startCommand('importUrl', front())
-
-    void commands.setTyped('https://example.com/a')
-
-    expect(commands.groups.value[0]?.items[0]?.actions).toStrictEqual([
-      { id: 'name', text: words.importIt },
-    ])
-  })
-
   it('draws each note found by its title, lit where a name matched, and by its file where it has none', async () => {
     const { commands } = createPalette({}, [
       name('physics/Entropy.md', 'Entropy'),

@@ -1,6 +1,6 @@
 /**
- * pointing at an address, made in a folder under the name it is given, and put
- * in front of the person in a tab of its own.
+ * A file of a kind a tab makes, made in a folder under the name it is given and
+ * put in front of the person in a tab of its own.
  */
 import { formatErrorMessage } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
@@ -8,8 +8,8 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/entities/file/@x/tab'
 import type { FileOpeners } from './openers'
 
-/** What a file is created as: a note pointing at an address, or a kind that makes files. */
-export type CreateKind = 'url' | (string & {})
+/** The kind of tab a file is created as. */
+export type CreateKind = string
 
 /**
  * What the window asks the vault to create from nothing. A creator that answers
@@ -33,9 +33,9 @@ export interface FileCreatorsOptions {
 }
 
 /**
- * A file of a kind, or a note pointing at an address, made in a
- * folder under the name it is given. The vault names the file after it and
- * answers at its current position. A vault that answers nothing at all is said here,
+ * A file of a kind, made in a folder under the name it is given. The vault names
+ * the file after it and answers at its current position. A vault that answers
+ * nothing at all is said here.
  */
 export function createFileCreators(
   vault: VaultCreator,
@@ -78,22 +78,5 @@ export function createFileCreators(
   return {
     createFile,
     createAndOpenFile,
-    createUrl: (folder: string, address: string) => createAndOpenFile('url', folder, address),
-    createUrls: async (
-      folder: string,
-      addresses: readonly string[],
-    ): Promise<readonly string[]> => {
-      if (addresses.length === 0) return []
-      if (addresses.length === 1 && addresses[0]) {
-        const path = await createAndOpenFile('url', folder, addresses[0])
-        return path ? [path] : []
-      }
-      const paths: string[] = []
-      for (const address of addresses) {
-        const path = await createFile('url', folder, address)
-        if (path) paths.push(path)
-      }
-      return paths
-    },
   }
 }

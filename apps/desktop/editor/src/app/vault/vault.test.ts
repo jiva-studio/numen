@@ -130,7 +130,7 @@ describe('the role a link carries', () => {
 })
 
 describe('files domain', () => {
-  it('handles remove, list, move, createFolder, createUrl, and fileKinds', async () => {
+  it('handles remove, list, move, createFolder, and fileKinds', async () => {
     request.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     const removed = await core.remove('test.md')
     expect(removed.ok && removed.value.trashed).toBe(true)

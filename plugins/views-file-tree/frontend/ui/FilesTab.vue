@@ -8,7 +8,6 @@ import type { Position, RowMarker } from '@numen/ui'
 
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
-import { getDroppedUrls, hasUrl } from '../lib/drag'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -41,17 +40,6 @@ onMounted(() => globalThis.addEventListener('focus', refreshTree))
 onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 
 /* -------------------------------- Handlers -------------------------------- */
-function onDrop(event: DragEvent) {
-  const urls = getDroppedUrls(event.dataTransfer)
-  if (urls.length === 0) return
-  event.preventDefault()
-  void props.state.importUrls(urls)
-}
-
-function onDragOver(event: DragEvent) {
-  if (hasUrl(event.dataTransfer?.types)) event.preventDefault()
-}
-
 function onOpenEntry(row: string) {
   props.state.open(row)
 }
@@ -111,7 +99,7 @@ function getItemIcon(id: string): Component | null {
 </script>
 
 <template>
-  <div class="files" @dragover="onDragOver" @drop="onDrop">
+  <div class="files">
     <p v-if="props.state.list.errorMessage.value" class="caution">
       {{ props.state.list.errorMessage.value }}
     </p>

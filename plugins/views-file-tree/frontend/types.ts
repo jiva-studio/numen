@@ -50,8 +50,6 @@ export interface FilesTabDeps {
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>
   createNote(folder: string): Promise<string>
-  importUrl(folder: string, url: string): Promise<string>
-  importUrls(folder: string, urls: readonly string[]): Promise<readonly string[]>
   showError(text: string): void
   /** The window's commands over a row, in the order the menu draws them. */
   getPathCommands(row: PathMenuRow): readonly MenuEntry[]
@@ -98,8 +96,6 @@ export interface FilesTabState {
   remove(paths: readonly string[]): void
   createFolder(path: string | null): Promise<void>
   createNote(path: string | null): Promise<void>
-  importUrl(url: string): Promise<string>
-  importUrls(urls: readonly string[]): Promise<readonly string[]>
   openMenu(request: MenuRequest): void
   dismissMenu(): void
   chooseMenuItem(id: string): void

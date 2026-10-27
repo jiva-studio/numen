@@ -69,7 +69,6 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
-    made: kinds.made,
     setVaultName: vaultsModule.setVaultName,
     reload: vaultsModule.reload,
     reached: editing.reached,

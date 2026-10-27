@@ -86,14 +86,6 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       if (fails) return ''
       return createdItem
     },
-    importUrl: async (folderPath, url) => {
-      isDone.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${url}`)
-      return fails ? '' : 'made.url'
-    },
-    importUrls: async (folderPath, urls) => {
-      isDone.push(`imports-multi ${folderPath === ROOT ? '/' : folderPath} ${urls.join(' ')}`)
-      return fails ? [] : urls.map(() => 'made.url')
-    },
     showError: (text) => void isDone.push(`says ${text}`),
   })
   return { recorded: isDone, list, one: gestures, requests: request, sources, folders }
@@ -294,8 +286,6 @@ describe('rows release', () => {
       setDraggedPaths: () => {},
       createFolder: async () => {},
       createNote: async () => '',
-      importUrl: async () => '',
-      importUrls: async () => [],
       showError: () => {},
     })
     await list.openFolder(ROOT)
@@ -533,7 +523,7 @@ describe('an item chosen in the menu on a row', () => {
 
 describe('useFilesTab helper and interaction methods', () => {
   it('covers folder operations, selections, renaming and dismiss', async () => {
-    const { list, one, recorded } = tab()
+    const { list, one } = tab()
     await list.openFolder(ROOT)
 
     one.open('physics')
@@ -548,12 +538,6 @@ describe('useFilesTab helper and interaction methods', () => {
     expect(one.menu.value).not.toBeNull()
     one.dismissMenu()
     expect(one.menu.value).toBeNull()
-
-    one.importUrl('https://example.com/video')
-    expect(recorded).toContain('imports physics https://example.com/video')
-
-    one.importUrls(['https://example.com/1', 'https://example.com/2'])
-    expect(recorded).toContain('imports-multi physics https://example.com/1 https://example.com/2')
 
     expect(one.getNameOf('Entropy.md')).toBe('Entropy.md')
     expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')

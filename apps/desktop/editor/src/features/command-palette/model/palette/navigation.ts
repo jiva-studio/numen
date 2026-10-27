@@ -14,12 +14,10 @@ import type {
 } from '../../types'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
-import { isWebUrl } from '../../lib/url/url'
 
 /** What the field asks for on each step that asks for one thing. */
 const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
   naming: words.typeName,
-  address: words.typeAddress,
   picking: words.typeNote,
   choosing: words.typeChoice,
   vaults: words.typeVault,
@@ -84,8 +82,6 @@ function resolveInputOrChoiceAction(
 ): CommandInvocation | null {
   const name = deps.text.value.trim()
   if (step.step === 'naming') return name ? deps.invocation(step.command.id, step.on, name) : null
-  if (step.step === 'address')
-    return isWebUrl(name) ? deps.invocation(step.command.id, step.on, name) : null
   if (step.step === 'choosing') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
@@ -145,7 +141,7 @@ function resolveStepAction(
   if (step.step === 'picking' || step.step === 'vaults') {
     return resolveSelectionAction(step, choice, deps)
   }
-  if (step.step === 'naming' || step.step === 'address' || step.step === 'choosing') {
+  if (step.step === 'naming' || step.step === 'choosing') {
     return resolveInputOrChoiceAction(step, choice.item, deps)
   }
   if (step.step === 'arguments') return resolveArgumentAction(step, deps)

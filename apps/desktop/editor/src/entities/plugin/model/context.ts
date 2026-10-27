@@ -92,14 +92,6 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
       requireWrite('files.createNote')
       return files.createNote(folder)
     },
-    importUrl: async (folder, url) => {
-      requireWrite('files.importUrl')
-      return files.importUrl(folder, url)
-    },
-    importUrls: async (folder, urls) => {
-      requireWrite('files.importUrls')
-      return files.importUrls(folder, urls)
-    },
   }
 }
 
