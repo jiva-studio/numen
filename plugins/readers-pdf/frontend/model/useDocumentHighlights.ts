@@ -2,7 +2,7 @@
  * Page highlights and span targeting for a document.
  */
 import { computed, shallowRef, type Ref } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { TextRange } from '../types'
 import type { Documents, PageHighlight, Rect } from '../types'
 

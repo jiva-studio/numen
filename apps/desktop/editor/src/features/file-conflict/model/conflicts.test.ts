@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raiseConflicts, type Notes } from './conflicts'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import { openNotes, type Notes as NotesCore } from '@/entities/note'
 import type { Conflict } from './flush'
 

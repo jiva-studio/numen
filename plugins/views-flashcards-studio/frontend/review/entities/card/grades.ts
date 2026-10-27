@@ -1,6 +1,6 @@
 /** How well a card came back, in this window's words and in the schema's. */
 import { Rating } from '../../../gen/numen/flashcards/v1/flashcards_pb.js'
-import { getNames } from '@numen/wire'
+import { getNames } from '@numen/plugin-sdk'
 
 /** How well a card came back. A person says which of the four. */
 export type Grade = 'again' | 'hard' | 'good' | 'easy'

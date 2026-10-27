@@ -7,7 +7,7 @@ import {
   type DocumentRun as DocumentRunMessage,
   type DocumentRect as DocumentRectMessage,
 } from '../gen/numen/pdf/v1/document_pb.js'
-import { formatFingerprint, getBytesQuery, retryWhileBusy, transport } from '@numen/wire'
+import { formatFingerprint, getBytesQuery, retryWhileBusy, transport } from '@numen/plugin-sdk'
 import type { Documents, PageHighlight, Rect } from '../types'
 
 /** Where the plugin's backend answers the window: the core forwards /plugin/<id>/ to it. */

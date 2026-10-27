@@ -2,7 +2,7 @@
  * Reader state and controls for an open document.
  */
 import { ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { TextRange } from '../types'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'

@@ -1,4 +1,4 @@
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 import type { NoteContents } from '../model/buffer'
 import type { ErrorCode } from '@/shared/errors'
 import type { TextRange } from '@/shared/textRange'

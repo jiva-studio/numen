@@ -7,7 +7,7 @@
  */
 import { Goal as Goals } from '../../gen/numen/flashcards/v1/presets_pb'
 
-import { getNames } from '@numen/wire'
+import { getNames } from '@numen/plugin-sdk'
 
 /** Which value the one control of a preset steers. */
 export type Goal = 'minutes' | 'retention' | 'date'

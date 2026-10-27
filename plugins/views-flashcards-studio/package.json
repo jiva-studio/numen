@@ -19,7 +19,6 @@
     "@numen/plugin-sdk": "workspace:*",
     "@numen/protocol": "workspace:*",
     "@numen/ui": "workspace:*",
-    "@numen/wire": "workspace:*",
     "reka-ui": "^2.10.3"
   },
   "peerDependencies": {

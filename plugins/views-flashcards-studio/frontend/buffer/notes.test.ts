@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import { openNotes } from './notes'
 import type { Notes } from './types'
 

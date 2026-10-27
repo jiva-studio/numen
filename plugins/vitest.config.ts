@@ -21,7 +21,6 @@ const alias = getPluginAliases([
   '@numen/protocol',
   '@numen/ui/styles.css',
   '@numen/ui',
-  '@numen/wire',
 ])
 
 export default defineConfig({

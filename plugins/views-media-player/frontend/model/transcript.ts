@@ -3,7 +3,7 @@
  * the edited text, and the text menu entries.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { findCueAt, getText, type Cue } from '../lib/cues'
 import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'

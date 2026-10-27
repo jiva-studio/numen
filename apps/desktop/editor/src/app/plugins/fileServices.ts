@@ -3,12 +3,13 @@
  * the files made and moved, and the window's commands over a row.
  */
 import type { Component } from 'vue'
-import { asFailure, getKnownErrorCode } from '@numen/wire'
-import type {
-  ContextMenuRegistration,
-  ContextMenuTarget,
-  VaultFiles,
-  WorkspaceHost,
+import {
+  asFailure,
+  getKnownErrorCode,
+  type ContextMenuRegistration,
+  type ContextMenuTarget,
+  type VaultFiles,
+  type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'

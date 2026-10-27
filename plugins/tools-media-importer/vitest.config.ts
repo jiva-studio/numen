@@ -12,7 +12,6 @@ export default defineConfig({
         '../../libs/plugin-sdk-ts/src/testing/mockContext.ts',
       ),
       '@numen/plugin-sdk': resolve(import.meta.dirname, '../../libs/plugin-sdk-ts/src/index.ts'),
-      '@numen/wire': resolve(import.meta.dirname, '../../libs/wire/index.ts'),
     },
   },
   test: {

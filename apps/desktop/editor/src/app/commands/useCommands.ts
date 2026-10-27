@@ -3,9 +3,8 @@
  */
 
 import { computed, watch, type Component } from 'vue'
-import type { CommandNote, MenuEntry } from '@numen/plugin-sdk'
+import { formatErrorMessage, type CommandNote, type MenuEntry } from '@numen/plugin-sdk'
 import type { WelcomeAction } from '@numen/shell'
-import { formatErrorMessage } from '@numen/wire'
 import {
   isChord,
   findChordCommand,

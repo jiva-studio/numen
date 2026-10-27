@@ -2,7 +2,7 @@
  * The decks and the card models a vault holds, as the window asks for them and as
  * they come back.
  */
-import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/wire'
+import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/plugin-sdk'
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { cardsService } from './clients'
 import type { Cards, DeckService, CardModelService } from '../types'

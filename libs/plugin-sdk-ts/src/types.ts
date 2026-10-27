@@ -19,7 +19,8 @@ export interface TextRange {
 }
 
 // Result is the discriminated outcome of a fallible operation.
-export type Result<T, E = string> = { ok: true; value: T } | { ok: false; error: E }
+import type { Result } from './result'
+export type { Failure, Result } from './result'
 
 // SettingOption declares one choice in an enumerated setting.
 export interface SettingOption {

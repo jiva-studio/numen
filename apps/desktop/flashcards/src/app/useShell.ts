@@ -5,7 +5,7 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
-import { formatErrorMessage, type LinkClient } from '@numen/wire'
+import { formatErrorMessage, type LinkClient } from '@numen/plugin-sdk'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'

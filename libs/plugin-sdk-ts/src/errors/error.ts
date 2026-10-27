@@ -75,5 +75,5 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
 }
 
 /** What one error code says, and nothing where there was no error. */
-export const formatErrorCodeMessage = (errorCode: ProtoErrorCode | undefined): string =>
-  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode] ?? UNEXPECTED)
+export const formatErrorCodeMessage = (errorCode: number | undefined): string =>
+  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode as ProtoErrorCode] ?? UNEXPECTED)

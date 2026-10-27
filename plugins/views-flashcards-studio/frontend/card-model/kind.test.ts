@@ -3,7 +3,7 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { ErrorCode } from '../cards/wire/errors'
 import type { Cards, VaultTemplate, DeckProblem, FieldRenameResult } from '../cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'

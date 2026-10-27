@@ -5,7 +5,7 @@
  * leaves out.
  */
 import { ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { Model, PluginInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'

@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
-import { asValue } from '@numen/wire'
+import { asValue } from '@numen/plugin-sdk'
 import { dayAfter } from '../../lib/day'
 
 import { usePresetTab } from '../kind'

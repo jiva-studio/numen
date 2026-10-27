@@ -5,8 +5,7 @@
  * for the whole window, and tells every plex when to ask again.
  */
 import { ref } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
-import { getRenamedPath } from '@numen/plugin-sdk'
+import { formatErrorMessage, getRenamedPath } from '@numen/plugin-sdk'
 import { createRequestGuard } from '../lib/requestGuard'
 import { areNeighbourhoodsEqual } from '../lib/picture'
 import type { Neighbourhood, PathRename } from '../types'

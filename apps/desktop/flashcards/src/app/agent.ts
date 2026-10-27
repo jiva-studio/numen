@@ -3,8 +3,13 @@
  * is asked once as the window opens; until the answer comes, it is taken to be reachable.
  */
 import { shallowRef } from 'vue'
-import type { AgentHost } from '@numen/plugin-sdk'
-import { createAgentPort, resolveTextLinks, type AgentClient, type LinkClient } from '@numen/wire'
+import {
+  createAgentPort,
+  resolveTextLinks,
+  type AgentClient,
+  type AgentHost,
+  type LinkClient,
+} from '@numen/plugin-sdk'
 import { WORDS } from '@/shared/words'
 
 /** As much of the agent service as the window asks of it. */

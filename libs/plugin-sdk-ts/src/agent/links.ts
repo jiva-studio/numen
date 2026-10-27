@@ -4,7 +4,7 @@
  * Every window asks the core the same way, so what `ResolveAddresses` answers
  * means in the port is written down once.
  */
-import type { TextLink } from '@numen/plugin-sdk'
+import type { TextLink } from '../agent'
 
 /** What the core is asked about one text. Empty fields are the window's own. */
 export interface LinkRequest {

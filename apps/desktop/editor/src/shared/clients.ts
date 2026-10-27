@@ -18,7 +18,7 @@ import {
   WindowService,
   WorkspaceService,
 } from '@numen/protocol'
-import { transport } from '@numen/wire'
+import { transport } from '@numen/plugin-sdk'
 
 export const vault = createClient(VaultService, transport)
 

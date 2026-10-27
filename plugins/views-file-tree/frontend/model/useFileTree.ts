@@ -2,8 +2,7 @@
  * Tree state and operations for the files tree.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
-import { getRenamedPath, type PathRename } from '@numen/plugin-sdk'
+import { formatErrorMessage, getRenamedPath, type PathRename } from '@numen/plugin-sdk'
 import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
 export const ROOT = ''

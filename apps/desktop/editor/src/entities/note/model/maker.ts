@@ -5,7 +5,7 @@
  * written into it as it is made. What a relation means for what gets written is
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { Link, NewNote, NoteRelation, PairLink, Role } from '../lib/note'
 import type { CreateResult } from '@/entities/file/@x/note'
 import type { ErrorCode } from '@/shared/errors'

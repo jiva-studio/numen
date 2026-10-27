@@ -14,7 +14,7 @@ import {
   getNames,
   isStaleAnswer,
   parseFingerprint,
-} from '@numen/wire'
+} from '@numen/plugin-sdk'
 import type {
   Link,
   Neighbourhood,

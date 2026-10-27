@@ -1,8 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { VAULT_SUMMARY } from '@numen/plugin-sdk'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage, VAULT_SUMMARY } from '@numen/plugin-sdk'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
@@ -22,6 +21,9 @@ vi.mock('@/shared/clients', () => ({
     getAgentState: async () => ({ unreachable: '' }),
     askAgent: wire.waits,
     finishConversation: async () => ({}),
+  },
+  noteService: {
+    resolveTextLinks: async () => ({ links: [] }),
   },
   pluginService: { getPlugins: wire.getPlugins },
   vaultsService: { listVaults: wire.listVaults },

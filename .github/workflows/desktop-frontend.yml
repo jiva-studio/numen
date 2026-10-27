@@ -13,8 +13,8 @@ on:
       - "!apps/desktop/flashcards/**/*.md"
       - "libs/ui/core/**"
       - "!libs/ui/core/**/*.md"
-      - "libs/wire/**"
-      - "!libs/wire/**/*.md"
+      - "libs/plugin-sdk-ts/**"
+      - "!libs/plugin-sdk-ts/**/*.md"
       - "libs/ui/shell/**"
       - "!libs/ui/shell/**/*.md"
       - "libs/plugin-host-ts/**"
@@ -92,9 +92,9 @@ jobs:
           npm run lint --prefix libs/ui/shell
           npm run lint --prefix libs/plugin-host-ts
 
-      - name: Typecheck screens and wire
+      - name: Typecheck screens and SDK
         run: |
-          npm run typecheck --prefix libs/wire
+          npm run typecheck --prefix libs/plugin-sdk-ts
           npm run typecheck --prefix libs/ui/shell
           npm run typecheck --prefix libs/plugin-host-ts
           npm run typecheck --prefix apps/desktop/editor
@@ -102,7 +102,7 @@ jobs:
 
       - name: Run frontend tests
         run: |
-          npm test --prefix libs/wire
+          npm test --prefix libs/plugin-sdk-ts
           npm run test:unit --prefix libs/ui/shell -- --coverage
           npm run test:stories --prefix libs/ui/shell
           npm test --prefix libs/plugin-host-ts

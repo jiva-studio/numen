@@ -7,7 +7,7 @@ import {
   VaultsService,
   WindowService,
 } from '@numen/protocol'
-import { transport } from '@numen/wire'
+import { transport } from '@numen/plugin-sdk'
 
 /** The plugins of the window's target, whose frontends the shell loads. */
 export const pluginService = createClient(PluginService, transport)

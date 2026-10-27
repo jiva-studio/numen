@@ -32,7 +32,7 @@ export const parseFingerprint = (stat: string) => {
  * `changed`. Keyed by the schema, so an error code added to it has to be given a
  * word or that same silence here before this compiles.
  */
-export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
+export const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
   [ProtoErrorCode.MISSING]: 'missing',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
@@ -43,14 +43,14 @@ export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
   [ProtoErrorCode.ALREADY_EXISTS]: 'alreadyExists',
   [ProtoErrorCode.INVALID_NAME]: 'invalidName',
   [ProtoErrorCode.STALE]: null,
-}
+} satisfies Record<ProtoErrorCode, ErrorCode | null>
 
 /** What one answer encountered as an error, and nothing where it succeeded. */
-export const findErrorCode = (from: { error?: ProtoErrorCode | undefined }): ErrorCode | null =>
-  ERROR_CODE[from.error as ProtoErrorCode] ?? null
+export const findErrorCode = (from: { error?: number | undefined }): ErrorCode | null =>
+  (from.error !== undefined ? ERROR_CODE[from.error] : undefined) ?? null
 
 /** Whether the file an answer is about had moved past what the caller read. */
-export const isStaleAnswer = (from: { error?: ProtoErrorCode | undefined }): boolean =>
+export const isStaleAnswer = (from: { error?: number | undefined }): boolean =>
   from.error === ProtoErrorCode.STALE
 
 /**

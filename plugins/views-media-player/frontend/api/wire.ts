@@ -4,8 +4,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { MediaService, FileMenuAction, TextVersionService } from '@numen/protocol'
-import type { TaskHost, VaultTexts } from '@numen/plugin-sdk'
-import { retryWhileBusy, transport } from '@numen/wire'
+import { retryWhileBusy, transport, type TaskHost, type VaultTexts } from '@numen/plugin-sdk'
 import type { MenuAction, MenuEntry, Recordings } from '../types'
 import { createWorkWatcher } from './work'
 import { createTranscripts } from './transcripts'

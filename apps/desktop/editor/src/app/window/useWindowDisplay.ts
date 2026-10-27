@@ -5,7 +5,7 @@ import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { createWindowStreams } from './useWindowStreams'
 
 /**

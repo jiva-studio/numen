@@ -1,4 +1,4 @@
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 import type { ErrorCode } from './wire/errors'
 import type { Surrounds } from './lib/surrounds'
 

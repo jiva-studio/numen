@@ -1,7 +1,7 @@
 /**
  * Domain types for open notes and their storage.
  */
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 import type { NoteBaseline, NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
 /** The prose a read gave back, and what the vault says came with it. */

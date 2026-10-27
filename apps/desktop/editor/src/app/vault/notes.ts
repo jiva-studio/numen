@@ -1,7 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
-import { asFailure, asValue, findErrorCode, isStaleAnswer, resolveTextLinks } from '@numen/wire'
+import { asFailure, asValue, findErrorCode, isStaleAnswer, resolveTextLinks } from '@numen/plugin-sdk'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,

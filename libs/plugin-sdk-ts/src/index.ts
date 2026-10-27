@@ -9,3 +9,25 @@ export * from './texts'
 export * from './notices'
 export * from './tasks'
 export * from './drops'
+export { createAgentPort } from './agent/agent'
+export type { AgentClient } from './agent/agent'
+export { resolveTextLinks } from './agent/links'
+export type { LinkClient, LinkRequest } from './agent/links'
+export { getNames } from './settings/enumNames'
+export { getOrigin, transport } from './transport'
+export { formatErrorMessage, formatErrorCodeMessage } from './errors/error'
+export { asFailure, asValue } from './result'
+export type { Failure, Result } from './result'
+export {
+  ERROR_CODE,
+  findErrorCode,
+  formatFingerprint,
+  getAssetUrl,
+  getBytesQuery,
+  isStaleAnswer,
+  MAX_BUSY_RETRIES,
+  parseFingerprint,
+  retryWhileBusy,
+} from './errors/answers'
+export type { ErrorCode } from './errors/errorCode'
+export { ERRORS, getErrorWords, getKnownErrorCode } from './errors/codes'

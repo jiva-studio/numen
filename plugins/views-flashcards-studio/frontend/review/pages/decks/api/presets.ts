@@ -1,10 +1,9 @@
 /** What the application answers about the preset one deck is scheduled by. */
 import { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
 import type { ErrorCode } from '../../../../gen/numen/flashcards/v1/errors_pb.js'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
 import { formatErrorCodeMessage } from '../../../../cards/wire/errors'
 import { parseSettings } from '../../../../cards/wire/settings'
-import type { Result } from '@numen/wire'
 import type { SettingsMessage } from '../../../../cards/wire/settings'
 
 import type { Settings } from '../types'

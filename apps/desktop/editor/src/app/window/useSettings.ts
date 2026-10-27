@@ -23,7 +23,7 @@ import {
   type PluginSettingOption,
   type SettingEdit,
 } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import type { Command, PaletteLists } from '@/features/command-palette'

@@ -5,8 +5,7 @@
  * error is said in the person's own words, and a call the window itself
  * stopped says nothing.
  */
-import type { NoticeHost, NoticeTask, Severity } from '@numen/plugin-sdk'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage, type NoticeHost, type NoticeTask, type Severity } from '@numen/plugin-sdk'
 
 export function createNotices(host: NoticeHost) {
   const showNotice = (text: string, severity: Severity) => host.show(text, severity)

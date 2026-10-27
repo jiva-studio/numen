@@ -23,7 +23,6 @@ const ALIASES = {
   '@numen/protocol': resolve(modules, 'libs/protocol/index.ts'),
   '@numen/ui/styles.css': resolve(modules, 'libs/ui/core/dist/numen-ui.css'),
   '@numen/ui': resolve(modules, 'libs/ui/core/dist/index.js'),
-  '@numen/wire': resolve(modules, 'libs/wire/index.ts'),
 } as const
 
 export type AliasName = keyof typeof ALIASES

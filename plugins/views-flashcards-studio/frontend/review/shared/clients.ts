@@ -4,6 +4,6 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { FlashcardsService } from '../../gen/numen/flashcards/v1/flashcards_pb.js'
-import { transport } from '@numen/wire'
+import { transport } from '@numen/plugin-sdk'
 
 export const cards = createClient(FlashcardsService, transport)

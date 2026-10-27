@@ -42,12 +42,12 @@ export const modules = [
     book: 'shell',
   },
   {
-    name: '@numen/wire',
-    at: 'libs/wire',
-    sources: ['index.ts'],
-    written: 'libs/wire',
-    reads: 'index.ts',
-    says: "What a window's ports are answered with.",
+    name: '@numen/plugin-sdk',
+    at: 'libs/plugin-sdk-ts',
+    sources: ['src'],
+    written: 'libs/plugin-sdk-ts/src',
+    reads: 'src/index.ts',
+    says: "The plugin contract and what a window's ports are answered with.",
     book: 'ui',
   },
   {

@@ -1,4 +1,4 @@
-/** What the window says a command came back with, in the words `@numen/wire` gives each error code. */
+/** What the window says a command came back with, in the words each error code is given. */
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import { formatErrorCodeMessage } from './error'
 import type { ErrorCode } from './errorCode'

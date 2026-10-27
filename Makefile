@@ -2,7 +2,6 @@
 CORE     := libs/core
 NOTES    := libs/notes
 UI       := libs/ui/core
-WIRE     := libs/wire
 SHELL_LIB := libs/ui/shell
 PLUGIN_HOST := libs/plugin-host-ts
 PROTOCOL := libs/protocol
@@ -45,7 +44,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -248,22 +247,6 @@ lib_ui_lint: ## lint UI components
 .PHONY: lib_ui_knip
 lib_ui_knip: ## check dead code and unused dependencies with knip
 	cd $(UI) && npm run knip
-
-# --------------------------------- Lib: Wire ----------------------------------
-.PHONY: lib_wire_typecheck
-lib_wire_typecheck: ## typecheck wire package
-	cd $(WIRE) && npm run typecheck
-
-.PHONY: lib_wire_compile
-lib_wire_compile: lib_wire_typecheck
-
-.PHONY: lib_wire_test
-lib_wire_test: ## run wire tests
-	cd $(WIRE) && npm test
-
-.PHONY: lib_wire_lint
-lib_wire_lint: ## lint wire package
-	cd $(WIRE) && npm run typecheck
 
 # --------------------------------- Lib: Shell ---------------------------------
 .PHONY: lib_shell_build

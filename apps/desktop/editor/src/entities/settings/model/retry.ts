@@ -1,7 +1,7 @@
 /**
  * Retry of a plugin the host suspends.
  */
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 /** Notice copy of a retry. */

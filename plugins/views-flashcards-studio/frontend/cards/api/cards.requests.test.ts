@@ -4,7 +4,7 @@
  * file moved on is `changed`, and a missing stamp is the empty string.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import { ErrorCode } from '../../gen/numen/flashcards/v1/errors_pb.js'
 import { cardsService } from './clients'
 import { cards } from './cards'

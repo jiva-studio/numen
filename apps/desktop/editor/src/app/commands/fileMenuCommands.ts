@@ -4,7 +4,7 @@
  * deleting a version, each by the plugin the application names.
  */
 import { computed, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getFileMenu, runFileMenuEntry, type FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'

@@ -1,5 +1,5 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
-import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/wire'
+import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/plugin-sdk'
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { formatSettings, parseSettings } from '../wire/settings'
 import { goalOf } from '../wire/goal'

@@ -5,11 +5,37 @@
  * evaluates to in the port is written down once. The window makes the client; this
  * says what its answers mean.
  */
-import type { AskAgentResponse, Range } from '@numen/protocol'
-import type { AgentPort, AgentQuery, AgentStep } from '@numen/plugin-sdk'
+import type { AgentPort, AgentQuery, AgentStep } from '../agent'
+
+/** A run of text on the wire, by where it begins and where it ends. */
+interface WireRange {
+  readonly start: number
+  readonly end: number
+}
+
+/** A tool the agent is using, as the wire carries it. */
+interface WireToolCall {
+  readonly tool: string
+  readonly about: string
+  readonly length: number
+  readonly path?: string | undefined
+  readonly range?: WireRange | undefined
+}
+
+/** One step of the work on the wire. */
+interface WireAgentResponse {
+  readonly step:
+    | { readonly case: 'text'; readonly value: string }
+    | { readonly case: 'toolCall'; readonly value: WireToolCall }
+    | { readonly case: 'stopped'; readonly value: string }
+    | { readonly case: 'toolFinished'; readonly value?: unknown }
+    | { readonly case: 'modelStarted'; readonly value?: unknown }
+    | { readonly case: 'editProgress'; readonly value?: unknown }
+    | { readonly case: undefined; readonly value?: undefined }
+}
 
 /** The range a call named, and an empty one for a call naming no place inside the source. */
-const normalizeRange = (range: Range | undefined) => ({
+const normalizeRange = (range: WireRange | undefined) => ({
   start: range?.start ?? 0,
   end: range?.end ?? 0,
 })
@@ -31,7 +57,7 @@ export interface AgentClient {
       vaultId?: string
     },
     options: { signal: AbortSignal },
-  ): AsyncIterable<AskAgentResponse>
+  ): AsyncIterable<WireAgentResponse>
   finishConversation(request: { conversation: string }): Promise<unknown>
 }
 
@@ -62,7 +88,7 @@ const createAgentRequest = (query: AgentQuery): AgentRequest => {
 }
 
 /** The step of the port a step on the wire is, or undefined for one that carries none. */
-const getAgentStep = (step: AskAgentResponse): AgentStep | undefined => {
+const getAgentStep = (step: WireAgentResponse): AgentStep | undefined => {
   switch (step.step.case) {
     case 'text':
       return { kind: 'said', text: step.step.value }

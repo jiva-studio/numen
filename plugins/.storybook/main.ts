@@ -23,7 +23,6 @@ const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
       '@numen/protocol',
       '@numen/ui/styles.css',
       '@numen/ui',
-      '@numen/wire',
     ]),
   },
 })

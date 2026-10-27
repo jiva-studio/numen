@@ -332,7 +332,7 @@ test('a file is mutated with the deepest target of its kind that holds it', () =
   assert.equal(findTarget(targets, 'apps/desktop/internal/a.go').name, 'apps-desktop')
   assert.equal(findTarget(targets, 'apps/mobile/bind/a.go').name, 'apps-mobile-go')
   assert.equal(findTarget(targets, 'apps/mobile/src/a.ts').name, 'apps-mobile-ts')
-  assert.throws(() => findTarget(targets, 'libs/wire/a.ts'))
+  assert.throws(() => findTarget(targets, 'libs/plugin-sdk-ts/src/a.ts'))
 })
 
 test('the mutants a file run prints are the unnoticed ones, in line order', () => {

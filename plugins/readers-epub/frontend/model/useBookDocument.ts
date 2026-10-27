@@ -2,8 +2,7 @@
  * The document of the spine being drawn, and the markup it is drawn from.
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
-import type { TextRange } from '@numen/plugin-sdk'
+import { formatErrorMessage, type TextRange } from '@numen/plugin-sdk'
 import { resolveImageUrls } from '../lib/markup'
 import type { Books, SpineDocument } from '../types'
 

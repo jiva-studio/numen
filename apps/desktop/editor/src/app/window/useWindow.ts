@@ -3,7 +3,7 @@
  * few things one kind asks of another.
  */
 import { ref } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'

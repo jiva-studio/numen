@@ -7,7 +7,7 @@
  * parts the schema holds it in.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 

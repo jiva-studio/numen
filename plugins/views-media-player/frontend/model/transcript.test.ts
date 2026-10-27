@@ -2,7 +2,7 @@
  * One recording as its tab reads it.
  */
 import { describe, expect, it } from 'vitest'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { findOffers, useTranscript } from './transcript'
 import {
   CUES,

@@ -15,7 +15,7 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/shell'
 import type { Tab, Workspace } from '@numen/shell'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'

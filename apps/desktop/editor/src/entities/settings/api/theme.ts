@@ -7,7 +7,7 @@
  * multiplier, and how far it goes is the application's to say.
  */
 import { Mode as Modes, Origin } from '@numen/protocol'
-import { getNames } from '@numen/wire'
+import { getNames } from '@numen/plugin-sdk'
 import { theme } from '@/shared/clients'
 
 /** Which half of a `light-dark()` pair every token is read as. */

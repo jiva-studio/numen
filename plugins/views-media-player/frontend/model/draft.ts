@@ -4,7 +4,7 @@
  */
 import { ref, type Ref } from 'vue'
 import { applyCues, isSame, type Cue } from '../lib/cues'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 
 /** What the words being edited are kept against. */
 export interface DraftOptions {

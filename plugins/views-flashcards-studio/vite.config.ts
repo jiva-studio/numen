@@ -9,7 +9,6 @@ export default defineConfig(
     aliases: [
       '@numen/plugin-sdk',
       '@numen/ui',
-      '@numen/wire',
       '@numen/protocol/numen/v1',
       '@numen/protocol',
     ],

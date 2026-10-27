@@ -2,8 +2,7 @@
  * Window registration and tab state for flashcard deck tabs.
  */
 import { computed } from 'vue'
-import { asFailure, asValue } from '@numen/wire'
-import type { BufferHost, PathRename } from '@numen/plugin-sdk'
+import { asFailure, asValue, type BufferHost, type PathRename } from '@numen/plugin-sdk'
 import { openNotes } from '../../buffer'
 import { getFailureCode, type Cards, type Presets } from '../../cards'
 import { createDeckAnswers } from './answers'

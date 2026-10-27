@@ -10,7 +10,7 @@ import {
 
 import { goalNames, goalOf } from './goal'
 import type { Goal } from './goal'
-import { getNames } from '@numen/wire'
+import { getNames } from '@numen/plugin-sdk'
 
 /** The unit a day's budget is spent in. */
 export type BudgetUnit = 'cards' | 'shows'

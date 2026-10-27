@@ -11,7 +11,7 @@ import { usePresetTab } from './kind'
 import type { PresetTabState, SettingValue } from './types'
 import { StopReason } from '../gen/numen/flashcards/v1/presets_pb.js'
 import { getGoalValue, findNearest } from './lib/curve'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { CardsFailure } from '../cards'
 import { getGoalFields, getGoalField, type Field } from './lib/fields'
 import {

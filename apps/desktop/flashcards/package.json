@@ -19,7 +19,6 @@
     "@numen/protocol": "*",
     "@numen/shell": "*",
     "@numen/ui": "*",
-    "@numen/wire": "*",
     "vue": "^3.5.44"
   },
   "devDependencies": {

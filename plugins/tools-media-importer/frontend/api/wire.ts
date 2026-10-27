@@ -3,8 +3,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { MediaService } from '@numen/protocol'
-import type { TaskHost } from '@numen/plugin-sdk'
-import { retryWhileBusy, transport } from '@numen/wire'
+import { retryWhileBusy, transport, type TaskHost } from '@numen/plugin-sdk'
 import { LinkErrorCode, LinkService } from '../gen/numen/links/v1/link_pb.js'
 import type { Links, Outcome } from '../types'
 import { WORDS as words } from '../words'

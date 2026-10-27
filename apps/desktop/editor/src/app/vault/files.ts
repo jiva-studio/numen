@@ -1,7 +1,7 @@
 /**
  * File tree and filesystem domain methods for the window core.
  */
-import { asFailure, asValue, findErrorCode } from '@numen/wire'
+import { asFailure, asValue, findErrorCode } from '@numen/plugin-sdk'
 import { files } from '@/shared/clients'
 import { mapEntry, mapMoveResult, mapNoteType } from './words'
 import type { FilePort } from '@/app/ports/files'

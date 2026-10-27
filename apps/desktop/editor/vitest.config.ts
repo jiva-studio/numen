@@ -19,7 +19,6 @@ const alias = {
     new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
   ),
   '@numen/protocol': fileURLToPath(new URL('../../../libs/protocol/index.ts', import.meta.url)),
-  '@numen/wire': fileURLToPath(new URL('../../../libs/wire/index.ts', import.meta.url)),
   '@numen/ui/styles.css': fileURLToPath(
     new URL('../../../libs/ui/core/dist/numen-ui.css', import.meta.url),
   ),

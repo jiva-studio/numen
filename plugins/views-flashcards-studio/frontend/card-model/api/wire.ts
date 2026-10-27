@@ -1,9 +1,8 @@
 /**
  * Wire adapters and vault communication for flashcard card model tabs.
  */
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue, type MessageWriter, type PathRename } from '@numen/plugin-sdk'
 import { type ErrorCode, ERRORS } from '../../cards/wire/errors'
-import type { PathRename, MessageWriter } from '@numen/plugin-sdk'
 import type { NoteBaseline } from '../../buffer'
 import { type Cards, type DeckProblem, getFailureCode, WORDS as words } from '../../cards'
 import {

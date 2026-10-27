@@ -5,7 +5,7 @@ import { settingsService } from '@/shared/clients'
 import { consented, fetched } from './words'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 

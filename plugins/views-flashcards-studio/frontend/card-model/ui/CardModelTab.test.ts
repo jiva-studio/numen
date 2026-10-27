@@ -8,7 +8,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { Cards, VaultTemplate, DeckProblem } from '../../cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import CardModelTab from './CardModelTab.vue'

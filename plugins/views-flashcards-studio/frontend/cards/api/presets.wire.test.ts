@@ -5,7 +5,7 @@
  * the default, and a bound the application said nothing about is absent.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure } from '@numen/wire'
+import { asFailure } from '@numen/plugin-sdk'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 

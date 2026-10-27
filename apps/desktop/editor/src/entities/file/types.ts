@@ -2,7 +2,7 @@
  * The files of the vault: which of them a file is, what a listing of one folder
  * reports, and what making one or moving one comes back with.
  */
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
 
 /**

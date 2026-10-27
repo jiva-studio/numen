@@ -12,7 +12,6 @@ export default defineConfig({
       '@numen/protocol',
       '@numen/ui/styles.css',
       '@numen/ui',
-      '@numen/wire',
     ]),
   },
   test: {

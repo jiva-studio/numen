@@ -1,7 +1,7 @@
 /**
  * Domain types for flashcard deck and card model open buffers.
  */
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 
 export type NoteErrorCode =
   'tooLarge' | 'bodyUnwritable' | 'notANote' | 'notText' | 'unreadable' | 'unreachable'

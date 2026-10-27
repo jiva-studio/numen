@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { ErrorCode } from '@numen/protocol'
-import { formatErrorCodeMessage } from '@numen/wire'
+import { formatErrorCodeMessage } from '@numen/plugin-sdk'
 import NoteSheet from './NoteSheet.vue'
 import type { Core } from '../core'
 

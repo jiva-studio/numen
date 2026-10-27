@@ -1,5 +1,5 @@
 /** How the decks pointing at one preset are scheduled, and what that evaluates to. */
-import { type Result } from '@numen/wire'
+import { type Result } from '@numen/plugin-sdk'
 import { type ErrorCode } from '../wire/errors'
 import {
   DEFAULT_SETTINGS,

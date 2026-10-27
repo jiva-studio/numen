@@ -2,16 +2,16 @@
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/wire'
-import type {
-  AgentHost,
-  AgentPort,
-  BufferHost,
-  MenuEntry,
-  NoteRef,
-  VaultFiles,
-  VaultNotes,
-  WorkspaceHost,
+import {
+  formatErrorMessage,
+  type AgentHost,
+  type AgentPort,
+  type BufferHost,
+  type MenuEntry,
+  type NoteRef,
+  type VaultFiles,
+  type VaultNotes,
+  type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'

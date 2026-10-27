@@ -5,7 +5,7 @@
  * last read or write earned, and a file that moved keeps the transcript of it.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import type {
   Cards,
   DeckProblem,

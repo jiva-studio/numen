@@ -16,8 +16,7 @@
     "@connectrpc/connect": "^2.0.1",
     "@connectrpc/connect-web": "^2.0.1",
     "@numen/plugin-sdk": "workspace:*",
-    "@numen/protocol": "workspace:*",
-    "@numen/wire": "workspace:*"
+    "@numen/protocol": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

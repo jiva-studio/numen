@@ -7,7 +7,7 @@
  * `types.ts`; what a command does to the vaults is `vaults.ts`. Nothing here
  * draws anything.
  */
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { CommandDeps, CommandHandler } from './deps'
 import type { CommandInvocation } from '../../types'
 import type { AnswerWords } from '../../words'

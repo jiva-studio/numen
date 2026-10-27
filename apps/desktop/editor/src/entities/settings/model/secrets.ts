@@ -1,7 +1,7 @@
 /**
  * The keys of the secrets plugins declare, stored and removed through the
  */
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 /** Everything this says in the window's voice. */

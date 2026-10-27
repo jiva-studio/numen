@@ -3,7 +3,7 @@
  * about, and closes.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asValue } from '@numen/wire'
+import { asValue } from '@numen/plugin-sdk'
 import { createDeckKind, type DeckTabsInside } from './kind'
 import type { DeckTabState } from './types'
 

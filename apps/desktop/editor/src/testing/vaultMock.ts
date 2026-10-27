@@ -3,7 +3,7 @@
  * it was asked in `requests`.
  */
 import { vi } from 'vitest'
-import { asValue } from '@numen/wire'
+import { asValue } from '@numen/plugin-sdk'
 import { requests } from './requests'
 import {
   folders,

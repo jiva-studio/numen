@@ -16,8 +16,7 @@
   "dependencies": {
     "@lucide/vue": "^1.34.0",
     "@numen/plugin-sdk": "workspace:*",
-    "@numen/ui": "workspace:*",
-    "@numen/wire": "workspace:*"
+    "@numen/ui": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

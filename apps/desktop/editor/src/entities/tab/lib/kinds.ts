@@ -1,7 +1,6 @@
 /** A kind of tab: what one of its tabs holds, and what a kind may ask of the window. */
 import type { Component } from 'vue'
-import type { TabPlacement } from '@numen/plugin-sdk'
-import type { Result } from '@numen/wire'
+import type { Result, TabPlacement } from '@numen/plugin-sdk'
 
 /**
  * What a command asked over one tab is over: the note the tab means, and the

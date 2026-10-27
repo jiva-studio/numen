@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { ErrorCode, GetNeighbourhoodResponseSchema, Relation } from '@numen/protocol'
-import { asFailure, asValue } from '@numen/wire'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
 
 const file = { path: 'Note.md', size: 12n, mtime: 34n }

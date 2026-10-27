@@ -1,7 +1,7 @@
 /**
  * The vaults an installation holds, and what the window asks of the list.
  */
-import type { Result } from '@numen/wire'
+import type { Result } from '@numen/plugin-sdk'
 
 /** One vault the installation holds, as the list has it. */
 export interface Vault {

@@ -3,8 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { ContentsEntry } from '../book'
-import { formatErrorMessage } from '@numen/wire'
-import type { TextRange } from '@numen/plugin-sdk'
+import { formatErrorMessage, type TextRange } from '@numen/plugin-sdk'
 import type { MessageWriter } from './useBookDocument'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 import { useBookDocument } from './useBookDocument'

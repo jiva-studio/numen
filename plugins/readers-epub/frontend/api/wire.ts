@@ -8,7 +8,7 @@ import {
   parseFingerprint,
   retryWhileBusy,
   transport,
-} from '@numen/wire'
+} from '@numen/plugin-sdk'
 import {
   BookService,
   type SpineDocument as SpineDocumentMessage,

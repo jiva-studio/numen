@@ -8,7 +8,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { IonContent, IonItem, IonList, IonPage, IonProgressBar, IonToast } from '@ionic/vue'
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import NoteSheet from '../note/NoteSheet.vue'
 import { startCore, type Core } from '../core'
 

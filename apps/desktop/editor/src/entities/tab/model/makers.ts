@@ -2,7 +2,7 @@
  * A file of a kind a tab makes, made in a folder under the name it is given and
  * put in front of the person in a tab of its own.
  */
-import { formatErrorMessage } from '@numen/wire'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/entities/file/@x/tab'
