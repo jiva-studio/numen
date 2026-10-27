@@ -14,8 +14,8 @@ const keyPrefix = "proofread-"
 
 // getVersionKey is the key of the proofreading of a version. One version has one proofreading,
 // rewritten when it is proofread again.
-func getVersionKey(input domain.TextVersionID) string {
-	sum := sha256.Sum256([]byte(input))
+func getVersionKey(source domain.TextVersionID) string {
+	sum := sha256.Sum256([]byte(source))
 	return keyPrefix + hex.EncodeToString(sum[:8])
 }
 

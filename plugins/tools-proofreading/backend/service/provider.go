@@ -56,7 +56,7 @@ func (p *provider) CreateText(_ context.Context, req host.TextCreation) error {
 		defer p.finish(key)
 		// Proofread reports a failure as a task error.
 		_, _ = p.proofreading.Proofread(p.ctx, Request{
-			Vault: req.Vault, Path: req.Path, Input: req.Source, IsUserStarted: req.IsUserStarted,
+			Vault: req.Vault, Path: req.Path, Source: req.Source, IsUserStarted: req.IsUserStarted,
 		})
 	})
 	return nil

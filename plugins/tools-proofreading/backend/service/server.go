@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
 // PluginID is the identity the manifest gives the plugin.
@@ -168,10 +169,14 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	if len(vars) > 0 {
 		config.updateConfig(vars)
 	}
-	proofreading := newProofreading(h, newAskModel(complete), config.getConfig)
-	provider := newProvider(proofreading)
+	kinds, err := readKinds(proofreading.Manifest)
+	if err != nil {
+		return err
+	}
+	run := newProofreading(h, kinds, newAskModel(complete), config.getConfig)
+	provider := newProvider(run)
 	commands := command.New()
-	if err := commands.Add("proofread", newProofreadCommand(proofreading)); err != nil {
+	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {
 		return err
 	}
 	s.SetUpdateConfig(config.updateConfig)

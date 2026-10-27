@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
 const (
@@ -19,6 +20,10 @@ const (
 	speechID = "md.numen.engines.transcription"
 	scanPath = "books/flywheel.pdf"
 	talkPath = "talks/storage.wav"
+
+	kindTranscript  domain.TextKind = "transcript"
+	kindRecognition domain.TextKind = "recognition"
+	kindPageText    domain.TextKind = "page-text"
 )
 
 // scene is a vault with a scan and a recording, the versions other plugins made of them, and the
@@ -61,7 +66,11 @@ func newScene(t *testing.T) *scene {
 	s.texts.File(scanPath, []byte("the scan"))
 	s.texts.File(talkPath, []byte("the recording"))
 	s.texts.SetStore(PluginID, s.store)
-	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, newAskModel(s.model.complete), s.settings.getConfig)
+	kinds, err := readKinds(proofreading.Manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, kinds, newAskModel(s.model.complete), s.settings.getConfig)
 	s.provider = newProvider(s.run)
 	t.Cleanup(s.provider.Close)
 	return s
@@ -144,7 +153,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 		})
 	}
 
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Input: scan.GetID(), IsUserStarted: true})
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +189,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 		return ""
 	}
 
-	if _, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Input: talk.GetID()}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Source: talk.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -205,7 +214,7 @@ func TestProofreadAsksAboutALongTranscriptAWindowAtATime(t *testing.T) {
 		return getRows(prompt, func(_, text string) string { return text + "!" })
 	}
 
-	res, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Input: talk.GetID()})
+	res, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Source: talk.GetID()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +249,7 @@ func TestTheVersionMadeFromARecognitionStaysLiveWithTheOCRPluginOff(t *testing.T
 	s := newScene(t)
 	s.hold(t, layerID, scanPath, "layer", kindPageText, "the scan", []domain.TextSegment{{Text: "shipping manifest"}})
 	scan := s.holdScan(t)
-	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Input: scan.GetID()}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 	if _, live := s.readLive(t, scanPath); live.PluginID != PluginID {
@@ -257,8 +266,8 @@ func TestProofreadRefusesWhatItCannotRead(t *testing.T) {
 		want    error
 	}{
 		"a file with no text": {Request{Path: talkPath}, errNoText},
-		"an article":          {Request{Path: "notes/article.url", Input: article.GetID()}, errFormat},
-		"a version not there": {Request{Path: scanPath, Input: "md.numen.engines.ocr/gone"}, host.ErrNotExist},
+		"an article":          {Request{Path: "notes/article.url", Source: article.GetID()}, errFormat},
+		"a version not there": {Request{Path: scanPath, Source: "md.numen.engines.ocr/gone"}, host.ErrNotExist},
 	} {
 		if _, err := s.run.Proofread(t.Context(), req.request); !errors.Is(err, req.want) {
 			t.Errorf("%s: got %v, want %v", name, err, req.want)
@@ -271,7 +280,7 @@ func TestAFailureOfTheModelIsShownAsATask(t *testing.T) {
 	scan := s.holdScan(t)
 	s.model.failure = errors.New("the model is away")
 
-	_, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Input: scan.GetID()})
+	_, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
 
 	if !errors.Is(err, s.model.failure) {
 		t.Fatalf("got %v", err)
@@ -327,7 +336,7 @@ func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 	scan := s.holdScan(t)
 	s.run.ask = newAskModel(completeMock)
 
-	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Input: scan.GetID()}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 

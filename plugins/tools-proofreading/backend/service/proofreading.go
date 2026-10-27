@@ -14,16 +14,16 @@ import (
 var (
 	// errNoText is a file no live version gives words to.
 	errNoText = errors.New("the file has no text to proofread")
-	// errFormat is a version in a format the plugin does not read.
-	errFormat = errors.New("the plugin proofreads timed and positioned text")
+	// errFormat is a version of a kind the manifest does not list.
+	errFormat = errors.New("the plugin proofreads the text kinds its manifest lists")
 )
 
-// Request is one text to proofread. Input is the version read, and empty for the live one.
+// Request is one text to proofread. Source is the version read, and empty for the live one.
 // IsUserStarted is set where a person asked for it.
 type Request struct {
 	Vault         domain.VaultID
 	Path          string
-	Input         domain.TextVersionID
+	Source        domain.TextVersionID
 	IsUserStarted bool
 }
 
@@ -40,12 +40,13 @@ type Result struct {
 // as a version made from the one it read.
 type Proofreading struct {
 	host      Host
+	kinds     map[domain.TextKind]bool
 	ask       askModel
 	getConfig func() proofreadingConfig
 }
 
-func newProofreading(h Host, ask askModel, getConfig func() proofreadingConfig) *Proofreading {
-	return &Proofreading{host: h, ask: ask, getConfig: getConfig}
+func newProofreading(h Host, kinds map[domain.TextKind]bool, ask askModel, getConfig func() proofreadingConfig) *Proofreading {
+	return &Proofreading{host: h, kinds: kinds, ask: ask, getConfig: getConfig}
 }
 
 // Proofread reads the version, puts its lines right and puts the version made from it. A failure
@@ -70,13 +71,13 @@ func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, erro
 }
 
 func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (Result, error) {
-	input, err := p.findInput(ctx, req.Path, req.Input)
+	source, err := p.findSource(ctx, req.Path, req.Source)
 	if err != nil {
 		return Result{}, err
 	}
-	parts, err := p.readParts(ctx, input)
+	parts, err := p.readParts(ctx, source)
 	if err != nil {
-		return Result{}, fmt.Errorf("read %s of %s: %w", input.GetID(), req.Path, err)
+		return Result{}, fmt.Errorf("read %s of %s: %w", source.GetID(), req.Path, err)
 	}
 
 	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
@@ -90,7 +91,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
 	}
-	corrections, uncorrected, err := p.correct(ctx, input.Kind, parts, lines, task)
+	corrections, uncorrected, err := p.correct(ctx, parts, lines, task)
 	if err != nil {
 		return Result{}, err
 	}
@@ -100,13 +101,13 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if req.Vault != "" {
 		store = store.With(req.Vault)
 	}
-	key := getVersionKey(input.GetID())
+	key := getVersionKey(source.GetID())
 	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
 		return Result{}, err
 	}
 	version, err := p.host.Texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: key, Source: input.GetID(), Kind: input.Kind,
-		SourceHash: input.Hash, File: getFileName(key),
+		Path: req.Path, Key: key, Source: source.GetID(), Kind: source.Kind,
+		SourceHash: source.Hash, File: getFileName(key),
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the proofreading of %s: %w", req.Path, err)
@@ -114,8 +115,8 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	return Result{Lines: len(lines), Corrected: len(corrections), Uncorrected: uncorrected, Version: version}, nil
 }
 
-// findInput is the version of the file the id names, or its live version where the id is empty.
-func (p *Proofreading) findInput(ctx context.Context, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
+// findSource is the version of the file the id names, or its live version where the id is empty.
+func (p *Proofreading) findSource(ctx context.Context, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
 	listing, err := p.host.Texts.ListVersions(ctx, filePath)
 	if err != nil {
 		return domain.TextVersion{}, err
@@ -127,7 +128,7 @@ func (p *Proofreading) findInput(ctx context.Context, filePath string, id domain
 		if id == "" || version.GetID() != id {
 			continue
 		}
-		if !isReadKind(version.Kind) {
+		if !p.kinds[version.Kind] {
 			return domain.TextVersion{}, fmt.Errorf("%s is %s text: %w", id, version.Kind, errFormat)
 		}
 		return version, nil
@@ -136,18 +137,6 @@ func (p *Proofreading) findInput(ctx context.Context, filePath string, id domain
 		return domain.TextVersion{}, fmt.Errorf("%s: %w", filePath, errNoText)
 	}
 	return domain.TextVersion{}, fmt.Errorf("%s of %s: %w", id, filePath, host.ErrNotExist)
-}
-
-// The kinds of text the plugin proofreads: speech, and the lines of pages.
-const (
-	kindTranscript  domain.TextKind = "transcript"
-	kindRecognition domain.TextKind = "recognition"
-	kindPageText    domain.TextKind = "page-text"
-)
-
-// isReadKind reports whether the plugin proofreads text of the kind.
-func isReadKind(kind domain.TextKind) bool {
-	return kind == kindTranscript || kind == kindRecognition || kind == kindPageText
 }
 
 // readParts is every page of the version's text, in order.
@@ -166,12 +155,12 @@ func (p *Proofreading) readParts(ctx context.Context, version domain.TextVersion
 	}
 }
 
-// correct asks the model about the lines as the kind reads them: the cues of a recording as
-// speech, a window at a time, and the lines of each page as a scan.
+// correct asks the model about the lines as their selectors place them: timed cues as speech, a
+// window at a time, and the lines of each page as a scan.
 func (p *Proofreading) correct(
-	ctx context.Context, kind domain.TextKind, parts []domain.TextSegment, lines []Line, task *host.Task,
+	ctx context.Context, parts []domain.TextSegment, lines []Line, task *host.Task,
 ) ([]Line, int, error) {
-	if kind == kindTranscript {
+	if isTimed(parts) {
 		return p.correctSpeech(ctx, lines, task)
 	}
 	return p.correctScan(ctx, readPages(parts, lines), task)
@@ -258,4 +247,13 @@ func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 		out[len(out)-1].Lines = append(out[len(out)-1].Lines, line)
 	}
 	return out
+}
+
+// isTimed reports whether the first segment is placed by a time range of a recording.
+func isTimed(parts []domain.TextSegment) bool {
+	if len(parts) == 0 {
+		return false
+	}
+	selector, err := host.ParseSelector(parts[0].Selector)
+	return err == nil && len(selector.T) == 2
 }
