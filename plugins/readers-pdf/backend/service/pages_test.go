@@ -28,8 +28,15 @@ func newLinkedPages(t *testing.T, vaultRoot string) *httptest.Server {
 	return web
 }
 
+// page is one answer of the page route.
+type page struct {
+	status int
+	header http.Header
+	body   []byte
+}
+
 // getPage asks web for a page at path with the plugin's token.
-func getPage(t *testing.T, web *httptest.Server, path string) (*http.Response, []byte) {
+func getPage(t *testing.T, web *httptest.Server, path string) page {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, web.URL+path, nil)
 	if err != nil {
@@ -41,8 +48,11 @@ func getPage(t *testing.T, web *httptest.Server, path string) (*http.Response, [
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	return resp, body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return page{status: resp.StatusCode, header: resp.Header, body: body}
 }
 
 func getTestdata(t *testing.T) string {
@@ -57,12 +67,12 @@ func getTestdata(t *testing.T) string {
 func TestPageRouteServesAPageAsJPEG(t *testing.T) {
 	web := newLinkedPages(t, getTestdata(t))
 
-	resp, body := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide=400")
+	got := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide=400")
 
-	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "image/jpeg" {
-		t.Fatalf("answered %d %q: %s", resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	if got.status != http.StatusOK || got.header.Get("Content-Type") != "image/jpeg" {
+		t.Fatalf("answered %d %q: %s", got.status, got.header.Get("Content-Type"), got.body)
 	}
-	drawing, err := jpeg.Decode(bytes.NewReader(body))
+	drawing, err := jpeg.Decode(bytes.NewReader(got.body))
 	if err != nil {
 		t.Fatalf("the page is no JPEG: %v", err)
 	}
@@ -84,9 +94,9 @@ func TestPageRouteRejectsAFileOutsideTheVault(t *testing.T) {
 	web := newLinkedPages(t, vaultRoot)
 
 	for _, path := range []string{outside, "../" + filepath.Base(filepath.Dir(outside)) + "/outside.pdf"} {
-		resp, _ := getPage(t, web, "/plugin/pages/0?path="+url.QueryEscape(path))
-		if resp.StatusCode != http.StatusForbidden {
-			t.Errorf("%q was answered %d", path, resp.StatusCode)
+		got := getPage(t, web, "/plugin/pages/0?path="+url.QueryEscape(path))
+		if got.status != http.StatusForbidden {
+			t.Errorf("%q was answered %d", path, got.status)
 		}
 	}
 }
@@ -101,8 +111,8 @@ func TestPageRouteRejectsABadRequest(t *testing.T) {
 		"/plugin/pages/0?path=gone.pdf":   http.StatusNotFound,
 		"/plugin/pages/999?path=tiny.pdf": http.StatusUnprocessableEntity,
 	} {
-		if resp, body := getPage(t, web, path); resp.StatusCode != want {
-			t.Errorf("%s was answered %d, want %d: %s", path, resp.StatusCode, want, body)
+		if got := getPage(t, web, path); got.status != want {
+			t.Errorf("%s was answered %d, want %d: %s", path, got.status, want, got.body)
 		}
 	}
 }
