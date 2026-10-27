@@ -92,21 +92,21 @@ type PluginTextPage struct {
 	NextCursor string
 }
 
-// PluginTexts is the text versions of the vault the host shows, as the plugins
-// that call the host work them.
+// PluginTexts is the text versions of the vaults, as the plugins that call the
+// host work them. Each call works the vault it is given.
 type PluginTexts interface {
 	// PutVersion records a version of the plugin, or replaces the one it has under the key.
-	PutVersion(ctx context.Context, pluginID string, params PluginTextPut) (domain.TextVersion, error)
+	PutVersion(ctx context.Context, v domain.Vault, pluginID string, params PluginTextPut) (domain.TextVersion, error)
 	// RemoveVersion removes the record of a version of the plugin.
-	RemoveVersion(ctx context.Context, pluginID, path, key string) error
+	RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
-	ListVersions(ctx context.Context, path string) (PluginTextListing, error)
+	ListVersions(ctx context.Context, v domain.Vault, path string) (PluginTextListing, error)
 	// ReadText is one page of any version's segments, read from its file.
-	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (PluginTextPage, error)
+	ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (PluginTextPage, error)
 }
 
 // PluginTextHost receives the text versions that plugins work on.
 type PluginTextHost interface {
-	// SetPluginTexts is the text versions of the shown vault the plugins work. Nil is none.
+	// SetPluginTexts is the text versions the plugins work. Nil is none.
 	SetPluginTexts(texts PluginTexts)
 }

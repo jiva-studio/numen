@@ -44,7 +44,7 @@ func (h *Host) GetPluginVault() pluginport.PluginVault {
 	return h.vault
 }
 
-// SetPluginTexts is the text versions of the shown vault the plugins work through the host.
+// SetPluginTexts is the text versions the plugins work through the host.
 func (h *Host) SetPluginTexts(texts pluginport.PluginTexts) {
 	h.mu.Lock()
 	defer h.mu.Unlock()

@@ -75,3 +75,21 @@ func TestAVersionThatIsNotOneIsRefused(t *testing.T) {
 		t.Errorf("a version not there: got %v", err)
 	}
 }
+
+func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
+	ctx := t.Context()
+	physics := hosttest.NewTexts("v1", "org.example.ocr")
+	other := physics.With("v2").(*hosttest.Texts)
+	if err := host.WriteText(ctx, other.GetStore("org.example.ocr"), "k.jsonl", []domain.TextSegment{{Text: "x"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := other.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", File: "k.jsonl"}); err != nil {
+		t.Fatal(err)
+	}
+
+	inOther, _ := physics.With("v2").ListVersions(ctx, "a.pdf")
+	inShown, _ := physics.ListVersions(ctx, "a.pdf")
+	if len(inOther.Versions) != 1 || len(inShown.Versions) != 0 {
+		t.Errorf("v2 holds %d versions and v1 %d, want 1 and 0", len(inOther.Versions), len(inShown.Versions))
+	}
+}

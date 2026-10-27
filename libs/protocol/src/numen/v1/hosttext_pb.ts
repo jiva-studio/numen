@@ -295,9 +295,12 @@ export const ReadTextResponseSchema: GenMessage<ReadTextResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_hosttext, 8);
 
 /**
- * HostTextService serves the text versions of the vault the host shows to the
- * plugins. The host identifies the plugin by its token; a call that reads needs
- * vault:read and one that changes a version vault:write.
+ * HostTextService serves the text versions of a vault to the plugins. The host
+ * identifies the plugin by its token; a call that reads needs vault:read and one
+ * that changes a version vault:write.
+ *
+ * Numen-Vault works the vault of that identity; without it a call works the
+ * vault the host is showing.
  *
  * A version made by the calling plugin is named by its key; any version is
  * named by its id, which is the plugin id and the key joined by "/".

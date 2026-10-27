@@ -16,14 +16,22 @@ import (
 // host. A version's file is read from the folder of the plugin that made it, as the host reads it:
 // the store SetStore names, or a folder in memory. The live version is the one the core would show:
 // the newest whose sources are unchanged and whose file still has the hash it was recorded with.
+// With reaches the texts of another vault of the same host, made empty on first use.
 type Texts struct {
 	world    *textWorld
 	pluginID string
 }
 
+// textHost is the texts of every vault one host keeps, by identity.
+type textHost struct {
+	mu     sync.Mutex
+	worlds map[domain.VaultID]*textWorld
+}
+
 // textWorld is what every plugin's view of one vault's texts shares.
 type textWorld struct {
 	mu       sync.Mutex
+	all      *textHost
 	vault    domain.VaultID
 	versions []domain.TextVersion
 	files    map[string][]byte
@@ -36,10 +44,27 @@ var _ host.Texts = (*Texts)(nil)
 
 // NewTexts is the texts of the vault of the identity, as the plugin of the id works them.
 func NewTexts(vault domain.VaultID, pluginID string) *Texts {
-	return &Texts{world: &textWorld{
-		vault: vault, files: map[string][]byte{}, stores: map[string]host.Store{},
-		clock: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-	}, pluginID: pluginID}
+	vaults := &textHost{worlds: map[domain.VaultID]*textWorld{}}
+	return &Texts{world: vaults.getWorld(vault), pluginID: pluginID}
+}
+
+// getWorld is the texts of the vault, made empty on first use.
+func (h *textHost) getWorld(vault domain.VaultID) *textWorld {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	w, ok := h.worlds[vault]
+	if !ok {
+		w = &textWorld{
+			all: h, vault: vault, files: map[string][]byte{}, stores: map[string]host.Store{},
+			clock: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		}
+		h.worlds[vault] = w
+	}
+	return w
+}
+
+func (t *Texts) With(id domain.VaultID) host.Texts {
+	return &Texts{world: t.world.all.getWorld(id), pluginID: t.pluginID}
 }
 
 // As is the same texts, as another plugin works them.

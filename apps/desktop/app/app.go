@@ -262,7 +262,7 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
-	cfg.SetPluginTexts(ctx, getShownVault)
+	cfg.SetPluginTexts()
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 

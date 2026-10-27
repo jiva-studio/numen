@@ -46,10 +46,9 @@ func (c Config) getTextReaders() textport.TextReaders {
 	return c.TextVersions
 }
 
-// SetPluginTexts is the text versions of the vault getVault names, as the
-// plugins work them through the host. Without text versions a plugin is told
-// there are none.
-func (c Config) SetPluginTexts(_ context.Context, getVault func() (domain.Vault, bool)) {
+// SetPluginTexts is the text versions of the vaults, as the plugins work them
+// through the host. Without text versions a plugin is told there are none.
+func (c Config) SetPluginTexts() {
 	if c.PluginHost == nil {
 		return
 	}
@@ -58,7 +57,7 @@ func (c Config) SetPluginTexts(_ context.Context, getVault func() (domain.Vault,
 		host.SetPluginTexts(nil)
 		return
 	}
-	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.VaultReaders(), getVault))
+	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.VaultReaders()))
 }
 
 // indexVersions is the text versions the index database records, one vault at a time.

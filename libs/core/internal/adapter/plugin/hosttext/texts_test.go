@@ -7,37 +7,33 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-type openFailure struct{}
+// openFailure fails to open every vault, and records the vaults it was asked to open.
+type openFailure struct {
+	opened *[]domain.VaultID
+}
 
-func (openFailure) Open(domain.Vault) (vaultport.VaultReader, error) {
+func (o openFailure) Open(v domain.Vault) (vaultport.VaultReader, error) {
+	*o.opened = append(*o.opened, v.ID)
 	return nil, errors.New("vault is gone")
 }
 
-func showNone() (domain.Vault, bool) { return domain.Vault{}, false }
-
-func TestEveryCallWithNoVaultShownIsNoText(t *testing.T) {
-	texts := hosttext.NewTexts(nil, openFailure{}, showNone)
-	ctx := t.Context()
-	_, putErr := texts.PutVersion(ctx, "engines.transcription", pluginport.PluginTextPut{Path: "talk.mp3", Key: "k"})
-	removeErr := texts.RemoveVersion(ctx, "engines.transcription", "talk.mp3", "k")
-	_, listErr := texts.ListVersions(ctx, "talk.mp3")
-	_, readErr := texts.ReadText(ctx, "talk.mp3", "engines.transcription/k", "")
-	for name, err := range map[string]error{"put": putErr, "remove": removeErr, "list": listErr, "read": readErr} {
-		if !errors.Is(err, textport.ErrNoText) {
-			t.Errorf("%s: got %v, want no text", name, err)
-		}
+func TestListVersionsReturnsTheReaderFailure(t *testing.T) {
+	var opened []domain.VaultID
+	texts := hosttext.NewTexts(nil, openFailure{opened: &opened})
+	if _, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1"}, "talk.mp3"); err == nil || errors.Is(err, textport.ErrNoText) {
+		t.Fatalf("got %v, want the reader's failure", err)
 	}
 }
 
-func TestListVersionsReturnsTheReaderFailure(t *testing.T) {
-	getVault := func() (domain.Vault, bool) { return domain.Vault{ID: "v1"}, true }
-	texts := hosttext.NewTexts(nil, openFailure{}, getVault)
-	if _, err := texts.ListVersions(t.Context(), "talk.mp3"); err == nil || errors.Is(err, textport.ErrNoText) {
-		t.Fatalf("got %v, want the reader's failure", err)
+func TestListVersionsReadsTheVaultItIsGiven(t *testing.T) {
+	var opened []domain.VaultID
+	texts := hosttext.NewTexts(nil, openFailure{opened: &opened})
+	_, _ = texts.ListVersions(t.Context(), domain.Vault{ID: "v2"}, "talk.mp3")
+	if len(opened) != 1 || opened[0] != "v2" {
+		t.Errorf("opened %v, want v2", opened)
 	}
 }

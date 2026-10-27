@@ -17,16 +17,19 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// textHost answers HostTextService with what a test set, and records what it was put.
+// textHost answers HostTextService with what a test set, and records what it was put and the vault
+// each call named.
 type textHost struct {
 	numenv1connect.UnimplementedHostTextServiceHandler
 	code    v1.TextErrorCode
 	request *v1.PutTextVersionRequest
 	auth    string
+	vaults  []string
 }
 
 func (h *textHost) PutTextVersion(_ context.Context, req *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error) {
 	h.request, h.auth = req.Msg, req.Header().Get("Authorization")
+	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
 	if h.code != v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.PutTextVersionResponse{Error: h.code}), nil
 	}
@@ -36,7 +39,8 @@ func (h *textHost) PutTextVersion(_ context.Context, req *connect.Request[v1.Put
 	}}), nil
 }
 
-func (h *textHost) ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error) {
+func (h *textHost) ListTextVersions(_ context.Context, req *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error) {
+	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
 	return connect.NewResponse(&v1.ListTextVersionsResponse{
 		Versions:      []*v1.TextVersion{{Id: "p/k", Path: "a.pdf", PluginId: "p", Key: "k", Kind: "transcript"}},
 		LiveVersionId: "p/k",
@@ -45,10 +49,16 @@ func (h *textHost) ListTextVersions(context.Context, *connect.Request[v1.ListTex
 }
 
 func (h *textHost) ReadText(_ context.Context, req *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error) {
+	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
 	if req.Msg.GetCursor() == "" {
 		return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "one ", Selector: `{"t":[1.5,2]}`}}, NextCursor: "1"}), nil
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "two"}}}), nil
+}
+
+func (h *textHost) RemoveTextVersion(_ context.Context, req *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error) {
+	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
+	return connect.NewResponse(&v1.RemoveTextVersionResponse{}), nil
 }
 
 func newTextClient(t *testing.T, h *textHost) *host.TextClient {
@@ -134,4 +144,43 @@ func TestProviderReceivesUserStartedFlag(t *testing.T) {
 	if !slices.Equal(provider.requests, want) {
 		t.Fatalf("got %+v, want %+v", provider.requests, want)
 	}
+}
+
+func TestATextClientOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
+	ctx := t.Context()
+	h := &textHost{}
+	client := newTextClient(t, h)
+	chemistry := client.With("Chemistry")
+
+	_, _ = chemistry.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "transcript", File: "k.jsonl"})
+	_, _ = chemistry.ListVersions(ctx, "a.pdf")
+	_, _ = chemistry.ReadText(ctx, "a.pdf", "p/k", "")
+	_ = chemistry.RemoveVersion(ctx, "a.pdf", "k")
+	_, _ = client.ListVersions(ctx, "a.pdf")
+
+	want := []string{"Chemistry", "Chemistry", "Chemistry", "Chemistry", ""}
+	if !slices.Equal(h.vaults, want) {
+		t.Errorf("the vaults named were %q, want %q", h.vaults, want)
+	}
+}
+
+func TestATextClientOfAnUnknownVaultReturnsErrUnknownVault(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostTextServiceHandler(unknownVaultTexts{}))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client := host.NewTextClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"}).With("Unknown")
+
+	if _, err := client.ListVersions(t.Context(), "a.pdf"); !errors.Is(err, host.ErrUnknownVault) {
+		t.Errorf("an unknown vault returned %v", err)
+	}
+}
+
+// unknownVaultTexts answers every call as a host that knows no vault of the name.
+type unknownVaultTexts struct {
+	numenv1connect.UnimplementedHostTextServiceHandler
+}
+
+func (unknownVaultTexts) ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error) {
+	return nil, connect.NewError(connect.CodeNotFound, errors.New("no such vault"))
 }

@@ -25,14 +25,36 @@ type textEndpoint struct {
 
 var _ numenv1connect.HostTextServiceHandler = (*textEndpoint)(nil)
 
-// begin authorizes a call and returns the plugin that made it and the text
-// versions of the vault the host shows, which are nil while it shows none.
-func (e *textEndpoint) begin(header http.Header, permission string) (string, pluginport.PluginTexts, error) {
+// textCall is an authorized text call: the plugin that made it, the text versions, and the vault
+// it works. Texts is nil where the host has no text versions or no vault to offer.
+type textCall struct {
+	pluginID string
+	texts    pluginport.PluginTexts
+	vault    domain.Vault
+}
+
+// begin authorizes a call and finds the vault it works: the one its Numen-Vault header names, else
+// the one the host shows.
+func (e *textEndpoint) begin(header http.Header, permission string) (textCall, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
-		return "", nil, err
+		return textCall{}, err
 	}
-	return pluginID, e.endpoint.callers.GetPluginTexts(), nil
+	call := textCall{pluginID: pluginID}
+	texts := e.endpoint.callers.GetPluginTexts()
+	if texts == nil {
+		return call, nil
+	}
+	vault, err := e.endpoint.getVault(header)
+	if err != nil || vault == nil {
+		return call, err
+	}
+	v, ok := vault.GetVault()
+	if !ok {
+		return call, nil
+	}
+	call.texts, call.vault = texts, v
+	return call, nil
 }
 
 // answerText sorts the failure of a text call: an answer the protocol names is
@@ -60,15 +82,15 @@ const noTexts = v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT
 func (e *textEndpoint) PutTextVersion(
 	ctx context.Context, req *connect.Request[v1.PutTextVersionRequest],
 ) (*connect.Response[v1.PutTextVersionResponse], error) {
-	pluginID, texts, err := e.begin(req.Header(), plugindir.PermissionVaultWrite)
+	call, err := e.begin(req.Header(), plugindir.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
-	if texts == nil {
+	if call.texts == nil {
 		return connect.NewResponse(&v1.PutTextVersionResponse{Error: noTexts}), nil
 	}
 	m := req.Msg
-	version, err := texts.PutVersion(ctx, pluginID, pluginport.PluginTextPut{
+	version, err := call.texts.PutVersion(ctx, call.vault, call.pluginID, pluginport.PluginTextPut{
 		Path: m.GetPath(), Key: m.GetKey(), Source: domain.TextVersionID(m.GetSourceVersionId()),
 		Kind: domain.TextKind(m.GetKind()), SourceHash: m.GetSourceHash(), File: m.GetFile(),
 	})
@@ -86,14 +108,14 @@ func (e *textEndpoint) PutTextVersion(
 func (e *textEndpoint) RemoveTextVersion(
 	ctx context.Context, req *connect.Request[v1.RemoveTextVersionRequest],
 ) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	pluginID, texts, err := e.begin(req.Header(), plugindir.PermissionVaultWrite)
+	call, err := e.begin(req.Header(), plugindir.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
-	if texts == nil {
+	if call.texts == nil {
 		return connect.NewResponse(&v1.RemoveTextVersionResponse{Error: noTexts}), nil
 	}
-	code, err := answerText(ctx, texts.RemoveVersion(ctx, pluginID, req.Msg.GetPath(), req.Msg.GetKey()))
+	code, err := answerText(ctx, call.texts.RemoveVersion(ctx, call.vault, call.pluginID, req.Msg.GetPath(), req.Msg.GetKey()))
 	if err != nil {
 		return nil, err
 	}
@@ -103,14 +125,14 @@ func (e *textEndpoint) RemoveTextVersion(
 func (e *textEndpoint) ListTextVersions(
 	ctx context.Context, req *connect.Request[v1.ListTextVersionsRequest],
 ) (*connect.Response[v1.ListTextVersionsResponse], error) {
-	_, texts, err := e.begin(req.Header(), plugindir.PermissionVaultRead)
+	call, err := e.begin(req.Header(), plugindir.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
-	if texts == nil {
+	if call.texts == nil {
 		return connect.NewResponse(&v1.ListTextVersionsResponse{Error: noTexts}), nil
 	}
-	listing, err := texts.ListVersions(ctx, req.Msg.GetPath())
+	listing, err := call.texts.ListVersions(ctx, call.vault, req.Msg.GetPath())
 	code, err := answerText(ctx, err)
 	if err != nil {
 		return nil, err
@@ -125,14 +147,14 @@ func (e *textEndpoint) ListTextVersions(
 func (e *textEndpoint) ReadText(
 	ctx context.Context, req *connect.Request[v1.ReadTextRequest],
 ) (*connect.Response[v1.ReadTextResponse], error) {
-	_, texts, err := e.begin(req.Header(), plugindir.PermissionVaultRead)
+	call, err := e.begin(req.Header(), plugindir.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
-	if texts == nil {
+	if call.texts == nil {
 		return connect.NewResponse(&v1.ReadTextResponse{Error: noTexts}), nil
 	}
-	page, err := texts.ReadText(ctx, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetCursor())
+	page, err := call.texts.ReadText(ctx, call.vault, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetCursor())
 	code, err := answerText(ctx, err)
 	if err != nil {
 		return nil, err

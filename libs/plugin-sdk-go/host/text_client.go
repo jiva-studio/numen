@@ -13,9 +13,11 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// TextClient works the text versions of the vault the host shows through HostTextService.
+// TextClient works the text versions of a vault through HostTextService.
 type TextClient struct {
 	rpc numenv1connect.HostTextServiceClient
+	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	vault string
 }
 
 var _ Texts = (*TextClient)(nil)
@@ -49,6 +51,20 @@ func NewTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint
 	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
+func (c *TextClient) With(id domain.VaultID) Texts {
+	linked := *c
+	linked.vault = string(id)
+	return &linked
+}
+
+func newTextRequest[T any](c *TextClient, msg *T) *connect.Request[T] {
+	req := connect.NewRequest(msg)
+	if c.vault != "" {
+		req.Header().Set(vaultHeader, c.vault)
+	}
+	return req
+}
+
 // failText turns the code of an answer into the error it stands for.
 func failText(code v1.TextErrorCode) error {
 	switch code {
@@ -67,12 +83,12 @@ func failText(code v1.TextErrorCode) error {
 }
 
 func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error) {
-	res, err := c.rpc.PutTextVersion(ctx, connect.NewRequest(&v1.PutTextVersionRequest{
+	res, err := c.rpc.PutTextVersion(ctx, newTextRequest(c, &v1.PutTextVersionRequest{
 		Path: params.Path, Key: params.Key, SourceVersionId: string(params.Source), Kind: string(params.Kind),
 		SourceHash: params.SourceHash, File: params.File,
 	}))
 	if err != nil {
-		return domain.TextVersion{}, err
+		return domain.TextVersion{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
 		return domain.TextVersion{}, err
@@ -81,17 +97,17 @@ func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.Tex
 }
 
 func (c *TextClient) RemoveVersion(ctx context.Context, path, key string) error {
-	res, err := c.rpc.RemoveTextVersion(ctx, connect.NewRequest(&v1.RemoveTextVersionRequest{Path: path, Key: key}))
+	res, err := c.rpc.RemoveTextVersion(ctx, newTextRequest(c, &v1.RemoveTextVersionRequest{Path: path, Key: key}))
 	if err != nil {
-		return err
+		return readError(err)
 	}
 	return failText(res.Msg.GetError())
 }
 
 func (c *TextClient) ListVersions(ctx context.Context, path string) (TextListing, error) {
-	res, err := c.rpc.ListTextVersions(ctx, connect.NewRequest(&v1.ListTextVersionsRequest{Path: path}))
+	res, err := c.rpc.ListTextVersions(ctx, newTextRequest(c, &v1.ListTextVersionsRequest{Path: path}))
 	if err != nil {
-		return TextListing{}, err
+		return TextListing{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
 		return TextListing{}, err
@@ -104,9 +120,9 @@ func (c *TextClient) ListVersions(ctx context.Context, path string) (TextListing
 }
 
 func (c *TextClient) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error) {
-	res, err := c.rpc.ReadText(ctx, connect.NewRequest(&v1.ReadTextRequest{Path: path, VersionId: string(id), Cursor: cursor}))
+	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), Cursor: cursor}))
 	if err != nil {
-		return TextPage{}, err
+		return TextPage{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
 		return TextPage{}, err

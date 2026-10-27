@@ -121,7 +121,7 @@ func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (
 	}
 	c.SetPluginWork(run.NewTasks(), &run.Lock{})
 	c.SetPluginVault(vault)
-	c.SetPluginTexts(ctx, current)
+	c.SetPluginTexts()
 	return c, nil
 }
 

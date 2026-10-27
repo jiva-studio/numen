@@ -48,6 +48,10 @@ type TextPage struct {
 // Texts is the text versions of the vault the host shows, as a plugin works them. TextClient works
 // them through HostTextService; tests work them through hosttest.Texts.
 type Texts interface {
+	// With is the text versions of the vault of the identity. A call on it returns ErrUnknownVault
+	// when the installation knows no such vault.
+	With(id domain.VaultID) Texts
+
 	// PutVersion records a version of the plugin from the file it wrote, or replaces the one it has
 	// under the key, and reindexes the file.
 	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)

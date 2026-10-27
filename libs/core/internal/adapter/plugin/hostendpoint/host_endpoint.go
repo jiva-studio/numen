@@ -51,7 +51,7 @@ type Services interface {
 	GetCompleter() completionport.Completer
 	// GetPluginVault is the vault the host shows, or nil where it has none to offer.
 	GetPluginVault() pluginport.PluginVault
-	// GetPluginTexts is the text versions of the vault the host shows, or nil.
+	// GetPluginTexts is the text versions the plugins work, or nil.
 	GetPluginTexts() pluginport.PluginTexts
 	// GetDependencies is what provisions the dependencies, or nil.
 	GetDependencies() pluginport.DependencyCatalog
