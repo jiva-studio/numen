@@ -36,12 +36,6 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `window-names-no-plugin-kind`: the editor window's sources name no plugin kind (`deck`, `card-model`, `preset`, `plex`, `agent`, `files`) as a literal, outside its tests and stories and the files listed in `CORE_NAME_FILES` (the settings entity and page and the plugin context).
    - `desktop-editor-fsd`, `desktop-flashcards-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), by `npm run lint` in each window.
 
-## Baseline
-
-The five checks `protocol-holds-no-plugin-contract`, `no-file-kind-outside-plugins`, `ui-exports-no-editor`, `plugins-name-no-window` and `plugins-write-data-through-host` read `baseline.json`: the violations known when they were added, by check id, as `<file>: <symbol>` and the number of times the symbol occurs in that file. Lines are left out, so an edit above a violation does not move it.
-
-A check fails on a violation the baseline does not hold, and on a baseline entry found fewer times than it lists. A change that removes a violation runs `node check.mjs --update-baseline <check>` and commits the lowered `baseline.json`. `--update-baseline` only lowers counts and removes entries; it never adds one. `--no-baseline` lists every violation with its line.
-
 ## Usage
 
 ```bash
@@ -56,6 +50,4 @@ make check_layers target=core         # specific module
 node check.mjs [target...]
 node check.mjs --list
 node check.mjs --help
-node check.mjs no-file-kind-outside-plugins --no-baseline   # every violation, with its line
-node check.mjs --update-baseline                             # drop baseline entries that no longer occur
 ```

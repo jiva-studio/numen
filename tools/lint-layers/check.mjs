@@ -18,10 +18,6 @@
  *
  * Modules:
  *   core, notes, protocol, kinds, ui, shell, host, wire, sdk, plugins, boundary, desktop, editor, flashcards
- *
- * Options:
- *   --update-baseline  remove baseline.json entries that no longer occur
- *   --no-baseline      list every violation of the checks that read baseline.json
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -863,66 +859,11 @@ function listShippedFiles(pathspecs) {
     .filter((file) => file && !NOT_SHIPPED.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
 }
 
-/**
- * The known violations of the checks that read one, by check id, as `<file>: <symbol>` and the
- * number of times it occurs there. Line numbers are left out so an edit above does not move them.
- */
-const BASELINE_FILE = path.join(SCRIPT_DIR, "baseline.json");
-const baseline = fs.existsSync(BASELINE_FILE) ? JSON.parse(fs.readFileSync(BASELINE_FILE, "utf8")) : {};
-let isBaselineChanged = false;
-
-/**
- * Fails on a finding the baseline does not hold, and on a baseline entry found fewer times than it
- * lists. `--update-baseline` lowers the listed counts to what is found and never raises one;
- * `--no-baseline` fails on every finding.
- */
-function checkAgainstBaseline(id, title, findings) {
-  const counts = new Map();
-  for (const { file, symbol } of findings) {
-    const key = `${file}: ${symbol}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  if (flags.has("--no-baseline")) {
-    if (findings.length === 0) return;
-    const listed = findings.map(({ file, line, symbol }) => `${file}:${line}: ${symbol}`);
-    throw new Error(`${title} (${findings.length}):\n` + listed.join("\n"));
-  }
-  const known = baseline[id] ?? {};
-  const added = [...counts]
-    .filter(([key, count]) => count > (known[key] ?? 0))
-    .map(([key, count]) => `${key} (found ${count}, baseline ${known[key] ?? 0})`);
-  const gone = Object.entries(known)
-    .filter(([key, count]) => (counts.get(key) ?? 0) < count)
-    .map(([key, count]) => `${key} (found ${counts.get(key) ?? 0}, baseline ${count})`);
-  if (flags.has("--update-baseline") && gone.length > 0) {
-    const kept = Object.entries(known)
-      .map(([key, count]) => [key, Math.min(count, counts.get(key) ?? 0)])
-      .filter(([, count]) => count > 0);
-    baseline[id] = Object.fromEntries(kept);
-    isBaselineChanged = true;
-    gone.length = 0;
-  }
-  const problems = [];
-  if (added.length > 0) problems.push(`${title}, not in ${path.basename(BASELINE_FILE)}:\n` + added.join("\n"));
-  if (gone.length > 0) {
-    problems.push(
-      `Baseline entries of ${id} that no longer occur; run node check.mjs --update-baseline ${id}:\n` + gone.join("\n"),
-    );
-  }
-  if (problems.length > 0) throw new Error(problems.join("\n"));
-}
-
-/** Writes the baseline back when `--update-baseline` lowered it. */
-function writeBaseline() {
-  if (!isBaselineChanged) return;
-  const sorted = Object.fromEntries(
-    Object.keys(baseline)
-      .sort()
-      .filter((id) => Object.keys(baseline[id]).length > 0)
-      .map((id) => [id, Object.fromEntries(Object.entries(baseline[id]).sort(([a], [b]) => a.localeCompare(b)))]),
-  );
-  fs.writeFileSync(BASELINE_FILE, JSON.stringify(sorted, null, 2) + "\n");
-  console.log("Baseline written: " + path.relative(REPO_ROOT, BASELINE_FILE));
+/** Fails with every finding, by file, line and symbol. */
+function failOnFindings(title, findings) {
+  if (findings.length === 0) return;
+  const listed = findings.map(({ file, line, symbol }) => `${file}:${line}: ${symbol}`);
+  throw new Error(`${title} (${findings.length}):\n` + listed.join("\n"));
 }
 
 /**
@@ -966,7 +907,7 @@ function findPluginProtoSymbols() {
 
 /** `numen.v1` holds the contracts of the core and its extension points, and nothing one plugin owns. */
 function verifyProtocolHoldsNoPluginContract() {
-  checkAgainstBaseline("protocol-holds-no-plugin-contract", "numen.v1 holds what a plugin owns", findPluginProtoSymbols());
+  failOnFindings("numen.v1 holds what a plugin owns", findPluginProtoSymbols());
 }
 
 /** The code that knows no file format and no source kind: it finds a plugin by content type instead. */
@@ -1047,7 +988,7 @@ function findFileKinds() {
 
 /** The core, the notes library, the SDKs, the UI libraries and the window name no file format and no source kind. */
 function verifyNoFileKindOutsidePlugins() {
-  checkAgainstBaseline("no-file-kind-outside-plugins", "File formats and source kinds outside plugins", findFileKinds());
+  failOnFindings("File formats and source kinds outside plugins", findFileKinds());
 }
 
 /** The Markdown editor of `@numen/ui`, which the notes plugin owns, and the wikilink helpers the core replaces. */
@@ -1076,7 +1017,7 @@ function findUiEditor() {
 
 /** `@numen/ui` holds and exports no editor and no wikilink helper. */
 function verifyUiExportsNoEditor() {
-  checkAgainstBaseline("ui-exports-no-editor", "The UI library holds the editor or wikilink helpers", findUiEditor());
+  failOnFindings("The UI library holds the editor or wikilink helpers", findUiEditor());
 }
 
 /** The ids of the application's windows. */
@@ -1099,7 +1040,7 @@ function findPluginWindowNames() {
 
 /** A plugin reaches the window through the SDK: it names no window and creates no `WindowService` client. */
 function verifyPluginsNameNoWindow() {
-  checkAgainstBaseline("plugins-name-no-window", "A plugin names a window or its service", findPluginWindowNames());
+  failOnFindings("A plugin names a window or its service", findPluginWindowNames());
 }
 
 /** The calls of Go's `os` package that change the file system. */
@@ -1118,7 +1059,7 @@ function findPluginDataWrites() {
 
 /** A plugin writes under `.numen/` through the host store, never with `os`. */
 function verifyPluginsWriteDataThroughHost() {
-  checkAgainstBaseline("plugins-write-data-through-host", "A plugin writes under .numen/ with os", findPluginDataWrites());
+  failOnFindings("A plugin writes under .numen/ with os", findPluginDataWrites());
 }
 
 const VERIFIERS = [
@@ -1343,12 +1284,12 @@ const SCOPES = ["all", "libs", "plugins", "apps"];
 const MODULE_NAMES = Array.from(new Set(VERIFIERS.map((v) => v.module)));
 
 /** The options of a run; every other argument is a target. */
-const FLAGS = ["--update-baseline", "--no-baseline", "--list", "--help", "-h"];
+const FLAGS = ["--list", "--help", "-h"];
 const flags = new Set(process.argv.slice(2).filter((arg) => FLAGS.includes(arg)));
 const args = process.argv.slice(2).filter((arg) => !FLAGS.includes(arg));
 
 if (flags.has("--help") || flags.has("-h")) {
-  console.log("Usage: node check.mjs [target...] [--list] [--help] [--update-baseline] [--no-baseline]");
+  console.log("Usage: node check.mjs [target...] [--list] [--help]");
   console.log("");
   console.log("Targets can be scopes or module names:");
   console.log("  Scopes:  " + SCOPES.join(", "));
@@ -1360,10 +1301,6 @@ if (flags.has("--help") || flags.has("-h")) {
   console.log("  node check.mjs plugins       # validate plugin isolation and boundaries");
   console.log("  node check.mjs apps          # validate application FSD layers");
   console.log("  node check.mjs core ui       # validate core and UI library");
-  console.log("");
-  console.log("Baseline (baseline.json, read by the checks that list known violations):");
-  console.log("  --update-baseline            # remove entries that no longer occur; never adds one");
-  console.log("  --no-baseline                # list every violation, known or not");
   process.exit(0);
 }
 
@@ -1495,8 +1432,6 @@ for (const verifier of activeVerifiers) {
     exitCode = 1;
   }
 }
-
-writeBaseline();
 
 console.log("\n\x1b[1m=== Validation Summary ===\x1b[0m");
 for (const res of results) {
