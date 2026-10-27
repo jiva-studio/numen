@@ -87,6 +87,10 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 			`[{"id":"convert","title":"C","arguments":[{"name":"pages","type":"string"}]}]`,
 			pluginport.ErrInvalidCommandArgument,
 		},
+		"a required argument hidden in the palette": {
+			`[{"id":"convert","title":"C","arguments":[{"name":"wait","title":"W","type":"boolean","required":true,"hiddenInPalette":true}]}]`,
+			pluginport.ErrInvalidCommandArgument,
+		},
 	}
 	for name, one := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -106,5 +110,16 @@ func TestAPluginThatDeclaresCommandsHasABackendToRunThem(t *testing.T) {
 
 	if !errors.Is(err, pluginport.ErrInvalidCommand) || !strings.Contains(err.Error(), "no backend") {
 		t.Errorf("error = %v, want a command with no backend", err)
+	}
+}
+
+func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
+	m, err := pluginport.ReadManifest(strings.NewReader(commandManifestHead +
+		`[{"id":"import","title":"I","arguments":[{"name":"wait","title":"W","type":"boolean","hiddenInPalette":true}]}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if wait, _ := m.Commands[0].GetArgument("wait"); !wait.IsHiddenInPalette {
+		t.Errorf("the argument came out as %+v", wait)
 	}
 }

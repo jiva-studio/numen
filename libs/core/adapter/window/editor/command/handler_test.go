@@ -33,7 +33,10 @@ func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "create-sample", Title: "Create a sample", ContentTypes: []domain.ContentType{"text/markdown"},
-			Arguments: []plugincommand.Argument{{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true}},
+			Arguments: []plugincommand.Argument{
+				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
+				{Name: "wait", Title: "Wait", Type: plugincommand.ArgumentBoolean, IsHiddenInPalette: true},
+			},
 		}},
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
@@ -69,7 +72,7 @@ func TestTheCommandsAreListedWithoutThoseHiddenInThePaletteOrOverNotesOfAType(t 
 	one := commands[0]
 	argument := one.GetArguments()[0]
 	if one.GetPluginId() != "org.example.sample" || one.GetId() != "create-sample" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
-		!argument.GetIsRequired() {
+		!argument.GetIsRequired() || len(one.GetArguments()) != 1 {
 		t.Errorf("got %v", one)
 	}
 }

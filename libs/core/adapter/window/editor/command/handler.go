@@ -87,6 +87,9 @@ func getErrorCode(err error) v1.CommandErrorCode {
 func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
+		if one.IsHiddenInPalette {
+			continue
+		}
 		arguments = append(arguments, &v1.CommandArgument{
 			Name:       one.Name,
 			Title:      one.Title,
