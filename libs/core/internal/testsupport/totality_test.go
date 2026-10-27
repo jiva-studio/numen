@@ -18,7 +18,6 @@ import (
 // below, and a value added to an enum already here fails in the test named
 // beside it.
 var walked = map[protoreflect.FullName]string{
-	"numen.v1.ArticleErrorCode":     "plugins/tools-media-importer: written by getErrorCode",
 	"numen.v1.CommandErrorCode":     "internal/adapter/plugin/commandbridge: read by RunCommand",
 	"numen.v1.CompletionConsent":    "adapter/window/editor: written by the consents table",
 	"numen.v1.CompletionErrorCode":  "plugin-sdk-go/ai: read by readRefusal",
