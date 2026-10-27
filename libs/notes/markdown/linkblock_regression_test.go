@@ -12,12 +12,12 @@ import (
 // replaced on its own, and nothing else there is laid out a line at a time.
 func TestLinksThatAreNotABlockSequenceAreRefused(t *testing.T) {
 	for name, raw := range map[string]string{
-		"a flow mapping":  "---\nid: 01\nlinks: {}\ntype: deck\n---\nbody\n",
-		"a filled one":    "---\nid: 01\nlinks: {a: b}\ntype: deck\n---\nbody\n",
+		"a flow mapping":  "---\nid: 01\nlinks: {}\ntype: sample\n---\nbody\n",
+		"a filled one":    "---\nid: 01\nlinks: {a: b}\ntype: sample\n---\nbody\n",
 		"a flow sequence": "---\nid: 01\nlinks: [{to: A, role: jump}]\n---\nbody\n",
 		"a scalar":        "---\nid: 01\nlinks: none\n---\nbody\n",
-		"a written null":  "---\nid: 01\nlinks: ~\ntype: deck\n---\nbody\n",
-		"the word null":   "---\nid: 01\nlinks: null\ntype: deck\n---\nbody\n",
+		"a written null":  "---\nid: 01\nlinks: ~\ntype: sample\n---\nbody\n",
+		"the word null":   "---\nid: 01\nlinks: null\ntype: sample\n---\nbody\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			d, err := Open([]byte(raw))
@@ -37,7 +37,7 @@ func TestLinksThatAreNotABlockSequenceAreRefused(t *testing.T) {
 
 // A `links:` key holding nothing is where a first entry is written.
 func TestAnEmptyLinksKeyConsumesTheFirstEntry(t *testing.T) {
-	d, err := Open([]byte("---\nid: 01\nlinks:\ntype: deck\n---\nbody\n"))
+	d, err := Open([]byte("---\nid: 01\nlinks:\ntype: sample\n---\nbody\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}

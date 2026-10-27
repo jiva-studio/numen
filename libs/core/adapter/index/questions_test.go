@@ -135,8 +135,8 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 
 	paths := make([]string, 0, 6)
 	for i := range 6 {
-		path := fmt.Sprintf("cards/deck-%d.md", i)
-		saveTypedNote(t, db, first, path, fmt.Sprintf("Deck %d", i), deckType)
+		path := fmt.Sprintf("samples/sample-%d.md", i)
+		saveTypedNote(t, db, first, path, fmt.Sprintf("Sample %d", i), sampleType)
 		paths = append(paths, path)
 	}
 
@@ -158,43 +158,43 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 	}
 }
 
-// A rename reads every deck of the vault, and the index says which notes those
+// A rename reads every note of one type in the vault, and the index says which notes those
 // are. Asking for them by type is one question whatever the vault holds.
 func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	db, queries := openCountedDB(t)
 	ctx := t.Context()
 
-	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", deckType)
-	saveTypedNote(t, db, first, "decks/birds.md", "Birds", deckType)
-	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", stencilType)
+	saveTypedNote(t, db, first, "samples/mammals.md", "Mammals", sampleType)
+	saveTypedNote(t, db, first, "samples/birds.md", "Birds", sampleType)
+	saveTypedNote(t, db, first, "forms/animal.md", "Animal", formType)
 	saveTypedNote(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
-	saveTypedNote(t, db, second, "decks/quasars.md", "Quasars", deckType)
+	saveTypedNote(t, db, second, "samples/quasars.md", "Quasars", sampleType)
 
-	if _, err := queries.GetPathsOfType(ctx, first.ID, deckType); err != nil {
+	if _, err := queries.GetPathsOfType(ctx, first.ID, sampleType); err != nil {
 		t.Fatal(err)
 	}
 	if ran := questions(t, func() error {
-		_, err := queries.GetPathsOfType(ctx, first.ID, deckType)
+		_, err := queries.GetPathsOfType(ctx, first.ID, sampleType)
 		return err
 	}); ran > 2 {
-		t.Errorf("the decks of a vault cost %d questions", ran)
+		t.Errorf("the samples of a vault cost %d questions", ran)
 	}
 
-	found, err := queries.GetPathsOfType(ctx, first.ID, deckType)
+	found, err := queries.GetPathsOfType(ctx, first.ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// By path, so that two runs over one vault answer in one order.
-	if len(found) != 2 || found[0] != "decks/birds.md" || found[1] != "decks/mammals.md" {
-		t.Errorf("the decks of the vault came back as %v", found)
+	if len(found) != 2 || found[0] != "samples/birds.md" || found[1] != "samples/mammals.md" {
+		t.Errorf("the samples of the vault came back as %v", found)
 	}
-	// One database holds every vault, and the second vault's deck is not this
+	// One database holds every vault, and the second vault's sample is not this
 	// vault's.
-	other, err := queries.GetPathsOfType(ctx, second.ID, deckType)
+	other, err := queries.GetPathsOfType(ctx, second.ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(other) != 1 || other[0] != "decks/quasars.md" {
-		t.Errorf("the other vault's decks came back as %v", other)
+	if len(other) != 1 || other[0] != "samples/quasars.md" {
+		t.Errorf("the other vault's samples came back as %v", other)
 	}
 }

@@ -481,9 +481,8 @@ func getClockReads(file *ast.File) (reads, arms []string) {
 // composition root is where it is bound to this machine's.
 //
 // A scenario reading the clock itself cannot be exercised at a chosen instant,
-// and scheduling here is entirely about when: the day a card comes back on, the
-// budget the day is answered under, and the identifier a note is stamped with
-// all turn on it.
+// and much of the work here is about when: the day a plugin schedules
+// something for, and the identifier a note is stamped with, both turn on it.
 func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	var wrong []string
 	var read int
@@ -1521,7 +1520,7 @@ import "context"
 
 type Store interface {
 	Read(ctx context.Context, vaultID domain.VaultID, chunkID int64) error
-	Write(ctx context.Context, rowID int) (cardID domain.CardID, err error)
+	Write(ctx context.Context, rowID int) (itemID domain.ItemID, err error)
 	Count(context.Context, int64) int
 }
 `, 0)

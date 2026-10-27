@@ -248,11 +248,12 @@ type PluginNoteType struct {
 	// Headings are the levels of heading the index keeps. Left out, every heading is kept; an empty
 	// list keeps none.
 	Headings *[]int `json:"headings,omitempty"`
-	// MarkedHeadings are the levels whose headings end in a mark that is no part of their text.
-	MarkedHeadings []int `json:"markedHeadings,omitempty"`
-	// MarkPattern is a regular expression the word of a mark must match whole. Left out, any word of
-	// letters, digits and hyphens is a mark.
-	MarkPattern string `json:"markPattern,omitempty"`
+	// IDHeadingLevels are the levels whose headings end in a block id (` ^id`, as in Obsidian) that
+	// is no part of their text.
+	IDHeadingLevels []int `json:"idHeadingLevels,omitempty"`
+	// IDPattern is a regular expression a block id must match whole. Left out, any word of letters,
+	// digits and hyphens is an id.
+	IDPattern string `json:"idPattern,omitempty"`
 }
 
 // ReadManifest decodes and validates a manifest from JSON input.
@@ -337,10 +338,10 @@ func (m PluginManifest) listNoteTypeIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))
 		}
 		observed[declared.Type] = true
-		if _, err := regexp.Compile(declared.MarkPattern); err != nil {
-			issues = append(issues, fmt.Errorf("%w: %q has a mark pattern that is no pattern: %w", ErrInvalidNoteType, declared.Type, err))
+		if _, err := regexp.Compile(declared.IDPattern); err != nil {
+			issues = append(issues, fmt.Errorf("%w: %q has an id pattern that is no pattern: %w", ErrInvalidNoteType, declared.Type, err))
 		}
-		levels := declared.MarkedHeadings
+		levels := declared.IDHeadingLevels
 		if declared.Headings != nil {
 			levels = append(slices.Clone(*declared.Headings), levels...)
 		}
@@ -365,9 +366,9 @@ func (t PluginNoteType) GetProfile() domain.NoteProfile {
 			profile.HeadingLevels = []int{}
 		}
 	}
-	profile.MarkedLevels = slices.Clone(t.MarkedHeadings)
-	if t.MarkPattern != "" {
-		profile.Mark, _ = regexp.Compile("^(?:" + t.MarkPattern + ")$")
+	profile.IDHeadingLevels = slices.Clone(t.IDHeadingLevels)
+	if t.IDPattern != "" {
+		profile.IDPattern, _ = regexp.Compile("^(?:" + t.IDPattern + ")$")
 	}
 	return profile
 }

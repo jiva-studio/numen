@@ -92,10 +92,10 @@ func getPartStarts(headings []domain.Heading) []domain.PartStart {
 // getIndexedHeadings is the headings of a note as the index keeps them.
 //
 // A type a plugin declares keeps the levels of heading its profile names, and a heading of a level
-// that ends in a mark is kept without it; a heading of no text is not kept. Every other note keeps
+// that ends in a block id is kept without it; a heading of no text is not kept. Every other note keeps
 // every heading it has.
 func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Heading {
-	if profile.HeadingLevels == nil && len(profile.MarkedLevels) == 0 {
+	if profile.HeadingLevels == nil && len(profile.IDHeadingLevels) == 0 {
 		return n.Headings
 	}
 	out := make([]domain.Heading, 0, len(n.Headings))
@@ -103,8 +103,8 @@ func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Head
 		if profile.HeadingLevels != nil && !slices.Contains(profile.HeadingLevels, h.Level) {
 			continue
 		}
-		if slices.Contains(profile.MarkedLevels, h.Level) {
-			h.Text = withoutMark(h.Text, profile.Mark)
+		if slices.Contains(profile.IDHeadingLevels, h.Level) {
+			h.Text = removeID(h.Text, profile.IDPattern)
 			if h.Text == "" {
 				continue
 			}
@@ -114,16 +114,16 @@ func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Head
 	return out
 }
 
-// withoutMark is a heading without the mark it ends in: a space, a caret and a word of letters,
-// digits and hyphens. A heading that is only a mark has no text.
-func withoutMark(heading string, mark *regexp.Regexp) string {
+// removeID returns a heading without the block id it ends in: a space, a caret and a word of letters,
+// digits and hyphens. A heading that is only an id has no text.
+func removeID(heading string, pattern *regexp.Regexp) string {
 	pos := strings.LastIndex(heading, " ")
 	last := heading
 	if pos >= 0 {
 		last = heading[pos+1:]
 	}
 	word, found := strings.CutPrefix(last, "^")
-	if !found || word == "" || !isMarkWord(word, mark) {
+	if !found || word == "" || !isIDWord(word, pattern) {
 		return heading
 	}
 	if pos < 0 {
@@ -132,11 +132,11 @@ func withoutMark(heading string, mark *regexp.Regexp) string {
 	return heading[:pos]
 }
 
-// isMarkWord says whether a word is the word of a mark: one the pattern matches whole, else any word
+// isIDWord reports whether a word is a block id: one the pattern matches whole, else any word
 // of letters, digits and hyphens.
-func isMarkWord(word string, mark *regexp.Regexp) bool {
-	if mark != nil {
-		return mark.MatchString(word)
+func isIDWord(word string, pattern *regexp.Regexp) bool {
+	if pattern != nil {
+		return pattern.MatchString(word)
 	}
 	return !strings.ContainsFunc(word, func(r rune) bool {
 		return !(r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r == '-')

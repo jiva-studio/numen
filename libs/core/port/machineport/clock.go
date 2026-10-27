@@ -10,7 +10,7 @@ import (
 // composition root binds it to the machine's.
 //
 // A scenario that takes no clock has none: there is no reading of the machine
-// behind a clock nobody gave, because a note stamped an hour out and a card due
+// behind a clock nobody gave, because a note stamped an hour out and a task due
 // on the wrong day are both wrong quietly.
 type Clock func() time.Time
 

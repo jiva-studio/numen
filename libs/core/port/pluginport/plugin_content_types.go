@@ -14,7 +14,7 @@ var ErrInvalidReader = errors.New("invalid reader")
 // PluginContentType is a type of file the plugin brings, and the names of the files of it.
 type PluginContentType struct {
 	Type domain.ContentType `json:"type"`
-	// Globs are the patterns of the names, each `*.` and an extension: `*.deck`.
+	// Globs are the patterns of the names, each `*.` and an extension: `*.sample`.
 	Globs []string `json:"globs"`
 }
 

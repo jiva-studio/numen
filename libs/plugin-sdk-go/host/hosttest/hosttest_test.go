@@ -80,7 +80,7 @@ func TestAMoveIsReportedToTheWatch(t *testing.T) {
 	}
 }
 
-const animal = "---\ntype: stencil\ntitle: The animal\nfields:\n  - Name\n---\n\n## Front\n\n{{Name}}\n"
+const animal = "---\ntype: form\ntitle: The animal\ncolour: brown\n---\n\n## Layout\n\nname\n"
 
 func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
 	ctx := context.Background()
@@ -90,10 +90,10 @@ func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
 
 	notes, _ := v.GetNotes(ctx, []string{"Animal.md", "assets/picture.png", "None.md"})
 	types, _ := v.GetTypes(ctx, []string{"Animal.md"})
-	stencils, _ := v.GetPathsOfType(ctx, "stencil")
+	forms, _ := v.GetPathsOfType(ctx, "form")
 
-	if len(notes) != 1 || notes["Animal.md"].Title != "The animal" || types["Animal.md"] != "stencil" || len(stencils) != 1 {
-		t.Errorf("got %v, %v and %v", notes, types, stencils)
+	if len(notes) != 1 || notes["Animal.md"].Title != "The animal" || types["Animal.md"] != "form" || len(forms) != 1 {
+		t.Errorf("got %v, %v and %v", notes, types, forms)
 	}
 }
 
@@ -118,13 +118,13 @@ func TestALinkIsABacklinkOnlyWhereItResolves(t *testing.T) {
 	v := hosttest.New("Physics")
 	v.File("Target.md", "# Target\n")
 	v.File("Other/Target.md", "# Another target\n")
-	v.File("Deck.md", "---\nlinks:\n  - to: Target\n    role: ref\n---\n\nbody\n")
+	v.File("Source.md", "---\nlinks:\n  - to: Target\n    role: ref\n---\n\nbody\n")
 
 	backlinks, _ := v.GetBacklinks(ctx, "Target.md")
 	away, _ := v.GetBacklinks(ctx, "Other/Target.md")
-	forward, _ := v.GetLinks(ctx, "Deck.md")
+	forward, _ := v.GetLinks(ctx, "Source.md")
 
-	if len(backlinks) != 1 || backlinks[0].From != "Deck.md" || len(away) != 0 || len(forward) != 1 || forward[0].To != "Target.md" {
+	if len(backlinks) != 1 || backlinks[0].From != "Source.md" || len(away) != 0 || len(forward) != 1 || forward[0].To != "Target.md" {
 		t.Errorf("got %+v, %+v and %+v", backlinks, away, forward)
 	}
 }
@@ -149,10 +149,10 @@ func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", nil)
 
-	first := v.Create(ctx, "decks/New.md", []byte("# New\n"))
-	again := v.Create(ctx, "decks/New.md", []byte("# New\n"))
+	first := v.Create(ctx, "samples/New.md", []byte("# New\n"))
+	again := v.Create(ctx, "samples/New.md", []byte("# New\n"))
 
-	body, there := v.Content("decks/New.md")
+	body, there := v.Content("samples/New.md")
 	if first != nil || !errors.Is(again, host.ErrOccupied) || !there || body != "# New\n" {
 		t.Errorf("got %v, %v and %q", first, again, body)
 	}
@@ -176,14 +176,14 @@ func TestAFileTheHostMayNotOpenFailsWithWhatItWasReportedToFailWith(t *testing.T
 
 func TestTheIndexKnowsAFileChangedAdjacentItOnlyOnceItIsReported(t *testing.T) {
 	ctx := context.Background()
-	v := hosttest.OnDisk(t, "Physics", map[string]string{"A.md": "---\ntype: deck\n---\n"})
-	if err := os.WriteFile(filepath.Join(v.Vault().Path, "B.md"), []byte("---\ntype: deck\n---\n"), 0o644); err != nil {
+	v := hosttest.OnDisk(t, "Physics", map[string]string{"A.md": "---\ntype: sample\n---\n"})
+	if err := os.WriteFile(filepath.Join(v.Vault().Path, "B.md"), []byte("---\ntype: sample\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	before, _ := v.GetPathsOfType(ctx, "deck")
+	before, _ := v.GetPathsOfType(ctx, "sample")
 	scanErr := v.Scan(ctx, []string{"B.md"})
-	after, _ := v.GetPathsOfType(ctx, "deck")
+	after, _ := v.GetPathsOfType(ctx, "sample")
 
 	if len(before) != 1 || scanErr != nil || len(after) != 2 {
 		t.Errorf("the index held %v, then %v (%v)", before, after, scanErr)
@@ -192,14 +192,14 @@ func TestTheIndexKnowsAFileChangedAdjacentItOnlyOnceItIsReported(t *testing.T) {
 
 func TestAFileInAHiddenFolderIsRemainingAloneByTheVault(t *testing.T) {
 	ctx := context.Background()
-	v := hosttest.OnDisk(t, "Physics", map[string]string{"decks/.Hidden.md": "---\ntype: deck\n---\n"})
+	v := hosttest.OnDisk(t, "Physics", map[string]string{"samples/.Hidden.md": "---\ntype: sample\n---\n"})
 
-	_, statErr := v.GetFingerprint(ctx, "decks/.Hidden.md")
-	_, missing := v.GetFingerprint(ctx, "decks/Nothing.md")
-	decks, _ := v.GetPathsOfType(ctx, "deck")
+	_, statErr := v.GetFingerprint(ctx, "samples/.Hidden.md")
+	_, missing := v.GetFingerprint(ctx, "samples/Nothing.md")
+	samples, _ := v.GetPathsOfType(ctx, "sample")
 
-	if !errors.Is(statErr, host.ErrNotANote) || !errors.Is(missing, host.ErrNotExist) || len(decks) != 0 {
-		t.Errorf("got %v, %v and %v", statErr, missing, decks)
+	if !errors.Is(statErr, host.ErrNotANote) || !errors.Is(missing, host.ErrNotExist) || len(samples) != 0 {
+		t.Errorf("got %v, %v and %v", statErr, missing, samples)
 	}
 }
 

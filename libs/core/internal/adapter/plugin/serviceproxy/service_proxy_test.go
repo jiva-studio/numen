@@ -84,12 +84,12 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	}))
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
-		services:  map[string]string{"numen.v1.CardsService": "md.numen.a"},
+		services:  map[string]string{"numen.v1.SampleService": "md.numen.a"},
 		endpoints: map[string]pluginport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(Open(host))
 	t.Cleanup(window.Close)
-	req, _ := http.NewRequest(http.MethodPost, window.URL+"/numen.v1.CardsService/ReadDeck?x=1", strings.NewReader(`{"path":"a.md"}`))
+	req, _ := http.NewRequest(http.MethodPost, window.URL+"/numen.v1.SampleService/ReadSample?x=1", strings.NewReader(`{"path":"a.md"}`))
 	req.Header.Set("Authorization", "Bearer from-the-window")
 	req.Header.Set("Origin", "wails://wails")
 
@@ -100,7 +100,7 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	answer, _ := io.ReadAll(res.Body)
 	res.Body.Close()
 
-	if path != "/numen.v1.CardsService/ReadDeck" || query != "x=1" || method != http.MethodPost || body != `{"path":"a.md"}` {
+	if path != "/numen.v1.SampleService/ReadSample" || query != "x=1" || method != http.MethodPost || body != `{"path":"a.md"}` {
 		t.Errorf("the plugin was asked %s %s?%s with %q", method, path, query, body)
 	}
 	if auth != "Bearer secret" || origin != "" {
@@ -125,13 +125,13 @@ func TestAStreamReachesTheWindowMessageByMessage(t *testing.T) {
 	}))
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
-		services:  map[string]string{"numen.v1.FlashcardsService": "md.numen.a"},
+		services:  map[string]string{"numen.v1.EventsService": "md.numen.a"},
 		endpoints: map[string]pluginport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(Open(host))
 	t.Cleanup(window.Close)
 
-	res, err := http.Post(window.URL+"/numen.v1.FlashcardsService/WatchReloads", "application/connect+json", nil)
+	res, err := http.Post(window.URL+"/numen.v1.EventsService/WatchReloads", "application/connect+json", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,10 +147,10 @@ func TestAStreamReachesTheWindowMessageByMessage(t *testing.T) {
 }
 
 func TestOnlyAServiceAPluginServesIsForwarded(t *testing.T) {
-	host := &servingHost{services: map[string]string{"numen.v1.CardsService": "md.numen.a"}}
+	host := &servingHost{services: map[string]string{"numen.v1.SampleService": "md.numen.a"}}
 	proxy := Open(host)
 
-	if !proxy.Serves("/numen.v1.CardsService/ReadDeck") || proxy.Serves("/numen.v1.NoteService/Read") || proxy.Serves("/") {
+	if !proxy.Serves("/numen.v1.SampleService/ReadSample") || proxy.Serves("/numen.v1.NoteService/Read") || proxy.Serves("/") {
 		t.Error("the proxy claimed a service it does not forward, or rejected one it does")
 	}
 	recorded := httptest.NewRecorder()
@@ -161,10 +161,10 @@ func TestOnlyAServiceAPluginServesIsForwarded(t *testing.T) {
 }
 
 func TestAPluginThatCannotBeStartedIsAnUnavailableService(t *testing.T) {
-	host := &servingHost{services: map[string]string{"numen.v1.CardsService": "md.numen.a"}}
+	host := &servingHost{services: map[string]string{"numen.v1.SampleService": "md.numen.a"}}
 	recorded := httptest.NewRecorder()
 
-	Open(host).ServeHTTP(recorded, httptest.NewRequest(http.MethodPost, "/numen.v1.CardsService/ReadDeck", nil))
+	Open(host).ServeHTTP(recorded, httptest.NewRequest(http.MethodPost, "/numen.v1.SampleService/ReadSample", nil))
 
 	var response map[string]string
 	if err := json.Unmarshal(recorded.Body.Bytes(), &response); err != nil {

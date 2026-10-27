@@ -826,7 +826,7 @@ func TestOneTypeNamesOnePlace(t *testing.T) {
 // with no block grows the block too.
 func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
 	for name, raw := range map[string]string{
-		"no block":       "---\ntype: deck\n---\nbody\n",
+		"no block":       "---\ntype: sample\n---\nbody\n",
 		"a block":        "---\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\nbody\n",
 		"no frontmatter": "body\n",
 	} {
@@ -841,7 +841,7 @@ func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
 				t.Fatalf("set: %v", err)
 			}
 
-			n := Parse(domain.Fingerprint{Path: "decks/Roots.md"}, d.Bytes())
+			n := Parse(domain.Fingerprint{Path: "samples/Roots.md"}, d.Bytes())
 			var named []domain.Link
 			for _, link := range n.Links {
 				if link.Type == "preset" {
@@ -862,14 +862,14 @@ func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
 // nothing else.
 func TestNamingNoPlaceBelowATypeConsumesTheEntryOut(t *testing.T) {
 	d, err := Open([]byte(
-		"---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\nbody\n"))
+		"---\ntype: sample\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\nbody\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := d.SetLinkOfType("preset", domain.Address{}, domain.RoleRef); err != nil {
 		t.Fatalf("set: %v", err)
 	}
-	if got := string(d.Bytes()); got != "---\ntype: deck\n---\nbody\n" {
+	if got := string(d.Bytes()); got != "---\ntype: sample\n---\nbody\n" {
 		t.Errorf("got %q", got)
 	}
 }

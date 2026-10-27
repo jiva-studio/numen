@@ -540,7 +540,8 @@ func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 	}
 }
 
-// A deck is a note file read at a bound of its own, and the writer it goes to
+// A typed note may be read at a bound of its own, and the writer it goes to
+// carries that bound.
 func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})

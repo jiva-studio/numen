@@ -30,14 +30,14 @@ func (q *typed) GetTypes(_ context.Context, _ domain.VaultID, paths []string) (m
 
 func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
-		"decks/spanish.md": "# spanish\n",
-		"decks/ideas.md":   "# ideas\n",
-		"decks/talk.mp3":   "sound",
-		"decks/inner/a.md": "# a\n",
+		"samples/spanish.md": "# spanish\n",
+		"samples/ideas.md":   "# ideas\n",
+		"samples/talk.mp3":   "sound",
+		"samples/inner/a.md": "# a\n",
 	})
-	index := &typed{types: map[string]domain.NoteType{"decks/spanish.md": "deck"}}
+	index := &typed{types: map[string]domain.NoteType{"samples/spanish.md": "sample"}}
 
-	listing, err := file.NewGetFolderEntries(vaultreader.Readers{}, index).Execute(t.Context(), v, "decks")
+	listing, err := file.NewGetFolderEntries(vaultreader.Readers{}, index).Execute(t.Context(), v, "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,8 +45,8 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 	if len(listing.Entries) != 4 {
 		t.Fatalf("the folder came back as %d entries", len(listing.Entries))
 	}
-	if listing.Types["decks/spanish.md"] != "deck" {
-		t.Errorf("the deck is %v", listing.Types["decks/spanish.md"])
+	if listing.Types["samples/spanish.md"] != "sample" {
+		t.Errorf("the sample is %v", listing.Types["samples/spanish.md"])
 	}
 	if len(index.requested) != 1 || len(index.requested[0]) != 2 {
 		t.Errorf("the index was asked %v, want one question about the two notes", index.requested)

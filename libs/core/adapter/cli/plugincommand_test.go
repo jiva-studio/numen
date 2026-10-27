@@ -29,8 +29,8 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) 
 // file and one over PDFs, and the vaults the plugins were opened over.
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{
-			ID: "create-deck", Title: "Create a deck",
+		{PluginID: "org.example.sample", Command: plugincommand.Command{
+			ID: "create-sample", Title: "Create a sample",
 			Arguments: []plugincommand.Argument{
 				{Name: "title", Title: "Title", Type: "string", IsRequired: true},
 				{Name: "folder", Title: "Folder", Type: "string"},
@@ -61,17 +61,17 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 func TestACommandAPluginDeclaresIsASubcommandWithItsArgumentsAsFlags(t *testing.T) {
 	deps, declared, vaults := createPluginCommandDeps()
 
-	out, err := runWithDeps(deps, "create-deck", "notebook", "--title", "Verbs", "--open", "--folder=decks")
+	out, err := runWithDeps(deps, "create-sample", "notebook", "--title", "Verbs", "--open", "--folder=samples")
 
-	if err != nil || out != "ran create-deck\n" {
+	if err != nil || out != "ran create-sample\n" {
 		t.Fatalf("the command answered %q, %v", out, err)
 	}
 	if len(*vaults) != 1 || (*vaults)[0].ID != notebook.ID {
 		t.Errorf("the plugins were opened over %+v", *vaults)
 	}
 	call := declared.calls[0]
-	if call.PluginID != "md.numen.cards" || call.Path != "" ||
-		call.Arguments["title"] != "Verbs" || call.Arguments["folder"] != "decks" || call.Arguments["open"] != "true" {
+	if call.PluginID != "org.example.sample" || call.Path != "" ||
+		call.Arguments["title"] != "Verbs" || call.Arguments["folder"] != "samples" || call.Arguments["open"] != "true" {
 		t.Errorf("the plugin was sent %+v", call)
 	}
 }
@@ -92,10 +92,10 @@ func TestPluginCommandOnFileAcceptsPathAfterVaultAndPrintsOpenedPath(t *testing.
 
 func TestPluginCommandWithInvalidArgumentsPrintsUsageAndRunsNothing(t *testing.T) {
 	cases := map[string][]string{
-		"no vault":                      {"create-deck"},
-		"a file to a command over none": {"create-deck", "notebook", "a.md", "--title", "T"},
+		"no vault":                      {"create-sample"},
+		"a file to a command over none": {"create-sample", "notebook", "a.md", "--title", "T"},
 		"no file to a command over one": {"count-pages", "notebook"},
-		"a flag it does not take":       {"create-deck", "notebook", "--title", "T", "--colour", "red"},
+		"a flag it does not take":       {"create-sample", "notebook", "--title", "T", "--colour", "red"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestPluginCommandWithInvalidArgumentsPrintsUsageAndRunsNothing(t *testing.T
 func TestACommandMissingARequiredArgumentRunsNothing(t *testing.T) {
 	deps, declared, _ := createPluginCommandDeps()
 
-	_, err := runWithDeps(deps, "create-deck", "notebook", "--folder", "decks")
+	_, err := runWithDeps(deps, "create-sample", "notebook", "--folder", "samples")
 
 	if !errors.Is(err, plugincommand.ErrBadArguments) || len(declared.calls) != 0 {
 		t.Errorf("the command answered %v and sent %+v", err, declared.calls)
@@ -132,7 +132,7 @@ func TestTheHelpListsTheCommandsThePluginsDeclare(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, line := range []string{
-		"numen-cli create-deck <vault> --title <string> [--folder <string>] [--open]",
+		"numen-cli create-sample <vault> --title <string> [--folder <string>] [--open]",
 		"numen-cli count-pages <vault> <file>",
 		"Count the pages",
 	} {

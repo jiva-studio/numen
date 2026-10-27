@@ -330,7 +330,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	cfg := container.Config{
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
-		PluginCachePath: filepath.Join(t.TempDir(), "flashcards"),
+		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
 	}
 	writeNamingSettings(t, cfg.RegistryPath, sync)
 	registry, err := cfg.Registry()
@@ -1358,11 +1358,11 @@ func TestAHeadingIsFoundWithTheLineItExistsOn(t *testing.T) {
 	}
 }
 
-// TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
+// TestANameSaysWhichOfFourTheNoteIs. The palette draws a typed note by its type.
 func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
-		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Entropy of a llama\n",
+		"Animals.md": "---\ntype: sample\ntitle: Animals\n---\n\n## Entropy of a llama\n",
 	})
 
 	answer, err := client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "entropy"}))
@@ -1376,7 +1376,7 @@ func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	}
 	want := map[string]string{
 		"Entropy.md": "",
-		"Animals.md": "deck",
+		"Animals.md": "sample",
 	}
 	for path, is := range want {
 		if got, target := types[path]; !target || got != is {
@@ -1598,15 +1598,15 @@ func TestANoteReturnsWhatItIsDividedInto(t *testing.T) {
 	}
 }
 
-// TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws a deck and a
-// stencil as what they are, and the picture is where it is told which is which.
+// TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws each typed note as
+// its type, and the picture is where it is told which is which.
 func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
-		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
-		"Animal.md": "---\ntype: stencil\ntitle: Animal\nfields:\n  - Height\n---\n\n" +
-			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
+		"Animals.md": "---\ntype: sample\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md": "---\ntype: form\ntitle: Animal\ncolour: brown\n---\n\n" +
+			"## Layout\n\n### Header\n\nan animal\n\n### Footer\n\nheight\n",
 	})
 
 	center, err := client.GetNeighbourhood(t.Context(),
@@ -1623,8 +1623,8 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{
-		"Animals.md": "deck",
-		"Animal.md":  "stencil",
+		"Animals.md": "sample",
+		"Animal.md":  "form",
 	}
 	for path, is := range want {
 		if got, target := types[path]; !target || got != is {
@@ -1632,14 +1632,14 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 		}
 	}
 
-	// And the note in focus is said the same way, a plex standing on a deck.
+	// And the note in focus is said the same way, a plex standing on a typed note.
 	item, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if is := item.Msg.GetFocusType(); is != "deck" {
-		t.Errorf("the deck in focus is drawn as %v", is)
+	if is := item.Msg.GetFocusType(); is != "sample" {
+		t.Errorf("the sample in focus is drawn as %v", is)
 	}
 }
 

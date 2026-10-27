@@ -53,7 +53,7 @@ func TestClosingWindowUpdatesNothing(t *testing.T) {
 
 	vaults.CloseAndWait()
 
-	err := vaults.UpdateIndex(t.Context(), target[0], []string{"decks/Words.md"})
+	err := vaults.UpdateIndex(t.Context(), target[0], []string{"samples/Words.md"})
 	if !errors.Is(err, ErrClosing) {
 		t.Errorf("a levelling asked for while closing came back with %v", err)
 	}
@@ -68,7 +68,7 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	if err := vaults.IndexVault(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	if err := vaults.UpdateIndex(t.Context(), v, []string{"decks/Words.md"}); err != nil {
+	if err := vaults.UpdateIndex(t.Context(), v, []string{"samples/Words.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if len(vaults.opened) != 1 {
@@ -76,11 +76,12 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	}
 }
 
-// openVaultsDeck is a vault holding one stencil and one deck.
-var openVaultsDeck = map[string]string{
-	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
-		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
-	"decks/Words.md": "---\ntype: deck\n---\n" +
+// openVaultsSamples is a vault holding a note of type form and a note of type
+// sample that links to it.
+var openVaultsSamples = map[string]string{
+	"Term.md": "---\ntype: form\n---\n" +
+		"\n## Layout\n\n### Header\n\nWord\n\n### Footer\n\nMeaning\n",
+	"samples/Words.md": "---\ntype: sample\n---\n" +
 		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
@@ -102,8 +103,8 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	t.Cleanup(func() { db.Close() })
 
 	target := []domain.Vault{
-		{ID: "one", Name: "One", Path: makeDeckVault(t, cfg)},
-		{ID: "two", Name: "Two", Path: makeDeckVault(t, cfg)},
+		{ID: "one", Name: "One", Path: makeSampleVault(t, cfg)},
+		{ID: "two", Name: "Two", Path: makeSampleVault(t, cfg)},
 	}
 	vaults := &OpenVaults{
 		Config: cfg, Index: db, Lifetime: t.Context(),
@@ -113,15 +114,15 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	return vaults, target
 }
 
-// makeDeckVault is a folder holding one stencil and one deck, as a vault.
-func makeDeckVault(t *testing.T, cfg Config) string {
+// makeSampleVault is a folder holding openVaultsSamples, as a vault.
+func makeSampleVault(t *testing.T, cfg Config) string {
 	t.Helper()
 
 	root := t.TempDir()
 	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	for name, body := range openVaultsDeck {
+	for name, body := range openVaultsSamples {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)

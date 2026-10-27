@@ -11,11 +11,11 @@ type NoteProfile struct {
 	// HeadingLevels are the levels of heading the index keeps, counted from one. Nil keeps every
 	// heading, and an empty list keeps none.
 	HeadingLevels []int
-	// MarkedLevels are the levels whose headings end in a mark — a space, a caret and a word — that is
-	// no part of what the heading says and is kept out of the text the index holds.
-	MarkedLevels []int
-	// Mark is the word of a mark, matched whole. Nil takes any word of letters, digits and hyphens.
-	Mark *regexp.Regexp
+	// IDHeadingLevels are the levels whose headings end in a block id — a space, a caret and a word —
+	// that is no part of what the heading says and is kept out of the text the index holds.
+	IDHeadingLevels []int
+	// IDPattern matches a block id whole. Nil takes any word of letters, digits and hyphens.
+	IDPattern *regexp.Regexp
 }
 
 // OrdinaryProfile is how an ordinary note is kept.

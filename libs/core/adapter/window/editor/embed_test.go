@@ -445,7 +445,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 }
 
 // Reading a vault is work, and work is one entry in the list of what is being
-// done. A pass that reports itself anywhere else draws a second card for the
+// done. A pass that reports itself anywhere else draws a second entry for the
 // same work, with a count of its own that nobody can place.
 func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vaultConfig(t, container.EmbeddingConfig{})

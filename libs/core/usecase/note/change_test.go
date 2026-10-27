@@ -490,7 +490,7 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 	c := openChanging(t, map[string]string{
 		"Sanskrit.md": "# Sanskrit\n",
 		"Slow.md":     "# Slow going\n",
-		"Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
+		"Roots.md": "---\ntype: sample\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 

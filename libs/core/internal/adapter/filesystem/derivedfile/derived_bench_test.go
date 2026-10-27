@@ -25,7 +25,7 @@ func opening(b *testing.B) *derivedfile.DerivedStore {
 
 // What one name of the store costs. An answer written to the log is one append
 // and a reading of the log is one read a file, so each of these is paid once
-// per card answered and once per run file read.
+// per answer and once per run file read.
 func BenchmarkDerived(b *testing.B) {
 	ctx := b.Context()
 	line := []byte("one line of a run\n")

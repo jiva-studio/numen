@@ -13,8 +13,8 @@ import (
 func TestOneKeyReturnsWhatANoteIs(t *testing.T) {
 	for content, want := range map[string]domain.NoteType{
 		"---\ntype: note\n---\n":     domain.TypeNote,
-		"---\ntype: deck\n---\n":     "deck",
-		"---\ntype: Deck\n---\n":     "Deck",
+		"---\ntype: sample\n---\n":   "sample",
+		"---\ntype: Sample\n---\n":   "Sample",
 		"---\ntype: sprocket\n---\n": "sprocket",
 
 		"---\ntitle: Entropy\n---\n": domain.TypeNote,
@@ -37,7 +37,7 @@ func TestOneKeyReturnsWhatANoteIs(t *testing.T) {
 func TestATypeThatIsNotText(t *testing.T) {
 	for _, content := range []string{
 		"---\ntype: 12\n---\n",
-		"---\ntype:\n  - deck\n---\n",
+		"---\ntype:\n  - sample\n---\n",
 	} {
 		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(content))
 		if n.Type != domain.TypeNote {
@@ -53,9 +53,9 @@ func TestATypeThatIsNotText(t *testing.T) {
 // indent and by nothing else.
 func TestALinksTypeIsNotTheNotesType(t *testing.T) {
 	n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(
-		"---\ntype: deck\nlinks:\n  - to: Thermodynamics\n    role: parent\n    type: source\n---\n"))
+		"---\ntype: sample\nlinks:\n  - to: Thermodynamics\n    role: parent\n    type: source\n---\n"))
 
-	if n.Type != "deck" {
+	if n.Type != "sample" {
 		t.Errorf("type = %q", n.Type)
 	}
 	if len(n.Links) != 1 || n.Links[0].Type != "source" {

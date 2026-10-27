@@ -218,13 +218,13 @@ func TestAWriteThatLandedIsReportedAlongsideALevellingThatFailed(t *testing.T) {
 }
 
 func TestANoteIsPointedAtAnotherBelowAType(t *testing.T) {
-	f := newFiles(map[string]string{"Deck.md": "---\ntype: deck\n---\n\n# Deck\n"})
+	f := newFiles(map[string]string{"Sample.md": "---\ntype: sample\n---\n\n# Sample\n"})
 	e := editing(f)
 
-	_, err := e.PointAt(t.Context(), vault, "Deck.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef)
+	_, err := e.PointAt(t.Context(), vault, "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef)
 
-	if err != nil || !strings.Contains(f.content["Deck.md"], "Slow") {
-		t.Errorf("got %v and the note %q", err, f.content["Deck.md"])
+	if err != nil || !strings.Contains(f.content["Sample.md"], "Slow") {
+		t.Errorf("got %v and the note %q", err, f.content["Sample.md"])
 	}
 }
 

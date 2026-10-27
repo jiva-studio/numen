@@ -34,14 +34,14 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 }
 
 func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) {
-	access, _ := diskVault(t, map[string]string{"decks/A.md": "body"})
+	access, _ := diskVault(t, map[string]string{"samples/A.md": "body"})
 
-	content, pos, err := access.Read(t.Context(), "decks/A.md")
+	content, pos, err := access.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if string(content) != "body" || pos.Path != "decks/A.md" || pos.Size != 4 {
+	if string(content) != "body" || pos.Path != "samples/A.md" || pos.Size != 4 {
 		t.Errorf("read %q with %+v", content, pos)
 	}
 	if _, _, err := access.Read(t.Context(), "gone.md"); !errors.Is(err, fs.ErrNotExist) {
@@ -50,36 +50,36 @@ func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) 
 }
 
 func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
-	access, v := diskVault(t, map[string]string{"decks/A.md": "body"})
-	_, pos, err := access.Read(t.Context(), "decks/A.md")
+	access, v := diskVault(t, map[string]string{"samples/A.md": "body"})
+	_, pos, err := access.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(v.Path, "decks", "A.md"), []byte("moved under it"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(v.Path, "samples", "A.md"), []byte("moved under it"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = access.Write(t.Context(), "decks/A.md", []byte("mine"), pos)
+	_, err = access.Write(t.Context(), "samples/A.md", []byte("mine"), pos)
 
 	if !errors.Is(err, vaultport.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)
 	}
-	_, now, err := access.Read(t.Context(), "decks/A.md")
+	_, now, err := access.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := access.Write(t.Context(), "decks/A.md", []byte("mine"), now); err != nil {
+	if _, err := access.Write(t.Context(), "samples/A.md", []byte("mine"), now); err != nil {
 		t.Errorf("a write over what was read was %v", err)
 	}
 }
 
 func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T) {
-	access, _ := diskVault(t, map[string]string{"decks/A.md": "body"})
+	access, _ := diskVault(t, map[string]string{"samples/A.md": "body"})
 
-	if err := access.Create(t.Context(), "decks/B.md", []byte("b")); err != nil {
+	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); err != nil {
 		t.Fatal(err)
 	}
-	if err := access.Create(t.Context(), "decks/B.md", []byte("b")); !errors.Is(err, vaultport.ErrOccupied) {
+	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultport.ErrOccupied) {
 		t.Errorf("a file made over one was %v", err)
 	}
 	release, err := access.Lock(t.Context())
@@ -108,7 +108,7 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 	if listErr != nil || !slices.Equal(items, []pluginport.PluginStoreFile{{Name: "one.log", Size: 4}}) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
-	for _, id := range []string{"", "flashcards", "index", "..", "a/b.c", ".a.b"} {
+	for _, id := range []string{"", "samples", "index", "..", "a/b.c", ".a.b"} {
 		if _, err := access.OpenStore(id); !errors.Is(err, vaultconfig.ErrOutside) {
 			t.Errorf("the folder of %q was opened with %v", id, err)
 		}

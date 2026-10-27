@@ -183,7 +183,7 @@ func (m *memoryVault) GetTypes(_ context.Context, paths []string) (map[string]do
 	out := map[string]domain.NoteType{}
 	for _, path := range paths {
 		if _, there := m.files[path]; there {
-			out[path] = "deck"
+			out[path] = "sample"
 		}
 	}
 	return out, nil
@@ -201,7 +201,7 @@ func (m *memoryVault) GetNamedPaths(_ context.Context, name string) ([]string, e
 }
 
 func (m *memoryVault) GetPathsOfType(_ context.Context, noteType domain.NoteType) ([]string, error) {
-	if noteType != "deck" {
+	if noteType != "sample" {
 		return nil, nil
 	}
 	paths := make([]string, 0, len(m.files))
@@ -224,7 +224,7 @@ func (m *memoryVault) GetLinks(_ context.Context, from string) ([]domain.Resolve
 }
 
 func (m *memoryVault) GetBacklinks(_ context.Context, to string) ([]domain.ResolvedLink, error) {
-	return []domain.ResolvedLink{m.link("decks/" + to)}, nil
+	return []domain.ResolvedLink{m.link("samples/" + to)}, nil
 }
 
 func (m *memoryVault) ResolveLinks(_ context.Context, from string, output []string) (map[string]domain.ResolvedLink, error) {
@@ -236,7 +236,7 @@ func (m *memoryVault) ResolveLinks(_ context.Context, from string, output []stri
 }
 
 func (m *memoryVault) GetParseProblems(context.Context) ([]domain.VaultProblem, error) {
-	return []domain.VaultProblem{{Path: "decks/A.md", Detail: "an entry has no role"}}, nil
+	return []domain.VaultProblem{{Path: "samples/A.md", Detail: "an entry has no role"}}, nil
 }
 
 func (m *memoryVault) ReadCache(_ context.Context, pluginID, name string) ([]byte, bool, error) {
@@ -270,7 +270,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1con
 
 func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memoryVault) {
 	t.Helper()
-	vault := newMemoryVault(map[string]string{"decks/A.md": "body", "Animal.md": "stencil"})
+	vault := newMemoryVault(map[string]string{"samples/A.md": "body", "Animal.md": "form"})
 	hosted := newCallers(nil)
 	hosted.vault = vault
 	return newVaultClient(t, hosted, "token-a"), vault
@@ -300,7 +300,7 @@ func TestAHostWithNoVaultToOfferAnswersThatItHasNone(t *testing.T) {
 	hosted := newCallers(nil)
 	client := newVaultClient(t, hosted, "token-a")
 
-	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "decks/A.md"}))
+	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
 
 	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
 		t.Errorf("the answer was %v (%v)", res.Msg, err)
@@ -310,12 +310,12 @@ func TestAHostWithNoVaultToOfferAnswersThatItHasNone(t *testing.T) {
 func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
-	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "decks/A.md"}))
+	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if string(res.Msg.GetContent()) != "body" || res.Msg.GetFingerprint().GetPath() != "decks/A.md" ||
+	if string(res.Msg.GetContent()) != "body" || res.Msg.GetFingerprint().GetPath() != "samples/A.md" ||
 		res.Msg.GetFingerprint().GetSize() != 4 {
 		t.Errorf("the file came back as %v", res.Msg)
 	}
@@ -327,37 +327,37 @@ func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
 
 func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 	client, vault := newVaultFixture(t)
-	read, err := client.GetFileFingerprint(t.Context(), connect.NewRequest(&v1.GetFileFingerprintRequest{Path: "decks/A.md"}))
+	read, err := client.GetFileFingerprint(t.Context(), connect.NewRequest(&v1.GetFileFingerprintRequest{Path: "samples/A.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	first, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
-		Path: "decks/A.md", Content: []byte("new"), Baseline: read.Msg.GetFingerprint(),
+		Path: "samples/A.md", Content: []byte("new"), Baseline: read.Msg.GetFingerprint(),
 	}))
 	if err != nil || first.Msg.GetError() != 0 || first.Msg.GetFingerprint().GetSize() != 3 {
 		t.Fatalf("the write was answered %v (%v)", first.Msg, err)
 	}
 	second, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
-		Path: "decks/A.md", Content: []byte("again"), Baseline: read.Msg.GetFingerprint(),
+		Path: "samples/A.md", Content: []byte("again"), Baseline: read.Msg.GetFingerprint(),
 	}))
 
 	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE {
 		t.Errorf("a write over what moved was answered %v (%v)", second.Msg, err)
 	}
-	if vault.files["decks/A.md"] != "new" {
-		t.Errorf("the file holds %q", vault.files["decks/A.md"])
+	if vault.files["samples/A.md"] != "new" {
+		t.Errorf("the file holds %q", vault.files["samples/A.md"])
 	}
 }
 
 func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
-	first, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "decks/B.md", Content: []byte("b")}))
+	first, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "samples/B.md", Content: []byte("b")}))
 	if err != nil || first.Msg.GetError() != 0 {
 		t.Fatalf("the first was answered %v (%v)", first.Msg, err)
 	}
-	second, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "decks/B.md", Content: []byte("b")}))
+	second, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "samples/B.md", Content: []byte("b")}))
 
 	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED {
 		t.Errorf("a file made over one was answered %v (%v)", second.Msg, err)
@@ -390,11 +390,11 @@ func TestTheWritersAreHeldUntilTheyAreLetGo(t *testing.T) {
 func TestTheIndexIsBroughtLevelWithTheFilesNamed(t *testing.T) {
 	client, vault := newVaultFixture(t)
 
-	if _, err := client.ScanFiles(t.Context(), connect.NewRequest(&v1.ScanFilesRequest{Paths: []string{"decks/A.md"}})); err != nil {
+	if _, err := client.ScanFiles(t.Context(), connect.NewRequest(&v1.ScanFilesRequest{Paths: []string{"samples/A.md"}})); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(vault.scanned) != 1 || vault.scanned[0][0] != "decks/A.md" {
+	if len(vault.scanned) != 1 || vault.scanned[0][0] != "samples/A.md" {
 		t.Errorf("the index was scanned for %v", vault.scanned)
 	}
 }
@@ -403,24 +403,24 @@ func TestWhatTheIndexReturnsOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
-	refs, err := client.GetNoteRefs(ctx, connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"decks/A.md", "gone.md"}}))
-	if err != nil || len(refs.Msg.GetNotes()) != 1 || refs.Msg.GetNotes()[0].GetTitle() != "Title of decks/A.md" {
+	refs, err := client.GetNoteRefs(ctx, connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"samples/A.md", "gone.md"}}))
+	if err != nil || len(refs.Msg.GetNotes()) != 1 || refs.Msg.GetNotes()[0].GetTitle() != "Title of samples/A.md" {
 		t.Errorf("the notes were %v (%v)", refs.Msg, err)
 	}
-	types, err := client.GetNoteTypes(ctx, connect.NewRequest(&v1.GetNoteTypesRequest{Paths: []string{"decks/A.md"}}))
-	if err != nil || types.Msg.GetTypes()["decks/A.md"] != "deck" {
+	types, err := client.GetNoteTypes(ctx, connect.NewRequest(&v1.GetNoteTypesRequest{Paths: []string{"samples/A.md"}}))
+	if err != nil || types.Msg.GetTypes()["samples/A.md"] != "sample" {
 		t.Errorf("the types were %v (%v)", types.Msg, err)
 	}
-	paths, err := client.GetPathsOfType(ctx, connect.NewRequest(&v1.GetPathsOfTypeRequest{Type: "deck"}))
-	if err != nil || !slices.Equal(paths.Msg.GetPaths(), []string{"Animal.md", "decks/A.md"}) {
+	paths, err := client.GetPathsOfType(ctx, connect.NewRequest(&v1.GetPathsOfTypeRequest{Type: "sample"}))
+	if err != nil || !slices.Equal(paths.Msg.GetPaths(), []string{"Animal.md", "samples/A.md"}) {
 		t.Errorf("the paths were %v (%v)", paths.Msg, err)
 	}
-	links, err := client.GetLinks(ctx, connect.NewRequest(&v1.GetLinksRequest{Path: "decks/A.md"}))
+	links, err := client.GetLinks(ctx, connect.NewRequest(&v1.GetLinksRequest{Path: "samples/A.md"}))
 	if err != nil || len(links.Msg.GetLinks()) != 1 {
 		t.Fatalf("the links were %v (%v)", links.Msg, err)
 	}
 	link := links.Msg.GetLinks()[0]
-	if link.GetFrom() != "decks/A.md" || link.GetTo() != "Animal.md" || link.GetToVault() != "v1" || link.GetLinkType() != "preset" ||
+	if link.GetFrom() != "samples/A.md" || link.GetTo() != "Animal.md" || link.GetToVault() != "v1" || link.GetLinkType() != "preset" ||
 		link.GetTargetScheme() != "name" || link.GetTargetValue() != "Animal" || link.GetLabel() != "by" || !link.GetIsAmbiguous() {
 		t.Errorf("the link came out as %v", link)
 	}
@@ -428,7 +428,7 @@ func TestWhatTheIndexReturnsOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	if err != nil || len(back.Msg.GetLinks()) != 1 {
 		t.Errorf("the backlinks were %v (%v)", back.Msg, err)
 	}
-	resolved, err := client.ResolveLinks(ctx, connect.NewRequest(&v1.ResolveLinksRequest{Path: "decks/A.md", Written: []string{"Animal"}}))
+	resolved, err := client.ResolveLinks(ctx, connect.NewRequest(&v1.ResolveLinksRequest{Path: "samples/A.md", Written: []string{"Animal"}}))
 	if err != nil || resolved.Msg.GetLinks()["Animal"].GetTo() != "Animal.md" {
 		t.Errorf("the resolved links were %v (%v)", resolved.Msg, err)
 	}
@@ -467,8 +467,8 @@ func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	if !stream.Receive() || len(stream.Msg().GetPaths()) != 0 {
 		t.Fatalf("the watch did not begin: %v", stream.Err())
 	}
-	vault.changes <- []string{"decks/A.md"}
-	if !stream.Receive() || !slices.Equal(stream.Msg().GetPaths(), []string{"decks/A.md"}) {
+	vault.changes <- []string{"samples/A.md"}
+	if !stream.Receive() || !slices.Equal(stream.Msg().GetPaths(), []string{"samples/A.md"}) {
 		t.Fatalf("the change was not told: %v %v", stream.Msg(), stream.Err())
 	}
 	close(vault.droppedChan)

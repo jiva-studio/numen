@@ -33,7 +33,7 @@ var expectedPlans = []struct {
 	{note.Statements(), "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 	{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 	{note.Statements(), "fingerprints", []any{1, "note"}, []string{"sources_by_fingerprint"}},
-	{note.Statements(), "notes_of_type", []any{1, "deck"}, []string{"notes_by_type"}},
+	{note.Statements(), "notes_of_type", []any{1, "sample"}, []string{"notes_by_type"}},
 	{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
 
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
@@ -164,11 +164,11 @@ func openPopulatedDB(t *testing.T) *DB {
 			source := insert(
 				`INSERT INTO sources (vault_id, path, kind, size, modified_at)
 				 VALUES (?, ?, 'note', 1, 1) RETURNING id`, vault, "folder/"+name+".md")
-			// A few of them are stencils, so that a question about the stencils
-			// of a vault is answered against a table where both answers occur.
+			// A few of them are forms, so that a question about the forms of a vault
+			// is answered against a table where both answers occur.
 			targetVal := "note"
 			if i%250 == 0 {
-				targetVal = "stencil"
+				targetVal = "form"
 			}
 			exec(`INSERT INTO notes (source_id, vault_id, folded_name, title, type, identifier)
 			      VALUES (?, ?, ?, ?, ?, ?)`,

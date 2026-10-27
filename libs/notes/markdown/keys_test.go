@@ -111,10 +111,10 @@ func TestAKeyArrivesAndPreserves(t *testing.T) {
 // A scalar key is written the same way, and an empty value takes it away.
 func TestAScalarKeyIsSaved(t *testing.T) {
 	doc := openDocument(t, "---\nid: 01J8F3K2M9QRSTVWXYZ012\nmine: keep me verbatim\n---\n")
-	if err := doc.SetScalar("type", "deck"); err != nil {
+	if err := doc.SetScalar("type", "sample"); err != nil {
 		t.Fatalf("set: %v", err)
 	}
-	want := "---\nid: 01J8F3K2M9QRSTVWXYZ012\nmine: keep me verbatim\ntype: deck\n---\n"
+	want := "---\nid: 01J8F3K2M9QRSTVWXYZ012\nmine: keep me verbatim\ntype: sample\n---\n"
 	if got := string(doc.Bytes()); got != want {
 		t.Errorf("wrote\n%q\nwant\n%q", got, want)
 	}
@@ -146,11 +146,11 @@ func TestAKeyConsumesTheFilesOwnLineEnding(t *testing.T) {
 // A block written on one line is a block where the span of any key is the span
 // of all of them, so nothing in it is changed.
 func TestAnInlineBlockIsRefused(t *testing.T) {
-	doc := openDocument(t, "---\n{type: stencil, fields: [Height]}\n---\n")
+	doc := openDocument(t, "---\n{type: form, fields: [Height]}\n---\n")
 	if err := doc.SetList("fields", []string{"Height", "Weight"}); err != markdown.ErrInline {
 		t.Errorf("set = %v, want it rejected", err)
 	}
-	if err := doc.SetScalar("type", "deck"); err != markdown.ErrInline {
+	if err := doc.SetScalar("type", "sample"); err != markdown.ErrInline {
 		t.Errorf("set = %v, want it rejected", err)
 	}
 }

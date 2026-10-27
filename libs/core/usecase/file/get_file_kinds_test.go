@@ -15,7 +15,7 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 		"b.mp3":  "sound",
 		"c.docx": "left alone",
 	})
-	index := &typed{types: map[string]domain.NoteType{"a.md": "stencil"}}
+	index := &typed{types: map[string]domain.NoteType{"a.md": "form"}}
 
 	listing, err := file.NewGetFileKinds(vaultreader.Readers{}, index).Execute(
 		t.Context(), v, []string{"b.mp3", "missing.md", "../outside.md", "a.md"})
@@ -29,7 +29,7 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 	if listing.Entries[0].Kind != domain.KindRecording || listing.Entries[1].Kind != domain.KindNote {
 		t.Errorf("kinds are %v and %v", listing.Entries[0].Kind, listing.Entries[1].Kind)
 	}
-	if listing.Types["a.md"] != "stencil" {
+	if listing.Types["a.md"] != "form" {
 		t.Errorf("the note is %v", listing.Types["a.md"])
 	}
 	if len(index.requested) != 1 || len(index.requested[0]) != 1 {

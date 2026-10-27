@@ -1455,12 +1455,12 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 
 // TestAListingSaysWhichOfFourEachNoteIs. The folder says which of its entries
 // are notes and the index says what each of those notes is, so a tree draws a
-// deck as a deck without opening it.
+// typed note as its type without opening it.
 func TestAListingReturnsWhichOfFourEachNoteIs(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":  "# Entropy\n",
-		"Animal.md":   "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
-		"Animals.md":  "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md":   "---\ntype: form\ncolour: brown\n---\n\n## Layout\n",
+		"Animals.md":  "---\ntype: sample\n---\n\n## Llama\n\n[[Animal]]\n",
 		"Sanskrit.md": "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Notes.txt":   "a list\n",
 	})
@@ -1472,8 +1472,8 @@ func TestAListingReturnsWhichOfFourEachNoteIs(t *testing.T) {
 	}
 
 	want := map[string]string{
-		"Animals.md":  "deck",
-		"Animal.md":   "stencil",
+		"Animals.md":  "sample",
+		"Animal.md":   "form",
 		"Sanskrit.md": "preset",
 		"Entropy.md":  "",
 		"Notes.txt":   "",
@@ -1525,8 +1525,8 @@ func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.File
 func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":   "# Entropy\n",
-		"Animal.md":    "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
-		"Animals.md":   "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Animal.md":    "---\ntype: form\ncolour: brown\n---\n\n## Layout\n",
+		"Animals.md":   "---\ntype: sample\n---\n\n## Llama\n\n[[Animal]]\n",
 		"Sanskrit.md":  "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Physics.epub": "an epub\n",
 		"Scan.pdf":     "a scan\n",
@@ -1543,8 +1543,8 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 		is     string
 		format v1.BookFormat
 	}{
-		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "deck", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, "stencil", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "sample", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, "form", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
 		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, "preset", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
 		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
 		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, "", v1.BookFormat_BOOK_FORMAT_EPUB},

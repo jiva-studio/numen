@@ -13,17 +13,17 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The types of note these tests keep in the way a plugin declares: a deck is found by its sections and its
-// cards, a stencil by its title, and neither is cut.
+// Note types declared the way a plugin declares them: a sample keeps its first two heading levels and
+// ends each second-level heading in a block id, a form keeps no heading, and neither is cut.
 const (
-	deckType    domain.NoteType = "deck"
-	stencilType domain.NoteType = "stencil"
-	presetType  domain.NoteType = "preset"
+	sampleType domain.NoteType = "sample"
+	formType   domain.NoteType = "form"
+	presetType domain.NoteType = "preset"
 )
 
 var profiles = map[domain.NoteType]domain.NoteProfile{
-	deckType:    {HeadingLevels: []int{1, 2}, MarkedLevels: []int{2}, Mark: regexp.MustCompile("^[0-9a-hjkmnp-tv-z]{10}$")},
-	stencilType: {HeadingLevels: []int{}},
+	sampleType: {HeadingLevels: []int{1, 2}, IDHeadingLevels: []int{2}, IDPattern: regexp.MustCompile("^[0-9a-hjkmnp-tv-z]{10}$")},
+	formType:   {HeadingLevels: []int{}},
 }
 
 // saveCut stores notes cut at the default sizes, the way a scan hands them over.

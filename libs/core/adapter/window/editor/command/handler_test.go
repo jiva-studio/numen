@@ -26,12 +26,12 @@ type pluginCommands struct {
 
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{
-			ID: "create-deck", Title: "Create a deck", ContentTypes: []domain.ContentType{"text/markdown"},
+		{PluginID: "org.example.sample", Command: plugincommand.Command{
+			ID: "create-sample", Title: "Create a sample", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true}},
 		}},
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{
-			ID: "print-deck", Title: "Print a deck", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
+		{PluginID: "org.example.sample", Command: plugincommand.Command{
+			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
 		}},
 	}
 }
@@ -62,7 +62,7 @@ func TestTheCommandsAreListedWithoutThoseHiddenInThePalette(t *testing.T) {
 	}
 	one := commands[0]
 	argument := one.GetArguments()[0]
-	if one.GetPluginId() != "md.numen.cards" || one.GetId() != "create-deck" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
+	if one.GetPluginId() != "org.example.sample" || one.GetId() != "create-sample" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
 		!argument.GetIsRequired() {
 		t.Errorf("got %v", one)
 	}
@@ -70,7 +70,7 @@ func TestTheCommandsAreListedWithoutThoseHiddenInThePalette(t *testing.T) {
 
 func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
 	valid := &v1.RunPluginCommandRequest{
-		PluginId: "md.numen.cards", Command: "create-deck", Path: "a.md", Arguments: map[string]string{"pages": "2"},
+		PluginId: "org.example.sample", Command: "create-sample", Path: "a.md", Arguments: map[string]string{"pages": "2"},
 	}
 	cases := map[string]struct {
 		commands pluginCommands
@@ -82,11 +82,11 @@ func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
 			pluginCommands{result: plugincommand.Result{Message: "made a.md", OpenedPath: "a.md"}}, valid, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED, "made a.md",
 		},
 		"a command no plugin declares": {
-			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "md.numen.cards", Command: "shred"},
+			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "shred"},
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND, "",
 		},
 		"arguments that do not meet it": {
-			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "md.numen.cards", Command: "create-deck", Path: "a.md"},
+			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "create-sample", Path: "a.md"},
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS, "",
 		},
 		"a command that failed": {
@@ -94,8 +94,8 @@ func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the disk is full",
 		},
 		"a plugin that cannot start": {
-			pluginCommands{err: &pluginport.UnavailableError{PluginID: "md.numen.cards", Reason: pluginport.PluginFailed}}, valid,
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE, "plugin md.numen.cards failed to start",
+			pluginCommands{err: &pluginport.UnavailableError{PluginID: "org.example.sample", Reason: pluginport.PluginFailed}}, valid,
+			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE, "plugin org.example.sample failed to start",
 		},
 	}
 	for name, one := range cases {

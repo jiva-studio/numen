@@ -14,23 +14,23 @@ const readerManifestHead = `{"id":"org.example.reader","name":"A","version":"1.0
 
 func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
 	m, err := pluginport.ReadManifest(strings.NewReader(readerManifestHead + `,
-		"contentTypes": [{"type": "application/x-example-deck", "globs": ["*.deck"]}],
+		"contentTypes": [{"type": "application/x-example-sample", "globs": ["*.sample"]}],
 		"readers": [
-			{"id": "deck", "contentTypes": ["application/x-example-deck"], "rank": "default"},
+			{"id": "sample", "contentTypes": ["application/x-example-sample"], "rank": "default"},
 			{"id": "audio", "contentTypes": ["audio/*"], "rank": "alternate"}
 		]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []domain.ContentHandler{
-		{PluginID: "org.example.reader", ID: "deck", Type: "application/x-example-deck", Rank: domain.RankDefault},
+		{PluginID: "org.example.reader", ID: "sample", Type: "application/x-example-sample", Rank: domain.RankDefault},
 		{PluginID: "org.example.reader", ID: "audio", Type: "audio/*", Rank: domain.RankAlternate},
 	}
 	if got := m.ListContentHandlers(); !slices.Equal(got, want) {
 		t.Errorf("ListContentHandlers = %+v; want %+v", got, want)
 	}
-	if got := m.ContentTypes[0].ListExtensions(); !slices.Equal(got, []string{"deck"}) {
-		t.Errorf("ListExtensions = %v; want [deck]", got)
+	if got := m.ContentTypes[0].ListExtensions(); !slices.Equal(got, []string{"sample"}) {
+		t.Errorf("ListExtensions = %v; want [sample]", got)
 	}
 	if !m.IsHandling("audio/mpeg") || m.IsHandling("video/mp4") {
 		t.Error("IsHandling answers for the wrong types")
@@ -60,8 +60,8 @@ func TestReadManifestRejectsAnInvalidReaderOrContentType(t *testing.T) {
 		"a reader of an extension": {`"readers":[{"id":"r","contentTypes":[".pdf"],"rank":"default"}]`, pluginport.ErrInvalidReader},
 		"a new type as a mask":     {`"contentTypes":[{"type":"audio/*","globs":["*.x"]}]`, domain.ErrInvalidContentType},
 		"a new type of no glob":    {`"contentTypes":[{"type":"application/x-a","globs":[]}]`, domain.ErrInvalidContentType},
-		"a glob of a whole name":   {`"contentTypes":[{"type":"application/x-a","globs":["deck"]}]`, domain.ErrInvalidContentType},
-		"a glob in capitals":       {`"contentTypes":[{"type":"application/x-a","globs":["*.DECK"]}]`, domain.ErrInvalidContentType},
+		"a glob of a whole name":   {`"contentTypes":[{"type":"application/x-a","globs":["sample"]}]`, domain.ErrInvalidContentType},
+		"a glob in capitals":       {`"contentTypes":[{"type":"application/x-a","globs":["*.SAMPLE"]}]`, domain.ErrInvalidContentType},
 	}
 	for name, one := range cases {
 		_, err := pluginport.ReadManifest(strings.NewReader(readerManifestHead + "," + one.fields + "}"))

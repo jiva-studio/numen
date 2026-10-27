@@ -698,7 +698,7 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 }
 
 // TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered. A note is made through
-// its own use case, and it says the same thing a stencil does.
+// its own use case, and it reports the same thing a save does.
 func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)

@@ -76,18 +76,18 @@ func TestPluginInfosAssignAnExtensionToTheNarrowerType(t *testing.T) {
 }
 
 func TestListExtensionsIncludesPluginContentTypes(t *testing.T) {
-	brings := pluginport.PluginManifest{ID: "org.example.decks", ContentTypes: []pluginport.PluginContentType{
-		{Type: "application/x-example-deck", Globs: []string{"*.deck", "*.md"}},
+	brings := pluginport.PluginManifest{ID: "org.example.samples", ContentTypes: []pluginport.PluginContentType{
+		{Type: "application/x-example-sample", Globs: []string{"*.example", "*.md"}},
 	}}
 	host := newReaderHost(brings)
 
-	if got := host.ListExtensions("application/x-example-deck"); !slices.Equal(got, []string{"deck", "md"}) {
-		t.Errorf("ListExtensions = %v; want [deck md]", got)
+	if got := host.ListExtensions("application/x-example-sample"); !slices.Equal(got, []string{"example", "md"}) {
+		t.Errorf("ListExtensions = %v; want [example md]", got)
 	}
 	if got := host.ListExtensions("text/markdown"); slices.Contains(got, "md") {
 		t.Errorf("ListExtensions(text/markdown) = %v; want md taken by the plugin type", got)
 	}
-	if got := host.GetContentType("Plan.MD"); got != "application/x-example-deck" {
+	if got := host.GetContentType("Plan.MD"); got != "application/x-example-sample" {
 		t.Errorf("GetContentType = %q; want the type the plugin brings", got)
 	}
 }

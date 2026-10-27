@@ -37,16 +37,16 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest2 := `{
-		"id": "md.numen.cards",
-		"name": "Cards",
+		"id": "org.example.sample",
+		"name": "Sample",
 		"version": "1.0.0",
-		"description": "Cards plugin",
-		"capabilities": ["cards"],
-		"targets": ["desktop.flashcards"],
+		"description": "Sample plugin",
+		"capabilities": ["samples"],
+		"targets": ["desktop.samples"],
 		"activationEvents": ["*"],
 		"permissions": [],
 		"lifecycle": {"mode": "persistent", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": true},
-		"backend": {"type": "process", "entrypoint": "bin/cards", "serviceName": "CardsService"},
+		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "SampleService"},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
 	}`
@@ -67,9 +67,9 @@ func TestDiscoverPlugins(t *testing.T) {
 		t.Errorf("unexpected editor plugins: %v", editorPlugins)
 	}
 
-	flashcardsPlugins := FilterPluginsByTarget(found, "desktop.flashcards")
-	if len(flashcardsPlugins) != 1 || flashcardsPlugins[0].Manifest.ID != "md.numen.cards" {
-		t.Errorf("unexpected flashcards plugins: %v", flashcardsPlugins)
+	samplePlugins := FilterPluginsByTarget(found, "desktop.samples")
+	if len(samplePlugins) != 1 || samplePlugins[0].Manifest.ID != "org.example.sample" {
+		t.Errorf("unexpected sample plugins: %v", samplePlugins)
 	}
 }
 

@@ -60,8 +60,8 @@ func TestReadManifest(t *testing.T) {
 	if !m.CanTarget("desktop.editor") {
 		t.Errorf("expected target desktop.editor to be accepted")
 	}
-	if m.CanTarget("desktop.flashcards") {
-		t.Errorf("expected target desktop.flashcards to be rejected")
+	if m.CanTarget("desktop.samples") {
+		t.Errorf("expected target desktop.samples to be rejected")
 	}
 	if !m.HasCapability("recognition") {
 		t.Errorf("expected capability recogniser")
@@ -424,11 +424,11 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 		services string
 		wrong    bool
 	}{
-		{"a full name", `["numen.v1.CardsService"]`, false},
-		{"two names", `["numen.v1.CardsService","numen.v1.PresetsService"]`, false},
-		{"a bare name", `["CardsService"]`, true},
-		{"a path", `["/numen.v1.CardsService"]`, true},
-		{"a name listed twice", `["numen.v1.CardsService","numen.v1.CardsService"]`, true},
+		{"a full name", `["numen.v1.SampleService"]`, false},
+		{"two names", `["numen.v1.SampleService","numen.v1.PresetsService"]`, false},
+		{"a bare name", `["SampleService"]`, true},
+		{"a path", `["/numen.v1.SampleService"]`, true},
+		{"a name listed twice", `["numen.v1.SampleService","numen.v1.SampleService"]`, true},
 		{"an empty name", `[""]`, true},
 	}
 	for _, one := range cases {
@@ -440,7 +440,7 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 			if one.wrong != errors.Is(err, pluginport.ErrInvalidService) {
 				t.Errorf("error = %v, want invalid service: %v", err, one.wrong)
 			}
-			if !one.wrong && !manifest.HasService("numen.v1.CardsService") {
+			if !one.wrong && !manifest.HasService("numen.v1.SampleService") {
 				t.Errorf("the services came out as %v", manifest.Services)
 			}
 		})

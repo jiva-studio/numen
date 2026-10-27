@@ -31,8 +31,8 @@ func (s Sources) Policy() string {
 // serves. One field to a directive of the policy: widening where a picture
 // comes from must not widen where sound does.
 type Sources struct {
-	// Images fills img-src. A card carries its own bytes, and a `data:` URI is
-	// no request.
+	// Images fills img-src. A `data:` URI carries its own bytes and is no
+	// request.
 	Images []string
 	// Media fills media-src, which is where sound and video are loaded from. A
 	// of the world and not the scheme a window is drawn from.

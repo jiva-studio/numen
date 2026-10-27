@@ -145,13 +145,13 @@ func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
 		Mark string `json:"mark"`
 	}
 	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.Reads}, func(ctx context.Context, _ in) (out, error) {
-		return out{Mark: tools.Asked(ctx)["md.example.cards/card"]}, nil
+		return out{Mark: tools.Asked(ctx)["org.example.sample/item"]}, nil
 	}); err != nil {
 		t.Fatal(err)
 	}
 
 	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{
-		Name: "current", Arguments: []byte(`{}`), Context: map[string]string{"md.example.cards/card": "k7"},
+		Name: "current", Arguments: []byte(`{}`), Context: map[string]string{"org.example.sample/item": "k7"},
 	}))
 
 	if err != nil || !strings.Contains(string(res.Msg.GetResult().GetStructured()), "k7") {

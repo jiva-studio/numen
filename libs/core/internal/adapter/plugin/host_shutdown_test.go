@@ -146,25 +146,25 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 
 func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 	host := NewHost("desktop.editor")
-	manifest := pluginport.PluginManifest{ID: "md.numen.decks", ContentTypes: []pluginport.PluginContentType{
-		{Type: "application/x-numen-deck", Globs: []string{"*.deck"}},
+	manifest := pluginport.PluginManifest{ID: "org.example.samples", ContentTypes: []pluginport.PluginContentType{
+		{Type: "application/x-example-sample", Globs: []string{"*.sample"}},
 	}}
 	host.plugins[manifest.ID] = plugindir.DiscoveredPlugin{Manifest: manifest}
 
-	if got := host.GetContentType("cards/Verbs.DECK"); got != "application/x-numen-deck" {
+	if got := host.GetContentType("samples/Verbs.SAMPLE"); got != "application/x-example-sample" {
 		t.Fatalf("GetContentType = %q; want the type the enabled plugin brings", got)
 	}
 	if err := host.SetPluginEnabled(t.Context(), manifest.ID, false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
-	if got := host.GetContentType("cards/Verbs.deck"); got != domain.UnknownContentType {
+	if got := host.GetContentType("samples/Verbs.sample"); got != domain.UnknownContentType {
 		t.Fatalf("GetContentType = %q; want unknown with the plugin disabled", got)
 	}
 	if err := host.SetPluginEnabled(t.Context(), manifest.ID, true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	host.SetSafeMode(true)
-	if got := host.GetContentType("cards/Verbs.deck"); got != domain.UnknownContentType {
+	if got := host.GetContentType("samples/Verbs.sample"); got != domain.UnknownContentType {
 		t.Fatalf("GetContentType = %q; want unknown in safe mode", got)
 	}
 }

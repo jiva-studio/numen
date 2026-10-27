@@ -54,7 +54,7 @@ func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 		"cards/Term.md",
 		"cards/crlf-deck.md",
 		"cards/empty-deck.md",
-		"cards/fieldless-stencil.md",
+		"cards/fieldless-card-model.md",
 		"daily/2026-08-15.md",
 		"edge/broken-frontmatter.md",
 		"edge/broken-links.md",

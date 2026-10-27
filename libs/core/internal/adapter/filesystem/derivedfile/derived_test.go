@@ -498,7 +498,7 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 			t.Fatalf("%s: %v", name, err)
 		}
 	}
-	if err := derived.Write(ctx, "flashcards/abc.jsonl", []byte("answered")); err == nil {
+	if err := derived.Write(ctx, "elsewhere/abc.jsonl", []byte("answered")); err == nil {
 		t.Error("the store wrote into an area it was not opened on")
 	}
 	if area := derived.Area(); area != testArea {
