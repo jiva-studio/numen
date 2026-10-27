@@ -36,6 +36,9 @@ type PluginStore interface {
 // PluginStores opens a plugin's folder in the store of a vault.
 type PluginStores interface {
 	Open(v domain.Vault, pluginID string) (PluginStore, error)
+	// DeleteFolder deletes the folder of the plugin and every file in it. A
+	// folder that is not there is deleted.
+	DeleteFolder(ctx context.Context, v domain.Vault, pluginID string) error
 }
 
 // PluginCache keeps what a plugin worked out for a vault between launches. It belongs to the

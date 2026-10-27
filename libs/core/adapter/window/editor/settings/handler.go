@@ -24,6 +24,9 @@ type Handler struct {
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
+	// PluginData and Vaults are nil where the installation keeps no text versions.
+	PluginData PluginData
+	Vaults     VaultProvider
 	// ChoosePath is nil where the application has no window to put a picker in.
 	ChoosePath *setting.ChoosePluginPath
 }

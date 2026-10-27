@@ -33,6 +33,10 @@ type ScenarioAssembly interface {
 	// where the installation keeps no text versions.
 	OpenFileText() *textversion.FileText
 
+	// OpenPluginData is the folders plugins keep in a vault's store and the records of their
+	// text versions, and nil where the installation keeps no text versions.
+	OpenPluginData() *textversion.PluginData
+
 	// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
 	OpenCopy() *file.OpenCopy
 

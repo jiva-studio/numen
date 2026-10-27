@@ -48,6 +48,11 @@ func (f folders) Open(_ domain.Vault, pluginID string) (pluginport.PluginStore, 
 	return folder(f[pluginID]), nil
 }
 
+func (f folders) DeleteFolder(_ context.Context, _ domain.Vault, pluginID string) error {
+	delete(f, pluginID)
+	return nil
+}
+
 type folder map[string][]byte
 
 func (f folder) Read(_ context.Context, name string) ([]byte, error) {

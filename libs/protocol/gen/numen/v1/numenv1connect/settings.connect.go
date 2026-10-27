@@ -66,6 +66,12 @@ const (
 	// SettingsServiceChoosePluginPathProcedure is the fully-qualified name of the SettingsService's
 	// ChoosePluginPath RPC.
 	SettingsServiceChoosePluginPathProcedure = "/numen.v1.SettingsService/ChoosePluginPath"
+	// SettingsServiceGetPluginDataProcedure is the fully-qualified name of the SettingsService's
+	// GetPluginData RPC.
+	SettingsServiceGetPluginDataProcedure = "/numen.v1.SettingsService/GetPluginData"
+	// SettingsServiceDeletePluginDataProcedure is the fully-qualified name of the SettingsService's
+	// DeletePluginData RPC.
+	SettingsServiceDeletePluginDataProcedure = "/numen.v1.SettingsService/DeletePluginData"
 )
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
@@ -99,6 +105,13 @@ type SettingsServiceClient interface {
 	// of type file or folder, and writes the path they chose. A path the setting does not take is not
 	// written, and the answer says why.
 	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
+	// GetPluginData is how many files the folder of a plugin holds in the vault
+	// the window shows, `.numen/<plugin id>/`, and their bytes.
+	GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error)
+	// DeletePluginData deletes the folder of a plugin in the vault the window
+	// shows and the records of the text versions the plugin made there. The
+	// files those versions were of are indexed again.
+	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
 }
 
 // NewSettingsServiceClient constructs a client for the numen.v1.SettingsService service. By
@@ -160,6 +173,18 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("ChoosePluginPath")),
 			connect.WithClientOptions(opts...),
 		),
+		getPluginData: connect.NewClient[v1.GetPluginDataRequest, v1.GetPluginDataResponse](
+			httpClient,
+			baseURL+SettingsServiceGetPluginDataProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("GetPluginData")),
+			connect.WithClientOptions(opts...),
+		),
+		deletePluginData: connect.NewClient[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse](
+			httpClient,
+			baseURL+SettingsServiceDeletePluginDataProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("DeletePluginData")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -173,6 +198,8 @@ type settingsServiceClient struct {
 	deletePluginSecret *connect.Client[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse]
 	retryPlugin        *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
 	choosePluginPath   *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
+	getPluginData      *connect.Client[v1.GetPluginDataRequest, v1.GetPluginDataResponse]
+	deletePluginData   *connect.Client[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse]
 }
 
 // GetSettings calls numen.v1.SettingsService.GetSettings.
@@ -215,6 +242,16 @@ func (c *settingsServiceClient) ChoosePluginPath(ctx context.Context, req *conne
 	return c.choosePluginPath.CallUnary(ctx, req)
 }
 
+// GetPluginData calls numen.v1.SettingsService.GetPluginData.
+func (c *settingsServiceClient) GetPluginData(ctx context.Context, req *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error) {
+	return c.getPluginData.CallUnary(ctx, req)
+}
+
+// DeletePluginData calls numen.v1.SettingsService.DeletePluginData.
+func (c *settingsServiceClient) DeletePluginData(ctx context.Context, req *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error) {
+	return c.deletePluginData.CallUnary(ctx, req)
+}
+
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
 	// GetSettings is every setting of the file, and the models the settings that
@@ -246,6 +283,13 @@ type SettingsServiceHandler interface {
 	// of type file or folder, and writes the path they chose. A path the setting does not take is not
 	// written, and the answer says why.
 	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
+	// GetPluginData is how many files the folder of a plugin holds in the vault
+	// the window shows, `.numen/<plugin id>/`, and their bytes.
+	GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error)
+	// DeletePluginData deletes the folder of a plugin in the vault the window
+	// shows and the records of the text versions the plugin made there. The
+	// files those versions were of are indexed again.
+	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
 }
 
 // NewSettingsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -303,6 +347,18 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("ChoosePluginPath")),
 		connect.WithHandlerOptions(opts...),
 	)
+	settingsServiceGetPluginDataHandler := connect.NewUnaryHandler(
+		SettingsServiceGetPluginDataProcedure,
+		svc.GetPluginData,
+		connect.WithSchema(settingsServiceMethods.ByName("GetPluginData")),
+		connect.WithHandlerOptions(opts...),
+	)
+	settingsServiceDeletePluginDataHandler := connect.NewUnaryHandler(
+		SettingsServiceDeletePluginDataProcedure,
+		svc.DeletePluginData,
+		connect.WithSchema(settingsServiceMethods.ByName("DeletePluginData")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SettingsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SettingsServiceGetSettingsProcedure:
@@ -321,6 +377,10 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceRetryPluginHandler.ServeHTTP(w, r)
 		case SettingsServiceChoosePluginPathProcedure:
 			settingsServiceChoosePluginPathHandler.ServeHTTP(w, r)
+		case SettingsServiceGetPluginDataProcedure:
+			settingsServiceGetPluginDataHandler.ServeHTTP(w, r)
+		case SettingsServiceDeletePluginDataProcedure:
+			settingsServiceDeletePluginDataHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -360,4 +420,12 @@ func (UnimplementedSettingsServiceHandler) RetryPlugin(context.Context, *connect
 
 func (UnimplementedSettingsServiceHandler) ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ChoosePluginPath is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.GetPluginData is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeletePluginData is not implemented"))
 }

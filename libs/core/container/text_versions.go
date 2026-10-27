@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textproviderbridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -176,4 +177,18 @@ func (p pluginTexts) ReadText(ctx context.Context, path string, id domain.TextVe
 		return pluginport.PluginTextPage{}, err
 	}
 	return pluginport.PluginTextPage{Segments: page.Segments, NextCursor: page.NextCursor}, nil
+}
+
+// OpenPluginData is the folders plugins keep in a vault's store and the records of their text
+// versions, and nil where the installation keeps no text versions.
+func (e EditorAssembly) OpenPluginData() *textversion.PluginData {
+	if e.cfg.TextVersions == nil {
+		return nil
+	}
+	data, err := textversion.NewPluginData(e.cfg.TextVersions, derivedfile.PluginStores{Options: e.cfg.vaultOptions()})
+	if err != nil {
+		e.cfg.handleError(err)
+		return nil
+	}
+	return data
 }

@@ -1,6 +1,7 @@
 package container
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 )
 
@@ -263,7 +265,7 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(listing.Versions) != 1 || listing.Versions[0].GetID() != version.GetID() {
-		t.Fatalf("after the delete the talk's path has %+v, want its transcript kept", listing)
+		t.Fatalf("after the delete the talk's path has %+v, want its transcript to stay", listing)
 	}
 	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
@@ -271,5 +273,83 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 	}
 	if len(found) != 0 {
 		t.Fatalf("found %+v, want nothing for a deleted talk", found)
+	}
+}
+
+// cutOnChange cuts a file again each time its versions change, as the index of
+// the shown vault does.
+type cutOnChange struct {
+	t       *testing.T
+	extract interface {
+		ExtractOne(ctx context.Context, v domain.Vault, path string) (source.ExtractResult, error)
+	}
+}
+
+func (c cutOnChange) ReportVersionsChanged(v domain.Vault, path string) {
+	if _, err := c.extract.ExtractOne(c.t.Context(), v, path); err != nil {
+		c.t.Error(err)
+	}
+}
+
+func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
+	cfg, db, v, _ := newTalkIndex(t)
+	const other = "org.example.subtitles"
+	files, err := textfiles.Stores{}.Open(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash, err := files.WriteTextFile(t.Context(), other, "notes.jsonl", []domain.TextSegment{{Text: "A kingfisher dives.\n"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(v.Path, talkPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	subtitles := domain.TextVersion{
+		Path: talkPath, PluginID: other, Key: "notes", Kind: "subtitles", File: "notes.jsonl",
+		SourceHash: domain.HashContent(raw), Hash: hash, CreateTime: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
+	}
+	repo, err := indexVersions{repo: db.db.TextVersions()}.Open(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
+		t.Fatal(err)
+	}
+	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.TextVersions.SetListener(cutOnChange{t: t, extract: extract})
+	data := EditorAssembly{cfg: cfg}.OpenPluginData()
+
+	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(filepath.Join(v.Path, ".numen", transcriber)); !os.IsNotExist(err) {
+		t.Fatalf("the transcriber's folder is still there (%v)", err)
+	}
+	if _, err := os.Stat(filepath.Join(v.Path, ".numen", other, "notes.jsonl")); err != nil {
+		t.Fatalf("the other plugin's file is gone: %v", err)
+	}
+	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	if err != nil || len(listing.Versions) != 1 || listing.Live != subtitles.GetID() {
+		t.Fatalf("after the delete the talk has %+v (%v), want the other plugin's version alone and live", listing, err)
+	}
+	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 0 {
+		t.Fatalf("found %+v, want the deleted transcript out of the index", found)
+	}
+	found, err = cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Producer != string(subtitles.GetID()) {
+		t.Fatalf("found %+v, want the talk through the other plugin's version", found)
 	}
 }

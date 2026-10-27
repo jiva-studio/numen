@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Io4BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mb0oECAQQBUoECAUQBkoECAYQByLxAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZRIyChByZWFzb25pbmdfbGV2ZWxzGAggAygLMhgubnVtZW4udjEuUmVhc29uaW5nTGV2ZWwSGQoRZGVmYXVsdF9yZWFzb25pbmcYCSABKAkiJAoHU2V0dGluZxIKCgJhdBgBIAMoCRINCgV2YWx1ZRgCIAEoCSI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIhkKF1JlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0IjkKGFJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkiTwoYV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0Eg8KB3dyaXR0ZW4YASABKAkSFQoIYmFzZWxpbmUYAiABKAlIAIgBAUILCglfYmFzZWxpbmUiTgoZV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciJIChhXcml0ZVBsdWdpblNlY3JldFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSCwoDa2V5GAMgASgJIhsKGVdyaXRlUGx1Z2luU2VjcmV0UmVzcG9uc2UiPAoZRGVsZXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCSIcChpEZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZSInChJSZXRyeVBsdWdpblJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIiYKE1JldHJ5UGx1Z2luUmVzcG9uc2USDwoHZmFpbHVyZRgBIAEoCSI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJKnMKCFByZXNlbmNlEhgKFFBSRVNFTkNFX1VOU1BFQ0lGSUVEEAASFAoQUFJFU0VOQ0VfUFJFU0VOVBABEhgKFFBSRVNFTkNFX05PVF9GRVRDSEVEEAISHQoZUFJFU0VOQ0VfTk9USElOR19UT19GRVRDSBADMs4FCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBSZWFkU2V0dGluZ3NGaWxlEiEubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QaIi5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVTZXR0aW5nc0ZpbGUSIi5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlElwKEVdyaXRlUGx1Z2luU2VjcmV0EiIubnVtZW4udjEuV3JpdGVQbHVnaW5TZWNyZXRSZXF1ZXN0GiMubnVtZW4udjEuV3JpdGVQbHVnaW5TZWNyZXRSZXNwb25zZRJfChJEZWxldGVQbHVnaW5TZWNyZXQSIy5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXF1ZXN0GiQubnVtZW4udjEuRGVsZXRlUGx1Z2luU2VjcmV0UmVzcG9uc2USSgoLUmV0cnlQbHVnaW4SHC5udW1lbi52MS5SZXRyeVBsdWdpblJlcXVlc3QaHS5udW1lbi52MS5SZXRyeVBsdWdpblJlc3BvbnNlElkKEENob29zZVBsdWdpblBhdGgSIS5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBoiLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Io4BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mb0oECAQQBUoECAUQBkoECAYQByLxAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZRIyChByZWFzb25pbmdfbGV2ZWxzGAggAygLMhgubnVtZW4udjEuUmVhc29uaW5nTGV2ZWwSGQoRZGVmYXVsdF9yZWFzb25pbmcYCSABKAkiJAoHU2V0dGluZxIKCgJhdBgBIAMoCRINCgV2YWx1ZRgCIAEoCSI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIhkKF1JlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0IjkKGFJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkiTwoYV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0Eg8KB3dyaXR0ZW4YASABKAkSFQoIYmFzZWxpbmUYAiABKAlIAIgBAUILCglfYmFzZWxpbmUiTgoZV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciJIChhXcml0ZVBsdWdpblNlY3JldFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSCwoDa2V5GAMgASgJIhsKGVdyaXRlUGx1Z2luU2VjcmV0UmVzcG9uc2UiPAoZRGVsZXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCSIcChpEZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZSInChJSZXRyeVBsdWdpblJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIiYKE1JldHJ5UGx1Z2luUmVzcG9uc2USDwoHZmFpbHVyZRgBIAEoCSI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIikKFEdldFBsdWdpbkRhdGFSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSI/ChVHZXRQbHVnaW5EYXRhUmVzcG9uc2USEgoKZmlsZV9jb3VudBgBIAEoBRISCgpieXRlX2NvdW50GAIgASgDIiwKF0RlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSIaChhEZWxldGVQbHVnaW5EYXRhUmVzcG9uc2UqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy+wYKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlElkKEFJlYWRTZXR0aW5nc0ZpbGUSIS5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVxdWVzdBoiLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRJcChFXcml0ZVNldHRpbmdzRmlsZRIiLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBojLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlEl8KEkRlbGV0ZVBsdWdpblNlY3JldBIjLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QaJC5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElAKDUdldFBsdWdpbkRhdGESHi5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVxdWVzdBofLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXNwb25zZRJZChBEZWxldGVQbHVnaW5EYXRhEiEubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QaIi5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -487,6 +487,75 @@ export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse
   messageDesc(file_numen_v1_settings, 17);
 
 /**
+ * @generated from message numen.v1.GetPluginDataRequest
+ */
+export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+};
+
+/**
+ * Describes the message numen.v1.GetPluginDataRequest.
+ * Use `create(GetPluginDataRequestSchema)` to create a new message.
+ */
+export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 18);
+
+/**
+ * @generated from message numen.v1.GetPluginDataResponse
+ */
+export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & {
+  /**
+   * @generated from field: int32 file_count = 1;
+   */
+  fileCount: number;
+
+  /**
+   * @generated from field: int64 byte_count = 2;
+   */
+  byteCount: bigint;
+};
+
+/**
+ * Describes the message numen.v1.GetPluginDataResponse.
+ * Use `create(GetPluginDataResponseSchema)` to create a new message.
+ */
+export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 19);
+
+/**
+ * @generated from message numen.v1.DeletePluginDataRequest
+ */
+export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+};
+
+/**
+ * Describes the message numen.v1.DeletePluginDataRequest.
+ * Use `create(DeletePluginDataRequestSchema)` to create a new message.
+ */
+export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 20);
+
+/**
+ * @generated from message numen.v1.DeletePluginDataResponse
+ */
+export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.DeletePluginDataResponse.
+ * Use `create(DeletePluginDataResponseSchema)` to create a new message.
+ */
+export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 21);
+
+/**
  * Presence is what a model's files are on this machine. It says where files
  * stand and nothing else: it is no reason to prefer one model to another.
  *
@@ -627,6 +696,29 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof ChoosePluginPathRequestSchema;
     output: typeof ChoosePluginPathResponseSchema;
+  },
+  /**
+   * GetPluginData is how many files the folder of a plugin holds in the vault
+   * the window shows, `.numen/<plugin id>/`, and their bytes.
+   *
+   * @generated from rpc numen.v1.SettingsService.GetPluginData
+   */
+  getPluginData: {
+    methodKind: "unary";
+    input: typeof GetPluginDataRequestSchema;
+    output: typeof GetPluginDataResponseSchema;
+  },
+  /**
+   * DeletePluginData deletes the folder of a plugin in the vault the window
+   * shows and the records of the text versions the plugin made there. The
+   * files those versions were of are indexed again.
+   *
+   * @generated from rpc numen.v1.SettingsService.DeletePluginData
+   */
+  deletePluginData: {
+    methodKind: "unary";
+    input: typeof DeletePluginDataRequestSchema;
+    output: typeof DeletePluginDataResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_settings, 0);

@@ -391,6 +391,24 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 	return nil
 }
 
+// RemoveAll takes a name out of the store with everything under it. A name
+// that is not there is removed.
+func (d *DerivedStore) RemoveAll(_ context.Context, name string) error {
+	target, err := d.getPath(name)
+	if err != nil {
+		return err
+	}
+	root, pos, err := d.openRoot(target)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	return root.RemoveAll(pos)
+}
+
 // checkVaultIdentity confirms the folder is the vault this store was opened on. A vault
 // carries its identity inside itself, and a folder that has lost the identity
 // it had is somewhere else: an unmounted disk, a synchroniser's stub, an empty

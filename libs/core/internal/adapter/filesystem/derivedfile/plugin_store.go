@@ -20,12 +20,25 @@ type PluginStores struct {
 // Open opens the folder of the plugin. A plugin's identity always holds a dot, so its folder is
 // never one of the store's own areas.
 func (p PluginStores) Open(v domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+	return p.openFolder(v, pluginID)
+}
+
+// DeleteFolder deletes the folder of the plugin and every file in it.
+func (p PluginStores) DeleteFolder(ctx context.Context, v domain.Vault, pluginID string) error {
+	folder, err := p.openFolder(v, pluginID)
+	if err != nil {
+		return err
+	}
+	return folder.store.RemoveAll(ctx, folder.folder)
+}
+
+func (p PluginStores) openFolder(v domain.Vault, pluginID string) (pluginFolder, error) {
 	if !strings.Contains(pluginID, ".") || strings.HasPrefix(pluginID, ".") || strings.ContainsAny(pluginID, `/\`) {
-		return nil, fmt.Errorf("%q is not the identity of a plugin: %w", pluginID, vaultconfig.ErrOutside)
+		return pluginFolder{}, fmt.Errorf("%q is not the identity of a plugin: %w", pluginID, vaultconfig.ErrOutside)
 	}
 	store, err := OpenDerived(v.Path, p.Options, pluginID)
 	if err != nil {
-		return nil, err
+		return pluginFolder{}, err
 	}
 	return pluginFolder{store: store, folder: pluginID}, nil
 }

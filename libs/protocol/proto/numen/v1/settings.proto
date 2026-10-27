@@ -54,6 +54,15 @@ service SettingsService {
   // of type file or folder, and writes the path they chose. A path the setting does not take is not
   // written, and the answer says why.
   rpc ChoosePluginPath(ChoosePluginPathRequest) returns (ChoosePluginPathResponse);
+
+  // GetPluginData is how many files the folder of a plugin holds in the vault
+  // the window shows, `.numen/<plugin id>/`, and their bytes.
+  rpc GetPluginData(GetPluginDataRequest) returns (GetPluginDataResponse);
+
+  // DeletePluginData deletes the folder of a plugin in the vault the window
+  // shows and the records of the text versions the plugin made there. The
+  // files those versions were of are indexed again.
+  rpc DeletePluginData(DeletePluginDataRequest) returns (DeletePluginDataResponse);
 }
 
 message GetSettingsRequest {}
@@ -210,3 +219,18 @@ message ChoosePluginPathResponse {
   // Why the setting does not take the path, in words a person reads. Empty where it was written.
   string problem = 3;
 }
+
+message GetPluginDataRequest {
+  string plugin_id = 1;
+}
+
+message GetPluginDataResponse {
+  int32 file_count = 1;
+  int64 byte_count = 2;
+}
+
+message DeletePluginDataRequest {
+  string plugin_id = 1;
+}
+
+message DeletePluginDataResponse {}

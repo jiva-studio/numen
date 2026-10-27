@@ -354,6 +354,9 @@ func (o *Installation) wireUseCases() {
 	services.Settings.WriteSecret = made.OpenWritePluginSecret()
 	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
+	if data := made.OpenPluginData(); data != nil {
+		services.Settings.PluginData, services.Settings.Vaults = data, o.State
+	}
 	services.openChoosePath = made.OpenChoosePluginPath
 
 	target := &o.vaults
