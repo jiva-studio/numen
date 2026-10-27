@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -75,15 +77,66 @@ func TestAskAgentOpensTheSessionWithTheRunEndpoint(t *testing.T) {
 	if string(servers) != want {
 		t.Errorf("the session was given MCP servers %s, want %s", servers, want)
 	}
-	replies := observed["reply"]
-	if len(replies) < 2 {
+}
+
+// A permission is granted once to a call of a tool of the task, told by the name ACP gives the call
+// or, where the request names none, by the name the agent reported for that call. A title naming a
+// tool of the task allows nothing.
+func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
+	agent, record := fakeACPAgent(t, "fake", "tools")
+
+	askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
+		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
+		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+	})
+
+	replies := readRecord(t, record)["reply"]
+	if len(replies) < 4 {
 		t.Fatalf("the agent had %d replies", len(replies))
 	}
-	if outcome, _ := json.Marshal(replies[0]["result"]); string(outcome) != `{"outcome":{"optionId":"once","outcome":"selected"}}` {
-		t.Errorf("the call of a tool of the task was answered %s", outcome)
+	allowed, denied := `{"outcome":{"optionId":"once","outcome":"selected"}}`, `{"outcome":{"outcome":"cancelled"}}`
+	for i, want := range []string{allowed, denied, denied, allowed} {
+		if outcome, _ := json.Marshal(replies[i]["result"]); string(outcome) != want {
+			t.Errorf("permission %d was answered %s, want %s", i, outcome, want)
+		}
 	}
-	if outcome, _ := json.Marshal(replies[1]["result"]); string(outcome) != `{"outcome":{"outcome":"cancelled"}}` {
-		t.Errorf("the call of another tool was answered %s", outcome)
+}
+
+// The tool calls the agent reports reach the stream as steps: the call, shown by the declaration
+// of its tool, and its end once.
+func TestAskAgentReportsTheToolCallsOfTheAgent(t *testing.T) {
+	agent, _ := fakeACPAgent(t, "fake", "tools")
+	stream, err := agenttest.Serve(t, serveAgents(agent)).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
+		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+		ToolDeclarations: []*numenv1.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var steps []string
+	for stream.Receive() {
+		switch step := stream.Msg().GetStep().(type) {
+		case *numenv1.AskAgentResponse_ToolCall:
+			call := step.ToolCall
+			steps = append(steps, fmt.Sprintf("call %s %s %s %s %s", call.GetCall(), call.GetTool(), call.GetKind(), call.GetAbout(), call.GetPath()))
+		case *numenv1.AskAgentResponse_ToolFinished:
+			steps = append(steps, "finished")
+		case *numenv1.AskAgentResponse_Text:
+			steps = append(steps, "text")
+		}
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"call c0 Read a note read Garden.md Garden.md",
+		"call c0 Read a note read Garden.md Garden.md",
+		"finished",
+		"text",
+	}
+	if !slices.Equal(steps, want) {
+		t.Errorf("the steps were %q, want %q", steps, want)
 	}
 }
 

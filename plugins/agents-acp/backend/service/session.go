@@ -15,6 +15,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 const (
@@ -70,6 +72,12 @@ type acpSession struct {
 	thoughtCurrent string
 	// answer is the text of the agent's message chunks.
 	answer strings.Builder
+	// calls are the tool calls of the session the agent reported, by id.
+	calls map[string]*acpCall
+	// words are the declarations of the run's tools, which a call is shown by.
+	words map[string]toolcall.Declaration
+	// report sends a step of the run as it happens. Nil sends none.
+	report func(*numenv1.AskAgentResponse) error
 }
 
 // openACPSession starts the agent, initializes the connection and opens a session in an empty
@@ -83,7 +91,10 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 		return nil, fmt.Errorf("create the session folder: %w", err)
 	}
 	running, stop := context.WithCancel(ctx)
-	s := &acpSession{stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program, stderr: &tailBuffer{}, tools: tools}
+	s := &acpSession{
+		stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program, stderr: &tailBuffer{}, tools: tools,
+		calls: map[string]*acpCall{},
+	}
 	s.cmd = exec.CommandContext(running, agent.Command[0], agent.Command[1:]...)
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
@@ -378,8 +389,11 @@ func (s *acpSession) answerRequest(request rpcMessage) error {
 	return nil
 }
 
-// readUpdate appends the text of the agent's message chunks for this session.
+// readUpdate reports the tool calls of this session and appends the text of its message chunks.
 func (s *acpSession) readUpdate(params json.RawMessage) error {
+	if step := s.readToolStep(params); step != nil && s.report != nil {
+		return s.report(step)
+	}
 	text, isChunk := s.readChunk(params)
 	if !isChunk {
 		return nil

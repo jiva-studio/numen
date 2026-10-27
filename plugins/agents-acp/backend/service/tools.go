@@ -38,20 +38,22 @@ func (s *acpSession) listServers() ([]any, error) {
 }
 
 // answerPermission selects the option that allows the call once where the call is one of the run's
-// tools, and refuses anything else.
+// tools, and refuses anything else. The tool is told by the programmatic name ACP gives a tool call,
+// never by its title, which an agent writes for a person.
 func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
 	denial := map[string]any{"outcome": map[string]any{"outcome": "cancelled"}}
 	var request struct {
 		SessionID string `json:"sessionId"`
 		ToolCall  struct {
-			Title string `json:"title"`
+			ToolCallID string `json:"toolCallId"`
+			Name       string `json:"name"`
 		} `json:"toolCall"`
 		Options []struct {
 			OptionID string `json:"optionId"`
 			Kind     string `json:"kind"`
 		} `json:"options"`
 	}
-	if json.Unmarshal(params, &request) != nil || request.SessionID != s.id || !s.isRunTool(request.ToolCall.Title) {
+	if json.Unmarshal(params, &request) != nil || request.SessionID != s.id || !s.isRunTool(request.ToolCall.ToolCallID, request.ToolCall.Name) {
 		return denial
 	}
 	for _, option := range request.Options {
@@ -62,12 +64,16 @@ func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
 	return denial
 }
 
-// isRunTool says whether a tool call's title names one of the run's tools: by its name, or by the
-// name an agent gives a tool of an MCP server, mcp__<server>__<tool>.
-func (s *acpSession) isRunTool(title string) bool {
-	return slices.ContainsFunc(s.tools.tools, func(name string) bool {
-		return title == name || title == "mcp__"+serverName+"__"+name
-	})
+// isRunTool says whether a tool call is a call of one of the run's tools, by the name the request
+// gives it, else by the name the agent reported for the call before. A call of no name is none.
+func (s *acpSession) isRunTool(callID, name string) bool {
+	if name == "" {
+		if call := s.calls[callID]; call != nil {
+			name = call.name
+		}
+	}
+	name = readToolName(name)
+	return name != "" && slices.Contains(s.tools.tools, name)
 }
 
 // readToolEndpoint is where the task's tools are served. A task that names no tool, or no endpoint,

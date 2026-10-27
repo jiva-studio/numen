@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
@@ -23,16 +24,22 @@ type question struct {
 	system    string
 	prompt    string
 	tools     toolEndpoint
+	// words are the declarations of the run's tools, which a call is shown by.
+	words map[string]toolcall.Declaration
+	// report sends a step of the run as it happens.
+	report func(*numenv1.AskAgentResponse) error
 }
 
 // answer asks the agent one question in a session of its own, with the model the agent reports by
-// the id and the tools of the question, and returns the text of its answer.
+// the id and the tools of the question, reports each tool call as it happens, and returns the text
+// of its answer.
 func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (string, error) {
 	session, err := openACPSession(ctx, agent, q.tools)
 	if err != nil {
 		return "", err
 	}
 	defer session.close()
+	session.words, session.report = q.words, q.report
 	if err := session.setModel(q.model); err != nil {
 		return "", err
 	}
@@ -61,7 +68,7 @@ func (s *agentServer) AskAgent(
 	}
 	text, err := s.answer(ctx, agent, question{
 		model: msg.GetModel(), reasoning: msg.GetReasoning(), system: msg.GetInstructions(), prompt: msg.GetPrompt(),
-		tools: readToolEndpoint(msg),
+		tools: readToolEndpoint(msg), words: toolcall.IndexDeclarations(msg.GetToolDeclarations()), report: stream.Send,
 	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
