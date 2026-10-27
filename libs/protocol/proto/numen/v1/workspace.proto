@@ -25,6 +25,10 @@ service WorkspaceService {
   // said.
   rpc WriteOpenTabs(WriteOpenTabsRequest) returns (WriteOpenTabsResponse);
 
+  // ReadOpenTabs returns the tabs last written for the vault in the window. The
+  // core keeps them across restarts, and the window opens them again.
+  rpc ReadOpenTabs(ReadOpenTabsRequest) returns (ReadOpenTabsResponse);
+
   // DetachTab asks that a tab be opened in a new window of its own.
   rpc DetachTab(DetachTabRequest) returns (DetachTabResponse);
 }
@@ -64,61 +68,36 @@ message WriteOpenTabsRequest {
 
 message WriteOpenTabsResponse {}
 
+message ReadOpenTabsRequest {}
+
+message ReadOpenTabsResponse {
+  // The tabs last written, in the order they were written.
+  repeated Tab tabs = 1;
+
+  // The id of the tab that was in front, empty where none was.
+  string front = 2;
+}
+
 // A Tab is one tab of the window: what kind it is, and what it holds.
 //
-// The kind is the client's own word — a note, a document, a recording — and a
-// reader that does not know one knows a tab of that kind is open and no more.
+// The kind is the name a plugin registers the tab kind under. A reader that
+// does not know the kind knows a tab of that kind is open and no more.
 message Tab {
   // Id is what the window calls this tab, which the front is named by.
   string id = 1;
 
-  // Kind is what sort of tab it is.
+  // Kind is the registered name of the tab kind.
   string kind = 2;
 
   // Path is the file it holds, by the path the vault files it under, and empty
-  // for a tab holding no file. A plex holds the note it relies on.
+  // for a tab holding no file.
   string path = 3;
 
   // Title is what the tab is called, as the person reads it.
   string title = 4;
 
-  // How far the person has got through what the tab holds. A tab holding a
-  // document sets document, a tab holding a recording sets recording, a tab
-  // none of them.
-  DocumentProgress document = 5;
-  RecordingProgress recording = 6;
-  BookProgress book = 7;
-}
-
-// A DocumentProgress is how far through a document the person reading it is.
-message DocumentProgress {
-  // Page is the page in front of them, counted from one.
-  int32 page = 1;
-
-  // PageCount is how many pages the document has.
-  int32 page_count = 2;
-}
-
-// is. Such a book has no pages of its own, so where they stand is an offset
-// into its text and the page is counted from that.
-message BookProgress {
-  // Offset is where they are reading, in bytes of the book's text.
-  int32 offset = 1;
-
-  // Page is the page the offset falls on, counted from one, and PageCount how
-  // many the book is read in. Both are counted over the text by the size of a
-  // page the book was answered with, which is not here.
-  int32 page = 2;
-  int32 page_count = 3;
-}
-
-// A RecordingProgress is how far into a recording the words written down reach.
-message RecordingProgress {
-  // TranscribedDurationMs is how far into the recording the words written down
-  // reach. It is short of the duration while a run is still going, and the two
-  // are equal once one has finished.
-  int32 transcribed_duration_ms = 1;
-
-  // DurationMs is how long the recording is.
-  int32 duration_ms = 2;
+  // State is the JSON the plugin owning the kind saved for the tab, such as the
+  // place it shows. The core and the window store it unread; empty for a tab
+  // whose kind saves none.
+  string state = 5;
 }

@@ -23,60 +23,15 @@ func (o OpenTabs) GetFrontTab() (Tab, bool) {
 
 // A Tab is one tab of a window: what kind it is, and what it holds.
 //
-// The kind is the window's own word for it. A window is free to open a kind
-// nothing here has heard of, and what such a tab holds is its kind and no more.
+// The kind is the name a plugin registers the tab kind under. State is the
+// JSON that plugin saved for the tab; nothing here reads it.
 type Tab struct {
 	ID   string
 	Kind string
-	// Path is the file the tab holds, empty for a tab holding no file. A plex
-	// holds the note it relies on.
+	// Path is the file the tab holds, empty for a tab holding no file.
 	Path string
 	// Title is what the tab is called, as the person reads it.
 	Title string
-	// Document is the document the tab holds, and nothing in a tab holding
-	// none.
-	Document *DocumentProgress
-	// Recording is the recording the tab holds, and nothing in a tab holding
-	// none.
-	Recording *RecordingProgress
-	// nothing in a tab holding none.
-	Book *BookProgress
+	// State is the JSON the plugin owning the kind saved, empty where it saved none.
+	State string
 }
-
-// A DocumentProgress is how far through a document the person reading it is.
-type DocumentProgress struct {
-	// Page is the page in front of them, counted from one.
-	Page int
-	// PageCount is how many pages the document has.
-	PageCount int
-}
-
-// is. Such a book has no pages of its own, so where they stand is an offset
-// into its text and the page is counted from that.
-type BookProgress struct {
-	// Offset is where they are reading, in bytes of the book's text.
-	Offset int
-	// Page is the page the offset falls on, counted from one, and PageCount how
-	// many the book is read in.
-	Page      int
-	PageCount int
-}
-
-// A RecordingProgress is how far into a recording the words written down reach.
-// Both are milliseconds.
-type RecordingProgress struct {
-	// TranscribedDuration is how far into the recording the words written down
-	// reach. It is short of the duration while a run is still listening.
-	TranscribedDuration int
-	// Duration is how long the recording is.
-	Duration int
-}
-
-// The kinds of tab this application has words for. A tab of any other kind is
-const (
-	TabNote      = "note"
-	TabDocument  = "document"
-	TabBook      = "book"
-	TabRecording = "recording"
-	TabPlex      = "plex"
-)

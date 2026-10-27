@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIjgKEERldGFjaFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEgkKAXgYAiABKAUSCQoBeRgDIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJBChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iQgoUV3JpdGVPcGVuVGFic1JlcXVlc3QSGwoEdGFicxgBIAMoCzINLm51bWVuLnYxLlRhYhINCgVmcm9udBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiwAEKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSLAoIZG9jdW1lbnQYBSABKAsyGi5udW1lbi52MS5Eb2N1bWVudFByb2dyZXNzEi4KCXJlY29yZGluZxgGIAEoCzIbLm51bWVuLnYxLlJlY29yZGluZ1Byb2dyZXNzEiQKBGJvb2sYByABKAsyFi5udW1lbi52MS5Cb29rUHJvZ3Jlc3MiNAoQRG9jdW1lbnRQcm9ncmVzcxIMCgRwYWdlGAEgASgFEhIKCnBhZ2VfY291bnQYAiABKAUiQAoMQm9va1Byb2dyZXNzEg4KBm9mZnNldBgBIAEoBRIMCgRwYWdlGAIgASgFEhIKCnBhZ2VfY291bnQYAyABKAUiSQoRUmVjb3JkaW5nUHJvZ3Jlc3MSHwoXdHJhbnNjcmliZWRfZHVyYXRpb25fbXMYASABKAUSEwoLZHVyYXRpb25fbXMYAiABKAUy9QEKEFdvcmtzcGFjZVNlcnZpY2USSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlEkQKCURldGFjaFRhYhIaLm51bWVuLnYxLkRldGFjaFRhYlJlcXVlc3QaGy5udW1lbi52MS5EZXRhY2hUYWJSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIjgKEERldGFjaFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEgkKAXgYAiABKAUSCQoBeRgDIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJBChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iQgoUV3JpdGVPcGVuVGFic1JlcXVlc3QSGwoEdGFicxgBIAMoCzINLm51bWVuLnYxLlRhYhINCgVmcm9udBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJCChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIksKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSDQoFc3RhdGUYBSABKAkyxAIKEFdvcmtzcGFjZVNlcnZpY2USSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlEk0KDFJlYWRPcGVuVGFicxIdLm51bWVuLnYxLlJlYWRPcGVuVGFic1JlcXVlc3QaHi5udW1lbi52MS5SZWFkT3BlblRhYnNSZXNwb25zZRJECglEZXRhY2hUYWISGi5udW1lbi52MS5EZXRhY2hUYWJSZXF1ZXN0GhsubnVtZW4udjEuRGV0YWNoVGFiUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.DetachTabRequest
@@ -147,10 +147,49 @@ export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*
   messageDesc(file_numen_v1_workspace, 5);
 
 /**
+ * @generated from message numen.v1.ReadOpenTabsRequest
+ */
+export type ReadOpenTabsRequest = Message<"numen.v1.ReadOpenTabsRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ReadOpenTabsRequest.
+ * Use `create(ReadOpenTabsRequestSchema)` to create a new message.
+ */
+export const ReadOpenTabsRequestSchema: GenMessage<ReadOpenTabsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 6);
+
+/**
+ * @generated from message numen.v1.ReadOpenTabsResponse
+ */
+export type ReadOpenTabsResponse = Message<"numen.v1.ReadOpenTabsResponse"> & {
+  /**
+   * The tabs last written, in the order they were written.
+   *
+   * @generated from field: repeated numen.v1.Tab tabs = 1;
+   */
+  tabs: Tab[];
+
+  /**
+   * The id of the tab that was in front, empty where none was.
+   *
+   * @generated from field: string front = 2;
+   */
+  front: string;
+};
+
+/**
+ * Describes the message numen.v1.ReadOpenTabsResponse.
+ * Use `create(ReadOpenTabsResponseSchema)` to create a new message.
+ */
+export const ReadOpenTabsResponseSchema: GenMessage<ReadOpenTabsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 7);
+
+/**
  * A Tab is one tab of the window: what kind it is, and what it holds.
  *
- * The kind is the client's own word — a note, a document, a recording — and a
- * reader that does not know one knows a tab of that kind is open and no more.
+ * The kind is the name a plugin registers the tab kind under. A reader that
+ * does not know the kind knows a tab of that kind is open and no more.
  *
  * @generated from message numen.v1.Tab
  */
@@ -163,7 +202,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
   id: string;
 
   /**
-   * Kind is what sort of tab it is.
+   * Kind is the registered name of the tab kind.
    *
    * @generated from field: string kind = 2;
    */
@@ -171,7 +210,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
 
   /**
    * Path is the file it holds, by the path the vault files it under, and empty
-   * for a tab holding no file. A plex holds the note it relies on.
+   * for a tab holding no file.
    *
    * @generated from field: string path = 3;
    */
@@ -185,23 +224,13 @@ export type Tab = Message<"numen.v1.Tab"> & {
   title: string;
 
   /**
-   * How far the person has got through what the tab holds. A tab holding a
-   * document sets document, a tab holding a recording sets recording, a tab
-   * none of them.
+   * State is the JSON the plugin owning the kind saved for the tab, such as the
+   * place it shows. The core and the window store it unread; empty for a tab
+   * whose kind saves none.
    *
-   * @generated from field: numen.v1.DocumentProgress document = 5;
+   * @generated from field: string state = 5;
    */
-  document?: DocumentProgress | undefined;
-
-  /**
-   * @generated from field: numen.v1.RecordingProgress recording = 6;
-   */
-  recording?: RecordingProgress | undefined;
-
-  /**
-   * @generated from field: numen.v1.BookProgress book = 7;
-   */
-  book?: BookProgress | undefined;
+  state: string;
 };
 
 /**
@@ -209,101 +238,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
  * Use `create(TabSchema)` to create a new message.
  */
 export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 6);
-
-/**
- * A DocumentProgress is how far through a document the person reading it is.
- *
- * @generated from message numen.v1.DocumentProgress
- */
-export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
-  /**
-   * Page is the page in front of them, counted from one.
-   *
-   * @generated from field: int32 page = 1;
-   */
-  page: number;
-
-  /**
-   * PageCount is how many pages the document has.
-   *
-   * @generated from field: int32 page_count = 2;
-   */
-  pageCount: number;
-};
-
-/**
- * Describes the message numen.v1.DocumentProgress.
- * Use `create(DocumentProgressSchema)` to create a new message.
- */
-export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 7);
-
-/**
- * is. Such a book has no pages of its own, so where they stand is an offset
- * into its text and the page is counted from that.
- *
- * @generated from message numen.v1.BookProgress
- */
-export type BookProgress = Message<"numen.v1.BookProgress"> & {
-  /**
-   * Offset is where they are reading, in bytes of the book's text.
-   *
-   * @generated from field: int32 offset = 1;
-   */
-  offset: number;
-
-  /**
-   * Page is the page the offset falls on, counted from one, and PageCount how
-   * many the book is read in. Both are counted over the text by the size of a
-   * page the book was answered with, which is not here.
-   *
-   * @generated from field: int32 page = 2;
-   */
-  page: number;
-
-  /**
-   * @generated from field: int32 page_count = 3;
-   */
-  pageCount: number;
-};
-
-/**
- * Describes the message numen.v1.BookProgress.
- * Use `create(BookProgressSchema)` to create a new message.
- */
-export const BookProgressSchema: GenMessage<BookProgress> = /*@__PURE__*/
   messageDesc(file_numen_v1_workspace, 8);
-
-/**
- * A RecordingProgress is how far into a recording the words written down reach.
- *
- * @generated from message numen.v1.RecordingProgress
- */
-export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
-  /**
-   * TranscribedDurationMs is how far into the recording the words written down
-   * reach. It is short of the duration while a run is still going, and the two
-   * are equal once one has finished.
-   *
-   * @generated from field: int32 transcribed_duration_ms = 1;
-   */
-  transcribedDurationMs: number;
-
-  /**
-   * DurationMs is how long the recording is.
-   *
-   * @generated from field: int32 duration_ms = 2;
-   */
-  durationMs: number;
-};
-
-/**
- * Describes the message numen.v1.RecordingProgress.
- * Use `create(RecordingProgressSchema)` to create a new message.
- */
-export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 9);
 
 /**
  * WorkspaceService answers where in the vault the person stands, and takes what
@@ -336,6 +271,17 @@ export const WorkspaceService: GenService<{
     methodKind: "unary";
     input: typeof WriteOpenTabsRequestSchema;
     output: typeof WriteOpenTabsResponseSchema;
+  },
+  /**
+   * ReadOpenTabs returns the tabs last written for the vault in the window. The
+   * core keeps them across restarts, and the window opens them again.
+   *
+   * @generated from rpc numen.v1.WorkspaceService.ReadOpenTabs
+   */
+  readOpenTabs: {
+    methodKind: "unary";
+    input: typeof ReadOpenTabsRequestSchema;
+    output: typeof ReadOpenTabsResponseSchema;
   },
   /**
    * DetachTab asks that a tab be opened in a new window of its own.

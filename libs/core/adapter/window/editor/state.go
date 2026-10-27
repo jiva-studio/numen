@@ -80,6 +80,10 @@ type State struct {
 	// nobody.
 	NotifyOpenTabs func(domain.OpenTabs)
 
+	// OpenTabsStore keeps the open tabs of the vault across restarts. Nil keeps
+	// them for as long as the core runs.
+	OpenTabsStore windowport.OpenTabsStore
+
 	// DetachTab opens a tab in its own window at the given screen coordinates.
 	DetachTab func(context.Context, string, int, int) error
 

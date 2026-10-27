@@ -286,6 +286,7 @@ func createWindow(
 	services := createServices(state)
 	services.getPluginDir = made.GetPluginDir
 	state.EmitEvent = made.EmitEvent
+	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
 	services.readFiles(readers, made.OpenCopy())
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())

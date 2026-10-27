@@ -201,48 +201,56 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 // and what is put in front of them.
 type workspaceHandler struct{ state *State }
 
-// WriteOpenTabs takes what currently open, as the window last said it.
+// WriteOpenTabs takes what currently open, as the window last said it, and
+// keeps it for the vault in the window.
 //
 // It is the other direction to WatchFocus: a place is put in front of the
 // person there, and here the window says what is in front of them now.
 func (h *workspaceHandler) WriteOpenTabs(
-	_ context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
+	ctx context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	tabs := r.Msg.GetTabs()
 	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(tabs)), FrontID: r.Msg.GetFront()}
 	for _, one := range tabs {
-		tab := domain.Tab{
+		open.Tabs = append(open.Tabs, domain.Tab{
 			ID:    one.GetId(),
 			Kind:  one.GetKind(),
 			Path:  one.GetPath(),
 			Title: one.GetTitle(),
-		}
-		if doc := one.GetDocument(); doc != nil {
-			tab.Document = &domain.DocumentProgress{
-				Page:      int(doc.GetPage()),
-				PageCount: int(doc.GetPageCount()),
-			}
-		}
-		if book := one.GetBook(); book != nil {
-			tab.Book = &domain.BookProgress{
-				Offset:    int(book.GetOffset()),
-				Page:      int(book.GetPage()),
-				PageCount: int(book.GetPageCount()),
-			}
-		}
-		if rec := one.GetRecording(); rec != nil {
-			tab.Recording = &domain.RecordingProgress{
-				TranscribedDuration: int(rec.GetTranscribedDurationMs()),
-				Duration:            int(rec.GetDurationMs()),
-			}
-		}
-		open.Tabs = append(open.Tabs, tab)
+			State: one.GetState(),
+		})
 	}
 	h.state.openTabs.Store(&open)
 	if h.state.NotifyOpenTabs != nil {
 		h.state.NotifyOpenTabs(open)
 	}
+	if v := h.state.GetCurrentVault(); h.state.OpenTabsStore != nil && v.Path != "" {
+		if err := h.state.OpenTabsStore.WriteOpenTabs(ctx, v, open); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
+}
+
+// ReadOpenTabs returns the tabs kept for the vault in the window.
+func (h *workspaceHandler) ReadOpenTabs(
+	ctx context.Context, _ *connect.Request[v1.ReadOpenTabsRequest],
+) (*connect.Response[v1.ReadOpenTabsResponse], error) {
+	v := h.state.GetCurrentVault()
+	if h.state.OpenTabsStore == nil || v.Path == "" {
+		return connect.NewResponse(&v1.ReadOpenTabsResponse{}), nil
+	}
+	open, err := h.state.OpenTabsStore.ReadOpenTabs(ctx, v)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	out := &v1.ReadOpenTabsResponse{Tabs: make([]*v1.Tab, 0, len(open.Tabs)), Front: open.FrontID}
+	for _, one := range open.Tabs {
+		out.Tabs = append(out.Tabs, &v1.Tab{
+			Id: one.ID, Kind: one.Kind, Path: one.Path, Title: one.Title, State: one.State,
+		})
+	}
+	return connect.NewResponse(out), nil
 }
 
 // DetachTab asks that a tab be opened in a new window.

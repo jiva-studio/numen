@@ -3,6 +3,8 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
+
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
@@ -76,7 +78,11 @@ func (e EditorAssembly) GetVaultReaders() vaultport.VaultReaders { return e.cfg.
 func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters { return e.cfg.VaultWriters() }
 
 func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity { return e.cfg.VaultIdentity() }
-func (e EditorAssembly) GetClock() machineport.Clock               { return e.cfg.Clock() }
+func (e EditorAssembly) GetOpenTabsStore() windowport.OpenTabsStore {
+	return derivedfile.OpenTabsFiles{Options: e.cfg.vaultOptions()}
+}
+
+func (e EditorAssembly) GetClock() machineport.Clock { return e.cfg.Clock() }
 
 func (e EditorAssembly) GetNoteQueries() noteport.NoteQueries          { return e.db.Queries() }
 func (e EditorAssembly) GetLinkQueries() noteport.LinkQueries          { return e.db.Links() }

@@ -429,10 +429,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		Front: "two",
 		Tabs: []*v1.Tab{
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
-			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &v1.RecordingProgress{TranscribedDurationMs: 1000, DurationMs: 4000}},
-			{Id: "three", Kind: "book", Path: "Adi.epub", Title: "The Adi Parva",
-				Book: &v1.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
+			{Id: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
 		},
 	}))
 	if err != nil {
@@ -443,14 +440,56 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
-			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &domain.RecordingProgress{TranscribedDuration: 1000, Duration: 4000}},
-			{ID: "three", Kind: domain.TabBook, Path: "Adi.epub", Title: "The Adi Parva",
-				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
+			{ID: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
 		},
 	}
 	if got := state.GetOpenTabs(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window has %+v open", got)
+	}
+}
+
+// memoryTabs keeps the open tabs of each vault in memory.
+type memoryTabs map[domain.VaultID]domain.OpenTabs
+
+func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (domain.OpenTabs, error) {
+	return m[v.ID], nil
+}
+
+func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open domain.OpenTabs) error {
+	m[v.ID] = open
+	return nil
+}
+
+func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
+	store := memoryTabs{}
+	state := &State{OpenTabsStore: store}
+	state.setVault(domain.Vault{ID: "v", Path: t.TempDir()})
+	api := &workspaceHandler{state: state}
+
+	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
+		Front: "one",
+		Tabs:  []*v1.Tab{{Id: "one", Kind: "reader:viewer", Path: "a.bin", Title: "a", State: `{"page":3}`}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A core started again reads the store, not the tabs held in memory.
+	restarted := &workspaceHandler{state: &State{OpenTabsStore: store}}
+	restarted.state.setVault(state.GetCurrentVault())
+	got, err := restarted.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Msg.GetFront() != "one" || len(got.Msg.GetTabs()) != 1 || got.Msg.GetTabs()[0].GetState() != `{"page":3}` {
+		t.Errorf("read %+v", got.Msg)
+	}
+}
+
+func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
+	api := &workspaceHandler{state: &State{OpenTabsStore: memoryTabs{}}}
+	got, err := api.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
+	if err != nil || len(got.Msg.GetTabs()) != 0 {
+		t.Errorf("read %+v, %v", got.Msg, err)
 	}
 }
 

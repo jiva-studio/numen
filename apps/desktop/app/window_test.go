@@ -53,8 +53,8 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 			open: domain.OpenTabs{
 				FrontID: "two",
 				Tabs: []domain.Tab{
-					{ID: "one", Kind: domain.TabPlex, Path: "Entropy.md"},
-					{ID: "two", Kind: domain.TabNote, Path: "Reading/Order.md"},
+					{ID: "one", Kind: "plex", Path: "Entropy.md"},
+					{ID: "two", Kind: "note", Path: "Reading/Order.md"},
 				},
 			},
 			want: "numen — Order.md",

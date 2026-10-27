@@ -23,6 +23,9 @@ type VaultAssembly interface {
 
 	GetVaultIdentity() vaultport.VaultIdentity
 
+	// GetOpenTabsStore keeps the tabs the window has open on a vault across restarts.
+	GetOpenTabsStore() windowport.OpenTabsStore
+
 	// ReadWholeVault is what makes a vault answer: the notes read, the books
 	// read, and the vectors made.
 	ReadWholeVault(

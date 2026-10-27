@@ -44,6 +44,9 @@ const (
 	// WorkspaceServiceWriteOpenTabsProcedure is the fully-qualified name of the WorkspaceService's
 	// WriteOpenTabs RPC.
 	WorkspaceServiceWriteOpenTabsProcedure = "/numen.v1.WorkspaceService/WriteOpenTabs"
+	// WorkspaceServiceReadOpenTabsProcedure is the fully-qualified name of the WorkspaceService's
+	// ReadOpenTabs RPC.
+	WorkspaceServiceReadOpenTabsProcedure = "/numen.v1.WorkspaceService/ReadOpenTabs"
 	// WorkspaceServiceDetachTabProcedure is the fully-qualified name of the WorkspaceService's
 	// DetachTab RPC.
 	WorkspaceServiceDetachTabProcedure = "/numen.v1.WorkspaceService/DetachTab"
@@ -60,6 +63,9 @@ type WorkspaceServiceClient interface {
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
 	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
+	// ReadOpenTabs returns the tabs last written for the vault in the window. The
+	// core keeps them across restarts, and the window opens them again.
+	ReadOpenTabs(context.Context, *connect.Request[v1.ReadOpenTabsRequest]) (*connect.Response[v1.ReadOpenTabsResponse], error)
 	// DetachTab asks that a tab be opened in a new window of its own.
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
 }
@@ -87,6 +93,12 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(workspaceServiceMethods.ByName("WriteOpenTabs")),
 			connect.WithClientOptions(opts...),
 		),
+		readOpenTabs: connect.NewClient[v1.ReadOpenTabsRequest, v1.ReadOpenTabsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceReadOpenTabsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ReadOpenTabs")),
+			connect.WithClientOptions(opts...),
+		),
 		detachTab: connect.NewClient[v1.DetachTabRequest, v1.DetachTabResponse](
 			httpClient,
 			baseURL+WorkspaceServiceDetachTabProcedure,
@@ -100,6 +112,7 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 type workspaceServiceClient struct {
 	watchFocus    *connect.Client[v1.WatchFocusRequest, v1.WatchFocusResponse]
 	writeOpenTabs *connect.Client[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse]
+	readOpenTabs  *connect.Client[v1.ReadOpenTabsRequest, v1.ReadOpenTabsResponse]
 	detachTab     *connect.Client[v1.DetachTabRequest, v1.DetachTabResponse]
 }
 
@@ -111,6 +124,11 @@ func (c *workspaceServiceClient) WatchFocus(ctx context.Context, req *connect.Re
 // WriteOpenTabs calls numen.v1.WorkspaceService.WriteOpenTabs.
 func (c *workspaceServiceClient) WriteOpenTabs(ctx context.Context, req *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	return c.writeOpenTabs.CallUnary(ctx, req)
+}
+
+// ReadOpenTabs calls numen.v1.WorkspaceService.ReadOpenTabs.
+func (c *workspaceServiceClient) ReadOpenTabs(ctx context.Context, req *connect.Request[v1.ReadOpenTabsRequest]) (*connect.Response[v1.ReadOpenTabsResponse], error) {
+	return c.readOpenTabs.CallUnary(ctx, req)
 }
 
 // DetachTab calls numen.v1.WorkspaceService.DetachTab.
@@ -129,6 +147,9 @@ type WorkspaceServiceHandler interface {
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
 	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
+	// ReadOpenTabs returns the tabs last written for the vault in the window. The
+	// core keeps them across restarts, and the window opens them again.
+	ReadOpenTabs(context.Context, *connect.Request[v1.ReadOpenTabsRequest]) (*connect.Response[v1.ReadOpenTabsResponse], error)
 	// DetachTab asks that a tab be opened in a new window of its own.
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
 }
@@ -152,6 +173,12 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 		connect.WithSchema(workspaceServiceMethods.ByName("WriteOpenTabs")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workspaceServiceReadOpenTabsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceReadOpenTabsProcedure,
+		svc.ReadOpenTabs,
+		connect.WithSchema(workspaceServiceMethods.ByName("ReadOpenTabs")),
+		connect.WithHandlerOptions(opts...),
+	)
 	workspaceServiceDetachTabHandler := connect.NewUnaryHandler(
 		WorkspaceServiceDetachTabProcedure,
 		svc.DetachTab,
@@ -164,6 +191,8 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 			workspaceServiceWatchFocusHandler.ServeHTTP(w, r)
 		case WorkspaceServiceWriteOpenTabsProcedure:
 			workspaceServiceWriteOpenTabsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceReadOpenTabsProcedure:
+			workspaceServiceReadOpenTabsHandler.ServeHTTP(w, r)
 		case WorkspaceServiceDetachTabProcedure:
 			workspaceServiceDetachTabHandler.ServeHTTP(w, r)
 		default:
@@ -181,6 +210,10 @@ func (UnimplementedWorkspaceServiceHandler) WatchFocus(context.Context, *connect
 
 func (UnimplementedWorkspaceServiceHandler) WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.WriteOpenTabs is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) ReadOpenTabs(context.Context, *connect.Request[v1.ReadOpenTabsRequest]) (*connect.Response[v1.ReadOpenTabsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.ReadOpenTabs is not implemented"))
 }
 
 func (UnimplementedWorkspaceServiceHandler) DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error) {
