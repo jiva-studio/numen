@@ -21,6 +21,7 @@ import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
 import type { useSettings } from '../window/useSettings'
 import { createPathCommandHost, type PathCommandDeps } from './fileServices'
+import type { PluginNotes } from './pluginNotes'
 
 /** The window and the notes a plugin is given, once the window has made them. */
 export interface PluginServices {
@@ -95,12 +96,18 @@ export interface VaultNotesDeps {
   readonly core: Pick<NotePort, 'neighbourhood' | 'headings'>
   readonly search: Pick<SearchDeps, 'names'>
   readonly making: NoteCreator
+  readonly pluginNotes: PluginNotes
 }
 
 /** How many notes a search for a note to link to answers with, where the plugin names no number. */
 const FOUND_LIMIT = 20
 
-export function createVaultNotes({ core, search, making }: VaultNotesDeps): VaultNotes {
+export function createVaultNotes({
+  core,
+  search,
+  making,
+  pluginNotes,
+}: VaultNotesDeps): VaultNotes {
   return {
     getNeighbourhood: (path) => core.neighbourhood(path),
     getHeadings: (paths) => core.headings(paths),
@@ -111,6 +118,8 @@ export function createVaultNotes({ core, search, making }: VaultNotesDeps): Vaul
     createWithTitle: (title, from, relation) => making.createWithTitle(title, from, relation),
     join: (...link) => making.join(...link),
     replaceLinks: (first, second, links) => making.replaceLinks(first, second, links),
+    read: (path) => pluginNotes.readNote(path),
+    write: (path, body) => pluginNotes.writeNote(path, body),
     creatableRelations: CREATABLE,
   }
 }
@@ -118,7 +127,7 @@ export function createVaultNotes({ core, search, making }: VaultNotesDeps): Vaul
 /** What the agent a plugin's tabs ask is made from. */
 export interface AgentHostDeps {
   readonly port: AgentPort
-  readonly core: Pick<NotePort, 'resolve'>
+  readonly core: Pick<NotePort, 'resolveLinks'>
   readonly window: { readonly unreachable: Readonly<Ref<string>> }
   readonly settings: {
     readonly rest: Pick<
@@ -132,7 +141,7 @@ export function createAgentHost({ port, core, window, settings }: AgentHostDeps)
   return {
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
-    resolve: (content) => core.resolve('', content),
+    resolveLinks: (text) => core.resolveLinks('', text),
     getUnreachable: () => window.unreachable.value,
     getSetting: (path) => settings.rest.getSetting(path),
     writeSetting: (path, value) => settings.rest.writeSetting(path, value),

@@ -562,7 +562,10 @@ type ResolveAddressesRequest struct {
 	// The addresses to answer about. A scheme written before `://` is read as
 	// one — `name://Entropy`, `note://<identifier>` — and everything else is a
 	// name, so what a file carries between its brackets is taken currently.
-	Written       []string `protobuf:"bytes,2,rep,name=written,proto3" json:"written,omitempty"`
+	Written []string `protobuf:"bytes,2,rep,name=written,proto3" json:"written,omitempty"`
+	// A text whose wikilinks are answered about beside `written`. Each one is
+	// asked about by its address as `scheme://value`, the form `found` lists.
+	Text          string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -611,11 +614,21 @@ func (x *ResolveAddressesRequest) GetWritten() []string {
 	return nil
 }
 
+func (x *ResolveAddressesRequest) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 type ResolveAddressesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where each address lands, in the order they were asked about. One that
 	// reaches nothing is absent, and so is one asked about twice.
-	Resolved      []*ResolvedAddress `protobuf:"bytes,1,rep,name=resolved,proto3" json:"resolved,omitempty"`
+	Resolved []*ResolvedAddress `protobuf:"bytes,1,rep,name=resolved,proto3" json:"resolved,omitempty"`
+	// The addresses of the wikilinks in `text`, in the order they are written,
+	// each once, whether they reach a note or not.
+	Found         []string `protobuf:"bytes,2,rep,name=found,proto3" json:"found,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -653,6 +666,13 @@ func (*ResolveAddressesResponse) Descriptor() ([]byte, []int) {
 func (x *ResolveAddressesResponse) GetResolved() []*ResolvedAddress {
 	if x != nil {
 		return x.Resolved
+	}
+	return nil
+}
+
+func (x *ResolveAddressesResponse) GetFound() []string {
+	if x != nil {
+		return x.Found
 	}
 	return nil
 }
@@ -2117,12 +2137,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x1b\n" +
 	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\tR\x04type\x12#\n" +
-	"\rreverse_label\x18\a \x01(\tR\freverseLabel\"G\n" +
+	"\rreverse_label\x18\a \x01(\tR\freverseLabel\"[\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
-	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
+	"\awritten\x18\x02 \x03(\tR\awritten\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"g\n" +
 	"\x18ResolveAddressesResponse\x125\n" +
-	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\"\x97\x01\n" +
+	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\x12\x14\n" +
+	"\x05found\x18\x02 \x03(\tR\x05found\"\x97\x01\n" +
 	"\x0fResolvedAddress\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +

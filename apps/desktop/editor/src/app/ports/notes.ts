@@ -23,11 +23,11 @@ export interface NotePort {
    */
   headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   /**
-   * Where each of those addresses lands, by the address it was asked about. A
-   * name resolves by a path relative to the note it is written in, which is
-   * `from`; an address that reaches nothing is absent.
+   * The address of each wikilink in a text, read by the core, and the note it
+   * reaches: empty where it reaches none, or one in another vault. A name
+   * resolves by a path relative to the note it is written in, which is `from`.
    */
-  resolve(from: string, content: readonly string[]): Promise<ReadonlyMap<string, string>>
+  resolveLinks(from: string, text: string): Promise<ReadonlyMap<string, string>>
   /** A change being made to a note's prose, reported while it is being made. */
   watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */

@@ -1,18 +1,13 @@
 /**
- * The notes an answer names: when each is looked up, and which turns are drawn
- * again as the lookups come back.
+ * The notes an answer names: when the core is asked about a turn's wikilinks, and which turns are
+ * drawn again as the answers come back.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
-import * as ui from '@numen/ui'
 import type { Conversation, Turn } from '../thread'
 import { useAgentConversation } from './useAgentConversation'
 import type { Span } from '@numen/plugin-sdk'
-
-vi.mock('@numen/ui', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@numen/ui')>()
-  return { ...original, getWikilinks: vi.fn(original.getWikilinks) }
-})
+import { createLinkResolver } from '../fixtures/links'
 
 /** A line of an answer. */
 const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
@@ -28,24 +23,25 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
     stop: () => {},
     finish: () => {},
   }
-  const resolved: (readonly string[])[] = []
+  const requests: string[] = []
   const openedCalls: [string, readonly Span[]][] = []
   const besideItems: string[] = []
+  const resolveLinks = createLinkResolver(notes)
   const state = useAgentConversation(conversation, {
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
     openFileBeside: (path) => besideItems.push(path),
-    resolve: async (content) => {
-      resolved.push(content)
-      return new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
+    resolveLinks: (text) => {
+      requests.push(text)
+      return resolveLinks(text)
     },
     unreachable: () => '',
   })
-  return { state, turns, resolved, opened: openedCalls, besideItems }
+  return { state, turns, requests, opened: openedCalls, besideItems }
 }
 
-/** Lets the lookups come back and the turns be drawn. */
+/** Lets the answers come back and the turns be drawn. */
 const settle = async () => {
-  for (let step = 0; step < 4; step++) await nextTick()
+  for (let step = 0; step < 6; step++) await nextTick()
 }
 
 /** The text of a turn changed at its current position, as it grows while active. */
@@ -60,47 +56,47 @@ const createPress = () => {
 }
 
 describe('the notes an answer names', () => {
-  it('are looked up as soon as the tab is made over turns already returned', () => {
+  it('requests the links of existing turns on creation', () => {
     const one = open([turn('a', 'See [[Entropy]].')])
 
-    expect(one.resolved).toEqual([['name://Entropy']])
+    expect(one.requests).toEqual(['See [[Entropy]].'])
   })
 
-  it('are looked up once each, however many turns name them', async () => {
+  it('requests the links once per turn text', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     one.turns.value = [...one.turns.value, turn('b', 'And [[Entropy]] with [[Order]].')]
     await settle()
+    void one.state.turns.value
 
-    expect(one.resolved).toEqual([['name://Entropy'], ['name://Order']])
+    expect(one.requests).toEqual(['See [[Entropy]].', 'And [[Entropy]] with [[Order]].'])
   })
 
-  it('are looked up again when the last turn grows while it is being returned', async () => {
+  it('skips the request for a text without brackets', async () => {
+    const one = open([turn('a', 'Nothing named here.')])
+    await settle()
+
+    expect(one.requests).toEqual([])
+  })
+
+  it('requests the links again when the last turn grows', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     await settle()
 
     rewrite(one.turns.value[0]!, 'See [[Entropy]] and [[Order]].')
     await settle()
 
-    expect(one.resolved).toEqual([['name://Entropy'], ['name://Order']])
+    expect(one.requests).toEqual(['See [[Entropy]].', 'See [[Entropy]] and [[Order]].'])
   })
 
-  it('are read out of a turn once while its text stays the same', async () => {
-    vi.mocked(ui.getWikilinks).mockClear()
+  it('requests the latest text after the pending request completes', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
-    await settle()
-    void one.state.turns.value
-
-    expect(vi.mocked(ui.getWikilinks)).toHaveBeenCalledTimes(1)
-  })
-
-  it('are read out of a turn again when its text changes', async () => {
-    const one = open([turn('a', 'See [[Entropy]].')])
-    await settle()
 
     rewrite(one.turns.value[0]!, 'See [[Order]].')
+    one.turns.value = [...one.turns.value]
     await settle()
 
-    expect(one.resolved.at(-1)).toEqual(['name://Order'])
+    expect(one.requests).toEqual(['See [[Entropy]].', 'See [[Order]].'])
+    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Order'])
   })
 })
 
@@ -155,12 +151,21 @@ describe('a link inside an answer', () => {
     ])
   })
 
-  it('opens no note for an address that is not a note', async () => {
-    const one = open([turn('a', 'See [[web://page]].')], { 'web://page': 'Page.md' })
+  it('opens the target note of a wikilink in the adjacent pane', async () => {
+    const one = open([turn('a', 'See [[Entropy]].')], { 'name://Entropy': 'Entropy.md' })
+    await settle()
+
+    one.state.followLink(one.turns.value[0]!, 'name://Entropy', createPress().press)
+
+    expect(one.besideItems).toEqual(['Entropy.md'])
+  })
+
+  it('opens no note for an address the core reached no note for', async () => {
+    const one = open([turn('a', 'See [[Nowhere]].')])
     await settle()
     const press = createPress()
 
-    one.state.followLink(one.turns.value[0]!, 'web://page', press.press)
+    one.state.followLink(one.turns.value[0]!, 'name://Nowhere', press.press)
 
     expect(one.besideItems).toEqual([])
     expect(press.was()).toBe(false)

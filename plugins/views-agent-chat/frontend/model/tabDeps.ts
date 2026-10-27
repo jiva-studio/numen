@@ -15,7 +15,7 @@ export function createAgentTabDeps({ workspace, agent }: AgentChatHost): AgentTa
   return {
     openFileAt: (path, ...spans) => workspace.openFileAt(path, spans),
     openFileBeside: (path) => workspace.openFile(path, { placement: 'beside' }),
-    resolve: (content) => agent.resolve(content),
+    resolveLinks: (text) => agent.resolveLinks(text),
     unreachable: () => agent.getUnreachable(),
     writeSetting: (path, value) => agent.writeSetting(path, value),
     getSetting: (path) => agent.getSetting(path),

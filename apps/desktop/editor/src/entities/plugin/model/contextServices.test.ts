@@ -28,6 +28,7 @@ const createServices = () => {
     createWithTitle: vi.fn(() => Promise.resolve(null)),
     join: vi.fn(() => Promise.resolve(true)),
     replaceLinks: vi.fn(() => Promise.resolve(true)),
+    write: vi.fn(() => Promise.resolve()),
   } as unknown as VaultNotes
   const files = {
     list: vi.fn(() => Promise.resolve([])),
@@ -38,7 +39,7 @@ const createServices = () => {
   const agent = {
     ask: vi.fn(),
     finish: vi.fn(() => Promise.resolve()),
-    resolve: vi.fn(() => Promise.resolve(new Map())),
+    resolveLinks: vi.fn(() => Promise.resolve(new Map())),
     getUnreachable: vi.fn(() => ''),
     getSetting: vi.fn(),
     writeSetting: vi.fn(() => Promise.resolve()),
@@ -77,6 +78,7 @@ const NOTE_WRITES: Record<string, Call> = {
   createWithTitle: (c) => c.notes!.createWithTitle('T', 'a.md', 'child'),
   join: (c) => c.notes!.join('a.md', 'b.md', 'child'),
   replaceLinks: (c) => c.notes!.replaceLinks('a.md', 'b.md', []),
+  write: (c) => c.notes!.write('a.md', 'Prose.'),
 }
 
 const FILE_WRITES: Record<string, Call> = {
@@ -245,7 +247,7 @@ const ASKING: Record<string, [string, Call]> = {
       }),
   ],
   finish: ['vault:read', (c) => getAgent(c).finish('c')],
-  resolve: ['vault:read', (c) => getAgent(c).resolve(['name://A'])],
+  resolveLinks: ['vault:read', (c) => getAgent(c).resolveLinks('[[A]]')],
 }
 
 describe('the agent a plugin asks', () => {
@@ -267,7 +269,7 @@ describe('the agent a plugin asks', () => {
 
       await call(context)
 
-      expect(agent[name as 'ask' | 'finish' | 'resolve']).toHaveBeenCalled()
+      expect(agent[name as 'ask' | 'finish' | 'resolveLinks']).toHaveBeenCalled()
     },
   )
 

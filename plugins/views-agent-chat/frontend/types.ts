@@ -7,7 +7,7 @@ import type { AgentModel, Span } from '@numen/plugin-sdk'
 export interface AgentTabDeps {
   openFileAt(path: string, ...spans: readonly Span[]): void
   openFileBeside(path: string): void
-  resolve(content: readonly string[]): Promise<ReadonlyMap<string, string>>
+  resolveLinks(text: string): Promise<ReadonlyMap<string, string>>
   unreachable(): string
   writeSetting?(path: readonly string[], value: unknown): Promise<void>
   getSetting?(path: readonly string[]): unknown

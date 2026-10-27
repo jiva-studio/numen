@@ -29,7 +29,7 @@ export type NoteOperations = Pick<
   | 'replaceLinks'
   | 'rename'
   | 'headings'
-  | 'resolve'
+  | 'resolveLinks'
 > &
   Pick<VaultPort, 'getInitialOpenPath'>
 
@@ -101,10 +101,11 @@ export const notesCore: NoteOperations = {
       ]),
     )
   },
-  resolve: async (from, writtenAddresses) => {
-    const answer = await notes.resolveAddresses({ from, written: [...writtenAddresses] })
-    return new Map(
+  resolveLinks: async (from, text) => {
+    const answer = await notes.resolveAddresses({ from, text })
+    const paths = new Map(
       answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.written, one.path]),
     )
+    return new Map(answer.found.map((address) => [address, paths.get(address) ?? '']))
   },
 }

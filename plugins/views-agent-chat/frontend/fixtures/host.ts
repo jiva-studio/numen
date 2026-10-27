@@ -12,6 +12,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AgentChatHost } from '../model/tabDeps'
+import { createLinkResolver } from './links'
 
 export interface HostOptions {
   /** The note the window relies on. */
@@ -39,7 +40,7 @@ export function createHost({
     openedAt: [] as [string, readonly Span[]][],
     settings: [] as [readonly string[], unknown][],
     finished: [] as string[],
-    resolved: [] as (readonly string[])[],
+    resolved: [] as string[],
     questions: [] as string[],
   }
 
@@ -58,9 +59,9 @@ export function createHost({
   const agent: AgentHost = {
     ask: async function* () {},
     finish: async (conversation) => void recorded.finished.push(conversation),
-    resolve: async (content) => {
-      recorded.resolved.push(content)
-      return new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!]))
+    resolveLinks: async (text) => {
+      recorded.resolved.push(text)
+      return createLinkResolver(notes)(text)
     },
     getUnreachable: () => unreachable,
     getSetting: (path) => settings[path.join('.')],

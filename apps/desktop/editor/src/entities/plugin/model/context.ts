@@ -74,6 +74,10 @@ function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void
       requireWrite('notes.replaceLinks')
       return notes.replaceLinks(first, second, links)
     },
+    write: async (path, body) => {
+      requireWrite('notes.write')
+      return notes.write(path, body)
+    },
   }
 }
 
@@ -143,9 +147,9 @@ function guardAgent(
       requirePerm('vault:read', 'agent.finish')
       return agent.finish(conversation)
     },
-    resolve: (content) => {
-      requirePerm('vault:read', 'agent.resolve')
-      return agent.resolve(content)
+    resolveLinks: (text) => {
+      requirePerm('vault:read', 'agent.resolveLinks')
+      return agent.resolveLinks(text)
     },
   }
 }

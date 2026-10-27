@@ -36,7 +36,7 @@ const open = (models: readonly Model[] = [], settings: Record<string, string> = 
   useAgentConversation(createConversation(), {
     openFileAt: () => {},
     openFileBeside: () => {},
-    resolve: async () => new Map(),
+    resolveLinks: async () => new Map(),
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
     getModelsAt: (categoryPath) =>

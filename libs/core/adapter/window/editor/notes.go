@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -13,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
 // ReadNote hands the client the prose of a note.
@@ -281,8 +284,9 @@ func (h *noteHandler) GetNeighbourhood(
 	return connect.NewResponse(out), nil
 }
 
-// ResolveAddresses answers where addresses written in one note land. An address
-// that reaches nothing is left out of the answer.
+// ResolveAddresses answers where addresses written in one note land, and where
+// the wikilinks of a text land. An address that reaches nothing is left out of
+// the resolved ones.
 func (h *noteHandler) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
@@ -290,16 +294,18 @@ func (h *noteHandler) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.resolveLinks.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetWritten())
+	inText := getWikilinkAddresses(r.Msg.GetText())
+	requested := append(slices.Clone(r.Msg.GetWritten()), inText...)
+	found, err := h.resolveLinks.Execute(ctx, showing, r.Msg.GetFrom(), requested)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	// In the order they were asked about, and an address asked about twice is
 	// one answer.
-	out := &v1.ResolveAddressesResponse{}
+	out := &v1.ResolveAddressesResponse{Found: inText}
 	observed := make(map[string]bool, len(found))
-	for _, content := range r.Msg.GetWritten() {
+	for _, content := range requested {
 		one, reached := found[content]
 		if !reached || observed[content] {
 			continue
@@ -563,4 +569,22 @@ func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,
 	}
+}
+
+// getWikilinkAddresses is the address of each wikilink in a text, in the order
+// they are written, each once.
+func getWikilinkAddresses(text string) []string {
+	var out []string
+	isListed := map[string]bool{}
+	for line := range strings.SplitSeq(text, "\n") {
+		for _, link := range markdown.WikilinksIn(line) {
+			address := link.Target.String()
+			if isListed[address] {
+				continue
+			}
+			isListed[address] = true
+			out = append(out, address)
+		}
+	}
+	return out
 }

@@ -35,7 +35,7 @@ export function createWindowAgent(client: WindowAgentClient): {
   const agent: AgentHost = {
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
-    resolve: async () => new Map(),
+    resolveLinks: async () => new Map(),
     getUnreachable: () => unreachable.value,
     getSetting: () => undefined,
     writeSetting: async () => {

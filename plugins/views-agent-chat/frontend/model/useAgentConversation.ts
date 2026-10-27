@@ -2,7 +2,6 @@
  * Conversation state for agent tabs.
  */
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
-import { isNoteAddress, getWikilinks } from '@numen/ui'
 import type { AgentModelOption } from '../message-composer'
 import type { Conversation, Turn } from '../thread'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../lib/links'
@@ -162,36 +161,54 @@ function createConversationLinkFollower(
       )
       return
     }
-    if (!isNoteAddress(href)) return
     const path = getResolved(href)
     if (path) deps.openFileBeside(path)
   }
 }
 
+/** The wikilink addresses of one turn, read by the core from the turn's text. */
+interface TurnLinks {
+  readonly text: string
+  readonly addresses: readonly string[]
+}
+
 function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps) {
   const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
-  const pendingAddresses = new Set<string>()
-  const addressCache = new Map<string, { text: string; addresses: readonly string[] }>()
+  const linksByTurn = shallowRef<ReadonlyMap<string, TurnLinks>>(new Map())
+  // A turn has at most one request in flight; a text that changes meanwhile is asked about after it.
+  const pendingTurns = new Set<string>()
   const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
 
-  const resolveAddresses = (addresses: readonly string[]) => {
-    const newAddresses = addresses.filter((one) => !pendingAddresses.has(one))
-    if (!newAddresses.length) return
-    for (const one of newAddresses) pendingAddresses.add(one)
-    void deps.resolve(newAddresses).then((found) => {
-      const next = new Map(resolvedAddresses.value)
-      for (const one of newAddresses) next.set(one, found.get(one) ?? '')
-      resolvedAddresses.value = next
-    })
+  const resolveTurn = (turn: Turn) => {
+    if (pendingTurns.has(turn.id) || linksByTurn.value.get(turn.id)?.text === turn.text) return
+    // A text without `[[` holds no wikilink, and the core is not asked about it.
+    if (!turn.text.includes('[[')) {
+      linksByTurn.value = new Map(linksByTurn.value).set(turn.id, {
+        text: turn.text,
+        addresses: [],
+      })
+      return
+    }
+    pendingTurns.add(turn.id)
+    const { id, text } = turn
+    void deps
+      .resolveLinks(text)
+      .then((found) => {
+        resolvedAddresses.value = new Map([...resolvedAddresses.value, ...found])
+        linksByTurn.value = new Map(linksByTurn.value).set(id, {
+          text,
+          addresses: [...found.keys()],
+        })
+      })
+      .finally(() => {
+        pendingTurns.delete(id)
+        const current = conversation.turns.value.find((one) => one.id === id)
+        if (current && current.text !== text) resolveTurn(current)
+      })
   }
 
-  const getTurnAddresses = (turn: Turn): readonly string[] => {
-    const cached = addressCache.get(turn.id)
-    if (cached && cached.text === turn.text) return cached.addresses
-    const addresses = getWikilinks(turn.text).map((one) => one.address)
-    addressCache.set(turn.id, { text: turn.text, addresses })
-    return addresses
-  }
+  const getTurnAddresses = (turn: Turn): readonly string[] =>
+    linksByTurn.value.get(turn.id)?.addresses ?? []
 
   watch(
     () => {
@@ -199,7 +216,9 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
       const last = all[all.length - 1]
       return [all.length, last?.id, last?.text, last?.state]
     },
-    () => resolveAddresses(conversation.turns.value.flatMap((turn) => getTurnAddresses(turn))),
+    () => {
+      for (const turn of conversation.turns.value) resolveTurn(turn)
+    },
     { immediate: true },
   )
 

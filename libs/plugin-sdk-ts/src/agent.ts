@@ -65,8 +65,9 @@ export interface AgentPort {
 
 // AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.
 export interface AgentHost extends AgentPort {
-  // The vault path each written name stands for, and empty where a name stands for none.
-  resolve(content: readonly string[]): Promise<ReadonlyMap<string, string>>
+  // The address of each wikilink in a text, as `scheme://value`, and the vault path it reaches:
+  // empty where it reaches none. The core reads the wikilinks out of the text.
+  resolveLinks(text: string): Promise<ReadonlyMap<string, string>>
   // Why the agent cannot be reached, and empty where it can.
   getUnreachable(): string
   getSetting(path: readonly string[]): unknown

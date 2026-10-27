@@ -145,7 +145,7 @@ describe('the window a plugin opens files and reads the note in focus through', 
 describe('the agent a plugin is handed', () => {
   const create = () => {
     const port = { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) }
-    const core = { resolve: vi.fn(() => Promise.resolve(new Map([['name://A', 'A.md']]))) }
+    const core = { resolveLinks: vi.fn(() => Promise.resolve(new Map([['name://A', 'A.md']]))) }
     const rest = {
       getSetting: vi.fn(() => 'zeta'),
       writeSetting: vi.fn(() => Promise.resolve()),
@@ -172,11 +172,11 @@ describe('the agent a plugin is handed', () => {
     expect(port.finish).toHaveBeenCalledWith('c:1')
   })
 
-  it('resolves the names an answer writes from the top of the vault', async () => {
+  it('resolves the wikilinks of an answer from the top of the vault', async () => {
     const { agent, core } = create()
 
-    expect([...(await agent.resolve(['name://A']))]).toStrictEqual([['name://A', 'A.md']])
-    expect(core.resolve).toHaveBeenCalledWith('', ['name://A'])
+    expect([...(await agent.resolveLinks('See [[A]].'))]).toStrictEqual([['name://A', 'A.md']])
+    expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].')
   })
 
   it('says why the agent cannot be reached while the window says it', () => {
@@ -224,8 +224,28 @@ describe('the notes of the vault a plugin is handed', () => {
         ]),
       ),
     }
-    return { making, core, search, notes: createVaultNotes({ core, search, making }) }
+    const pluginNotes = {
+      readNote: vi.fn(() => Promise.resolve({ body: 'Prose.' })),
+      writeNote: vi.fn(() => Promise.resolve()),
+    }
+    return {
+      making,
+      core,
+      search,
+      pluginNotes,
+      notes: createVaultNotes({ core, search, making, pluginNotes }),
+    }
   }
+
+  it('reads and writes the prose of a note through the queue of the plugins', async () => {
+    const { notes, pluginNotes } = createNotes()
+
+    expect(await notes.read('Root.md')).toStrictEqual({ body: 'Prose.' })
+    await notes.write('Root.md', 'More prose.')
+
+    expect(pluginNotes.readNote).toHaveBeenCalledWith('Root.md')
+    expect(pluginNotes.writeNote).toHaveBeenCalledWith('Root.md', 'More prose.')
+  })
 
   it('reads what is around a note and the headings of notes', async () => {
     const { notes, core } = createNotes()

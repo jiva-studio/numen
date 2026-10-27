@@ -40,8 +40,6 @@ const request = {
   listFileKinds: vi.fn(),
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
-  readSettingsFile: vi.fn(),
-  writeSettingsFile: vi.fn(),
   getVaultState: vi.fn(),
   getAgentState: vi.fn(),
   writeOpenTabs: vi.fn(),
@@ -172,13 +170,6 @@ describe('settings domain', () => {
     const config = await core.getSettings()
     expect(config.path).toBe('settings.json')
     await core.updateSettings([])
-
-    request.readSettingsFile.mockResolvedValue({ written: 'raw', path: 'settings.json' })
-    request.writeSettingsFile.mockResolvedValue({})
-    const file = await core.getSettingsFile()
-    expect(file.written).toBe('raw')
-    const saved = await core.saveSettingsFile('raw2', null)
-    expect(saved.isChanged).toBe(false)
   })
 })
 
@@ -210,10 +201,11 @@ describe('notes domain', () => {
     expect(heads.get('a.md')?.[0]?.text).toBe('H1')
 
     request.resolveAddresses.mockResolvedValue({
-      resolved: [{ written: 'B', path: 'b.md', crossed: false }],
+      found: ['name://B'],
+      resolved: [{ written: 'name://B', path: 'b.md', isCrossed: false }],
     })
-    const res = await core.resolve('a.md', ['B'])
-    expect(res.get('B')).toBe('b.md')
+    const res = await core.resolveLinks('a.md', '[[B]]')
+    expect(res.get('name://B')).toBe('b.md')
   })
 })
 

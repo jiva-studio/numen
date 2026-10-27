@@ -30,13 +30,16 @@ describe('what an agent tab asks of the window', () => {
     expect(recorded.opened).toStrictEqual([['Note.md', { placement: 'beside' }]])
   })
 
-  it('resolves the names an answer writes through the agent', async () => {
+  it('resolves the wikilinks of an answer through the agent', async () => {
     const { host, recorded } = createHost({ notes: { 'name://Plan': 'Ideas/Plan.md' } })
 
-    const found = await createAgentTabDeps(host).resolve(['name://Plan', 'name://Nowhere'])
+    const found = await createAgentTabDeps(host).resolveLinks('[[Plan]] and [[Nowhere]]')
 
-    expect([...found]).toStrictEqual([['name://Plan', 'Ideas/Plan.md']])
-    expect(recorded.resolved).toStrictEqual([['name://Plan', 'name://Nowhere']])
+    expect([...found]).toStrictEqual([
+      ['name://Plan', 'Ideas/Plan.md'],
+      ['name://Nowhere', ''],
+    ])
+    expect(recorded.resolved).toStrictEqual(['[[Plan]] and [[Nowhere]]'])
   })
 
   it('says why the agent cannot be reached', () => {

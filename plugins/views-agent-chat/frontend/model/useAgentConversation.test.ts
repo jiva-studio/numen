@@ -9,6 +9,7 @@ import { nextTick, ref, shallowRef } from 'vue'
 import type { Conversation, Turn } from '../thread'
 import type { AgentModel, Span } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
+import { createLinkResolver } from '../fixtures/links'
 
 type Model = AgentModel & { readonly nameAt: readonly string[] }
 
@@ -44,8 +45,7 @@ const tab = (
   const state = useAgentConversation(fake.conversation, {
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
     openFileBeside: (path) => besideItems.push(path),
-    resolve: async (content) =>
-      new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
+    resolveLinks: createLinkResolver(notes),
     unreachable: () => '',
   })
   return { state, opened: openedCalls, besideItems, ...fake }
@@ -188,7 +188,7 @@ describe('agent model selection and settings', () => {
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
       openFileBeside: () => {},
-      resolve: async () => new Map(),
+      resolveLinks: async () => new Map(),
       unreachable: () => '',
       writeSetting: async (path, value) => {
         content.push([path, value])
@@ -229,7 +229,7 @@ describe('agent model selection and settings', () => {
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
       openFileBeside: () => {},
-      resolve: async () => new Map(),
+      resolveLinks: async () => new Map(),
       unreachable: () => '',
       getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),
       getModelsAt: (categoryPath) =>

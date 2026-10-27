@@ -755,6 +755,30 @@ func TestAnAddressIsAnsweredWithTheNoteItReaches(t *testing.T) {
 	}
 }
 
+func TestResolveAddressesFindsTheWikilinksOfAText(t *testing.T) {
+	client, _ := openVault(t, map[string]string{
+		"physics/Entropy.md": "---\ntitle: Entropy\n---\n\nheat\n",
+	})
+
+	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
+		Text: "See [[Entropy]] and [[Nowhere|elsewhere]].\nAgain [[Entropy#Heat]], not `[[]]`.",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := answer.Msg.GetFound(), []string{"name://Entropy", "name://Nowhere"}; !slices.Equal(got, want) {
+		t.Errorf("found %q, want %q", got, want)
+	}
+	landed := getResolved(t, answer.Msg)
+	if got := landed["name://Entropy"].GetPath(); got != "physics/Entropy.md" {
+		t.Errorf("the link reaches %q", got)
+	}
+	if one, isFound := landed["name://Nowhere"]; isFound {
+		t.Errorf("a name no note answers to lands at %q", one.GetPath())
+	}
+}
+
 func TestANameReachesTheNoteAdjacentTheOneItIsSavedIn(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"heat/Entropy.md":  "---\ntitle: Entropy\n---\n\nheat\n",
