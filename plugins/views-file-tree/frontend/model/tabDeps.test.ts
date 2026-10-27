@@ -109,3 +109,35 @@ describe('what else a files tab asks of the window', () => {
     expect(deps.getEntryIcon(null, false)).toBeDefined()
   })
 })
+
+describe('data dropped from outside the window', () => {
+  it('calls the drop host with the folder and data', async () => {
+    const { host } = createHost()
+    const dropped: string[] = []
+    const deps = createFilesTabDeps(
+      {
+        ...host,
+        drops: {
+          canDrop: (types) => types.includes('text/uri-list'),
+          drop: async (folder, data) => {
+            dropped.push(`${folder} ${data['text/uri-list']}`)
+            return [`${folder}/clip.md`]
+          },
+        },
+      },
+      'files',
+    )
+
+    expect(deps.canDropData(['text/uri-list'])).toBe(true)
+    expect(await deps.dropData('talks', { 'text/uri-list': 'https://video.test/clip' })).toEqual([
+      'talks/clip.md',
+    ])
+    expect(dropped).toEqual(['talks https://video.test/clip'])
+  })
+
+  it('returns no paths without a drop host', async () => {
+    const deps = createFilesTabDeps(createHost().host, 'files')
+    expect(deps.canDropData(['text/uri-list'])).toBe(false)
+    expect(await deps.dropData('', { 'text/uri-list': 'https://video.test/clip' })).toEqual([])
+  })
+})

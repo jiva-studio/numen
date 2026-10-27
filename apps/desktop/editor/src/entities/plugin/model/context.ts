@@ -8,6 +8,7 @@ import type {
   CommandRegistration,
   ContextMenuRegistration,
   Disposable,
+  DropRegistration,
   FileSelectEvent,
   PluginContext,
   PluginManifest,
@@ -255,6 +256,8 @@ export function createPluginContext(
       const view = host.mountView(capability, element, context)
       return { focus: () => view.focus(), ...add(view) }
     },
+    registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
+    drops: host.drops,
     getSetting: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
     onSettingChange: <T = unknown>(key: string, h: (v: T) => void) =>
       add(host.onSettingChange<T>(pluginId, key, h)),

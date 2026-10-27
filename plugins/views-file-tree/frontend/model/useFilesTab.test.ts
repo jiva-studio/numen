@@ -86,6 +86,11 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       if (fails) return ''
       return createdItem
     },
+    canDropData: (types) => types.includes('text/uri-list'),
+    dropData: async (folderPath, data) => {
+      isDone.push(`drops into ${folderPath === ROOT ? '/' : folderPath} ${data['text/uri-list']}`)
+      return []
+    },
     showError: (text) => void isDone.push(`says ${text}`),
   })
   return { recorded: isDone, list, one: gestures, requests: request, sources, folders }
@@ -286,6 +291,8 @@ describe('rows release', () => {
       setDraggedPaths: () => {},
       createFolder: async () => {},
       createNote: async () => '',
+      canDropData: () => false,
+      dropData: async () => [],
       showError: () => {},
     })
     await list.openFolder(ROOT)

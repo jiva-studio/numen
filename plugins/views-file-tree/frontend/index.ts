@@ -14,11 +14,13 @@ export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, files } = context
+  const { workspace, files, drops } = context
   if (!workspace || !files) {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }
-  const trees = createFilesKind({ workspace, files }, () => useFileTree(files))
+  const trees = createFilesKind({ workspace, files, ...(drops ? { drops } : {}) }, () =>
+    useFileTree(files),
+  )
   context.registerTabKind(trees.kind)
   context.onVaultChange((event) => trees.refresh(event))
 

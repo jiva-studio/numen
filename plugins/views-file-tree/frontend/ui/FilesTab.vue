@@ -8,6 +8,7 @@ import type { Position, RowMarker } from '@numen/ui'
 
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
+import { getDragTypes, readDroppedData } from '../lib/drag'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -40,6 +41,17 @@ onMounted(() => globalThis.addEventListener('focus', refreshTree))
 onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 
 /* -------------------------------- Handlers -------------------------------- */
+function onDragOver(event: DragEvent) {
+  if (props.state.canDropData(getDragTypes(event.dataTransfer))) event.preventDefault()
+}
+
+function onDrop(event: DragEvent) {
+  const types = getDragTypes(event.dataTransfer)
+  if (!props.state.canDropData(types)) return
+  event.preventDefault()
+  void props.state.dropData(readDroppedData(event.dataTransfer))
+}
+
 function onOpenEntry(row: string) {
   props.state.open(row)
 }
@@ -99,7 +111,7 @@ function getItemIcon(id: string): Component | null {
 </script>
 
 <template>
-  <div class="files">
+  <div class="files" @dragover="onDragOver" @drop="onDrop">
     <p v-if="props.state.list.errorMessage.value" class="caution">
       {{ props.state.list.errorMessage.value }}
     </p>

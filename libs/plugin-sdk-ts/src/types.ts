@@ -1,5 +1,6 @@
 import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
+import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { Selector, TextInput, VaultTexts } from './texts'
@@ -266,6 +267,10 @@ export interface PluginContext {
   readonly notices?: NoticeHost
   // The tasks the plugins report, where the host offers them.
   readonly tasks?: TaskHost
+  // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
+  registerDropHandler?(registration: DropRegistration): Disposable
+  // Hands a drop to the plugin that takes it, where the host offers drops.
+  readonly drops?: DropHost
 }
 
 // PluginManifest describes the metadata in manifest.json.

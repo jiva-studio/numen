@@ -19,3 +19,4 @@ export {
   type StyleRoot,
 } from './styles'
 export { createViewRegistry, type ViewRegistry } from './views'
+export { createDropRegistry } from './drops'

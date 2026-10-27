@@ -42,6 +42,11 @@ const mountFiles = async (open: readonly string[] = []) => {
     setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => void isDone.push(`makes ${path}`),
     createNote: async (folderPath) => `${folderPath}Untitled note.md`,
+    canDropData: (types) => types.includes('text/uri-list'),
+    dropData: async (folderPath, data) => {
+      isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
+      return []
+    },
     showError: (text) => void isDone.push(`says ${text}`),
   })
   await list.openFolder(ROOT)
@@ -257,6 +262,8 @@ describe('a folder that could not be read', () => {
       setDraggedPaths: () => {},
       createFolder: async () => {},
       createNote: async () => '',
+      canDropData: () => false,
+      dropData: async () => [],
       showError: () => {},
     })
     await list.openFolder(ROOT)
@@ -271,5 +278,24 @@ describe('a folder that could not be read', () => {
     const { window } = await mountFiles()
 
     expect(window.find('.caution').exists()).toBe(false)
+  })
+})
+
+describe('an address dropped on the files tab', () => {
+  it('goes to the plugin that takes it, into the folder of the selection', async () => {
+    const { recorded, window } = await mountFiles()
+    const dataTransfer = {
+      types: ['text/uri-list'],
+      getData: (type: string) => (type === 'text/uri-list' ? 'https://video.test/clip' : ''),
+    }
+    await window.find('.files').trigger('drop', { dataTransfer })
+    expect(recorded).toContain('drops into / https://video.test/clip')
+  })
+
+  it('is left to the window where it carries files alone', async () => {
+    const { recorded, window } = await mountFiles()
+    const dataTransfer = { types: ['Files'], getData: () => '' }
+    await window.find('.files').trigger('drop', { dataTransfer })
+    expect(recorded.some((one) => one.startsWith('drops into'))).toBe(false)
   })
 })

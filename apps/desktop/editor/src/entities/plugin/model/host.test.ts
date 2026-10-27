@@ -347,4 +347,20 @@ describe('createPluginHost', () => {
 
     expect(panel.textContent).toBe('')
   })
+
+  it('routes a drop to the handler another plugin registered until it is disposed', async () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+    host.createContext('md.numen.links').registerDropHandler?.({
+      types: ['text/uri-list'],
+      drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
+    })
+    const drops = host.createContext('md.numen.views.file.tree').drops
+
+    expect(drops?.canDrop(['text/uri-list'])).toBe(true)
+    expect(await drops?.drop('talks', { 'text/uri-list': 'clip' })).toEqual(['talks/clip.md'])
+
+    host.disposePlugin('md.numen.links')
+    expect(drops?.canDrop(['text/uri-list'])).toBe(false)
+  })
 })

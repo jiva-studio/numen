@@ -2,7 +2,7 @@
  * Type declarations for the files tab domain.
  */
 import type { Component, Ref } from 'vue'
-import type { MenuEntry, PathMenuRow, PathRename, VaultEntry } from '@numen/plugin-sdk'
+import type { DroppedData, MenuEntry, PathMenuRow, PathRename, VaultEntry } from '@numen/plugin-sdk'
 
 /** One file or folder of the vault, as a row of the tree stands for it. */
 export type Entry = VaultEntry
@@ -49,6 +49,10 @@ export interface FilesTabDeps {
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>
   createNote(folder: string): Promise<string>
+  /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
+  canDropData(types: readonly string[]): boolean
+  /** Hands data dropped into the folder to the plugin that takes it; answers what it made. */
+  dropData(folder: string, data: DroppedData): Promise<readonly string[]>
   showError(text: string): void
   /** The window's commands over a row, in the order the menu draws them. */
   getPathCommands(row: PathMenuRow): readonly MenuEntry[]
@@ -95,6 +99,10 @@ export interface FilesTabState {
   remove(paths: readonly string[]): void
   createFolder(path: string | null): Promise<void>
   createNote(path: string | null): Promise<void>
+  /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
+  canDropData(types: readonly string[]): boolean
+  /** Hands data dropped on the tree to the plugin that takes it, into the folder of the selection. */
+  dropData(data: DroppedData): Promise<readonly string[]>
   openMenu(request: MenuRequest): void
   dismissMenu(): void
   chooseMenuItem(id: string): void

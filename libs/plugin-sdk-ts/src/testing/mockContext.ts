@@ -11,6 +11,7 @@ import type {
   VaultChangeEvent,
 } from '../types'
 import type { MountedView, ViewRegistration } from '../views'
+import type { DropRegistration } from '../drops'
 
 // MockMountedView records one mountView call of a plugin under test, and whether its view was disposed.
 export interface MockMountedView {
@@ -29,6 +30,7 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredContextMenus(): ContextMenuRegistration[]
   getRegisteredAgentProviders(): AgentProviderRegistration[]
   getRegisteredViews(): ViewRegistration[]
+  getRegisteredDropHandlers(): DropRegistration[]
   getMountedViews(): MockMountedView[]
   triggerCommand(commandId: string, note?: CommandNote): Promise<void>
   setSetting<T = unknown>(key: string, value: T): void
@@ -49,6 +51,7 @@ export function createMockPluginContext(
   const contextMenus: ContextMenuRegistration[] = []
   const agentProviders: AgentProviderRegistration[] = []
   const views: ViewRegistration[] = []
+  const drops: DropRegistration[] = []
   const mounted: MockMountedView[] = []
   const settings = new Map<string, unknown>(Object.entries(initialValues?.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: unknown) => void>>()
@@ -137,6 +140,16 @@ export function createMockPluginContext(
         },
       }
       return addDisposable(disposable)
+    },
+
+    registerDropHandler(registration: DropRegistration): Disposable {
+      drops.push(registration)
+      return addDisposable({
+        dispose: () => {
+          const idx = drops.indexOf(registration)
+          if (idx !== -1) drops.splice(idx, 1)
+        },
+      })
     },
 
     registerView(registration: ViewRegistration): Disposable {
@@ -265,6 +278,10 @@ export function createMockPluginContext(
 
     getRegisteredViews(): ViewRegistration[] {
       return [...views]
+    },
+
+    getRegisteredDropHandlers(): DropRegistration[] {
+      return [...drops]
     },
 
     getMountedViews(): MockMountedView[] {

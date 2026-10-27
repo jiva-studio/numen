@@ -39,6 +39,8 @@ describe('PluginContext', () => {
       }),
       registerView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
       mountView: vi.fn((_capability, _element, _context) => ({ focus: vi.fn(), dispose: vi.fn() })),
+      registerDropHandler: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+      drops: { canDrop: vi.fn(() => false), drop: vi.fn(async () => []) },
       getSetting: vi.fn((_id: string, key: string) => {
         calls.getSetting++
         return key === 'enabled' ? true : undefined
