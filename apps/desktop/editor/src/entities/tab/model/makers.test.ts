@@ -44,39 +44,39 @@ describe('a file of a kind made', () => {
     const vault = maker()
     const createdItem = createCreators(vault)
 
-    await createdItem.createFile('deck', 'zoology', 'Animals')
-    await createdItem.createFile('stencil', 'zoology', 'Words')
-    await createdItem.createFile('preset', '', 'Slow')
+    await createdItem.createFile('sample', 'zoology', 'Animals')
+    await createdItem.createFile('form', 'zoology', 'Words')
+    await createdItem.createFile('sheet', '', 'Slow')
 
     expect(vault.requests).toStrictEqual([
-      'deck zoology Animals',
-      'stencil zoology Words',
-      'preset — Slow',
+      'sample zoology Animals',
+      'form zoology Words',
+      'sheet — Slow',
     ])
   })
 
   it('answers where the vault filed it', async () => {
     const createdItem = createCreators(maker())
 
-    expect(await createdItem.createFile('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
+    expect(await createdItem.createFile('sample', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
 
   it('is put in front of the person as what it was made as', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const openedTabs: string[] = []
-    for (const what of ['deck', 'stencil', 'preset'] as const) {
+    for (const what of ['sample', 'form', 'sheet'] as const) {
       tabOpeners.registerEditor(what, (path) => openedTabs.push(`${what} ${path}`))
     }
     const createdItem = createCreators(maker(), tabOpeners)
 
-    await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')
-    await createdItem.createAndOpenFile('stencil', 'zoology', 'Words')
-    await createdItem.createAndOpenFile('preset', '', 'Slow')
+    await createdItem.createAndOpenFile('sample', 'zoology', 'Animals')
+    await createdItem.createAndOpenFile('form', 'zoology', 'Words')
+    await createdItem.createAndOpenFile('sheet', '', 'Slow')
 
     expect(openedTabs).toStrictEqual([
-      'deck zoology/Animals.md',
-      'stencil zoology/Words.md',
-      'preset /Slow.md',
+      'sample zoology/Animals.md',
+      'form zoology/Words.md',
+      'sheet /Slow.md',
     ])
   })
 
@@ -85,7 +85,7 @@ describe('a file of a kind made', () => {
     const mockWriter = writer()
     const createdItem = createCreators(maker('occupied'), tabOpeners, mockWriter.write)
 
-    expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
+    expect(await createdItem.createAndOpenFile('sample', 'zoology', 'Animals')).toBe('')
     expect(mockWriter.messagesText).toStrictEqual([ERRORS.occupied])
   })
 
@@ -93,7 +93,7 @@ describe('a file of a kind made', () => {
     const mockWriter = writer()
     const createdItem = createCreators(maker(null, true), undefined, mockWriter.write)
 
-    expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
+    expect(await createdItem.createAndOpenFile('sample', 'zoology', 'Animals')).toBe('')
     expect(mockWriter.messagesText.join(' ')).not.toContain('the vault is not there')
     expect(mockWriter.messagesText.join(' ')).toContain('Numen is not responding')
   })
@@ -102,7 +102,7 @@ describe('a file of a kind made', () => {
     const mockWriter = writer()
     const createdItem = createCreators(maker('occupied'), undefined, mockWriter.write)
 
-    await createdItem.createFile('deck', 'zoology', 'Animals')
+    await createdItem.createFile('sample', 'zoology', 'Animals')
 
     expect(mockWriter.messages).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
   })
@@ -111,7 +111,7 @@ describe('a file of a kind made', () => {
     const mockWriter = writer()
     const createdItem = createCreators(maker(null, true), undefined, mockWriter.write)
 
-    await createdItem.createFile('deck', 'zoology', 'Animals')
+    await createdItem.createFile('sample', 'zoology', 'Animals')
 
     expect(mockWriter.messages.map((one) => one.kind)).toStrictEqual(['error'])
   })
@@ -121,7 +121,7 @@ describe('a file nothing offers to make', () => {
   it('answers nothing, opens nothing and writes nothing of its own, the creator having returned why', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const openedTabs: string[] = []
-    tabOpeners.registerEditor('deck', (path) => openedTabs.push(path))
+    tabOpeners.registerEditor('sample', (path) => openedTabs.push(path))
     const mockWriter = writer()
     const createdItem = createCreators(
       { createFile: async () => null },
@@ -129,7 +129,7 @@ describe('a file nothing offers to make', () => {
       mockWriter.write,
     )
 
-    expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
+    expect(await createdItem.createAndOpenFile('sample', 'zoology', 'Animals')).toBe('')
     expect(openedTabs).toStrictEqual([])
     expect(mockWriter.messagesText).toStrictEqual([])
   })
@@ -139,10 +139,10 @@ describe('a file made and put in front of the person', () => {
   it('is opened with no title of its own', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const titles: string[] = []
-    tabOpeners.registerEditor('deck', (_path, title) => titles.push(title))
+    tabOpeners.registerEditor('sample', (_path, title) => titles.push(title))
     const createdItem = createCreators(maker(), tabOpeners)
 
-    await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')
+    await createdItem.createAndOpenFile('sample', 'zoology', 'Animals')
 
     expect(titles).toStrictEqual([''])
   })

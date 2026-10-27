@@ -8,34 +8,34 @@ import { mapEntry, mapMoveResult } from './fileWords'
 describe('a row of a listing', () => {
   it('keeps its path, name and folder flag, and says its source and type in window words', () => {
     const row = {
-      path: 'Decks/Animals.md',
+      path: 'Samples/Animals.md',
       name: 'Animals',
       isFolder: false,
       kind: SourceKind.NOTE,
-      type: 'deck',
+      type: 'sample',
     } as Entry
 
     expect(mapEntry(row)).toStrictEqual({
-      path: 'Decks/Animals.md',
+      path: 'Samples/Animals.md',
       name: 'Animals',
       isFolder: false,
       kind: 'note',
-      type: 'deck',
+      type: 'sample',
     })
   })
 
   it('keeps a folder a folder', () => {
     const row = {
-      path: 'Decks',
-      name: 'Decks',
+      path: 'Samples',
+      name: 'Samples',
       isFolder: true,
       kind: SourceKind.UNSPECIFIED,
       type: '',
     } as Entry
 
     expect(mapEntry(row)).toStrictEqual({
-      path: 'Decks',
-      name: 'Decks',
+      path: 'Samples',
+      name: 'Samples',
       isFolder: true,
       kind: 'other',
       type: 'note',

@@ -47,11 +47,11 @@ describe('mapNeighbourhood', () => {
   it('carries the focus, and every neighbour that has a relation and a note', () => {
     const answer = create(GetNeighbourhoodResponseSchema, {
       focus: { path: 'Here.md', title: 'Here' },
-      focusType: 'deck',
+      focusType: 'sample',
       related: [
         {
           note: { path: 'Up.md', title: 'Up' },
-          type: 'preset',
+          type: 'sheet',
           relation: Relation.PARENT,
           label: 'part of',
           reverseLabel: 'holds',
@@ -65,12 +65,12 @@ describe('mapNeighbourhood', () => {
 
     expect(mapNeighbourhood(answer)).toEqual({
       focus: { path: 'Here.md', title: 'Here' },
-      focusType: 'deck',
+      focusType: 'sample',
       related: [
         {
           path: 'Up.md',
           title: 'Up',
-          type: 'preset',
+          type: 'sheet',
           relation: 'parent',
           label: 'part of',
           reverseLabel: 'holds',

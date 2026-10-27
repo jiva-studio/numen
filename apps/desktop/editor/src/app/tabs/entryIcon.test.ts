@@ -45,10 +45,10 @@ describe('the icon of an entry', () => {
 
   it('is drawn by the type of note for a note, as a plugin registers its icon', () => {
     expect(getEntryIcon(entry({ type: 'note' }), false)).toBe(FileText)
-    expect(getEntryIcon(entry({ type: 'deck' }), false)).toBe(FileText)
+    expect(getEntryIcon(entry({ type: 'sample' }), false)).toBe(FileText)
 
-    const unregister = registerNoteIcon('deck', Layers)
-    expect(getEntryIcon(entry({ type: 'deck' }), false)).toBe(Layers)
+    const unregister = registerNoteIcon('sample', Layers)
+    expect(getEntryIcon(entry({ type: 'sample' }), false)).toBe(Layers)
     unregister()
   })
 
@@ -59,6 +59,6 @@ describe('the icon of an entry', () => {
   })
 
   it('is a plain file for a file the vault holds no source for', () => {
-    expect(getEntryIcon(entry({ kind: 'other', type: 'deck' }), false)).toBe(File)
+    expect(getEntryIcon(entry({ kind: 'other', type: 'sample' }), false)).toBe(File)
   })
 })

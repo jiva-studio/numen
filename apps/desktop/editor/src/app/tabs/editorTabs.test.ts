@@ -28,10 +28,10 @@ describe('the tab that edits the file at a path', () => {
   it('is the tab of a kind that writes files out, standing at the path', () => {
     const windowTabs = createWindowTabs({
       'document:a': { editsFiles: false, path: 'a.md' },
-      'deck:a': { editsFiles: true, path: 'a.md' },
+      'sample:a': { editsFiles: true, path: 'a.md' },
     })
 
-    expect(findEditorTabAt(windowTabs, 'a.md')).toBe('deck:a')
+    expect(findEditorTabAt(windowTabs, 'a.md')).toBe('sample:a')
   })
 
   it('is none where only a tab that edits nothing remains at the path', () => {
@@ -41,13 +41,13 @@ describe('the tab that edits the file at a path', () => {
   })
 
   it('is none where no tab remains at the path', () => {
-    const windowTabs = createWindowTabs({ 'deck:a': { editsFiles: true, path: 'a.md' } })
+    const windowTabs = createWindowTabs({ 'sample:a': { editsFiles: true, path: 'a.md' } })
 
     expect(findEditorTabAt(windowTabs, 'b.md')).toBeNull()
   })
 
   it('is none for a tab the window no longer holds', () => {
-    const windowTabs = createWindowTabs({ 'deck:a': undefined })
+    const windowTabs = createWindowTabs({ 'sample:a': undefined })
 
     expect(findEditorTabAt(windowTabs, 'a.md')).toBeNull()
   })
@@ -60,7 +60,7 @@ describe('what the window knows of the note open at a path', () => {
         reached: { getTabAt: () => reachedTab },
         getTitle: (id) => (id === 'note:a' ? 'Alpha' : ''),
       },
-      createWindowTabs({ 'deck:a': { editsFiles: true, path: 'a.md' } }),
+      createWindowTabs({ 'sample:a': { editsFiles: true, path: 'a.md' } }),
     )
 
   it('is the tab of a note editor, called what that editor calls it', () => {
@@ -73,8 +73,8 @@ describe('what the window knows of the note open at a path', () => {
   it('is the tab of a kind that edits files where no note editor remains at the path, called what the tab is', () => {
     const lookup = create(null)
 
-    expect(lookup.getTabAt('a.md')).toBe('deck:a')
-    expect(lookup.getTitle('a.md')).toBe('deck:a')
+    expect(lookup.getTabAt('a.md')).toBe('sample:a')
+    expect(lookup.getTitle('a.md')).toBe('sample:a')
   })
 
   it('is no tab and no title where nothing remains at the path', () => {

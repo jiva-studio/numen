@@ -122,22 +122,22 @@ describe('command handlers', () => {
 })
 
 describe('a command over a note', () => {
-  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'deck' }
+  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'sample' }
 
   it('is offered as one over a note, and runs with the note it is given', async () => {
     const host = createPluginHost(createDeps())
     const handler = vi.fn()
     host.createContext('cmd.plugin').registerCommand({
-      id: 'preset',
-      title: 'Open preset',
+      id: 'summary',
+      title: 'Open summary',
       scope: 'note',
       handler,
     })
 
-    await host.executeCommand('plugin:preset', NOTE)
+    await host.executeCommand('plugin:summary', NOTE)
 
     expect(host.getPaletteCommands()).toStrictEqual([
-      { id: 'plugin:preset', title: 'Open preset', scope: 'note' },
+      { id: 'plugin:summary', title: 'Open summary', scope: 'note' },
     ])
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
   })
@@ -146,8 +146,8 @@ describe('a command over a note', () => {
     const host = createPluginHost(createDeps())
     const handler = vi.fn()
     host.createContext('cmd.plugin').registerCommand({
-      id: 'preset',
-      title: 'Open preset',
+      id: 'summary',
+      title: 'Open summary',
       shortcut: 'ctrl+p',
       scope: 'note',
       handler,

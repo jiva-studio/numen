@@ -92,7 +92,11 @@ describe('a note found where no plugin puts a note in front', () => {
 
 describe('a heading found by its name', () => {
   it('is placed under its path and line, offers the note first, and is a note', () => {
-    const row = createNameItem(createName({ heading: 'Being', line: 7, type: 'deck' }), WORDS, SHOW)
+    const row = createNameItem(
+      createName({ heading: 'Being', line: 7, type: 'sample' }),
+      WORDS,
+      SHOW,
+    )
 
     expect(row.item.id).toBe('physics/Ontology.md#7')
     expect(row.item.title).toBe('Being')
@@ -102,7 +106,7 @@ describe('a heading found by its name', () => {
       { id: 'travel', text: SHOW },
     ])
     expect(row.hit).toStrictEqual(
-      createHit({ line: 7, offers: ['note', 'travel'], type: 'deck', kind: 'note' }),
+      createHit({ line: 7, offers: ['note', 'travel'], type: 'sample', kind: 'note' }),
     )
   })
 })
@@ -126,7 +130,7 @@ describe('a passage found in a source that is not a note', () => {
   it('offers the document, remains at no line, and is of no note type', () => {
     const row = createPassageItem(
       'meaning',
-      createPassage({ isNote: false, kind: 'book', title: '', type: 'deck' }),
+      createPassage({ isNote: false, kind: 'book', title: '', type: 'sample' }),
       WORDS,
       SHOW,
     )

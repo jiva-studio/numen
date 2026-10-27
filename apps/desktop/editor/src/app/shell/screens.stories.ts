@@ -126,11 +126,7 @@ const PLUGINS: readonly PluginInfo[] = [
     'Media Importer',
     'Keeps web addresses as links and fetches what is published there',
   ),
-  plugin(
-    'md.numen.views.flashcards.studio',
-    'Flashcards Studio',
-    'Decks, stencils, presets and the review of the cards',
-  ),
+  plugin('org.example.sample.studio', 'Sample Studio', 'Samples, forms and the views of them'),
   plugin('md.numen.views.plex.graph', 'Plex Graph', 'Knowledge graph visualizer and plex explorer'),
 ]
 

@@ -376,18 +376,18 @@ describe('reconciling tabs for a path', () => {
       kind: 'note',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    const deckKind = kind({
-      kind: 'deck',
+    const sampleKind = kind({
+      kind: 'sample',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    const window = notifiedCalls([noteKind.declared, deckKind.declared])
+    const window = notifiedCalls([noteKind.declared, sampleKind.declared])
 
-    const noteTabId = await window.openTabOfKind('note', 'Cards.md')
+    const noteTabId = await window.openTabOfKind('note', 'Shapes.md')
     expect(window.tabs.value.map((t) => t.id)).toContain(noteTabId)
 
-    window.reconcileTab('Cards.md', 'deck')
+    window.reconcileTab('Shapes.md', 'sample')
 
-    expect(noteKind.closedPaths).toEqual(['Cards.md'])
+    expect(noteKind.closedPaths).toEqual(['Shapes.md'])
     expect(window.getTab(noteTabId)).toBeNull()
   })
 
@@ -420,7 +420,7 @@ describe('reconciling tabs for a path', () => {
     const plexTabId = await window.openTabOfKind('plex', 'Graph.md')
     const noteTabId = await window.openTabOfKind('note', 'Graph.md')
 
-    window.reconcileTab('Graph.md', 'deck')
+    window.reconcileTab('Graph.md', 'sample')
 
     expect(noteKind.closedPaths).toEqual(['Graph.md'])
     expect(plexKind.closedPaths).toEqual([])
@@ -433,11 +433,11 @@ describe('reconciling tabs for a path', () => {
       kind: 'note',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    const deckKind = kind({
-      kind: 'deck',
+    const sampleKind = kind({
+      kind: 'sample',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    const window = notifiedCalls([noteKind.declared, deckKind.declared])
+    const window = notifiedCalls([noteKind.declared, sampleKind.declared])
 
     let fileKind: FileKind = { kind: 'note', type: 'note' }
     const openers = fileOpeners({
@@ -445,17 +445,17 @@ describe('reconciling tabs for a path', () => {
       reconcileTab: window.reconcileTab,
     })
     openers.registerEditor('note', (path) => void window.openTabOfKind('note', path))
-    openers.registerEditor('deck', (path) => void window.openTabOfKind('deck', path))
+    openers.registerEditor('sample', (path) => void window.openTabOfKind('sample', path))
 
     await openers.openFile('Animals.md')
     expect(window.tabs.value).toHaveLength(1)
     expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('note')
 
-    fileKind = { kind: 'note' as const, type: 'deck' as const }
+    fileKind = { kind: 'note' as const, type: 'sample' as const }
     await openers.openFile('Animals.md')
 
     expect(window.tabs.value).toHaveLength(1)
-    expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('deck')
+    expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('sample')
     expect(noteKind.closedPaths).toEqual(['Animals.md'])
   })
 })
@@ -678,7 +678,7 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
     const window = notifiedCalls([pathlessKind.declared])
     const id = await window.openTabOfKind('bare', 'x')
 
-    window.reconcileTab('', 'deck')
+    window.reconcileTab('', 'sample')
 
     expect(window.getTab(id)).not.toBeNull()
     expect(pathlessKind.closedPaths).toEqual([])
@@ -692,7 +692,7 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
     const window = notifiedCalls([note.declared])
     const id = await window.openTabOfKind('note', 'Other.md')
 
-    window.reconcileTab('Cards.md', 'deck')
+    window.reconcileTab('Shapes.md', 'sample')
 
     expect(window.getTab(id)).not.toBeNull()
   })
@@ -703,9 +703,9 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
       getTarget: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
-    const id = await window.openTabOfKind('note', 'Cards.md')
+    const id = await window.openTabOfKind('note', 'Shapes.md')
 
-    window.reconcileTab('Cards.md', 'deck')
+    window.reconcileTab('Shapes.md', 'sample')
 
     expect(window.getTab(id)).toBeNull()
   })
@@ -717,9 +717,9 @@ describe('reconciling tabs for a path, by what a tab relies on', () => {
       getTarget: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
-    const id = await window.openTabOfKind('note', 'Cards.md')
+    const id = await window.openTabOfKind('note', 'Shapes.md')
 
-    window.reconcileTab('Cards.md', 'deck')
+    window.reconcileTab('Shapes.md', 'sample')
 
     expect(window.getTab(id)).toBeNull()
   })
@@ -754,7 +754,7 @@ describe('reconciling tabs for a path, by what a tab names', () => {
     const window = notifiedCalls([pathlessKind.declared])
     const id = await window.openTabOfKind('bare', 'x')
 
-    expect(() => window.reconcileTab('x', 'deck')).not.toThrow()
+    expect(() => window.reconcileTab('x', 'sample')).not.toThrow()
 
     expect(window.getTab(id)).not.toBeNull()
   })
@@ -765,9 +765,9 @@ describe('reconciling tabs for a path, by what a tab names', () => {
       getTarget: (state: { targetPath: string }) => ({ file: state.targetPath }),
     })
     const window = notifiedCalls([note.declared])
-    const id = await window.openTabOfKind('note', 'Cards.md')
+    const id = await window.openTabOfKind('note', 'Shapes.md')
 
-    window.reconcileTab('Cards.md', 'deck')
+    window.reconcileTab('Shapes.md', 'sample')
 
     expect(window.getTab(id)).toBeNull()
   })
@@ -775,9 +775,9 @@ describe('reconciling tabs for a path, by what a tab names', () => {
   it('leaves a tab alone whose target names neither path nor file', async () => {
     const note = kind({ kind: 'note', getTarget: () => ({}) })
     const window = notifiedCalls([note.declared])
-    const id = await window.openTabOfKind('note', 'Cards.md')
+    const id = await window.openTabOfKind('note', 'Shapes.md')
 
-    window.reconcileTab('Cards.md', 'deck')
+    window.reconcileTab('Shapes.md', 'sample')
 
     expect(window.getTab(id)).not.toBeNull()
   })

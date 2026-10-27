@@ -483,18 +483,18 @@ describe('what a row is drawn as', () => {
 
     vault.names[0]?.answer([
       createNameMatch(),
-      createNameMatch({ path: 'decks/words.md', title: 'Words to learn', type: 'deck' }),
-      createNameMatch({ path: 'stencils/animal.md', title: 'Animal', type: 'stencil' }),
-      createNameMatch({ path: 'presets/daily.md', title: 'Every day', type: 'preset' }),
+      createNameMatch({ path: 'samples/words.md', title: 'Words to learn', type: 'sample' }),
+      createNameMatch({ path: 'forms/animal.md', title: 'Animal', type: 'form' }),
+      createNameMatch({ path: 'sheets/daily.md', title: 'Every day', type: 'sheet' }),
     ])
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
     expect(items.map((one) => palette.findNoteType(one.id))).toEqual([
       'note',
-      'deck',
-      'stencil',
-      'preset',
+      'sample',
+      'form',
+      'sheet',
     ])
   })
 
@@ -509,17 +509,17 @@ describe('what a row is drawn as', () => {
 
     vault.names[0]?.answer([
       createNameMatch({
-        path: 'decks/words.md',
+        path: 'samples/words.md',
         title: 'Words to learn',
         heading: 'Entropy',
         line: 12,
-        type: 'deck',
+        type: 'sample',
       }),
     ])
     await flushPromises()
 
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
-    expect(palette.findNoteType(item.id)).toBe('deck')
+    expect(palette.findNoteType(item.id)).toBe('sample')
   })
 
   it('draws a passage as the note it was read out of', async () => {
@@ -532,7 +532,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     vault.mode('words')?.answer([
-      passage({ path: 'presets/daily.md', type: 'preset' }),
+      passage({ path: 'sheets/daily.md', type: 'sheet' }),
       passage({
         path: 'library/mahabharata.epub',
         title: '',
@@ -544,7 +544,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findNoteType(one.id))).toEqual(['preset', null])
+    expect(items.map((one) => palette.findNoteType(one.id))).toEqual(['sheet', null])
   })
 
   it('says what the vault holds where a passage was read out of', async () => {
@@ -580,7 +580,7 @@ describe('what a row is drawn as', () => {
 
     vault.names[0]?.answer([
       createNameMatch(),
-      createNameMatch({ path: 'decks/words.md', type: 'deck' }),
+      createNameMatch({ path: 'samples/words.md', type: 'sample' }),
     ])
     await flushPromises()
 

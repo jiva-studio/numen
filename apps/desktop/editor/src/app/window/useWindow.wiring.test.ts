@@ -323,7 +323,7 @@ describe('what the window knows of a note', () => {
 
   describe('in a tab of a kind that edits files', () => {
     const stand = () => {
-      h.f.windowTabs.tabs.value = [{ id: 'deck:a', title: 'Animals' }]
+      h.f.windowTabs.tabs.value = [{ id: 'sample:a', title: 'Animals' }]
       h.f.windowTabs.getTab.mockReturnValue({
         state: { path: 'a.md' },
         kind: { flushPending: () => Promise.resolve(), getOpenTab: () => ({ path: 'a.md' }) },
@@ -334,7 +334,7 @@ describe('what the window knows of a note', () => {
       stand()
       useWindow()
 
-      expect(h.args.commands.knows.getTabAt('a.md')).toBe('deck:a')
+      expect(h.args.commands.knows.getTabAt('a.md')).toBe('sample:a')
     })
 
     it('is its title from that tab', () => {

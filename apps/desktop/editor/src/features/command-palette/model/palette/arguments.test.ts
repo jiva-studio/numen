@@ -20,15 +20,15 @@ const front: CommandTarget = {
   isReady: true,
 }
 
-const createDeck: Command = {
-  id: 'create-deck',
-  text: 'Create a deck',
+const createSample: Command = {
+  id: 'create-sample',
+  text: 'Create a sample',
   group: 'window',
   needs: 'arguments',
   prompts: [
     { name: 'title', title: 'Title', isRequired: true },
     { name: 'folder', title: 'Folder', isRequired: false },
-    { name: 'stencil', title: 'Stencil', isRequired: false },
+    { name: 'form', title: 'Form', isRequired: false },
   ],
   isOffered: () => true,
 }
@@ -41,7 +41,7 @@ const createPalette = () => {
     knows: { getTitle: () => '', getTabAt: () => null },
     lists: { getStepGroups: () => [], previewItem: () => {} },
     runs: runSupport(),
-    getExtraCommands: () => [createDeck],
+    getExtraCommands: () => [createSample],
   })
   commands.setOpen(true)
   return commands
@@ -51,9 +51,9 @@ describe('a command that asks for its arguments', () => {
   it('asks for the first in a step named after it', () => {
     const commands = createPalette()
 
-    expect(commands.startCommand('create-deck', front)).toBeNull()
+    expect(commands.startCommand('create-sample', front)).toBeNull()
 
-    expect(commands.crumb.value).toBe('Create a deck')
+    expect(commands.crumb.value).toBe('Create a sample')
     expect(commands.placeholder.value).toBe('Title')
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['arguments'])
     expect(commands.groups.value[0]?.items).toStrictEqual([])
@@ -61,7 +61,7 @@ describe('a command that asks for its arguments', () => {
 
   it('does not go on from a required argument with nothing typed', () => {
     const commands = createPalette()
-    commands.startCommand('create-deck', front)
+    commands.startCommand('create-sample', front)
 
     expect(commands.chooseItem('name', 'name')).toBeNull()
     expect(commands.placeholder.value).toBe('Title')
@@ -69,7 +69,7 @@ describe('a command that asks for its arguments', () => {
 
   it('goes on to the next argument with what was typed, and offers to leave an optional one out', () => {
     const commands = createPalette()
-    commands.startCommand('create-deck', front)
+    commands.startCommand('create-sample', front)
     void commands.setTyped('  Verbs ')
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Title: “Verbs”')
@@ -82,7 +82,7 @@ describe('a command that asks for its arguments', () => {
 
   it('carries every value typed, by name, and leaves out the optional ones left blank', () => {
     const commands = createPalette()
-    commands.startCommand('create-deck', front)
+    commands.startCommand('create-sample', front)
     void commands.setTyped('Verbs')
     commands.chooseItem('name', 'name')
     commands.chooseItem('name', 'name')
@@ -90,14 +90,14 @@ describe('a command that asks for its arguments', () => {
 
     const invocation = commands.chooseItem('name', 'name')
 
-    expect(invocation?.id).toBe('create-deck')
+    expect(invocation?.id).toBe('create-sample')
     expect(invocation?.file).toBe('physics/Ontology.md')
-    expect(invocation?.values).toStrictEqual({ title: 'Verbs', stencil: 'Spanish' })
+    expect(invocation?.values).toStrictEqual({ title: 'Verbs', form: 'Spanish' })
   })
 
   it('goes back to the argument before', () => {
     const commands = createPalette()
-    commands.startCommand('create-deck', front)
+    commands.startCommand('create-sample', front)
     void commands.setTyped('Verbs')
     commands.chooseItem('name', 'name')
 
@@ -120,16 +120,16 @@ describe('a command that arrives after the palette is made', () => {
       getExtraCommands: () => extra.value,
     })
     commands.setOpen(true)
-    void commands.setTyped('a deck')
+    void commands.setTyped('a sample')
     expect(commands.groups.value).toStrictEqual([])
 
-    extra.value = [createDeck]
+    extra.value = [createSample]
 
     expect(
       commands.groups.value.flatMap((group) => group.items.map((item) => item.id)),
-    ).toStrictEqual(['create-deck'])
+    ).toStrictEqual(['create-sample'])
 
-    expect(commands.startCommand('create-deck', front)).toBeNull()
+    expect(commands.startCommand('create-sample', front)).toBeNull()
     expect(commands.placeholder.value).toBe('Title')
   })
 })

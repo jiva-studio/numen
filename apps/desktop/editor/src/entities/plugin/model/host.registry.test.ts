@@ -147,7 +147,9 @@ describe('a tab kind opened as the editor of a path', () => {
         return () => {}
       }),
     })
-    const sub = host.createContext('sample.plugin').registerTabKind({ kind: 'deck', component: {} })
+    const sub = host
+      .createContext('sample.plugin')
+      .registerTabKind({ kind: 'sample', component: {} })
     return { open, sub }
   }
 
@@ -156,12 +158,12 @@ describe('a tab kind opened as the editor of a path', () => {
     const deps = createDeps({ openTabBeside })
     const { open } = registerKind(deps)
 
-    open('Decks/One.md', 'One', 'beside')
-    open('Decks/Two.md', 'Two', { where: 'beside' })
+    open('Samples/One.md', 'One', 'beside')
+    open('Samples/Two.md', 'Two', { where: 'beside' })
 
     expect(openTabBeside.mock.calls).toStrictEqual([
-      ['deck', 'Decks/One.md'],
-      ['deck', 'Decks/Two.md'],
+      ['sample', 'Samples/One.md'],
+      ['sample', 'Samples/Two.md'],
     ])
     expect(deps.openTab).not.toHaveBeenCalled()
   })
@@ -170,16 +172,16 @@ describe('a tab kind opened as the editor of a path', () => {
     const deps = createDeps()
     const { open, sub } = registerKind(deps)
 
-    open('Decks/One.md')
-    open('Decks/Two.md', 'Two', { where: 'here' })
-    open('Decks/Three.md', 'Three', null)
-    open('Decks/Four.md', 'Four', 'beside')
+    open('Samples/One.md')
+    open('Samples/Two.md', 'Two', { where: 'here' })
+    open('Samples/Three.md', 'Three', null)
+    open('Samples/Four.md', 'Four', 'beside')
 
     expect(vi.mocked(deps.openTab).mock.calls.map((call) => call[1])).toStrictEqual([
-      'Decks/One.md',
-      'Decks/Two.md',
-      'Decks/Three.md',
-      'Decks/Four.md',
+      'Samples/One.md',
+      'Samples/Two.md',
+      'Samples/Three.md',
+      'Samples/Four.md',
     ])
     sub.dispose()
     sub.dispose()

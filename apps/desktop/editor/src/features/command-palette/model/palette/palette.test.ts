@@ -1391,15 +1391,15 @@ describe('what a step draws', () => {
 
   it('says which of four each note found is, and nothing of a note it did not find', async () => {
     const { commands } = createPalette({}, [
-      name('physics/Entropy.md', 'Entropy', '', 'deck'),
-      name('physics/Heat.md', 'Heat', '', 'stencil'),
+      name('physics/Entropy.md', 'Entropy', '', 'sample'),
+      name('physics/Heat.md', 'Heat', '', 'form'),
     ])
     commands.startCommand('goto', front())
 
     await commands.setTyped('en')
 
-    expect(commands.findNoteType('physics/Heat.md')).toBe('stencil')
-    expect(commands.findNoteType('physics/Entropy.md')).toBe('deck')
+    expect(commands.findNoteType('physics/Heat.md')).toBe('form')
+    expect(commands.findNoteType('physics/Entropy.md')).toBe('sample')
     expect(commands.findNoteType('Order.md')).toBeNull()
   })
 

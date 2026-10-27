@@ -309,12 +309,12 @@ describe('createCustomTabKind (actions)', () => {
     const hostAction = vi.fn()
 
     const kind = createCustomTabKind(
-      'cards-plugin',
+      'sample-plugin',
       {
-        kind: 'deck',
+        kind: 'sample',
         component: null,
         actions: {
-          exportDeck: customAction,
+          exportSample: customAction,
         },
       },
       {
@@ -322,29 +322,29 @@ describe('createCustomTabKind (actions)', () => {
         registerExtensionReader: vi.fn(() => () => {}),
         openTab: vi.fn(async () => 'tab-1'),
         tabActionHandlers: {
-          syncDeck: hostAction,
+          syncSample: hostAction,
         },
       },
     )
 
-    const state = kind.open('decks/test.md', 'tab') as Record<string, unknown>
-    expect(typeof state.exportDeck).toBe('function')
-    expect(typeof state.syncDeck).toBe('function')
+    const state = kind.open('samples/test.md', 'tab') as Record<string, unknown>
+    expect(typeof state.exportSample).toBe('function')
+    expect(typeof state.syncSample).toBe('function')
 
-    ;(state.exportDeck as (arg: string) => void)('json')
-    expect(customAction).toHaveBeenCalledWith('decks/test.md', 'json')
+    ;(state.exportSample as (arg: string) => void)('json')
+    expect(customAction).toHaveBeenCalledWith('samples/test.md', 'json')
 
-    ;(state.syncDeck as (force: boolean) => void)(true)
-    expect(hostAction).toHaveBeenCalledWith('decks/test.md', true)
+    ;(state.syncSample as (force: boolean) => void)(true)
+    expect(hostAction).toHaveBeenCalledWith('samples/test.md', true)
   })
 
   it('prevents action names from overwriting tab-state fields', () => {
     const collidingAction = vi.fn()
 
     const kind = createCustomTabKind(
-      'cards-plugin',
+      'sample-plugin',
       {
-        kind: 'deck',
+        kind: 'sample',
         component: null,
         actions: {
           path: collidingAction,
@@ -361,8 +361,8 @@ describe('createCustomTabKind (actions)', () => {
       },
     )
 
-    const state = kind.open('decks/secure.md', 'tab') as Record<string, unknown>
-    expect(state.path).toBe('decks/secure.md')
+    const state = kind.open('samples/secure.md', 'tab') as Record<string, unknown>
+    expect(state.path).toBe('samples/secure.md')
     expect(state.file).toBeUndefined()
     expect(typeof state.path).toBe('string')
   })

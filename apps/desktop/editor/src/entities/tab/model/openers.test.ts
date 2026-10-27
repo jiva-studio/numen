@@ -42,7 +42,7 @@ const unreachable: FileOpenerDeps = {
 /** The three editors, the reader and the player, each writing down what it was given. */
 const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors: string[] = []
-  for (const type of ['note', 'deck', 'stencil'] as const) {
+  for (const type of ['note', 'sample', 'form'] as const) {
     tabOpeners.registerEditor(type, (path, title, options) => {
       const showing = typeof options === 'string' ? options : (options?.where ?? 'here')
       const line = typeof options === 'object' ? options?.line : undefined
@@ -66,24 +66,24 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
 }
 
 describe('a path opened', () => {
-  it('opens a deck in the editor of its cards', async () => {
-    const one = vault({ 'Animals.md': note('deck') })
+  it('opens a sample in the editor of its kind', async () => {
+    const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
     await tabOpeners.openFile('Animals.md', 'Animals')
 
-    expect(activeEditors).toStrictEqual(['deck Animals.md Animals here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md Animals here —'])
   })
 
-  it('opens a stencil in the editor of its fields and faces', async () => {
-    const one = vault({ 'Animal.md': note('stencil') })
+  it('opens a form in the editor of its kind', async () => {
+    const one = vault({ 'Animal.md': note('form') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
     await tabOpeners.openFile('Animal.md', 'Animal')
 
-    expect(activeEditors).toStrictEqual(['stencil Animal.md Animal here —'])
+    expect(activeEditors).toStrictEqual(['form Animal.md Animal here —'])
   })
 
   it('opens an ordinary note in the editor of its prose', async () => {
@@ -146,7 +146,7 @@ describe('a path opened', () => {
   })
 
   it('asks the vault what remains there, the caller having returned nothing', async () => {
-    const one = vault({ 'Animals.md': note('deck') })
+    const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
     editors(tabOpeners)
 
@@ -156,17 +156,17 @@ describe('a path opened', () => {
   })
 
   it('passes an editor an empty title where the caller gave none', async () => {
-    const one = vault({ 'Animals.md': note('deck') })
+    const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
     await tabOpeners.openFile('Animals.md')
 
-    expect(activeEditors).toStrictEqual(['deck Animals.md — here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md — here —'])
   })
 
   it('opens nothing where no editor was handed over for the kind', async () => {
-    const one = vault({ 'Animals.md': note('deck') })
+    const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
 
     await expect(tabOpeners.openFile('Animals.md', 'Animals')).resolves.toBeUndefined()
@@ -183,17 +183,17 @@ describe('a path opened', () => {
   })
 
   it('opens alongside where that is where it was requested for', async () => {
-    const one = vault({ 'Animals.md': note('deck') })
+    const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
     await tabOpeners.openFile('Animals.md', 'Animals', 'beside')
 
-    expect(activeEditors).toStrictEqual(['deck Animals.md Animals beside —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md Animals beside —'])
   })
 
   it('carries the line it was requested at, which each editor answers for itself', async () => {
-    const one = vault({ 'Entropy.md': note('note'), 'Animals.md': note('deck') })
+    const one = vault({ 'Entropy.md': note('note'), 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
@@ -202,7 +202,7 @@ describe('a path opened', () => {
 
     expect(activeEditors).toStrictEqual([
       'note Entropy.md Entropy here 12',
-      'deck Animals.md Animals here 12',
+      'sample Animals.md Animals here 12',
     ])
   })
 })
@@ -232,14 +232,14 @@ describe('a source opened at a span of its own text', () => {
   })
 
   it('opens a note in the editor made for what it is, and not in the reader', async () => {
-    const one = vault({ 'Animals.md': note('deck'), 'Entropy.md': note('note') })
+    const one = vault({ 'Animals.md': note('sample'), 'Entropy.md': note('note') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
     await tabOpeners.openFileAt('Animals.md', [{ from: 10, to: 14 }])
     await tabOpeners.openFileAt('Entropy.md', [{ from: 10, to: 14 }])
 
-    expect(activeEditors).toStrictEqual(['deck Animals.md — here —', 'note Entropy.md — here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md — here —', 'note Entropy.md — here —'])
   })
 
   it('opens nothing where the vault says nothing remains there', async () => {
@@ -291,7 +291,7 @@ describe('a file just made here', () => {
   it('opens in nothing where no editor was handed over for what it was made as', () => {
     const tabOpeners = fileOpeners(vault().core)
 
-    expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')).not.toThrow()
+    expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')).not.toThrow()
   })
 
   it('opens as what it was made as, the vault not being requested', async () => {
@@ -299,17 +299,17 @@ describe('a file just made here', () => {
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')
+    tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')
 
-    expect(activeEditors).toStrictEqual(['deck Animals.md Animals here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md Animals here —'])
     expect(one.requested).toStrictEqual([])
   })
 })
 
 describe('reconciling open tabs when a file is opened', () => {
-  it('reconciles open tabs for a deck file', async () => {
+  it('reconciles open tabs for a sample file', async () => {
     const reconciled: { path: string; newKind: string }[] = []
-    const one = vault({ 'Animals.md': note('deck') })
+    const one = vault({ 'Animals.md': note('sample') })
     const core: FileOpenerDeps = {
       ...one.core,
       reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
@@ -319,7 +319,7 @@ describe('reconciling open tabs when a file is opened', () => {
 
     await tabOpeners.openFile('Animals.md', 'Animals')
 
-    expect(reconciled).toStrictEqual([{ path: 'Animals.md', newKind: 'deck' }])
+    expect(reconciled).toStrictEqual([{ path: 'Animals.md', newKind: 'sample' }])
   })
 
   it('reconciles open tabs for an epub book', async () => {

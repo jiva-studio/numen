@@ -3,7 +3,7 @@ import { getFileName, getFileStem } from './paths'
 
 describe('what a file is filed as', () => {
   it('is the last segment of the path', () => {
-    expect(getFileName('stencils/cards/Animal.md')).toBe('Animal.md')
+    expect(getFileName('forms/samples/Animal.md')).toBe('Animal.md')
   })
 
   it('is the whole of a path standing in no folder', () => {
@@ -17,12 +17,12 @@ describe('what a file is filed as', () => {
 
 describe('the name a link writes', () => {
   it('is the file, without the folders above it and without the extension', () => {
-    expect(getFileStem('stencils/cards/Animal.md')).toBe('Animal')
+    expect(getFileStem('forms/samples/Animal.md')).toBe('Animal')
   })
 
   it('keeps a name a dot remains inside, and one carrying no extension at all', () => {
-    expect(getFileStem('stencils/Animal v2.md')).toBe('Animal v2')
-    expect(getFileStem('stencils/Animal')).toBe('Animal')
+    expect(getFileStem('forms/Animal v2.md')).toBe('Animal v2')
+    expect(getFileStem('forms/Animal')).toBe('Animal')
   })
 
   it('keeps the whole of a name that is only an ending', () => {

@@ -28,9 +28,9 @@ describe('the commands the plugins declare', () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
-          pluginId: 'md.numen.cards',
-          id: 'create-deck',
-          title: 'Create a deck',
+          pluginId: 'org.example.sample',
+          id: 'create-sample',
+          title: 'Create a sample',
           contentTypes: [],
           extensions: [],
           arguments: [
@@ -43,7 +43,7 @@ describe('the commands the plugins declare', () => {
 
     const [one] = await listDeclaredCommands()
 
-    expect(one?.pluginId).toBe('md.numen.cards')
+    expect(one?.pluginId).toBe('org.example.sample')
     expect(one?.arguments).toStrictEqual([
       { name: 'title', title: 'Title', isRequired: true },
       { name: 'folder', title: 'Folder', isRequired: false },

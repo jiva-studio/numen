@@ -191,7 +191,7 @@ describe('a key press', () => {
 })
 
 describe('a plugin command over a note', () => {
-  const PRESET = { id: 'plugin:preset', title: 'Open preset', scope: 'note' as const }
+  const SUMMARY = { id: 'plugin:summary', title: 'Open summary', scope: 'note' as const }
   const GRAPH = {
     id: 'plugin:graph',
     title: 'New graph',
@@ -205,16 +205,16 @@ describe('a plugin command over a note', () => {
     isNoteDestination: true,
   }
 
-  const setupPlugin = (declared: readonly object[] = [PRESET]) => {
+  const setupPlugin = (declared: readonly object[] = [SUMMARY]) => {
     const executeCommand = vi.fn(async () => true)
     const pluginHost = {
       getPaletteCommands: () => declared,
-      hasCommand: (id: string) => id === 'preset',
+      hasCommand: (id: string) => id === 'summary',
       executeCommand,
       handleShortcut: () => false,
     }
     const fileKinds = vi.fn(
-      async (paths: readonly string[]) => new Map(paths.map((one) => [one, { type: 'deck' }])),
+      async (paths: readonly string[]) => new Map(paths.map((one) => [one, { type: 'sample' }])),
     )
     const options = {
       core: { fileKinds },
@@ -238,7 +238,7 @@ describe('a plugin command over a note', () => {
       group: string
       isOffered: (target: CommandTarget) => boolean
     }[]
-    const offer = offers.find((one) => one.id === PRESET.id)
+    const offer = offers.find((one) => one.id === SUMMARY.id)
     if (!offer) throw new Error('the palette has no plugin command')
     return offer
   }
@@ -261,11 +261,11 @@ describe('a plugin command over a note', () => {
 
     await handler({ path: 'Animals.md', title: 'Animals' })
 
-    expect(id).toBe(PRESET.id)
-    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(PRESET.id, {
+    expect(id).toBe(SUMMARY.id)
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(SUMMARY.id, {
       path: 'Animals.md',
       title: 'Animals',
-      type: 'deck',
+      type: 'sample',
     })
   })
 
@@ -283,31 +283,31 @@ describe('a plugin command over a note', () => {
   })
 
   it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
-    const one = setupPlugin([PRESET, GRAPH, { id: 'plugin:tree', title: 'Show the tree' }])
+    const one = setupPlugin([SUMMARY, GRAPH, { id: 'plugin:tree', title: 'Show the tree' }])
 
     expect(one.pluginWays.value).toStrictEqual([
       { id: GRAPH.id, text: GRAPH.title, keys: { letter: 'mod+shift+x' }, icon: 'graph icon' },
     ])
     expect(one.getNoteCommands()).toStrictEqual([
-      { id: PRESET.id, text: PRESET.title, group: 'note' },
+      { id: SUMMARY.id, text: SUMMARY.title, group: 'note' },
     ])
   })
 
   it('puts a note in front through the command declared for it, and offers it to the search', async () => {
-    const one = setupPlugin([PRESET, SHOW])
+    const one = setupPlugin([SUMMARY, SHOW])
 
     await expect(one.showNote('Animals.md')).resolves.toBe(true)
 
     expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(SHOW.id, {
       path: 'Animals.md',
       title: '',
-      type: 'deck',
+      type: 'sample',
     })
     expect(h.searchOptions?.getTravel?.()).toBe(SHOW.title)
   })
 
   it('puts no note in front where no plugin declares a command for it', async () => {
-    const one = setupPlugin([PRESET])
+    const one = setupPlugin([SUMMARY])
 
     await expect(one.showNote('Animals.md')).resolves.toBe(false)
 
@@ -318,13 +318,13 @@ describe('a plugin command over a note', () => {
   it('runs by id with the note of the target', async () => {
     const one = setupPlugin()
 
-    one.runCommand('preset', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
+    one.runCommand('summary', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
     await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
 
-    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith('preset', {
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith('summary', {
       path: 'Animals.md',
       title: 'Animals',
-      type: 'deck',
+      type: 'sample',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })

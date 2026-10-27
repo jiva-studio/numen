@@ -33,17 +33,17 @@ describe('vault name responses', () => {
     answerWith({
       found: [
         { note: { path: 'Ants.md', title: 'Ants' }, at: [], type: '' },
-        { note: { path: 'Animals.md', title: 'Animals' }, at: [], type: 'deck' },
-        { note: { path: 'Animal.md', title: 'Animal' }, at: [], type: 'stencil' },
-        { note: { path: 'Daily.md', title: 'Daily' }, at: [], type: 'preset' },
+        { note: { path: 'Animals.md', title: 'Animals' }, at: [], type: 'sample' },
+        { note: { path: 'Animal.md', title: 'Animal' }, at: [], type: 'form' },
+        { note: { path: 'Daily.md', title: 'Daily' }, at: [], type: 'sheet' },
       ],
     })
 
     expect((await core.names('an', 8)).map((one) => one.type)).toEqual([
       'note',
-      'deck',
-      'stencil',
-      'preset',
+      'sample',
+      'form',
+      'sheet',
     ])
   })
 
@@ -62,14 +62,14 @@ describe('vault passage responses', () => {
           path: 'Daily.md',
           note: { path: 'Daily.md', title: 'Daily' },
           at: [],
-          type: 'preset',
+          type: 'sheet',
         },
         { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, at: [] },
       ],
     })
 
     const found = await core.search('an', 'words', 8)
-    expect(found.map((one) => one.type)).toEqual(['preset', 'note'])
+    expect(found.map((one) => one.type)).toEqual(['sheet', 'note'])
     expect(found.map((one) => one.isNote)).toEqual([true, true])
   })
 
@@ -116,7 +116,7 @@ describe('vault neighbourhood responses', () => {
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
     answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
-      focusType: 'deck',
+      focusType: 'sample',
       related: [
         {
           note: { path: 'Allotments.md', title: 'Allotments' },
@@ -130,7 +130,7 @@ describe('vault neighbourhood responses', () => {
 
     const neighbourhood = await core.neighbourhood('Rota.md')
     expect(neighbourhood.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
-    expect(neighbourhood.focusType).toBe('deck')
+    expect(neighbourhood.focusType).toBe('sample')
     expect(neighbourhood.related).toEqual([
       {
         path: 'Allotments.md',

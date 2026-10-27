@@ -66,11 +66,11 @@ describe('the palette', () => {
     )
 
   it('draws every kind of note a name turned up as what it is', async () => {
-    drawFlashcardTypes()
+    drawPluginTypes()
     said.names = [
       nameAnswer('Ants.md', 'Ants'),
-      nameAnswer('Animals.md', 'Animals', 'deck'),
-      nameAnswer('Animal.md', 'Animal', 'stencil'),
+      nameAnswer('Animals.md', 'Animals', 'sample'),
+      nameAnswer('Animal.md', 'Animal', 'form'),
     ]
     const window = await mountWindowWithPalette()
 
@@ -80,10 +80,10 @@ describe('the palette', () => {
   })
 
   it('draws a passage as the note it was read out of', async () => {
-    drawFlashcardTypes()
+    drawPluginTypes()
     said.names = []
     said.passages = [
-      passageAnswer('Animals.md', 'Animals', 'deck'),
+      passageAnswer('Animals.md', 'Animals', 'sample'),
       passageAnswer('Ants.md', 'Ants'),
     ]
     const window = await mountWindowWithPalette()
@@ -320,9 +320,9 @@ describe('a command requested for while the vault is being read', () => {
 
 /** How the window is drawn, walked as a person walks it, with nothing stubbed. */
 
-/** Decks and stencils drawn with the icons their plugin registers, for the test that asks for them. */
-function drawFlashcardTypes(): void {
-  const unregister = [registerNoteIcon('deck', Layers), registerNoteIcon('stencil', LayoutTemplate)]
+/** Samples and forms drawn with the icons their plugin registers, for the test that asks for them. */
+function drawPluginTypes(): void {
+  const unregister = [registerNoteIcon('sample', Layers), registerNoteIcon('form', LayoutTemplate)]
   onTestFinished(() => {
     for (const one of unregister) one()
   })

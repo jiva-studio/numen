@@ -53,15 +53,15 @@ describe('the icon a command is drawn with', () => {
 // One mark to a type.
 describe('the icon of a type of note', () => {
   it('is the icon of a note for a type no plugin draws', () => {
-    expect(getNoteIcon('deck')).toBe(getNoteIcon('note'))
+    expect(getNoteIcon('sample')).toBe(getNoteIcon('note'))
   })
 
   it('is the icon a plugin registers for its type, until the plugin lets go of it', () => {
     const icon = {}
-    const unregister = registerNoteIcon('deck', icon)
-    expect(getNoteIcon('deck')).toBe(icon)
+    const unregister = registerNoteIcon('sample', icon)
+    expect(getNoteIcon('sample')).toBe(icon)
 
     unregister()
-    expect(getNoteIcon('deck')).toBe(getNoteIcon('note'))
+    expect(getNoteIcon('sample')).toBe(getNoteIcon('note'))
   })
 })

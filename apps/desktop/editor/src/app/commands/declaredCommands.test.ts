@@ -11,10 +11,10 @@ import {
   useDeclaredCommands,
 } from './declaredCommands'
 
-const createDeck: DeclaredCommand = {
-  pluginId: 'md.numen.cards',
-  id: 'create-deck',
-  title: 'Create a deck',
+const createSample: DeclaredCommand = {
+  pluginId: 'org.example.sample',
+  id: 'create-sample',
+  title: 'Create a sample',
   contentTypes: [],
   extensions: [],
   arguments: [
@@ -46,12 +46,12 @@ const front = (file: string, isReady = true) => ({
 
 describe('a declared command in the palette', () => {
   it('asks for its arguments, one step each', () => {
-    const [deck] = createDeclaredPaletteCommands([createDeck])
+    const [sample] = createDeclaredPaletteCommands([createSample])
 
-    expect(deck?.id).toBe('plugin-command:md.numen.cards:create-deck')
-    expect(deck?.group).toBe('window')
-    expect(deck?.needs).toBe('arguments')
-    expect(deck?.prompts).toStrictEqual([
+    expect(sample?.id).toBe('plugin-command:org.example.sample:create-sample')
+    expect(sample?.group).toBe('window')
+    expect(sample?.needs).toBe('arguments')
+    expect(sample?.prompts).toStrictEqual([
       { name: 'title', title: 'Title', isRequired: true },
       { name: 'folder', title: 'Folder', isRequired: false },
     ])
@@ -73,16 +73,16 @@ describe('a run of a declared command', () => {
   it('sends the file and values, writes the message and opens the returned path', async () => {
     const run = vi.fn().mockResolvedValue({
       ok: true,
-      value: { message: 'Made a deck', openedPath: 'Verbs.md' },
+      value: { message: 'Made a sample', openedPath: 'Verbs.md' },
     })
-    const declared = useDeclaredCommands({ list: async () => [createDeck], run })
+    const declared = useDeclaredCommands({ list: async () => [createSample], run })
     await declared.load()
     const writeMessage = vi.fn()
     const openFile = vi.fn()
 
     await runInvocation(
       {
-        id: getPaletteId(createDeck),
+        id: getPaletteId(createSample),
         path: '',
         vault: { id: 'v', name: 'V' },
         note: null,
@@ -98,11 +98,11 @@ describe('a run of a declared command', () => {
       ANSWER_WORDS,
     )
 
-    expect(run).toHaveBeenCalledWith(createDeck, { path: 'a.md', values: { title: 'Verbs' } })
-    expect(writeMessage).toHaveBeenLastCalledWith('Made a deck', 'report')
+    expect(run).toHaveBeenCalledWith(createSample, { path: 'a.md', values: { title: 'Verbs' } })
+    expect(writeMessage).toHaveBeenLastCalledWith('Made a sample', 'report')
     expect(openFile).toHaveBeenCalledWith('Verbs.md', '', 'here')
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([
-      getPaletteId(createDeck),
+      getPaletteId(createSample),
     ])
   })
 
@@ -150,16 +150,16 @@ describe('a run of a declared command', () => {
 describe('a run that opens a file and says nothing', () => {
   it('writes no message', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [createDeck],
+      list: async () => [createSample],
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
     })
     await declared.load()
     const writeMessage = vi.fn()
     const openFile = vi.fn()
 
-    await commands.get(getPaletteId(createDeck))?.(
+    await commands.get(getPaletteId(createSample))?.(
       {
-        id: getPaletteId(createDeck),
+        id: getPaletteId(createSample),
         path: '',
         vault: { id: 'v', name: 'V' },
         note: null,

@@ -584,9 +584,9 @@ export const Alone: Story = {
 /** What each row of the icons story is drawn as. The map is the caller's. */
 const ICONS: Record<string, Component> = {
   note: FileText,
-  deck: Layers,
-  stencil: LayoutTemplate,
-  preset: Gauge,
+  sample: Layers,
+  form: LayoutTemplate,
+  sheet: Gauge,
   book: BookOpen,
   recording: AudioLines,
 }
@@ -623,7 +623,7 @@ const getIcon = (row: Element | null | undefined): string =>
 
 /**
  * An icon before every row, drawn by whoever offered the row: here a note, a
- * deck, a stencil, a preset, a book and a recording, each drawn as itself. A
+ * sample, a form, a sheet, a book and a recording, each drawn as itself. A
  * row the caller has no icon for keeps the room, so the names line up down the
  * list.
  */
@@ -635,9 +635,9 @@ export const Icons: Story = {
         title: 'Names',
         items: [
           createItem('note', 'Entropy', 'ent'),
-          createItem('deck', 'Words to learn', ''),
-          createItem('stencil', 'Animal', ''),
-          createItem('preset', 'Every day', ''),
+          createItem('sample', 'Words to learn', ''),
+          createItem('form', 'Animal', ''),
+          createItem('sheet', 'Every day', ''),
         ],
       },
       {
@@ -681,7 +681,7 @@ export const IconsOnTheName: Story = {
         title: 'Names',
         items: [
           createItem('note', 'Entropy', 'ent'),
-          passage('deck', 'Words to learn', LONG, 'the'),
+          passage('sample', 'Words to learn', LONG, 'the'),
         ],
       },
     ],

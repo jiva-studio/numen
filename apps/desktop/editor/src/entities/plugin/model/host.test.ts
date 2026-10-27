@@ -327,9 +327,9 @@ describe('createPluginHost', () => {
     const panel = document.createElement('section')
 
     const mounted = host
-      .createContext('md.numen.cards')
-      .mountView(CONVERSATION, panel, { focus: 'Decks/Physics.md' })
-    expect(panel.textContent).toBe('Decks/Physics.md')
+      .createContext('org.example.sample')
+      .mountView(CONVERSATION, panel, { focus: 'Samples/Physics.md' })
+    expect(panel.textContent).toBe('Samples/Physics.md')
 
     mounted.dispose()
     expect(panel.textContent).toBe('')
@@ -343,7 +343,7 @@ describe('createPluginHost', () => {
       .createContext('md.numen.chat')
       .registerView({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
-    host.createContext('md.numen.cards').mountView(CONVERSATION, panel, {})
+    host.createContext('org.example.sample').mountView(CONVERSATION, panel, {})
 
     host.disposePlugin('md.numen.chat')
 
