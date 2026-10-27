@@ -27,35 +27,22 @@ func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 		cleanup()
 		return "", func() {}, err
 	}
-	linkEntries(realHome, tempHome, ".gemini")
+	agentrun.LinkEntries(realHome, tempHome, ".gemini")
 
 	realGemini := filepath.Join(realHome, ".gemini")
 	tempGemini := filepath.Join(tempHome, ".gemini")
-	_ = os.MkdirAll(filepath.Join(tempGemini, "config"), 0o700)
-	linkEntries(realGemini, tempGemini, "config")
+	_ = agentrun.CreateDir(filepath.Join(tempGemini, "config"), 0o700)
+	agentrun.LinkEntries(realGemini, tempGemini, "config")
 
 	mcpConfig := map[string]any{"mcpServers": map[string]any{}}
 	if tools != nil {
 		mcpConfig = makeMCPConfig(*tools, filepath.Join(realGemini, "config", "mcp_config.json"))
 	}
 	if encoded, err := json.MarshalIndent(mcpConfig, "", "  "); err == nil {
-		_ = os.WriteFile(filepath.Join(tempGemini, "config", "mcp_config.json"), append(encoded, '\n'), 0o600)
+		_ = agentrun.WriteFile(filepath.Join(tempGemini, "config", "mcp_config.json"), append(encoded, '\n'), 0o600)
 	}
 
 	return tempHome, cleanup, nil
-}
-
-func linkEntries(from, into, except string) {
-	entries, err := os.ReadDir(from)
-	if err != nil {
-		return
-	}
-	for _, entry := range entries {
-		name := entry.Name()
-		if name != except {
-			_ = os.Symlink(filepath.Join(from, name), filepath.Join(into, name))
-		}
-	}
 }
 
 func makeMCPConfig(tools Endpoint, existingPath string) map[string]any {
@@ -68,7 +55,7 @@ func makeMCPConfig(tools Endpoint, existingPath string) map[string]any {
 			},
 		},
 	}
-	if raw, err := os.ReadFile(existingPath); err == nil {
+	if raw, err := agentrun.ReadFile(existingPath); err == nil {
 		var existing struct {
 			MCPServers map[string]any `json:"mcpServers"`
 		}

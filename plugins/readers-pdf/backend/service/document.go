@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"runtime"
 	"slices"
 	"sync"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1/pdfv1connect"
@@ -24,20 +23,19 @@ var initOnce sync.Once
 type DocumentServer struct {
 	pdfv1connect.UnimplementedDocumentServiceHandler
 
-	vaults vaultRoots
-	texts  host.Texts
+	files host.Vault
+	texts host.Texts
 }
 
-// NewDocumentServer configures the worker pool and returns a DocumentServer that finds the vault of
-// a request through files, works the vault at defaultRoot for a request naming none, and reads the
-// text versions of the files from texts.
-func NewDocumentServer(files host.Vault, defaultRoot func() string, texts host.Texts) *DocumentServer {
+// NewDocumentServer configures the worker pool and returns a DocumentServer that reads files from
+// files and text versions from texts.
+func NewDocumentServer(files host.Vault, texts host.Texts) *DocumentServer {
 	initOnce.Do(func() {
 		pdf.SetWorkers(runtime.NumCPU())
 		pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
 		go pdf.Warmup()
 	})
-	return &DocumentServer{vaults: vaultRoots{files: files, defaultRoot: defaultRoot}, texts: texts}
+	return &DocumentServer{files: files, texts: texts}
 }
 
 // GetDocument returns metadata and dimensions for each page in the PDF.
@@ -49,18 +47,12 @@ func (s *DocumentServer) GetDocument(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := s.vaults.getFilePath(ctx, req.Header(), path)
+	raw, _, err := getVault(s.files, req.Header()).Read(ctx, path)
 	if err != nil {
-		return nil, err
+		return nil, readVaultError(err)
 	}
 
-	file, err := os.Open(cleanPath)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("open file: %w", err))
-	}
-	defer file.Close()
-
-	scan, err := pdf.OpenReader(file)
+	scan, err := pdf.OpenBytes(raw)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("read pdf: %w", err))
 	}
@@ -97,8 +89,8 @@ func (s *DocumentServer) GetHighlights(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	if _, err := s.vaults.getFilePath(ctx, req.Header(), path); err != nil {
-		return nil, err
+	if _, err := getVault(s.files, req.Header()).StatFile(ctx, path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
+		return nil, readVaultError(err)
 	}
 	spans := req.Msg.GetRanges()
 	if len(spans) == 0 || len(spans) > mostSpans {

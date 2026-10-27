@@ -3,26 +3,25 @@ package service
 import (
 	"bytes"
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
-	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 )
 
-// newCountingServer is a server on the vault dir that counts the files it opens.
-func newCountingServer(t *testing.T, dir string) (*BookServer, *atomic.Int64) {
+// newCountingServer is a server on files that counts the files it reads.
+func newCountingServer(t *testing.T, files *hosttest.Vault) (*BookServer, *atomic.Int64) {
 	t.Helper()
-	server := NewBookServer(hosttest.New("vault"), func() string { return dir })
+	server := NewBookServer(files)
 	t.Cleanup(server.Close)
 	var opens atomic.Int64
-	server.books.openFile = func(path string) (*os.File, error) {
+	server.books.readFile = func(ctx context.Context, v host.Vault, path string) ([]byte, host.FileStat, error) {
 		opens.Add(1)
-		return os.Open(path)
+		return v.Read(ctx, path)
 	}
 	return server, &opens
 }
@@ -33,8 +32,8 @@ func readEntryFrom(server *BookServer, name, entry string) (*connect.Response[ep
 }
 
 func TestReadBookEntryOpensTheFileOnceForManyEntries(t *testing.T) {
-	dir, name, _, _ := writeBook(t)
-	server, opens := newCountingServer(t, dir)
+	files, name, _, _ := writeBook(t)
+	server, opens := newCountingServer(t, files)
 	for range 50 {
 		for _, entry := range []string{"EPUB/cover.png", "EPUB/c1.xhtml", "EPUB/c2.xhtml"} {
 			if _, err := readEntryFrom(server, name, entry); err != nil {
@@ -48,8 +47,8 @@ func TestReadBookEntryOpensTheFileOnceForManyEntries(t *testing.T) {
 }
 
 func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
-	dir, name, _, _ := writeBook(t)
-	server, opens := newCountingServer(t, dir)
+	files, name, _, _ := writeBook(t)
+	server, opens := newCountingServer(t, files)
 	if _, err := readEntryFrom(server, name, "EPUB/cover.png"); err != nil {
 		t.Fatal(err)
 	}
@@ -62,9 +61,7 @@ func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 </package>`),
 		"EPUB/cover.png": []byte("\x89PNG\r\n\x1a\nanother picture, longer than the first one was"),
 	})
-	if err := os.WriteFile(filepath.Join(dir, name), changed, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	files.File(name, string(changed))
 	resp, err := readEntryFrom(server, name, "EPUB/cover.png")
 	if err != nil {
 		t.Fatal(err)
@@ -78,14 +75,12 @@ func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 }
 
 func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
-	dir, _, _, _ := writeBook(t)
-	server, opens := newCountingServer(t, dir)
+	files, _, _, _ := writeBook(t)
+	server, opens := newCountingServer(t, files)
 	for i := range maxCachedBooks + 1 {
-		name := filepath.Join(dir, "copy"+string(rune('a'+i))+".epub")
-		if err := os.WriteFile(name, createPictureEpub(t), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := readEntryFrom(server, filepath.Base(name), "EPUB/cover.png"); err != nil {
+		name := "copy" + string(rune('a'+i)) + ".epub"
+		files.File(name, string(createPictureEpub(t)))
+		if _, err := readEntryFrom(server, name, "EPUB/cover.png"); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -102,8 +97,8 @@ func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
 }
 
 func TestReadBookEntryAnswersConcurrentRequests(t *testing.T) {
-	dir, name, _, _ := writeBook(t)
-	server, opens := newCountingServer(t, dir)
+	files, name, _, _ := writeBook(t)
+	server, opens := newCountingServer(t, files)
 	var wg sync.WaitGroup
 	for range 32 {
 		wg.Go(func() {
@@ -127,15 +122,15 @@ func TestReadBookEntryAnswersConcurrentRequests(t *testing.T) {
 }
 
 func TestCloseClosesTheFilesOfTheCachedBooks(t *testing.T) {
-	dir, name, _, _ := writeBook(t)
-	server, _ := newCountingServer(t, dir)
+	files, name, _, _ := writeBook(t)
+	server, _ := newCountingServer(t, files)
 	if _, err := readEntryFrom(server, name, "EPUB/cover.png"); err != nil {
 		t.Fatal(err)
 	}
-	file := server.books.books[0].file
+	book := server.books.books[0]
 	server.Close()
-	if _, err := file.Stat(); err == nil {
-		t.Error("the file of the book is still open after Close")
+	if book.archive != nil {
+		t.Error("the archive of the book is still kept after Close")
 	}
 	_, err := readEntryFrom(server, name, "EPUB/cover.png")
 	if connect.CodeOf(err) != connect.CodeUnavailable {
@@ -144,9 +139,9 @@ func TestCloseClosesTheFilesOfTheCachedBooks(t *testing.T) {
 }
 
 func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
-	dir, name, _, _ := writeBook(t)
-	server, _ := newCountingServer(t, dir)
-	book, err := server.books.acquire(filepath.Join(dir, name))
+	files, name, _, _ := writeBook(t)
+	server, _ := newCountingServer(t, files)
+	book, err := server.books.acquire(t.Context(), files, "", name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +151,7 @@ func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
 		t.Fatalf("entry = %q, %v, want the picture's bytes while the request reads", body, err)
 	}
 	server.books.release(book)
-	if _, err := book.file.Stat(); err == nil {
-		t.Error("the file is still open after the last request gave the book back")
+	if book.archive != nil {
+		t.Error("the archive is still kept after the last request gave the book back")
 	}
 }

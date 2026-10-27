@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -19,13 +18,9 @@ const mostListed = 1000
 
 // readBookFile reads a book of the vault the request works.
 func (s *BookServer) readBookFile(ctx context.Context, header http.Header, path string) ([]byte, error) {
-	cleanPath, err := s.vaults.getFilePath(ctx, header, path)
+	raw, _, err := getVault(s.files, header).Read(ctx, path)
 	if err != nil {
-		return nil, err
-	}
-	raw, err := os.ReadFile(cleanPath)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+		return nil, readVaultError(path, err)
 	}
 	return raw, nil
 }
@@ -35,7 +30,7 @@ func (s *BookServer) readBookFile(ctx context.Context, header http.Header, path 
 type BookServer struct {
 	epubv1connect.UnimplementedBookServiceHandler
 
-	vaults vaultRoots
+	files host.Vault
 
 	// books caches the books entries are read from, and closes them when the server closes.
 	books *bookCache
@@ -44,10 +39,9 @@ type BookServer struct {
 	placed placedBook
 }
 
-// NewBookServer returns a BookServer that finds the vault of a request through files, and works the
-// vault at defaultRoot for a request naming none.
-func NewBookServer(files host.Vault, defaultRoot func() string) *BookServer {
-	return &BookServer{vaults: vaultRoots{files: files, defaultRoot: defaultRoot}, books: newBookCache()}
+// NewBookServer returns a BookServer that reads the vault of a request through files.
+func NewBookServer(files host.Vault) *BookServer {
+	return &BookServer{files: files, books: newBookCache()}
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
@@ -147,17 +141,15 @@ func (s *BookServer) ReadBookEntry(
 	if req.Msg.GetEntry() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("entry required"))
 	}
-	cleanPath, err := s.vaults.getFilePath(ctx, req.Header(), path)
-	if err != nil {
-		return nil, err
-	}
-	book, err := s.books.acquire(cleanPath)
+	vaultID := host.GetRequestVault(req.Header())
+	files := getVault(s.files, req.Header())
+	book, err := s.books.acquire(ctx, files, vaultID, path)
 	if err != nil {
 		if errors.Is(err, errCacheClosed) {
 			return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("read book %s: %w", path, err))
 		}
 		if errors.Is(err, errReadFile) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+			return nil, readVaultError(path, err)
 		}
 		return nil, newReadError(err)
 	}

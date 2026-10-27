@@ -12,15 +12,17 @@ import (
 )
 
 func TestPdfServerVaultBoundary(t *testing.T) {
-	vaultDir := t.TempDir()
 	outsideDir := t.TempDir()
 
-	insidePath := filepath.Join(vaultDir, "inside.pdf")
+	files := hosttest.OnDisk(t, "vault", map[string]string{
+		"inside.pdf": "%PDF-1.4 dummy",
+		"a..b.pdf":   "%PDF-1.4 dummy",
+	})
+	vaultDir := files.Vault().Path
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
-	_ = os.WriteFile(insidePath, []byte("%PDF-1.4 dummy"), 0o644)
 	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	server := NewDocumentServer(hosttest.New("vault"), func() string { return vaultDir }, hosttest.NewTexts("vault", pluginID))
+	server := NewDocumentServer(files, hosttest.NewTexts("vault", pluginID))
 	ctx := context.Background()
 
 	// 1. GetDocument outside vault -> PermissionDenied
@@ -48,10 +50,8 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 6. Double-dot filename inside vault -> check passes (does not return PermissionDenied)
-	dotPath := filepath.Join(vaultDir, "a..b.pdf")
-	_ = os.WriteFile(dotPath, []byte("%PDF-1.4 dummy"), 0o644)
 	_, err = server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
-		Path: dotPath,
+		Path: "a..b.pdf",
 	}))
 	if connect.CodeOf(err) == connect.CodePermissionDenied {
 		t.Fatalf("expected double-dot filename not to be PermissionDenied, got %v", err)
@@ -72,7 +72,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 }
 
 func TestDocumentServerEmptyPath(t *testing.T) {
-	server := NewDocumentServer(hosttest.New("vault"), func() string { return "" }, hosttest.NewTexts("vault", pluginID))
+	server := NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", pluginID))
 	ctx := context.Background()
 
 	// 1. GetDocument with empty path

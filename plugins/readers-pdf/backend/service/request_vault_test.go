@@ -42,11 +42,9 @@ func newTwoVaults(t *testing.T) twoVaults {
 	return twoVaults{current: current, other: other, texts: texts, server: server}
 }
 
-func (v twoVaults) getCurrentRoot() string { return v.current.Vault().Path }
-
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.getCurrentRoot, v.texts)
+	documents := NewDocumentServer(v.current, v.texts)
 	req := connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: "tiny.pdf", Ranges: []*pdfv1.Range{{Start: 0, End: 4}}})
 	req.Header().Set("Numen-Vault", "Chemistry")
 
@@ -62,7 +60,7 @@ func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.getCurrentRoot, v.texts)
+	documents := NewDocumentServer(v.current, v.texts)
 
 	named := connect.NewRequest(&pdfv1.GetDocumentRequest{Path: "tiny.pdf"})
 	named.Header().Set("Numen-Vault", "Chemistry")
@@ -77,7 +75,7 @@ func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	pages := NewPageServer(v.current, v.getCurrentRoot)
+	pages := NewPageServer(v.current)
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 

@@ -16,7 +16,7 @@ func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
 	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(createPictureEpub(t))})
 	current.Beside(other)
-	books := NewBookServer(current, func() string { return current.Vault().Path })
+	books := NewBookServer(current)
 	t.Cleanup(books.Close)
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+entriesPattern, NewEntryServer(books))

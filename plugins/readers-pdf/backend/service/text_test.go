@@ -258,8 +258,7 @@ func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 
 // newDocumentServer is the document service of the vault the text server reads.
 func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
-	root := server.files.(*hosttest.Vault).Vault().Path
-	return NewDocumentServer(server.files, func() string { return root }, texts)
+	return NewDocumentServer(server.files, texts)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {

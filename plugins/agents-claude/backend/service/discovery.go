@@ -5,8 +5,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 var claudeSearchPlaces = []string{
@@ -29,7 +30,7 @@ var claudeSearchPlaces = []string{
 // names, else the Claude Code CLI where it is installed. Empty is a program nowhere to be found.
 func findClaude(customPath ...string) string {
 	if len(customPath) > 0 && customPath[0] != "" {
-		if isRunnable(customPath[0]) {
+		if agentrun.IsRunnable(customPath[0]) {
 			return customPath[0]
 		}
 	}
@@ -68,7 +69,7 @@ func findInPlaces(places []string) string {
 			continue
 		}
 		for _, match := range matches {
-			if isRunnable(match) {
+			if agentrun.IsRunnable(match) {
 				return match
 			}
 		}
@@ -89,16 +90,4 @@ func escapeGlob(path string) string {
 		}
 	}
 	return pattern.String()
-}
-
-func isRunnable(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
-		return false
-	}
-	if runtime.GOOS == "windows" {
-		ext := strings.ToLower(filepath.Ext(path))
-		return slices.Contains([]string{".exe", ".cmd", ".bat"}, ext)
-	}
-	return info.Mode()&0o111 != 0
 }

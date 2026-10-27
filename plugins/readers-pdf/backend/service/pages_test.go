@@ -10,18 +10,24 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// newLinkedPages is the linked handler of the plugin over the folder of the test PDFs.
-func newLinkedPages(t *testing.T, vaultRoot string) *httptest.Server {
+// newLinkedPages is the linked handler of the plugin over files.
+func newLinkedPages(t *testing.T, files host.Vault) *httptest.Server {
 	t.Helper()
-	handler, err := NewHandler(map[string]string{
+	handler, err := server.NewLinkedHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
-		"NUMEN_VAULT_PATH":   vaultRoot,
+	}, func(s *server.Server) error {
+		s.RegisterRoute(pagesPattern, NewPageServer(files))
+		return nil
 	})
 	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
+		t.Fatalf("NewLinkedHandler: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	t.Cleanup(web.Close)
@@ -55,17 +61,17 @@ func getPage(t *testing.T, web *httptest.Server, path string) page {
 	return page{status: resp.StatusCode, header: resp.Header, body: body}
 }
 
-func getTestdata(t *testing.T) string {
+func newTestdataVault(t *testing.T) *hosttest.Vault {
 	t.Helper()
-	dir, err := filepath.Abs(filepath.Join("..", "pdf", "testdata"))
+	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return dir
+	return hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
 }
 
 func TestPageRouteServesAPageAsJPEG(t *testing.T) {
-	web := newLinkedPages(t, getTestdata(t))
+	web := newLinkedPages(t, newTestdataVault(t))
 
 	got := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide=400")
 
@@ -82,16 +88,9 @@ func TestPageRouteServesAPageAsJPEG(t *testing.T) {
 }
 
 func TestPageRouteRejectsAFileOutsideTheVault(t *testing.T) {
-	vaultRoot := t.TempDir()
+	files := hosttest.New("vault")
 	outside := filepath.Join(t.TempDir(), "outside.pdf")
-	tiny, err := os.ReadFile(filepath.Join(getTestdata(t), "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(outside, tiny, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	web := newLinkedPages(t, vaultRoot)
+	web := newLinkedPages(t, files)
 
 	for _, path := range []string{outside, "../" + filepath.Base(filepath.Dir(outside)) + "/outside.pdf"} {
 		got := getPage(t, web, "/plugin/pages/0?path="+url.QueryEscape(path))
@@ -102,7 +101,7 @@ func TestPageRouteRejectsAFileOutsideTheVault(t *testing.T) {
 }
 
 func TestPageRouteRejectsABadRequest(t *testing.T) {
-	web := newLinkedPages(t, getTestdata(t))
+	web := newLinkedPages(t, newTestdataVault(t))
 
 	for path, want := range map[string]int{
 		"/plugin/pages/0":                 http.StatusBadRequest,
@@ -118,7 +117,7 @@ func TestPageRouteRejectsABadRequest(t *testing.T) {
 }
 
 func TestPageRouteRequiresTheHostToken(t *testing.T) {
-	web := newLinkedPages(t, getTestdata(t))
+	web := newLinkedPages(t, newTestdataVault(t))
 
 	resp, err := web.Client().Get(web.URL + "/plugin/pages/0?path=tiny.pdf")
 	if err != nil {

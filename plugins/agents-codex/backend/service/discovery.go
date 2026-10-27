@@ -1,13 +1,12 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 var codexPlaces = []string{
@@ -24,16 +23,16 @@ var codexPlaces = []string{
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
 func IsCodexInstalled(customPath ...string) bool {
 	if len(customPath) > 0 && customPath[0] != "" {
-		return isRunnable(customPath[0])
+		return agentrun.IsRunnable(customPath[0])
 	}
 	p := FindCodex()
-	return isRunnable(p)
+	return agentrun.IsRunnable(p)
 }
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
 func FindCodex(customPath ...string) string {
 	if len(customPath) > 0 && customPath[0] != "" {
-		if isRunnable(customPath[0]) {
+		if agentrun.IsRunnable(customPath[0]) {
 			return customPath[0]
 		}
 	}
@@ -46,7 +45,7 @@ func FindCodex(customPath ...string) string {
 		if strings.HasPrefix(p, "~/") && home != "" {
 			resolved = filepath.Join(home, p[2:])
 		}
-		if isRunnable(resolved) {
+		if agentrun.IsRunnable(resolved) {
 			return resolved
 		}
 	}
@@ -60,16 +59,4 @@ func programCommand(commands []*agentrun.AgentProgramCommand, name string) []str
 		}
 	}
 	return nil
-}
-
-func isRunnable(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
-		return false
-	}
-	if runtime.GOOS == "windows" {
-		ext := strings.ToLower(filepath.Ext(path))
-		return slices.Contains([]string{".exe", ".cmd", ".bat"}, ext)
-	}
-	return info.Mode()&0o111 != 0
 }

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // AntigravityConfig holds configuration values discovered from Antigravity configuration files.
@@ -24,7 +26,7 @@ func ReadAntigravityConfig() (*AntigravityConfig, error) {
 		filepath.Join(home, ".antigravity", "config.json"),
 	}
 	for _, path := range candidates {
-		data, err := os.ReadFile(path)
+		data, err := agentrun.ReadFile(path)
 		if err != nil {
 			continue
 		}

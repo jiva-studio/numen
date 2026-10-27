@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -17,12 +16,9 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	vaultDir := t.TempDir()
 	outsideDir := t.TempDir()
 
-	insidePath := filepath.Join(vaultDir, "inside.pdf")
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
-	_ = os.WriteFile(insidePath, []byte("%PDF-1.4 dummy"), 0o644)
-	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	server := service.NewDocumentServer(hosttest.New("vault"), func() string { return vaultDir }, hosttest.NewTexts("vault", "md.numen.readers.pdf"))
+	server := service.NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", "md.numen.readers.pdf"))
 	ctx := context.Background()
 
 	// 1. GetDocument outside vault -> PermissionDenied

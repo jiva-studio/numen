@@ -2,7 +2,6 @@ package service
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
@@ -28,8 +27,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	defaultRoot := func() string { return os.Getenv("NUMEN_VAULT_PATH") }
-	return mount(s, NewBookServer(files, defaultRoot), NewTextServer(files, texts, store, queue))
+	return mount(s, NewBookServer(files), NewTextServer(files, texts, store, queue))
 }
 
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
@@ -62,8 +60,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		root := vars["NUMEN_VAULT_PATH"]
-		defaultRoot := func() string { return root }
-		return mount(s, NewBookServer(files, defaultRoot), NewTextServer(files, texts, store, queue))
+		return mount(s, NewBookServer(files), NewTextServer(files, texts, store, queue))
 	})
 }

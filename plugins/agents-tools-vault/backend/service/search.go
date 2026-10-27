@@ -2,9 +2,6 @@ package service
 
 import (
 	"context"
-	"io/fs"
-	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 
@@ -240,41 +237,5 @@ func (t *Tools) collectNotePaths(ctx context.Context) ([]string, error) {
 	if err == nil && len(paths) > 0 {
 		return paths, nil
 	}
-
-	untyped, err := t.vault.GetPathsOfType(ctx, "")
-	if err == nil && len(untyped) > 0 {
-		return untyped, nil
-	}
-
-	return t.collectDiskPaths(ctx)
-}
-
-func (t *Tools) collectDiskPaths(ctx context.Context) ([]string, error) {
-	v, err := t.vault.GetVault(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if v.Path == "" {
-		return nil, nil
-	}
-
-	var diskPaths []string
-	walkErr := filepath.WalkDir(v.Path, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d != nil && !d.IsDir() && strings.HasSuffix(d.Name(), ".md") {
-			rel, relErr := filepath.Rel(v.Path, path)
-			if relErr == nil {
-				diskPaths = append(diskPaths, filepath.ToSlash(rel))
-			}
-		}
-		return nil
-	})
-	if walkErr != nil {
-		return nil, walkErr
-	}
-
-	slices.Sort(diskPaths)
-	return diskPaths, nil
+	return t.vault.GetPathsOfType(ctx, "")
 }

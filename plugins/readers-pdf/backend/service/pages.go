@@ -2,10 +2,8 @@ package service
 
 import (
 	"bytes"
-	"errors"
 	"image/jpeg"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -21,13 +19,12 @@ const pageDPI = 150
 
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
-	vaults vaultRoots
+	files host.Vault
 }
 
-// NewPageServer returns a PageServer that finds the vault of a request through files, and works the
-// vault at defaultRoot for a request naming none.
-func NewPageServer(files host.Vault, defaultRoot func() string) *PageServer {
-	return &PageServer{vaults: vaultRoots{files: files, defaultRoot: defaultRoot}}
+// NewPageServer returns a PageServer that reads files from files.
+func NewPageServer(files host.Vault) *PageServer {
+	return &PageServer{files: files}
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
@@ -43,18 +40,14 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "path required", http.StatusBadRequest)
 		return
 	}
-	cleanPath, err := s.vaults.getFilePath(r.Context(), r.Header, path)
+	raw, _, err := getVault(s.files, r.Header).Read(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), getStatus(err))
 		return
 	}
-	image, err := renderPage(cleanPath, index)
+	image, err := renderPage(raw, index)
 	if err != nil {
-		status := http.StatusUnprocessableEntity
-		if errors.Is(err, os.ErrNotExist) {
-			status = http.StatusNotFound
-		}
-		http.Error(w, err.Error(), status)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	w.Header().Set("Content-Type", "image/jpeg")
@@ -62,14 +55,9 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(image)
 }
 
-// renderPage draws one page of the PDF at path as JPEG bytes.
-func renderPage(path string, index int) ([]byte, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	scan, err := pdf.OpenReader(file)
+// renderPage draws one page of the PDF bytes raw as JPEG bytes.
+func renderPage(raw []byte, index int) ([]byte, error) {
+	scan, err := pdf.OpenBytes(raw)
 	if err != nil {
 		return nil, err
 	}

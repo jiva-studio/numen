@@ -1,7 +1,7 @@
 package service
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,38 +10,22 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 )
 
-// vaultRoots finds the folder of the vault a request works.
-type vaultRoots struct {
-	files host.Vault
-	// defaultRoot is the folder of the vault the plugin was started for, which a request naming no
-	// vault works.
-	defaultRoot func() string
+// getVault returns the vault the request's Numen-Vault header names, and the shown vault where it
+// names none.
+func getVault(files host.Vault, header http.Header) host.Vault {
+	if id := host.GetRequestVault(header); id != "" {
+		return files.With(id)
+	}
+	return files
 }
 
-// getRoot returns the folder of the vault the request's Numen-Vault header names, and the folder of
-// the vault the plugin was started for where it names none.
-func (r vaultRoots) getRoot(ctx context.Context, header http.Header) (string, error) {
-	id := host.GetRequestVault(header)
-	if id == "" {
-		return r.defaultRoot(), nil
+// readVaultError turns a host vault error into a Connect error.
+func readVaultError(path string, err error) error {
+	if errors.Is(err, host.ErrOutside) {
+		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", vault.ErrOutsideVault))
 	}
-	found, err := r.files.With(id).GetVault(ctx)
-	if err != nil {
-		return "", fmt.Errorf("find the vault %s: %w", id, err)
+	if errors.Is(err, host.ErrNoVault) {
+		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
 	}
-	return found.Path, nil
-}
-
-// getFilePath returns the path on disk of a file of the vault the request works, and a Connect
-// error where the vault is not found or the path leaves it.
-func (r vaultRoots) getFilePath(ctx context.Context, header http.Header, path string) (string, error) {
-	root, err := r.getRoot(ctx, header)
-	if err != nil {
-		return "", connect.NewError(connect.CodeNotFound, err)
-	}
-	cleanPath, err := vault.ValidatePathIn(root, path)
-	if err != nil {
-		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
-	}
-	return cleanPath, nil
+	return connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
 }

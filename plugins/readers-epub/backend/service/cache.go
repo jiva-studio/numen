@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
@@ -22,8 +24,8 @@ var errReadFile = errors.New("read file")
 // A bookCache keeps open the most recently read books, each opened once while its
 // file is unchanged.
 type bookCache struct {
-	// openFile opens the file at a path.
-	openFile func(path string) (*os.File, error)
+	// readFile reads the file at a path of the vault.
+	readFile func(ctx context.Context, files host.Vault, path string) ([]byte, host.FileStat, error)
 
 	mu       sync.Mutex
 	books    []*cachedBook // least recently read first
@@ -31,30 +33,32 @@ type bookCache struct {
 }
 
 func newBookCache() *bookCache {
-	return &bookCache{openFile: openShared}
+	return &bookCache{readFile: func(ctx context.Context, files host.Vault, path string) ([]byte, host.FileStat, error) {
+		return files.Read(ctx, path)
+	}}
 }
 
-// A cachedBook is a book whose file stays open until it is evicted and has no readers.
+// A cachedBook is a book kept in the cache until it is evicted and has no readers.
 type cachedBook struct {
-	path    string
+	key     string
 	size    int64
 	mtime   int64
-	file    *os.File
 	archive *epub.Archive
 
 	// readers is how many requests are reading, and evicted is whether the cache
-	// dropped the book. The file closes when an evicted book has no readers.
+	// dropped the book.
 	readers int
 	evicted bool
 }
 
 // acquire returns the cached book at path, opening it when the cache has none for the
 // file as it is now. The caller returns it with release.
-func (c *bookCache) acquire(path string) (*cachedBook, error) {
-	info, err := os.Stat(path)
+func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID host.VaultID, path string) (*cachedBook, error) {
+	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errReadFile, err)
 	}
+	key := string(vaultID) + "\x00" + path
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -62,11 +66,11 @@ func (c *bookCache) acquire(path string) (*cachedBook, error) {
 		return nil, errCacheClosed
 	}
 	for i, book := range c.books {
-		if book.path != path {
+		if book.key != key {
 			continue
 		}
 		c.books = append(c.books[:i:i], c.books[i+1:]...)
-		if book.size == info.Size() && book.mtime == info.ModTime().UnixNano() {
+		if book.size == info.Size && book.mtime == info.ModTime.UnixNano() {
 			c.books = append(c.books, book)
 			book.readers++
 			return book, nil
@@ -75,7 +79,7 @@ func (c *bookCache) acquire(path string) (*cachedBook, error) {
 		break
 	}
 
-	book, err := c.openBook(path)
+	book, err := c.openBook(ctx, files, key, path)
 	if err != nil {
 		return nil, err
 	}
@@ -88,40 +92,28 @@ func (c *bookCache) acquire(path string) (*cachedBook, error) {
 	return book, nil
 }
 
-func (c *bookCache) openBook(path string) (*cachedBook, error) {
-	file, err := c.openFile(path)
+func (c *bookCache) openBook(ctx context.Context, files host.Vault, key, path string) (*cachedBook, error) {
+	raw, info, err := c.readFile(ctx, files, path)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errReadFile, err)
 	}
-	info, err := file.Stat()
+	archive, err := epub.OpenArchive(bytes.NewReader(raw), int64(len(raw)))
 	if err != nil {
-		_ = file.Close()
-		return nil, fmt.Errorf("%w: %w", errReadFile, err)
-	}
-	if info.IsDir() {
-		_ = file.Close()
-		return nil, fmt.Errorf("%w: %s is a directory", errReadFile, path)
-	}
-	archive, err := epub.OpenArchive(file, info.Size())
-	if err != nil {
-		_ = file.Close()
 		return nil, err
 	}
 	return &cachedBook{
-		path:    path,
-		size:    info.Size(),
-		mtime:   info.ModTime().UnixNano(),
-		file:    file,
+		key:     key,
+		size:    info.Size,
+		mtime:   info.ModTime.UnixNano(),
 		archive: archive,
 	}, nil
 }
 
-// evict drops a book from the cache. The file of a book with no readers closes at once, and the
-// file of a book with readers closes when the last one releases it. The caller has the lock.
+// evict drops a book from the cache. The caller has the lock.
 func (c *bookCache) evict(book *cachedBook) {
 	book.evicted = true
 	if book.readers == 0 {
-		_ = book.file.Close()
+		book.archive = nil
 	}
 }
 
@@ -131,7 +123,7 @@ func (c *bookCache) release(book *cachedBook) {
 	defer c.mu.Unlock()
 	book.readers--
 	if book.evicted && book.readers == 0 {
-		_ = book.file.Close()
+		book.archive = nil
 	}
 }
 

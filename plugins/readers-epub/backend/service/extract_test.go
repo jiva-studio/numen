@@ -67,33 +67,28 @@ func createPictureEpub(t *testing.T) []byte {
 	})
 }
 
-func writeBook(t *testing.T) (dir, name string, size, mtime int64) {
+func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime int64) {
 	t.Helper()
-	dir = t.TempDir()
 	name = "pictured.epub"
-	full := filepath.Join(dir, name)
-	if err := os.WriteFile(full, createPictureEpub(t), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	info, err := os.Stat(full)
+	files = hosttest.OnDisk(t, "vault", map[string]string{name: string(createPictureEpub(t))})
+	info, err := files.StatFile(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("NUMEN_VAULT_PATH", dir)
-	return dir, name, info.Size(), info.ModTime().UnixNano()
+	return files, name, info.Size, info.ModTime.UnixNano()
 }
 
-func readEntry(t *testing.T, path, entry string, baseline *epubv1.FileStat) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
+func readEntry(t *testing.T, files *hosttest.Vault, path, entry string, baseline *epubv1.FileStat) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
 	t.Helper()
-	server := NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
+	server := NewBookServer(files)
 	t.Cleanup(server.Close)
 	return server.ReadBookEntry(context.Background(),
 		connect.NewRequest(&epubv1.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline}))
 }
 
 func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
-	_, name, size, mtime := writeBook(t)
-	resp, err := readEntry(t, name, "EPUB/cover.png", &epubv1.FileStat{Path: name, Size: size, Mtime: mtime})
+	files, name, size, mtime := writeBook(t)
+	resp, err := readEntry(t, files, name, "EPUB/cover.png", &epubv1.FileStat{Path: name, Size: size, Mtime: mtime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,21 +98,21 @@ func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 }
 
 func TestReadBookEntryAnswersWithoutABaseline(t *testing.T) {
-	_, name, _, _ := writeBook(t)
-	if _, err := readEntry(t, name, "EPUB/cover.png", nil); err != nil {
+	files, name, _, _ := writeBook(t)
+	if _, err := readEntry(t, files, name, "EPUB/cover.png", nil); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
-	_, name, size, mtime := writeBook(t)
+	files, name, size, mtime := writeBook(t)
 	cases := map[string]*epubv1.FileStat{
 		"another size":  {Path: name, Size: size + 1, Mtime: mtime},
 		"another stamp": {Path: name, Size: size, Mtime: mtime + 1},
 	}
 	for label, baseline := range cases {
 		t.Run(label, func(t *testing.T) {
-			_, err := readEntry(t, name, "EPUB/cover.png", baseline)
+			_, err := readEntry(t, files, name, "EPUB/cover.png", baseline)
 			if connect.CodeOf(err) != connect.CodeAborted {
 				t.Fatalf("code = %v (%v), want aborted", connect.CodeOf(err), err)
 			}
@@ -126,20 +121,20 @@ func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
 }
 
 func TestReadBookEntryRefusesAnEntryTheArchiveLacks(t *testing.T) {
-	_, name, _, _ := writeBook(t)
-	_, err := readEntry(t, name, "EPUB/missing.png", nil)
+	files, name, _, _ := writeBook(t)
+	_, err := readEntry(t, files, name, "EPUB/missing.png", nil)
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("code = %v (%v), want not found", connect.CodeOf(err), err)
 	}
 }
 
 func TestReadBookEntryRefusesAPathOutsideTheVault(t *testing.T) {
-	writeBook(t)
+	files, _, _, _ := writeBook(t)
 	outside := filepath.Join(t.TempDir(), "outside.epub")
 	if err := os.WriteFile(outside, createPictureEpub(t), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err := readEntry(t, outside, "EPUB/cover.png", nil)
+	_, err := readEntry(t, files, outside, "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("code = %v (%v), want permission denied", connect.CodeOf(err), err)
 	}
@@ -149,40 +144,39 @@ func TestReadBookEntryRefusesAPathOutsideTheVault(t *testing.T) {
 }
 
 func TestReadBookEntryRefusesAFileThatIsNoBook(t *testing.T) {
-	dir, _, _, _ := writeBook(t)
-	if err := os.WriteFile(filepath.Join(dir, "junk.epub"), []byte("junk"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	_, err := readEntry(t, "junk.epub", "EPUB/cover.png", nil)
+	files, _, _, _ := writeBook(t)
+	files.File("junk.epub", "junk")
+	_, err := readEntry(t, files, "junk.epub", "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
 }
 
 func TestReadBookEntryRefusesNoPath(t *testing.T) {
-	_, err := readEntry(t, "", "EPUB/cover.png", nil)
+	files, _, _, _ := writeBook(t)
+	_, err := readEntry(t, files, "", "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
 }
 
 func TestReadBookEntryRefusesNoEntry(t *testing.T) {
-	_, name, _, _ := writeBook(t)
-	_, err := readEntry(t, name, "", nil)
+	files, name, _, _ := writeBook(t)
+	_, err := readEntry(t, files, name, "", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
 	}
 }
 
 func TestReadBookEntryRefusesNotFound(t *testing.T) {
-	dir, _, _, _ := writeBook(t)
-	subDir := filepath.Join(dir, "sub")
+	files, _, _, _ := writeBook(t)
+	subDir := filepath.Join(files.Vault().Path, "sub")
 	if err := os.Mkdir(subDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	for _, target := range []string{"nonexistent.epub", "sub"} {
 		t.Run(target, func(t *testing.T) {
-			_, err := readEntry(t, target, "EPUB/cover.png", nil)
+			_, err := readEntry(t, files, target, "EPUB/cover.png", nil)
 			if connect.CodeOf(err) != connect.CodeNotFound {
 				t.Fatalf("code = %v (%v), want not found", connect.CodeOf(err), err)
 			}
@@ -191,8 +185,8 @@ func TestReadBookEntryRefusesNotFound(t *testing.T) {
 }
 
 func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
-	_, name, size, _ := writeBook(t)
-	if _, err := readEntry(t, name, "EPUB/cover.png", &epubv1.FileStat{Path: name, Size: size, Mtime: 0}); err != nil {
+	files, name, size, _ := writeBook(t)
+	if _, err := readEntry(t, files, name, "EPUB/cover.png", &epubv1.FileStat{Path: name, Size: size, Mtime: 0}); err != nil {
 		t.Fatalf("expected success with Mtime == 0, got %v", err)
 	}
 }

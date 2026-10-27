@@ -117,20 +117,16 @@ func createMinimalEpub(t *testing.T) []byte {
 }
 
 func TestBookServerGetBookAndMarkup(t *testing.T) {
-	tempDir := t.TempDir()
-	t.Setenv("NUMEN_VAULT_PATH", tempDir)
 	epubBytes := createMinimalEpub(t)
-	epubPath := filepath.Join(tempDir, "test.epub")
-	if err := os.WriteFile(epubPath, epubBytes, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	files := hosttest.New("vault")
+	files.File("test.epub", string(epubBytes))
 
-	server := service.NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
+	server := service.NewBookServer(files)
 	ctx := context.Background()
 
 	// Test GetBook
 	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
-		Path: epubPath,
+		Path: "test.epub",
 	}))
 	if err != nil {
 		t.Fatalf("unexpected GetBook error: %v", err)
@@ -148,7 +144,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 
 	// Test ReadBookMarkup
 	markupResp, err := server.ReadBookMarkup(ctx, connect.NewRequest(&epubv1.ReadBookMarkupRequest{
-		Path:     epubPath,
+		Path:     "test.epub",
 		Document: "OEBPS/doc1.xhtml",
 	}))
 	if err != nil {
@@ -160,7 +156,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 
 	// Test non-existent book
 	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
-		Path: filepath.Join(tempDir, "nonexistent.epub"),
+		Path: "nonexistent.epub",
 	}))
 	if err == nil {
 		t.Fatal("expected error for nonexistent file, got nil")
@@ -168,21 +164,17 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 }
 
 func TestBookServerVaultBoundary(t *testing.T) {
-	vaultDir := t.TempDir()
 	outsideDir := t.TempDir()
 
 	epubBytes := createMinimalEpub(t)
-	insidePath := filepath.Join(vaultDir, "inside.epub")
 	outsidePath := filepath.Join(outsideDir, "outside.epub")
-	if err := os.WriteFile(insidePath, epubBytes, 0o644); err != nil {
-		t.Fatal(err)
-	}
 	if err := os.WriteFile(outsidePath, epubBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := service.NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
+	files := hosttest.New("vault")
+	files.File("inside.epub", string(epubBytes))
+	server := service.NewBookServer(files)
 	ctx := context.Background()
 
 	// 1. Path outside vault should fail with permission denied
@@ -198,7 +190,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 
 	// 2. Path traversal should fail with permission denied
 	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
-		Path: filepath.Join(vaultDir, "..", "outside.epub"),
+		Path: "../outside.epub",
 	}))
 	if err == nil {
 		t.Fatal("expected error for traversal path, got nil")

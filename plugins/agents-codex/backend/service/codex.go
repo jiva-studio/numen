@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 )
 
@@ -46,7 +47,7 @@ func readCodexCache() []AgentModel {
 	if err != nil {
 		return nil
 	}
-	data, err := os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
+	data, err := agentrun.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
 	if err != nil {
 		return nil
 	}

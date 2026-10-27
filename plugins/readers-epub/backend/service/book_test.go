@@ -60,17 +60,18 @@ func createMinimalEpub(t *testing.T) []byte {
 }
 
 func TestBookServerVaultBoundary(t *testing.T) {
-	vaultDir := t.TempDir()
 	outsideDir := t.TempDir()
-
-	insidePath := filepath.Join(vaultDir, "inside.epub")
 	outsidePath := filepath.Join(outsideDir, "outside.epub")
 	data := createMinimalEpub(t)
-	_ = os.WriteFile(insidePath, data, 0o644)
 	_ = os.WriteFile(outsidePath, data, 0o644)
 
-	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
+	files := hosttest.OnDisk(t, "vault", map[string]string{
+		"inside.epub": string(data),
+		"a..b.epub":   string(data),
+	})
+	vaultDir := files.Vault().Path
+
+	server := NewBookServer(files)
 	ctx := context.Background()
 
 	// 1. GetBook outside vault -> PermissionDenied
@@ -92,7 +93,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 
 	// 3. Inside vault -> Success
 	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
-		Path: insidePath,
+		Path: "inside.epub",
 	}))
 	if err != nil {
 		t.Fatalf("expected success for GetBook inside vault, got %v", err)
@@ -119,10 +120,8 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 6. Double dot in legitimate filename inside vault -> Success
-	dotPath := filepath.Join(vaultDir, "a..b.epub")
-	_ = os.WriteFile(dotPath, data, 0o644)
 	resp, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
-		Path: dotPath,
+		Path: "a..b.epub",
 	}))
 	if err != nil {
 		t.Fatalf("expected success for double-dot filename inside vault, got %v", err)
@@ -143,12 +142,14 @@ func TestBookServerVaultBoundary(t *testing.T) {
 		t.Fatalf("expected CodePermissionDenied for broken outside symlink, got %v", err)
 	}
 
-	// 8. Empty vault root -> PermissionDenied
-	emptyServer := NewBookServer(hosttest.New("vault"), func() string { return "" })
+	// 8. Hidden vault -> PermissionDenied
+	hiddenVault := hosttest.New("vault")
+	hiddenVault.Hide()
+	emptyServer := NewBookServer(hiddenVault)
 	_, err = emptyServer.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
-		Path: insidePath,
+		Path: "inside.epub",
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
-		t.Fatalf("expected CodePermissionDenied for empty vault root, got %v", err)
+		t.Fatalf("expected CodePermissionDenied for hidden vault, got %v", err)
 	}
 }

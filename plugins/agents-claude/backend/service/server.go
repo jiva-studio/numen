@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -154,12 +153,12 @@ func (s *agentServer) AskAgent(
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="work.Output is unused because agent-claude writes responses directly to the stream"
 	work := agentrun.NewWork(conversation, 0, cancel)
 	if !s.registry.Add(work) {
-		removeFile(configFile)
+		agentrun.RemoveFile(configFile)
 		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
 	}
 	defer s.registry.Remove(work)
 	defer work.End()
-	defer removeFile(configFile)
+	defer agentrun.RemoveFile(configFile)
 
 	// The wait for the model begins with the program, and the stream opens on saying so.
 	if err := stream.Send(&agentrun.AskAgentResponse{
@@ -364,17 +363,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
 		return mount(s, &agentServer{environ: getVariables(vars)})
 	})
-}
-
-// removeFile removes the file, if there is one.
-func removeFile(path string) {
-	// gomutants:disable-next-line BRANCH_IF reason="os.Remove on an empty path returns ErrNotExist which is ignored"
-	if path == "" {
-		return
-	}
-	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		fmt.Fprintf(os.Stderr, "remove %s: %v\n", path, err)
-	}
 }
 
 // listModels returns the models the program offers, as it lists them. The aliases of the fallback

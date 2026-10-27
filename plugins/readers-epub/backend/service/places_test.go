@@ -1,8 +1,6 @@
 package service
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -35,15 +33,13 @@ func createGuidedEpub(t *testing.T) []byte {
 }
 
 // newGuidedBookServer is a book server over a vault holding the guided book as guided.epub.
-func newGuidedBookServer(t *testing.T) (*BookServer, string) {
+func newGuidedBookServer(t *testing.T) (*BookServer, *hosttest.Vault) {
 	t.Helper()
-	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "guided.epub"), createGuidedEpub(t), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	books := NewBookServer(hosttest.New("vault"), func() string { return dir })
+	files := hosttest.New("vault")
+	files.File("guided.epub", string(createGuidedEpub(t)))
+	books := NewBookServer(files)
 	t.Cleanup(books.Close)
-	return books, dir
+	return books, files
 }
 
 func TestGetCfiNamesTheCharacterAtAnOffset(t *testing.T) {
@@ -78,14 +74,12 @@ func TestFindOffsetReturnsTheOffsetACFINames(t *testing.T) {
 }
 
 func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
-	books, dir := newGuidedBookServer(t)
+	books, files := newGuidedBookServer(t)
 	first, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "guided.epub", Offset: 0}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "guided.epub"), createPictureEpub(t), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	files.File("guided.epub", string(createPictureEpub(t)))
 
 	second, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "guided.epub", Offset: 0}))
 
@@ -125,17 +119,15 @@ func TestGetCfiRefusesNoPath(t *testing.T) {
 }
 
 func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
-	dir := t.TempDir()
 	raw := createZipEpub(t, map[string][]byte{
 		"EPUB/package.opf": []byte(`<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata/>
 <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
 <spine><itemref idref="c1"/></spine></package>`),
 		"EPUB/c1.xhtml": []byte(`<html><body><img src="cover.png"/></body></html>`),
 	})
-	if err := os.WriteFile(filepath.Join(dir, "blank.epub"), raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	books := NewBookServer(hosttest.New("vault"), func() string { return dir })
+	files := hosttest.New("vault")
+	files.File("blank.epub", string(raw))
+	books := NewBookServer(files)
 	t.Cleanup(books.Close)
 
 	_, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "blank.epub"}))

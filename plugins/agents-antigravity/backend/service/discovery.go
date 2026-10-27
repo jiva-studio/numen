@@ -1,13 +1,12 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 var antigravityPlaces = []string{
@@ -23,16 +22,16 @@ var antigravityPlaces = []string{
 // IsAntigravityInstalled checks whether Google Antigravity CLI is available on this machine.
 func IsAntigravityInstalled(customPath ...string) bool {
 	if len(customPath) > 0 && customPath[0] != "" {
-		return isRunnable(customPath[0])
+		return agentrun.IsRunnable(customPath[0])
 	}
 	found := FindAntigravity()
-	return isRunnable(found)
+	return agentrun.IsRunnable(found)
 }
 
 // FindAntigravity returns the path of the Antigravity CLI, or the bare name where not found.
 func FindAntigravity(customPath ...string) string {
 	if len(customPath) > 0 && customPath[0] != "" {
-		if isRunnable(customPath[0]) {
+		if agentrun.IsRunnable(customPath[0]) {
 			return customPath[0]
 		}
 	}
@@ -47,7 +46,7 @@ func FindAntigravity(customPath ...string) string {
 		if strings.HasPrefix(p, "~/") && home != "" {
 			resolved = filepath.Join(home, p[2:])
 		}
-		if isRunnable(resolved) {
+		if agentrun.IsRunnable(resolved) {
 			return resolved
 		}
 	}
@@ -61,16 +60,4 @@ func programCommand(commands []*agentrun.AgentProgramCommand, name string) []str
 		}
 	}
 	return nil
-}
-
-func isRunnable(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
-		return false
-	}
-	if runtime.GOOS == "windows" {
-		ext := strings.ToLower(filepath.Ext(path))
-		return slices.Contains([]string{".exe", ".cmd", ".bat"}, ext)
-	}
-	return info.Mode()&0o111 != 0
 }

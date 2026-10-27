@@ -25,6 +25,15 @@ func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
 	return &Scan{doc: doc}, nil
 }
 
+// OpenBytes opens a PDF from raw bytes for page rendering.
+func OpenBytes(raw []byte) (*Scan, error) {
+	doc, err := openBytes(raw)
+	if err != nil {
+		return nil, err
+	}
+	return &Scan{doc: doc}, nil
+}
+
 func (s *Scan) Close() { s.doc.close() }
 
 // GetPageCount is how many pages the document has.

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // CodexConfig holds configuration values discovered from Codex configuration files.
@@ -20,12 +22,12 @@ func ReadCodexConfig() (*CodexConfig, error) {
 		return nil, err
 	}
 	tomlPath := filepath.Join(home, ".codex", "config.toml")
-	if data, err := os.ReadFile(tomlPath); err == nil {
+	if data, err := agentrun.ReadFile(tomlPath); err == nil {
 		cfg := parseSimpleToml(string(data))
 		return cfg, nil
 	}
 	jsonPath := filepath.Join(home, ".codex", "config.json")
-	if data, err := os.ReadFile(jsonPath); err == nil {
+	if data, err := agentrun.ReadFile(jsonPath); err == nil {
 		var cfg CodexConfig
 		if err := json.Unmarshal(data, &cfg); err == nil {
 			return &cfg, nil

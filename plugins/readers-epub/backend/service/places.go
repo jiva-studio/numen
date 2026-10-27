@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/cfi"
 	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
@@ -16,7 +16,7 @@ import (
 // placedBook is the book a place was last asked of, kept while its file is the same bytes: the tab
 // asks for the CFI of each page it turns to.
 type placedBook struct {
-	path  string
+	key   string
 	size  int64
 	mtime int64
 	book  *epub.Book
@@ -28,30 +28,29 @@ func (s *BookServer) readPlacedBook(ctx context.Context, header http.Header, pat
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("path required"))
 	}
-	cleanPath, err := s.vaults.getFilePath(ctx, header, path)
+	vaultID := host.GetRequestVault(header)
+	files := getVault(s.files, header)
+	info, err := files.StatFile(ctx, path)
 	if err != nil {
-		return nil, err
+		return nil, readVaultError(path, err)
 	}
-	info, err := os.Stat(cleanPath)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
-	}
+	key := string(vaultID) + "\x00" + path
 	s.mu.Lock()
 	last := s.placed
 	s.mu.Unlock()
-	if last.book != nil && last.path == cleanPath && last.size == info.Size() && last.mtime == info.ModTime().UnixNano() {
+	if last.book != nil && last.key == key && last.size == info.Size && last.mtime == info.ModTime.UnixNano() {
 		return last.book, nil
 	}
-	raw, err := os.ReadFile(cleanPath)
+	raw, info, err := files.Read(ctx, path)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+		return nil, readVaultError(path, err)
 	}
 	book, err := epub.Read(raw)
 	if err != nil {
 		return nil, newReadError(err)
 	}
 	s.mu.Lock()
-	s.placed = placedBook{path: cleanPath, size: info.Size(), mtime: info.ModTime().UnixNano(), book: book}
+	s.placed = placedBook{key: key, size: info.Size, mtime: info.ModTime.UnixNano(), book: book}
 	s.mu.Unlock()
 	return book, nil
 }

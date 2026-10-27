@@ -3,9 +3,10 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 func writeMcpConfig(url, token string) (string, error) {
@@ -33,21 +34,7 @@ func writeMcpConfig(url, token string) (string, error) {
 		return "", fmt.Errorf("marshal mcp config: %w", err)
 	}
 
-	file, err := os.CreateTemp("", "numen-tools-*.json")
-	if err != nil {
-		return "", fmt.Errorf("create temp config: %w", err)
-	}
-	defer file.Close()
-
-	if err := file.Chmod(0o600); err != nil {
-		_ = os.Remove(file.Name())
-		return "", fmt.Errorf("chmod config: %w", err)
-	}
-	if _, err := file.Write(data); err != nil {
-		_ = os.Remove(file.Name())
-		return "", fmt.Errorf("write config: %w", err)
-	}
-	return file.Name(), nil
+	return agentrun.WriteTempFile("numen-tools-*.json", data)
 }
 
 // claudeArguments is what a run of the program is started from.
