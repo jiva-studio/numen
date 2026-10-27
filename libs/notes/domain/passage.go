@@ -33,6 +33,10 @@ type Passage struct {
 	// source's own bytes are the text.
 	Producer string
 
+	// Selector locates the hit in the file, from the text version segment it is
+	// in. Empty for a note.
+	Selector Selector
+
 	// SourceHash addresses the content of the source, and is what the 	// recognition of it are kept under. Reading a passage back composes the name
 	// from this and Producer.
 	SourceHash string
