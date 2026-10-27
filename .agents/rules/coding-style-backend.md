@@ -92,8 +92,6 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 
 ## 5. Tests
 
-**How this application is tested*.*
-
 - `t.TempDir`, `t.Context`, `t.Cleanup`. Never the machine's real home, config or cache directory, and never the network. Where the code defaults to a platform location, the test passes an explicit path.
 - The committed fixture vault in `tests/` is read-only and awkward on purpose. A test that needs to change it works on a copy.
 - **A test must be able to fail.** For anything guarding a rule rather than a value, break the rule and watch the test fail — remove the filter, invert the condition, delete the guard. A test that passes either way is worse than no test.

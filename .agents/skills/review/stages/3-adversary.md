@@ -53,7 +53,7 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 
 - A file written and read back is the same bytes.
 - An index rebuilt from the same vault gives the same rows.
-- A chunk identified by its text is the same identifier on either platform (*A chunk is identified by its text*).
+- A chunk identified by its text is the same identifier on either platform.
 - The pure core of a component gives the same numbers on any machine on any day: run it twice with the same props and a fixed clock.
 
 ---

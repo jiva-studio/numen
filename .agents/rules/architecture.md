@@ -40,12 +40,10 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 - **`core` points inward.** `domain/`, `port/` and `usecase/` import nothing from `adapter/`, and nothing that is a driver, a framework or a transport. The violation is always visible in an import block.
 - **`ui` knows nothing about the domain.** No component, story or fixture in `modules/libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests".
 - **`plugin-host` knows only Vue and the plugin SDK.** `modules/libs/plugin-host-ts` (`@numen/plugin-host`) is the loader of plugin frontends and the build of the host modules an application serves them; each application that loads plugins implements its `LoaderHost`. It imports nothing of `@numen/ui`, `@numen/shell`, the protocol, the wire or an application, and no plugin imports it (`tools/lint-layers`, `plugin-host-isolation` and `plugins-reach-no-shell`).
-- **`protocol` is generated, not written.** What crosses between the Go host and a window is the schema's shape; `make generate-check` fails when what is committed is out of date (*A client is generated from the protocol*).
+- **`protocol` is generated, not written.** What crosses between the Go host and a window is the schema's shape; `make generate-check` fails when what is committed is out of date.
 - **An application is where the two sides meet.** `modules/apps/desktop` translates the domain into the drawing vocabulary a component takes, and translates the identifier a component emits back.
 
 ## 3. Ports and adapters
-
-**A hexagonal core in Go*.*
 
 - A **port is named after the need**, an **adapter after the technology**. The core asks for somewhere to read a vault from; that the answer is a filesystem, and that the index is SQLite, is knowledge confined to `adapter/` and `container/`.
 - **Interfaces belong to whoever needs them.** The consumer declares the interface; the implementation never names it. An adapter importing the port package to announce it satisfies it is ceremony.
@@ -55,8 +53,6 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 - **Entities hold rules, not the world.** No I/O, no clock, no framework tags, no knowledge of how they are stored.
 
 ## 4. The interface hexagon & Feature-Sliced Design (FSD)
-
-**How an interface component is built*, *The component library is shadcn-vue*, *A file of the windows belongs to a layer*.*
 
 The frontend is structured into **six FSD layers**:
 
@@ -79,18 +75,12 @@ In anything pure — `domain/`, the model and arithmetic modules beside a compon
 
 - **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected, never reached for. Time has a lifetime a test must control.
 - **Randomness is a port.** `math/rand` and `Math.random()` are passed in or seeded.
-- **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform (*A chunk is identified by its text*).
+- **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform.
 - **No error is swallowed.** An empty `catch {}` and a discarded `_ = fn()` are both forbidden. An error is handled, returned, wrapped, or ignored with a statement saying it is.
 
 ## 6. One name for one thing
 
-*The glossary preamble.*
-
-The domain, the storage, the wire and the interface use one word for one thing. **A word means one thing inside its context, and the same word in two contexts is not a collision** — nothing is renamed to keep clear of a name another context already uses, and a word is listed as never called something only where the two would genuinely be taken for the same thing.
-
-A concept takes the word its field already gives it. A field renamed on the way across a boundary is a defect unless the glossary lists the rename; it lists `calling`/`doing` and `stretch`/`span`, each a rename the boundary requires, and a third name for either is the defect.
-
-A concept appearing in code under a name nobody wrote down is the point at which the code and the documents start describing different systems. A new term is added to the glossary in the change that introduces it.
+A concept takes the standard term of its field.
 
 ## 7. Nothing exists that no decision asked for
 

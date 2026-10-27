@@ -241,35 +241,15 @@ Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `r
 
 ## 9. Domain terminology
 
-Use the **project glossary** (`docs/glossary.md`) as the single source of
-truth for domain terms. When the glossary and code disagree, fix the code.
+A concept takes the standard term of its field (W3C, LSP, MIME, gRPC codes).
 
 Specific term rules:
 
 | Wrong                | Correct              | Context                                       |
 | -------------------- | -------------------- | --------------------------------------------- |
 | `refusal`, `refused` | `error`, `errorCode` | operation error discriminants                 |
-| `readings`           | `recognition`        | OCR output — the core's word is `Recognition` |
 | `spoken`, `spokenBy` | `transcript`         | audio/video transcription output              |
-| `reflow` for EPUB    | `book`               | EPUB = book; PDF = document                   |
 | `make` (frontend)    | `create`             | factory functions in TS/Vue                   |
-
-Three words this table used to call wrong are the glossary's own, and renaming
-them breaks a settled distinction rather than serving it:
-
-- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
-  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
-  Both are correct, on their own side of the boundary, and the pair is a rename
-  the boundary requires. A third name for either is the defect.
-- **`address`** is scheme and value, the only thing that says where a link goes.
-  **`link`** is the relationship as written in a file. Collapsing the two makes
-  a homonym of the two concepts.
-- **`overtaken`** is the glossary's word for a tab whose file no longer holds
-  the prose the tab read. `stale` appears nowhere in the glossary.
-
-The glossary itself must contain **only project-specific terms** — terms that
-have a meaning in this project different from or more specific than their
-general meaning. Obvious industry terms (tree, drag, chunk, window, theme) do not belong.
 
 ### Vault and link formatting rules
 

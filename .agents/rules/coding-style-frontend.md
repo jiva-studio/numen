@@ -129,8 +129,6 @@ function formatValue(val: string) { ... }
 
 ## 8. Styling
 
-**The component library is shadcn-vue*.*
-
 - **Every colour, size, radius and duration is a design token.** A literal hex, a raw `rgb()`, a hardcoded duration or a Tailwind palette class (`bg-slate-800`) in a component is a finding.
 - **Tokens are declared on the root alone**, in `src/tokens/tokens.css`. A custom property declared on an element beats the same property inherited from the root, so a component declaring its own is a component a theme no longer reaches.
 - **`theme.css` defines Tailwind's names from the tokens, never the reverse**, so `bg-surface` and `var(--numen-surface)` resolve to one value.
@@ -141,8 +139,6 @@ function formatValue(val: string) { ... }
 ---
 
 ## 9. Stories and tests
-
-**How an interface component is built*, *How this application is tested*.*
 
 - **A component is built in Storybook**, in isolation, before any application renders it. One built inside a screen has whatever edge cases that screen happened to contain.
 - **The stories are the corpus, and they are awkward on purpose**: empty, one, far too many, text that is not Latin, text far too long, text with nothing to break at, and no text at all.

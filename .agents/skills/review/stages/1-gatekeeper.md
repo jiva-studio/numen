@@ -51,7 +51,7 @@ Never run blanket checks over untouched parts of the monorepo.
 - `generate-check` fails → **REJECT** (the committed generated code is out of date; *A client is generated from the protocol*).
 - `vue-tsc` fails → **REJECT** (type errors).
 - `vitest` fails, unit or stories → **REJECT**.
-- The story suites did not run in **both** engines → **REJECT the gate as incomplete.** The window is WebKit on this platform and Chromium on Windows; a review that saw one engine did not see the product (*How this application is tested*).
+- The story suites did not run in **both** engines → **REJECT the gate as incomplete.** The window is WebKit on this platform and Chromium on Windows; a review that saw one engine did not see the product.
 - The library was not rebuilt before the windows' suites → the failure is `Cannot find module '@numen/ui'`, which is the gate's own mistake. Rebuild and rerun; do not report it as a finding.
 
 `usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under `-race`. A timeout there is the machine's load, not the code — rerun before calling it a failure.
@@ -66,8 +66,6 @@ Read `AGENTS.md` at the root and in the touched module, and the rules distilled 
 
 ### Go — core, adapters, the desktop host
 
-Related: *A hexagonal core in Go*, *A client is generated from the protocol*, *One process, one lifetime*, and the glossary preamble.
-
 - **Dependencies point inward, and the compiler proves it.** `domain/`, `port/` and `usecase/` import nothing from `adapter/` and nothing that is a driver, a framework or a transport. An import going the wrong way is a finding whatever it is for; it is always visible in an import block.
 - **A port is named after the need, an adapter after the technology.** The core asks for somewhere to read a vault from; that the answer is a filesystem, and that the index is SQLite, is knowledge confined to `adapter/` and `container/`.
 - **Interfaces belong to whoever needs them.** The consumer declares the interface, the implementation never names it. An interface declared next to its single implementation, or an adapter importing the port package to announce it satisfies it, is ceremony.
@@ -81,8 +79,6 @@ Related: *A hexagonal core in Go*, *A client is generated from the protocol*, *O
 - **Do not abstract before there is a second case**, and say so equally when a genuinely needed seam is missing.
 
 ### Vue and TypeScript — the library and the windows
-
-Related: *How an interface component is built*, *The component library is shadcn-vue*, *How this application is tested*, the glossary, *A client is generated from the protocol*.
 
 - **`@numen/ui` knows nothing about the domain.** No component, story or fixture in `modules/libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests". A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `modules/apps/*` → `modules/libs/ui/core`; never back, never sideways.
 - **The core is pure and the view is humble.** What is drawn is computed from the props as plain values — every coordinate, state and derived flag — with no DOM, no Vue, no clock, no randomness and no measurement of text. A number in a template that the pure part did not produce is a broken split, and so is a `computed` reaching for `window` or `Date.now`.
@@ -101,7 +97,7 @@ Related: *How an interface component is built*, *The component library is shadcn
 ### Everywhere
 
 - **A function is named by an imperative verb phrase or a predicate**, and the reader checks it. The reader catches a gerund, a participle, a lone preposition and a third-person verb, and also the word that is neither: a bare noun (`paper`, `room`, `ceiling`), an adjective or an adverb (`plainly`, `quietest`, `harder`), and a metaphor standing where an engineering term exists (`seal`, `retire`, `wake`). Say what the operation is: `measurePage`, `hasRoom`, `getPlainRune`.
-- **One name for one thing** (the glossary preamble). A concept under a name nobody wrote down, or under two names in two packages, is the point at which the code and the documents start describing different systems. A field renamed across a boundary is a defect unless the glossary lists the rename.
+- **One name for one thing.** A concept takes the standard term of its field. A concept under two names in two packages, or a field renamed across a boundary, is a finding.
 - **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers live in `docs/performance.md`.
 - **Anything that makes the same fact true in two places**, and any new dependency inside the core.
 

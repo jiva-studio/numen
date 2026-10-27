@@ -54,10 +54,7 @@ outside `port/`.
 
 No type is named by a gerund or a participle.
 
-The vocabulary itself is [`docs/glossary.md`](../../../docs/glossary.md), and
-its preamble is what a rename is judged against: a concept takes the word its
-field already gives it, a word means one thing inside its context, and nothing
-is coined or suffixed to keep clear of a name another context uses.
+A concept takes the standard term of its field.
 
 ## Constructors
 

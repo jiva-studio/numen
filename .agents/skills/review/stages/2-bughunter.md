@@ -25,7 +25,7 @@ A white-box detective looking only for **functional defects**: logic bugs, races
    - Upstream sources of the state it reads: props, RPC responses, index rows, files on disk.
    - Downstream consumers: watchers, computed properties, event subscribers, renderers, background workers.
 
-A change to a wire message reaches both sides of *A client is generated from the protocol*. A change to what the index stores reaches every query over it (*What the index stores*, *A schema change is a numbered migration*).
+A change to a wire message reaches both the Go side and the generated TypeScript client. A change to what the index stores reaches every query over it and needs a numbered migration.
 
 ---
 
@@ -37,7 +37,7 @@ A change to a wire message reaches both sides of *A client is generated from the
 - A goroutine started without an owner that knows when it ends, or one that never selects on `ctx.Done()`.
 - A blocking channel send with no buffer and no `select` default.
 - `time.Sleep` used as synchronisation, in code or in a test.
-- One process, one lifetime (*One process, one lifetime*): work outliving the thing that started it.
+- One process, one lifetime: work outliving the thing that started it.
 
 ### 2. Go — context, errors and resources
 
@@ -67,7 +67,7 @@ A change to a wire message reaches both sides of *A client is generated from the
 ### 5. Boundaries and indexes
 
 - Off-by-one in a range, a slice, a page or a cursor.
-- Bytes against UTF-16 code units: a *stretch* is bytes over the source's text, a *span* is `from`/`to` as a client counts it, and nothing crosses that boundary unconverted (*A passage is a range of bytes*, and the glossary).
+- Bytes against UTF-16 code units: a *stretch* is bytes over the source's text, a *span* is `from`/`to` as a client counts it, and nothing crosses that boundary unconverted.
 - A string sliced by byte where a rune or a grapheme was meant.
 - Empty input, a single element, a trailing newline, a file with no final newline, CRLF against LF.
 
@@ -75,7 +75,7 @@ A change to a wire message reaches both sides of *A client is generated from the
 
 - A field optional on the Go side (`omitempty`, a nullable column) read on the TypeScript side with no guard.
 - A generated type used against a hand-written shape that has drifted.
-- A value crossing *A client is generated from the protocol*'s boundary renamed on the way, where the glossary does not list it.
+- A value renamed on the way across the protocol boundary.
 
 ### 7. Conditions
 
