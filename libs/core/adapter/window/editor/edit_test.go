@@ -421,12 +421,12 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 	state := &State{}
 	api := &workspaceHandler{state: state}
 
-	if open := state.GetOpenTabs(); len(open.Tabs) != 0 || open.FrontID != "" {
+	if open := state.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
-		Front: "two",
+		ActiveId: "two",
 		Tabs: []*v1.Tab{
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{Id: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
@@ -437,7 +437,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 	}
 
 	want := domain.OpenTabs{
-		FrontID: "two",
+		ActiveID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
@@ -467,8 +467,8 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 	api := &workspaceHandler{state: state}
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
-		Front: "one",
-		Tabs:  []*v1.Tab{{Id: "one", Kind: "reader:viewer", Path: "a.bin", Title: "a", State: `{"page":3}`}},
+		ActiveId: "one",
+		Tabs:     []*v1.Tab{{Id: "one", Kind: "reader:viewer", Path: "a.bin", Title: "a", State: `{"page":3}`}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -480,7 +480,7 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetFront() != "one" || len(got.Msg.GetTabs()) != 1 || got.Msg.GetTabs()[0].GetState() != `{"page":3}` {
+	if got.Msg.GetActiveId() != "one" || len(got.Msg.GetTabs()) != 1 || got.Msg.GetTabs()[0].GetState() != `{"page":3}` {
 		t.Errorf("read %+v", got.Msg)
 	}
 }
@@ -499,8 +499,8 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	api := &workspaceHandler{state: state}
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
-		Front: "one",
-		Tabs:  []*v1.Tab{{Id: "one", Kind: "note", Path: "Entropy.md", Title: "Entropy"}},
+		ActiveId: "one",
+		Tabs:     []*v1.Tab{{Id: "one", Kind: "note", Path: "Entropy.md", Title: "Entropy"}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -509,7 +509,7 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	if len(received) != 1 {
 		t.Fatalf("what the window has open was said %d times", len(received))
 	}
-	front, target := received[0].GetFrontTab()
+	front, target := received[0].GetActiveTab()
 	if !target || front.Path != "Entropy.md" {
 		t.Errorf("the tab in front is %+v", front)
 	}
@@ -522,19 +522,19 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 	}{
 		"a tab in front": {
 			open: domain.OpenTabs{
-				FrontID: "two",
-				Tabs:    []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
+				ActiveID: "two",
+				Tabs:     []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
 			},
 			want: "Talk.mp3",
 		},
 		"nothing open":     {open: domain.OpenTabs{}},
-		"a tab it lets go": {open: domain.OpenTabs{FrontID: "three", Tabs: []domain.Tab{{ID: "one"}}}},
+		"a tab it lets go": {open: domain.OpenTabs{ActiveID: "three", Tabs: []domain.Tab{{ID: "one"}}}},
 		"a tab with no identity": {
 			open: domain.OpenTabs{Tabs: []domain.Tab{{Path: "Entropy.md"}}},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			front, target := c.open.GetFrontTab()
+			front, target := c.open.GetActiveTab()
 			if target != (c.want != "") {
 				t.Fatalf("a tab in front is %v", target)
 			}

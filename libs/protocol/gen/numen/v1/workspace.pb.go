@@ -224,7 +224,7 @@ type WriteOpenTabsRequest struct {
 	Tabs []*Tab `protobuf:"bytes,1,rep,name=tabs,proto3" json:"tabs,omitempty"`
 	// Which of them the person is looking at, by its id. Empty where the window
 	// has nothing open.
-	Front         string `protobuf:"bytes,2,opt,name=front,proto3" json:"front,omitempty"`
+	ActiveId      string `protobuf:"bytes,2,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -266,9 +266,9 @@ func (x *WriteOpenTabsRequest) GetTabs() []*Tab {
 	return nil
 }
 
-func (x *WriteOpenTabsRequest) GetFront() string {
+func (x *WriteOpenTabsRequest) GetActiveId() string {
 	if x != nil {
-		return x.Front
+		return x.ActiveId
 	}
 	return ""
 }
@@ -349,8 +349,8 @@ type ReadOpenTabsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The tabs last written, in the order they were written.
 	Tabs []*Tab `protobuf:"bytes,1,rep,name=tabs,proto3" json:"tabs,omitempty"`
-	// The id of the tab that was in front, empty where none was.
-	Front         string `protobuf:"bytes,2,opt,name=front,proto3" json:"front,omitempty"`
+	// The id of the tab that was active, empty where none was.
+	ActiveId      string `protobuf:"bytes,2,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -392,9 +392,9 @@ func (x *ReadOpenTabsResponse) GetTabs() []*Tab {
 	return nil
 }
 
-func (x *ReadOpenTabsResponse) GetFront() string {
+func (x *ReadOpenTabsResponse) GetActiveId() string {
 	if x != nil {
-		return x.Front
+		return x.ActiveId
 	}
 	return ""
 }
@@ -500,15 +500,15 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x11WatchFocusRequest\"Q\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
-	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\"O\n" +
+	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\"V\n" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
-	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
-	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
+	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
+	"\tactive_id\x18\x02 \x01(\tR\bactiveId\"\x17\n" +
 	"\x15WriteOpenTabsResponse\"\x15\n" +
-	"\x13ReadOpenTabsRequest\"O\n" +
+	"\x13ReadOpenTabsRequest\"V\n" +
 	"\x14ReadOpenTabsResponse\x12!\n" +
-	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
-	"\x05front\x18\x02 \x01(\tR\x05front\"i\n" +
+	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
+	"\tactive_id\x18\x02 \x01(\tR\bactiveId\"i\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +

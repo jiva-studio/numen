@@ -88,7 +88,7 @@ export function useWindowTabs() {
    * The tabs the core kept, opened again with the state each kind saved and laid out by the
    * placement of their kind. A tab whose kind is not registered opens as a placeholder.
    */
-  const restoreTabs = (saved: readonly SavedTab[], front: string) => {
+  const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
     const main: string[] = []
     const aside: string[] = []
     for (const one of saved) {
@@ -98,7 +98,7 @@ export function useWindowTabs() {
       else main.push(one.id)
     }
     layout.value = createWorkspace(main, aside)
-    if (open.value.has(front)) layout.value = openTab(layout.value, front)
+    if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
   }
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)

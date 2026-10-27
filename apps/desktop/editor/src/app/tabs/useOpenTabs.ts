@@ -36,7 +36,7 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
   }
 
   const getOpenTabs = (): OpenTabs => ({
-    front: getActiveTabId(),
+    activeId: getActiveTabId(),
     tabs: windowTabs.tabs.value.map(({ id, title }) => {
       const one = windowTabs.getTab(id)
       return {

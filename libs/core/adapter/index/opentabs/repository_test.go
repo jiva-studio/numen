@@ -27,7 +27,7 @@ func openRepository(t *testing.T) *opentabs.Repository {
 
 func TestReadOpenTabsReturnsNoneForANewVault(t *testing.T) {
 	open, err := openRepository(t).ReadOpenTabs(t.Context(), first)
-	if err != nil || len(open.Tabs) != 0 || open.FrontID != "" {
+	if err != nil || len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("got %+v, %v", open, err)
 	}
 }
@@ -39,7 +39,7 @@ func TestReadOpenTabsReturnsTabsInOrderWithStateAndFront(t *testing.T) {
 			{ID: "reader:viewer:a.bin", Kind: "reader:viewer", Path: "a.bin", Title: "a", State: `{"page":4}`},
 			{ID: "graph:1", Kind: "graph"},
 		},
-		FrontID: "reader:viewer:a.bin",
+		ActiveID: "reader:viewer:a.bin",
 	}
 	if err := repo.WriteOpenTabs(t.Context(), first, want); err != nil {
 		t.Fatal(err)

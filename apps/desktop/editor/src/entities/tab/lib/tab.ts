@@ -15,8 +15,8 @@ export interface Tab {
   readonly state: string
 }
 
-/** What currently open: every tab, and which of them is in front. */
+/** What currently open: every tab, and which of them is active. */
 export interface OpenTabs {
   readonly tabs: readonly Tab[]
-  readonly front: string
+  readonly activeId: string
 }

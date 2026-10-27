@@ -52,7 +52,7 @@ export const mockVaultState: MockVaultState = {
   /** The passages the search answers with. */
   passages: [],
   /** The open tabs the core kept from before the window started. */
-  savedTabs: { tabs: [], front: '' },
+  savedTabs: { tabs: [], activeId: '' },
   /**
    * Which of three the note at each path is, as the vault answers it. A path
    * it says nothing about is the ordinary note the window reads it as.
@@ -200,7 +200,7 @@ export const forgetAnswers = () => {
   mockVaultState.opening = 'Root.md'
   mockVaultState.names = []
   mockVaultState.passages = []
-  mockVaultState.savedTabs = { tabs: [], front: '' }
+  mockVaultState.savedTabs = { tabs: [], activeId: '' }
   mockVaultState.types = {}
   mockVaultState.embedded = 0
   mockVaultState.listable = true

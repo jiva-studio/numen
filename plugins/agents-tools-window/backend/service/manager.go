@@ -20,7 +20,7 @@ var (
 type WindowManager struct {
 	mu         sync.RWMutex
 	tabs       []TabInfo
-	frontID    string
+	activeID   string
 	previews   map[string]EditPreview
 	previewSeq atomic.Uint64
 }
@@ -33,16 +33,16 @@ func NewManager() *WindowManager {
 }
 
 // SetOpenTabs sets the currently open tabs.
-func (m *WindowManager) SetOpenTabs(tabs []TabInfo, frontID string) {
+func (m *WindowManager) SetOpenTabs(tabs []TabInfo, activeID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.tabs = make([]TabInfo, len(tabs))
 	copy(m.tabs, tabs)
-	m.frontID = frontID
+	m.activeID = activeID
 
 	for i := range m.tabs {
-		m.tabs[i].IsFront = (m.tabs[i].ID != "" && m.tabs[i].ID == frontID)
+		m.tabs[i].IsActive = (m.tabs[i].ID != "" && m.tabs[i].ID == activeID)
 	}
 }
 
@@ -53,7 +53,7 @@ func (m *WindowManager) GetOpenTabs() ([]TabInfo, string) {
 
 	copied := make([]TabInfo, len(m.tabs))
 	copy(copied, m.tabs)
-	return copied, m.frontID
+	return copied, m.activeID
 }
 
 // FocusTab focuses or switches to a tab matching the input.
@@ -72,10 +72,10 @@ func (m *WindowManager) FocusTab(_ context.Context, in WindowFocusTabInput) (Tab
 	if in.Path != "" {
 		newTab := createTabFromPath(in.Path, in.TabID, in.Title, len(m.tabs)+1)
 		for j := range m.tabs {
-			m.tabs[j].IsFront = false
+			m.tabs[j].IsActive = false
 		}
 		m.tabs = append(m.tabs, newTab)
-		m.frontID = newTab.ID
+		m.activeID = newTab.ID
 		return newTab, nil
 	}
 
@@ -83,11 +83,11 @@ func (m *WindowManager) FocusTab(_ context.Context, in WindowFocusTabInput) (Tab
 }
 
 func (m *WindowManager) activateTab(idx int) TabInfo {
-	m.frontID = m.tabs[idx].ID
+	m.activeID = m.tabs[idx].ID
 	for j := range m.tabs {
-		m.tabs[j].IsFront = (j == idx)
+		m.tabs[j].IsActive = (j == idx)
 	}
-	m.tabs[idx].IsFront = true
+	m.tabs[idx].IsActive = true
 	return m.tabs[idx]
 }
 
@@ -114,11 +114,11 @@ func createTabFromPath(path, tabID, title string, nextIndex int) TabInfo {
 		title = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	}
 	return TabInfo{
-		ID:      tabID,
-		Kind:    "note",
-		Path:    path,
-		Title:   title,
-		IsFront: true,
+		ID:       tabID,
+		Kind:     "note",
+		Path:     path,
+		Title:    title,
+		IsActive: true,
 	}
 }
 

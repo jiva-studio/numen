@@ -10,7 +10,7 @@ export * from 'playwright/test'
 /** Clears the open tabs the core keeps for the vault in the window. */
 export const forgetOpenTabs = async (request: APIRequestContext): Promise<void> => {
   const answer = await request.post('/numen.v1.WorkspaceService/WriteOpenTabs', {
-    data: { tabs: [], front: '' },
+    data: { tabs: [], activeId: '' },
     headers: { 'Content-Type': 'application/json' },
   })
   if (!answer.ok()) throw new Error(`clearing the open tabs answered ${answer.status()}`)

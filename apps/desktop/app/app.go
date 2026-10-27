@@ -372,7 +372,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 const droppedInto = "data-file-drop-target"
 
 func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
-	if front, target := open.GetFrontTab(); target && front.Path != "" {
+	if front, target := open.GetActiveTab(); target && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}
 	if v.Name == "" {

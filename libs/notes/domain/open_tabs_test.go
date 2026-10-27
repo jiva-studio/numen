@@ -13,9 +13,9 @@ func TestTheFrontTabIsTheOneWhoseIDIsInFront(t *testing.T) {
 			{ID: "b", Kind: "reader:viewer", Path: "b.bin"},
 			{ID: "c", Kind: "graph", State: "{\"focus\":\"a.md\"}"},
 		},
-		FrontID: "b",
+		ActiveID: "b",
 	}
-	front, ok := open.GetFrontTab()
+	front, ok := open.GetActiveTab()
 	if !ok || front.ID != "b" || front.Path != "b.bin" {
 		t.Fatalf("got %+v, %v", front, ok)
 	}
@@ -25,11 +25,11 @@ func TestAWindowWithNoTabInFrontAnswersWithNone(t *testing.T) {
 	for name, open := range map[string]domain.OpenTabs{
 		"nothing open":      {},
 		"no front id":       {Tabs: []domain.Tab{{ID: "a"}}},
-		"front id unknown":  {Tabs: []domain.Tab{{ID: "a"}}, FrontID: "z"},
+		"front id unknown":  {Tabs: []domain.Tab{{ID: "a"}}, ActiveID: "z"},
 		"tab without an id": {Tabs: []domain.Tab{{Kind: "note"}}},
-		"front id only":     {FrontID: "a"},
+		"front id only":     {ActiveID: "a"},
 	} {
-		if front, ok := open.GetFrontTab(); ok || front.ID != "" || front.Kind != "" {
+		if front, ok := open.GetActiveTab(); ok || front.ID != "" || front.Kind != "" {
 			t.Errorf("%s: got %+v, %v", name, front, ok)
 		}
 	}
@@ -37,17 +37,17 @@ func TestAWindowWithNoTabInFrontAnswersWithNone(t *testing.T) {
 
 func TestAnEmptyIDIsNotMatchedByAnEmptyFrontID(t *testing.T) {
 	open := domain.OpenTabs{Tabs: []domain.Tab{{Kind: "note"}, {ID: "a"}}}
-	if front, ok := open.GetFrontTab(); ok {
+	if front, ok := open.GetActiveTab(); ok {
 		t.Errorf("got %+v", front)
 	}
 }
 
 func TestTheFirstTabOfTheFrontIDWinsAfterOthersThatDoNotMatch(t *testing.T) {
 	open := domain.OpenTabs{
-		Tabs:    []domain.Tab{{ID: "a"}, {ID: "", Kind: "x"}, {ID: "b", Kind: "y"}},
-		FrontID: "b",
+		Tabs:     []domain.Tab{{ID: "a"}, {ID: "", Kind: "x"}, {ID: "b", Kind: "y"}},
+		ActiveID: "b",
 	}
-	if front, ok := open.GetFrontTab(); !ok || front.Kind != "y" {
+	if front, ok := open.GetActiveTab(); !ok || front.Kind != "y" {
 		t.Errorf("got %+v, %v", front, ok)
 	}
 }

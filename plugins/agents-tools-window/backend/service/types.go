@@ -5,12 +5,12 @@ import "time"
 
 // TabInfo describes an open tab in the user window.
 type TabInfo struct {
-	ID      string `json:"id" jsonschema:"the identifier of the tab"`
-	Kind    string `json:"kind" jsonschema:"what kind of tab it is (e.g. note, document, book, recording, plex)"`
-	Path    string `json:"path,omitempty" jsonschema:"the file it holds, by the path the vault files it under"`
-	Title   string `json:"title,omitempty" jsonschema:"what the tab is called, as the person reads it"`
-	Where   string `json:"where,omitempty" jsonschema:"where in that file the person stands"`
-	IsFront bool   `json:"front,omitempty" jsonschema:"whether the person is currently looking at this tab"`
+	ID       string `json:"id" jsonschema:"the identifier of the tab"`
+	Kind     string `json:"kind" jsonschema:"what kind of tab it is (e.g. note, document, book, recording, plex)"`
+	Path     string `json:"path,omitempty" jsonschema:"the file it holds, by the path the vault files it under"`
+	Title    string `json:"title,omitempty" jsonschema:"what the tab is called, as the person reads it"`
+	Where    string `json:"where,omitempty" jsonschema:"where in that file the person stands"`
+	IsActive bool   `json:"active,omitempty" jsonschema:"whether this tab is the active one"`
 }
 
 // WindowTabsGetInput represents the arguments for window_tabs_get.
@@ -18,9 +18,9 @@ type WindowTabsGetInput struct{}
 
 // WindowTabsGetOutput represents the result of inspecting open window tabs.
 type WindowTabsGetOutput struct {
-	Tabs    []TabInfo `json:"tabs"`
-	FrontID string    `json:"frontId,omitempty" jsonschema:"the identifier of the tab currently in front"`
-	Summary string    `json:"summary" jsonschema:"the tab the person is looking at, in words to say back to them"`
+	Tabs     []TabInfo `json:"tabs"`
+	ActiveID string    `json:"activeId,omitempty" jsonschema:"the identifier of the active tab"`
+	Summary  string    `json:"summary" jsonschema:"the tab the person is looking at, in words to say back to them"`
 }
 
 // WindowFocusTabInput represents the arguments for window_focus_tab.

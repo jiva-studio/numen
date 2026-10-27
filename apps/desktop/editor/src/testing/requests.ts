@@ -21,7 +21,7 @@ export const requests = {
   /** How often a folder was asked for, which is a vault being added. */
   chose: 0,
   /** What the window said currently open, the last of it last. */
-  openTabs: [] as { tabs: readonly Tab[]; front: string }[],
+  openTabs: [] as { tabs: readonly Tab[]; activeId: string }[],
 }
 
 /** Nothing asked yet, which is where every test begins. */

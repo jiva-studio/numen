@@ -44,7 +44,7 @@ func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (domain.O
 			return domain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
 		}
 		if isFront {
-			open.FrontID = tab.ID
+			open.ActiveID = tab.ID
 		}
 		open.Tabs = append(open.Tabs, tab)
 	}
@@ -65,7 +65,7 @@ func (r *Repository) WriteOpenTabs(ctx context.Context, v domain.Vault, open dom
 		return fmt.Errorf("clear the open tabs of %s: %w", v.ID, err)
 	}
 	for position, tab := range open.Tabs {
-		isFront := tab.ID != "" && tab.ID == open.FrontID
+		isFront := tab.ID != "" && tab.ID == open.ActiveID
 		if _, err := tx.ExecContext(ctx, stmt.Get("save"),
 			string(v.ID), position, tab.ID, tab.Kind, tab.Path, tab.Title, tab.State, isFront); err != nil {
 			return fmt.Errorf("save the open tab %s of %s: %w", tab.ID, v.ID, err)

@@ -5,16 +5,15 @@ package domain
 type OpenTabs struct {
 	// Tabs are every tab open, in the order the person was last in them.
 	Tabs []Tab
-	// FrontID is the tab in front, by its id. Empty where the window has
+	// ActiveID is the id of the active tab. Empty where the window has
 	// nothing open.
-	FrontID string
+	ActiveID string
 }
 
-// GetFrontTab is the tab the person is looking at. A window holding none
-// answers with no tab at all.
-func (o OpenTabs) GetFrontTab() (Tab, bool) {
+// GetActiveTab returns the active tab, and false where the window has none.
+func (o OpenTabs) GetActiveTab() (Tab, bool) {
 	for _, one := range o.Tabs {
-		if one.ID != "" && one.ID == o.FrontID {
+		if one.ID != "" && one.ID == o.ActiveID {
 			return one, true
 		}
 	}

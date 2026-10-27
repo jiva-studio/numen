@@ -26,8 +26,8 @@ func TestWindowManagerOpenTabs(t *testing.T) {
 	if front != "t2" {
 		t.Errorf("front = %q, want t2", front)
 	}
-	if tabs[0].IsFront || !tabs[1].IsFront {
-		t.Errorf("expected tab 2 to be front, got t1=%v, t2=%v", tabs[0].IsFront, tabs[1].IsFront)
+	if tabs[0].IsActive || !tabs[1].IsActive {
+		t.Errorf("expected tab 2 to be front, got t1=%v, t2=%v", tabs[0].IsActive, tabs[1].IsActive)
 	}
 }
 
@@ -45,8 +45,8 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FocusTab: %v", err)
 	}
-	if focused.ID != "t2" || !focused.IsFront {
-		t.Errorf("focused = %+v, want ID t2 and IsFront true", focused)
+	if focused.ID != "t2" || !focused.IsActive {
+		t.Errorf("focused = %+v, want ID t2 and IsActive true", focused)
 	}
 	_, front := mgr.GetOpenTabs()
 	if front != "t2" {
@@ -58,8 +58,8 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FocusTab: %v", err)
 	}
-	if focused.ID != "t1" || !focused.IsFront {
-		t.Errorf("focused = %+v, want ID t1 and IsFront true", focused)
+	if focused.ID != "t1" || !focused.IsActive {
+		t.Errorf("focused = %+v, want ID t1 and IsActive true", focused)
 	}
 
 	// Focus by Title
@@ -67,8 +67,8 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FocusTab: %v", err)
 	}
-	if focused.ID != "t2" || !focused.IsFront {
-		t.Errorf("focused = %+v, want ID t2 and IsFront true", focused)
+	if focused.ID != "t2" || !focused.IsActive {
+		t.Errorf("focused = %+v, want ID t2 and IsActive true", focused)
 	}
 }
 
@@ -80,8 +80,8 @@ func TestWindowManagerFocusTabNewPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FocusTab: %v", err)
 	}
-	if focused.Path != "notes/new.md" || !focused.IsFront {
-		t.Errorf("focused = %+v, want Path notes/new.md and IsFront true", focused)
+	if focused.Path != "notes/new.md" || !focused.IsActive {
+		t.Errorf("focused = %+v, want Path notes/new.md and IsActive true", focused)
 	}
 	if focused.Title != "new" {
 		t.Errorf("focused.Title = %q, want 'new'", focused.Title)

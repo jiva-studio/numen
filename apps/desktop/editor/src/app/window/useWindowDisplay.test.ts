@@ -48,7 +48,7 @@ function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
     watchVaultChanges: async function* () {},
     watchFocus: async function* () {},
     writeOpenTabs: vi.fn(() => Promise.resolve()),
-    readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], front: '' })),
+    readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
     watchEdits: async function* () {},
     watchTasks: async function* () {
       await waitForever()

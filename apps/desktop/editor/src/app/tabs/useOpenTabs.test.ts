@@ -103,7 +103,7 @@ describe('the active tab', () => {
     )
 
     expect(target.getActiveTabId()).toBe('a')
-    expect(target.open.value.front).toBe('a')
+    expect(target.open.value.activeId).toBe('a')
   })
 
   it('is the last tab that takes no text when one that takes text is in front', () => {

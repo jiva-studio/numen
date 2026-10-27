@@ -65,9 +65,9 @@ describe('the tabs a window holds open', () => {
   it('are written as they stand, with the one in front', async () => {
     const tab = { id: 't1', kind: 'note', path: 'Llama.md' }
 
-    await sessionCore.writeOpenTabs({ tabs: [tab], front: 't1' } as never)
+    await sessionCore.writeOpenTabs({ tabs: [tab], activeId: 't1' } as never)
 
-    expect(request.writeOpenTabs).toHaveBeenCalledWith({ tabs: [tab], front: 't1' })
+    expect(request.writeOpenTabs).toHaveBeenCalledWith({ tabs: [tab], activeId: 't1' })
   })
 })
 

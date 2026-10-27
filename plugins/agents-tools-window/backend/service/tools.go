@@ -36,28 +36,28 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 		Effect:  tools.ReadOnly,
 		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
-		tabs, frontID := manager.GetOpenTabs()
+		tabs, activeID := manager.GetOpenTabs()
 		requestContext := tools.GetCallContext(ctx)
 
 		if len(tabs) == 0 && requestContext != nil {
 			if focus := requestContext["focus"]; focus != "" {
 				inferredTab := TabInfo{
-					ID:      "front-tab",
-					Kind:    "note",
-					Path:    focus,
-					Title:   formatTitleFromPath(focus),
-					IsFront: true,
+					ID:       "front-tab",
+					Kind:     "note",
+					Path:     focus,
+					Title:    formatTitleFromPath(focus),
+					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
-				frontID = inferredTab.ID
+				activeID = inferredTab.ID
 			}
 		}
 
-		summary := formatTabsSummary(tabs, frontID)
+		summary := formatTabsSummary(tabs, activeID)
 		return WindowTabsGetOutput{
-			Tabs:    tabs,
-			FrontID: frontID,
-			Summary: summary,
+			Tabs:     tabs,
+			ActiveID: activeID,
+			Summary:  summary,
 		}, nil
 	})
 }
@@ -144,24 +144,24 @@ func prepareDiff(ctx context.Context, in EditPreviewInput, vault host.Vault) (st
 	return CreateUnifiedDiff(in.Path, original, in.ProposedContent)
 }
 
-func formatTabsSummary(tabs []TabInfo, frontID string) string {
+func formatTabsSummary(tabs []TabInfo, activeID string) string {
 	if len(tabs) == 0 {
 		return "the window has nothing open"
 	}
-	var frontTab *TabInfo
+	var activeTab *TabInfo
 	for i := range tabs {
-		if tabs[i].ID != "" && tabs[i].ID == frontID {
-			frontTab = &tabs[i]
+		if tabs[i].ID != "" && tabs[i].ID == activeID {
+			activeTab = &tabs[i]
 			break
 		}
-		if tabs[i].IsFront {
-			frontTab = &tabs[i]
+		if tabs[i].IsActive {
+			activeTab = &tabs[i]
 		}
 	}
-	if frontTab == nil {
-		frontTab = &tabs[0]
+	if activeTab == nil {
+		activeTab = &tabs[0]
 	}
-	return describeTab(*frontTab)
+	return describeTab(*activeTab)
 }
 
 func describeTab(t TabInfo) string {

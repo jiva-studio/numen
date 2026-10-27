@@ -229,7 +229,7 @@ describe('session domain', () => {
     expect(await core.agentUnreachable()).toBe('offline')
 
     request.writeOpenTabs.mockResolvedValue({})
-    await core.writeOpenTabs({ tabs: [], front: '' })
+    await core.writeOpenTabs({ tabs: [], activeId: '' })
     expect(request.writeOpenTabs).toHaveBeenCalled()
 
     request.reportFlush.mockResolvedValue({})

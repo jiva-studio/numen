@@ -97,8 +97,8 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 	if len(output.Tabs) != 2 {
 		t.Fatalf("len(Tabs) = %d, want 2", len(output.Tabs))
 	}
-	if output.FrontID != "tab-2" {
-		t.Errorf("FrontID = %q, want tab-2", output.FrontID)
+	if output.ActiveID != "tab-2" {
+		t.Errorf("ActiveID = %q, want tab-2", output.ActiveID)
 	}
 	if !strings.Contains(output.Summary, "Specification") || !strings.Contains(output.Summary, "page 3 of 10") {
 		t.Errorf("Summary = %q, want to mention Specification and page 3 of 10", output.Summary)

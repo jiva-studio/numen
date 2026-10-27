@@ -58,12 +58,15 @@ export const sessionCore: SessionCore = {
   },
   watchFocus: (signal) => workspace.watchFocus({}, { signal }),
   writeOpenTabs: async (open) => {
-    await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
+    await workspace.writeOpenTabs({
+      tabs: open.tabs.map((one) => ({ ...one })),
+      activeId: open.activeId,
+    })
   },
   readOpenTabs: async () => {
     const answer = await workspace.readOpenTabs({})
     return {
-      front: answer.front,
+      activeId: answer.activeId,
       tabs: answer.tabs.map(({ id, kind, path, title, state }) => ({
         id,
         kind,

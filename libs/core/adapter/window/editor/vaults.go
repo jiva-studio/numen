@@ -210,7 +210,7 @@ func (h *workspaceHandler) WriteOpenTabs(
 	ctx context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	tabs := r.Msg.GetTabs()
-	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(tabs)), FrontID: r.Msg.GetFront()}
+	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(tabs)), ActiveID: r.Msg.GetActiveId()}
 	for _, one := range tabs {
 		open.Tabs = append(open.Tabs, domain.Tab{
 			ID:    one.GetId(),
@@ -244,7 +244,7 @@ func (h *workspaceHandler) ReadOpenTabs(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.ReadOpenTabsResponse{Tabs: make([]*v1.Tab, 0, len(open.Tabs)), Front: open.FrontID}
+	out := &v1.ReadOpenTabsResponse{Tabs: make([]*v1.Tab, 0, len(open.Tabs)), ActiveId: open.ActiveID}
 	for _, one := range open.Tabs {
 		out.Tabs = append(out.Tabs, &v1.Tab{
 			Id: one.ID, Kind: one.Kind, Path: one.Path, Title: one.Title, State: one.State,

@@ -101,7 +101,7 @@ const readSavedTabs = async () => {
   try {
     return await core.readOpenTabs()
   } catch {
-    return { tabs: [], front: '' }
+    return { tabs: [], activeId: '' }
   }
 }
 
@@ -128,7 +128,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     }
     const saved = await readSavedTabs()
     if (saved.tabs.length > 0) {
-      windowTabs.restoreTabs(parseSavedTabs(saved), saved.front)
+      windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),

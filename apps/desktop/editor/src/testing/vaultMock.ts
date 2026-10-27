@@ -87,7 +87,7 @@ vi.mock('@/app/vault', () => ({
     watchEdits: pendingStream,
     watchTasks: pendingStream,
     watchFocus: outside.stream,
-    writeOpenTabs: async (open: { tabs: readonly Tab[]; front: string }) => {
+    writeOpenTabs: async (open: { tabs: readonly Tab[]; activeId: string }) => {
       requests.openTabs.push(open)
     },
     readOpenTabs: async () => mockVaultState.savedTabs,
