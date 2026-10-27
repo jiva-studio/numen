@@ -15,10 +15,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// Plugins finds the plugin that serves a service to the windows and activates it.
+// Plugins finds the plugin that serves a service to the windows and activates it, and lists the
+// plugins installed.
 type Plugins interface {
 	pluginport.PluginResolver
 	pluginport.PluginActivator
+	GetPluginInfos() []pluginport.PluginInfo
 }
 
 // Proxy forwards the calls a window receives for the services a plugin serves, with the

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/media.proto.
  */
 export const file_numen_v1_media: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9tZWRpYS5wcm90bxIIbnVtZW4udjEiJQoVR2V0TWVkaWFTb3VyY2VSZXF1ZXN0EgwKBHBhdGgYASABKAkiOQoWR2V0TWVkaWFTb3VyY2VSZXNwb25zZRILCgNzcmMYASABKAkSEgoKbWVkaWFfdHlwZRgCIAEoCTJjCgxNZWRpYVNlcnZpY2USUwoOR2V0TWVkaWFTb3VyY2USHy5udW1lbi52MS5HZXRNZWRpYVNvdXJjZVJlcXVlc3QaIC5udW1lbi52MS5HZXRNZWRpYVNvdXJjZVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS9tZWRpYS5wcm90bxIIbnVtZW4udjEiJQoVR2V0TWVkaWFTb3VyY2VSZXF1ZXN0EgwKBHBhdGgYASABKAkiOQoWR2V0TWVkaWFTb3VyY2VSZXNwb25zZRILCgNzcmMYASABKAkSEgoKbWVkaWFfdHlwZRgCIAEoCSI3ChRHZXRQYWdlU291cmNlUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEcGF0aBgCIAEoCSIkChVHZXRQYWdlU291cmNlUmVzcG9uc2USCwoDc3JjGAEgASgJMrUBCgxNZWRpYVNlcnZpY2USUwoOR2V0TWVkaWFTb3VyY2USHy5udW1lbi52MS5HZXRNZWRpYVNvdXJjZVJlcXVlc3QaIC5udW1lbi52MS5HZXRNZWRpYVNvdXJjZVJlc3BvbnNlElAKDUdldFBhZ2VTb3VyY2USHi5udW1lbi52MS5HZXRQYWdlU291cmNlUmVxdWVzdBofLm51bWVuLnYxLkdldFBhZ2VTb3VyY2VSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.GetMediaSourceRequest
@@ -62,6 +62,52 @@ export const GetMediaSourceResponseSchema: GenMessage<GetMediaSourceResponse> = 
   messageDesc(file_numen_v1_media, 1);
 
 /**
+ * @generated from message numen.v1.GetPageSourceRequest
+ */
+export type GetPageSourceRequest = Message<"numen.v1.GetPageSourceRequest"> & {
+  /**
+   * The plugin that serves the page.
+   *
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * The page below the plugin's route, with its query: `embed?address=...`.
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetPageSourceRequest.
+ * Use `create(GetPageSourceRequestSchema)` to create a new message.
+ */
+export const GetPageSourceRequestSchema: GenMessage<GetPageSourceRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_media, 2);
+
+/**
+ * @generated from message numen.v1.GetPageSourceResponse
+ */
+export type GetPageSourceResponse = Message<"numen.v1.GetPageSourceResponse"> & {
+  /**
+   * The address of the page on the loopback interface. Empty where this build
+   * serves no files.
+   *
+   * @generated from field: string src = 1;
+   */
+  src: string;
+};
+
+/**
+ * Describes the message numen.v1.GetPageSourceResponse.
+ * Use `create(GetPageSourceResponseSchema)` to create a new message.
+ */
+export const GetPageSourceResponseSchema: GenMessage<GetPageSourceResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_media, 3);
+
+/**
  * MediaService returns the address a player loads a file of the vault from.
  *
  * It is a service apart from the vault's notes: a window that serves the notes
@@ -81,6 +127,19 @@ export const MediaService: GenService<{
     methodKind: "unary";
     input: typeof GetMediaSourceRequestSchema;
     output: typeof GetMediaSourceResponseSchema;
+  },
+  /**
+   * GetPageSource returns where a page a plugin serves below its route is
+   * loaded from in a frame: an http address on the loopback interface. A page
+   * of the toolkit's own scheme sends no Referer, and a site framed in a page
+   * served there is sent the origin of the loopback socket.
+   *
+   * @generated from rpc numen.v1.MediaService.GetPageSource
+   */
+  getPageSource: {
+    methodKind: "unary";
+    input: typeof GetPageSourceRequestSchema;
+    output: typeof GetPageSourceResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_media, 0);

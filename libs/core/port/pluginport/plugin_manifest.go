@@ -236,6 +236,9 @@ type PluginManifest struct {
 	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
 	// registers it under.
 	Readers []PluginReader `json:"readers,omitempty"`
+	// Frames are the https origins the plugin's pages frame, such as a video site's player. The
+	// window's frame-src names them while the plugin is enabled.
+	Frames []string `json:"frames,omitempty"`
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
@@ -304,6 +307,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listPlaybackIssues()...)
 	issues = append(issues, m.listContentTypeIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
+	issues = append(issues, m.listFrameIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)

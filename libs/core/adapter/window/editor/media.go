@@ -2,6 +2,8 @@ package editor
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -59,3 +61,18 @@ func (h *mediaHandler) GetMediaSource(
 func getCopyFingerprint(path string, size int64) domain.Fingerprint {
 	return domain.Fingerprint{Path: path, Size: size}
 }
+
+// GetPageSource returns the loopback address of a page a plugin serves below its route.
+func (h *mediaHandler) GetPageSource(
+	_ context.Context, r *connect.Request[v1.GetPageSourceRequest],
+) (*connect.Response[v1.GetPageSourceResponse], error) {
+	if r.Msg.GetPluginId() == "" || strings.ContainsAny(r.Msg.GetPluginId(), "/?#") {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoPlugin)
+	}
+	return connect.NewResponse(&v1.GetPageSourceResponse{
+		Src: h.playing.PageAddress(r.Msg.GetPluginId(), r.Msg.GetPath()),
+	}), nil
+}
+
+// errNoPlugin is a page asked of no plugin id.
+var errNoPlugin = errors.New("the request names no plugin")

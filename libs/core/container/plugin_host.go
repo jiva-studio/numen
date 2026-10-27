@@ -132,6 +132,10 @@ type PluginServices = interface {
 	Serves(urlPath string) bool
 	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
 	ServeRoute(w http.ResponseWriter, r *http.Request)
+	// ListFrameOrigins lists the origins the pages of every enabled plugin frame.
+	ListFrameOrigins() []string
+	// GetFrameOrigins lists the origins the pages of one enabled plugin frame.
+	GetFrameOrigins(pluginID string) []string
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows. Where there is
@@ -352,3 +356,7 @@ func (c Config) GetFrontendPluginIDs() []string {
 	}
 	return ids
 }
+
+func (noPluginServices) ListFrameOrigins() []string { return nil }
+
+func (noPluginServices) GetFrameOrigins(string) []string { return nil }

@@ -37,6 +37,9 @@ const (
 	// MediaServiceGetMediaSourceProcedure is the fully-qualified name of the MediaService's
 	// GetMediaSource RPC.
 	MediaServiceGetMediaSourceProcedure = "/numen.v1.MediaService/GetMediaSource"
+	// MediaServiceGetPageSourceProcedure is the fully-qualified name of the MediaService's
+	// GetPageSource RPC.
+	MediaServiceGetPageSourceProcedure = "/numen.v1.MediaService/GetPageSource"
 )
 
 // MediaServiceClient is a client for the numen.v1.MediaService service.
@@ -45,6 +48,11 @@ type MediaServiceClient interface {
 	// media type a player is told. A file a plugin keeps a copy of to play is
 	// loaded from the copy.
 	GetMediaSource(context.Context, *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error)
+	// GetPageSource returns where a page a plugin serves below its route is
+	// loaded from in a frame: an http address on the loopback interface. A page
+	// of the toolkit's own scheme sends no Referer, and a site framed in a page
+	// served there is sent the origin of the loopback socket.
+	GetPageSource(context.Context, *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error)
 }
 
 // NewMediaServiceClient constructs a client for the numen.v1.MediaService service. By default, it
@@ -64,17 +72,29 @@ func NewMediaServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(mediaServiceMethods.ByName("GetMediaSource")),
 			connect.WithClientOptions(opts...),
 		),
+		getPageSource: connect.NewClient[v1.GetPageSourceRequest, v1.GetPageSourceResponse](
+			httpClient,
+			baseURL+MediaServiceGetPageSourceProcedure,
+			connect.WithSchema(mediaServiceMethods.ByName("GetPageSource")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // mediaServiceClient implements MediaServiceClient.
 type mediaServiceClient struct {
 	getMediaSource *connect.Client[v1.GetMediaSourceRequest, v1.GetMediaSourceResponse]
+	getPageSource  *connect.Client[v1.GetPageSourceRequest, v1.GetPageSourceResponse]
 }
 
 // GetMediaSource calls numen.v1.MediaService.GetMediaSource.
 func (c *mediaServiceClient) GetMediaSource(ctx context.Context, req *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error) {
 	return c.getMediaSource.CallUnary(ctx, req)
+}
+
+// GetPageSource calls numen.v1.MediaService.GetPageSource.
+func (c *mediaServiceClient) GetPageSource(ctx context.Context, req *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error) {
+	return c.getPageSource.CallUnary(ctx, req)
 }
 
 // MediaServiceHandler is an implementation of the numen.v1.MediaService service.
@@ -83,6 +103,11 @@ type MediaServiceHandler interface {
 	// media type a player is told. A file a plugin keeps a copy of to play is
 	// loaded from the copy.
 	GetMediaSource(context.Context, *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error)
+	// GetPageSource returns where a page a plugin serves below its route is
+	// loaded from in a frame: an http address on the loopback interface. A page
+	// of the toolkit's own scheme sends no Referer, and a site framed in a page
+	// served there is sent the origin of the loopback socket.
+	GetPageSource(context.Context, *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error)
 }
 
 // NewMediaServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -98,10 +123,18 @@ func NewMediaServiceHandler(svc MediaServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(mediaServiceMethods.ByName("GetMediaSource")),
 		connect.WithHandlerOptions(opts...),
 	)
+	mediaServiceGetPageSourceHandler := connect.NewUnaryHandler(
+		MediaServiceGetPageSourceProcedure,
+		svc.GetPageSource,
+		connect.WithSchema(mediaServiceMethods.ByName("GetPageSource")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.MediaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case MediaServiceGetMediaSourceProcedure:
 			mediaServiceGetMediaSourceHandler.ServeHTTP(w, r)
+		case MediaServiceGetPageSourceProcedure:
+			mediaServiceGetPageSourceHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -113,4 +146,8 @@ type UnimplementedMediaServiceHandler struct{}
 
 func (UnimplementedMediaServiceHandler) GetMediaSource(context.Context, *connect.Request[v1.GetMediaSourceRequest]) (*connect.Response[v1.GetMediaSourceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.MediaService.GetMediaSource is not implemented"))
+}
+
+func (UnimplementedMediaServiceHandler) GetPageSource(context.Context, *connect.Request[v1.GetPageSourceRequest]) (*connect.Response[v1.GetPageSourceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.MediaService.GetPageSource is not implemented"))
 }

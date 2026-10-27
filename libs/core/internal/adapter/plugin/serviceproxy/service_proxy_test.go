@@ -19,6 +19,7 @@ import (
 
 // servingHost serves the services it is given from the plugins it runs.
 type servingHost struct {
+	infos     []pluginport.PluginInfo
 	services  map[string]string
 	endpoints map[string]pluginport.Endpoint
 	manifests map[string]pluginport.PluginManifest
@@ -181,3 +182,5 @@ func TestAPluginThatCannotBeStartedIsAnUnavailableService(t *testing.T) {
 func (h *servingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false
 }
+
+func (h *servingHost) GetPluginInfos() []pluginport.PluginInfo { return h.infos }

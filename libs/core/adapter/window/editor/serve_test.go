@@ -991,6 +991,10 @@ type testInterceptingPlugins struct {
 	servedPaths []string
 }
 
+func (p *testInterceptingPlugins) ListFrameOrigins() []string { return nil }
+
+func (p *testInterceptingPlugins) GetFrameOrigins(string) []string { return nil }
+
 func (p *testInterceptingPlugins) Serves(_ string) bool {
 	return true
 }
@@ -1053,7 +1057,18 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 // routedPlugins records the requests forwarded on the plugin route.
 type routedPlugins struct {
 	routed []string
+	frames map[string][]string
 }
+
+func (p *routedPlugins) ListFrameOrigins() []string {
+	var out []string
+	for _, origins := range p.frames {
+		out = append(out, origins...)
+	}
+	return out
+}
+
+func (p *routedPlugins) GetFrameOrigins(pluginID string) []string { return p.frames[pluginID] }
 
 func (p *routedPlugins) Serves(string) bool { return false }
 

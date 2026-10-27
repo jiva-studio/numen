@@ -14,6 +14,12 @@ service MediaService {
   // media type a player is told. A file a plugin keeps a copy of to play is
   // loaded from the copy.
   rpc GetMediaSource(GetMediaSourceRequest) returns (GetMediaSourceResponse);
+
+  // GetPageSource returns where a page a plugin serves below its route is
+  // loaded from in a frame: an http address on the loopback interface. A page
+  // of the toolkit's own scheme sends no Referer, and a site framed in a page
+  // served there is sent the origin of the loopback socket.
+  rpc GetPageSource(GetPageSourceRequest) returns (GetPageSourceResponse);
 }
 
 message GetMediaSourceRequest {
@@ -29,4 +35,18 @@ message GetMediaSourceResponse {
 
   // The media type (RFC 6838) of the bytes at src.
   string media_type = 2;
+}
+
+message GetPageSourceRequest {
+  // The plugin that serves the page.
+  string plugin_id = 1;
+
+  // The page below the plugin's route, with its query: `embed?address=...`.
+  string path = 2;
+}
+
+message GetPageSourceResponse {
+  // The address of the page on the loopback interface. Empty where this build
+  // serves no files.
+  string src = 1;
 }

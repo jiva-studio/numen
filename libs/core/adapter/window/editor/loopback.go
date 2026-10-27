@@ -50,6 +50,8 @@ type Loopback struct {
 	// window closing. An address on a socket that answers nothing is a recording
 	// that will not play and nothing said about why.
 	stopped atomic.Bool
+	// plugins forwards the plugin route, once the window has its plugins.
+	plugins atomic.Pointer[PluginServices]
 }
 
 // Listen opens the socket. A machine that refuses one leaves whatever cannot
@@ -118,6 +120,10 @@ func (l *Loopback) getHandler() http.Handler {
 		id, rest, found := strings.Cut(strings.TrimPrefix(escaped, target), "/")
 		if !found {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
+			return
+		}
+		if id == pluginPageSegment {
+			l.servePluginPage(w, r, rest)
 			return
 		}
 		path, err := url.PathUnescape(rest)

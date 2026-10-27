@@ -16,7 +16,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/internal/csp"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -38,6 +37,10 @@ type PluginServices = interface {
 	Serves(urlPath string) bool
 	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
 	ServeRoute(w http.ResponseWriter, r *http.Request)
+	// ListFrameOrigins lists the origins the pages of every enabled plugin frame.
+	ListFrameOrigins() []string
+	// GetFrameOrigins lists the origins the pages of one enabled plugin frame.
+	GetFrameOrigins(pluginID string) []string
 }
 
 // served is one service this build answers: where its calls arrive, and what
@@ -64,9 +67,9 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
-	policy := csp.Sources{Media: s.Playing.getPlayOrigins()}.Policy()
+	played := s.Playing.getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", policy)
+		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.
 		if s.state.isClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
