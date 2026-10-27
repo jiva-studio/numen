@@ -203,9 +203,9 @@ func describeCode(reason flashcardsv1.ErrorCode) string {
 		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
 	case flashcardsv1.ErrorCode_ERROR_CODE_UNREADABLE:
 		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	case flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED:
+	case flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
 		return "a file is already where this note would go"
-	case flashcardsv1.ErrorCode_ERROR_CODE_UNNAMEABLE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_INVALID_NAME:
 		return "a note cannot be called this"
 	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL:
 		return "this note is not a card model"

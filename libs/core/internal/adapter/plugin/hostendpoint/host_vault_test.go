@@ -145,7 +145,7 @@ func (m *memoryVault) Create(_ context.Context, path string, content []byte) err
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, there := m.files[path]; there {
-		return vaultport.ErrOccupied
+		return vaultport.ErrAlreadyExists
 	}
 	m.files[path] = string(content)
 	return nil
@@ -359,7 +359,7 @@ func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
 	}
 	second, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "samples/B.md", Content: []byte("b")}))
 
-	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED {
+	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a file made over one was answered %v (%v)", second.Msg, err)
 	}
 }

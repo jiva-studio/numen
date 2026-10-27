@@ -108,7 +108,7 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
   async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
     for (let counter = 1; counter <= names; counter++) {
       const createdItem = await createNote(createNumberedName(counter), folder, links)
-      if (createdItem === 'occupied') continue
+      if (createdItem === 'alreadyExists') continue
       return reportNoteResult(createdItem)
     }
     writeMessage(exhausted, 'error')

@@ -24,8 +24,8 @@ var (
 	ErrOutside = errors.New("host: not a path inside the vault")
 	// ErrStale is what a write gets when the file changed since the baseline.
 	ErrStale = edit.ErrStale
-	// ErrOccupied is what a create gets when a file is already there.
-	ErrOccupied = errors.New("host: a file is already there")
+	// ErrAlreadyExists is what a create gets when a file is already there.
+	ErrAlreadyExists = errors.New("host: a file is already there")
 	// ErrHeldByAnother is what a name gets when another program holds the file.
 	ErrHeldByAnother = errors.New("host: the file is held by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
@@ -81,7 +81,7 @@ type Vault interface {
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	// Write replaces the file if it is still what the baseline says, else it returns ErrStale.
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
-	// Create makes a file that is not there, else it returns ErrOccupied.
+	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers to this plugin until the release is called.
 	Lock(ctx context.Context) (release func(), err error)

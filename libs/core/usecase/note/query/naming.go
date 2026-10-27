@@ -41,5 +41,5 @@ func (ask SyncSetting) GetSetting() SyncTitleAndFilename {
 	return ask()
 }
 
-// ErrUnnameable is a title no note can be given. Nothing is written.
-var ErrUnnameable = domain.ErrUnnameable
+// ErrInvalidName is a title no note can be given. Nothing is written.
+var ErrInvalidName = domain.ErrInvalidName

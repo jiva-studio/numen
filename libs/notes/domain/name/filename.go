@@ -8,8 +8,8 @@ import (
 	"unicode"
 )
 
-// ErrUnnameable is a title no note can be given. Nothing is written.
-var ErrUnnameable = errors.New("a note cannot be given this title")
+// ErrInvalidName is a title no note can be given. Nothing is written.
+var ErrInvalidName = errors.New("a note cannot be given this title")
 
 // Filename refuses a title no note can be given, and answers for every other
 // with the name it is filed under and whether it survived the trip.
@@ -18,9 +18,9 @@ var ErrUnnameable = errors.New("a note cannot be given this title")
 func Filename(title string) (name string, exact bool, err error) {
 	switch name, exact = GetReducedFilename(title); {
 	case name == "":
-		return "", false, fmt.Errorf("%w: %q generates empty filename", ErrUnnameable, title)
+		return "", false, fmt.Errorf("%w: %q generates empty filename", ErrInvalidName, title)
 	case strings.ContainsAny(title, "\n\r"):
-		return "", false, fmt.Errorf("%w: %q is more than one line", ErrUnnameable, title)
+		return "", false, fmt.Errorf("%w: %q is more than one line", ErrInvalidName, title)
 	}
 	return name, exact, nil
 }

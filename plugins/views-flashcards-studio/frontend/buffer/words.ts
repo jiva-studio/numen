@@ -36,8 +36,8 @@ const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
   notADeck: 'notANote',
   notAPreset: 'notANote',
   missing: 'unreadable',
-  occupied: 'unreadable',
-  unnameable: 'unreadable',
+  alreadyExists: 'unreadable',
+  invalidName: 'unreadable',
 }
 
 export const convertErrorCode = (from: string): NoteErrorCode =>

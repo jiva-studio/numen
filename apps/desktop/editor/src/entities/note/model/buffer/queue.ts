@@ -16,8 +16,8 @@ const TAB_CODES: ReadonlySet<string> = new Set<NoteErrorCode>([
 
 const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
   missing: 'unreadable',
-  occupied: 'unreadable',
-  unnameable: 'unreadable',
+  alreadyExists: 'unreadable',
+  invalidName: 'unreadable',
 }
 
 /** The code a tab holds for a code a vault answered with, and unreadable for one it has no word for. */

@@ -45,12 +45,12 @@ enum ErrorCode {
 
   // A file is already where the note would go. Nothing is written there; a
   // rename may already have written the note it was moving.
-  ERROR_CODE_OCCUPIED = 7;
+  ERROR_CODE_ALREADY_EXISTS = 7;
 
   // A note cannot be called this: the title leaves nothing a file can be named
   // after, it is more than one line, or a heading would read it back as
   // something else. Nothing is written.
-  ERROR_CODE_UNNAMEABLE = 8;
+  ERROR_CODE_INVALID_NAME = 8;
 
   reserved 9, 10, 11, 12;
 

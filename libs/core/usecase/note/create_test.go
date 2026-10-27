@@ -17,8 +17,8 @@ func TestATitleNoFileCanBeNamedAfterMakesNothing(t *testing.T) {
 	c := openChanging(t, nil)
 
 	for _, title := range []string{"", "  ", "two\nlines"} {
-		if _, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: title}); !errors.Is(err, domain.ErrUnnameable) {
-			t.Errorf("title %q: want ErrUnnameable, got %v", title, err)
+		if _, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: title}); !errors.Is(err, domain.ErrInvalidName) {
+			t.Errorf("title %q: want ErrInvalidName, got %v", title, err)
 		}
 	}
 }

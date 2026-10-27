@@ -302,8 +302,8 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
-	if !errors.Is(err, vaultport.ErrOccupied) {
-		t.Fatalf("want ErrOccupied, got %v", err)
+	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 	if renamed.Path != "Old.md" {
 		t.Errorf("want the note where it still is, got %s", renamed.Path)
@@ -367,8 +367,8 @@ func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
 			c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
-			if !errors.Is(err, note.ErrUnnameable) {
-				t.Fatalf("want ErrUnnameable, got %v", err)
+			if !errors.Is(err, note.ErrInvalidName) {
+				t.Fatalf("want ErrInvalidName, got %v", err)
 			}
 			if renamed.Path != "" {
 				t.Errorf("a rejected rename answered with %q", renamed.Path)

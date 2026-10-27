@@ -66,10 +66,10 @@ describe('making a deck', () => {
   })
 
   it('carries the error in the words the window uses', async () => {
-    replyWith({ ok: false, error: 'ERROR_CODE_OCCUPIED' })
+    replyWith({ ok: false, error: 'ERROR_CODE_ALREADY_EXISTS' })
 
     const createdItem = await cards.createDeck('Words', 'Decks')
-    expect(createdItem.ok ? null : createdItem.error).toBe('occupied')
+    expect(createdItem.ok ? null : createdItem.error).toBe('alreadyExists')
   })
 })
 

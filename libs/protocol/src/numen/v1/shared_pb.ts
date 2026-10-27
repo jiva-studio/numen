@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqqAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIUChBFUlJPUl9DT0RFX1NUQUxFEA0iBAgJEAkiBAgKEAoiBAgLEAsiBAgMEAxCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqyAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhQKEEVSUk9SX0NPREVfU1RBTEUQDSIECAkQCSIECAoQCiIECAsQCyIECAwQDEJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -196,18 +196,18 @@ export enum ErrorCode {
    * A file is already where the note would go. Nothing is written there; a
    * rename may already have written the note it was moving.
    *
-   * @generated from enum value: ERROR_CODE_OCCUPIED = 7;
+   * @generated from enum value: ERROR_CODE_ALREADY_EXISTS = 7;
    */
-  OCCUPIED = 7,
+  ALREADY_EXISTS = 7,
 
   /**
    * A note cannot be called this: the title leaves nothing a file can be named
    * after, it is more than one line, or a heading would read it back as
    * something else. Nothing is written.
    *
-   * @generated from enum value: ERROR_CODE_UNNAMEABLE = 8;
+   * @generated from enum value: ERROR_CODE_INVALID_NAME = 8;
    */
-  UNNAMEABLE = 8,
+  INVALID_NAME = 8,
 
   /**
    * The file is no longer the one this caller read. Nothing was written, and

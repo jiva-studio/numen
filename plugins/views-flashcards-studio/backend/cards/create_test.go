@@ -26,7 +26,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 		"two lines": "Birds\nof prey",
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := u.Deck(t.Context(), v, cards.New{Title: title}); !errors.Is(err, domain.ErrUnnameable) {
+			if _, err := u.Deck(t.Context(), v, cards.New{Title: title}); !errors.Is(err, domain.ErrInvalidName) {
 				t.Errorf("make a deck titled %q = %v, want it rejected", title, err)
 			}
 		})

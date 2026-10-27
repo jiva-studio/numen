@@ -41,7 +41,7 @@ service HostVaultService {
   rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
 
   // CreateFile makes a file that is not there yet. A file that is there is
-  // answered with the error code OCCUPIED.
+  // answered with the error code ALREADY_EXISTS.
   rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
 
   // LockVault holds the vault's writers to one caller until UnlockVault, or
@@ -115,7 +115,7 @@ enum HostVaultErrorCode {
   HOST_VAULT_ERROR_CODE_STALE = 4;
 
   // A file is already there.
-  HOST_VAULT_ERROR_CODE_OCCUPIED = 5;
+  HOST_VAULT_ERROR_CODE_ALREADY_EXISTS = 5;
 
   // Another program holds the file.
   HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER = 6;

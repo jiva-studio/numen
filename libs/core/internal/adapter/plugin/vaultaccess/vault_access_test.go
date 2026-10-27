@@ -79,7 +79,7 @@ func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T
 	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); err != nil {
 		t.Fatal(err)
 	}
-	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultport.ErrOccupied) {
+	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultport.ErrAlreadyExists) {
 		t.Errorf("a file made over one was %v", err)
 	}
 	release, err := access.Lock(t.Context())

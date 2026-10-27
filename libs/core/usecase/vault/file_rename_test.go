@@ -280,8 +280,8 @@ func TestARenameOntoATakenNamePreservesTheNoteCalledWhatItWas(t *testing.T) {
 	f := openFiling(t, map[string]string{"Entropy.md": raw, "Disorder.md": "# Disorder\n"})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
-	if !errors.Is(err, vaultport.ErrOccupied) {
-		t.Fatalf("want ErrOccupied, got %v", err)
+	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 	if moved.IsLanded {
 		t.Error("the move says it landed")

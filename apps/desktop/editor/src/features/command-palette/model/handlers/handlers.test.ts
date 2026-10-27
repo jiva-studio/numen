@@ -373,11 +373,11 @@ describe('a note renamed', () => {
   })
 
   it('says the name was taken, and that the note carries the new one', async () => {
-    const one = window({ renamed: asFailure('occupied' as const) })
+    const one = window({ renamed: asFailure('alreadyExists' as const) })
 
     await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
-    expect(one.notices).toStrictEqual([words.errors.occupied])
+    expect(one.notices).toStrictEqual([words.errors.alreadyExists])
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
@@ -389,11 +389,11 @@ describe('a note renamed', () => {
   })
 
   it('says a name no file can be named', async () => {
-    const one = window({ renamed: asFailure('unnameable' as const) })
+    const one = window({ renamed: asFailure('invalidName' as const) })
 
     await carry(createInvocation('title', front(), '...'), one.on)
 
-    expect(one.notices).toStrictEqual([words.errors.unnameable])
+    expect(one.notices).toStrictEqual([words.errors.invalidName])
   })
 })
 
@@ -582,19 +582,19 @@ describe('a file filed somewhere else', () => {
   })
 
   it('stays where it is where something of that name is filed there', async () => {
-    const one = window({ movement: { ok: false, error: 'occupied' } })
+    const one = window({ movement: { ok: false, error: 'alreadyExists' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.notices).toStrictEqual([words.occupied])
+    expect(one.notices).toStrictEqual([words.alreadyExists])
   })
 
   it('says nothing of a note renamed, which is what a move is not', async () => {
-    const one = window({ movement: { ok: false, error: 'occupied' } })
+    const one = window({ movement: { ok: false, error: 'alreadyExists' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.notices).not.toContain(words.errors.occupied)
+    expect(one.notices).not.toContain(words.errors.alreadyExists)
   })
 
   it('asks the vault for nothing where it landed where it already was', async () => {
@@ -616,11 +616,11 @@ describe('a folder made', () => {
   })
 
   it('is not made where something of that name is filed there', async () => {
-    const one = window({ folderError: 'occupied' })
+    const one = window({ folderError: 'alreadyExists' })
 
     await carry(createInvocation('createFolder', front(), 'physics/heat'), one.on)
 
-    expect(one.notices).toStrictEqual([words.occupied])
+    expect(one.notices).toStrictEqual([words.alreadyExists])
   })
 
   it('asks the vault for nothing where no path was given', async () => {
@@ -985,7 +985,7 @@ describe('what the voice says in which severity', () => {
 
   it('cautions that a rename waits on the person, and errors on failure', async () => {
     const pendingItem = window({ isAsking: true })
-    const failedWindow = window({ renamed: asFailure('unnameable' as const) })
+    const failedWindow = window({ renamed: asFailure('invalidName' as const) })
     const changedWindow = window({ renamed: asFailure('changed' as const) })
 
     await carry(createInvocation('title', front(), 'Entropy'), pendingItem.on)
@@ -1007,7 +1007,7 @@ describe('what the voice says in which severity', () => {
 
   it('cautions that a move waits on the person, and errors on failure', async () => {
     const pendingItem = window({ isAsking: true })
-    const acquiredItem = window({ movement: { ok: false, error: 'occupied' } })
+    const acquiredItem = window({ movement: { ok: false, error: 'alreadyExists' } })
     const failingWindow = window({ movement: { ok: false, error: 'missing' } })
 
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), pendingItem.on)
@@ -1029,14 +1029,14 @@ describe('what the voice says in which severity', () => {
   })
 
   it('errors on a folder that is taken, and says what else rejected it', async () => {
-    const acquiredItem = window({ folderError: 'occupied' })
-    const failingWindow = window({ folderError: 'unnameable' })
+    const acquiredItem = window({ folderError: 'alreadyExists' })
+    const failingWindow = window({ folderError: 'invalidName' })
 
     await carry(createInvocation('createFolder', front(), 'physics/heat'), acquiredItem.on)
     await carry(createInvocation('createFolder', front(), 'physics/heat'), failingWindow.on)
 
     expect(acquiredItem.severities).toStrictEqual(['error'])
-    expect(failingWindow.notices).toStrictEqual([words.errors.unnameable])
+    expect(failingWindow.notices).toStrictEqual([words.errors.invalidName])
     expect(failingWindow.severities).toStrictEqual(['error'])
   })
 

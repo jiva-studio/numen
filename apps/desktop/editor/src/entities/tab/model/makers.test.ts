@@ -83,10 +83,10 @@ describe('a file of a kind made', () => {
   it('says what the vault rejected, and nothing opens', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const mockWriter = writer()
-    const createdItem = createCreators(maker('occupied'), tabOpeners, mockWriter.write)
+    const createdItem = createCreators(maker('alreadyExists'), tabOpeners, mockWriter.write)
 
     expect(await createdItem.createAndOpenFile('sample', 'zoology', 'Animals')).toBe('')
-    expect(mockWriter.messagesText).toStrictEqual([ERRORS.occupied])
+    expect(mockWriter.messagesText).toStrictEqual([ERRORS.alreadyExists])
   })
 
   it('says a vault that could not be requested at all', async () => {
@@ -100,11 +100,11 @@ describe('a file of a kind made', () => {
 
   it('says what the vault rejected as an error', async () => {
     const mockWriter = writer()
-    const createdItem = createCreators(maker('occupied'), undefined, mockWriter.write)
+    const createdItem = createCreators(maker('alreadyExists'), undefined, mockWriter.write)
 
     await createdItem.createFile('sample', 'zoology', 'Animals')
 
-    expect(mockWriter.messages).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
+    expect(mockWriter.messages).toStrictEqual([{ text: ERRORS.alreadyExists, kind: 'error' }])
   })
 
   it('says a vault that could not be requested as an error', async () => {

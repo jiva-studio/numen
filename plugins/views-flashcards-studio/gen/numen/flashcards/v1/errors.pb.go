@@ -43,9 +43,9 @@ const (
 	// The frontmatter cannot be read, so the note can be neither read nor written.
 	ErrorCode_ERROR_CODE_UNREADABLE ErrorCode = 6
 	// A file is already where the note would go. Nothing is written there.
-	ErrorCode_ERROR_CODE_OCCUPIED ErrorCode = 7
+	ErrorCode_ERROR_CODE_ALREADY_EXISTS ErrorCode = 7
 	// A note cannot be called this. Nothing is written.
-	ErrorCode_ERROR_CODE_UNNAMEABLE ErrorCode = 8
+	ErrorCode_ERROR_CODE_INVALID_NAME ErrorCode = 8
 	// The note at the path is not a card model, and a card model was asked for.
 	ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL ErrorCode = 9
 	// The note at the path is not a deck, and a deck was asked for.
@@ -70,8 +70,8 @@ var (
 		4:  "ERROR_CODE_TOO_LARGE",
 		5:  "ERROR_CODE_BODY_UNWRITABLE",
 		6:  "ERROR_CODE_UNREADABLE",
-		7:  "ERROR_CODE_OCCUPIED",
-		8:  "ERROR_CODE_UNNAMEABLE",
+		7:  "ERROR_CODE_ALREADY_EXISTS",
+		8:  "ERROR_CODE_INVALID_NAME",
 		9:  "ERROR_CODE_NOT_A_CARD_MODEL",
 		10: "ERROR_CODE_NOT_A_DECK",
 		11: "ERROR_CODE_DECK_TOO_LARGE",
@@ -86,8 +86,8 @@ var (
 		"ERROR_CODE_TOO_LARGE":        4,
 		"ERROR_CODE_BODY_UNWRITABLE":  5,
 		"ERROR_CODE_UNREADABLE":       6,
-		"ERROR_CODE_OCCUPIED":         7,
-		"ERROR_CODE_UNNAMEABLE":       8,
+		"ERROR_CODE_ALREADY_EXISTS":   7,
+		"ERROR_CODE_INVALID_NAME":     8,
 		"ERROR_CODE_NOT_A_CARD_MODEL": 9,
 		"ERROR_CODE_NOT_A_DECK":       10,
 		"ERROR_CODE_DECK_TOO_LARGE":   11,
@@ -127,7 +127,7 @@ var File_numen_flashcards_v1_errors_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_errors_proto_rawDesc = "" +
 	"\n" +
-	" numen/flashcards/v1/errors.proto\x12\x13numen.flashcards.v1*\x8a\x03\n" +
+	" numen/flashcards/v1/errors.proto\x12\x13numen.flashcards.v1*\x92\x03\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -135,9 +135,9 @@ const file_numen_flashcards_v1_errors_proto_rawDesc = "" +
 	"\x13ERROR_CODE_NOT_TEXT\x10\x03\x12\x18\n" +
 	"\x14ERROR_CODE_TOO_LARGE\x10\x04\x12\x1e\n" +
 	"\x1aERROR_CODE_BODY_UNWRITABLE\x10\x05\x12\x19\n" +
-	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x17\n" +
-	"\x13ERROR_CODE_OCCUPIED\x10\a\x12\x19\n" +
-	"\x15ERROR_CODE_UNNAMEABLE\x10\b\x12\x1f\n" +
+	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x1d\n" +
+	"\x19ERROR_CODE_ALREADY_EXISTS\x10\a\x12\x1b\n" +
+	"\x17ERROR_CODE_INVALID_NAME\x10\b\x12\x1f\n" +
 	"\x1bERROR_CODE_NOT_A_CARD_MODEL\x10\t\x12\x19\n" +
 	"\x15ERROR_CODE_NOT_A_DECK\x10\n" +
 	"\x12\x1d\n" +

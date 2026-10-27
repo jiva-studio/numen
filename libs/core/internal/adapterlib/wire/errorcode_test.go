@@ -60,8 +60,8 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_TOO_LARGE, true,
 		},
 		"a title no note can be given": {
-			fmt.Errorf("%w: nothing to name it", note.ErrUnnameable),
-			v1.ErrorCode_ERROR_CODE_UNNAMEABLE, true,
+			fmt.Errorf("%w: nothing to name it", note.ErrInvalidName),
+			v1.ErrorCode_ERROR_CODE_INVALID_NAME, true,
 		},
 		"a frontmatter written on one line": {
 			fmt.Errorf("Old.md: %w", note.ErrInline),
@@ -88,12 +88,12 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true,
 		},
 		"a file where the note would go": {
-			fmt.Errorf("Old.md: %w", vaultport.ErrOccupied),
-			v1.ErrorCode_ERROR_CODE_OCCUPIED, true,
+			fmt.Errorf("Old.md: %w", vaultport.ErrAlreadyExists),
+			v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true,
 		},
 		"a file where a folder of the path must be": {
 			fmt.Errorf("a/b/Old.md: %w", syscall.ENOTDIR),
-			v1.ErrorCode_ERROR_CODE_OCCUPIED, true,
+			v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true,
 		},
 		"the vault itself is out of reach": {
 			fmt.Errorf("stat /vault: %w", fs.ErrNotExist),

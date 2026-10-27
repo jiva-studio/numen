@@ -118,7 +118,7 @@ func TestCreateMakesANoteOfTypeLinkWithTheAddress(t *testing.T) {
 	if err != nil || read != made {
 		t.Errorf("the link reads back as %+v (%v), want %+v", read, err, made)
 	}
-	if _, err := w.links.Create(t.Context(), "links", articleAddress); !errors.Is(err, host.ErrOccupied) {
+	if _, err := w.links.Create(t.Context(), "links", articleAddress); !errors.Is(err, host.ErrAlreadyExists) {
 		t.Errorf("a second link of one address was answered %v", err)
 	}
 	if _, err := w.links.Create(t.Context(), "", "file:///etc/passwd"); !errors.Is(err, address.ErrNotAURL) {

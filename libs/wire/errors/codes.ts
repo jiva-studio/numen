@@ -11,8 +11,8 @@ const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> =
   tooLarge: ProtoErrorCode.TOO_LARGE,
   bodyUnwritable: ProtoErrorCode.BODY_UNWRITABLE,
   unreadable: ProtoErrorCode.UNREADABLE,
-  occupied: ProtoErrorCode.OCCUPIED,
-  unnameable: ProtoErrorCode.UNNAMEABLE,
+  alreadyExists: ProtoErrorCode.ALREADY_EXISTS,
+  invalidName: ProtoErrorCode.INVALID_NAME,
 }
 
 /** What is said when the vault did not answer at all. */

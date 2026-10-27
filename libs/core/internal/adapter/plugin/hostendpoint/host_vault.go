@@ -86,8 +86,8 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, nil
 	case errors.Is(err, vaultport.ErrStale):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, nil
-	case errors.Is(err, vaultport.ErrOccupied):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED, nil
+	case errors.Is(err, vaultport.ErrAlreadyExists):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, nil
 	case errors.Is(err, vaultport.ErrHeldByAnother):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER, nil
 	case errors.Is(err, vaultport.ErrNotANote):

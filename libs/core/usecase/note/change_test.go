@@ -152,8 +152,8 @@ func TestCreatingRefusesToLandOnAnExistingNote(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
-	if !errors.Is(err, vaultport.ErrOccupied) {
-		t.Fatalf("want ErrOccupied, got %v", err)
+	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 }
 

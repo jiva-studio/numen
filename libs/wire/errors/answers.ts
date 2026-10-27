@@ -40,8 +40,8 @@ export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
   [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
   [ProtoErrorCode.BODY_UNWRITABLE]: 'bodyUnwritable',
   [ProtoErrorCode.UNREADABLE]: 'unreadable',
-  [ProtoErrorCode.OCCUPIED]: 'occupied',
-  [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
+  [ProtoErrorCode.ALREADY_EXISTS]: 'alreadyExists',
+  [ProtoErrorCode.INVALID_NAME]: 'invalidName',
   [ProtoErrorCode.STALE]: null,
 }
 

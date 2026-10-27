@@ -128,8 +128,8 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Cover.png" {
 		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if !errors.Is(brought.Errors[0].Why, vaultport.ErrOccupied) {
-		t.Errorf("the error: want ErrOccupied, got %v", brought.Errors[0].Why)
+	if !errors.Is(brought.Errors[0].Why, vaultport.ErrAlreadyExists) {
+		t.Errorf("the error: want ErrAlreadyExists, got %v", brought.Errors[0].Why)
 	}
 	if body := readArrived(t, v.Path, "Cover.png"); body != "MINE" {
 		t.Errorf("the file that was there was replaced with %q", body)

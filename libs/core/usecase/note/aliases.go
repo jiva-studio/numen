@@ -39,5 +39,5 @@ var (
 	NewShowLinks         = query.NewShowLinks
 	NewShowNeighbourhood = query.NewShowNeighbourhood
 
-	ErrUnnameable = query.ErrUnnameable
+	ErrInvalidName = query.ErrInvalidName
 )

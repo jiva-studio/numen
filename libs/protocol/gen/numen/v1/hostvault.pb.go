@@ -35,7 +35,7 @@ const (
 	// The file changed since the file stat given.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE HostVaultErrorCode = 4
 	// A file is already there.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED HostVaultErrorCode = 5
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS HostVaultErrorCode = 5
 	// Another program holds the file.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER HostVaultErrorCode = 6
 	// The path is not a note this vault holds.
@@ -50,7 +50,7 @@ var (
 		2: "HOST_VAULT_ERROR_CODE_MISSING",
 		3: "HOST_VAULT_ERROR_CODE_OUTSIDE",
 		4: "HOST_VAULT_ERROR_CODE_STALE",
-		5: "HOST_VAULT_ERROR_CODE_OCCUPIED",
+		5: "HOST_VAULT_ERROR_CODE_ALREADY_EXISTS",
 		6: "HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER",
 		8: "HOST_VAULT_ERROR_CODE_NOT_A_NOTE",
 	}
@@ -60,7 +60,7 @@ var (
 		"HOST_VAULT_ERROR_CODE_MISSING":         2,
 		"HOST_VAULT_ERROR_CODE_OUTSIDE":         3,
 		"HOST_VAULT_ERROR_CODE_STALE":           4,
-		"HOST_VAULT_ERROR_CODE_OCCUPIED":        5,
+		"HOST_VAULT_ERROR_CODE_ALREADY_EXISTS":  5,
 		"HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER": 6,
 		"HOST_VAULT_ERROR_CODE_NOT_A_NOTE":      8,
 	}
@@ -2730,14 +2730,14 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x11WatchVaultRequest\"T\n" +
 	"\x12WatchVaultResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12(\n" +
-	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\xbb\x02\n" +
+	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\xc1\x02\n" +
 	"\x12HostVaultErrorCode\x12%\n" +
 	"!HOST_VAULT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12!\n" +
 	"\x1dHOST_VAULT_ERROR_CODE_MISSING\x10\x02\x12!\n" +
 	"\x1dHOST_VAULT_ERROR_CODE_OUTSIDE\x10\x03\x12\x1f\n" +
-	"\x1bHOST_VAULT_ERROR_CODE_STALE\x10\x04\x12\"\n" +
-	"\x1eHOST_VAULT_ERROR_CODE_OCCUPIED\x10\x05\x12)\n" +
+	"\x1bHOST_VAULT_ERROR_CODE_STALE\x10\x04\x12(\n" +
+	"$HOST_VAULT_ERROR_CODE_ALREADY_EXISTS\x10\x05\x12)\n" +
 	"%HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER\x10\x06\x12$\n" +
 	" HOST_VAULT_ERROR_CODE_NOT_A_NOTE\x10\b*\x8c\x01\n" +
 	"\x0eHostIndexState\x12 \n" +

@@ -103,7 +103,7 @@ export const moveFileCommand = async (
   if (tab.isWaiting) return on.writeMessage(words.unanswered, 'warning')
   const answer = await on.files.move(invocation.path, invocation.name)
   if (answer.ok) return
-  if (answer.error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  if (answer.error === 'alreadyExists') return on.writeMessage(words.alreadyExists, 'error')
   on.writeMessage(words.errors[answer.error], 'error')
 }
 
@@ -115,6 +115,6 @@ export const createFolderCommand = async (
 ): Promise<void> => {
   if (!invocation.name) return
   const error = await on.files.createFolder(invocation.name)
-  if (error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  if (error === 'alreadyExists') return on.writeMessage(words.alreadyExists, 'error')
   if (error) on.writeMessage(words.errors[error], 'error')
 }

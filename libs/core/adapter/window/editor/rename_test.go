@@ -250,7 +250,7 @@ func TestRenamingOntoATakenNameReturnsWhatTheNoteIsCalled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Old.md" {
@@ -277,7 +277,7 @@ func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNNAMEABLE {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_INVALID_NAME {
 		t.Errorf("a title with no filename in it was answered with %v", code)
 	}
 	if now := fileAt(t, f.root, "Old.md"); now != target {
@@ -530,7 +530,7 @@ func TestRenamingReturnsWhatANoteCannotBeCalled(t *testing.T) {
 		"a title over more than one line": {
 			activeItem: "---\ntitle: Old\n---\nbody\n",
 			title:      "one\ntwo",
-			want:       v1.ErrorCode_ERROR_CODE_UNNAMEABLE,
+			want:       v1.ErrorCode_ERROR_CODE_INVALID_NAME,
 		},
 		"the key carries the hash, so the note is renamed": {
 			activeItem: "---\ntitle: Old\n---\nbody\n",
@@ -1008,7 +1008,7 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if answer.Msg.GetPath() != "" {
@@ -1359,7 +1359,7 @@ func TestAMoveOntoATakenNamePreservesBothWhereTheyAre(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if moved := answer.Msg.GetMoved(); moved != nil {
@@ -1479,7 +1479,7 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a path a file already holds was answered with %v", code)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != target {

@@ -262,8 +262,8 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "physics", "archive/physics")
-	if !errors.Is(err, vaultport.ErrOccupied) {
-		t.Fatalf("want ErrOccupied, got %v", err)
+	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
 	if moved.IsLanded {
 		t.Error("the move says it landed")

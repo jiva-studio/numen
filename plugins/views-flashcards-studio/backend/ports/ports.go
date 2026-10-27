@@ -21,8 +21,8 @@ var (
 	// ErrNotANote is what a path gets when there is a file at it and the vault does not hold it as a
 	// note.
 	ErrNotANote = edit.ErrNotANote
-	// ErrOccupied is what making a file says when one is already there.
-	ErrOccupied = errors.New("a file is already there")
+	// ErrAlreadyExists is what making a file says when one is already there.
+	ErrAlreadyExists = errors.New("a file is already there")
 	// ErrHeldByAnother is what a name gets when a program outside this one has the file.
 	ErrHeldByAnother = errors.New("the file is held by another program")
 )
@@ -50,7 +50,7 @@ type VaultWriter interface {
 	// Write replaces the file if it is still what the file stat says, else it returns ErrStale. An
 	// empty file stat holds the write to nothing.
 	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
-	// Create makes a file that is not there, else it returns ErrOccupied.
+	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error
 }
 

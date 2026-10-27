@@ -21,7 +21,7 @@ type store interface {
 	read(filePath string) ([]byte, error)
 	// write makes the file or replaces it, and returns what it is now.
 	write(filePath string, content []byte) (domain.FileStat, error)
-	// create makes a file that is not there, else it returns host.ErrOccupied.
+	// create makes a file that is not there, else it returns host.ErrAlreadyExists.
 	create(filePath string, content []byte) (domain.FileStat, error)
 	remove(filePath string) error
 	// paths lists every file, with forward slashes.
@@ -65,7 +65,7 @@ func (m *memory) write(filePath string, content []byte) (domain.FileStat, error)
 
 func (m *memory) create(filePath string, content []byte) (domain.FileStat, error) {
 	if _, there := m.files[filePath]; there {
-		return domain.FileStat{}, host.ErrOccupied
+		return domain.FileStat{}, host.ErrAlreadyExists
 	}
 	return m.write(filePath, content)
 }
@@ -140,7 +140,7 @@ func (d disk) create(filePath string, content []byte) (domain.FileStat, error) {
 	}
 	file, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if errors.Is(err, fs.ErrExist) {
-		return domain.FileStat{}, host.ErrOccupied
+		return domain.FileStat{}, host.ErrAlreadyExists
 	}
 	if err != nil {
 		return domain.FileStat{}, err

@@ -106,7 +106,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 				}
 				out, err := renaming.Execute(rt.Context(), c.vault, path,
 					rapid.SampledFrom(titles).Draw(rt, "title"))
-				if err != nil && !errors.Is(err, note.ErrUnnameable) {
+				if err != nil && !errors.Is(err, note.ErrInvalidName) {
 					rt.Fatalf("rename %s: %v", path, err)
 				}
 				if out.Path != "" {
@@ -153,7 +153,7 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 		title := rapid.SampledFrom(titles).Draw(rt, "title")
 
 		out, err := c.rename().Execute(rt.Context(), c.vault, path, title)
-		if err != nil && !errors.Is(err, note.ErrUnnameable) {
+		if err != nil && !errors.Is(err, note.ErrInvalidName) {
 			rt.Fatalf("rename: %v", err)
 		}
 		if err != nil {

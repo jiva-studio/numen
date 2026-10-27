@@ -136,7 +136,7 @@ func moveToTrash(ctx context.Context, writer vaultport.VaultWriter, path string)
 		if err == nil {
 			return target, nil
 		}
-		if !errors.Is(err, vaultport.ErrOccupied) {
+		if !errors.Is(err, vaultport.ErrAlreadyExists) {
 			return "", mapMissingNote(err)
 		}
 		if attempt > 100 {

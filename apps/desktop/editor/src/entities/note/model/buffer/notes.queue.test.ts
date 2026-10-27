@@ -9,8 +9,8 @@ type ErrorCode = string
 describe('what a failed call is reported as', () => {
   it.each<[ErrorCode, string]>([
     ['missing', 'unreadable'],
-    ['occupied', 'unreadable'],
-    ['unnameable', 'unreadable'],
+    ['alreadyExists', 'unreadable'],
+    ['invalidName', 'unreadable'],
     ['tooLarge', 'tooLarge'],
     ['notANote', 'notANote'],
     ['notText', 'notText'],
@@ -187,7 +187,7 @@ describe('the queue of an open note', () => {
     })
 
     it('reports any other failure by the name the tab knows it by', async () => {
-      const { queue, turned } = setup({ read: async () => asFailure('occupied') })
+      const { queue, turned } = setup({ read: async () => asFailure('alreadyExists') })
 
       await queue.read('a', 'Note.md', 2)
 
@@ -241,7 +241,7 @@ describe('the queue of an open note', () => {
     })
 
     it('reports any other failure by the name the tab knows it by', async () => {
-      const { queue, turned } = setup({ write: async () => asFailure('unnameable') })
+      const { queue, turned } = setup({ write: async () => asFailure('invalidName') })
 
       await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 

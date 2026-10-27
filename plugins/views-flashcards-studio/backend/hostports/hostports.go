@@ -85,8 +85,8 @@ func (w writer) Create(ctx context.Context, path string, content []byte) error {
 
 func readError(err error) error {
 	switch {
-	case errors.Is(err, host.ErrOccupied):
-		return ports.ErrOccupied
+	case errors.Is(err, host.ErrAlreadyExists):
+		return ports.ErrAlreadyExists
 	case errors.Is(err, host.ErrHeldByAnother):
 		return ports.ErrHeldByAnother
 	}

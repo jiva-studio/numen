@@ -69,8 +69,8 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.TOO_LARGE]: 'note too large',
   [ProtoErrorCode.BODY_UNWRITABLE]: 'text cannot start with frontmatter',
   [ProtoErrorCode.UNREADABLE]: 'frontmatter unreadable',
-  [ProtoErrorCode.OCCUPIED]: 'a file with this name exists',
-  [ProtoErrorCode.UNNAMEABLE]: 'invalid note name',
+  [ProtoErrorCode.ALREADY_EXISTS]: 'a file with this name exists',
+  [ProtoErrorCode.INVALID_NAME]: 'invalid note name',
   [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
 }
 

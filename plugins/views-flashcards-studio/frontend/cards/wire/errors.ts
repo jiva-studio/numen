@@ -13,8 +13,8 @@ export type ErrorCode =
   | 'tooLarge'
   | 'bodyUnwritable'
   | 'unreadable'
-  | 'occupied'
-  | 'unnameable'
+  | 'alreadyExists'
+  | 'invalidName'
   | 'unreachable'
   | 'notACardModel'
   | 'notADeck'
@@ -30,8 +30,8 @@ const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
   [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
   [ProtoErrorCode.BODY_UNWRITABLE]: 'bodyUnwritable',
   [ProtoErrorCode.UNREADABLE]: 'unreadable',
-  [ProtoErrorCode.OCCUPIED]: 'occupied',
-  [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
+  [ProtoErrorCode.ALREADY_EXISTS]: 'alreadyExists',
+  [ProtoErrorCode.INVALID_NAME]: 'invalidName',
   [ProtoErrorCode.NOT_A_CARD_MODEL]: 'notACardModel',
   [ProtoErrorCode.NOT_A_DECK]: 'notADeck',
   [ProtoErrorCode.DECK_TOO_LARGE]: 'deckTooLarge',
@@ -47,8 +47,8 @@ export const ERRORS: Readonly<Record<ErrorCode, string>> = {
   tooLarge: 'note too large',
   bodyUnwritable: 'text cannot start with frontmatter',
   unreadable: 'frontmatter unreadable',
-  occupied: 'a file with this name exists',
-  unnameable: 'invalid note name',
+  alreadyExists: 'a file with this name exists',
+  invalidName: 'invalid note name',
   unreachable: 'vault unreachable',
   notACardModel: 'that note is not a card model',
   notADeck: 'that note is not a deck',

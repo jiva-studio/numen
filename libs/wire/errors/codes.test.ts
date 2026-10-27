@@ -24,7 +24,7 @@ describe('the words of an error code', () => {
 
 describe('a code given as text', () => {
   it('is the code the window words, where it words it', () => {
-    expect(getKnownErrorCode('occupied')).toBe('occupied')
+    expect(getKnownErrorCode('alreadyExists')).toBe('alreadyExists')
     expect(getKnownErrorCode('unreachable')).toBe('unreachable')
   })
 

@@ -44,7 +44,7 @@ func GetTempPattern(name string) string {
 func CreateParents(root *os.Root, dir, path string) error {
 	err := root.MkdirAll(dir, 0o755)
 	if errors.Is(err, fs.ErrExist) {
-		return fmt.Errorf("make %s: %w", path, vaultport.ErrOccupied)
+		return fmt.Errorf("make %s: %w", path, vaultport.ErrAlreadyExists)
 	}
 	return err
 }

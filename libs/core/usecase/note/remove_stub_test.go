@@ -184,7 +184,7 @@ func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 		*tr.moves = append(*tr.moves, to)
 		switch {
 		case len(*tr.moves) < 4:
-			return vaultport.ErrOccupied
+			return vaultport.ErrAlreadyExists
 		case len(*tr.moves) < 150:
 			return nil
 		}
@@ -211,7 +211,7 @@ func TestAFullTrashRefusesTheNoteAfterAHundredNames(t *testing.T) {
 	tr := newTrashing()
 	tr.writers.writer.move = func(_, to string) error {
 		*tr.moves = append(*tr.moves, to)
-		return vaultport.ErrOccupied
+		return vaultport.ErrAlreadyExists
 	}
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")

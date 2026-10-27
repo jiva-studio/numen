@@ -14,9 +14,9 @@ import (
 // own note outranks whatever was going to be put on top of it.
 var ErrStale = edit.ErrStale
 
-// ErrOccupied is what a move says when something already sits where a note was
+// ErrAlreadyExists is what a move says when something already sits where a note was
 // going. Nothing is moved.
-var ErrOccupied = errors.New("a file is already there")
+var ErrAlreadyExists = errors.New("a file is already there")
 
 // VaultWriter changes the files of one vault. It is the only way the
 // application touches what the person wrote, and it is deliberately small: what

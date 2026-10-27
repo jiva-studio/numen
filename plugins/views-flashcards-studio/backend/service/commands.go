@@ -66,9 +66,9 @@ func (b *Backend) newCreateRun(
 // describeCreateError is why a file was not made, in words a person reads.
 func describeCreateError(code flashcardsv1.ErrorCode) string {
 	switch code {
-	case flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED:
+	case flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
 		return "something of that name is filed there already, so nothing was written"
-	case flashcardsv1.ErrorCode_ERROR_CODE_UNNAMEABLE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_INVALID_NAME:
 		return "a note cannot be called that"
 	default:
 		return "the file could not be made: " + code.String()

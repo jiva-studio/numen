@@ -47,8 +47,8 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		return v1.ErrorCode_ERROR_CODE_MISSING, true
 	case errors.Is(err, note.ErrTooLarge):
 		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
-	case errors.Is(err, note.ErrUnnameable):
-		return v1.ErrorCode_ERROR_CODE_UNNAMEABLE, true
+	case errors.Is(err, note.ErrInvalidName):
+		return v1.ErrorCode_ERROR_CODE_INVALID_NAME, true
 	case errors.Is(err, note.ErrUnreadable),
 		errors.Is(err, note.ErrInline),
 		errors.Is(err, note.ErrUnterminated),
@@ -60,8 +60,8 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
 	// A file standing where a folder of the path must be is a file in the way,
 	// the same as a file standing where the note itself would go.
-	case errors.Is(err, vaultport.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
-		return v1.ErrorCode_ERROR_CODE_OCCUPIED, true
+	case errors.Is(err, vaultport.ErrAlreadyExists), errors.Is(err, syscall.ENOTDIR):
+		return v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true
 	default:
 		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 	}

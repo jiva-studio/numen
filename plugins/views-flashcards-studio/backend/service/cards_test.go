@@ -767,7 +767,7 @@ func TestACardModelMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("making a card model on a name already taken answered %v", code)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
@@ -786,7 +786,7 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("making a deck on a name already taken answered %v", code)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
@@ -850,7 +850,7 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("making a deck under a file answered %v", code)
 	}
 	if target := onDisk(t, f.root, "Entropy.md"); target != "# Entropy\n" {

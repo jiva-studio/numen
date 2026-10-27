@@ -88,8 +88,8 @@ describe('making a note in a relation of another', () => {
 
   it('asks for the next name for as long as the vault says the last one is taken', async () => {
     const { core, requests, write, last } = fake([
-      { ok: false, error: 'occupied' },
-      { ok: false, error: 'occupied' },
+      { ok: false, error: 'alreadyExists' },
+      { ok: false, error: 'alreadyExists' },
     ])
     const making = createNoteWriter(core, write)
     const createdItem = await making.createInRelation('Ontology.md', 'child')
@@ -144,7 +144,7 @@ describe('making a note in a relation of another', () => {
 describe('a vault that has filed every name offered', () => {
   it('requests a hundred names and reports status', async () => {
     const { core, requests, write, messages } = fake(
-      Array.from({ length: 101 }, () => ({ ok: false, error: 'occupied' }) as const),
+      Array.from({ length: 101 }, () => ({ ok: false, error: 'alreadyExists' }) as const),
     )
 
     expect(await createNoteWriter(core, write).createUntitled('', [])).toBeNull()

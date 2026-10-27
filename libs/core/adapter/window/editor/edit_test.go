@@ -125,8 +125,8 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 			err: fmt.Errorf("stat /vault: %w", fs.ErrNotExist),
 		},
 		"a title no note can be given": {
-			err:  fmt.Errorf("%w: nothing to name it", note.ErrUnnameable),
-			want: v1.ErrorCode_ERROR_CODE_UNNAMEABLE,
+			err:  fmt.Errorf("%w: nothing to name it", note.ErrInvalidName),
+			want: v1.ErrorCode_ERROR_CODE_INVALID_NAME,
 			is:   true,
 		},
 		"a frontmatter written on one line": {

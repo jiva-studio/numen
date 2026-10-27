@@ -32,7 +32,7 @@ func TestACreateOverAFileIsOccupied(t *testing.T) {
 	v := hosttest.New("Physics")
 	v.File("a.md", "one")
 
-	if err := v.Create(context.Background(), "a.md", nil); !errors.Is(err, host.ErrOccupied) {
+	if err := v.Create(context.Background(), "a.md", nil); !errors.Is(err, host.ErrAlreadyExists) {
 		t.Errorf("got %v", err)
 	}
 	if err := v.Create(context.Background(), "../a.md", nil); !errors.Is(err, host.ErrOutside) {
@@ -153,7 +153,7 @@ func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
 	again := v.Create(ctx, "samples/New.md", []byte("# New\n"))
 
 	body, there := v.Content("samples/New.md")
-	if first != nil || !errors.Is(again, host.ErrOccupied) || !there || body != "# New\n" {
+	if first != nil || !errors.Is(again, host.ErrAlreadyExists) || !there || body != "# New\n" {
 		t.Errorf("got %v, %v and %q", first, again, body)
 	}
 }

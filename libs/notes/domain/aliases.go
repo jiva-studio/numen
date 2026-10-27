@@ -19,7 +19,7 @@ const (
 
 var (
 	// From name subpackage
-	ErrUnnameable      = name.ErrUnnameable
+	ErrInvalidName     = name.ErrInvalidName
 	Filename           = name.Filename
 	GetReducedFilename = name.GetReducedFilename
 	ChooseMatch        = name.ChooseMatch

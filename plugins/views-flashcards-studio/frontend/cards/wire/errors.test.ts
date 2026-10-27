@@ -12,7 +12,7 @@ describe('errors', () => {
   it('translates every note code of the schema into the plugin code', () => {
     expect(findErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
     expect(findErrorCode({ error: ProtoErrorCode.NOT_A_NOTE })).toBe('notANote')
-    expect(findErrorCode({ error: ProtoErrorCode.UNNAMEABLE })).toBe('unnameable')
+    expect(findErrorCode({ error: ProtoErrorCode.INVALID_NAME })).toBe('invalidName')
     expect(findErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
   })
 

@@ -196,7 +196,7 @@ func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, vaultport.ErrOccupied) {
+	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, vaultport.ErrAlreadyExists) {
 		t.Fatalf("what stayed outside: %+v", brought.Errors)
 	}
 	if len(brought.Landed) != 0 {

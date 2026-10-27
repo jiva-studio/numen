@@ -51,9 +51,9 @@ describe('a note requested for', () => {
     expect(created).toEqual({ ok: true, value: { path: 'Notes/Heat.md' } })
     expect(asked.createNote.mock.calls.at(-1)?.[0].path).toBe('Notes')
 
-    asked.createNote.mockResolvedValue({ error: ErrorCode.OCCUPIED })
+    asked.createNote.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
     const outcome = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
-    expect(outcome).toEqual({ ok: false, error: 'occupied' })
+    expect(outcome).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
   it('is renamed by the path it has, and a stale answer is a change under the window', async () => {
@@ -68,8 +68,8 @@ describe('a note requested for', () => {
     asked.renameNote.mockResolvedValue({ error: ErrorCode.STALE })
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'changed' })
 
-    asked.renameNote.mockResolvedValue({ error: ErrorCode.OCCUPIED })
-    expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'occupied' })
+    asked.renameNote.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
   it('has its headings requested of every path given', async () => {
@@ -129,8 +129,8 @@ describe('a file requested for', () => {
     await core.move('a.md', 'b.md')
     expect(asked.moveFile.mock.calls.at(-1)?.[0]).toEqual({ from: 'a.md', to: 'b.md' })
 
-    asked.moveFile.mockResolvedValue({ error: ErrorCode.OCCUPIED })
-    expect(await core.move('a.md', 'b.md')).toEqual({ ok: false, error: 'occupied' })
+    asked.moveFile.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    expect(await core.move('a.md', 'b.md')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
   it('has a folder created at its path', async () => {

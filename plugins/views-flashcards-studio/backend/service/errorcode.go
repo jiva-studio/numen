@@ -45,8 +45,8 @@ func getErrorCode(err error) (flashcardsv1.ErrorCode, bool) {
 		return flashcardsv1.ErrorCode_ERROR_CODE_MISSING, true
 	case errors.Is(err, edit.ErrTooLarge):
 		return flashcardsv1.ErrorCode_ERROR_CODE_TOO_LARGE, true
-	case errors.Is(err, domain.ErrUnnameable):
-		return flashcardsv1.ErrorCode_ERROR_CODE_UNNAMEABLE, true
+	case errors.Is(err, domain.ErrInvalidName):
+		return flashcardsv1.ErrorCode_ERROR_CODE_INVALID_NAME, true
 	case errors.Is(err, edit.ErrUnreadable),
 		errors.Is(err, edit.ErrInline),
 		errors.Is(err, edit.ErrUnterminated),
@@ -58,8 +58,8 @@ func getErrorCode(err error) (flashcardsv1.ErrorCode, bool) {
 		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
 	// A file standing where a folder of the path must be is a file in the way, the same as a file
 	// standing where the note itself would go.
-	case errors.Is(err, ports.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
-		return flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED, true
+	case errors.Is(err, ports.ErrAlreadyExists), errors.Is(err, syscall.ENOTDIR):
+		return flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true
 	}
 	return flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 }

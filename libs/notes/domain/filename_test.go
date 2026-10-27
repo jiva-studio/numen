@@ -181,7 +181,7 @@ func TestFilenameAnswersForATitleThatCanBeFiled(t *testing.T) {
 func TestFilenameRejectsATitleThatPreservesNoFilename(t *testing.T) {
 	for _, title := range []string{"", "   ", "...", "\x00"} {
 		name, exact, err := domain.Filename(title)
-		if !errors.Is(err, domain.ErrUnnameable) {
+		if !errors.Is(err, domain.ErrInvalidName) {
 			t.Errorf("%q: err %v", title, err)
 		}
 		if name != "" || exact {
@@ -196,7 +196,7 @@ func TestFilenameRejectsATitleThatPreservesNoFilename(t *testing.T) {
 func TestFilenameRejectsATitleOfMoreThanOneLine(t *testing.T) {
 	for _, title := range []string{"first\nsecond", "first\rsecond", "first\r\nsecond"} {
 		name, exact, err := domain.Filename(title)
-		if !errors.Is(err, domain.ErrUnnameable) {
+		if !errors.Is(err, domain.ErrInvalidName) {
 			t.Errorf("%q: err %v", title, err)
 		}
 		if name != "" || exact {

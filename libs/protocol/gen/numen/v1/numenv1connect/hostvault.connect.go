@@ -122,7 +122,7 @@ type HostVaultServiceClient interface {
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
-	// answered with the error code OCCUPIED.
+	// answered with the error code ALREADY_EXISTS.
 	CreateFile(context.Context, *connect.Request[v1.CreateFileRequest]) (*connect.Response[v1.CreateFileResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin goes. A caller that finds it held waits for it.
@@ -467,7 +467,7 @@ type HostVaultServiceHandler interface {
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
-	// answered with the error code OCCUPIED.
+	// answered with the error code ALREADY_EXISTS.
 	CreateFile(context.Context, *connect.Request[v1.CreateFileRequest]) (*connect.Response[v1.CreateFileResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin goes. A caller that finds it held waits for it.

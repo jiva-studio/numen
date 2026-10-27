@@ -337,11 +337,11 @@ describe('writing a card model', () => {
   })
 
   it('fails in the service words', async () => {
-    answer('writeCardModel', { error: ErrorCode.OCCUPIED })
+    answer('writeCardModel', { error: ErrorCode.ALREADY_EXISTS })
 
     expect(
       await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null),
-    ).toEqual(asFailure('occupied'))
+    ).toEqual(asFailure('alreadyExists'))
   })
 
   it('is changed where the file moved past what was read', async () => {

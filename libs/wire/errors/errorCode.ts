@@ -6,6 +6,6 @@ export type ErrorCode =
   | 'tooLarge'
   | 'bodyUnwritable'
   | 'unreadable'
-  | 'occupied'
-  | 'unnameable'
+  | 'alreadyExists'
+  | 'invalidName'
   | 'unreachable'

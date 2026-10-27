@@ -36,7 +36,7 @@ export interface AnswerWords {
   /** The note holds prose nobody here has seen, so nothing was written. */
   readonly stale: string
   /** A name at the destination is taken, and the file stayed where it was. */
-  readonly occupied: string
+  readonly alreadyExists: string
 }
 
 /** The words the step that asks for the name typed back is drawn in. */

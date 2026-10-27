@@ -166,8 +166,8 @@ func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
 	vaultfixture.PlaceFile(t, root, "scan.png")
 	vaultfixture.PlaceFile(t, root, "assets/scan.png")
 
-	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, vaultport.ErrOccupied) {
-		t.Errorf("want ErrOccupied, got %v", err)
+	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Errorf("want ErrAlreadyExists, got %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "scan.png")); err != nil {
 		t.Errorf("the file did not stay where it was: %v", err)
@@ -211,8 +211,8 @@ func TestAFolderIsMade(t *testing.T) {
 	}
 
 	vaultfixture.PlaceFile(t, root, "science/Entropy.md")
-	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, vaultport.ErrOccupied) {
-		t.Errorf("a folder over a file: want ErrOccupied, got %v", err)
+	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Errorf("a folder over a file: want ErrAlreadyExists, got %v", err)
 	}
 	if err := w.MakeFolder(ctx, "../outside"); !errors.Is(err, vaultconfig.ErrOutside) {
 		t.Errorf("a folder outside the vault: want ErrOutside, got %v", err)
@@ -381,8 +381,8 @@ func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	}
 
 	for _, to := range []string{"physics/inner", "physics/inner/deeper", "physics/inner/physics"} {
-		if err := w.Move(ctx, "physics", to); !errors.Is(err, vaultport.ErrOccupied) {
-			t.Errorf("moving physics to %s gave %v, want ErrOccupied", to, err)
+		if err := w.Move(ctx, "physics", to); !errors.Is(err, vaultport.ErrAlreadyExists) {
+			t.Errorf("moving physics to %s gave %v, want ErrAlreadyExists", to, err)
 		}
 		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(to))); !errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("%s was made: %v", to, err)
@@ -410,8 +410,8 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 		t.Errorf("the file arrived as %q", target)
 	}
 
-	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, vaultport.ErrOccupied) {
-		t.Errorf("a file over a file: want ErrOccupied, got %v", err)
+	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Errorf("a file over a file: want ErrAlreadyExists, got %v", err)
 	}
 	if err := w.Import(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, vaultconfig.ErrOutside) {
 		t.Errorf("a file outside the vault: want ErrOutside, got %v", err)
@@ -642,7 +642,7 @@ func TestANameAnotherFileExistsAtIsRefused(t *testing.T) {
 	if err := w.Create(ctx, "Other.md", []byte("# Other\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.Move(ctx, "Note.md", "Other.md"); !errors.Is(err, vaultport.ErrOccupied) {
-		t.Errorf("want ErrOccupied, got %v", err)
+	if err := w.Move(ctx, "Note.md", "Other.md"); !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Errorf("want ErrAlreadyExists, got %v", err)
 	}
 }

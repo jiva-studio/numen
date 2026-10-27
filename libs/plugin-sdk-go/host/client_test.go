@@ -110,7 +110,7 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING:         host.ErrNotExist,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE:         host.ErrOutside,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:           host.ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED:        host.ErrOccupied,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:  host.ErrAlreadyExists,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER: host.ErrHeldByAnother,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:      host.ErrNotANote,
 	}
