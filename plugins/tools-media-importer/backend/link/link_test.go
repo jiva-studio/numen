@@ -144,7 +144,7 @@ func TestAnArticleIsThePlainTextVersionOfItsLink(t *testing.T) {
 	if kind := listing.Versions[0].Kind; kind != "article" {
 		t.Errorf("an article is %q text", kind)
 	}
-	text, err := w.links.ReadArticle(t.Context(), made.Path)
+	text, err := w.links.ReadArticle(t.Context(), made)
 	if err != nil || text != "A tidal mill stored seawater behind a sluice gate." {
 		t.Errorf("the article reads %q (%v)", text, err)
 	}
@@ -205,7 +205,7 @@ func TestTheHostAsksForTheTextOfALinkAndItIsFetched(t *testing.T) {
 		t.Fatal(err)
 	}
 	w.links.Wait()
-	if text, err := w.links.ReadArticle(t.Context(), made.Path); err != nil || text == "" {
+	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
 		t.Errorf("the article reads %q (%v)", text, err)
 	}
 	if err := provider.CreateText(t.Context(), host.TextCreation{Vault: w.vault.Vault().ID, Path: made.Path, Source: "v1"}); !errors.Is(err, host.ErrInvalidVersion) {
@@ -321,7 +321,7 @@ func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
 	if err := w.links.FetchText(t.Context(), made, true); err != nil {
 		t.Fatal(err)
 	}
-	if text, err := w.links.ReadArticle(t.Context(), made.Path); err != nil || text == "" {
+	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
 		t.Errorf("a person asking again leaves the article %q (%v)", text, err)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || isDeleted {
@@ -336,7 +336,7 @@ func TestAFetchNobodyAskedForFetchesALinkNeverFetched(t *testing.T) {
 	if err := w.links.FetchText(t.Context(), made, false); err != nil {
 		t.Fatal(err)
 	}
-	if text, err := w.links.ReadArticle(t.Context(), made.Path); err != nil || text == "" {
+	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
 		t.Errorf("the article reads %q (%v)", text, err)
 	}
 }
@@ -369,7 +369,7 @@ func TestAnEditedNoteGetsItsStoredTextWithoutAFetch(t *testing.T) {
 	if count := w.sites.texts.Load(); count != 1 {
 		t.Errorf("the address was asked %d times, want once", count)
 	}
-	if text, err := w.links.ReadArticle(t.Context(), edited.Path); err != nil || text == "" {
+	if text, err := w.links.ReadArticle(t.Context(), edited); err != nil || text == "" {
 		t.Errorf("the edited note reads %q (%v)", text, err)
 	}
 }
@@ -430,5 +430,9 @@ func TestTheTextOfALinkIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if names, _ := w.store.List(t.Context()); len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
+	}
+	read, err := w.links.ReadArticle(t.Context(), link.Link{Vault: "Chemistry", Path: "links/rance.md"})
+	if err != nil || read == "" {
+		t.Errorf("the article read in Chemistry is %q (%v), want its text", read, err)
 	}
 }

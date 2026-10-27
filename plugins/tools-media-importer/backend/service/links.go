@@ -69,11 +69,11 @@ func (s linkServer) GetLink(
 func (s linkServer) ReadArticle(
 	ctx context.Context, req *connect.Request[linksv1.ReadArticleRequest],
 ) (*connect.Response[linksv1.ReadArticleResponse], error) {
-	_, code, err := s.readLink(ctx, req.Msg.GetPath())
+	found, code, err := s.readLink(ctx, req.Msg.GetPath())
 	if err != nil || isRefused(code) {
 		return connect.NewResponse(&linksv1.ReadArticleResponse{Error: code}), err
 	}
-	text, err := s.links.ReadArticle(ctx, req.Msg.GetPath())
+	text, err := s.links.ReadArticle(ctx, found)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

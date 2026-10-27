@@ -191,22 +191,28 @@ func (l *Links) getTexts(link Link) host.Texts {
 	return l.host.Texts.With(link.Vault)
 }
 
-// claim takes one kind of work on a link for this run alone, and returns false where another run
-// has it.
-func (l *Links) claim(work, key string) bool {
+// claim takes one kind of work on a key of a link's vault for this run alone, and returns false
+// where another run has it. The same address in another vault is other work.
+func (l *Links) claim(work string, link Link, key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.running[work+key] {
+	name := getWorkName(work, link, key)
+	if l.running[name] {
 		return false
 	}
-	l.running[work+key] = true
+	l.running[name] = true
 	return true
 }
 
-func (l *Links) release(work, key string) {
+func (l *Links) release(work string, link Link, key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	delete(l.running, work+key)
+	delete(l.running, getWorkName(work, link, key))
+}
+
+// getWorkName names one kind of work on a key in the vault of a link.
+func getWorkName(work string, link Link, key string) string {
+	return work + "\x00" + string(link.Vault) + "\x00" + key
 }
 
 // IsCopyable reports whether something on this machine copies what the address publishes.
@@ -280,10 +286,10 @@ func getTaskID(work, path string) string { return work + ":" + path }
 // address marked as publishing none and a text whose version a person deleted, and puts a text
 // already stored again as a version of the note as it reads now, without fetching it.
 func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) error {
-	if !l.claim("text", link.Key) {
+	if !l.claim("text", link, link.Key) {
 		return ErrBeingFetched
 	}
-	defer l.release("text", link.Key)
+	defer l.release("text", link, link.Key)
 	folder := folder{store: l.getStore(link)}
 	if !isUserStarted {
 		isDone, err := l.reuseText(ctx, folder, link)
@@ -379,10 +385,10 @@ const copyChunk = 1 << 20
 // Copy copies the video a link's address publishes into the plugin's folder, through the core's
 // queue, and returns its size. A copy already stored is left as it is.
 func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
-	if !l.claim("copy", link.Hash) {
+	if !l.claim("copy", link, link.Hash) {
 		return 0, ErrBeingFetched
 	}
-	defer l.release("copy", link.Hash)
+	defer l.release("copy", link, link.Hash)
 	if size, err := l.FindCopy(ctx, link); err != nil || size > 0 {
 		return size, err
 	}
@@ -465,9 +471,11 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 	return folder.writeRecord(ctx, link.Key, rec)
 }
 
-// ReadArticle is the text of the live version of a link, and nothing where it has none.
-func (l *Links) ReadArticle(ctx context.Context, path string) (string, error) {
-	listing, err := l.host.Texts.ListVersions(ctx, path)
+// ReadArticle is the text of the live version of a link, read in the link's vault, and nothing
+// where it has none.
+func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
+	texts := l.getTexts(link)
+	listing, err := texts.ListVersions(ctx, link.Path)
 	if err != nil || listing.Live == "" {
 		return "", err
 	}
@@ -475,7 +483,7 @@ func (l *Links) ReadArticle(ctx context.Context, path string) (string, error) {
 		if version.GetID() != listing.Live {
 			continue
 		}
-		whole, err := host.ReadWholeText(ctx, l.host.Texts, version)
+		whole, err := host.ReadWholeText(ctx, texts, version)
 		if err != nil {
 			return "", err
 		}
