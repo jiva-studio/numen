@@ -76,10 +76,6 @@ const createSection = (
     }),
     choose: vi.fn(),
     isSyncing: ref(true),
-    isNesting: ref(true),
-    headings: ref(6),
-    headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: vi.fn(),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(AiSettingsSection, { props: { state } })

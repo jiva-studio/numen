@@ -3,25 +3,17 @@
  */
 import { settingsService } from '@/shared/clients'
 import { consented, fetched } from './words'
-import { DEFAULT_HEADINGS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage, isStaleAnswer } from '@numen/wire'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
-import type { NestingSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
-const NESTING = ['appearance', 'nest_headings_under_notes']
-const HEADINGS = ['appearance', 'nested_heading_limit']
 
 /** Every setting currently, with the defaults under what the file leaves out. */
 const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
-
-/** How many headings nest under a note, and the default where the settings name none. */
-const getNestedHeadingLimit = (value: unknown): number =>
-  typeof value === 'number' ? value : DEFAULT_HEADINGS
 
 /**
  * Settings written into the file, together or not at all. What could not be
@@ -56,22 +48,6 @@ const readCondition = (
 export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
   setSyncEnabled: (retained) => writeSettings([{ at: SYNCS, value: retained }]),
-  getNestingSettings: async () => {
-    const answer = await settingsService.getSettings({})
-    const content = JSON.parse(answer.written)
-    const target = answer.nestedHeadingLimitBounds
-    return {
-      isNesting: getSettingAt(content, NESTING) !== false,
-      headings: getNestedHeadingLimit(getSettingAt(content, HEADINGS)),
-      least: target?.least ?? DEFAULT_HEADINGS,
-      most: target?.most ?? DEFAULT_HEADINGS,
-    } satisfies NestingSettings
-  },
-  setNestingSettings: (isNesting, headings) =>
-    writeSettings([
-      { at: NESTING, value: isNesting },
-      ...(headings === undefined ? [] : [{ at: HEADINGS, value: headings }]),
-    ]),
   getSettings: async () => {
     const answer = await settingsService.getSettings({})
     return {

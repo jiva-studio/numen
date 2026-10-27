@@ -172,8 +172,6 @@ const window = (
     settings: {
       chooseAppearance: async (selected) => void isDone.push(`appearance ${selected}`),
       chooseSync: async (selected) => void isDone.push(`syncing ${selected}`),
-      chooseNesting: async (selected) => void isDone.push(`nesting ${selected}`),
-      chooseHeadings: async (selected) => void isDone.push(`headings ${selected}`),
       choosePerformance: async (selected) => void isDone.push(`performance ${selected}`),
       choosePluginSetting: async (pluginId, key, selected) =>
         void isDone.push(`plugin ${pluginId} ${key} ${selected}`),

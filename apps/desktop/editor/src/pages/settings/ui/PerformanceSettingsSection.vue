@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Settings for workload performance profiles, batching, and hardware resource allocation.
+ * The performance profile: how much of the machine the core's CPU-bound work takes.
  */
 import { computed } from 'vue'
-import { NumberField, SegmentedControl } from '@numen/ui'
+import { SegmentedControl } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../types'
 import paths from '../paths.json'
@@ -20,15 +20,12 @@ const profiles = [
   { id: 'eco', text: words.eco },
   { id: 'balanced', text: words.balanced },
   { id: 'maximum', text: words.maximum },
-  { id: 'custom', text: words.custom },
 ]
 
 const currentProfile = computed<string>(() => {
   const profile = fields.getString(paths.performanceProfile)
-  return profile || 'balanced'
+  return profiles.some((one) => one.id === profile) ? profile : 'balanced'
 })
-
-const isCustom = computed<boolean>(() => currentProfile.value === 'custom')
 
 const profileDetail = computed<string>(() => {
   switch (currentProfile.value) {
@@ -36,9 +33,6 @@ const profileDetail = computed<string>(() => {
       return words.ecoDetail
     case 'maximum':
       return words.maximumDetail
-    case 'custom':
-      return words.customDetail
-    case 'balanced':
     default:
       return words.balancedDetail
   }
@@ -47,22 +41,6 @@ const profileDetail = computed<string>(() => {
 /* -------------------------------- Handlers -------------------------------- */
 function onProfileChange(choice: string): void {
   fields.setValue(paths.performanceProfile, choice)
-}
-
-function onEmbeddingBatchSizeChange(size: number | null): void {
-  if (size !== null) fields.setValue(paths.performanceEmbeddingBatchSize, size)
-}
-
-function onOcrThreadsChange(threads: number | null): void {
-  if (threads !== null) fields.setValue(paths.performanceOcrThreads, threads)
-}
-
-function onOcrSessionsChange(sessions: number | null): void {
-  if (sessions !== null) fields.setValue(paths.performanceOcrSessions, sessions)
-}
-
-function onLlmConcurrencyChange(concurrency: number | null): void {
-  if (concurrency !== null) fields.setValue(paths.performanceLlmConcurrency, concurrency)
 }
 </script>
 
@@ -83,76 +61,6 @@ function onLlmConcurrencyChange(concurrency: number | null): void {
         @update:model-value="onProfileChange"
       />
     </SettingRow>
-
-    <template v-if="isCustom">
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="embedding-batch-size"
-        :name="words.embeddingBatchSize"
-        :detail="words.embeddingBatchSizeDetail"
-      >
-        <NumberField
-          :model-value="fields.getNumber(paths.performanceEmbeddingBatchSize, 32)"
-          :min="1"
-          :max="512"
-          :step="1"
-          :aria-labelledby="labelledBy"
-          class="settings__number"
-          @commit="onEmbeddingBatchSizeChange"
-        />
-      </SettingRow>
-
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="ocr-threads"
-        :name="words.ocrThreads"
-        :detail="words.ocrThreadsDetail"
-      >
-        <NumberField
-          :model-value="fields.getNumber(paths.performanceOcrThreads, 4)"
-          :min="1"
-          :max="64"
-          :step="1"
-          :aria-labelledby="labelledBy"
-          class="settings__number"
-          @commit="onOcrThreadsChange"
-        />
-      </SettingRow>
-
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="ocr-sessions"
-        :name="words.ocrSessions"
-        :detail="words.ocrSessionsDetail"
-      >
-        <NumberField
-          :model-value="fields.getNumber(paths.performanceOcrSessions, 1)"
-          :min="1"
-          :max="16"
-          :step="1"
-          :aria-labelledby="labelledBy"
-          class="settings__number"
-          @commit="onOcrSessionsChange"
-        />
-      </SettingRow>
-
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="llm-concurrency"
-        :name="words.llmConcurrency"
-        :detail="words.llmConcurrencyDetail"
-      >
-        <NumberField
-          :model-value="fields.getNumber(paths.performanceLlmConcurrency, 2)"
-          :min="1"
-          :max="16"
-          :step="1"
-          :aria-labelledby="labelledBy"
-          class="settings__number"
-          @commit="onLlmConcurrencyChange"
-        />
-      </SettingRow>
-    </template>
   </section>
 </template>
 
@@ -170,9 +78,5 @@ function onLlmConcurrencyChange(concurrency: number | null): void {
   font-weight: 600;
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;
-}
-
-.settings__number {
-  inline-size: var(--settings-value, 6rem);
 }
 </style>

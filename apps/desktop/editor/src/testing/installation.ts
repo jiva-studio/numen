@@ -26,10 +26,6 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   }),
   choose: fn(),
   isSyncing: ref(true),
-  isNesting: ref(true),
-  headings: ref(6),
-  headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: fn(),
   ...overrides,
 })
 

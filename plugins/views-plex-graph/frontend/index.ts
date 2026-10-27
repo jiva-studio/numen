@@ -3,6 +3,7 @@ import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind, PLEX } from './kind'
 import { usePlexView } from './model/usePlexView'
+import { readNesting } from './model/nesting'
 import { WORDS } from './words'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
@@ -18,7 +19,7 @@ export function activate(context: PluginContext): void {
   if (!workspace || !notes) {
     throw new Error('a plex needs the window it is drawn in and the notes of the vault')
   }
-  const plexes = createPlexKind({ workspace, notes }, () =>
+  const plexes = createPlexKind({ workspace, notes, nesting: readNesting(context) }, () =>
     usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
   )
   context.registerTabKind(plexes.kind)

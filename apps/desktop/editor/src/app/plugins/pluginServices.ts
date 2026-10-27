@@ -37,10 +37,6 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
     readonly opening: Readonly<Ref<string>>
     readInitialNote(): Promise<string>
   }
-  readonly nesting: {
-    readonly isNesting: Readonly<Ref<boolean>>
-    readonly headings: Readonly<Ref<number>>
-  }
   readonly dragged: ShallowRef<readonly string[]>
   readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
@@ -57,12 +53,11 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
 }
 
 export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
-  const { window, nesting, dragged, tabOpeners, writeMessage } = deps
+  const { window, dragged, tabOpeners, writeMessage } = deps
   return {
     isReady: computed(() => !window.failure.value),
     openingPath: window.opening,
     readOpeningPath: () => window.readInitialNote(),
-    headingDisplay: { isNesting: nesting.isNesting, count: nesting.headings },
     draggedPaths: dragged,
     setDraggedPaths: (paths) => {
       dragged.value = paths

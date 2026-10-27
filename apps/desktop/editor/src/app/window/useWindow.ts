@@ -75,7 +75,6 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reached: editing.reached,
     appearance: settings.appearance,
     oneName: settings.oneName,
-    nesting: settings.nesting,
     rest: settings.rest,
     travel: (path) => kinds.travel(path),
     leavePath: (from, to) => kinds.leavePath(from, to),

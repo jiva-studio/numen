@@ -47,7 +47,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['nesting', 'worn', 'named', 'configured', 'keys', 'plugins'])
+    expect(writers).toStrictEqual(['worn', 'named', 'configured', 'keys', 'plugins'])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -75,7 +75,7 @@ describe('the settings as they are put together', () => {
 })
 
 describe('the lists the palette offers for a setting', () => {
-  it('offers the four performance profiles, each with what it does', () => {
+  it('offers the three performance profiles, each with what it does', () => {
     const { settings } = createSettings()
 
     expect(settings.paletteLists.getStepGroups('performanceProfile', '')).toStrictEqual([
@@ -86,7 +86,6 @@ describe('the lists the palette offers for a setting', () => {
           { id: 'eco', title: WORDS.eco, detail: WORDS.ecoDetail },
           { id: 'balanced', title: WORDS.balanced, detail: WORDS.balancedDetail },
           { id: 'maximum', title: WORDS.maximum, detail: WORDS.maximumDetail },
-          { id: 'custom', title: WORDS.custom, detail: WORDS.customDetail },
         ],
       },
     ])
@@ -100,17 +99,11 @@ describe('the lists the palette offers for a setting', () => {
     expect(settings.paletteLists.getStepGroups('child', '')).toStrictEqual([])
   })
 
-  it('offers each switch the list its own setting holds', () => {
+  it('offers the syncing switch the list its own setting holds', () => {
     const { settings } = createSettings()
 
     expect(settings.paletteLists.getStepGroups('syncing', '')).toStrictEqual(
       settings.sync.getSyncingGroups(),
-    )
-    expect(settings.paletteLists.getStepGroups('nesting', '')).toStrictEqual(
-      settings.nesting.getNestingGroups(),
-    )
-    expect(settings.paletteLists.getStepGroups('headings', '')).toStrictEqual(
-      settings.nesting.getHeadingsGroups(),
     )
     expect(settings.paletteLists.getStepGroups('syncing', '')[0]?.items).toHaveLength(2)
   })
@@ -148,34 +141,18 @@ describe('the settings tab', () => {
     expect(choose).toHaveBeenCalledWith('preset:dracula')
   })
 
-  it('reads and writes the two switches as the palette rows they are', () => {
+  it('reads and writes the syncing switch as the palette rows it is', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
     const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-    const nest = vi.spyOn(settings.nesting, 'choose').mockResolvedValue()
     settings.sync.isEnabled.value = false
-    settings.nesting.isNesting.value = false
 
     expect(installation.isSyncing.value).toBe(false)
-    expect(installation.isNesting.value).toBe(false)
 
     installation.isSyncing.value = true
-    installation.isNesting.value = true
     installation.isSyncing.value = false
-    installation.isNesting.value = false
 
     expect(sync.mock.calls).toStrictEqual([['on'], ['off']])
-    expect(nest.mock.calls).toStrictEqual([['on'], ['off']])
-  })
-
-  it('chooses a count of headings through the palette’s own choices', () => {
-    const { settings } = createSettings()
-    const { installation } = settings.configured.state
-    const count = vi.spyOn(settings.nesting, 'chooseCount').mockResolvedValue()
-
-    installation.chooseHeadings(4)
-
-    expect(count).toHaveBeenCalledWith('4')
   })
 
   it('reads and writes the rest of the file through the settings the window holds', () => {

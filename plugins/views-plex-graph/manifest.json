@@ -8,6 +8,26 @@
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
+  "settings": [
+    {
+      "key": "nest_headings",
+      "type": "boolean",
+      "title": "Nest headings under notes",
+      "description": "Show the headings of a note under its node.",
+      "default": true,
+      "palette": true
+    },
+    {
+      "key": "heading_limit",
+      "type": "number",
+      "title": "Headings per note",
+      "description": "Maximum number of headings shown under a node. The rest scroll.",
+      "default": 6,
+      "min": 1,
+      "max": 12,
+      "step": 1
+    }
+  ],
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"

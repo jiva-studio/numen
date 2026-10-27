@@ -76,7 +76,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     isReady: ref(true),
     openingPath: ref(''),
     readOpeningPath: async () => '',
-    headingDisplay: { isNesting: ref(false), count: ref(0) },
     draggedPaths: ref([]),
     setDraggedPaths: (paths) => void recorded.dragged.push(paths),
     openFile: (path, options) => void recorded.opened.push([path, options]),

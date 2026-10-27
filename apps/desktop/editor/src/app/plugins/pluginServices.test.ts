@@ -18,7 +18,6 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
       opening: ref('Root.md'),
       readInitialNote: vi.fn(() => Promise.resolve('Root.md')),
     },
-    nesting: { isNesting: ref(true), headings: ref(3) },
     dragged: shallowRef<readonly string[]>([]),
     tabOpeners: {
       openFile: vi.fn(() => Promise.resolve()),
@@ -105,13 +104,11 @@ describe('the window a plugin is handed', () => {
     expect(deps.writeMessage).toHaveBeenCalledWith('the link was not written', 'error')
   })
 
-  it('reads the note the vault opens with, and how headings are shown', async () => {
+  it('reads the note the vault opens with', async () => {
     const { workspace } = createWorkspace()
 
     expect(workspace.openingPath.value).toBe('Root.md')
     expect(await workspace.readOpeningPath()).toBe('Root.md')
-    expect(workspace.headingDisplay.isNesting.value).toBe(true)
-    expect(workspace.headingDisplay.count.value).toBe(3)
   })
 })
 

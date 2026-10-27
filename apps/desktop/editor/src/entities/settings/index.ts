@@ -22,8 +22,6 @@ export type {
   Consent,
   CompletionChoice,
 } from './lib/configuration'
-export { DEFAULT_HEADINGS, ladder as nestingLadder } from './lib/nesting'
-export type { NestingSettings } from './lib/nesting'
 export { getSettingAt, createSettingsStore } from './model/store'
 export { themes } from './api/theme'
 export type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } from './api/theme'

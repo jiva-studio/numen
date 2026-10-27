@@ -31,7 +31,7 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(8)
+    expect(ctx.subscriptions).toHaveLength(10)
     const menus = ctx.getRegisteredContextMenus()
     expect(menus).toHaveLength(4)
     expect(menus.map((m) => m.id)).toEqual(['travel', 'child', 'parent', 'jump'])
@@ -103,6 +103,27 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     expect(requested.headings.length).toBeGreaterThan(0)
+  })
+
+  it('reads no headings while its nest_headings setting is off, and reads them once it is on', async () => {
+    const { host, requested } = createHost({ opening: 'Root.md' })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      workspace: host.workspace,
+      notes: host.notes,
+      initialSettings: { nest_headings: false },
+    })
+    activate(ctx)
+    const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
+    await settle()
+    expect(requested.headings).toStrictEqual([])
+
+    ctx.setSetting('nest_headings', true)
+    ctx.setSetting('heading_limit', 3)
+    await settle()
+
+    expect(requested.headings.length).toBeGreaterThan(0)
+    expect(state.maxHeadings.value).toBe(3)
   })
 
   it('refuses to activate in a window that offers no workspace or notes', () => {

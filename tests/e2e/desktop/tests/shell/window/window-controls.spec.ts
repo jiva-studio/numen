@@ -65,19 +65,21 @@ test.describe('Window Controls and Display Preferences', () => {
     })
   })
 
-  test('toggles plexus heading nesting preference via command palette', async ({ page }) => {
+  test('toggles the plex heading nesting setting of the Plex Graph plugin via command palette', async ({
+    page,
+  }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
       timeout: 15_000,
     })
 
-    // 1. Open palette and search "Nest headings under notes"
+    // 1. Open palette and search the plugin's setting command
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    await paletteInput.fill('Nest headings under notes')
+    await paletteInput.fill('Plex Graph: Nest headings under notes')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 

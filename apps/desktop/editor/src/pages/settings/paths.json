@@ -1,9 +1,5 @@
 {
   "agent": ["agent", "use"],
   "agentTools": ["agent", "serve_tools"],
-  "performanceProfile": ["performance", "profile"],
-  "performanceEmbeddingBatchSize": ["performance", "custom", "embedding_batch_size"],
-  "performanceOcrThreads": ["performance", "custom", "ocr_threads"],
-  "performanceOcrSessions": ["performance", "custom", "ocr_sessions"],
-  "performanceLlmConcurrency": ["performance", "custom", "llm_concurrency"]
+  "performanceProfile": ["performance", "profile"]
 }

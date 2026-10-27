@@ -91,7 +91,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const services: PluginServices = {
     workspace: createWorkspaceHost({
       ...deps,
-      nesting: settings.nesting,
       dragged,
       getNoteInFocus,
       ask: (text) => agents.askQuestion(text),

@@ -95,10 +95,6 @@ const installation: Installation = {
   }),
   choose: fn(),
   isSyncing: ref(true),
-  isNesting: ref(true),
-  headings: ref(6),
-  headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: fn(),
 }
 
 /** The AI section and a plugin's own settings, at the width a story gives. */

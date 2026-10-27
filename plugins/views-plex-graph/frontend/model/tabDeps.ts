@@ -4,15 +4,20 @@
  */
 import type { VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
 import type { PlexTabDeps } from '../types'
+import type { Nesting } from './nesting'
 
-/** The host services a plex tab is made from. */
+/** The host services a plex tab is made from, and the plugin's nesting settings. */
 export interface PlexHost {
   readonly workspace: WorkspaceHost
   readonly notes: VaultNotes
+  readonly nesting: Nesting
 }
 
 /** What the plex tab `id` asks of the window. A note it opens goes to its linked tabs first. */
-export function createPlexTabDeps({ workspace, notes }: PlexHost, id: string): PlexTabDeps {
+export function createPlexTabDeps(
+  { workspace, notes, nesting }: PlexHost,
+  id: string,
+): PlexTabDeps {
   return {
     editor: {
       createInRelation: (from, relation) => notes.createInRelation(from, relation),
@@ -21,8 +26,8 @@ export function createPlexTabDeps({ workspace, notes }: PlexHost, id: string): P
       replaceLinks: (first, second, links) => notes.replaceLinks(first, second, links),
     },
     isReady: workspace.isReady,
-    isNesting: workspace.headingDisplay.isNesting,
-    headings: workspace.headingDisplay.count,
+    isNesting: nesting.isNesting,
+    headings: nesting.headings,
     openNote: (path, options) => {
       const title = options?.title ?? ''
       if (options?.line === undefined && workspace.syncPath(id, path, title)) return

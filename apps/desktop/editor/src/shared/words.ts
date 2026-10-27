@@ -65,8 +65,6 @@ export const WORDS = {
   interfaceScale: 'Interface size',
   textScale: 'Reading font size',
   syncing: 'Sync title and filename',
-  nesting: 'Nest headings under notes',
-  headings: 'Headings per note',
   performanceProfile: 'Set performance profile',
   performance: 'Performance profile',
   eco: 'Eco',
@@ -75,8 +73,6 @@ export const WORDS = {
   balancedDetail: 'Recommended for everyday use',
   maximum: 'Maximum',
   maximumDetail: 'All hardware for indexing and models',
-  custom: 'Custom',
-  customDetail: 'Manual concurrency and batch settings',
   byDefault: 'default',
   present: 'downloaded',
   notFetched: 'not downloaded',
@@ -140,12 +136,8 @@ export const WORDS = {
   unworn: 'Theme unreadable',
   /** The group the setting is drawn in, and the two it is. */
   syncingGroup: 'Sync title and filename',
-  /** The group the setting is drawn in, and the two it is. */
-  nestingGroup: 'Nest headings under notes',
   on: 'On',
   off: 'Off',
-  /** The group the counts are drawn in. */
-  headingsGroup: 'Headings per note',
   unturned: 'Setting not saved:',
   secretFailed: 'Key not changed:',
   /** Plugin notices: "<Name> stopped: <reason>", and errors raised by plugin code. */

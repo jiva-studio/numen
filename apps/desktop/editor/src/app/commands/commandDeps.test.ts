@@ -32,7 +32,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     reached: {} as never,
     appearance: { chooseItem: vi.fn() },
     oneName: { choose: vi.fn() },
-    nesting: { choose: vi.fn(), chooseCount: vi.fn() },
     rest: {
       writeSettings: (content) => {
         record('writeSettings')(content)
@@ -149,16 +148,10 @@ describe('the commands reach the window', () => {
     const selected: string[] = []
     const { deps } = createOptions({
       oneName: { choose: async (item) => void selected.push(`sync ${item}`) },
-      nesting: {
-        choose: async (item) => void selected.push(`nesting ${item}`),
-        chooseCount: async (item) => void selected.push(`headings ${item}`),
-      },
     })
 
     await deps.settings.chooseSync('on')
-    await deps.settings.chooseNesting('off')
-    await deps.settings.chooseHeadings('6')
-    expect(selected).toStrictEqual(['sync on', 'nesting off', 'headings 6'])
+    expect(selected).toStrictEqual(['sync on'])
   })
 
   it('copies nothing where there is no clipboard', () => {

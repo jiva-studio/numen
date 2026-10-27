@@ -81,20 +81,6 @@ export const createWindowFeatureCommands = (words: Words): readonly Command[] =>
     isOffered: isAlwaysOffered,
   },
   {
-    id: 'nesting',
-    text: words.nesting,
-    group: 'window',
-    needs: 'choosing',
-    isOffered: isAlwaysOffered,
-  },
-  {
-    id: 'headings',
-    text: words.headings,
-    group: 'window',
-    needs: 'choosing',
-    isOffered: isAlwaysOffered,
-  },
-  {
     id: 'performanceProfile',
     text: words.performanceProfile,
     group: 'window',

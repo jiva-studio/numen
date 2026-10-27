@@ -22,7 +22,6 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
   models: [],
-  nestedHeadingLimitBounds: { least: 2, most: 9 },
   ...overrides,
 })
 
@@ -60,54 +59,6 @@ describe('keeping a title and its file name in line', () => {
     request.writeSettings.mockRejectedValue(new Error('the file is read-only'))
 
     expect(await core.setSyncEnabled(true)).toEqual(expect.stringMatching(/./))
-  })
-})
-
-describe('the headings a node nests', () => {
-  it('reads whether they nest, how many, and the bounds the vault holds', async () => {
-    request.getSettings.mockResolvedValue(
-      answer({ appearance: { nest_headings_under_notes: false, nested_heading_limit: 3 } }),
-    )
-
-    expect(await core.getNestingSettings()).toStrictEqual({
-      isNesting: false,
-      headings: 3,
-      least: 2,
-      most: 9,
-    })
-  })
-
-  it('hangs the default count where the file names none, or names no number', async () => {
-    request.getSettings.mockResolvedValue(answer({}))
-    expect((await core.getNestingSettings()).headings).toBe(6)
-
-    request.getSettings.mockResolvedValue(answer({ appearance: { nested_heading_limit: '3' } }))
-    expect((await core.getNestingSettings()).headings).toBe(6)
-  })
-
-  it('bounds the count at the default where the vault names no bounds', async () => {
-    request.getSettings.mockResolvedValue(answer({}, { nestedHeadingLimitBounds: undefined }))
-
-    expect(await core.getNestingSettings()).toMatchObject({ isNesting: true, least: 6, most: 6 })
-  })
-
-  it('writes whether they nest and leaves the count where none is given', async () => {
-    await core.setNestingSettings(true)
-
-    expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['appearance', 'nest_headings_under_notes'], value: 'true' }],
-    })
-  })
-
-  it('writes the count alongside it where one is given', async () => {
-    await core.setNestingSettings(false, 4)
-
-    expect(writtenLast()).toStrictEqual({
-      settings: [
-        { at: ['appearance', 'nest_headings_under_notes'], value: 'false' },
-        { at: ['appearance', 'nested_heading_limit'], value: '4' },
-      ],
-    })
   })
 })
 

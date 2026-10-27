@@ -83,10 +83,6 @@ export interface SettingsWriter {
   chooseAppearance(selected: string): Promise<void>
   /** Whether a note's title and the name of its file are kept as one name. */
   chooseSync(selected: string): Promise<void>
-  /** Whether a node nests the headings of its note under it. */
-  chooseNesting(selected: string): Promise<void>
-  /** How many headings nest under a note at once. */
-  chooseHeadings(selected: string): Promise<void>
   /** The performance workload profile chosen. */
   choosePerformance(selected: string): Promise<void>
   /** A declarative plugin setting chosen. */

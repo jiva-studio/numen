@@ -157,26 +157,17 @@ describe('files domain', () => {
 })
 
 describe('settings domain', () => {
-  it('handles the sync, nesting, settings, and settings-file', async () => {
-    const writtenSettings = JSON.stringify({
-      naming: { sync_title_and_filename: true },
-      appearance: { nest_headings_under_notes: true, nested_heading_limit: 3 },
-    })
+  it('handles the sync, settings, and settings-file', async () => {
+    const writtenSettings = JSON.stringify({ naming: { sync_title_and_filename: true } })
     request.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],
-      nestedHeadingLimitBounds: { least: 1, most: 5 },
       path: 'settings.json',
     })
     request.writeSettings.mockResolvedValue({})
 
     expect(await core.getSyncEnabled()).toBe(true)
     expect(await core.setSyncEnabled(false)).toBeNull()
-
-    const nested = await core.getNestingSettings()
-    expect(nested.isNesting).toBe(true)
-    expect(nested.headings).toBe(3)
-    expect(await core.setNestingSettings(false, 2)).toBeNull()
 
     const config = await core.getSettings()
     expect(config.path).toBe('settings.json')

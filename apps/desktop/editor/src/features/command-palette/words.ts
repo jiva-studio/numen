@@ -83,10 +83,6 @@ export interface Words extends EmptyWords {
   readonly textScale: string
   /** The command over whether a note's title and its filename are one name. */
   readonly syncing: string
-  /** The command over whether a node nests the headings of its note under it. */
-  readonly nesting: string
-  /** The command over how many of them stand under a node at once. */
-  readonly headings: string
   /** The command over the performance workload profile. */
   readonly performanceProfile: string
   /** Everything this installation is configured as, in a tab of its own. */

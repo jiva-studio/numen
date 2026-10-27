@@ -35,7 +35,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       request.opening.push(openingPath.value)
       return openingPath.value
     },
-    headingDisplay: { isNesting, count: ref(6) },
     draggedPaths: ref([]),
     setDraggedPaths: () => {},
     openFile: (path, options) => void recorded.opened.push([path, options]),
@@ -85,6 +84,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     creatableRelations: ['parent', 'child', 'jump'],
   }
 
-  const host: PlexHost = { workspace, notes }
+  const host: PlexHost = { workspace, notes, nesting: { isNesting, headings: ref(6) } }
   return { host, openingPath, isNesting, requested: request, asked: request, recorded }
 }

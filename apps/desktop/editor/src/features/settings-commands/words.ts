@@ -28,20 +28,6 @@ export interface AppearanceWords {
   readonly unworn: string
 }
 
-/** Everything the nesting says in the window's voice. */
-export interface NestingWords {
-  /** The group the setting is drawn in, and the two it is. */
-  readonly nestingGroup: string
-  readonly on: string
-  readonly off: string
-  /** The group the counts are drawn in. */
-  readonly headingsGroup: string
-  /** The row a list of values opens on, which is the value in force. */
-  readonly current: string
-  /** The setting could not be written. */
-  readonly unturned: string
-}
-
 /** Everything the syncing says in the window's voice. */
 export interface SyncWords {
   /** The group the setting is drawn in, and the two it is. */

@@ -1,6 +1,5 @@
 /** What the window asks of the vault about its settings. */
 import type { Configuration, SettingEdit } from '@/entities/settings'
-import type { NestingSettings } from '@/entities/settings'
 
 export interface SettingsPort {
   /**
@@ -13,16 +12,6 @@ export interface SettingsPort {
    * nothing where it was: the rename after this reads what was written.
    */
   setSyncEnabled(isEnabled: boolean): Promise<string | null>
-  /**
-   * Whether a node in the plex nests the headings of its note under the box, and
-   * how many of them stand there at once, as the settings hold them.
-   */
-  getNestingSettings(): Promise<NestingSettings>
-  /**
-   * Those settings written into the settings file. What could not be written,
-   * and nothing where it was. A count left out stands as it is.
-   */
-  setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
   /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>

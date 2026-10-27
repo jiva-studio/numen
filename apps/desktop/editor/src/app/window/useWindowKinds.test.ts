@@ -67,10 +67,7 @@ const create = ({
     showNote: vi.fn(() => Promise.resolve(showsNotes)),
     getNoteCommands: () => [],
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
-    settings: {
-      kinds: ['settings'],
-      nesting: { isNesting: ref(true), headings: ref(2) },
-    },
+    settings: { kinds: ['settings'] },
     window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
     core: {},
     getTarget: vi.fn(() => ({})),
@@ -198,7 +195,6 @@ describe('the services the window gives a plugin', () => {
     expect(deps.log.getWriter).toHaveBeenCalledWith('stencil')
     expect(workspace?.getToday()).toBe('2026-09-04')
     expect(workspace?.openingPath.value).toBe('Root.md')
-    expect(workspace?.headingDisplay.count.value).toBe(2)
     expect(notes?.creatableRelations).toStrictEqual(['parent', 'child', 'jump'])
   })
 

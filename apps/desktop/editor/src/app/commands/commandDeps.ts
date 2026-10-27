@@ -22,10 +22,6 @@ export interface CommandDepsOptions {
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
-  nesting: {
-    choose: (item: string) => Promise<void> | void
-    chooseCount: (item: string) => Promise<void> | void
-  }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
@@ -67,19 +63,13 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
 }
 
 function createSettingsCommands(options: CommandDepsOptions): CommandDeps['settings'] {
-  const { appearance, oneName, nesting, rest } = options
+  const { appearance, oneName, rest } = options
   return {
     chooseAppearance: async (selected) => {
       await appearance.chooseItem(selected)
     },
     chooseSync: async (selected) => {
       await oneName.choose(selected)
-    },
-    chooseNesting: async (selected) => {
-      await nesting.choose(selected)
-    },
-    chooseHeadings: async (selected) => {
-      await nesting.chooseCount(selected)
     },
     choosePerformance: async (selected) => {
       await rest.writeSettings([{ at: ['performance', 'profile'], value: write(selected) }])

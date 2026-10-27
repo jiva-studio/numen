@@ -156,12 +156,6 @@ const INSTALLATION: Installation = {
     DONE.push('choose')
   },
   isSyncing: ref(true),
-  isNesting: ref(true),
-  headings: ref(6),
-  headingsBounds: ref({ least: 1, most: 12 }),
-  chooseHeadings: () => {
-    DONE.push('headings')
-  },
   writeSecret: () => {
     DONE.push('key')
   },

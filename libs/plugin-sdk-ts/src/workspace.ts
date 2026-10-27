@@ -88,11 +88,6 @@ export interface WorkspaceHost {
   readonly openingPath: Readonly<Ref<string>>
   // The note the vault opens with, asked of the vault again.
   readOpeningPath(): Promise<string>
-  // Whether a note drawn in a tab shows its headings, and how many of them.
-  readonly headingDisplay: {
-    readonly isNesting: Readonly<Ref<boolean>>
-    readonly count: Readonly<Ref<number>>
-  }
   // The vault paths the person is dragging, from any tab of the window.
   readonly draggedPaths: Readonly<Ref<readonly string[]>>
   setDraggedPaths(paths: readonly string[]): void

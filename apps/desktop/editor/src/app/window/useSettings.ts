@@ -6,16 +6,13 @@ import { themes } from '@/entities/settings'
 import {
   APPEARANCE,
   APPEARANCE_COMMANDS,
-  NESTING,
   INTERFACE_SCALE,
   MODE,
   OFF,
   ON,
-  HEADINGS,
   SYNCING,
   syncSetting,
   TEXT_SCALE,
-  useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
 import {
@@ -55,7 +52,6 @@ function getPerformanceStepGroups(words: Words) {
         { id: 'eco', title: words.eco, detail: words.ecoDetail },
         { id: 'balanced', title: words.balanced, detail: words.balancedDetail },
         { id: 'maximum', title: words.maximum, detail: words.maximumDetail },
-        { id: 'custom', title: words.custom, detail: words.customDetail },
       ],
     },
   ]
@@ -158,7 +154,6 @@ export function createPluginSettingCommands(plugins: readonly PluginInfo[]): rea
 interface SettingsTabConfigDeps {
   appearance: ReturnType<typeof createWindowAppearance>
   sync: ReturnType<typeof syncSetting>
-  nesting: ReturnType<typeof useNestingSetting>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
@@ -167,7 +162,7 @@ interface SettingsTabConfigDeps {
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, nesting, rest, secrets, retry, file, core } = deps
+  const { appearance, sync, rest, secrets, retry, file, core } = deps
   return {
     themes: appearance.list,
     applied: appearance.applied,
@@ -180,13 +175,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
       get: () => sync.isEnabled.value,
       set: (on: boolean) => void sync.choose(on ? ON : OFF),
     }),
-    isNesting: computed({
-      get: () => nesting.isNesting.value,
-      set: (on: boolean) => void nesting.choose(on ? ON : OFF),
-    }),
-    headings: nesting.headings,
-    headingsBounds: nesting.ends,
-    chooseHeadings: (count: number) => nesting.chooseCount(`${count}`),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => rest.writeSettings(content),
@@ -212,7 +200,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
 interface PaletteListsDeps {
   appearance: ReturnType<typeof createWindowAppearance>
   sync: ReturnType<typeof syncSetting>
-  nesting: ReturnType<typeof useNestingSetting>
   rest: ReturnType<typeof createSettingsStore>
   words: Words
 }
@@ -230,14 +217,12 @@ function getAppearanceStepGroups(
 }
 
 function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
-  const { appearance, sync, nesting, rest, words } = deps
+  const { appearance, sync, rest, words } = deps
   return {
     getStepGroups: (command, typed) => {
       const appearanceGroups = getAppearanceStepGroups(command, appearance, typed)
       if (appearanceGroups.length > 0) return appearanceGroups
       if (command === SYNCING) return sync.getSyncingGroups()
-      if (command === NESTING) return nesting.getNestingGroups()
-      if (command === HEADINGS) return nesting.getHeadingsGroups()
       if (command === 'performanceProfile') return getPerformanceStepGroups(words)
       if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
       return []
@@ -249,7 +234,6 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
 }
 
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
-  const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
   const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
@@ -269,19 +253,18 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ appearance, sync, nesting, rest, secrets, retry, file, core }),
+    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, file, core }),
   )
 
   watch(appearance.sized, () => onSizeChanged())
 
-  const retainedItem = createSettingsPaletteLists({ appearance, sync, nesting, rest, words })
+  const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
 
   const kinds = [configured.kind, file.kind]
 
   const start = async () => {
     void appearance.start()
     void sync.start()
-    void nesting.start()
     // The plugins the window starts are named by what this read answers.
     await rest.start()
   }
@@ -291,7 +274,6 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   }
 
   const api = {
-    nesting,
     appearance,
     sync,
     oneName: sync,

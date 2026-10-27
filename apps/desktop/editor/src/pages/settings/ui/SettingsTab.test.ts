@@ -81,7 +81,6 @@ const createTab = (
   const isDone: string[] = []
   const content: SettingEdit[] = []
   const isSyncing = ref(true)
-  const isNesting = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
@@ -114,18 +113,6 @@ const createTab = (
         isDone.push(`syncing ${on}`)
       },
     }),
-    isNesting: computed({
-      get: () => isNesting.value,
-      set: (on) => {
-        isNesting.value = on
-        isDone.push(`nesting ${on}`)
-      },
-    }),
-    headings: ref(6),
-    headingsBounds: ref({ least: 2, most: 9 }),
-    chooseHeadings: (count) => {
-      isDone.push(`headings ${count}`)
-    },
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),

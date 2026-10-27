@@ -7,7 +7,7 @@
  */
 import type { Ref } from 'vue'
 import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
-import type { Bounds, Mode, Ranges, Sizes, Theme } from '@/entities/settings'
+import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
@@ -25,14 +25,8 @@ export interface Installation {
    * are each named a different way, so none of the four is written by hand.
    */
   choose(item: string): void
-  /** The two switches, which are read and written as the one value. */
+  /** Whether a note's title and the name of its file are kept as one name. */
   readonly isSyncing: Ref<boolean>
-  readonly isNesting: Ref<boolean>
-  /** How many headings a day is nested in. A field offers no number as well. */
-  readonly headings: Readonly<Ref<number>>
-  /** How many the vault takes, which it says when it is asked what it holds. */
-  readonly headingsBounds: Readonly<Ref<Bounds>>
-  chooseHeadings(count: number): void
   /**
    * names one can be set to, and settings written where they stand.
    */

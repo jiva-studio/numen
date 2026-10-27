@@ -57,10 +57,6 @@ export interface CommandsDepsOptions {
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
-  nesting: {
-    choose: (item: string) => Promise<void> | void
-    chooseCount: (item: string) => Promise<void> | void
-  }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
