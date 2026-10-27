@@ -89,7 +89,7 @@ describe('a path selected in a files tab', () => {
     path,
     name: 'a',
     isFolder: false,
-    kind: 'note',
+    isNote: true,
     type: 'note',
   })
 
@@ -108,7 +108,7 @@ describe('a path selected in a files tab', () => {
   it('moves nothing for a folder, a file that is not a note, or an emptied selection', async () => {
     const { tree, selectedPaths, entries } = createTreeOf()
     entries.set('notes', { ...note('notes'), isFolder: true })
-    entries.set('Cover.png', { ...note('Cover.png'), kind: 'other' })
+    entries.set('Cover.png', { ...note('Cover.png'), isNote: false })
     const { kind, recorded } = createKindOver(tree)
     openTab(kind)
 

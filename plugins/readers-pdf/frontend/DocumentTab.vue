@@ -7,6 +7,7 @@ import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
 import { Reader } from './reader'
 import { WORDS as words } from './words'
+import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import type { Span } from './types'
 import type { DocumentTabState } from './model/useDocumentTab'
 import { useDocumentTab } from './model/useDocumentTab'
@@ -62,18 +63,26 @@ onMounted(() => {
     s.handleKeyPress = (e: KeyboardEvent) => activeState.value?.handleKeyPress(e) ?? false
     s.focusSpans = (...spans: readonly Span[]) => activeState.value?.focusSpans(...spans)
   }
-  const spans = (props.state as { spans?: readonly Span[] } | undefined)?.spans
-  if (activeState.value && spans && spans.length > 0) {
-    void activeState.value.focusSpans(...spans)
-  }
 })
 
+/** The tab as the window hands it, where it is a reader tab. */
+const readerTab = computed(() => props.state as Partial<ReaderTabState> | undefined)
+
+// The selector is a search hit or the place saved before a restart; `page` counts from 1 (RFC 8118).
 watch(
-  () => (props.state as { spans?: readonly Span[] } | undefined)?.spans,
-  (spans) => {
-    if (activeState.value && spans && spans.length > 0) {
-      void activeState.value.focusSpans(...spans)
+  () => readerTab.value?.selector,
+  (selector: Selector | null | undefined) => {
+    if (activeState.value && typeof selector?.page === 'number') {
+      void activeState.value.goToPage(selector.page)
     }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => activeState.value?.pageNumber.value,
+  (page) => {
+    if (typeof page === 'number' && page > 0) readerTab.value?.savePlace?.({ page })
   },
 )
 

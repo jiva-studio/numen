@@ -15,7 +15,7 @@ describe('reader-pdf plugin frontend', () => {
     const reader = readers[0]
     expect(reader?.id).toBe('reader-pdf')
     expect(reader?.component).toBe(DocumentTab)
-    expect(reader?.source).toBe('book')
+    expect(reader?.icon).toBeDefined()
   })
 
   it('declares the reader it registers as the default reader of PDF files', async () => {

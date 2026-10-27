@@ -3,7 +3,7 @@
  * Book tab view rendering reflowable book text and contents navigation.
  */
 import { ref, useTemplateRef, watch, watchEffect } from 'vue'
-import type { Span } from '@numen/plugin-sdk'
+import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
@@ -11,6 +11,7 @@ import { WORDS as words } from './words'
 import { books } from './api/wire'
 import { useBookReader } from './model/useBookReader'
 import { useBookTab, type BookTabState } from './model/useBookTab'
+import { createOffsetSelector, getSelectorOffset } from './lib/place'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -47,13 +48,24 @@ watchEffect(() => {
 })
 
 /* ---------------------------------- Hooks --------------------------------- */
-// The host names the runs a tab is opened at by setting `spans` on its state.
+/** The tab as the window hands it, where it is a reader tab. */
+const readerTab = props.state as Partial<ReaderTabState> | undefined
+
+// The window sets a selector for a search hit and for the place saved before a restart.
 watch(
-  () => (props.state as { spans?: readonly Span[] } | undefined)?.spans,
-  (spans) => {
-    if (spans && spans.length > 0) void tabState.focusSpans(...spans)
+  () => [readerTab?.selector, tabState.isLoading.value] as const,
+  ([selector, isLoading]: readonly [Selector | null | undefined, boolean]) => {
+    const offset = getSelectorOffset(selector)
+    if (!isLoading && offset !== null) void tabState.goToOffset(offset)
   },
   { immediate: true },
+)
+
+watch(
+  () => tabState.offset.value,
+  (offset) => {
+    if (!tabState.isLoading.value) readerTab?.savePlace?.(createOffsetSelector(offset))
+  },
 )
 
 /* -------------------------------- Handlers -------------------------------- */

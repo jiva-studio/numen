@@ -14,15 +14,15 @@ const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
 
-const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, isNote: false })
 
 const target: Record<string, readonly Entry[]> = {
-  [ROOT]: [folder('physics'), file('Entropy.md'), file('Cover.png', { kind: 'other' })],
+  [ROOT]: [folder('physics'), file('Entropy.md'), file('Cover.png', { isNote: false })],
   physics: [file('physics/Kelvin.md')],
 }
 

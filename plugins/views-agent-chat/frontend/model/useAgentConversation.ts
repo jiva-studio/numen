@@ -6,6 +6,7 @@ import type { AgentModelOption } from '../message-composer'
 import type { Conversation, Turn } from '../thread'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../lib/links'
 import type { AgentTabDeps } from '../types'
+import type { SavedConversation } from '../lib/saved'
 
 export { createTabTitle } from '../lib/title'
 export type { AgentTabDeps } from '../types'
@@ -260,6 +261,12 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     })
   }
 
+  /** Shows the question and the turns a tab saved before a restart. */
+  const restore = (saved: SavedConversation) => {
+    userQuestion.value = saved.question
+    if (saved.turns.length > 0) conversation.turns.value = saved.turns.map((turn) => ({ ...turn }))
+  }
+
   const openTurnSource = (turn: Turn) => {
     const location = conversation.getSourceLocation(turn.id)
     if (location) deps.openFileAt(location.path, location.span)
@@ -273,6 +280,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     userQuestion,
     setQuestion,
     send,
+    restore,
     openTurnSource,
     unreachable: deps.unreachable,
   }

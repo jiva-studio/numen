@@ -12,12 +12,12 @@ const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
 
-const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, isNote: false })
 
 /** A vault of three folders, a note, a book and a picture. */
 const target: Record<string, readonly Entry[]> = {
@@ -26,8 +26,8 @@ const target: Record<string, readonly Entry[]> = {
     folder('notes'),
     folder('heat'),
     file('Entropy.md'),
-    file('Heat.pdf', { kind: 'book' }),
-    file('Cover.png', { kind: 'other' }),
+    file('Heat.pdf', { isNote: false }),
+    file('Cover.png', { isNote: false }),
   ],
   physics: [file('physics/Kelvin.md')],
   notes: [],
@@ -53,7 +53,7 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const isDone: string[] = []
   const request: string[] = []
-  const sources: string[] = []
+  const sources: boolean[] = []
   const folders: boolean[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
   const list = useFileTree({
@@ -67,7 +67,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
     runCommand: (id, paths, target) => {
       isDone.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
-      sources.push(target.source)
+      sources.push(target.isNote)
       folders.push(target.isFolder)
     },
     movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
@@ -579,8 +579,8 @@ describe('a menu item chosen off every row', () => {
   })
 })
 
-describe('the source a command is run over', () => {
-  it('is the kind of file the row remains for', async () => {
+describe('whether a command is run over a note', () => {
+  it('is what the row the command is over holds', async () => {
     const { list, one, sources } = tab()
     await list.openFolder(ROOT)
 
@@ -588,16 +588,16 @@ describe('the source a command is run over', () => {
     one.chooseMenuItem('recognise')
     one.remove(['Entropy.md'])
 
-    expect(sources).toStrictEqual(['book', 'note'])
+    expect(sources).toStrictEqual([false, true])
   })
 
-  it('is other for a row the tree does not hold', () => {
+  it('is no note for a row the tree does not hold', () => {
     const { one, sources } = tab()
 
     one.openMenu({ path: 'ghost.bin', at: { x: 0, y: 0 } })
     one.chooseMenuItem('recognise')
 
-    expect(sources).toStrictEqual(['other'])
+    expect(sources).toStrictEqual([false])
   })
 
   it('says whether the row is a folder', async () => {

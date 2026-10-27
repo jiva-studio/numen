@@ -12,7 +12,7 @@ const entry = (overrides: Partial<Entry> = {}): Entry => ({
   path: 'Entropy.md',
   name: 'Entropy.md',
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
@@ -55,7 +55,7 @@ describe('the menu on a row standing for a note', () => {
 
 describe('the menu on a row standing for any other file', () => {
   it('remains what the tab does before the window’s commands, a run after the path', () => {
-    expect(getGroupedIds({ kind: 'recording', path: 'Lecture.mp3' })).toStrictEqual([
+    expect(getGroupedIds({ isNote: false, path: 'Lecture.mp3' })).toStrictEqual([
       'new',
       'rename',
       'copy',
@@ -66,13 +66,13 @@ describe('the menu on a row standing for any other file', () => {
   })
 
   it('leaves no rule behind on a row that has no run, and treats a folder as a file', () => {
-    expect(getGroupedIds({ kind: 'other', path: 'Cover.png' })).toStrictEqual([
+    expect(getGroupedIds({ isNote: false, path: 'Cover.png' })).toStrictEqual([
       'new',
       'rename',
       'copy',
       '— remove',
     ])
-    expect(getGroupedIds({ isFolder: true, kind: 'other', path: 'physics' })).toStrictEqual([
+    expect(getGroupedIds({ isFolder: true, isNote: false, path: 'physics' })).toStrictEqual([
       'new',
       'rename',
       'copy',

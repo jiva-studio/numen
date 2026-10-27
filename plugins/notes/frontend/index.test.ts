@@ -17,7 +17,6 @@ describe('notes plugin lifecycle', () => {
       expect.objectContaining({
         id: 'markdown',
         title: 'Markdown Note Editor',
-        source: 'note',
       }),
     )
 

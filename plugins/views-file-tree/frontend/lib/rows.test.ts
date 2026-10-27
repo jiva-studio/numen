@@ -11,7 +11,7 @@ const entry = (path: string, isFolder = false): Entry => ({
   path,
   name: path.split('/').at(-1) ?? path,
   isFolder,
-  kind: 'note',
+  isNote: true,
   type: 'note',
 })
 

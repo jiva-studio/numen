@@ -9,6 +9,7 @@ import { Bot } from '@lucide/vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import AgentTab from './ui/AgentTab.vue'
 import { createTabTitle } from './lib/title'
+import { createSavedConversation, parseSavedConversation } from './lib/saved'
 import { createAgentTabDeps, type AgentChatHost } from './model/tabDeps'
 import type { AgentTabState } from './model/useAgentConversation'
 import type { AgentTabDeps } from './types'
@@ -34,7 +35,12 @@ export function createAgentKind(
     icon: Bot,
     isTool: true,
     placement: { pane: 'aside', order: 0 },
-    open: () => createState(createAgentTabDeps(host)),
+    open: (_targetPath, _id, saved) => {
+      const state = createState(createAgentTabDeps(host))
+      state.restore(parseSavedConversation(saved))
+      return state
+    },
+    getState: (state) => createSavedConversation(state.userQuestion.value, state.turns.value),
     getTitle: getAgentTitle,
     onClose: (state) => {
       state.finish()

@@ -18,12 +18,12 @@ const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
 
-const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, isNote: false })
 
 /**
  * A vault of two folders and a picture nothing holds a source for, and a count
@@ -31,7 +31,7 @@ const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'othe
  */
 const vault = (
   folders: Record<string, readonly Entry[]> = {
-    [ROOT]: [folder('physics'), folder('notes'), file('Cover.png', { kind: 'other' })],
+    [ROOT]: [folder('physics'), folder('notes'), file('Cover.png', { isNote: false })],
     physics: [folder('physics/heat'), file('physics/Entropy.md')],
     'physics/heat': [file('physics/heat/Kelvin.md')],
     notes: [file('notes/Today.md')],
@@ -291,7 +291,7 @@ describe('the window coming back to the front', () => {
     const list = useFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
-    puts('physics', file('physics/Diagram.png', { kind: 'other' }))
+    puts('physics', file('physics/Diagram.png', { isNote: false }))
 
     await list.refresh()
 
@@ -593,7 +593,7 @@ describe('a listing that changes in one field of one entry', () => {
     ['path', { path: 'c.md' }],
     ['name', { name: 'B' }],
     ['isFolder', { isFolder: true }],
-    ['kind', { kind: 'book' }],
+    ['isNote', { isNote: false }],
     ['type', { type: 'deck' }],
   ]
 

@@ -1,6 +1,7 @@
 /**
  * Frontend entrypoint for the PDF Reader plugin.
  */
+import { FileText } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 
@@ -16,7 +17,7 @@ export function activate(context: PluginContext): void {
     id: 'reader-pdf',
     component: DocumentTab,
     title: 'PDF Reader',
-    source: 'book',
+    icon: FileText,
   })
 }
 

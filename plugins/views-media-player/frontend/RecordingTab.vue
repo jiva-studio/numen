@@ -10,14 +10,16 @@ import Player from './Player.vue'
 import MediaLayout from './MediaLayout.vue'
 import { recordings as servedRecordings } from './api/wire'
 import { useTranscript, type TranscriptOptions } from './model/transcript'
+import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import type { Recordings, Span } from './types'
+import { createTimeSelector, getSelectorStart } from './lib/place'
 import { DELETE_TEXT, PROOFREAD, WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   readonly path?: string
   readonly file?: string
-  readonly state?: { path?: string; file?: string; spans?: readonly Span[]; [key: string]: unknown }
+  readonly state?: Partial<ReaderTabState> & { file?: string; [key: string]: unknown }
   /** What the tab reads the recording through, and how it plays it. The window's own by default. */
   readonly recordings?: Recordings
   readonly how?: TranscriptOptions
@@ -42,18 +44,36 @@ onMounted(() => {
     const shared = props.state as Record<string, unknown>
     shared.focusSpans = (...spans: readonly Span[]) => tab.navigation.reach(...spans)
   }
-  const spans = props.state?.spans
-  if (spans && spans.length > 0) void tab.navigation.reach(...spans)
 })
 
+// The window sets a selector for a search hit and for the place saved before a restart.
 watch(
-  () => props.state?.spans,
-  (spans) => {
-    if (spans && spans.length > 0) void tab.navigation.reach(...spans)
+  () => props.state?.selector,
+  (selector: Selector | null | undefined) => {
+    const start = getSelectorStart(selector)
+    if (start !== null) tab.playback.controls.go(start)
+  },
+  { immediate: true },
+)
+
+/** Saves the current playback time as the place the tab opens at after a restart. */
+const savePlace = () => props.state?.savePlace?.(createTimeSelector(now.value))
+
+// Saved when playback stops and every ten seconds of it, so a restart loses at most that much.
+watch(isPlaying, (playing) => {
+  if (!playing) savePlace()
+})
+watch(
+  () => Math.floor(now.value / 10_000),
+  () => {
+    if (isPlaying.value) savePlace()
   },
 )
 
-onUnmounted(() => tab.close())
+onUnmounted(() => {
+  savePlace()
+  tab.close()
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
@@ -71,6 +91,7 @@ function onPause() {
 
 function onSeek(ms: number) {
   tab.playback.controls.go(ms)
+  props.state?.savePlace?.(createTimeSelector(ms))
 }
 </script>
 

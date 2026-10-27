@@ -45,7 +45,7 @@ export function createPlexTabDeps(
     getNoteCommands: () => workspace.getNoteCommands(),
     getCommandIcon: (command) => workspace.getCommandIcon(command),
     getNoteIcon: (type) =>
-      workspace.getEntryIcon({ path: '', name: '', isFolder: false, kind: 'note', type }, false),
+      workspace.getEntryIcon({ path: '', name: '', isFolder: false, isNote: true, type }, false),
     openingPath: workspace.openingPath,
     readOpeningPath: () => workspace.readOpeningPath(),
     dragged: workspace.draggedPaths,

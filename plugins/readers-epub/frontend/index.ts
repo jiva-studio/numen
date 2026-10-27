@@ -1,3 +1,4 @@
+import { BookOpen } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import BookTab from './BookTab.vue'
 
@@ -9,7 +10,7 @@ export default definePlugin({
       id: 'reader-epub',
       component: BookTab,
       title: 'EPUB Reader',
-      source: 'book',
+      icon: BookOpen,
     })
   },
   deactivate() {

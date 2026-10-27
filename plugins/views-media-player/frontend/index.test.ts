@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { AudioLines } from '@lucide/vue'
 import { createMockPluginContext } from '@numen/plugin-sdk'
 import plugin, { activate, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 import { recordings } from './api/wire'
@@ -15,7 +16,7 @@ describe('media-player plugin', () => {
       id: 'media-player',
       component: RecordingTab,
       title: 'Audio Player',
-      source: 'recording',
+      icon: AudioLines,
       capabilities: ['recording', 'media', 'audio'],
     })
 

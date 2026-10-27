@@ -11,7 +11,7 @@ const entry = (overrides: Partial<Entry> = {}): Entry => ({
   path: 'a.md',
   name: 'a.md',
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
@@ -33,7 +33,7 @@ describe('a file a files tab opens', () => {
     const { host, recorded } = createHost({ linked: { files: true } })
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.openEntry(entry({ path: 'Heat.pdf', name: 'Heat.pdf', kind: 'book' }))
+    deps.openEntry(entry({ path: 'Heat.pdf', name: 'Heat.pdf', isNote: false }))
     deps.openEntry(entry({ path: 'Untitled', name: '' }))
 
     expect(recorded.opened).toStrictEqual([['Heat.pdf', { title: 'Heat.pdf', placement: 'here' }]])
@@ -55,8 +55,8 @@ describe('a path a files tab selects', () => {
     const deps = createFilesTabDeps(host, 'files')
 
     deps.onSelectPath?.('a.md', createTabState(entry()))
-    deps.onSelectPath?.('b.md', createTabState(entry({ path: 'b.md', name: 'b', kind: 'other' })))
-    deps.onSelectPath?.('c.txt', createTabState(entry({ path: 'c.txt', name: 'c', kind: 'note' })))
+    deps.onSelectPath?.('b.md', createTabState(entry({ path: 'b.md', name: 'b', isNote: false })))
+    deps.onSelectPath?.('c.txt', createTabState(entry({ path: 'c.txt', name: 'c', isNote: true })))
 
     expect(recorded.synced).toStrictEqual([
       ['files', 'a.md', 'a.md'],
@@ -70,7 +70,7 @@ describe('a path a files tab selects', () => {
     const deps = createFilesTabDeps(host, 'files')
 
     deps.onSelectPath?.('notes', createTabState(entry({ path: 'notes', isFolder: true })))
-    deps.onSelectPath?.('Cover.png', createTabState(entry({ path: 'Cover.png', kind: 'other' })))
+    deps.onSelectPath?.('Cover.png', createTabState(entry({ path: 'Cover.png', isNote: false })))
     deps.onSelectPath?.('gone.md', createTabState(null))
 
     expect(recorded.synced).toStrictEqual([])
@@ -82,13 +82,13 @@ describe('what else a files tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.runCommand('remove', ['a.md', 'b.md'], { name: 'a', source: 'note', isFolder: false })
+    deps.runCommand('remove', ['a.md', 'b.md'], { name: 'a', isNote: true, isFolder: false })
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
     expect(await deps.createNote('dir/')).toBe('dir/note')
 
     expect(recorded.commands).toStrictEqual([
-      ['remove', { paths: ['a.md', 'b.md'], name: 'a', source: 'note', isFolder: false }],
+      ['remove', { paths: ['a.md', 'b.md'], name: 'a', isNote: true, isFolder: false }],
     ])
     expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir', 'note dir/'])
   })

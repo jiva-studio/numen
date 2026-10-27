@@ -97,7 +97,7 @@ describe('view-agent-chat plugin', () => {
       path: 'Two.md',
       name: 'Two',
       isFolder: false,
-      kind: 'note',
+      isNote: true,
     })
 
     expect(openCalls).toStrictEqual([[AGENT, undefined]])

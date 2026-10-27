@@ -17,6 +17,17 @@ import type { PlexTabState, PlexView } from './types'
 /** The word plex tabs are filed under. */
 export const PLEX = 'plex'
 
+/** What a plex tab saves across restarts: the note in focus. */
+interface PlexSavedState {
+  readonly focus: string
+}
+
+/** The note in focus a plex tab saved, and empty where it saved none. */
+const readSavedFocus = (saved: unknown): string => {
+  const focus = (saved as Partial<PlexSavedState> | null | undefined)?.focus
+  return typeof focus === 'string' ? focus : ''
+}
+
 /** What a plex tab is called: the note it relies on. */
 const getPlexTitle = (note: string): string => note || words.plex
 
@@ -76,8 +87,12 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
     icon: Waypoints,
     isTool: true,
     placement: { pane: 'main', order: 0 },
-    open: (targetPath, id) => {
-      const from = targetPath || tabs.getCurrentPath() || host.workspace.openingPath.value
+    open: (targetPath, id, saved) => {
+      const from =
+        readSavedFocus(saved) ||
+        targetPath ||
+        tabs.getCurrentPath() ||
+        host.workspace.openingPath.value
       const state = usePlexTab(createView(), createPlexTabDeps(host, id))
       tabs.add(id, state)
       if (from) void state.view.go(from)
@@ -98,6 +113,7 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
       return { path, title: (path && state.getName(path)) || path }
     },
     getOpenTab: (state) => ({ path: state.view.here.value }),
+    getState: (state): PlexSavedState => ({ focus: state.view.here.value }),
     navigate: async (state, path) => {
       if (isNotePath(path) && state.view.here.value !== path) await state.view.go(path)
     },

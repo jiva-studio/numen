@@ -17,20 +17,20 @@ const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
 
-const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, isNote: false })
 
 /** A vault of one folder, a note, a book and a picture. */
 const VAULT: Record<string, readonly Entry[]> = {
   [ROOT]: [
     folder('physics'),
     file('Entropy.md'),
-    file('Boltzmann 1877.pdf', { kind: 'book' }),
-    file('Cover.png', { kind: 'other' }),
+    file('Boltzmann 1877.pdf', { isNote: false }),
+    file('Cover.png', { isNote: false }),
   ],
   physics: [file('physics/Kelvin.md')],
 }

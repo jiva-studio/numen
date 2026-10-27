@@ -1,4 +1,4 @@
-import { Mic } from '@lucide/vue'
+import { AudioLines, Mic } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import MediaRecordingTab from './MediaRecordingTab.vue'
@@ -17,7 +17,7 @@ export function activate(context: PluginContext): void {
     id: 'media-player',
     component: RecordingTab,
     title: 'Audio Player',
-    source: 'recording',
+    icon: AudioLines,
     capabilities: ['recording', 'media', 'audio'],
   })
 

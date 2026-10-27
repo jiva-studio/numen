@@ -30,9 +30,10 @@ const NOTE = [
   command('ask', 'agent'),
   command('remove', 'remove', 'Remove note'),
 ]
+/** The commands the plugins add over a file, by the extension of its name. */
 const RUNS: Readonly<Record<string, readonly MenuEntry[]>> = {
-  recording: [command('transcribe', 'run'), command('proofread', 'run')],
-  book: [command('recognise', 'run'), command('proofread', 'run')],
+  mp3: [command('transcribe', 'run'), command('proofread', 'run')],
+  pdf: [command('recognise', 'run'), command('proofread', 'run')],
   url: [command('downloadText', 'run'), command('downloadCopy', 'run')],
 }
 
@@ -40,8 +41,8 @@ const RUNS: Readonly<Record<string, readonly MenuEntry[]>> = {
 export const getPathCommands = ({ entry, isSeveral }: PathMenuRow): readonly MenuEntry[] => {
   if (isSeveral) return [REMOVE]
   if (entry.isFolder) return [COPY, REMOVE]
-  if (entry.kind === 'note') return NOTE
-  return [COPY, ...(RUNS[entry.kind] ?? []), REMOVE]
+  if (entry.isNote) return NOTE
+  return [COPY, ...(RUNS[entry.path.split('.').pop() ?? ''] ?? []), REMOVE]
 }
 
 /** The icon a command or an entry is drawn with, one made-up component for each. */

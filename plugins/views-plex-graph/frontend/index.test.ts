@@ -80,7 +80,7 @@ describe('view-plex-graph plugin', () => {
       path: 'Two.md',
       name: 'Two',
       isFolder: false,
-      kind: 'note',
+      isNote: true,
     })
 
     expect(openCalls).toStrictEqual([[PLEX, undefined]])

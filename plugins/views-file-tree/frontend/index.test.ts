@@ -11,7 +11,7 @@ const note = (path: string): Entry => ({
   path,
   name: path,
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
 })
 

@@ -35,7 +35,6 @@ export function activate(context: PluginContext): void {
     id: 'markdown',
     component: MarkdownNoteEditor,
     title: 'Markdown Note Editor',
-    source: 'note',
   })
 
   context.registerTabKind({

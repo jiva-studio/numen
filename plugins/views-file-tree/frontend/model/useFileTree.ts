@@ -31,7 +31,7 @@ const isSameEntry = (one: Entry, other: Entry): boolean =>
   one.path === other.path &&
   one.name === other.name &&
   one.isFolder === other.isFolder &&
-  one.kind === other.kind &&
+  one.isNote === other.isNote &&
   one.type === other.type
 
 /** Whether two listings hold the same entries in the same order. */

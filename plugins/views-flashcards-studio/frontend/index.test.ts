@@ -219,18 +219,18 @@ describe('flashcards-studio plugin', () => {
     expect(menus.map((m) => m.id)).toEqual(['newDeck', 'newCardModel', 'newPreset'])
     expect(menus.every((m) => m.parentId === 'new')).toBe(true)
 
-    await menus[0]?.handler({ path: 'Decks', isFolder: true, kind: 'other', isSeveral: false })
+    await menus[0]?.handler({ path: 'Decks', isFolder: true, isNote: false, isSeveral: false })
     expect(createDeck).toHaveBeenCalledWith('New deck', 'Decks')
 
     await menus[1]?.handler({
       path: 'Decks/One.md',
       isFolder: false,
-      kind: 'note',
+      isNote: true,
       isSeveral: false,
     })
     expect(createCardModel).toHaveBeenCalledWith('New card model', 'Decks', [])
 
-    await menus[2]?.handler({ path: '', isFolder: false, kind: 'other', isSeveral: false })
+    await menus[2]?.handler({ path: '', isFolder: false, isNote: false, isSeveral: false })
     expect(createPreset).toHaveBeenCalledWith('New preset', '')
   })
 })

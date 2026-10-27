@@ -2,13 +2,12 @@
  * Type declarations for the files tab domain.
  */
 import type { Component, Ref } from 'vue'
-import type { FileSource, MenuEntry, PathMenuRow, PathRename, VaultEntry } from '@numen/plugin-sdk'
+import type { MenuEntry, PathMenuRow, PathRename, VaultEntry } from '@numen/plugin-sdk'
 
 /** One file or folder of the vault, as a row of the tree stands for it. */
 export type Entry = VaultEntry
 
 /** What the vault holds at a path. */
-export type Source = FileSource
 
 /** Everything a files tab asks of the file storage/vault. */
 export interface Folders {
@@ -36,7 +35,7 @@ export type DropPosition = { readonly into: string | null } | { readonly before:
 
 export interface FileCommandTarget {
   readonly name: string
-  readonly source: Source
+  readonly isNote: boolean
   readonly isFolder: boolean
 }
 

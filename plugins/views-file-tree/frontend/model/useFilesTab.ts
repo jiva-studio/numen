@@ -14,7 +14,6 @@ import type {
   FilesTabState,
   FileTree,
   MenuRequest,
-  Source,
 } from '../types'
 import * as create from './create'
 
@@ -72,16 +71,16 @@ interface FileMenuDeps {
   renamingPath: ReturnType<typeof ref<string | null>>
   creators: ReturnType<typeof createFileCreation>
   getNameOf: (path: string) => string
-  getSourceOf: (path: string) => Source
+  isNoteAt: (path: string) => boolean
 }
 
-/** The entry a menu asked for on a path stands for, and a file of no source where the tree holds none. */
+/** The entry a menu asked for on a path stands for, and a file that is no note where the tree holds none. */
 const getMenuEntry = (list: FileTree, path: string): Entry =>
   list.getEntryAt(path) ?? {
     path,
     name: getFileName(path),
     isFolder: false,
-    kind: 'other',
+    isNote: false,
     type: 'note',
   }
 
@@ -89,7 +88,7 @@ const hasMenuId = (items: readonly MenuEntry[], id: string): boolean =>
   items.some((one) => one.id === id || (one.children && hasMenuId(one.children, id)))
 
 function useFileMenu(options: FileMenuDeps) {
-  const { list, deps, renamingPath, creators, getNameOf, getSourceOf } = options
+  const { list, deps, renamingPath, creators, getNameOf, isNoteAt } = options
   const menu = ref<MenuRequest | null>(null)
 
   const openMenu = (request: MenuRequest) => {
@@ -131,7 +130,7 @@ function useFileMenu(options: FileMenuDeps) {
     }
     deps.runCommand(id, getOverPaths(path), {
       name: getNameOf(path),
-      source: getSourceOf(path),
+      isNote: isNoteAt(path),
       isFolder: list.getEntryAt(path)?.isFolder ?? false,
     })
   }
@@ -141,7 +140,7 @@ function useFileMenu(options: FileMenuDeps) {
 
 function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
-  const getSourceOf = (path: string): Source => list.getEntryAt(path)?.kind ?? 'other'
+  const isNoteAt = (path: string): boolean => list.getEntryAt(path)?.isNote ?? false
 
   const activate = (path: string) => {
     const entry = list.getEntryAt(path)
@@ -161,7 +160,7 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
     deps.setDraggedPaths(
       paths.filter((path) => {
         const entry = list.getEntryAt(path)
-        return !!entry && !entry.isFolder && entry.kind === 'note'
+        return !!entry && !entry.isFolder && entry.isNote
       }),
     )
   }
@@ -171,12 +170,12 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
     if (first === undefined) return
     deps.runCommand('remove', paths, {
       name: getNameOf(first),
-      source: getSourceOf(first),
+      isNote: isNoteAt(first),
       isFolder: list.getEntryAt(first)?.isFolder ?? false,
     })
   }
 
-  return { getNameOf, getSourceOf, activate, rename, drag, remove }
+  return { getNameOf, isNoteAt, activate, rename, drag, remove }
 }
 
 export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
@@ -194,7 +193,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     renamingPath,
     creators,
     getNameOf: actions.getNameOf,
-    getSourceOf: actions.getSourceOf,
+    isNoteAt: actions.isNoteAt,
   })
 
   const tabState: FilesTabState = {

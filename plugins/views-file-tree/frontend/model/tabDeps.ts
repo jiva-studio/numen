@@ -23,12 +23,12 @@ export function createFilesTabDeps({ workspace, files }: FileTreeHost, id: strin
     },
     onSelectPath: (path, state) => {
       const entry = state.list.getEntryAt(path)
-      if (entry && !entry.isFolder && (entry.kind === 'note' || isNotePath(path))) {
+      if (entry && !entry.isFolder && (entry.isNote || isNotePath(path))) {
         workspace.syncPath(id, path, entry.name)
       }
     },
-    runCommand: (command, paths, { name, source, isFolder }) =>
-      workspace.runPathCommand(command, { paths, name, source, isFolder }),
+    runCommand: (command, paths, { name, isNote, isFolder }) =>
+      workspace.runPathCommand(command, { paths, name, isNote, isFolder }),
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
     createFolder: (path) => files.createFolder(path),
