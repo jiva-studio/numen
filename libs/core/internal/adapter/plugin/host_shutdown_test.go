@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
@@ -171,7 +170,7 @@ func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{bridge.CapabilityBook}}}
+		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
 	getReason := func(capability string) pluginport.UnavailableReason {
 		t.Helper()
@@ -183,22 +182,22 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		return missing.Reason
 	}
 
-	if found, err := host.ResolveCapability(bridge.CapabilityBook); err != nil || found.Manifest.ID != "md.numen.a" {
+	if found, err := host.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.a" {
 		t.Fatalf("ResolveCapability = %q, %v, want the lowest id", found.Manifest.ID, err)
 	}
-	if got := getReason(bridge.CapabilityDocument); got != pluginport.PluginNotInstalled {
+	if got := getReason("org.example.gadget"); got != pluginport.PluginNotInstalled {
 		t.Errorf("a capability nothing declares is %v, want not installed", got)
 	}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
-	if found, err := host.ResolveCapability(bridge.CapabilityBook); err != nil || found.Manifest.ID != "md.numen.b" {
+	if found, err := host.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.b" {
 		t.Fatalf("ResolveCapability = %q, %v, want the enabled one", found.Manifest.ID, err)
 	}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.b", false); err != nil {
 		t.Fatal(err)
 	}
-	if got := getReason(bridge.CapabilityBook); got != pluginport.PluginDisabled {
+	if got := getReason("org.example.widget"); got != pluginport.PluginDisabled {
 		t.Errorf("a capability every declaring plugin of is disabled is %v, want disabled", got)
 	}
 	for _, id := range []string{"md.numen.a", "md.numen.b"} {
@@ -207,10 +206,10 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		}
 	}
 	host.SetSafeMode(true)
-	if got := getReason(bridge.CapabilityBook); got != pluginport.PluginDisabled {
+	if got := getReason("org.example.widget"); got != pluginport.PluginDisabled {
 		t.Errorf("a capability in safe mode is %v, want disabled", got)
 	}
-	if _, ok := host.FindPluginByCapability(bridge.CapabilityBook); ok {
+	if _, ok := host.FindPluginByCapability("org.example.widget"); ok {
 		t.Error("FindPluginByCapability found a plugin ResolveCapability does not")
 	}
 }

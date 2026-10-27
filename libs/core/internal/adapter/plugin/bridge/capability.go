@@ -2,8 +2,6 @@ package bridge
 
 // The capabilities the core asks a plugin for, as a manifest declares them.
 const (
-	CapabilityDocument  = "document"
-	CapabilityBook      = "book"
 	CapabilityEmbedding = "embedding"
 	// CapabilityTools marks a plugin that serves PluginToolService: the tools it offers an agent.
 	CapabilityTools = "tools"

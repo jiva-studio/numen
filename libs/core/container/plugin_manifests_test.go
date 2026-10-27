@@ -458,8 +458,6 @@ func TestWhatTheSettingRuleRefuses(t *testing.T) {
 
 // coreCapabilities are the capabilities resolved by the core's adapters and composition root.
 var coreCapabilities = map[string]bool{
-	bridge.CapabilityDocument:  true,
-	bridge.CapabilityBook:      true,
 	bridge.CapabilityEmbedding: true,
 	bridge.CapabilityTools:     true,
 	"ai.agent.provider":        true,
@@ -475,7 +473,9 @@ var sdkCapabilities = map[string]bool{
 
 // capabilityMarkers are explicit capability markers declared by plugins.
 var capabilityMarkers = map[string]bool{
-	"agent": true,
+	"agent":    true,
+	"book":     true,
+	"document": true,
 }
 
 func isResolvedCapability(capability string) bool {
