@@ -587,9 +587,13 @@ var validPluginKinds = []string{
 	"tools",
 }
 
+// domainPlugins are plugins named by the domain they hold whole, with no kind.
+var domainPlugins = []string{"notes"}
+
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
 // with md.numen., matches the folder name (with hyphens mapped to dots),
-// and the kind is one of agents, readers, editors, views, engines or tools.
+// and the kind is one of agents, readers, editors, views, engines or tools, or
+// the folder is a domain plugin.
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string
 	if !strings.HasPrefix(id, "md.numen.") {
@@ -601,6 +605,9 @@ func listPluginNamingIssues(folder, id string) []string {
 		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
 	}
 	parts := strings.Split(dotFolder, ".")
+	if slices.Contains(domainPlugins, dotFolder) {
+		return issues
+	}
 	if len(parts) < 2 || !slices.Contains(validPluginKinds, parts[0]) {
 		issues = append(issues, fmt.Sprintf("kind %q in folder %q is not a known plugin kind", parts[0], folder))
 	}
@@ -628,6 +635,7 @@ func TestWhatThePluginNamingRuleRefuses(t *testing.T) {
 		"unknown kind":            {"widgets-tree", "md.numen.widgets.tree", 1},
 		"missing md.numen prefix": {"views-file-tree", "views.file.tree", 2},
 		"no name segment":         {"views", "md.numen.views", 1},
+		"domain plugin":           {"notes", "md.numen.notes", 0},
 	} {
 		if got := listPluginNamingIssues(one.folder, one.id); len(got) != one.issues {
 			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)
