@@ -1,22 +1,19 @@
 /**
- * Which files work is going on, as the window's list of tasks says: one shared stream, open while
- * any tab listens to it.
+ * Which files work is going on, as the host's list of plugin tasks says: one shared subscription,
+ * open while any tab listens to it.
  */
 
-/** One list of what is being done: each task by its id and the file it is about. */
-export type TaskStream = (
-  signal: AbortSignal,
-) => AsyncIterable<readonly { readonly id: string; readonly about: string }[]>
+/** Subscribes to the plugin task lists: each task by the file it is about. */
+export type TaskSource = (onTasks: (tasks: readonly { readonly about: string }[]) => void) => {
+  dispose(): void
+}
 
-/** The core lists a plugin's task under an id starting with this; the index's own tasks do not. */
-const PLUGIN_TASK_PREFIX = 'plugin:'
-
-/** Tells each listener whether work on its file is going, from one stream of tasks. */
-export function createWorkWatcher(openStream: TaskStream) {
+/** Tells each listener whether work on its file is going, from one subscription to the tasks. */
+export function createWorkWatcher(watchTasks: TaskSource) {
   const listeners = new Map<number, { path: string; onChange: (isWorking: boolean) => void }>()
   let nextId = 0
   let working = new Set<string>()
-  let abort: AbortController | null = null
+  let subscription: { dispose(): void } | null = null
 
   const publish = (paths: Set<string>) => {
     const before = working
@@ -27,39 +24,17 @@ export function createWorkWatcher(openStream: TaskStream) {
     }
   }
 
-  const open = () => {
-    const controller = new AbortController()
-    abort = controller
-    void (async () => {
-      try {
-        for await (const tasks of openStream(controller.signal)) {
-          publish(
-            new Set(
-              tasks
-                .filter((task) => task.id.startsWith(PLUGIN_TASK_PREFIX))
-                .map((task) => task.about),
-            ),
-          )
-        }
-      } catch {
-        // A stream that ended is opened again by the next tab that listens.
-      } finally {
-        if (abort === controller) abort = null
-      }
-    })()
-  }
-
   return {
     watch(path: string, onChange: (isWorking: boolean) => void): () => void {
       const id = nextId++
       listeners.set(id, { path, onChange })
       if (working.has(path)) onChange(true)
-      if (!abort) open()
+      subscription ??= watchTasks((tasks) => publish(new Set(tasks.map((task) => task.about))))
       return () => {
         listeners.delete(id)
-        if (listeners.size === 0 && abort) {
-          abort.abort()
-          abort = null
+        if (listeners.size === 0 && subscription) {
+          subscription.dispose()
+          subscription = null
           working = new Set()
         }
       }

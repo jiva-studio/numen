@@ -1,81 +1,62 @@
-/** Which files work is going on, from one shared stream of the window's tasks. */
+/** Which files work is going on, from one shared subscription to the plugin tasks. */
 import { describe, expect, it } from 'vitest'
-import { createWorkWatcher, type TaskStream } from './work'
+import { createWorkWatcher, type TaskSource } from './work'
 
-/** A stream of task lists a test pushes, and how many times it was opened and closed. */
-function createStream() {
-  const lists: (readonly { id: string; about: string }[])[] = []
-  let wake: (() => void) | null = null
-  const counts = { opened: 0, aborted: 0 }
-  const stream: TaskStream = async function* (signal) {
+/** A task source a test pushes lists through, and how many times it was opened and closed. */
+function createSource() {
+  let handler: ((tasks: readonly { about: string }[]) => void) | null = null
+  const counts = { opened: 0, disposed: 0 }
+  const source: TaskSource = (onTasks) => {
     counts.opened++
-    signal.addEventListener('abort', () => {
-      counts.aborted++
-      wake?.()
-    })
-    while (!signal.aborted) {
-      const next = lists.shift()
-      if (next) {
-        yield next
-        continue
-      }
-      await new Promise<void>((done) => (wake = done))
+    handler = onTasks
+    return {
+      dispose: () => {
+        counts.disposed++
+        handler = null
+      },
     }
   }
-  const push = (list: readonly { id: string; about: string }[]) => {
-    lists.push(list)
-    wake?.()
-  }
-  return { stream, push, counts }
+  const push = (list: readonly { about: string }[]) => handler?.(list)
+  return { source, push, counts }
 }
 
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
-
 describe('a watcher of work', () => {
-  it('reports work on a file when it starts and when it ends', async () => {
-    const { stream, push } = createStream()
+  it('reports work on a file when it starts and when it ends', () => {
+    const { source, push } = createSource()
     const changes: boolean[] = []
-    const watcher = createWorkWatcher(stream)
+    const watcher = createWorkWatcher(source)
     watcher.watch('a.wav', (isWorking) => changes.push(isWorking))
 
-    push([{ id: 'plugin:p:t', about: 'b.wav' }])
-    await flush()
-    push([{ id: 'plugin:p:t', about: 'a.wav' }])
-    await flush()
-    push([
-      { id: 'plugin:p:t', about: 'a.wav' },
-      { id: 'plugin:p:t', about: 'b.wav' },
-    ])
-    await flush()
+    push([{ about: 'b.wav' }])
+    push([{ about: 'a.wav' }])
+    push([{ about: 'a.wav' }, { about: 'b.wav' }])
     push([])
-    await flush()
 
     expect(changes).toStrictEqual([true, true, false])
   })
 
-  it('ignores a task the core lists about the file itself', async () => {
-    const { stream, push } = createStream()
-    const changes: boolean[] = []
-    createWorkWatcher(stream).watch('a.wav', (isWorking) => changes.push(isWorking))
-
-    push([{ id: 'making the vectors', about: 'a.wav' }])
-    await flush()
-
-    expect(changes).toStrictEqual([])
-  })
-
-  it('opens one stream for every listener, and closes it when the last stops listening', async () => {
-    const { stream, counts } = createStream()
-    const watcher = createWorkWatcher(stream)
+  it('opens one subscription for every listener, and closes it when the last stops listening', () => {
+    const { source, counts } = createSource()
+    const watcher = createWorkWatcher(source)
     const stopA = watcher.watch('a.wav', () => {})
     const stopB = watcher.watch('b.wav', () => {})
-    await flush()
     stopA()
-    expect(counts.aborted).toBe(0)
+    expect(counts.disposed).toBe(0)
     stopB()
-    await flush()
 
     expect(counts.opened).toBe(1)
-    expect(counts.aborted).toBe(1)
+    expect(counts.disposed).toBe(1)
+  })
+
+  it('reports existing work on the file to a new listener', () => {
+    const { source, push } = createSource()
+    const watcher = createWorkWatcher(source)
+    watcher.watch('b.wav', () => {})
+    push([{ about: 'a.wav' }])
+    const changes: boolean[] = []
+
+    watcher.watch('a.wav', (isWorking) => changes.push(isWorking))
+
+    expect(changes).toStrictEqual([true])
   })
 })

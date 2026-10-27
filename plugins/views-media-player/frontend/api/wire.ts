@@ -1,5 +1,5 @@
 /**
- * Wire adapter for RecordingService, TranscriptService, TextVersionService and the window's tasks.
+ * Wire adapter for RecordingService, TranscriptService, TextVersionService and the plugin tasks.
  */
 import { createClient } from '@connectrpc/connect'
 import {
@@ -7,9 +7,9 @@ import {
   FileMenuAction,
   TextVersionService,
   TranscriptService,
-  WindowService,
   type Cue as CueMessage,
 } from '@numen/protocol'
+import type { TaskHost } from '@numen/plugin-sdk'
 import { retryWhileBusy, transport } from '@numen/wire'
 import type { Cue } from '../lib/cues'
 import type { MenuAction, MenuEntry, Recordings } from '../types'
@@ -19,11 +19,14 @@ export const client = {
   recordings: createClient(RecordingService, transport),
   transcripts: createClient(TranscriptService, transport),
   textVersions: createClient(TextVersionService, transport),
-  window: createClient(WindowService, transport),
 }
 
-/** The window the player's tabs are drawn in. */
-const WINDOW = 'editor'
+let taskHost: TaskHost | undefined
+
+/** Sets the task host the plugin was activated with. */
+export const setTaskHost = (host: TaskHost | undefined) => {
+  taskHost = host
+}
 
 const ACTIONS: ReadonlyMap<FileMenuAction, MenuAction> = new Map([
   [FileMenuAction.RECOGNISE, 'recognise'],
@@ -60,11 +63,7 @@ export const readMenuEntries = (
 
 const readCue = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
 
-const work = createWorkWatcher(async function* (signal) {
-  for await (const update of client.window.watchTasks({ window: WINDOW }, { signal })) {
-    yield update.tasks
-  }
-})
+const work = createWorkWatcher((onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => {} })
 
 export const recordings: Recordings = {
   getSource: async (path) => {

@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { createActivate, LINK, LinkTab } from './index'
+import { activate, createActivate, LINK, LinkTab } from './index'
+import { links as servedLinks } from './api/wire'
 import type { Links } from './types'
 
 const links = (made: string[]): Links => ({
@@ -38,5 +39,25 @@ describe('the media importer frontend', () => {
     expect(kind?.getTitle?.(kind.open?.('links/Tidal mills.url', 'tab') as never)).toBe(
       'Tidal mills',
     )
+  })
+
+  it('watches the work of its own tasks through the task host', () => {
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
+    const tasks = {
+      watch: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {
+        onTasks([{ about: 'links/a.url' }])
+        return { dispose: () => {} }
+      }),
+      watchAll: vi.fn(),
+    }
+    activate(Object.assign(ctx, { tasks }))
+    const changes: boolean[] = []
+
+    const stop = servedLinks.watchWork('links/a.url', (isWorking) => changes.push(isWorking))
+    stop()
+
+    expect(tasks.watch).toHaveBeenCalledTimes(1)
+    expect(tasks.watchAll).not.toHaveBeenCalled()
+    expect(changes).toEqual([true])
   })
 })

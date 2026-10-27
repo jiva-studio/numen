@@ -1,8 +1,9 @@
 /**
- * Wire adapter for ArticleService, RecordingService and the window's tasks.
+ * Wire adapter for ArticleService, RecordingService and the plugin's tasks.
  */
 import { createClient } from '@connectrpc/connect'
-import { ArticleErrorCode, ArticleService, RecordingService, WindowService } from '@numen/protocol'
+import { ArticleErrorCode, ArticleService, RecordingService } from '@numen/protocol'
+import type { TaskHost } from '@numen/plugin-sdk'
 import { retryWhileBusy, transport } from '@numen/wire'
 import type { Links } from '../types'
 import { WORDS as words } from '../words'
@@ -11,11 +12,14 @@ import { createWorkWatcher } from './work'
 const client = {
   articles: createClient(ArticleService, transport),
   recordings: createClient(RecordingService, transport),
-  window: createClient(WindowService, transport),
 }
 
-/** The window the plugin's tabs are drawn in. */
-const WINDOW = 'editor'
+let taskHost: TaskHost | undefined
+
+/** Sets the task host the plugin was activated with. */
+export const setTaskHost = (host: TaskHost | undefined) => {
+  taskHost = host
+}
 
 /** What a person reads for each refusal. */
 const REFUSALS: Readonly<Record<ArticleErrorCode, string>> = {
@@ -29,11 +33,7 @@ const REFUSALS: Readonly<Record<ArticleErrorCode, string>> = {
 /** What a person reads for a refusal of the schema. */
 export const describeRefusal = (code: ArticleErrorCode): string => REFUSALS[code] ?? words.failed
 
-const work = createWorkWatcher(async function* (signal) {
-  for await (const update of client.window.watchTasks({ window: WINDOW }, { signal })) {
-    yield update.tasks
-  }
-})
+const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
 
 export const links: Links = {
   getLink: async (path) => {

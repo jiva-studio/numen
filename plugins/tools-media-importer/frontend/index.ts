@@ -5,7 +5,7 @@
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
 import LinkTab from './LinkTab.vue'
 import './styles.css'
-import { links } from './api/wire'
+import { links, setTaskHost } from './api/wire'
 import type { Links } from './types'
 import { WORDS as words } from './words'
 
@@ -43,7 +43,10 @@ export function createActivate(served: Links) {
   }
 }
 
-export const activate = createActivate(links)
+export const activate = (context: PluginContext): void => {
+  setTaskHost(context.tasks)
+  createActivate(links)(context)
+}
 
 export default definePlugin({
   activate,
