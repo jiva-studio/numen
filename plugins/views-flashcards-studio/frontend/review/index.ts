@@ -5,6 +5,7 @@
 import { computed, defineComponent, h, type PropType } from 'vue'
 import {
   VAULT_SUMMARY,
+  type AgentHost,
   type NoticeHost,
   type TabKindRegistration,
   type VaultSummaryContext,
@@ -27,6 +28,7 @@ export const REVIEW = 'flashcards.review'
 export interface ReviewKindDeps {
   readonly counts: VaultCounts
   readonly notices: NoticeHost
+  readonly agent: AgentHost
   readonly mountView: MountView
   /** The tab closed, which takes the window back to its list of vaults. */
   readonly closeTab: (id: string) => void
@@ -47,6 +49,7 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
         vault,
         counts: deps.counts,
         notices: deps.notices,
+        agent: deps.agent,
         mountView: deps.mountView,
         goToVaults: () => deps.closeTab(id),
       }),

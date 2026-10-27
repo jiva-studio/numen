@@ -30,9 +30,11 @@ export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
   if (context.target === FLASHCARDS_TARGET) {
-    const { notices, closeTab } = context
-    if (!notices || !closeTab) {
-      throw new Error('the review needs the notices of the window it is drawn in and its tabs')
+    const { notices, closeTab, agent } = context
+    if (!notices || !closeTab || !agent) {
+      throw new Error(
+        'the review needs the notices, the tabs and the agent of the window it is drawn in',
+      )
     }
     const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
     context.subscriptions.push({ dispose: counts.dispose })
@@ -41,6 +43,7 @@ export function activate(context: PluginContext): void {
       createReviewKind({
         counts,
         notices,
+        agent,
         mountView: (capability, element, view) => context.mountView(capability, element, view),
         closeTab: (id) => closeTab(id),
       }),

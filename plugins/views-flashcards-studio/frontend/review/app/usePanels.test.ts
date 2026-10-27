@@ -6,6 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
 import { usePanels } from './usePanels'
 import type { CardFace } from '../entities/card'
@@ -14,10 +15,6 @@ vi.mock('../shared/clients', async (original) => ({
   ...(await original<typeof import('../shared/clients')>()),
   cards: {
     getDeckNeighbourhood: async () => ({ notes: [], unread: 0 }),
-  },
-  agentService: {
-    askAgent: async function* () {},
-    finishConversation: async () => ({}),
   },
 }))
 
@@ -37,13 +34,15 @@ const card = (more: Partial<CardFace> = {}): CardFace => ({
 
 const panels = (more: { card?: CardFace | null; unreachable?: string } = {}) => {
   const notices: string[] = []
+  const agent = createMockAgentHost()
   const target = usePanels({
+    agent,
     card: () => (more.card === undefined ? card() : more.card),
     unreachable: () => more.unreachable ?? '',
     vault: () => 'garden',
     showNotice: (text) => notices.push(text),
   })
-  return { ...target, notices }
+  return { ...target, notices, agent }
 }
 
 describe('the window', () => {
@@ -157,5 +156,27 @@ describe('the window', () => {
 
     expect(showing.value).toBe('here')
     expect(notices).toEqual(['No agent is set up'])
+  })
+})
+
+describe('a question about the card', () => {
+  it('goes to the agent of the window with the card in its context', async () => {
+    const { agent, agentPanel, toggleAgent } = panels()
+    toggleAgent()
+    const signal = new AbortController().signal
+
+    for await (const step of agentPanel.context.value!.agent.ask({
+      question: 'where does the word come from',
+      focus: 'decks/Words.md',
+      conversation: 'card-0',
+      signal,
+    }))
+      void step
+
+    expect(agent.getQueries()[0]?.context).toEqual({
+      'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
+      'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
+      'md.numen.views.flashcards.studio/face': 'Say it',
+    })
   })
 })

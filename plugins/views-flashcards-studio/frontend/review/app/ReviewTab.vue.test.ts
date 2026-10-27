@@ -7,7 +7,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
+import { createMockAgentHost, createMockNoticeHost } from '@numen/plugin-sdk/testing'
 
 const { counted, started, waits } = vi.hoisted(() => ({
   counted: {
@@ -81,7 +81,6 @@ vi.mock('../shared/clients', async (original) => ({
       return { run: 'run', cards: [], unwritten: [], skipped: 0 }
     },
   },
-  agentService: { getAgentState: async () => ({ unreachable: '' }) },
 }))
 
 const { default: ReviewTab } = await import('./ReviewTab.vue')
@@ -103,6 +102,7 @@ const mountReview = async (vault: string) => {
       vault,
       counts,
       notices: createMockNoticeHost(),
+      agent: createMockAgentHost(),
       mountView: mountNothing,
       goToVaults: () => {},
     }),

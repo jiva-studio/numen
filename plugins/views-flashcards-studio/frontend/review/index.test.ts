@@ -30,7 +30,6 @@ vi.mock('./shared/clients', () => ({
       await new Promise<never>(() => {})
     },
   },
-  agentService: {},
 }))
 
 const { createVaultCounts, createVaultSummaryView } = await import('./index')

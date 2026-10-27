@@ -1,22 +1,12 @@
 /**
- * A conversation about one card names the card beside every question it sends,
- * and is ended under the name it was held by.
+ * A conversation about one card names the card in the context of every
+ * question it sends, and is ended under the name it was held by.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
 import { createCardAgentPort } from './agent'
 import type { CardFace } from '../../../entities/card'
-
-const { askAgent, finishConversation } = vi.hoisted(() => ({
-  askAgent: vi.fn(async function* (_request: unknown, _options: unknown) {
-    yield { step: { case: 'text', value: 'Because of the leaves.' } }
-  }),
-  finishConversation: vi.fn(async (_request: unknown) => ({})),
-}))
-
-vi.mock('../../../shared/clients', () => ({
-  agentService: { askAgent, finishConversation },
-}))
 
 const card: CardFace = {
   deck: 'decks/Words.md',
@@ -30,11 +20,12 @@ const card: CardFace = {
   ahead: null,
 }
 
-describe('the agent a card is requested about', () => {
-  it('sends the mark and the face of the card alongside the question, and reads the answer', async () => {
+describe('createCardAgentPort', () => {
+  it('sends the deck, the card and the face in the query context', async () => {
+    const agent = createMockAgentHost([{ kind: 'said', text: 'Because of the leaves.' }])
     const signal = new AbortController().signal
     const steps = []
-    for await (const step of createCardAgentPort(card).ask({
+    for await (const step of createCardAgentPort(agent, card).ask({
       question: 'why is it called that',
       focus: 'decks/Words.md',
       conversation: 'card-0',
@@ -43,21 +34,25 @@ describe('the agent a card is requested about', () => {
       steps.push(step)
     }
 
-    expect(askAgent).toHaveBeenCalledWith(
+    expect(agent.getQueries()).toEqual([
       {
-        prompt: 'why is it called that',
+        question: 'why is it called that',
         focus: 'decks/Words.md',
         conversation: 'card-0',
-        mark: '3f4g5h6j7k',
-        face: 'Say it',
+        signal,
+        context: {
+          'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
+          'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
+          'md.numen.views.flashcards.studio/face': 'Say it',
+        },
       },
-      { signal },
-    )
+    ])
     expect(steps).toEqual([{ kind: 'said', text: 'Because of the leaves.' }])
   })
 
-  it('ends the conversation under the name it was retained by', async () => {
-    await createCardAgentPort(card).finish('card-0')
-    expect(finishConversation).toHaveBeenCalledWith({ conversation: 'card-0' })
+  it('finishes the conversation by its id', async () => {
+    const agent = createMockAgentHost()
+    await createCardAgentPort(agent, card).finish('card-0')
+    expect(agent.getFinished()).toEqual(['card-0'])
   })
 })

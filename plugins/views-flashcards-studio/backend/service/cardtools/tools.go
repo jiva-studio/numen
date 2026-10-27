@@ -13,12 +13,13 @@ import (
 
 var errNoVault = errors.New("no vault is open")
 
-// The keys of what the host tells a tool about the window the agent was started from.
+// The keys of what the host tells a tool about the window the agent was started from. The review
+// writes the card keys, under this plugin's id, as the context of the question.
 const (
 	askedVault = "vault"
-	askedFocus = "focus"
-	askedMark  = "mark"
-	askedFace  = "face"
+	askedDeck  = "md.numen.views.flashcards.studio/deck"
+	askedMark  = "md.numen.views.flashcards.studio/card"
+	askedFace  = "md.numen.views.flashcards.studio/face"
 )
 
 // Tools provides MCP tools for interacting with flashcards.

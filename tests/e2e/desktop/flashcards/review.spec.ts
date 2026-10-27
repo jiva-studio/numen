@@ -66,12 +66,15 @@ test('the review mounts the conversation of the agent chat plugin in its agent p
 
   await expect(panel.getByText('Where does it live?')).toBeVisible()
   await expect(panel).toContainText(STAND_IN_REPLY)
-  // The card goes beside the question, and the question is only what was written.
+  // The card goes in the context of the question, and the question is only what was written.
   expect(requests).toHaveLength(1)
   expect(requests[0]).toMatchObject({
     prompt: 'Where does it live?',
     focus: expect.stringMatching(/\.md$/),
   })
-  expect(requests[0]?.['mark']).toEqual(expect.any(String))
-  expect(requests[0]?.['face']).toEqual(expect.any(String))
+  expect(requests[0]?.['context']).toEqual({
+    'md.numen.views.flashcards.studio/deck': expect.stringMatching(/\.md$/),
+    'md.numen.views.flashcards.studio/card': expect.any(String),
+    'md.numen.views.flashcards.studio/face': expect.any(String),
+  })
 })

@@ -7,8 +7,9 @@
  */
 import { computed, ref } from 'vue'
 
+import type { AgentPort } from '@numen/plugin-sdk'
 import {
-  createCardAgentPort as agent,
+  createCardAgentPort,
   getDeckNeighbourhood,
   useAgentPanel,
   useNotesPanel,
@@ -18,6 +19,8 @@ import type { CardFace } from '../entities/card'
 
 /** What the panels ask of the window they stand in. */
 export interface PanelsDeps {
+  /** The agent of the window, which every question about a card goes to. */
+  readonly agent: AgentPort
   /** The card in front of the person, and nothing between cards. */
   readonly card: () => CardFace | null
   /** Why nothing can be asked here, empty while something can. */
@@ -53,7 +56,7 @@ export const usePanels = (deps: PanelsDeps) => {
   }
 
   const agentPanel = useAgentPanel({
-    agent,
+    agent: (card) => createCardAgentPort(deps.agent, card),
     card: deps.card,
     unreachable: deps.unreachable,
     open: () => showing.value === 'asking',

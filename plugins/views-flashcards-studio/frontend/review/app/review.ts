@@ -5,15 +5,15 @@
  * what the review has to say. Everything here is made once, as the window
  * opens the review on a vault, and released when the window closes it.
  */
-import { computed, onScopeDispose, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 
-import { agentService, cards } from '../shared/clients'
+import { cards } from '../shared/clients'
 import { useScreens } from '../shared/screens'
 import type { MountView } from '../shared/views'
 import { getDeckName, type VaultCardsDue } from '../entities/vault'
 import { useReviewDays, useVaultPresets } from '../pages/decks'
-import { useReviewSession, WORDS } from '../pages/session'
-import type { NoticeHost, NoticeTone as Tone } from '@numen/plugin-sdk'
+import { useReviewSession } from '../pages/session'
+import type { AgentHost, NoticeHost, NoticeTone as Tone } from '@numen/plugin-sdk'
 import { createNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
@@ -29,6 +29,8 @@ export interface ReviewDeps {
   readonly counts: VaultCounts
   /** The corner of the window the notices are drawn in. */
   readonly notices: NoticeHost
+  /** The agent of the window, which says whether it can be reached and answers about a card. */
+  readonly agent: AgentHost
   /** How the agent panel mounts the conversation another plugin declares. */
   readonly mountView: MountView
   /** Out of the vault: the window closes the review and offers its vaults again. */
@@ -108,23 +110,6 @@ function createReviewActions(deps: ReviewActionDeps) {
 }
 
 /**
- * Whether a card can be asked about is the agent's to know before a person
- * reaches for it, so it is asked once as the review opens.
- */
-function useAgentState(unreachable: Ref<string>) {
-  const abortController = new AbortController()
-  void agentService
-    .getAgentState({}, { signal: abortController.signal })
-    .then((response) => {
-      unreachable.value = response.unreachable
-    })
-    .catch(() => {
-      unreachable.value = WORDS.unreachable
-    })
-  onScopeDispose(() => abortController.abort())
-}
-
-/**
  * The vault counted is the vault the decks are drawn from. Its presets are read
  * once it is, and the counting of the other vaults ends there: they are not
  * drawn again until the review is left.
@@ -156,12 +141,12 @@ export const useReview = (deps: ReviewDeps) => {
     widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
   })
   const schedules = useVaultPresets({ presets: cards })
-  const unreachable = ref('')
   const notesPage = shallowRef<NotesPage | null>(null)
 
   const panels = usePanels({
     card: () => state.card.value,
-    unreachable: () => unreachable.value,
+    agent: deps.agent,
+    unreachable: () => deps.agent.getUnreachable(),
     vault: () => deps.vault,
     showNotice: (text) => notices.showNotice(text, 'caution'),
   })
@@ -210,7 +195,6 @@ export const useReview = (deps: ReviewDeps) => {
   deps.counts.setRefresh(actions.refresh)
   void reviewDays.read(deps.vault)
   useChosenVault({ vaultCount, counts: deps.counts, readSchedules: actions.readSchedules })
-  useAgentState(unreachable)
 
   onScopeDispose(() => {
     deps.counts.setRefresh(null)

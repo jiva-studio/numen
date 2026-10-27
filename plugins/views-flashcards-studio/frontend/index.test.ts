@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  createMockAgentHost,
   createMockBufferHost,
   createMockNoticeHost,
   createMockPluginContext,
@@ -36,6 +37,7 @@ describe('flashcards-studio plugin', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',
       notices: createMockNoticeHost(),
+      agent: createMockAgentHost(),
       closeTab: vi.fn(),
     })
     activate(ctx)
@@ -49,7 +51,11 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('refuses to draw the review in a window that offers no notices', () => {
-    const ctx = createMockPluginContext({ target: 'desktop.flashcards', closeTab: vi.fn() })
+    const ctx = createMockPluginContext({
+      target: 'desktop.flashcards',
+      closeTab: vi.fn(),
+      agent: createMockAgentHost(),
+    })
 
     expect(() => activate(ctx)).toThrow(/notices/)
   })
@@ -58,9 +64,20 @@ describe('flashcards-studio plugin', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',
       notices: createMockNoticeHost(),
+      agent: createMockAgentHost(),
     })
 
     expect(() => activate(ctx)).toThrow(/tabs/)
+  })
+
+  it('refuses to draw the review in a window that offers no agent', () => {
+    const ctx = createMockPluginContext({
+      target: 'desktop.flashcards',
+      notices: createMockNoticeHost(),
+      closeTab: vi.fn(),
+    })
+
+    expect(() => activate(ctx)).toThrow(/agent/)
   })
 
   it('takes the window back to its vaults by closing the review tab', async () => {
@@ -68,6 +85,7 @@ describe('flashcards-studio plugin', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',
       notices: createMockNoticeHost(),
+      agent: createMockAgentHost(),
       closeTab,
     })
     activate(ctx)

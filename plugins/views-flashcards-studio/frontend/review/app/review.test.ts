@@ -10,7 +10,7 @@
  */
 import { effectScope, isRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
+import { createMockAgentHost, createMockNoticeHost } from '@numen/plugin-sdk/testing'
 import { Code, ConnectError } from '@connectrpc/connect'
 
 const wire = vi.hoisted(() => {
@@ -48,7 +48,6 @@ const wire = vi.hoisted(() => {
     isCountHeld: false,
     /** Whether the count names the vault's own numbers, after the list. */
     isVaultCounted: true,
-    agentCalls: [] as AbortSignal[],
     counts: [] as AbortSignal[],
     daysAsked: [] as { vault: string; from: string; to: string }[],
     presetsAsked: [] as unknown[],
@@ -57,7 +56,6 @@ const wire = vi.hoisted(() => {
     responses: [] as { mark: string }[],
     takenBack: [] as unknown[],
     scrolled: [] as boolean[],
-    agent: async (): Promise<{ unreachable: string }> => ({ unreachable: '' }),
     opened: { unwritten: [] as string[], skipped: 0 },
     isStartRefused: false,
     sessionsAsked: [] as unknown[],
@@ -165,25 +163,19 @@ vi.mock('../shared/clients', async (original) => ({
       return {}
     },
   },
-  // Whether a card can be asked about is the agent's to answer, and the
-  // review asks it as it opens.
-  agentService: {
-    getAgentState: (_: unknown, how?: { signal?: AbortSignal }) => {
-      if (how?.signal) wire.agentCalls.push(how.signal)
-      return wire.agent()
-    },
-  },
 }))
 
 const { useReview } = await import('./review')
 const { createVaultCounts } = await import('./counts')
-const { WORDS } = await import('../pages/session')
 const { mountNothing } = await import('../shared/views')
 
 type Review = ReturnType<typeof useReview>
 
 /** The corner the review last opened says its notices in. */
 let notices = createMockNoticeHost()
+
+/** The agent of the window the review last opened. */
+let agent = createMockAgentHost()
 
 /** What the review last opened asked of the window to go back to the vaults. */
 let goToVaults = vi.fn()
@@ -200,7 +192,7 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
   const counts = createVaultCounts({ reportError: vi.fn() })
   const scope = effectScope()
   const review = scope.run(() =>
-    useReview({ vault: 'roots', counts, notices, mountView: mountNothing, goToVaults }),
+    useReview({ vault: 'roots', counts, notices, agent, mountView: mountNothing, goToVaults }),
   ) as Review
   if (isPageDrawn) {
     review.notesPage.value = { scrollPage: (back: boolean) => wire.scrolled.push(back) }
@@ -257,14 +249,13 @@ beforeEach(() => {
   wire.isCountHeld = false
   wire.isVaultCounted = true
   wire.counts.length = 0
-  wire.agentCalls.length = 0
   wire.daysAsked.length = 0
   wire.presetsAsked.length = 0
   wire.notesAsked.length = 0
   wire.responses.length = 0
   wire.takenBack.length = 0
   wire.scrolled.length = 0
-  wire.agent = async () => ({ unreachable: '' })
+  agent = createMockAgentHost()
   wire.opened = { unwritten: [], skipped: 0 }
   wire.isStartRefused = false
   wire.sessionsAsked.length = 0
@@ -378,30 +369,6 @@ describe('a deck written underneath the review', () => {
   })
 })
 
-describe('agent availability', () => {
-  it('asks the agent once on open and aborts the request on close', async () => {
-    wire.agent = () => new Promise<never>(() => {})
-    const { close } = await openReview()
-    expect(wire.agentCalls).toHaveLength(1)
-    expect(wire.agentCalls[0]!.aborted).toBe(false)
-
-    close()
-
-    expect(wire.agentCalls[0]!.aborted).toBe(true)
-  })
-
-  it('keeps the agent panel closed and shows a notice when the agent is unreachable', async () => {
-    wire.agent = async () => {
-      throw new Error('the connection went')
-    }
-    const review = await openSession()
-    review.session.toggleAgent()
-
-    expect(review.session.agentPanel.open.value).toBe(false)
-    expect(notices.getShown()).toMatchObject([{ text: WORDS.unreachable, tone: 'caution' }])
-  })
-})
-
 describe('a review closed by the window', () => {
   it('lets go of the session it was in', async () => {
     const review = await openSession()
@@ -509,17 +476,8 @@ describe('a session sat down to', () => {
     expect(wire.notesAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
   })
 
-  it('lets the conversation in before the agent has returned whether it can be reached', async () => {
-    wire.agent = () => new Promise<never>(() => {})
-    const review = await openSession()
-    review.session.toggleAgent()
-
-    expect(review.session.agentPanel.open.value).toBe(true)
-    expect(notices.getShown()).toHaveLength(0)
-  })
-
   it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
-    wire.agent = async () => ({ unreachable: 'no model is set up' })
+    agent.setUnreachable('no model is set up')
     const review = await openSession()
     review.session.toggleAgent()
 
