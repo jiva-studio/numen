@@ -49,10 +49,6 @@ func (h *Handler) GetSettings(
 		Written: got.Written,
 		Path:    got.Path,
 		Models:  NewWireModels(got.Models),
-		NestedHeadingLimitBounds: &v1.Bounds{
-			Least: got.NestedHeadingLimitBounds.Least,
-			Most:  got.NestedHeadingLimitBounds.Most,
-		},
 		Plugins: NewWirePluginInfos(got.Plugins),
 	}), nil
 }

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
@@ -318,13 +317,6 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	}
 	if got, _ := os.ReadFile(path); string(got) != `{}` {
 		t.Errorf("the file holds %q", got)
-	}
-}
-
-func TestTheBoundsOnNestedHeadingLimitAreTheSettingsOwn(t *testing.T) {
-	got := Config{}.NestedHeadingLimitBounds()
-	if got != settings.NestedHeadingLimitBounds || got == (settings.Bounds{}) {
-		t.Errorf("got %+v", got)
 	}
 }
 

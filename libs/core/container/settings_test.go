@@ -47,8 +47,8 @@ func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	if target.Appearance.Theme != "mine:sea" {
 		t.Errorf("the theme reads %q", target.Appearance.Theme)
 	}
-	if target.Appearance.NestedHeadingLimit != settings.DefaultNestedHeadingLimit {
-		t.Errorf("the count reads %d", target.Appearance.NestedHeadingLimit)
+	if target.Appearance.Mode != settings.ModeSystem {
+		t.Errorf("the mode reads %q", target.Appearance.Mode)
 	}
 }
 
@@ -170,7 +170,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	if got.Hardware.LogicalCPUs < 1 {
 		t.Errorf("the hardware was not detected: %+v", got.Hardware)
 	}
-	if got.ResolvedCompute.Profile != hardware.ProfileEco || got.ResolvedCompute.OcrThreads != 1 {
+	if got.ResolvedCompute.Profile != hardware.ProfileEco || got.ResolvedCompute.Workers != 1 {
 		t.Errorf("the compute plan is %+v", got.ResolvedCompute)
 	}
 }
@@ -182,22 +182,6 @@ func TestWhatIsSaidWhileReadingIsCached(t *testing.T) {
 	target.AddNotice("second")
 	if !slices.Equal(target.Notices, []string{"first", "second"}) {
 		t.Errorf("said %v", target.Notices)
-	}
-}
-
-func TestNestedHeadingLimitIsWhatTheAppearanceReturns(t *testing.T) {
-	target := DefaultSettings()
-	if !target.HasNestedHeadings() {
-		t.Error("untouched settings hang no headings under a node")
-	}
-	off := false
-	target.Appearance.NestHeadingsUnderNotes = &off
-	if target.HasNestedHeadings() {
-		t.Error("settings turning it off still hang headings under a node")
-	}
-	target.Appearance.NestedHeadingLimit = 7
-	if target.GetNestedHeadingLimit() != 7 {
-		t.Errorf("%d headings stand under a node", target.GetNestedHeadingLimit())
 	}
 }
 

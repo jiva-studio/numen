@@ -66,12 +66,10 @@ const DefaultVersion = 1
 // DefaultAppearance and DefaultTitles are what an installation nobody has configured draws and names by.
 func DefaultAppearance() Appearance {
 	return Appearance{
-		InterfaceScale:         AsDesigned,
-		TextScale:              AsDesigned,
-		Mode:                   ModeSystem,
-		Theme:                  DefaultTheme,
-		NestHeadingsUnderNotes: newTrue(),
-		NestedHeadingLimit:     DefaultNestedHeadingLimit,
+		InterfaceScale: AsDesigned,
+		TextScale:      AsDesigned,
+		Mode:           ModeSystem,
+		Theme:          DefaultTheme,
 	}
 }
 

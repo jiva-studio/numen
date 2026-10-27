@@ -189,11 +189,6 @@ func (c Config) WriteConfiguredFile() func(content string, baseline *string) err
 	}
 }
 
-// NestedHeadingLimitBounds returns min and max bounds for nested headings in notes.
-func (Config) NestedHeadingLimitBounds() settings.Bounds {
-	return settings.NestedHeadingLimitBounds
-}
-
 // GetSettingsWriter patches specific settings paths in the configuration file.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
 	return func(entries []settingsport.Setting) error {

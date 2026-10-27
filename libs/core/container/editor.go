@@ -90,11 +90,7 @@ func (e EditorAssembly) GetPassageQueries() sourceport.PassageQueries     { retu
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
 func (e EditorAssembly) OpenGetSettings() *settings.Get {
-	target := e.cfg.NestedHeadingLimitBounds()
-	return settings.NewGet(
-		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: target.Least, Most: target.Most},
-		e.cfg.Plugins(),
-	)
+	return settings.NewGet(e.cfg.ReadSettings(), e.cfg.Models(), e.cfg.Plugins())
 }
 
 func (e EditorAssembly) OpenWriteSettings() *settings.Write {

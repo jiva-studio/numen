@@ -29,22 +29,6 @@ type Appearance struct {
 	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
 	// person's file.
 	Theme string `json:"theme"`
-
-	// NestHeadingsUnderNotes is whether a node in the plex nests the headings of
-	// its note under the box. A file leaving it out nests them, and a file
-	// naming false leaves the box alone.
-	NestHeadingsUnderNotes *bool `json:"nest_headings_under_notes"`
-
-	// NestedHeadingLimit is how many of those headings stand under a node at once,
-	// the rest being reached by scrolling. A number outside NestedHeadingLimitBounds is
-	// refused, and a file naming none stands DefaultNestedHeadingLimit of them.
-	NestedHeadingLimit int `json:"nested_heading_limit"`
-}
-
-// HasNestedHeadings reports whether a node shows the headings of its note. An unset value
-// shows them.
-func (a Appearance) HasNestedHeadings() bool {
-	return a.NestHeadingsUnderNotes == nil || *a.NestHeadingsUnderNotes
 }
 
 // The modes a colour pair is read by.
@@ -80,21 +64,15 @@ func GetModeName(mode appearance.ColorScheme) string {
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
 
-// DefaultNestedHeadingLimit is how many headings stand under a node where the file names no
-// number.
-const DefaultNestedHeadingLimit = 6
-
-// How far each of the two sizes goes, and how many headings a node may hang.
+// How far each of the two sizes goes.
 //
 // The interface holds while the smallest control it draws is a target a
 // pointer finds, and while a window 1280 across still stands its panes side by
 // side. Text holds while the smallest of it is still read, and while a line of
-// typing still fits the row it is typed in. A node hangs at least one heading,
-// and twelve of them reach the foot of a window the plex is drawn in.
+// typing still fits the row it is typed in.
 var (
-	InterfaceScaleBounds     = Bounds{Least: 0.8, Most: 2}
-	TextScaleBounds          = Bounds{Least: 0.8, Most: 1.75}
-	NestedHeadingLimitBounds = Bounds{Least: 1, Most: 12}
+	InterfaceScaleBounds = Bounds{Least: 0.8, Most: 2}
+	TextScaleBounds      = Bounds{Least: 0.8, Most: 1.75}
 )
 
 // GetOutsideBounds is every number the section holds that its setting does not take,
@@ -104,7 +82,6 @@ func (a Appearance) GetOutsideBounds() []*OutsideBounds {
 	for _, err := range []error{
 		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
 		TextScaleBounds.Check("appearance.text_scale", a.TextScale),
-		NestedHeadingLimitBounds.Check("appearance.nested_heading_limit", float64(a.NestedHeadingLimit)),
 	} {
 		var outside *OutsideBounds
 		if errors.As(err, &outside) {

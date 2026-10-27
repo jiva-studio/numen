@@ -73,10 +73,6 @@ func (s *Settings) AddNotice(notice string) { s.Notices = append(s.Notices, noti
 // Sync is whether a note's title and its filename are kept as one name.
 func (s Settings) Sync() bool { return s.Titles.Sync() }
 
-// how many of those headings stand under it at once.
-func (s Settings) HasNestedHeadings() bool    { return s.Appearance.HasNestedHeadings() }
-func (s Settings) GetNestedHeadingLimit() int { return s.Appearance.NestedHeadingLimit }
-
 // Settings reads the file a person configures this installation in. An
 // installation nobody has configured is written down as what it is doing.
 func (c Config) Settings() (Settings, error) {
@@ -138,7 +134,7 @@ func (c Config) SetSettings(s Settings) Config {
 	c.Agent = s.Agent
 	c.Performance = s.Performance
 	c.Hardware = hardware.Detect()
-	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware, s.Performance.Custom)
+	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware)
 	if c.PluginHost != nil {
 		if s.Plugins != nil {
 			c.PluginHost.SetSettings(s.Plugins)

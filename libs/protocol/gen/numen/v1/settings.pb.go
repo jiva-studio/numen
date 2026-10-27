@@ -135,8 +135,6 @@ type GetSettingsResponse struct {
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The models the settings that name one can be set to.
 	Models []*Model `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
-	// How many headings may nest under a note, at each end. A number outside
-	NestedHeadingLimitBounds *Bounds `protobuf:"bytes,4,opt,name=nested_heading_limit_bounds,json=nestedHeadingLimitBounds,proto3" json:"nested_heading_limit_bounds,omitempty"`
 	// Active plugins and their declarative settings schema.
 	Plugins       []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -190,13 +188,6 @@ func (x *GetSettingsResponse) GetPath() string {
 func (x *GetSettingsResponse) GetModels() []*Model {
 	if x != nil {
 		return x.Models
-	}
-	return nil
-}
-
-func (x *GetSettingsResponse) GetNestedHeadingLimitBounds() *Bounds {
-	if x != nil {
-		return x.NestedHeadingLimitBounds
 	}
 	return nil
 }
@@ -1057,13 +1048,12 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xf9\x01\n" +
+	"\x12GetSettingsRequest\"\xae\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
-	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12O\n" +
-	"\x1bnested_heading_limit_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x18nestedHeadingLimitBounds\x12.\n" +
-	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\apluginsJ\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"\xce\x02\n" +
+	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12.\n" +
+	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\apluginsJ\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"\xce\x02\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1161,41 +1151,39 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*RetryPluginResponse)(nil),        // 16: numen.v1.RetryPluginResponse
 	(*ChoosePluginPathRequest)(nil),    // 17: numen.v1.ChoosePluginPathRequest
 	(*ChoosePluginPathResponse)(nil),   // 18: numen.v1.ChoosePluginPathResponse
-	(*Bounds)(nil),                     // 19: numen.v1.Bounds
-	(*PluginInfo)(nil),                 // 20: numen.v1.PluginInfo
-	(*ReasoningLevel)(nil),             // 21: numen.v1.ReasoningLevel
-	(ErrorCode)(0),                     // 22: numen.v1.ErrorCode
+	(*PluginInfo)(nil),                 // 19: numen.v1.PluginInfo
+	(*ReasoningLevel)(nil),             // 20: numen.v1.ReasoningLevel
+	(ErrorCode)(0),                     // 21: numen.v1.ErrorCode
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	19, // 1: numen.v1.GetSettingsResponse.nested_heading_limit_bounds:type_name -> numen.v1.Bounds
-	20, // 2: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
-	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
-	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	21, // 5: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
-	4,  // 6: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	22, // 7: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 8: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	5,  // 9: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	7,  // 10: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
-	9,  // 11: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
-	11, // 12: numen.v1.SettingsService.WritePluginSecret:input_type -> numen.v1.WritePluginSecretRequest
-	13, // 13: numen.v1.SettingsService.DeletePluginSecret:input_type -> numen.v1.DeletePluginSecretRequest
-	15, // 14: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	17, // 15: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
-	2,  // 16: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	6,  // 17: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	8,  // 18: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
-	10, // 19: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
-	12, // 20: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
-	14, // 21: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
-	16, // 22: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	18, // 23: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
-	16, // [16:24] is the sub-list for method output_type
-	8,  // [8:16] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	19, // 1: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	4,  // 2: numen.v1.Model.writes:type_name -> numen.v1.Setting
+	0,  // 3: numen.v1.Model.presence:type_name -> numen.v1.Presence
+	20, // 4: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
+	4,  // 5: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	21, // 6: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
+	1,  // 7: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 8: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 9: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
+	9,  // 10: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
+	11, // 11: numen.v1.SettingsService.WritePluginSecret:input_type -> numen.v1.WritePluginSecretRequest
+	13, // 12: numen.v1.SettingsService.DeletePluginSecret:input_type -> numen.v1.DeletePluginSecretRequest
+	15, // 13: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	17, // 14: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
+	2,  // 15: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 16: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 17: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
+	10, // 18: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
+	12, // 19: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
+	14, // 20: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
+	16, // 21: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	18, // 22: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
+	15, // [15:23] is the sub-list for method output_type
+	7,  // [7:15] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }

@@ -302,7 +302,7 @@ func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 	if cfg.Appearance.Theme != "preset:gruvbox" {
 		t.Errorf("wears %q", cfg.Appearance.Theme)
 	}
-	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.NestedHeadingLimit == 0 {
+	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.TextScale != settings.AsDesigned {
 		t.Errorf("the rest of the file is not the defaults: %+v", cfg)
 	}
 }

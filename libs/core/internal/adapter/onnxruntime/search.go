@@ -12,7 +12,7 @@ import (
 
 // libraryEnvs name the library a person points the host at. The first set one
 // is used as given.
-var libraryEnvs = []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME", "NUMEN_OCR_RUNTIME"}
+var libraryEnvs = []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME"}
 
 // getLibraryName returns what the library is called on an operating system.
 func getLibraryName(goos string) string {

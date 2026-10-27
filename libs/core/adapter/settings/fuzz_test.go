@@ -27,27 +27,26 @@ func FuzzAt(f *testing.F) {
 	// word no half of a colour pair is called, a theme named nothing at all, an
 	// hour that is no hour and one with spaces around it, and a version the file
 	// was never written at.
-	f.Add(1, "system", "preset:numen", "04:00", 1.0, 1.0, 6)
-	f.Add(1, "dark", "mine:dracula", "23:59", 2.0, 1.75, 12)
-	f.Add(1, "light", "preset:numen", "04:00", 9.0, 1.0, 6)
-	f.Add(1, "purple", "preset:numen", "04:00", 1.0, 1.0, 6)
-	f.Add(1, "", "", "", 1.0, 1.0, 6)
-	f.Add(1, "system", "preset:numen", "99:99", 1.0, 1.0, 6)
-	f.Add(1, "system", "preset:numen", "  07:30  ", 1.0, 1.0, 6)
-	f.Add(0, "system", "preset:numen", "04:00", 1.0, 1.0, 6)
-	f.Add(1, "system", "preset:numen", "04:00", 0.8, 0.8, 1)
+	f.Add(1, "system", "preset:numen", "04:00", 1.0, 1.0)
+	f.Add(1, "dark", "mine:dracula", "23:59", 2.0, 1.75)
+	f.Add(1, "light", "preset:numen", "04:00", 9.0, 1.0)
+	f.Add(1, "purple", "preset:numen", "04:00", 1.0, 1.0)
+	f.Add(1, "", "", "", 1.0, 1.0)
+	f.Add(1, "system", "preset:numen", "99:99", 1.0, 1.0)
+	f.Add(1, "system", "preset:numen", "  07:30  ", 1.0, 1.0)
+	f.Add(0, "system", "preset:numen", "04:00", 1.0, 1.0)
+	f.Add(1, "system", "preset:numen", "04:00", 0.8, 0.8)
 
 	path := filepath.Join(f.TempDir(), "numen.json")
 	f.Fuzz(func(t *testing.T, version int, mode, theme, dayStartTime string,
-		interfaceScale, textScale float64, headings int) {
+		interfaceScale, textScale float64) {
 		raw, err := json.Marshal(file{
 			Version: version,
 			Appearance: appearance{
-				InterfaceScale:     interfaceScale,
-				TextScale:          textScale,
-				Mode:               mode,
-				Theme:              theme,
-				NestedHeadingLimit: headings,
+				InterfaceScale: interfaceScale,
+				TextScale:      textScale,
+				Mode:           mode,
+				Theme:          theme,
 			},
 			Review: review{DayStartTime: dayStartTime},
 		})
@@ -92,11 +91,10 @@ type file struct {
 }
 
 type appearance struct {
-	InterfaceScale     float64 `json:"interface_scale"`
-	TextScale          float64 `json:"text_scale"`
-	Mode               string  `json:"mode"`
-	Theme              string  `json:"theme"`
-	NestedHeadingLimit int     `json:"nested_heading_limit"`
+	InterfaceScale float64 `json:"interface_scale"`
+	TextScale      float64 `json:"text_scale"`
+	Mode           string  `json:"mode"`
+	Theme          string  `json:"theme"`
 }
 
 type review struct {
@@ -110,7 +108,7 @@ type review struct {
 // object, an empty file, and bytes that are no settings at all.
 var byteSeeds = []string{
 	`{"v":1,"appearance":{"interface_scale":1,"text_scale":1,"mode":"dark",` +
-		`"theme":"preset:numen","nest_headings_under_notes":true,"nested_heading_limit":6},` +
+		`"theme":"preset:numen"},` +
 		`"review":{"day_start_time":"04:00"}}`,
 	"{\n  \"appearance\": {\n    \"theme\": \"mine:dracula\"\n  }\n}\n",
 	`{"appearance":{"zoom":1.25}}`,

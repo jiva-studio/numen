@@ -17,7 +17,6 @@ func read() (string, string, error) { return `{"v":1}`, "/home/settings.json", n
 func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 	t.Parallel()
 	models := []settingsport.Model{{Name: "base"}}
-	bounds := settings.Bounds{Least: 1, Most: 6}
 	pluginList := []pluginport.PluginInfo{
 		{
 			ID:   "md.numen.test",
@@ -28,7 +27,7 @@ func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 		},
 	}
 	get := settings.NewGet(
-		read, func() []settingsport.Model { return models }, bounds, func() []pluginport.PluginInfo { return pluginList },
+		read, func() []settingsport.Model { return models }, func() []pluginport.PluginInfo { return pluginList },
 	)
 
 	got, err := get.Execute()
@@ -45,14 +44,11 @@ func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 	if len(got.Plugins) != 1 || got.Plugins[0].ID != "md.numen.test" {
 		t.Errorf("the plugins are %v", got.Plugins)
 	}
-	if got.NestedHeadingLimitBounds != bounds {
-		t.Errorf("the limits are %v", got.NestedHeadingLimitBounds)
-	}
 }
 
 func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
 	t.Parallel()
-	get := settings.NewGet(read, nil, settings.Bounds{}, nil)
+	get := settings.NewGet(read, nil, nil)
 
 	got, err := get.Execute()
 	if err != nil {
@@ -70,7 +66,7 @@ func TestGetRefusesWhenTheFileCannotBeRead(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, error) { return "", "", errRead },
-		nil, settings.Bounds{}, nil,
+		nil, nil,
 	)
 
 	if _, err := get.Execute(); !errors.Is(err, errRead) {

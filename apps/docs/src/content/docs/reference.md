@@ -27,8 +27,6 @@ How the window is drawn.
 | `text_scale` | a number | how large the text a person reads is set: a note, a book, an answer, the editor. |
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
 | `theme` | text | the stylesheet applied to the window, named by its origin and its filename: `preset:dracula` ships here, `mine:dracula` is the person's file. |
-| `nest_headings_under_notes` | yes or no | whether a node in the plex nests the headings of its note under the box. |
-| `nested_heading_limit` | a number | how many of those headings stand under a node at once, the rest being reached by scrolling. |
 
 ### `indexing.embedding`
 
@@ -63,11 +61,6 @@ The workload and resource calibration profile.
 | | | |
 | --- | --- | --- |
 | `profile` | text | the active preset. |
-| `custom` |  | holds user-defined overrides when `profile` is `custom`. |
-| `custom.embedding_batch_size` | a number |  |
-| `custom.ocr_threads` | a number |  |
-| `custom.ocr_sessions` | a number |  |
-| `custom.llm_concurrency` | a number |  |
 
 ### `ai.default`
 

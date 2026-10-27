@@ -18,9 +18,7 @@ How the window is drawn: how large, which half of a colour pair, and which palet
     "interface_scale": 1,
     "text_scale": 1,
     "mode": "system",
-    "theme": "preset:numen",
-    "nest_headings_under_notes": true,
-    "nested_heading_limit": 6
+    "theme": "preset:numen"
   }
 }
 ```
@@ -31,8 +29,6 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 | `text_scale` | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75. |
 | `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
 | `theme` | the stylesheet the window wears, named by its origin and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
-| `nest_headings_under_notes` | whether a node nests the headings of the note it stands for under its box. On. |
-| `nested_heading_limit` | how many of those headings stand under a node at once, the rest being reached by scrolling. 6, and it goes from 1 to 12. |
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 
@@ -54,9 +50,7 @@ A theme pinning `color-scheme` is published in one half, and `mode` has nothing 
 
 Choosing a theme, light or dark, or either size writes the field it names back here — each is a command of its own in the palette, over the window. The file is read as an object, the named fields are set, and it is written back, so a key this build knows nothing about comes through the write unchanged. A file that does not parse is not written.
 
-On, a node in the plex nests the headings of the note it stands for under its box, each at the line it stands on, and choosing one puts that note in front of the person with the keyboard on that line. Off, a node is its box alone, and nothing is asked of the vault about what a note is divided into.
-
-`Nest headings under notes` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
+Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `plugins.md.numen.views.plex.graph.nest_headings` and `heading_limit`.
 
 ## A day of review
 
@@ -106,71 +100,39 @@ Typing a new `# Heading` into a note does not rename its file. A save puts down 
 
 ## Performance profiles
 
-`performance` governs how intensively background AI pipelines (vector embedding, OCR, transcription, and agent concurrency) utilize system hardware.
+`performance` sets how much of the machine the core's CPU-bound work and the Go runtime take. Settings of a plugin's own work, such as OCR or embedding, are that plugin's settings.
 
 ```json
 {
   "performance": {
-    "profile": "balanced",
-    "custom": {
-      "embedding_batch_size": 32,
-      "ocr_threads": 4,
-      "ocr_sessions": 1,
-      "llm_concurrency": 2
-    }
+    "profile": "balanced"
   }
 }
 ```
 
 | | |
 | --- | --- |
-| `profile` | the workload profile: `eco`, `balanced` (default), `maximum`, or `custom`. |
-| `custom.embedding_batch_size` | how many passages are embedded in a single forward pass when `profile` is `custom`. |
-| `custom.ocr_threads` | intra-op thread count per OCR model instance. |
-| `custom.ocr_sessions` | concurrent OCR inference workers. |
-| `custom.llm_concurrency` | maximum simultaneous LLM/agent requests in flight. |
+| `profile` | the workload profile: `eco`, `balanced` (default) or `maximum`. Any other word is read as `balanced`. |
 
 ### Hardware adaptation
 
-When `profile` is `eco`, `balanced`, or `maximum`, numen reads the machine and resolves every pool from it. The machine is described by its logical CPUs (hardware threads the process may run on, limited by the process affinity and, on Linux, the cgroup v2 CPU quota), its physical cores, its performance cores (the cores of the highest performance class; equal to the physical cores when none differ), and its installed and free memory. A figure that cannot be read is unknown and takes the fallback below.
+numen reads the machine and resolves every pool from it. The machine is described by its logical CPUs (hardware threads the process may run on, limited by the process affinity and, on Linux, the cgroup v2 CPU quota), its physical cores, its performance cores (the cores of the highest performance class; equal to the physical cores when none differ), and its installed and free memory. A figure that cannot be read is unknown and takes the fallback below.
 
 The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core.
 
 | | Eco | Balanced *(default)* | Maximum |
 | --- | --- | --- | --- |
 | Core budget | 1 | 50% of the performance threads, at least 1 | 100% of the performance threads |
-| OCR sessions × threads | 1 × 1 | the budget, split as below | the budget, split as below |
 | Workers (general CPU-bound pool) | 1 | half the budget, at least 1 | the budget |
-| Embedding batch | 16 | 1 per 256 MB free, from 16 to 64 | 1 per 128 MB free, from 32 to 256 |
-| LLM concurrency | 1 | 2 | 4 |
 | Memory limit (soft) | 25% of installed memory | 50% of installed memory | 75% of installed memory |
 
-**Where each figure is read.** The resolved plan is the source of every limit below; a limit the user sets in a section of its own wins over it, and a component built without a plan keeps the fallback in the last column.
+The core reads the workers as the number of sources a search extracts at once; a search built without a plan extracts 4.
 
-| Consumer | Limit | Fallback without a plan |
-| --- | --- | --- |
-| Local embedding batch | embedding batch, unless the model names `batch_texts` | the model's own |
-| Local embedding, threads of the loaded model | core budget, unless the model names `threads` | the default of the runtime |
-| Local embedding, forward passes at once | workers, lowered to what a quarter of the available memory holds, unless the model names `sessions`; one on an accelerator | one up to 2 CPUs, two up to 4, three beyond |
-| Search question and indexing sharing one local model | indexing holds one pass fewer than the model runs at once, at least one; a question is never held | not applicable |
-| OCR | OCR threads and sessions | unresolved counts, then named defaults |
-| Proofreading, batches of a transcript one window carries | the plugin's `in_flight` | 4 |
-| Embedding service, requests in flight | LLM concurrency | 4 |
-| Search, sources extracted at once | workers | 4 |
-| Cards, decks parsed and curve places worked out at once | workers | one per CPU |
-| PDF worker pool | workers, at least 2; the workers kept alive between documents are the planned workers, lowered to what 5% of the available memory holds at 32 MB each, none when it is unknown, and all are released after 5 minutes without an open document | one per CPU, at least 2; none kept alive |
-| Transcription, resampling and feature extraction | workers | one per CPU |
-
-OCR threads × sessions never exceeds the core budget. The budget is split into 4 sessions, or more when one session would need over 8 threads; sessions are capped at 16 and at the budget, and each session gets the budget divided by the sessions, at most 8 threads.
-
-The memory limit is a soft limit on the memory the Go runtime manages, set once at startup from the installed memory: near it the collector runs more often, and no allocation fails. It is not set when the installed memory is unknown, when `GOMEMLIMIT` is set, or when a limit is already in force. Custom follows the Balanced share.
-
-Free memory is what the operating system reports as available. When only installed memory is known, half of it is taken as free; when neither is known, 4096 MB is taken as free. macOS does not report free memory, so it takes the second rule.
+The memory limit is a soft limit on the memory the Go runtime manages, set once at startup from the installed memory: near it the collector runs more often, and no allocation fails. It is not set when the installed memory is unknown, when `GOMEMLIMIT` is set, or when a limit is already in force.
 
 - **Eco**: Keeps background work unobtrusive and battery-friendly: one thread for each pool.
 - **Balanced**: Optimized for everyday responsive use; half the performance threads, so the interface keeps the rest.
 - **Maximum**: Full use of the performance cores for fast initial indexing and bulk processing.
-- **Custom**: Uses the explicit parameters written in `performance.custom`, clamped to their bounds: batch size up to 512 (32 when unset), OCR threads up to 64, OCR sessions up to 16, LLM concurrency from 1 to 16. When both `ocr_threads` and `ocr_sessions` are set they are used as written, even if their product exceeds the core budget. When one is unset, it is derived so that the product fills the Maximum budget; when both are unset, the Maximum split applies. Workers follow the Balanced rule.
 
 `Set performance profile` is a command of its own in the palette, over the window. Choosing a profile updates the configuration immediately.
 

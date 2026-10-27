@@ -69,13 +69,10 @@ message GetSettingsResponse {
   // The models the settings that name one can be set to.
   repeated Model models = 3;
 
-  // How many headings may nest under a note, at each end. A number outside
-  Bounds nested_heading_limit_bounds = 4;
-
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
 
-  reserved 5, 6;
+  reserved 4, 5, 6;
 }
 
 // Model is one model a setting that names a model can be set to.

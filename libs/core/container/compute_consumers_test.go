@@ -8,7 +8,7 @@ import (
 )
 
 func makePlan(workers, llm int) hardware.ResolvedCompute {
-	return hardware.ResolvedCompute{Workers: workers, LlmConcurrency: llm}
+	return hardware.ResolvedCompute{Workers: workers}
 }
 
 func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {

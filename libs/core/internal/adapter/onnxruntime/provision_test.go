@@ -495,7 +495,7 @@ func TestProvisionNamedInTheEnvironmentIsUsedAsGiven(t *testing.T) {
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
 	cfg.Machine = []string{writeLibraryDir(t)}
-	for _, name := range []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME", "NUMEN_OCR_RUNTIME"} {
+	for _, name := range []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME"} {
 		named := filepath.Join(t.TempDir(), name+".so")
 		t.Setenv(name, named)
 		got, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
@@ -715,5 +715,22 @@ func TestProvisionUsesALibraryNamedInTheEnvironmentWithoutOpeningIt(t *testing.T
 	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "cuda", Machine: []string{}, Check: refuse(named)}
 	if got, provider, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err != nil || got != named || provider != "cuda" {
 		t.Fatalf("Provision() = %q, %q, %v, want %q and cuda", got, provider, err, named)
+	}
+}
+
+// NUMEN_OCR_RUNTIME belongs to the OCR plugin, which reads it itself.
+func TestProvisionIgnoresTheOcrPluginsOwnVariable(t *testing.T) {
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	server, _ := serve(t, archive)
+	cfg := newConfig(server, archive)
+	cfg.Dir = t.TempDir()
+	shared := t.TempDir()
+	target := writeLibrary(t, shared)
+	cfg.Machine = []string{shared}
+	t.Setenv("NUMEN_OCR_RUNTIME", filepath.Join(t.TempDir(), "named.so"))
+
+	got, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
+	if err != nil || got != target {
+		t.Fatalf("Provision() = %q, %v, want %q", got, err, target)
 	}
 }
