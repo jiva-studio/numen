@@ -2,6 +2,8 @@ package recognition_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"image"
 	"os"
@@ -165,8 +167,8 @@ func TestRecogniseSkipsTextLayerUnlessUserStarted(t *testing.T) {
 
 func TestRecogniseSkipsUnchangedFile(t *testing.T) {
 	s := newScene(t)
-	for _, isUserStarted := range []bool{false, false, true} {
-		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: isUserStarted}); err != nil {
+	for range 2 {
+		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -180,6 +182,84 @@ func TestRecogniseSkipsUnchangedFile(t *testing.T) {
 	}
 	if got := s.recogniser.getPageCount(); got != 4 {
 		t.Fatalf("%d pages were read, want the replaced file read again", got)
+	}
+}
+
+func TestRecogniseUserStartedReadsARecognisedFileAgain(t *testing.T) {
+	s := newScene(t)
+	for _, isUserStarted := range []bool{false, true} {
+		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: isUserStarted}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := s.recogniser.getPageCount(); got != 4 {
+		t.Fatalf("%d pages were read, want the file read twice", got)
+	}
+}
+
+// getStoreNames is the names of the files of the plugin's folder.
+func (s *scene) getStoreNames(t *testing.T) []string {
+	t.Helper()
+	files, err := s.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make([]string, len(files))
+	for i, file := range files {
+		names[i] = file.Name
+	}
+	return names
+}
+
+func TestRecogniseKeepsOnlyTheVersionFile(t *testing.T) {
+	s := newScene(t)
+
+	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	text := s.readLive(t, "books/scan.pdf")
+	if names := s.getStoreNames(t); len(names) != 1 || names[0] != text.Version.File || !strings.HasSuffix(names[0], ".jsonl") {
+		t.Errorf("the folder holds %v, want only the version file %s", names, text.Version.File)
+	}
+}
+
+func TestRecogniseReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
+	s := newScene(t)
+	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.texts.RemoveVersion(t.Context(), "books/scan.pdf", recognition.VersionKey); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+
+	if err != nil || res.IsSkipped || s.recogniser.getPageCount() != 4 {
+		t.Fatalf("recognised %+v (%v) after %d pages, want the file read again", res, err, s.recogniser.getPageCount())
+	}
+}
+
+func TestRecogniseResumesFromTheProgressRecord(t *testing.T) {
+	s := newScene(t)
+	raw := readFixture(t, "scan.pdf")
+	sum := sha256.Sum256([]byte("books/scan.pdf"))
+	progress := `{"path":"books/scan.pdf","inputHash":"` + domain.HashContent([]byte(raw)) +
+		`","recipe":"a test|layout|lines|72","pageCount":2,"pages":[[{"text":"kept from before\n\n"}]]}`
+	if err := s.store.Write(t.Context(), hex.EncodeToString(sum[:])+".progress.json", []byte(progress)); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+
+	if err != nil || res.Pages != 2 || s.recogniser.getPageCount() != 1 {
+		t.Fatalf("recognised %+v (%v) after %d pages, want only the second page read", res, err, s.recogniser.getPageCount())
+	}
+	if text := s.readLive(t, "books/scan.pdf"); !strings.HasPrefix(text.Text, "kept from before\n\nHeading") {
+		t.Errorf("the text reads %q, want the kept page first", text.Text)
+	}
+	if names := s.getStoreNames(t); len(names) != 1 {
+		t.Errorf("the folder holds %v, want the progress deleted", names)
 	}
 }
 

@@ -15,16 +15,16 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 )
 
-// record is what the plugin keeps of the recognition of one file in its folder of the vault's
-// store: the content it read, what read it, and the text of each page read so far. A record that is
-// not complete is a recognition stopped part way, taken up again where it stopped.
+// record is the progress of a recognition that has not ended, kept in the plugin's folder of the
+// vault's store between batches: the content it reads, what reads it, and the text of each page read
+// so far. A recognition stopped part way takes it up again where it stopped. The record is deleted
+// once the version is put, so the folder holds only the version file of a recognised path.
 type record struct {
-	Path       string   `json:"path"`
-	InputHash  string   `json:"inputHash"`
-	Recipe     string   `json:"recipe"`
-	PageCount  int      `json:"pageCount"`
-	Pages      [][]part `json:"pages"`
-	IsComplete bool     `json:"isComplete"`
+	Path      string   `json:"path"`
+	InputHash string   `json:"inputHash"`
+	Recipe    string   `json:"recipe"`
+	PageCount int      `json:"pageCount"`
+	Pages     [][]part `json:"pages"`
 }
 
 // part is one run of a page's text and the rectangles it was read from, in fractions of the page.
@@ -34,10 +34,10 @@ type part struct {
 	Section string       `json:"section,omitempty"`
 }
 
-// getRecordName returns the store file name of the recognition of a path.
+// getRecordName returns the store file name of the progress of a path's recognition.
 func getRecordName(path string) string {
 	sum := sha256.Sum256([]byte(path))
-	return hex.EncodeToString(sum[:]) + ".json"
+	return hex.EncodeToString(sum[:]) + ".progress.json"
 }
 
 // getVersionName returns the store file name of the text version of a path's recognition.
@@ -49,7 +49,7 @@ func getVersionName(path string) string {
 // textKind is the kind of the text versions the plugin makes.
 const textKind domain.TextKind = "recognition"
 
-// readRecord returns the stored record of the path, or nil when there is none.
+// readRecord returns the progress of the path's recognition, or nil when there is none.
 func readRecord(ctx context.Context, store host.Store, path string) (*record, error) {
 	raw, err := store.Read(ctx, getRecordName(path))
 	if errors.Is(err, host.ErrNotExist) {
@@ -71,7 +71,7 @@ func writeRecord(ctx context.Context, store host.Store, rec *record) error {
 		return err
 	}
 	if err := store.Write(ctx, getRecordName(rec.Path), raw); err != nil {
-		return fmt.Errorf("keep the recognition of %s: %w", rec.Path, err)
+		return fmt.Errorf("keep the progress of the recognition of %s: %w", rec.Path, err)
 	}
 	return nil
 }
@@ -79,11 +79,6 @@ func writeRecord(ctx context.Context, store host.Store, rec *record) error {
 // isFor reports whether the record was made from the content hash with the recipe.
 func (r *record) isFor(inputHash, recipe string) bool {
 	return r != nil && r.InputHash == inputHash && r.Recipe == recipe
-}
-
-// isCompleteFor reports whether the record holds every page of the content hash.
-func (r *record) isCompleteFor(inputHash string) bool {
-	return r != nil && r.InputHash == inputHash && r.IsComplete
 }
 
 // getTextSegments is the segments of one page as the version file holds them: the page counted

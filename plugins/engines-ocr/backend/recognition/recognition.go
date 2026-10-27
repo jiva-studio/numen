@@ -19,7 +19,7 @@ import (
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
 const VersionKey = "recognition"
 
-// batch is the number of pages read between two writes of the record.
+// batch is the number of pages read between two writes of the progress record.
 const batch = 8
 
 // Recogniser reads the blocks of one page drawn as an image.
@@ -99,12 +99,15 @@ func (r *Recognition) recognise(ctx context.Context, vault host.Vault, store hos
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
 	}
 	inputHash := domain.HashContent(raw)
+	if !req.IsUserStarted {
+		isRecognised, err := r.isRecognised(ctx, req.Path, inputHash)
+		if err != nil || isRecognised {
+			return Result{IsSkipped: isRecognised}, err
+		}
+	}
 	rec, err := readRecord(ctx, store, req.Path)
 	if err != nil {
 		return Result{}, err
-	}
-	if !req.IsUserStarted && rec.isCompleteFor(inputHash) {
-		return Result{Pages: rec.PageCount, IsSkipped: true}, nil
 	}
 	doc, err := document.Open(req.Path, raw)
 	if err != nil {
@@ -133,7 +136,6 @@ func (r *Recognition) recognise(ctx context.Context, vault host.Vault, store hos
 	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
-	rec.IsComplete = true
 	return r.putVersion(ctx, store, rec)
 }
 
@@ -176,8 +178,8 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 	return nil
 }
 
-// putVersion keeps a complete record and reports it as the file's version. A record that says
-// no text is deleted and reported as no version.
+// putVersion writes the text of a complete record as the file's version, reports it, and deletes
+// the record. A record that says no text is deleted and reported as no version.
 func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *record) (Result, error) {
 	text := rec.getText()
 	if strings.TrimSpace(text.Text) == "" {
@@ -185,9 +187,6 @@ func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *rec
 			return Result{}, err
 		}
 		return Result{Pages: rec.PageCount, IsEmpty: true}, nil
-	}
-	if err := writeRecord(ctx, store, rec); err != nil {
-		return Result{}, err
 	}
 	file := getVersionName(rec.Path)
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
@@ -199,5 +198,22 @@ func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *rec
 	if err != nil {
 		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)
 	}
+	if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
+		return Result{}, err
+	}
 	return Result{Pages: rec.PageCount}, nil
+}
+
+// isRecognised reports whether the file has a version of the plugin made from the content hash.
+func (r *Recognition) isRecognised(ctx context.Context, path, inputHash string) (bool, error) {
+	listing, err := r.host.Texts.ListVersions(ctx, path)
+	if err != nil {
+		return false, fmt.Errorf("list the versions of %s: %w", path, err)
+	}
+	for _, version := range listing.Versions {
+		if version.Key == VersionKey && version.Kind == textKind && version.IsFromFile() && version.SourceHash == inputHash {
+			return true, nil
+		}
+	}
+	return false, nil
 }

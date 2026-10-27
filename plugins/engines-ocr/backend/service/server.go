@@ -16,6 +16,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
+// EnvMockML names the variable that has the plugin read every page with the mock recogniser.
+const EnvMockML = "NUMEN_MOCK_ML"
+
 // engineFactory opens the recogniser the configuration names.
 type engineFactory func(ctx context.Context, cfg engine.Config) (recogniser, error)
 
@@ -27,7 +30,7 @@ type recogniser interface {
 
 // openEngine opens the models of the configuration, or the mock where the host runs on mock models.
 func openEngine(ctx context.Context, cfg engine.Config) (recogniser, error) {
-	if os.Getenv("NUMEN_MOCK_ML") == "true" {
+	if os.Getenv(EnvMockML) == "true" {
 		return engine.MockRecogniser{}, nil
 	}
 	return engine.Open(ctx, cfg)
