@@ -1,18 +1,11 @@
-import { resolve } from 'path'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+import { getPluginAliases } from '@numen/plugin-sdk/vite'
 
 export default defineConfig({
   plugins: [vue()],
   resolve: {
-    alias: {
-      '@numen/protocol': resolve(import.meta.dirname, '../../libs/protocol/index.ts'),
-      '@numen/plugin-sdk/testing': resolve(
-        import.meta.dirname,
-        '../../libs/plugin-sdk-ts/src/testing/mockContext.ts',
-      ),
-      '@numen/plugin-sdk': resolve(import.meta.dirname, '../../libs/plugin-sdk-ts/src/index.ts'),
-    },
+    alias: getPluginAliases(['@numen/plugin-sdk/testing', '@numen/plugin-sdk']),
   },
   test: {
     environment: 'jsdom',

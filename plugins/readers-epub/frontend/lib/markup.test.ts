@@ -3,7 +3,7 @@
  * loads them from.
  */
 import { describe, expect, it } from 'vitest'
-import spine from '../../../../libs/protocol/testdata/spine.html?raw'
+import spine from '../testdata/spine.html?raw'
 import { resolveImageUrls } from './markup'
 
 const entry = (name: string) =>

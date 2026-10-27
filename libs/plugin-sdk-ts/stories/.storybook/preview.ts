@@ -2,8 +2,8 @@ import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
 // The one keyboard walk and the one toolbar, where they are written. A plugin
 // draws the components, so it is judged by what they are judged by.
-import { reachCheck, type Proof } from '../../libs/ui/core/.storybook/check'
-import { toolbar } from '../../libs/ui/core/.storybook/toolbar'
+import { reachCheck, type Proof } from '../../../ui/core/.storybook/check'
+import { toolbar } from '../../../ui/core/.storybook/toolbar'
 import '@numen/ui/styles.css'
 import 'virtual:plugin-utilities.css'
 import './preview.css'

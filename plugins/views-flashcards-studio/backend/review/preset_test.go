@@ -570,7 +570,7 @@ func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
 // The defaults are written once and read twice: here, and in the window, where
 // a person making a preset is shown the numbers it is scheduled by. Both read
 // this one corpus, and neither owns it.
-const presetCorpus = "../../../../libs/protocol/testdata/presets.json"
+const presetCorpus = "../../frontend/testdata/presets.json"
 
 // defaultPreset is a preset naming nothing, in the words a preset file writes
 // its values in.

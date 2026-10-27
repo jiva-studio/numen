@@ -2,8 +2,13 @@
  * Wire adapter for the plugin's LinkService, the window's MediaService and the plugin's tasks.
  */
 import { createClient } from '@connectrpc/connect'
-import { MediaService } from '@numen/protocol'
-import { retryWhileBusy, transport, type TaskHost } from '@numen/plugin-sdk'
+import {
+  getMediaSource,
+  getPageSource,
+  retryWhileBusy,
+  transport,
+  type TaskHost,
+} from '@numen/plugin-sdk'
 import { LinkErrorCode, LinkService } from '../gen/numen/links/v1/link_pb.js'
 import type { Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
@@ -14,7 +19,6 @@ export const PLUGIN_ID = 'md.numen.tools.media.importer'
 
 const client = {
   links: createClient(LinkService, transport),
-  media: createClient(MediaService, transport),
 }
 
 let taskHost: TaskHost | undefined
@@ -61,13 +65,8 @@ export const links: Links = {
   },
   readArticle: async (path) =>
     (await retryWhileBusy(() => client.links.readArticle({ path }))).text,
-  getSource: async (path) => {
-    const answer = await retryWhileBusy(() => client.media.getMediaSource({ path }))
-    return { mediaUrl: answer.src, mediaType: answer.mediaType }
-  },
-  getPageSource: async (page) =>
-    (await retryWhileBusy(() => client.media.getPageSource({ pluginId: PLUGIN_ID, path: page })))
-      .src,
+  getSource: (path) => getMediaSource(path),
+  getPageSource: (page) => getPageSource(PLUGIN_ID, page),
   fetchText: async (path, isUserStarted) =>
     readOutcome(await client.links.fetchText({ path, isUserStarted })),
   copyVideo: async (path) => readOutcome(await client.links.copyVideo({ path })),

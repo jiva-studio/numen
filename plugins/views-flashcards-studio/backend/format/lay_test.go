@@ -11,7 +11,7 @@ import (
 // A review card is shown on two surfaces and each lays it out for itself: this
 // package for the window a card is reviewed in, and modules/libs/ui/core for the
 // file, and neither owns it.
-const corpus = "../../../../libs/protocol/testdata/templates.json"
+const corpus = "../../frontend/testdata/templates.json"
 
 // table is the corpus as it is written down: what it says of itself, and the
 // templates.

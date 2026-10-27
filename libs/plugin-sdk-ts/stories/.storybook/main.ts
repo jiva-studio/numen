@@ -1,7 +1,6 @@
 import type { StorybookConfig } from '@storybook/vue3-vite'
 import vue from '@vitejs/plugin-vue'
-import { getPluginAliases } from '../vite.shared.ts'
-import { createStoryUtilitiesPlugin } from '../vite.styles.ts'
+import { createStoryUtilitiesPlugin, getPluginAliases } from '../../src/vite.ts'
 
 /**
  * A story drawn for a picture is served by `storybook dev`, which reads no
@@ -29,7 +28,7 @@ const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
 
 /** The stories every plugin writes beside its frontend. */
 const config: StorybookConfig = {
-  stories: ['../*/frontend/**/*.stories.ts'],
+  stories: ['../../../../plugins/*/frontend/**/*.stories.ts'],
   addons: ['@storybook/addon-vitest'],
   framework: { name: '@storybook/vue3-vite', options: {} },
   ...(drawing ? { viteFinal: reaching } : {}),

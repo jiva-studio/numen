@@ -3,7 +3,6 @@ import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { formatSettings, parseSettings } from '../wire/settings'
 import { goalOf } from '../wire/goal'
-import { type Bounds as BoundsMessage } from '@numen/protocol'
 import {
   type Curve as CurveMessage,
   type CurvePoint as CurvePointMessage,
@@ -100,7 +99,7 @@ const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBo
 }
 
 /** One pair of ends, in the window's own words. */
-const parseBounds = (bounds: BoundsMessage): Bounds => ({
+const parseBounds = (bounds: Bounds): Bounds => ({
   min: bounds.min,
   max: bounds.max,
 })

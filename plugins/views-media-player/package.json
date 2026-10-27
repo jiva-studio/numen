@@ -18,7 +18,6 @@
     "@connectrpc/connect": "^2.1.2",
     "@lucide/vue": "^1.34.0",
     "@numen/plugin-sdk": "workspace:*",
-    "@numen/protocol": "workspace:*",
     "@numen/ui": "workspace:*"
   },
   "peerDependencies": {

@@ -17,5 +17,5 @@
     "jsx": "preserve",
     "types": ["vite/client"]
   },
-  "include": ["frontend/**/*.ts", "frontend/**/*.vue", "../.storybook/commands.d.ts"]
+  "include": ["frontend/**/*.ts", "frontend/**/*.vue"]
 }

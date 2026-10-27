@@ -92,7 +92,7 @@ plugins_clean: ## remove what every plugin built
 
 .PHONY: plugins_stories
 plugins_stories: lib_ui_build ## draw the stories of every plugin in Chromium and WebKit
-	cd $(PLUGINS) && npx vitest run
+	cd $(PLUGIN_SDK)/stories && npx vitest run
 
 .PHONY: plugins_package
 plugins_package: plugins_build ## package every plugin into a zip archive

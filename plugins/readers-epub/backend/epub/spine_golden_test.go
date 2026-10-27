@@ -21,7 +21,7 @@ var update = flag.Bool("update", false, "write the goldens of the corpus again")
 // share, because it is the one thing about a book that crosses as neither the
 // schema nor bytes: an attribute name, a set of elements, an escaping and a set
 // of offsets, agreed on by a producer here and a reader there.
-const spineCorpus = "../../../../libs/protocol/testdata/spine.html"
+const spineCorpus = "../../frontend/testdata/spine.html"
 
 // middleDoc is the document the corpus is taken from. A document stands before
 // it in the spine, so its offsets begin where nothing else does.

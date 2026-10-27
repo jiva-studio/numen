@@ -42,6 +42,7 @@ func ReadPlaces(docPath string, raw []byte) Places {
 	x.markup = newBuilder(path.Dir(docPath))
 	x.isPlacing = true
 	x.ReadDocument(docPath, raw)
+	x.places.Blocks = slices.Compact(x.places.Blocks)
 	return x.places
 }
 

@@ -8,15 +8,17 @@
 import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
-import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
+import { HOST_MODULES } from './hostModules.ts'
 import { LIGHTNING_CSS } from '@numen/ui/vite'
-import { createUtilitiesPlugin } from './vite.styles.ts'
+import { createStoryUtilitiesPlugin, createUtilitiesPlugin } from './viteStyles.ts'
 
-const modules = resolve(import.meta.dirname, '..')
+export { createStoryUtilitiesPlugin }
+
+const modules = resolve(import.meta.dirname, '../../..')
 
 /** Every alias a plugin may resolve, in the order Vite tries them. */
 const ALIASES = {
-  '@plugins': import.meta.dirname,
+  '@plugins': resolve(modules, 'plugins'),
   '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk-ts/src/testing/index.ts'),
   '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk-ts/src/index.ts'),
   '@numen/protocol/numen/v1': resolve(modules, 'libs/protocol/src/numen/v1'),
@@ -29,7 +31,11 @@ export type AliasName = keyof typeof ALIASES
 
 /** The named aliases and their paths, in the order of `ALIASES`. */
 export function getPluginAliases(names: readonly AliasName[]): Record<string, string> {
-  const wanted = new Set(names)
+  const wanted = new Set<AliasName>([
+    ...names,
+    '@numen/protocol/numen/v1',
+    '@numen/protocol',
+  ])
   return Object.fromEntries(
     Object.entries(ALIASES).filter(([name]) => wanted.has(name as AliasName)),
   )

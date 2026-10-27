@@ -18,7 +18,8 @@ import type { Node as BabelNode } from '@babel/types'
 import type { Plugin } from 'vite'
 import { UI_STYLES, getNormalCss, removePresent } from '@numen/ui/vite'
 
-const modules = resolve(import.meta.dirname, '..')
+const modules = resolve(import.meta.dirname, '../../..')
+const pluginsDir = resolve(modules, 'plugins')
 
 /** The stylesheet of `@numen/ui` the utilities are built from. */
 const THEME = resolve(modules, 'libs/ui/core/src/shared/tokens/theme.css')
@@ -172,7 +173,7 @@ export async function getUndefinedUtilities(
 
 /** The source files of the bundle that belong to the plugins. */
 function getPluginFiles(moduleIds: Iterable<string>): string[] {
-  const plugins = import.meta.dirname + sep
+  const plugins = pluginsDir + sep
   const files = new Set<string>()
   for (const id of moduleIds) {
     const file = id.split('?')[0]!
@@ -215,10 +216,10 @@ const STORY_UTILITIES = 'virtual:plugin-utilities.css'
 
 /** Every source file of every plugin frontend, stories and tests left out. */
 function getFrontendFiles(): string[] {
-  return readdirSync(import.meta.dirname, { recursive: true, encoding: 'utf8' })
+  return readdirSync(pluginsDir, { recursive: true, encoding: 'utf8' })
     .filter((path) => /^[^/]+\/frontend\/.+\.(vue|ts)$/.test(path.split(sep).join('/')))
     .filter((path) => !/\.(stories|test)\.ts$/.test(path))
-    .map((path) => resolve(import.meta.dirname, path))
+    .map((path) => resolve(pluginsDir, path))
 }
 
 /**

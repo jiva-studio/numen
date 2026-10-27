@@ -18,7 +18,7 @@ import {
  * library for the preview beside the card model being written, and the core's
  * flashcards/format for the window a card is reviewed in. The table both are
  */
-import corpus from '../../../../../../libs/protocol/testdata/templates.json'
+import corpus from '../../../testdata/templates.json'
 
 const VALUES = [
   { field: 'Height', text: 'about 45"' },

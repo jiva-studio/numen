@@ -22,7 +22,7 @@ import { modules, root } from '../shared/modules.mjs'
 export const BOOKS = {
   ui: 'libs/ui/core',
   shell: 'libs/ui/shell',
-  plugins: 'plugins',
+  plugins: 'libs/plugin-sdk-ts/stories',
 }
 
 /**
@@ -32,7 +32,7 @@ export const BOOKS = {
  */
 const ROOTS = [
   ...modules.map((one) => ({ at: join(root, one.written), book: one.book, only: /./ })),
-  { at: join(root, BOOKS.plugins), book: 'plugins', only: /^[^/]+\/frontend\// },
+  { at: join(root, 'plugins'), book: 'plugins', only: /^[^/]+\/frontend\// },
 ]
 
 /**

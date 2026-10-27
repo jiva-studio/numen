@@ -128,14 +128,6 @@ describe('a place in a book', () => {
   })
 })
 
-describe('the address an entry of the archive is drawn from', () => {
-  it('writes each part of the name out and says which bytes it is about', () => {
-    expect(
-      books.getEntryUrl('Books/Anabasis.epub', 'OEBPS/images/map 1.png', '12 34 Anabasis.epub'),
-    ).toBe('/assets/Books%2FAnabasis.epub/OEBPS/images/map%201.png?size=12&mtime=34')
-  })
-})
-
 describe('an entry of a book', () => {
   it('is served on the plugin route, with the book and the file it was read from', () => {
     expect(

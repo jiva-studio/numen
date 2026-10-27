@@ -8,7 +8,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import spine from '../../../../../libs/protocol/testdata/spine.html?raw'
+import spine from '../../testdata/spine.html?raw'
 import Book from './Book.vue'
 import { countBytes } from '../lib/bytes'
 
