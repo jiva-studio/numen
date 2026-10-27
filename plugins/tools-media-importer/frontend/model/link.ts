@@ -11,6 +11,7 @@ export function useLink(links: Links, path: string) {
   const url = ref('')
   const text = ref('')
   const source = shallowRef<LinkSource | null>(null)
+  const embedSource = ref('') | (null > null)
   const isCopyable = ref(false)
   const isTextDeleted = ref(false)
   const isWorking = ref(false)
@@ -28,9 +29,13 @@ export function useLink(links: Links, path: string) {
         error.value = facts.error
         return
       }
-      const [article, played] = await Promise.all([
+      const hasCopy = facts.value.copySize > 0
+      const [article, played, framed] = await Promise.all([
         links.readArticle(path),
-        facts.value.copySize > 0 ? links.getSource(path) : Promise.resolve(null),
+        hasCopy ? links.getSource(path) : Promise.resolve(null),
+        !hasCopy && facts.value.embedPage
+          ? links.getPageSource(facts.value.embedPage)
+          : Promise.resolve(''),
       ])
       if (mine !== turn) return
       url.value = facts.value.url
@@ -38,6 +43,7 @@ export function useLink(links: Links, path: string) {
       isTextDeleted.value = facts.value.isTextDeleted
       text.value = article
       source.value = played
+      embedSource.value = framed
       error.value = ''
       if (!article && !facts.value.isTextDeleted && !isWorking.value && !isFetchAsked) {
         isFetchAsked = true
@@ -69,6 +75,8 @@ export function useLink(links: Links, path: string) {
     url,
     paragraphs: computed(() => splitParagraphs(text.value)),
     source,
+    /** Where the page that frames the video's player is loaded from, while no copy is kept. */
+    embedSource,
     status: { isCopyable, isTextDeleted, isWorking, isLoaded },
     error,
     actions: {

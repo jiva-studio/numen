@@ -15,9 +15,8 @@ const pluginID = "md.numen.tools.media.importer"
 // videoAddress is an address the mock downloader takes for a video site.
 const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
-// newMockCommands is the plugin's commands over an empty vault, reaching video sites through the
-// mock downloader.
-func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
+// newMockLinks is the links of an empty vault, reaching video sites through the mock downloader.
+func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store) {
 	t.Helper()
 	vault := hosttest.New("Mills")
 	store := vault.Store()
@@ -27,6 +26,14 @@ func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 		func() link.Fetcher { return download.NewMock() },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
+	return links, store
+}
+
+// newMockCommands is the plugin's commands over an empty vault, reaching video sites through the
+// mock downloader.
+func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
+	t.Helper()
+	links, store := newMockLinks(t)
 	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)

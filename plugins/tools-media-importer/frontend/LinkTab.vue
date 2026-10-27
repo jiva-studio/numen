@@ -20,7 +20,7 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const tab = useLink(props.links ?? servedLinks, props.state?.path ?? props.path ?? '')
-const { url, paragraphs, source, error } = tab
+const { url, paragraphs, source, embedSource, error } = tab
 const { isCopyable, isTextDeleted, isWorking, isLoaded } = tab.status
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -66,6 +66,14 @@ function onDeleteCopy() {
     </header>
     <p v-if="error" class="link-tab__error" role="alert">{{ error }}</p>
     <LinkPlayer v-if="source" :source="source" />
+    <iframe
+      v-else-if="embedSource"
+      class="link-tab__embed"
+      :src="embedSource"
+      :title="url"
+      allow="fullscreen; picture-in-picture; encrypted-media"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+    />
     <p v-else-if="isWorking && isCopyable" class="link-tab__status">{{ words.copying }}</p>
     <section v-if="paragraphs.length > 0" class="link-tab__text">
       <p v-for="(paragraph, index) in paragraphs" :key="index">{{ paragraph }}</p>

@@ -136,6 +136,11 @@ type GetLinkResponse struct {
 	// Whether the text was fetched once and its version deleted since. Such a
 	// link is fetched again only when the person asks.
 	IsTextDeleted bool `protobuf:"varint,5,opt,name=is_text_deleted,json=isTextDeleted,proto3" json:"is_text_deleted,omitempty"`
+	// The page below the plugin's route that frames the player of the video at
+	// the address, with its query, and empty where the plugin knows no player
+	// for it. numen.v1.MediaService.GetPageSource returns where it is loaded
+	// from.
+	EmbedPage     string `protobuf:"bytes,6,opt,name=embed_page,json=embedPage,proto3" json:"embed_page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -203,6 +208,13 @@ func (x *GetLinkResponse) GetIsTextDeleted() bool {
 		return x.IsTextDeleted
 	}
 	return false
+}
+
+func (x *GetLinkResponse) GetEmbedPage() string {
+	if x != nil {
+		return x.EmbedPage
+	}
+	return ""
 }
 
 type ReadArticleRequest struct {
@@ -580,20 +592,130 @@ func (x *DeleteCopyResponse) GetError() LinkErrorCode {
 	return LinkErrorCode_LINK_ERROR_CODE_UNSPECIFIED
 }
 
+type CreateLinksRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The folder the notes are made in, as the vault holds it; empty for the
+	// root.
+	Folder string `protobuf:"bytes,1,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The web addresses, one note each.
+	Urls          []string `protobuf:"bytes,2,rep,name=urls,proto3" json:"urls,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLinksRequest) Reset() {
+	*x = CreateLinksRequest{}
+	mi := &file_numen_links_v1_link_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLinksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLinksRequest) ProtoMessage() {}
+
+func (x *CreateLinksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_links_v1_link_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLinksRequest.ProtoReflect.Descriptor instead.
+func (*CreateLinksRequest) Descriptor() ([]byte, []int) {
+	return file_numen_links_v1_link_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CreateLinksRequest) GetFolder() string {
+	if x != nil {
+		return x.Folder
+	}
+	return ""
+}
+
+func (x *CreateLinksRequest) GetUrls() []string {
+	if x != nil {
+		return x.Urls
+	}
+	return nil
+}
+
+type CreateLinksResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error LinkErrorCode          `protobuf:"varint,1,opt,name=error,proto3,enum=numen.links.v1.LinkErrorCode" json:"error,omitempty"`
+	// The notes made, in the order of their addresses.
+	Paths         []string `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLinksResponse) Reset() {
+	*x = CreateLinksResponse{}
+	mi := &file_numen_links_v1_link_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLinksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLinksResponse) ProtoMessage() {}
+
+func (x *CreateLinksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_links_v1_link_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLinksResponse.ProtoReflect.Descriptor instead.
+func (*CreateLinksResponse) Descriptor() ([]byte, []int) {
+	return file_numen_links_v1_link_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateLinksResponse) GetError() LinkErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return LinkErrorCode_LINK_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *CreateLinksResponse) GetPaths() []string {
+	if x != nil {
+		return x.Paths
+	}
+	return nil
+}
+
 var File_numen_links_v1_link_proto protoreflect.FileDescriptor
 
 const file_numen_links_v1_link_proto_rawDesc = "" +
 	"\n" +
 	"\x19numen/links/v1/link.proto\x12\x0enumen.links.v1\"$\n" +
 	"\x0eGetLinkRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xbe\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xdd\x01\n" +
 	"\x0fGetLinkResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.links.v1.LinkErrorCodeR\x05error\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1f\n" +
 	"\vis_copyable\x18\x03 \x01(\bR\n" +
 	"isCopyable\x12\x1b\n" +
 	"\tcopy_size\x18\x04 \x01(\x03R\bcopySize\x12&\n" +
-	"\x0fis_text_deleted\x18\x05 \x01(\bR\risTextDeleted\"(\n" +
+	"\x0fis_text_deleted\x18\x05 \x01(\bR\risTextDeleted\x12\x1d\n" +
+	"\n" +
+	"embed_page\x18\x06 \x01(\tR\tembedPage\"(\n" +
 	"\x12ReadArticleRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"^\n" +
 	"\x13ReadArticleResponse\x123\n" +
@@ -611,18 +733,25 @@ const file_numen_links_v1_link_proto_rawDesc = "" +
 	"\x11DeleteCopyRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"I\n" +
 	"\x12DeleteCopyResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.links.v1.LinkErrorCodeR\x05error*n\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.links.v1.LinkErrorCodeR\x05error\"@\n" +
+	"\x12CreateLinksRequest\x12\x16\n" +
+	"\x06folder\x18\x01 \x01(\tR\x06folder\x12\x12\n" +
+	"\x04urls\x18\x02 \x03(\tR\x04urls\"`\n" +
+	"\x13CreateLinksResponse\x123\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.links.v1.LinkErrorCodeR\x05error\x12\x14\n" +
+	"\x05paths\x18\x02 \x03(\tR\x05paths*n\n" +
 	"\rLinkErrorCode\x12\x1f\n" +
 	"\x1bLINK_ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aLINK_ERROR_CODE_NOT_A_LINK\x10\x01\x12\x1c\n" +
-	"\x18LINK_ERROR_CODE_NO_VAULT\x10\x022\xaa\x03\n" +
+	"\x18LINK_ERROR_CODE_NO_VAULT\x10\x022\x82\x04\n" +
 	"\vLinkService\x12J\n" +
 	"\aGetLink\x12\x1e.numen.links.v1.GetLinkRequest\x1a\x1f.numen.links.v1.GetLinkResponse\x12V\n" +
 	"\vReadArticle\x12\".numen.links.v1.ReadArticleRequest\x1a#.numen.links.v1.ReadArticleResponse\x12P\n" +
 	"\tFetchText\x12 .numen.links.v1.FetchTextRequest\x1a!.numen.links.v1.FetchTextResponse\x12P\n" +
 	"\tCopyVideo\x12 .numen.links.v1.CopyVideoRequest\x1a!.numen.links.v1.CopyVideoResponse\x12S\n" +
 	"\n" +
-	"DeleteCopy\x12!.numen.links.v1.DeleteCopyRequest\x1a\".numen.links.v1.DeleteCopyResponseBVZTgithub.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1;linksv1b\x06proto3"
+	"DeleteCopy\x12!.numen.links.v1.DeleteCopyRequest\x1a\".numen.links.v1.DeleteCopyResponse\x12V\n" +
+	"\vCreateLinks\x12\".numen.links.v1.CreateLinksRequest\x1a#.numen.links.v1.CreateLinksResponseBVZTgithub.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1;linksv1b\x06proto3"
 
 var (
 	file_numen_links_v1_link_proto_rawDescOnce sync.Once
@@ -637,7 +766,7 @@ func file_numen_links_v1_link_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_links_v1_link_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_links_v1_link_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_links_v1_link_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_links_v1_link_proto_goTypes = []any{
 	(LinkErrorCode)(0),          // 0: numen.links.v1.LinkErrorCode
 	(*GetLinkRequest)(nil),      // 1: numen.links.v1.GetLinkRequest
@@ -650,6 +779,8 @@ var file_numen_links_v1_link_proto_goTypes = []any{
 	(*CopyVideoResponse)(nil),   // 8: numen.links.v1.CopyVideoResponse
 	(*DeleteCopyRequest)(nil),   // 9: numen.links.v1.DeleteCopyRequest
 	(*DeleteCopyResponse)(nil),  // 10: numen.links.v1.DeleteCopyResponse
+	(*CreateLinksRequest)(nil),  // 11: numen.links.v1.CreateLinksRequest
+	(*CreateLinksResponse)(nil), // 12: numen.links.v1.CreateLinksResponse
 }
 var file_numen_links_v1_link_proto_depIdxs = []int32{
 	0,  // 0: numen.links.v1.GetLinkResponse.error:type_name -> numen.links.v1.LinkErrorCode
@@ -657,21 +788,24 @@ var file_numen_links_v1_link_proto_depIdxs = []int32{
 	0,  // 2: numen.links.v1.FetchTextResponse.error:type_name -> numen.links.v1.LinkErrorCode
 	0,  // 3: numen.links.v1.CopyVideoResponse.error:type_name -> numen.links.v1.LinkErrorCode
 	0,  // 4: numen.links.v1.DeleteCopyResponse.error:type_name -> numen.links.v1.LinkErrorCode
-	1,  // 5: numen.links.v1.LinkService.GetLink:input_type -> numen.links.v1.GetLinkRequest
-	3,  // 6: numen.links.v1.LinkService.ReadArticle:input_type -> numen.links.v1.ReadArticleRequest
-	5,  // 7: numen.links.v1.LinkService.FetchText:input_type -> numen.links.v1.FetchTextRequest
-	7,  // 8: numen.links.v1.LinkService.CopyVideo:input_type -> numen.links.v1.CopyVideoRequest
-	9,  // 9: numen.links.v1.LinkService.DeleteCopy:input_type -> numen.links.v1.DeleteCopyRequest
-	2,  // 10: numen.links.v1.LinkService.GetLink:output_type -> numen.links.v1.GetLinkResponse
-	4,  // 11: numen.links.v1.LinkService.ReadArticle:output_type -> numen.links.v1.ReadArticleResponse
-	6,  // 12: numen.links.v1.LinkService.FetchText:output_type -> numen.links.v1.FetchTextResponse
-	8,  // 13: numen.links.v1.LinkService.CopyVideo:output_type -> numen.links.v1.CopyVideoResponse
-	10, // 14: numen.links.v1.LinkService.DeleteCopy:output_type -> numen.links.v1.DeleteCopyResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	0,  // 5: numen.links.v1.CreateLinksResponse.error:type_name -> numen.links.v1.LinkErrorCode
+	1,  // 6: numen.links.v1.LinkService.GetLink:input_type -> numen.links.v1.GetLinkRequest
+	3,  // 7: numen.links.v1.LinkService.ReadArticle:input_type -> numen.links.v1.ReadArticleRequest
+	5,  // 8: numen.links.v1.LinkService.FetchText:input_type -> numen.links.v1.FetchTextRequest
+	7,  // 9: numen.links.v1.LinkService.CopyVideo:input_type -> numen.links.v1.CopyVideoRequest
+	9,  // 10: numen.links.v1.LinkService.DeleteCopy:input_type -> numen.links.v1.DeleteCopyRequest
+	11, // 11: numen.links.v1.LinkService.CreateLinks:input_type -> numen.links.v1.CreateLinksRequest
+	2,  // 12: numen.links.v1.LinkService.GetLink:output_type -> numen.links.v1.GetLinkResponse
+	4,  // 13: numen.links.v1.LinkService.ReadArticle:output_type -> numen.links.v1.ReadArticleResponse
+	6,  // 14: numen.links.v1.LinkService.FetchText:output_type -> numen.links.v1.FetchTextResponse
+	8,  // 15: numen.links.v1.LinkService.CopyVideo:output_type -> numen.links.v1.CopyVideoResponse
+	10, // 16: numen.links.v1.LinkService.DeleteCopy:output_type -> numen.links.v1.DeleteCopyResponse
+	12, // 17: numen.links.v1.LinkService.CreateLinks:output_type -> numen.links.v1.CreateLinksResponse
+	12, // [12:18] is the sub-list for method output_type
+	6,  // [6:12] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_links_v1_link_proto_init() }
@@ -685,7 +819,7 @@ func file_numen_links_v1_link_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_links_v1_link_proto_rawDesc), len(file_numen_links_v1_link_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

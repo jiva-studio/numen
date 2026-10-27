@@ -24,6 +24,7 @@ function createLinks(facts: LinkFacts) {
       mediaUrl: `http://127.0.0.1:1/t/v/${path}`,
       mediaType: 'video/mp4',
     }),
+    getPageSource: async (page) => `http://127.0.0.1:1/t/plugin/importer/${page}`,
     fetchText: async (_, isUserStarted) => {
       link.fetches.push(isUserStarted)
       return { ok: true, value: null }
@@ -48,7 +49,13 @@ function createLinks(facts: LinkFacts) {
 }
 
 const ARTICLE = 'http://tidal-mills.numen.test/history/rance'
-const FACTS: LinkFacts = { url: ARTICLE, isCopyable: false, copySize: 0, isTextDeleted: false }
+const FACTS: LinkFacts = {
+  url: ARTICLE,
+  isCopyable: false,
+  copySize: 0,
+  isTextDeleted: false,
+  embedPage: '',
+}
 
 describe('useLink', () => {
   it('reads the address and the text, and reads them again once the work on the link ends', async () => {
@@ -138,5 +145,25 @@ describe('useLink', () => {
     const tab = useLink(links, 'notes/plain.md')
     await flushPromises()
     expect(tab.error.value).toBe('This note has no web address')
+  })
+})
+
+describe('useLink of a video', () => {
+  it('frames the player page while no copy is kept, and plays the copy once one is', async () => {
+    const { link, links } = createLinks({
+      ...FACTS,
+      isCopyable: true,
+      embedPage: 'embed?address=x',
+    })
+    const tab = useLink(links, 'links/clip.md')
+    await flushPromises()
+    expect(tab.embedSource.value).toBe('http://127.0.0.1:1/t/plugin/importer/embed?address=x')
+    expect(tab.source.value).toBeNull()
+
+    link.facts = { ...link.facts, copySize: 6000 }
+    link.onChange(false)
+    await flushPromises()
+    expect(tab.embedSource.value).toBe('')
+    expect(tab.source.value?.mediaType).toBe('video/mp4')
   })
 })

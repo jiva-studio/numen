@@ -62,7 +62,7 @@ func (s linkServer) GetLink(
 	}
 	return connect.NewResponse(&linksv1.GetLinkResponse{
 		Url: string(found.Address), IsCopyable: s.links.IsCopyable(found.Address), CopySize: size,
-		IsTextDeleted: isDeleted,
+		IsTextDeleted: isDeleted, EmbedPage: getEmbedPage(found.Address),
 	}), nil
 }
 
@@ -113,4 +113,28 @@ func (s linkServer) DeleteCopy(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&linksv1.DeleteCopyResponse{}), nil
+}
+
+// CreateLinks makes a link note of each web address in the folder and starts fetching what is
+// published at each. A text that is no web address is skipped.
+func (s linkServer) CreateLinks(
+	ctx context.Context, req *connect.Request[linksv1.CreateLinksRequest],
+) (*connect.Response[linksv1.CreateLinksResponse], error) {
+	out := &linksv1.CreateLinksResponse{}
+	for _, raw := range req.Msg.GetUrls() {
+		made, err := s.links.Create(ctx, req.Msg.GetFolder(), raw)
+		if errors.Is(err, address.ErrNotAURL) {
+			continue
+		}
+		if code, ok := getErrorCode(err); err != nil && ok {
+			out.Error = code
+			return connect.NewResponse(out), nil
+		}
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		s.links.StartFetch(made)
+		out.Paths = append(out.Paths, made.Path)
+	}
+	return connect.NewResponse(out), nil
 }

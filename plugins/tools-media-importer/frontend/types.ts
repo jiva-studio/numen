@@ -11,6 +11,8 @@ export interface LinkFacts {
   readonly copySize: number
   /** Whether the text was fetched once and its version deleted since. */
   readonly isTextDeleted: boolean
+  /** The page below the plugin route that frames the player of the video, and empty where none is known. */
+  readonly embedPage: string
 }
 
 /** Where a copy is played from, and what it is played as. */
@@ -28,6 +30,8 @@ export interface Links {
   getLink(path: string): Promise<Outcome<LinkFacts>>
   readArticle(path: string): Promise<string>
   getSource(path: string): Promise<LinkSource>
+  /** Where a page below the plugin route is loaded from in a frame. */
+  getPageSource(page: string): Promise<string>
   /** Starts fetching the text. A fetch the person did not ask for leaves a deleted text deleted. */
   fetchText(path: string, isUserStarted: boolean): Promise<Outcome<null>>
   copyVideo(path: string): Promise<Outcome<null>>

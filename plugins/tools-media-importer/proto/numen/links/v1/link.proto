@@ -25,6 +25,11 @@ service LinkService {
 
   // DeleteCopy deletes the copy kept of a link's video.
   rpc DeleteCopy(DeleteCopyRequest) returns (DeleteCopyResponse);
+
+  // CreateLinks makes a link note of each web address in a folder and starts
+  // fetching what is published at each. A text that is no web address is
+  // skipped.
+  rpc CreateLinks(CreateLinksRequest) returns (CreateLinksResponse);
 }
 
 // LinkErrorCode is why a call about a link was refused. The zero value means it
@@ -60,6 +65,12 @@ message GetLinkResponse {
   // Whether the text was fetched once and its version deleted since. Such a
   // link is fetched again only when the person asks.
   bool is_text_deleted = 5;
+
+  // The page below the plugin's route that frames the player of the video at
+  // the address, with its query, and empty where the plugin knows no player
+  // for it. numen.v1.MediaService.GetPageSource returns where it is loaded
+  // from.
+  string embed_page = 6;
 }
 
 message ReadArticleRequest {
@@ -103,4 +114,20 @@ message DeleteCopyRequest {
 
 message DeleteCopyResponse {
   LinkErrorCode error = 1;
+}
+
+message CreateLinksRequest {
+  // The folder the notes are made in, as the vault holds it; empty for the
+  // root.
+  string folder = 1;
+
+  // The web addresses, one note each.
+  repeated string urls = 2;
+}
+
+message CreateLinksResponse {
+  LinkErrorCode error = 1;
+
+  // The notes made, in the order of their addresses.
+  repeated string paths = 2;
 }

@@ -119,6 +119,7 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	s.Register(host.NewTextProviderHandler(link.NewProvider(links), s.HandlerOptions()...))
 	s.Register(linksv1connect.NewLinkServiceHandler(linkServer{links: links}, s.HandlerOptions()...))
 	command.Mount(s, commands)
+	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
 	s.OnClose(links.Close)
 	return nil
 }

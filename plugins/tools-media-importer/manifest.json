@@ -4,32 +4,20 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Keeps web links as notes, fetches their articles and captions, and downloads videos for offline playback",
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "activationEvents": [],
-  "permissions": [
-    "vault:read",
-    "vault:write",
-    "network:outbound"
-  ],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
   "noteTypes": [
     {
       "type": "link"
     }
   ],
-  "services": [
-    "numen.links.v1.LinkService"
-  ],
+  "services": ["numen.links.v1.LinkService"],
   "textInput": {
-    "noteTypes": [
-      "link"
-    ]
+    "noteTypes": ["link"]
   },
   "playback": {
-    "noteTypes": [
-      "link"
-    ]
+    "noteTypes": ["link"]
   },
   "commands": [
     {
@@ -52,23 +40,17 @@
     {
       "id": "download-text",
       "title": "Download text again",
-      "noteTypes": [
-        "link"
-      ]
+      "noteTypes": ["link"]
     },
     {
       "id": "download-copy",
       "title": "Download video",
-      "noteTypes": [
-        "link"
-      ]
+      "noteTypes": ["link"]
     },
     {
       "id": "delete-copy",
       "title": "Delete downloaded video",
-      "noteTypes": [
-        "link"
-      ]
+      "noteTypes": ["link"]
     }
   ],
   "lifecycle": {
@@ -92,9 +74,7 @@
       "title": "yt-dlp",
       "description": "Path to the yt-dlp program",
       "default": "",
-      "replaces": [
-        "importing.yt_dlp"
-      ]
+      "replaces": ["importing.yt_dlp"]
     },
     {
       "key": "ffmpeg",
@@ -102,9 +82,7 @@
       "title": "ffmpeg",
       "description": "Path to the ffmpeg program",
       "default": "",
-      "replaces": [
-        "importing.ffmpeg"
-      ]
+      "replaces": ["importing.ffmpeg"]
     },
     {
       "key": "captions",
@@ -130,5 +108,6 @@
       "max": 100000,
       "step": 50
     }
-  ]
+  ],
+  "frames": ["https://www.youtube-nocookie.com"]
 }

@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/links/v1/link.proto.
  */
 export const file_numen_links_v1_link: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi9saW5rcy92MS9saW5rLnByb3RvEg5udW1lbi5saW5rcy52MSIeCg5HZXRMaW5rUmVxdWVzdBIMCgRwYXRoGAEgASgJIo0BCg9HZXRMaW5rUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi5saW5rcy52MS5MaW5rRXJyb3JDb2RlEgsKA3VybBgCIAEoCRITCgtpc19jb3B5YWJsZRgDIAEoCBIRCgljb3B5X3NpemUYBCABKAMSFwoPaXNfdGV4dF9kZWxldGVkGAUgASgIIiIKElJlYWRBcnRpY2xlUmVxdWVzdBIMCgRwYXRoGAEgASgJIlEKE1JlYWRBcnRpY2xlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi5saW5rcy52MS5MaW5rRXJyb3JDb2RlEgwKBHRleHQYAiABKAkiOQoQRmV0Y2hUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhcKD2lzX3VzZXJfc3RhcnRlZBgCIAEoCCJBChFGZXRjaFRleHRSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLmxpbmtzLnYxLkxpbmtFcnJvckNvZGUiIAoQQ29weVZpZGVvUmVxdWVzdBIMCgRwYXRoGAEgASgJIkEKEUNvcHlWaWRlb1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4ubGlua3MudjEuTGlua0Vycm9yQ29kZSIhChFEZWxldGVDb3B5UmVxdWVzdBIMCgRwYXRoGAEgASgJIkIKEkRlbGV0ZUNvcHlSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLmxpbmtzLnYxLkxpbmtFcnJvckNvZGUqbgoNTGlua0Vycm9yQ29kZRIfChtMSU5LX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpMSU5LX0VSUk9SX0NPREVfTk9UX0FfTElOSxABEhwKGExJTktfRVJST1JfQ09ERV9OT19WQVVMVBACMqoDCgtMaW5rU2VydmljZRJKCgdHZXRMaW5rEh4ubnVtZW4ubGlua3MudjEuR2V0TGlua1JlcXVlc3QaHy5udW1lbi5saW5rcy52MS5HZXRMaW5rUmVzcG9uc2USVgoLUmVhZEFydGljbGUSIi5udW1lbi5saW5rcy52MS5SZWFkQXJ0aWNsZVJlcXVlc3QaIy5udW1lbi5saW5rcy52MS5SZWFkQXJ0aWNsZVJlc3BvbnNlElAKCUZldGNoVGV4dBIgLm51bWVuLmxpbmtzLnYxLkZldGNoVGV4dFJlcXVlc3QaIS5udW1lbi5saW5rcy52MS5GZXRjaFRleHRSZXNwb25zZRJQCglDb3B5VmlkZW8SIC5udW1lbi5saW5rcy52MS5Db3B5VmlkZW9SZXF1ZXN0GiEubnVtZW4ubGlua3MudjEuQ29weVZpZGVvUmVzcG9uc2USUwoKRGVsZXRlQ29weRIhLm51bWVuLmxpbmtzLnYxLkRlbGV0ZUNvcHlSZXF1ZXN0GiIubnVtZW4ubGlua3MudjEuRGVsZXRlQ29weVJlc3BvbnNlQlZaVGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vcGx1Z2lucy90b29scy1tZWRpYS1pbXBvcnRlci9nZW4vbnVtZW4vbGlua3MvdjE7bGlua3N2MWIGcHJvdG8z");
+  fileDesc("ChludW1lbi9saW5rcy92MS9saW5rLnByb3RvEg5udW1lbi5saW5rcy52MSIeCg5HZXRMaW5rUmVxdWVzdBIMCgRwYXRoGAEgASgJIqEBCg9HZXRMaW5rUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi5saW5rcy52MS5MaW5rRXJyb3JDb2RlEgsKA3VybBgCIAEoCRITCgtpc19jb3B5YWJsZRgDIAEoCBIRCgljb3B5X3NpemUYBCABKAMSFwoPaXNfdGV4dF9kZWxldGVkGAUgASgIEhIKCmVtYmVkX3BhZ2UYBiABKAkiIgoSUmVhZEFydGljbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiUQoTUmVhZEFydGljbGVSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLmxpbmtzLnYxLkxpbmtFcnJvckNvZGUSDAoEdGV4dBgCIAEoCSI5ChBGZXRjaFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAIgASgIIkEKEUZldGNoVGV4dFJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4ubGlua3MudjEuTGlua0Vycm9yQ29kZSIgChBDb3B5VmlkZW9SZXF1ZXN0EgwKBHBhdGgYASABKAkiQQoRQ29weVZpZGVvUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi5saW5rcy52MS5MaW5rRXJyb3JDb2RlIiEKEURlbGV0ZUNvcHlSZXF1ZXN0EgwKBHBhdGgYASABKAkiQgoSRGVsZXRlQ29weVJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4ubGlua3MudjEuTGlua0Vycm9yQ29kZSIyChJDcmVhdGVMaW5rc1JlcXVlc3QSDgoGZm9sZGVyGAEgASgJEgwKBHVybHMYAiADKAkiUgoTQ3JlYXRlTGlua3NSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLmxpbmtzLnYxLkxpbmtFcnJvckNvZGUSDQoFcGF0aHMYAiADKAkqbgoNTGlua0Vycm9yQ29kZRIfChtMSU5LX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpMSU5LX0VSUk9SX0NPREVfTk9UX0FfTElOSxABEhwKGExJTktfRVJST1JfQ09ERV9OT19WQVVMVBACMoIECgtMaW5rU2VydmljZRJKCgdHZXRMaW5rEh4ubnVtZW4ubGlua3MudjEuR2V0TGlua1JlcXVlc3QaHy5udW1lbi5saW5rcy52MS5HZXRMaW5rUmVzcG9uc2USVgoLUmVhZEFydGljbGUSIi5udW1lbi5saW5rcy52MS5SZWFkQXJ0aWNsZVJlcXVlc3QaIy5udW1lbi5saW5rcy52MS5SZWFkQXJ0aWNsZVJlc3BvbnNlElAKCUZldGNoVGV4dBIgLm51bWVuLmxpbmtzLnYxLkZldGNoVGV4dFJlcXVlc3QaIS5udW1lbi5saW5rcy52MS5GZXRjaFRleHRSZXNwb25zZRJQCglDb3B5VmlkZW8SIC5udW1lbi5saW5rcy52MS5Db3B5VmlkZW9SZXF1ZXN0GiEubnVtZW4ubGlua3MudjEuQ29weVZpZGVvUmVzcG9uc2USUwoKRGVsZXRlQ29weRIhLm51bWVuLmxpbmtzLnYxLkRlbGV0ZUNvcHlSZXF1ZXN0GiIubnVtZW4ubGlua3MudjEuRGVsZXRlQ29weVJlc3BvbnNlElYKC0NyZWF0ZUxpbmtzEiIubnVtZW4ubGlua3MudjEuQ3JlYXRlTGlua3NSZXF1ZXN0GiMubnVtZW4ubGlua3MudjEuQ3JlYXRlTGlua3NSZXNwb25zZUJWWlRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvdG9vbHMtbWVkaWEtaW1wb3J0ZXIvZ2VuL251bWVuL2xpbmtzL3YxO2xpbmtzdjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.links.v1.GetLinkRequest
@@ -73,6 +73,16 @@ export type GetLinkResponse = Message<"numen.links.v1.GetLinkResponse"> & {
    * @generated from field: bool is_text_deleted = 5;
    */
   isTextDeleted: boolean;
+
+  /**
+   * The page below the plugin's route that frames the player of the video at
+   * the address, with its query, and empty where the plugin knows no player
+   * for it. numen.v1.MediaService.GetPageSource returns where it is loaded
+   * from.
+   *
+   * @generated from field: string embed_page = 6;
+   */
+  embedPage: string;
 };
 
 /**
@@ -242,6 +252,57 @@ export const DeleteCopyResponseSchema: GenMessage<DeleteCopyResponse> = /*@__PUR
   messageDesc(file_numen_links_v1_link, 9);
 
 /**
+ * @generated from message numen.links.v1.CreateLinksRequest
+ */
+export type CreateLinksRequest = Message<"numen.links.v1.CreateLinksRequest"> & {
+  /**
+   * The folder the notes are made in, as the vault holds it; empty for the
+   * root.
+   *
+   * @generated from field: string folder = 1;
+   */
+  folder: string;
+
+  /**
+   * The web addresses, one note each.
+   *
+   * @generated from field: repeated string urls = 2;
+   */
+  urls: string[];
+};
+
+/**
+ * Describes the message numen.links.v1.CreateLinksRequest.
+ * Use `create(CreateLinksRequestSchema)` to create a new message.
+ */
+export const CreateLinksRequestSchema: GenMessage<CreateLinksRequest> = /*@__PURE__*/
+  messageDesc(file_numen_links_v1_link, 10);
+
+/**
+ * @generated from message numen.links.v1.CreateLinksResponse
+ */
+export type CreateLinksResponse = Message<"numen.links.v1.CreateLinksResponse"> & {
+  /**
+   * @generated from field: numen.links.v1.LinkErrorCode error = 1;
+   */
+  error: LinkErrorCode;
+
+  /**
+   * The notes made, in the order of their addresses.
+   *
+   * @generated from field: repeated string paths = 2;
+   */
+  paths: string[];
+};
+
+/**
+ * Describes the message numen.links.v1.CreateLinksResponse.
+ * Use `create(CreateLinksResponseSchema)` to create a new message.
+ */
+export const CreateLinksResponseSchema: GenMessage<CreateLinksResponse> = /*@__PURE__*/
+  messageDesc(file_numen_links_v1_link, 11);
+
+/**
  * LinkErrorCode is why a call about a link was refused. The zero value means it
  * was not.
  *
@@ -331,6 +392,18 @@ export const LinkService: GenService<{
     methodKind: "unary";
     input: typeof DeleteCopyRequestSchema;
     output: typeof DeleteCopyResponseSchema;
+  },
+  /**
+   * CreateLinks makes a link note of each web address in a folder and starts
+   * fetching what is published at each. A text that is no web address is
+   * skipped.
+   *
+   * @generated from rpc numen.links.v1.LinkService.CreateLinks
+   */
+  createLinks: {
+    methodKind: "unary";
+    input: typeof CreateLinksRequestSchema;
+    output: typeof CreateLinksResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_links_v1_link, 0);

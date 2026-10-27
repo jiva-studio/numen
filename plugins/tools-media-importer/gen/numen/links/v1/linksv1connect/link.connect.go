@@ -46,6 +46,8 @@ const (
 	LinkServiceCopyVideoProcedure = "/numen.links.v1.LinkService/CopyVideo"
 	// LinkServiceDeleteCopyProcedure is the fully-qualified name of the LinkService's DeleteCopy RPC.
 	LinkServiceDeleteCopyProcedure = "/numen.links.v1.LinkService/DeleteCopy"
+	// LinkServiceCreateLinksProcedure is the fully-qualified name of the LinkService's CreateLinks RPC.
+	LinkServiceCreateLinksProcedure = "/numen.links.v1.LinkService/CreateLinks"
 )
 
 // LinkServiceClient is a client for the numen.links.v1.LinkService service.
@@ -62,6 +64,10 @@ type LinkServiceClient interface {
 	CopyVideo(context.Context, *connect.Request[v1.CopyVideoRequest]) (*connect.Response[v1.CopyVideoResponse], error)
 	// DeleteCopy deletes the copy kept of a link's video.
 	DeleteCopy(context.Context, *connect.Request[v1.DeleteCopyRequest]) (*connect.Response[v1.DeleteCopyResponse], error)
+	// CreateLinks makes a link note of each web address in a folder and starts
+	// fetching what is published at each. A text that is no web address is
+	// skipped.
+	CreateLinks(context.Context, *connect.Request[v1.CreateLinksRequest]) (*connect.Response[v1.CreateLinksResponse], error)
 }
 
 // NewLinkServiceClient constructs a client for the numen.links.v1.LinkService service. By default,
@@ -105,6 +111,12 @@ func NewLinkServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(linkServiceMethods.ByName("DeleteCopy")),
 			connect.WithClientOptions(opts...),
 		),
+		createLinks: connect.NewClient[v1.CreateLinksRequest, v1.CreateLinksResponse](
+			httpClient,
+			baseURL+LinkServiceCreateLinksProcedure,
+			connect.WithSchema(linkServiceMethods.ByName("CreateLinks")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -115,6 +127,7 @@ type linkServiceClient struct {
 	fetchText   *connect.Client[v1.FetchTextRequest, v1.FetchTextResponse]
 	copyVideo   *connect.Client[v1.CopyVideoRequest, v1.CopyVideoResponse]
 	deleteCopy  *connect.Client[v1.DeleteCopyRequest, v1.DeleteCopyResponse]
+	createLinks *connect.Client[v1.CreateLinksRequest, v1.CreateLinksResponse]
 }
 
 // GetLink calls numen.links.v1.LinkService.GetLink.
@@ -142,6 +155,11 @@ func (c *linkServiceClient) DeleteCopy(ctx context.Context, req *connect.Request
 	return c.deleteCopy.CallUnary(ctx, req)
 }
 
+// CreateLinks calls numen.links.v1.LinkService.CreateLinks.
+func (c *linkServiceClient) CreateLinks(ctx context.Context, req *connect.Request[v1.CreateLinksRequest]) (*connect.Response[v1.CreateLinksResponse], error) {
+	return c.createLinks.CallUnary(ctx, req)
+}
+
 // LinkServiceHandler is an implementation of the numen.links.v1.LinkService service.
 type LinkServiceHandler interface {
 	// GetLink returns the address a link holds and the copy kept of it.
@@ -156,6 +174,10 @@ type LinkServiceHandler interface {
 	CopyVideo(context.Context, *connect.Request[v1.CopyVideoRequest]) (*connect.Response[v1.CopyVideoResponse], error)
 	// DeleteCopy deletes the copy kept of a link's video.
 	DeleteCopy(context.Context, *connect.Request[v1.DeleteCopyRequest]) (*connect.Response[v1.DeleteCopyResponse], error)
+	// CreateLinks makes a link note of each web address in a folder and starts
+	// fetching what is published at each. A text that is no web address is
+	// skipped.
+	CreateLinks(context.Context, *connect.Request[v1.CreateLinksRequest]) (*connect.Response[v1.CreateLinksResponse], error)
 }
 
 // NewLinkServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -195,6 +217,12 @@ func NewLinkServiceHandler(svc LinkServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(linkServiceMethods.ByName("DeleteCopy")),
 		connect.WithHandlerOptions(opts...),
 	)
+	linkServiceCreateLinksHandler := connect.NewUnaryHandler(
+		LinkServiceCreateLinksProcedure,
+		svc.CreateLinks,
+		connect.WithSchema(linkServiceMethods.ByName("CreateLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.links.v1.LinkService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case LinkServiceGetLinkProcedure:
@@ -207,6 +235,8 @@ func NewLinkServiceHandler(svc LinkServiceHandler, opts ...connect.HandlerOption
 			linkServiceCopyVideoHandler.ServeHTTP(w, r)
 		case LinkServiceDeleteCopyProcedure:
 			linkServiceDeleteCopyHandler.ServeHTTP(w, r)
+		case LinkServiceCreateLinksProcedure:
+			linkServiceCreateLinksHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -234,4 +264,8 @@ func (UnimplementedLinkServiceHandler) CopyVideo(context.Context, *connect.Reque
 
 func (UnimplementedLinkServiceHandler) DeleteCopy(context.Context, *connect.Request[v1.DeleteCopyRequest]) (*connect.Response[v1.DeleteCopyResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.links.v1.LinkService.DeleteCopy is not implemented"))
+}
+
+func (UnimplementedLinkServiceHandler) CreateLinks(context.Context, *connect.Request[v1.CreateLinksRequest]) (*connect.Response[v1.CreateLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.links.v1.LinkService.CreateLinks is not implemented"))
 }

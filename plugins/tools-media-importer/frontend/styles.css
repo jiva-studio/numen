@@ -94,3 +94,11 @@
   font-variant-numeric: tabular-nums;
   color: var(--numen-hushed);
 }
+
+.link-tab__embed {
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  max-block-size: 60vh;
+  border: 0;
+  background: #000;
+}

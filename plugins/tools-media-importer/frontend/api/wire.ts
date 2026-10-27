@@ -10,6 +10,9 @@ import type { Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
 import { createWorkWatcher } from './work'
 
+/** The id the manifest declares the plugin under. */
+export const PLUGIN_ID = 'md.numen.tools.media.importer'
+
 const client = {
   links: createClient(LinkService, transport),
   media: createClient(MediaService, transport),
@@ -53,6 +56,7 @@ export const links: Links = {
         isCopyable: answer.isCopyable,
         copySize: Number(answer.copySize),
         isTextDeleted: answer.isTextDeleted,
+        embedPage: answer.embedPage,
       },
     }
   },
@@ -62,9 +66,23 @@ export const links: Links = {
     const answer = await retryWhileBusy(() => client.media.getMediaSource({ path }))
     return { mediaUrl: answer.src, mediaType: answer.mediaType }
   },
+  getPageSource: async (page) =>
+    (await retryWhileBusy(() => client.media.getPageSource({ pluginId: PLUGIN_ID, path: page })))
+      .src,
   fetchText: async (path, isUserStarted) =>
     readOutcome(await client.links.fetchText({ path, isUserStarted })),
   copyVideo: async (path) => readOutcome(await client.links.copyVideo({ path })),
   deleteCopy: async (path) => readOutcome(await client.links.deleteCopy({ path })),
   watchWork: (path, onChange) => work.watch(path, onChange),
+}
+
+/** Makes a link note of each web address in the folder; answers the notes made. */
+export const createLinks = async (
+  folder: string,
+  urls: readonly string[],
+): Promise<Outcome<readonly string[]>> => {
+  const answer = await client.links.createLinks({ folder, urls: [...urls] })
+  return answer.error === LinkErrorCode.UNSPECIFIED
+    ? { ok: true, value: answer.paths }
+    : { ok: false, error: describeRefusal(answer.error) }
 }
