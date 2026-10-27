@@ -1,61 +1,59 @@
-import type { Disposable, Result } from '../types'
+import type { Result } from '../types'
 import type {
+  LiveText,
   TextErrorCode,
-  TextListing,
-  TextPage,
-  TextPart,
+  TextSegment,
   TextVersion,
   TextVersionId,
   VaultTexts,
 } from '../texts'
 
-// MockVaultTexts extends VaultTexts with what a test puts in it: each version with its text, and
-// which one is live. A page holds one part.
+// MockVaultTexts extends VaultTexts with what a test puts in it: each file's live version and its
+// segments, and the edits it recorded.
 export interface MockVaultTexts extends VaultTexts {
-  putVersion(version: TextVersion, parts: readonly TextPart[]): void
-  setLive(path: string, versionId: TextVersionId): void
+  setLive(version: TextVersion, segments: readonly TextSegment[]): void
+  readonly edits: readonly { readonly path: string; readonly version: TextVersion }[]
 }
 
-// createMockVaultTexts builds the text versions of a vault in memory.
-export function createMockVaultTexts(): MockVaultTexts {
-  const versions = new Map<string, { version: TextVersion; parts: readonly TextPart[] }[]>()
-  const live = new Map<string, TextVersionId>()
-  const handlers = new Set<(path: string) => void>()
-
-  function notify(path: string): void {
-    for (const handler of handlers) {
-      handler(path)
-    }
-  }
+// createMockVaultTexts builds the text versions of a vault in memory, as a view of the plugin
+// `pluginId` works them. An edit becomes the file's live version.
+export function createMockVaultTexts(pluginId = 'org.example.view'): MockVaultTexts {
+  const live = new Map<string, LiveText>()
+  const edits: { path: string; version: TextVersion }[] = []
+  let count = 0
 
   return {
-    putVersion(version, parts) {
-      const list = (versions.get(version.path) ?? []).filter((one) => one.version.id !== version.id)
-      versions.set(version.path, [...list, { version, parts }])
-      notify(version.path)
+    edits,
+    setLive(version, segments) {
+      live.set(version.path, { version, segments })
     },
-    setLive(path, versionId) {
-      live.set(path, versionId)
-      notify(path)
+    async readLiveText(path) {
+      return live.get(path) ?? null
     },
-    async listVersions(path): Promise<TextListing> {
-      return {
-        versions: (versions.get(path) ?? []).map((one) => one.version),
-        liveVersionId: live.get(path) ?? '',
-      }
-    },
-    async readText(path, versionId, cursor = ''): Promise<Result<TextPage, TextErrorCode>> {
-      const found = (versions.get(path) ?? []).find((one) => one.version.id === versionId)
-      if (!found) {
+    async createEdit(
+      path: string,
+      sourceVersionId: TextVersionId,
+      segments: readonly TextSegment[],
+    ): Promise<Result<TextVersion, TextErrorCode>> {
+      const current = live.get(path)
+      if (current?.version.id !== sourceVersionId) {
         return { ok: false, error: 'missing' }
       }
-      const from = cursor === '' ? 0 : Number(cursor)
-      const next = from + 1 < found.parts.length ? String(from + 1) : ''
-      return { ok: true, value: { parts: found.parts.slice(from, from + 1), nextCursor: next } }
-    },
-    onVersionsChange(handler): Disposable {
-      handlers.add(handler)
-      return { dispose: () => handlers.delete(handler) }
+      count++
+      const key = `edit-${count}`
+      const version: TextVersion = {
+        id: `${pluginId}/${key}`,
+        path,
+        pluginId,
+        key,
+        sourceVersionId,
+        kind: current.version.kind,
+        file: `${key}.jsonl`,
+        createTime: new Date(count),
+      }
+      live.set(path, { version, segments })
+      edits.push({ path, version })
+      return { ok: true, value: version }
     },
   }
 }

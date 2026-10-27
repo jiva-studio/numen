@@ -320,7 +320,14 @@ function createServiceBridge(
   deps: PluginHostDeps,
 ): Pick<
   PluginContextHost,
-  'getWorkspace' | 'getNotes' | 'getFiles' | 'getAgent' | 'getBuffers' | 'getNotices' | 'getTasks'
+  | 'getWorkspace'
+  | 'getNotes'
+  | 'getFiles'
+  | 'getAgent'
+  | 'getBuffers'
+  | 'getNotices'
+  | 'getTasks'
+  | 'getTexts'
 > {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
@@ -330,6 +337,7 @@ function createServiceBridge(
     getBuffers: () => deps.getBuffers?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId),
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
+    getTexts: (pluginId) => deps.getTexts?.(pluginId),
   }
 }
 

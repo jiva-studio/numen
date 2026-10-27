@@ -1,23 +1,17 @@
 /**
- * Wire adapter for RecordingService, TranscriptService, TextVersionService and the plugin tasks.
+ * Wire adapter for RecordingService, TextVersionService and the plugin tasks; the transcript is
+ * read and edited through the plugin SDK.
  */
 import { createClient } from '@connectrpc/connect'
-import {
-  RecordingService,
-  FileMenuAction,
-  TextVersionService,
-  TranscriptService,
-  type Cue as CueMessage,
-} from '@numen/protocol'
-import type { TaskHost } from '@numen/plugin-sdk'
+import { RecordingService, FileMenuAction, TextVersionService } from '@numen/protocol'
+import type { TaskHost, VaultTexts } from '@numen/plugin-sdk'
 import { retryWhileBusy, transport } from '@numen/wire'
-import type { Cue } from '../lib/cues'
 import type { MenuAction, MenuEntry, Recordings } from '../types'
 import { createWorkWatcher } from './work'
+import { createTranscripts } from './transcripts'
 
 export const client = {
   recordings: createClient(RecordingService, transport),
-  transcripts: createClient(TranscriptService, transport),
   textVersions: createClient(TextVersionService, transport),
 }
 
@@ -61,7 +55,13 @@ export const readMenuEntries = (
       : []
   })
 
-const readCue = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
+/** The texts of the vault, as the plugin's context gave them when it was activated. */
+let vaultTexts: VaultTexts | undefined
+
+/** Keeps the texts the plugin's context gives, which the transcript is read and edited through. */
+export const bindTexts = (texts: VaultTexts | undefined): void => {
+  vaultTexts = texts
+}
 
 const work = createWorkWatcher((onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => {} })
 
@@ -70,17 +70,7 @@ export const recordings: Recordings = {
     const answer = await retryWhileBusy(() => client.recordings.getRecording({ path }))
     return { mediaUrl: answer.mediaUrl, mediaType: answer.mediaType }
   },
-  readTranscript: async (path) => {
-    const answer = await retryWhileBusy(() => client.transcripts.readTranscript({ path }))
-    return answer.cues.map(readCue)
-  },
-  writeTranscript: async (path, cues) => {
-    await retryWhileBusy(() => client.transcripts.writeTranscript({ path, cues: [...cues] }))
-  },
-  findCueTime: async (path, span) => {
-    const answer = await retryWhileBusy(() => client.transcripts.readTranscript({ path, span }))
-    return answer.cues[0]?.from ?? null
-  },
+  ...createTranscripts(() => vaultTexts),
   getMenu: async (path) => {
     const answer = await retryWhileBusy(() => client.textVersions.getFileMenu({ path }))
     return readMenuEntries(answer.entries)

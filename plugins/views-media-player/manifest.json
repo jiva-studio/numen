@@ -6,6 +6,7 @@
   "description": "Audio player with waveform visualization and microphone recording",
   "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
+  "permissions": ["vault:read", "vault:write"],
   "readers": [
     {
       "id": "media-player",

@@ -16,6 +16,7 @@ import type {
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
+  VaultTexts,
   ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -98,6 +99,23 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
     importUrls: async (folder, urls) => {
       requireWrite('files.importUrls')
       return files.importUrls(folder, urls)
+    },
+  }
+}
+
+/** The texts of the vault: reading needs vault:read, and an edit vault:write. */
+function guardTexts(
+  texts: VaultTexts,
+  requirePerm: (permission: string, operation: string) => void,
+): VaultTexts {
+  return {
+    readLiveText: (path) => {
+      requirePerm('vault:read', 'texts.readLiveText')
+      return texts.readLiveText(path)
+    },
+    createEdit: (path, sourceVersionId, segments) => {
+      requirePerm('vault:write', 'texts.createEdit')
+      return texts.createEdit(path, sourceVersionId, segments)
     },
   }
 }
@@ -217,6 +235,7 @@ export function createPluginContext(
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
   const notices = host.getNotices?.(pluginId)
   const tasks = host.getTasks?.(pluginId)
+  const texts = host.getTexts?.(pluginId)
 
   return {
     pluginId,
@@ -225,6 +244,7 @@ export function createPluginContext(
     ...guardServices(host, requirePerm, add),
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
+    ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

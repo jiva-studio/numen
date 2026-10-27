@@ -3,7 +3,7 @@ import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import MediaRecordingTab from './MediaRecordingTab.vue'
 import { WORDS } from './words'
-import { setTaskHost } from './api/wire'
+import { bindTexts, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }
 
@@ -12,6 +12,7 @@ export const RECORDER = 'recording'
 
 export function activate(context: PluginContext): void {
   setTaskHost(context.tasks)
+  bindTexts(context.texts)
   context.registerReader({
     id: 'media-player',
     component: RecordingTab,

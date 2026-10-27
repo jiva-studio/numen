@@ -21,6 +21,7 @@ import type {
   ViewRegistration,
   VaultFiles,
   VaultNotes,
+  VaultTexts,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from '@/entities/tab/@x/plugin'
@@ -92,6 +93,8 @@ export interface PluginHostDeps {
   readonly getAgent?: () => AgentHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
+  /** The text versions of the shown vault, as the views of one plugin read and edit them. */
+  readonly getTexts?: (pluginId: string) => VaultTexts
   /** The notices one plugin shows in the window's corner. */
   readonly getNotices?: (pluginId: string) => NoticeHost
   /** The tasks the plugins report, as one plugin watches them. */
@@ -134,4 +137,5 @@ export interface PluginContextHost {
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined
+  getTexts?(pluginId: string): VaultTexts | undefined
 }

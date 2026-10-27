@@ -5,7 +5,7 @@ import { createClient } from '@connectrpc/connect'
 import {
   DocumentService,
   type DocumentRun as DocumentRunMessage,
-  type TextRect as TextRectMessage,
+  type DocumentRect as DocumentRectMessage,
 } from '@numen/protocol'
 import { formatFingerprint, getBytesQuery, retryWhileBusy, transport } from '@numen/wire'
 import type { Documents, PageHighlight, Rect } from '../types'
@@ -18,7 +18,7 @@ export const client = {
 }
 
 /** The corners of one rectangle, in fractions of its page. */
-const toRect = (rect: TextRectMessage): Rect => ({
+const toRect = (rect: DocumentRectMessage): Rect => ({
   minX: rect.minX,
   minY: rect.minY,
   maxX: rect.maxX,

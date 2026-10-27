@@ -11,6 +11,7 @@ import {
   SearchService,
   SettingsService,
   TextVersionService,
+  TextService,
   ThemeService,
   VaultService,
   VaultsService,
@@ -48,6 +49,9 @@ export const theme = createClient(ThemeService, transport)
 
 /** The menu a file's text versions make, and running one of its entries. */
 export const textVersions = createClient(TextVersionService, transport)
+
+/** The live text of a file and a person's edits of it, for the views of plugins. */
+export const texts = createClient(TextService, transport)
 
 /** The commands the enabled plugins declare, and running one in the plugin's backend. */
 export const pluginCommands = createClient(CommandService, transport)

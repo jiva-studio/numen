@@ -9,6 +9,8 @@ import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
 import { createPluginNotices } from './pluginNotices'
 import { createPluginTasks } from './pluginTasks'
+import { createPluginTexts } from './pluginTexts'
+import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {
   readonly windowTabs: ReturnType<typeof useWindowTabs>
@@ -111,6 +113,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       const list = deps.services?.taskList
       return list ? createPluginTasks(list, pluginId) : undefined
     },
+    getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
   const reportLoadError = deps.reportLoadError ?? deps.reportError
