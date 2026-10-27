@@ -99,10 +99,11 @@ fs.utimesSync(thermoFile, futureTime, futureTime)
 
 const testConfigDir = path.join(tmpVault, '.config')
 fs.mkdirSync(testConfigDir, { recursive: true })
-// Each server keeps its index in a cache folder of its own.
+// Each server keeps its caches in a folder of its own.
 const testCacheDir = path.join(tmpVault, '.cache')
 fs.mkdirSync(testCacheDir, { recursive: true })
-// The trash, the dependencies and whatever a plugin keeps under the home folder stay in the run too.
+// The index, the trash, the dependencies and whatever a plugin keeps under the home folder stay in
+// the run too.
 const testDataDir = path.join(tmpVault, '.data')
 fs.mkdirSync(testDataDir, { recursive: true })
 const testStateDir = path.join(tmpVault, '.state')

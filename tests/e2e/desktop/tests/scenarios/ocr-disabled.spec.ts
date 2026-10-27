@@ -32,7 +32,7 @@ test.describe('With the OCR plugin disabled', () => {
     await setOcrEnabled(page, true)
   })
 
-  test('the text shown falls back to the text layer of the file', async ({ page }) => {
+  test('the recognition stays the text shown and found', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'flywheel.pdf')
     await waitForPassage(page, LAYER_WORDS, PATH)
@@ -44,8 +44,8 @@ test.describe('With the OCR plugin disabled', () => {
 
     await setOcrEnabled(page, false)
 
-    await waitForPassage(page, LAYER_WORDS, PATH)
-    await expect((await findPassages(page, SCANNED_WORDS, PATH)).first()).toBeHidden()
+    await waitForPassage(page, SCANNED_WORDS, PATH)
+    await expect((await findPassages(page, LAYER_WORDS, PATH)).first()).toBeHidden()
   })
 })
 
@@ -57,9 +57,7 @@ test.describe('With the OCR plugin disabled after a proofreading', () => {
     await setOcrEnabled(page, true)
   })
 
-  test('shows the text layer while the plugin is off, and the proofread recognition once it is on', async ({
-    page,
-  }) => {
+  test('keeps the proofread recognition shown and found', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'flywheel.pdf')
     await runCommand(page, 'Recognise', /^Recognise/)
@@ -72,12 +70,7 @@ test.describe('With the OCR plugin disabled after a proofreading', () => {
 
     await setOcrEnabled(page, false)
 
-    await waitForPassage(page, LAYER_WORDS, PATH)
-    await expect((await findPassages(page, PROOFREAD_MARK, PATH)).first()).toBeHidden()
-
-    await openWorkspace(page)
-    await setOcrEnabled(page, true)
-
     await waitForPassage(page, PROOFREAD_MARK, PATH)
+    await expect((await findPassages(page, LAYER_WORDS, PATH)).first()).toBeHidden()
   })
 })

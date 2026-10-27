@@ -1,6 +1,6 @@
 # How a recording is transcribed
 
-What a model writes down from a recording, where it is kept, and how a search lands on the second it was said. Transcription is the plugin `engines-transcription`: it keeps each transcript in its own folder of the vault's store, `.numen/md.numen.engines.transcription/`, and gives it to the core as a timed text version of the recording, which is what the window shows and the index cuts.
+What a model writes down from a recording, where it is kept, and how a search lands on the second it was said. Transcription is the plugin `engines-transcription`: it keeps each transcript in its own folder of the vault's store, `.numen/md.numen.engines.transcription/`, and records it with the core as a text version of kind `transcript`, which is what the window shows and the index cuts. The core keeps the record in its index database and reads the file itself.
 
 The recording itself is never moved, copied or renamed. It plays where it lies, from the address the core's `RecordingService` gives the player.
 
@@ -14,49 +14,38 @@ The run waits for the core's shared queue as a person's request, behind any othe
 
 Every file is named by the hash of the recording's bytes, so a file renamed or moved keeps its transcript, and two copies of one recording share it.
 
-| File                 | What it holds                                   |
-| -------------------- | ----------------------------------------------- |
-| `<hash>.vtt`         | the transcript, complete                        |
-| `<hash>.partial.vtt` | a run still going, or one that stopped part way |
-| `edit-<id>.vtt`      | a person's edit of a version                    |
+| File                   | What it holds                                   |
+| ---------------------- | ----------------------------------------------- |
+| `<hash>.jsonl`         | the transcript, complete                        |
+| `<hash>.partial.jsonl` | a run still going, or one that stopped part way |
+| `<hash>.reached`       | how far a partial run got, and its size then    |
 
 A recording asked for again whose transcript is complete is not heard again.
 
 ## What a transcript holds
 
-WebVTT, which is the format a player and a browser already read:
+The common format of every text version: JSON Lines, one segment to a line, `{"text", "heading"?, "selector"?}`. A cue is one segment, its selector the span of the recording in seconds (`t`, as in W3C Media Fragments):
 
 ```
-WEBVTT
-
-00:00:01.500 --> 00:00:04.200
-The first thing to say about heat is that it moves.
-
-00:00:04.200 --> 00:00:09.100
-It moves one way, and that is the whole of the second law.
+{"text":"The first thing to say about heat is that it moves.\n","selector":{"t":[1.5,4.2]}}
+{"text":"It moves one way, and that is the whole of the second law.\n","selector":{"t":[4.2,9.1]}}
 ```
 
-A cue is one stretch of speech between two times. The version's text is the cues' words, one to a line, and each part of it stands at the moments of its cue, so a search result about a recording names the time on the player and opening it sets the player to the second the words were said.
+The version's text is the cues' words, one to a line. A search hit in a recording carries the selector of its segment, and the player goes to the second the words were said.
 
 ## A run
 
-The speech is found first, and the model is given one stretch at a time. Cues are appended to the partial file as they are written down, and after them a note saying how many milliseconds have been reached:
-
-```
-NOTE heard 9100
-```
-
-**The note is what makes the cues in front of it count**: a batch that did not land whole is one no note claims, and the next run cuts back to the last note and does that batch again.
+The speech is found first, and the model is given one stretch at a time. Cues are appended to the partial file as they are written down, and after each batch `<hash>.reached` records how many milliseconds have been reached and how many bytes the partial file held then. A batch that did not land whole is past that size: the next run cuts the partial file back to it and does that batch again.
 
 The version is put after every batch, so the core cuts the recording again and a search finds what has been transcribed while the rest of it is still being heard. Work waiting for the queue runs between two batches.
 
 ## An edit
 
-The transcript under the player is edited in place. An edit is a new version of the plugin, made from the version shown, and it is the one shown from then on; editing it again rewrites it. Deleting the edit from the recording's menu gives back the version it was made from.
+The transcript under the player is edited in place. The player saves the edit through the plugin SDK, and the core writes it as a new version made from the version shown, in the player's own folder `.numen/md.numen.views.media.player/`; it is the one shown from then on. Each save is a new version. Deleting the edit from the recording's menu gives back the version it was made from.
 
 ## Deleting a transcript
 
-**Delete the text Audio/Video Transcription made** on the recording's menu asks the plugin to remove the version and its file, and the recording is as it was before anything heard it.
+**Delete the text Audio/Video Transcription made** on the recording's menu removes the version's file and its record, and the recording is as it was before anything heard it. A transcript stays shown and searchable while the plugin is disabled.
 
 ## Running without models
 

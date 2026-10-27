@@ -40,7 +40,7 @@ test.describe('A recording', () => {
     await page.keyboard.press('Control+End')
     await page.keyboard.type(' The lecturer paused at the blackboard.')
     const writeResponse = page.waitForResponse((response) =>
-      response.url().includes('/numen.v1.TranscriptService/WriteTranscript'),
+      response.url().includes('/numen.v1.TextService/CreateTextEdit'),
     )
     await page.keyboard.press('Control+s')
     expect((await writeResponse).ok()).toBe(true)
