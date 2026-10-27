@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
-const workingPlugin = "md.numen.engines.ocr"
+const workingPlugin = "org.example.sample"
 
 // workingHost is a running host whose plugin has a task listed and holds the
 // lock.
@@ -36,7 +36,7 @@ func newWorkingHost(t *testing.T) workingHost {
 	}
 	host.Release(workingPlugin)
 
-	work.ReportTask(workingPlugin, pluginport.PluginTask{ID: "scan.pdf", Title: "Recognising"})
+	work.ReportTask(workingPlugin, pluginport.PluginTask{ID: "scan.sample", Title: "Scanning"})
 	turn, err := work.EnqueueWork(t.Context(), workingPlugin, true, nil)
 	if err != nil {
 		t.Fatal(err)

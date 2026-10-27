@@ -24,19 +24,19 @@ import (
 
 func CreateTestPluginTree(t *testing.T, dir string) {
 	t.Helper()
-	pDir := filepath.Join(dir, "ocr")
+	pDir := filepath.Join(dir, "sample")
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatalf("mkdir failed: %v", err)
 	}
 
 	manifest := `{
-		"id": "md.numen.engines.ocr",
-		"name": "OCR Plugin",
+		"id": "org.example.sample",
+		"name": "Sample Plugin",
 		"version": "1.0.0",
-		"description": "OCR",
-		"capabilities": ["recognition"],
+		"description": "Sample",
+		"capabilities": ["org.example.reading"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onFile:*.pdf"],
+		"activationEvents": ["onFile:*.sample"],
 		"permissions": ["vault:read"],
 		"lifecycle": {
 			"mode": "on-demand",
@@ -45,7 +45,7 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 		},
 		"backend": {
 			"type": "process",
-			"entrypoint": "bin/engines.ocr",
+			"entrypoint": "bin/sample",
 			"serviceName": "numen.v1.TextProviderService"
 		},
 		"frontend": {

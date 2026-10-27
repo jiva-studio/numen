@@ -30,13 +30,14 @@ type store interface {
 
 // memory keeps the files in memory. Every write moves the modification time on by a second.
 type memory struct {
+	kinds        sourceKinds
 	files        map[string][]byte
 	fingerprints map[string]domain.Fingerprint
 	clock        time.Time
 }
 
-func newMemory() *memory {
-	return &memory{files: map[string][]byte{}, fingerprints: map[string]domain.Fingerprint{}, clock: time.Unix(1_700_000_000, 0)}
+func newMemory(kinds sourceKinds) *memory {
+	return &memory{kinds: kinds, files: map[string][]byte{}, fingerprints: map[string]domain.Fingerprint{}, clock: time.Unix(1_700_000_000, 0)}
 }
 
 func (m *memory) stat(filePath string) (domain.Fingerprint, error) {
@@ -44,6 +45,7 @@ func (m *memory) stat(filePath string) (domain.Fingerprint, error) {
 	if !there {
 		return domain.Fingerprint{}, fs.ErrNotExist
 	}
+	fp.Kind = m.kinds.getKind(filePath)
 	return fp, nil
 }
 
@@ -58,7 +60,7 @@ func (m *memory) read(filePath string) ([]byte, error) {
 func (m *memory) write(filePath string, content []byte) (domain.Fingerprint, error) {
 	m.clock = m.clock.Add(time.Second)
 	m.files[filePath] = append([]byte(nil), content...)
-	m.fingerprints[filePath] = domain.Fingerprint{Path: filePath, Kind: kindOf(filePath), Size: int64(len(content)), ModTime: m.clock}
+	m.fingerprints[filePath] = domain.Fingerprint{Path: filePath, Kind: m.kinds.getKind(filePath), Size: int64(len(content)), ModTime: m.clock}
 	return m.fingerprints[filePath], nil
 }
 
@@ -89,7 +91,10 @@ func (m *memory) paths() []string {
 
 // disk keeps the files in a folder, so that a test can change them and read them as another program
 // would, and make them refuse the plugin with the permissions of the folder.
-type disk struct{ root string }
+type disk struct {
+	root  string
+	kinds sourceKinds
+}
 
 func (d disk) at(filePath string) string { return filepath.Join(d.root, filepath.FromSlash(filePath)) }
 
@@ -98,7 +103,7 @@ func (d disk) stat(filePath string) (domain.Fingerprint, error) {
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	return domain.Fingerprint{Path: filePath, Kind: kindOf(filePath), Size: info.Size(), ModTime: info.ModTime()}, nil
+	return domain.Fingerprint{Path: filePath, Kind: d.kinds.getKind(filePath), Size: info.Size(), ModTime: info.ModTime()}, nil
 }
 
 func (d disk) read(filePath string) ([]byte, error) { return os.ReadFile(d.at(filePath)) }

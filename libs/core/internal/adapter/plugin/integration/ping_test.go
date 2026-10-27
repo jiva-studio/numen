@@ -57,17 +57,17 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			var procs []*os.Process
 			host.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
-			_, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
+			_, err := host.EnsureActive(t.Context(), "org.example.sample")
 			if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, pluginport.ErrUnsupportedProtocol, tc.want)
 			}
-			if failedID != "md.numen.engines.ocr" || reason != lifecycle.DescribeFailure(pluginport.ErrUnsupportedProtocol) {
-				t.Fatalf("failure reported for %q with %q, want md.numen.engines.ocr with the protocol reason", failedID, reason)
+			if failedID != "org.example.sample" || reason != lifecycle.DescribeFailure(pluginport.ErrUnsupportedProtocol) {
+				t.Fatalf("failure reported for %q with %q, want org.example.sample with the protocol reason", failedID, reason)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
-			if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); !errors.Is(err, lifecycle.ErrPluginFailed) {
+			if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, lifecycle.ErrPluginFailed) {
 				t.Fatalf("second EnsureActive() = %v, want %v", err, lifecycle.ErrPluginFailed)
 			}
 			if len(procs) != 1 {
@@ -82,10 +82,10 @@ func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
 
-	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err != nil {
+	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive() = %v, want the plugin active", err)
 	}
-	host.Release("md.numen.engines.ocr")
+	host.Release("org.example.sample")
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}

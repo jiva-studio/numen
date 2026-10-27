@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 )
@@ -231,5 +232,21 @@ func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
 
 	if readErr == nil || errors.Is(readErr, host.ErrNotExist) || appendErr == nil || listErr == nil || len(notes) != 1 {
 		t.Errorf("got %v, %v, %v and %v", readErr, appendErr, listErr, notes)
+	}
+}
+
+func TestSetSourceKindAppliesToFilesOfTheExtension(t *testing.T) {
+	ctx := context.Background()
+	v := hosttest.New("Physics")
+	v.File("a.sample", "one")
+	v.SetSourceKind(".SAMPLE", domain.KindBook)
+
+	fingerprint, err := v.GetFingerprint(ctx, "a.sample")
+	if err != nil || fingerprint.Kind != domain.KindBook {
+		t.Errorf("fingerprint = %+v, %v, want the kind set for the extension", fingerprint, err)
+	}
+	v.File("b.other", "two")
+	if fingerprint, _ := v.GetFingerprint(ctx, "b.other"); fingerprint.Kind != domain.KindNote {
+		t.Errorf("fingerprint = %+v, want a file of an extension nothing set to be a note", fingerprint)
 	}
 }

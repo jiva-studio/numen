@@ -11,20 +11,20 @@ import (
 
 func TestHostSafeMode(t *testing.T) {
 	tmp := t.TempDir()
-	pDir := filepath.Join(tmp, "ocr")
+	pDir := filepath.Join(tmp, "sample")
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.engines.ocr",
-		"name": "OCR",
+		"id": "org.example.sample",
+		"name": "Sample",
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onFile:*.pdf"],
+		"activationEvents": ["onFile:*.sample"],
 		"permissions": ["vault:read"],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 10, "keepAliveWhileVisible": false},
-		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "numen.v1.TextProviderService"}
+		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.v1.TextProviderService"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -45,7 +45,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("expected 0 plugins in safe mode, got %d", len(plugins))
 	}
 
-	if _, ok := host.GetPlugin("md.numen.engines.ocr"); ok {
+	if _, ok := host.GetPlugin("org.example.sample"); ok {
 		t.Fatal("expected GetPlugin to report false in safe mode")
 	}
 
@@ -54,11 +54,11 @@ func TestHostSafeMode(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	if _, err := host.EnsureActive(ctx, "md.numen.engines.ocr"); !errors.Is(err, plugin.ErrSafeModeActive) {
+	if _, err := host.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, plugin.ErrSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
+	activated, err := host.TriggerEvent(ctx, "onFile:test.sample")
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

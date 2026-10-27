@@ -149,7 +149,7 @@ func TestABrokenManifestDoesNotHideTheOtherPlugins(t *testing.T) {
 
 	found, problems := DiscoverPlugins([]string{tempDir})
 
-	if len(found) != 1 || found[0].Manifest.ID != "md.numen.engines.ocr" {
+	if len(found) != 1 || found[0].Manifest.ID != "org.example.sample" {
 		t.Fatalf("expected the valid plugin to be discovered, got %v", found)
 	}
 	if len(problems) != 1 || problems[0].Dir != broken || problems[0].Err == nil {

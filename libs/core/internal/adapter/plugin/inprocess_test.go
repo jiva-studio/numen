@@ -242,10 +242,10 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 		return nil, nil, errors.New("no process in this test")
 	})
 
-	if _, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr"); err == nil {
+	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err == nil {
 		t.Fatal("the launch that failed activated the plugin")
 	}
-	if got := <-launched; got != "md.numen.engines.ocr" {
+	if got := <-launched; got != "org.example.sample" {
 		t.Fatalf("launched %q", got)
 	}
 }
@@ -258,31 +258,31 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
-	manifest, err := os.ReadFile(filepath.Join(tmp, "ocr", "manifest.json"))
+	manifest, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in ocr"))
-	if p, _ := host.GetPlugin("md.numen.engines.ocr"); p.Dir == "" {
+	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in sample"))
+	if p, _ := host.GetPlugin("org.example.sample"); p.Dir == "" {
 		t.Fatal("the copy on disk was replaced by the built-in")
 	}
 
-	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
+	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
 	}
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	p, ok := host.GetPlugin("md.numen.engines.ocr")
+	p, ok := host.GetPlugin("org.example.sample")
 	if !ok || p.Dir != "" {
 		t.Fatalf("GetPlugin = %+v, %v; want the built-in", p, ok)
 	}
-	endpoint, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
+	endpoint, err := host.EnsureActive(t.Context(), "org.example.sample")
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	if got := getAgentPrompt(t, endpoint); got != "built-in ocr" {
+	if got := getAgentPrompt(t, endpoint); got != "built-in sample" {
 		t.Fatalf("answered %q", got)
 	}
 }
@@ -465,7 +465,7 @@ func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
-	manifest, err := os.ReadFile(filepath.Join(tmp, "ocr", "manifest.json"))
+	manifest, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -473,19 +473,19 @@ func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 	if builtIn == string(manifest) {
 		t.Fatal("the fixture's permissions are not the ones replaced")
 	}
-	registerBuiltIn(t, host, []byte(builtIn), newBuiltInBackend().serve("built-in ocr"))
+	registerBuiltIn(t, host, []byte(builtIn), newBuiltInBackend().serve("built-in sample"))
 
-	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
+	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
 	}
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	if err := host.CheckPluginPermission("md.numen.engines.ocr", plugindir.PermissionVaultWrite); err != nil {
+	if err := host.CheckPluginPermission("org.example.sample", plugindir.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
-	if err := host.CheckPluginPermission("md.numen.engines.ocr", plugindir.PermissionVaultRead); err == nil {
+	if err := host.CheckPluginPermission("org.example.sample", plugindir.PermissionVaultRead); err == nil {
 		t.Error("the permission of the copy that left is still granted")
 	}
 }
@@ -498,13 +498,13 @@ func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
-	manifest, err := os.ReadFile(filepath.Join(tmp, "ocr", "manifest.json"))
+	manifest, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in ocr"))
+	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in sample"))
 
-	endpoint, err := host.EnsureActive(t.Context(), "md.numen.engines.ocr")
+	endpoint, err := host.EnsureActive(t.Context(), "org.example.sample")
 
 	if err == nil {
 		t.Fatalf("the copy on disk was served by the built-in: %+v", endpoint)

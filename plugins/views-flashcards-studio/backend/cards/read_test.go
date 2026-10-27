@@ -277,6 +277,7 @@ func TestADeckWhereNothingIsIsMissing(t *testing.T) {
 // bytes say.
 func TestAFileOfAnotherKindIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
+	vs.hosts[vs.first.ID].SetSourceKind(".url", domain.KindURL)
 	write(t, vs.first, "decks/Wrens.url", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
 
 	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Wrens.url")

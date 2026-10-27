@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-const failingPluginID = "md.numen.engines.ocr"
+const failingPluginID = "org.example.sample"
 
 func failLaunching(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 	return nil, nil, errors.New("exec format error")
@@ -92,10 +92,10 @@ func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
-	if failure == nil || failure.Reason != lifecycle.DescribeFailure(errors.New("launch plugin md.numen.engines.ocr: exec format error")) {
+	if failure == nil || failure.Reason != lifecycle.DescribeFailure(errors.New("launch plugin org.example.sample: exec format error")) {
 		t.Fatalf("failure = %+v, want the reason the start failed for", failure)
 	}
-	if failure.Detail != "launch plugin md.numen.engines.ocr: exec format error" {
+	if failure.Detail != "launch plugin org.example.sample: exec format error" {
 		t.Fatalf("failure detail = %q, want the launch error", failure.Detail)
 	}
 	if got := getFailure(t, host, failingPluginID); got == nil || got.Reason != failure.Reason {
