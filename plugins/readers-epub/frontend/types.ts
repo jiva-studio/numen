@@ -24,12 +24,6 @@ export interface PrintedPage {
   readonly offset: number
 }
 
-/** Where a block element begins in the text of a book, and its EPUB CFI. */
-export interface BookAnchor {
-  readonly offset: number
-  readonly cfi: string
-}
-
 /** Book manifest and metadata. */
 export interface Book {
   readonly title: string
@@ -37,8 +31,6 @@ export interface Book {
   readonly documents: readonly SpineDocument[]
   readonly parts: readonly BookPart[]
   readonly printedPages: readonly PrintedPage[]
-  /** The blocks of the book, ascending by offset. */
-  readonly anchors: readonly BookAnchor[]
   readonly pages: number
   readonly pageBytes: number
   readonly fingerprint: string
@@ -52,6 +44,10 @@ export interface Books {
   readMarkup(path: string, document: string, fingerprint: string): Promise<string>
   /** Returns the URL for an archived resource entry. */
   getEntryUrl(path: string, name: string, fingerprint: string): string
+  /** The EPUB CFI of the character at an offset of the text, and null for a book with no text. */
+  getCfi(path: string, offset: number): Promise<string | null>
+  /** The offset of the text a CFI names, and null where it names no place in the book. */
+  findOffset(path: string, cfi: string): Promise<number | null>
 }
 
 /** Localization words for book navigation. */

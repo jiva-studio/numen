@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -39,6 +40,9 @@ type BookServer struct {
 
 	// books caches the books entries are read from, and closes them when the server closes.
 	books *bookCache
+
+	mu     sync.Mutex
+	placed placedBook
 }
 
 // NewBookServer returns a BookServer that finds the vault of a request through files, and works the
@@ -97,10 +101,6 @@ func (s *BookServer) GetBook(
 			Label:  page.Label,
 			Offset: int32(page.Offset),
 		})
-	}
-
-	for _, anchor := range book.Anchors() {
-		resp.Anchors = append(resp.Anchors, &epubv1.Anchor{Offset: int32(anchor.Offset), Cfi: anchor.CFI})
 	}
 
 	return connect.NewResponse(resp), nil

@@ -41,10 +41,3 @@ type Entry struct {
 	Title string
 	Href  string
 }
-
-// An Anchor is where a block element of a document begins in its text, and the steps of an EPUB
-// CFI from the document's root element to it, such as "/4/2".
-type Anchor struct {
-	Offset int
-	Path   string
-}

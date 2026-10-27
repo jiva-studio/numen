@@ -17,6 +17,8 @@ const create = (open = { value: true }) => {
   const content: Array<[string, string | undefined]> = []
   const books: Books = {
     getBook: vi.fn(),
+    getCfi: vi.fn(),
+    findOffset: vi.fn(),
     readMarkup: (_path, document) =>
       new Promise<string>((resolve, reject) => pending.set(document, { resolve, reject })),
     getEntryUrl: (path, name, fingerprint) => {

@@ -4,14 +4,9 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 )
 
 // serveEntries is the entries route over a book server whose current vault holds nothing, beside the
@@ -56,28 +51,5 @@ func TestTheEntriesRouteRefusesABookThatChanged(t *testing.T) {
 
 	if answer.Code != http.StatusConflict {
 		t.Errorf("a stale picture answered %d, want %d", answer.Code, http.StatusConflict)
-	}
-}
-
-func TestGetBookReturnsTheCFIOfEachBlock(t *testing.T) {
-	dir := t.TempDir()
-	raw := createPictureEpub(t)
-	if err := os.WriteFile(filepath.Join(dir, "pictured.epub"), raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	books := NewBookServer(hosttest.New("vault"), func() string { return dir })
-	t.Cleanup(books.Close)
-
-	res, err := books.GetBook(t.Context(), connect.NewRequest(&epubv1.GetBookRequest{Path: "pictured.epub"}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cfis := map[string]bool{}
-	for _, anchor := range res.Msg.GetAnchors() {
-		cfis[anchor.GetCfi()] = true
-	}
-	if !cfis["epubcfi(/6/2!/4/2)"] || !cfis["epubcfi(/6/4!/4/4)"] {
-		t.Errorf("anchors %v, want the heading of the first chapter and the paragraph of the second", res.Msg.GetAnchors())
 	}
 }

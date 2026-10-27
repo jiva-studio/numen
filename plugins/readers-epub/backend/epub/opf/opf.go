@@ -38,6 +38,8 @@ type Package struct {
 	base string
 	// Spine is the documents of the spine, in reading order.
 	Spine []SpineItem
+	// SpineStep is the CFI step of the spine element among the package element's children.
+	SpineStep int
 	// NCX and Nav are the archive paths of the two kinds of navigation
 	// document, empty when the book has neither.
 	NCX string
@@ -53,6 +55,8 @@ type SpineItem struct {
 	MediaType string
 	IsLinear  bool
 	Layout    Layout
+	// Step is the CFI step of the itemref among the spine element's children.
+	Step int
 }
 
 type rawPackageDocument struct {
@@ -121,16 +125,75 @@ func readManifest(read *Package, doc *rawPackageDocument) map[string]manifestIte
 	return manifest
 }
 
-func readSpine(read *Package, doc *rawPackageDocument, manifest map[string]manifestItem) {
-	for _, ref := range doc.Spine.ItemRefs {
+func readSpine(read *Package, doc *rawPackageDocument, manifest map[string]manifestItem, steps []int) {
+	for i, ref := range doc.Spine.ItemRefs {
 		named := manifest[ref.IDRef]
+		step := 2 * (i + 1)
+		if i < len(steps) {
+			step = steps[i]
+		}
 		read.Spine = append(read.Spine, SpineItem{
 			Path:      named.path,
 			MediaType: named.mediaType,
 			IsLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
 			Layout:    parseItemLayout(ref.Properties, read.Layout),
+			Step:      step,
 		})
 	}
+}
+
+// readSpineSteps is the CFI step of the spine element among the package element's children, and the
+// step of each itemref among the spine's children. A step counts the elements before it, whatever
+// else the package document holds (EPUB CFI 1.1 §3.1.3).
+func readSpineSteps(raw []byte) (int, []int) {
+	d := archive.NewXMLDecoder(raw)
+	var steps spineSteps
+	for {
+		token, err := d.Token()
+		if err != nil {
+			return steps.spine, steps.items
+		}
+		switch t := token.(type) {
+		case xml.StartElement:
+			steps.openElement(t.Name.Local)
+		case xml.EndElement:
+			steps.closeElement()
+		}
+	}
+}
+
+// spineSteps counts the elements of a package document as they open.
+type spineSteps struct {
+	depth    int
+	children int
+	inSpine  bool
+	// spineChildren counts the children of the spine element.
+	spineChildren int
+	spine         int
+	items         []int
+}
+
+func (s *spineSteps) openElement(name string) {
+	s.depth++
+	switch {
+	case s.depth == 2:
+		s.children++
+		if name == "spine" && s.spine == 0 {
+			s.spine, s.inSpine = 2*s.children, true
+		}
+	case s.depth == 3 && s.inSpine:
+		s.spineChildren++
+		if name == "itemref" {
+			s.items = append(s.items, 2*s.spineChildren)
+		}
+	}
+}
+
+func (s *spineSteps) closeElement() {
+	if s.depth == 2 {
+		s.inSpine = false
+	}
+	s.depth--
 }
 
 // Read reads the manifest and the spine. The order is the spine's: file
@@ -153,7 +216,9 @@ func Read(files map[string]*zip.File, opfPath string) (Package, error) {
 	}
 	readPackageMetadata(&read, &document)
 	manifest := readManifest(&read, &document)
-	readSpine(&read, &document, manifest)
+	spineStep, itemSteps := readSpineSteps(raw)
+	read.SpineStep = spineStep
+	readSpine(&read, &document, manifest, itemSteps)
 
 	return read, nil
 }

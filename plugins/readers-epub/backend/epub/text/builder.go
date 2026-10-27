@@ -3,7 +3,6 @@ package text
 import (
 	"path"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/href"
@@ -347,32 +346,4 @@ func ReadNodes(docPath string, raw []byte) []markup.Node {
 	x.markup = newBuilder(path.Dir(docPath))
 	read := x.ReadDocument(docPath, raw)
 	return x.markup.finish(string(x.out), read.Length)
-}
-
-// ReadAnchors reads one document and returns where each block element in it begins. The offsets
-// count from the start of the document, as ReadNodes counts them.
-func ReadAnchors(docPath string, raw []byte) []Anchor {
-	x := NewExtractor()
-	x.markup = newBuilder(path.Dir(docPath))
-	x.isAnchoring = true
-	x.ReadDocument(docPath, raw)
-	return x.blockAnchors
-}
-
-// getNodePath is the steps of an EPUB CFI from the root element of a document to the element:
-// each the even index of the element among its parent's children, counting elements only
-// (EPUB CFI 3.1 §3.1.3).
-func getNodePath(n *html.Node) string {
-	var steps []string
-	for node := n; node.Parent != nil && node.Parent.Type == html.ElementNode; node = node.Parent {
-		index := 2
-		for before := node.PrevSibling; before != nil; before = before.PrevSibling {
-			if before.Type == html.ElementNode {
-				index += 2
-			}
-		}
-		steps = append(steps, strconv.Itoa(index))
-	}
-	slices.Reverse(steps)
-	return "/" + strings.Join(steps, "/")
 }

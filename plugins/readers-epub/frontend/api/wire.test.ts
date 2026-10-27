@@ -5,12 +5,15 @@
  * range of the text it covers, and the file the caller read goes back out as
  * the three parts the schema holds it in, or not at all.
  */
+import { Code, ConnectError } from '@connectrpc/connect'
 import { describe, expect, it, vi } from 'vitest'
 import { books, client } from './wire'
 
 const request = {
   getBook: vi.fn(),
   readBookMarkup: vi.fn(),
+  getCfi: vi.fn(),
+  findOffset: vi.fn(),
 }
 client.books = request as unknown as typeof client.books
 
@@ -21,7 +24,6 @@ const nothing = {
   documents: [],
   parts: [],
   printedPages: [],
-  anchors: [],
   pageCount: 0,
   pageBytes: 0,
 }
@@ -37,7 +39,6 @@ describe('a book', () => {
       ],
       parts: [{ title: 'Book I', offset: 0, level: 1 }],
       printedPages: [{ label: 'iv', offset: 120 }],
-      anchors: [{ offset: 0, cfi: 'epubcfi(/6/2!/4/2)' }],
       pageCount: 8,
       pageBytes: 500,
       fingerprint: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
@@ -52,7 +53,6 @@ describe('a book', () => {
       ],
       parts: [{ title: 'Book I', offset: 0, level: 1 }],
       printedPages: [{ label: 'iv', offset: 120 }],
-      anchors: [{ offset: 0, cfi: 'epubcfi(/6/2!/4/2)' }],
       pages: 8,
       pageBytes: 500,
       fingerprint: '12 34 Anabasis.epub',
@@ -90,6 +90,41 @@ describe('the markup of one document', () => {
       path: 'Anabasis.epub',
       document: 'one.xhtml',
     })
+  })
+})
+
+describe('a place in a book', () => {
+  it('is the CFI the backend names an offset by', async () => {
+    request.getCfi.mockResolvedValue({ cfi: 'epubcfi(/8/4!/4/2/1:17)' })
+
+    expect(await books.getCfi('Anabasis.epub', 120)).toBe('epubcfi(/8/4!/4/2/1:17)')
+    expect(request.getCfi).toHaveBeenCalledWith({ path: 'Anabasis.epub', offset: 120 })
+  })
+
+  it('is the offset the backend finds a CFI at', async () => {
+    request.findOffset.mockResolvedValue({ offset: 120 })
+
+    expect(await books.findOffset('Anabasis.epub', 'epubcfi(/8/4!/4/2/1:17)')).toBe(120)
+    expect(request.findOffset).toHaveBeenCalledWith({
+      path: 'Anabasis.epub',
+      cfi: 'epubcfi(/8/4!/4/2/1:17)',
+    })
+  })
+
+  it('is nothing where the backend finds no such place or reads no CFI', async () => {
+    request.findOffset.mockRejectedValueOnce(new ConnectError('no document', Code.NotFound))
+    request.getCfi.mockRejectedValueOnce(new ConnectError('no text', Code.NotFound))
+    request.findOffset.mockRejectedValueOnce(new ConnectError('no CFI', Code.InvalidArgument))
+
+    expect(await books.findOffset('Anabasis.epub', 'epubcfi(/6/2!/4)')).toBeNull()
+    expect(await books.getCfi('Anabasis.epub', 0)).toBeNull()
+    expect(await books.findOffset('Anabasis.epub', 'page 3')).toBeNull()
+  })
+
+  it('passes on any other failure', async () => {
+    request.getCfi.mockRejectedValueOnce(new ConnectError('disk', Code.Internal))
+
+    await expect(books.getCfi('Anabasis.epub', 0)).rejects.toThrow('disk')
   })
 })
 

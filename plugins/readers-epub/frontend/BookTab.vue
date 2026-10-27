@@ -2,8 +2,8 @@
 /**
  * Book tab view rendering reflowable book text and contents navigation.
  */
-import { ref, useTemplateRef, watch, watchEffect } from 'vue'
-import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
+import { ref, useTemplateRef, watchEffect } from 'vue'
+import type { ReaderTabState } from '@numen/plugin-sdk'
 import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
@@ -11,7 +11,7 @@ import { WORDS as words } from './words'
 import { books } from './api/wire'
 import { useBookReader } from './model/useBookReader'
 import { useBookTab, type BookTabState } from './model/useBookTab'
-import { createCfiSelector, findAnchorCfi, findAnchorOffset, getSelectorCfi } from './lib/place'
+import { useBookPlace } from './model/useBookPlace'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -51,24 +51,7 @@ watchEffect(() => {
 /** The tab as the window hands it, where it is a reader tab. */
 const readerTab = props.state as Partial<ReaderTabState> | undefined
 
-// The window sets a selector for a search hit and for the place saved before a restart.
-watch(
-  () => [readerTab?.selector, tabState.isLoading.value] as const,
-  ([selector, isLoading]: readonly [Selector | null | undefined, boolean]) => {
-    const cfi = getSelectorCfi(selector)
-    const offset = cfi === null ? null : findAnchorOffset(tabState.anchors.value, cfi)
-    if (!isLoading && offset !== null) void tabState.goToOffset(offset)
-  },
-  { immediate: true },
-)
-
-watch(
-  () => tabState.offset.value,
-  (offset) => {
-    const cfi = findAnchorCfi(tabState.anchors.value, offset)
-    if (!tabState.isLoading.value && cfi !== null) readerTab?.savePlace?.(createCfiSelector(cfi))
-  },
-)
+useBookPlace(tabState, () => readerTab)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDismissListing() {

@@ -34,6 +34,16 @@ service BookService {
   // file is still the bytes the request names. The entries route of the
   // plugin serves a picture of the book through it.
   rpc ReadBookEntry(ReadBookEntryRequest) returns (ReadBookEntryResponse);
+
+  // GetCfi is the EPUB CFI of the place at an offset of the book's text,
+  // which a place in the book is saved by. It is not found for a book with no
+  // text.
+  rpc GetCfi(GetCfiRequest) returns (GetCfiResponse);
+
+  // FindOffset is the offset of the book's text an EPUB CFI names: a saved
+  // place or a search hit. It is not found for a CFI naming no document of
+  // the book's spine, and invalid for a string that is no CFI.
+  rpc FindOffset(FindOffsetRequest) returns (FindOffsetResponse);
 }
 
 message GetBookRequest {
@@ -73,10 +83,33 @@ message GetBookResponse {
   // document and in the address of a picture, so both name one reading of one
   // file.
   numen.v1.Fingerprint fingerprint = 8;
+}
 
-  // Where each block element of the book begins, ascending by offset. A place
-  // in the book is saved and found by the CFI of the block it is in.
-  repeated Anchor anchors = 9;
+message GetCfiRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The offset in the book's text.
+  int32 offset = 2;
+}
+
+message GetCfiResponse {
+  // The EPUB CFI of the character at the offset, such as
+  // `epubcfi(/6/4!/4/2/1:12)`: the first character written at or after it.
+  string cfi = 1;
+}
+
+message FindOffsetRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // An EPUB CFI into the book.
+  string cfi = 2;
+}
+
+message FindOffsetResponse {
+  // The offset in the book's text of what the CFI names.
+  int32 offset = 1;
 }
 
 message ReadBookMarkupRequest {
@@ -141,11 +174,4 @@ message BookPart {
 message PrintedPage {
   string label = 1;
   int32 offset = 2;
-}
-
-// Anchor is where a block element begins in the book's text, and its EPUB
-// Canonical Fragment Identifier, such as `epubcfi(/6/4!/4/2)`.
-message Anchor {
-  int32 offset = 1;
-  string cfi = 2;
 }

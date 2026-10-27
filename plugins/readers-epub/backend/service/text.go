@@ -24,9 +24,9 @@ const partBytes = 64 << 10
 const textKind domain.TextKind = "book-text"
 
 // TextServer writes the text of the vault's EPUB books into the plugin's folder as text versions,
-// each named section opened where it begins and each segment selected by the CFI of the block it is
-// in. The text and its offsets are the ones the reader sets the book with. Each text is written as
-// background work in the host's queue.
+// each named section opened where it begins and each segment selected by the CFI of the character
+// it begins at. The text and its offsets are the ones the reader sets the book with. Each text is
+// written as background work in the host's queue.
 type TextServer struct {
 	files host.Vault
 	texts host.Texts
@@ -95,7 +95,7 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 	if err != nil {
 		return bookText{}, err
 	}
-	read := bookText{hash: hash, text: book.Text, segments: getSegments(book.Text, book.Parts, book.Anchors())}
+	read := bookText{hash: hash, text: book.Text, segments: getSegments(book.Text, book.Parts, book.ReadPlaces())}
 	s.mu.Lock()
 	s.last = read
 	s.mu.Unlock()
@@ -182,51 +182,63 @@ func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task ho
 
 // getSegments is a book's text as segments: one from where each block element begins, cut again at
 // partBytes on whole characters, with an empty segment opening each named section where it begins.
-// The selector of each segment names the CFI of the block it is in. The sections and the anchors
-// ascend by offset.
-func getSegments(text string, sections []epub.Part, anchors []epub.Anchor) []domain.TextSegment {
-	cutter := segmentCut{text: text, sections: sections, anchors: anchors}
+// The selector of each segment names the CFI of the character it begins at. The sections ascend by
+// offset.
+func getSegments(text string, sections []epub.Part, places epub.Places) []domain.TextSegment {
+	cutter := segmentCut{text: text, sections: sections, blocks: places.Blocks}
+	var segments []domain.TextSegment
 	from := 0
 	for {
-		cutter.openAt(from)
+		selector := getSelector(places, from)
+		for _, title := range cutter.openAt(from) {
+			segments = append(segments, domain.TextSegment{Heading: title, Selector: selector})
+		}
 		if from >= len(text) {
-			return cutter.segments
+			return segments
 		}
 		to := cutter.getEnd(from)
-		cutter.segments = append(cutter.segments, domain.TextSegment{Text: text[from:to], Selector: cutter.selector})
+		segments = append(segments, domain.TextSegment{Text: text[from:to], Selector: selector})
 		from = to
 	}
 }
 
-// segmentCut is the segments of a book cut so far, the sections and the anchors still ahead, and the
-// selector of the block the cut is in.
+// getSelector is the selector of the CFI of the character at an offset, and none where the book has
+// no text node.
+func getSelector(places epub.Places, offset int) domain.Selector {
+	place, ok := places.GetCFI(offset)
+	if !ok {
+		return ""
+	}
+	return host.Selector{CFI: place.String()}.Encode()
+}
+
+// segmentCut is the text of a book, and the sections and block starts still ahead of the cut.
 type segmentCut struct {
 	text     string
 	sections []epub.Part
-	anchors  []epub.Anchor
-	selector domain.Selector
-	segments []domain.TextSegment
+	blocks   []int
 }
 
-// openAt takes the selector of the last block beginning at or before an offset, and opens each
-// section beginning there.
-func (c *segmentCut) openAt(from int) {
-	for len(c.anchors) > 0 && c.anchors[0].Offset <= from {
-		c.selector = host.Selector{CFI: c.anchors[0].CFI}.Encode()
-		c.anchors = c.anchors[1:]
+// openAt passes the blocks beginning at or before an offset, and returns the titles of the sections
+// beginning there.
+func (c *segmentCut) openAt(from int) []string {
+	for len(c.blocks) > 0 && c.blocks[0] <= from {
+		c.blocks = c.blocks[1:]
 	}
+	var titles []string
 	for len(c.sections) > 0 && c.sections[0].Offset <= from {
-		c.segments = append(c.segments, domain.TextSegment{Heading: c.sections[0].Title, Selector: c.selector})
+		titles = append(titles, c.sections[0].Title)
 		c.sections = c.sections[1:]
 	}
+	return titles
 }
 
 // getEnd is where the segment from an offset ends: at most partBytes on, and before the next block
 // or section begins.
 func (c *segmentCut) getEnd(from int) int {
 	to := getCutEnd(c.text, from)
-	if len(c.anchors) > 0 && c.anchors[0].Offset < to {
-		to = c.anchors[0].Offset
+	if len(c.blocks) > 0 && c.blocks[0] < to {
+		to = c.blocks[0]
 	}
 	if len(c.sections) > 0 && c.sections[0].Offset < to {
 		to = c.sections[0].Offset

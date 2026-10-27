@@ -41,10 +41,6 @@ const BOOK: Book = {
     { title: 'Сказание о сожжении леса', offset: 3_600, level: 1 },
   ],
   printedPages: [],
-  anchors: [
-    { offset: 0, cfi: 'epubcfi(/6/2!/4/2)' },
-    { offset: 3_600, cfi: 'epubcfi(/6/4!/4/4)' },
-  ],
   pages: 3,
   pageBytes: 3_000,
   fingerprint: '20480 1700000000000000000 mahabharata.epub',
@@ -63,6 +59,7 @@ const PRINTED: Book = {
 function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
   const requests: string[] = []
   const markupCalls: string[] = []
+  const placeCalls: string[] = []
 
   const books: Books = {
     getBook: async (path) => {
@@ -76,9 +73,17 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
       return `<p data-offset="0">${document}</p>`
     },
     getEntryUrl: (path, name) => `/assets/${path}/${name}`,
+    getCfi: async (path, offset) => {
+      placeCalls.push(`cfi ${path} ${offset}`)
+      return `epubcfi(/8/2!/4/2/1:${offset})`
+    },
+    findOffset: async (path, cfi) => {
+      placeCalls.push(`offset ${path} ${cfi}`)
+      return cfi === 'epubcfi(/8/4!/4/4/1:600)' ? 3_600 : null
+    },
   }
 
-  return { books, requests, markupCalls }
+  return { books, requests, markupCalls, placeCalls }
 }
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -185,13 +190,30 @@ describe('a book opened', () => {
     ])
   })
 
-  it('holds the blocks the book names by their CFI', async () => {
+  it('goes to the offset a CFI names', async () => {
+    const { books, placeCalls } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    expect(await readItem.goToCfi('epubcfi(/8/4!/4/4/1:600)')).toBe(true)
+
+    expect(readItem.offset.value).toBe(3_600)
+    expect(placeCalls).toStrictEqual(['offset library/Mahabharata.epub epubcfi(/8/4!/4/4/1:600)'])
+  })
+
+  it('stays where it is for a CFI that names no place in the book', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await settle()
+    expect(await readItem.goToCfi('epubcfi(/8/10!/4/2)')).toBe(false)
 
-    expect(readItem.anchors.value).toStrictEqual(BOOK.anchors)
+    expect(readItem.offset.value).toBe(0)
+  })
+
+  it('asks the backend for the CFI of an offset of its book', async () => {
+    const { books } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    expect(await readItem.getCfi(42)).toBe('epubcfi(/8/2!/4/2/1:42)')
   })
 
   it('is called what the book calls itself', async () => {

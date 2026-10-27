@@ -23,7 +23,6 @@ import (
 	"io"
 	"path"
 	"sort"
-	"strconv"
 
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/archive"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/container"
@@ -66,6 +65,11 @@ type Book struct {
 	files      map[string]*zip.File
 	documents  map[string]Document
 	mediaTypes map[string]string
+
+	// spineStep and itemSteps are the CFI steps of the spine in the package document and of each
+	// itemref in the spine, by spine index.
+	spineStep int
+	itemSteps []int
 
 	// pageBytes is how many bytes of this book's text stand on one page.
 	pageBytes int
@@ -114,8 +118,12 @@ func Read(raw []byte) (*Book, error) {
 		files:      files,
 		documents:  map[string]Document{},
 		mediaTypes: map[string]string{},
+		spineStep:  pkg.SpineStep,
 	}
 	remaining := int64(archive.MostPerBook)
+	for _, item := range pkg.Spine {
+		book.itemSteps = append(book.itemSteps, item.Step)
+	}
 	for spine, item := range pkg.Spine {
 		if remaining <= 0 {
 			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="left never grows, so every later document also ends the iteration"
@@ -261,29 +269,4 @@ func (b *Book) Locate(offset int) Location {
 // there is none. The items are ascending by offset.
 func findPreceding(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
-}
-
-// An Anchor is where a block element of the book begins in its Text, and its EPUB Canonical
-// Fragment Identifier.
-type Anchor struct {
-	Offset int
-	CFI    string
-}
-
-// Anchors reads the spine documents again and returns where each block element in them begins,
-// ascending by offset. The first step of each CFI is the spine of the package document, which
-// stands third among its children.
-func (b *Book) Anchors() []Anchor {
-	var anchors []Anchor
-	for _, doc := range b.Documents {
-		raw, ok := archive.ReadBounded(b.files[doc.Path], archive.MostPerDocument)
-		if !ok {
-			continue
-		}
-		spine := "epubcfi(/6/" + strconv.Itoa(2*(doc.Spine+1)) + "!"
-		for _, one := range text.ReadAnchors(doc.Path, raw) {
-			anchors = append(anchors, Anchor{Offset: doc.Offset + one.Offset, CFI: spine + one.Path + ")"})
-		}
-	}
-	return anchors
 }

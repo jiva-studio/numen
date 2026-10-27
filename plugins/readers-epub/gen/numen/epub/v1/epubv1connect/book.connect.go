@@ -53,6 +53,10 @@ const (
 	// BookServiceReadBookEntryProcedure is the fully-qualified name of the BookService's ReadBookEntry
 	// RPC.
 	BookServiceReadBookEntryProcedure = "/numen.epub.v1.BookService/ReadBookEntry"
+	// BookServiceGetCfiProcedure is the fully-qualified name of the BookService's GetCfi RPC.
+	BookServiceGetCfiProcedure = "/numen.epub.v1.BookService/GetCfi"
+	// BookServiceFindOffsetProcedure is the fully-qualified name of the BookService's FindOffset RPC.
+	BookServiceFindOffsetProcedure = "/numen.epub.v1.BookService/FindOffset"
 )
 
 // BookServiceClient is a client for the numen.epub.v1.BookService service.
@@ -70,6 +74,14 @@ type BookServiceClient interface {
 	// file is still the bytes the request names. The entries route of the
 	// plugin serves a picture of the book through it.
 	ReadBookEntry(context.Context, *connect.Request[v1.ReadBookEntryRequest]) (*connect.Response[v1.ReadBookEntryResponse], error)
+	// GetCfi is the EPUB CFI of the place at an offset of the book's text,
+	// which a place in the book is saved by. It is not found for a book with no
+	// text.
+	GetCfi(context.Context, *connect.Request[v1.GetCfiRequest]) (*connect.Response[v1.GetCfiResponse], error)
+	// FindOffset is the offset of the book's text an EPUB CFI names: a saved
+	// place or a search hit. It is not found for a CFI naming no document of
+	// the book's spine, and invalid for a string that is no CFI.
+	FindOffset(context.Context, *connect.Request[v1.FindOffsetRequest]) (*connect.Response[v1.FindOffsetResponse], error)
 }
 
 // NewBookServiceClient constructs a client for the numen.epub.v1.BookService service. By default,
@@ -101,6 +113,18 @@ func NewBookServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(bookServiceMethods.ByName("ReadBookEntry")),
 			connect.WithClientOptions(opts...),
 		),
+		getCfi: connect.NewClient[v1.GetCfiRequest, v1.GetCfiResponse](
+			httpClient,
+			baseURL+BookServiceGetCfiProcedure,
+			connect.WithSchema(bookServiceMethods.ByName("GetCfi")),
+			connect.WithClientOptions(opts...),
+		),
+		findOffset: connect.NewClient[v1.FindOffsetRequest, v1.FindOffsetResponse](
+			httpClient,
+			baseURL+BookServiceFindOffsetProcedure,
+			connect.WithSchema(bookServiceMethods.ByName("FindOffset")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -109,6 +133,8 @@ type bookServiceClient struct {
 	getBook        *connect.Client[v1.GetBookRequest, v1.GetBookResponse]
 	readBookMarkup *connect.Client[v1.ReadBookMarkupRequest, v1.ReadBookMarkupResponse]
 	readBookEntry  *connect.Client[v1.ReadBookEntryRequest, v1.ReadBookEntryResponse]
+	getCfi         *connect.Client[v1.GetCfiRequest, v1.GetCfiResponse]
+	findOffset     *connect.Client[v1.FindOffsetRequest, v1.FindOffsetResponse]
 }
 
 // GetBook calls numen.epub.v1.BookService.GetBook.
@@ -126,6 +152,16 @@ func (c *bookServiceClient) ReadBookEntry(ctx context.Context, req *connect.Requ
 	return c.readBookEntry.CallUnary(ctx, req)
 }
 
+// GetCfi calls numen.epub.v1.BookService.GetCfi.
+func (c *bookServiceClient) GetCfi(ctx context.Context, req *connect.Request[v1.GetCfiRequest]) (*connect.Response[v1.GetCfiResponse], error) {
+	return c.getCfi.CallUnary(ctx, req)
+}
+
+// FindOffset calls numen.epub.v1.BookService.FindOffset.
+func (c *bookServiceClient) FindOffset(ctx context.Context, req *connect.Request[v1.FindOffsetRequest]) (*connect.Response[v1.FindOffsetResponse], error) {
+	return c.findOffset.CallUnary(ctx, req)
+}
+
 // BookServiceHandler is an implementation of the numen.epub.v1.BookService service.
 type BookServiceHandler interface {
 	// GetBook is what the book is: what it is called, the documents it is read
@@ -141,6 +177,14 @@ type BookServiceHandler interface {
 	// file is still the bytes the request names. The entries route of the
 	// plugin serves a picture of the book through it.
 	ReadBookEntry(context.Context, *connect.Request[v1.ReadBookEntryRequest]) (*connect.Response[v1.ReadBookEntryResponse], error)
+	// GetCfi is the EPUB CFI of the place at an offset of the book's text,
+	// which a place in the book is saved by. It is not found for a book with no
+	// text.
+	GetCfi(context.Context, *connect.Request[v1.GetCfiRequest]) (*connect.Response[v1.GetCfiResponse], error)
+	// FindOffset is the offset of the book's text an EPUB CFI names: a saved
+	// place or a search hit. It is not found for a CFI naming no document of
+	// the book's spine, and invalid for a string that is no CFI.
+	FindOffset(context.Context, *connect.Request[v1.FindOffsetRequest]) (*connect.Response[v1.FindOffsetResponse], error)
 }
 
 // NewBookServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -168,6 +212,18 @@ func NewBookServiceHandler(svc BookServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(bookServiceMethods.ByName("ReadBookEntry")),
 		connect.WithHandlerOptions(opts...),
 	)
+	bookServiceGetCfiHandler := connect.NewUnaryHandler(
+		BookServiceGetCfiProcedure,
+		svc.GetCfi,
+		connect.WithSchema(bookServiceMethods.ByName("GetCfi")),
+		connect.WithHandlerOptions(opts...),
+	)
+	bookServiceFindOffsetHandler := connect.NewUnaryHandler(
+		BookServiceFindOffsetProcedure,
+		svc.FindOffset,
+		connect.WithSchema(bookServiceMethods.ByName("FindOffset")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.epub.v1.BookService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BookServiceGetBookProcedure:
@@ -176,6 +232,10 @@ func NewBookServiceHandler(svc BookServiceHandler, opts ...connect.HandlerOption
 			bookServiceReadBookMarkupHandler.ServeHTTP(w, r)
 		case BookServiceReadBookEntryProcedure:
 			bookServiceReadBookEntryHandler.ServeHTTP(w, r)
+		case BookServiceGetCfiProcedure:
+			bookServiceGetCfiHandler.ServeHTTP(w, r)
+		case BookServiceFindOffsetProcedure:
+			bookServiceFindOffsetHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -195,4 +255,12 @@ func (UnimplementedBookServiceHandler) ReadBookMarkup(context.Context, *connect.
 
 func (UnimplementedBookServiceHandler) ReadBookEntry(context.Context, *connect.Request[v1.ReadBookEntryRequest]) (*connect.Response[v1.ReadBookEntryResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.epub.v1.BookService.ReadBookEntry is not implemented"))
+}
+
+func (UnimplementedBookServiceHandler) GetCfi(context.Context, *connect.Request[v1.GetCfiRequest]) (*connect.Response[v1.GetCfiResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.epub.v1.BookService.GetCfi is not implemented"))
+}
+
+func (UnimplementedBookServiceHandler) FindOffset(context.Context, *connect.Request[v1.FindOffsetRequest]) (*connect.Response[v1.FindOffsetResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.epub.v1.BookService.FindOffset is not implemented"))
 }

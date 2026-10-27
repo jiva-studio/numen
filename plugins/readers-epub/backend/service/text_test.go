@@ -125,7 +125,7 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 	text := strings.Repeat("ж", partBytes) + "end"
 	sections := []epub.Part{{Title: "One", Offset: 0}, {Title: "Inner", Offset: 0}, {Title: "Two", Offset: 2 * partBytes}}
 
-	parts := getSegments(text, sections, nil)
+	parts := getSegments(text, sections, epub.Places{})
 
 	var joined strings.Builder
 	var named []string
@@ -179,11 +179,13 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	}
 }
 
-func TestEachSegmentIsSelectedByTheCFIOfTheBlockItIsIn(t *testing.T) {
-	text := "First block.\nSecond block.\n"
-	anchors := []epub.Anchor{{Offset: 0, CFI: "epubcfi(/6/2!/4/2)"}, {Offset: 13, CFI: "epubcfi(/6/2!/4/4)"}}
+func TestEachSegmentIsSelectedByTheCFIOfItsFirstCharacter(t *testing.T) {
+	book, err := epub.Read(createGuidedEpub(t))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	segments := getSegments(text, []epub.Part{{Title: "Second", Offset: 13}}, anchors)
+	segments := getSegments(book.Text, book.Parts, book.ReadPlaces())
 
 	var got []string
 	for _, segment := range segments {
@@ -191,19 +193,28 @@ func TestEachSegmentIsSelectedByTheCFIOfTheBlockItIsIn(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got = append(got, segment.Heading+"|"+segment.Text+"|"+selector.CFI)
+		got = append(got, segment.Heading+"|"+firstWord(segment.Text)+"|"+selector.CFI)
 	}
 	want := []string{
-		"|First block.\n|epubcfi(/6/2!/4/2)",
-		"Second||epubcfi(/6/2!/4/4)",
-		"|Second block.\n|epubcfi(/6/2!/4/4)",
+		"|Prologue|epubcfi(/8/2!/4/2/1:0)",
+		"|word|epubcfi(/8/2!/4/4/1:3)",
+		"|ord|epubcfi(/8/2!/4/4/1:65539)",
+		"|Epilogue|epubcfi(/8/4!/4/2/1:0)",
 	}
 	if strings.Join(got, ";") != strings.Join(want, ";") {
 		t.Errorf("segments %q, want %q", got, want)
 	}
 }
 
-func TestTheTextOfABookCarriesTheCFIOfItsBlocks(t *testing.T) {
+// firstWord is the first word of a text, and empty for one with none.
+func firstWord(text string) string {
+	if words := strings.Fields(text); len(words) > 0 {
+		return words[0]
+	}
+	return ""
+}
+
+func TestTheTextOfABookCarriesTheCFIOfItsCharacters(t *testing.T) {
 	raw := createPictureEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 
@@ -211,7 +222,7 @@ func TestTheTextOfABookCarriesTheCFIOfItsBlocks(t *testing.T) {
 
 	text := readLive(t, texts, "book.epub")
 	selector, err := host.ParseSelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
-	if err != nil || !strings.HasPrefix(selector.CFI, "epubcfi(/6/") {
-		t.Errorf("the selector of Goodbye is %+v (%v), want a CFI", selector, err)
+	if err != nil || selector.CFI != "epubcfi(/6/4!/4/4/1:0)" {
+		t.Errorf("the selector of Goodbye is %+v (%v), want epubcfi(/6/4!/4/4/1:0)", selector, err)
 	}
 }

@@ -59,10 +59,15 @@ func ReadBounded(f *zip.File, most int64) ([]byte, bool) {
 // DecodeXML reads one of the documents that are XML: the container, the package
 // and the navigation control file.
 func DecodeXML(raw []byte, into any) error {
+	return NewXMLDecoder(raw).Decode(into)
+}
+
+// NewXMLDecoder is the decoder DecodeXML reads a document with, for a reader that walks its tokens.
+func NewXMLDecoder(raw []byte) *xml.Decoder {
 	d := xml.NewDecoder(bytes.NewReader(raw))
 	d.Strict = false
 	// A declared encoding is taken as the bytes are. A label with no decoder
 	// still leaves the names and the hrefs readable.
 	d.CharsetReader = func(_ string, in io.Reader) (io.Reader, error) { return in, nil }
-	return d.Decode(into)
+	return d
 }

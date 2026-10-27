@@ -25,7 +25,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/epub/v1/book.proto.
  */
 export const file_numen_epub_v1_book: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi9lcHViL3YxL2Jvb2sucHJvdG8SDW51bWVuLmVwdWIudjEiHgoOR2V0Qm9va1JlcXVlc3QSDAoEcGF0aBgBIAEoCSK8AgoPR2V0Qm9va1Jlc3BvbnNlEg0KBXRpdGxlGAEgASgJEi8KCWRvY3VtZW50cxgCIAMoCzIcLm51bWVuLmVwdWIudjEuU3BpbmVEb2N1bWVudBImCgVwYXJ0cxgDIAMoCzIXLm51bWVuLmVwdWIudjEuQm9va1BhcnQSMQoNcHJpbnRlZF9wYWdlcxgEIAMoCzIaLm51bWVuLmVwdWIudjEuUHJpbnRlZFBhZ2USEgoKcGFnZV9jb3VudBgFIAEoBRISCgp0ZXh0X2J5dGVzGAYgASgFEhIKCnBhZ2VfYnl0ZXMYByABKAUSKgoLZmluZ2VycHJpbnQYCCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludBImCgdhbmNob3JzGAkgAygLMhUubnVtZW4uZXB1Yi52MS5BbmNob3IicgoVUmVhZEJvb2tNYXJrdXBSZXF1ZXN0EgwKBHBhdGgYASABKAkSEAoIZG9jdW1lbnQYAiABKAkSLAoIYmFzZWxpbmUYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgsKCV9iYXNlbGluZSIoChZSZWFkQm9va01hcmt1cFJlc3BvbnNlEg4KBm1hcmt1cBgBIAEoCSJcChRSZWFkQm9va0VudHJ5UmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBWVudHJ5GAIgASgJEicKCGJhc2VsaW5lGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQiJQoVUmVhZEJvb2tFbnRyeVJlc3BvbnNlEgwKBGJvZHkYASABKAwiPQoNU3BpbmVEb2N1bWVudBIMCgRwYXRoGAEgASgJEg4KBm9mZnNldBgCIAEoBRIOCgZsZW5ndGgYAyABKAUiOAoIQm9va1BhcnQSDQoFdGl0bGUYASABKAkSDgoGb2Zmc2V0GAIgASgFEg0KBWxldmVsGAMgASgFIiwKC1ByaW50ZWRQYWdlEg0KBWxhYmVsGAEgASgJEg4KBm9mZnNldBgCIAEoBSIlCgZBbmNob3ISDgoGb2Zmc2V0GAEgASgFEgsKA2NmaRgCIAEoCTKSAgoLQm9va1NlcnZpY2USSAoHR2V0Qm9vaxIdLm51bWVuLmVwdWIudjEuR2V0Qm9va1JlcXVlc3QaHi5udW1lbi5lcHViLnYxLkdldEJvb2tSZXNwb25zZRJdCg5SZWFkQm9va01hcmt1cBIkLm51bWVuLmVwdWIudjEuUmVhZEJvb2tNYXJrdXBSZXF1ZXN0GiUubnVtZW4uZXB1Yi52MS5SZWFkQm9va01hcmt1cFJlc3BvbnNlEloKDVJlYWRCb29rRW50cnkSIy5udW1lbi5lcHViLnYxLlJlYWRCb29rRW50cnlSZXF1ZXN0GiQubnVtZW4uZXB1Yi52MS5SZWFkQm9va0VudHJ5UmVzcG9uc2VCTFpKZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3JlYWRlcnMtZXB1Yi9nZW4vbnVtZW4vZXB1Yi92MTtlcHVidjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi9lcHViL3YxL2Jvb2sucHJvdG8SDW51bWVuLmVwdWIudjEiHgoOR2V0Qm9va1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKUAgoPR2V0Qm9va1Jlc3BvbnNlEg0KBXRpdGxlGAEgASgJEi8KCWRvY3VtZW50cxgCIAMoCzIcLm51bWVuLmVwdWIudjEuU3BpbmVEb2N1bWVudBImCgVwYXJ0cxgDIAMoCzIXLm51bWVuLmVwdWIudjEuQm9va1BhcnQSMQoNcHJpbnRlZF9wYWdlcxgEIAMoCzIaLm51bWVuLmVwdWIudjEuUHJpbnRlZFBhZ2USEgoKcGFnZV9jb3VudBgFIAEoBRISCgp0ZXh0X2J5dGVzGAYgASgFEhIKCnBhZ2VfYnl0ZXMYByABKAUSKgoLZmluZ2VycHJpbnQYCCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCItCg1HZXRDZmlSZXF1ZXN0EgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgFIh0KDkdldENmaVJlc3BvbnNlEgsKA2NmaRgBIAEoCSIuChFGaW5kT2Zmc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2NmaRgCIAEoCSIkChJGaW5kT2Zmc2V0UmVzcG9uc2USDgoGb2Zmc2V0GAEgASgFInIKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEiwKCGJhc2VsaW5lGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUILCglfYmFzZWxpbmUiKAoWUmVhZEJvb2tNYXJrdXBSZXNwb25zZRIOCgZtYXJrdXAYASABKAkiXAoUUmVhZEJvb2tFbnRyeVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgVlbnRyeRgCIAEoCRInCghiYXNlbGluZRgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiUKFVJlYWRCb29rRW50cnlSZXNwb25zZRIMCgRib2R5GAEgASgMIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyrAMKC0Jvb2tTZXJ2aWNlEkgKB0dldEJvb2sSHS5udW1lbi5lcHViLnYxLkdldEJvb2tSZXF1ZXN0Gh4ubnVtZW4uZXB1Yi52MS5HZXRCb29rUmVzcG9uc2USXQoOUmVhZEJvb2tNYXJrdXASJC5udW1lbi5lcHViLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBolLm51bWVuLmVwdWIudjEuUmVhZEJvb2tNYXJrdXBSZXNwb25zZRJaCg1SZWFkQm9va0VudHJ5EiMubnVtZW4uZXB1Yi52MS5SZWFkQm9va0VudHJ5UmVxdWVzdBokLm51bWVuLmVwdWIudjEuUmVhZEJvb2tFbnRyeVJlc3BvbnNlEkUKBkdldENmaRIcLm51bWVuLmVwdWIudjEuR2V0Q2ZpUmVxdWVzdBodLm51bWVuLmVwdWIudjEuR2V0Q2ZpUmVzcG9uc2USUQoKRmluZE9mZnNldBIgLm51bWVuLmVwdWIudjEuRmluZE9mZnNldFJlcXVlc3QaIS5udW1lbi5lcHViLnYxLkZpbmRPZmZzZXRSZXNwb25zZUJMWkpnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvcmVhZGVycy1lcHViL2dlbi9udW1lbi9lcHViL3YxO2VwdWJ2MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.epub.v1.GetBookRequest
@@ -113,14 +113,6 @@ export type GetBookResponse = Message<"numen.epub.v1.GetBookResponse"> & {
    * @generated from field: numen.v1.Fingerprint fingerprint = 8;
    */
   fingerprint?: Fingerprint | undefined;
-
-  /**
-   * Where each block element of the book begins, ascending by offset. A place
-   * in the book is saved and found by the CFI of the block it is in.
-   *
-   * @generated from field: repeated numen.epub.v1.Anchor anchors = 9;
-   */
-  anchors: Anchor[];
 };
 
 /**
@@ -129,6 +121,97 @@ export type GetBookResponse = Message<"numen.epub.v1.GetBookResponse"> & {
  */
 export const GetBookResponseSchema: GenMessage<GetBookResponse> = /*@__PURE__*/
   messageDesc(file_numen_epub_v1_book, 1);
+
+/**
+ * @generated from message numen.epub.v1.GetCfiRequest
+ */
+export type GetCfiRequest = Message<"numen.epub.v1.GetCfiRequest"> & {
+  /**
+   * The file, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The offset in the book's text.
+   *
+   * @generated from field: int32 offset = 2;
+   */
+  offset: number;
+};
+
+/**
+ * Describes the message numen.epub.v1.GetCfiRequest.
+ * Use `create(GetCfiRequestSchema)` to create a new message.
+ */
+export const GetCfiRequestSchema: GenMessage<GetCfiRequest> = /*@__PURE__*/
+  messageDesc(file_numen_epub_v1_book, 2);
+
+/**
+ * @generated from message numen.epub.v1.GetCfiResponse
+ */
+export type GetCfiResponse = Message<"numen.epub.v1.GetCfiResponse"> & {
+  /**
+   * The EPUB CFI of the character at the offset, such as
+   * `epubcfi(/6/4!/4/2/1:12)`: the first character written at or after it.
+   *
+   * @generated from field: string cfi = 1;
+   */
+  cfi: string;
+};
+
+/**
+ * Describes the message numen.epub.v1.GetCfiResponse.
+ * Use `create(GetCfiResponseSchema)` to create a new message.
+ */
+export const GetCfiResponseSchema: GenMessage<GetCfiResponse> = /*@__PURE__*/
+  messageDesc(file_numen_epub_v1_book, 3);
+
+/**
+ * @generated from message numen.epub.v1.FindOffsetRequest
+ */
+export type FindOffsetRequest = Message<"numen.epub.v1.FindOffsetRequest"> & {
+  /**
+   * The file, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * An EPUB CFI into the book.
+   *
+   * @generated from field: string cfi = 2;
+   */
+  cfi: string;
+};
+
+/**
+ * Describes the message numen.epub.v1.FindOffsetRequest.
+ * Use `create(FindOffsetRequestSchema)` to create a new message.
+ */
+export const FindOffsetRequestSchema: GenMessage<FindOffsetRequest> = /*@__PURE__*/
+  messageDesc(file_numen_epub_v1_book, 4);
+
+/**
+ * @generated from message numen.epub.v1.FindOffsetResponse
+ */
+export type FindOffsetResponse = Message<"numen.epub.v1.FindOffsetResponse"> & {
+  /**
+   * The offset in the book's text of what the CFI names.
+   *
+   * @generated from field: int32 offset = 1;
+   */
+  offset: number;
+};
+
+/**
+ * Describes the message numen.epub.v1.FindOffsetResponse.
+ * Use `create(FindOffsetResponseSchema)` to create a new message.
+ */
+export const FindOffsetResponseSchema: GenMessage<FindOffsetResponse> = /*@__PURE__*/
+  messageDesc(file_numen_epub_v1_book, 5);
 
 /**
  * @generated from message numen.epub.v1.ReadBookMarkupRequest
@@ -163,7 +246,7 @@ export type ReadBookMarkupRequest = Message<"numen.epub.v1.ReadBookMarkupRequest
  * Use `create(ReadBookMarkupRequestSchema)` to create a new message.
  */
 export const ReadBookMarkupRequestSchema: GenMessage<ReadBookMarkupRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 2);
+  messageDesc(file_numen_epub_v1_book, 6);
 
 /**
  * @generated from message numen.epub.v1.ReadBookMarkupResponse
@@ -182,7 +265,7 @@ export type ReadBookMarkupResponse = Message<"numen.epub.v1.ReadBookMarkupRespon
  * Use `create(ReadBookMarkupResponseSchema)` to create a new message.
  */
 export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 3);
+  messageDesc(file_numen_epub_v1_book, 7);
 
 /**
  * @generated from message numen.epub.v1.ReadBookEntryRequest
@@ -216,7 +299,7 @@ export type ReadBookEntryRequest = Message<"numen.epub.v1.ReadBookEntryRequest">
  * Use `create(ReadBookEntryRequestSchema)` to create a new message.
  */
 export const ReadBookEntryRequestSchema: GenMessage<ReadBookEntryRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 4);
+  messageDesc(file_numen_epub_v1_book, 8);
 
 /**
  * @generated from message numen.epub.v1.ReadBookEntryResponse
@@ -235,7 +318,7 @@ export type ReadBookEntryResponse = Message<"numen.epub.v1.ReadBookEntryResponse
  * Use `create(ReadBookEntryResponseSchema)` to create a new message.
  */
 export const ReadBookEntryResponseSchema: GenMessage<ReadBookEntryResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 5);
+  messageDesc(file_numen_epub_v1_book, 9);
 
 /**
  * SpineDocument is one document of the spine and where it is in the book's
@@ -271,7 +354,7 @@ export type SpineDocument = Message<"numen.epub.v1.SpineDocument"> & {
  * Use `create(SpineDocumentSchema)` to create a new message.
  */
 export const SpineDocumentSchema: GenMessage<SpineDocument> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 6);
+  messageDesc(file_numen_epub_v1_book, 10);
 
 /**
  * BookPart is a named division of the book, at the offset its text begins.
@@ -303,7 +386,7 @@ export type BookPart = Message<"numen.epub.v1.BookPart"> & {
  * Use `create(BookPartSchema)` to create a new message.
  */
 export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 7);
+  messageDesc(file_numen_epub_v1_book, 11);
 
 /**
  * PrintedPage is one page of the printed book, at the offset it starts.
@@ -327,32 +410,7 @@ export type PrintedPage = Message<"numen.epub.v1.PrintedPage"> & {
  * Use `create(PrintedPageSchema)` to create a new message.
  */
 export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 8);
-
-/**
- * Anchor is where a block element begins in the book's text, and its EPUB
- * Canonical Fragment Identifier, such as `epubcfi(/6/4!/4/2)`.
- *
- * @generated from message numen.epub.v1.Anchor
- */
-export type Anchor = Message<"numen.epub.v1.Anchor"> & {
-  /**
-   * @generated from field: int32 offset = 1;
-   */
-  offset: number;
-
-  /**
-   * @generated from field: string cfi = 2;
-   */
-  cfi: string;
-};
-
-/**
- * Describes the message numen.epub.v1.Anchor.
- * Use `create(AnchorSchema)` to create a new message.
- */
-export const AnchorSchema: GenMessage<Anchor> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 9);
+  messageDesc(file_numen_epub_v1_book, 12);
 
 /**
  * @generated from service numen.epub.v1.BookService
@@ -394,6 +452,30 @@ export const BookService: GenService<{
     methodKind: "unary";
     input: typeof ReadBookEntryRequestSchema;
     output: typeof ReadBookEntryResponseSchema;
+  },
+  /**
+   * GetCfi is the EPUB CFI of the place at an offset of the book's text,
+   * which a place in the book is saved by. It is not found for a book with no
+   * text.
+   *
+   * @generated from rpc numen.epub.v1.BookService.GetCfi
+   */
+  getCfi: {
+    methodKind: "unary";
+    input: typeof GetCfiRequestSchema;
+    output: typeof GetCfiResponseSchema;
+  },
+  /**
+   * FindOffset is the offset of the book's text an EPUB CFI names: a saved
+   * place or a search hit. It is not found for a CFI naming no document of
+   * the book's spine, and invalid for a string that is no CFI.
+   *
+   * @generated from rpc numen.epub.v1.BookService.FindOffset
+   */
+  findOffset: {
+    methodKind: "unary";
+    input: typeof FindOffsetRequestSchema;
+    output: typeof FindOffsetResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_epub_v1_book, 0);
