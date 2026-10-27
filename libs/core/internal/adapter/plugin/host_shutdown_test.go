@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
@@ -142,26 +144,28 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 	}
 }
 
-func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
+func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 	host := NewHost("desktop.editor")
-	manifest := pluginport.PluginManifest{ID: "md.numen.readers.epub", FileExtensions: []string{".epub"}}
-	host.plugins["md.numen.readers.epub"] = plugindir.DiscoveredPlugin{Manifest: manifest}
+	manifest := pluginport.PluginManifest{ID: "md.numen.decks", ContentTypes: []pluginport.PluginContentType{
+		{Type: "application/x-numen-deck", Globs: []string{"*.deck"}},
+	}}
+	host.plugins[manifest.ID] = plugindir.DiscoveredPlugin{Manifest: manifest}
 
-	if _, ok := host.FindPluginByFileExtension(".epub"); !ok {
-		t.Fatal("expected an enabled plugin to be found")
+	if got := host.GetContentType("cards/Verbs.DECK"); got != "application/x-numen-deck" {
+		t.Fatalf("GetContentType = %q; want the type the enabled plugin brings", got)
 	}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.readers.epub", false); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), manifest.ID, false); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
-	if _, ok := host.FindPluginByFileExtension(".epub"); ok {
-		t.Fatal("a disabled plugin was found by extension")
+	if got := host.GetContentType("cards/Verbs.deck"); got != domain.UnknownContentType {
+		t.Fatalf("GetContentType = %q; want unknown with the plugin disabled", got)
 	}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.readers.epub", true); err != nil {
+	if err := host.SetPluginEnabled(t.Context(), manifest.ID, true); err != nil {
 		t.Fatalf("SetPluginEnabled failed: %v", err)
 	}
 	host.SetSafeMode(true)
-	if _, ok := host.FindPluginByFileExtension(".epub"); ok {
-		t.Fatal("a plugin was found by extension in safe mode")
+	if got := host.GetContentType("cards/Verbs.deck"); got != domain.UnknownContentType {
+		t.Fatalf("GetContentType = %q; want unknown in safe mode", got)
 	}
 }
 

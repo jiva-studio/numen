@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
@@ -17,7 +18,8 @@ const frontendOnlyManifest = `{
 	"name": "Sketch",
 	"version": "1.0.0",
 	"targets": ["desktop.editor"],
-	"fileExtensions": [".sketch"],
+	"contentTypes": [{"type": "application/x-numen-sketch", "globs": ["*.sketch"]}],
+	"readers": [{"id": "sketch", "contentTypes": ["application/x-numen-sketch"], "rank": "default"}],
 	"settings": [{"key": "grid", "type": "boolean", "title": "Grid", "default": true}],
 	"frontend": {"entrypoint": "dist/index.js"}
 }`
@@ -86,5 +88,9 @@ func TestPluginInfosMarkThePluginsWithAFrontend(t *testing.T) {
 	infos := host.GetPluginInfos()
 	if len(infos) != 1 || !infos[0].HasFrontend {
 		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend", infos)
+	}
+	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"sketch"}}}
+	if !reflect.DeepEqual(infos[0].Readers, want) {
+		t.Fatalf("Readers = %+v, want %+v", infos[0].Readers, want)
 	}
 }

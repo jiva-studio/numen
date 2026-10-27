@@ -14,7 +14,7 @@
     {
       "id": "proofread",
       "title": "Proofread text",
-      "fileExtensions": ["*"],
+      "contentTypes": ["*/*"],
       "hiddenInPalette": true
     }
   ],

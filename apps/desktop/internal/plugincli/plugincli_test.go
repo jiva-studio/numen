@@ -260,7 +260,7 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
 		{"command without backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, "no backend to run them"},
 		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"Run","title":"Run"}]}`, "lowercase words joined by hyphens"},
-		{"command extension with a dot", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"run","title":"Run","fileExtensions":[".pdf"]}]}`, "without the dot"},
+		{"command content type that is an extension", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"run","title":"Run","contentTypes":[".pdf"]}]}`, "invalid content type"},
 		{"command argument of no type", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"run","title":"Run","arguments":[{"name":"n","title":"N","type":"int"}]}]}`, "invalid command argument"},
 	}
 	for _, tc := range cases {

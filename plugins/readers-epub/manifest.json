@@ -6,11 +6,11 @@
   "description": "EPUB book reader and metadata parser",
   "capabilities": ["book"],
   "targets": ["desktop.editor"],
-  "fileExtensions": [".epub"],
-  "activationEvents": ["onFile:*.epub"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
+  "readers": [{ "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }],
   "textInput": {
-    "files": [".epub"],
+    "contentTypes": ["application/epub+zip"],
     "autoRun": true
   },
   "lifecycle": {

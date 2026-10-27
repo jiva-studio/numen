@@ -298,8 +298,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onFile:<glob>` (e.g. pdf)\n  - `*` (startup)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onFile:<glob>", "*"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onCommand:<id>` (e.g. ocr.scan)\n  - `*` (startup)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onCommand:<id>", "*"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }
@@ -522,8 +522,6 @@ func isEmittedActivationEvent(event string) bool {
 	switch {
 	case event == "*":
 		return true
-	case strings.HasPrefix(event, "onFile:"):
-		return len(strings.TrimPrefix(event, "onFile:")) > 0
 	case strings.HasPrefix(event, "onCommand:"):
 		return len(strings.TrimPrefix(event, "onCommand:")) > 0
 	default:
@@ -564,7 +562,7 @@ func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
 			violations = append(violations, event)
 		}
 	}
-	want := []string{"onStartupFinished", "onView:agent", "unsupportedEvent", "onFile:", "onCommand:", "onView:"}
+	want := []string{"onFile:*.pdf", "onStartupFinished", "onView:agent", "unsupportedEvent", "onFile:", "onCommand:", "onView:"}
 	if !slices.Equal(violations, want) {
 		t.Errorf("the activation event rule rejects %v, want %v", violations, want)
 	}

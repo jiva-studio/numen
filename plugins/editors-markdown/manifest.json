@@ -6,7 +6,9 @@
   "description": "Modular Markdown and plain text editor with CodeMirror 6 and wikilinks support",
   "capabilities": [],
   "targets": ["desktop.editor"],
-  "fileExtensions": [".md", ".markdown", ".txt", ".note"],
+  "readers": [
+    { "id": "editor-markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
+  ],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {

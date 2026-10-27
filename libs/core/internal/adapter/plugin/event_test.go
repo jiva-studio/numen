@@ -23,7 +23,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -79,13 +81,16 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	return addr.Port
 }
 
-// newEventHost returns a host whose plugins subscribe to the given activation events and run on the given ports.
+// newEventHost returns a host of the given plugins, each with a backend, running on the given ports.
 // The host is torn down before its processes are killed.
-func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[string]int) *Host {
+func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
 	t.Helper()
 	host := NewHost("desktop.editor")
-	for id, events := range subscriptions {
-		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: events, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
+	host.SetContentTypeTable(sharedmimeinfo.Open())
+	for id, manifest := range manifests {
+		manifest.ID = id
+		manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
+		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: manifest}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -115,10 +120,10 @@ func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[str
 	return host
 }
 
-func TestAnEventReachesOnlyThePluginsSubscribedToIt(t *testing.T) {
+func TestAFileEventReachesOnlyThePluginsReadingItsType(t *testing.T) {
 	pdf, notes := &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
-		map[string][]string{"md.test.pdf": {"onFile:*.pdf"}, "md.test.notes": {"onFile:*.md"}},
+		map[string]pluginport.PluginManifest{"md.test.pdf": readingType("application/pdf"), "md.test.notes": readingType("text/markdown")},
 		map[string]int{"md.test.pdf": servePlugin(t, pdf), "md.test.notes": servePlugin(t, notes)},
 	)
 
@@ -141,7 +146,7 @@ func TestAnEventReachesOnlyThePluginsSubscribedToIt(t *testing.T) {
 func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 	pdf := &eventRecorder{}
 	host := newEventHost(t,
-		map[string][]string{"md.test.pdf": {"onFile:*.pdf"}},
+		map[string]pluginport.PluginManifest{"md.test.pdf": readingType("application/pdf")},
 		map[string]int{"md.test.pdf": servePlugin(t, pdf)},
 	)
 
@@ -157,7 +162,7 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string][]string{"md.test.silent": {"onOpen"}},
+		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{"onOpen"}}},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
@@ -174,7 +179,7 @@ func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testin
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
-		map[string][]string{"a.refusing": {"onOpen"}, "b.working": {"onOpen"}},
+		map[string]pluginport.PluginManifest{"a.refusing": {ActivationEvents: []string{"onOpen"}}, "b.working": {ActivationEvents: []string{"onOpen"}}},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
@@ -191,7 +196,7 @@ func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testin
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string][]string{"md.test.failing": {"onOpen"}},
+		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{"onOpen"}}},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
@@ -213,4 +218,9 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	if err := transport.ConvertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
 		t.Fatalf("convertEventRefusal(99) = %v, want an error naming the unknown code", err)
 	}
+}
+
+// readingType is a plugin that makes text from files of the type.
+func readingType(contentType domain.ContentType) pluginport.PluginManifest {
+	return pluginport.PluginManifest{TextInput: &pluginport.PluginTextInput{ContentTypes: []domain.ContentType{contentType}}}
 }

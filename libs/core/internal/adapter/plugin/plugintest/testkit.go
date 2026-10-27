@@ -36,7 +36,9 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 		"description": "Sample",
 		"capabilities": ["org.example.reading"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onFile:*.sample"],
+		"activationEvents": [],
+		"contentTypes": [{"type": "application/x-sample", "globs": ["*.sample"]}],
+		"textInput": {"contentTypes": ["application/x-sample"]},
 		"permissions": ["vault:read"],
 		"lifecycle": {
 			"mode": "on-demand",

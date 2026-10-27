@@ -7,4 +7,4 @@ Reflowable EPUB book reader and metadata parser.
 - Parses EPUB archives, chapters, and table of contents.
 - Serves `numen.v1.BookService`.
 - Provides frontend reader interface with chapter navigation.
-- Activates on `onFile:*.epub`.
+- Opens `application/epub+zip` files as their default reader.

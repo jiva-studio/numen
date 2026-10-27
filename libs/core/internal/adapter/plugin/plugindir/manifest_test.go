@@ -17,7 +17,7 @@ func TestReadManifest(t *testing.T) {
 		"description": "Optical character recognition",
 		"capabilities": ["recognition"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
+		"activationEvents": ["onCommand:ocr.recognize"],
 		"permissions": ["vault:read"],
 		"lifecycle": {
 			"mode": "on-demand",
@@ -66,17 +66,8 @@ func TestReadManifest(t *testing.T) {
 	if !m.HasCapability("recognition") {
 		t.Errorf("expected capability recogniser")
 	}
-	if !m.CanActivateOn("onFile:document.pdf") {
-		t.Errorf("expected activation on onFile:document.pdf")
-	}
-	if !m.CanActivateOn("onFile:pdf") {
-		t.Errorf("expected activation on onFile:pdf")
-	}
-	if !m.CanActivateOn("onFile:.pdf") {
-		t.Errorf("expected activation on onFile:.pdf")
-	}
-	if m.CanActivateOn("onFile:book.epub") {
-		t.Errorf("unexpected activation on onFile:book.epub")
+	if m.CanActivateOn("onFile:document.pdf") {
+		t.Errorf("unexpected activation on onFile:document.pdf: a file event is matched by content type")
 	}
 	if !m.CanActivateOn("onCommand:ocr.recognize") {
 		t.Errorf("expected activation on onCommand:ocr.recognize")
@@ -250,7 +241,7 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"negative idle timeout", `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, pluginport.ErrInvalidLifecycle},
 		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, pluginport.ErrInvalidBackend},
 		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, pluginport.ErrInvalidBackend},
-		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onFile:.md"],"frontend":{"entrypoint":"dist/index.js"}}`, pluginport.ErrNoBackend},
+		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onCommand:a"],"frontend":{"entrypoint":"dist/index.js"}}`, pluginport.ErrNoBackend},
 		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, pluginport.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, pluginport.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, pluginport.ErrNoBackend},

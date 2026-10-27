@@ -149,7 +149,7 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
         .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'window' })),
       declared: (manifest.commands ?? [])
         .filter((one) => !one.hiddenInPalette)
-        .map((one) => ({ text: one.title, group: one.fileExtensions?.length ? 'file' : 'window' })),
+        .map((one) => ({ text: one.title, group: one.contentTypes?.length ? 'file' : 'window' })),
       commands: manifest.frontend ? await readRegisteredCommands(at, entry.name) : [],
     })
   }

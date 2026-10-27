@@ -187,6 +187,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			CompletionConsent: Consents[one.Consent],
 			Failure:           newWirePluginFailure(one.Failure),
 			HasFrontend:       one.HasFrontend,
+			Readers:           newWireReaders(one.Readers),
 		})
 	}
 	return infos
@@ -338,4 +339,13 @@ func (h *Handler) ChoosePluginPath(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return connect.NewResponse(reply), nil
+}
+
+// newWireReaders is the readers of a plugin as the wire carries them.
+func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
+	out := make([]*v1.PluginReader, 0, len(readers))
+	for _, one := range readers {
+		out = append(out, &v1.PluginReader{Id: one.ID, Extensions: one.Extensions})
+	}
+	return out
 }

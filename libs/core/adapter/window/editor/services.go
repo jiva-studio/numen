@@ -82,7 +82,7 @@ func createServices(state *State) *Services {
 		Vaults:      &vaultsHandler{state: state},
 		Settings:    settings.NewHandler(),
 		Agent:       newAgentHandler(state),
-		Command:     command.NewHandler(plugincommand.NewCommands(nil)),
+		Command:     command.NewHandler(plugincommand.NewCommands(nil, nil)),
 		Recording:   &recordingHandler{state: state},
 		TextVersion: textmenu.NewHandler(state, nil),
 		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},

@@ -5,10 +5,11 @@
   "protocol": 1,
   "description": "Saves web links as notes, fetches their articles and captions, and downloads videos for offline playback",
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFile:*.url"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "readers": [{ "id": "link", "contentTypes": ["application/x-mswinurl"], "rank": "default" }],
   "textInput": {
-    "files": [".url"],
+    "contentTypes": ["application/x-mswinurl"],
     "autoRun": true
   },
   "playback": {
@@ -26,17 +27,17 @@
     {
       "id": "download-text",
       "title": "Download text again",
-      "fileExtensions": ["url"]
+      "contentTypes": ["application/x-mswinurl"]
     },
     {
       "id": "download-copy",
       "title": "Download video",
-      "fileExtensions": ["url"]
+      "contentTypes": ["application/x-mswinurl"]
     },
     {
       "id": "delete-copy",
       "title": "Delete downloaded video",
-      "fileExtensions": ["url"]
+      "contentTypes": ["application/x-mswinurl"]
     }
   ],
   "lifecycle": {

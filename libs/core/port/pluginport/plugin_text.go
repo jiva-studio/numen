@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -12,40 +11,36 @@ import (
 // ErrInvalidTextInput is a text input that points at no version, or at the wrong one.
 var ErrInvalidTextInput = errors.New("invalid text input")
 
-// PluginTextInput is what a plugin makes text from: files of the types Files
-// names, by extension with its dot, and text versions in the formats Formats
-// names. IsAutoRun asks the host to run the plugin on a file of its types that
-// has no live text version.
+// PluginTextInput is what a plugin makes text from: files of the content types
+// ContentTypes names, and text versions in the formats Formats names. IsAutoRun
+// asks the host to run the plugin on a file of its types that has no live text
+// version.
 //
 // A plugin that declares one serves numen.v1.TextProviderService.
 type PluginTextInput struct {
-	Files     []string            `json:"files,omitempty"`
-	Formats   []domain.TextFormat `json:"formats,omitempty"`
-	IsAutoRun bool                `json:"autoRun,omitempty"`
+	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
+	Formats      []domain.TextFormat  `json:"formats,omitempty"`
+	IsAutoRun    bool                 `json:"autoRun,omitempty"`
 }
 
 // listTextInputIssues checks that a text input names something to read, every
-// file type as an extension and every format as one the core reads.
+// content type as a type or a mask and every format as one the core reads.
 func (m PluginManifest) listTextInputIssues() []error {
 	in := m.TextInput
 	if in == nil {
 		return nil
 	}
 	var issues []error
-	if len(in.Files) == 0 && len(in.Formats) == 0 {
-		issues = append(issues, fmt.Errorf("%w: it names no file type and no format", ErrInvalidTextInput))
+	if len(in.ContentTypes) == 0 && len(in.Formats) == 0 {
+		issues = append(issues, fmt.Errorf("%w: it names no content type and no format", ErrInvalidTextInput))
 	}
-	for _, ext := range in.Files {
-		if len(ext) < 2 || !strings.HasPrefix(ext, ".") || strings.ContainsAny(ext[1:], `./\ `) {
-			issues = append(issues, fmt.Errorf("%w: %q is not an extension", ErrInvalidTextInput, ext))
-		}
-	}
+	issues = append(issues, listContentTypesIssues(ErrInvalidTextInput, in.ContentTypes)...)
 	for _, format := range in.Formats {
 		if !format.IsValid() {
 			issues = append(issues, fmt.Errorf("%w: %q is not a format, expected one of %v", ErrInvalidTextInput, format, domain.TextFormats()))
 		}
 	}
-	if in.IsAutoRun && len(in.Files) == 0 {
+	if in.IsAutoRun && len(in.ContentTypes) == 0 {
 		issues = append(issues, fmt.Errorf("%w: a plugin that runs on its own reads files", ErrInvalidTextInput))
 	}
 	return issues

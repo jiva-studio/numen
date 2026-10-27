@@ -44,6 +44,17 @@ type PluginInfo struct {
 	Failure *PluginFailure
 	// HasFrontend is whether the plugin declares a bundle the windows load.
 	HasFrontend bool
+	// Readers are the readers the manifest declares, with the files each opens.
+	Readers []PluginReaderInfo
+}
+
+// PluginReaderInfo is a reader of a plugin and the files it opens.
+type PluginReaderInfo struct {
+	// ID is the id the frontend registers the reader under.
+	ID string
+	// Extensions are the extensions, lowercase and without the dot, of the files the reader opens:
+	// those of its types where it is the default reader of every enabled plugin.
+	Extensions []string
 }
 
 // CompletionConsent is whether the person lets a plugin ask for model

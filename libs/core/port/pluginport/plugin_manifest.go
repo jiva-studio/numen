@@ -55,7 +55,6 @@ func PluginCapabilities() []string {
 // PluginActivationEvents is every activation event pattern the guide lists.
 func PluginActivationEvents() []string {
 	return []string{
-		"onFile:<glob>",
 		"onCommand:<id>",
 		"*",
 	}
@@ -207,7 +206,6 @@ type PluginManifest struct {
 	Description      string                  `json:"description"`
 	Capabilities     []string                `json:"capabilities"`
 	Targets          []string                `json:"targets"`
-	FileExtensions   []string                `json:"fileExtensions,omitempty"`
 	ActivationEvents []string                `json:"activationEvents"`
 	Permissions      []string                `json:"permissions"`
 	Runtimes         []string                `json:"runtimes,omitempty"`
@@ -233,6 +231,11 @@ type PluginManifest struct {
 	TextInput *PluginTextInput `json:"textInput,omitempty"`
 	// Playback is the file types the plugin keeps a copy to play of. A plugin that keeps none declares none.
 	Playback *PluginPlayback `json:"playback,omitempty"`
+	// ContentTypes are the types of file the plugin brings that the content type table does not know.
+	ContentTypes []PluginContentType `json:"contentTypes,omitempty"`
+	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
+	// registers it under.
+	Readers []PluginReader `json:"readers,omitempty"`
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
@@ -298,6 +301,8 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listTextInputIssues()...)
 	issues = append(issues, m.listPlaybackIssues()...)
+	issues = append(issues, m.listContentTypeIssues()...)
+	issues = append(issues, m.listReaderIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
@@ -533,9 +538,6 @@ func isRecognizedActivationEvent(event string) bool {
 	if event == "*" {
 		return true
 	}
-	if strings.HasPrefix(event, "onFile:") && len(event) > len("onFile:") {
-		return true
-	}
 	if strings.HasPrefix(event, "onCommand:") && len(event) > len("onCommand:") {
 		return true
 	}
@@ -667,43 +669,7 @@ func (m PluginManifest) HasService(service string) bool {
 	return (m.Backend.ServiceName != "" && m.Backend.ServiceName == service) || slices.Contains(m.Services, service)
 }
 
-// HasFileExtension reports whether this plugin supports the given file extension.
-func (m PluginManifest) HasFileExtension(ext string) bool {
-	return slices.Contains(m.FileExtensions, ext)
-}
-
 // CanActivateOn reports whether the given event triggers plugin activation.
 func (m PluginManifest) CanActivateOn(event string) bool {
-	if slices.Contains(m.ActivationEvents, "*") {
-		return true
-	}
-	for _, one := range m.ActivationEvents {
-		if one == event {
-			return true
-		}
-		if strings.HasPrefix(one, "onFile:") && strings.HasPrefix(event, "onFile:") {
-			pattern := strings.TrimPrefix(one, "onFile:")
-			target := strings.TrimPrefix(event, "onFile:")
-			if matchFilePattern(pattern, target) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func matchFilePattern(pattern, target string) bool {
-	if pattern == target || pattern == "*" {
-		return true
-	}
-	if strings.HasPrefix(pattern, "*.") {
-		ext := strings.TrimPrefix(pattern, "*")
-		rawExt := strings.TrimPrefix(pattern, "*.")
-		return strings.HasSuffix(target, ext) || target == rawExt || target == ext
-	}
-	if strings.HasPrefix(pattern, ".") {
-		rawExt := strings.TrimPrefix(pattern, ".")
-		return strings.HasSuffix(target, pattern) || target == rawExt
-	}
-	return false
+	return slices.Contains(m.ActivationEvents, "*") || slices.Contains(m.ActivationEvents, event)
 }

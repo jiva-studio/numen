@@ -32,6 +32,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -102,6 +103,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	plugintest.CreateTestPluginTree(t, tmp)
 
 	host := NewHost("desktop.editor", tmp)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -231,6 +233,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	plugintest.CreateTestPluginTree(t, tmp)
 
 	host := NewHost("desktop.editor", tmp)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1393,7 +1396,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 }
 
-// newHostOfProviders registers three plugins sharing a capability and an extension, in an order
+// newHostOfProviders registers three plugins sharing a capability, in an order
 // that is not the order of their ids.
 func newHostOfProviders(t *testing.T) *Host {
 	t.Helper()
@@ -1401,15 +1404,14 @@ func newHostOfProviders(t *testing.T) *Host {
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Second) })
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
 		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: plugindir.Manifest{
-			ID:             id,
-			Capabilities:   []string{bridge.CapabilityEmbedding},
-			FileExtensions: []string{".fixture"},
+			ID:           id,
+			Capabilities: []string{bridge.CapabilityEmbedding},
 		}}
 	}
 	return host
 }
 
-// Of several enabled plugins with the capability or the extension, the one with the lowest id is
+// Of several enabled plugins with the capability, the one with the lowest id is
 // found, at every lookup.
 func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
 	host := newHostOfProviders(t)
@@ -1417,10 +1419,6 @@ func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
 		byCapability, ok := host.FindPluginByCapability(bridge.CapabilityEmbedding)
 		if !ok || byCapability.Manifest.ID != "md.numen.provider-a" {
 			t.Fatalf("by capability found %q, %v", byCapability.Manifest.ID, ok)
-		}
-		byExtension, ok := host.FindPluginByFileExtension(".fixture")
-		if !ok || byExtension.Manifest.ID != "md.numen.provider-a" {
-			t.Fatalf("by extension found %q, %v", byExtension.Manifest.ID, ok)
 		}
 	}
 

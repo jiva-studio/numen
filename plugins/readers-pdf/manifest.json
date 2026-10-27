@@ -6,11 +6,11 @@
   "description": "Standalone PDF document viewer and page renderer powered by PDFium",
   "capabilities": ["document"],
   "targets": ["desktop.editor"],
-  "fileExtensions": [".pdf"],
-  "activationEvents": ["onFile:*.pdf"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
+  "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }],
   "textInput": {
-    "files": [".pdf"],
+    "contentTypes": ["application/pdf"],
     "autoRun": true
   },
   "lifecycle": {

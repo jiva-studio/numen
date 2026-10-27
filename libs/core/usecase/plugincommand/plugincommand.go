@@ -9,8 +9,12 @@ import (
 	"maps"
 	"slices"
 	"strconv"
+	"strings"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -50,14 +54,16 @@ type Commands struct {
 	Run  Run
 }
 
-// NewCommands makes both scenarios over the commands, which may be nothing.
-func NewCommands(commands pluginport.PluginCommands) Commands {
-	return Commands{List: List{commands: commands}, Run: Run{commands: commands}}
+// NewCommands makes both scenarios over the commands, which may be nothing, and the table that
+// gives a file its type.
+func NewCommands(commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable) Commands {
+	return Commands{List: List{commands: commands, types: types}, Run: Run{commands: commands, types: types}}
 }
 
 // List lists the commands the enabled plugins declare.
 type List struct {
 	commands pluginport.PluginCommands
+	types    contenttypeport.ContentTypeTable
 }
 
 // Execute lists them. Where there is no plugin host it lists none.
@@ -82,6 +88,7 @@ func (u List) Find(id string) (Entry, bool) {
 // Run runs one command in the backend of the plugin that declares it.
 type Run struct {
 	commands pluginport.PluginCommands
+	types    contenttypeport.ContentTypeTable
 }
 
 // Execute checks the call against the declaration and runs it. A call that does not meet the declaration is ErrBadArguments, saying what is wrong,
@@ -98,7 +105,7 @@ func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
 	declared := entries[index].Command
-	if err := checkCall(declared, call); err != nil {
+	if err := u.checkCall(declared, call); err != nil {
 		return Result{}, err
 	}
 	normalized := call
@@ -107,12 +114,12 @@ func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
 }
 
 // checkCall reports the first way the call does not meet the declaration.
-func checkCall(declared Command, call Call) error {
+func (u Run) checkCall(declared Command, call Call) error {
 	switch {
-	case declared.HasFiles() && call.Path == "":
+	case declared.HasFiles() && (call.Path == "" || strings.HasSuffix(call.Path, "/")):
 		return fmt.Errorf("%w: %s runs over a file", ErrBadArguments, declared.ID)
-	case declared.HasFiles() && !declared.CanRunOn(call.Path):
-		return fmt.Errorf("%w: %s runs over files of %v, and %s is none", ErrBadArguments, declared.ID, declared.FileExtensions, call.Path)
+	case declared.HasFiles() && !declared.CanRunOn(u.getContentType(call.Path)):
+		return fmt.Errorf("%w: %s runs over files of %v, and %s is none", ErrBadArguments, declared.ID, declared.ContentTypes, call.Path)
 	case !declared.HasFiles() && call.Path != "":
 		return fmt.Errorf("%w: %s runs over no file", ErrBadArguments, declared.ID)
 	}
@@ -156,4 +163,28 @@ func normalizeArguments(declared Command, arguments map[string]string) map[strin
 		normalized[name] = value
 	}
 	return normalized
+}
+
+// getContentType is the type of the file at the path, unknown where there is no table.
+func (u Run) getContentType(path string) domain.ContentType {
+	if u.types == nil {
+		return domain.UnknownContentType
+	}
+	return u.types.GetContentType(path)
+}
+
+// ListExtensions lists, lowercase and without the dot, the extensions that give a file a type the
+// command runs over, and `*` alone where it runs over a file of any type.
+func (u List) ListExtensions(command Command) []string {
+	if slices.Contains(command.ContentTypes, domain.AnyContentType) {
+		return []string{"*"}
+	}
+	var out []string
+	for _, one := range command.ContentTypes {
+		if u.types != nil {
+			out = append(out, u.types.ListExtensions(one)...)
+		}
+	}
+	slices.Sort(out)
+	return slices.Compact(out)
 }

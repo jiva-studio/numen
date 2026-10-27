@@ -3,6 +3,7 @@ package cli_test
 import (
 	"context"
 	"errors"
+	"path"
 	"strings"
 	"testing"
 
@@ -37,11 +38,11 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 			},
 		}},
 		{PluginID: "md.numen.pages", Command: plugincommand.Command{
-			ID: "count-pages", Title: "Count the pages", FileExtensions: []string{"pdf"},
+			ID: "count-pages", Title: "Count the pages", ContentTypes: []domain.ContentType{"application/pdf"},
 		}},
 	}}
 	var vaults []domain.Vault
-	commands := plugincommand.NewCommands(declared)
+	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"})
 	deps := cli.Deps{
 		Vaults: createVaultList(notebook),
 		PluginCommands: func() cli.PluginCommands {
@@ -175,9 +176,9 @@ func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
 		PluginID: "md.numen.engines.transcription",
-		Command:  plugincommand.Command{ID: "transcribe", Title: "Transcribe a recording", FileExtensions: []string{"wav"}},
+		Command:  plugincommand.Command{ID: "transcribe", Title: "Transcribe a recording", ContentTypes: []domain.ContentType{"audio/*"}},
 	}}}
-	commands := plugincommand.NewCommands(declared)
+	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"})
 	deps := cli.Deps{
 		Vaults: createVaultList(notebook),
 		PluginCommands: func() cli.PluginCommands {
@@ -201,4 +202,24 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		declared.calls[0].Path != "talks/lecture.wav" {
 		t.Errorf("the plugin was sent %+v", declared.calls)
 	}
+}
+
+// fileTypes gives a file the type of its lowercase extension.
+type fileTypes map[string]domain.ContentType
+
+func (f fileTypes) GetContentType(name string) domain.ContentType {
+	if found, ok := f[strings.ToLower(path.Ext(name))]; ok {
+		return found
+	}
+	return domain.UnknownContentType
+}
+
+func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
+	var out []string
+	for extension, one := range f {
+		if mask.Matches(one) {
+			out = append(out, extension[1:])
+		}
+	}
+	return out
 }

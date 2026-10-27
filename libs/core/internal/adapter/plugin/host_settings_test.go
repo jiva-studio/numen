@@ -147,8 +147,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		"description": "Can be toggled",
 		"capabilities": ["text-processing"],
 		"targets": ["desktop.editor"],
-		"activation_events": ["on-edit"],
-		"fileExtensions": [".txt"]
+		"activation_events": ["on-edit"]
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatalf("write manifest failed: %v", err)
@@ -180,9 +179,6 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	if _, found := host.FindPluginByCapability("text-processing"); !found {
 		t.Errorf("expected capability text-processing to be found")
 	}
-	if _, found := host.FindPluginByFileExtension(".txt"); !found {
-		t.Errorf("expected extension .txt to be found")
-	}
 
 	// 2. Disable plugin
 	if err := host.SetPluginEnabled(t.Context(), pluginID, false); err != nil {
@@ -200,9 +196,6 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 
 	if _, found := host.FindPluginByCapability("text-processing"); found {
 		t.Errorf("expected disabled plugin to not be found by capability")
-	}
-	if _, found := host.FindPluginByFileExtension(".txt"); found {
-		t.Errorf("expected disabled plugin to not be found by extension")
 	}
 
 	ctx := t.Context()

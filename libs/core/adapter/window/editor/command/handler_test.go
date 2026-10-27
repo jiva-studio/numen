@@ -2,11 +2,16 @@ package command_test
 
 import (
 	"context"
+	"path"
+	"slices"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -22,11 +27,11 @@ type pluginCommands struct {
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{
-			ID: "create-deck", Title: "Create a deck", FileExtensions: []string{"md"},
+			ID: "create-deck", Title: "Create a deck", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true}},
 		}},
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{
-			ID: "print-deck", Title: "Print a deck", FileExtensions: []string{"md"}, IsHiddenInPalette: true,
+			ID: "print-deck", Title: "Print a deck", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
 		}},
 	}
 }
@@ -37,7 +42,7 @@ func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (pluginc
 
 func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequest) *v1.RunPluginCommandResponse {
 	t.Helper()
-	res, err := command.NewHandler(plugincommand.NewCommands(commands)).RunPluginCommand(t.Context(), connect.NewRequest(request))
+	res, err := command.NewHandler(plugincommand.NewCommands(commands, fileTypes{".md": "text/markdown"})).RunPluginCommand(t.Context(), connect.NewRequest(request))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +50,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 }
 
 func TestTheCommandsAreListedWithoutThoseHiddenInThePalette(t *testing.T) {
-	res, err := command.NewHandler(plugincommand.NewCommands(pluginCommands{})).ListCommands(
+	res, err := command.NewHandler(plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"})).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +62,7 @@ func TestTheCommandsAreListedWithoutThoseHiddenInThePalette(t *testing.T) {
 	}
 	one := commands[0]
 	argument := one.GetArguments()[0]
-	if one.GetPluginId() != "md.numen.cards" || one.GetId() != "create-deck" || one.GetFileExtensions()[0] != "md" ||
+	if one.GetPluginId() != "md.numen.cards" || one.GetId() != "create-deck" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
 		!argument.GetIsRequired() {
 		t.Errorf("got %v", one)
 	}
@@ -111,4 +116,24 @@ func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
 			}
 		})
 	}
+}
+
+// fileTypes gives a file the type of its lowercase extension.
+type fileTypes map[string]domain.ContentType
+
+func (f fileTypes) GetContentType(name string) domain.ContentType {
+	if found, ok := f[strings.ToLower(path.Ext(name))]; ok {
+		return found
+	}
+	return domain.UnknownContentType
+}
+
+func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
+	var out []string
+	for extension, one := range f {
+		if mask.Matches(one) {
+			out = append(out, extension[1:])
+		}
+	}
+	return out
 }

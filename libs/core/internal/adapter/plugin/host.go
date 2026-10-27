@@ -107,6 +107,8 @@ type Host struct {
 	dependencies   pluginport.DependencyCatalog
 	work           pluginport.PluginWork
 	builtIns       map[string]builtInPlugin
+	contentTypes   contentTypeTable
+	typeCache      contentTypeCache
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -146,6 +148,8 @@ func NewHost(target string, dirs ...string) *Host {
 		dependencies:     nil,
 		work:             nil,
 		builtIns:         make(map[string]builtInPlugin),
+		contentTypes:     nil,
+		typeCache:        contentTypeCache{},
 	}
 	h.bus = eventbus.New(h, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -440,27 +444,6 @@ func (h *Host) FindPluginByCapability(capability string) (plugindir.DiscoveredPl
 	return p, err == nil
 }
 
-// FindPluginByFileExtension finds the enabled plugin with the lowest id among those declaring
-// support for the given file extension.
-func (h *Host) FindPluginByFileExtension(ext string) (plugindir.DiscoveredPlugin, bool) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	if h.safeMode {
-		return plugindir.EmptyDiscoveredPlugin(), false
-	}
-
-	for _, p := range h.getPluginsInOrderLocked() {
-		if !h.isPluginEnabledLocked(p.Manifest.ID) {
-			continue
-		}
-		if p.Manifest.HasFileExtension(ext) {
-			return p, true
-		}
-	}
-	return plugindir.EmptyDiscoveredPlugin(), false
-}
-
 // TriggerEvent activates every enabled plugin whose activationEvents match the event and delivers the event to it.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()
@@ -474,7 +457,7 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 		if !h.isPluginEnabledLocked(id) {
 			continue
 		}
-		if p.Manifest.CanActivateOn(event) {
+		if p.Manifest.CanActivateOn(event) || h.isOpeningFileLocked(p, event) {
 			candidates = append(candidates, id)
 		}
 	}
@@ -1534,6 +1517,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			Consent:       h.getCompletionConsentLocked(p.Manifest),
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
+			Readers:       h.listReaderInfosLocked(p.Manifest),
 		})
 	}
 	return result

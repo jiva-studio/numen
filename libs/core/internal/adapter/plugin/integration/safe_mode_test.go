@@ -21,7 +21,9 @@ func TestHostSafeMode(t *testing.T) {
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onFile:*.sample"],
+		"activationEvents": [],
+		"contentTypes": [{"type": "application/x-sample", "globs": ["*.sample"]}],
+		"textInput": {"contentTypes": ["application/x-sample"]},
 		"permissions": ["vault:read"],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 10, "keepAliveWhileVisible": false},
 		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.v1.TextProviderService"}

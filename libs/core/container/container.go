@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -105,6 +106,7 @@ type Config struct {
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(target, dirs...)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
 	host.SetDependencies(newDependencies())
 	if err := host.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)

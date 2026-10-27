@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIoQBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9maWxlX2V4dGVuc2lvbnMYBCADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50IkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIIsIBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiawoYUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJKscBChBDb21tYW5kRXJyb3JDb2RlEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiYKIkNPTU1BTkRfRVJST1JfQ09ERV9VTktOT1dOX0NPTU1BTkQQARIkCiBDT01NQU5EX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACEh0KGUNPTU1BTkRfRVJST1JfQ09ERV9GQUlMRUQQAxIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5BVkFJTEFCTEUQBDJfChRQbHVnaW5Db21tYW5kU2VydmljZRJHCgpSdW5Db21tYW5kEhsubnVtZW4udjEuUnVuQ29tbWFuZFJlcXVlc3QaHC5udW1lbi52MS5SdW5Db21tYW5kUmVzcG9uc2UyugEKDkNvbW1hbmRTZXJ2aWNlEk0KDExpc3RDb21tYW5kcxIdLm51bWVuLnYxLkxpc3RDb21tYW5kc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXNwb25zZRJZChBSdW5QbHVnaW5Db21tYW5kEiEubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QaIi5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIpYBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50IkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIIsIBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiawoYUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJKscBChBDb21tYW5kRXJyb3JDb2RlEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiYKIkNPTU1BTkRfRVJST1JfQ09ERV9VTktOT1dOX0NPTU1BTkQQARIkCiBDT01NQU5EX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACEh0KGUNPTU1BTkRfRVJST1JfQ09ERV9GQUlMRUQQAxIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5BVkFJTEFCTEUQBDJfChRQbHVnaW5Db21tYW5kU2VydmljZRJHCgpSdW5Db21tYW5kEhsubnVtZW4udjEuUnVuQ29tbWFuZFJlcXVlc3QaHC5udW1lbi52MS5SdW5Db21tYW5kUmVzcG9uc2UyugEKDkNvbW1hbmRTZXJ2aWNlEk0KDExpc3RDb21tYW5kcxIdLm51bWVuLnYxLkxpc3RDb21tYW5kc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXNwb25zZRJZChBSdW5QbHVnaW5Db21tYW5kEiEubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QaIi5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -25,7 +25,7 @@ export type RunCommandRequest = Message<"numen.v1.RunCommandRequest"> & {
 
   /**
    * The file the command runs over, as a path relative to the vault folder.
-   * Empty for a command that declares no file extensions.
+   * Empty for a command that declares no content types.
    *
    * @generated from field: string path = 2;
    */
@@ -139,12 +139,21 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
   title: string;
 
   /**
-   * The file extensions, without the dot, the command runs over. None is a
-   * command over no file.
+   * The content types of the files the command runs over, such as
+   * application/pdf or audio/*; *\/* is a file of any type. None is a command
+   * over no file.
    *
-   * @generated from field: repeated string file_extensions = 4;
+   * @generated from field: repeated string content_types = 4;
    */
-  fileExtensions: string[];
+  contentTypes: string[];
+
+  /**
+   * The extensions, lowercase and without the dot, that give a file one of
+   * those types, and * where the command runs over a file of any type.
+   *
+   * @generated from field: repeated string extensions = 6;
+   */
+  extensions: string[];
 
   /**
    * The arguments, in the order a person is asked for them.
@@ -308,7 +317,7 @@ export const CommandErrorCodeSchema: GenEnum<CommandErrorCode> = /*@__PURE__*/
  * in its manifest serves. The host checks a call against the declaration before
  * it forwards it: the command is declared, every required argument is given,
  * every argument is declared and holds a value of its type, and a command over
- * files is given a file of a declared extension.
+ * files is given a file of a declared content type.
  *
  * @generated from service numen.v1.PluginCommandService
  */

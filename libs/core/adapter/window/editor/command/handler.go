@@ -10,6 +10,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 )
 
@@ -34,7 +36,7 @@ func (h *Handler) ListCommands(
 		if one.Command.IsHiddenInPalette {
 			continue
 		}
-		commands = append(commands, newWireCommand(one))
+		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
 }
@@ -74,7 +76,7 @@ func getErrorCode(err error) v1.CommandErrorCode {
 }
 
 // newWireCommand is a command as the schema carries it.
-func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
+func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
 		arguments = append(arguments, &v1.CommandArgument{
@@ -84,10 +86,19 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 		})
 	}
 	return &v1.PluginCommand{
-		PluginId:       entry.PluginID,
-		Id:             entry.Command.ID,
-		Title:          entry.Command.Title,
-		FileExtensions: entry.Command.FileExtensions,
-		Arguments:      arguments,
+		PluginId:     entry.PluginID,
+		Id:           entry.Command.ID,
+		Title:        entry.Command.Title,
+		ContentTypes: getContentTypeTexts(entry.Command.ContentTypes),
+		Extensions:   extensions,
+		Arguments:    arguments,
 	}
+}
+
+func getContentTypeTexts(types []domain.ContentType) []string {
+	out := make([]string, 0, len(types))
+	for _, one := range types {
+		out = append(out, string(one))
+	}
+	return out
 }

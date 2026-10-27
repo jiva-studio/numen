@@ -81,9 +81,9 @@ func (c Config) StopPlugins(ctx context.Context) error {
 // host they list none.
 func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
-		return plugincommand.NewCommands(nil)
+		return plugincommand.NewCommands(nil, nil)
 	}
-	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost))
+	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost)
 }
 
 // OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions

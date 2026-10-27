@@ -86,7 +86,7 @@ type RunCommandRequest struct {
 	// The id the manifest declares the command under.
 	Command string `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
 	// The file the command runs over, as a path relative to the vault folder.
-	// Empty for a command that declares no file extensions.
+	// Empty for a command that declares no content types.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The arguments by their declared names, each written as text: a number in
 	// decimal, a boolean as true or false. An optional argument left out is
@@ -300,9 +300,13 @@ type PluginCommand struct {
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	// What a person reads the command as.
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	// The file extensions, without the dot, the command runs over. None is a
-	// command over no file.
-	FileExtensions []string `protobuf:"bytes,4,rep,name=file_extensions,json=fileExtensions,proto3" json:"file_extensions,omitempty"`
+	// The content types of the files the command runs over, such as
+	// application/pdf or audio/*; */* is a file of any type. None is a command
+	// over no file.
+	ContentTypes []string `protobuf:"bytes,4,rep,name=content_types,json=contentTypes,proto3" json:"content_types,omitempty"`
+	// The extensions, lowercase and without the dot, that give a file one of
+	// those types, and * where the command runs over a file of any type.
+	Extensions []string `protobuf:"bytes,6,rep,name=extensions,proto3" json:"extensions,omitempty"`
 	// The arguments, in the order a person is asked for them.
 	Arguments     []*CommandArgument `protobuf:"bytes,5,rep,name=arguments,proto3" json:"arguments,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -360,9 +364,16 @@ func (x *PluginCommand) GetTitle() string {
 	return ""
 }
 
-func (x *PluginCommand) GetFileExtensions() []string {
+func (x *PluginCommand) GetContentTypes() []string {
 	if x != nil {
-		return x.FileExtensions
+		return x.ContentTypes
+	}
+	return nil
+}
+
+func (x *PluginCommand) GetExtensions() []string {
+	if x != nil {
+		return x.Extensions
 	}
 	return nil
 }
@@ -586,12 +597,15 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"openedPath\"\x15\n" +
 	"\x13ListCommandsRequest\"K\n" +
 	"\x14ListCommandsResponse\x123\n" +
-	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xb4\x01\n" +
+	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xd0\x01\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12'\n" +
-	"\x0ffile_extensions\x18\x04 \x03(\tR\x0efileExtensions\x127\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12#\n" +
+	"\rcontent_types\x18\x04 \x03(\tR\fcontentTypes\x12\x1e\n" +
+	"\n" +
+	"extensions\x18\x06 \x03(\tR\n" +
+	"extensions\x127\n" +
 	"\targuments\x18\x05 \x03(\v2\x19.numen.v1.CommandArgumentR\targuments\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +

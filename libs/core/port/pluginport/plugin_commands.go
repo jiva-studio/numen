@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // The types an argument of a command holds.
@@ -15,9 +17,6 @@ const (
 	CommandArgumentNumber  = "number"
 	CommandArgumentBoolean = "boolean"
 )
-
-// AnyFileExtension is the extension a command declares to run over a file of any type.
-const AnyFileExtension = "*"
 
 var (
 	ErrInvalidCommand         = errors.New("invalid command")
@@ -34,10 +33,10 @@ var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber
 type PluginCommand struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
-	// FileExtensions are the extensions, without the dot, of the files the command runs over, and
-	// AnyFileExtension for a file of any type. None is a command over no file.
-	FileExtensions []string                `json:"fileExtensions,omitempty"`
-	Arguments      []PluginCommandArgument `json:"arguments,omitempty"`
+	// ContentTypes are the types of the files the command runs over; `*/*` is a file of any type.
+	// None is a command over no file.
+	ContentTypes []domain.ContentType    `json:"contentTypes,omitempty"`
+	Arguments    []PluginCommandArgument `json:"arguments,omitempty"`
 	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
 	// same thing another way. The command line still offers it.
 	IsHiddenInPalette bool `json:"hiddenInPalette,omitempty"`
@@ -53,19 +52,12 @@ type PluginCommandArgument struct {
 
 // HasFiles reports whether the command runs over a file.
 func (c PluginCommand) HasFiles() bool {
-	return len(c.FileExtensions) > 0
+	return len(c.ContentTypes) > 0
 }
 
-// CanRunOn reports whether the command runs over the file at path, by its extension.
-func (c PluginCommand) CanRunOn(path string) bool {
-	if slices.Contains(c.FileExtensions, AnyFileExtension) {
-		return path != "" && !strings.HasSuffix(path, "/")
-	}
-	dot := strings.LastIndexByte(path, '.')
-	if dot < 0 || strings.ContainsRune(path[dot:], '/') {
-		return false
-	}
-	return slices.Contains(c.FileExtensions, strings.ToLower(path[dot+1:]))
+// CanRunOn reports whether the command runs over a file of the type.
+func (c PluginCommand) CanRunOn(contentType domain.ContentType) bool {
+	return isAnyMatching(c.ContentTypes, contentType)
 }
 
 // GetArgument returns the declaration of the argument of the name, and false where none is declared.
@@ -96,23 +88,8 @@ func (m PluginManifest) listCommandIssues() []error {
 		if strings.TrimSpace(command.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
 		}
-		issues = append(issues, listCommandExtensionIssues(command)...)
+		issues = append(issues, listContentTypesIssues(ErrInvalidCommand, command.ContentTypes)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
-	}
-	return issues
-}
-
-// listCommandExtensionIssues checks that every extension is lowercase without the dot, or is
-// AnyFileExtension.
-func listCommandExtensionIssues(command PluginCommand) []error {
-	var issues []error
-	for _, extension := range command.FileExtensions {
-		if extension == AnyFileExtension {
-			continue
-		}
-		if extension == "" || extension != strings.ToLower(extension) || strings.ContainsAny(extension, "./*") {
-			issues = append(issues, fmt.Errorf("%w: %q names extension %q, which is not lowercase without the dot", ErrInvalidCommand, command.ID, extension))
-		}
 	}
 	return issues
 }

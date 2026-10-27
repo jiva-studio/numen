@@ -76,12 +76,19 @@ func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.ocr":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", TextInput: &pluginport.PluginTextInput{
-			Files: []string{".pdf"}, Formats: []domain.TextFormat{domain.TextFormatPlain}, IsAutoRun: true,
+			ContentTypes: []domain.ContentType{"application/pdf"}, Formats: []domain.TextFormat{domain.TextFormatPlain}, IsAutoRun: true,
 		}}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
 	}
 	return pluginport.DiscoveredPlugin{}, false
+}
+
+func (h *host) ListExtensions(mask domain.ContentType) []string {
+	if mask == "application/pdf" {
+		return []string{"pdf"}
+	}
+	return nil
 }
 
 func (h *host) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {

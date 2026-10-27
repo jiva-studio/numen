@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
+	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 )
 
 var (
@@ -215,6 +216,7 @@ type PluginManager interface {
 	PluginLifecycleManager
 	PluginRegistryManager
 	PluginTextHost
+	contenttypeport.ContentTypeTable
 	// GetDependencies is what provisions the dependencies the plugins declare, or nil when nothing does.
 	GetDependencies() DependencyCatalog
 }

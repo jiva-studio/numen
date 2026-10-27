@@ -41,7 +41,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
           frontend: true,
           settings: [{ title: 'Glow', palette: true }, { title: 'Hidden' }],
           commands: [
-            { title: 'Light a file', fileExtensions: ['txt'] },
+            { title: 'Light a file', contentTypes: ['text/plain'] },
             { title: 'Light the room' },
             { title: 'Secret', hiddenInPalette: true },
           ],

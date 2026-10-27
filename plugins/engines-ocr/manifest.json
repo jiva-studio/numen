@@ -9,14 +9,14 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "textInput": {
-    "files": [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"],
+    "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
     "autoRun": true
   },
   "commands": [
     {
       "id": "recognise",
       "title": "Recognise text",
-      "fileExtensions": ["pdf", "png", "jpg", "jpeg", "gif", "webp"],
+      "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
       "hiddenInPalette": true
     }
   ],

@@ -6,7 +6,20 @@
   "description": "Audio player with waveform visualization and microphone recording",
   "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
-  "fileExtensions": [".mp3", ".m4a", ".wav", ".ogg", ".aac", ".flac"],
+  "readers": [
+    {
+      "id": "media-player",
+      "contentTypes": [
+        "audio/mpeg",
+        "audio/mp4",
+        "audio/vnd.wave",
+        "audio/ogg",
+        "audio/aac",
+        "audio/flac"
+      ],
+      "rank": "default"
+    }
+  ],
   "activationEvents": [],
   "frontend": {
     "entrypoint": "dist/index.js",

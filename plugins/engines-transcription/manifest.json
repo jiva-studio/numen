@@ -5,16 +5,16 @@
   "protocol": 1,
   "description": "Transcribes recordings into timed transcripts in the vault",
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFile:*.mp3", "onFile:*.wav", "onFile:*.flac"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "textInput": {
-    "files": [".wav", ".mp3", ".flac"]
+    "contentTypes": ["audio/*", "video/*"]
   },
   "commands": [
     {
       "id": "transcribe",
       "title": "Transcribe a recording",
-      "fileExtensions": ["wav", "mp3", "flac"],
+      "contentTypes": ["audio/*", "video/*"],
       "hiddenInPalette": true
     }
   ],

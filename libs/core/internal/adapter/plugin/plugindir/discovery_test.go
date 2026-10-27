@@ -21,7 +21,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		"description": "OCR plugin",
 		"capabilities": ["recognition"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onFile:*.pdf"],
+		"activationEvents": [],
 		"permissions": [],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 100, "keepAliveWhileVisible": false},
 		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "TextProviderService"},

@@ -22,6 +22,7 @@ type Host interface {
 	pluginport.PluginDiscoverer
 	pluginport.PluginResolver
 	pluginport.PluginActivator
+	ListExtensions(mask domain.ContentType) []string
 }
 
 // Plugins is the enabled plugins that declare a text input, and their providers.
@@ -44,8 +45,19 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 		}
 		in := found.Manifest.TextInput
 		out = append(out, textport.TextPlugin{
-			ID: info.ID, Name: found.Manifest.Name, Files: domain.FileInput(in.Files), Formats: in.Formats, IsAutoRun: in.IsAutoRun,
+			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(in.ContentTypes), Formats: in.Formats, IsAutoRun: in.IsAutoRun,
 		})
+	}
+	return out
+}
+
+// getFileInput is the extensions, each with its dot, that give a file one of the types.
+func (p Plugins) getFileInput(types []domain.ContentType) domain.FileInput {
+	var out domain.FileInput
+	for _, one := range types {
+		for _, extension := range p.host.ListExtensions(one) {
+			out = append(out, "."+extension)
+		}
 	}
 	return out
 }

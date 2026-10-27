@@ -121,6 +121,19 @@ message PluginInfo {
   PluginFailure failure = 13;
   // Whether the plugin declares a frontend bundle a window loads.
   bool has_frontend = 14;
+  // The readers the manifest declares, with the files each opens.
+  repeated PluginReader readers = 15;
+}
+
+// PluginReader is a tab of a plugin's frontend that opens files.
+message PluginReader {
+  // The id the frontend registers the reader under.
+  string id = 1;
+
+  // The extensions, lowercase and without the dot, of the files the reader
+  // opens: those of the content types it declares where it is the default
+  // reader among the enabled plugins.
+  repeated string extensions = 2;
 }
 
 // PluginFailure is why a plugin is suspended, and when it was.

@@ -8,7 +8,7 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // in its manifest serves. The host checks a call against the declaration before
 // it forwards it: the command is declared, every required argument is given,
 // every argument is declared and holds a value of its type, and a command over
-// files is given a file of a declared extension.
+// files is given a file of a declared content type.
 service PluginCommandService {
   // RunCommand runs one command the manifest declares.
   rpc RunCommand(RunCommandRequest) returns (RunCommandResponse);
@@ -19,7 +19,7 @@ message RunCommandRequest {
   string command = 1;
 
   // The file the command runs over, as a path relative to the vault folder.
-  // Empty for a command that declares no file extensions.
+  // Empty for a command that declares no content types.
   string path = 2;
 
   // The arguments by their declared names, each written as text: a number in
@@ -86,9 +86,14 @@ message PluginCommand {
   // What a person reads the command as.
   string title = 3;
 
-  // The file extensions, without the dot, the command runs over. None is a
-  // command over no file.
-  repeated string file_extensions = 4;
+  // The content types of the files the command runs over, such as
+  // application/pdf or audio/*; */* is a file of any type. None is a command
+  // over no file.
+  repeated string content_types = 4;
+
+  // The extensions, lowercase and without the dot, that give a file one of
+  // those types, and * where the command runs over a file of any type.
+  repeated string extensions = 6;
 
   // The arguments, in the order a person is asked for them.
   repeated CommandArgument arguments = 5;
