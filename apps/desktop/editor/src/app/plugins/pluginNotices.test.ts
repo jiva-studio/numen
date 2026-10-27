@@ -3,16 +3,16 @@ import { createNoticeQueue } from '@numen/shell'
 import { createPluginNotices } from './pluginNotices'
 
 describe('the notices of one plugin', () => {
-  it('are shown in the window list under the plugin, plain where no tone is given', () => {
+  it('are shown in the window list under the plugin, info where no severity is given', () => {
     const queue = createNoticeQueue()
     const notices = createPluginNotices(queue, 'md.numen.cards')
 
     notices.show('Saved.')
-    notices.show('Could not save.', 'alarm')
+    notices.show('Could not save.', 'error')
 
-    expect(queue.notices.value.map((one) => [one.text, one.tone, one.stay])).toEqual([
-      ['Saved.', 'plain', 'read'],
-      ['Could not save.', 'alarm', 'kept'],
+    expect(queue.notices.value.map((one) => [one.text, one.severity, one.stay])).toEqual([
+      ['Saved.', 'info', 'read'],
+      ['Could not save.', 'error', 'kept'],
     ])
   })
 
@@ -25,7 +25,7 @@ describe('the notices of one plugin', () => {
 
     expect(queue.notices.value).toMatchObject([
       { text: 'Reading the vault', about: 'Physics', done: 2, total: 5, isWorking: true },
-      { text: 'The server is gone', tone: 'alarm', isWorking: false },
+      { text: 'The server is gone', severity: 'error', isWorking: false },
     ])
   })
 })

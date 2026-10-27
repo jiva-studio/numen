@@ -111,23 +111,23 @@ export const Resting: Story = {
   },
 }
 
-/** A caution is read at leisure, and is marked so it is read. */
-export const Caution: Story = {
-  args: { text: 'No tab of this window is over a note', tone: 'caution' },
+/** A warning is read at leisure, and is marked so it is read. */
+export const Warning: Story = {
+  args: { text: 'No tab of this window is over a note', severity: 'warning' },
   play: async ({ canvasElement }) => {
     const line = getLine(canvasElement)
-    await expect(line).toHaveAttribute('data-tone', 'caution')
+    await expect(line).toHaveAttribute('data-severity', 'warning')
     await expect(line).toHaveAttribute('data-state', 'resting')
   },
 }
 
-/** Alarm outranks a count: a line that is both failing and counting says it is failing. */
+/** An error outranks a count: a line that is both failing and counting says it is failing. */
 export const Failed: Story = {
   args: {
     text: 'Reading',
     about: 'permission denied',
     tally: { completedCount: 2, total: 8 },
-    tone: 'alarm',
+    severity: 'error',
   },
   play: async ({ canvasElement }) => {
     const line = getLine(canvasElement)

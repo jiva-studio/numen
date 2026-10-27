@@ -86,8 +86,8 @@ const window = (
   const isDone: string[] = []
   const notices: string[] = []
   /** The voice each sentence was said in, one to a sentence. */
-  const tones: string[] = []
-  /** Every call to the voice, the empty ones and the missing tones included. */
+  const severities: string[] = []
+  /** Every call to the voice, the empty ones and the missing severities included. */
   const calls: [string | undefined, string | undefined][] = []
   const targetPath = answers.targetPath ?? answers.at ?? 'physics/Ontology.md'
   const turnedDown = answers.turnedDown ?? null
@@ -175,10 +175,10 @@ const window = (
       calls.push([text, kind])
       if (!text) return
       notices.push(text)
-      tones.push(kind ?? '')
+      severities.push(kind ?? '')
     },
   }
-  return { on, actions: isDone, notices, tones, calls, runs }
+  return { on, actions: isDone, notices, severities, calls, runs }
 }
 
 /** One command carried out over the note in front. */
@@ -970,7 +970,7 @@ describe('a command nothing carries out', () => {
   })
 })
 
-describe('what the voice says in which tone', () => {
+describe('what the voice says in which severity', () => {
   it('cautions that a vault opens with no note at all', async () => {
     const one = window()
     const empty: CommandDeps = {
@@ -980,7 +980,7 @@ describe('what the voice says in which tone', () => {
 
     await runInvocation(createInvocation('first', front()), empty, words)
 
-    expect(one.tones).toStrictEqual(['caution'])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('cautions that a rename waits on the person, and errors on failure', async () => {
@@ -992,9 +992,9 @@ describe('what the voice says in which tone', () => {
     await carry(createInvocation('title', front(), 'Entropy'), failedWindow.on)
     await carry(createInvocation('title', front(), 'Entropy'), changedWindow.on)
 
-    expect(pendingItem.tones).toStrictEqual(['caution'])
-    expect(failedWindow.tones).toStrictEqual(['error'])
-    expect(changedWindow.tones).toStrictEqual(['caution'])
+    expect(pendingItem.severities).toStrictEqual(['warning'])
+    expect(failedWindow.severities).toStrictEqual(['error'])
+    expect(changedWindow.severities).toStrictEqual(['warning'])
   })
 
   it('says nothing of a rename that came off', async () => {
@@ -1014,10 +1014,10 @@ describe('what the voice says in which tone', () => {
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), acquiredItem.on)
     await carry(createInvocation('move', front(), 'notes/Ontology.md'), failingWindow.on)
 
-    expect(pendingItem.tones).toStrictEqual(['caution'])
-    expect(acquiredItem.tones).toStrictEqual(['error'])
+    expect(pendingItem.severities).toStrictEqual(['warning'])
+    expect(acquiredItem.severities).toStrictEqual(['error'])
     expect(failingWindow.notices).toStrictEqual([words.errors.missing])
-    expect(failingWindow.tones).toStrictEqual(['error'])
+    expect(failingWindow.severities).toStrictEqual(['error'])
   })
 
   it('says nothing of a move that came off', async () => {
@@ -1035,9 +1035,9 @@ describe('what the voice says in which tone', () => {
     await carry(createInvocation('createFolder', front(), 'physics/heat'), acquiredItem.on)
     await carry(createInvocation('createFolder', front(), 'physics/heat'), failingWindow.on)
 
-    expect(acquiredItem.tones).toStrictEqual(['error'])
+    expect(acquiredItem.severities).toStrictEqual(['error'])
     expect(failingWindow.notices).toStrictEqual([words.errors.unnameable])
-    expect(failingWindow.tones).toStrictEqual(['error'])
+    expect(failingWindow.severities).toStrictEqual(['error'])
   })
 
   it('says nothing of a folder that was made', async () => {
@@ -1055,9 +1055,9 @@ describe('what the voice says in which tone', () => {
     await carry(createInvocation('remove', front()), failingWindow.on)
     await carry(createInvocation('remove', front()), pendingItem.on)
 
-    expect(failingWindow.tones).toStrictEqual(['error'])
+    expect(failingWindow.severities).toStrictEqual(['error'])
     expect(pendingItem.notices).toStrictEqual([words.unanswered])
-    expect(pendingItem.tones).toStrictEqual(['caution'])
+    expect(pendingItem.severities).toStrictEqual(['warning'])
   })
 })
 

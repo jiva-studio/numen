@@ -89,14 +89,14 @@ describe('createShellHost', () => {
     const { host, notices } = createShellHost()
     const context = host.createContext('md.numen.example')
 
-    context.notices?.show('Could not save the deck.', 'alarm')
+    context.notices?.show('Could not save the deck.', 'error')
     context.notices?.show('Saved.')
     context.notices?.setTasks([{ id: 'index', label: 'Reading the vault', done: 2, total: 5 }])
 
-    expect(notices.notices.value.map((one) => [one.text, one.tone])).toEqual([
+    expect(notices.notices.value.map((one) => [one.text, one.severity])).toEqual([
       ['Reading the vault', undefined],
-      ['Could not save the deck.', 'alarm'],
-      ['Saved.', 'plain'],
+      ['Could not save the deck.', 'error'],
+      ['Saved.', 'info'],
     ])
     expect(notices.notices.value[0]).toMatchObject({ done: 2, total: 5, isWorking: true })
   })

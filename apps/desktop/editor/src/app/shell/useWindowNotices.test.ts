@@ -45,7 +45,7 @@ describe('the lost notice', () => {
 describe('what the plugins show', () => {
   it('follows the notices of the window', () => {
     const plugins: NoticeQueue = createNoticeQueue()
-    plugins.show('md.numen.cards', 'Saved.', 'plain')
+    plugins.show('md.numen.cards', 'Saved.', 'info')
 
     expect(getCorner('the vault', '', plugins).map((one) => one.text)).toEqual([
       'the vault',

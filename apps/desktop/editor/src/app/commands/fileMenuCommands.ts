@@ -59,7 +59,7 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
       registerCommand(getFileMenuId(entry), async (invocation, on) => {
         try {
           await run(invocation.file, entry)
-          on.writeMessage(WORDS.textAsked(entry.pluginName), 'report')
+          on.writeMessage(WORDS.textAsked(entry.pluginName), 'info')
         } catch (error) {
           on.writeMessage(formatErrorMessage(error), 'error')
         }

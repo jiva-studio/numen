@@ -139,7 +139,7 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
     worn: createWindowAppearance({
       core,
       words,
-      write: (text, kind = 'report') => void notifiedCalls.push({ text, kind }),
+      write: (text, kind = 'info') => void notifiedCalls.push({ text, kind }),
       sheet,
     }),
     sheet,
@@ -749,7 +749,7 @@ describe('the message line when a row is chosen', () => {
 
     await one.worn.chooseItem('interfaceScale:1.5')
 
-    expect(one.messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(one.messages).toStrictEqual([{ text: '', kind: 'info' }])
   })
 
   it('is cleared before a theme is written', async () => {
@@ -757,7 +757,7 @@ describe('the message line when a row is chosen', () => {
 
     await one.worn.chooseItem('mine:sea')
 
-    expect(one.messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(one.messages).toStrictEqual([{ text: '', kind: 'info' }])
   })
 })
 
@@ -983,7 +983,7 @@ describe('the application that cannot list the themes', () => {
         },
       },
       words,
-      write: (text, kind = 'report') => void notifiedCalls.push({ text, kind }),
+      write: (text, kind = 'info') => void notifiedCalls.push({ text, kind }),
       sheet,
     })
 

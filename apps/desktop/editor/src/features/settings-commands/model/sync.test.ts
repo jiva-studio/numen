@@ -115,7 +115,7 @@ describe('whether a title and a filename are one name', () => {
 
     await target.choose(OFF)
 
-    expect(mockWriter.messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(mockWriter.messages).toStrictEqual([{ text: '', kind: 'info' }])
   })
 
   it('says the failure as an error', async () => {

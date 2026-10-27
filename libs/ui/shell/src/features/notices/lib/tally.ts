@@ -21,9 +21,9 @@ export type ActivityState = 'quiet' | 'working' | 'resting' | 'failed'
  * How a line reads.
  *
  * Given by whoever draws the line, where the state above is worked out from the
- * count. Alarm is what a line that failed is drawn with.
+ * count. A line that failed is drawn as an error.
  */
-export type Tone = 'plain' | 'caution' | 'alarm'
+export type Severity = 'info' | 'warning' | 'error'
 
 /** A count of things done out of things to do. */
 export interface Tally {

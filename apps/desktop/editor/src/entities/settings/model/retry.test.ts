@@ -38,7 +38,7 @@ describe('createPluginRetry', () => {
   it('shows a repeated failure with the plugin name and the reason', async () => {
     const { notify, refresh, retry } = createRetry(Promise.resolve('Failed to start'))
     await retry.retryPlugin('md.numen.sample')
-    expect(notify).toHaveBeenLastCalledWith('Sample stopped: Failed to start', 'caution')
+    expect(notify).toHaveBeenLastCalledWith('Sample stopped: Failed to start', 'warning')
     expect(refresh).toHaveBeenCalledOnce()
   })
 

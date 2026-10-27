@@ -1,6 +1,7 @@
 import type { Component, Ref } from 'vue'
 import type { Selector } from './texts'
 import type { TextRange } from './types'
+import type { Severity } from './notices'
 
 // NoteRef is one note of the vault: where it is filed, and what it is called.
 export interface NoteRef {
@@ -81,13 +82,10 @@ export interface OpenFileOptions {
   readonly selector?: Selector
 }
 
-// WorkspaceHost is the window a plugin's tabs are drawn in.
-// MessageKind is what a message of the window says: what did not happen, what is worth reading, what a command did, or what is so until something else makes it not so.
-export type MessageKind = 'error' | 'caution' | 'report' | 'state'
-
 // MessageWriter writes one message under a name of its own, replacing what that name wrote last.
-export type MessageWriter = (text: string, kind?: MessageKind) => void
+export type MessageWriter = (text: string, severity?: Severity) => void
 
+// WorkspaceHost is the window a plugin's tabs are drawn in.
 export interface WorkspaceHost {
   // Whether the vault can be read; false while the window says it cannot.
   readonly isReady: Readonly<Ref<boolean>>

@@ -1181,7 +1181,7 @@ describe('the preset of a note', () => {
     expect(await kind.findPreset(note('Animals.md', 'deck'))).toStrictEqual({
       ok: false,
       text: words.noPreset,
-      severity: 'caution',
+      severity: 'warning',
     })
   })
 
@@ -1221,7 +1221,7 @@ describe('the preset of a note', () => {
     )
 
     expect(openedTabs).toStrictEqual([])
-    expect(messages).toStrictEqual([[words.noPreset, 'caution']])
+    expect(messages).toStrictEqual([[words.noPreset, 'warning']])
   })
 })
 

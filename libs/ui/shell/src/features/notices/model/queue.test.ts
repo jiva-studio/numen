@@ -6,9 +6,9 @@ const TASK = { id: 'index', label: 'Reading the vault', about: '', error: '', is
 describe('a queue of notices from several sources', () => {
   it('lists the messages of every source oldest first, each with a unique id', () => {
     const queue = createNoticeQueue()
-    queue.show('sample', 'The sample was saved.', 'plain')
-    queue.show('graph', 'The note is gone.', 'caution')
-    queue.show('sample', 'The sample was saved.', 'plain')
+    queue.show('sample', 'The sample was saved.', 'info')
+    queue.show('graph', 'The note is gone.', 'warning')
+    queue.show('sample', 'The sample was saved.', 'info')
 
     const ids = queue.notices.value.map((one) => one.id)
     expect(queue.notices.value.map((one) => one.text)).toEqual([
@@ -19,27 +19,27 @@ describe('a queue of notices from several sources', () => {
     expect(new Set(ids).size).toBe(3)
   })
 
-  it('lets a plain notice go once read and keeps any other until it is dismissed', () => {
+  it('lets an info notice go once read and keeps any other until it is dismissed', () => {
     const queue = createNoticeQueue()
-    queue.show('sample', 'Saved.', 'plain')
-    queue.show('sample', 'Could not save.', 'alarm')
+    queue.show('sample', 'Saved.', 'info')
+    queue.show('sample', 'Could not save.', 'error')
 
-    expect(queue.notices.value.map((one) => [one.tone, one.stay])).toEqual([
-      ['plain', 'read'],
-      ['alarm', 'kept'],
+    expect(queue.notices.value.map((one) => [one.severity, one.stay])).toEqual([
+      ['info', 'read'],
+      ['error', 'kept'],
     ])
     expect(queue.notices.value.every((one) => one.isUserStarted && !one.isWorking)).toBe(true)
   })
 
   it('says nothing for an empty text', () => {
     const queue = createNoticeQueue()
-    queue.show('sample', '', 'alarm')
+    queue.show('sample', '', 'error')
     expect(queue.notices.value).toEqual([])
   })
 
   it('lists the tasks of every source before the messages', () => {
     const queue = createNoticeQueue()
-    queue.show('sample', 'Saved.', 'plain')
+    queue.show('sample', 'Saved.', 'info')
     queue.setTasks('sample', [TASK])
 
     expect(queue.notices.value.map((one) => one.text)).toEqual(['Reading the vault', 'Saved.'])
@@ -66,8 +66,8 @@ describe('a queue of notices from several sources', () => {
 
   it('takes away one notice when it is dismissed', () => {
     const queue = createNoticeQueue()
-    queue.show('sample', 'One.', 'caution')
-    queue.show('sample', 'Two.', 'caution')
+    queue.show('sample', 'One.', 'warning')
+    queue.show('sample', 'Two.', 'warning')
 
     queue.dismiss(queue.notices.value[0]?.id ?? '')
 
@@ -76,9 +76,9 @@ describe('a queue of notices from several sources', () => {
 
   it('takes away everything a source gave when it is cleared', () => {
     const queue = createNoticeQueue()
-    queue.show('sample', 'Saved.', 'plain')
+    queue.show('sample', 'Saved.', 'info')
     queue.setTasks('sample', [TASK])
-    queue.show('graph', 'Drawn.', 'plain')
+    queue.show('graph', 'Drawn.', 'info')
 
     queue.clear('sample')
 

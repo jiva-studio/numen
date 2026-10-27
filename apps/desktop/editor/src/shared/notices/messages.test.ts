@@ -24,18 +24,18 @@ describe('a writer under a name', () => {
     const log = createMessageLog()
     log.getWriter('command')('Renamed')
 
-    expect(log.messages.value[0]?.kind).toBe('report')
+    expect(log.messages.value[0]?.severity).toBe('info')
   })
 
-  it('replaces what remains where only its kind differs', () => {
+  it('replaces what remains where only its severity differs', () => {
     const log = createMessageLog()
     const command = log.getWriter('command')
 
-    command('Renamed', 'report')
+    command('Renamed', 'info')
     command('Renamed', 'error')
 
     expect(log.messages.value).toHaveLength(1)
-    expect(log.messages.value[0]?.kind).toBe('error')
+    expect(log.messages.value[0]?.severity).toBe('error')
   })
 
   it('numbers the identities upward from one, across every name', () => {
@@ -64,9 +64,9 @@ describe('a writer under a name', () => {
     const log = createMessageLog()
     const aged = log.getWriter('worn')
 
-    aged('the themes stopped arriving', 'state')
+    aged('the themes stopped arriving', 'warning')
     const first = log.messages.value[0]?.id
-    aged('the themes stopped arriving', 'state')
+    aged('the themes stopped arriving', 'warning')
 
     expect(log.messages.value[0]?.id).toBe(first)
   })

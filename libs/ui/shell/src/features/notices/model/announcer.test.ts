@@ -13,7 +13,7 @@ const createQuietNotice = (id: string, text: string, about?: string): Notice => 
   text,
   ...(about ? { about } : {}),
 })
-const loud = (id: string, text: string): Notice => ({ id, text, tone: 'alarm' })
+const loud = (id: string, text: string): Notice => ({ id, text, severity: 'error' })
 
 /** The announcer mounted over a list of notices the test replaces. */
 function listen(initial: readonly Notice[]) {

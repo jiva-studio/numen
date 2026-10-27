@@ -2,9 +2,9 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
-import type { Tally, TallyUnit, Tone } from './tally'
+import type { Tally, TallyUnit, Severity } from './tally'
 
-export type { Tone }
+export type { Severity }
 
 /**
  * How long a notice stands.
@@ -36,8 +36,8 @@ export interface Notice {
   readonly counting?: TallyUnit
   /** Whether it is running now, or is a fact that is simply so. */
   readonly isWorking?: boolean
-  /** How it reads. Plain unless said otherwise. */
-  readonly tone?: Tone
+  /** How severe it is: info unless set. */
+  readonly severity?: Severity
   /** How long it stands. Held unless said otherwise. */
   readonly stay?: Stay
   /**
@@ -78,7 +78,7 @@ export const createNotice = (task: Task): Notice => {
     about: task.about,
     isWorking: error === '',
     isUserStarted: task.isUserStarted || error !== '',
-    ...(error ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
+    ...(error ? { severity: 'error' as const, stay: 'kept' as const } : {}),
     ...(completed !== undefined && total !== undefined && total > 0
       ? { done: completed, total: total, ...(task.counting ? { counting: task.counting } : {}) }
       : {}),

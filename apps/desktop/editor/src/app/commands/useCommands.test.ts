@@ -60,7 +60,7 @@ const setup = (preventHeld = false) => {
     kept: {},
     runs: {},
     coverage: () => ({}),
-    writeMessage: (text: string, tone: string) => content.push([text, tone]),
+    writeMessage: (text: string, severity: string) => content.push([text, severity]),
   } as unknown as CommandsDepsOptions
   return { messages: content, press, ...useCommands(options) }
 }

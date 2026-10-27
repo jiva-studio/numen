@@ -64,7 +64,7 @@ export function useShell(deps: ShellDeps = {}) {
   const isLoading = ref(true)
   const listError = ref('')
   const { vaults, isListing } = useVaults(deps.listVaults ?? listVaults, (text) =>
-    notices.show(WINDOW_SOURCE, text, 'alarm'),
+    notices.show(WINDOW_SOURCE, text, 'error'),
   )
   const onKeyDown = createWindowKeys({
     getTab: () => tab.value,

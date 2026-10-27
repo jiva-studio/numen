@@ -17,7 +17,7 @@ export function useWindowTasks(notices: NoticeQueue) {
   const abortController = new AbortController()
   const follow = createFollower({
     isOpen: () => isOpen,
-    setLost: (text) => notices.show(WINDOW_SOURCE, text, 'alarm'),
+    setLost: (text) => notices.show(WINDOW_SOURCE, text, 'error'),
     wait: (ms) => new Promise((then) => setTimeout(then, ms)),
   })
 

@@ -1,5 +1,5 @@
-// NoticeTone is how a notice reads: plain, worth a second look, or something that did not happen.
-export type NoticeTone = 'plain' | 'caution' | 'alarm'
+// Severity is how a notice or a message reads: information, a warning, or an error.
+export type Severity = 'info' | 'warning' | 'error'
 
 // NoticeTask is one piece of work a plugin does behind the window, drawn while it runs.
 export interface NoticeTask {
@@ -19,9 +19,9 @@ export interface NoticeTask {
 
 // NoticeHost is the corner of the window a plugin's notices are drawn in, one list for the window.
 export interface NoticeHost {
-  // A notice in a tone, plain by default. A plain one goes once read; any other stands until the
+  // A notice at a severity, info by default. An info notice goes once read; any other stands until the
   // person dismisses it.
-  show(text: string, tone?: NoticeTone): void
+  show(text: string, severity?: Severity): void
   // The work the plugin is doing, replacing the list it gave last. An empty list takes it away.
   setTasks(tasks: readonly NoticeTask[]): void
 }

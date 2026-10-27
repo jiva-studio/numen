@@ -256,7 +256,7 @@ describe('removing a relationship from a note', () => {
       await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child'),
     ).toBe(true)
     expect(requests).toStrictEqual([{ path: 'Ontology.md', to: 'Entropy.md', role: 'child' }])
-    expect(messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(messages).toStrictEqual([{ text: '', kind: 'info' }])
   })
 
   it('asks for no role where no relation was given', async () => {
@@ -330,7 +330,7 @@ describe('replacing the links between two notes', () => {
     expect(requests).toStrictEqual([
       { first: 'Ontology.md', second: 'Entropy.md', roles: ['child', 'parent'] },
     ])
-    expect(messages).toStrictEqual([{ text: '', kind: 'report' }])
+    expect(messages).toStrictEqual([{ text: '', kind: 'info' }])
   })
 
   it('asks for nothing where a relation is not one a link can carry', async () => {

@@ -38,7 +38,7 @@ export function createPluginRetry(
     notify('')
     try {
       const failure = await core.retryPlugin(pluginId)
-      if (failure !== '') notify(words.stopped(getName(pluginId), failure), 'caution')
+      if (failure !== '') notify(words.stopped(getName(pluginId), failure), 'warning')
     } catch (caughtError) {
       notify(words.retryFailed(getName(pluginId), formatErrorMessage(caughtError)), 'error')
     }

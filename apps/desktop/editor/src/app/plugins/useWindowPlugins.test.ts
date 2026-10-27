@@ -155,7 +155,7 @@ describe('the settings and notices a plugin is given', () => {
     const notices = createNoticeQueue()
     const { pluginHost } = createWith({ notices })
 
-    pluginHost.createContext('md.numen.a').notices?.show('Saved.', 'caution')
+    pluginHost.createContext('md.numen.a').notices?.show('Saved.', 'warning')
     expect(notices.notices.value.map((one) => one.text)).toStrictEqual(['Saved.'])
 
     pluginHost.disposePlugin('md.numen.a')

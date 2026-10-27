@@ -262,7 +262,7 @@ describe('how many cards stand at once', () => {
   it('folds nothing that stopped badly, wherever it remains', () => {
     // Trouble is what a person has to see, and it arrives before the reports
     // that pile up behind it.
-    const failed: Notice = { id: 'failed', text: 'Reading', tone: 'alarm', stay: 'kept' }
+    const failed: Notice = { id: 'failed', text: 'Reading', severity: 'error', stay: 'kept' }
     const renderedNotices = [failed, word('a'), word('b'), word('c')]
 
     const { visible, overflowCount } = foldNotices(renderedNotices, 2)

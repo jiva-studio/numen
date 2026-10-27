@@ -6,9 +6,9 @@
  * is drawn.
  */
 import { shallowRef, type Ref } from 'vue'
-import type { MessageKind, MessageWriter } from '@numen/plugin-sdk'
+import type { Severity, MessageWriter } from '@numen/plugin-sdk'
 
-export type { MessageKind, MessageWriter }
+export type { Severity, MessageWriter }
 
 /** One message the window holds. */
 export interface WindowMessage {
@@ -16,7 +16,7 @@ export interface WindowMessage {
   readonly id: string
   /** The part of the window that wrote it, which holds one message at a time. */
   readonly name: string
-  readonly kind: MessageKind
+  readonly severity: Severity
   readonly text: string
 }
 
@@ -42,12 +42,12 @@ export function createMessageLog(): MessageLog {
 
   const getWriter =
     (name: string): MessageWriter =>
-    (text, kind = 'report') => {
+    (text, severity = 'info') => {
       // The same text written again is nothing new, and what stands keeps its
       // identity and its place.
       const status = messages.value.find((one) => one.name === name)
       if (status === undefined && text === '') return
-      if (status?.text === text && status.kind === kind) return
+      if (status?.text === text && status.severity === severity) return
 
       const rest = messages.value.filter((one) => one.name !== name)
       if (text === '') {
@@ -55,7 +55,7 @@ export function createMessageLog(): MessageLog {
         return
       }
       nextId += 1
-      messages.value = [...rest, { id: `${name}#${nextId}`, name, kind, text }]
+      messages.value = [...rest, { id: `${name}#${nextId}`, name, severity, text }]
     }
 
   const dismiss = (id: string): void => {

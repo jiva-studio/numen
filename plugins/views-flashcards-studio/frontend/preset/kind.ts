@@ -41,7 +41,7 @@ const DECK_TYPE = 'deck'
 /** Where the preset of a note is, or why there is none to open. */
 export type PresetPlace =
   | { readonly ok: true; readonly at: string }
-  | { readonly ok: false; readonly text: string; readonly severity: 'error' | 'caution' }
+  | { readonly ok: false; readonly text: string; readonly severity: 'error' | 'warning' }
 
 /** What the preset tabs of a window are made from. */
 export interface PresetTabDeps {
@@ -198,7 +198,7 @@ export function usePresetTab(deps: PresetTabDeps) {
     const answer = await core.getDeckPreset(note.path)
     if (!answer.ok) return { ok: false, text: ERRORS[answer.error], severity: 'error' }
     const readItem = answer.value.preset
-    if (!readItem?.path) return { ok: false, text: words.noPreset, severity: 'caution' }
+    if (!readItem?.path) return { ok: false, text: words.noPreset, severity: 'warning' }
     if (readItem.title) titles.set(readItem.path, readItem.title)
     return { ok: true, at: readItem.path }
   }

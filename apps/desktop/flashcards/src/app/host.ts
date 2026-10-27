@@ -39,7 +39,7 @@ const NOTHING: Disposable = { dispose: () => {} }
 
 /** The notices of one plugin, in the window's one list. */
 export const createPluginNotices = (queue: NoticeQueue, pluginId: string): NoticeHost => ({
-  show: (text, tone = 'plain') => queue.show(pluginId, text, tone),
+  show: (text, severity = 'info') => queue.show(pluginId, text, severity),
   setTasks: (tasks) =>
     queue.setTasks(
       pluginId,

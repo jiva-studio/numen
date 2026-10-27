@@ -4,11 +4,11 @@
  * Everything in the window that has something to say takes a `MessageWriter`,
  * so a test that wants to read what was written hands one of these over.
  */
-import type { MessageKind, MessageWriter } from '@/shared/notices/messages'
+import type { Severity, MessageWriter } from '@/shared/notices/messages'
 
 export function writer() {
-  const notifiedCalls: { text: string; kind: MessageKind }[] = []
-  const write: MessageWriter = (text, kind = 'report') => void notifiedCalls.push({ text, kind })
+  const notifiedCalls: { text: string; kind: Severity }[] = []
+  const write: MessageWriter = (text, kind = 'info') => void notifiedCalls.push({ text, kind })
   return {
     write,
     /** Everything written through it, each with the kind it was written as. */

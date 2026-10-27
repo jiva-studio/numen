@@ -99,7 +99,7 @@ describe('a run of a declared command', () => {
     )
 
     expect(run).toHaveBeenCalledWith(createSample, { path: 'a.md', values: { title: 'Verbs' } })
-    expect(writeMessage).toHaveBeenLastCalledWith('Made a sample', 'report')
+    expect(writeMessage).toHaveBeenLastCalledWith('Made a sample', 'info')
     expect(openFile).toHaveBeenCalledWith('Verbs.md', '', 'here')
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([
       getPaletteId(createSample),

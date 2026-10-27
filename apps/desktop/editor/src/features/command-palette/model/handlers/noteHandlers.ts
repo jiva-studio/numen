@@ -40,7 +40,7 @@ export const navigateToPath = async (
   on: TabContext & Voice,
   words: AnswerWords,
 ): Promise<void> => {
-  if (!path) return on.writeMessage(words.nowhere, 'caution')
+  if (!path) return on.writeMessage(words.nowhere, 'warning')
   await on.navigator.travel(path)
 }
 
@@ -82,10 +82,10 @@ export const renameNoteCommand = async (
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.title) return
   const tab = await flushTab(invocation.path, on)
-  if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
+  if (tab.isWaiting) return on.writeMessage(words.unanswered, 'warning')
   const answer = await on.files.rename(invocation.path, invocation.name)
   if (answer.ok) return
-  if (answer.error === 'changed') return on.writeMessage(words.stale, 'caution')
+  if (answer.error === 'changed') return on.writeMessage(words.stale, 'warning')
   on.writeMessage(words.errors[answer.error], 'error')
 }
 
@@ -100,7 +100,7 @@ export const moveFileCommand = async (
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.path) return
   const tab = await flushTab(invocation.path, on)
-  if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
+  if (tab.isWaiting) return on.writeMessage(words.unanswered, 'warning')
   const answer = await on.files.move(invocation.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'occupied') return on.writeMessage(words.occupied, 'error')

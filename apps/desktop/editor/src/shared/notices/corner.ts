@@ -6,10 +6,10 @@
  * them is an entry in one of the three lists and nothing here.
  */
 import { createNotice } from '@numen/shell'
-import type { Notice, Stay, Tone } from '@numen/shell'
+import type { Notice, Stay, Severity } from '@numen/shell'
 import type { Task } from './task'
 import { isTextSearchOnly, type IndexCoverage } from './coverage'
-import type { MessageKind, WindowMessage } from './messages'
+import type { WindowMessage } from './messages'
 
 /** The sentences the corner draws that are the window's own. */
 export interface Words {
@@ -39,19 +39,18 @@ export interface State {
   readonly hasNote: boolean
 }
 
-/** How each kind of word is drawn, and how long it stands. */
-const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
-  error: { tone: 'alarm', stay: 'kept' },
-  caution: { tone: 'caution', stay: 'kept' },
-  report: { tone: 'plain', stay: 'read' },
-  state: { tone: 'plain', stay: 'holds' },
+/** How long a message of each severity stays in the corner. */
+const stayBySeverity: Record<Severity, Stay> = {
+  error: 'kept',
+  warning: 'kept',
+  info: 'read',
 }
 
 /** One state of the window, where it is in that state. */
 const createStateNotices = (
   id: string,
   text: string,
-  how: { about?: string; tone?: Tone; isUserStarted?: boolean } = {},
+  how: { about?: string; severity?: Severity; isUserStarted?: boolean } = {},
 ): readonly Notice[] =>
   text === ''
     ? []
@@ -60,7 +59,7 @@ const createStateNotices = (
           id,
           text,
           about: how.about ?? '',
-          tone: how.tone ?? 'plain',
+          severity: how.severity ?? 'info',
           isWorking: false,
           isUserStarted: how.isUserStarted ?? true,
           stay: 'holds',
@@ -118,13 +117,13 @@ export const getCornerNotices = (
   const so: Notice[] = [
     ...createStateNotices('unwatched', state.unwatched && words.unwatched, {
       about: state.unwatched,
-      tone: 'caution',
+      severity: 'warning',
     }),
     ...createStateNotices('unread', state.unread && words.unread, {
       about: state.unread,
-      tone: 'caution',
+      severity: 'warning',
     }),
-    ...createStateNotices('lost', state.lost, { tone: 'caution' }),
+    ...createStateNotices('lost', state.lost, { severity: 'warning' }),
     ...createStateNotices('indexing', state.isIndexing ? words.indexing : ''),
     // One at a time: a vault still being indexed has not finished indexing nothing.
     ...createStateNotices(
@@ -142,7 +141,8 @@ export const getCornerNotices = (
     text: one.text,
     isWorking: false,
     isUserStarted: true,
-    ...manner[one.kind],
+    severity: one.severity,
+    stay: stayBySeverity[one.severity],
   }))
 
   return [...isWorking, ...so, ...messageNotices]

@@ -13,7 +13,7 @@ import type { MountView } from '../shared/views'
 import { getDeckName, type VaultCardsDue } from '../entities/vault'
 import { useReviewDays, useVaultPresets } from '../pages/decks'
 import { useReviewSession } from '../pages/session'
-import type { AgentHost, NoticeHost, NoticeTone as Tone } from '@numen/plugin-sdk'
+import type { AgentHost, NoticeHost, Severity } from '@numen/plugin-sdk'
 import { createNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
@@ -42,15 +42,18 @@ export interface NotesPage {
   scrollPage(back: boolean): void
 }
 
-const reportSessionNotice = (report: Report, showNotice: (text: string, tone: Tone) => void) => {
+const reportSessionNotice = (
+  report: Report,
+  showNotice: (text: string, severity: Severity) => void,
+) => {
   if (report.unwritten.length) {
     showNotice(
       `Not asked from ${report.unwritten.map(getDeckName).join(', ')}: the deck could not be written.`,
-      'caution',
+      'warning',
     )
   }
   if (report.skipped > 0) {
-    showNotice(`${report.skipped} answers in this vault could not be read.`, 'caution')
+    showNotice(`${report.skipped} answers in this vault could not be read.`, 'warning')
   }
 }
 
@@ -64,7 +67,7 @@ interface ReviewActionDeps {
   schedules: ReturnType<typeof useVaultPresets>
   state: ReturnType<typeof useReviewSession>
   agentPanel: { endConversation: () => void }
-  showNotice: (text: string, tone: Tone) => void
+  showNotice: (text: string, severity: Severity) => void
   goToVaults: () => void
 }
 
@@ -149,7 +152,7 @@ export const useReview = (deps: ReviewDeps) => {
     unreachable: () => deps.agent.getUnreachable(),
     resolveLinks: (text) => deps.agent.resolveLinks(text, deps.vault),
     vault: () => deps.vault,
-    showNotice: (text) => notices.showNotice(text, 'caution'),
+    showNotice: (text) => notices.showNotice(text, 'warning'),
   })
 
   const { on, goTo } = useScreens(['decks', 'session'] as const, {

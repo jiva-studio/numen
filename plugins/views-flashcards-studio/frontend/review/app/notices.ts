@@ -1,15 +1,15 @@
 /**
  * What the window has to say, handed to the corner the host draws.
  *
- * Apart from the template because what is said and in what tone are rules: an
+ * Apart from the template because what is said and in what severity are rules: an
  * error is said in the person's own words, and a call the window itself
  * stopped says nothing.
  */
-import type { NoticeHost, NoticeTask, NoticeTone } from '@numen/plugin-sdk'
+import type { NoticeHost, NoticeTask, Severity } from '@numen/plugin-sdk'
 import { formatErrorMessage } from '@numen/wire'
 
 export function createNotices(host: NoticeHost) {
-  const showNotice = (text: string, tone: NoticeTone) => host.show(text, tone)
+  const showNotice = (text: string, severity: Severity) => host.show(text, severity)
 
   /**
    * Trouble, in the person's own words. A call the window itself stopped has
@@ -17,7 +17,7 @@ export function createNotices(host: NoticeHost) {
    */
   const reportError = (why: unknown) => {
     const text = sentence(formatErrorMessage(why))
-    if (text) showNotice(text, 'alarm')
+    if (text) showNotice(text, 'error')
   }
 
   /** What is being done behind the window. The whole list arrives at once. */

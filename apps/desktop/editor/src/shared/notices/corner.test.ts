@@ -52,7 +52,7 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
 const createMessage = (overrides: Partial<WindowMessage> = {}): WindowMessage => ({
   id: 'command#1',
   name: 'command',
-  kind: 'report',
+  severity: 'info',
   text: 'The note is in the trash',
   ...overrides,
 })
@@ -90,10 +90,10 @@ describe('a document being read', () => {
 })
 
 describe('work that stopped badly', () => {
-  it('is drawn as alarm and not as something still running', () => {
+  it('is drawn as an error and not as something still running', () => {
     const notices = corner([createTask({ error: 'nothing to read with' })])
 
-    expect(notices[0]?.tone).toBe('alarm')
+    expect(notices[0]?.severity).toBe('error')
     expect(notices[0]?.isWorking).toBe(false)
   })
 
@@ -239,7 +239,7 @@ describe('what is so about the window', () => {
     expect(notices[0]?.text).toBe(words.unwatched)
     expect(notices[0]?.about).toBe('/home/vault')
     expect(notices[0]?.stay).toBe('holds')
-    expect(notices[0]?.tone).toBe('caution')
+    expect(notices[0]?.severity).toBe('warning')
   })
 
   it('says nothing was read only once the indexing is over', () => {
@@ -286,7 +286,7 @@ describe('what is so about the window', () => {
 })
 
 describe('each state of the window', () => {
-  it('is drawn under its own identity, tone and manner', () => {
+  it('is drawn under its own identity, severity and manner', () => {
     const notices = corner(
       [],
       [],
@@ -298,7 +298,7 @@ describe('each state of the window', () => {
         id: 'unwatched',
         text: words.unwatched,
         about: '/home/vault',
-        tone: 'caution',
+        severity: 'warning',
         isWorking: false,
         isUserStarted: true,
         stay: 'holds',
@@ -307,7 +307,7 @@ describe('each state of the window', () => {
         id: 'unread',
         text: words.unread,
         about: 'no such folder',
-        tone: 'caution',
+        severity: 'warning',
         isWorking: false,
         isUserStarted: true,
         stay: 'holds',
@@ -316,7 +316,7 @@ describe('each state of the window', () => {
         id: 'lost',
         text: 'the themes stopped',
         about: '',
-        tone: 'caution',
+        severity: 'warning',
         isWorking: false,
         isUserStarted: true,
         stay: 'holds',
@@ -330,7 +330,7 @@ describe('each state of the window', () => {
         id: 'indexing',
         text: words.indexing,
         about: '',
-        tone: 'plain',
+        severity: 'info',
         isWorking: false,
         isUserStarted: true,
         stay: 'holds',
@@ -345,7 +345,7 @@ describe('each state of the window', () => {
       id: 'nothingRead',
       text: words.nothingRead,
       about: '',
-      tone: 'plain',
+      severity: 'info',
       isWorking: false,
       isUserStarted: true,
       stay: 'holds',
@@ -360,7 +360,7 @@ describe('each state of the window', () => {
         id: 'wordsOnly',
         text: words.wordsOnly,
         about: '',
-        tone: 'plain',
+        severity: 'info',
         isWorking: false,
         isUserStarted: false,
         stay: 'holds',
@@ -379,36 +379,27 @@ describe('what the window returned', () => {
 
     expect(notices[0]).toMatchObject({
       text: 'The note is in the trash',
-      tone: 'plain',
+      severity: 'info',
       stay: 'read',
     })
   })
 
-  it('draws a caution to be read and left standing', () => {
+  it('draws a warning to be read and left standing', () => {
     const notices = corner(
       [],
-      [createMessage({ kind: 'caution', text: 'that note changed on disk' })],
+      [createMessage({ severity: 'warning', text: 'that note changed on disk' })],
     )
 
-    expect(notices[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
+    expect(notices[0]).toMatchObject({ severity: 'warning', stay: 'kept' })
   })
 
   it('draws an error that remains until it is put away', () => {
     const notices = corner(
       [],
-      [createMessage({ kind: 'error', text: 'a note of that name is filed there' })],
+      [createMessage({ severity: 'error', text: 'a note of that name is filed there' })],
     )
 
-    expect(notices[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
-  })
-
-  it('draws a state for as long as whoever returned it keeps saying it', () => {
-    const notices = corner(
-      [],
-      [createMessage({ kind: 'state', text: 'the themes stopped arriving' })],
-    )
-
-    expect(notices[0]).toMatchObject({ tone: 'plain', stay: 'holds' })
+    expect(notices[0]).toMatchObject({ severity: 'error', stay: 'kept' })
   })
 
   it('keeps each utterance under the identity it was given', () => {

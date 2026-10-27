@@ -66,7 +66,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
         const outcome = await run(one, { path: invocation.file, values: invocation.values ?? {} })
         if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
         const { message, openedPath } = outcome.value
-        if (message) on.writeMessage(message, 'report')
+        if (message) on.writeMessage(message, 'info')
         if (openedPath) on.notes.openFile(openedPath, '', 'here')
       }),
     )

@@ -390,7 +390,7 @@ describe('a session sat down to', () => {
 
     const response = notices.getShown()
     expect(response).toHaveLength(2)
-    expect(response.every((one) => one.tone === 'caution')).toBe(true)
+    expect(response.every((one) => one.severity === 'warning')).toBe(true)
     expect(response[0]!.text).toContain('Suffixes')
     expect(response[1]!.text).toContain('2')
   })
@@ -420,7 +420,7 @@ describe('a session sat down to', () => {
 
     expect(review.on.value).toBe('session')
     expect(wire.sessionsAsked).toEqual([{ vault: 'roots', deck: '', preset: 'presets/Daily.md' }])
-    expect(notices.getShown().map((one) => one.tone)).toEqual(['caution'])
+    expect(notices.getShown().map((one) => one.severity)).toEqual(['warning'])
   })
 
   it('stays on the decks when a preset’s session cannot be opened', async () => {
@@ -431,7 +431,7 @@ describe('a session sat down to', () => {
     await review.decks.startPreset('presets/Daily.md')
 
     expect(review.on.value).toBe('decks')
-    expect(notices.getShown().map((one) => one.tone)).toEqual(['alarm'])
+    expect(notices.getShown().map((one) => one.severity)).toEqual(['error'])
   })
 
   it('ends the conversation with the card it was about', async () => {
@@ -465,7 +465,7 @@ describe('a session sat down to', () => {
     const review = await openSession()
 
     expect(review.on.value).toBe('decks')
-    expect(notices.getShown().map((one) => one.tone)).toEqual(['alarm'])
+    expect(notices.getShown().map((one) => one.severity)).toEqual(['error'])
   })
 
   it('reads the notes of the vault it is on', async () => {
@@ -482,7 +482,7 @@ describe('a session sat down to', () => {
     review.session.toggleAgent()
 
     expect(review.session.agentPanel.open.value).toBe(false)
-    expect(notices.getShown()).toMatchObject([{ text: 'no model is set up', tone: 'caution' }])
+    expect(notices.getShown()).toMatchObject([{ text: 'no model is set up', severity: 'warning' }])
   })
 })
 

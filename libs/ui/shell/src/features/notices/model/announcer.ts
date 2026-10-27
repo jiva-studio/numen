@@ -49,8 +49,8 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
 
     const pending = pendingNotices
     pendingNotices = []
-    const loud = pending.filter((one) => one.tone === 'alarm')
-    const regular = pending.filter((one) => one.tone !== 'alarm')
+    const loud = pending.filter((one) => one.severity === 'error')
+    const regular = pending.filter((one) => one.severity !== 'error')
     if (loud.length) assertive.value = loud.map(getWords).join('. ')
     if (regular.length) polite.value = regular.map(getWords).join('. ')
   }

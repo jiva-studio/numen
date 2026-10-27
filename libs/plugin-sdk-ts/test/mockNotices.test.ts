@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { createMockNoticeHost } from '../src/testing/mockNotices'
 
 describe('the mock notice host', () => {
-  it('keeps every notice in order, plain where no tone is given', () => {
+  it('keeps every notice in order, info where no severity is given', () => {
     const notices = createMockNoticeHost()
     notices.show('Saved.')
-    notices.show('Could not save.', 'alarm')
+    notices.show('Could not save.', 'error')
 
     expect(notices.getShown()).toStrictEqual([
-      { text: 'Saved.', tone: 'plain' },
-      { text: 'Could not save.', tone: 'alarm' },
+      { text: 'Saved.', severity: 'info' },
+      { text: 'Could not save.', severity: 'error' },
     ])
   })
 

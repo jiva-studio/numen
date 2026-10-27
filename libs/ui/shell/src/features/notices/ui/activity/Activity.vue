@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import { Spinner } from '@numen/ui'
-import { activity, percentWord, type Tally, type Tone } from '../../lib/tally'
+import { activity, percentWord, type Tally, type Severity } from '../../lib/tally'
 
 const props = withDefaults(
   defineProps<{
@@ -29,16 +29,16 @@ const props = withDefaults(
     isWorking?: boolean
     /** How much longer, on a clock, from whoever is timing the count. */
     left?: string
-    /** How the line reads. An alarm is a line that stopped badly. */
-    tone?: Tone
+    /** How the line reads. An error is a line that stopped badly. */
+    severity?: Severity
   }>(),
-  { text: '', about: '', isWorking: false, left: '', tone: 'plain' },
+  { text: '', about: '', isWorking: false, left: '', severity: 'info' },
 )
 
 const activityView = computed(() =>
   activity({
     text: props.text,
-    ...(props.tone === 'alarm' ? { hasFailed: true } : {}),
+    ...(props.severity === 'error' ? { hasFailed: true } : {}),
     ...(props.isWorking ? { isWorking: true } : {}),
     ...(props.tally ? { tally: props.tally } : {}),
   }),
@@ -71,10 +71,10 @@ const givesSays = computed(() =>
 const givesAbout = computed(() => (activityView.value.hasCounts ? 'truncate' : 'line-clamp-2'))
 
 /**
- * A line about work is hushed. A line with a tone is drawn in it, and takes the
- * colour of whatever ground that tone put it on.
+ * A line about work is hushed. A line with a severity is drawn in it, and takes the
+ * colour of whatever ground that severity put it on.
  */
-const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
+const strength = computed(() => (props.severity === 'info' ? 'text-hushed' : ''))
 </script>
 
 <template>
@@ -83,7 +83,7 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
     class="activity numen text-small flex items-center gap-2 font-sans"
     :class="strength"
     :data-state="activityView.state"
-    :data-tone="tone"
+    :data-severity="severity"
   >
     <span class="activity__words flex min-w-0 flex-1 flex-col">
       <span class="activity__says" :class="givesSays">{{ words }}</span>

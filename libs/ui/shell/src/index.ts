@@ -17,7 +17,7 @@ export { commandKeyChord } from './features/palette'
 export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'
 
 /** What a count counts, and how a notice about it reads. */
-export type { TallyUnit, Tone } from './features/notices'
+export type { TallyUnit, Severity } from './features/notices'
 
 export { Notices } from './features/notices'
 export { createNotice } from './features/notices'

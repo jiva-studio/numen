@@ -5,7 +5,7 @@ import type { NoticeHost } from '@numen/plugin-sdk'
 import type { NoticeQueue } from '@numen/shell'
 
 export const createPluginNotices = (queue: NoticeQueue, pluginId: string): NoticeHost => ({
-  show: (text, tone = 'plain') => queue.show(pluginId, text, tone),
+  show: (text, severity = 'info') => queue.show(pluginId, text, severity),
   setTasks: (tasks) =>
     queue.setTasks(
       pluginId,

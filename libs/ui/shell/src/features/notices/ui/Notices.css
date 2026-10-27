@@ -32,13 +32,13 @@
   text-align: start;
 }
 
-.notice[data-tone='caution'] {
+.notice[data-severity='warning'] {
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
   border-color: color-mix(in oklab, currentColor 25%, transparent);
 }
 
-.notice[data-tone='alarm'] {
+.notice[data-severity='error'] {
   background: var(--numen-alarm-bg);
   color: var(--numen-alarm);
   border-color: color-mix(in oklab, currentColor 25%, transparent);

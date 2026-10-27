@@ -25,7 +25,7 @@ defineExpose({ way })
 </script>
 
 <template>
-  <article class="notice" :data-tone="one.tone ?? 'plain'">
+  <article class="notice" :data-severity="one.severity ?? 'info'">
     <Activity
       class="notice__work"
       :text="one.text"
@@ -33,7 +33,7 @@ defineExpose({ way })
       :tally="findTally(one)"
       :is-working="one.isWorking ?? false"
       :left="left"
-      :tone="one.tone ?? 'plain'"
+      :severity="one.severity ?? 'info'"
     />
     <button
       ref="way"

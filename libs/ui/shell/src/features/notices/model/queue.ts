@@ -4,14 +4,14 @@
  */
 import { computed, shallowRef, type ComputedRef } from 'vue'
 import { createNotice, type Notice, type Task } from '../lib/notice'
-import type { Tone } from '../lib/tally'
+import type { Severity } from '../lib/tally'
 
 /** The notices of every source, and what changes them. */
 export interface NoticeQueue {
   /** The tasks of every source first, then the messages, oldest first. */
   readonly notices: ComputedRef<readonly Notice[]>
-  /** A notice from a source. A plain one goes once read; any other stands until dismissed. */
-  show(source: string, text: string, tone: Tone): void
+  /** A notice from a source. An info notice goes once read; any other stands until dismissed. */
+  show(source: string, text: string, severity: Severity): void
   /** The work a source is doing, replacing the list it gave last. */
   setTasks(source: string, tasks: readonly Task[]): void
   /** A notice the person is finished with, by its identity. */
@@ -35,14 +35,14 @@ export function createNoticeQueue(): NoticeQueue {
     ...messages.value.map((one) => one.notice),
   ])
 
-  const show = (source: string, text: string, tone: Tone): void => {
+  const show = (source: string, text: string, severity: Severity): void => {
     if (text === '') return
     count += 1
     const notice: Notice = {
       id: `${source}#${count}`,
       text,
-      tone,
-      stay: tone === 'plain' ? 'read' : 'kept',
+      severity,
+      stay: severity === 'info' ? 'read' : 'kept',
       isWorking: false,
       isUserStarted: true,
     }

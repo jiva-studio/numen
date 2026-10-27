@@ -10,22 +10,22 @@ const createWindowNotices = () => {
 }
 
 describe('what the window has to say', () => {
-  it('shows each notice in its tone', () => {
+  it('shows each notice in its severity', () => {
     const one = createWindowNotices()
-    one.showNotice('the first', 'caution')
-    one.showNotice('the second', 'alarm')
+    one.showNotice('the first', 'warning')
+    one.showNotice('the second', 'error')
 
     expect(one.host.getShown()).toEqual([
-      { text: 'the first', tone: 'caution' },
-      { text: 'the second', tone: 'alarm' },
+      { text: 'the first', severity: 'warning' },
+      { text: 'the second', severity: 'error' },
     ])
   })
 
-  it('says trouble in the person’s own words, as an alarm', () => {
+  it('says trouble in the person’s own words, as an error', () => {
     const one = createWindowNotices()
     one.reportError(new ConnectError('Vault unreadable', Code.Unavailable))
 
-    expect(one.host.getShown()).toEqual([{ text: 'Vault unreadable.', tone: 'alarm' }])
+    expect(one.host.getShown()).toEqual([{ text: 'Vault unreadable.', severity: 'error' }])
   })
 
   // Pressing a tile whose count is a moment stale fails, and what the

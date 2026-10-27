@@ -59,7 +59,7 @@ const RENAMED: Notice = {
 const OCCUPIED: Notice = {
   id: 'occupied',
   text: 'A note of that name is filed there already',
-  tone: 'alarm',
+  severity: 'error',
   stay: 'kept',
   isUserStarted: true,
 }
@@ -196,12 +196,12 @@ export const WorkAndWords: Story = {
         id: 'unwatched',
         text: 'The vault is not being watched',
         about: '/home/vault',
-        tone: 'caution',
+        severity: 'warning',
       },
       {
         id: 'nowhere',
         text: 'No tab of this window is over a note',
-        tone: 'caution',
+        severity: 'warning',
         stay: 'kept',
       },
       OCCUPIED,
@@ -210,8 +210,8 @@ export const WorkAndWords: Story = {
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(4))
 
-    const tones = [...cards()].map((card) => card.getAttribute('data-tone'))
-    await expect(tones).toEqual(['plain', 'caution', 'caution', 'alarm'])
+    const severities = [...cards()].map((card) => card.getAttribute('data-severity'))
+    await expect(severities).toEqual(['info', 'warning', 'warning', 'error'])
   },
 }
 
@@ -231,7 +231,7 @@ export const FailureStays: Story = {
     await waitFor(() => expect(cards()).toHaveLength(1))
     await new Promise((rest) => setTimeout(rest, AWHILE))
     await expect(cards()).toHaveLength(1)
-    await expect(cards()[0]!.getAttribute('data-tone')).toBe('alarm')
+    await expect(cards()[0]!.getAttribute('data-severity')).toBe('error')
   },
 }
 
@@ -274,7 +274,7 @@ export const MoreThanThereIsRoomFor: Story = {
       {
         id: 'd',
         text: 'A theme by that name is not in the catalogue',
-        tone: 'alarm',
+        severity: 'error',
         stay: 'kept',
         isUserStarted: true,
       },
@@ -329,7 +329,14 @@ export const TooMuchToSay: Story = {
     notices: [
       { id: 'one', text: RUSSIAN, about: LONG, done: 1, total: 2, isWorking: true },
       { id: 'two', text: UNBREAKABLE, about: UNBREAKABLE, isWorking: true },
-      { id: 'three', text: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', isUserStarted: true },
+      {
+        id: 'three',
+        text: RUSSIAN,
+        about: LONG,
+        severity: 'error',
+        stay: 'kept',
+        isUserStarted: true,
+      },
       { id: 'brief', text: 'Reading', isWorking: true },
     ],
   },
@@ -394,7 +401,7 @@ export const ReadOutInTurnAndOverTheRest: Story = {
 }
 
 /**
- * On the dark set of tokens, with a card of each tone.
+ * On the dark set of tokens, with a card of each severity.
  *
  * A card a person has to read is framed in its own text, thinned until it is
  * nearly the ground. That frame is the thing a dark ground swallows, so it is
@@ -405,7 +412,12 @@ export const Dark: Story = {
   args: {
     notices: [
       READING,
-      { id: 'unwatched', text: 'The vault is not being watched', tone: 'caution', stay: 'kept' },
+      {
+        id: 'unwatched',
+        text: 'The vault is not being watched',
+        severity: 'warning',
+        stay: 'kept',
+      },
       OCCUPIED,
     ],
   },
@@ -415,17 +427,17 @@ export const Dark: Story = {
     await waitFor(() => expect(corner.getAllByRole('article')).toHaveLength(3))
 
     const cards = corner.getAllByRole('article')
-    await expect(cards.map((card) => card.getAttribute('data-tone'))).toEqual([
-      'plain',
-      'caution',
-      'alarm',
+    await expect(cards.map((card) => card.getAttribute('data-severity'))).toEqual([
+      'info',
+      'warning',
+      'error',
     ])
 
     for (const card of cards) {
       const cardStyle = getComputedStyle(card)
       const ground = lightness(cardStyle.backgroundColor)
       const ink = lightness(cardStyle.color)
-      // Whatever its tone, a card is written in ink standing above its own
+      // Whatever its severity, a card is written in ink standing above its own
       // ground, which is the way round the dark set is written.
       await expect(ink).toBeGreaterThan(ground + 40)
 
