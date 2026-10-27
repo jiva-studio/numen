@@ -108,7 +108,7 @@ func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 func readACPListing(ctx context.Context, agent acpAgent) (acpListing, error) {
 	asking, stop := context.WithTimeout(ctx, acpListLimit)
 	defer stop()
-	session, err := openACPSession(asking, agent)
+	session, err := openACPSession(asking, agent, toolEndpoint{})
 	if err != nil {
 		return acpListing{}, err
 	}

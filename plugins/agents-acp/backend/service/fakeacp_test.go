@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 // fakeACPAgent returns an agent served by this test binary. The behaviour is one of: "config"
 // reports models m1 and m2 as a config option, "thought" does so and adds the depths low, medium and high of
 // the category thought_level, "legacy" reports them the older way, "plain"
-// reports none, "fail" exits at once, "refuse" ends its turn refusing, and "hang" never ends it.
+// reports none, "tools" reports none and takes MCP servers over HTTP and asks to call two tools, "fail" exits at once, "refuse" ends its turn refusing, and "hang" never ends it.
 // Every line the agent reads is appended to the record.
 func fakeACPAgent(t *testing.T, program, behaviour string) (acpAgent, string) {
 	t.Helper()
@@ -113,10 +113,11 @@ func (a *fakeAgent) handle() {
 	id := message["id"]
 	switch message["method"] {
 	case "initialize":
-		a.send(map[string]any{"id": id, "result": map[string]any{
-			"protocolVersion":   1,
-			"agentCapabilities": map[string]any{"sessionCapabilities": map[string]any{"close": map[string]any{}}},
-		}})
+		capabilities := map[string]any{"sessionCapabilities": map[string]any{"close": map[string]any{}}}
+		if a.behaviour == "tools" {
+			capabilities["mcpCapabilities"] = map[string]any{"http": true}
+		}
+		a.send(map[string]any{"id": id, "result": map[string]any{"protocolVersion": 1, "agentCapabilities": capabilities}})
 	case "session/new":
 		a.send(map[string]any{"id": id, "result": a.getSession()})
 	case "session/prompt":
@@ -157,6 +158,18 @@ func (a *fakeAgent) getSession() map[string]any {
 func (a *fakeAgent) answerPrompt(id any) {
 	if a.behaviour == "hang" {
 		return
+	}
+	if a.behaviour == "tools" {
+		for i, title := range []string{"mcp__numen__note_read", "mcp__numen__note_write"} {
+			a.send(map[string]any{"id": fmt.Sprintf("t%d", i), "method": "session/request_permission", "params": map[string]any{
+				"sessionId": "s1", "toolCall": map[string]any{"toolCallId": fmt.Sprintf("c%d", i), "title": title},
+				"options": []map[string]any{
+					{"optionId": "always", "name": "Always allow", "kind": "allow_always"},
+					{"optionId": "once", "name": "Allow", "kind": "allow_once"},
+				},
+			}})
+			a.read()
+		}
 	}
 	a.send(map[string]any{"id": "p1", "method": "session/request_permission", "params": map[string]any{
 		"sessionId": "s1", "toolCall": map[string]any{"toolCallId": "t1"},

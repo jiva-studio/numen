@@ -39,7 +39,8 @@ type acpModel struct {
 }
 
 // acpSession is one ACP session with an agent started for it alone. The client offers the agent no
-// file system, no terminal and no MCP servers, and refuses every permission it asks for.
+// file system and no terminal, and the tools of the run as its one MCP server. It grants the
+// permission to call one of those tools and refuses every other.
 type acpSession struct {
 	cmd      *exec.Cmd
 	stdin    io.WriteCloser
@@ -52,6 +53,10 @@ type acpSession struct {
 	nextID   int
 	id       string
 	canClose bool
+	// hasHTTPServers is set where the agent takes MCP servers over HTTP.
+	hasHTTPServers bool
+	// tools is where the run's tools are served and which of them the agent may call.
+	tools toolEndpoint
 	// models are what the agent reports for the session, current is the one it answers with, and
 	// modelOption is the id of its model config option, empty where it reports models the older way.
 	models      []acpModel
@@ -68,8 +73,8 @@ type acpSession struct {
 }
 
 // openACPSession starts the agent, initializes the connection and opens a session in an empty
-// folder of its own.
-func openACPSession(ctx context.Context, agent acpAgent) (*acpSession, error) {
+// folder of its own, with the tools at the endpoint. An empty endpoint gives the session no tools.
+func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*acpSession, error) {
 	if len(agent.Command) == 0 {
 		return nil, fmt.Errorf("no command starts %s", agent.Program)
 	}
@@ -78,7 +83,7 @@ func openACPSession(ctx context.Context, agent acpAgent) (*acpSession, error) {
 		return nil, fmt.Errorf("create the session folder: %w", err)
 	}
 	running, stop := context.WithCancel(ctx)
-	s := &acpSession{stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program, stderr: &tailBuffer{}}
+	s := &acpSession{stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program, stderr: &tailBuffer{}, tools: tools}
 	s.cmd = exec.CommandContext(running, agent.Command[0], agent.Command[1:]...)
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
@@ -134,6 +139,9 @@ func (s *acpSession) initialize() error {
 			SessionCapabilities struct {
 				Close json.RawMessage `json:"close"`
 			} `json:"sessionCapabilities"`
+			MCPCapabilities struct {
+				HTTP bool `json:"http"`
+			} `json:"mcpCapabilities"`
 		} `json:"agentCapabilities"`
 	}
 	if err := json.Unmarshal(result, &reply); err != nil {
@@ -141,12 +149,17 @@ func (s *acpSession) initialize() error {
 	}
 	closing := string(reply.AgentCapabilities.SessionCapabilities.Close)
 	s.canClose = closing != "" && closing != "null" && closing != "false"
+	s.hasHTTPServers = reply.AgentCapabilities.MCPCapabilities.HTTP
 	return nil
 }
 
-// create opens the session and reads the models the agent reports for it.
+// create opens the session with the run's tools and reads the models the agent reports for it.
 func (s *acpSession) create() error {
-	result, err := s.call("session/new", map[string]any{"cwd": s.dir, "mcpServers": []any{}})
+	servers, err := s.listServers()
+	if err != nil {
+		return err
+	}
+	result, err := s.call("session/new", map[string]any{"cwd": s.dir, "mcpServers": servers})
 	if err != nil {
 		return err
 	}
@@ -350,11 +363,12 @@ func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 		fmt.Errorf("%s exited before answering %s", s.program, method), s.stderr.String()))
 }
 
-// answerRequest refuses every permission the agent asks for and serves none of its other methods.
+// answerRequest grants the permission to call one of the run's tools, refuses every other, and
+// serves none of the agent's other methods.
 func (s *acpSession) answerRequest(request rpcMessage) error {
 	reply := rpcRequest{ID: request.ID}
 	if request.Method == "session/request_permission" {
-		reply.Result = map[string]any{"outcome": map[string]any{"outcome": "cancelled"}}
+		reply.Result = s.answerPermission(request.Params)
 	} else {
 		reply.Error = &rpcError{Code: methodNotFound, Message: "numen serves no " + request.Method}
 	}

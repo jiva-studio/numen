@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
@@ -15,30 +14,36 @@ import (
 // reasonDone is why a task stops when the agent has answered.
 const reasonDone = "done"
 
-var (
-	errNoTools           = errors.New("this agent answers single questions and runs no tools")
-	errAgentNotInstalled = errors.New("the ACP agent is not installed")
-)
+var errAgentNotInstalled = errors.New("the ACP agent is not installed")
+
+// question is one task as a session is asked it.
+type question struct {
+	model     string
+	reasoning string
+	system    string
+	prompt    string
+	tools     toolEndpoint
+}
 
 // answer asks the agent one question in a session of its own, with the model the agent reports by
-// the id, and returns the text of its answer.
-func (s *agentServer) answer(ctx context.Context, agent acpAgent, modelID, level, system, prompt string) (string, error) {
-	session, err := openACPSession(ctx, agent)
+// the id and the tools of the question, and returns the text of its answer.
+func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (string, error) {
+	session, err := openACPSession(ctx, agent, q.tools)
 	if err != nil {
 		return "", err
 	}
 	defer session.close()
-	if err := session.setModel(modelID); err != nil {
+	if err := session.setModel(q.model); err != nil {
 		return "", err
 	}
-	if err := session.setReasoning(level); err != nil {
+	if err := session.setReasoning(q.reasoning); err != nil {
 		return "", err
 	}
-	return session.ask(system, prompt)
+	return session.ask(q.system, q.prompt)
 }
 
-// AskAgent answers a task that names no tool with the ACP agent the task names, in a session of its
-// tool is stopped.
+// AskAgent answers the task with the ACP agent the task names, in a session of its own that reaches
+// the tools of the task at their endpoint.
 func (s *agentServer) AskAgent(
 	ctx context.Context,
 	req *connect.Request[numenv1.AskAgentRequest],
@@ -50,14 +55,14 @@ func (s *agentServer) AskAgent(
 	}); err != nil {
 		return err
 	}
-	if agentrun.HasTools(msg) {
-		return sendStopped(stream, errNoTools.Error())
-	}
 	agent, err := s.findAgent(msg.GetAgent(), msg.GetCommand())
 	if err != nil {
 		return sendStopped(stream, err.Error())
 	}
-	text, err := s.answer(ctx, agent, msg.GetModel(), msg.GetReasoning(), msg.GetInstructions(), msg.GetPrompt())
+	text, err := s.answer(ctx, agent, question{
+		model: msg.GetModel(), reasoning: msg.GetReasoning(), system: msg.GetInstructions(), prompt: msg.GetPrompt(),
+		tools: readToolEndpoint(msg),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return ctxErr

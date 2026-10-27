@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"os"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -56,30 +56,66 @@ func TestAskAgent_ResponseSuccess(t *testing.T) {
 	}
 }
 
-// A task offers the agent no MCP server, whatever endpoint it holds, and a task naming a tool is
-// stopped before the agent is started.
-func TestAskAgentOffersTheAgentNoTool(t *testing.T) {
-	agent, record := fakeACPAgent(t, "fake", "plain")
-	svc := serveAgents(agent)
+// A task naming tools opens the session with the endpoint of the run as its MCP server, and the
+// agent is allowed once to call a tool of the task and nothing else.
+func TestAskAgentOpensTheSessionWithTheRunEndpoint(t *testing.T) {
+	agent, record := fakeACPAgent(t, "fake", "tools")
 
-	askAgent(t, svc, &numenv1.AskAgentRequest{
+	response, stopReason := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
+		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
+		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+	})
+
+	if response != "the answer" || stopReason != reasonDone {
+		t.Errorf("said %q, stopReason %q", response, stopReason)
+	}
+	observed := readRecord(t, record)
+	servers, _ := json.Marshal(observed["session/new"][0]["params"].(map[string]any)["mcpServers"])
+	want := `[{"headers":[{"name":"Authorization","value":"Bearer secret"}],"name":"numen","type":"http","url":"http://127.0.0.1:1/mcp"}]`
+	if string(servers) != want {
+		t.Errorf("the session was given MCP servers %s, want %s", servers, want)
+	}
+	replies := observed["reply"]
+	if len(replies) < 2 {
+		t.Fatalf("the agent had %d replies", len(replies))
+	}
+	if outcome, _ := json.Marshal(replies[0]["result"]); string(outcome) != `{"outcome":{"optionId":"once","outcome":"selected"}}` {
+		t.Errorf("the call of a tool of the task was answered %s", outcome)
+	}
+	if outcome, _ := json.Marshal(replies[1]["result"]); string(outcome) != `{"outcome":{"outcome":"cancelled"}}` {
+		t.Errorf("the call of another tool was answered %s", outcome)
+	}
+}
+
+// A task that names no tool gives the session no MCP server, whatever endpoint it holds.
+func TestAskAgentOpensASessionWithNoServerForATaskWithNoTool(t *testing.T) {
+	agent, record := fakeACPAgent(t, "fake", "tools")
+
+	askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
 		Agent: "acp:fake", Prompt: "why?", ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
-	observed := readRecord(t, record)
-	session := observed["session/new"][0]["params"].(map[string]any)
+
+	session := readRecord(t, record)["session/new"][0]["params"].(map[string]any)
 	if servers := session["mcpServers"].([]any); len(servers) != 0 {
 		t.Errorf("the session was given MCP servers %v", servers)
 	}
+}
 
-	other, otherRecord := fakeACPAgent(t, "other", "plain")
-	response, stopReason := askAgent(t, serveAgents(other), &numenv1.AskAgentRequest{
-		Agent: "acp:other", Prompt: "why?", Tools: []string{"note_read"},
+// A task naming tools is stopped by an agent that takes no MCP server over HTTP, before a session
+// is opened.
+func TestAskAgentStopsWhereTheAgentCannotReachTheTools(t *testing.T) {
+	agent, record := fakeACPAgent(t, "fake", "plain")
+
+	response, stopReason := askAgent(t, serveAgents(agent), &numenv1.AskAgentRequest{
+		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
+		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
-	if response != "" || stopReason != errNoTools.Error() {
+
+	if response != "" || !strings.Contains(stopReason, "takes no MCP server over HTTP") {
 		t.Errorf("said %q, stopReason %q", response, stopReason)
 	}
-	if _, err := os.Stat(otherRecord); err == nil {
-		t.Error("the agent was started for a task naming a tool")
+	if sessions := readRecord(t, record)["session/new"]; len(sessions) != 0 {
+		t.Errorf("a session was opened: %v", sessions)
 	}
 }
 
