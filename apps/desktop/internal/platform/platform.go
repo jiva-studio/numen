@@ -1,5 +1,5 @@
 // Package platform is what this machine supplies to the core that a settings
-// file cannot name: the folders its plugins are found in.
+// file cannot name: the folders its plugins are found in and the keychain keys are kept in.
 //
 // Every entry point of this application begins from the configuration here, so
 // a window and the command line reach the same machine.
@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
@@ -47,6 +48,7 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 func GetConfigFor(target string) container.Config {
 	cfg := container.Config{
 		PluginHost: newPluginHost(target, getPluginsDirs()...),
+		KeyStore:   keychain.Store{},
 	}
 	// A machine with no data folder leaves the path empty, and the core refuses to start.
 	if path, err := GetIndexPath(); err == nil {

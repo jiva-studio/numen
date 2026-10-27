@@ -72,3 +72,9 @@ func TestGetConfig(t *testing.T) {
 		t.Fatal("expected configured plugin host")
 	}
 }
+
+func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
+	if GetConfigFor(TargetFlashcards).KeyStore == nil {
+		t.Error("the desktop configuration names no key store")
+	}
+}

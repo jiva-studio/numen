@@ -37,7 +37,6 @@ require (
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	github.com/zalando/go-keyring v0.2.8 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
@@ -51,6 +50,7 @@ replace github.com/jiva-studio/numen/libs/protocol => ../../libs/protocol
 require (
 	github.com/jiva-studio/numen/libs/core v0.0.0
 	github.com/jiva-studio/numen/libs/notes v0.0.0
+	github.com/zalando/go-keyring v0.2.8
 )
 
 replace github.com/jiva-studio/numen/libs/core => ../../libs/core

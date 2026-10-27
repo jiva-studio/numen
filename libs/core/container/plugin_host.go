@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/keychain"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/serviceproxy"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
@@ -302,16 +301,6 @@ func (c Config) OpenPluginVault(
 }
 
 var errNoPluginHost = errors.New("this installation has no plugin host to keep a secret for")
-
-// GetKeyStore is where the keys of services are kept: the one the installation
-// names, else the system keychain. A machine without a keychain fails with
-// port.ErrNoKeyStore and keeps no key anywhere else.
-func (c Config) GetKeyStore() pluginport.KeyStore {
-	if c.KeyStore != nil {
-		return c.KeyStore
-	}
-	return keychain.Store{}
-}
 
 // GetPluginSecretWriter stores, as the window asks, the key of a secret a plugin
 // declares in its manifest, and hands the plugin the secrets it holds now.

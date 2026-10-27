@@ -76,7 +76,8 @@ type Config struct {
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
 
-	// KeyStore provides credential storage. Defaults to the system keychain if nil.
+	// KeyStore is where the keys of plugin secrets are kept. The application names it; without one
+	// every secret fails with port.ErrNoKeyStore.
 	KeyStore pluginport.KeyStore
 
 	// TextVersions is the text versions of the vaults' files, which the index, the

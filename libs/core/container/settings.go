@@ -152,7 +152,7 @@ func (c Config) SetSettings(s Settings) Config {
 				},
 			})
 		})
-		c.PluginHost.SetKeyStore(c.GetKeyStore())
+		c.PluginHost.SetKeyStore(c.KeyStore)
 		c.setCompleter()
 	}
 	return c

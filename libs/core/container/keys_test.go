@@ -58,19 +58,6 @@ func writeSecretPlugin(t *testing.T) string {
 	return root
 }
 
-// An installation names its key store, and otherwise has the system keychain.
-func TestTheKeyStoreIsTheOneNamedElseTheSystemKeychain(t *testing.T) {
-	jar := keyJar{}
-	if got := (Config{KeyStore: jar}).GetKeyStore(); got == nil {
-		t.Fatal("no key store")
-	} else if err := got.SetKey(t.Context(), "n", "k"); err != nil || jar["n"] != "k" {
-		t.Errorf("the named store was not used: %v, %v", jar, err)
-	}
-	if (Config{}).GetKeyStore() == nil {
-		t.Error("an installation naming none has no key store")
-	}
-}
-
 // A secret written through the container lands in the key store the plugin
 // host reads its plugins' secrets from, under the plugin and the name, and the
 // settings file records the name of the secret and never its key.
@@ -121,5 +108,19 @@ func TestWithoutAPluginHostASecretIsAnError(t *testing.T) {
 	}
 	if err := cfg.GetPluginSecretDeleter()(t.Context(), "p", "n"); !errors.Is(err, errNoPluginHost) {
 		t.Errorf("delete: error = %v", err)
+	}
+}
+
+// An installation that names no key store keeps no key anywhere: the secret
+// writer fails with port.ErrNoKeyStore.
+func TestWithoutAKeyStoreASecretIsErrNoKeyStore(t *testing.T) {
+	settingsPath := filepath.Join(t.TempDir(), "numen.json")
+	cfg := Config{SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
+	cfg = cfg.SetSettings(DefaultSettings())
+	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agents.numen", "apiKey", "value-1"); !errors.Is(err, pluginport.ErrNoKeyStore) {
+		t.Errorf("write: error = %v, want port.ErrNoKeyStore", err)
+	}
+	if content, err := os.ReadFile(settingsPath); err == nil && strings.Contains(string(content), "value-1") {
+		t.Errorf("the settings file holds:\n%s", content)
 	}
 }
