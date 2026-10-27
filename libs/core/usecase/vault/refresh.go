@@ -220,6 +220,9 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return res, fmt.Errorf("index: %w", err)
 	}
 	u.writeLedger(v, recorded)
+	if err := u.followRenames(ctx, v, reader, res); err != nil {
+		return res, fmt.Errorf("follow renames: %w", err)
+	}
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
 	removed := append(append([]string(nil), res.Removed...), res.LeftAlone...)
@@ -346,6 +349,73 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 		}
 	}
 	return nil
+}
+
+// followRenames moves the sources at removed paths to the asset paths that now
+// hold the same content. A file renamed outside the core arrives as its old path
+// gone and its new path changed; the move keeps its chunks and text versions.
+// Only an asset of the same size as a removed source is read.
+func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res RefreshResult) error {
+	if len(res.Removed) == 0 || len(res.Assets) == 0 {
+		return nil
+	}
+	gone, err := u.getRemovedSources(ctx, v, res.Removed)
+	if err != nil {
+		return err
+	}
+	for _, path := range res.Assets {
+		if len(gone) == 0 {
+			return nil
+		}
+		ref, err := reader.GetFingerprint(ctx, path)
+		if err != nil {
+			continue
+		}
+		i := slices.IndexFunc(gone, func(old sourceport.SourceText) bool { return old.Size == ref.Size })
+		if i < 0 {
+			continue
+		}
+		raw, err := reader.Read(ctx, path)
+		if err != nil {
+			continue
+		}
+		hash := domain.HashContent(raw)
+		i = slices.IndexFunc(gone, func(old sourceport.SourceText) bool { return old.Hash == hash })
+		if i < 0 {
+			continue
+		}
+		if err := u.sources.MoveSources(ctx, v.ID, gone[i].Path, path); err != nil {
+			return err
+		}
+		gone = slices.Delete(gone, i, i+1)
+	}
+	return nil
+}
+
+// getRemovedSources is the sources other than notes the index holds at and
+// under the removed paths, with the content hash each was read with. A source
+// never read has no hash and matches nothing.
+func (u Refresh) getRemovedSources(ctx context.Context, v domain.Vault, removed []string) ([]sourceport.SourceText, error) {
+	var out []sourceport.SourceText
+	for _, path := range removed {
+		under, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
+		if err != nil {
+			return nil, err
+		}
+		for _, ref := range under {
+			if ref.Kind == domain.KindNote {
+				continue
+			}
+			text, ok, err := u.queries.GetSourceText(ctx, v.ID, ref.Path)
+			if err != nil {
+				return nil, err
+			}
+			if ok && text.Hash != "" {
+				out = append(out, text)
+			}
+		}
+	}
+	return out, nil
 }
 
 // isCurrent reports whether the index already holds the note as the file is.

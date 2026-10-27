@@ -185,3 +185,91 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 		t.Fatalf("the old path still has %+v (%v)", old, err)
 	}
 }
+
+// newTalkIndex is the talk vault read into an index, with a transcript of the
+// talk recorded.
+func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersion) {
+	t.Helper()
+	v := newTalkVault(t)
+	cfg := Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	versions, err := cfg.NewTextVersions(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.TextVersions = versions
+	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
+	readIntoIndex(t, cfg, db, v)
+	return cfg, db, v, version
+}
+
+// refreshPaths brings the named paths up to date, as the watch does with the
+// paths it reports.
+func refreshPaths(t *testing.T, cfg Config, db *Index, v domain.Vault, paths ...string) {
+	t.Helper()
+	if _, err := makeRefresh(cfg, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
+	cfg, db, v, version := newTalkIndex(t)
+	const renamed = "talks/Heron talk.mp3"
+	if err := os.Rename(filepath.Join(v.Path, talkPath), filepath.Join(v.Path, renamed)); err != nil {
+		t.Fatal(err)
+	}
+
+	refreshPaths(t, cfg, db, v, talkPath, renamed)
+	readIntoIndex(t, cfg, db, v)
+
+	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))
+	if err != nil {
+		t.Fatal(err)
+	}
+	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 1 || listing.Live != version.GetID() || listing.Versions[0].Path != renamed {
+		t.Fatalf("after the rename on disk the talk has %+v, want its transcript live at the new path", listing)
+	}
+	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Source != renamed {
+		t.Fatalf("found %+v, want the talk at its new path", found)
+	}
+}
+
+func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
+	cfg, db, v, version := newTalkIndex(t)
+	raw, err := os.ReadFile(filepath.Join(v.Path, talkPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(v.Path, talkPath)); err != nil {
+		t.Fatal(err)
+	}
+
+	refreshPaths(t, cfg, db, v, talkPath)
+
+	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 1 || listing.Versions[0].GetID() != version.GetID() {
+		t.Fatalf("after the delete the talk's path has %+v, want its transcript kept", listing)
+	}
+	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 0 {
+		t.Fatalf("found %+v, want nothing for a deleted talk", found)
+	}
+}
