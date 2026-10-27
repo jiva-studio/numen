@@ -1430,27 +1430,6 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	return secretsErr
 }
 
-// NotifyAllPluginConfigs sends resolved configurations to all running plugins.
-func (h *Host) NotifyAllPluginConfigs(ctx context.Context) error {
-	h.mu.RLock()
-	observed := make(map[string]struct{}, len(h.plugins))
-	for id := range h.plugins {
-		observed[id] = struct{}{}
-	}
-	for id := range h.supervisors {
-		observed[id] = struct{}{}
-	}
-	h.mu.RUnlock()
-
-	var firstErr error
-	for id := range observed {
-		if err := h.NotifyPluginConfig(ctx, id); err != nil && firstErr == nil {
-			firstErr = err
-		}
-	}
-	return firstErr
-}
-
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
 func (h *Host) GetPluginInfos() []pluginport.PluginInfo {

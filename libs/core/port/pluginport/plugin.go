@@ -164,7 +164,6 @@ type PluginDiscoverer interface {
 type PluginConfigurator interface {
 	SetSettings(all map[string]map[string]any)
 	SetPersistHandler(handler PluginPersistHandler)
-	NotifyAllPluginConfigs(ctx context.Context) error
 	SetCompleter(completer completionport.Completer)
 	SetKeyStore(store KeyStore)
 	SetPluginSecret(ctx context.Context, pluginID, name, key string) error

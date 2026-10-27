@@ -16,7 +16,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { PluginInfo } from "./plugin_pb.js";
 import { file_numen_v1_plugin } from "./plugin_pb.js";
-import type { ErrorCode, ReasoningLevel } from "./shared_pb.js";
+import type { ReasoningLevel } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Io4BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mb0oECAQQBUoECAUQBkoECAYQByLxAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZRIyChByZWFzb25pbmdfbGV2ZWxzGAggAygLMhgubnVtZW4udjEuUmVhc29uaW5nTGV2ZWwSGQoRZGVmYXVsdF9yZWFzb25pbmcYCSABKAkiJAoHU2V0dGluZxIKCgJhdBgBIAMoCRINCgV2YWx1ZRgCIAEoCSI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIhkKF1JlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0IjkKGFJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkiTwoYV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0Eg8KB3dyaXR0ZW4YASABKAkSFQoIYmFzZWxpbmUYAiABKAlIAIgBAUILCglfYmFzZWxpbmUiTgoZV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciJIChhXcml0ZVBsdWdpblNlY3JldFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSCwoDa2V5GAMgASgJIhsKGVdyaXRlUGx1Z2luU2VjcmV0UmVzcG9uc2UiPAoZRGVsZXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCSIcChpEZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZSInChJSZXRyeVBsdWdpblJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIiYKE1JldHJ5UGx1Z2luUmVzcG9uc2USDwoHZmFpbHVyZRgBIAEoCSI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIikKFEdldFBsdWdpbkRhdGFSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSI/ChVHZXRQbHVnaW5EYXRhUmVzcG9uc2USEgoKZmlsZV9jb3VudBgBIAEoBRISCgpieXRlX2NvdW50GAIgASgDIiwKF0RlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSIaChhEZWxldGVQbHVnaW5EYXRhUmVzcG9uc2UqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy+wYKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlElkKEFJlYWRTZXR0aW5nc0ZpbGUSIS5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVxdWVzdBoiLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRJcChFXcml0ZVNldHRpbmdzRmlsZRIiLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBojLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlEl8KEkRlbGV0ZVBsdWdpblNlY3JldBIjLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QaJC5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElAKDUdldFBsdWdpbkRhdGESHi5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVxdWVzdBofLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXNwb25zZRJZChBEZWxldGVQbHVnaW5EYXRhEiEubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QaIi5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Io4BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mb0oECAQQBUoECAUQBkoECAYQByLxAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZRIyChByZWFzb25pbmdfbGV2ZWxzGAggAygLMhgubnVtZW4udjEuUmVhc29uaW5nTGV2ZWwSGQoRZGVmYXVsdF9yZWFzb25pbmcYCSABKAkiJAoHU2V0dGluZxIKCgJhdBgBIAMoCRINCgV2YWx1ZRgCIAEoCSI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIkgKGFdyaXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRILCgNrZXkYAyABKAkiGwoZV3JpdGVQbHVnaW5TZWNyZXRSZXNwb25zZSI8ChlEZWxldGVQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJIhwKGkRlbGV0ZVBsdWdpblNlY3JldFJlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLCBQoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USXAoRV3JpdGVQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlEl8KEkRlbGV0ZVBsdWdpblNlY3JldBIjLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QaJC5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElAKDUdldFBsdWdpbkRhdGESHi5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVxdWVzdBofLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXNwb25zZRJZChBEZWxldGVQbHVnaW5EYXRhEiEubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QaIi5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -219,94 +219,6 @@ export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> = /*
   messageDesc(file_numen_v1_settings, 5);
 
 /**
- * @generated from message numen.v1.ReadSettingsFileRequest
- */
-export type ReadSettingsFileRequest = Message<"numen.v1.ReadSettingsFileRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.ReadSettingsFileRequest.
- * Use `create(ReadSettingsFileRequestSchema)` to create a new message.
- */
-export const ReadSettingsFileRequestSchema: GenMessage<ReadSettingsFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 6);
-
-/**
- * @generated from message numen.v1.ReadSettingsFileResponse
- */
-export type ReadSettingsFileResponse = Message<"numen.v1.ReadSettingsFileResponse"> & {
-  /**
-   * The file as its person wrote it. A file that is not there is an empty
-   * object, which is what an installation nobody has configured runs on.
-   *
-   * @generated from field: string written = 1;
-   */
-  written: string;
-
-  /**
-   * The file itself, absolute on this machine.
-   *
-   * @generated from field: string path = 2;
-   */
-  path: string;
-};
-
-/**
- * Describes the message numen.v1.ReadSettingsFileResponse.
- * Use `create(ReadSettingsFileResponseSchema)` to create a new message.
- */
-export const ReadSettingsFileResponseSchema: GenMessage<ReadSettingsFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 7);
-
-/**
- * @generated from message numen.v1.WriteSettingsFileRequest
- */
-export type WriteSettingsFileRequest = Message<"numen.v1.WriteSettingsFileRequest"> & {
-  /**
-   * What is to stand in the file, written as it was typed.
-   *
-   * @generated from field: string written = 1;
-   */
-  written: string;
-
-  /**
-   * The file as this caller last read it. Absent for a write that lands on
-   * whatever the file now holds.
-   *
-   * @generated from field: optional string baseline = 2;
-   */
-  baseline?: string | undefined;
-};
-
-/**
- * Describes the message numen.v1.WriteSettingsFileRequest.
- * Use `create(WriteSettingsFileRequestSchema)` to create a new message.
- */
-export const WriteSettingsFileRequestSchema: GenMessage<WriteSettingsFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 8);
-
-/**
- * @generated from message numen.v1.WriteSettingsFileResponse
- */
-export type WriteSettingsFileResponse = Message<"numen.v1.WriteSettingsFileResponse"> & {
-  /**
-   * Set when nothing was written, and why. A file holding bytes this caller
-   * has not read is ERROR_CODE_STALE, and the person chooses what happens to
-   * their text.
-   *
-   * @generated from field: optional numen.v1.ErrorCode error = 1;
-   */
-  error?: ErrorCode | undefined;
-};
-
-/**
- * Describes the message numen.v1.WriteSettingsFileResponse.
- * Use `create(WriteSettingsFileResponseSchema)` to create a new message.
- */
-export const WriteSettingsFileResponseSchema: GenMessage<WriteSettingsFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 9);
-
-/**
  * @generated from message numen.v1.WritePluginSecretRequest
  */
 export type WritePluginSecretRequest = Message<"numen.v1.WritePluginSecretRequest"> & {
@@ -337,7 +249,7 @@ export type WritePluginSecretRequest = Message<"numen.v1.WritePluginSecretReques
  * Use `create(WritePluginSecretRequestSchema)` to create a new message.
  */
 export const WritePluginSecretRequestSchema: GenMessage<WritePluginSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 10);
+  messageDesc(file_numen_v1_settings, 6);
 
 /**
  * @generated from message numen.v1.WritePluginSecretResponse
@@ -350,7 +262,7 @@ export type WritePluginSecretResponse = Message<"numen.v1.WritePluginSecretRespo
  * Use `create(WritePluginSecretResponseSchema)` to create a new message.
  */
 export const WritePluginSecretResponseSchema: GenMessage<WritePluginSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 11);
+  messageDesc(file_numen_v1_settings, 7);
 
 /**
  * @generated from message numen.v1.DeletePluginSecretRequest
@@ -376,7 +288,7 @@ export type DeletePluginSecretRequest = Message<"numen.v1.DeletePluginSecretRequ
  * Use `create(DeletePluginSecretRequestSchema)` to create a new message.
  */
 export const DeletePluginSecretRequestSchema: GenMessage<DeletePluginSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 12);
+  messageDesc(file_numen_v1_settings, 8);
 
 /**
  * @generated from message numen.v1.DeletePluginSecretResponse
@@ -389,7 +301,7 @@ export type DeletePluginSecretResponse = Message<"numen.v1.DeletePluginSecretRes
  * Use `create(DeletePluginSecretResponseSchema)` to create a new message.
  */
 export const DeletePluginSecretResponseSchema: GenMessage<DeletePluginSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 13);
+  messageDesc(file_numen_v1_settings, 9);
 
 /**
  * @generated from message numen.v1.RetryPluginRequest
@@ -408,7 +320,7 @@ export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
  * Use `create(RetryPluginRequestSchema)` to create a new message.
  */
 export const RetryPluginRequestSchema: GenMessage<RetryPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 14);
+  messageDesc(file_numen_v1_settings, 10);
 
 /**
  * @generated from message numen.v1.RetryPluginResponse
@@ -427,7 +339,7 @@ export type RetryPluginResponse = Message<"numen.v1.RetryPluginResponse"> & {
  * Use `create(RetryPluginResponseSchema)` to create a new message.
  */
 export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 15);
+  messageDesc(file_numen_v1_settings, 11);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathRequest
@@ -451,7 +363,7 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
  * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
  */
 export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 16);
+  messageDesc(file_numen_v1_settings, 12);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathResponse
@@ -484,7 +396,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
  * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
  */
 export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 17);
+  messageDesc(file_numen_v1_settings, 13);
 
 /**
  * @generated from message numen.v1.GetPluginDataRequest
@@ -501,7 +413,7 @@ export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
  * Use `create(GetPluginDataRequestSchema)` to create a new message.
  */
 export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 18);
+  messageDesc(file_numen_v1_settings, 14);
 
 /**
  * @generated from message numen.v1.GetPluginDataResponse
@@ -523,7 +435,7 @@ export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & 
  * Use `create(GetPluginDataResponseSchema)` to create a new message.
  */
 export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 19);
+  messageDesc(file_numen_v1_settings, 15);
 
 /**
  * @generated from message numen.v1.DeletePluginDataRequest
@@ -540,7 +452,7 @@ export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"
  * Use `create(DeletePluginDataRequestSchema)` to create a new message.
  */
 export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 20);
+  messageDesc(file_numen_v1_settings, 16);
 
 /**
  * @generated from message numen.v1.DeletePluginDataResponse
@@ -553,7 +465,7 @@ export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataRespons
  * Use `create(DeletePluginDataResponseSchema)` to create a new message.
  */
 export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 21);
+  messageDesc(file_numen_v1_settings, 17);
 
 /**
  * Presence is what a model's files are on this machine. It says where files
@@ -599,7 +511,7 @@ export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
   enumDesc(file_numen_v1_settings, 0);
 
 /**
- * SettingsService answers about that file, one setting at a time and whole.
+ * SettingsService answers about that file, one setting at a time.
  *
  * @generated from service numen.v1.SettingsService
  */
@@ -626,28 +538,6 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof WriteSettingsRequestSchema;
     output: typeof WriteSettingsResponseSchema;
-  },
-  /**
-   * ReadSettingsFile is that file as its person wrote it, byte for byte.
-   *
-   * @generated from rpc numen.v1.SettingsService.ReadSettingsFile
-   */
-  readSettingsFile: {
-    methodKind: "unary";
-    input: typeof ReadSettingsFileRequestSchema;
-    output: typeof ReadSettingsFileResponseSchema;
-  },
-  /**
-   * WriteSettingsFile replaces that file whole, with the bytes as they were
-   * left as it was; what is said names where in the file the trouble is. A file
-   * standing at anything other than what the caller presents is left alone and
-   *
-   * @generated from rpc numen.v1.SettingsService.WriteSettingsFile
-   */
-  writeSettingsFile: {
-    methodKind: "unary";
-    input: typeof WriteSettingsFileRequestSchema;
-    output: typeof WriteSettingsFileResponseSchema;
   },
   /**
    * WritePluginSecret stores the key of a secret a plugin declares, in the

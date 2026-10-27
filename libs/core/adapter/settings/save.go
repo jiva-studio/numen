@@ -70,15 +70,6 @@ func Save(path string, into Document, settings ...Setting) error {
 	})
 }
 
-// checkSettings says what is wrong with the settings these bytes make, and
-// nothing where they read out as settings this build can work with.
-func checkSettings(raw []byte, into Document) error {
-	if err := json.Unmarshal(raw, into); err != nil {
-		return err
-	}
-	return into.GetAppearance().Check()
-}
-
 // writeSettings says what is wrong with the settings this call wrote, and
 // nothing where each is a number its setting writeSettings and an hour its
 // setting begins at.
@@ -179,24 +170,6 @@ var errNotASection = errors.New("a setting goes inside a section")
 // errRepeated is a name written twice in one section. The settings are read
 // from the last of the two, and a span is replaced at the first.
 var errRepeated = errors.New("a section holds one of a name")
-
-// checkNoDuplicateNames says which name a section of the file holds twice, and nothing where
-// every section holds one of each. A value that is not a section holds no names.
-func checkNoDuplicateNames(object []byte) error {
-	target, err := parseObjectShape(object)
-	if errors.Is(err, errNotASection) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	for _, one := range target.pairs {
-		if err := checkNoDuplicateNames(object[one.from:one.to]); err != nil {
-			return fmt.Errorf("%s: %w", one.key, err)
-		}
-	}
-	return nil
-}
 
 func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {

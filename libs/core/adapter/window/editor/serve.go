@@ -350,8 +350,6 @@ func (o *Installation) wireUseCases() {
 	}
 	services.Agent.GetAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()
-	services.Settings.GetFile = made.OpenGetSettingsFile()
-	services.Settings.WriteFile = made.OpenWriteSettingsFile()
 	services.Settings.WriteSecret = made.OpenWritePluginSecret()
 	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()

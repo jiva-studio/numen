@@ -4,7 +4,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 // Setting is one setting of the file, and what to put there. Model is a model a
@@ -50,6 +49,3 @@ const PluginNotInstalled = pluginport.PluginNotInstalled
 // ErrNotASetting is a value the settings cannot be read out of again. Nothing is
 // written, and the value is the caller's to correct.
 var ErrNotASetting = settingsport.ErrNotASetting
-
-// ErrStale is a file that holds bytes the caller has not read. It is left alone.
-var ErrStale = vaultport.ErrStale

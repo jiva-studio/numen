@@ -13,14 +13,11 @@ import (
 	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
-// Handler answers every setting read and written, the settings file
-// read and replaced whole, and the keys of the secrets plugins declare, stored
-// and removed.
+// Handler answers every setting read and written, and the keys of the secrets
+// plugins declare, stored and removed.
 type Handler struct {
 	Get          *setting.Get
 	Write        *setting.Write
-	GetFile      *setting.GetFile
-	WriteFile    *setting.WriteFile
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
@@ -76,44 +73,6 @@ func (h *Handler) WriteSettings(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
-}
-
-// ReadSettingsFile is that file as its person wrote it, byte for byte.
-func (h *Handler) ReadSettingsFile(
-	_ context.Context, _ *connect.Request[v1.ReadSettingsFileRequest],
-) (*connect.Response[v1.ReadSettingsFileResponse], error) {
-	if h.GetFile == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
-	got, err := h.GetFile.Execute()
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	return connect.NewResponse(&v1.ReadSettingsFileResponse{Written: got.Written, Path: got.Path}), nil
-}
-
-// WriteSettingsFile replaces that file whole. A file the settings could not be
-// read out of is the client's to correct, and the file is left as it was.
-//
-// The client presents the file it last read. A file holding bytes it has not
-// their text.
-func (h *Handler) WriteSettingsFile(
-	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
-) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	if h.WriteFile == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
-	if err := h.WriteFile.Execute(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
-		if errors.Is(err, setting.ErrStale) {
-			staleCode := v1.ErrorCode_ERROR_CODE_STALE
-			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &staleCode}), nil
-		}
-		if errors.Is(err, setting.ErrNotASetting) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	return connect.NewResponse(&v1.WriteSettingsFileResponse{}), nil
 }
 
 // NewWireModels is the models as the wire carries them.

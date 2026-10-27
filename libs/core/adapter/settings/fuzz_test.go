@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-
-	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
 // A file naming settings is answered for either with settings this build can be
@@ -101,62 +99,6 @@ type review struct {
 	DayStartTime string `json:"day_start_time"`
 }
 
-// byteSeeds are the shapes a settings file arrives in: what the application
-// writes, one setting indented another way, a name this build does not know, a
-// name written twice, a value of the wrong kind, a file somebody was still
-// typing, a bare null, the file as something other than an object, an empty
-// object, an empty file, and bytes that are no settings at all.
-var byteSeeds = []string{
-	`{"v":1,"appearance":{"interface_scale":1,"text_scale":1,"mode":"dark",` +
-		`"theme":"preset:numen"},` +
-		`"review":{"day_start_time":"04:00"}}`,
-	"{\n  \"appearance\": {\n    \"theme\": \"mine:dracula\"\n  }\n}\n",
-	`{"appearance":{"zoom":1.25}}`,
-	`{"appearance":{"interface_scale":1,"interface_scale":9}}`,
-	`{"appearance":{"interface_scale":"1.5"}}`,
-	`{"v":1,"appearance":{"text_sc`,
-	"null",
-	"[]",
-	"{}\n",
-	"",
-	"\x00\xff\xfe",
-}
-
-// Bytes the settings are saved from land in the file as they were typed, and
-// what lands is read back as settings: a file the application itself took is
-// name, and the file is left holding what it held — a person's own settings are
-// worth more than the one being written over them.
-//
-// The bytes come from an editor a person types into, so they are that person's
-// and not this application's.
-func FuzzWrite(f *testing.F) {
-	for _, seed := range byteSeeds {
-		f.Add(seed)
-	}
-	path := filepath.Join(f.TempDir(), "numen.json")
-	f.Fuzz(func(t *testing.T, raw string) {
-		const status = `{"appearance":{"theme":"mine:dracula"}}`
-		writeFile(t, path, status)
-
-		switch err := settings.Write(path, []byte(raw), nil, newDocument()); {
-		case err == nil:
-			if got := reading(t, path); got != raw {
-				t.Fatalf("saved %q, found %q in file", raw, got)
-			}
-			if _, err := openAt(path); err != nil {
-				t.Fatalf("%q was saved and reads back as %v", raw, err)
-			}
-		default:
-			if !errors.Is(err, settingsport.ErrNotASetting) {
-				t.Fatalf("%q failed as %v, which does not say what is wrong with it", raw, err)
-			}
-			if got := reading(t, path); got != status {
-				t.Fatalf("%q failed and left %q in the file", raw, got)
-			}
-		}
-	})
-}
-
 // is. One file is written over and over: a folder for each of a million inputs
 // is a folder a run never gets to the end of.
 func writeFile(tb testing.TB, path, raw string) string {
@@ -165,13 +107,4 @@ func writeFile(tb testing.TB, path, raw string) string {
 		tb.Fatal(err)
 	}
 	return path
-}
-
-func reading(tb testing.TB, path string) string {
-	tb.Helper()
-	raw, err := settings.Read(path)
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return string(raw)
 }

@@ -282,9 +282,7 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 
 	for _, item := range []string{
 		"/numen.v1.SettingsService/GetSettings",
-		"/numen.v1.SettingsService/ReadSettingsFile",
 		"/numen.v1.SettingsService/WriteSettings",
-		"/numen.v1.SettingsService/WriteSettingsFile",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"written":"stolen: true\n"}`)))

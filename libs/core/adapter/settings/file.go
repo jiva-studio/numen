@@ -4,73 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
-	"os"
 
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
-
-// Read returns the settings file as its person wrote it: every byte of it,
-// in the order they arranged it. A file that is not there reads as an empty
-// object, which is what an installation nobody has configured runs on.
-func Read(path string) ([]byte, error) {
-	raw, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return []byte("{}\n"), nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return raw, nil
-}
-
-// Write replaces the settings file whole, with the bytes as they were typed.
-//
-// it was. What is said names where in the file the trouble is, and nothing
-// standing in it is repeated back.
-//
-// Seen is the file as the caller last read it. A file standing at anything else
-// is left alone and port.ErrStale comes back: someone turning a setting in
-// their own window outranks a caller that read the file, thought about it, and
-// arrived late. Nil is a caller that compares nothing, and its bytes land.
-// into says what shape the whole file takes, so bytes the settings cannot be
-func Write(path string, raw []byte, baseline *string, into Document) error {
-	if err := checkObject(raw); err != nil {
-		return err
-	}
-	if err := checkNoDuplicateNames(raw); err != nil {
-		return fmt.Errorf("%w: %s", settingsport.ErrNotASetting, describeErrorLocation(err))
-	}
-	if err := checkSettings(raw, into); err != nil {
-		return fmt.Errorf("%w: %s", settingsport.ErrNotASetting, describeErrorLocation(err))
-	}
-
-	return runOnFile(path, func(path string) error {
-		if err := checkUnchanged(path, baseline); err != nil {
-			return err
-		}
-		return writeFileAtomically(path, raw)
-	})
-}
-
-// checkUnchanged says whether the file holds what its caller last read, and
-// nothing where the caller presents nothing. It is read the way Read reads it,
-// so a file that is not there checkUnchanged at the empty object a caller was
-// given.
-func checkUnchanged(path string, baseline *string) error {
-	if baseline == nil {
-		return nil
-	}
-	target, err := Read(path)
-	if err != nil {
-		return err
-	}
-	if string(target) != *baseline {
-		return vaultport.ErrStale
-	}
-	return nil
-}
 
 // checkObject says what is wrong with bytes that are not the one checkObject the
 // settings are the fields of, and nothing where they are it.

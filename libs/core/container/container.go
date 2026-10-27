@@ -158,43 +158,6 @@ func (c Config) ReadSettings() func() (string, string, error) {
 	}
 }
 
-// ReadSettingsFile returns a function that reads raw settings file contents and path.
-func (c Config) ReadSettingsFile() func() (string, string, error) {
-	return func() (string, string, error) {
-		path, err := c.settingsFile()
-		if err != nil {
-			return "", "", err
-		}
-		raw, err := settings.Read(path)
-		if err != nil {
-			return "", path, err
-		}
-		return string(raw), path, nil
-	}
-}
-
-// WriteConfiguredFile replaces the settings file content.
-// Returns port.ErrStale if baseline does not match current file content.
-func (c Config) WriteConfiguredFile() func(content string, baseline *string) error {
-	return func(content string, baseline *string) error {
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		target := DefaultSettings()
-		if err := settings.Write(path, []byte(content), baseline, &target); err != nil {
-			return err
-		}
-		if c.PluginHost != nil {
-			if target.Plugins != nil {
-				c.PluginHost.SetSettings(target.Plugins)
-			}
-			_ = c.PluginHost.NotifyAllPluginConfigs(context.Background())
-		}
-		return nil
-	}
-}
-
 // GetSettingsWriter patches specific settings paths in the configuration file.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
 	return func(entries []settingsport.Setting) error {

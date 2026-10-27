@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 // isolate points everything the platform keeps per user at folders of the
@@ -67,9 +66,6 @@ func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 
 	if _, response, err := (Config{}).ReadSettings()(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
-	}
-	if _, responseVal, err := (Config{}).ReadSettingsFile()(); err == nil || responseVal != "" {
-		t.Errorf("the settings file was read from %q: %v", responseVal, err)
 	}
 	err := Config{}.GetSettingsWriter()([]settingsport.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
@@ -160,7 +156,6 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 	}
 }
 
-
 func TestWhatWentWrongIsReportedToWhoeverAskedToBeReported(t *testing.T) {
 	var notified []error
 	problem := errors.New("a vacuum that could not run")
@@ -172,97 +167,10 @@ func TestWhatWentWrongIsReportedToWhoeverAskedToBeReported(t *testing.T) {
 	Config{}.handleError(problem)
 }
 
-func TestTheSettingsFileIsReadOutAsItsPersonWroteIt(t *testing.T) {
-	const typed = `{"appearance": {"theme": "mine:sea"}}`
-	cfg, path := writeSettings(t, typed)
-
-	raw, response, err := cfg.ReadSettingsFile()()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if raw != typed || response != path {
-		t.Errorf("read %q at %q", raw, response)
-	}
-}
-
-func TestASettingsFileThatCannotBeReadIsSaidWithWhereItExists(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "numen.json")
-	if err := os.Mkdir(path, 0o700); err != nil {
-		t.Fatal(err)
-	}
-
-	raw, response, err := Config{SettingsPath: path}.ReadSettingsFile()()
-	if err == nil || raw != "" || response != path {
-		t.Errorf("read %q at %q: %v", raw, response, err)
-	}
-}
-
-func TestTheSettingsFileIsReplacedWholeByWhatWasTyped(t *testing.T) {
-	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
-	const typed = `{"appearance": {"theme": "mine:sand"}}`
-
-	if err := cfg.WriteConfiguredFile()(typed, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := os.ReadFile(path); err != nil || string(got) != typed {
-		t.Errorf("the file holds %q: %v", got, err)
-	}
-}
-
-func TestWriteConfiguredFileUpdatesPluginSettings(t *testing.T) {
-	cfg, _ := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
-	tmp := t.TempDir()
-	host := NewPluginHost("desktop.editor", tmp)
-	cfg.PluginHost = host
-
-	const typed = `{"appearance": {"theme": "mine:sand"}, "plugins": {"md.numen.pdf": {"engine": "mupdf", "max_pages": 50}}}`
-	if err := cfg.WriteConfiguredFile()(typed, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	pluginSettings := host.GetPluginSettings("md.numen.pdf")
-	if got := pluginSettings["engine"]; got != "mupdf" {
-		t.Errorf("expected engine mupdf, got %v", got)
-	}
-	if got := pluginSettings["max_pages"]; got != float64(50) && got != 50 {
-		t.Errorf("expected max_pages 50, got %v", got)
-	}
-}
-
-func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
-	const standing = `{"appearance": {"theme": "mine:sea"}}`
-	cfg, path := writeSettings(t, standing)
-	baseline := `{"appearance": {"theme": "mine:forest"}}`
-
-	err := cfg.WriteConfiguredFile()(`{"appearance": {"theme": "mine:sand"}}`, &baseline)
-	if !errors.Is(err, vaultport.ErrStale) {
-		t.Errorf("got %v", err)
-	}
-	if got, _ := os.ReadFile(path); string(got) != standing {
-		t.Errorf("the file holds %q", got)
-	}
-}
-
-func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsCached(t *testing.T) {
-	const standing = `{"appearance": {"theme": "mine:sea"}}`
-	cfg, path := writeSettings(t, standing)
-
-	if err := cfg.WriteConfiguredFile()(`{not json`, nil); err == nil {
-		t.Error("bytes that are not JSON were written")
-	}
-	if got, _ := os.ReadFile(path); string(got) != standing {
-		t.Errorf("the file holds %q", got)
-	}
-}
-
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := Config{}.WriteConfiguredFile()(`{}`, nil)
-	if err == nil || !strings.Contains(err.Error(), "HOME") {
-		t.Errorf("got %v", err)
-	}
-	err = Config{}.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
+	err := Config{}.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}

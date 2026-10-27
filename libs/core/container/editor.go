@@ -101,14 +101,6 @@ func (e EditorAssembly) OpenWriteSettings() *settings.Write {
 	return settings.NewWrite(e.cfg.GetSettingsWriter())
 }
 
-func (e EditorAssembly) OpenGetSettingsFile() *settings.GetFile {
-	return settings.NewGetFile(e.cfg.ReadSettingsFile())
-}
-
-func (e EditorAssembly) OpenWriteSettingsFile() *settings.WriteFile {
-	return settings.NewWriteFile(e.cfg.WriteConfiguredFile())
-}
-
 func (e EditorAssembly) OpenWritePluginSecret() *settings.WriteSecret {
 	return settings.NewWriteSecret(e.cfg.GetPluginSecretWriter())
 }

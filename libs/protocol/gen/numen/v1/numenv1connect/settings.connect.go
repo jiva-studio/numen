@@ -48,12 +48,6 @@ const (
 	// SettingsServiceWriteSettingsProcedure is the fully-qualified name of the SettingsService's
 	// WriteSettings RPC.
 	SettingsServiceWriteSettingsProcedure = "/numen.v1.SettingsService/WriteSettings"
-	// SettingsServiceReadSettingsFileProcedure is the fully-qualified name of the SettingsService's
-	// ReadSettingsFile RPC.
-	SettingsServiceReadSettingsFileProcedure = "/numen.v1.SettingsService/ReadSettingsFile"
-	// SettingsServiceWriteSettingsFileProcedure is the fully-qualified name of the SettingsService's
-	// WriteSettingsFile RPC.
-	SettingsServiceWriteSettingsFileProcedure = "/numen.v1.SettingsService/WriteSettingsFile"
 	// SettingsServiceWritePluginSecretProcedure is the fully-qualified name of the SettingsService's
 	// WritePluginSecret RPC.
 	SettingsServiceWritePluginSecretProcedure = "/numen.v1.SettingsService/WritePluginSecret"
@@ -83,12 +77,6 @@ type SettingsServiceClient interface {
 	// object, so every key a person typed stays where it was, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
-	// ReadSettingsFile is that file as its person wrote it, byte for byte.
-	ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error)
-	// WriteSettingsFile replaces that file whole, with the bytes as they were
-	// left as it was; what is said names where in the file the trouble is. A file
-	// standing at anything other than what the caller presents is left alone and
-	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// WritePluginSecret stores the key of a secret a plugin declares, in the
 	// system keychain and never in the file, and records that the secret is
 	// stored. The plugin is handed its secrets again.
@@ -137,18 +125,6 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 			connect.WithClientOptions(opts...),
 		),
-		readSettingsFile: connect.NewClient[v1.ReadSettingsFileRequest, v1.ReadSettingsFileResponse](
-			httpClient,
-			baseURL+SettingsServiceReadSettingsFileProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("ReadSettingsFile")),
-			connect.WithClientOptions(opts...),
-		),
-		writeSettingsFile: connect.NewClient[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse](
-			httpClient,
-			baseURL+SettingsServiceWriteSettingsFileProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("WriteSettingsFile")),
-			connect.WithClientOptions(opts...),
-		),
 		writePluginSecret: connect.NewClient[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse](
 			httpClient,
 			baseURL+SettingsServiceWritePluginSecretProcedure,
@@ -192,8 +168,6 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 type settingsServiceClient struct {
 	getSettings        *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
 	writeSettings      *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
-	readSettingsFile   *connect.Client[v1.ReadSettingsFileRequest, v1.ReadSettingsFileResponse]
-	writeSettingsFile  *connect.Client[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse]
 	writePluginSecret  *connect.Client[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse]
 	deletePluginSecret *connect.Client[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse]
 	retryPlugin        *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
@@ -210,16 +184,6 @@ func (c *settingsServiceClient) GetSettings(ctx context.Context, req *connect.Re
 // WriteSettings calls numen.v1.SettingsService.WriteSettings.
 func (c *settingsServiceClient) WriteSettings(ctx context.Context, req *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error) {
 	return c.writeSettings.CallUnary(ctx, req)
-}
-
-// ReadSettingsFile calls numen.v1.SettingsService.ReadSettingsFile.
-func (c *settingsServiceClient) ReadSettingsFile(ctx context.Context, req *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error) {
-	return c.readSettingsFile.CallUnary(ctx, req)
-}
-
-// WriteSettingsFile calls numen.v1.SettingsService.WriteSettingsFile.
-func (c *settingsServiceClient) WriteSettingsFile(ctx context.Context, req *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	return c.writeSettingsFile.CallUnary(ctx, req)
 }
 
 // WritePluginSecret calls numen.v1.SettingsService.WritePluginSecret.
@@ -261,12 +225,6 @@ type SettingsServiceHandler interface {
 	// object, so every key a person typed stays where it was, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
-	// ReadSettingsFile is that file as its person wrote it, byte for byte.
-	ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error)
-	// WriteSettingsFile replaces that file whole, with the bytes as they were
-	// left as it was; what is said names where in the file the trouble is. A file
-	// standing at anything other than what the caller presents is left alone and
-	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// WritePluginSecret stores the key of a secret a plugin declares, in the
 	// system keychain and never in the file, and records that the secret is
 	// stored. The plugin is handed its secrets again.
@@ -311,18 +269,6 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 		connect.WithHandlerOptions(opts...),
 	)
-	settingsServiceReadSettingsFileHandler := connect.NewUnaryHandler(
-		SettingsServiceReadSettingsFileProcedure,
-		svc.ReadSettingsFile,
-		connect.WithSchema(settingsServiceMethods.ByName("ReadSettingsFile")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceWriteSettingsFileHandler := connect.NewUnaryHandler(
-		SettingsServiceWriteSettingsFileProcedure,
-		svc.WriteSettingsFile,
-		connect.WithSchema(settingsServiceMethods.ByName("WriteSettingsFile")),
-		connect.WithHandlerOptions(opts...),
-	)
 	settingsServiceWritePluginSecretHandler := connect.NewUnaryHandler(
 		SettingsServiceWritePluginSecretProcedure,
 		svc.WritePluginSecret,
@@ -365,10 +311,6 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceGetSettingsHandler.ServeHTTP(w, r)
 		case SettingsServiceWriteSettingsProcedure:
 			settingsServiceWriteSettingsHandler.ServeHTTP(w, r)
-		case SettingsServiceReadSettingsFileProcedure:
-			settingsServiceReadSettingsFileHandler.ServeHTTP(w, r)
-		case SettingsServiceWriteSettingsFileProcedure:
-			settingsServiceWriteSettingsFileHandler.ServeHTTP(w, r)
 		case SettingsServiceWritePluginSecretProcedure:
 			settingsServiceWritePluginSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceDeletePluginSecretProcedure:
@@ -396,14 +338,6 @@ func (UnimplementedSettingsServiceHandler) GetSettings(context.Context, *connect
 
 func (UnimplementedSettingsServiceHandler) WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSettings is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ReadSettingsFile is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSettingsFile is not implemented"))
 }
 
 func (UnimplementedSettingsServiceHandler) WritePluginSecret(context.Context, *connect.Request[v1.WritePluginSecretRequest]) (*connect.Response[v1.WritePluginSecretResponse], error) {
