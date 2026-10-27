@@ -133,7 +133,7 @@ export type FieldLimits = { min: number; max: number } | Record<string, never>
 const PERCENT = 100
 
 const toLimits = (bounds: Bounds | undefined, per = 1): FieldLimits =>
-  bounds ? { min: bounds.least * per, max: bounds.most * per } : {}
+  bounds ? { min: bounds.min * per, max: bounds.max * per } : {}
 
 export const getFieldLimits = (field: Field, bounds: SettingsBounds): FieldLimits => {
   if (field === 'newADay') return toLimits(bounds.newADay)

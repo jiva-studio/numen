@@ -42,8 +42,8 @@ func createFakeAppearances(t *testing.T, appearance theme.Appearance) *fakeAppea
 	appearances.service = &theme.Service{
 		Catalogue:            createThemeFolder(t),
 		Settings:             appearances,
-		InterfaceScaleBounds: theme.Bounds{Least: 0.8, Most: 2},
-		TextScaleBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
+		InterfaceScaleBounds: theme.Bounds{Min: 0.8, Max: 2},
+		TextScaleBounds:      theme.Bounds{Min: 0.8, Max: 1.75},
 	}
 	return appearances
 }
@@ -154,10 +154,10 @@ func TestTheListReturnsTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 	if answer.GetInterfaceScale() != 1.25 || answer.GetTextScale() != 1.5 {
 		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
 	}
-	if answer.GetInterfaceScaleBounds().GetLeast() != 0.8 || answer.GetInterfaceScaleBounds().GetMost() != 2 {
+	if answer.GetInterfaceScaleBounds().GetMin() != 0.8 || answer.GetInterfaceScaleBounds().GetMax() != 2 {
 		t.Errorf("the interface goes %v", answer.GetInterfaceScaleBounds())
 	}
-	if answer.GetTextScaleBounds().GetLeast() != 0.8 || answer.GetTextScaleBounds().GetMost() != 1.75 {
+	if answer.GetTextScaleBounds().GetMin() != 0.8 || answer.GetTextScaleBounds().GetMax() != 1.75 {
 		t.Errorf("the text goes %v", answer.GetTextScaleBounds())
 	}
 }

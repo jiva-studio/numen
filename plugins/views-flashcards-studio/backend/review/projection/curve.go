@@ -151,7 +151,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
 	free := p
-	free.MinutesADay = int(MinutesADayBounds.Most)
+	free.MinutesADay = int(MinutesADayBounds.Max)
 	load, err := run.Run(ctx, now, free, pos, unreviewed)
 	if err != nil {
 		return Curve{}, err
@@ -212,7 +212,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
 	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
-	least, most := RetentionBounds.Least, RetentionBounds.Most
+	least, most := RetentionBounds.Min, RetentionBounds.Max
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
 	}

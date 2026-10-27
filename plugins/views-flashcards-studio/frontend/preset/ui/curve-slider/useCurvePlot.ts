@@ -17,7 +17,7 @@ export function useCurveScale(getCurve: () => Curve) {
     (curve) => {
       if (
         scale.value?.goal === curve.goal &&
-        (!curve.isHonest || getExtent(curve).most <= scale.value.extent.most)
+        (!curve.isHonest || getExtent(curve).max <= scale.value.extent.max)
       ) {
         return
       }

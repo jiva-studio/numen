@@ -908,18 +908,18 @@ describe('how far each setting goes', () => {
   it('holds a number typed past an end at the end the read answered', async () => {
     const { state } = await openPresetTab()
     state.updateSetting('interval', 9_000)
-    expect(state.settings.value.interval).toBe(BOUNDS.interval.most)
+    expect(state.settings.value.interval).toBe(BOUNDS.interval.max)
 
     state.updateSetting('newADay', -4)
-    expect(state.settings.value.newADay).toBe(BOUNDS.newADay.least)
+    expect(state.settings.value.newADay).toBe(BOUNDS.newADay.min)
   })
 
   it('holds each day of the week inside the share the read answered', async () => {
     const { state } = await openPresetTab()
     state.updateSetting('load', { sat: 250, sun: -10, mon: 50 })
     expect(state.settings.value.load).toStrictEqual({
-      sat: BOUNDS.load.most,
-      sun: BOUNDS.load.least,
+      sat: BOUNDS.load.max,
+      sun: BOUNDS.load.min,
       mon: 50,
     })
   })

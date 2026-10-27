@@ -12,8 +12,8 @@ const THEMES: readonly Theme[] = [
 
 const SIZES: Sizes = { interfaceScale: 1, textScale: 1 }
 const BOUNDS: Ranges = {
-  interfaceScale: { least: 0.8, most: 2 },
-  textScale: { least: 0.8, most: 1.75 },
+  interfaceScale: { min: 0.8, max: 2 },
+  textScale: { min: 0.8, max: 1.75 },
 }
 
 describe('the themes offered', () => {

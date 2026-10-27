@@ -36,7 +36,7 @@ func GetSettingsBounds() *flashcardsv1.SettingsBounds {
 
 // getBounds is one pair of bounds as the schema carries it.
 func getBounds(b review.Bounds) *v1.Bounds {
-	return &v1.Bounds{Least: b.Least, Most: b.Most}
+	return &v1.Bounds{Min: b.Min, Max: b.Max}
 }
 
 // ConvertPresetToWire is one preset as the schema carries it.

@@ -62,7 +62,7 @@ describe('holding the shares of a load to bounds', () => {
   })
 
   it('rounds each share and holds it inside the bound', () => {
-    expect(clampShares({ mon: 50.4, tue: 140 }, { least: 0, most: 100 })).toStrictEqual({
+    expect(clampShares({ mon: 50.4, tue: 140 }, { min: 0, max: 100 })).toStrictEqual({
       mon: 50,
       tue: 100,
     })

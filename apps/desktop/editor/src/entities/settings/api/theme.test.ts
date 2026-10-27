@@ -28,8 +28,8 @@ const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   mode: Modes.SYSTEM,
   interfaceScale: 1,
   textScale: 1,
-  interfaceScaleBounds: { least: 0.8, most: 2 },
-  textScaleBounds: { least: 0.8, most: 1.75 },
+  interfaceScaleBounds: { min: 0.8, max: 2 },
+  textScaleBounds: { min: 0.8, max: 1.75 },
   ...overrides,
 })
 
@@ -91,8 +91,8 @@ describe('how far a size goes', () => {
 
     expect(sizes).toEqual({ interfaceScale: 1, textScale: 1 })
     expect(bounds).toEqual({
-      interfaceScale: { least: 0.8, most: 2 },
-      textScale: { least: 0.8, most: 1.75 },
+      interfaceScale: { min: 0.8, max: 2 },
+      textScale: { min: 0.8, max: 1.75 },
     })
   })
 
@@ -104,8 +104,8 @@ describe('how far a size goes', () => {
     )
 
     expect((await themes.getAppearance()).bounds).toEqual({
-      interfaceScale: { least: 0, most: 0 },
-      textScale: { least: 0, most: 0 },
+      interfaceScale: { min: 0, max: 0 },
+      textScale: { min: 0, max: 0 },
     })
   })
 })

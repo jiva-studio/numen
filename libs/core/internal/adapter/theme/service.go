@@ -27,7 +27,7 @@ type Appearance struct {
 
 // Bounds is how far a size goes, at each end. A client asking a person for a
 // number says these.
-type Bounds struct{ Least, Most float64 }
+type Bounds struct{ Min, Max float64 }
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
@@ -99,7 +99,7 @@ func (s *Service) ListThemes(
 
 // encodeBounds converts domain Bounds to wire representation.
 func encodeBounds(bounds Bounds) *v1.Bounds {
-	return &v1.Bounds{Least: bounds.Least, Most: bounds.Most}
+	return &v1.Bounds{Min: bounds.Min, Max: bounds.Max}
 }
 
 // ReadTheme returns CSS definitions for a theme. If the theme is not found,

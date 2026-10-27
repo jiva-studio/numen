@@ -75,7 +75,7 @@ describe('where a place of the grid remains across the picture', () => {
 describe('the curve as it is drawn', () => {
   it('is scaled to the extent it is given, between the foot and the top', () => {
     const one = curve([0, 0.5, 1])
-    expect(getExtent(one)).toStrictEqual({ least: 0, most: 1 })
+    expect(getExtent(one)).toStrictEqual({ min: 0, max: 1 })
     const positions = createPositions(one, getExtent(one))
     expect(positions[0]?.y).toBe(PLOT_BOTTOM)
     expect(positions[2]?.y).toBe(PLOT_TOP)
@@ -84,12 +84,12 @@ describe('the curve as it is drawn', () => {
   // The extent is the goal's and not this answer's, so an answer that moves
   // little inside it is drawn as the little it moves.
   it('draws a curve that is flat within its extent flat', () => {
-    const positions = createPositions(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
+    const positions = createPositions(curve([0.9, 0.9, 0.9]), { min: 0, max: 1 })
     expect(positions.every((point) => point.y === positions[0]?.y)).toBe(true)
   })
 
   it('keeps a curve past either end of its extent inside the picture', () => {
-    const positions = createPositions(curve([-1, 0.5, 2]), { least: 0, most: 1 })
+    const positions = createPositions(curve([-1, 0.5, 2]), { min: 0, max: 1 })
     expect(positions[0]?.y).toBe(PLOT_BOTTOM)
     expect(positions[2]?.y).toBe(PLOT_TOP)
   })
@@ -97,15 +97,15 @@ describe('the curve as it is drawn', () => {
   // A count does not go below nothing, so nothing is the foot of the picture
   // and a run of it lies along that foot.
   it('lies along the floor where the extent has no width', () => {
-    const positions = createPositions(curve([0, 0, 0]), { least: 0, most: 0 })
+    const positions = createPositions(curve([0, 0, 0]), { min: 0, max: 0 })
     expect(positions.every((one) => one.y === PLOT_BOTTOM)).toBe(true)
   })
 
   it('remains an extent on nothing, whatever the run it holds evaluates to', () => {
-    expect(getExtent(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
-    expect(getExtent(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
-    expect(getExtent(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
-    expect(getExtent(curve([]))).toStrictEqual({ least: 0, most: 0 })
+    expect(getExtent(curve([0, 0, 0]))).toStrictEqual({ min: 0, max: 0 })
+    expect(getExtent(curve([40, 45, 41]))).toStrictEqual({ min: 0, max: 45 })
+    expect(getExtent(curve([0, 20, 5]))).toStrictEqual({ min: 0, max: 20 })
+    expect(getExtent(curve([]))).toStrictEqual({ min: 0, max: 0 })
   })
 
   // Whatever the run holds, the height read as nothing is the foot line.
@@ -125,7 +125,7 @@ describe('the curve as it is drawn', () => {
   })
 
   it('is one line through every place', () => {
-    const positions = createPositions(curve([0, 0.5, 1]), { least: 0, most: 1 })
+    const positions = createPositions(curve([0, 0.5, 1]), { min: 0, max: 1 })
     expect(createLinePath(positions).startsWith('M')).toBe(true)
     expect(createLinePath(positions).split('L')).toHaveLength(3)
   })
@@ -204,17 +204,17 @@ describe('where a keystroke takes the knob', () => {
 
 describe('the extent a backlog is drawn against', () => {
   it('relies on nothing and reaches the most the pace ever remains at', () => {
-    expect(getBacklogExtent([3, 7, 2])).toStrictEqual({ least: 0, most: 7 })
+    expect(getBacklogExtent([3, 7, 2])).toStrictEqual({ min: 0, max: 7 })
   })
 
   it('is nothing at all for a pace holding no days', () => {
-    expect(getBacklogExtent([])).toStrictEqual({ least: 0, most: 0 })
+    expect(getBacklogExtent([])).toStrictEqual({ min: 0, max: 0 })
   })
 })
 
 describe('a series drawn against an extent that does not begin at nothing', () => {
   it('measures each value up from the least of the extent', () => {
-    const series = createSeries([10, 15, 20], { least: 10, most: 20 })
+    const series = createSeries([10, 15, 20], { min: 10, max: 20 })
     expect(series.map((one) => one.y)).toStrictEqual([
       PLOT_BOTTOM,
       PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) / 2,

@@ -54,7 +54,7 @@ describe('the line the window draws in the answer’s place', () => {
 
 describe('the span the sketch of a target is drawn across', () => {
   it('is the one the application answered with, and not one kept here', () => {
-    const response = { ...BOUNDS, retention: { least: 0.75, most: 0.95 } }
+    const response = { ...BOUNDS, retention: { min: 0.75, max: 0.95 } }
     const guess = estimateCurve(settings({ goal: 'retention' }), today, response)
     expect(guess.grid[0]).toBe(0.75)
     expect(guess.grid.at(-1)).toBe(0.95)
@@ -62,7 +62,7 @@ describe('the span the sketch of a target is drawn across', () => {
 
   it('answers the corpus, which is where that span is written down', () => {
     const guess = estimateCurve(settings({ goal: 'retention' }), today, BOUNDS)
-    expect({ least: guess.grid[0], most: guess.grid.at(-1) }).toStrictEqual(corpus.retentionBounds)
+    expect({ min: guess.grid[0], max: guess.grid.at(-1) }).toStrictEqual(corpus.retentionBounds)
   })
 
   it('has no places at all until the application has returned how far a target goes', () => {

@@ -20,8 +20,8 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   isPinned: ref(false),
   sizes: ref({ interfaceScale: 1, textScale: 1 }),
   bounds: ref({
-    interfaceScale: { least: 0.8, most: 2 },
-    textScale: { least: 0.8, most: 1.75 },
+    interfaceScale: { min: 0.8, max: 2 },
+    textScale: { min: 0.8, max: 1.75 },
   }),
   choose: fn(),
   isSyncing: ref(true),

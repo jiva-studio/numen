@@ -159,11 +159,11 @@ describe('the field a goal steers', () => {
 
 describe('the limits of a control', () => {
   const bounds = {
-    newADay: { least: 0, most: 50 },
-    retention: { least: 0.7, most: 0.99 },
-    backlog: { least: 0, most: 100 },
-    reviewsADay: { least: 10, most: 200 },
-    minutesADay: { least: 5, most: 120 },
+    newADay: { min: 0, max: 50 },
+    retention: { min: 0.7, max: 0.99 },
+    backlog: { min: 0, max: 100 },
+    reviewsADay: { min: 10, max: 200 },
+    minutesADay: { min: 5, max: 120 },
   }
 
   it('are the bounds of the setting', () => {

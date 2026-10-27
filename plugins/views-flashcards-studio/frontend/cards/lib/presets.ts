@@ -63,8 +63,8 @@ export const setLoadOn = (load: Load, day: string, share: number): Load => {
 
 /** How far one setting goes, at each end. */
 export interface Bounds {
-  readonly least: number
-  readonly most: number
+  readonly min: number
+  readonly max: number
 }
 
 /**

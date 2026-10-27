@@ -76,10 +76,10 @@ message Range {
   int32 end = 2;
 }
 
-// Bounds is how far a size goes, at each end. A number outside them is
+// Bounds is the range a number may take: from min to max, both inclusive.
 message Bounds {
-  double least = 1;
-  double most = 2;
+  double min = 1;
+  double max = 2;
 }
 
 // ReasoningLevel is one depth of reasoning a model can be asked to work at.

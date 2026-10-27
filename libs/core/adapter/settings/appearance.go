@@ -71,8 +71,8 @@ const AsDesigned = 1
 // side. Text holds while the smallest of it is still read, and while a line of
 // typing still fits the row it is typed in.
 var (
-	InterfaceScaleBounds = Bounds{Least: 0.8, Most: 2}
-	TextScaleBounds      = Bounds{Least: 0.8, Most: 1.75}
+	InterfaceScaleBounds = Bounds{Min: 0.8, Max: 2}
+	TextScaleBounds      = Bounds{Min: 0.8, Max: 1.75}
 )
 
 // GetOutsideBounds is every number the section holds that its setting does not take,

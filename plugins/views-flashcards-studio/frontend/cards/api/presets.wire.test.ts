@@ -88,13 +88,13 @@ describe('how far each setting goes', () => {
   it('carries the ends the application named and nothing else', async () => {
     replyWith({
       preset: { path: 'Daily.md', title: 'Daily' },
-      bounds: { minutesADay: { least: 5, most: 240 }, load: { least: 0, most: 100 } },
+      bounds: { minutesADay: { min: 5, max: 240 }, load: { min: 0, max: 100 } },
     })
 
     const answer = await presets.read('Daily.md')
     expect(answer.ok ? answer.value.bounds : null).toEqual({
-      minutesADay: { least: 5, most: 240 },
-      load: { least: 0, most: 100 },
+      minutesADay: { min: 5, max: 240 },
+      load: { min: 0, max: 100 },
     })
   })
 
@@ -344,7 +344,7 @@ describe('writing into a preset the window read', () => {
 
 describe('the ends of every setting', () => {
   it('are carried for each setting the application named', async () => {
-    const ends = { least: 1, most: 9 }
+    const ends = { min: 1, max: 9 }
     replyWith({
       preset: { path: 'Daily.md', title: 'Daily' },
       bounds: {
@@ -374,12 +374,12 @@ describe('the ends of every setting', () => {
   it('are left out for each setting the application did not name', async () => {
     replyWith({
       preset: { path: 'Daily.md', title: 'Daily' },
-      bounds: { interval: { least: 1, most: 9 } },
+      bounds: { interval: { min: 1, max: 9 } },
     })
 
     const answer = await presets.read('Daily.md')
 
-    expect(answer.ok ? answer.value.bounds : null).toEqual({ interval: { least: 1, most: 9 } })
+    expect(answer.ok ? answer.value.bounds : null).toEqual({ interval: { min: 1, max: 9 } })
   })
 })
 

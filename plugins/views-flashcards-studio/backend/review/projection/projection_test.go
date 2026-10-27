@@ -433,7 +433,7 @@ func TestAHigherTargetIsMoreReviews(t *testing.T) {
 	pos := makeLearnedCards(review.NewFSRS(), now, 40)
 
 	var minutes []float64
-	for share := review.RetentionBounds.Least; share <= review.RetentionBounds.Most; share += 0.01 {
+	for share := review.RetentionBounds.Min; share <= review.RetentionBounds.Max; share += 0.01 {
 		run := projection.Simulation{
 			By: review.NewFSRSAt(share), Day: ahead, Cost: review.DefaultCost, Days: 120,
 		}
@@ -991,7 +991,7 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	// A day long enough and a budget large enough that nothing but the rule
 	// decides when the one review card is learned.
 	p := review.Defaults()
-	p.Goal, p.MinutesADay = review.GoalMinutes, int(review.MinutesADayBounds.Most)
+	p.Goal, p.MinutesADay = review.GoalMinutes, int(review.MinutesADayBounds.Max)
 	p.NewADay, p.ReviewsADay, p.IsEvenLoad = 1, 1000, false
 	p.Rule = review.RuleInterval
 

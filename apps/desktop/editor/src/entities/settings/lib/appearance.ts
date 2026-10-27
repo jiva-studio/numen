@@ -28,25 +28,25 @@ export const SCHEMES: Record<Mode, string> = {
 }
 
 /** A range until the application has said what one is. */
-export const EMPTY_RANGE: Bounds = { least: 0, most: 0 }
+export const EMPTY_RANGE: Bounds = { min: 0, max: 0 }
 
 /** Whether a range reaches a size. A range holding nothing reaches none. */
 export const isInBounds = (range: Bounds, size: number): boolean =>
-  range.most > range.least && range.least > 0 && size >= range.least && size <= range.most
+  range.max > range.min && range.min > 0 && size >= range.min && size <= range.max
 
 /**
  * The sizes standing between the ends of a range: every step inside it, with
  * each end itself, so the end is offered wherever it falls.
  */
 export const ladder = (range: Bounds): readonly number[] => {
-  if (!isInBounds(range, range.least)) return []
-  const rungs = [range.least]
-  const last = Math.floor(range.most * STEPS)
+  if (!isInBounds(range, range.min)) return []
+  const rungs = [range.min]
+  const last = Math.floor(range.max * STEPS)
   for (let step = 1; step <= last; step += 1) {
     const size = step / STEPS
-    if (size > range.least && size < range.most) rungs.push(size)
+    if (size > range.min && size < range.max) rungs.push(size)
   }
-  return [...rungs, range.most]
+  return [...rungs, range.max]
 }
 
 /** The size those digits name, and nothing where what was typed is not digits. */

@@ -66,7 +66,7 @@ function useCurveBounds(
   )
   const least = computed(() => grid.value[0] ?? 0)
   const most = computed(() => grid.value[lastIndex.value] ?? 0)
-  return { atLeast, atMost, least, most }
+  return { atLeast, atMost, min: least, max: most }
 }
 
 export function useCurveAnnotations(

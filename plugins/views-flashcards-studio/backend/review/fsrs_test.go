@@ -233,7 +233,7 @@ func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 		return review.NewFSRS(), fsrs.NewFSRS(p)
 	}
 	p.RequestRetention = math.Min(math.Max(retention,
-		review.RetentionBounds.Least), review.RetentionBounds.Most)
+		review.RetentionBounds.Min), review.RetentionBounds.Max)
 	return review.NewFSRSAt(retention), fsrs.NewFSRS(p)
 }
 

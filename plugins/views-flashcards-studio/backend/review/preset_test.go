@@ -591,8 +591,8 @@ type defaultPreset struct {
 
 // presetBounds is how far one setting goes, at each end.
 type presetBounds struct {
-	Least float64 `json:"least"`
-	Most  float64 `json:"most"`
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
 }
 
 // presetCorpusFile is what the corpus holds.
@@ -653,17 +653,17 @@ func TestAWholeDaysLoadIsWhatTheCorpusReturns(t *testing.T) {
 	if review.FullLoad != want {
 		t.Errorf("a whole day's load is %d, want %d", review.FullLoad, want)
 	}
-	if review.LoadBounds.Most != float64(want) {
-		t.Errorf("a day is loaded up to %g, want %d", review.LoadBounds.Most, want)
+	if review.LoadBounds.Max != float64(want) {
+		t.Errorf("a day is loaded up to %g, want %d", review.LoadBounds.Max, want)
 	}
 }
 
 func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 	want := readPresetCorpus(t).RetentionBounds
 
-	if review.RetentionBounds.Least != want.Least || review.RetentionBounds.Most != want.Most {
+	if review.RetentionBounds.Min != want.Min || review.RetentionBounds.Max != want.Max {
 		t.Errorf("retention runs %g to %g, want %g to %g",
-			review.RetentionBounds.Least, review.RetentionBounds.Most, want.Least, want.Most)
+			review.RetentionBounds.Min, review.RetentionBounds.Max, want.Min, want.Max)
 	}
 }
 

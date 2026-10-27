@@ -27,7 +27,7 @@ const props = defineProps<{
 const { plot, interactions, annotations } = props.state
 const { line, short, knob, suggested } = plot
 const { isDated, bounds, knob: knobAnnotation } = annotations
-const { least, most } = bounds
+const { min: least, max: most } = bounds
 const { value } = knobAnnotation
 const { setPicture, onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp } = interactions
 </script>

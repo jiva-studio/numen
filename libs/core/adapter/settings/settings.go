@@ -172,7 +172,7 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 		// far that goes. The number itself stays in the file, where a person
 		// wrote it and where they will read it again.
 		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
-			InterfaceScaleBounds.Least, InterfaceScaleBounds.Most)
+			InterfaceScaleBounds.Min, InterfaceScaleBounds.Max)
 	}
 }
 

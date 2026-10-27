@@ -74,7 +74,7 @@ func abs(one int) int {
 // load costs, and never less than a short day or more than a day holds.
 func getMinutesUpperBound(load, keeping float64) float64 {
 	top := math.Ceil(2 * math.Max(load, keeping))
-	return math.Min(math.Max(top, LeastCeiling), MinutesADayBounds.Most)
+	return math.Min(math.Max(top, LeastCeiling), MinutesADayBounds.Max)
 }
 
 // findNearest is the place of the grid a value falls at, and -1 for a value outside

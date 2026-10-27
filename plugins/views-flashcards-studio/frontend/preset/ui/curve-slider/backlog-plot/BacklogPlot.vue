@@ -56,7 +56,7 @@ const hasBacklog = computed(() => props.isHonest && backlog.value.length > 1)
  * the floor it lies along.
  */
 const heights = computed(() => {
-  const { least, most } = extent.value
+  const { min: least, max: most } = extent.value
   const formatValue = (value: number) => words.formatBacklogCards(value)
   const createAxisLabels = (y: number, lift: string, value: number) =>
     isAxisLabelClear(y, positions.value, [])

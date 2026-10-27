@@ -51,8 +51,8 @@ describe('the settings under the control', () => {
     expect(track.attributes('aria-valuenow')).toBe('70')
     // The track runs the ends the read answered, and nothing outside them is
     // taken.
-    expect(track.attributes('aria-valuemin')).toBe(`${BOUNDS.backlog.least}`)
-    expect(track.attributes('aria-valuemax')).toBe(`${BOUNDS.backlog.most}`)
+    expect(track.attributes('aria-valuemin')).toBe(`${BOUNDS.backlog.min}`)
+    expect(track.attributes('aria-valuemax')).toBe(`${BOUNDS.backlog.max}`)
     expect(track.attributes('aria-labelledby')).toBe('preset-backlog')
     expect(row.get('[data-preset="percent"]').text()).toBe(words.percent(70))
 
@@ -117,8 +117,8 @@ describe('the settings under the control', () => {
     const row = tab.get('[data-preset-row="interval"]')
     const field = row.get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
-    expect(field.attributes('aria-valuemin')).toBe(`${BOUNDS.interval.least}`)
-    expect(field.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.most}`)
+    expect(field.attributes('aria-valuemin')).toBe(`${BOUNDS.interval.min}`)
+    expect(field.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.max}`)
     await field.setValue('30')
     expect(recorded).toStrictEqual(['type interval 30'])
   })
@@ -131,7 +131,7 @@ describe('the settings under the control', () => {
     const tab = mount(PresetTab, { props: { state } })
     const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
-    expect(field.attributes('aria-valuemax')).not.toBe(`${BOUNDS.interval.most}`)
+    expect(field.attributes('aria-valuemax')).not.toBe(`${BOUNDS.interval.max}`)
   })
 })
 

@@ -430,19 +430,19 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutBelowTheOldOne(t *testing.T) 
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := readPresetConfig(t, api, v, "Grammar.md")
-	p.Retention = review.RetentionBounds.Least
+	p.Retention = review.RetentionBounds.Min
 	writePreset(t, api, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the
 	// one that could be answered from it.
 	least := countOfferedCards(getVaultCount(t, api, v), underGrammar)
 
-	p.Retention = review.RetentionBounds.Most
+	p.Retention = review.RetentionBounds.Max
 	writePreset(t, api, v, "Grammar.md", p)
 	most := countOfferedCards(getVaultCount(t, api, v), underGrammar)
 
 	if most <= least {
 		t.Errorf("asking for %v of the cards back offers %d, and %v offers %d",
-			review.RetentionBounds.Most, most, review.RetentionBounds.Least, least)
+			review.RetentionBounds.Max, most, review.RetentionBounds.Min, least)
 	}
 
 	// And the preset beside it, whose target nobody moved, is where it was.

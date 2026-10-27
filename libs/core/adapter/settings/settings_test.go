@@ -105,8 +105,8 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	if outside.At != "appearance.text_scale" || outside.Number != 3 {
 		t.Errorf("failed %+v", outside)
 	}
-	if outside.Least != settings.TextScaleBounds.Least || outside.Most != settings.TextScaleBounds.Most {
-		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
+	if outside.Min != settings.TextScaleBounds.Min || outside.Max != settings.TextScaleBounds.Max {
+		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
 	}
 	// What is wrong is the number and how far the setting goes, in the sentence
 	// a person is shown.

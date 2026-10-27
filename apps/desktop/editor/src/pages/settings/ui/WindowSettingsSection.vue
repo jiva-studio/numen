@@ -98,8 +98,8 @@ function onTextScaleChange(size: number | null) {
     >
       <NumberField
         :model-value="installation.sizes.value.interfaceScale"
-        :min="bounds.interfaceScale.least"
-        :max="bounds.interfaceScale.most"
+        :min="bounds.interfaceScale.min"
+        :max="bounds.interfaceScale.max"
         :step="STEP"
         :aria-labelledby="labelledBy"
         class="settings__number"
@@ -115,8 +115,8 @@ function onTextScaleChange(size: number | null) {
     >
       <NumberField
         :model-value="installation.sizes.value.textScale"
-        :min="bounds.textScale.least"
-        :max="bounds.textScale.most"
+        :min="bounds.textScale.min"
+        :max="bounds.textScale.max"
         :step="STEP"
         :aria-labelledby="labelledBy"
         class="settings__number"

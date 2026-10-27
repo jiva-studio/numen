@@ -19,7 +19,7 @@ const props = defineProps<{ state: SettingsTabState }>()
 const fields = createSettingFields(() => props.state.installation)
 
 const WHOLE = Number.MAX_SAFE_INTEGER
-const STEPS = { least: 1, most: WHOLE }
+const STEPS = { min: 1, max: WHOLE }
 
 /** How many steps a program takes where the file says nothing. */
 const DEFAULT_STEPS = 100
@@ -109,8 +109,8 @@ function onAgentHooksChange(value: boolean) {
     >
       <NumberField
         :model-value="fields.getNumber(agentStepsPath, DEFAULT_STEPS)"
-        :min="STEPS.least"
-        :max="STEPS.most"
+        :min="STEPS.min"
+        :max="STEPS.max"
         :step="1"
         :aria-labelledby="labelledBy"
         class="settings__number"

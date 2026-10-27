@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest'
 import { isInBounds, ladder, parseSize } from './appearance'
 
 describe('whether a range reaches a size', () => {
-  const range = { least: 0.8, most: 2 }
+  const range = { min: 0.8, max: 2 }
 
   it('is so for each end and for a size between them', () => {
-    expect([range.least, 1, range.most].map((size) => isInBounds(range, size))).toStrictEqual([
+    expect([range.min, 1, range.max].map((size) => isInBounds(range, size))).toStrictEqual([
       true,
       true,
       true,
@@ -21,36 +21,36 @@ describe('whether a range reaches a size', () => {
   })
 
   it('is never so for a range holding nothing', () => {
-    expect(isInBounds({ least: 0, most: 0 }, 0)).toBe(false)
-    expect(isInBounds({ least: 1, most: 1 }, 1)).toBe(false)
+    expect(isInBounds({ min: 0, max: 0 }, 0)).toBe(false)
+    expect(isInBounds({ min: 1, max: 1 }, 1)).toBe(false)
   })
 
   it('is not so for a range whose far end lies below its near end', () => {
-    expect(isInBounds({ least: 2, most: 1 }, 1.5)).toBe(false)
+    expect(isInBounds({ min: 2, max: 1 }, 1.5)).toBe(false)
   })
 
   it('is not so for a range reaching down to nothing or below', () => {
-    expect(isInBounds({ least: 0, most: 1 }, 0.5)).toBe(false)
-    expect(isInBounds({ least: -1, most: 1 }, 0.5)).toBe(false)
+    expect(isInBounds({ min: 0, max: 1 }, 0.5)).toBe(false)
+    expect(isInBounds({ min: -1, max: 1 }, 0.5)).toBe(false)
   })
 })
 
 describe('the sizes standing between the ends of a range', () => {
   it('are every step inside it, with each end itself', () => {
-    expect(ladder({ least: 0.8, most: 1.2 })).toStrictEqual([0.8, 0.9, 1, 1.1, 1.2])
+    expect(ladder({ min: 0.8, max: 1.2 })).toStrictEqual([0.8, 0.9, 1, 1.1, 1.2])
   })
 
   it('offer an end that falls between two steps', () => {
-    expect(ladder({ least: 0.85, most: 1.15 })).toStrictEqual([0.85, 0.9, 1, 1.1, 1.15])
+    expect(ladder({ min: 0.85, max: 1.15 })).toStrictEqual([0.85, 0.9, 1, 1.1, 1.15])
   })
 
   it('are each end once where the ends fall on steps', () => {
-    expect(ladder({ least: 1, most: 1.1 })).toStrictEqual([1, 1.1])
+    expect(ladder({ min: 1, max: 1.1 })).toStrictEqual([1, 1.1])
   })
 
   it('are none for a range holding nothing', () => {
-    expect(ladder({ least: 0, most: 0 })).toStrictEqual([])
-    expect(ladder({ least: 2, most: 1 })).toStrictEqual([])
+    expect(ladder({ min: 0, max: 0 })).toStrictEqual([])
+    expect(ladder({ min: 2, max: 1 })).toStrictEqual([])
   })
 })
 

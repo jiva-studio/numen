@@ -208,7 +208,7 @@ export const createAxisLabels = (
   context: AxisLabelsContext,
   getText: (value: number) => string,
 ): readonly Height[] => {
-  const { least, most } = extent
+  const { min: least, max: most } = extent
   const { places, marks, calloutBox = null } = context
   const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
     const box = getAxisNumberBox(y, lift)

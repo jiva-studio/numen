@@ -144,7 +144,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 
 // getSizeFatalReport is a scale value out of range, from the file or the command line.
 func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) fatalReport {
-	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
+	far := fmt.Sprintf("%v to %v", outside.Min, outside.Max)
 	content := fmt.Sprint(outside.Number)
 
 	if strings.HasPrefix(outside.At, "-") {

@@ -79,7 +79,7 @@ const createGrid = (
   if (settings.goal === 'retention') {
     const span = within.retention
     if (span === undefined) return []
-    return ladder(span.least, span.most, (one) => Math.round(one * 1000) / 1000)
+    return ladder(span.min, span.max, (one) => Math.round(one * 1000) / 1000)
   }
   if (settings.goal === 'date') {
     const most = Math.max(daysBetween(today, settings.byDate), 30)

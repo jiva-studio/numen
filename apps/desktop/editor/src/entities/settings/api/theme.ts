@@ -35,8 +35,8 @@ export interface Scales<T> {
 }
 
 export interface Bounds {
-  readonly least: number
-  readonly most: number
+  readonly min: number
+  readonly max: number
 }
 
 /** The two multipliers the window is drawn at. One is as designed. */
@@ -102,9 +102,9 @@ export const themes: Themes = {
 }
 
 /** How far a size goes. A bound the application left out is no bound at all. */
-const parseBounds = (bounds: { least: number; most: number } | undefined): Bounds => ({
-  least: bounds?.least ?? 0,
-  most: bounds?.most ?? 0,
+const parseBounds = (bounds: { min: number; max: number } | undefined): Bounds => ({
+  min: bounds?.min ?? 0,
+  max: bounds?.max ?? 0,
 })
 
 /**

@@ -3,11 +3,11 @@ package settings
 import "fmt"
 
 // Bounds is how far a multiplier goes, at each end.
-type Bounds struct{ Least, Most float64 }
+type Bounds struct{ Min, Max float64 }
 
 // Contains is whether a number is one the setting takes.
 func (b Bounds) Contains(value float64) bool {
-	return value >= b.Least && value <= b.Most
+	return value >= b.Min && value <= b.Max
 }
 
 // Check returns what is wrong with a number the setting does not take, and
@@ -27,5 +27,5 @@ type OutsideBounds struct {
 }
 
 func (o *OutsideBounds) Error() string {
-	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Number, o.Least, o.Most)
+	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Number, o.Min, o.Max)
 }

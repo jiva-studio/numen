@@ -146,7 +146,7 @@ describe('what the control says alongside the picture', () => {
 
   it('reads the near end of the range off the first place', () => {
     const { state } = slider()
-    expect(state.annotations.bounds.least.value).toBe(10)
+    expect(state.annotations.bounds.min.value).toBe(10)
     expect(state.annotations.bounds.atLeast.value).toBe(words.formatGoalValue('minutes', 10))
   })
 })

@@ -23,7 +23,7 @@ const themesSaid = {
       applied: mockVaultState.applied,
       mode: mockVaultState.mode,
       sizes: mockVaultState.sizes,
-      bounds: { interfaceScale: { least: 0.8, most: 2 }, textScale: { least: 0.8, most: 1.75 } },
+      bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
     }),
     readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
     writeAppearance: async (

@@ -195,23 +195,23 @@ func IsKnownBudgetUnit(u BudgetUnit) bool {
 }
 
 // Bounds is how far a setting goes, at each end.
-type Bounds struct{ Least, Most float64 }
+type Bounds struct{ Min, Max float64 }
 
 // Contains reports whether a value is within the bounds.
-func (b Bounds) Contains(value float64) bool { return value >= b.Least && value <= b.Most }
+func (b Bounds) Contains(value float64) bool { return value >= b.Min && value <= b.Max }
 
 // What each setting of a preset may be. A day holds no more minutes than it
 // has, a retention target outside these is a scheduler asking for what memory
 // does not do, and an interval a card is learned at is a day at the least and a
 // year at the most.
 var (
-	MinutesADayBounds = Bounds{Least: 0, Most: 24 * 60}
-	NewADayBounds     = Bounds{Least: 0, Most: 9999}
-	ReviewsADayBounds = Bounds{Least: 0, Most: 9999}
-	RetentionBounds   = Bounds{Least: 0.7, Most: 0.99}
-	IntervalBounds    = Bounds{Least: 1, Most: 365}
-	BacklogBounds     = Bounds{Least: 0, Most: 100}
-	LoadBounds        = Bounds{Least: 0, Most: FullLoad}
+	MinutesADayBounds = Bounds{Min: 0, Max: 24 * 60}
+	NewADayBounds     = Bounds{Min: 0, Max: 9999}
+	ReviewsADayBounds = Bounds{Min: 0, Max: 9999}
+	RetentionBounds   = Bounds{Min: 0.7, Max: 0.99}
+	IntervalBounds    = Bounds{Min: 1, Max: 365}
+	BacklogBounds     = Bounds{Min: 0, Max: 100}
+	LoadBounds        = Bounds{Min: 0, Max: FullLoad}
 )
 
 // Defaults is a preset naming nothing, and how a deck pointing at no preset is
@@ -530,7 +530,7 @@ func readRetention(front map[string]any, p *Preset, problems *[]string) {
 		*problems = append(*problems, "retention is not a number")
 	case !RetentionBounds.Contains(value):
 		*problems = append(*problems, fmt.Sprintf(
-			"retention %g is outside %g to %g", value, RetentionBounds.Least, RetentionBounds.Most))
+			"retention %g is outside %g to %g", value, RetentionBounds.Min, RetentionBounds.Max))
 	default:
 		p.Retention = value
 	}
@@ -565,7 +565,7 @@ func readDayShare(name string, raw any, p *Preset, daysLen int, problems *[]stri
 		*problems = append(*problems, "the load of "+name+" is counted in whole per cent")
 	case !LoadBounds.Contains(share):
 		*problems = append(*problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
-			name, share, LoadBounds.Least, LoadBounds.Most))
+			name, share, LoadBounds.Min, LoadBounds.Max))
 	default:
 		if p.Load == nil {
 			p.Load = make(map[time.Weekday]int, daysLen)
@@ -649,7 +649,7 @@ func readWholeNumber(
 		*problems = append(*problems, key+" is counted in whole numbers")
 	case !bounds.Contains(value):
 		*problems = append(*problems, fmt.Sprintf(
-			"%s %g is outside %g to %g", key, value, bounds.Least, bounds.Most))
+			"%s %g is outside %g to %g", key, value, bounds.Min, bounds.Max))
 	default:
 		return int(value)
 	}

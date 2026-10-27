@@ -62,7 +62,7 @@ const APPEARANCE: Appearance = {
   applied: 'preset:numen',
   mode: 'system',
   sizes: { interfaceScale: 1, textScale: 1 },
-  bounds: { interfaceScale: { least: 0.8, most: 2 }, textScale: { least: 0.8, most: 1.75 } },
+  bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
 }
 
 /** A moment for whatever was asked of the application to come back. */
@@ -72,7 +72,7 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
 /** A range narrower than the one the application answers with. */
-const NARROW = { least: 1, most: 1.5 }
+const NARROW = { min: 1, max: 1.5 }
 
 /** Every tenth the interface goes between, as a person reads them. */
 const TENTHS = [
@@ -418,7 +418,7 @@ describe('the sizes the two steps offer', () => {
 
   it('offers nothing at all until the application has returned how far a size goes', async () => {
     const one = await startWindow({
-      bounds: { interfaceScale: { least: 0, most: 0 }, textScale: NARROW },
+      bounds: { interfaceScale: { min: 0, max: 0 }, textScale: NARROW },
     })
 
     expect(rows(one, INTERFACE_SCALE)).toStrictEqual([])

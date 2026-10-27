@@ -25,13 +25,13 @@ import {
  * what the tab was told and reads the drawn control against it.
  */
 export const BOUNDS = {
-  minutesADay: { least: 0, most: 24 * 60 },
-  newADay: { least: 0, most: 9999 },
-  reviewsADay: { least: 0, most: 9999 },
-  retention: { least: 0.7, most: 0.99 },
-  backlog: { least: 0, most: 100 },
-  interval: { least: 1, most: 365 },
-  load: { least: 0, most: 100 },
+  minutesADay: { min: 0, max: 24 * 60 },
+  newADay: { min: 0, max: 9999 },
+  reviewsADay: { min: 0, max: 9999 },
+  retention: { min: 0.7, max: 0.99 },
+  backlog: { min: 0, max: 100 },
+  interval: { min: 1, max: 365 },
+  load: { min: 0, max: 100 },
 } satisfies SettingsBounds
 
 // The track of a share is measured as it is drawn, and a document with no

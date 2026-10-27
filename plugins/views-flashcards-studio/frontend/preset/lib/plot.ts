@@ -51,8 +51,8 @@ export const yOfGridline = (share: number): number => PLOT_BOTTOM - (PLOT_BOTTOM
 
 /** The stretch of cost the picture is scaled to. */
 export interface Extent {
-  readonly least: number
-  readonly most: number
+  readonly min: number
+  readonly max: number
 }
 
 /**
@@ -62,7 +62,7 @@ export interface Extent {
  */
 export const getExtent = (curve: Curve): Extent => {
   const costs = curve.at.map((point) => getPointCost(curve.goal, point))
-  return { least: 0, most: Math.max(0, ...costs) }
+  return { min: 0, max: Math.max(0, ...costs) }
 }
 
 /**
@@ -70,8 +70,8 @@ export const getExtent = (curve: Curve): Extent => {
  * climbing over the height it has.
  */
 export const getBacklogExtent = (backlog: readonly number[]): Extent => ({
-  least: 0,
-  most: backlog.length === 0 ? 0 : Math.max(...backlog),
+  min: 0,
+  max: backlog.length === 0 ? 0 : Math.max(...backlog),
 })
 
 /**
@@ -106,14 +106,14 @@ export const createSeries = (
   extent: Extent,
   plot: Plot = CURVE_PLOT,
 ): readonly Position[] => {
-  const span = extent.most - extent.least
+  const span = extent.max - extent.min
   // An extent of no width has no height to read: every value in it is the foot
   // of the plot, and the foot is where it is drawn.
   return values.map((value, place) => ({
     x: getXAtPlace(place, values.length),
     y:
       span > 0
-        ? clamp(plot.foot - (plot.foot - plot.top) * ((value - extent.least) / span), plot)
+        ? clamp(plot.foot - (plot.foot - plot.top) * ((value - extent.min) / span), plot)
         : plot.foot,
   }))
 }

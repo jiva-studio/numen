@@ -78,7 +78,7 @@ func checkGoal(p review.Preset) error {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
-		ErrOutOfBounds, key, value, bounds.Least, bounds.Most)
+		ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
 }
 
 // Execute is the curve of the goal this preset steers.

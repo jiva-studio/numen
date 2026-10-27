@@ -31,7 +31,7 @@ export const clearBacklog = (backlog: readonly number[]): number | null => {
  * A number held inside the bounds of the setting it is. A setting the
  */
 export const clamp = (value: number, within: Bounds | undefined): number =>
-  within === undefined ? value : Math.min(Math.max(value, within.least), within.most)
+  within === undefined ? value : Math.min(Math.max(value, within.min), within.max)
 
 /** The place of the grid nearest a value, and the last one for an empty grid. */
 export const findNearest = (grid: readonly number[], value: number): number => {

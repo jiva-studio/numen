@@ -170,8 +170,8 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	if len(got.Grid) != flashcards.Points {
 		t.Fatalf("the curve has %d places", len(got.Grid))
 	}
-	if got.Grid[0] != review.RetentionBounds.Least ||
-		got.Grid[len(got.Grid)-1] != review.RetentionBounds.Most {
+	if got.Grid[0] != review.RetentionBounds.Min ||
+		got.Grid[len(got.Grid)-1] != review.RetentionBounds.Max {
 		t.Errorf("the grid runs from %v to %v", got.Grid[0], got.Grid[len(got.Grid)-1])
 	}
 	for i := 1; i < len(got.Points); i++ {
@@ -717,7 +717,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 		t.Errorf("a material months past its answers stands %v learned under both rules", got)
 	}
 	tighter := base
-	tighter.Interval = int(review.IntervalBounds.Most)
+	tighter.Interval = int(review.IntervalBounds.Max)
 	if got := getLearned(t, s, tighter); got[0] >= learned[0] {
 		t.Errorf("an interval of a year learns %v of what an interval of three weeks learns %v",
 			got, learned)

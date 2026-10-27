@@ -240,11 +240,11 @@ func (x *Range) GetEnd() int32 {
 	return 0
 }
 
-// Bounds is how far a size goes, at each end. A number outside them is
+// Bounds is the range a number may take: from min to max, both inclusive.
 type Bounds struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Least         float64                `protobuf:"fixed64,1,opt,name=least,proto3" json:"least,omitempty"`
-	Most          float64                `protobuf:"fixed64,2,opt,name=most,proto3" json:"most,omitempty"`
+	Min           float64                `protobuf:"fixed64,1,opt,name=min,proto3" json:"min,omitempty"`
+	Max           float64                `protobuf:"fixed64,2,opt,name=max,proto3" json:"max,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -279,16 +279,16 @@ func (*Bounds) Descriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Bounds) GetLeast() float64 {
+func (x *Bounds) GetMin() float64 {
 	if x != nil {
-		return x.Least
+		return x.Min
 	}
 	return 0
 }
 
-func (x *Bounds) GetMost() float64 {
+func (x *Bounds) GetMax() float64 {
 	if x != nil {
-		return x.Most
+		return x.Max
 	}
 	return 0
 }
@@ -359,10 +359,10 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"/\n" +
 	"\x05Range\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x10\n" +
-	"\x03end\x18\x02 \x01(\x05R\x03end\"2\n" +
-	"\x06Bounds\x12\x14\n" +
-	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
-	"\x04most\x18\x02 \x01(\x01R\x04most\":\n" +
+	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +
+	"\x06Bounds\x12\x10\n" +
+	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max\":\n" +
 	"\x0eReasoningLevel\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title*\xaa\x02\n" +

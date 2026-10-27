@@ -22,10 +22,10 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 			say:    say,
 		},
 		InterfaceScaleBounds: theme.Bounds{
-			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
+			Min: settings.InterfaceScaleBounds.Min, Max: settings.InterfaceScaleBounds.Max,
 		},
 		TextScaleBounds: theme.Bounds{
-			Least: settings.TextScaleBounds.Least, Most: settings.TextScaleBounds.Most,
+			Min: settings.TextScaleBounds.Min, Max: settings.TextScaleBounds.Max,
 		},
 	}, err
 }

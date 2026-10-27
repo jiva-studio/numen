@@ -653,7 +653,7 @@ func checkBounds(p review.Preset) error {
 	} {
 		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
-				ErrOutOfBounds, one.key, one.value, one.bounds.Least, one.bounds.Most)
+				ErrOutOfBounds, one.key, one.value, one.bounds.Min, one.bounds.Max)
 		}
 	}
 	return checkLoad(p.Load)
@@ -667,7 +667,7 @@ func checkLoad(load map[time.Weekday]int) error {
 		if named && !review.LoadBounds.Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
 				ErrOutOfBounds, review.DayName(weekday), share,
-				review.LoadBounds.Least, review.LoadBounds.Most)
+				review.LoadBounds.Min, review.LoadBounds.Max)
 		}
 	}
 	for weekday := range load {

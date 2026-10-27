@@ -101,8 +101,8 @@ const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBo
 
 /** One pair of ends, in the window's own words. */
 const parseBounds = (bounds: BoundsMessage): Bounds => ({
-  least: bounds.least,
-  most: bounds.most,
+  min: bounds.min,
+  max: bounds.max,
 })
 
 /** One preset as the window carries it. */

@@ -47,7 +47,7 @@ func NewFSRS() FSRS {
 func NewFSRSAt(retention float64) FSRS {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
-	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Least), RetentionBounds.Most)
+	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Min), RetentionBounds.Max)
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
 
