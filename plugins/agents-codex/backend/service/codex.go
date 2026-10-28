@@ -85,6 +85,8 @@ type codexModelCache struct {
 	// failedKey and failedAt are the command line Codex last failed to list under, and when.
 	failedKey string
 	failedAt  time.Time
+	inFlight  map[string]bool
+	isAsync   bool
 	// now is the clock the backoff uses. Empty is the system clock.
 	now func() time.Time
 }
@@ -101,16 +103,46 @@ func (c *codexModelCache) getNow() time.Time {
 func (c *codexModelCache) get(ctx context.Context, command []string) []AgentModel {
 	key := strings.Join(command, " ")
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.isCached && c.key == key {
-		return c.models
+		models := c.models
+		c.mu.Unlock()
+		return models
 	}
 	if c.failedKey == key && c.getNow().Sub(c.failedAt) < codexFailureBackoff {
+		c.mu.Unlock()
 		return nil
 	}
+	if c.isAsync {
+		if !c.inFlight[key] {
+			if c.inFlight == nil {
+				c.inFlight = make(map[string]bool)
+			}
+			c.inFlight[key] = true
+			cmdCopy := slices.Clone(command)
+			go c.fetchInBackground(key, cmdCopy)
+		}
+		c.mu.Unlock()
+		return readCodexCache()
+	}
+	c.mu.Unlock()
+	return c.fetchAndStore(ctx, key, command)
+}
+
+func (c *codexModelCache) fetchInBackground(key string, command []string) {
+	defer func() {
+		c.mu.Lock()
+		delete(c.inFlight, key)
+		c.mu.Unlock()
+	}()
+	c.fetchAndStore(context.Background(), key, command)
+}
+
+func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command []string) []AgentModel {
 	asking, stop := context.WithTimeout(ctx, codexListLimit)
 	defer stop()
 	models, err := GetCodexModels(asking, command)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if err != nil {
 		if ctx.Err() == nil {
 			c.failedKey, c.failedAt = key, c.getNow()

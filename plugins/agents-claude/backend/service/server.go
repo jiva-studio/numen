@@ -347,7 +347,7 @@ func (s *agentServer) GetAgentTools(
 // Mount registers the agent's services on s and hands Configure's settings to the agent.
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
-	return mount(s, &agentServer{})
+	return mount(s, &agentServer{models: modelCache{isAsync: true}})
 }
 
 func mount(s *server.Server, agentSvc *agentServer) error {
@@ -361,7 +361,7 @@ func mount(s *server.Server, agentSvc *agentServer) error {
 // from the variables a launched process of the plugin is given.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, &agentServer{environ: getVariables(vars)})
+		return mount(s, &agentServer{environ: getVariables(vars), models: modelCache{isAsync: true}})
 	})
 }
 
