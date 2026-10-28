@@ -2,11 +2,15 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/clock"
 )
@@ -134,6 +138,14 @@ func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 			c.inFlight[key] = true
 			go c.fetchInBackground(agent, key)
 		}
+		if cached, found := readACPCache(key); found {
+			if c.entries == nil {
+				c.entries = make(map[string]acpListing)
+			}
+			c.entries[key] = cached
+			c.mu.Unlock()
+			return cached
+		}
 		c.mu.Unlock()
 		return acpListing{}
 	}
@@ -168,7 +180,80 @@ func (c *acpModelCache) fetchAndStore(ctx context.Context, agent acpAgent, key s
 	}
 	c.entries[key] = listing
 	delete(c.failedAt, key)
+	if c.isAsync {
+		writeACPCache(key, listing)
+	}
 	return listing
+}
+
+type persistedACPListing struct {
+	Models  []acpModel        `json:"models"`
+	Current string            `json:"current"`
+	Levels  []reasoning.Level `json:"levels,omitempty"`
+	Level   string            `json:"level,omitempty"`
+}
+
+func acpCachePath() (string, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			return "", err
+		}
+		dir = filepath.Join(home, ".cache")
+	}
+	return filepath.Join(dir, "numen", "models-acp.json"), nil
+}
+
+func readACPCache(key string) (acpListing, bool) {
+	path, err := acpCachePath()
+	if err != nil {
+		return acpListing{}, false
+	}
+	data, err := agentrun.ReadFile(path)
+	if err != nil {
+		return acpListing{}, false
+	}
+	var all map[string]persistedACPListing
+	if json.Unmarshal(data, &all) != nil {
+		return acpListing{}, false
+	}
+	one, found := all[key]
+	if !found || len(one.Models) == 0 {
+		return acpListing{}, false
+	}
+	return acpListing{
+		models:  one.Models,
+		current: one.Current,
+		levels:  one.Levels,
+		level:   one.Level,
+	}, true
+}
+
+func writeACPCache(key string, listing acpListing) {
+	if len(listing.models) == 0 {
+		return
+	}
+	path, err := acpCachePath()
+	if err != nil {
+		return
+	}
+	all := make(map[string]persistedACPListing)
+	if data, err := agentrun.ReadFile(path); err == nil {
+		_ = json.Unmarshal(data, &all)
+	}
+	all[key] = persistedACPListing{
+		Models:  listing.models,
+		Current: listing.current,
+		Levels:  listing.levels,
+		Level:   listing.level,
+	}
+	data, err := json.Marshal(all)
+	if err != nil {
+		return
+	}
+	_ = agentrun.CreateDir(filepath.Dir(path), 0o700)
+	_ = agentrun.WriteFile(path, data, 0o600)
 }
 
 // readACPListing opens a session with the agent and returns the models it reports for it.

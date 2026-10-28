@@ -263,7 +263,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const scheduleRefresh = () => {
     clearRefreshTimers()
-    for (const delayMs of [1500, 3500, 7000]) {
+    for (const delayMs of [1500, 3500, 7000, 11000, 16000]) {
       refreshTimers.push(
         setTimeout(() => {
           void rest.start()

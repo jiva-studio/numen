@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -155,10 +157,19 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 	if c.isAsync {
 		hasFailed := c.failed[key]
 		c.enqueueAsyncFetchLocked(key, command, env)
-		c.mu.Unlock()
 		if found {
+			c.mu.Unlock()
 			return one.models, nil
 		}
+		if cached := readClaudeCache(key); len(cached) > 0 {
+			if c.lists == nil {
+				c.lists = map[string]modelList{}
+			}
+			c.lists[key] = modelList{models: cached}
+			c.mu.Unlock()
+			return cached, nil
+		}
+		c.mu.Unlock()
 		if hasFailed {
 			return fallbackModels, nil
 		}
@@ -206,7 +217,59 @@ func (c *modelCache) fetchAndStore(ctx context.Context, key string, command, env
 	}
 	c.lists[key] = modelList{models: models, fetchedAt: clock.Now()}
 	delete(c.failed, key)
+	if c.isAsync {
+		writeClaudeCache(key, models)
+	}
 	return models, nil
+}
+
+type persistedClaudeModels struct {
+	Key    string        `json:"key"`
+	Models []claudeModel `json:"models"`
+}
+
+func claudeCachePath() (string, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			return "", err
+		}
+		dir = filepath.Join(home, ".cache")
+	}
+	return filepath.Join(dir, "numen", "models-claude.json"), nil
+}
+
+func readClaudeCache(key string) []claudeModel {
+	path, err := claudeCachePath()
+	if err != nil {
+		return nil
+	}
+	data, err := agentrun.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var cached persistedClaudeModels
+	if json.Unmarshal(data, &cached) != nil || cached.Key != key {
+		return nil
+	}
+	return cached.Models
+}
+
+func writeClaudeCache(key string, models []claudeModel) {
+	if len(models) == 0 {
+		return
+	}
+	path, err := claudeCachePath()
+	if err != nil {
+		return
+	}
+	data, err := json.Marshal(persistedClaudeModels{Key: key, Models: models})
+	if err != nil {
+		return
+	}
+	_ = agentrun.CreateDir(filepath.Dir(path), 0o700)
+	_ = agentrun.WriteFile(path, data, 0o600)
 }
 
 // find returns the levels of the model among the current lists, and whether the model is listed.
