@@ -13,9 +13,11 @@ const props = defineProps<{
   /** Why the setting did not take the path last chosen; empty where it did. */
   problem: string
   labelledBy: string
+  isMulti?: boolean
   words: {
     readonly pathNone: string
     readonly pathChoose: string
+    readonly pathAdd?: string
     readonly pathClear: string
   }
 }>()
@@ -27,6 +29,8 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const paths = computed(() => parsePaths(props.path))
+const hasMultipleRows = computed(() => isMultiRowLayout(props.isMulti, paths.value))
+const chooseButtonLabel = computed(() => getChooseButtonLabel(props.isMulti, props.words))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose() {
@@ -45,6 +49,20 @@ function parsePaths(rawPaths: string): string[] {
     .filter((one) => one !== '')
 }
 
+function isMultiRowLayout(isMulti: boolean | undefined, items: readonly string[]): boolean {
+  return Boolean(isMulti) || items.length > 1
+}
+
+function getChooseButtonLabel(
+  isMulti: boolean | undefined,
+  words: { readonly pathChoose: string; readonly pathAdd?: string },
+): string {
+  if (isMulti) {
+    return words.pathAdd ?? words.pathChoose
+  }
+  return words.pathChoose
+}
+
 function formatPathLabel(rawPath: string): string {
   const parts = rawPath.split(/[\\/]/).filter((one) => one !== '')
   return parts.length > 2 ? `…/${parts.slice(-2).join('/')}` : rawPath
@@ -53,7 +71,7 @@ function formatPathLabel(rawPath: string): string {
 
 <template>
   <span class="settings__path" role="group" :aria-labelledby="labelledBy">
-    <template v-if="paths.length <= 1">
+    <template v-if="!hasMultipleRows">
       <span class="settings__path-line">
         <span
           v-if="paths[0]"
@@ -64,7 +82,7 @@ function formatPathLabel(rawPath: string): string {
           {{ formatPathLabel(paths[0]) }}
         </span>
         <Button variant="outline" size="small" class="settings__path-choose" @click="onChoose">
-          {{ words.pathChoose }}
+          {{ chooseButtonLabel }}
         </Button>
         <Button v-if="paths[0]" variant="ghost" size="small" @click="onClear(paths[0])">
           {{ words.pathClear }}
@@ -82,7 +100,7 @@ function formatPathLabel(rawPath: string): string {
       </span>
       <span class="settings__path-line">
         <Button variant="outline" size="small" class="settings__path-choose" @click="onChoose">
-          {{ words.pathChoose }}
+          {{ chooseButtonLabel }}
         </Button>
       </span>
     </template>
@@ -95,7 +113,7 @@ function formatPathLabel(rawPath: string): string {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.25rem;
+  gap: 0.375rem;
   min-inline-size: 0;
   max-inline-size: 100%;
 }
@@ -108,11 +126,24 @@ function formatPathLabel(rawPath: string): string {
   max-inline-size: 100%;
 }
 
+.settings__path-agent-title {
+  color: var(--numen-ink);
+  font-size: var(--numen-text-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.settings__path-line--discovered .settings__path-label {
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-mono, monospace);
+  font-size: var(--numen-text-1);
+}
+
 .settings__path-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-inline-size: 16rem;
+  max-inline-size: 18rem;
   color: var(--numen-ink);
   font-size: var(--numen-text-2);
 }

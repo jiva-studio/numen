@@ -60,22 +60,19 @@ function onSettingChange(key: string, value: unknown): void {
   fields.setValue(['plugins', props.plugin.id, key], value)
 }
 
-async function onPathChoose(key: string): Promise<void> {
-  const previous = getStringSetting(key, '')
-  const problem = await installation.value.choosePath(props.plugin.id, key)
-  pathProblems.value = { ...pathProblems.value, [key]: problem }
-  if (problem === '' && previous !== '' && key === 'executable_path') {
-    onSettingChange(key, appendPathEntry(previous, getStringSetting(key, '')))
+async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
+  const previous = getStringSetting(setting.key, setting.default)
+  const problem = await installation.value.choosePath(props.plugin.id, setting.key)
+  pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
+  if (problem === '' && previous !== '' && setting.key === 'executable_path') {
+    onSettingChange(setting.key, appendPathEntry(previous, getStringSetting(setting.key, '')))
   }
 }
 
-function onPathClear(key: string, targetPath?: string): void {
-  pathProblems.value = { ...pathProblems.value, [key]: '' }
-  onSettingChange(key, removePathEntry(getStringSetting(key, ''), targetPath))
-}
-
-function onAgentChoose(key: string, choice: CompletionChoice): void {
-  fields.setValue(['plugins', props.plugin.id, key], choice)
+function onPathClear(setting: PluginSettingInfo, targetPath?: string): void {
+  pathProblems.value = { ...pathProblems.value, [setting.key]: '' }
+  const current = getStringSetting(setting.key, setting.default)
+  onSettingChange(setting.key, removePathEntry(current, targetPath))
 }
 
 function onSecretSave(name: string, key: string): void {
@@ -150,7 +147,7 @@ function getStringSetting(key: string, fallback: unknown): string {
       :agents="getAgentChoices(getChoice(setting.key))"
       :models="getModelChoices(getChoice(setting.key))"
       :choice="getChoice(setting.key)"
-      @choose="(choice) => onAgentChoose(setting.key, choice)"
+      @choose="(choice) => onSettingChange(setting.key, choice)"
     />
 
     <SettingRow
@@ -219,12 +216,13 @@ function getStringSetting(key: string, fallback: unknown): string {
 
       <PathField
         v-else-if="setting.type === 'file' || setting.type === 'folder'"
-        :path="getStringSetting(setting.key, '')"
+        :path="getStringSetting(setting.key, setting.default)"
         :problem="pathProblems[setting.key] ?? ''"
         :labelled-by="labelledBy"
+        :is-multi="setting.title === 'Executable Paths'"
         :words="words"
-        @choose="onPathChoose(setting.key)"
-        @clear="(targetPath) => onPathClear(setting.key, targetPath)"
+        @choose="onPathChoose(setting)"
+        @clear="(targetPath) => onPathClear(setting, targetPath)"
       />
 
       <Select

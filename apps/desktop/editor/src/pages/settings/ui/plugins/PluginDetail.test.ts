@@ -556,6 +556,34 @@ describe('PluginDetail with settings that follow one another', () => {
       at: ['plugins', 'test.linked', 'dictionary'],
       value: '"/usr/local/bin/codex-acp"',
     })
+
+    const acpPlugin: PluginInfo = {
+      ...createPluginInfo('test.acp', 'ACP Agents'),
+      settings: [
+        {
+          key: 'executable_path',
+          type: 'file',
+          title: 'Executable Paths',
+          description: '',
+          default: '/usr/local/bin/gemini\n/usr/local/bin/opencode',
+        },
+      ],
+    }
+    const acpDetail = createDetail(acpPlugin)
+    const acpRow = acpDetail.wrapper.findAllComponents(SettingRow)[0]!
+    const autoFound = acpRow.findAll('[data-testid="setting-path"]')
+    expect(autoFound).toHaveLength(2)
+    expect(autoFound[0]!.text()).toBe('…/bin/gemini')
+    expect(autoFound[1]!.text()).toBe('…/bin/opencode')
+    const acpClearButtons = acpRow.findAll('button').filter((btn) => btn.text() === words.pathClear)
+    expect(acpClearButtons).toHaveLength(2)
+    await acpClearButtons[0]!.trigger('click')
+    expect(acpDetail.recordedWrites).toContainEqual({
+      at: ['plugins', 'test.acp', 'executable_path'],
+      value: '"/usr/local/bin/opencode"',
+    })
+    const addButton = acpRow.findAll('button').find((btn) => btn.text() === words.pathAdd)
+    expect(addButton).toBeDefined()
   })
 })
 

@@ -193,11 +193,11 @@ function onChooseMenuItem(id: string): void {
 .plugin-version-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.375rem;
+  padding: 0.125rem 0.4375rem;
   border-radius: var(--numen-radius-pill, 9999px);
-  background: var(--numen-surface, rgba(125, 125, 125, 0.12));
-  border: 1px solid var(--numen-rule, rgba(125, 125, 125, 0.2));
-  color: var(--numen-hushed);
+  background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
+  color: var(--numen-accent);
   font-size: var(--numen-text-1, 0.75rem);
   font-weight: 500;
   line-height: 1;

@@ -137,6 +137,7 @@ export const WORDS = {
   /** A plugin's setting of type file or folder. */
   pathNone: 'None',
   pathChoose: 'Choose…',
+  pathAdd: 'Add…',
   pathClear: 'Clear',
   /** The folder a plugin keeps in the shown vault, and its deletion. */
   pluginData: 'Plugin data',
