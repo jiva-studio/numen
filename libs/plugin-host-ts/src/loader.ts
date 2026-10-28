@@ -181,7 +181,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const defaults = resolveDefaultDeps(deps)
   const { activePlugins, failures, manifests, moduleLoaders } = state
   const queues = new Map<string, Promise<unknown>>()
-  let importToken = 0
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? Promise.resolve()).then(task)
@@ -198,7 +197,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     activePlugins,
     failures,
     manifests,
-    getImportToken: () => ++importToken,
     ...defaults,
   }
   const deactivateContext: DeactivateDeps = {

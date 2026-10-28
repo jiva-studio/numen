@@ -536,26 +536,35 @@ describe('PluginDetail with settings that follow one another', () => {
     const emptyRow = findRow(emptyDetail.wrapper, 'dictionary')!
     expect(emptyRow.find('[data-testid="setting-path"]').exists()).toBe(false)
 
-    const multiDetail = createDetail(LINKED, {
-      plugins: {
-        'test.linked': {
-          dictionary: '/usr/bin/claude-code-acp\n/usr/local/bin/codex-acp',
+    const acpPlugin: PluginInfo = {
+      ...createPluginInfo('test.acp', 'ACP Agents'),
+      settings: [
+        {
+          key: 'executable_path',
+          type: 'file',
+          title: 'Executable Paths',
+          description: '',
+          default: '/usr/local/bin/gemini\n/usr/local/bin/opencode',
         },
-      },
+      ],
+    }
+    const acpDetail = createDetail(acpPlugin)
+    const acpRow = acpDetail.wrapper.findAllComponents(SettingRow)[0]!
+    const autoFound = acpRow.findAll('[data-testid="setting-path"]')
+    expect(autoFound).toHaveLength(2)
+    expect(autoFound[0]!.text()).toBe('/usr/local/bin/gemini')
+    expect(autoFound[1]!.text()).toBe('/usr/local/bin/opencode')
+    const acpClearButtons = acpRow
+      .findAll('button')
+      .filter((btn) => btn.attributes('aria-label') === words.pathClear)
+    expect(acpClearButtons).toHaveLength(2)
+    await acpClearButtons[0]!.trigger('click')
+    expect(acpDetail.recordedWrites).toContainEqual({
+      at: ['plugins', 'test.acp', 'executable_path'],
+      value: '"/usr/local/bin/opencode"',
     })
-    const multiRow = findRow(multiDetail.wrapper, 'dictionary')!
-    const labels = multiRow.findAll('[data-testid="setting-path"]')
-    expect(labels).toHaveLength(2)
-    expect(labels[0]!.text()).toBe('…/bin/claude-code-acp')
-    expect(labels[1]!.text()).toBe('…/bin/codex-acp')
-
-    const clearButtons = multiRow.findAll('button').filter((btn) => btn.text() === words.pathClear)
-    expect(clearButtons).toHaveLength(2)
-    await clearButtons[0]!.trigger('click')
-    expect(multiDetail.recordedWrites).toContainEqual({
-      at: ['plugins', 'test.linked', 'dictionary'],
-      value: '"/usr/local/bin/codex-acp"',
-    })
+    const addButton = acpRow.findAll('button').find((btn) => btn.text() === words.pathAdd)
+    expect(addButton).toBeDefined()
   })
 })
 

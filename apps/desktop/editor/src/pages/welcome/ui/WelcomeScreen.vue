@@ -69,6 +69,10 @@ function onRun(id: string) {
 function onOpen(id: string) {
   const one = props.vaultList.vaults.find((vault) => vault.id === id)
   if (!one) return
+  if (id === props.vaultList.showing) {
+    props.openCurrentVault?.()
+    return
+  }
   const vault: VaultRef = { id: one.id, name: one.name }
   void runInvocation(
     createInvocation('openVault', { ...props.getTarget(), vault }),

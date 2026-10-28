@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -118,9 +119,21 @@ func (s *agentServer) GetAgentPrograms(
 	s.commands = commands
 	s.mu.Unlock()
 
+	agents := s.getACPAgents()
+	listings := make([]acpListing, len(agents))
+	var group sync.WaitGroup
+	for idx, agent := range agents {
+		group.Add(1)
+		go func(i int, target acpAgent) {
+			defer group.Done()
+			listings[i] = s.acpModels.get(ctx, target)
+		}(idx, agent)
+	}
+	group.Wait()
+
 	res := &agentrun.GetAgentProgramsResponse{}
-	for _, agent := range s.getACPAgents() {
-		listing := s.acpModels.get(ctx, agent)
+	for idx, agent := range agents {
+		listing := listings[idx]
 		program := &agentrun.AgentProgram{
 			Name:        acpProgramPrefix + agent.Program,
 			Title:       agent.Title,

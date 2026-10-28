@@ -30,6 +30,8 @@ const unsaved = {
 
 const {
   runCommand,
+  openCurrentVault,
+  isLayoutReady,
   openSettings,
   commands,
   pluginWays,
@@ -139,6 +141,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 
       <template #silence>
         <WelcomeScreen
+          v-if="isLayoutReady || !vaultList.showing"
           :vault-list="vaultList"
           :tabs="windowTabs.tabs.value"
           :commands="commands"
@@ -147,7 +150,9 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
           :get-target="getTarget"
           :plugin-ways="pluginWays"
           :run-command="runCommand"
+          :open-current-vault="openCurrentVault"
         />
+        <div v-else />
       </template>
     </WorkspaceLayout>
 

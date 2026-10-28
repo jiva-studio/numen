@@ -11,7 +11,7 @@ import (
 )
 
 // acpListLimit is how long an agent has to open the session its models are read from.
-const acpListLimit = 15 * time.Second
+const acpListLimit = 3 * time.Second
 
 // acpFailureBackoff is how long an agent that failed to list is left alone.
 const acpFailureBackoff = 30 * time.Second
@@ -45,20 +45,42 @@ func (s *agentServer) getACPAgents() []acpAgent {
 		if hasCustom {
 			continue
 		}
-		program := "acp"
-		title := "ACP Agent"
-		if len(execPaths) > 1 {
-			program = getExecutableProgramName(execPath)
-			title = program
-		}
-		agents = append(agents, acpAgent{
-			Program: program,
-			Title:   title,
-			Command: []string{execPath},
-		})
+		agent := buildCustomACPAgent(execPath, len(execPaths) > 1)
+		agents = append(agents, agent)
 	}
 	slices.SortFunc(agents, func(a, b acpAgent) int { return strings.Compare(a.Program, b.Program) })
 	return agents
+}
+
+func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
+	baseName := getExecutableProgramName(execPath)
+	for _, candidate := range knownACPAgents {
+		if candidate.binary == baseName {
+			command := make([]string, 0, 1+len(candidate.args))
+			command = append(command, execPath)
+			command = append(command, candidate.args...)
+			program := "acp"
+			if isMulti {
+				program = candidate.program
+			}
+			return acpAgent{
+				Program: program,
+				Title:   candidate.title,
+				Command: command,
+			}
+		}
+	}
+	program := "acp"
+	title := "ACP Agent"
+	if isMulti {
+		program = baseName
+		title = baseName
+	}
+	return acpAgent{
+		Program: program,
+		Title:   title,
+		Command: []string{execPath},
+	}
 }
 
 // acpListing is what an agent reports for a session: its models and the one it answers with.
@@ -77,6 +99,8 @@ type acpModelCache struct {
 	mu       sync.Mutex
 	entries  map[string]acpListing
 	failedAt map[string]time.Time
+	inFlight map[string]bool
+	isAsync  bool
 	// now is the clock the backoff is kept by. Nil is the system clock.
 	now func() time.Time
 }
@@ -97,10 +121,35 @@ func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 	listing, ok := c.entries[key]
 	failedAt, hasFailed := c.failedAt[key]
 	isBackingOff := hasFailed && c.getNow().Sub(failedAt) < acpFailureBackoff
-	c.mu.Unlock()
 	if ok || isBackingOff {
+		c.mu.Unlock()
 		return listing
 	}
+	if c.isAsync {
+		if !c.inFlight[key] {
+			if c.inFlight == nil {
+				c.inFlight = make(map[string]bool)
+			}
+			c.inFlight[key] = true
+			go c.fetchInBackground(agent, key)
+		}
+		c.mu.Unlock()
+		return acpListing{}
+	}
+	c.mu.Unlock()
+	return c.fetchAndStore(ctx, agent, key)
+}
+
+func (c *acpModelCache) fetchInBackground(agent acpAgent, key string) {
+	defer func() {
+		c.mu.Lock()
+		delete(c.inFlight, key)
+		c.mu.Unlock()
+	}()
+	c.fetchAndStore(context.Background(), agent, key)
+}
+
+func (c *acpModelCache) fetchAndStore(ctx context.Context, agent acpAgent, key string) acpListing {
 	listing, err := readACPListing(ctx, agent)
 	c.mu.Lock()
 	defer c.mu.Unlock()
