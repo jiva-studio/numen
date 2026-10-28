@@ -39,9 +39,7 @@ test.describe('Plugin Settings and Configuration', () => {
     await page.keyboard.press('Escape')
   })
 
-  test('changes the transcription model and keeps the model across reopening', async ({
-    page,
-  }) => {
+  test('changes the transcription model and keeps the model across reopening', async ({ page }) => {
     await openWorkspace(page)
     await openTranscriptionSettings(page)
 
@@ -136,7 +134,7 @@ test.describe('OCR settings', () => {
     await page.getByRole('menuitemradio', { name: /^Custom model/ }).click()
     await expect(page.getByText('Model file', { exact: true })).toBeVisible()
     await expect(page.getByText('Character dictionary', { exact: true })).toBeVisible()
-    await expect(page.getByTestId('setting-path').first()).toHaveText('None')
+    await expect(page.getByTestId('setting-path')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Choose…' })).toHaveCount(2)
 
     await model.locator('.settings__choice').click()
@@ -164,7 +162,7 @@ test.describe('Embeddings settings', () => {
     await provider.locator('.settings__choice').click()
     await expect(
       page.getByRole('menuitemradio', {
-        name: /Local.*BGE-M3 on this machine: 100\+ languages, 1024 dimensions/i,
+        name: /Local.*Runs ONNX embedding models locally on this machine/i,
       }),
     ).toBeVisible()
     await page.getByRole('menuitemradio', { name: /^Custom service/ }).click()

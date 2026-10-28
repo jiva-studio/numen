@@ -26,3 +26,23 @@ export function createTextDrafts(write: (key: string, text: string) => void) {
 
   return { getDraft, setDraft, writeDraft }
 }
+
+/** Joins the previous newline-separated paths with the newly selected path. */
+export function appendPathEntry(previous: string, nextPath: string): string {
+  if (previous === '' || nextPath === '' || nextPath === previous) return nextPath
+  const existing = previous
+    .split('\n')
+    .map((one) => one.trim())
+    .filter((one) => one !== '')
+  return existing.includes(nextPath) ? existing.join('\n') : [...existing, nextPath].join('\n')
+}
+
+/** Removes one path from a newline-separated path setting, or clears all when none is named. */
+export function removePathEntry(current: string, targetPath?: string): string {
+  if (!targetPath) return ''
+  return current
+    .split('\n')
+    .map((one) => one.trim())
+    .filter((one) => one !== '' && one !== targetPath)
+    .join('\n')
+}

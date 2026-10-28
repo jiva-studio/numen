@@ -74,6 +74,39 @@ func TestASettingWhoseOptionsFollowAnotherFallsBackToTheirFirst(t *testing.T) {
 	}
 }
 
+func TestAStringSettingWithOptionsByFollowsProviderWhenStoredValueBelongsToAnotherProvider(t *testing.T) {
+	m, err := ReadManifest(strings.NewReader(`{
+		"id": "md.numen.engines.embeddings", "name": "Embeddings", "version": "1.0.0",
+		"settings": [
+			{"key": "provider", "type": "enum", "title": "Provider", "default": "local", "options": ["local", "openrouter"]},
+			{"key": "model", "type": "string", "title": "Model", "default": "Xenova/bge-m3", "optionsBy": {
+				"setting": "provider",
+				"options": {
+					"local": ["Xenova/bge-m3", "Xenova/multilingual-e5-small"],
+					"openrouter": ["openai/text-embedding-3-small", "baai/bge-m3"]
+				}
+			}}
+		]
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, tc := range map[string]struct {
+		stored map[string]any
+		want   string
+	}{
+		"default local":                {map[string]any{}, "Xenova/bge-m3"},
+		"default openrouter":           {map[string]any{"provider": "openrouter"}, "openai/text-embedding-3-small"},
+		"remote model under local":     {map[string]any{"provider": "local", "model": "openai/text-embedding-3-small"}, "Xenova/bge-m3"},
+		"local model under openrouter": {map[string]any{"provider": "openrouter", "model": "Xenova/multilingual-e5-small"}, "openai/text-embedding-3-small"},
+		"custom model under local":     {map[string]any{"provider": "local", "model": "org/custom-onnx"}, "org/custom-onnx"},
+	} {
+		if got := m.ResolveSettings(tc.stored)["model"]; got != tc.want {
+			t.Errorf("%s: model = %v, want %s", name, got, tc.want)
+		}
+	}
+}
+
 // A setting whose condition fails is not handed over, and a stored value it holds stays stored.
 func TestASettingWhoseConditionFailsIsLeftOut(t *testing.T) {
 	m := readTestManifest(t)

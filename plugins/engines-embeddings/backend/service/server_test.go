@@ -4,7 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
 func TestEmbeddingServerGetModel(t *testing.T) {
@@ -82,7 +85,9 @@ func TestModelDimensionResolutionAcrossProviders(t *testing.T) {
 	}{
 		{provider: "local", model: "Xenova/bge-m3", wantDims: 1024},
 		{provider: "local", model: "Xenova/multilingual-e5-small", wantDims: 384},
+		{provider: "local", model: "openai/text-embedding-3-small", wantDims: 1024},
 		{provider: "openrouter", model: "openai/text-embedding-3-small", wantDims: 1536},
+		{provider: "openrouter", model: "Xenova/multilingual-e5-small", wantDims: 1536},
 		{provider: "openrouter", model: "openai/text-embedding-3-large", wantDims: 3072},
 		{provider: "openrouter", model: "baai/bge-m3", wantDims: 1024},
 		{provider: "openrouter", model: "qwen/qwen3-embedding-8b", wantDims: 4096},
@@ -157,5 +162,58 @@ func TestIndexShareReservesOnePassForQuestions(t *testing.T) {
 		if got := getIndexShare(tc.passes); got != tc.want {
 			t.Errorf("a model of %d passes gives the index %d, want %d", tc.passes, got, tc.want)
 		}
+	}
+}
+
+func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
+	srv := newEmbeddingServer()
+	hasOpenCall := false
+	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+		hasOpenCall = true
+		return engine.MockEmbedder{}, nil
+	}
+
+	srv.updateConfig(map[string]string{
+		"provider": "openrouter",
+		"model":    "openai/text-embedding-3-small",
+	})
+
+	_, err := srv.EmbedTexts(t.Context(), []string{"hello"})
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("err = %v, want FailedPrecondition", err)
+	}
+	if hasOpenCall {
+		t.Fatal("local ONNX embedder was opened while remote provider was selected without an API key")
+	}
+}
+
+func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
+	srv := newEmbeddingServer()
+	var activeInfo engine.ModelInfo
+	var activeLocal engine.LocalModel
+	srv.open = func(_ context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
+		activeInfo = info
+		activeLocal = local
+		return engine.MockEmbedder{}, nil
+	}
+
+	srv.updateConfig(map[string]string{
+		"provider": "local",
+		"model":    "openai/text-embedding-3-small",
+	})
+
+	info, err := srv.GetModelInfo(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.GetName() != "bge-m3" || info.GetDimensions() != 1024 {
+		t.Fatalf("GetModelInfo = %s@%d, want bge-m3@1024", info.GetName(), info.GetDimensions())
+	}
+
+	if _, err := srv.EmbedTexts(t.Context(), []string{"hello"}); err != nil {
+		t.Fatal(err)
+	}
+	if activeInfo.Name != "bge-m3" || activeInfo.Dimensions != 1024 || activeLocal.Name != "Xenova/bge-m3" {
+		t.Fatalf("opened %+v / %+v, want bge-m3@1024 on Xenova/bge-m3", activeInfo, activeLocal)
 	}
 }

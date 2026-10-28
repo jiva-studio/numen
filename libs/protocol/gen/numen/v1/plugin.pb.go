@@ -441,7 +441,9 @@ type PluginSetting struct {
 	// The condition under which the setting is shown and handed to the plugin.
 	When *PluginSettingCondition `protobuf:"bytes,13,opt,name=when,proto3" json:"when,omitempty"`
 	// The file extensions a setting of type file takes, each with its leading dot. Empty takes any file.
-	Accept        []string `protobuf:"bytes,14,rep,name=accept,proto3" json:"accept,omitempty"`
+	Accept []string `protobuf:"bytes,14,rep,name=accept,proto3" json:"accept,omitempty"`
+	// The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
+	Icon          string `protobuf:"bytes,15,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -572,6 +574,13 @@ func (x *PluginSetting) GetAccept() []string {
 		return x.Accept
 	}
 	return nil
+}
+
+func (x *PluginSetting) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -1336,7 +1345,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xef\x03\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x83\x04\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1353,7 +1362,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"options_by\x18\f \x01(\v2 .numen.v1.PluginSettingOptionsByR\toptionsBy\x124\n" +
 	"\x04when\x18\r \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\x12\x16\n" +
-	"\x06accept\x18\x0e \x03(\tR\x06acceptB\x06\n" +
+	"\x06accept\x18\x0e \x03(\tR\x06accept\x12\x12\n" +
+	"\x04icon\x18\x0f \x01(\tR\x04iconB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_step\"Y\n" +

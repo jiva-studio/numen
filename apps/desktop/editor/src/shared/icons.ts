@@ -16,12 +16,16 @@ import {
   Copy,
   CornerDownRight,
   CornerLeftUp,
+  Download,
   FilePlus,
   FileText,
   FolderPlus,
   FolderRoot,
   Gauge,
   Languages,
+  Layers,
+  LayoutTemplate,
+  Link,
   Navigation,
   Palette,
   PenLine,
@@ -31,6 +35,7 @@ import {
   Ruler,
   ScanText,
   Search,
+  Settings,
   SlidersHorizontal,
   SpellCheck,
   Sparkles,
@@ -70,7 +75,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['textScale', ALargeSmall],
   ['syncing', RefreshCw],
   ['performanceProfile', Gauge],
-  ['settings', SlidersHorizontal],
+  ['settings', Settings],
   ['first', Compass],
   ['goto', Navigation],
   ['openVault', FolderRoot],
@@ -87,13 +92,23 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
 const NAMED_ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['audio-lines', AudioLines],
   ['captions', Captions],
+  ['download', Download],
   ['file-text', FileText],
+  ['gauge', Gauge],
   ['languages', Languages],
+  ['layers', Layers],
+  ['layout-template', LayoutTemplate],
+  ['link', Link],
+  ['refresh-cw', RefreshCw],
   ['scan-text', ScanText],
+  ['settings', Settings],
+  ['sliders-horizontal', SlidersHorizontal],
   ['sparkles', Sparkles],
   ['spell-check', SpellCheck],
   ['text-search', TextSearch],
+  ['trash-2', Trash2],
   ['wand-sparkles', WandSparkles],
+  ['waypoints', Waypoints],
 ])
 
 /** The icon a plugin's manifest names. */
@@ -102,6 +117,7 @@ export const getNamedIcon = (name: string): LucideIcon => NAMED_ICONS.get(name) 
 /** The icon for a command, and nothing where it has none. */
 export const findIcon = (id: string): LucideIcon | null => {
   if (id.startsWith('plugin-setting:')) return SlidersHorizontal
+  if (id.startsWith('plugin-command:')) return Puzzle
   if (id.startsWith('file-menu:delete-version:')) return Trash2
   return ICONS.get(id) ?? null
 }

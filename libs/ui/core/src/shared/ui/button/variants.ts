@@ -24,11 +24,11 @@ export const buttonVariants = cva(
           'hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-accent-ink)_8%)]',
         ],
         outline: [
-          'border-rule bg-raised text-ink border',
-          'hover:bg-[color-mix(in_oklab,var(--numen-raised),var(--numen-ink)_8%)]',
+          'border-field-rule bg-field text-ink border',
+          'hover:bg-[color-mix(in_oklab,var(--numen-field-bg),var(--numen-ink)_8%)]',
         ],
         danger: [
-          'border-alarm bg-[var(--numen-alarm-bg)] text-alarm border',
+          'border-alarm text-alarm border bg-[var(--numen-alarm-bg)]',
           'hover:bg-[color-mix(in_oklab,var(--numen-alarm-bg),var(--numen-alarm)_12%)]',
         ],
         ghost: 'text-ink hover:bg-raised',

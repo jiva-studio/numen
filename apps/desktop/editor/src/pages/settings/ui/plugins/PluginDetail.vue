@@ -194,7 +194,7 @@ watch(
     </div>
 
     <div
-      v-if="hasConsent || hasDeclarativeSettings || shownSecrets.length > 0 || fileCount > 0"
+      v-if="hasConsent || hasDeclarativeSettings || shownSecrets.length > 0"
       class="plugin-detail__settings"
     >
       <!-- AI consent -->
@@ -218,10 +218,11 @@ watch(
         :state="props.state"
         :plugin="props.plugin"
       />
+    </div>
 
+    <div v-if="fileCount > 0" class="plugin-detail__settings plugin-detail__data">
       <!-- Data the plugin keeps in the shown vault -->
       <SettingRow
-        v-if="fileCount > 0"
         :at="`data-${props.plugin.id}`"
         :name="words.pluginData"
         :detail="words.pluginDataDetail(fileCount)"
@@ -271,6 +272,10 @@ watch(
   border: var(--numen-stroke, 1px) solid var(--numen-rule);
   border-radius: var(--numen-radius, 0.375rem);
   background-color: var(--numen-raised, rgba(125, 125, 125, 0.04));
+}
+
+.plugin-detail__settings + .plugin-detail__settings {
+  margin-block-start: 1.25rem;
 }
 
 .plugin-detail__settings :deep(.settings__row:last-child) {

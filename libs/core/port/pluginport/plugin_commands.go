@@ -33,6 +33,7 @@ var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber
 type PluginCommand struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+	Icon  string `json:"icon,omitempty"`
 	// ContentTypes are the types of the files the command runs over; `*/*` is a file of any type.
 	// A command that names no content type and no note type runs over no file.
 	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`

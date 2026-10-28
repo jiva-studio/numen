@@ -32,7 +32,7 @@ type pluginCommands struct {
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "create-sample", Title: "Create a sample", ContentTypes: []domain.ContentType{"text/markdown"},
+			ID: "create-sample", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
 				{Name: "wait", Title: "Wait", Type: plugincommand.ArgumentBoolean, IsHiddenInPalette: true},
@@ -71,7 +71,7 @@ func TestTheCommandsAreListedWithoutThoseHiddenInThePaletteOrOverNotesOfAType(t 
 	}
 	one := commands[0]
 	argument := one.GetArguments()[0]
-	if one.GetPluginId() != "org.example.sample" || one.GetId() != "create-sample" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
+	if one.GetPluginId() != "org.example.sample" || one.GetId() != "create-sample" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
 		!argument.GetIsRequired() || len(one.GetArguments()) != 1 {
 		t.Errorf("got %v", one)
 	}

@@ -38,28 +38,28 @@ export const createWindowDisplayCommands = (words: Words): readonly Command[] =>
   {
     id: 'appearance',
     text: words.appearance,
-    group: 'window',
+    group: 'settings',
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
   {
     id: 'mode',
     text: words.mode,
-    group: 'window',
+    group: 'settings',
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
   {
     id: 'interfaceScale',
     text: words.interfaceScale,
-    group: 'window',
+    group: 'settings',
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
   {
     id: 'textScale',
     text: words.textScale,
-    group: 'window',
+    group: 'settings',
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
@@ -69,18 +69,18 @@ export const createWindowFeatureCommands = (words: Words): readonly Command[] =>
   {
     id: 'syncing',
     text: words.syncing,
-    group: 'window',
+    group: 'settings',
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
   {
     id: 'performanceProfile',
     text: words.performanceProfile,
-    group: 'window',
+    group: 'settings',
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
-  { id: 'settings', text: words.settings, group: 'window', isOffered: isAlwaysOffered },
+  { id: 'settings', text: words.settings, group: 'settings', isOffered: isAlwaysOffered },
 ]
 
 export const createWindowSettingsCommands = (words: Words): readonly Command[] => [

@@ -61,24 +61,23 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 
 	_ = aggregator.SyncTools(context.Background())
 
-	authHandler := createHTTPHandler(mcpServer, cfg.Token)
-
 	srv := &Server{
 		config:     cfg,
 		mcpServer:  mcpServer,
-		handler:    authHandler,
 		aggregator: aggregator,
-		httpServer: &http.Server{
-			Handler:           authHandler,
-			ReadHeaderTimeout: 10 * time.Second,
-		},
+	}
+	authHandler := srv.createHTTPHandler(mcpServer)
+	srv.handler = authHandler
+	srv.httpServer = &http.Server{
+		Handler:           authHandler,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	return srv, nil
 }
 
 // createHTTPHandler sets up HTTP routes and token authentication.
-func createHTTPHandler(mcpServer *sdk.Server, token string) http.Handler {
+func (s *Server) createHTTPHandler(mcpServer *sdk.Server) http.Handler {
 	mux := http.NewServeMux()
 
 	sseHandler := sdk.NewSSEHandler(
@@ -114,7 +113,49 @@ func createHTTPHandler(mcpServer *sdk.Server, token string) http.Handler {
 		streamHandler.ServeHTTP(w, r)
 	})
 
-	return requireToken(token, mux)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requireToken(s.GetToken(), mux).ServeHTTP(w, r)
+	})
+}
+
+// Rebind updates the server address and token, restarting the listener when the address changes.
+func (s *Server) Rebind(cfg Config) error {
+	s.mu.Lock()
+	s.config.Token = cfg.Token
+	if cfg.Addr == "" || cfg.Addr == s.config.Addr || s.isClosed {
+		s.mu.Unlock()
+		return nil
+	}
+	oldListener := s.listener
+	s.config.Addr = cfg.Addr
+	s.mu.Unlock()
+
+	if oldListener != nil {
+		_ = oldListener.Close()
+	}
+	ln, err := net.Listen("tcp", cfg.Addr)
+	if err != nil {
+		return fmt.Errorf("listen on %s: %w", cfg.Addr, err)
+	}
+	s.mu.Lock()
+	if s.isClosed {
+		s.mu.Unlock()
+		_ = ln.Close()
+		return nil
+	}
+	s.listener = ln
+	s.actualAddr = ln.Addr().String()
+	s.httpServer = &http.Server{
+		Handler:           s.handler,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	httpSrv := s.httpServer
+	s.mu.Unlock()
+
+	go func() {
+		_ = httpSrv.Serve(ln)
+	}()
+	return nil
 }
 
 // Start opens the network listener and begins serving requests.
@@ -201,6 +242,8 @@ func (s *Server) GetHTTPURL() string {
 
 // GetToken returns the authentication token.
 func (s *Server) GetToken() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	return s.config.Token
 }
 

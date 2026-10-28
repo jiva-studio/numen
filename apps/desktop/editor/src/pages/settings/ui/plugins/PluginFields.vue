@@ -29,7 +29,7 @@ import {
   readChoice,
 } from '../../lib/agents'
 import { createEnumFields } from '../../lib/enums'
-import { createTextDrafts } from '../../lib/drafts'
+import { appendPathEntry, createTextDrafts, removePathEntry } from '../../lib/drafts'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -61,13 +61,17 @@ function onSettingChange(key: string, value: unknown): void {
 }
 
 async function onPathChoose(key: string): Promise<void> {
+  const previous = getStringSetting(key, '')
   const problem = await installation.value.choosePath(props.plugin.id, key)
   pathProblems.value = { ...pathProblems.value, [key]: problem }
+  if (problem === '' && previous !== '' && key === 'executable_path') {
+    onSettingChange(key, appendPathEntry(previous, getStringSetting(key, '')))
+  }
 }
 
-function onPathClear(key: string): void {
+function onPathClear(key: string, targetPath?: string): void {
   pathProblems.value = { ...pathProblems.value, [key]: '' }
-  onSettingChange(key, '')
+  onSettingChange(key, removePathEntry(getStringSetting(key, ''), targetPath))
 }
 
 function onAgentChoose(key: string, choice: CompletionChoice): void {
@@ -92,11 +96,8 @@ function getChoice(key: string): CompletionChoice {
 }
 
 function getAgentChoices(choice: CompletionChoice) {
-  return createPluginAgentChoices(
-    agents.value,
-    { defaultAgent: defaultAgent.value, chosen: choice.agent },
-    words,
-  )
+  const selection = { defaultAgent: defaultAgent.value, chosen: choice.agent }
+  return createPluginAgentChoices(agents.value, selection, words)
 }
 
 function getModelChoices(choice: CompletionChoice) {
@@ -223,7 +224,7 @@ function getStringSetting(key: string, fallback: unknown): string {
         :labelled-by="labelledBy"
         :words="words"
         @choose="onPathChoose(setting.key)"
-        @clear="onPathClear(setting.key)"
+        @clear="(targetPath) => onPathClear(setting.key, targetPath)"
       />
 
       <Select
@@ -328,7 +329,7 @@ function getStringSetting(key: string, fallback: unknown): string {
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
-  text-align: end;
+  text-align: start;
 }
 
 .settings__text-input:focus {

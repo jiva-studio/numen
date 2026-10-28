@@ -240,6 +240,9 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 
 	item, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
 	if err != nil {
+		if q.hasOtherCoarseRecipe(ctx, recipe) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	ranked, err := q.rerank(ctx, recipe, query, item, of, floor)
@@ -251,6 +254,13 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		ranked = ranked[:limit]
 	}
 	return q.getEnclosingPassages(ctx, vault, ranked)
+}
+
+// hasOtherCoarseRecipe reports whether the coarse vector table holds vectors for a different recipe.
+func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool {
+	var currentRecipe string
+	err := q.db.QueryRowContext(ctx, `SELECT recipe FROM coarse_recipe WHERE id = 1`).Scan(&currentRecipe)
+	return err == nil && currentRecipe != "" && currentRecipe != recipe
 }
 
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs

@@ -226,7 +226,7 @@ const commands = async () => {
   const own = []
   for (const { id, said: row } of declared) {
     const word = row.match(/text:\s*words\.([A-Za-z]+)/)
-    const group = row.match(/group:\s*'(note|file|window|vault)'/)
+    const group = row.match(/group:\s*'(note|file|window|settings|vault)'/)
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' stands in no group`)
     const chord = table.find((one) => one.command === id)
@@ -252,6 +252,7 @@ const commands = async () => {
     ['note', 'noteGroupTitle'],
     ['file', 'overFile'],
     ['window', 'overWindow'],
+    ['settings', 'overSettings'],
     ['vault', 'overVault'],
   ]
 

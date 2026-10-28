@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
 import type { DeclaredCommand } from '@/entities/plugin'
+import { getNamedIcon } from '@/shared/icons'
 import {
   createDeclaredPaletteCommands,
   getPaletteId,
@@ -15,6 +16,7 @@ const createSample: DeclaredCommand = {
   pluginId: 'org.example.sample',
   id: 'create-sample',
   title: 'Create a sample',
+  icon: 'layers',
   contentTypes: [],
   extensions: [],
   arguments: [
@@ -50,6 +52,7 @@ describe('a declared command in the palette', () => {
 
     expect(sample?.id).toBe('plugin-command:org.example.sample:create-sample')
     expect(sample?.group).toBe('window')
+    expect(sample?.icon).toBe(getNamedIcon('layers'))
     expect(sample?.needs).toBe('arguments')
     expect(sample?.prompts).toStrictEqual([
       { name: 'title', title: 'Title', isRequired: true },

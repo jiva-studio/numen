@@ -40,7 +40,16 @@ func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {
 	if path == "" {
 		return nil
 	}
-	return checkPath(declared, path)
+	for one := range strings.SplitSeq(path, "\n") {
+		entry := strings.TrimSpace(one)
+		if entry == "" {
+			continue
+		}
+		if err := checkPath(declared, entry); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func checkPath(declared pluginport.PluginManifestSetting, path string) error {

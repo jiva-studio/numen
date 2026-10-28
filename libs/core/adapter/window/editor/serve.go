@@ -354,6 +354,16 @@ func (o *Installation) wireUseCases() {
 	services.Settings.WriteSecret = made.OpenWritePluginSecret()
 	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
+	services.Settings.OnPluginChange = func() {
+		if o.Embedder != nil {
+			model := o.Embedder.GetModel()
+			o.State.Indexing.Model.Store(model.String())
+			o.State.Indexing.Recipe.Store(model.Recipe())
+		}
+		if o.indexer != nil {
+			o.indexer.WakeSources()
+		}
+	}
 	if data := made.OpenPluginData(); data != nil {
 		services.Settings.PluginData, services.Settings.Vaults = data, o.State
 	}

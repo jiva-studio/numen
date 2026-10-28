@@ -47,6 +47,36 @@ export function getOptions(
   return setting.optionsBy.options[formatValue(parentValue)] ?? []
 }
 
+function hasOptionInAnyGroup(setting: PluginSettingInfo, value: string): boolean {
+  if (!setting.optionsBy) return false
+  return Object.values(setting.optionsBy.options).some((list) =>
+    list.some((one) => one.value === value),
+  )
+}
+
+function isCustomStringOption(setting: PluginSettingInfo, stored: unknown): boolean {
+  return (
+    setting.type === 'string' &&
+    typeof stored === 'string' &&
+    stored !== '' &&
+    !hasOptionInAnyGroup(setting, stored)
+  )
+}
+
+function getLinkedValue(
+  plugin: PluginInfo,
+  setting: PluginSettingInfo,
+  read: ReadPluginSetting,
+  stored: unknown,
+): PluginValue {
+  const options = getOptions(plugin, setting, read)
+  const isListed = stored !== undefined && options.some((one) => one.value === formatValue(stored))
+  if (isListed || isCustomStringOption(setting, stored)) {
+    return { value: stored, origin: 'chosen' }
+  }
+  return { value: options[0]?.value ?? setting.default, origin: 'followed' }
+}
+
 /** The value in force of the setting, and where it comes from. */
 export function getValue(
   plugin: PluginInfo,
@@ -54,16 +84,7 @@ export function getValue(
   read: ReadPluginSetting,
 ): PluginValue {
   const stored = read(setting.key)
-  if (setting.optionsBy) {
-    if (setting.type === 'string' && typeof stored === 'string' && stored !== '') {
-      return { value: stored, origin: 'chosen' }
-    }
-    const options = getOptions(plugin, setting, read)
-    if (options.some((one) => one.value === formatValue(stored)) && stored !== undefined) {
-      return { value: stored, origin: 'chosen' }
-    }
-    return { value: options[0]?.value ?? setting.default, origin: 'followed' }
-  }
+  if (setting.optionsBy) return getLinkedValue(plugin, setting, read, stored)
   if (stored === undefined || formatValue(stored) === formatValue(setting.default)) {
     return { value: stored ?? setting.default, origin: 'default' }
   }

@@ -10,6 +10,7 @@ interface WireCommand {
   readonly pluginId: string
   readonly id: string
   readonly title: string
+  readonly icon?: string
   readonly contentTypes: readonly string[]
   readonly extensions: readonly string[]
   readonly arguments: readonly {
@@ -33,6 +34,7 @@ export interface DeclaredCommand {
   readonly pluginId: string
   readonly id: string
   readonly title: string
+  readonly icon?: string
   readonly contentTypes: readonly string[]
   /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
   readonly extensions: readonly string[]
@@ -57,6 +59,7 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   pluginId: wire.pluginId,
   id: wire.id,
   title: wire.title,
+  ...(wire.icon ? { icon: wire.icon } : {}),
   contentTypes: wire.contentTypes,
   extensions: wire.extensions,
   arguments: wire.arguments.map((one) => ({

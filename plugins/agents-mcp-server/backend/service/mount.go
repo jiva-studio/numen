@@ -36,9 +36,7 @@ func Mount(s *server.Server) error {
 		}
 
 		newCfg := readConfig(values)
-		if newCfg.Token != "" {
-			srv.config.Token = newCfg.Token
-		}
+		_ = srv.Rebind(newCfg)
 
 		_ = srv.aggregator.SyncTools(ctx)
 		return nil

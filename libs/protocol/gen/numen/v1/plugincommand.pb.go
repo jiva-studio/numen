@@ -308,7 +308,10 @@ type PluginCommand struct {
 	// those types, and * where the command runs over a file of any type.
 	Extensions []string `protobuf:"bytes,6,rep,name=extensions,proto3" json:"extensions,omitempty"`
 	// The arguments, in the order a person is asked for them.
-	Arguments     []*CommandArgument `protobuf:"bytes,5,rep,name=arguments,proto3" json:"arguments,omitempty"`
+	Arguments []*CommandArgument `protobuf:"bytes,5,rep,name=arguments,proto3" json:"arguments,omitempty"`
+	// The icon the command shows in the palette, by its Lucide name. Empty shows
+	// the default plugin command icon.
+	Icon          string `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -383,6 +386,13 @@ func (x *PluginCommand) GetArguments() []*CommandArgument {
 		return x.Arguments
 	}
 	return nil
+}
+
+func (x *PluginCommand) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
 }
 
 // CommandArgument is one argument a command takes.
@@ -597,7 +607,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"openedPath\"\x15\n" +
 	"\x13ListCommandsRequest\"K\n" +
 	"\x14ListCommandsResponse\x123\n" +
-	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xd0\x01\n" +
+	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xe4\x01\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -606,7 +616,8 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\n" +
 	"extensions\x18\x06 \x03(\tR\n" +
 	"extensions\x127\n" +
-	"\targuments\x18\x05 \x03(\v2\x19.numen.v1.CommandArgumentR\targuments\"\\\n" +
+	"\targuments\x18\x05 \x03(\v2\x19.numen.v1.CommandArgumentR\targuments\x12\x12\n" +
+	"\x04icon\x18\a \x01(\tR\x04icon\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1f\n" +

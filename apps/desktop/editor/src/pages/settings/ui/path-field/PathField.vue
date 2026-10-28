@@ -22,43 +22,70 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   choose: []
-  clear: []
+  clear: [targetPath?: string]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-/** The folder and the name at the end of the path. */
-const label = computed(() => {
-  if (props.path === '') return props.words.pathNone
-  const parts = props.path.split(/[\\/]/).filter((one) => one !== '')
-  return parts.length > 2 ? `…/${parts.slice(-2).join('/')}` : props.path
-})
+const paths = computed(() => parsePaths(props.path))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose() {
   emit('choose')
 }
 
-function onClear() {
-  emit('clear')
+function onClear(targetPath?: string) {
+  emit('clear', targetPath)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function parsePaths(rawPaths: string): string[] {
+  return rawPaths
+    .split('\n')
+    .map((one) => one.trim())
+    .filter((one) => one !== '')
+}
+
+function formatPathLabel(rawPath: string): string {
+  const parts = rawPath.split(/[\\/]/).filter((one) => one !== '')
+  return parts.length > 2 ? `…/${parts.slice(-2).join('/')}` : rawPath
 }
 </script>
 
 <template>
   <span class="settings__path" role="group" :aria-labelledby="labelledBy">
-    <span class="settings__path-line">
-      <span
-        class="settings__path-label"
-        :class="{ 'settings__path-label--none': path === '' }"
-        :title="path"
-        data-testid="setting-path"
-      >
-        {{ label }}
+    <template v-if="paths.length <= 1">
+      <span class="settings__path-line">
+        <span
+          v-if="paths[0]"
+          class="settings__path-label"
+          :title="paths[0]"
+          data-testid="setting-path"
+        >
+          {{ formatPathLabel(paths[0]) }}
+        </span>
+        <Button variant="outline" size="small" class="settings__path-choose" @click="onChoose">
+          {{ words.pathChoose }}
+        </Button>
+        <Button v-if="paths[0]" variant="ghost" size="small" @click="onClear(paths[0])">
+          {{ words.pathClear }}
+        </Button>
       </span>
-      <Button variant="outline" size="small" @click="onChoose">{{ words.pathChoose }}</Button>
-      <Button v-if="path !== ''" variant="ghost" size="small" @click="onClear">
-        {{ words.pathClear }}
-      </Button>
-    </span>
+    </template>
+    <template v-else>
+      <span v-for="item in paths" :key="item" class="settings__path-line">
+        <span class="settings__path-label" :title="item" data-testid="setting-path">
+          {{ formatPathLabel(item) }}
+        </span>
+        <Button variant="ghost" size="small" @click="onClear(item)">
+          {{ words.pathClear }}
+        </Button>
+      </span>
+      <span class="settings__path-line">
+        <Button variant="outline" size="small" class="settings__path-choose" @click="onChoose">
+          {{ words.pathChoose }}
+        </Button>
+      </span>
+    </template>
     <span v-if="problem !== ''" class="settings__path-problem" role="alert">{{ problem }}</span>
   </span>
 </template>
@@ -90,8 +117,9 @@ function onClear() {
   font-size: var(--numen-text-2);
 }
 
-.settings__path-label--none {
-  color: var(--numen-hushed);
+.settings__path-choose {
+  background-color: var(--numen-field-bg, var(--numen-surface));
+  border-color: var(--numen-field-rule, var(--numen-rule));
 }
 
 .settings__path-problem {

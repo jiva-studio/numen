@@ -146,7 +146,7 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
       id: manifest.id,
       settings: (manifest.settings ?? [])
         .filter((one) => one.palette)
-        .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'window' })),
+        .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'settings' })),
       declared: (manifest.commands ?? [])
         .filter((one) => !one.hiddenInPalette)
         .map((one) => ({ text: one.title, group: one.contentTypes?.length ? 'file' : 'window' })),

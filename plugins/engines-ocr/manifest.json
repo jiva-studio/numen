@@ -17,6 +17,7 @@
     {
       "id": "recognise",
       "title": "Recognise text",
+      "icon": "scan-text",
       "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
       "hiddenInPalette": true
     }

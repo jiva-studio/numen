@@ -62,6 +62,11 @@ func newIndexWorker(
 			if state.Indexing.Progress == nil {
 				return 0, 0, errNoProgress
 			}
+			if embedder != nil {
+				model := embedder.GetModel()
+				state.Indexing.Model.Store(model.String())
+				state.Indexing.Recipe.Store(model.Recipe())
+			}
 			return state.Indexing.Progress.GetProgress(ctx, v.ID, text(&state.Indexing.Recipe))
 		},
 		Events: indexEvents{state: state, out: out},

@@ -100,6 +100,7 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		PluginId:     entry.PluginID,
 		Id:           entry.Command.ID,
 		Title:        entry.Command.Title,
+		Icon:         entry.Command.Icon,
 		ContentTypes: getContentTypeTexts(entry.Command.ContentTypes),
 		Extensions:   extensions,
 		Arguments:    arguments,

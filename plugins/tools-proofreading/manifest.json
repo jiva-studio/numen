@@ -26,6 +26,7 @@
     {
       "id": "proofread",
       "title": "Proofread text",
+      "icon": "spell-check",
       "contentTypes": ["*/*"],
       "hiddenInPalette": true
     }
@@ -39,9 +40,21 @@
       "default": "agent",
       "options": [
         { "value": "agent", "title": "Agent", "detail": "Uses a configured Numen agent" },
-        { "value": "openrouter", "title": "OpenRouter", "detail": "Direct parallel batch requests via OpenRouter API" },
-        { "value": "openai", "title": "OpenAI", "detail": "Direct parallel batch requests via OpenAI API" },
-        { "value": "custom", "title": "Custom service", "detail": "Any OpenAI-compatible chat completions API" }
+        {
+          "value": "openrouter",
+          "title": "OpenRouter",
+          "detail": "Direct parallel batch requests via OpenRouter API"
+        },
+        {
+          "value": "openai",
+          "title": "OpenAI",
+          "detail": "Direct parallel batch requests via OpenAI API"
+        },
+        {
+          "value": "custom",
+          "title": "Custom service",
+          "detail": "Any OpenAI-compatible chat completions API"
+        }
       ]
     },
     {
@@ -79,18 +92,50 @@
         "setting": "provider",
         "options": {
           "openrouter": [
-            { "value": "google/gemini-2.5-flash", "title": "Gemini 2.5 Flash", "detail": "Fast, low-cost batch proofreading · OpenRouter" },
-            { "value": "openai/gpt-4o-mini", "title": "GPT-4o mini", "detail": "Balanced speed and accuracy · OpenRouter" },
-            { "value": "anthropic/claude-3.5-haiku", "title": "Claude 3.5 Haiku", "detail": "High-accuracy text editing · OpenRouter" },
-            { "value": "deepseek/deepseek-chat", "title": "DeepSeek V3", "detail": "Cost-effective bulk proofreading · OpenRouter" }
+            {
+              "value": "google/gemini-2.5-flash",
+              "title": "Gemini 2.5 Flash",
+              "detail": "Fast, low-cost batch proofreading · OpenRouter"
+            },
+            {
+              "value": "openai/gpt-4o-mini",
+              "title": "GPT-4o mini",
+              "detail": "Balanced speed and accuracy · OpenRouter"
+            },
+            {
+              "value": "anthropic/claude-3.5-haiku",
+              "title": "Claude 3.5 Haiku",
+              "detail": "High-accuracy text editing · OpenRouter"
+            },
+            {
+              "value": "deepseek/deepseek-chat",
+              "title": "DeepSeek V3",
+              "detail": "Cost-effective bulk proofreading · OpenRouter"
+            }
           ],
           "openai": [
-            { "value": "gpt-4o-mini", "title": "GPT-4o mini", "detail": "Fast, low-cost proofreading · OpenAI" },
-            { "value": "gpt-4.1-mini", "title": "GPT-4.1 mini", "detail": "High accuracy · OpenAI" },
-            { "value": "gpt-4.1-nano", "title": "GPT-4.1 nano", "detail": "Lowest cost bulk proofreading · OpenAI" }
+            {
+              "value": "gpt-4o-mini",
+              "title": "GPT-4o mini",
+              "detail": "Fast, low-cost proofreading · OpenAI"
+            },
+            {
+              "value": "gpt-4.1-mini",
+              "title": "GPT-4.1 mini",
+              "detail": "High accuracy · OpenAI"
+            },
+            {
+              "value": "gpt-4.1-nano",
+              "title": "GPT-4.1 nano",
+              "detail": "Lowest cost bulk proofreading · OpenAI"
+            }
           ],
           "custom": [
-            { "value": "gpt-4o-mini", "title": "gpt-4o-mini", "detail": "OpenAI-compatible model ID" }
+            {
+              "value": "gpt-4o-mini",
+              "title": "gpt-4o-mini",
+              "detail": "OpenAI-compatible model ID"
+            }
           ]
         }
       }

@@ -8,6 +8,7 @@ type PluginSetting struct {
 	Description string
 	DefaultJSON string
 	Palette     bool
+	Icon        string
 	Options     PluginSettingOptions
 	Min         *float64
 	Max         *float64

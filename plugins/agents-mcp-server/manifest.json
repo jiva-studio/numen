@@ -6,6 +6,7 @@
   "description": "Connects external AI apps to your open vault",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "activationEvents": ["*"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
@@ -15,5 +16,17 @@
     "type": "process",
     "entrypoint": "bin/agents-mcp-server",
     "serviceName": "numen.v1.McpServerService"
-  }
+  },
+  "settings": [
+    {
+      "key": "port",
+      "type": "number",
+      "title": "Port",
+      "description": "Local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp and SSE at /sse)",
+      "default": 3333,
+      "min": 1024,
+      "max": 65535,
+      "step": 1
+    }
+  ]
 }

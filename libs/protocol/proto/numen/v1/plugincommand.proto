@@ -97,6 +97,10 @@ message PluginCommand {
 
   // The arguments, in the order a person is asked for them.
   repeated CommandArgument arguments = 5;
+
+  // The icon the command shows in the palette, by its Lucide name. Empty shows
+  // the default plugin command icon.
+  string icon = 7;
 }
 
 // CommandArgument is one argument a command takes.

@@ -43,3 +43,26 @@ func TestACPAgentFromConfig(t *testing.T) {
 		t.Errorf("got %+v", agents[0])
 	}
 }
+
+func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
+	s := &agentServer{
+		discover: func() []acpAgent {
+			return discoverACPAgentsWithLookup(func(binary string) (string, bool) {
+				if binary == "gemini" {
+					return "/usr/local/bin/gemini", true
+				}
+				return "", false
+			})
+		},
+	}
+	s.applyConfig(map[string]string{
+		"executable_path": "/usr/bin/claude-code-acp\n/opt/bin/codex-acp",
+	})
+	agents := s.getACPAgents()
+	if len(agents) != 3 {
+		t.Fatalf("expected 3 agents, got %d: %+v", len(agents), agents)
+	}
+	if agents[0].Program != "claude-code-acp" || agents[1].Program != "codex-acp" || agents[2].Program != "gemini" {
+		t.Errorf("unexpected agents: %+v", agents)
+	}
+}

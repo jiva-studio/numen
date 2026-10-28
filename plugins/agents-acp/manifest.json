@@ -21,8 +21,8 @@
     {
       "key": "executable_path",
       "type": "file",
-      "title": "Executable Path",
-      "description": "Path to the ACP agent executable. Empty finds it automatically.",
+      "title": "Executable Paths",
+      "description": "Installed ACP agents are discovered automatically. Choose one or more custom ACP agent executables to add them.",
       "default": ""
     }
   ]

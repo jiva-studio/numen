@@ -106,6 +106,7 @@ export const settingsCore: SettingsPort = {
             description: s.description,
             default: defaultValue,
             palette: s.palette,
+            ...(s.icon ? { icon: s.icon } : {}),
             options: s.options.length > 0 ? s.options.map(readOption) : undefined,
             optionsBy: s.optionsBy
               ? {

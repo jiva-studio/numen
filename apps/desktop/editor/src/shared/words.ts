@@ -39,6 +39,7 @@ export const WORDS = {
   noteGroupTitle: 'Note',
   overFile: 'File',
   overWindow: 'General',
+  overSettings: 'Settings',
   overVault: 'Vault',
   beside: 'Open beside',
   child: 'New child note',

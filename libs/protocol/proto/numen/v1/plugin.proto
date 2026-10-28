@@ -59,6 +59,8 @@ message PluginSetting {
   PluginSettingCondition when = 13;
   // The file extensions a setting of type file takes, each with its leading dot. Empty takes any file.
   repeated string accept = 14;
+  // The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
+  string icon = 15;
 }
 
 // PluginSettingOption is one value an enum setting can hold.

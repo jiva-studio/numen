@@ -15,7 +15,8 @@
       "title": "Nest headings under notes",
       "description": "Show the headings of a note under its node.",
       "default": true,
-      "palette": true
+      "palette": true,
+      "icon": "waypoints"
     },
     {
       "key": "heading_limit",

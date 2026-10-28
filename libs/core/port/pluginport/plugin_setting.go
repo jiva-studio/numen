@@ -155,25 +155,46 @@ func (m PluginManifest) ResolveSettings(stored map[string]any) map[string]any {
 // false where it holds none.
 func (m PluginManifest) resolveValue(s PluginManifestSetting, values map[string]any) (any, bool) {
 	value, ok := values[s.Key]
-	if !ok && s.Default != nil {
-		value, ok = s.Default, true
-	}
 	if s.OptionsBy == nil {
+		if !ok && s.Default != nil {
+			return s.Default, true
+		}
 		return value, ok
 	}
-	if s.Type == SettingTypeString {
-		if str, isStr := value.(string); ok && isStr && str != "" {
-			return value, true
-		}
-	}
 	options := m.GetSettingOptions(s, values)
-	if _, isOption := options.Find(FormatSettingValue(value)); ok && isOption {
+	if ok && s.isAcceptedOptionValue(options, value) {
 		return value, true
 	}
-	if len(options) == 0 {
-		return nil, false
+	if len(options) > 0 {
+		return options[0].Value, true
 	}
-	return options[0].Value, true
+	if s.Default != nil {
+		return s.Default, true
+	}
+	return nil, false
+}
+
+func (s PluginManifestSetting) isAcceptedOptionValue(options PluginSettingOptions, value any) bool {
+	if _, isOption := options.Find(FormatSettingValue(value)); isOption {
+		return true
+	}
+	if s.Type != SettingTypeString {
+		return false
+	}
+	str, isStr := value.(string)
+	return isStr && str != "" && !s.hasOptionInAnyGroup(str)
+}
+
+func (s PluginManifestSetting) hasOptionInAnyGroup(value string) bool {
+	if s.OptionsBy == nil {
+		return false
+	}
+	for _, list := range s.OptionsBy.Options {
+		if _, ok := list.Find(value); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // IsSecretActive reports whether the secret is handed to the plugin under the values in force.

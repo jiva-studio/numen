@@ -5,6 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginSettingCommands, useSettings } from './useSettings'
+import { getNamedIcon } from '@/shared/icons'
 import { WORDS } from '@/shared/words'
 import type { Model } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -181,6 +182,7 @@ describe('the settings tab', () => {
           description: 'Scan on drop',
           default: false,
           palette: true,
+          icon: 'scan-text',
         },
         {
           key: 'hiddenSetting',
@@ -198,8 +200,9 @@ describe('the settings tab', () => {
       {
         id: 'plugin-setting:plugin.ocr:autoScan',
         text: 'OCR Plugin: Auto Scan',
-        group: 'window',
+        group: 'settings',
         needs: 'choosing',
+        icon: getNamedIcon('scan-text'),
         isOffered: expect.any(Function),
       },
     ])

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -78,8 +79,11 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 		s.provider = provider
 	}
 	model := values["model"]
-	if model != "" {
+	if model != "" && !isLocalPresetModel(model) {
 		s.remoteModel = model
+	}
+	if s.provider != providerLocal && s.provider != "" && s.remoteModel == "" {
+		s.remoteModel = getDefaultRemoteModel(s.provider)
 	}
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
@@ -98,9 +102,25 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	}
 }
 
+func isLocalPresetModel(model string) bool {
+	switch model {
+	case "Xenova/bge-m3", "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "bge-m3", "bge-m3-int8":
+		return true
+	default:
+		return false
+	}
+}
+
+func getDefaultRemoteModel(provider string) string {
+	if provider == "openrouter" {
+		return "openai/text-embedding-3-small"
+	}
+	return "text-embedding-3-small"
+}
+
 func resolveModelDimensions(model string) int {
 	switch model {
-	case "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5":
+	case "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "Xenova/all-MiniLM-L6-v2", "Xenova/all-MiniLM-L12-v2":
 		return 384
 	case "openai/text-embedding-3-small", "text-embedding-3-small", "openai/text-embedding-ada-002", "text-embedding-ada-002":
 		return 1536
@@ -118,19 +138,24 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 		return
 	}
 	prevRepo := s.localModel.Name
+	prevName := s.localName
 	switch model {
-	case "", "Xenova/bge-m3", "bge-m3", "bge-m3-int8", "text-embedding-3-small":
-		_, defLocal := engine.DefaultBGEM3Config()
-		applyModelOverrides(&s.modelInfo, &defLocal)
+	case "", "Xenova/bge-m3", "bge-m3", "bge-m3-int8",
+		"openai/text-embedding-3-small", "text-embedding-3-small",
+		"openai/text-embedding-3-large", "text-embedding-3-large",
+		"openai/text-embedding-ada-002", "text-embedding-ada-002",
+		"baai/bge-m3", "qwen/qwen3-embedding-8b":
+		defInfo, defLocal := engine.DefaultBGEM3Config()
+		applyModelOverrides(&defInfo, &defLocal)
 		applyRuntimeEnv(&defLocal)
 		s.localModel = defLocal
-		s.localName = "bge-m3"
+		s.localName = defInfo.Name
 	default:
 		s.localModel = s.localModel.WithRepository(model)
 		s.localModel.File = ""
 		s.localName = model
 	}
-	if s.localModel.Name != prevRepo && s.embedder != nil {
+	if (s.localModel.Name != prevRepo || s.localName != prevName) && s.embedder != nil {
 		_ = s.embedder.Close()
 		s.embedder = nil
 	}
@@ -213,7 +238,13 @@ func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error)
 		return s.embedder, nil
 	}
 
-	emb, err := s.open(ctx, s.modelInfo, s.localModel)
+	localInfo := s.modelInfo
+	if !s.isMock {
+		localInfo.Name = s.localName
+		localInfo.Dimensions = resolveModelDimensions(s.localName)
+		applyDimensionEnv(&localInfo)
+	}
+	emb, err := s.open(ctx, localInfo, s.localModel)
 	if err != nil {
 		return nil, fmt.Errorf("opening onnx embedding engine: %w", err)
 	}
@@ -264,7 +295,8 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 		return nil, nil
 	}
 
-	if key, baseURL := s.getService(); key != "" && baseURL != "" {
+	key, baseURL := s.getService()
+	if key != "" && baseURL != "" {
 		model := s.getModelName()
 		vectors := make([][]float32, len(texts))
 		for i, t := range texts {
@@ -280,6 +312,12 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 			vectors[i] = vec
 		}
 		return vectors, nil
+	}
+	if s.isRemoteProvider() {
+		if baseURL == "" {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("embedding service URL is not configured"))
+		}
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("embedding API key is not configured"))
 	}
 
 	emb, err := s.getEmbedder(ctx)
@@ -308,6 +346,13 @@ type openAIEmbeddingResponse struct {
 		Embedding []float32 `json:"embedding"`
 		Index     int       `json:"index"`
 	} `json:"data"`
+}
+
+// isRemoteProvider reports whether the configured provider is a remote HTTP service.
+func (s *embeddingServer) isRemoteProvider() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return !s.isMock && s.provider != "" && s.provider != providerLocal
 }
 
 // getService returns the key Configure handed over and the endpoint of the

@@ -70,7 +70,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
       assert.deepEqual(await getPluginCommands('desktop.editor', at), [
         {
           id: 'tools.lantern',
-          settings: [{ text: 'Lantern: Glow', group: 'window' }],
+          settings: [{ text: 'Lantern: Glow', group: 'settings' }],
           declared: [
             { text: 'Light a file', group: 'file' },
             { text: 'Light the room', group: 'window' },

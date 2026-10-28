@@ -28,6 +28,7 @@ import { createPluginRetry, createSecretStore, createSettingsStore } from '@/ent
 import { useSettingsTab } from '@/pages/settings'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
+import { getNamedIcon } from '@/shared/icons'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
@@ -141,8 +142,9 @@ export function createPluginSettingCommands(plugins: readonly PluginInfo[]): rea
       result.push({
         id: `plugin-setting:${plugin.id}:${setting.key}`,
         text: `${plugin.name}: ${setting.title}`,
-        group: 'window',
+        group: 'settings',
         needs: 'choosing',
+        ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
         isOffered: () => true,
       })
     }

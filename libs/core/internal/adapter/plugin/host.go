@@ -1458,6 +1458,7 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			Description: s.Description,
 			DefaultJSON: defJSON,
 			Palette:     s.Palette,
+			Icon:        s.Icon,
 			Options:     s.Options,
 			Min:         minPtr,
 			Max:         maxPtr,

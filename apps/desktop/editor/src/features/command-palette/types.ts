@@ -24,7 +24,7 @@ export interface CommandsDeps {
 }
 
 /** Which group a command is offered in. */
-export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
+export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 
 /**
  * Which step the palette is on: one being asked for, or the list of commands.

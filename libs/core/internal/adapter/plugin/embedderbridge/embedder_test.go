@@ -26,6 +26,8 @@ import (
 
 type mockEmbeddingServer struct {
 	getModelCalls atomic.Int32
+	modelName     atomic.Value
+	dimensions    atomic.Int32
 }
 
 func (s *mockEmbeddingServer) GetEmbeddingModel(
@@ -33,9 +35,17 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	_ *connect.Request[v1.GetEmbeddingModelRequest],
 ) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
 	s.getModelCalls.Add(1)
+	name := "test-model"
+	if v, ok := s.modelName.Load().(string); ok && v != "" {
+		name = v
+	}
+	dims := int32(384)
+	if d := s.dimensions.Load(); d > 0 {
+		dims = d
+	}
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name:        "test-model",
-		Dimensions:  384,
+		Name:        name,
+		Dimensions:  dims,
 		MaxTokens:   256,
 		Pooling:     "mean",
 		From:        "test-provider",
@@ -176,5 +186,12 @@ func TestEmbedderBridge(t *testing.T) {
 	empty, err := bridge.Embed(ctx, nil)
 	if err != nil || empty != nil {
 		t.Errorf("expected nil vectors for empty input, got %v, err=%v", empty, err)
+	}
+
+	mockServer.modelName.Store("updated-model")
+	mockServer.dimensions.Store(1024)
+	currentModel := bridge.GetModel()
+	if currentModel.Name != "updated-model" || currentModel.Dimensions != 1024 {
+		t.Errorf("GetModel() after update = %+v, want updated-model@1024", currentModel)
 	}
 }

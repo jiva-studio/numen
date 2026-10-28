@@ -15,6 +15,7 @@
     {
       "id": "transcribe",
       "title": "Transcribe a recording",
+      "icon": "audio-lines",
       "contentTypes": ["audio/*", "video/*"],
       "hiddenInPalette": true
     }
@@ -156,7 +157,8 @@
           ]
         }
       ],
-      "palette": true
+      "palette": true,
+      "icon": "audio-lines"
     }
   ]
 }

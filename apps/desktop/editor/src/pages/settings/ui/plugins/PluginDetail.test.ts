@@ -446,6 +446,50 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(row.find('.settings__fixed').text()).toBe('English')
   })
 
+  it('falls back to the active provider option when a string setting holds an option of another provider', () => {
+    const embeddingsPlugin = createPluginInfo('md.numen.engines.embeddings', 'Embeddings', {
+      settings: [
+        {
+          key: 'provider',
+          type: 'enum',
+          title: 'Provider',
+          description: '',
+          default: 'local',
+          options: [option('local', 'Local'), option('openrouter', 'OpenRouter')],
+        },
+        {
+          key: 'model',
+          type: 'string',
+          title: 'Model',
+          description: '',
+          default: 'Xenova/bge-m3',
+          optionsBy: {
+            setting: 'provider',
+            options: {
+              local: [
+                option('Xenova/bge-m3', 'BGE-M3'),
+                option('Xenova/multilingual-e5-small', 'E5 Small'),
+              ],
+              openrouter: [option('openai/text-embedding-3-small', 'OpenAI Small')],
+            },
+          },
+        },
+      ],
+    })
+    const { wrapper } = createDetail(embeddingsPlugin, {
+      plugins: {
+        'md.numen.engines.embeddings': {
+          provider: 'local',
+          model: 'openai/text-embedding-3-small',
+        },
+      },
+    })
+    const row = wrapper
+      .findAllComponents(SettingRow)
+      .find((r) => r.props('at') === 'md.numen.engines.embeddings-model')!
+    expect(row.findComponent(Select).props('modelValue')).toBe('Xenova/bge-m3')
+  })
+
   it('shows the settings and the key of a provider only while it is chosen, placing the key after provider', () => {
     const local = createDetail(LINKED)
     expect(findRow(local.wrapper, 'url')).toBeUndefined()
@@ -486,6 +530,33 @@ describe('PluginDetail with settings that follow one another', () => {
       value: '""',
     })
   })
+
+  it('hides the path label when no path is chosen and supports multiple paths', async () => {
+    const emptyDetail = createDetail(LINKED)
+    const emptyRow = findRow(emptyDetail.wrapper, 'dictionary')!
+    expect(emptyRow.find('[data-testid="setting-path"]').exists()).toBe(false)
+
+    const multiDetail = createDetail(LINKED, {
+      plugins: {
+        'test.linked': {
+          dictionary: '/usr/bin/claude-code-acp\n/usr/local/bin/codex-acp',
+        },
+      },
+    })
+    const multiRow = findRow(multiDetail.wrapper, 'dictionary')!
+    const labels = multiRow.findAll('[data-testid="setting-path"]')
+    expect(labels).toHaveLength(2)
+    expect(labels[0]!.text()).toBe('…/bin/claude-code-acp')
+    expect(labels[1]!.text()).toBe('…/bin/codex-acp')
+
+    const clearButtons = multiRow.findAll('button').filter((btn) => btn.text() === words.pathClear)
+    expect(clearButtons).toHaveLength(2)
+    await clearButtons[0]!.trigger('click')
+    expect(multiDetail.recordedWrites).toContainEqual({
+      at: ['plugins', 'test.linked', 'dictionary'],
+      value: '"/usr/local/bin/codex-acp"',
+    })
+  })
 })
 
 describe('the data of a plugin', () => {
@@ -517,6 +588,7 @@ describe('the data of a plugin', () => {
 
   it('deletes the data only after the person confirms', async () => {
     const { wrapper, deletePluginData } = await createDataDetail(3)
+    expect(wrapper.find('.plugin-detail__data').exists()).toBe(true)
     expect(wrapper.text()).toContain(words.pluginDataDetail(3))
 
     await findButton(wrapper, words.pluginDataDelete)!.trigger('click')

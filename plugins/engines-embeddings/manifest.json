@@ -45,7 +45,7 @@
         {
           "value": "local",
           "title": "Local",
-          "detail": "BGE-M3 on this machine: 100+ languages, 1024 dimensions"
+          "detail": "Runs ONNX embedding models locally on this machine"
         },
         {
           "value": "openrouter",
@@ -85,23 +85,63 @@
         "setting": "provider",
         "options": {
           "local": [
-            { "value": "Xenova/bge-m3", "title": "BGE-M3 (int8)", "detail": "100+ languages, 1024 dims · Hugging Face" },
-            { "value": "Xenova/multilingual-e5-small", "title": "Multilingual E5 Small", "detail": "100 languages, 384 dims · Hugging Face" },
-            { "value": "Xenova/bge-small-en-v1.5", "title": "BGE Small English v1.5", "detail": "English, 384 dims · Hugging Face" }
+            {
+              "value": "Xenova/bge-m3",
+              "title": "BGE-M3 (int8)",
+              "detail": "100+ languages, 1024 dims · Hugging Face"
+            },
+            {
+              "value": "Xenova/multilingual-e5-small",
+              "title": "Multilingual E5 Small",
+              "detail": "100 languages, 384 dims · Hugging Face"
+            },
+            {
+              "value": "Xenova/bge-small-en-v1.5",
+              "title": "BGE Small English v1.5",
+              "detail": "English, 384 dims · Hugging Face"
+            }
           ],
           "openrouter": [
-            { "value": "openai/text-embedding-3-small", "title": "OpenAI: text-embedding-3-small", "detail": "1536 dims · OpenRouter" },
-            { "value": "openai/text-embedding-3-large", "title": "OpenAI: text-embedding-3-large", "detail": "3072 dims · OpenRouter" },
+            {
+              "value": "openai/text-embedding-3-small",
+              "title": "OpenAI: text-embedding-3-small",
+              "detail": "1536 dims · OpenRouter"
+            },
+            {
+              "value": "openai/text-embedding-3-large",
+              "title": "OpenAI: text-embedding-3-large",
+              "detail": "3072 dims · OpenRouter"
+            },
             { "value": "baai/bge-m3", "title": "BAAI: BGE-M3", "detail": "1024 dims · OpenRouter" },
-            { "value": "qwen/qwen3-embedding-8b", "title": "Qwen3 Embedding 8B", "detail": "4096 dims · OpenRouter" }
+            {
+              "value": "qwen/qwen3-embedding-8b",
+              "title": "Qwen3 Embedding 8B",
+              "detail": "4096 dims · OpenRouter"
+            }
           ],
           "openai": [
-            { "value": "text-embedding-3-small", "title": "text-embedding-3-small", "detail": "1536 dims · OpenAI" },
-            { "value": "text-embedding-3-large", "title": "text-embedding-3-large", "detail": "3072 dims · OpenAI" },
-            { "value": "text-embedding-ada-002", "title": "text-embedding-ada-002", "detail": "1536 dims · OpenAI" }
+            {
+              "value": "text-embedding-3-small",
+              "title": "text-embedding-3-small",
+              "detail": "1536 dims · OpenAI"
+            },
+            {
+              "value": "text-embedding-3-large",
+              "title": "text-embedding-3-large",
+              "detail": "3072 dims · OpenAI"
+            },
+            {
+              "value": "text-embedding-ada-002",
+              "title": "text-embedding-ada-002",
+              "detail": "1536 dims · OpenAI"
+            }
           ],
           "custom": [
-            { "value": "text-embedding-3-small", "title": "text-embedding-3-small", "detail": "OpenAI-compatible model ID" }
+            {
+              "value": "text-embedding-3-small",
+              "title": "text-embedding-3-small",
+              "detail": "OpenAI-compatible model ID"
+            }
           ]
         }
       }

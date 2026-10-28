@@ -3,6 +3,7 @@ package embedderbridge
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -27,6 +28,7 @@ type Embedder struct {
 	pluginID    string
 	service     bridge.Service[numenv1connect.EmbeddingServiceClient]
 	lease       *bridge.Lease
+	mu          sync.Mutex
 	model       embeddingport.EmbeddingModel
 	concurrency int
 }
@@ -43,24 +45,10 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		return nil, err
 	}
 
-	modelCtx, cancel := context.WithTimeout(ctx, transport.ModelInfoTimeout)
-	defer cancel()
-	resp, err := client.GetEmbeddingModel(modelCtx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
+	model, concurrency, err := readClientModel(ctx, plugin.Manifest.ID, client)
 	if err != nil {
 		_ = lease.Close()
-		return nil, fmt.Errorf("get embedding model %s: %w", plugin.Manifest.ID, err)
-	}
-	concurrency := 1
-	if resp.Msg.GetConcurrency() > 0 {
-		concurrency = int(resp.Msg.GetConcurrency())
-	}
-
-	model := embeddingport.EmbeddingModel{
-		Name:       resp.Msg.GetName(),
-		Dimensions: int(resp.Msg.GetDimensions()),
-		MaxTokens:  int(resp.Msg.GetMaxTokens()),
-		Pooling:    resp.Msg.GetPooling(),
-		From:       resp.Msg.GetFrom(),
+		return nil, err
 	}
 
 	return &Embedder{
@@ -73,8 +61,46 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 	}, nil
 }
 
-// GetModel returns the model the embedding plugin answered with when the bridge was opened.
+func readClientModel(
+	ctx context.Context,
+	pluginID string,
+	client numenv1connect.EmbeddingServiceClient,
+) (embeddingport.EmbeddingModel, int, error) {
+	modelCtx, cancel := context.WithTimeout(ctx, transport.ModelInfoTimeout)
+	defer cancel()
+	resp, err := client.GetEmbeddingModel(modelCtx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
+	if err != nil {
+		return embeddingport.EmbeddingModel{}, 0, fmt.Errorf("get embedding model %s: %w", pluginID, err)
+	}
+	concurrency := 1
+	if resp.Msg.GetConcurrency() > 0 {
+		concurrency = int(resp.Msg.GetConcurrency())
+	}
+	model := embeddingport.EmbeddingModel{
+		Name:       resp.Msg.GetName(),
+		Dimensions: int(resp.Msg.GetDimensions()),
+		MaxTokens:  int(resp.Msg.GetMaxTokens()),
+		Pooling:    resp.Msg.GetPooling(),
+		From:       resp.Msg.GetFrom(),
+	}
+	return model, concurrency, nil
+}
+
+// GetModel returns the active model of the embedding plugin.
 func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
+	if client, call, err := b.service.Open(context.Background()); err == nil {
+		model, concurrency, readErr := readClientModel(context.Background(), b.pluginID, client)
+		_ = call.Close()
+		if readErr == nil {
+			b.mu.Lock()
+			b.model = model
+			b.concurrency = concurrency
+			b.mu.Unlock()
+			return model
+		}
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	return b.model
 }
 
@@ -108,10 +134,13 @@ func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 
 // Concurrency returns how many batches the embedder runs in parallel.
 func (b *Embedder) Concurrency() int {
-	if b.concurrency <= 0 {
+	b.mu.Lock()
+	concurrency := b.concurrency
+	b.mu.Unlock()
+	if concurrency <= 0 {
 		return 1
 	}
-	return b.concurrency
+	return concurrency
 }
 
 // Close releases the active reference count for the embedding plugin in the host supervisor.

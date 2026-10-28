@@ -100,6 +100,7 @@ export interface Words extends EmptyWords {
   readonly noteGroupTitle: string
   readonly overFile: string
   readonly overWindow: string
+  readonly overSettings?: string
   readonly overVault: string
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   readonly noVault: string

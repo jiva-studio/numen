@@ -9,7 +9,7 @@ import (
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	return mount(s, &agentServer{})
+	return mount(s, &agentServer{discover: discoverInstalledACPAgents})
 }
 
 func mount(s *server.Server, agent *agentServer) error {

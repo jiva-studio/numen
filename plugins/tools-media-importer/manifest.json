@@ -23,6 +23,7 @@
     {
       "id": "import",
       "title": "Import from URL",
+      "icon": "link",
       "arguments": [
         {
           "name": "address",
@@ -41,16 +42,19 @@
     {
       "id": "download-text",
       "title": "Download text again",
+      "icon": "refresh-cw",
       "noteTypes": ["link"]
     },
     {
       "id": "download-copy",
       "title": "Download video",
+      "icon": "download",
       "noteTypes": ["link"]
     },
     {
       "id": "delete-copy",
       "title": "Delete downloaded video",
+      "icon": "trash-2",
       "noteTypes": ["link"]
     }
   ],

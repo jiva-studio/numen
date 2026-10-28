@@ -176,6 +176,7 @@ type PluginManifestSetting struct {
 	Description string               `json:"description"`
 	Default     any                  `json:"default"`
 	Palette     bool                 `json:"palette,omitempty"`
+	Icon        string               `json:"icon,omitempty"`
 	Options     PluginSettingOptions `json:"options,omitempty"`
 	Min         float64              `json:"min,omitempty"`
 	Max         float64              `json:"max,omitempty"`

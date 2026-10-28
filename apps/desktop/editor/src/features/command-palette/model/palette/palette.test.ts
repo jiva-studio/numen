@@ -152,10 +152,8 @@ describe('the commands as they open', () => {
 
     expect(getItemIds(commands.groups)).toStrictEqual({
       note: ['read', 'child', 'parent', 'jump', 'title', 'remove', 'copy'],
-      window: [
-        'note',
-        'close',
-        'find',
+      window: ['note', 'close', 'find'],
+      settings: [
         'appearance',
         'mode',
         'interfaceScale',
@@ -228,9 +226,8 @@ describe('what is in front', () => {
     const { commands } = createPalette({ isReady: false })
 
     expect(getItemIds(commands.groups)).toStrictEqual({
-      window: [
-        'close',
-        'find',
+      window: ['close', 'find'],
+      settings: [
         'appearance',
         'mode',
         'interfaceScale',
@@ -385,6 +382,7 @@ describe('removing a note', () => {
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
       'note',
       'window',
+      'settings',
       'vault',
     ])
   })
@@ -684,6 +682,7 @@ describe('leaving a step', () => {
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
       'note',
       'window',
+      'settings',
       'vault',
     ])
   })

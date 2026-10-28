@@ -4,6 +4,7 @@
  */
 import { computed, shallowRef } from 'vue'
 import { registerCommand, type Command } from '@/features/command-palette'
+import { getNamedIcon } from '@/shared/icons'
 import {
   canRunOn,
   listDeclaredCommands,
@@ -28,6 +29,7 @@ export function createDeclaredPaletteCommands(
       id: getPaletteId(one),
       text: one.title,
       group: hasFiles ? 'file' : 'window',
+      ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
       ...(one.arguments.length > 0
         ? {
             needs: 'arguments' as const,

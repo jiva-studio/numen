@@ -26,6 +26,8 @@ type Handler struct {
 	Vaults     VaultProvider
 	// ChoosePath is nil where the application has no window to put a picker in.
 	ChoosePath *setting.ChoosePluginPath
+	// OnPluginChange is called when a plugin setting or secret is updated.
+	OnPluginChange func()
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -63,7 +65,11 @@ func (h *Handler) WriteSettings(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	content := make([]setting.Setting, 0, len(r.Msg.GetSettings()))
+	hasPluginEdit := false
 	for _, one := range r.Msg.GetSettings() {
+		if len(one.GetAt()) >= 2 && one.GetAt()[0] == "plugins" {
+			hasPluginEdit = true
+		}
 		content = append(content, setting.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
 	if err := h.Write.Execute(content); err != nil {
@@ -71,6 +77,9 @@ func (h *Handler) WriteSettings(
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	if hasPluginEdit && h.OnPluginChange != nil {
+		h.OnPluginChange()
 	}
 	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
 }
@@ -124,6 +133,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 				Description: s.Description,
 				DefaultJson: s.DefaultJSON,
 				Palette:     s.Palette,
+				Icon:        s.Icon,
 				Options:     newWireOptions(s.Options),
 				Min:         s.Min,
 				Max:         s.Max,
@@ -176,6 +186,9 @@ func (h *Handler) WritePluginSecret(
 	if err := h.WriteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
+	if h.OnPluginChange != nil {
+		h.OnPluginChange()
+	}
 	return connect.NewResponse(&v1.WritePluginSecretResponse{}), nil
 }
 
@@ -188,6 +201,9 @@ func (h *Handler) DeletePluginSecret(
 	}
 	if err := h.DeleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+	if h.OnPluginChange != nil {
+		h.OnPluginChange()
 	}
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }

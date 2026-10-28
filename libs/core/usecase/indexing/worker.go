@@ -319,6 +319,7 @@ func (p *pass) embed(ctx context.Context) {
 	}
 	owing, owes := w.getOwedVectors(ctx, p.v)
 	if !owes {
+		w.events.FinishTask(MakingVectors)
 		return
 	}
 

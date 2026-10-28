@@ -14,7 +14,7 @@ export function findRowIcon(
 ) {
   if (commands.open.value) {
     const picked = commands.findNoteType(id)
-    return picked ? getNoteIcon(picked) : (findIcon(id) ?? commands.findCommandIcon(id))
+    return picked ? getNoteIcon(picked) : (commands.findCommandIcon(id) ?? findIcon(id))
   }
   if (id === CREATE_NOTE_ID) return findIcon('note')
   const type = search.findNoteType(id)

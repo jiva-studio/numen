@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { findIcon } from '@/shared/icons'
+import { findIcon, getNamedIcon } from '@/shared/icons'
 import { getNoteIcon, registerNoteIcon } from '@/entities/note'
 import { createCommands, createPathCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
@@ -36,6 +36,14 @@ describe('the icon a command is drawn with', () => {
 
   it('is there for every command the palette draws', () => {
     for (const one of createCommands(words)) expect(findIcon(one.id), one.id).not.toBeNull()
+  })
+
+  it('is there for declared plugin commands and plugin settings, with distinct icons', () => {
+    expect(findIcon('plugin-command:org.example.custom:run')).not.toBeNull()
+    expect(findIcon('plugin-setting:org.example.custom:toggle')).not.toBeNull()
+    expect(findIcon('settings')).not.toBe(findIcon('plugin-setting:org.example.custom:toggle'))
+    expect(getNamedIcon('layers')).not.toBe(getNamedIcon('layout-template'))
+    expect(getNamedIcon('audio-lines')).not.toBe(getNamedIcon('waypoints'))
   })
 
   it('is there for every way into a vault the welcome screen offers', () => {

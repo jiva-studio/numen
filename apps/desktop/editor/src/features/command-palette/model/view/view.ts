@@ -55,6 +55,7 @@ export function getPaletteView(state: ViewState) {
     const note = items('note')
     const file = items('file')
     const window = items('window')
+    const settings = items('settings')
     const vault = items('vault')
 
     const groups: PaletteGroup[] = []
@@ -66,6 +67,9 @@ export function getPaletteView(state: ViewState) {
     }
     if (window.length > 0) {
       groups.push({ id: 'window', title: words.overWindow, items: window })
+    }
+    if (settings.length > 0) {
+      groups.push({ id: 'settings', title: words.overSettings ?? words.settings, items: settings })
     }
     if (vault.length > 0) {
       groups.push({ id: 'vault', title: words.overVault, items: vault })

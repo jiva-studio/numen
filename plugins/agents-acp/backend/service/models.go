@@ -22,25 +22,42 @@ func (s *agentServer) getACPAgents() []acpAgent {
 		return s.acpAgents()
 	}
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	agents := getACPAgentsFromCommands(s.commands)
-	if s.executablePath != "" {
-		hasCustom := false
-		for _, a := range agents {
-			if a.Program == "acp" || (len(a.Command) > 0 && a.Command[0] == s.executablePath) {
-				hasCustom = true
-				break
+	commands := s.commands
+	execPaths := slices.Clone(s.executablePaths)
+	discover := s.discover
+	s.mu.RUnlock()
+
+	agents := getACPAgentsFromCommands(commands)
+	if discover != nil {
+		for _, candidate := range discover() {
+			hasAgent := slices.ContainsFunc(agents, func(a acpAgent) bool {
+				return a.Program == candidate.Program || (len(a.Command) > 0 && len(candidate.Command) > 0 && a.Command[0] == candidate.Command[0])
+			})
+			if !hasAgent {
+				agents = append(agents, candidate)
 			}
 		}
-		if !hasCustom {
-			agents = append(agents, acpAgent{
-				Program: "acp",
-				Title:   "ACP Agent",
-				Command: []string{s.executablePath},
-			})
-			slices.SortFunc(agents, func(a, b acpAgent) int { return strings.Compare(a.Program, b.Program) })
-		}
 	}
+	for _, execPath := range execPaths {
+		hasCustom := slices.ContainsFunc(agents, func(a acpAgent) bool {
+			return len(a.Command) > 0 && a.Command[0] == execPath
+		})
+		if hasCustom {
+			continue
+		}
+		program := "acp"
+		title := "ACP Agent"
+		if len(execPaths) > 1 {
+			program = getExecutableProgramName(execPath)
+			title = program
+		}
+		agents = append(agents, acpAgent{
+			Program: program,
+			Title:   title,
+			Command: []string{execPath},
+		})
+	}
+	slices.SortFunc(agents, func(a, b acpAgent) int { return strings.Compare(a.Program, b.Program) })
 	return agents
 }
 
