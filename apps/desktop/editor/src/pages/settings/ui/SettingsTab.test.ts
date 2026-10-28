@@ -34,7 +34,7 @@ const MODELS: readonly Model[] = [
   {
     namedAt: ['agent', 'claude', 'model'],
     name: '',
-    title: 'Whatever this machine answers with',
+    title: 'Default model',
     group: '',
     isDefault: true,
     writes: [{ at: ['agent', 'claude', 'model'], value: '""' }],

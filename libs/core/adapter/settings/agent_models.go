@@ -65,7 +65,7 @@ func getModelsOfProgram(pos []string, program agentport.AgentProgram, set string
 	case len(program.Models) == 0 && set != "":
 		models = []settingsport.Model{{Path: pos, Name: set, Title: set, IsDefault: true}}
 	case len(program.Models) == 0:
-		models = []settingsport.Model{{Path: pos, Title: "Whatever this machine answers with", IsDefault: true}}
+		models = []settingsport.Model{{Path: pos, Title: "Default model", IsDefault: true}}
 	default:
 		models = getReportedModels(pos, set, program.Models)
 	}
