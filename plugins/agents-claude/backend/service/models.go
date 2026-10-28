@@ -135,8 +135,10 @@ type modelList struct {
 
 // modelCache keeps the lists of models by the command that listed them.
 type modelCache struct {
-	mu    sync.Mutex
-	lists map[string]modelList
+	mu       sync.Mutex
+	lists    map[string]modelList
+	inFlight map[string]bool
+	isAsync  bool
 }
 
 // get returns the current list of models for the command, listing them where none is current.
@@ -144,10 +146,40 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 	key := strings.Join(command, "\x00")
 	c.mu.Lock()
 	one, found := c.lists[key]
-	c.mu.Unlock()
 	if found && time.Since(one.fetchedAt) < modelsLifetime {
+		c.mu.Unlock()
 		return one.models, nil
 	}
+	if c.isAsync {
+		if !c.inFlight[key] {
+			if c.inFlight == nil {
+				c.inFlight = make(map[string]bool)
+			}
+			c.inFlight[key] = true
+			cmdCopy := slices.Clone(command)
+			envCopy := slices.Clone(env)
+			go c.fetchInBackground(key, cmdCopy, envCopy)
+		}
+		c.mu.Unlock()
+		if found {
+			return one.models, nil
+		}
+		return fallbackModels, nil
+	}
+	c.mu.Unlock()
+	return c.fetchAndStore(ctx, key, command, env)
+}
+
+func (c *modelCache) fetchInBackground(key string, command, env []string) {
+	defer func() {
+		c.mu.Lock()
+		delete(c.inFlight, key)
+		c.mu.Unlock()
+	}()
+	_, _ = c.fetchAndStore(context.Background(), key, command, env)
+}
+
+func (c *modelCache) fetchAndStore(ctx context.Context, key string, command, env []string) ([]claudeModel, error) {
 	models, err := fetchModels(ctx, command, env)
 	if err != nil {
 		return nil, err

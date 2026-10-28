@@ -379,6 +379,7 @@ export const useWindow = () => {
     onAction: (pluginId) => settings.configured.openSettings(pluginId),
   })
   const isWritingTabs = ref(false)
+  const isLayoutReady = ref(false)
   const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs, isWriting: isWritingTabs })
 
   const closeTab = (id: string, hold?: () => void) => {
@@ -400,12 +401,18 @@ export const useWindow = () => {
     pluginLoader: base.pluginLoader,
     writeMessage: base.writeMessage,
     onLayoutStarted: () => {
+      isLayoutReady.value = true
       isWritingTabs.value = !isSecondaryWindow()
     },
   })
 
   const api = {
     runCommand,
+    openCurrentVault: () =>
+      void base.windowTabs.openPlacedTabs((kind, error) =>
+        base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+      ),
+    isLayoutReady,
     openSettings: (pluginId?: string, filter?: string) =>
       settings.configured.openSettings(pluginId, filter),
     commands: getCommands(ctx).commands,

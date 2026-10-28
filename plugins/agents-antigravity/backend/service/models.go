@@ -30,6 +30,8 @@ type modelCache[M any] struct {
 	isCached  bool
 	failedKey string
 	failedAt  time.Time
+	inFlight  map[string]bool
+	isAsync   bool
 	now       func() time.Time
 }
 
@@ -42,16 +44,45 @@ func (c *modelCache[M]) getNow() time.Time {
 
 func (c *modelCache[M]) get(ctx context.Context, key string, list func(context.Context) ([]M, error)) []M {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.isCached && c.key == key {
-		return c.models
+		models := c.models
+		c.mu.Unlock()
+		return models
 	}
 	if c.failedKey == key && c.getNow().Sub(c.failedAt) < failureBackoff {
+		c.mu.Unlock()
 		return nil
 	}
+	if c.isAsync {
+		if !c.inFlight[key] {
+			if c.inFlight == nil {
+				c.inFlight = make(map[string]bool)
+			}
+			c.inFlight[key] = true
+			go c.fetchInBackground(key, list)
+		}
+		c.mu.Unlock()
+		return nil
+	}
+	c.mu.Unlock()
+	return c.fetchAndStore(ctx, key, list)
+}
+
+func (c *modelCache[M]) fetchInBackground(key string, list func(context.Context) ([]M, error)) {
+	defer func() {
+		c.mu.Lock()
+		delete(c.inFlight, key)
+		c.mu.Unlock()
+	}()
+	c.fetchAndStore(context.Background(), key, list)
+}
+
+func (c *modelCache[M]) fetchAndStore(ctx context.Context, key string, list func(context.Context) ([]M, error)) []M {
 	asking, stop := context.WithTimeout(ctx, modelListLimit)
 	defer stop()
 	models, err := list(asking)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if err != nil {
 		if ctx.Err() == nil {
 			c.failedKey, c.failedAt = key, c.getNow()

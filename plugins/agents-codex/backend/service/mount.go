@@ -9,7 +9,9 @@ import (
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	agent := &agentServer{}
+	agent := &agentServer{
+		codexModels: codexModelCache{isAsync: true},
+	}
 	s.OnClose(func() { _ = agent.Close() })
 	s.SetUpdateConfig(agent.applyConfig)
 	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))

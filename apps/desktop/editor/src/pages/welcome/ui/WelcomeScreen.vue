@@ -70,7 +70,7 @@ function onOpen(id: string) {
   const one = props.vaultList.vaults.find((vault) => vault.id === id)
   if (!one) return
   if (id === props.vaultList.showing) {
-    props.runCommand('first', props.getTarget())
+    props.openCurrentVault?.()
     return
   }
   const vault: VaultRef = { id: one.id, name: one.name }
