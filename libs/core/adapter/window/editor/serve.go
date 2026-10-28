@@ -65,8 +65,8 @@ type Installation struct {
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.
 	models *run.Lock
-	// ctx is the root context for vault sessions.
-	ctx context.Context
+	// closing signals when the window root context ends.
+	closing <-chan struct{}
 	// indexer brings the index of the vault in the window level with it.
 	indexer *indexing.Worker
 	// embedderError records the error if embedding model initialization failed.
@@ -137,7 +137,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		tasks:         tasks,
 		models:        models,
 		out:           out,
-		ctx:           ctx,
+		closing:       ctx.Done(),
 		indexer:       indexer,
 		embedderError: why,
 		stopEmbedder:  closeEmbedder,
@@ -147,8 +147,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 
 	// Indexing every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
-	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
-	if err := pool.startVault(first, made.IsRebuildingIndex()); err != nil {
+	if err := pool.startVault(ctx, first, made.IsRebuildingIndex()); err != nil {
 		_ = closeEmbedder()
 		_ = made.CloseIndex()
 		return nil, err

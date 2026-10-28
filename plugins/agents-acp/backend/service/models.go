@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/clock"
 )
 
 // acpListLimit is how long an agent has to open the session its models are read from.
@@ -108,7 +109,7 @@ type acpModelCache struct {
 // getNow returns the time by the clock of the cache.
 func (c *acpModelCache) getNow() time.Time {
 	if c.now == nil {
-		return time.Now()
+		return clock.Now()
 	}
 	return c.now()
 }

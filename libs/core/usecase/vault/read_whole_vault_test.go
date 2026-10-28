@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -205,16 +206,25 @@ func (unwilling) Close() error { return nil }
 // ends with is the error a deadline gives, which is not the error a cancelled
 // run gives.
 type limited struct {
-	context.Context
-	overChan chan struct{}
+	overChan  chan struct{}
+	deadline  func() (time.Time, bool)
+	parentErr func() error
+	value     func(any) any
 }
 
 func limit(ctx context.Context) *limited {
-	return &limited{Context: ctx, overChan: make(chan struct{})}
+	return &limited{
+		overChan:  make(chan struct{}),
+		deadline:  ctx.Deadline,
+		parentErr: ctx.Err,
+		value:     ctx.Value,
+	}
 }
 
 // reachLimit is the limit being met.
 func (l *limited) reachLimit() { close(l.overChan) }
+
+func (l *limited) Deadline() (time.Time, bool) { return l.deadline() }
 
 func (l *limited) Done() <-chan struct{} { return l.overChan }
 
@@ -223,9 +233,11 @@ func (l *limited) Err() error {
 	case <-l.overChan:
 		return context.DeadlineExceeded
 	default:
-		return l.Context.Err()
+		return l.parentErr()
 	}
 }
+
+func (l *limited) Value(key any) any { return l.value(key) }
 
 // timedOut is a set of readers that reach the run's limit and stop there.
 type timedOut struct{ limit *limited }

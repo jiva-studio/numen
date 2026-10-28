@@ -8,7 +8,7 @@
 package cardid
 
 import (
-	"crypto/rand"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 )
 
 // Crockford base32 in lower case: no i, l, o or u, so that an identifier read
@@ -36,7 +36,7 @@ func New() ID {
 	var b [Length]byte
 	// rand.Read aborts the program when the system has no randomness; it never
 	// returns an error.
-	_, _ = rand.Read(b[:])
+	_, _ = clock.ReadEntropy(b[:])
 	out := make([]byte, Length)
 	for i, v := range b {
 		// The alphabet is 32 characters and a byte holds eight of them evenly,

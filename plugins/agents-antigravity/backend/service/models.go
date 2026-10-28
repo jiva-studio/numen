@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/clock"
 )
 
 const (
@@ -37,7 +39,7 @@ type modelCache[M any] struct {
 
 func (c *modelCache[M]) getNow() time.Time {
 	if c.now == nil {
-		return time.Now()
+		return clock.Now()
 	}
 	return c.now()
 }

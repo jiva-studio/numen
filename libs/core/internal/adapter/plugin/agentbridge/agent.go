@@ -98,7 +98,6 @@ func (b *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 	}
 
 	run := &pluginRun{
-		ctx:    runCtx,
 		stream: stream,
 		cancel: cancel,
 		steps:  make(chan agentport.Step, 16),
@@ -106,7 +105,7 @@ func (b *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 			_ = lease.Close()
 		},
 	}
-	go run.readSteps()
+	go run.readSteps(runCtx)
 	return run, nil
 }
 
@@ -230,7 +229,6 @@ func (b *Agent) Close() error {
 }
 
 type pluginRun struct {
-	ctx       context.Context
 	stream    *connect.ServerStreamForClient[v1.AskAgentResponse]
 	cancel    context.CancelFunc
 	steps     chan agentport.Step
@@ -255,7 +253,7 @@ func (r *pluginRun) Stop() error {
 	return nil
 }
 
-func (r *pluginRun) readSteps() {
+func (r *pluginRun) readSteps(ctx context.Context) {
 	defer close(r.steps)
 	defer func() {
 		_ = r.Stop()
@@ -265,7 +263,7 @@ func (r *pluginRun) readSteps() {
 		msg := r.stream.Msg()
 		step := convertResponseStep(msg)
 		select {
-		case <-r.ctx.Done():
+		case <-ctx.Done():
 			return
 		case r.steps <- step:
 		}
@@ -273,9 +271,9 @@ func (r *pluginRun) readSteps() {
 			return
 		}
 	}
-	if err := r.stream.Err(); err != nil && r.ctx.Err() == nil {
+	if err := r.stream.Err(); err != nil && ctx.Err() == nil {
 		select {
-		case <-r.ctx.Done():
+		case <-ctx.Done():
 		case r.steps <- agentport.Step{Kind: domain.StepStop, Detail: err.Error()}:
 		}
 	}

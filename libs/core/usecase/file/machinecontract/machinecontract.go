@@ -1,3 +1,4 @@
+// Package machinecontract re-exports the machine port contract.
 package machinecontract
 
 import "github.com/jiva-studio/numen/libs/core/port/machineport"

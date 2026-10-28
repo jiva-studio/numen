@@ -1,3 +1,4 @@
+// Package vaultcontract re-exports the vault port contract.
 package vaultcontract
 
 import "github.com/jiva-studio/numen/libs/core/port/vaultport"

@@ -107,7 +107,7 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 		{ID: "two", Name: "Two", Path: makeSampleVault(t, cfg)},
 	}
 	vaults := &OpenVaults{
-		Config: cfg, Index: db, Lifetime: t.Context(),
+		Config: cfg, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)

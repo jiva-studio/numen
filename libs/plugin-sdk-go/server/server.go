@@ -25,16 +25,20 @@ import (
 // tokenVar names the variable holding the token the host authenticates with.
 const tokenVar = "NUMEN_PLUGIN_TOKEN"
 
+type defaultFlags struct {
+	mu   sync.Mutex
+	port int
+}
+
 var (
-	flagMu          sync.Mutex
-	defaultPortFlag int
-	exitProcess               = os.Exit
-	exitOutput      io.Writer = os.Stderr
+	flags                defaultFlags
+	exitProcess                    = os.Exit
+	exitOutput io.Writer           = os.Stderr
 )
 
 func parseDefaultFlags() int {
-	flagMu.Lock()
-	defer flagMu.Unlock()
+	flags.mu.Lock()
+	defer flags.mu.Unlock()
 
 	var port int
 
@@ -46,10 +50,10 @@ func parseDefaultFlags() int {
 		}
 	} else {
 		if f := flag.CommandLine.Lookup("port"); f == nil {
-			flag.IntVar(&defaultPortFlag, "port", 0, "Port to listen on")
+			flag.IntVar(&flags.port, "port", 0, "Port to listen on")
 		}
 		flag.Parse()
-		port = defaultPortFlag
+		port = flags.port
 	}
 
 	if port == 0 {

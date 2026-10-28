@@ -13,20 +13,18 @@ import (
 type Provider struct {
 	recognition *Recognition
 
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
 
-	mu      sync.Mutex
-	running map[string]bool
+	mu       sync.Mutex
+	isClosed bool
+	running  map[string]context.CancelFunc
 }
 
 var _ host.TextProvider = (*Provider)(nil)
 
 // NewProvider is the provider over the recognition.
 func NewProvider(recognition *Recognition) *Provider {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &Provider{recognition: recognition, ctx: ctx, cancel: cancel, running: map[string]bool{}}
+	return &Provider{recognition: recognition, running: map[string]context.CancelFunc{}}
 }
 
 // Wait waits for the recognitions it started to end.
@@ -34,27 +32,34 @@ func (p *Provider) Wait() { p.wg.Wait() }
 
 // Close stops the recognitions it started and waits for them to end.
 func (p *Provider) Close() {
-	p.cancel()
+	p.mu.Lock()
+	p.isClosed = true
+	for _, cancel := range p.running {
+		cancel()
+	}
+	p.mu.Unlock()
 	p.Wait()
 }
 
 // CreateText starts recognising the file and returns. The plugin reads files, so a request for text
 // of a version is invalid. A file being recognised already is not started again.
-func (p *Provider) CreateText(_ context.Context, req host.TextCreation) error {
+func (p *Provider) CreateText(ctx context.Context, req host.TextCreation) error {
 	if req.Source != "" {
 		return fmt.Errorf("the plugin recognises files and not %s: %w", req.Source, host.ErrInvalidVersion)
 	}
 	key := string(req.Vault) + "\x00" + req.Path
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.running[key] {
+	if p.isClosed || p.running[key] != nil {
 		return nil
 	}
-	p.running[key] = true
+	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	p.running[key] = cancel
 	p.wg.Go(func() {
 		defer p.finish(key)
+		defer cancel()
 		// Recognise reports a failure as a task error.
-		_, _ = p.recognition.Recognise(p.ctx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: req.IsUserStarted})
+		_, _ = p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: req.IsUserStarted})
 	})
 	return nil
 }

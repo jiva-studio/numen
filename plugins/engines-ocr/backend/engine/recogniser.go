@@ -11,15 +11,11 @@ import (
 	"github.com/getcharzp/go-ocr/paddle"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
 // Model describes active OCR models.
-type Model struct {
-	Layout     string
-	Recogniser string
-	DPI        int
-	From       string
-}
+type Model = recognition.Model
 
 // Recogniser executes OCR recognition models on images.
 type Recogniser struct {

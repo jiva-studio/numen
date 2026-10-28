@@ -1,3 +1,4 @@
+// Package embeddingcontract re-exports the embedding port contract.
 package embeddingcontract
 
 import "github.com/jiva-studio/numen/libs/core/port/embeddingport"

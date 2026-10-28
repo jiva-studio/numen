@@ -156,8 +156,10 @@ func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool
 // shape short of a folder cannot tell a folder that has gone from a file that
 // has — the index would go on answering with files that are not there.
 func (f *Folders) GetPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
-	w := &underWalk{ctx: ctx, folders: f, absolute: absolute}
-	_ = filepath.WalkDir(absolute, w.visit)
+	w := &underWalk{folders: f, absolute: absolute}
+	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
+		return w.visit(ctx, p, d, err)
+	})
 	if w.exceeded || w.short {
 		return nil, true
 	}
@@ -168,7 +170,6 @@ func (f *Folders) GetPathsUnder(ctx context.Context, absolute string) (paths []s
 // whether the walk went past the entries it may read or met a folder it could
 // not enter.
 type underWalk struct {
-	ctx        context.Context
 	folders    *Folders
 	absolute   string
 	discovered []string
@@ -178,8 +179,8 @@ type underWalk struct {
 }
 
 // visit is one entry of the walk.
-func (w *underWalk) visit(p string, d fs.DirEntry, err error) error {
-	if w.ctx.Err() != nil {
+func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err error) error {
+	if ctx.Err() != nil {
 		return fs.SkipAll
 	}
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
 )
@@ -128,7 +129,7 @@ func (a *reviewHandler) WatchCardsDue(
 	// A write that fails is the one report there is, so the list goes again
 	// while nothing has been counted, and a person reloading twice does not
 	// leave two sets of counters reading the vault.
-	repeat := time.NewTicker(again)
+	repeat := clock.NewTicker(again)
 	defer repeat.Stop()
 
 	counted := a.countVaults(ctx, recognized)
@@ -524,7 +525,7 @@ func (a *reviewHandler) WatchReloads(
 		return err
 	}
 
-	repeat := time.NewTicker(again)
+	repeat := clock.NewTicker(again)
 	defer repeat.Stop()
 
 	for {

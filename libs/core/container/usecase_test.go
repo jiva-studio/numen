@@ -124,7 +124,7 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 			}
 			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 			if err != nil {
-				return nil
+				return err
 			}
 			for _, found := range getExposedDependencies(file) {
 				t.Errorf("%s %s exposes constructor-injected field(s) %s", path, found.in, strings.Join(found.fields, ", "))

@@ -34,12 +34,16 @@ type Env struct {
 	Queries Queries
 }
 
-var made atomic.Int64
+type vaultCounter struct {
+	made atomic.Int64
+}
+
+var vaults vaultCounter
 
 // New is a vault of the notes given.
 func New(tb testing.TB, notes map[string]string) Env {
 	tb.Helper()
-	host := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", made.Add(1)), notes)
+	host := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", vaults.made.Add(1)), notes)
 	return Of(host)
 }
 
@@ -82,7 +86,7 @@ func NewInstallation() Installation {
 // Add makes a vault of the notes given, known to the host.
 func (i Installation) Add(tb testing.TB, notes map[string]string) domain.Vault {
 	tb.Helper()
-	added := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", made.Add(1)), notes)
+	added := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", vaults.made.Add(1)), notes)
 	i.Host.Beside(added)
 	i.vaults[added.Vault().ID] = added
 	return added.Vault()
@@ -98,11 +102,12 @@ const Patience = 10 * time.Second
 // WaitFor holds until something is so, and fails the test if it never is.
 func WaitFor(tb testing.TB, condition func() bool) {
 	tb.Helper()
-	for pos := time.Now(); time.Since(pos) < Patience; {
+	const step = 10 * time.Millisecond
+	for range int(Patience / step) {
 		if condition() {
 			return
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(step)
 	}
 	tb.Fatal("it never came to be so")
 }

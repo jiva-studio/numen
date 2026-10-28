@@ -11,10 +11,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
@@ -29,11 +28,11 @@ type pages struct {
 	says      string
 }
 
-func (p *pages) GetRecognitionModel() engine.Model {
-	return engine.Model{Layout: "layout", Recogniser: "lines", DPI: 72, From: "a test"}
+func (p *pages) GetRecognitionModel() recognition.Model {
+	return recognition.Model{Layout: "layout", Recogniser: "lines", DPI: 72, From: "a test"}
 }
 
-func (p *pages) Recognise(_ context.Context, page image.Image) ([]engine.Block, error) {
+func (p *pages) Recognise(_ context.Context, page image.Image) ([]recognition.Block, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pageCount++
@@ -46,11 +45,11 @@ func (p *pages) Recognise(_ context.Context, page image.Image) ([]engine.Block, 
 	b := page.Bounds()
 	first := p.says + " one"
 	text := first + " " + p.says + " two"
-	return []engine.Block{
+	return []recognition.Block{
 		{Label: "doc_title", Text: "Heading", IsHeading: true},
-		{Label: "text", Text: text, Boxes: []engine.Box{
-			{Rect: image.Rect(0, 0, b.Dx(), b.Dy()/2), Range: engine.ByteRange{End: len(first)}},
-			{Rect: image.Rect(0, b.Dy()/2, b.Dx(), b.Dy()), Range: engine.ByteRange{Start: len(first) + 1, End: len(text)}},
+		{Label: "text", Text: text, Boxes: []recognition.Box{
+			{Rect: image.Rect(0, 0, b.Dx(), b.Dy()/2), Range: recognition.ByteRange{End: len(first)}},
+			{Rect: image.Rect(0, b.Dy()/2, b.Dx(), b.Dy()), Range: recognition.ByteRange{Start: len(first) + 1, End: len(text)}},
 		}},
 	}, nil
 }

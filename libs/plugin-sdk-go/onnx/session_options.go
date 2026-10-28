@@ -15,10 +15,12 @@ func init() {
 	})
 }
 
-var (
-	optLevelMu                       sync.Mutex
-	setSessionGraphOptimizationLevel func(options uintptr, level uint32) uintptr
-)
+type graphOptimization struct {
+	mu       sync.Mutex
+	setLevel func(options uintptr, level uint32) uintptr
+}
+
+var graphOpt graphOptimization
 
 type ortAPIBase struct {
 	GetAPI           uintptr
@@ -31,9 +33,9 @@ type ortAPI struct {
 }
 
 func initGraphOptimization(libPath string) error {
-	optLevelMu.Lock()
-	defer optLevelMu.Unlock()
-	if setSessionGraphOptimizationLevel != nil {
+	graphOpt.mu.Lock()
+	defer graphOpt.mu.Unlock()
+	if graphOpt.setLevel != nil {
 		return nil
 	}
 	if libPath == "" {
@@ -65,14 +67,14 @@ func initGraphOptimization(libPath string) error {
 
 	var setOptLevel func(options uintptr, level uint32) uintptr
 	purego.RegisterFunc(&setOptLevel, api.SetSessionGraphOptimizationLevel)
-	setSessionGraphOptimizationLevel = setOptLevel
+	graphOpt.setLevel = setOptLevel
 	return nil
 }
 
 func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
-	optLevelMu.Lock()
-	fn := setSessionGraphOptimizationLevel
-	optLevelMu.Unlock()
+	graphOpt.mu.Lock()
+	fn := graphOpt.setLevel
+	graphOpt.mu.Unlock()
 
 	if fn == nil {
 		_, loadedPath := runtimeState.GetLoaded()
@@ -80,9 +82,9 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 		if err := initGraphOptimization(loadedPath); err != nil {
 			return err
 		}
-		optLevelMu.Lock()
-		fn = setSessionGraphOptimizationLevel
-		optLevelMu.Unlock()
+		graphOpt.mu.Lock()
+		fn = graphOpt.setLevel
+		graphOpt.mu.Unlock()
 	}
 
 	optHandle := *(*uintptr)(unsafe.Pointer(opts))

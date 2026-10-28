@@ -1,17 +1,18 @@
 package service
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
 	"net/http"
 	"strings"
+
+	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/internal/adapter/entropy"
 )
 
 // createRandomToken generates a 32-byte hex-encoded random authentication token.
 func createRandomToken() (string, error) {
 	bytes := make([]byte, 32)
-	if _, err := rand.Read(bytes); err != nil {
+	if _, err := entropy.Read(bytes); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil

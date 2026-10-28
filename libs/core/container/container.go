@@ -29,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 
+	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
@@ -99,6 +100,8 @@ type Config struct {
 
 	// Now provides current time for timestamping and scheduling. Defaults to time.Now if nil.
 	Now machineport.Clock
+
+	agentProvider agentport.AgentProvider
 }
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
@@ -156,29 +159,31 @@ func (c Config) ReadSettings() func() (string, string, error) {
 
 // GetSettingsWriter patches specific settings paths in the configuration file.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
-	return func(entries []settingsport.Setting) error {
-		target := make([]settings.Setting, 0, len(entries))
-		for _, one := range entries {
-			var value json.RawMessage
-			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
-				return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
-			}
-			target = append(target, settings.Setting{At: one.Path, Written: value})
-		}
-		if err := checkPluginSettings(c.PluginHost, entries); err != nil {
+	return c.writeSettings
+}
+
+func (c Config) writeSettings(entries []settingsport.Setting) error {
+	target := make([]settings.Setting, 0, len(entries))
+	for _, one := range entries {
+		var value json.RawMessage
+		if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
 			return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
 		}
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		into := DefaultSettings()
-		if err := settings.Save(path, &into, target...); err != nil {
-			return err
-		}
-		notifyPluginSettings(c.PluginHost, entries)
-		return nil
+		target = append(target, settings.Setting{At: one.Path, Written: value})
 	}
+	if err := checkPluginSettings(c.PluginHost, entries); err != nil {
+		return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
+	}
+	path, err := c.settingsFile()
+	if err != nil {
+		return err
+	}
+	into := DefaultSettings()
+	if err := settings.Save(path, &into, target...); err != nil {
+		return err
+	}
+	notifyPluginSettings(c.PluginHost, entries)
+	return nil
 }
 
 const pluginSettingsPrefix = "plugins"

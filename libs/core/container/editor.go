@@ -50,53 +50,31 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
 	provider := cfg.AgentProvider()
 	return EditorAssembly{
-		PluginDirFn: cfg.GetPluginDir,
-		EmitEventFn: func(event string) {
-			if cfg.PluginHost != nil {
-				var emitter pluginport.PluginEventEmitter = cfg.PluginHost
-				emitter.EmitEvent(event)
-			}
-		},
-		RegistryVal:        registry,
-		VaultReadersFn:     cfg.VaultReaders,
-		VaultWritersFn:     cfg.VaultWriters,
-		VaultIdentityFn:    cfg.VaultIdentity,
-		OpenTabsStoreFn:    func() windowport.OpenTabsStore { return db.OpenTabs() },
-		ClockFn:            cfg.Clock,
-		NoteQueriesFn:      func() noteport.NoteQueries { return db.Queries() },
-		LinkQueriesFn:      func() noteport.LinkQueries { return db.Links() },
-		ProblemQueriesFn:   func() problemport.ProblemQueries { return db.Problems() },
-		IndexProgressFn:    func() indexport.IndexProgress { return db.Progress() },
-		SourceRepositoryFn: func() sourceport.SourceRepository { return db.Sources() },
-		SourceQueriesFn:    func() sourceport.SourceQueries { return db.SourcesKnown() },
-		PassageQueriesFn:   func() sourceport.PassageQueries { return db.Passages() },
-		CloseIndexFn:       func() error { return db.Close() },
-		OpenGetSettingsFn: func() *settings.Get {
-			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins())
-		},
-		OpenWriteSettingsFn: func() *settings.Write {
-			return settings.NewWrite(cfg.GetSettingsWriter())
-		},
-		OpenWritePluginSecretFn: func() *settings.WriteSecret {
-			return settings.NewWriteSecret(cfg.GetPluginSecretWriter())
-		},
-		OpenDeletePluginSecretFn: func() *settings.DeleteSecret {
-			return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter())
-		},
-		OpenRetryPluginFn: func() *settings.RetryPlugin {
-			retry, err := settings.NewRetryPlugin(cfg.GetPluginRetrier())
-			if err != nil {
-				return nil
-			}
-			return retry
-		},
-		ReportPluginFailuresFn: func(tasks *run.Tasks) {
-			cfg.ReportPluginFailures(tasks)
-			cfg.ReportDependencies(tasks)
-		},
-		SetPluginWorkFn:      cfg.SetPluginWork,
-		IsRebuildingIndexVal: cfg.ShouldRebuildIndex,
-		OpenEmbeddersFn:      cfg.Embedders,
+		PluginDirFn:              cfg.GetPluginDir,
+		EmitEventFn:              cfg.emitPluginEvent,
+		RegistryVal:              registry,
+		VaultReadersFn:           cfg.VaultReaders,
+		VaultWritersFn:           cfg.VaultWriters,
+		VaultIdentityFn:          cfg.VaultIdentity,
+		OpenTabsStoreFn:          func() windowport.OpenTabsStore { return db.OpenTabs() },
+		ClockFn:                  cfg.Clock,
+		NoteQueriesFn:            func() noteport.NoteQueries { return db.Queries() },
+		LinkQueriesFn:            func() noteport.LinkQueries { return db.Links() },
+		ProblemQueriesFn:         func() problemport.ProblemQueries { return db.Problems() },
+		IndexProgressFn:          func() indexport.IndexProgress { return db.Progress() },
+		SourceRepositoryFn:       func() sourceport.SourceRepository { return db.Sources() },
+		SourceQueriesFn:          func() sourceport.SourceQueries { return db.SourcesKnown() },
+		PassageQueriesFn:         func() sourceport.PassageQueries { return db.Passages() },
+		CloseIndexFn:             func() error { return db.Close() },
+		OpenGetSettingsFn:        func() *settings.Get { return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins()) },
+		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
+		OpenWritePluginSecretFn:  func() *settings.WriteSecret { return settings.NewWriteSecret(cfg.GetPluginSecretWriter()) },
+		OpenDeletePluginSecretFn: func() *settings.DeleteSecret { return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter()) },
+		OpenRetryPluginFn:        cfg.openRetryPlugin,
+		ReportPluginFailuresFn:   func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },
+		SetPluginWorkFn:          cfg.SetPluginWork,
+		IsRebuildingIndexVal:     cfg.ShouldRebuildIndex,
+		OpenEmbeddersFn:          cfg.Embedders,
 		NewSearchFn: func(asking embeddingport.Embedder, handleError func(error)) search.Search {
 			return cfg.NewSearch(db, asking, handleError)
 		},
@@ -114,29 +92,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			request.ShouldRebuildIndex = rebuild
 			return request.ReadWholeVault(ctx, db, embedder, v)
 		},
-		StartVaultFn: func(
-			ctx context.Context, v domain.Vault, rebuild bool,
-			notified func(paths, assets []string, reload bool),
-			handleError windowport.ErrorHandler,
-		) (
-			read func(ctx context.Context, during func()) (notes int, err error),
-			run func(ctx context.Context),
-			refresh vault.Refresh,
-			unwatched error,
-		) {
-			request := cfg
-			request.ShouldRebuildIndex = rebuild
-
-			opening := request.VaultOpener(db)
-			opening.ShouldRebuild = rebuild
-			opening.ErrorHandler = handleError
-			if notified != nil {
-				opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
-			}
-
-			open := opening.Begin(ctx, v)
-			return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
-		},
+		StartVaultFn: cfg.startVault(db),
 		PluginServicesFn: cfg.GetPluginServices,
 		PluginCommandsFn: cfg.GetPluginCommands,
 		AgentVal:         cfg.serveTools(provider),
@@ -145,17 +101,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 				cfg.TextVersions.SetListener(listener)
 			}
 		},
-		OpenFileMenuFn: func() *textversion.FileMenu {
-			if cfg.TextVersions == nil {
-				return nil
-			}
-			menu, err := textversion.NewFileMenu(cfg.TextVersions, cfg.VaultReaders())
-			if err != nil {
-				cfg.handleError(err)
-				return nil
-			}
-			return menu
-		},
+		OpenFileMenuFn: cfg.openFileMenu,
 		OpenProxyFn: func() *file.OpenProxy {
 			return file.NewOpenProxy(cfg.VaultReaders(), cfg.Copies())
 		},
@@ -165,20 +111,84 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenChoosePluginPathFn: func(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 			return settings.NewChoosePluginPath(dialog, cfg.Plugins(), cfg.GetSettingsWriter())
 		},
-		OpenFileTextFn: func() *textversion.FileText {
-			if cfg.TextVersions == nil {
-				return nil
-			}
-			text, err := textversion.NewFileText(cfg.TextVersions, cfg.VaultReaders())
-			if err != nil {
-				cfg.handleError(err)
-				return nil
-			}
-			return text
-		},
+		OpenFileTextFn:   cfg.openFileText,
 		OpenPluginDataFn: cfg.openPluginData,
 		OpenPluginVaultFn: func(current func() (domain.Vault, bool), hooks PluginVaultHooks) (pluginport.PluginVault, error) {
 			return cfg.OpenPluginVault(registry, db, current, hooks)
 		},
 	}
+}
+
+func (c Config) emitPluginEvent(event string) {
+	if c.PluginHost != nil {
+		var emitter pluginport.PluginEventEmitter = c.PluginHost
+		emitter.EmitEvent(event)
+	}
+}
+
+func (c Config) openRetryPlugin() *settings.RetryPlugin {
+	retry, err := settings.NewRetryPlugin(c.GetPluginRetrier())
+	if err != nil {
+		return nil
+	}
+	return retry
+}
+
+func (c Config) startVault(db *Index) func(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError windowport.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vault.Refresh,
+	unwatched error,
+) {
+	return func(
+		ctx context.Context, v domain.Vault, rebuild bool,
+		notified func(paths, assets []string, reload bool),
+		handleError windowport.ErrorHandler,
+	) (
+		read func(ctx context.Context, during func()) (notes int, err error),
+		run func(ctx context.Context),
+		refresh vault.Refresh,
+		unwatched error,
+	) {
+		request := c
+		request.ShouldRebuildIndex = rebuild
+
+		opening := request.VaultOpener(db)
+		opening.ShouldRebuild = rebuild
+		opening.ErrorHandler = handleError
+		if notified != nil {
+			opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+		}
+
+		open := opening.Begin(ctx, v)
+		return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
+	}
+}
+
+func (c Config) openFileMenu() *textversion.FileMenu {
+	if c.TextVersions == nil {
+		return nil
+	}
+	menu, err := textversion.NewFileMenu(c.TextVersions, c.VaultReaders())
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return menu
+}
+
+func (c Config) openFileText() *textversion.FileText {
+	if c.TextVersions == nil {
+		return nil
+	}
+	text, err := textversion.NewFileText(c.TextVersions, c.VaultReaders())
+	if err != nil {
+		c.handleError(err)
+		return nil
+	}
+	return text
 }

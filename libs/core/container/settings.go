@@ -122,11 +122,14 @@ func (c Config) Models() func() []settingsport.Model {
 	return c.modelsForProvider(c.AgentProvider())
 }
 
+func (c Config) listModels() []settingsport.Model {
+	target := c.getSettingsOrDefaults()
+	return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(c.agentProvider, target.Agent))
+}
+
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
-	return func() []settingsport.Model {
-		target := c.getSettingsOrDefaults()
-		return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(provider, target.Agent))
-	}
+	c.agentProvider = provider
+	return c.listModels
 }
 
 // MigratePluginSettings gives a person's plugin the settings that were theirs before the plugin took

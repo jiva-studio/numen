@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1/linksv1connect"
 )
@@ -29,6 +30,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 		Store: host.NewStoreClient(endpoint),
 		Texts: host.NewTextClient(endpoint),
 		Queue: host.NewQueueClient(endpoint),
+		Now:   clock.Now,
 	}
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
-	"github.com/jiva-studio/numen/apps/desktop/internal/plugincli"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
@@ -91,10 +90,6 @@ func Run(opts ...*Options) error {
 }
 
 func parseFlags() *Options {
-	if len(os.Args) > 1 && os.Args[1] == "plugin" {
-		os.Exit(plugincli.Run(os.Args[2:], os.Stdout, os.Stderr))
-	}
-
 	opts := NewOptions()
 	fs := flag.CommandLine
 	if !fs.Parsed() {

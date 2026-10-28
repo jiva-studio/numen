@@ -36,11 +36,13 @@ type configEntryTable struct {
 	releaseStatus func(status uintptr)
 }
 
-var (
-	configEntryMu     sync.Mutex
-	configEntryLoaded bool
-	configEntryCalls  *configEntryTable
-)
+type configEntryResolver struct {
+	mu       sync.Mutex
+	isLoaded bool
+	calls    *configEntryTable
+}
+
+var configEntries configEntryResolver
 
 // loadConfigEntryTable resolves the config-entry calls of the library at path.
 // It returns a nil table when the library does not carry them.
@@ -82,16 +84,16 @@ func getConfigEntryTable() (*configEntryTable, error) {
 		return nil, fmt.Errorf("onnx runtime not loaded")
 	}
 
-	configEntryMu.Lock()
-	defer configEntryMu.Unlock()
-	if configEntryLoaded {
-		return configEntryCalls, nil
+	configEntries.mu.Lock()
+	defer configEntries.mu.Unlock()
+	if configEntries.isLoaded {
+		return configEntries.calls, nil
 	}
 	table, err := loadConfigEntryTable(loadedPath)
 	if err != nil {
 		return nil, err
 	}
-	configEntryCalls, configEntryLoaded = table, true
+	configEntries.calls, configEntries.isLoaded = table, true
 	return table, nil
 }
 

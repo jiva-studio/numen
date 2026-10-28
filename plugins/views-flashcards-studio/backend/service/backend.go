@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -79,7 +80,7 @@ func New(cfg Config) *Backend {
 	wired := hostports.New(cfg.Vault, cfg.Store)
 	now := cfg.Now
 	if now == nil {
-		now = time.Now
+		now = clock.Now
 	}
 	b := &Backend{vault: cfg.Vault, ports: wired, titles: wired.Notes, now: now, cfg: cfg}
 	b.scenariosStore.Store(b.build(cfg.DayStart))

@@ -1,3 +1,4 @@
+// Package windowcontract re-exports the window port contract.
 package windowcontract
 
 import "github.com/jiva-studio/numen/libs/core/port/windowport"

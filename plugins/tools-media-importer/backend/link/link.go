@@ -61,6 +61,7 @@ type Host struct {
 	Store host.Store
 	Texts host.Texts
 	Queue host.Queue
+	Now   func() time.Time
 }
 
 // Settings are what the person set about fetching. CopyMaxSize is in bytes, and zero is no limit.
@@ -77,10 +78,9 @@ type Links struct {
 	settings func() Settings
 	now      func() time.Time
 
-	// ctx is what every fetch started in the background runs under, and it ends with Close.
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	closing   chan struct{}
+	closeOnce sync.Once
+	wg        sync.WaitGroup
 
 	mu      sync.Mutex
 	running map[string]bool
@@ -89,17 +89,32 @@ type Links struct {
 // New is the links worked through the host. fetcher and settings are asked at every fetch, so a
 // setting changed is taken by the next one.
 func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
-	ctx, cancel := context.WithCancel(context.Background())
+	now := h.Now
+	if now == nil {
+		now = func() time.Time { return time.Unix(1_700_000_000, 0) }
+	}
 	return &Links{
-		host: h, fetcher: fetcher, settings: settings, now: time.Now,
-		ctx: ctx, cancel: cancel, running: map[string]bool{},
+		host: h, fetcher: fetcher, settings: settings, now: now,
+		closing: make(chan struct{}), running: map[string]bool{},
 	}
 }
 
 // Close stops every fetch in the background and waits for them.
 func (l *Links) Close() {
-	l.cancel()
+	l.closeOnce.Do(func() { close(l.closing) })
 	l.wg.Wait()
+}
+
+func (l *Links) withClosing(ctx context.Context) (context.Context, context.CancelFunc) {
+	runCtx, cancel := context.WithCancel(ctx)
+	go func() {
+		select {
+		case <-l.closing:
+			cancel()
+		case <-runCtx.Done():
+		}
+	}()
+	return runCtx, cancel
 }
 
 // Wait waits for every fetch started in the background.
@@ -253,9 +268,11 @@ func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
 // published. A failure is shown as the task of the work that failed.
 func (l *Links) StartFetch(link Link) {
 	l.wg.Go(func() {
-		_ = l.FetchText(l.ctx, link, true)
+		runCtx, cancel := l.withClosing(context.Background())
+		defer cancel()
+		_ = l.FetchText(runCtx, link, true)
 		if l.IsCopyable(link.Address) {
-			_, _ = l.Copy(l.ctx, link)
+			_, _ = l.Copy(runCtx, link)
 		}
 	})
 }
@@ -263,14 +280,18 @@ func (l *Links) StartFetch(link Link) {
 // StartFetchText fetches the text of a link in the background. A failure is shown as its task.
 func (l *Links) StartFetchText(link Link, isUserStarted bool) {
 	l.wg.Go(func() {
-		_ = l.FetchText(l.ctx, link, isUserStarted)
+		runCtx, cancel := l.withClosing(context.Background())
+		defer cancel()
+		_ = l.FetchText(runCtx, link, isUserStarted)
 	})
 }
 
 // StartCopy copies the video of a link in the background. A failure is shown as its task.
 func (l *Links) StartCopy(link Link) {
 	l.wg.Go(func() {
-		_, _ = l.Copy(l.ctx, link)
+		runCtx, cancel := l.withClosing(context.Background())
+		defer cancel()
+		_, _ = l.Copy(runCtx, link)
 	})
 }
 
@@ -424,7 +445,10 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 		return 0, err
 	}
 	into := &storeWriter{
-		ctx: ctx, store: store, name: part, limit: settings.CopyMaxSize,
+		limit: settings.CopyMaxSize,
+		appendChunk: func(chunk []byte) error {
+			return store.Append(ctx, part, chunk)
+		},
 		report: func(byteCount int64) {
 			task.Done, task.Total = byteCount, meta.Bytes
 			l.reportTask(ctx, task)
@@ -519,13 +543,11 @@ func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 // storeWriter appends what is written to a file of the store, a chunk at a time, and stops past a
 // limit.
 type storeWriter struct {
-	ctx       context.Context
-	store     host.Store
-	name      string
-	limit     int64
-	report    func(byteCount int64)
-	pending   []byte
-	byteCount int64
+	limit       int64
+	appendChunk func(chunk []byte) error
+	report      func(byteCount int64)
+	pending     []byte
+	byteCount   int64
 }
 
 func (w *storeWriter) Write(p []byte) (int, error) {
@@ -552,7 +574,7 @@ func (w *storeWriter) flush() error {
 }
 
 func (w *storeWriter) send(chunk []byte) error {
-	if err := w.store.Append(w.ctx, w.name, chunk); err != nil {
+	if err := w.appendChunk(chunk); err != nil {
 		return err
 	}
 	w.byteCount += int64(len(chunk))

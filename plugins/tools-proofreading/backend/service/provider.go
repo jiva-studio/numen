@@ -14,19 +14,17 @@ import (
 type provider struct {
 	proofreading *Proofreading
 
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
 
-	mu      sync.Mutex
-	running map[string]bool
+	mu       sync.Mutex
+	isClosed bool
+	running  map[string]context.CancelFunc
 }
 
 var _ host.TextProvider = (*provider)(nil)
 
 func newProvider(proofreading *Proofreading) *provider {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &provider{proofreading: proofreading, ctx: ctx, cancel: cancel, running: map[string]bool{}}
+	return &provider{proofreading: proofreading, running: map[string]context.CancelFunc{}}
 }
 
 // Wait waits for the proofreadings it started to end.
@@ -34,28 +32,35 @@ func (p *provider) Wait() { p.wg.Wait() }
 
 // Close stops the proofreadings it started and waits for them to end.
 func (p *provider) Close() {
-	p.cancel()
+	p.mu.Lock()
+	p.isClosed = true
+	for _, cancel := range p.running {
+		cancel()
+	}
+	p.mu.Unlock()
 	p.Wait()
 }
 
 // CreateText starts proofreading the version the request names and returns. The plugin reads
 // versions, so a request for text of the file itself is invalid. A version being proofread already
 // is not started again.
-func (p *provider) CreateText(_ context.Context, req host.TextCreation) error {
+func (p *provider) CreateText(ctx context.Context, req host.TextCreation) error {
 	if req.Source == "" {
 		return fmt.Errorf("the plugin proofreads versions and not the file %s: %w", req.Path, host.ErrInvalidVersion)
 	}
 	key := string(req.Vault) + "\x00" + req.Path + "\x00" + string(req.Source)
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.running[key] {
+	if p.isClosed || p.running[key] != nil {
 		return nil
 	}
-	p.running[key] = true
+	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	p.running[key] = cancel
 	p.wg.Go(func() {
 		defer p.finish(key)
+		defer cancel()
 		// Proofread reports a failure as a task error.
-		_, _ = p.proofreading.Proofread(p.ctx, Request{
+		_, _ = p.proofreading.Proofread(runCtx, Request{
 			Vault: req.Vault, Path: req.Path, Source: req.Source, IsUserStarted: req.IsUserStarted,
 		})
 	})

@@ -1,3 +1,4 @@
+// Package vaultreading runs the three passes that make a vault searchable.
 package vaultreading
 
 import (

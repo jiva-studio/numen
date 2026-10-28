@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/clock"
 )
 
 // defaultModelName is the model the program lists for the choice of its own.
@@ -146,20 +147,12 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 	key := strings.Join(command, "\x00")
 	c.mu.Lock()
 	one, found := c.lists[key]
-	if found && time.Since(one.fetchedAt) < modelsLifetime {
+	if found && clock.Now().Sub(one.fetchedAt) < modelsLifetime {
 		c.mu.Unlock()
 		return one.models, nil
 	}
 	if c.isAsync {
-		if !c.inFlight[key] {
-			if c.inFlight == nil {
-				c.inFlight = make(map[string]bool)
-			}
-			c.inFlight[key] = true
-			cmdCopy := slices.Clone(command)
-			envCopy := slices.Clone(env)
-			go c.fetchInBackground(key, cmdCopy, envCopy)
-		}
+		c.enqueueAsyncFetchLocked(key, command, env)
 		c.mu.Unlock()
 		if found {
 			return one.models, nil
@@ -168,6 +161,19 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, key, command, env)
+}
+
+func (c *modelCache) enqueueAsyncFetchLocked(key string, command, env []string) {
+	if c.inFlight[key] {
+		return
+	}
+	if c.inFlight == nil {
+		c.inFlight = make(map[string]bool)
+	}
+	c.inFlight[key] = true
+	cmdCopy := slices.Clone(command)
+	envCopy := slices.Clone(env)
+	go c.fetchInBackground(key, cmdCopy, envCopy)
 }
 
 func (c *modelCache) fetchInBackground(key string, command, env []string) {
@@ -189,7 +195,7 @@ func (c *modelCache) fetchAndStore(ctx context.Context, key string, command, env
 	if c.lists == nil {
 		c.lists = map[string]modelList{}
 	}
-	c.lists[key] = modelList{models: models, fetchedAt: time.Now()}
+	c.lists[key] = modelList{models: models, fetchedAt: clock.Now()}
 	return models, nil
 }
 

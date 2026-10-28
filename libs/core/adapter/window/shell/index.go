@@ -19,10 +19,10 @@ type IndexVault func(ctx context.Context, v domain.Vault) error
 type indexRuns struct {
 	mu sync.Mutex
 
-	// indexVault is how a vault is brought up to date in the index, and ctx is the
-	// life those runs have.
+	// indexVault is how a vault is brought up to date in the index, and closing
+	// signals when those runs end.
 	indexVault IndexVault
-	ctx        context.Context
+	closing    <-chan struct{}
 
 	indexed  map[domain.VaultID]bool
 	running  map[domain.VaultID]bool
@@ -33,7 +33,12 @@ type indexRuns struct {
 func (r *indexRuns) setIndexer(ctx context.Context, read IndexVault) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.ctx, r.indexVault = ctx, read
+	if ctx != nil {
+		r.closing = ctx.Done()
+	} else {
+		r.closing = nil
+	}
+	r.indexVault = read
 }
 
 // clear lets go of why a vault could not be indexed, and that it was indexed at all.
@@ -50,7 +55,7 @@ func (r *indexRuns) clear(id domain.VaultID) {
 // window indexes nothing.
 func (r *indexRuns) tryStart(
 	v domain.Vault,
-) (read IndexVault, limit context.Context, underway bool, reason string) {
+) (read IndexVault, closing <-chan struct{}, underway bool, reason string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.indexed[v.ID] {
@@ -69,7 +74,7 @@ func (r *indexRuns) tryStart(
 		r.running = make(map[domain.VaultID]bool)
 	}
 	r.running[v.ID] = true
-	return r.indexVault, r.ctx, true, ""
+	return r.indexVault, r.closing, true, ""
 }
 
 // record is what one indexing came to: the vault is indexed, or it is why it is not.
@@ -104,12 +109,25 @@ func (a *API) SetVaultIndexer(ctx context.Context, read IndexVault) {
 // from there. One vault is indexed once at a time however many counts ask for it,
 // and an indexing that failed is not begun again until the vault moves.
 func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, item, running, reason := a.indexRuns.tryStart(v)
+	read, closing, running, reason := a.indexRuns.tryStart(v)
 	if read == nil {
 		return running, reason
 	}
-	//nolint:contextcheck // a vault is indexed for the life of the window, under behind, not under the count that asked
-	go a.runIndexing(item, read, v, a.IsVaultIndexed.Execute(ctx, v))
+	isHeld := a.IsVaultIndexed.Execute(ctx, v)
+	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	go func() {
+		defer cancel()
+		if closing != nil {
+			go func() {
+				select {
+				case <-closing:
+					cancel()
+				case <-runCtx.Done():
+				}
+			}()
+		}
+		a.runIndexing(runCtx, read, v, isHeld)
+	}()
 	return true, ""
 }
 

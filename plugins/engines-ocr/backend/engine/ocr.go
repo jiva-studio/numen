@@ -8,6 +8,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
 // Region is one part of a page: what it is, where it is, and where it comes
@@ -27,25 +29,13 @@ type Line struct {
 }
 
 // ByteRange represents a byte offset range.
-type ByteRange struct {
-	Start int
-	End   int
-}
+type ByteRange = recognition.ByteRange
 
 // Box is one box of a region: the rectangle it covers on the page, and the run of bytes it produced.
-type Box struct {
-	Rect  image.Rectangle
-	Range ByteRange
-}
+type Box = recognition.Box
 
 // Block is one region of a page, written out.
-type Block struct {
-	Label     string
-	Text      string
-	IsHeading bool
-	Depth     int
-	Boxes     []Box
-}
+type Block = recognition.Block
 
 // Distinct drops a region that covers one already kept.
 func Distinct(regions []Region, most float64) []Region {

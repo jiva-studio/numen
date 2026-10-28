@@ -4,18 +4,16 @@ import (
 	"image"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 )
 
 func TestNewPageSplitsBlocksByBox(t *testing.T) {
 	bounds := image.Rect(0, 0, 100, 200)
-	blocks := []engine.Block{
-		{Text: "Chapter One", IsHeading: true, Boxes: []engine.Box{{Rect: image.Rect(10, 0, 90, 20), Range: engine.ByteRange{End: 11}}}},
+	blocks := []Block{
+		{Text: "Chapter One", IsHeading: true, Boxes: []Box{{Rect: image.Rect(10, 0, 90, 20), Range: ByteRange{End: 11}}}},
 		{Text: ""},
-		{Text: "first line second line", Boxes: []engine.Box{
-			{Rect: image.Rect(0, 100, 100, 150), Range: engine.ByteRange{Start: 11, End: 22}},
-			{Rect: image.Rect(0, 50, 100, 100), Range: engine.ByteRange{Start: 0, End: 10}},
+		{Text: "first line second line", Boxes: []Box{
+			{Rect: image.Rect(0, 100, 100, 150), Range: ByteRange{Start: 11, End: 22}},
+			{Rect: image.Rect(0, 50, 100, 100), Range: ByteRange{Start: 0, End: 10}},
 		}},
 		{Text: "a caption nothing placed"},
 	}

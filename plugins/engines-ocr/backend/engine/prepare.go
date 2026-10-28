@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/getcharzp/go-ocr/paddle"
 
@@ -15,10 +14,8 @@ func init() {
 	})
 }
 
-var prepared atomic.Bool
-
 // IsPrepared says whether this process made the runtime.
-func IsPrepared() bool { return prepared.Load() }
+func IsPrepared() bool { return onnx.IsAvailable("") }
 
 // Prepare makes the runtime a page is read through.
 func Prepare(ctx context.Context, cfg Config) error {
@@ -26,6 +23,5 @@ func Prepare(ctx context.Context, cfg Config) error {
 	if _, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)); err != nil {
 		return err
 	}
-	prepared.Store(true)
 	return nil
 }

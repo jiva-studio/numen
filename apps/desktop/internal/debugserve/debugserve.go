@@ -22,6 +22,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/jiva-studio/numen/apps/desktop/internal/adapter/clock"
 )
 
 // Serve answers with handler at addr until ctx is done or the process is interrupted. It serves TLS
@@ -87,8 +89,8 @@ func generateSelfSignedCert() (tls.Certificate, error) {
 		},
 		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1"), net.IPv6loopback},
 		DNSNames:              []string{"localhost"},
-		NotBefore:             time.Now().Add(-1 * time.Hour),
-		NotAfter:              time.Now().Add(24 * time.Hour),
+		NotBefore:             clock.Now().Add(-1 * time.Hour),
+		NotAfter:              clock.Now().Add(24 * time.Hour),
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,

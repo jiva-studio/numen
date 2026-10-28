@@ -28,9 +28,9 @@ type Calls struct {
 // GetCalls are the runtime entry points, or false when the runtime has not
 // registered them.
 func GetCalls() (Calls, bool) {
-	runnerMu.Lock()
-	defer runnerMu.Unlock()
-	calls := Calls{Run: ortRun, GetData: ortGetTensorMutableData, Release: ortReleaseValue, Check: checkStatus}
+	runner.mu.Lock()
+	defer runner.mu.Unlock()
+	calls := Calls{Run: runner.ortRun, GetData: runner.ortGetTensorMutableData, Release: runner.ortReleaseValue, Check: checkStatus}
 	return calls, calls.Run != nil && calls.GetData != nil && calls.Release != nil
 }
 

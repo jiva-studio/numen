@@ -41,7 +41,6 @@ func failWithDialog(cfg container.Config, why error) {
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		PostShutdown: func() { os.Exit(1) },
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  appName,

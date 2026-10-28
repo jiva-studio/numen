@@ -39,10 +39,9 @@ type Transcriber struct {
 	queue   host.Queue
 	engines Engines
 
-	// ctx is what every transcription runs under, and it ends when the plugin stops.
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	closing   chan struct{}
+	closeOnce sync.Once
+	wg        sync.WaitGroup
 
 	mu      sync.Mutex
 	running map[string]bool
@@ -50,17 +49,28 @@ type Transcriber struct {
 
 // NewTranscriber is the transcriber over what the host gives the plugin.
 func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host.Queue, engines Engines) *Transcriber {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &Transcriber{
 		files: files, stores: stores, texts: texts, queue: queue, engines: engines,
-		ctx: ctx, cancel: cancel, running: map[string]bool{},
+		closing: make(chan struct{}), running: map[string]bool{},
 	}
 }
 
 // Close stops every transcription and waits for them.
 func (t *Transcriber) Close() {
-	t.cancel()
+	t.closeOnce.Do(func() { close(t.closing) })
 	t.wg.Wait()
+}
+
+func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context.CancelFunc) {
+	runCtx, cancel := context.WithCancel(ctx)
+	go func() {
+		select {
+		case <-t.closing:
+			cancel()
+		case <-runCtx.Done():
+		}
+	}()
+	return runCtx, cancel
 }
 
 // Wait waits for every transcription started.
@@ -82,7 +92,9 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	}
 	t.wg.Go(func() {
 		defer t.clearRunning(key)
-		_ = t.transcribe(t.ctx, vault, path)
+		runCtx, cancel := t.withClosing(context.WithoutCancel(ctx))
+		defer cancel()
+		_ = t.transcribe(runCtx, vault, path)
 	})
 	return nil
 }
@@ -100,9 +112,8 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 	defer t.clearRunning(key)
 	t.wg.Add(1)
 	defer t.wg.Done()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
-	defer context.AfterFunc(t.ctx, cancel)() //nolint:contextcheck // the plugin stopping ends the command too
 
 	if err := t.queue.ReportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true}); err != nil {
 		return err

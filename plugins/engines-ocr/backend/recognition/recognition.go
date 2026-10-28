@@ -10,10 +10,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/document"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 )
 
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
@@ -22,10 +21,39 @@ const VersionKey = "recognition"
 // batch is the number of pages read between two writes of the progress record.
 const batch = 8
 
+// Model describes active OCR models.
+type Model struct {
+	Layout     string
+	Recogniser string
+	DPI        int
+	From       string
+}
+
+// ByteRange represents a byte offset range.
+type ByteRange struct {
+	Start int
+	End   int
+}
+
+// Box is one box of a region: the rectangle it covers on the page, and the run of bytes it produced.
+type Box struct {
+	Rect  image.Rectangle
+	Range ByteRange
+}
+
+// Block is one region of a page, written out.
+type Block struct {
+	Label     string
+	Text      string
+	IsHeading bool
+	Depth     int
+	Boxes     []Box
+}
+
 // Recogniser reads the blocks of one page drawn as an image.
 type Recogniser interface {
-	GetRecognitionModel() engine.Model
-	Recognise(ctx context.Context, page image.Image) ([]engine.Block, error)
+	GetRecognitionModel() Model
+	Recognise(ctx context.Context, page image.Image) ([]Block, error)
 }
 
 // Host is what a recognition works through: the vault the file is read from, the plugin's folder

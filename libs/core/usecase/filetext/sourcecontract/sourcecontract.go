@@ -1,3 +1,4 @@
+// Package sourcecontract re-exports the source port contract.
 package sourcecontract
 
 import "github.com/jiva-studio/numen/libs/core/port/sourceport"

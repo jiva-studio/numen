@@ -39,17 +39,19 @@ func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
 func startIdlePool(t *testing.T, idle int, period time.Duration) {
 	t.Helper()
 	workers.Lock()
-	before, beforePeriod := workers.idle, idleRelease
+	before, beforePeriod, beforeAfter := workers.idle, idleRelease, workers.afterFunc
 	workers.Unlock()
 	t.Cleanup(func() {
 		releasePool()
 		SetIdleWorkers(before)
 		workers.Lock()
 		idleRelease = beforePeriod
+		workers.afterFunc = beforeAfter
 		workers.Unlock()
 	})
 	releasePool()
 	SetIdleWorkers(idle)
+	SetAfterFunc(func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) })
 	workers.Lock()
 	idleRelease = period
 	workers.Unlock()

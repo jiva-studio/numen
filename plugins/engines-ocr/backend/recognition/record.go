@@ -10,9 +10,8 @@ import (
 	"image"
 	"sort"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // record is the progress of a recognition that has not ended, kept in the plugin's folder of the
@@ -107,7 +106,7 @@ const blockGap = "\n\n"
 // newPage returns the parts of one recognised page. Each block is split at the start of each box, so
 // every part has the rectangle of its line; a block without boxes is one part without rectangles. A
 // heading block starts a section named by its text.
-func newPage(bounds image.Rectangle, blocks []engine.Block) []part {
+func newPage(bounds image.Rectangle, blocks []Block) []part {
 	var out []part
 	for _, block := range blocks {
 		if block.Text == "" {
@@ -124,8 +123,8 @@ func newPage(bounds image.Rectangle, blocks []engine.Block) []part {
 }
 
 // newBlockParts returns the parts of one non-empty block, split at the start of each box.
-func newBlockParts(bounds image.Rectangle, block engine.Block) []part {
-	boxes := append([]engine.Box(nil), block.Boxes...)
+func newBlockParts(bounds image.Rectangle, block Block) []part {
+	boxes := append([]Box(nil), block.Boxes...)
 	sort.SliceStable(boxes, func(i, j int) bool { return boxes[i].Range.Start < boxes[j].Range.Start })
 	var out []part
 	for i, box := range boxes {

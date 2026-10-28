@@ -33,13 +33,12 @@ type TextServer struct {
 	store host.Store
 	queue host.Queue
 
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
 
-	mu      sync.Mutex
-	last    bookText
-	running map[string]bool
+	mu       sync.Mutex
+	isClosed bool
+	last     bookText
+	running  map[string]context.CancelFunc
 }
 
 var _ host.TextProvider = (*TextServer)(nil)
@@ -47,10 +46,9 @@ var _ host.TextProvider = (*TextServer)(nil)
 // NewTextServer is the texts of the books read through files, written into store and reported to
 // texts, each written in a turn of queue.
 func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &TextServer{
 		files: files, texts: texts, store: store, queue: queue,
-		ctx: ctx, cancel: cancel, running: map[string]bool{},
+		running: map[string]context.CancelFunc{},
 	}
 }
 
@@ -59,7 +57,12 @@ func (s *TextServer) Wait() { s.wg.Wait() }
 
 // Close stops the texts it started and waits for them to end.
 func (s *TextServer) Close() {
-	s.cancel()
+	s.mu.Lock()
+	s.isClosed = true
+	for _, cancel := range s.running {
+		cancel()
+	}
+	s.mu.Unlock()
 	s.Wait()
 }
 
@@ -105,20 +108,22 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 // CreateText starts writing the text of a book as a version made from the file, and returns. The
 // plugin reads files, so a request for text of a version is invalid. A book whose text is being
 // written already is not started again.
-func (s *TextServer) CreateText(_ context.Context, req host.TextCreation) error {
+func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
 	if req.Source != "" {
 		return fmt.Errorf("%w: the EPUB reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
 	}
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.running[key] {
+	if s.isClosed || s.running[key] != nil {
 		return nil
 	}
-	s.running[key] = true
+	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	s.running[key] = cancel
 	s.wg.Go(func() {
 		defer s.finish(key)
-		s.writeText(s.ctx, req)
+		defer cancel()
+		s.writeText(runCtx, req)
 	})
 	return nil
 }

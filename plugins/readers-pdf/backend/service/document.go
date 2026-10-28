@@ -6,17 +6,15 @@ import (
 	"fmt"
 	"runtime"
 	"slices"
-	"sync"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1/pdfv1connect"
 )
-
-var initOnce sync.Once
 
 // DocumentServer implements pdfv1connect.DocumentServiceHandler. Each call works the vault its
 // Numen-Vault header names.
@@ -30,11 +28,10 @@ type DocumentServer struct {
 // NewDocumentServer configures the worker pool and returns a DocumentServer that reads files from
 // files and text versions from texts.
 func NewDocumentServer(files host.Vault, texts host.Texts) *DocumentServer {
-	initOnce.Do(func() {
-		pdf.SetWorkers(runtime.NumCPU())
-		pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
-		go pdf.Warmup()
-	})
+	pdf.SetAfterFunc(clock.AfterFunc)
+	pdf.SetWorkers(runtime.NumCPU())
+	pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
+	go pdf.Warmup()
 	return &DocumentServer{files: files, texts: texts}
 }
 

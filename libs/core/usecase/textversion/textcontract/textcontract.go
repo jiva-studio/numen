@@ -1,3 +1,4 @@
+// Package textcontract re-exports the text port contract.
 package textcontract
 
 import "github.com/jiva-studio/numen/libs/core/port/textport"

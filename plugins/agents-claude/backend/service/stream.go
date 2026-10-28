@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/clock"
 )
 
 // serverName is what the vault's tool server calls itself, and the prefix its tools arrive under.
@@ -101,7 +102,7 @@ func parseStream(
 	record func(string),
 	expectsVault bool,
 ) string {
-	return parseStreamWithClock(ctx, r, send, words, record, time.Now, expectsVault)
+	return parseStreamWithClock(ctx, r, send, words, record, clock.Now, expectsVault)
 }
 
 // parseStreamWithClock is parseStream with the clock that paces the reports of a change.

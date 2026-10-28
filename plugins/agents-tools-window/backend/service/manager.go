@@ -8,7 +8,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
+
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/internal/adapter/clock"
 )
 
 var (
@@ -157,5 +158,5 @@ func (m *WindowManager) ClearPreviews() {
 // NextPreviewID generates a unique identifier for an edit preview.
 func (m *WindowManager) NextPreviewID() string {
 	seq := m.previewSeq.Add(1)
-	return fmt.Sprintf("prev-%d-%d", time.Now().UnixNano(), seq)
+	return fmt.Sprintf("prev-%d-%d", clock.Now().UnixNano(), seq)
 }

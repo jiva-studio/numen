@@ -1,3 +1,4 @@
+// Package playbackcontract re-exports the playback port contract.
 package playbackcontract
 
 import "github.com/jiva-studio/numen/libs/core/port/playbackport"

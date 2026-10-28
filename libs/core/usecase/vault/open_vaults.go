@@ -23,13 +23,13 @@ type OpenVaults[C OpenerFactory[I], I any] struct {
 	Config      C
 	Index       I
 	Label       string
-	Lifetime    context.Context
 	RecordVault func(domain.Vault)
 	Out         io.Writer
 
 	running   sync.WaitGroup
 	mu        sync.Mutex
 	isClosing bool
+	cancels   []context.CancelFunc
 	opened    map[domain.VaultID]*openedVault
 }
 
@@ -43,8 +43,13 @@ type openedVault struct {
 func (o *OpenVaults[C, I]) CloseAndWait() {
 	o.mu.Lock()
 	o.isClosing = true
+	cancels := o.cancels
+	o.cancels = nil
 	o.mu.Unlock()
 
+	for _, cancel := range cancels {
+		cancel()
+	}
 	o.running.Wait()
 }
 
@@ -59,7 +64,7 @@ func (o *OpenVaults[C, I]) tryBeginWork() bool {
 	return true
 }
 
-func (o *OpenVaults[C, I]) getOpenedVault(v domain.Vault) *openedVault {
+func (o *OpenVaults[C, I]) getOpenedVault(ctx context.Context, v domain.Vault) *openedVault {
 	o.mu.Lock()
 	one, there := o.opened[v.ID]
 	if !there {
@@ -71,11 +76,11 @@ func (o *OpenVaults[C, I]) getOpenedVault(v domain.Vault) *openedVault {
 	}
 	o.mu.Unlock()
 
-	one.once.Do(func() { o.openVault(v, one) })
+	one.once.Do(func() { o.openVault(ctx, v, one) })
 	return one
 }
 
-func (o *OpenVaults[C, I]) openVault(v domain.Vault, one *openedVault) {
+func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *openedVault) {
 	opening := o.Config.VaultOpener(o.Index)
 	opening.Told = func(VaultChanges) { o.RecordVault(v) }
 	opening.ErrorHandler = func(err error) {
@@ -84,7 +89,16 @@ func (o *OpenVaults[C, I]) openVault(v domain.Vault, one *openedVault) {
 		}
 	}
 
-	open := opening.Begin(o.Lifetime, v)
+	lifetime, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	o.mu.Lock()
+	if o.isClosing {
+		cancel()
+	} else {
+		o.cancels = append(o.cancels, cancel)
+	}
+	o.mu.Unlock()
+
+	open := opening.Begin(lifetime, v)
 	if why := open.GetUnwatchedReason(); why != nil {
 		fmt.Fprintf(o.Out, "%s: %s is not being followed: %v\n", o.Label, v.Name, why)
 	}
@@ -93,7 +107,7 @@ func (o *OpenVaults[C, I]) openVault(v domain.Vault, one *openedVault) {
 	if o.tryBeginWork() {
 		go func() {
 			defer o.running.Done()
-			open.Run(o.Lifetime)
+			open.Run(lifetime)
 		}()
 	}
 }
@@ -105,7 +119,7 @@ func (o *OpenVaults[C, I]) IndexVault(ctx context.Context, v domain.Vault) error
 	}
 	defer o.running.Done()
 
-	_, err := o.getOpenedVault(v).open.Read(ctx, nil)
+	_, err := o.getOpenedVault(ctx, v).open.Read(ctx, nil)
 	return err
 }
 
@@ -116,7 +130,7 @@ func (o *OpenVaults[C, I]) UpdateIndex(ctx context.Context, v domain.Vault, path
 	}
 	defer o.running.Done()
 
-	return o.getOpenedVault(v).opening.Level(ctx, v, paths)
+	return o.getOpenedVault(ctx, v).opening.Level(ctx, v, paths)
 }
 
 // OpenedCount returns the number of opened vaults.

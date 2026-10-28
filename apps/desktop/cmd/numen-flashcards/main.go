@@ -93,7 +93,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	vaults := &container.OpenVaults{
-		Config: cfg, Index: db, Lifetime: ctx, Out: os.Stderr, Label: appName,
+		Config: cfg, Index: db, Out: os.Stderr, Label: appName,
 	}
 
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))

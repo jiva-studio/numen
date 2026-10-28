@@ -22,7 +22,10 @@ func setProcessGroup(running *exec.Cmd) {
 			}
 			return err
 		}
-		time.AfterFunc(stopGrace, func() { _ = syscall.Kill(group, syscall.SIGKILL) })
+		go func() {
+			time.Sleep(stopGrace)
+			_ = syscall.Kill(group, syscall.SIGKILL)
+		}()
 		return nil
 	}
 	running.WaitDelay = stopGrace

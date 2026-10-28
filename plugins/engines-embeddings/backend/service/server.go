@@ -297,21 +297,7 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 
 	key, baseURL := s.getService()
 	if key != "" && baseURL != "" {
-		model := s.getModelName()
-		vectors := make([][]float32, len(texts))
-		for i, t := range texts {
-			vec, err := computeServiceVector(ctx, key, baseURL, model, t)
-			if err != nil {
-				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
-			}
-			if len(vec) > 0 {
-				s.mu.Lock()
-				s.modelInfo.Dimensions = len(vec)
-				s.mu.Unlock()
-			}
-			vectors[i] = vec
-		}
-		return vectors, nil
+		return s.embedRemoteTexts(ctx, key, baseURL, texts)
 	}
 	if s.isRemoteProvider() {
 		if baseURL == "" {
@@ -334,6 +320,24 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 	}
 
 	return denseVectors, nil
+}
+
+func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL string, texts []string) ([][]float32, error) {
+	model := s.getModelName()
+	vectors := make([][]float32, len(texts))
+	for i, t := range texts {
+		vec, err := computeServiceVector(ctx, key, baseURL, model, t)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
+		}
+		if len(vec) > 0 {
+			s.mu.Lock()
+			s.modelInfo.Dimensions = len(vec)
+			s.mu.Unlock()
+		}
+		vectors[i] = vec
+	}
+	return vectors, nil
 }
 
 type openAIEmbeddingRequest struct {

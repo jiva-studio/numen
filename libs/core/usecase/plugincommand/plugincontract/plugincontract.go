@@ -1,3 +1,4 @@
+// Package plugincontract re-exports the plugin port contract.
 package plugincontract
 
 import "github.com/jiva-studio/numen/libs/core/port/pluginport"

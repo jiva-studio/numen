@@ -381,8 +381,11 @@ func resolvePath(path string) string {
 	return filepath.Join(dir, filepath.Base(abs))
 }
 
-// fileLock is held while runOnFile works on a settings file.
-var fileLock sync.Mutex
+type fileAccess struct {
+	mu sync.Mutex
+}
+
+var files fileAccess
 
 // runOnFile hands the work the file the path leads to, with the folder that
 // link is followed once and the rest of the way is the file itself.
@@ -390,8 +393,12 @@ var fileLock sync.Mutex
 // One work runs at a time: each reads the file and writes it back whole, and two at once would
 // write over each other's change.
 func runOnFile(path string, work func(path string) error) error {
-	fileLock.Lock()
-	defer fileLock.Unlock()
+	return files.run(path, work)
+}
+
+func (f *fileAccess) run(path string, work func(path string) error) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	resolved := resolvePath(path)
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
 		return err

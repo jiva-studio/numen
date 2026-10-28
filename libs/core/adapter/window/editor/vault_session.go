@@ -19,10 +19,7 @@ type vaultSession struct {
 	// being followed by.
 	refresh vaults.Refresh
 
-	// ctx is what every pass behind this vault runs under, and what work
-	// nobody is waiting for is started under. cancel ends them, and wait waits
-	// for them.
-	ctx    context.Context
+	// cancel ends every pass behind this vault, and wait waits for them.
 	cancel context.CancelFunc
 	wait   func()
 }
@@ -65,10 +62,9 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.stopVault()
 	o.resetStatus()
 
-	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
-	err := o.startVault(v, false)
+	err := o.startVault(ctx, v, false)
 	if err != nil {
-		if back := o.startVault(was, false); back != nil { //nolint:contextcheck // and so do the ones behind the vault it goes back to
+		if back := o.startVault(ctx, was, false); back != nil {
 			// The window is standing on nothing: it says so, and the door on
 			// writes stays shut.
 			o.State.setVault(domain.Vault{})
@@ -91,7 +87,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 //
 // The zero vault is a window standing on nothing: it shows no vault, and no
 // pass runs behind it.
-func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
+func (o *Installation) startVault(ctx context.Context, v domain.Vault, rebuild bool) error {
 	o.State.setVault(v)
 	if v.ID == "" {
 		// Nothing is being read, so nothing is waited for.
@@ -103,7 +99,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 	if err := o.vaults.RecordOpen.Execute(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
-	on := o.buildSession(v, rebuild)
+	on := o.buildSession(ctx, v, rebuild)
 	// Last, so a request that reads a run reads the one belonging to the vault
 	// in front of it.
 	o.State.setSession(on)
@@ -112,8 +108,17 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 
 // buildSession builds the half of the window that belongs to one vault: the scan
 // and the watch behind it.
-func (o *Installation) buildSession(v domain.Vault, rebuild bool) *vaultSession {
-	watching, stop := context.WithCancel(o.ctx)
+func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild bool) *vaultSession {
+	watching, stop := context.WithCancel(context.WithoutCancel(ctx))
+	if o.closing != nil {
+		go func() {
+			select {
+			case <-o.closing:
+				stop()
+			case <-watching.Done():
+			}
+		}()
+	}
 
 	// What a plugin writes as a text version is cut where every other cut happens.
 	// A version being made and a vault being scanned are then never two passes
@@ -127,7 +132,6 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) *vaultSession 
 
 	return &vaultSession{
 		refresh: refresh,
-		ctx:     watching,
 		cancel:  stop,
 		wait:    ended,
 	}

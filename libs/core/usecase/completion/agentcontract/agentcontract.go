@@ -1,3 +1,4 @@
+// Package agentcontract re-exports the agent port contract for completion use cases.
 package agentcontract
 
 import "github.com/jiva-studio/numen/libs/core/port/agentport"

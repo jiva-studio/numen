@@ -24,6 +24,11 @@ import (
 // reader borrows one. A returned worker stays alive while the pool is within
 // its idle count, and the pool is released once no document has been open for
 // idleRelease.
+// Timer stops a scheduled callback.
+type Timer interface {
+	Stop() bool
+}
+
 var workers struct {
 	sync.Mutex
 	pool pdfium.Pool
@@ -33,8 +38,19 @@ var workers struct {
 	idle int
 	// open is the number of documents open on the pool.
 	open int
+	// isWarmed records whether Warmup has started the pool.
+	isWarmed bool
 	// release fires when the pool has had no open document for idleRelease.
-	release *time.Timer
+	release Timer
+	// afterFunc arms a timer for idleRelease.
+	afterFunc func(time.Duration, func()) Timer
+}
+
+// SetAfterFunc sets the timer factory used to release idle workers.
+func SetAfterFunc(fn func(time.Duration, func()) Timer) {
+	workers.Lock()
+	defer workers.Unlock()
+	workers.afterFunc = fn
 }
 
 // idleRelease is how long an unused pool keeps its workers; a worker holds
@@ -166,7 +182,9 @@ func markDocumentClosed() {
 		workers.release.Stop()
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="markDocumentClosed schedules pool release after idle timeout"
-	workers.release = time.AfterFunc(idleRelease, releasePool)
+	if workers.afterFunc != nil {
+		workers.release = workers.afterFunc(idleRelease, releasePool)
+	}
 }
 
 // releasePool closes the pool and every worker in it when no document is
@@ -308,6 +326,13 @@ func GetWorkers() int {
 
 // Warmup starts the pool and keeps at least one worker ready to serve requests.
 func Warmup() {
+	workers.Lock()
+	if workers.isWarmed {
+		workers.Unlock()
+		return
+	}
+	workers.isWarmed = true
+	workers.Unlock()
 	worker, err := getWorker()
 	if err == nil {
 		putWorker(worker)

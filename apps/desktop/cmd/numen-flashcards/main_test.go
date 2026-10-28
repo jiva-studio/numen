@@ -45,7 +45,7 @@ func makeWindow(
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
 	vaults := &container.OpenVaults{
-		Config: cfg, Index: db, Lifetime: t.Context(),
+		Config: cfg, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)

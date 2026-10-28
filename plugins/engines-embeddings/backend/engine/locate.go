@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/clock"
 )
 
 // FetchProgress reports progress while downloading models.
@@ -127,10 +128,7 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	}
 
 	files := selectModelFiles(folder, file)
-	release, err := reserveDownload(ctx, home, repo, cfg.Name, files, sizes, tokenizerSize, progress)
-	if err != nil {
-		return Paths{}, err
-	}
+	release := reserveDownload(repo, files, sizes, tokenizerSize, progress)
 	defer release()
 
 	p, err := fetchModelFiles(ctx, repo, files, file, cfg.Sums)
@@ -145,15 +143,12 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 }
 
 func reserveDownload(
-	_ context.Context,
-	_ string,
 	repo *hub.Repo,
-	_ string,
 	files []string,
 	sizes map[string]int64,
 	tokenizerSize int64,
 	progress FetchProgress,
-) (func(), error) {
+) func() {
 	var total int64
 	for _, f := range files {
 		total += sizes[f]
@@ -167,12 +162,11 @@ func reserveDownload(
 	if dirErr == nil {
 		cancelProgress = reportProgress(dir, counted, sizes, total, progress)
 	}
-	release := func() {
+	return func() {
 		if cancelProgress != nil {
 			cancelProgress()
 		}
 	}
-	return release, nil
 }
 
 func fetchTokenizer(ctx context.Context, repo *hub.Repo, name string, sums map[string]string) (string, error) {
@@ -239,7 +233,7 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 	doneCh := make(chan struct{})
 	go func() {
 		defer close(doneCh)
-		tick := time.NewTicker(time.Second)
+		tick := clock.NewTicker(time.Second)
 		defer tick.Stop()
 		for {
 			select {
