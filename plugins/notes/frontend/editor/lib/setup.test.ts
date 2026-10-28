@@ -226,6 +226,19 @@ describe('editor preferences in setup', () => {
     expect(getComputedStyle(gutters).backgroundColor).toBe('rgba(0, 0, 0, 0)')
   })
 
+  it('attaches heading and code-block alignment classes to line number gutter elements', () => {
+    const view = open({ lineNumbers: true }, '# First\n\n## Second\n\n```ts\nconst x = 1\n```')
+    const elements = Array.from(
+      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement'),
+    ).filter((el) => el.style.visibility !== 'hidden')
+
+    expect(elements[0]?.classList.contains('cm-gutter-heading-1')).toBe(true)
+    expect(elements[0]?.classList.contains('cm-gutter-gap')).toBe(false)
+    expect(elements[2]?.classList.contains('cm-gutter-heading-2')).toBe(true)
+    expect(elements[2]?.classList.contains('cm-gutter-gap')).toBe(true)
+    expect(elements[4]?.classList.contains('cm-gutter-code-first')).toBe(true)
+  })
+
   it('indents with the configured tabSize', () => {
     const view = open({ tabSize: 4 }, 'one')
     expect(view.state.tabSize).toBe(4)

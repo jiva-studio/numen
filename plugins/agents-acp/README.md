@@ -1,12 +1,11 @@
 # ACP Agents
 
-Connects Numen to external AI coding agents that speak the Agent Client Protocol (ACP) and routes assistant tasks through them.
+Use external AI assistants installed on your computer inside the Agent Chat panel and for AI tasks across your vault.
 
 <!-- more -->
 
-## How It Works
+## What You Can Do
 
-- **Agent discovery & delegation**: Launches and communicates with external ACP-compatible agent processes to serve `numen.v1.AgentService`.
-- **Vault MCP tools**: Exposes the active run's vault and window tools to each ACP session over an ephemeral HTTP MCP server, scoped strictly to the tools authorized for that turn.
-- **Step streaming**: Reports tool invocations, arguments, and outputs back to the Agent Chat view as structured turn steps.
-- **On-demand lifecycle**: Started automatically by the host when a conversation or task selects an ACP agent.
+- **Chat with your favorite AI tools**: Connect any assistant that supports the Agent Client Protocol so you can ask questions, summarize readings, and draft notes without leaving Numen.
+- **Work directly with your vault**: The assistant can search your notes, read passages from books and documents, and propose edits that you can review before accepting.
+- **Automatic startup**: Numen starts the selected assistant automatically when you open a conversation and stops it when you are done.

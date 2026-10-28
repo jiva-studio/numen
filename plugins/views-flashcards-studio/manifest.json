@@ -3,7 +3,7 @@
   "name": "Flashcards Studio",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Flashcard deck editor, card card model designer, SRS presets and card review",
+  "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],

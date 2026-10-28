@@ -3,7 +3,7 @@
   "name": "Vector Embeddings",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Vector embeddings engine for semantic search",
+  "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
   "targets": ["desktop.editor"],
   "activationEvents": ["*"],

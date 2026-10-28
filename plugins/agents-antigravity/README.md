@@ -1,13 +1,15 @@
 # Antigravity Agent
 
-Runs the Google Antigravity CLI (`agy`) as a local agent provider for the Agent Chat panel and background AI tasks.
+Use Google Antigravity (`agy`) installed on your computer to chat with your vault, search your library, and draft or edit notes.
 
 <!-- more -->
 
-## How It Works
+## What You Can Do
 
-- **Local CLI integration**: Spawns the `agy` CLI installed on your machine and streams responses and tool calls through `numen.v1.AgentService`.
-- **Models**: Supports Gemini 2.5 Pro, Gemini 2.5 Flash, and other models configured in your local Antigravity installation.
-- **Settings**:
-  - **Executable path**: Optional custom path to the `agy` binary. When empty, `agy` is resolved from your system `PATH`.
-  - **Hooks & skills**: Can load local Antigravity skills and hooks when enabled in Agent settings.
+- **Ask questions about your library**: Chat with Gemini models through your local Antigravity setup to explore notes, books, PDFs, and recordings.
+- **Draft and refine notes**: Ask the assistant to create or update notes and review every suggested change before applying it.
+
+## Settings
+
+- **Executable path**: Choose where the `agy` program is located on your computer if it is not found automatically.
+- **Hooks & skills**: Enable your personal Antigravity skills and custom workflows during conversations.

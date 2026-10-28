@@ -1,11 +1,11 @@
-# Plex Graph Visualizer
+# Plex Graph
 
-Interactive 2D neighborhood graph that visualizes notes and their directional relationships (parent, child, jump, and sibling links).
+Explore your notes as an interactive visual map showing how ideas connect as parent topics, subtopics, related jumps, and siblings.
 
 <!-- more -->
 
-## Features
+## What You Can Do
 
-- **Focused neighborhood layout**: Displays the active note at the center with its connected parent, child, jump, and sibling nodes arranged and color-coded by relationship type.
-- **Gesture-based linking & creation**: Drag from any node's handle onto another node to link them, or release on empty space to create and link a new note in that direction.
-- **Smooth animated transitions**: Interpolates node positions and edge routing as you navigate across your knowledge graph.
+- **See the big picture around any note**: Places your current note at the center with its parent topics above, subtopics below, and related notes to the side.
+- **Connect and create notes visually**: Drag a connection line from one note to another to link them, or drag onto empty space to create and link a brand-new note in that direction.
+- **Navigate smoothly**: Click any connected note on the map to move the focus there and explore your knowledge step by step.

@@ -2,16 +2,28 @@
 /**
  * Placeholder displayed when a tab's kind belongs to a disabled or missing plugin.
  */
-import type { UnavailableState } from './unavailable'
+import { computed } from 'vue'
+import {
+  formatUnavailableFeature,
+  getUnavailablePluginFilter,
+  type UnavailableState,
+} from './unavailable'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   state: UnavailableState
 }>()
 
+/* --------------------------------- State ---------------------------------- */
+const featureName = computed(() => formatUnavailableFeature(props.state.kind))
+
 /* -------------------------------- Handlers -------------------------------- */
 function onOpenSettings(): void {
-  globalThis.dispatchEvent(new CustomEvent('numen:open-settings'))
+  globalThis.dispatchEvent(
+    new CustomEvent('numen:open-settings', {
+      detail: { filter: getUnavailablePluginFilter(props.state.kind) },
+    }),
+  )
 }
 </script>
 
@@ -21,10 +33,7 @@ function onOpenSettings(): void {
       <div class="tab-unavailable__icon" aria-hidden="true">&#9888;</div>
       <h3 class="tab-unavailable__title">Plugin disabled</h3>
       <p class="tab-unavailable__message">
-        The plugin for &ldquo;{{ props.state.kind }}&rdquo; is disabled or missing.
-      </p>
-      <p v-if="props.state.targetPath" class="tab-unavailable__path">
-        {{ props.state.targetPath }}
+        The plugin for {{ featureName }} is disabled or missing.
       </p>
       <button type="button" class="tab-unavailable__button" @click="onOpenSettings">
         Open Settings
@@ -67,19 +76,10 @@ function onOpenSettings(): void {
 }
 
 .tab-unavailable__message {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.75rem 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-2, 0.95rem);
   line-height: 1.4;
-}
-
-.tab-unavailable__path {
-  margin: 0 0 1.25rem 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1, 0.8125rem);
-  font-family: var(--numen-font-mono, monospace);
-  opacity: 0.8;
-  word-break: break-all;
 }
 
 .tab-unavailable__button {

@@ -7,11 +7,13 @@
  */
 import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { bracketMatching, indentUnit, syntaxHighlighting } from '@codemirror/language'
+import { bracketMatching, indentUnit, syntaxHighlighting, syntaxTree } from '@codemirror/language'
 import {
   type Extension,
+  type Range,
   Compartment,
   EditorState,
+  RangeSet,
   StateEffect,
   StateField,
 } from '@codemirror/state'
@@ -20,6 +22,7 @@ import {
   EditorView,
   GutterMarker,
   drawSelection,
+  gutterLineClass,
   keymap,
   lineNumberWidgetMarker,
   lineNumbers,
@@ -31,6 +34,7 @@ import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from 
 import { highlighting } from '../config/highlight'
 import { LANGUAGES } from '../config/languages'
 import { live, wholeLines } from './live/live'
+import { HEADING } from './live/styles'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from './outside'
 import { monospaced, theme } from '../config/theme'
@@ -92,10 +96,56 @@ class BlockLineNumberMarker extends GutterMarker {
   }
 }
 
+class LineClassMarker extends GutterMarker {
+  constructor(override readonly elementClass: string) {
+    super()
+  }
+
+  override eq(other: LineClassMarker): boolean {
+    return this.elementClass === other.elementClass
+  }
+}
+
+function buildGutterLineClasses(state: EditorState): RangeSet<GutterMarker> {
+  const markers: Range<GutterMarker>[] = []
+  syntaxTree(state).iterate({
+    enter: (node) => {
+      const heading = HEADING.exec(node.name)
+      if (heading) {
+        const line = state.doc.lineAt(node.from)
+        const gap = line.from > 0 ? ' cm-gutter-gap' : ''
+        markers.push(
+          new LineClassMarker(`cm-gutter-heading cm-gutter-heading-${heading[1]}${gap}`).range(
+            line.from,
+          ),
+        )
+        return false
+      }
+      if (node.name === 'FencedCode') {
+        const line = state.doc.lineAt(node.from)
+        markers.push(new LineClassMarker('cm-gutter-code-first').range(line.from))
+        return false
+      }
+      return true
+    },
+  })
+  return RangeSet.of(markers, true)
+}
+
+const gutterLineClasses = StateField.define<RangeSet<GutterMarker>>({
+  create: buildGutterLineClasses,
+  update: (current, tr) =>
+    tr.docChanged || syntaxTree(tr.startState) !== syntaxTree(tr.state)
+      ? buildGutterLineClasses(tr.state)
+      : current,
+  provide: (field) => gutterLineClass.from(field),
+})
+
 export const getLineNumbersExtension = (show: boolean): Extension =>
   show
     ? [
         lineNumbers(),
+        gutterLineClasses,
         lineNumberWidgetMarker.of(
           (view, _widget, block) =>
             new BlockLineNumberMarker(String(view.state.doc.lineAt(block.from).number)),

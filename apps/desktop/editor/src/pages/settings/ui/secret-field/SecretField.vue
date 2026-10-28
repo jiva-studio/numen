@@ -61,14 +61,13 @@ function onDelete() {
         type="password"
         autocomplete="off"
         spellcheck="false"
-        :placeholder="words.keyPlaceholder"
+        :placeholder="isStored ? '••••••••' : words.keyPlaceholder"
         :aria-labelledby="labelledBy"
         class="settings__secret-input"
+        @blur="onSave"
+        @change="onSave"
         @keydown.enter="onSave"
       />
-      <Button variant="outline" size="small" :disabled="inputValue.trim() === ''" @click="onSave">
-        {{ isStored ? words.keyReplace : words.keySave }}
-      </Button>
       <Button v-if="isStored" variant="ghost" size="small" @click="onDelete">
         {{ words.keyDelete }}
       </Button>

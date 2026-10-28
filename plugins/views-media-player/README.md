@@ -1,11 +1,12 @@
-# Media Player
+# Audio Player & Recorder
 
-Plays audio and video recordings alongside their time-aligned transcripts and records voice notes from the microphone.
+Listen to audio and video recordings alongside their interactive transcript, or record new voice notes directly from your microphone.
 
 <!-- more -->
 
-## Features
+## What You Can Do
 
-- **Synchronized transcript editor**: Displays each transcript cue with its timestamp in the gutter; clicking a timestamp or a search hit seeks playback to that exact moment.
-- **Live transcript updates**: Watches active transcription and proofreading tasks, updating cues in real time and saving manual edits as a new text version.
-- **Microphone recorder**: Built-in voice recorder with a live input level meter, timer, preview playback, and one-click export to the vault.
+- **Listen and follow along**: Play recordings while the active line in the transcript highlights and scrolls along with the speaker's voice.
+- **Jump to any moment**: Click any timestamp in the transcript to jump playback to that exact second.
+- **Transcribe, proofread, and edit by hand**: Start **Transcribe** or **Proofread** with one click in the toolbar, or click **Edit** to fix any line of the transcript yourself.
+- **Record voice notes**: Record audio from your microphone, preview it, and save it straight into your vault.

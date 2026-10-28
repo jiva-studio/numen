@@ -3,7 +3,7 @@
   "name": "Window Interaction Tools",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Provides window interaction, active tab inspection, and interactive diff edit preview tools for AI agents",
+  "description": "Workspace context and interactive edit previews for AI assistants",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "permissions": ["vault:read"],

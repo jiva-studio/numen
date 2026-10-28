@@ -62,7 +62,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   const ask = async (question: string, focus: string, askOptions?: AskOptions) => {
     if (!question || isWorking.value) return
-    turns.value.push({ id: nextId(), voice: 'prompt', text: question })
+    put({ id: nextId(), voice: 'prompt', text: question })
 
     const work = createWorkLine(
       { put, drop, locations, waitWords: words.thinking },
@@ -170,7 +170,12 @@ function useConversationTurns() {
     turns.value = turns.value.filter((turn) => turn.id !== id)
   }
 
-  const nextId = () => `${next++}`
+  const nextId = () => {
+    while (turns.value.some((turn) => turn.id === `${next}`)) {
+      next += 1
+    }
+    return `${next++}`
+  }
 
   return { turns, locations, put: saveTurn, drop, nextId }
 }

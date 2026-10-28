@@ -406,6 +406,8 @@ export const useWindow = () => {
 
   const api = {
     runCommand,
+    openSettings: (pluginId?: string, filter?: string) =>
+      settings.configured.openSettings(pluginId, filter),
     commands: getCommands(ctx).commands,
     pluginWays: getCommands(ctx).pluginWays,
     commandDeps: getCommands(ctx).commandDeps,

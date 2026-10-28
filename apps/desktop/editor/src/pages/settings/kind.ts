@@ -11,7 +11,8 @@ import { WORDS as words } from './words'
 export function useSettingsTab(handle: WindowHandle, installation: Installation) {
   const isOpen = ref(false)
   const initialPluginId = ref<string | null>(null)
-  const state: SettingsTabState = { installation, initialPluginId }
+  const initialSearchQuery = ref('')
+  const state: SettingsTabState = { installation, initialPluginId, initialSearchQuery }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: TabKind<SettingsTabState, typeof SETTINGS> = {
@@ -29,10 +30,13 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
     isTool: true,
   }
 
-  /** Opens the settings tab, optionally at one plugin. */
-  const openSettings = (pluginId?: string): void => {
+  /** Opens the settings tab, optionally at one plugin or with a search filter. */
+  const openSettings = (pluginId?: string, filter?: string): void => {
     isOpen.value = true
-    if (pluginId !== undefined) {
+    if (filter !== undefined) {
+      initialPluginId.value = null
+      initialSearchQuery.value = filter
+    } else if (pluginId !== undefined) {
       initialPluginId.value = pluginId
     }
     void handle.openTab(SETTINGS, pluginId)

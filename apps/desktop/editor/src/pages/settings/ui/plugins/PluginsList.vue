@@ -3,10 +3,16 @@
  * Registry list of installed plugins with search filtering and category prefix,
  * plus navigation to detail views and system settings.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import PluginRow from './PluginRow.vue'
 import SystemRow from './SystemRow.vue'
 import type { SettingsTabState } from '../../types'
+import {
+  matchesPluginQuery,
+  matchesSystemRow,
+  parsePluginQuery,
+  type PluginFilterContext,
+} from '../../lib/pluginFilter'
 import { write, type PluginInfo } from '@/entities/settings'
 import { WORDS as words } from '../../words'
 
@@ -22,7 +28,16 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const searchQuery = ref('')
+const searchQuery = ref(props.state.initialSearchQuery?.value ?? '')
+
+watch(
+  () => props.state.initialSearchQuery?.value,
+  (newQuery) => {
+    if (newQuery !== undefined) {
+      searchQuery.value = newQuery
+    }
+  },
+)
 
 const CATEGORY_ORDER = ['agents', 'editors', 'engines', 'readers', 'tools', 'views']
 
@@ -32,26 +47,22 @@ interface FlatPluginItem {
   plugin: PluginInfo
 }
 
-const showsSystem = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) return true
-  const keywords = ['system', 'theme', 'appearance', 'window', 'scale', 'naming', 'sync']
-  return keywords.some((k) => k.includes(query) || query.includes(k))
-})
+const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
+
+const filterContext: PluginFilterContext = {
+  isEnabled: isPluginEnabled,
+  getCategory: getPluginCategory,
+  getCategoryLabel: formatCategoryLabel,
+}
+
+const showsSystem = computed(() => matchesSystemRow(parsedQuery.value))
 
 const flatPlugins = computed<readonly FlatPluginItem[]>(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  const matching = query
-    ? props.plugins.filter((plugin) => {
-        const cat = getPluginCategory(plugin)
-        const label = formatCategoryLabel(cat).toLowerCase()
-        const nameMatch = plugin.name.toLowerCase().includes(query)
-        const descMatch = (plugin.description ?? '').toLowerCase().includes(query)
-        const idMatch = plugin.id.toLowerCase().includes(query)
-        const catMatch = cat.includes(query) || label.includes(query)
-        return nameMatch || descMatch || idMatch || catMatch
-      })
-    : props.plugins
+  const query = parsedQuery.value
+  const matching =
+    query.qualifiers.length > 0 || query.terms.length > 0
+      ? props.plugins.filter((plugin) => matchesPluginQuery(plugin, query, filterContext))
+      : props.plugins
 
   const items: FlatPluginItem[] = matching.map((plugin) => {
     const category = getPluginCategory(plugin)

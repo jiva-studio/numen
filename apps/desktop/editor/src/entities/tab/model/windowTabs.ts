@@ -39,6 +39,7 @@ export interface SavedTab {
   readonly id: string
   readonly kind: string
   readonly path: string
+  readonly title?: string | undefined
   /** What the kind saved, parsed from its JSON; absent where it saved nothing. */
   readonly saved?: unknown
 }
@@ -166,10 +167,12 @@ function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
     for (const [id, one] of ctx.open.value) {
       if (one.kind.pluginId !== pluginId) continue
       const saved = one.kind.getState?.(one.state)
+      const title = one.kind.getTitle?.(one.state)
+      const icon = one.kind.icon
       const path = getTabPath(one)
       if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
       else one.kind.onClose?.(one.state, id)
-      replaceTab(id, createUnavailableKind(one.kind.kind), path, saved)
+      replaceTab(id, createUnavailableKind(one.kind.kind, { title, icon }), path, saved)
     }
   }
 
@@ -289,7 +292,8 @@ function createTabQueries(
 function createTabOpeners(ctx: TabOpenerContext) {
   /** A tab the core kept, opened under its id with the state its kind saved. */
   const openSavedTab = (saved: SavedTab) => {
-    const one = ctx.byKind.get(saved.kind) ?? createUnavailableKind(saved.kind)
+    const one =
+      ctx.byKind.get(saved.kind) ?? createUnavailableKind(saved.kind, { title: saved.title })
     const scope = effectScope(true)
     const state = openInScope(scope, () => one.open(saved.path, saved.id, saved.saved))
     ctx.scopes.set(saved.id, scope)

@@ -115,7 +115,7 @@ describe('a recording tab', () => {
     tab.unmount()
   })
 
-  it('shows the proofread button in the media strip and re-transcribe in the overflow menu when a transcript exists', async () => {
+  it('offers proofread and re-transcribe in the overflow menu when a transcript exists', async () => {
     const proofreadEntry = {
       ...TRANSCRIBE_ENTRY,
       pluginId: 'md.test.proofreading',
@@ -130,9 +130,15 @@ describe('a recording tab', () => {
     const { tab } = mountTab(recordings)
     await flush()
 
-    const proofreadBtn = tab.find('.media__proofread')
-    expect(proofreadBtn.exists()).toBe(true)
-    await proofreadBtn.trigger('click')
+    expect(tab.find('.media__proofread').exists()).toBe(false)
+
+    await tab.find('.media__more').trigger('click')
+    const proofreadItem = [...document.querySelectorAll('[role="menuitem"]')].find(
+      (one) => one.textContent?.trim() === WORDS.proofread,
+    ) as HTMLElement | undefined
+    expect(proofreadItem).toBeDefined()
+    expect(proofreadItem!.querySelector('.media__menu-icon')).not.toBeNull()
+    proofreadItem!.click()
     await flush()
     expect(state.runs).toStrictEqual([proofreadEntry])
 

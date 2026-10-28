@@ -12,7 +12,7 @@ export const WORDS = {
   nothingSaid: 'No messages yet',
   agent: 'Agent',
   /** The commands the plugin declares: a conversation opened, and a note asked about. */
-  newAgent: 'New agent',
+  newAgent: 'Open agent tab',
   askAbout: 'Ask the agent',
   reasoning: 'Reasoning',
 }

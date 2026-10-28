@@ -3,7 +3,7 @@
   "name": "ACP Agents",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Agent Client Protocol (ACP) client: finds ACP programs and runs completions through them",
+  "description": "External AI assistants via the Agent Client Protocol",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],

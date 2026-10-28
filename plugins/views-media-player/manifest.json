@@ -3,7 +3,7 @@
   "name": "Audio Player & Recorder",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Audio player with waveform visualization and microphone recording",
+  "description": "Audio and video player with interactive transcripts and voice recording",
   "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
   "permissions": ["vault:read", "vault:write"],

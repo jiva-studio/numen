@@ -3,7 +3,7 @@
   "name": "Media Importer",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Keeps web links as notes, fetches their articles and captions, and downloads videos for offline playback",
+  "description": "Saves web articles and downloads online videos for offline playback",
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],

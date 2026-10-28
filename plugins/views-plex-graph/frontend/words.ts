@@ -39,7 +39,7 @@ export const WORDS = {
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
   /** The commands the plugin declares: a plex opened, and a note put in front in one. */
-  newPlex: 'New plex',
+  newPlex: 'Open plex tab',
   travel: 'Show in plex',
   /** Menu command labels */
   read: 'Open note',

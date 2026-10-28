@@ -85,6 +85,30 @@ export const theme = EditorView.theme({
     lineHeight: '2',
     userSelect: 'none',
   },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-gap': {
+    paddingTop: 'calc(var(--editor-block-gap) * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-heading-1': {
+    lineHeight: 'calc(1.75 * 1.3 * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-heading-2': {
+    lineHeight: 'calc(1.5 * 1.3 * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-heading-3': {
+    lineHeight: 'calc(1.3 * 1.3 * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-heading-4': {
+    lineHeight: 'calc(1.15 * 1.3 * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-heading-5': {
+    lineHeight: 'calc(1.05 * 1.3 * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-heading-6': {
+    lineHeight: 'calc(1 * 1.3 * 1.25)',
+  },
+  '.cm-lineNumbers .cm-gutterElement.cm-gutter-code-first': {
+    paddingTop: '4px',
+  },
   '&.cm-editor .cm-activeLineGutter': {
     backgroundColor: 'transparent',
     color: 'var(--numen-ink)',
@@ -120,7 +144,7 @@ export const theme = EditorView.theme({
   '.cm-heading': {
     fontWeight: '600',
     lineHeight: '1.3',
-    marginTop: 'var(--editor-block-gap)',
+    paddingTop: 'var(--editor-block-gap)',
   },
   '.cm-heading-1': { fontSize: '1.75em' },
   '.cm-heading-2': { fontSize: '1.5em' },
@@ -130,7 +154,7 @@ export const theme = EditorView.theme({
   '.cm-heading-6': { fontSize: '1em' },
 
   /* Nothing stands above the first line, so it takes no gap. */
-  '.cm-content > .cm-line:first-child': { marginTop: '0', paddingTop: '0' },
+  '.cm-content > .cm-line:first-child': { paddingTop: '0' },
 
   '.cm-strong': { fontWeight: '600' },
   '.cm-em': { fontStyle: 'italic' },
@@ -154,7 +178,6 @@ export const theme = EditorView.theme({
     padding: '0 8px',
   },
   '.cm-code-first': {
-    marginTop: 'var(--editor-block-gap)',
     paddingTop: '4px',
     borderTopLeftRadius: 'var(--numen-radius)',
     borderTopRightRadius: 'var(--numen-radius)',
@@ -181,8 +204,14 @@ export const theme = EditorView.theme({
     cursor: 'pointer',
   },
 
-  '.cm-rule': { padding: '6px 0' },
+  '.cm-rule': {
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: '1.6em',
+    padding: '0',
+  },
   '.cm-rule hr': {
+    width: '100%',
     border: 'none',
     borderTop: '1px solid var(--numen-rule)',
     margin: '0',

@@ -42,7 +42,6 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
       return state
     },
     getTitle: () => words.files,
-    identity: () => FILES,
     onClose: (state, id) => {
       state.list.close()
       tabs.delete(id)

@@ -3,7 +3,7 @@
   "name": "Notes",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Notes written in Markdown: the live editor, wikilinks and the note editor view",
+  "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "readers": [
@@ -33,15 +33,6 @@
       "title": "Line Numbers",
       "description": "Show line numbers in the editor margin",
       "default": true
-    },
-    {
-      "key": "tab_size",
-      "type": "number",
-      "title": "Tab Size",
-      "description": "Number of spaces per indentation level",
-      "default": 2,
-      "min": 2,
-      "max": 8
     }
   ]
 }

@@ -40,13 +40,13 @@ const openTab = (kind: ReturnType<typeof createKindOver>['kind'], targetPath = '
 }
 
 describe('a files tab', () => {
-  it('is called Files and is one tab per window', () => {
+  it('is called Files and allows opening multiple tabs', () => {
     const { kind } = createKindOver(createTreeOf().tree)
     const { state } = openTab(kind)
 
     expect(kind.kind).toBe(FILES)
     expect(kind.getTitle?.(state)).toBe('Files')
-    expect(kind.identity?.('anything')).toBe(FILES)
+    expect(kind.identity).toBeUndefined()
   })
 
   it('opens on the root of the vault, and reveals nothing where it was told nothing', () => {

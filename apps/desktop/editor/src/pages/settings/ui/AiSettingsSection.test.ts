@@ -166,11 +166,12 @@ describe('the keys', () => {
     }
   })
 
-  it('are stored as typed, and the field is emptied', async () => {
+  it('are stored as typed on Enter or blur without a Save button, and the field is emptied', async () => {
     const { wrapper, secrets } = createSection()
+    expect(wrapper.findAll('button').some((one) => one.text() === 'Save')).toBe(false)
     const input = pick(wrapper.findAll('input[type="password"]'), 1)
     await input.setValue('  made-up-key  ')
-    await input.trigger('keydown.enter')
+    await input.trigger('blur')
     expect(secrets).toStrictEqual(['write test.agent-a apiKey made-up-key'])
     expect((input.element as HTMLInputElement).value).toBe('')
   })

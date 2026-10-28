@@ -1,11 +1,11 @@
 # PDF Reader
 
-Renders `.pdf` documents with high-DPI PDFium page rendering, document outlines, and selectable text layers.
+Read PDF documents and scanned books with smooth zooming, page thumbnails, highlights, and passage links.
 
 <!-- more -->
 
-## Features
+## What You Can Do
 
-- **PDFium rendering engine**: Streams rendered pages and document metadata over `numen.pdf.v1.DocumentService`.
-- **OCR integration**: Overlays positioned text recognized by the Document OCR plugin on scanned pages so every PDF is selectable and searchable.
-- **Passage citations**: Links directly to pages and text stretches from notes, flashcards, and search results.
+- **Read digital and scanned PDFs**: Browse pages with the thumbnail sidebar, outline tree, and zoom controls.
+- **Works seamlessly with OCR and Proofreading**: On scanned PDFs, select and search recognized text right on the page, or switch between the original scan text and the proofread version.
+- **Highlight and cite passages**: Highlight important lines on any page and copy quotes that link directly back to that page and passage.

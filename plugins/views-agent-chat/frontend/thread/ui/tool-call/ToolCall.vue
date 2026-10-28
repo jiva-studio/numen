@@ -1,7 +1,5 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
-import { TypingIndicator } from '../typing-indicator'
-
 withDefaults(
   defineProps<{
     /** What the tool is called, in the words it is to be shown by. */
@@ -27,7 +25,6 @@ withDefaults(
     <span v-if="subject" class="min-w-0 flex-1 truncate opacity-70">{{ subject }}</span>
     <span v-else class="flex-1" />
     <span v-if="aside" class="flex-none tabular-nums opacity-70">{{ aside }}</span>
-    <TypingIndicator v-if="isWorking" class="ml-0.5" />
   </p>
 </template>
 

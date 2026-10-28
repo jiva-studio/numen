@@ -3,7 +3,7 @@
   "name": "Document OCR",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Text recognition for scans and scanned PDFs with PaddleOCR and ONNX Runtime",
+  "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],
@@ -180,7 +180,8 @@
         {
           "value": "custom",
           "title": "Custom model",
-          "detail": "Languages unknown: they are those of the model file"
+          "detail": "Languages unknown: they are those of the model file",
+          "dependencies": ["rec-pp-ocrv6-tiny"]
         }
       ]
     },

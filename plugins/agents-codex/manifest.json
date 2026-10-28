@@ -3,7 +3,7 @@
   "name": "OpenAI Codex Agent",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "OpenAI Codex CLI agent runner and provider service",
+  "description": "OpenAI Codex assistant for chat and note editing",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],

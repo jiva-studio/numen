@@ -3,7 +3,7 @@
   "name": "Model Context Protocol Server",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Exposes an external MCP (Model Context Protocol) SSE/stdio server aggregating the tools of the plugins through the host",
+  "description": "Connects external AI apps to your open vault",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],

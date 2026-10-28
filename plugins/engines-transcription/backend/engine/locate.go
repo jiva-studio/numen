@@ -82,7 +82,7 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 	if found := findInHome(fileName); found != "" {
 		return found, nil
 	}
-	return "", fmt.Errorf("model %s not found (env: %s)", fileName, envVar)
+	return "", fmt.Errorf("model %s not found", fileName)
 }
 
 func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {

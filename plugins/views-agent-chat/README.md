@@ -1,11 +1,11 @@
 # Agent Chat
 
-Provides the interactive conversation tab where you ask AI agents questions about your vault, search sources, and review proposed note edits.
+Open a conversation tab to ask AI assistants questions about your vault, find passages across your books and notes, and collaborate on writing.
 
 <!-- more -->
 
-## Features
+## What You Can Do
 
-- **Agent & model selector**: Switch between installed agents (Numen Agent, Claude Code, Antigravity, Codex, ACP) and their models per conversation.
-- **Grounded vault citations**: Follows `[[Note]]` wikilinks and `numen:` passage links in agent responses, opening cited books, PDFs, and transcripts at the exact passage.
-- **Tool call inspection**: Displays each MCP tool call and its result inline as the agent works.
+- **Switch assistants and models anytime**: Pick which AI assistant and model to use right from the bottom of the chat.
+- **Click citations to verify sources**: Answers include clickable links to your notes, book passages, PDF pages, and transcript timestamps so you can jump straight to the source.
+- **See what the assistant is doing**: Watch each search and note lookup step as the assistant works on your request.

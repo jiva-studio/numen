@@ -1,16 +1,20 @@
 # LLM Proofreading
 
-Proofreads transcripts and OCR-recognized text with a language model, saving the cleaned text as a new text version while preserving timestamps and page coordinates.
+Cleans up spelling, punctuation, and recognition errors in audio transcripts and scanned documents using an AI model—without losing timestamps or page positions.
 
 <!-- more -->
 
-## Providers & Settings
+## What You Can Do
+
+- **Fix transcription and OCR mistakes**: Click **Proofread** in the Media Player or right-click a transcribed recording or recognized PDF in the sidebar to produce a clean, readable version.
+- **Keep original versions safe**: Proofreading creates a new text version alongside the original transcript or scan recognition, so you can switch back and forth at any time.
+
+## Settings
 
 - **Provider**:
-  - **Agent** *(default)*: Routes proofreading prompts through a configured Numen agent.
-  - **OpenRouter / OpenAI / Custom service**: Sends parallel batch chat completion requests directly to an OpenAI-compatible API using the configured **API key** and **Model**.
-- **Batching & safety controls**:
-  - **Batch size**: Number of lines sent per model request (`40` by default).
-  - **Overlap**: Context lines shared between adjacent batches (`4` by default).
-  - **In-flight requests**: Number of parallel model requests executed concurrently (`4` by default).
-  - **Max edit distance**: Maximum allowed normalized edit distance (`0.3` by default) to guard against model hallucinations or dropped lines.
+  - **Agent** *(default)*: Uses one of your configured AI assistants in Numen.
+  - **OpenRouter / OpenAI / Custom service**: Connects directly to an online model service to proofread multiple sections in parallel for faster results and lower cost.
+- **Batch size**: How many lines are proofread together at once (`40` by default).
+- **Overlap**: Extra surrounding lines included for context between batches (`4` by default).
+- **In-flight requests**: How many batches are proofread in parallel (`4` by default).
+- **Max edit distance**: Safety limit (`0.3` by default) that rejects a line if the AI rewrites too much of the original wording.

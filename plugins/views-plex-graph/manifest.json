@@ -3,7 +3,7 @@
   "name": "Plex Graph",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Modular knowledge graph visualizer and plex explorer",
+  "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],

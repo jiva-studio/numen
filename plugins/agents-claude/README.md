@@ -1,13 +1,15 @@
 # Claude Code Agent
 
-Runs the Anthropic Claude Code CLI (`claude`) as a local agent provider for vault conversations and AI completions.
+Use Anthropic Claude Code (`claude`) installed on your computer to answer questions about your vault, summarize sources, and help write notes.
 
 <!-- more -->
 
-## How It Works
+## What You Can Do
 
-- **Local CLI integration**: Invokes the `claude` CLI process on your machine and bridges its streaming output and MCP tool calls to `numen.v1.AgentService`.
-- **Models**: Supports Claude Opus, Sonnet, and Haiku models available to your Claude Code account.
-- **Settings**:
-  - **Executable path**: Optional custom path to the `claude` binary. When empty, `claude` is resolved from your system `PATH`.
-  - **Hooks & skills**: Supports local Claude Code hooks and skills when enabled in Agent settings.
+- **Research across your vault**: Use Claude Opus, Sonnet, or Haiku through your Claude Code subscription to search notes, books, and transcripts.
+- **Guided note editing**: Ask Claude to reorganize notes, extract key ideas, or link related passages, with interactive previews for every edit.
+
+## Settings
+
+- **Executable path**: Choose the location of the `claude` program on your computer if it is installed in a custom folder.
+- **Hooks & skills**: Allow Claude to use your configured Claude Code skills and shortcuts.

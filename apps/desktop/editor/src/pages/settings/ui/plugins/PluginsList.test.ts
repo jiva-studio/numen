@@ -92,6 +92,36 @@ describe('PluginsList', () => {
     expect(rows).toHaveLength(3)
   })
 
+  it('filters plugins by disabled:true, reader:<id>, and feature:<kind>', async () => {
+    const plugins = [
+      createPluginInfo('md.numen.notes', 'Notes', {
+        readers: [{ id: 'markdown', extensions: ['md'] }],
+      }),
+      createPluginInfo('md.numen.views.file.tree', 'File Tree Explorer'),
+    ]
+    const { wrapper } = createList(
+      { plugins: { 'md.numen.notes': { enabled: false } } },
+      plugins,
+    )
+
+    const searchInput = wrapper.find('input[type="search"]')
+
+    await searchInput.setValue('disabled:true')
+    let rows = wrapper.findAllComponents(PluginRow)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.props('plugin').id).toBe('md.numen.notes')
+
+    await searchInput.setValue('reader:markdown')
+    rows = wrapper.findAllComponents(PluginRow)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.props('plugin').id).toBe('md.numen.notes')
+
+    await searchInput.setValue('feature:files')
+    rows = wrapper.findAllComponents(PluginRow)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.props('plugin').id).toBe('md.numen.views.file.tree')
+  })
+
   it('passes enabled state from installation settings to plugin row', () => {
     const plugins = [createPluginInfo('plugin.disabled', 'Disabled Plugin')]
     const { wrapper } = createList({ plugins: { 'plugin.disabled': { enabled: false } } }, plugins)

@@ -30,6 +30,7 @@ const unsaved = {
 
 const {
   runCommand,
+  openSettings,
   commands,
   pluginWays,
   commandDeps,
@@ -61,7 +62,12 @@ const linkMenu = useTabLinkMenu({
 const writeMessage = log.getWriter('window')
 
 /* --------------------------------- Hooks ---------------------------------- */
-function onOpenSettings(): void {
+function onOpenSettings(event: Event): void {
+  const filter = (event as CustomEvent<{ filter?: string }>).detail?.filter
+  if (filter && openSettings) {
+    openSettings(undefined, filter)
+    return
+  }
   runCommand('settings', getTarget())
 }
 

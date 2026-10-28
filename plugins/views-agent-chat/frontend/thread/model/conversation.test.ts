@@ -732,6 +732,28 @@ describe('an exchange that is over', () => {
     ])
   })
 
+  it('appends new prompts and responses after restored turns without colliding on turn IDs', async () => {
+    const conversation = useConversation(
+      createPort([createSaidStep('Fresh reply'), createStopped()]),
+      words,
+      called,
+      now,
+    )
+    conversation.turns.value = [
+      { id: '0', voice: 'prompt', text: 'hey' },
+      { id: '3', voice: 'response', text: 'Previous reply' },
+    ]
+
+    await conversation.ask('why so long?', '')
+
+    expect(conversation.turns.value.map((turn) => [turn.voice, turn.text])).toEqual([
+      ['prompt', 'hey'],
+      ['response', 'Previous reply'],
+      ['prompt', 'why so long?'],
+      ['response', 'Fresh reply'],
+    ])
+  })
+
   it('leaves nothing saying so when the agent could not be reached', async () => {
     const conversation = useConversation(
       {

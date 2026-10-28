@@ -66,4 +66,5 @@ export interface Installation {
 export interface SettingsTabState {
   readonly installation: Installation
   readonly initialPluginId?: Ref<string | null>
+  readonly initialSearchQuery?: Ref<string>
 }

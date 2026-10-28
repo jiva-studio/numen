@@ -2,8 +2,8 @@
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   files: 'Files',
-  /** The commands the plugin declares: the tree put in front, and a note shown in it. */
-  showFiles: 'Show files',
+  /** The commands the plugin declares: a files tab opened, and a note shown in one. */
+  showFiles: 'Open files tab',
   reveal: 'Show in files',
   /** The tree, announced to whoever is not looking at it. */
   tree: 'Vault files',

@@ -2,7 +2,7 @@
 /**
  * The controls over the text, standing together at the end of the media strip.
  */
-import { Ellipsis, LocateFixed, SpellCheck } from '@lucide/vue'
+import { Ellipsis, LocateFixed } from '@lucide/vue'
 import { WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -11,25 +11,18 @@ const props = defineProps<{
   isTimed?: boolean
   /** Whether the view keeps the line being said in sight. */
   isFollowing?: boolean
-  /** Whether the transcript can be proofread now. */
-  isProofreadable?: boolean
   /** Whether the menu at the end of the strip offers anything. */
   hasMenu?: boolean
 }>()
 
 const emit = defineEmits<{
   'toggle-follow': []
-  proofread: []
   'open-menu': [event: Event]
 }>()
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggleFollow() {
   emit('toggle-follow')
-}
-
-function onProofread() {
-  emit('proofread')
 }
 
 function onOpenMenu(event: Event) {
@@ -49,16 +42,6 @@ function onOpenMenu(event: Event) {
       @click="onToggleFollow"
     >
       <LocateFixed class="media__icon" />
-    </button>
-    <button
-      v-if="props.isProofreadable"
-      type="button"
-      class="media__proofread"
-      :aria-label="words.proofread"
-      :title="words.proofread"
-      @click="onProofread"
-    >
-      <SpellCheck class="media__icon" />
     </button>
     <button
       v-if="props.hasMenu"
@@ -83,7 +66,6 @@ function onOpenMenu(event: Event) {
 }
 
 .media__follow,
-.media__proofread,
 .media__more {
   display: grid;
   place-items: center;
@@ -99,7 +81,6 @@ function onOpenMenu(event: Event) {
 }
 
 .media__follow:hover,
-.media__proofread:hover,
 .media__more:hover {
   background: var(--numen-field-bg);
 }

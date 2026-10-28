@@ -120,9 +120,9 @@ export const settingsCore: SettingsPort = {
               : undefined,
             when: readCondition(s.when),
             accept: s.accept,
-            min: s.min,
-            max: s.max,
-            step: s.step,
+            min: s.min === 0 && s.max === 0 ? undefined : s.min,
+            max: s.min === 0 && s.max === 0 ? undefined : s.max,
+            step: s.step === 0 ? undefined : s.step,
             modelsOf: s.modelsOf,
           }
         }),

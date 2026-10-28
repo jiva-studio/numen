@@ -3,7 +3,7 @@
   "name": "Numen Agent",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Built-in agent for OpenAI-compatible chat APIs (OpenRouter, OpenAI, Ollama, LM Studio) with the vault tools over MCP",
+  "description": "Built-in AI assistant for OpenRouter, OpenAI, Ollama, and LM Studio",
   "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],

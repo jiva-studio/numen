@@ -3,7 +3,7 @@
   "name": "Audio/Video Transcription",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Transcribes recordings into timed transcripts in the vault",
+  "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],

@@ -3,7 +3,7 @@
   "name": "PDF Reader",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Standalone PDF document viewer and page renderer powered by PDFium",
+  "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],

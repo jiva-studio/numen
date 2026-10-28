@@ -1,10 +1,11 @@
-# Window Tools
+# Window Interaction Tools
 
-Provides MCP tools for inspecting open workspace tabs and proposing interactive diff edits in the desktop editor.
+Allows AI assistants to see which tab and passage you are currently reading and to show you interactive previews before changing a note.
 
 <!-- more -->
 
-## Tools Provided
+## What It Enables
 
-- **Workspace tab context**: Allows the active agent to see which notes, books, or documents are currently open in the editor window.
-- **Interactive diff previews**: Lets the agent propose inline changes to open notes that you can review, accept, or reject directly in the editor.
+- **Context awareness**: When you ask a question like *"Summarize this page"*, the assistant can see which note, book, PDF, or recording you have open.
+- **Guided navigation**: Lets the assistant open a note, book passage, or transcript right in your workspace when you ask for it.
+- **Safe edit previews**: Instead of changing your notes silently, the assistant highlights proposed additions and removals right inside the editor so you can accept or reject each change.

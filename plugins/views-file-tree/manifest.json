@@ -3,7 +3,7 @@
   "name": "File Tree Explorer",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Modular file tree explorer and vault navigator",
+  "description": "Sidebar file browser for managing notes, books, and recordings",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],

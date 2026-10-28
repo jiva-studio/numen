@@ -1449,9 +1449,17 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 					defJSON = string(b)
 				}
 			}
-			minVal := s.Min
-			maxVal := s.Max
-			stepVal := s.Step
+			var minPtr, maxPtr, stepPtr *float64
+			if s.Min != 0 || s.Max != 0 {
+				minVal := s.Min
+				maxVal := s.Max
+				minPtr = &minVal
+				maxPtr = &maxVal
+			}
+			if s.Step != 0 {
+				stepVal := s.Step
+				stepPtr = &stepVal
+			}
 			settings = append(settings, pluginport.PluginSetting{
 				Key:         s.Key,
 				Type:        s.Type,
@@ -1460,9 +1468,9 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 				DefaultJSON: defJSON,
 				Palette:     s.Palette,
 				Options:     s.Options,
-				Min:         &minVal,
-				Max:         &maxVal,
-				Step:        &stepVal,
+				Min:         minPtr,
+				Max:         maxPtr,
+				Step:        stepPtr,
 				ModelsOf:    s.ModelsOf,
 				Replaces:    s.Replaces,
 				OptionsBy:   s.OptionsBy,

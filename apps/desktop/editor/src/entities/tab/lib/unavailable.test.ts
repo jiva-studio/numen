@@ -22,23 +22,31 @@ describe('createUnavailableKind', () => {
     expect(kind.getTitle?.(state)).toBe('a.bin')
   })
 
-  it('says that the plugin is disabled and names the kind and the path', () => {
-    const kind = createUnavailableKind('reader:viewer')
+  it('preserves the original tab title when provided and falls back to the formatted kind title', () => {
+    const withTitle = createUnavailableKind('files', { title: 'Files' })
+    expect(withTitle.getTitle?.(withTitle.open('', 'tab'))).toBe('Files')
 
-    const view = mount(kind.pane, { props: { state: kind.open('/a.bin', 'tab') } })
-
-    expect(view.text()).toContain('Plugin disabled')
-    expect(view.text()).toContain('reader:viewer')
-    expect(view.text()).toContain('/a.bin')
+    const withoutTitle = createUnavailableKind('files')
+    expect(withoutTitle.getTitle?.(withoutTitle.open('', 'tab'))).toBe('Files')
   })
 
-  it('dispatches numen:open-settings event when Open Settings button is clicked', async () => {
-    const kind = createUnavailableKind('reader:viewer')
-    const view = mount(kind.pane, { props: { state: kind.open('/a.bin', 'tab') } })
+  it('says that the plugin is disabled with a friendly feature name and omits the raw file path', () => {
+    const kind = createUnavailableKind('reader:markdown')
 
-    let eventFired = false
-    const listener = () => {
-      eventFired = true
+    const view = mount(kind.pane, { props: { state: kind.open('cards/Place.md', 'tab') } })
+
+    expect(view.text()).toContain('Plugin disabled')
+    expect(view.text()).toContain('The plugin for Markdown notes is disabled or missing.')
+    expect(view.text()).not.toContain('cards/Place.md')
+  })
+
+  it('dispatches numen:open-settings event with the feature filter when Open Settings button is clicked', async () => {
+    const kind = createUnavailableKind('reader:markdown')
+    const view = mount(kind.pane, { props: { state: kind.open('cards/Place.md', 'tab') } })
+
+    let receivedFilter: string | undefined
+    const listener = (event: Event) => {
+      receivedFilter = (event as CustomEvent<{ filter?: string }>).detail?.filter
     }
     globalThis.addEventListener('numen:open-settings', listener)
 
@@ -47,7 +55,7 @@ describe('createUnavailableKind', () => {
     expect(button.text()).toBe('Open Settings')
 
     await button.trigger('click')
-    expect(eventFired).toBe(true)
+    expect(receivedFilter).toBe('reader:markdown')
 
     globalThis.removeEventListener('numen:open-settings', listener)
   })

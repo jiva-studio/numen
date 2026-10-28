@@ -4,12 +4,13 @@
  *
  * The player comes in through the slot, and so does whatever the tab lets a person ask over it.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, type Component } from 'vue'
+import { AudioLines, SpellCheck, Trash2 } from '@lucide/vue'
 import { Menu } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
 import MediaActions from './MediaActions.vue'
 import Transcript from './Transcript.vue'
-import { WORDS as words } from './words'
+import { DELETE_TEXT, PROOFREAD, TRANSCRIBE, WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -28,7 +29,6 @@ const emit = defineEmits<{ choose: [id: string] }>()
 /* --------------------------------- State ---------------------------------- */
 const { following } = props.state.content
 const { timed } = props.state.lines
-const { isProofreadable } = props.state.offers
 const { isPlaying: playbackIsPlaying } = props.state.playback
 
 const isFollowing = computed(() => following.value)
@@ -60,8 +60,12 @@ function onToggleFollow() {
   props.state.content.setFollowing(!isFollowing.value)
 }
 
-function onProofread() {
-  void props.state.offers.proofread()
+/* -------------------------------- Helpers --------------------------------- */
+function getMenuItemIcon(id: string): Component | null {
+  if (id === PROOFREAD) return SpellCheck
+  if (id === TRANSCRIBE) return AudioLines
+  if (id === DELETE_TEXT) return Trash2
+  return null
 }
 </script>
 
@@ -71,13 +75,11 @@ function onProofread() {
       <slot name="player" />
 
       <MediaActions
-        v-if="timed || isProofreadable || items.length"
+        v-if="timed || items.length"
         :is-timed="timed"
         :is-following="isFollowing"
-        :is-proofreadable="isProofreadable"
         :has-menu="items.length > 0"
         @toggle-follow="onToggleFollow"
-        @proofread="onProofread"
         @open-menu="onOpenMenu"
       />
     </div>
@@ -93,7 +95,16 @@ function onProofread() {
       :name="words.more"
       @choose="onChooseMenuItem"
       @dismiss="onDismissMenu"
-    />
+    >
+      <template #icon="{ id }">
+        <component
+          :is="getMenuItemIcon(id)"
+          v-if="getMenuItemIcon(id)"
+          class="media__menu-icon"
+          aria-hidden="true"
+        />
+      </template>
+    </Menu>
   </div>
 </template>
 
@@ -120,5 +131,12 @@ function onProofread() {
   min-block-size: var(--numen-action-size);
   padding-inline: var(--numen-gutter);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.media__menu-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.875;
+  opacity: 0.75;
 }
 </style>

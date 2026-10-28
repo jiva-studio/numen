@@ -1,10 +1,10 @@
 # File Tree Explorer
 
-Provides the sidebar file tree for browsing, creating, renaming, moving, and organizing files and folders in the active vault.
+Browse, organize, rename, and manage all the notes, books, documents, and recordings in your vault from the sidebar.
 
 <!-- more -->
 
-## Features
+## What You Can Do
 
-- **Live vault synchronization**: Automatically updates the folder hierarchy as notes, recordings, books, and documents are added or changed on disk.
-- **Drag-and-drop & context actions**: Supports moving files between folders, creating notes and folders, and running file-specific commands (such as **Transcribe**, **Recognise text**, and **Proofread**).
+- **Organize your library**: Create notes and folders, drag and drop files to reorganize them, and rename or delete items.
+- **Quick actions on any file**: Right-click an audio file, video, or PDF to start **Transcribe**, **Recognise text**, or **Proofread** directly from the file tree.

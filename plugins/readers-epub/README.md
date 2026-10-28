@@ -1,11 +1,11 @@
 # EPUB Book Reader
 
-Opens `.epub` books with reflowable chapter rendering, table of contents navigation, and passage linking.
+Read EPUB books with customizable typography, a table of contents, highlights, and instant quote links for your notes.
 
 <!-- more -->
 
-## Features
+## What You Can Do
 
-- **Reflowable reading view**: Renders EPUB chapters with customizable reading scale and theme colors.
-- **Chapter & outline navigation**: Parses EPUB spine and NCX/Navigation documents via `numen.epub.v1.BookService`.
-- **Passage citations**: Supports selecting and linking exact byte stretches (`numen:<path>?start=<offset>&length=<len>`) from notes and agent answers.
+- **Comfortable reading**: Navigate chapters from the table of contents, adjust text size, and search inside the book.
+- **Highlight and annotate**: Select any passage to highlight it in your chosen color or attach a margin note.
+- **Copy quotes with exact links**: Copy any passage and paste it into a note—clicking the quote later opens the book right back to that exact paragraph.

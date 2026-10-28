@@ -3,7 +3,7 @@
   "name": "Agent Chat",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Agent conversation tab and the conversation view used by other plugins",
+  "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],

@@ -3,7 +3,7 @@
   "name": "Claude Code Agent",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Claude Code CLI agent runner and provider service",
+  "description": "Anthropic Claude Code assistant for chat and note editing",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],

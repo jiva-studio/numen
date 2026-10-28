@@ -3,7 +3,7 @@
   "name": "Vault Knowledge Tools",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Provides core vault, note, search, and wikilink tools for AI agents",
+  "description": "Library search, reading, and note editing tools for AI assistants",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "permissions": ["vault:read", "vault:write"],

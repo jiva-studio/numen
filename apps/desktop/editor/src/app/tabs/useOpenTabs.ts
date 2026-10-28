@@ -106,4 +106,10 @@ const parseSavedState = (state: string): unknown => {
 export const parseSavedTabs = (open: OpenTabs): readonly SavedTab[] =>
   open.tabs
     .filter((one) => one.id !== '' && one.kind !== '')
-    .map(({ id, kind, path, state }) => ({ id, kind, path, saved: parseSavedState(state) }))
+    .map(({ id, kind, path, title, state }) => ({
+      id,
+      kind,
+      path,
+      ...(title ? { title } : {}),
+      saved: parseSavedState(state),
+    }))
