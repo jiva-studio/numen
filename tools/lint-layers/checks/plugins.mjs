@@ -370,7 +370,7 @@ function findCrossPluginKnowledge() {
   const found = [];
   const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
   for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
-    if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file)) continue;
+    if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file) || path.basename(file) === "eslint.config.js") continue;
     const plugin = file.split("/")[1];
     if (!pluginNames.includes(plugin)) continue;
     if (path.basename(file) === "manifest.json") {

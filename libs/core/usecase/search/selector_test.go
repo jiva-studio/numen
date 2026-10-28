@@ -17,7 +17,7 @@ type versionTexts struct{ text domain.VersionText }
 func (t versionTexts) Open(domain.Vault) (textport.VaultTexts, error) { return t, nil }
 
 func (t versionTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
-	return t.text.Version.GetID(), nil
+	return t.text.Version().GetID(), nil
 }
 
 func (t versionTexts) GetLiveText(context.Context, string, string) (domain.VersionText, error) {
@@ -25,7 +25,7 @@ func (t versionTexts) GetLiveText(context.Context, string, string) (domain.Versi
 }
 
 func (t versionTexts) GetVersionText(_ context.Context, _ string, id domain.TextVersionID) (domain.VersionText, error) {
-	if id != t.text.Version.GetID() {
+	if id != t.text.Version().GetID() {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return t.text, nil

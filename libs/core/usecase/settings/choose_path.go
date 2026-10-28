@@ -2,9 +2,9 @@ package settings
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -52,12 +52,8 @@ func (u *ChoosePluginPath) Execute(ctx context.Context, pluginID, key string) (C
 	if err != nil || !isChosen {
 		return ChosenPath{}, err
 	}
-	written, err := json.Marshal(path)
-	if err != nil {
-		return ChosenPath{}, err
-	}
 	result := ChosenPath{Path: path, IsChosen: true}
-	return result, u.write([]Setting{{Path: []string{"plugins", pluginID, key}, JSON: string(written)}})
+	return result, u.write([]Setting{{Path: []string{"plugins", pluginID, key}, JSON: strconv.Quote(path)}})
 }
 
 func (u *ChoosePluginPath) findSetting(pluginID, key string) (PluginSetting, error) {

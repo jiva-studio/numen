@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/usecase/file"
 )
 
 // Versions is the text versions of vault files: what plugins report, what is
@@ -419,6 +418,6 @@ func (u *Versions) isTaking(ctx context.Context, v domain.Vault, plugin textport
 	if len(plugin.NoteTypes) == 0 {
 		return false
 	}
-	noteType, err := file.ReadNoteType(ctx, u.readers, v, path)
+	noteType, err := vaultport.ReadNoteType(ctx, u.readers, v, path)
 	return err == nil && slices.Contains(plugin.NoteTypes, noteType)
 }

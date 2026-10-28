@@ -48,12 +48,12 @@ func (t vaultBookTexts) read(ctx context.Context, path string) (domain.VersionTe
 
 func (t vaultBookTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
 	doc, err := t.GetLiveText(ctx, path, fileHash)
-	return doc.Version.GetID(), err
+	return doc.Version().GetID(), err
 }
 
 func (t vaultBookTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version.SourceHash != fileHash {
+	if err == nil && doc.Version().SourceHash != fileHash {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err
@@ -61,7 +61,7 @@ func (t vaultBookTexts) GetLiveText(ctx context.Context, path, fileHash string) 
 
 func (t vaultBookTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version.GetID() != id {
+	if err == nil && doc.Version().GetID() != id {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err

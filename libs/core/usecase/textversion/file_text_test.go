@@ -24,14 +24,14 @@ func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	}
 
 	edit, err := text.CreateEdit(t.Context(), s.vault, textversion.TextEdit{
-		PluginID: player, Path: scanPath, Source: live.Version.GetID(), Segments: []domain.TextSegment{{Text: "layer the "}},
+		PluginID: player, Path: scanPath, Source: live.Version().GetID(), Segments: []domain.TextSegment{{Text: "layer the "}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	live, _, err = text.ReadLiveText(t.Context(), s.vault, scanPath)
-	if err != nil || live.Version.GetID() != edit.GetID() || live.Text != "layer the " {
-		t.Fatalf("after the edit the live text is %q of %s (%v)", live.Text, live.Version.GetID(), err)
+	if err != nil || live.Version().GetID() != edit.GetID() || live.Text != "layer the " {
+		t.Fatalf("after the edit the live text is %q of %s (%v)", live.Text, live.Version().GetID(), err)
 	}
 }
 

@@ -3,7 +3,7 @@ package settingsport
 import (
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // ErrNotASetting is a value the settings cannot be read out of again: one that
@@ -46,7 +46,7 @@ type Model struct {
 
 	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
 	// the most. None where it offers no choice.
-	ReasoningLevels []agentport.ReasoningLevel
+	ReasoningLevels []domain.ReasoningLevel
 
 	// DefaultReasoning is the level the model works at unasked, empty where it names none.
 	DefaultReasoning string

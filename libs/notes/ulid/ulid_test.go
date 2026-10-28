@@ -1,12 +1,17 @@
 package ulid_test
 
 import (
+	"crypto/rand"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
+
+func init() {
+	ulid.DefaultEntropy = rand.Reader
+}
 
 func TestShapeAndAlphabet(t *testing.T) {
 	id := ulid.New(time.Now())

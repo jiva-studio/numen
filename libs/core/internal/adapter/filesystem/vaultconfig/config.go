@@ -1,6 +1,7 @@
 package vaultconfig
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
+
+func init() {
+	ulid.DefaultEntropy = rand.Reader
+}
 
 // DefaultServiceDir is where the application keeps a vault's own state. The
 // other folder it writes into a vault is TrashDir.
@@ -77,7 +82,7 @@ func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 		return Config{}, err
 	}
 
-	id := ulid.New(now)
+	id := ulid.New(now, rand.Reader)
 	c := Config{Version: 1, ID: id}
 
 	dir := filepath.Join(root, serviceDir)

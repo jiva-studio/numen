@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	pathpkg "path"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -93,19 +92,7 @@ func (u Move) Readers() vaultport.VaultReaders { return u.readers }
 
 // MoveResult says where the note went and what it did to the links that
 // pointed at it.
-type MoveResult struct {
-	From string
-	To   string
-	// IsLanded is whether the file is at To. It is false for a move that was
-	// is there however the rest of the work goes.
-	IsLanded bool
-	// Repaired is the notes whose link stopped resolving and was written
-	// again, by name.
-	Repaired []string
-	// Dangling is the notes whose link stopped resolving and could not be
-	// written again. Each of them still points at the name the file left.
-	Dangling []string
-}
+type MoveResult = domain.MoveResult
 
 func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (MoveResult, error) {
 	res := MoveResult{From: from, To: to}
@@ -278,7 +265,7 @@ func (u Move) repair(
 		return linkUntouched, err
 	}
 	raw, err := reader.Read(ctx, in)
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, vaultport.ErrNotExist) {
 		// The note that wrote the link went between the backlinks being read
 		// and this. Its link went with it.
 		return linkUntouched, nil

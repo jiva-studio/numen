@@ -52,9 +52,12 @@ func (c Config) newCompletionRouter() (*completion.Router, error) {
 	if provider == nil {
 		return nil, errNoCompletionProvider
 	}
+	choices, _ := c.PluginHost.(completionport.CompletionChoices)
 	return completion.NewRouter(
-		func() completion.Config { return c.getSettingsOrDefaults().AI },
-		c.PluginHost,
+		func() completion.Config {
+			return completion.Config{Default: completion.Route(c.getSettingsOrDefaults().AI.Default)}
+		},
+		choices,
 		&completionPrograms{provider: provider, getAgent: func() settings.Agent { return c.getSettingsOrDefaults().Agent }},
 	)
 }
@@ -70,7 +73,9 @@ func (c Config) setCompleter() {
 		c.handleError(err)
 		return
 	}
-	c.PluginHost.SetCompleter(router)
+	if host, ok := c.PluginHost.(completionport.CompleterHost); ok {
+		host.SetCompleter(router)
+	}
 }
 
 // completionPrograms finds the agent programs the plugins list and starts the

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"time"
 
@@ -61,6 +62,8 @@ type Edit struct {
 	Index Levels
 	// Now is the time an identifier is minted at.
 	Now func() time.Time
+	// Entropy is the randomness source for minted identifiers.
+	Entropy io.Reader
 
 	FileStat domain.FileStat
 	// ShouldOverwrite is a caller writing what is in front of the person: the note on disk is replaced
@@ -182,5 +185,5 @@ func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil
 	}
-	return doc.SetIdentifier(ulid.New(e.Now()))
+	return doc.SetIdentifier(ulid.New(e.Now(), e.Entropy))
 }

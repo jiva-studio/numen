@@ -227,7 +227,7 @@ func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation
 		if err != nil {
 			return err
 		}
-		params.SourceHash = source.Version.Hash
+		params.SourceHash = source.Version().Hash
 		params.Key = "from-" + strings.ReplaceAll(string(req.Source), "/", "-")
 		segments = f.make(req.Path, source, true)
 	}

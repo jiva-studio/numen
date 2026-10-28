@@ -4,20 +4,28 @@ import (
 	"context"
 	"errors"
 	"io"
-	"io/fs"
+	pathpkg "path"
+	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/edit"
+	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
 // ErrNotANote is what a path gets when there is a file at it and the vault does
 // not hold that file as a note: an attachment, an export, a folder some tool
 // keeps its state in, whatever the vault's own rules leave alone.
 //
-// It is its own answer and not fs.ErrNotExist. A file that is there and a path
+// It is its own answer and not ErrNotExist. A file that is there and a path
 // with nothing at it are different facts, and a caller acts on them
 // differently.
 var ErrNotANote = edit.ErrNotANote
+
+// ErrNotExist is what a path with nothing at it gets.
+var ErrNotExist = edit.ErrNotExist
+
+// ErrExist is what a path that already holds a file gets when a write requires an unoccupied path.
+var ErrExist = edit.ErrExist
 
 // ErrOutside is what a path that does not stay in the vault gets. It is not
 // "no note": a caller asking for something outside has made a mistake worth
@@ -31,7 +39,7 @@ var ErrOutside = errors.New("not a path inside the vault")
 // to a caller acting on the difference, and it is the difference the two
 // sentinels carry.
 func IsNoNote(err error) bool {
-	return errors.Is(err, fs.ErrNotExist) || errors.Is(err, ErrNotANote)
+	return edit.IsNoNote(err)
 }
 
 // VaultReader is one vault as seen from outside: something that can be walked
@@ -73,4 +81,27 @@ type VaultReader interface {
 // on is decided while it runs.
 type VaultReaders interface {
 	Open(v domain.Vault) (VaultReader, error)
+}
+
+// IsNote reports whether the file at the path is a note, by its extension.
+func IsNote(path string) bool {
+	return strings.EqualFold(pathpkg.Ext(path), domain.NoteExtension)
+}
+
+// ReadNoteType is the type the note at the path carries in its frontmatter as the file now reads,
+// so a note just written has its type before the index holds it. A file that is no note has no
+// type and is not read.
+func ReadNoteType(ctx context.Context, readers VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
+	if !IsNote(path) {
+		return "", nil
+	}
+	reader, err := readers.Open(v)
+	if err != nil {
+		return "", err
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	return markdown.Parse(domain.FileStat{}, raw).Type, nil
 }

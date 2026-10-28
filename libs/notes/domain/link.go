@@ -1,6 +1,9 @@
 package domain
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 // LinkRole says what a link is for. The list is closed: navigation and rendering
 // read it, so a role nobody decided on has no behaviour.
@@ -169,4 +172,19 @@ func IsNameable(name string) bool {
 		return false
 	}
 	return ParseAddress(name) == Address{Scheme: SchemeName, Value: name}
+}
+
+// IsHTTPSAddress reports whether raw is an https:// URL with a host.
+func IsHTTPSAddress(raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && u.Scheme == "https" && u.Host != ""
+}
+
+// IsHTTPSOrigin reports whether raw is an https:// origin with a host and no path, query, fragment, or userinfo.
+func IsHTTPSOrigin(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return false
+	}
+	return u.User == nil && u.Path == "" && u.RawQuery == "" && u.Fragment == "" && u.Opaque == "" && !u.ForceQuery
 }

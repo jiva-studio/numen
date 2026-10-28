@@ -61,7 +61,7 @@ func (h *Handler) ReadLiveText(
 		return connect.NewResponse(&v1.ReadLiveTextResponse{}), nil
 	}
 	return connect.NewResponse(&v1.ReadLiveTextResponse{
-		Version: writeVersion(text.Version), Segments: writeSegments(text.GetSegments()),
+		Version: writeVersion(text.Version()), Segments: writeSegments(text.GetSegments()),
 	}), nil
 }
 

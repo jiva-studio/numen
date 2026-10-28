@@ -3,7 +3,8 @@ package pluginport
 import (
 	"errors"
 	"fmt"
-	"net/url"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // ErrInvalidFrame is a frame origin that is not an https origin.
@@ -14,18 +15,9 @@ var ErrInvalidFrame = errors.New("invalid frame origin")
 func (m PluginManifest) listFrameIssues() []error {
 	var issues []error
 	for _, origin := range m.Frames {
-		if !isHTTPSOrigin(origin) {
+		if !domain.IsHTTPSOrigin(origin) {
 			issues = append(issues, fmt.Errorf("%w: %q is not https://host", ErrInvalidFrame, origin))
 		}
 	}
 	return issues
-}
-
-func isHTTPSOrigin(origin string) bool {
-	parsed, err := url.Parse(origin)
-	if err != nil {
-		return false
-	}
-	return parsed.Scheme == "https" && parsed.Host != "" && parsed.User == nil && parsed.Path == "" &&
-		parsed.RawQuery == "" && parsed.Fragment == "" && parsed.Opaque == "" && !parsed.ForceQuery
 }

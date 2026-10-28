@@ -1,7 +1,20 @@
 package ulid
 
 import (
+	"crypto/rand"
+	"io"
+	"time"
+
 	notesulid "github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-var New = notesulid.New
+func init() {
+	notesulid.DefaultEntropy = rand.Reader
+}
+
+func New(t time.Time, entropy ...io.Reader) string {
+	if len(entropy) == 0 {
+		return notesulid.New(t, rand.Reader)
+	}
+	return notesulid.New(t, entropy...)
+}

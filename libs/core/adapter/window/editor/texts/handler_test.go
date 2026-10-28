@@ -29,11 +29,11 @@ func (f *fileText) ReadLiveText(context.Context, domain.Vault, string) (domain.V
 }
 
 func (f *fileText) CreateEdit(_ context.Context, _ domain.Vault, edit textversion.TextEdit) (domain.TextVersion, error) {
-	if edit.Source != f.live.Version.GetID() {
+	if edit.Source != f.live.Version().GetID() {
 		return domain.TextVersion{}, textversion.ErrNoText
 	}
 	f.edits = append(f.edits, edit)
-	version := domain.TextVersion{Path: edit.Path, PluginID: edit.PluginID, Key: "edit-1", Source: edit.Source, Kind: f.live.Version.Kind}
+	version := domain.TextVersion{Path: edit.Path, PluginID: edit.PluginID, Key: "edit-1", Source: edit.Source, Kind: f.live.Version().Kind}
 	f.live = domain.NewVersionText(version, edit.Segments)
 	return version, nil
 }

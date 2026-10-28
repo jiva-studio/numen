@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"slices"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // DependencyKind is what a dependency is.
@@ -41,16 +42,16 @@ var dependencyChecksumPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 // DependencyRequirement is one dependency a plugin declares.
 type DependencyRequirement struct {
-	ID             string            `json:"id"`
-	Kind           DependencyKind    `json:"kind"`
-	Version        string            `json:"version,omitempty"`
-	SourceURL      string            `json:"sourceUrl,omitempty"`
-	ChecksumSHA256 string            `json:"checksumSha256,omitempty"`
-	Metadata       map[string]string `json:"metadata,omitempty"`
+	ID             string
+	Kind           DependencyKind
+	Version        string
+	SourceURL      string
+	ChecksumSHA256 string
+	Metadata       map[string]string
 
 	// PluginDir is the folder of the plugin that declares the requirement. A
 	// provisioner looks beside it first.
-	PluginDir string `json:"-"`
+	PluginDir string
 }
 
 // ResolvedDependency is the install location of a ready dependency and how a process uses it.
@@ -166,7 +167,7 @@ func listDependencySourceIssues(req DependencyRequirement) []error {
 		return nil
 	}
 	var issues []error
-	if address, err := url.Parse(req.SourceURL); err != nil || address.Scheme != "https" || address.Host == "" {
+	if !domain.IsHTTPSAddress(req.SourceURL) {
 		issues = append(issues, fmt.Errorf("%w: %s sourceUrl %q is not an https address", ErrInvalidDependency, req.ID, req.SourceURL))
 	}
 	if !dependencyChecksumPattern.MatchString(req.ChecksumSHA256) {

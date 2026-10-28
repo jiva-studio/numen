@@ -29,3 +29,11 @@ const (
 	// StepStop is the last step of any work.
 	StepStop
 )
+
+// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+type ReasoningLevel struct {
+	// Name is what a task asks for the level by.
+	Name string
+	// Title is what the level is called when shown to a person.
+	Title string
+}

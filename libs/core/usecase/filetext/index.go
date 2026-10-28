@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
@@ -77,22 +77,14 @@ func NewIndex(
 }
 
 // IndexResult reports what indexing did.
-//
-// `Seen` counts the files that have text or that a plugin makes text of, and
-// nothing else. `Recorded` and `Extracted` are separate numbers because they
-// are separate passes: a file is recorded when the vault is walked and extracted
-// when its text is read.
-type IndexResult struct {
-	Seen          int    // files with text found in the vault
-	Recorded      int    // new or changed, so owing their text
-	Unchanged     int    // skipped on size and modification time alone
-	Extracted     int    // read, chunked and written
-	Chunks        int    // chunks written, of both sizes
-	Unreadable    int    // read, and no live text version
-	Removed       int    // held by the index, no longer in the vault
-	Outdated      int    // cut from a version that is no longer the live one
-	Vanished      int    // named by the index, vanished by the time it was read
-	CurrentSource string // the source open now
+type IndexResult = vaultreading.IndexResult
+
+// IndexWithProgress runs Execute with onProgress reporting each step when non-nil.
+func (u Index) IndexWithProgress(ctx context.Context, v domain.Vault, onProgress func(IndexResult)) (IndexResult, error) {
+	if onProgress != nil {
+		u.OnProgress = onProgress
+	}
+	return u.Execute(ctx, v)
 }
 
 // Execute brings the chunks of one vault's file texts up to date with what is
@@ -407,7 +399,7 @@ func (u Index) source(
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
 	raw, err := on.files.Read(ctx, path)
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, vaultport.ErrNotExist) {
 		res.Vanished++
 		return nil
 	}
@@ -439,7 +431,7 @@ func (u Index) source(
 			FileStat: ref,
 			Hash:     hash,
 			Recipe:   recipe(versionReader, sizes),
-			Producer: string(doc.Version.GetID()),
+			Producer: string(doc.Version().GetID()),
 		},
 		Chunks: chunks,
 	}

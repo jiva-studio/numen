@@ -6,12 +6,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/fs"
 	"slices"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -77,16 +77,14 @@ func NewEmbed(
 }
 
 // EmbedResult reports what embedding did.
-type EmbedResult struct {
-	Owing    int // chunks found with no vector from the model in use
-	Embedded int // chunks that now carry one
-	// Reused counts the chunks whose vector was already made for their text and
-	// was claimed and not bought.
-	Reused        int
-	Vanished      int    // whose source the vault no longer holds
-	Displaced     int    // whose place is not in the text their source holds now
-	CurrentSource string // the source open now
-	IsBusy        bool   // somebody else is embedding this vault, and nothing was done
+type EmbedResult = vaultreading.EmbedResult
+
+// EmbedWithProgress runs Execute with onProgress reporting each step when non-nil.
+func (u Embed) EmbedWithProgress(ctx context.Context, v domain.Vault, onProgress func(EmbedResult)) (EmbedResult, error) {
+	if onProgress != nil {
+		u.OnProgress = onProgress
+	}
+	return u.Execute(ctx, v)
 }
 
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
@@ -577,7 +575,7 @@ func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool
 
 	read, err := e.read(ctx, path, from)
 	switch {
-	case vaultport.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, textport.ErrNoText):
+	case vaultport.IsNoNote(err), errors.Is(err, vaultport.ErrNotExist), errors.Is(err, textport.ErrNoText):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)

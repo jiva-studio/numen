@@ -3,16 +3,21 @@ package vault
 import (
 	"context"
 	"errors"
-	"io/fs"
 	pathpkg "path"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/edit"
 
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
+
+// NoteMover settles each note that travelled in a vault move.
+type NoteMover interface {
+	WriteFilenameAsTitle(ctx context.Context, v domain.Vault, path string) error
+	RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (domain.MoveResult, error)
+}
 
 // Move files anything the vault holds somewhere else inside it: one file of any
 // kind, or a folder with everything under it. Renaming is a move within one
@@ -33,19 +38,19 @@ type Move struct {
 	sources sourceport.SourceRepository
 	// notes is what settles each note that travelled: whoever is drawing it, and
 	// the links written by its old name.
-	notes note.Move
+	notes NoteMover
 }
 
 // NewMove is what files anything the vault holds somewhere else: the vault it
 // is moved within, the links that pointed at what travelled, what the index
 // holds about the files under the path and where it files them, and the one
-// note.Move every note that travelled settles through.
+// NoteMover every note that travelled settles through.
 func NewMove(
 	writers vaultport.VaultWriters,
 	links noteport.LinkQueries,
 	queries sourceport.SourceQueries,
 	sources sourceport.SourceRepository,
-	notes note.Move,
+	notes NoteMover,
 ) Move {
 	return Move{writers: writers, links: links, queries: queries, sources: sources, notes: notes}
 }
@@ -66,8 +71,8 @@ func (u Move) Sources() sourceport.SourceRepository {
 // A folder is one rename, so what it holds arrives whole or stays where it was.
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
-func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (note.MoveResult, error) {
-	res := note.MoveResult{From: from, To: to}
+func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
+	res := domain.MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil
 	}
@@ -90,8 +95,8 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 	}
 	// Only the core says a path holds nothing: the writer answers the same way
 	// for a vault it cannot reach at all.
-	if err := writer.Move(ctx, from, to); errors.Is(err, fs.ErrNotExist) {
-		return res, note.ErrNoNote
+	if err := writer.Move(ctx, from, to); errors.Is(err, vaultport.ErrNotExist) {
+		return res, edit.ErrNoNote
 	} else if err != nil {
 		return res, err
 	}
@@ -143,7 +148,7 @@ func (u Move) rewriteNoteLinks(
 	from, to string,
 	sources []domain.FileStat,
 	pointing map[string][]domain.ResolvedLink,
-	res *note.MoveResult,
+	res *domain.MoveResult,
 ) error {
 	for _, source := range sources {
 		if source.Kind != domain.KindNote {

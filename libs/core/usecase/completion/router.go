@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/agent"
-
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
@@ -24,13 +22,13 @@ var (
 type Router struct {
 	config   func() Config
 	choices  completionport.CompletionChoices
-	programs completionport.CompletionPrograms
+	programs agentport.CompletionPrograms
 	limits   *limits
 }
 
 // NewRouter returns a router reading the settings and the plugin's choice at
 // every question, so a choice edited in the settings applies to the next one.
-func NewRouter(config func() Config, choices completionport.CompletionChoices, programs completionport.CompletionPrograms) (*Router, error) {
+func NewRouter(config func() Config, choices completionport.CompletionChoices, programs agentport.CompletionPrograms) (*Router, error) {
 	if config == nil {
 		return nil, errNoConfig
 	}
@@ -74,7 +72,7 @@ func (r *Router) Complete(ctx context.Context, pluginID string, question complet
 	if isReplaced {
 		task.Model = model
 	}
-	text, err := agent.Answer(ctx, r.programs, task)
+	text, err := agentport.Answer(ctx, r.programs, task)
 	if err != nil && isReplaced {
 		return "", fmt.Errorf("%w (the model %q is not offered by %s; asked %q)", err, route.Model, program.Name, model)
 	}

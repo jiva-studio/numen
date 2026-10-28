@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/usecase/file"
 )
 
 // The ports' words for a command, which a driving adapter reaches here.
@@ -189,7 +188,7 @@ func (u Run) readNoteType(ctx context.Context, v domain.Vault, declared Command,
 	if len(declared.NoteTypes) == 0 || u.readers == nil {
 		return ""
 	}
-	noteType, err := file.ReadNoteType(ctx, u.readers, v, path)
+	noteType, err := vaultport.ReadNoteType(ctx, u.readers, v, path)
 	if err != nil {
 		return ""
 	}

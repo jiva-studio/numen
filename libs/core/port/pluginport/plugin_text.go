@@ -22,18 +22,18 @@ var ErrInvalidTextInput = errors.New("invalid text input")
 //
 // A plugin that declares one serves numen.v1.TextProviderService.
 type PluginTextInput struct {
-	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
-	Kinds        []domain.TextKind    `json:"kinds,omitempty"`
-	NoteTypes    []string             `json:"noteTypes,omitempty"`
-	IsAutoRun    bool                 `json:"autoRun,omitempty"`
-	MenuEntry    *PluginMenuEntry     `json:"menuEntry,omitempty"`
+	ContentTypes []domain.ContentType
+	Kinds        []domain.TextKind
+	NoteTypes    []string
+	IsAutoRun    bool
+	MenuEntry    *PluginMenuEntry
 }
 
 // PluginMenuEntry is what a plugin's entry in a file's menu reads and is drawn
 // with. Icon is a Lucide icon name, such as "scan-text".
 type PluginMenuEntry struct {
-	Title string `json:"title"`
-	Icon  string `json:"icon,omitempty"`
+	Title string
+	Icon  string
 }
 
 // listTextInputIssues checks that a text input names something to read, every

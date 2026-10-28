@@ -1,10 +1,13 @@
-package pluginport
+package pluginport_test
 
 import (
 	"errors"
 	"slices"
 	"strings"
 	"testing"
+
+	_ "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	. "github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 // readTestManifest is a plugin with two models, the languages of each, a provider and the settings

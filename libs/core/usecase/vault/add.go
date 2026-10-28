@@ -3,7 +3,6 @@ package vault
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -44,7 +43,7 @@ func NewAdd(identity vaultport.VaultIdentity, registry vaultport.VaultRegistry, 
 // process working directory is something only the caller knows how to do, and a
 // use case whose result depends on where it was invoked from is not one.
 func (u Add) Execute(root, name string) (domain.Vault, error) {
-	if !filepath.IsAbs(root) {
+	if !domain.IsAbsPath(root) {
 		return domain.Vault{}, fmt.Errorf("vault path must be absolute, got %q", root)
 	}
 	// One folder has one name here, whichever route reached it, and which
@@ -98,7 +97,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	v := domain.Vault{ID: id, Name: name, Path: root}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
-		v.Name = filepath.Base(root)
+		v.Name = domain.BasePath(root)
 	}
 	v.Name = recognized.FreeName(v.Name, v.ID)
 	if err := u.registry.Save(v); err != nil {

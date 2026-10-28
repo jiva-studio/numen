@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 )
 
 var (
+	// ErrUnavailable means whatever answers cannot be reached right now.
+	ErrUnavailable = domain.ErrUnavailable
+
 	// ErrPathTraversal is returned when a path escapes the active vault boundary.
 	ErrPathTraversal = errors.New("path traversal outside active vault is prohibited")
 
@@ -71,7 +71,7 @@ func (e *UnavailableError) Error() string {
 
 // Is reports that the error is ErrUnavailable.
 func (e *UnavailableError) Is(target error) bool {
-	return target == completionport.ErrUnavailable
+	return target == ErrUnavailable
 }
 
 // Unwrap returns the cause the host gave.
@@ -164,7 +164,6 @@ type PluginDiscoverer interface {
 type PluginConfigurator interface {
 	SetSettings(all map[string]map[string]any)
 	SetPersistHandler(handler PluginPersistHandler)
-	SetCompleter(completer completionport.Completer)
 	SetKeyStore(store KeyStore)
 	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
 	DeletePluginSecret(ctx context.Context, pluginID, name string) error
@@ -204,7 +203,6 @@ type PluginLifecycleManager interface {
 // PluginRegistryManager coordinates discovery, configuration, resolution, and capabilities for plugins.
 type PluginRegistryManager interface {
 	PluginDiscoverer
-	completionport.CompletionChoices
 	PluginResolver
 	PluginConfigurator
 	PluginEventEmitter
@@ -215,7 +213,8 @@ type PluginManager interface {
 	PluginLifecycleManager
 	PluginRegistryManager
 	PluginTextHost
-	contenttypeport.ContentTypeTable
+	GetContentType(name string) domain.ContentType
+	ListExtensions(mask domain.ContentType) []string
 	// GetDependencies is what provisions the dependencies the plugins declare, or nil when nothing does.
 	GetDependencies() DependencyCatalog
 }

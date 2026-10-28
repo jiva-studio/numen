@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
-	"github.com/jiva-studio/numen/libs/core/usecase/completion"
 
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -55,7 +54,7 @@ type Settings struct {
 
 	// AI is the agent and the model that answer the questions of a plugin whose
 	// own setting names no agent.
-	AI completion.Config `json:"ai"`
+	AI settings.AI `json:"ai"`
 
 	// Notices is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of

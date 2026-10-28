@@ -1,11 +1,9 @@
 package pluginport
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"regexp"
 	"slices"
 	"strings"
@@ -130,141 +128,148 @@ var validSettingTypes = []string{"boolean", SettingTypeString, "number", Setting
 
 // PluginLifecycle defines when the host evicts an idle plugin from memory.
 type PluginLifecycle struct {
-	IdleTimeoutSeconds    int    `json:"idleTimeoutSeconds"`
-	KeepAliveWhileVisible bool   `json:"keepAliveWhileVisible"`
-	MemoryLimitBytes      uint64 `json:"memoryLimitBytes,omitempty"`
-}
-
-// UnmarshalJSON decodes lifecycle settings, accepting memoryLimitBytes or memoryLimitMB.
-func (l *PluginLifecycle) UnmarshalJSON(data []byte) error {
-	type rawLifecycle PluginLifecycle
-	var raw struct {
-		rawLifecycle
-		MemoryLimitMB uint64 `json:"memoryLimitMB,omitempty"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	*l = PluginLifecycle(raw.rawLifecycle)
-	if l.MemoryLimitBytes == 0 && raw.MemoryLimitMB > 0 {
-		if raw.MemoryLimitMB > math.MaxUint64/(1024*1024) {
-			return errors.New("memory limit in megabytes exceeds maximum value")
-		}
-		l.MemoryLimitBytes = raw.MemoryLimitMB * 1024 * 1024
-	}
-	return nil
+	IdleTimeoutSeconds    int
+	KeepAliveWhileVisible bool
+	MemoryLimitBytes      uint64
 }
 
 // PluginBackend describes the server-side executable of a plugin.
 type PluginBackend struct {
-	Type        string `json:"type"`
-	Entrypoint  string `json:"entrypoint"`
-	ServiceName string `json:"serviceName"`
+	Type        string
+	Entrypoint  string
+	ServiceName string
 }
 
 // PluginFrontend describes the client-side bundle and styles of a plugin.
 type PluginFrontend struct {
-	Entrypoint string `json:"entrypoint"`
-	Styles     string `json:"styles"`
+	Entrypoint string
+	Styles     string
 }
 
 // PluginManifestSetting declares one configuration field managed by the core host.
 type PluginManifestSetting struct {
-	Key         string               `json:"key"`
-	Type        string               `json:"type"`
-	Title       string               `json:"title"`
-	Description string               `json:"description"`
-	Default     any                  `json:"default"`
-	Palette     bool                 `json:"palette,omitempty"`
-	Icon        string               `json:"icon,omitempty"`
-	Options     PluginSettingOptions `json:"options,omitempty"`
-	Min         float64              `json:"min,omitempty"`
-	Max         float64              `json:"max,omitempty"`
-	Step        float64              `json:"step,omitempty"`
+	Key         string
+	Type        string
+	Title       string
+	Description string
+	Default     any
+	Palette     bool
+	Icon        string
+	Options     PluginSettingOptions
+	Min         float64
+	Max         float64
+	Step        float64
 	// ModelsOf is the agent program whose models a string setting is offered, as the program names
 	// itself. The models are those the plugins list for it.
-	ModelsOf string `json:"modelsOf,omitempty"`
+	ModelsOf string
 	// Replaces are the places in the settings file a person kept this setting before the plugin took
 	// it over, each written as the keys that lead to it joined by dots, the newest first. The first of
 	// them the file holds gives the value to a person whose file has none for the plugin yet.
-	Replaces []string `json:"replaces,omitempty"`
+	Replaces []string
 	// OptionsBy gives an enum setting its options from the value of another setting. The first option
 	// of each list is the default under that value.
-	OptionsBy *PluginSettingOptionsBy `json:"optionsBy,omitempty"`
+	OptionsBy *PluginSettingOptionsBy
 	// When is the condition under which the setting is shown and handed to the plugin. A setting
 	// whose condition fails keeps its stored value.
-	When *PluginSettingCondition `json:"when,omitempty"`
+	When *PluginSettingCondition
 	// Accept are the file extensions a setting of type file takes, each with its leading dot. Empty
 	// takes any file.
-	Accept []string `json:"accept,omitempty"`
+	Accept []string
 }
 
 // PluginManifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
 type PluginManifest struct {
-	ID               string                  `json:"id"`
-	Name             string                  `json:"name"`
-	Version          string                  `json:"version"`
-	Protocol         int                     `json:"protocol,omitempty"`
-	Description      string                  `json:"description"`
-	Capabilities     []string                `json:"capabilities"`
-	Targets          []string                `json:"targets"`
-	ActivationEvents []string                `json:"activationEvents"`
-	Permissions      []string                `json:"permissions"`
-	Runtimes         []string                `json:"runtimes,omitempty"`
-	Dependencies     []DependencyRequirement `json:"dependencies,omitempty"`
-	Lifecycle        PluginLifecycle         `json:"lifecycle"`
-	Backend          PluginBackend           `json:"backend,omitzero"`
-	Frontend         PluginFrontend          `json:"frontend,omitzero"`
-	Settings         []PluginManifestSetting `json:"settings"`
+	ID               string
+	Name             string
+	Version          string
+	Protocol         int
+	Description      string
+	Capabilities     []string
+	Targets          []string
+	ActivationEvents []string
+	Permissions      []string
+	Runtimes         []string
+	Dependencies     []DependencyRequirement
+	Lifecycle        PluginLifecycle
+	Backend          PluginBackend
+	Frontend         PluginFrontend
+	Settings         []PluginManifestSetting
 	// Secrets are the names of the secrets, such as an API key, the plugin asks the
 	// host to keep. The host hands them over as Configure values, empty while a
 	// secret has no key, and never puts one in the environment or on the command line.
-	Secrets []PluginSecret `json:"secrets,omitempty"`
+	Secrets []PluginSecret
 	// Services are the services the plugin serves to the windows, by their full names. A window that
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
-	Services []string `json:"services,omitempty"`
+	Services []string
 	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
 	// each. A note of a type no plugin declares is kept as an ordinary note is.
-	NoteTypes []PluginNoteType `json:"noteTypes,omitempty"`
+	NoteTypes []PluginNoteType
 	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
-	Commands []PluginCommand `json:"commands,omitempty"`
+	Commands []PluginCommand
 	// TextInput is what the plugin makes text from. A plugin that makes no text declares none.
-	TextInput *PluginTextInput `json:"textInput,omitempty"`
+	TextInput *PluginTextInput
 	// Playback is the file types the plugin keeps a copy to play of. A plugin that keeps none declares none.
-	Playback *PluginPlayback `json:"playback,omitempty"`
+	Playback *PluginPlayback
 	// ContentTypes are the types of file the plugin brings that the content type table does not know.
-	ContentTypes []PluginContentType `json:"contentTypes,omitempty"`
+	ContentTypes []PluginContentType
 	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
 	// registers it under.
-	Readers []PluginReader `json:"readers,omitempty"`
+	Readers []PluginReader
 	// Frames are the https origins the plugin's pages frame, such as a video site's player. The
 	// window's frame-src names them while the plugin is enabled.
-	Frames []string `json:"frames,omitempty"`
+	Frames []string
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
 type PluginNoteType struct {
 	// Type is the word the `type` key of a note's frontmatter holds.
-	Type string `json:"type"`
+	Type string
 	// Chunks says whether the prose of the note is cut into chunks and searched by meaning. Left out,
 	// it is.
-	Chunks *bool `json:"chunks,omitempty"`
+	Chunks *bool
 	// Headings are the levels of heading the index keeps. Left out, every heading is kept; an empty
 	// list keeps none.
-	Headings *[]int `json:"headings,omitempty"`
+	Headings *[]int
 	// IDHeadingLevels are the levels whose headings end in a block id (` ^id`, as in Obsidian) that
 	// is no part of their text.
-	IDHeadingLevels []int `json:"idHeadingLevels,omitempty"`
+	IDHeadingLevels []int
 	// IDPattern is a regular expression a block id must match whole. Left out, any word of letters,
 	// digits and hyphens is an id.
-	IDPattern string `json:"idPattern,omitempty"`
+	IDPattern string
 }
 
-// ReadManifest decodes and validates a manifest from JSON input.
+var decodeManifest func([]byte) (PluginManifest, error)
+
+// SetManifestDecoder registers the function that decodes a manifest from bytes.
+func SetManifestDecoder(fn func([]byte) (PluginManifest, error)) {
+	decodeManifest = fn
+}
+
+// UnmarshalJSON decodes a manifest using the registered decoder.
+func (m *PluginManifest) UnmarshalJSON(data []byte) error {
+	if decodeManifest == nil {
+		return errors.New("manifest decoder not registered")
+	}
+	parsed, err := decodeManifest(data)
+	if err != nil {
+		return err
+	}
+	*m = parsed
+	return nil
+}
+
+// ReadManifest decodes and validates a manifest from input.
 func ReadManifest(r io.Reader) (PluginManifest, error) {
-	var m PluginManifest
-	if err := json.NewDecoder(r).Decode(&m); err != nil {
+	if decodeManifest == nil {
+		return PluginManifest{}, errors.New("manifest decoder not registered")
+	}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return PluginManifest{}, fmt.Errorf("decode manifest: %w", err)
+	}
+	m, err := decodeManifest(data)
+	if err != nil {
 		return PluginManifest{}, fmt.Errorf("decode manifest: %w", err)
 	}
 	if err := m.Validate(); err != nil {

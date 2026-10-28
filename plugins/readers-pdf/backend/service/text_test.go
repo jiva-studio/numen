@@ -74,11 +74,11 @@ func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 	createText(t, server, host.TextCreation{Path: "books/tiny.pdf"})
 
 	text := readLive(t, texts, "books/tiny.pdf")
-	if text.Version.Kind != textKind {
-		t.Errorf("kind %q, want %q", text.Version.Kind, textKind)
+	if text.Version().Kind != textKind {
+		t.Errorf("kind %q, want %q", text.Version().Kind, textKind)
 	}
-	if text.Version.SourceHash != domain.HashContent(raw) || !text.Version.IsFromFile() {
-		t.Errorf("version %+v is not made from the file as it is", text.Version)
+	if text.Version().SourceHash != domain.HashContent(raw) || !text.Version().IsFromFile() {
+		t.Errorf("version %+v is not made from the file as it is", text.Version())
 	}
 	if want := "Alpha beta gamma\nDelta epsilon zeta\n"; text.Text != want {
 		t.Errorf("text %q, want %q", text.Text, want)
@@ -279,8 +279,8 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 
 	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})
 
-	if text := readLive(t, other, "tiny.pdf"); text.Version.Kind != textKind {
-		t.Errorf("Chemistry's live version is %+v", text.Version)
+	if text := readLive(t, other, "tiny.pdf"); text.Version().Kind != textKind {
+		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
 	if inShown, _ := texts.ListVersions(t.Context(), "tiny.pdf"); len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)

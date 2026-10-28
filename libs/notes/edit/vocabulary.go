@@ -31,6 +31,10 @@ var (
 	// ErrTooLarge is what a note over MaxBytes gets. Nothing is written. The bound is measured
 	// against the whole file about to be stored, which is what a read measures.
 	ErrTooLarge = errors.New("this is more text than a note is written with")
+	// ErrNotExist is what a path with nothing at it gets.
+	ErrNotExist = fs.ErrNotExist
+	// ErrExist is what a path that already holds a file gets when a write requires an unoccupied path.
+	ErrExist = fs.ErrExist
 )
 
 // ErrBodyUnwritable is a body that opens with the frontmatter delimiter.

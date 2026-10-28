@@ -179,3 +179,35 @@ func (p AgentProgram) MarshalJSON() ([]byte, error) {
 	content["max_steps"] = p.MaxSteps
 	return json.Marshal(content)
 }
+
+// AI is the section of the settings file that says which agent answers the
+// questions of a plugin whose own setting names none.
+type AI struct {
+	Default AIRoute `json:"default"`
+}
+
+// AIRoute is an agent, the model it answers with, and the limit of its questions.
+type AIRoute struct {
+	Agent       string `json:"agent,omitempty"`
+	Model       string `json:"model,omitempty"`
+	Concurrency int    `json:"concurrency,omitempty"`
+}
+
+// UnmarshalJSON reads the section. A file of an older shape holds its default
+// under routes.default, which is read where the section names no default; the
+// routes of single purposes are not read.
+func (c *AI) UnmarshalJSON(data []byte) error {
+	var stored struct {
+		Default *AIRoute           `json:"default"`
+		Routes  map[string]AIRoute `json:"routes"`
+	}
+	if err := json.Unmarshal(data, &stored); err != nil {
+		return err
+	}
+	if stored.Default != nil {
+		c.Default = *stored.Default
+		return nil
+	}
+	c.Default = stored.Routes["default"]
+	return nil
+}

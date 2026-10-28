@@ -31,29 +31,29 @@ var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber
 
 // PluginCommand is one command a manifest declares, which the plugin's backend runs.
 type PluginCommand struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Icon  string `json:"icon,omitempty"`
+	ID    string
+	Title string
+	Icon  string
 	// ContentTypes are the types of the files the command runs over; `*/*` is a file of any type.
 	// A command that names no content type and no note type runs over no file.
-	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
+	ContentTypes []domain.ContentType
 	// NoteTypes are the plugin's own note types of the notes the command runs over.
-	NoteTypes []string                `json:"noteTypes,omitempty"`
-	Arguments []PluginCommandArgument `json:"arguments,omitempty"`
+	NoteTypes []string
+	Arguments []PluginCommandArgument
 	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
 	// same thing another way. The command line still offers it.
-	IsHiddenInPalette bool `json:"hiddenInPalette,omitempty"`
+	IsHiddenInPalette bool
 }
 
 // PluginCommandArgument is one argument a command takes.
 type PluginCommandArgument struct {
-	Name       string `json:"name"`
-	Title      string `json:"title"`
-	Type       string `json:"type"`
-	IsRequired bool   `json:"required,omitempty"`
+	Name       string
+	Title      string
+	Type       string
+	IsRequired bool
 	// IsHiddenInPalette keeps an optional argument out of the window's palette, which runs the
 	// command without it. The command line still takes it.
-	IsHiddenInPalette bool `json:"hiddenInPalette,omitempty"`
+	IsHiddenInPalette bool
 }
 
 // HasFiles reports whether the command runs over a file.

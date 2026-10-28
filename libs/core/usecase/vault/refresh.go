@@ -5,14 +5,13 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"io/fs"
 	"maps"
 	"slices"
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
@@ -42,7 +41,7 @@ type Refresh struct {
 	now machineport.Clock
 
 	// Cut is how the notes named are cut into the chunks the index keeps.
-	Cut note.CutNotes
+	Cut chunking.CutNotes
 
 	// Ledger holds the content of notes indexed while their modification time
 	// was too recent to tell a second edit from the first. Refreshes that share
@@ -279,7 +278,7 @@ func (u Refresh) refreshPath(
 func readListedFile(ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case errors.Is(err, fs.ErrNotExist):
+	case errors.Is(err, vaultport.ErrNotExist):
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)
 	default:
@@ -300,7 +299,7 @@ func (u Refresh) statNote(
 		// An attachment, an export or a note renamed out of the vault's sight is
 		// not a note that vanished, and the index holds nothing at its path.
 		res.LeftAlone = append(res.LeftAlone, path)
-	case errors.Is(err, fs.ErrNotExist):
+	case errors.Is(err, vaultport.ErrNotExist):
 		res.Removed = append(res.Removed, path)
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)
@@ -358,11 +357,11 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	removed, err := filetext.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
+	removed, err := vaultreading.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
 	if err != nil {
 		return err
 	}
-	_, err = filetext.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
+	_, err = vaultreading.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
 	return err
 }
 

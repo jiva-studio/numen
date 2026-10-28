@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	_ "github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 

@@ -13,9 +13,9 @@ var ErrInvalidReader = errors.New("invalid reader")
 
 // PluginContentType is a type of file the plugin brings, and the names of the files of it.
 type PluginContentType struct {
-	Type domain.ContentType `json:"type"`
+	Type domain.ContentType
 	// Globs are the patterns of the names, each `*.` and an extension: `*.sample`.
-	Globs []string `json:"globs"`
+	Globs []string
 }
 
 // ListExtensions lists the extensions of the globs, lowercase and without the dot.
@@ -30,9 +30,9 @@ func (t PluginContentType) ListExtensions() []string {
 // PluginReader is a tab of the plugin that opens files of the types it names.
 type PluginReader struct {
 	// ID is the id the frontend registers the reader under.
-	ID           string               `json:"id"`
-	ContentTypes []domain.ContentType `json:"contentTypes"`
-	Rank         domain.HandlerRank   `json:"rank"`
+	ID           string
+	ContentTypes []domain.ContentType
+	Rank         domain.HandlerRank
 }
 
 // ListContentHandlers lists the handler of each type each reader of the plugin opens.

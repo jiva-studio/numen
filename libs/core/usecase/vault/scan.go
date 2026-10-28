@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
@@ -26,7 +26,7 @@ type Scan struct {
 	maintenance indexport.IndexMaintenance
 
 	// Cut is how the notes found are cut into the chunks the index keeps.
-	Cut note.CutNotes
+	Cut chunking.CutNotes
 
 	// Walks is the turns the vaults being walked take. A scan given none takes
 	// its turn from nobody and waits for nobody.
@@ -67,18 +67,14 @@ func NewScan(
 }
 
 // ScanResult reports what a scan did, in the terms the user cares about.
-//
-// `Notes` counts notes, and every number below it is about those notes. What
-// the walk found that is a source of another kind is `Assets`, which is how a
-// format nothing extracts is told from one that is seen and left alone.
-type ScanResult struct {
-	Notes      int // notes found in the vault
-	Assets     int // sources of another kind found in the vault
-	Indexed    int // parsed and written, because they were new or had changed
-	Unchanged  int // skipped on size and modification time alone
-	Removed    int // in the index, no longer on disk
-	Vanished   int // walked, but gone by the time it was read
-	Unreadable int // walked, present, and the read failed
+type ScanResult = vaultreading.ScanResult
+
+// ScanWithProgress runs Execute with onProgress reporting each group when non-nil.
+func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(ScanResult)) (ScanResult, error) {
+	if onProgress != nil {
+		u.OnProgress = onProgress
+	}
+	return u.Execute(ctx, v)
 }
 
 // FileStatQueries is the one question a scan asks of the index, so that a
@@ -228,7 +224,7 @@ func (u Scan) indexChanged(
 func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case errors.Is(err, fs.ErrNotExist):
+	case errors.Is(err, vaultport.ErrNotExist):
 		// A note saved, moved or deleted during a scan does not end the scan; the
 		// next one sees whatever it became. A file briefly absent is what an
 		// editor saving through a temporary file looks like.

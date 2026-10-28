@@ -3,7 +3,7 @@ package container
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/completion"
+	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 )
 
 // model and the limit.
@@ -13,7 +13,7 @@ func TestTheDefaultIsReadFromTheAISection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (completion.Route{Agent: "a", Model: "m", Concurrency: 3}); loaded.AI.Default != want {
+	if want := (settings.AIRoute{Agent: "a", Model: "m", Concurrency: 3}); loaded.AI.Default != want {
 		t.Errorf("the default reads %+v, want %+v", loaded.AI.Default, want)
 	}
 }
@@ -25,7 +25,7 @@ func TestAFileWithRoutesByPurposeLoads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (completion.Route{Agent: "a", Model: "m"}); loaded.AI.Default != want {
+	if want := (settings.AIRoute{Agent: "a", Model: "m"}); loaded.AI.Default != want {
 		t.Errorf("the default reads %+v, want %+v", loaded.AI.Default, want)
 	}
 }

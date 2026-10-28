@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 var (
 	// ErrUnavailable means whatever answers cannot be reached right now.
-	ErrUnavailable = errors.New("unavailable")
+	ErrUnavailable = domain.ErrUnavailable
 
 	// ErrNoRoute means no agent answers the question: the program the settings
 	// name is not installed or no plugin lists it, or no program is installed at
@@ -44,10 +44,10 @@ type Message struct {
 type CompletionChoice struct {
 	// Agent is the name of the agent program. Empty is the default of the
 	// settings.
-	Agent string `json:"agent,omitempty"`
+	Agent string
 	// Model is the model the program answers with. Empty is the one the settings
 	// name for the program, else the program's own.
-	Model string `json:"model,omitempty"`
+	Model string
 }
 
 // ReadCompletionChoice reads the value of a setting of type SettingTypeAgent. A
@@ -71,22 +71,15 @@ type Completer interface {
 	Complete(ctx context.Context, pluginID string, question Question) (string, error)
 }
 
+// CompleterHost receives the completer that answers plugin questions.
+type CompleterHost interface {
+	// SetCompleter sets the completer that answers plugin questions.
+	SetCompleter(completer Completer)
+}
+
 // CompletionChoices reads the choice a plugin's setting holds.
 type CompletionChoices interface {
 	// GetCompletionChoice returns the agent and the model the plugin's setting of
 	// type SettingTypeAgent holds, and the empty choice where it holds none.
 	GetCompletionChoice(pluginID string) CompletionChoice
-}
-
-// CompletionPrograms finds the program a route names and starts the tasks that
-// carry the questions to it.
-type CompletionPrograms interface {
-	// GetProgram returns the program named, or, when the name is empty, the one
-	// the settings name, else the default of the plugins. A program that is not
-	// installed or that no plugin lists fails with ErrNoRoute, and plugins that
-	// cannot be reached with ErrUnavailable.
-	GetProgram(ctx context.Context, name string) (agentport.AgentProgram, error)
-	// StartRun starts the task on the program it names, under that program's
-	// section of the settings.
-	StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error)
 }

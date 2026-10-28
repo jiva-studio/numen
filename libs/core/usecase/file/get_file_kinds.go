@@ -3,7 +3,6 @@ package file
 import (
 	"context"
 	"errors"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
@@ -33,7 +32,7 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	refs := make(map[string]domain.FileStat, len(paths))
 	for _, path := range paths {
 		ref, err := reader.StatFile(ctx, path)
-		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, vaultport.ErrOutside) {
+		if errors.Is(err, vaultport.ErrNotExist) || errors.Is(err, vaultport.ErrOutside) {
 			continue
 		}
 		// A file the vault leaves alone stands there and is no source.
@@ -67,7 +66,7 @@ func readMissingTypes(
 			continue
 		}
 		raw, err := reader.Read(ctx, entry.Path)
-		if errors.Is(err, fs.ErrNotExist) {
+		if errors.Is(err, vaultport.ErrNotExist) {
 			continue
 		}
 		if err != nil {

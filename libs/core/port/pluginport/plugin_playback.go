@@ -16,8 +16,8 @@ var ErrInvalidPlayback = errors.New("invalid playback")
 // plugin's store folder named by the content hash of the file and an extension of an audio or video
 // type: `<hash>.mp4`.
 type PluginPlayback struct {
-	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
-	NoteTypes    []string             `json:"noteTypes,omitempty"`
+	ContentTypes []domain.ContentType
+	NoteTypes    []string
 }
 
 // IsCopying reports whether the plugin keeps copies of files of the content type, or of notes of

@@ -67,11 +67,11 @@ func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 	createText(t, server, host.TextCreation{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
-	if text.Version.Kind != textKind || !text.Version.IsFromFile() {
-		t.Errorf("version %+v, want a book text made from the file", text.Version)
+	if text.Version().Kind != textKind || !text.Version().IsFromFile() {
+		t.Errorf("version %+v, want a book text made from the file", text.Version())
 	}
-	if text.Version.SourceHash != domain.HashContent(raw) || text.Version.File != domain.HashContent(raw)+".jsonl" {
-		t.Errorf("version %+v does not name the file and the text as they are", text.Version)
+	if text.Version().SourceHash != domain.HashContent(raw) || text.Version().File != domain.HashContent(raw)+".jsonl" {
+		t.Errorf("version %+v does not name the file and the text as they are", text.Version())
 	}
 	if text.Text != book.Text {
 		t.Errorf("text %q, want the text the reader sets the book with, %q", text.Text, book.Text)
@@ -171,8 +171,8 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 
 	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "book.epub"})
 
-	if text := readLive(t, other, "book.epub"); text.Version.Kind != textKind {
-		t.Errorf("Chemistry's live version is %+v", text.Version)
+	if text := readLive(t, other, "book.epub"); text.Version().Kind != textKind {
+		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
 	if inShown, _ := texts.ListVersions(t.Context(), "book.epub"); len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)

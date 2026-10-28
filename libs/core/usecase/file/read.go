@@ -7,9 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	pathpkg "path"
-	"path/filepath"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/core/internal/text"
@@ -80,7 +79,7 @@ func (u Read) Execute(
 	}
 	file, err := reader.Open(ctx, path)
 	switch {
-	case errors.Is(err, fs.ErrNotExist):
+	case errors.Is(err, vaultport.ErrNotExist):
 		out.Outcome = Missing
 		return out, nil
 	case err != nil:
@@ -154,13 +153,13 @@ func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, 
 // folder above it: Ok for a file, AFolder for a folder, LeftAlone for a path it
 // does not report at all.
 func getReadOutcome(ctx context.Context, reader vaultport.VaultReader, path string) (ReadOutcome, error) {
-	clean := pathpkg.Clean(filepath.ToSlash(path))
+	clean := pathpkg.Clean(strings.ReplaceAll(path, `\`, "/"))
 	folder := pathpkg.Dir(clean)
 	if folder == "." {
 		folder = ""
 	}
 	entries, err := reader.List(ctx, folder)
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, vaultport.ErrNotExist) {
 		return LeftAlone, nil
 	}
 	if err != nil {

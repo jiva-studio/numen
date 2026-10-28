@@ -5,8 +5,8 @@
 package ulid
 
 import (
-	"crypto/rand"
 	"errors"
+	"io"
 	"time"
 )
 
@@ -17,6 +17,9 @@ const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 // isAlphabet holds, for each byte, whether it is a character of the alphabet.
 var isAlphabet = createTable(alphabet)
 
+// DefaultEntropy is the entropy source used when none is passed to New.
+var DefaultEntropy io.Reader
+
 func createTable(characters string) (table [256]bool) {
 	for i := range len(characters) {
 		table[characters[i]] = true
@@ -26,7 +29,7 @@ func createTable(characters string) (table [256]bool) {
 
 // New returns a ULID for the given instant: 48 bits of milliseconds followed by
 // 80 bits of randomness, encoded as 26 characters.
-func New(t time.Time) string {
+func New(t time.Time, entropy ...io.Reader) string {
 	var b [16]byte
 	ms := uint64(t.UTC().UnixMilli())
 	b[0] = byte(ms >> 40)
@@ -35,8 +38,14 @@ func New(t time.Time) string {
 	b[3] = byte(ms >> 16)
 	b[4] = byte(ms >> 8)
 	b[5] = byte(ms)
-	// rand.Read never returns an error: it aborts the program instead.
-	_, _ = rand.Read(b[6:])
+
+	source := DefaultEntropy
+	if len(entropy) > 0 && entropy[0] != nil {
+		source = entropy[0]
+	}
+	if source != nil {
+		_, _ = io.ReadFull(source, b[6:])
+	}
 
 	out := make([]byte, 26)
 	// 26 base32 characters carry 130 bits; the value is left-padded into them.
@@ -62,8 +71,7 @@ func New(t time.Time) string {
 }
 
 // Valid reports whether s could have been produced by New. It is deliberately
-// strict: an identifier that is almost right points at a corrupted file rather
-// than at something to be tolerated.
+// strict: an identifier that is almost right points at a corrupted file.
 func Valid(s string) bool {
 	if len(s) != 26 {
 		return false

@@ -2,7 +2,8 @@ package check
 
 import (
 	"fmt"
-	"path/filepath"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -25,11 +26,11 @@ func (u *CheckRoot) Execute(root string) error {
 	if u == nil || u.identity == nil || u.home == nil {
 		return fmt.Errorf("%s cannot be checked here, so it is not added", root)
 	}
-	if !filepath.IsAbs(root) {
+	if !domain.IsAbsPath(root) {
 		return fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
 	}
 	pos := u.getName(root)
-	if filepath.Dir(pos) == pos {
+	if domain.IsRootPath(pos) {
 		return fmt.Errorf(
 			"%s is the root of this filesystem, and a vault is a folder somebody keeps notes in", pos)
 	}
@@ -41,5 +42,5 @@ func (u *CheckRoot) Execute(root string) error {
 }
 
 func (u *CheckRoot) getName(path string) string {
-	return u.identity.GetName(filepath.Clean(path))
+	return u.identity.GetName(domain.CleanPath(path))
 }

@@ -181,3 +181,45 @@ func jsonEqual(a, b map[string]any) bool {
 	right, errRight := json.Marshal(b)
 	return errLeft == nil && errRight == nil && string(remaining) == string(right)
 }
+
+// The default is placed under ai.default, with the agent, the model and the limit.
+func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
+	var config settings.AI
+	if err := json.Unmarshal([]byte(`{"default": {"agent": "a", "model": "m", "concurrency": 3}}`), &config); err != nil {
+		t.Fatal(err)
+	}
+	if want := (settings.AIRoute{Agent: "a", Model: "m", Concurrency: 3}); config.Default != want {
+		t.Errorf("read %+v, want %+v", config.Default, want)
+	}
+}
+
+// A file of the older shape keeps its default route, and the routes of single
+// purposes are not read.
+func TestAnOlderFileKeepsItsDefaultRoute(t *testing.T) {
+	var config settings.AI
+	older := `{"routes": {"default": {"agent": "a", "model": "m", "concurrency": 2}, "proofreading": {"agent": "b"}}}`
+	if err := json.Unmarshal([]byte(older), &config); err != nil {
+		t.Fatal(err)
+	}
+	if want := (settings.AIRoute{Agent: "a", Model: "m", Concurrency: 2}); config.Default != want {
+		t.Errorf("read %+v, want %+v", config.Default, want)
+	}
+
+	if err := json.Unmarshal([]byte(`{"routes": {"proofreading": {"agent": "b"}}}`), &config); err != nil {
+		t.Fatal(err)
+	}
+	if config.Default != (settings.AIRoute{}) {
+		t.Errorf("a purpose's route was read as the default: %+v", config.Default)
+	}
+}
+
+func TestTheDefaultExistsOverTheOlderRoutes(t *testing.T) {
+	var config settings.AI
+	both := `{"default": {"agent": "new"}, "routes": {"default": {"agent": "old"}}}`
+	if err := json.Unmarshal([]byte(both), &config); err != nil {
+		t.Fatal(err)
+	}
+	if config.Default.Agent != "new" {
+		t.Errorf("read agent %q, want new", config.Default.Agent)
+	}
+}

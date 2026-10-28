@@ -20,7 +20,7 @@ type TextSegment struct {
 // VersionText is a version's text as one string, and the segments it was given
 // in, each at the byte offset it begins at.
 type VersionText struct {
-	Version  TextVersion
+	version  TextVersion
 	Text     string
 	segments []TextSegment
 	offsets  []int
@@ -34,8 +34,11 @@ func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
 		offsets[i] = len(b)
 		b = append(b, s.Text...)
 	}
-	return VersionText{Version: version, Text: string(b), segments: segments, offsets: offsets}
+	return VersionText{version: version, Text: string(b), segments: segments, offsets: offsets}
 }
+
+// Version returns the metadata of the text version.
+func (t VersionText) Version() TextVersion { return t.version }
 
 // GetSegments is the segments of the text, in order.
 func (t VersionText) GetSegments() []TextSegment { return t.segments }

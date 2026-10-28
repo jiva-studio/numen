@@ -1,8 +1,6 @@
 package pluginport
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -11,14 +9,14 @@ import (
 
 // PluginSettingOption is one value an enum setting can hold.
 type PluginSettingOption struct {
-	Value string `json:"value"`
+	Value string
 	// Title is what a person reads for the value. Empty shows the value itself.
-	Title string `json:"title,omitempty"`
+	Title string
 	// Detail is what a person reads under the setting while the value is in force.
-	Detail string `json:"detail,omitempty"`
+	Detail string
 	// Dependencies are the ids of the manifest's dependencies the host provisions only while the
 	// option is in force.
-	Dependencies []string `json:"dependencies,omitempty"`
+	Dependencies []string
 }
 
 // GetTitle returns the title of the option, or its value where it has none.
@@ -31,25 +29,6 @@ func (o PluginSettingOption) GetTitle() string {
 
 // PluginSettingOptions are the values an enum setting can hold, in the order they are offered.
 type PluginSettingOptions []PluginSettingOption
-
-// UnmarshalJSON reads a list of values or a list of options.
-func (o *PluginSettingOptions) UnmarshalJSON(data []byte) error {
-	var values []string
-	if err := json.Unmarshal(data, &values); err == nil {
-		options := make(PluginSettingOptions, 0, len(values))
-		for _, value := range values {
-			options = append(options, PluginSettingOption{Value: value})
-		}
-		*o = options
-		return nil
-	}
-	var options []PluginSettingOption
-	if err := json.Unmarshal(data, &options); err != nil {
-		return errors.New("options must be a list of values or of objects with a value")
-	}
-	*o = options
-	return nil
-}
 
 // Find returns the option holding the value.
 func (o PluginSettingOptions) Find(value string) (PluginSettingOption, bool) {
@@ -64,25 +43,25 @@ func (o PluginSettingOptions) Find(value string) (PluginSettingOption, bool) {
 // PluginSettingOptionsBy gives a setting its options from the value of another setting.
 type PluginSettingOptionsBy struct {
 	// Setting is the key of the enum setting the options follow.
-	Setting string `json:"setting"`
+	Setting string
 	// Options are the options under each value of that setting.
-	Options map[string]PluginSettingOptions `json:"options"`
+	Options map[string]PluginSettingOptions
 }
 
 // PluginSettingCondition holds while a setting holds one of the values listed.
 type PluginSettingCondition struct {
-	Setting string   `json:"setting"`
-	Is      []string `json:"is"`
+	Setting string
+	Is      []string
 }
 
 // PluginSecret is one secret, such as an API key, a plugin asks the host to keep.
 type PluginSecret struct {
 	// Name is what the plugin reads the key under.
-	Name        string `json:"name"`
-	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
+	Name        string
+	Title       string
+	Description string
 	// When is the condition under which the secret is shown and handed to the plugin.
-	When *PluginSettingCondition `json:"when,omitempty"`
+	When *PluginSettingCondition
 }
 
 // GetSecretNames returns the names of the secrets the plugin declares.

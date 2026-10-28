@@ -21,3 +21,27 @@ type Edit struct {
 	// IsDone is the last report of this change. It arrives whether the change
 	IsDone bool
 }
+
+// Move is a note that is no longer where it was, and where it now is.
+//
+// The bytes do not change on the way, so this says nothing about what the note
+// holds. It says only that a name stopped naming it.
+type Move struct {
+	From string
+	To   string
+}
+
+// MoveResult says where the note went and what it did to the links that
+// pointed at it.
+type MoveResult struct {
+	From string
+	To   string
+	// IsLanded is whether the file is at To.
+	IsLanded bool
+	// Repaired is the notes whose link stopped resolving and was written
+	// again, by name.
+	Repaired []string
+	// Dangling is the notes whose link stopped resolving and could not be
+	// written again. Each of them still points at the name the file left.
+	Dangling []string
+}

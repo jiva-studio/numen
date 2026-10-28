@@ -85,12 +85,12 @@ func splitAt(text string, starts []int, titles []string) []domain.TextSegment {
 
 func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
 	doc, err := t.GetLiveText(ctx, path, fileHash)
-	return doc.Version.GetID(), err
+	return doc.Version().GetID(), err
 }
 
 func (t vaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version.SourceHash != fileHash {
+	if err == nil && doc.Version().SourceHash != fileHash {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err
@@ -98,7 +98,7 @@ func (t vaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (dom
 
 func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version.GetID() != id {
+	if err == nil && doc.Version().GetID() != id {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err

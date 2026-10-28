@@ -133,8 +133,8 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 		t.Fatalf("recognised %+v (%v), want two pages", res, err)
 	}
 	text := s.readLive(t, "books/scan.pdf")
-	if text.Version.Kind != "recognition" || text.Version.Key != recognition.VersionKey {
-		t.Fatalf("the version is %+v", text.Version)
+	if text.Version().Kind != "recognition" || text.Version().Key != recognition.VersionKey {
+		t.Fatalf("the version is %+v", text.Version())
 	}
 	if !strings.Contains(text.Text, "page two\n\nHeading") {
 		t.Errorf("the text reads %q, want the pages in order with their blocks apart", text.Text)
@@ -219,8 +219,8 @@ func TestRecogniseKeepsOnlyTheVersionFile(t *testing.T) {
 	}
 
 	text := s.readLive(t, "books/scan.pdf")
-	if names := s.getStoreNames(t); len(names) != 1 || names[0] != text.Version.File || !strings.HasSuffix(names[0], ".jsonl") {
-		t.Errorf("the folder holds %v, want only the version file %s", names, text.Version.File)
+	if names := s.getStoreNames(t); len(names) != 1 || names[0] != text.Version().File || !strings.HasSuffix(names[0], ".jsonl") {
+		t.Errorf("the folder holds %v, want only the version file %s", names, text.Version().File)
 	}
 }
 

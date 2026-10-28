@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"errors"
+
 	"github.com/jiva-studio/numen/libs/notes/domain/name"
 )
 
@@ -18,6 +20,9 @@ const (
 )
 
 var (
+	// ErrUnavailable means whatever answers cannot be reached right now.
+	ErrUnavailable = errors.New("unavailable")
+
 	// From name subpackage
 	ErrInvalidName     = name.ErrInvalidName
 	Filename           = name.Filename

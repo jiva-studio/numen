@@ -4,51 +4,21 @@ import (
 	"context"
 	"slices"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
 )
 
 // A Task is one piece of work, as a person is shown it.
-type Task struct {
-	// ID is what this work is called, so that the same work reported again
-	// replaces itself and not appearing twice.
-	ID string
-
-	// Title is the work, in the words to show: "Recognising a scan".
-	Title string
-	// About is what it is on, and is empty for work that is on nothing in
-	// particular.
-	About string
-
-	// Count and Total are how far it has got, when there is a total to count
-	// against. Both zero is work that is running with nothing to count, which is
-	// an ordinary state and not an unknown one.
-	Count, Total int64
-
-	// Error is why the work stopped, when it stopped badly. A task that stopped
-	// badly stays in the list until whoever put it there takes it out.
-	Error string
-
-	// IsUserStarted is set for work a person started and is waiting to be told about.
-	// Work nobody asked for is shown once it has lasted, and most of it ends
-	// before that.
-	IsUserStarted bool
-
-	// Unit is what Count and Total are counted in.
-	Unit Unit
-
-	// PluginID is the plugin that reported the task, and PluginName its name
-	// from the manifest. Both are empty for the core's own work.
-	PluginID, PluginName string
-}
+type Task = vaultreading.Task
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, and everything else is counted one by one.
-type Unit int
+type Unit = vaultreading.Unit
 
 const (
-	Things Unit = iota
-	Bytes
-	// Seconds are a stretch of a recording, read out as a length of time.
-	Seconds
+	Things  = vaultreading.Things
+	Bytes   = vaultreading.Bytes
+	Seconds = vaultreading.Seconds
 )
 
 // Tasks is what the application is doing now.
