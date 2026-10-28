@@ -91,6 +91,10 @@ const trimmedDetail = computed(() => props.detail.trim())
   min-inline-size: 0;
 }
 
+.settings__value:has(.settings__path--multi) {
+  display: contents;
+}
+
 .settings__value :deep(.settings__choice),
 .settings__value :deep(.settings__text-input) {
   inline-size: var(--settings-choice, 16rem);

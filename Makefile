@@ -50,7 +50,7 @@ compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile 
 build: interface lib_core_build app_desktop_build ## build all application artifacts
 
 .PHONY: interface
-interface: lib_shell_build app_desktop_editor_build ## build UI pages into assets
+interface: lib_shell_build app_desktop_editor_build app_desktop_flashcards_build ## build UI pages into assets
 
 .PHONY: generate
 generate: lib_protocol_generate ## generate code from schema
@@ -64,7 +64,7 @@ desktop: app_desktop_build ## build desktop application
 .PHONY: desktop_modular
 desktop_modular: interface plugins_build ## build desktop application in modular mode
 	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o $(CURDIR)/numen ./cmd/numen
-	$(call bundle,Numen,numen,Info.plist,numen.icns)
+	$(call bundle,Numen,numen,Info.plist,numen.icns,desktop.editor)
 
 # Each runs the target of that name in every plugin's own Makefile.
 define run_in_plugins
@@ -296,19 +296,18 @@ endif
 ifeq ($(shell uname -s),Darwin)
 define bundle
 	rm -rf "$(1).app"
-	mkdir -p "$(1).app/Contents/MacOS" "$(1).app/Contents/Resources"
+	mkdir -p "$(1).app/Contents/MacOS" "$(1).app/Contents/Resources/plugins"
 	mv $(2) "$(1).app/Contents/MacOS/$(2)"
 	cp $(DESKTOP)/build/darwin/$(3) "$(1).app/Contents/Info.plist"
 	cp $(DESKTOP)/build/darwin/$(4) "$(1).app/Contents/Resources/$(4)"
-	mkdir -p "$(1).app/Contents/PlugIns"
 	for p in $$(find $(PLUGINS) -mindepth 1 -maxdepth 1 -type d); do \
-		if [ -f "$$p/manifest.json" ] && [ -d "$$p/bin" ]; then \
+		if [ -f "$$p/manifest.json" ] && { [ -d "$$p/bin" ] || [ -d "$$p/dist" ]; } && grep -q '"$(5)"' "$$p/manifest.json"; then \
 			name=$$(basename "$$p"); \
-			mkdir -p "$(1).app/Contents/PlugIns/$$name"; \
-			cp "$$p/manifest.json" "$(1).app/Contents/PlugIns/$$name/"; \
-			cp -r "$$p/bin" "$(1).app/Contents/PlugIns/$$name/"; \
-			if [ -d "$$p/dist" ]; then cp -r "$$p/dist" "$(1).app/Contents/PlugIns/$$name/"; fi; \
-			for bin in "$(1).app/Contents/PlugIns/$$name/bin/"*; do \
+			mkdir -p "$(1).app/Contents/Resources/plugins/$$name"; \
+			cp "$$p/manifest.json" "$(1).app/Contents/Resources/plugins/$$name/"; \
+			if [ -d "$$p/bin" ]; then cp -r "$$p/bin" "$(1).app/Contents/Resources/plugins/$$name/"; fi; \
+			if [ -d "$$p/dist" ]; then cp -r "$$p/dist" "$(1).app/Contents/Resources/plugins/$$name/"; fi; \
+			for bin in "$(1).app/Contents/Resources/plugins/$$name/bin/"*; do \
 				if [ -f "$$bin" ] && [ -x "$$bin" ]; then \
 					codesign --force -s - "$$bin"; \
 				fi; \
@@ -335,7 +334,7 @@ app_desktop_flashcards_build: lib_shell_build
 .PHONY: app_desktop_build
 app_desktop_build: interface plugins_build ## build desktop binary
 	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o $(CURDIR)/numen ./cmd/numen
-	$(call bundle,Numen,numen,Info.plist,numen.icns)
+	$(call bundle,Numen,numen,Info.plist,numen.icns,desktop.editor)
 
 .PHONY: app_desktop_pgo
 app_desktop_pgo: ## refresh the desktop PGO profile from the benchmarks
@@ -348,7 +347,7 @@ app_desktop_pgo_check: ## fail when the desktop PGO profile names a local path
 .PHONY: app_desktop_flashcards_bin
 app_desktop_flashcards_bin: app_desktop_flashcards_build plugins_build ## build desktop flashcards binary
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o $(CURDIR)/numen-flashcards ./cmd/numen-flashcards
-	$(call bundle,Numen Flashcards,numen-flashcards,numen-flashcards-Info.plist,numen-flashcards.icns)
+	$(call bundle,Numen Flashcards,numen-flashcards,numen-flashcards-Info.plist,numen-flashcards.icns,desktop.flashcards)
 
 .PHONY: app_desktop_compile
 app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck frontends

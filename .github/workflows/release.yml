@@ -650,7 +650,7 @@ jobs:
               mkdir -p "$RUNNER_TEMP/plugins/$name"
               if [ -d "$p/backend" ]; then
                 mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
-                GOOS=windows GOARCH=amd64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name.exe" "$p/backend"
+                GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/plugins/$name/bin/$name.exe" "$p/backend"
               fi
               cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
@@ -766,8 +766,8 @@ jobs:
               mkdir -p "$RUNNER_TEMP/plugins/$name"
               if [ -d "$p/backend" ]; then
                 mkdir -p "$RUNNER_TEMP/plugins/$name/bin"
-                CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$p/backend"
-                CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -o "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" "$p/backend"
+                CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$p/backend"
+                CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" "$p/backend"
                 lipo -create "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64" -output "$RUNNER_TEMP/plugins/$name/bin/$name"
                 rm "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64"
               fi
@@ -784,13 +784,18 @@ jobs:
         run: |
           bundle() {
             APP="$RUNNER_TEMP/$1.app"
+            TARGET="$5"
             mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
             mv "$RUNNER_TEMP/$2" "$APP/Contents/MacOS/$2"
             cp "apps/desktop/build/darwin/$3" "$APP/Contents/Info.plist"
             cp "apps/desktop/build/darwin/$4" "$APP/Contents/Resources/$4"
             if [ -d "$RUNNER_TEMP/plugins" ]; then
-              mkdir -p "$APP/Contents/PlugIns"
-              cp -r "$RUNNER_TEMP/plugins/"* "$APP/Contents/PlugIns/"
+              mkdir -p "$APP/Contents/Resources/plugins"
+              for p in "$RUNNER_TEMP/plugins/"*; do
+                if grep -q "\"$TARGET\"" "$p/manifest.json"; then
+                  cp -r "$p" "$APP/Contents/Resources/plugins/"
+                fi
+              done
             fi
             printf 'APPL????' > "$APP/Contents/PkgInfo"
             plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
@@ -798,8 +803,8 @@ jobs:
             plutil -lint "$APP/Contents/Info.plist"
           }
 
-          bundle Numen numen Info.plist numen.icns
-          bundle "Numen Flashcards" numen-flashcards numen-flashcards-Info.plist numen-flashcards.icns
+          bundle Numen numen Info.plist numen.icns desktop.editor
+          bundle "Numen Flashcards" numen-flashcards numen-flashcards-Info.plist numen-flashcards.icns desktop.flashcards
 
       # The identity lives in a keychain of this run's own, which the last step
       # deletes.
@@ -835,17 +840,16 @@ jobs:
 
       - name: Sign application bundle
         run: |
-          if [ -d "$RUNNER_TEMP/Numen.app/Contents/PlugIns" ]; then
-            find "$RUNNER_TEMP/Numen.app/Contents/PlugIns" -type f -perm +111 | while read -r plugin_bin; do
-              codesign --force --timestamp --options runtime \
-                --entitlements apps/desktop/build/darwin/entitlements.plist \
-                --keychain "$KEYCHAIN" --sign "$IDENTITY" \
-                "$plugin_bin"
-              codesign --verify --strict --verbose=2 "$plugin_bin"
-            done
-          fi
-
           for app in "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app"; do
+            if [ -d "$app/Contents/Resources/plugins" ]; then
+              find "$app/Contents/Resources/plugins" -type f -perm +111 | while read -r plugin_bin; do
+                codesign --force --timestamp --options runtime \
+                  --entitlements apps/desktop/build/darwin/entitlements.plist \
+                  --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+                  "$plugin_bin"
+                codesign --verify --strict --verbose=2 "$plugin_bin"
+              done
+            fi
             codesign --force --timestamp --options runtime \
               --entitlements apps/desktop/build/darwin/entitlements.plist \
               --keychain "$KEYCHAIN" --sign "$IDENTITY" \
