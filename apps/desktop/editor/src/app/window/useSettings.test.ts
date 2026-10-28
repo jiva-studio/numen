@@ -63,6 +63,28 @@ describe('the settings as they are put together', () => {
 
     expect(close).toHaveBeenCalledOnce()
   })
+
+  it('refreshes the settings in the background after starting and stops when closed', async () => {
+    vi.useFakeTimers()
+    try {
+      const { settings } = createSettings()
+      vi.spyOn(settings.appearance, 'start').mockResolvedValue()
+      vi.spyOn(settings.sync, 'start').mockResolvedValue()
+      const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
+
+      await settings.start()
+      expect(startRest).toHaveBeenCalledTimes(1)
+
+      vi.advanceTimersByTime(1500)
+      expect(startRest).toHaveBeenCalledTimes(2)
+
+      settings.close()
+      vi.advanceTimersByTime(10000)
+      expect(startRest).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('the lists the palette offers for a setting', () => {

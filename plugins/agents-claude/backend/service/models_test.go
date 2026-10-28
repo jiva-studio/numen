@@ -141,3 +141,19 @@ func TestACachedListIsNotAskedAgain(t *testing.T) {
 		t.Fatalf("got %v, %v", got, err)
 	}
 }
+
+func TestAnAsyncCacheReturnsEmptyWhileInFlightAndFallbackAfterFailure(t *testing.T) {
+	cache := modelCache{
+		isAsync:  true,
+		inFlight: map[string]bool{"x": true},
+	}
+	got, err := cache.get(context.Background(), []string{"x"}, nil)
+	if err != nil || len(got) != 0 {
+		t.Fatalf("in-flight async cache returned %v, %v", got, err)
+	}
+	cache.failed = map[string]bool{"x": true}
+	got, err = cache.get(context.Background(), []string{"x"}, nil)
+	if err != nil || len(got) != len(fallbackModels) {
+		t.Fatalf("failed async cache returned %v, %v", got, err)
+	}
+}
