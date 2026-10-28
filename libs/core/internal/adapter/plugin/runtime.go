@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // ErrRuntimeUnavailable indicates that a plugin declares a dependency the host cannot provision.

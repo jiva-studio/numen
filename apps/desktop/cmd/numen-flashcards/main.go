@@ -23,9 +23,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 const appName = "numen-flashcards"

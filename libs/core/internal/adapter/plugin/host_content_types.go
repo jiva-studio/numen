@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // contentTypeTable gives a file the type of its name where no plugin brings one.

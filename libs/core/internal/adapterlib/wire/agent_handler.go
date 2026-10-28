@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 )
 
 // ErrNoAgent is an installation with none. Whether one can be reached is asked of GetAgentState.

@@ -38,8 +38,8 @@ func (s UnitRange) Empty() bool { return s.End <= s.Start }
 // Len is how many code units the span covers.
 func (s UnitRange) Len() int { return s.End - s.Start }
 
-// MostHighlights is how many spans of one source are highlighted at once.
+// MaxHighlights is how many spans of one source are highlighted at once.
 //
 // A page with everything on it highlighted says nothing about where to look,
 // and whoever is choosing the places chooses which of them matter.
-const MostHighlights = 8
+const MaxHighlights = 8

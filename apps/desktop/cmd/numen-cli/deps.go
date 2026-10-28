@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
 )
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {

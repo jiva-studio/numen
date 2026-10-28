@@ -40,7 +40,7 @@ func notesAt(paths ...string) []domain.NoteChunks {
 // order it was first written, whether it was saved or removed.
 func TestThePathsSavedBelowAWalkAreHeldOnceInOrder(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
-	buffered.startRecording()
+	buffered.StartRecording()
 
 	if err := buffered.Save(t.Context(), "v", notesAt("b.md", "a.md")); err != nil {
 		t.Fatal(err)
@@ -53,10 +53,10 @@ func TestThePathsSavedBelowAWalkAreHeldOnceInOrder(t *testing.T) {
 	}
 
 	want := []string{"b.md", "a.md", "c.md", "d.md"}
-	if got := buffered.stopRecording(); !slices.Equal(got, want) {
+	if got := buffered.StopRecording(); !slices.Equal(got, want) {
 		t.Errorf("held %v, want %v", got, want)
 	}
-	if got := buffered.stopRecording(); len(got) != 0 {
+	if got := buffered.StopRecording(); len(got) != 0 {
 		t.Errorf("held %v after they were taken", got)
 	}
 }
@@ -78,26 +78,26 @@ func TestAWriteThatFailsIsAnsweredWithTheFailure(t *testing.T) {
 // held no longer; the next walk holds again.
 func TestNothingIsHeldOnceTheWalkIsOver(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
-	buffered.startRecording()
+	buffered.StartRecording()
 	if err := buffered.Save(t.Context(), "v", notesAt("a.md")); err != nil {
 		t.Fatal(err)
 	}
-	if got := buffered.stopRecording(); !slices.Equal(got, []string{"a.md"}) {
+	if got := buffered.StopRecording(); !slices.Equal(got, []string{"a.md"}) {
 		t.Fatalf("held %v", got)
 	}
 
 	if err := buffered.Save(t.Context(), "v", notesAt("late.md")); err != nil {
 		t.Fatal(err)
 	}
-	if got := buffered.stopRecording(); len(got) != 0 {
+	if got := buffered.StopRecording(); len(got) != 0 {
 		t.Errorf("held %v, written after the walk was over", got)
 	}
 
-	buffered.startRecording()
+	buffered.StartRecording()
 	if err := buffered.Save(t.Context(), "v", notesAt("next.md")); err != nil {
 		t.Fatal(err)
 	}
-	if got := buffered.stopRecording(); !slices.Equal(got, []string{"next.md"}) {
+	if got := buffered.StopRecording(); !slices.Equal(got, []string{"next.md"}) {
 		t.Errorf("the next walk held %v", got)
 	}
 }
@@ -123,7 +123,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 
 		opening := cfg.VaultOpener(db)
 		broken := errors.New("index unavailable")
-		opening.refresh = vault.NewRefresh(
+		opening.Refresh = vault.NewRefresh(
 			cfg.VaultReaders(), db.Vaults(), repositoryAnswering{err: broken},
 			db.SourcesKnown(), db.Sources(), cfg.Clock(),
 		)
@@ -133,7 +133,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 
 		got, err := open.Read(t.Context(), func() {
 			if one.encoded {
-				opening.buffered.record("Leaf.md")
+				opening.Buffered.Record("Leaf.md")
 			}
 		})
 		if err != nil {
@@ -170,13 +170,13 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 	if err := cfg.VaultOpener(db).Level(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := db.ledger.Len(); got != 1 {
+	if got := db.Ledger().Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
 	if err := cfg.Level(db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := db.ledger.Len(); got != 2 {
+	if got := db.Ledger().Len(); got != 2 {
 		t.Errorf("the levelling left %d notes in the index's ledger", got)
 	}
 }

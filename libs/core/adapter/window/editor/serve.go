@@ -21,13 +21,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
-	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/problemport"
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
+	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
+	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
+	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 )
 
 // Installation is a window put together and running: the questions a client
@@ -288,7 +289,7 @@ func createWindow(
 	state.EmitEvent = made.EmitEvent
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
-	services.readFiles(readers, made.OpenCopy(), made.GetMediaType())
+	services.readFiles(readers, made.OpenProxy(), made.GetMediaType())
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
 	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
 	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
@@ -307,9 +308,9 @@ func createWindow(
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
 	if embedder != nil {
-		model := embedder.GetModel()
-		state.Indexing.Model.Store(model.String())
-		state.Indexing.Recipe.Store(model.Recipe())
+		name, recipe := vectors.DescribeModel(embedder)
+		state.Indexing.Model.Store(name)
+		state.Indexing.Recipe.Store(recipe)
 	}
 	return state, services
 }
@@ -356,9 +357,9 @@ func (o *Installation) wireUseCases() {
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
 	services.Settings.OnPluginChange = func() {
 		if o.Embedder != nil {
-			model := o.Embedder.GetModel()
-			o.State.Indexing.Model.Store(model.String())
-			o.State.Indexing.Recipe.Store(model.Recipe())
+			name, recipe := vectors.DescribeModel(o.Embedder)
+			o.State.Indexing.Model.Store(name)
+			o.State.Indexing.Recipe.Store(recipe)
 		}
 		if o.indexer != nil {
 			o.indexer.WakeSources()

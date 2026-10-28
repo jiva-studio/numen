@@ -367,7 +367,7 @@ func (m PluginManifest) listNoteTypeIssues() []error {
 
 // GetProfile is how the index keeps the notes of the type.
 func (t PluginNoteType) GetProfile() domain.NoteProfile {
-	profile := domain.OrdinaryProfile()
+	profile := domain.DefaultProfile()
 	if t.Chunks != nil {
 		profile.HasChunks = *t.Chunks
 	}

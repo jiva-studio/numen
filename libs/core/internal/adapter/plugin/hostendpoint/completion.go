@@ -6,7 +6,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
+	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 )
 
 func writeRefusal(err error) (v1.CompletionErrorCode, bool) {

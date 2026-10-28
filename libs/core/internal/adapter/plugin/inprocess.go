@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 var (

@@ -29,49 +29,7 @@ const (
 // settings adapter owns the file and the sections about the window; what
 // configures an adapter is that adapter's own shape, and the union of them is
 // made here, where every adapter is bound.
-type Settings struct {
-	// Version is the shape of the file. Nothing reads it yet, and it is written
-	// so that the day a section changes shape there is something to tell the
-	// two apart.
-	Version int `json:"v"`
-
-	// Appearance is how the window is drawn.
-	Appearance settings.Appearance `json:"appearance"`
-
-	// Indexing is how a vault is made searchable.
-	Indexing Indexing `json:"indexing"`
-
-	// Agent is which agent answers in the panel, and what it may reach.
-	Agent settings.Agent `json:"agent"`
-
-	Titles settings.Titles `json:"naming"`
-
-	// Performance is the workload and resource calibration profile.
-	Performance hardware.Performance `json:"performance"`
-
-	// Plugins is the configuration for modular plugins, keyed by plugin ID.
-	Plugins map[string]map[string]any `json:"plugins,omitempty"`
-
-	// AI is the agent and the model that answer the questions of a plugin whose
-	// own setting names no agent.
-	AI settings.AI `json:"ai"`
-
-	// Notices is what reading the file leaves a person something to do about: a
-	// number written where a setting does not go that far. Each is one line of
-	// a band, which gives a line about sixty characters, and whoever read the
-	// settings puts it where the person is.
-	Notices []string `json:"-"`
-}
-
-// The sections the settings adapter reads and puts right as it reads the file.
-func (s *Settings) GetVersion() *int                    { return &s.Version }
-func (s *Settings) GetAppearance() *settings.Appearance { return &s.Appearance }
-
-// AddNotice leaves a person one line about what the file holds.
-func (s *Settings) AddNotice(notice string) { s.Notices = append(s.Notices, notice) }
-
-// Sync is whether a note's title and its filename are kept as one name.
-func (s Settings) Sync() bool { return s.Titles.Sync() }
+type Settings = settings.File
 
 // Settings reads the file a person configures this installation in. An
 // installation nobody has configured is written down as what it is doing.
@@ -94,23 +52,7 @@ func (c Config) getSettingsAt(path string) (Settings, error) {
 
 // DefaultSettings is what an installation nobody has configured does.
 func DefaultSettings() Settings {
-	return Settings{
-		Version:     settings.DefaultVersion,
-		Appearance:  settings.DefaultAppearance(),
-		Indexing:    DefaultIndexing(),
-		Titles:      settings.DefaultTitles(),
-		Performance: hardware.DefaultPerformance(),
-	}
-}
-
-// WriteJSON is every setting as JSON. What is handed in is what is written out,
-// so a document read from a file carries the defaults the file leaves out.
-func (s Settings) WriteJSON() (string, error) {
-	content, err := json.Marshal(s)
-	if err != nil {
-		return "", err
-	}
-	return string(content), nil
+	return settings.DefaultFile()
 }
 
 // getSettingsOrDefaults is that document, and what an installation nobody has

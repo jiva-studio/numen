@@ -73,10 +73,10 @@ func (keptCopies) IsCopyingNotes() bool { return true }
 
 func (keptCopies) IsCopied(_ string, noteType domain.NoteType) bool { return noteType == "link" }
 
-func (k keptCopies) OpenCopy(_ context.Context, _ domain.Vault, _ string, _ domain.NoteType, hash string) (playbackport.Copy, error) {
+func (k keptCopies) OpenProxy(_ context.Context, _ domain.Vault, _ string, _ domain.NoteType, hash string) (playbackport.Copy, error) {
 	content, ok := k[hash]
 	if !ok {
-		return playbackport.Copy{}, playbackport.ErrNoCopy
+		return playbackport.Copy{}, playbackport.ErrNoProxy
 	}
 	return playbackport.Copy{Body: nopSeekCloser{bytes.NewReader(content)}, Size: int64(len(content)), MediaType: "video/mp4"}, nil
 }
@@ -99,7 +99,7 @@ func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceC
 	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound, plain: plainNote})
 	api := newBareServices()
 	readers := vaultreader.Readers{}
-	api.readFiles(readers, file.NewOpenCopy(readers, copies), file.NewGetMediaType(sharedmimeinfo.Open()))
+	api.readFiles(readers, file.NewOpenProxy(readers, copies), file.NewGetMediaType(sharedmimeinfo.Open()))
 	api.state.setVault(vault)
 	back, err := Listen(api.server, nil)
 	if err != nil {

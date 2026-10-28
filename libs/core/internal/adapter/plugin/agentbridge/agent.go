@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // Host provides plugin resolution and activation for AI agents.

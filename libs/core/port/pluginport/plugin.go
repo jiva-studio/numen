@@ -160,16 +160,18 @@ type PluginDiscoverer interface {
 	GetPluginInfos() []PluginInfo
 }
 
-// PluginConfigurator manages configuration and settings for plugins.
-type PluginConfigurator interface {
-	SetSettings(all map[string]map[string]any)
-	SetPersistHandler(handler PluginPersistHandler)
+type pluginSecretConfigurator interface {
 	SetKeyStore(store KeyStore)
 	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
 	DeletePluginSecret(ctx context.Context, pluginID, name string) error
+}
+
+// PluginConfigurator manages configuration and settings for plugins.
+type PluginConfigurator interface {
+	pluginSecretConfigurator
+	SetSettings(all map[string]map[string]any)
+	SetPersistHandler(handler PluginPersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
-	// CheckPluginSetting reports why a setting the plugin declares does not take the value, and nil
-	// where it does.
 	CheckPluginSetting(pluginID, key string, value any) error
 }
 
@@ -178,26 +180,25 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 }
 
+type pluginFailureCallbacks interface {
+	SetOnPluginFailed(fn func(PluginFailure))
+	SetOnFailureCleared(fn func(pluginID string))
+	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)
+	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
+}
+
+type pluginVaultBinding interface {
+	SetSafeMode(enabled bool)
+	SetPluginVault(vault PluginVault)
+	SetPluginWork(work PluginWork)
+	SetVaultPath(path string)
+}
+
 // PluginLifecycleManager coordinates process lifecycle, failure handling, and teardown for plugins.
 type PluginLifecycleManager interface {
 	PluginActivator
-	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
-	SetSafeMode(enabled bool)
-	SetPluginVault(vault PluginVault)
-	// SetPluginWork sets the queue and the list of tasks the plugins use.
-	SetPluginWork(work PluginWork)
-	// SetVaultPath is the vault the plugins' paths are inside.
-	SetVaultPath(path string)
-	// SetOnPluginFailed registers a callback invoked once when a plugin has failed to start repeatedly,
-	// and again when a retry of it fails.
-	SetOnPluginFailed(fn func(PluginFailure))
-	// SetOnFailureCleared registers a callback invoked with the id of a plugin whose failure the host forgets, because the plugin started, was enabled or was disabled.
-	SetOnFailureCleared(fn func(pluginID string))
-	// RetryPlugin forgets the failures of a plugin and starts it once. The failure is set where the
-	// plugin fails again; an unknown plugin is an *UnavailableError.
-	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)
-	// TeardownAll stops every plugin, giving each the grace period to exit.
-	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
+	pluginVaultBinding
+	pluginFailureCallbacks
 }
 
 // PluginRegistryManager coordinates discovery, configuration, resolution, and capabilities for plugins.
@@ -208,13 +209,16 @@ type PluginRegistryManager interface {
 	PluginEventEmitter
 }
 
+type pluginContentTypes interface {
+	GetContentType(name string) domain.ContentType
+	ListExtensions(mask domain.ContentType) []string
+}
+
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
 type PluginManager interface {
 	PluginLifecycleManager
 	PluginRegistryManager
 	PluginTextHost
-	GetContentType(name string) domain.ContentType
-	ListExtensions(mask domain.ContentType) []string
-	// GetDependencies is what provisions the dependencies the plugins declare, or nil when nothing does.
+	pluginContentTypes
 	GetDependencies() DependencyCatalog
 }

@@ -8,11 +8,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/problemport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 var ErrNoVault = errors.New("the host is showing no vault")

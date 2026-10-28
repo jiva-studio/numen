@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // RouterHost is the plugin host as a Router reaches it: the plugins it knows, and each one's agent

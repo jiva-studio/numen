@@ -28,8 +28,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 var (

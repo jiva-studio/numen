@@ -36,7 +36,7 @@ func TestASpanIsEmptyWhenItEndsWhereItBeginsOrBefore(t *testing.T) {
 }
 
 func TestMostHighlightsIsEight(t *testing.T) {
-	if domain.MostHighlights != 8 {
-		t.Errorf("MostHighlights is %d, want 8", domain.MostHighlights)
+	if domain.MaxHighlights != 8 {
+		t.Errorf("MaxHighlights is %d, want 8", domain.MaxHighlights)
 	}
 }

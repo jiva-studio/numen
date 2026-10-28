@@ -125,7 +125,7 @@ func (nopCloser) Close() error { return nil }
 const hash = "4f2a"
 
 func TestOnlyANoteTypeAnEnabledPluginDeclaresIsCopied(t *testing.T) {
-	copies := NewCopies(host{}, folders{})
+	copies := NewProxies(host{}, folders{})
 	if !copies.IsCopyingNotes() || !copies.IsCopied("links/Tidal mills.MD", "link") {
 		t.Error("a link note is not copied, and the plugin that keeps copies of link notes is enabled")
 	}
@@ -147,7 +147,7 @@ func TestTheCopyIsTheFileNamedByTheHashInAContainerThatPlays(t *testing.T) {
 		hash + ".mp4":          []byte("the copy"),
 		"org.example.other.md": []byte("not a copy"),
 	}}
-	found, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.md", "link", hash)
+	found, err := NewProxies(host{}, stores).OpenProxy(t.Context(), domain.Vault{}, "links/a.md", "link", hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,16 +167,16 @@ func TestALinkWithNoCopyHasNone(t *testing.T) {
 		"org.example.other": {hash + ".mp4": []byte("a plugin that keeps no copies")},
 		"org.example.off":   {hash + ".mp4": []byte("a plugin switched off")},
 	}
-	_, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.md", "link", hash)
-	if !errors.Is(err, playbackport.ErrNoCopy) {
+	_, err := NewProxies(host{}, stores).OpenProxy(t.Context(), domain.Vault{}, "links/a.md", "link", hash)
+	if !errors.Is(err, playbackport.ErrNoProxy) {
 		t.Errorf("a link with no copy opened as %v", err)
 	}
 }
 
 func TestACopyOfATypeThatDoesNotPlayIsNone(t *testing.T) {
 	stores := folders{"org.example.links": {hash + ".json": []byte("{}")}}
-	_, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.md", "link", hash)
-	if !errors.Is(err, playbackport.ErrNoCopy) {
+	_, err := NewProxies(host{}, stores).OpenProxy(t.Context(), domain.Vault{}, "links/a.md", "link", hash)
+	if !errors.Is(err, playbackport.ErrNoProxy) {
 		t.Errorf("a file of no audio or video type opened as %v", err)
 	}
 }

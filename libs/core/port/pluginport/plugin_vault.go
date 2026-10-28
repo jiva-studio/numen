@@ -15,22 +15,18 @@ type PluginStoreFile struct {
 
 // PluginStore is one plugin's own folder in a vault's store, `.numen/<plugin id>/`. A name is a file
 // directly in that folder; one that holds a slash or begins with a dot gets vaultport.ErrOutside.
-type PluginStore interface {
-	// Read returns what is kept under the name, or fs.ErrNotExist.
-	Read(ctx context.Context, name string) ([]byte, error)
-	// Append adds to the end of the file, making it when it is not there.
+type pluginStoreMutator interface {
 	Append(ctx context.Context, name string, content []byte) error
-	// Write replaces the whole file, making it when it is not there.
 	Write(ctx context.Context, name string, content []byte) error
-	// Delete removes the file. A file that is not there is removed.
 	Delete(ctx context.Context, name string) error
-	// List returns the files of the folder, sorted by name.
-	List(ctx context.Context) ([]PluginStoreFile, error)
-	// Open opens the file to read a part of, and returns how many bytes it holds, or
-	// fs.ErrNotExist. Whoever opens it closes it.
-	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
-	// Rename moves the file to another name of the folder, replacing what the other held.
 	Rename(ctx context.Context, from, to string) error
+}
+
+type PluginStore interface {
+	pluginStoreMutator
+	Read(ctx context.Context, name string) ([]byte, error)
+	List(ctx context.Context) ([]PluginStoreFile, error)
+	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
 }
 
 // PluginStores opens a plugin's folder in the store of a vault.
@@ -67,17 +63,24 @@ type PluginIndexState struct {
 }
 
 // PluginVaultReader provides read access to files, notes, links, and index problems of a vault.
-type PluginVaultReader interface {
-	StatFile(ctx context.Context, path string) (domain.FileStat, error)
-	// Read returns the file and what it was when it was asked about, before its bytes were read.
-	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
+type pluginVaultNoteReader interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
 	GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+}
+
+type pluginVaultLinkReader interface {
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
+}
+
+type PluginVaultReader interface {
+	pluginVaultNoteReader
+	pluginVaultLinkReader
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
+	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
@@ -101,21 +104,17 @@ type PluginVaultStore interface {
 }
 
 // PluginVaultLifecycle manages vault identity, indexing state, usage, and file watching.
-type PluginVaultLifecycle interface {
-	// GetVault returns the vault open in the window, or false when none is open.
-	GetVault() (domain.Vault, bool)
-	// GetVaults lists every vault the installation knows.
-	GetVaults() ([]domain.Vault, error)
-	// With is the vault of the identity, worked the way the shown vault is. It returns
-	// fs.ErrNotExist for an identity the installation does not know.
-	With(id domain.VaultID) (PluginVault, error)
-	// EnsureIndexed brings the vault into the index when it is not there, and says where that
-	// stands. The work goes on after it returns.
-	EnsureIndexed(ctx context.Context) (PluginIndexState, error)
-	// WatchMoves tells that something moved in some vault, until ctx is done.
+type pluginVaultWatchers interface {
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
-	// Watch tells of the files of the vault that changed, until ctx is done or the watch is lost.
 	Watch(ctx context.Context) (changes <-chan []string, lost <-chan struct{}, err error)
+}
+
+type PluginVaultLifecycle interface {
+	pluginVaultWatchers
+	GetVault() (domain.Vault, bool)
+	GetVaults() ([]domain.Vault, error)
+	With(id domain.VaultID) (PluginVault, error)
+	EnsureIndexed(ctx context.Context) (PluginIndexState, error)
 }
 
 // PluginVault is the open vault as the host exposes it to a plugin: its files,

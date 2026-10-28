@@ -3,18 +3,8 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
-	"github.com/jiva-studio/numen/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
-	"github.com/jiva-studio/numen/libs/core/usecase/vault"
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -25,26 +15,24 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// EditorAssembly is this installation as the window a person writes in asks it:
-// the vault list, the cache baseline as the ports the window reaches it through,
-// and the scenarios and passes a vault is opened with.
-//
-// It is what the window is handed. The window declares what it asks for and is
-// given it, so nothing of the window's is named here.
-type EditorAssembly struct {
-	cfg      Config
-	registry vaultport.VaultRegistry
-	db       *Index
-	provider agentport.AgentProvider
-	// agent keeps which plugin each conversation was asked in, so it is made once for the window.
-	agent agentport.Agent
-}
+// EditorAssembly is this installation as the window a person writes in asks it.
+type EditorAssembly = assembly.Runtime[PluginVaultHooks, pluginport.PluginVault]
+
+// UnknownVaultError is a vault named at start that the registry does not hold.
+type UnknownVaultError = vault.UnknownError
 
 // GetEditorAssembly opens the cache and binds everything that window relies on
-// to this installation's adapters. The window closes the cache when it closes,
-// and a window that could not be opened closes it too.
+// to this installation's adapters.
 func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 	registry, err := c.Registry()
 	if err != nil {
@@ -61,197 +49,136 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 // open, for a caller that opened them itself.
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
 	provider := cfg.AgentProvider()
-	return EditorAssembly{cfg: cfg, registry: registry, db: db, provider: provider, agent: cfg.serveTools(provider)}
-}
+	return EditorAssembly{
+		PluginDirFn: cfg.GetPluginDir,
+		EmitEventFn: func(event string) {
+			if cfg.PluginHost != nil {
+				var emitter pluginport.PluginEventEmitter = cfg.PluginHost
+				emitter.EmitEvent(event)
+			}
+		},
+		RegistryVal:        registry,
+		VaultReadersFn:     cfg.VaultReaders,
+		VaultWritersFn:     cfg.VaultWriters,
+		VaultIdentityFn:    cfg.VaultIdentity,
+		OpenTabsStoreFn:    func() windowport.OpenTabsStore { return db.OpenTabs() },
+		ClockFn:            cfg.Clock,
+		NoteQueriesFn:      func() noteport.NoteQueries { return db.Queries() },
+		LinkQueriesFn:      func() noteport.LinkQueries { return db.Links() },
+		ProblemQueriesFn:   func() problemport.ProblemQueries { return db.Problems() },
+		IndexProgressFn:    func() indexport.IndexProgress { return db.Progress() },
+		SourceRepositoryFn: func() sourceport.SourceRepository { return db.Sources() },
+		SourceQueriesFn:    func() sourceport.SourceQueries { return db.SourcesKnown() },
+		PassageQueriesFn:   func() sourceport.PassageQueries { return db.Passages() },
+		CloseIndexFn:       func() error { return db.Close() },
+		OpenGetSettingsFn: func() *settings.Get {
+			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins())
+		},
+		OpenWriteSettingsFn: func() *settings.Write {
+			return settings.NewWrite(cfg.GetSettingsWriter())
+		},
+		OpenWritePluginSecretFn: func() *settings.WriteSecret {
+			return settings.NewWriteSecret(cfg.GetPluginSecretWriter())
+		},
+		OpenDeletePluginSecretFn: func() *settings.DeleteSecret {
+			return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter())
+		},
+		OpenRetryPluginFn: func() *settings.RetryPlugin {
+			retry, err := settings.NewRetryPlugin(cfg.GetPluginRetrier())
+			if err != nil {
+				return nil
+			}
+			return retry
+		},
+		ReportPluginFailuresFn: func(tasks *run.Tasks) {
+			cfg.ReportPluginFailures(tasks)
+			cfg.ReportDependencies(tasks)
+		},
+		SetPluginWorkFn:      cfg.SetPluginWork,
+		IsRebuildingIndexVal: cfg.ShouldRebuildIndex,
+		OpenEmbeddersFn:      cfg.Embedders,
+		NewSearchFn: func(asking embeddingport.Embedder, handleError func(error)) search.Search {
+			return cfg.NewSearch(db, asking, handleError)
+		},
+		OpenNotesFn: func(index note.Levels) note.Scenarios {
+			return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), index)
+		},
+		OpenVaultsFn: func(moves note.Move) vault.Scenarios {
+			return cfg.Vaults(registry, db, moves)
+		},
+		GetRefreshFn: func() vault.Refresh {
+			return makeRefresh(cfg, db, db.Notes())
+		},
+		ReadWholeVaultFn: func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vault.ReadWholeVault, error) {
+			request := cfg
+			request.ShouldRebuildIndex = rebuild
+			return request.ReadWholeVault(ctx, db, embedder, v)
+		},
+		StartVaultFn: func(
+			ctx context.Context, v domain.Vault, rebuild bool,
+			notified func(paths, assets []string, reload bool),
+			handleError windowport.ErrorHandler,
+		) (
+			read func(ctx context.Context, during func()) (notes int, err error),
+			run func(ctx context.Context),
+			refresh vault.Refresh,
+			unwatched error,
+		) {
+			request := cfg
+			request.ShouldRebuildIndex = rebuild
 
-func (e EditorAssembly) GetPluginDir(id string) (string, bool) { return e.cfg.GetPluginDir(id) }
+			opening := request.VaultOpener(db)
+			opening.ShouldRebuild = rebuild
+			opening.ErrorHandler = handleError
+			if notified != nil {
+				opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+			}
 
-func (e EditorAssembly) EmitEvent(event string) {
-	if e.cfg.PluginHost != nil {
-		var emitter pluginport.PluginEventEmitter = e.cfg.PluginHost
-		emitter.EmitEvent(event)
+			open := opening.Begin(ctx, v)
+			return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
+		},
+		PluginServicesFn: cfg.GetPluginServices,
+		PluginCommandsFn: cfg.GetPluginCommands,
+		AgentVal:         cfg.serveTools(provider),
+		SetTextVersionListenerFn: func(listener textport.VersionListener) {
+			if cfg.TextVersions != nil {
+				cfg.TextVersions.SetListener(listener)
+			}
+		},
+		OpenFileMenuFn: func() *textversion.FileMenu {
+			if cfg.TextVersions == nil {
+				return nil
+			}
+			menu, err := textversion.NewFileMenu(cfg.TextVersions, cfg.VaultReaders())
+			if err != nil {
+				cfg.handleError(err)
+				return nil
+			}
+			return menu
+		},
+		OpenProxyFn: func() *file.OpenProxy {
+			return file.NewOpenProxy(cfg.VaultReaders(), cfg.Copies())
+		},
+		GetMediaTypeFn: func() *file.GetMediaType {
+			return file.NewGetMediaType(sharedmimeinfo.Open())
+		},
+		OpenChoosePluginPathFn: func(dialog machineport.PathDialog) *settings.ChoosePluginPath {
+			return settings.NewChoosePluginPath(dialog, cfg.Plugins(), cfg.GetSettingsWriter())
+		},
+		OpenFileTextFn: func() *textversion.FileText {
+			if cfg.TextVersions == nil {
+				return nil
+			}
+			text, err := textversion.NewFileText(cfg.TextVersions, cfg.VaultReaders())
+			if err != nil {
+				cfg.handleError(err)
+				return nil
+			}
+			return text
+		},
+		OpenPluginDataFn: cfg.openPluginData,
+		OpenPluginVaultFn: func(current func() (domain.Vault, bool), hooks PluginVaultHooks) (pluginport.PluginVault, error) {
+			return cfg.OpenPluginVault(registry, db, current, hooks)
+		},
 	}
-}
-
-func (e EditorAssembly) GetRegistry() vaultport.VaultRegistry { return e.registry }
-
-func (e EditorAssembly) GetVaultReaders() vaultport.VaultReaders { return e.cfg.VaultReaders() }
-func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters { return e.cfg.VaultWriters() }
-
-func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity { return e.cfg.VaultIdentity() }
-func (e EditorAssembly) GetOpenTabsStore() windowport.OpenTabsStore {
-	return e.db.db.OpenTabs()
-}
-
-func (e EditorAssembly) GetClock() machineport.Clock { return e.cfg.Clock() }
-
-func (e EditorAssembly) GetNoteQueries() noteport.NoteQueries          { return e.db.Queries() }
-func (e EditorAssembly) GetLinkQueries() noteport.LinkQueries          { return e.db.Links() }
-func (e EditorAssembly) GetProblemQueries() problemport.ProblemQueries { return e.db.Problems() }
-func (e EditorAssembly) GetIndexProgress() indexport.IndexProgress     { return e.db.Progress() }
-
-func (e EditorAssembly) GetSourceRepository() sourceport.SourceRepository { return e.db.Sources() }
-func (e EditorAssembly) GetSourceQueries() sourceport.SourceQueries       { return e.db.SourcesKnown() }
-func (e EditorAssembly) GetPassageQueries() sourceport.PassageQueries     { return e.db.Passages() }
-
-func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
-
-func (e EditorAssembly) OpenGetSettings() *settings.Get {
-	return settings.NewGet(e.cfg.ReadSettings(), e.cfg.modelsForProvider(e.provider), e.cfg.Plugins())
-}
-
-func (e EditorAssembly) OpenWriteSettings() *settings.Write {
-	return settings.NewWrite(e.cfg.GetSettingsWriter())
-}
-
-func (e EditorAssembly) OpenWritePluginSecret() *settings.WriteSecret {
-	return settings.NewWriteSecret(e.cfg.GetPluginSecretWriter())
-}
-
-func (e EditorAssembly) OpenDeletePluginSecret() *settings.DeleteSecret {
-	return settings.NewDeleteSecret(e.cfg.GetPluginSecretDeleter())
-}
-
-// OpenRetryPlugin is nil where the retry cannot be made, which the window answers as served by no build.
-func (e EditorAssembly) OpenRetryPlugin() *settings.RetryPlugin {
-	retry, err := settings.NewRetryPlugin(e.cfg.GetPluginRetrier())
-	if err != nil {
-		return nil
-	}
-	return retry
-}
-
-func (e EditorAssembly) ReportPluginFailures(tasks *run.Tasks) {
-	e.cfg.ReportPluginFailures(tasks)
-	e.cfg.ReportDependencies(tasks)
-}
-
-func (e EditorAssembly) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
-	e.cfg.SetPluginWork(tasks, models)
-}
-
-func (e EditorAssembly) IsRebuildingIndex() bool { return e.cfg.ShouldRebuildIndex }
-
-func (e EditorAssembly) OpenEmbedders(
-	ctx context.Context, tasks *run.Tasks,
-) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
-	return e.cfg.Embedders(ctx, tasks)
-}
-
-func (e EditorAssembly) NewSearch(
-	asking embeddingport.Embedder, handleError func(error),
-) search.Search {
-	return e.cfg.NewSearch(e.db, asking, handleError)
-}
-
-func (e EditorAssembly) OpenNotes(index note.Levels) note.Scenarios {
-	return e.cfg.Notes(e.db.Queries(), e.db.Links(), e.db.Sources(), e.db.SourcesKnown(), index)
-}
-
-func (e EditorAssembly) OpenVaults(moves note.Move) vault.Scenarios {
-	return e.cfg.Vaults(e.registry, e.db, moves)
-}
-
-func (e EditorAssembly) GetRefresh() vault.Refresh {
-	return makeRefresh(e.cfg, e.db, e.db.Notes())
-}
-
-// ReadWholeVault reads the vault the one way, with this launch's answer about
-// reading every file again standing for the one pass that was asked for it.
-func (e EditorAssembly) ReadWholeVault(
-	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-) (vault.ReadWholeVault, error) {
-	request := e.cfg
-	request.ShouldRebuildIndex = rebuild
-	return request.ReadWholeVault(ctx, e.db, embedder, v)
-}
-
-// StartVault opens the vault the way both windows open one, and answers with
-// the walk, the watch, the levelling and why the vault is not being followed.
-func (e EditorAssembly) StartVault(
-	ctx context.Context, v domain.Vault, rebuild bool,
-	notified func(paths, assets []string, reload bool),
-	handleError windowport.ErrorHandler,
-) (
-	read func(ctx context.Context, during func()) (notes int, err error),
-	run func(ctx context.Context),
-	refresh vault.Refresh,
-	unwatched error,
-) {
-	request := e.cfg
-	request.ShouldRebuildIndex = rebuild
-
-	opening := request.VaultOpener(e.db)
-	opening.ShouldRebuild = rebuild
-	opening.ErrorHandler = handleError
-	if notified != nil {
-		opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
-	}
-
-	open := opening.Begin(ctx, v)
-	return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
-}
-
-// GetPluginServices is where the window forwards the calls it receives for the services plugins
-// serve.
-func (e EditorAssembly) GetPluginServices() PluginServices { return e.cfg.GetPluginServices() }
-
-// GetPluginCommands is the use cases over the commands the enabled plugins declare.
-func (e EditorAssembly) GetPluginCommands() plugincommand.Commands { return e.cfg.GetPluginCommands() }
-
-// GetAgent returns the agent provider for running tasks, the same one at every call.
-func (e EditorAssembly) GetAgent() agentport.Agent { return e.agent }
-
-// SetTextVersionListener names the index that hears the versions of a file changed.
-func (e EditorAssembly) SetTextVersionListener(listener textport.VersionListener) {
-	if e.cfg.TextVersions != nil {
-		e.cfg.TextVersions.SetListener(listener)
-	}
-}
-
-// OpenFileMenu is the menu the text versions make of a vault's files, and nil where the
-// installation keeps no text versions.
-func (e EditorAssembly) OpenFileMenu() *textversion.FileMenu {
-	if e.cfg.TextVersions == nil {
-		return nil
-	}
-	menu, err := textversion.NewFileMenu(e.cfg.TextVersions, e.cfg.VaultReaders())
-	if err != nil {
-		e.cfg.handleError(err)
-		return nil
-	}
-	return menu
-}
-
-// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
-func (e EditorAssembly) OpenCopy() *file.OpenCopy {
-	return file.NewOpenCopy(e.cfg.VaultReaders(), e.cfg.Copies())
-}
-
-// GetMediaType finds the content type a file of a vault is served and played as.
-func (e EditorAssembly) GetMediaType() *file.GetMediaType {
-	return file.NewGetMediaType(sharedmimeinfo.Open())
-}
-
-// UnknownVaultError is a vault named at start that the registry does not hold.
-type UnknownVaultError = vault.UnknownError
-
-// OpenChoosePluginPath makes the use case that puts the picker for a plugin's path setting in front
-// of the person and writes the path chosen.
-func (e EditorAssembly) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
-	return settings.NewChoosePluginPath(dialog, e.cfg.Plugins(), e.cfg.GetSettingsWriter())
-}
-
-// OpenFileText is the live text of a vault's files and a person's edits of it, and nil where the
-// installation keeps no text versions.
-func (e EditorAssembly) OpenFileText() *textversion.FileText {
-	if e.cfg.TextVersions == nil {
-		return nil
-	}
-	text, err := textversion.NewFileText(e.cfg.TextVersions, e.cfg.VaultReaders())
-	if err != nil {
-		e.cfg.handleError(err)
-		return nil
-	}
-	return text
 }

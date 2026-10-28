@@ -1,8 +1,8 @@
 package plugin
 
 import (
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // GetCompletionChoice returns the agent and the model the plugin's setting of

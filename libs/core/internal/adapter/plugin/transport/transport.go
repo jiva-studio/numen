@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 var (

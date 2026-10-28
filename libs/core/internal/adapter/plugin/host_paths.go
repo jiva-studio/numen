@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // The reasons a setting of type file or folder does not take a path.

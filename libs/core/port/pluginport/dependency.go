@@ -92,18 +92,17 @@ type DependencyProvisioner interface {
 // DependencyCatalog is the provisioners together: it routes a requirement to
 // the provisioner that handles it, shares one run between identical requests
 // and answers for every requirement it has been told of.
+type dependencyRegistry interface {
+	Register(req DependencyRequirement)
+	Lookup(id string) (DependencyRequirement, bool)
+}
+
 type DependencyCatalog interface {
 	DependencyProvisioner
-	// Register records a requirement so that it is answered for by id.
-	Register(req DependencyRequirement)
-	// GetStatus answers where the registered dependency with the id stands.
+	dependencyRegistry
 	GetStatus(ctx context.Context, id string) (DependencyStatus, error)
-	// List answers where every registered dependency stands.
 	List(ctx context.Context) ([]DependencyStatus, error)
-	// SetObserver sets what is told each status a provisioning reaches.
 	SetObserver(observer func(DependencyRequirement, DependencyStatus))
-	// Lookup returns the registered requirement with the id.
-	Lookup(id string) (DependencyRequirement, bool)
 }
 
 // GetDependencyKinds is every kind a manifest may declare.

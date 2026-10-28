@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // Plugins finds the plugin that serves a service to the windows and activates it, and lists the
@@ -132,3 +132,21 @@ func writeConnectError(w http.ResponseWriter, status int, code connect.Code, mes
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"code": code.String(), "message": message})
 }
+
+
+// NoServices is the forwarding of an installation with no plugin host.
+type NoServices struct{}
+
+func (NoServices) Serves(string) bool { return false }
+
+func (NoServices) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "no plugin serves this service", http.StatusNotFound)
+}
+
+func (NoServices) ServeRoute(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "plugin not found", http.StatusNotFound)
+}
+
+func (NoServices) ListFrameOrigins() []string { return nil }
+
+func (NoServices) GetFrameOrigins(string) []string { return nil }

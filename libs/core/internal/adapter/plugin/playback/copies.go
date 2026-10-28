@@ -12,8 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/playbackport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	playbackport "github.com/jiva-studio/numen/libs/core/usecase/file/playbackcontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // Host finds the enabled plugins and gives a file its content type by its name.
@@ -29,8 +29,8 @@ type Copies struct {
 	stores pluginport.PluginStores
 }
 
-// NewCopies reaches the plugins of the host and their folders in the vaults' stores.
-func NewCopies(host Host, stores pluginport.PluginStores) Copies {
+// NewProxies reaches the plugins of the host and their folders in the vaults' stores.
+func NewProxies(host Host, stores pluginport.PluginStores) Copies {
 	return Copies{host: host, stores: stores}
 }
 
@@ -62,26 +62,26 @@ func (c Copies) IsCopyingNotes() bool {
 	return false
 }
 
-// OpenCopy opens the first copy named `<hash><ext>`, where the extension is of an audio or video
+// OpenProxy opens the first copy named `<hash><ext>`, where the extension is of an audio or video
 // type, in the folder of a plugin that keeps copies of the path's type or of the note type.
-func (c Copies) OpenCopy(ctx context.Context, v domain.Vault, path string, noteType domain.NoteType, hash string) (playbackport.Copy, error) {
+func (c Copies) OpenProxy(ctx context.Context, v domain.Vault, path string, noteType domain.NoteType, hash string) (playbackport.Copy, error) {
 	for _, pluginID := range c.getKeepers(path, noteType) {
 		store, err := c.stores.Open(v, pluginID)
 		if err != nil {
 			return playbackport.Copy{}, err
 		}
 		found, err := c.openIn(ctx, store, hash)
-		if !errors.Is(err, playbackport.ErrNoCopy) {
+		if !errors.Is(err, playbackport.ErrNoProxy) {
 			return found, err
 		}
 	}
-	return playbackport.Copy{}, playbackport.ErrNoCopy
+	return playbackport.Copy{}, playbackport.ErrNoProxy
 }
 
 // playedTypes are the masks of the types a copy is played as.
 var playedTypes = []domain.ContentType{"audio/*", "video/*"}
 
-// openIn opens the copy named by the hash in one plugin's folder, or returns ErrNoCopy.
+// openIn opens the copy named by the hash in one plugin's folder, or returns ErrNoProxy.
 func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash string) (playbackport.Copy, error) {
 	files, err := store.List(ctx)
 	if err != nil {
@@ -104,7 +104,7 @@ func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash s
 		}
 		return playbackport.Copy{Body: body, Size: size, MediaType: string(mediaType)}, nil
 	}
-	return playbackport.Copy{}, playbackport.ErrNoCopy
+	return playbackport.Copy{}, playbackport.ErrNoProxy
 }
 
 func isPlayed(contentType domain.ContentType) bool {
@@ -114,4 +114,16 @@ func isPlayed(contentType domain.ContentType) bool {
 		}
 	}
 	return false
+}
+
+
+// NoProxies is an installation where no plugin keeps a copy.
+type NoProxies struct{}
+
+func (NoProxies) IsCopyingNotes() bool { return false }
+
+func (NoProxies) IsCopied(string, domain.NoteType) bool { return false }
+
+func (NoProxies) OpenProxy(context.Context, domain.Vault, string, domain.NoteType, string) (playbackport.Copy, error) {
+	return playbackport.Copy{}, playbackport.ErrNoProxy
 }

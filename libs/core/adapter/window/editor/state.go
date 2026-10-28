@@ -20,10 +20,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
+	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/indexport"
-	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
 )
 
 // State is the vault the window is looking at and what every handler of it
@@ -136,7 +138,7 @@ func (s *State) GetCurrentVault() domain.Vault {
 // writeOpenTabs records the open tabs of the vault in the window.
 func (s *State) writeOpenTabs(ctx context.Context, open domain.OpenTabs) error {
 	if v := s.GetCurrentVault(); s.OpenTabsStore != nil && v.Path != "" {
-		return s.OpenTabsStore.WriteOpenTabs(ctx, v, open)
+		return vaults.WriteOpenTabs(ctx, s.OpenTabsStore, v, open)
 	}
 	return nil
 }
@@ -147,7 +149,7 @@ func (s *State) readOpenTabs(ctx context.Context) (domain.OpenTabs, error) {
 	if s.OpenTabsStore == nil || v.Path == "" {
 		return domain.OpenTabs{}, nil
 	}
-	return s.OpenTabsStore.ReadOpenTabs(ctx, v)
+	return vaults.ReadOpenTabs(ctx, s.OpenTabsStore, v)
 }
 
 // setVault puts a vault in front of whoever asks from now on.
@@ -228,7 +230,7 @@ func (h *vaultHandler) GetVaultState(
 	// the state is answered currently. A window standing on nothing holds no
 	// chunks and counts none.
 	if h.state.Indexing.Progress != nil && showing.ID != "" {
-		if target, embedded, err := h.state.Indexing.Progress.GetProgress(ctx, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
+		if target, embedded, err := indexing.GetProgress(ctx, h.state.Indexing.Progress, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
 			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = target, embedded
 		}
 	}

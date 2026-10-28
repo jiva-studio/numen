@@ -6,9 +6,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/textport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 

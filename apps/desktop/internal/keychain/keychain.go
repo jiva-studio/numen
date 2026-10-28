@@ -9,7 +9,7 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // service is the name every key of this application is kept under.

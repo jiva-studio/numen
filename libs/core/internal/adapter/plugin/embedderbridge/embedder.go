@@ -12,8 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // Host provides plugin resolution and activation for embeddings.

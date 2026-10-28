@@ -7,7 +7,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 var errUndeclaredSecret = errors.New("the plugin declares no such secret")

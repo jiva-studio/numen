@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 // An outcome or a write's error as the error code the schema carries.

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/port/machineport"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 )
 
 // Handler handles a dispatched event string.

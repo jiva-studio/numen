@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 )
 
 // StreamAgentTask hands one task to the agent and writes what it does to the stream, for as

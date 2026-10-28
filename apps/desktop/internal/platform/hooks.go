@@ -3,7 +3,7 @@ package platform
 import (
 	"github.com/jiva-studio/numen/libs/core/container"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // newPluginHost is the plugin host of this binary.

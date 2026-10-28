@@ -18,7 +18,7 @@ type mediaHandler struct {
 	state      *State
 	playing    *Loopback
 	statFile   *file.StatFile
-	openCopy   *file.OpenCopy
+	openCopy   *file.OpenProxy
 	mediaTypes *file.GetMediaType
 }
 

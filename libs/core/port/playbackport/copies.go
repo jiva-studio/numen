@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrNoCopy is a file no enabled plugin keeps a copy of.
-var ErrNoCopy = errors.New("no copy of the file is kept")
+// ErrNoProxy is a file no enabled plugin keeps a copy of.
+var ErrNoProxy = errors.New("no copy of the file is kept")
 
 // Copy is a copy open to read a part of. Whoever opens it closes it.
 type Copy struct {
@@ -29,7 +29,7 @@ type Copies interface {
 	// IsCopied reports whether an enabled plugin keeps copies of files of the type of the path, or
 	// of notes of the note type.
 	IsCopied(path string, noteType domain.NoteType) bool
-	// OpenCopy opens the copy kept of the file at the path whose content has the hash, or returns
-	// ErrNoCopy.
-	OpenCopy(ctx context.Context, v domain.Vault, path string, noteType domain.NoteType, hash string) (Copy, error)
+	// OpenProxy opens the copy kept of the file at the path whose content has the hash, or returns
+	// ErrNoProxy.
+	OpenProxy(ctx context.Context, v domain.Vault, path string, noteType domain.NoteType, hash string) (Copy, error)
 }

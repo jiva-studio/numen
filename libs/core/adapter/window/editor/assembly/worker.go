@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 
-	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 // WorkerAssembly is what this window asks for its background workers and embedding.

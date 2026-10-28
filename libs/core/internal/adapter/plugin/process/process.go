@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 var (

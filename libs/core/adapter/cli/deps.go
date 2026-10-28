@@ -9,10 +9,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/port/problemport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
 )
 
 // Locations are the places a person may point this installation at, as they

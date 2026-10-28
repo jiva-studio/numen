@@ -25,7 +25,7 @@ func (u CutNotes) getProfile(noteType domain.NoteType) domain.NoteProfile {
 			return profile
 		}
 	}
-	return domain.OrdinaryProfile()
+	return domain.DefaultProfile()
 }
 
 // NewCutNotes cuts at the bound a model reading maxTokens tokens allows, and at

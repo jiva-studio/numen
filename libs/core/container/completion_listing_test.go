@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/completion"
 
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
@@ -28,7 +28,7 @@ func (p *listingProvider) GetPrograms(ctx context.Context, _ map[string][]string
 // ends in failure leaves the program unavailable.
 func TestTheListingOfProgramsForAQuestionHasALimit(t *testing.T) {
 	provider := &listingProvider{}
-	programs := &completionPrograms{provider: provider, getAgent: func() settings.Agent { return settings.Agent{} }}
+	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completion.AgentSettings{} })
 
 	before := time.Now()
 	_, err := programs.GetProgram(t.Context(), "claude")

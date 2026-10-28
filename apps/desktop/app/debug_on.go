@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 

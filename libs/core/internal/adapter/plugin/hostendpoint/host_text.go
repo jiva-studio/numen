@@ -14,8 +14,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textwire"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/textport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 )
 
 // textEndpoint answers HostTextService for the plugins that call the host.

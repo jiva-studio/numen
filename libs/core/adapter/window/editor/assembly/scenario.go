@@ -7,42 +7,28 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
-	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/machineport"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 )
+
+type textScenarioAssembly interface {
+	OpenVaults(moves note.Move) vaults.Scenarios
+	OpenFileMenu() *textversion.FileMenu
+	OpenFileText() *textversion.FileText
+	OpenPluginData() *textversion.PluginData
+}
+
+type fileScenarioAssembly interface {
+	OpenProxy() *file.OpenProxy
+	GetMediaType() *file.GetMediaType
+	GetRefresh() vaults.Refresh
+}
 
 // ScenarioAssembly is what this window asks for scenarios, search, and refresh.
 type ScenarioAssembly interface {
-	// GetClock is what time it is.
 	GetClock() machineport.Clock
-
-	// NewSearch is how the window answers a question about the text the vault
-	// holds. handleError is where a half that could not run is said.
 	NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search
-
-	// OpenNotes and OpenVaults are this installation's scenarios, built against the cache above. index brings
-	// what a write touched up to date before the write answers.
 	OpenNotes(index note.Levels) note.Scenarios
-	OpenVaults(moves note.Move) vaults.Scenarios
-
-	// OpenFileMenu is the menu the text versions make of a vault's files, and nil where the
-	// installation keeps no text versions.
-	OpenFileMenu() *textversion.FileMenu
-
-	// OpenFileText is the live text of a vault's files and a person's edits of it, and nil
-	// where the installation keeps no text versions.
-	OpenFileText() *textversion.FileText
-
-	// OpenPluginData is the folders plugins keep in a vault's store and the records of their
-	// text versions, and nil where the installation keeps no text versions.
-	OpenPluginData() *textversion.PluginData
-
-	// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
-	OpenCopy() *file.OpenCopy
-	// GetMediaType finds the content type a file of a vault is served and played as.
-	GetMediaType() *file.GetMediaType
-
-	// GetRefresh brings named notes up to date for a window standing on no
-	// vault. A window showing one asks what that vault was opened with.
-	GetRefresh() vaults.Refresh
+	textScenarioAssembly
+	fileScenarioAssembly
 }

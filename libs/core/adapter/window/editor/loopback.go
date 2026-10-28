@@ -23,7 +23,7 @@ import (
 type fileServer struct {
 	state      *State
 	find       *vaults.Find
-	openCopy   *file.OpenCopy
+	openCopy   *file.OpenProxy
 	openFile   *file.OpenFile
 	mediaTypes *file.GetMediaType
 }

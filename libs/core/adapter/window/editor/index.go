@@ -11,12 +11,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
 )
 
 // quietPeriod is how long the vault has to have been still before the notes
@@ -63,11 +64,11 @@ func newIndexWorker(
 				return 0, 0, errNoProgress
 			}
 			if embedder != nil {
-				model := embedder.GetModel()
-				state.Indexing.Model.Store(model.String())
-				state.Indexing.Recipe.Store(model.Recipe())
+				name, recipe := vectors.DescribeModel(embedder)
+				state.Indexing.Model.Store(name)
+				state.Indexing.Recipe.Store(recipe)
 			}
-			return state.Indexing.Progress.GetProgress(ctx, v.ID, text(&state.Indexing.Recipe))
+			return indexing.GetProgress(ctx, state.Indexing.Progress, v.ID, text(&state.Indexing.Recipe))
 		},
 		Events: indexEvents{state: state, out: out},
 		Quiet:  idleDuration,

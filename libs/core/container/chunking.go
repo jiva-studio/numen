@@ -76,7 +76,7 @@ func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault
 		return vectors.Embed{}, err
 	}
 	embed := vectors.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
-	embed.Claim = indexClaim{store: store}
+	embed.Claim = store.NewIndexClaim(coreFolder + "/indexing")
 	embed.Texts = c.getTextReaders()
 	embed.Embedder = embedder
 	return embed, nil
@@ -97,12 +97,3 @@ func (c Config) IndexTexts(sources sourceport.SourceRepository, queries sourcepo
 	return index, nil
 }
 
-// indexClaim is the hold on a vault's vectors: a claim on one name of the
-// core's folder of that vault's store.
-type indexClaim struct {
-	store *derivedfile.DerivedStore
-}
-
-func (c indexClaim) ClaimIndex(ctx context.Context) (func() error, error) {
-	return c.store.ClaimName(ctx, coreFolder+"/indexing")
-}

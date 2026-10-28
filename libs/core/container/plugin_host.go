@@ -142,22 +142,9 @@ type PluginServices = interface {
 // no plugin host it serves none.
 func (c Config) GetPluginServices() PluginServices {
 	if c.PluginHost == nil {
-		return noPluginServices{}
+		return serviceproxy.NoServices{}
 	}
 	return serviceproxy.Open(c.PluginHost)
-}
-
-// noPluginServices is the forwarding of an installation with no plugin host.
-type noPluginServices struct{}
-
-func (noPluginServices) Serves(string) bool { return false }
-
-func (noPluginServices) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "no plugin serves this service", http.StatusNotFound)
-}
-
-func (noPluginServices) ServeRoute(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "plugin not found", http.StatusNotFound)
 }
 
 // GetPluginRetrier starts, as the window asks, a plugin the host suspends once more.
@@ -236,14 +223,6 @@ type PluginVaultHooks struct {
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// Moved tells that something moved in some vault. Left nil, it is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
-}
-
-// OpenPluginVault is the vault the plugins work through the host: the one current names, over the
-// files, the index and the stores of this installation.
-func (e EditorAssembly) OpenPluginVault(
-	current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (pluginport.PluginVault, error) {
-	return e.cfg.OpenPluginVault(e.registry, e.db, current, hooks)
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
@@ -357,6 +336,3 @@ func (c Config) GetFrontendPluginIDs() []string {
 	return ids
 }
 
-func (noPluginServices) ListFrameOrigins() []string { return nil }
-
-func (noPluginServices) GetFrameOrigins(string) []string { return nil }

@@ -62,19 +62,17 @@ type VaultWriters interface {
 }
 
 // NoteQueries is what the index says of a vault's notes.
-type NoteQueries interface {
-	// GetNotes names the notes at the paths, and leaves out a path with no note.
-	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
-	// GetTypes says what type each note at the paths is.
-	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
-	// GetPathsOfType lists the notes of a type, by path.
-	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
-	// GetCardModels lists the card models of the vault, by path.
+type cardModelQueries interface {
 	GetCardModels(ctx context.Context, vaultID domain.VaultID) ([]CardModel, error)
-	// GetNamedPaths lists the notes filed under a name.
-	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
-	// Has says whether the index carries the vault.
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
+}
+
+type NoteQueries interface {
+	cardModelQueries
+	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
+	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
+	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
 // LinkQueries is what the index says of a vault's links.

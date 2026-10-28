@@ -1,7 +1,7 @@
 package assembly
 
 import (
-	"github.com/jiva-studio/numen/libs/core/port/machineport"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 

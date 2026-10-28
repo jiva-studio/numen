@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 // Services is the handlers a window answers through, one for each service of the
@@ -104,7 +104,7 @@ func (s *Services) openPlaying(playing *Loopback) {
 
 // readFiles binds the use cases that read the files of the vaults the readers open, the copies
 // played in place of files, and the content types files are served as.
-func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenCopy, mediaTypes *file.GetMediaType) {
+func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenProxy, mediaTypes *file.GetMediaType) {
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openCopy = openCopy
 	s.server.mediaTypes = mediaTypes

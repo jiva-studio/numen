@@ -593,3 +593,20 @@ func (d *DerivedStore) Rename(_ context.Context, from, to string) error {
 	}
 	return atomicfile.SyncDirectory(root, filepath.Dir(newPos))
 }
+
+
+// IndexClaim is the hold on a vault's vectors: a claim on one name of the store.
+type IndexClaim struct {
+	store *DerivedStore
+	name  string
+}
+
+// NewIndexClaim returns a claim on a named entry in this store.
+func (d *DerivedStore) NewIndexClaim(name string) IndexClaim {
+	return IndexClaim{store: d, name: name}
+}
+
+// ClaimIndex acquires the file lock for the configured name.
+func (c IndexClaim) ClaimIndex(ctx context.Context) (func() error, error) {
+	return c.store.ClaimName(ctx, c.name)
+}

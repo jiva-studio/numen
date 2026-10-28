@@ -43,6 +43,23 @@ func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settin
 
 var errNoCompletionProvider = errors.New("no plugin host runs agent programs")
 
+func (c Config) completionAgentSettings() completion.AgentSettings {
+	target := c.getSettingsOrDefaults().Agent
+	return completion.AgentSettings{
+		IsNamed:  target.IsNamed(),
+		Use:      target.GetUse(),
+		Commands: target.GetCommands(),
+		GetProgram: func(name string) completion.ProgramSettings {
+			section := target.GetProgram(name)
+			return completion.ProgramSettings{
+				Model:   section.Model,
+				Command: section.Command,
+				Options: section.Options,
+			}
+		},
+	}
+}
+
 // newCompletionRouter answers the questions plugins ask of a model with the
 // agent each plugin's setting names, else the default under ai.default in the
 // settings file, both read at every question, through the agent programs of the
@@ -58,7 +75,7 @@ func (c Config) newCompletionRouter() (*completion.Router, error) {
 			return completion.Config{Default: completion.Route(c.getSettingsOrDefaults().AI.Default)}
 		},
 		choices,
-		&completionPrograms{provider: provider, getAgent: func() settings.Agent { return c.getSettingsOrDefaults().Agent }},
+		completion.NewPrograms(provider, c.completionAgentSettings),
 	)
 }
 
@@ -78,64 +95,6 @@ func (c Config) setCompleter() {
 	}
 }
 
-// completionPrograms finds the agent programs the plugins list and starts the
-// tasks of single answers on them, under the settings read at every call.
-type completionPrograms struct {
-	provider agentport.AgentProvider
-	getAgent func() settings.Agent
-}
-
-// GetProgram returns the program named. An empty name is the program the
-// settings name under agent.use, else the default of the plugins.
-func (p *completionPrograms) GetProgram(ctx context.Context, name string) (agentport.AgentProgram, error) {
-	target := p.getAgent()
-	if name == "" && !target.IsNamed() {
-		return agentport.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", completionport.ErrNoRoute)
-	}
-	if name == "" {
-		name = target.GetUse()
-	}
-	listing, stop := context.WithTimeout(ctx, programsLimit)
-	defer stop()
-	programs, listErr := p.provider.GetPrograms(listing, target.GetCommands())
-	found, isFound := findProgram(programs, name)
-	switch {
-	case !isFound && listErr != nil:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: %w", completionport.ErrUnavailable, listErr)
-	case !isFound:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: no plugin lists the program %q", completionport.ErrNoRoute, name)
-	case !found.IsInstalled:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: the program %q is not installed", completionport.ErrNoRoute, found.Name)
-	}
-	return found, nil
-}
-
-// findProgram is the program named, or, for an empty name, the default of the
-// plugins.
-func findProgram(programs []agentport.AgentProgram, name string) (agentport.AgentProgram, bool) {
-	if name == "" {
-		return agentport.GetDefaultProgram(programs)
-	}
-	for _, one := range programs {
-		if one.Name == name {
-			return one, true
-		}
-	}
-	return agentport.AgentProgram{}, false
-}
-
-// StartRun starts the task on the program it names, with the command line,
-// the options and, where the task names none, the model the settings give it.
-func (p *completionPrograms) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
-	section := p.getAgent().GetProgram(task.Agent)
-	if task.Model == "" {
-		task.Model = section.Model
-	}
-	task.Command = section.Command
-	task.Options = section.Options
-	return p.provider.StartRun(ctx, task)
-}
-
 // GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at
 // every task. A task naming no program goes to the one agent.use names, else to the default of the
 // plugins. Each run reaches the tools of the plugins on an endpoint of its own. It is nil where
@@ -145,33 +104,7 @@ func (c Config) GetSettingsAgent() agentport.Agent {
 	if provider == nil {
 		return nil
 	}
-	return c.serveTools(&settingsAgent{programs: &completionPrograms{
-		provider: provider,
-		getAgent: func() settings.Agent { return c.getSettingsOrDefaults().Agent },
-	}})
-}
-
-// settingsAgent starts each task on the program the task or the settings name.
-type settingsAgent struct {
-	programs *completionPrograms
-}
-
-// StartRun starts the task on the program it names, else on the one the settings choose, with the
-// command line, the options and the model the settings give that program.
-func (a *settingsAgent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
-	if task.Agent == "" {
-		program, err := a.programs.GetProgram(ctx, "")
-		if err != nil {
-			return nil, err
-		}
-		task.Agent = program.Name
-	}
-	return a.programs.StartRun(ctx, task)
-}
-
-// EndConversation says a conversation is over to every plugin it was asked in.
-func (a *settingsAgent) EndConversation(ctx context.Context, conversation string) error {
-	return a.programs.provider.EndConversation(ctx, conversation)
+	return c.serveTools(completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings)))
 }
 
 // serveTools gives each run of the agent an MCP endpoint of its own, serving the tools the plugins

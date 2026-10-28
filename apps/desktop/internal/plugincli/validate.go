@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	_ "github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // Validate inspects a plugin manifest and entrypoints on disk.

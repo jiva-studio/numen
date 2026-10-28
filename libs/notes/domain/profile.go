@@ -18,5 +18,5 @@ type NoteProfile struct {
 	IDPattern *regexp.Regexp
 }
 
-// OrdinaryProfile is how an ordinary note is kept.
-func OrdinaryProfile() NoteProfile { return NoteProfile{HasChunks: true} }
+// DefaultProfile is how an ordinary note is kept.
+func DefaultProfile() NoteProfile { return NoteProfile{HasChunks: true} }

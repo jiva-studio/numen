@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/textport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 )
 
 // Host finds the enabled plugins and starts them.
@@ -115,4 +115,14 @@ func readError(code v1.TextErrorCode) error {
 		v1.TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER:
 	}
 	return fmt.Errorf("the text provider answered %s", code)
+}
+
+
+// NoPlugins is an installation with no plugin that makes text.
+type NoPlugins struct{}
+
+func (NoPlugins) GetTextPlugins() []textport.TextPlugin { return nil }
+
+func (NoPlugins) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
+	return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled}
 }

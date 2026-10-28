@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 const (
@@ -36,29 +36,31 @@ var (
 // Callers is what the host endpoint asks the host about a call: who made
 // it, what that plugin may do, whether the person lets it ask a model, and who
 // answers a completion.
+type callerLease interface {
+	Acquire(pluginID string)
+	Release(pluginID string)
+}
+
 type Callers interface {
 	Services
 	GetPluginIDByToken(token string) (string, bool)
 	CheckPluginPermission(pluginID, permission string) error
 	CheckCompletionConsent(pluginID string) error
-	// Acquire keeps a running plugin from being stopped as idle until Release.
-	Acquire(pluginID string)
-	Release(pluginID string)
+	callerLease
+}
+
+type workServices interface {
+	GetPluginWork() pluginport.PluginWork
+	GetPluginTools() PluginTools
 }
 
 // Services is what the host lends the plugins that call it.
 type Services interface {
 	GetCompleter() completionport.Completer
-	// GetPluginVault is the vault the host shows, or nil where it has none to offer.
 	GetPluginVault() pluginport.PluginVault
-	// GetPluginTexts is the text versions the plugins work, or nil.
 	GetPluginTexts() pluginport.PluginTexts
-	// GetDependencies is what provisions the dependencies, or nil.
 	GetDependencies() pluginport.DependencyCatalog
-	// GetPluginWork is the queue and the list of tasks the plugins use, or nil.
-	GetPluginWork() pluginport.PluginWork
-	// GetPluginTools is the tools of the plugins a plugin serves to programs outside Numen, or nil.
-	GetPluginTools() PluginTools
+	workServices
 }
 
 // Endpoint answers the calls plugins make to the host. It listens on the
