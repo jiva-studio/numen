@@ -1,6 +1,9 @@
 /** A kind of tab: what one of its tabs holds, and what a kind may ask of the window. */
 import type { Component } from 'vue'
-import type { Result, TabPlacement } from '@numen/plugin-sdk'
+import type { Result, Selector, TabPlacement } from '@numen/plugin-sdk'
+
+/** A file put in front of the person in its reader, at the place the selector names. */
+export type SourceReader = (path: string, selector: Selector | null) => void
 
 /**
  * What a command asked over one tab is over: the note the tab means, and the

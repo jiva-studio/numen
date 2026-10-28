@@ -5,6 +5,7 @@
  * The plex measures its own text: the type a title is set in is the type it is
  * arranged from. The answer comes at once, while the arrangement is worked out.
  */
+import { doc, hasDocument } from '../../../dom'
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 import type { PlexNode } from '../../lib/node'
 
@@ -104,9 +105,9 @@ export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined>
 
 /** A box of the plex's own type, standing in the page. */
 function openProbe(): Probe | null {
-  if (typeof document === 'undefined' || !document.body) return null
+  if (!hasDocument() || !doc.body) return null
 
-  const box = document.createElement('div')
+  const box = doc.createElement('div')
   box.setAttribute('aria-hidden', 'true')
   box.style.cssText = PROBE
 
@@ -114,13 +115,13 @@ function openProbe(): Probe | null {
   const title = word('')
   const label = word(LABEL)
   box.append(title, label)
-  document.body.append(box)
+  doc.body.append(box)
 
   return { box, label }
 }
 
 function word(style: string): HTMLElement {
-  const span = document.createElement('span')
+  const span = doc.createElement('span')
   span.style.cssText = style
   span.textContent = SAMPLE
   return span
@@ -198,7 +199,7 @@ function textWidths(context: CanvasRenderingContext2D, font: string): (text: str
 function getMeasuringContext(): CanvasRenderingContext2D | null {
   if (typeof CanvasRenderingContext2D === 'undefined') return null
   try {
-    return document.createElement('canvas').getContext('2d')
+    return doc.createElement('canvas').getContext('2d')
   } catch {
     // A window that will not make one has none, which is what the check above
     // already answers for; measuring is not offered either way.

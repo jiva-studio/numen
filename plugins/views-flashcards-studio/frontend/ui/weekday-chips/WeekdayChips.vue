@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from '../../dom'
 /**
  * The days of the week as seven chips, each standing at a level. Pressing a day
  * offers the levels, and the day it was chosen for is handed back with it.
@@ -54,7 +55,7 @@ const onOpenLevels = (day: Day, event: Event) => {
   if (props.isDisabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
-  const box = chip.getBoundingClientRect()
+  const box = measureRect(chip)
   popoverAnchor.value = {
     day: day.id,
     level: getFill(day.level),

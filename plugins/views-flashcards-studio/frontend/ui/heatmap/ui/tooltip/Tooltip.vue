@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from '../../../../dom'
 /**
  * What a thing is, said beside it while a person points at it. It follows the
  * pointer and never takes it.
@@ -72,7 +73,7 @@ watch(() => props.at, measure, { flush: 'post' })
 
 /* --------------------------------- Helpers -------------------------------- */
 function measure(): void {
-  const box = root.value?.getBoundingClientRect()
+  const box = measureRect(root.value)
   if (box) size.value = { width: box.width, height: box.height }
 }
 </script>

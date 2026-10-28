@@ -29,7 +29,7 @@ import {
   readChoice,
 } from '../../lib/agents'
 import { createEnumFields } from '../../lib/enums'
-import { appendPathEntry, createTextDrafts, removePathEntry } from '../../lib/drafts'
+import { appendPathEntry, createTextDrafts, removePathEntry } from '../../model/drafts'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -277,7 +277,7 @@ function getStringSetting(key: string, fallback: unknown): string {
 
 <style scoped>
 .settings__number {
-  inline-size: var(--settings-value, 6rem);
+  inline-size: var(--settings-value);
   text-align: end;
 }
 
@@ -285,7 +285,7 @@ function getStringSetting(key: string, fallback: unknown): string {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
 }
 
 .settings__slider-container .settings__slider {
@@ -302,7 +302,7 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
 }
 
 .settings__enum {
@@ -318,12 +318,12 @@ function getStringSetting(key: string, fallback: unknown): string {
 
 .settings__text-input {
   box-sizing: border-box;
-  inline-size: var(--settings-choice, 16rem);
-  block-size: var(--numen-action-size, 2rem);
+  inline-size: var(--settings-choice);
+  block-size: var(--numen-action-size);
   padding: 0.25rem 0.625rem;
-  background-color: var(--numen-field-bg, var(--numen-surface, transparent));
-  border: var(--numen-stroke, 1px) solid var(--numen-field-rule, var(--numen-rule));
-  border-radius: var(--numen-radius, 0.375rem);
+  background-color: var(--numen-field-bg);
+  border: var(--numen-stroke) solid var(--numen-field-rule);
+  border-radius: var(--numen-radius);
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
@@ -331,6 +331,6 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__text-input:focus {
-  outline: var(--numen-stroke, 1px) solid var(--numen-accent, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-accent);
 }
 </style>

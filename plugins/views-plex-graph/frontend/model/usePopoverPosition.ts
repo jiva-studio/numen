@@ -1,6 +1,7 @@
 /**
  * Viewport positioning and resize tracking for link inspector popover.
  */
+import { hasWindow, measureRect, win } from '../dom'
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { resolvePopoverPosition } from './linkInspector'
@@ -12,7 +13,7 @@ export interface PopoverPositionOptions {
 }
 
 function getElementSize(el: HTMLElement): { width: number; height: number } {
-  const rect = el.getBoundingClientRect()
+  const rect = measureRect(el)
   return {
     width: rect.width || el.offsetWidth || 320,
     height: rect.height || el.offsetHeight || 160,
@@ -20,10 +21,10 @@ function getElementSize(el: HTMLElement): { width: number; height: number } {
 }
 
 function getContainerSize(parent: HTMLElement | null): { width: number; height: number } {
-  const rect = parent?.getBoundingClientRect()
+  const rect = measureRect(parent)
   return {
-    width: rect?.width || (typeof window !== 'undefined' ? window.innerWidth : 800),
-    height: rect?.height || (typeof window !== 'undefined' ? window.innerHeight : 600),
+    width: rect?.width || (hasWindow() ? win.innerWidth : 800),
+    height: rect?.height || (hasWindow() ? win.innerHeight : 600),
   }
 }
 
@@ -35,8 +36,8 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
       at: getAnchor(),
       popoverSize: { width: 320, height: 160 },
       containerSize: {
-        width: typeof window !== 'undefined' ? window.innerWidth : 800,
-        height: typeof window !== 'undefined' ? window.innerHeight : 600,
+        width: hasWindow() ? win.innerWidth : 800,
+        height: hasWindow() ? win.innerHeight : 600,
       },
     }),
   )
@@ -60,7 +61,7 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
   let resizeObserver: ResizeObserver | null = null
 
   onMounted(() => {
-    window.addEventListener('resize', updatePosition)
+    win.addEventListener('resize', updatePosition)
     void nextTick(() => {
       updatePosition()
       if (typeof ResizeObserver !== 'undefined' && target.value) {
@@ -75,7 +76,7 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
   })
 
   onScopeDispose(() => {
-    window.removeEventListener('resize', updatePosition)
+    win.removeEventListener('resize', updatePosition)
     resizeObserver?.disconnect()
   })
 

@@ -313,7 +313,6 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     if (location) deps.openFileAt(location.path, location.range)
   }
 
-  // eslint-disable-next-line numen/max-composable-return-properties
   return {
     ...conversation,
     ...selection,

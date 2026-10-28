@@ -6,6 +6,7 @@
  * Which of the two a plex offers is the caller's, so neither is written into
  * the node.
  */
+import { win } from '../../../dom'
 import { onScopeDispose, ref } from 'vue'
 
 /**
@@ -75,7 +76,7 @@ export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
 
     const forget = () => {
       if (!first.value) return
-      window.clearTimeout(first.value.timer)
+      win.clearTimeout(first.value.timer)
       first.value = null
     }
 
@@ -94,7 +95,7 @@ export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
         first.value = {
           x: event.clientX,
           y: event.clientY,
-          timer: window.setTimeout(forget, within),
+          timer: win.setTimeout(forget, within),
         }
       },
     }

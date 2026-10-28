@@ -8,6 +8,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
+import { measureElementRect } from '@/shared/lib/dom'
 import { cn } from '@/shared/lib/dom/classes'
 import { Menu, type MenuItem } from '../menu'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -66,7 +67,7 @@ defineExpose({
 const onOpenChoices = () => {
   const line = element.value
   if (!line || props.isDisabled) return
-  const box = line.getBoundingClientRect()
+  const box = measureElementRect(line)
   menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 

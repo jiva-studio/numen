@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getCurrentDate, measureRect } from '../../../dom'
 /**
  * What a person did on each day and what is still coming to them, as a grid of
  * weeks.
@@ -35,7 +36,7 @@ const props = withDefaults(
     cell?: number
     gap?: number
   }>(),
-  { due: () => new Map(), now: () => new Date(), cell: 11, gap: 3 },
+  { due: () => new Map(), now: () => getCurrentDate(), cell: 11, gap: 3 },
 )
 
 /* ---------------------------------- State --------------------------------- */
@@ -56,7 +57,7 @@ const pointed = ref<{ day: Day; at: Box } | null>(null)
 
 /* -------------------------------- Handlers -------------------------------- */
 const onSetPointed = (day: Day, press: MouseEvent) => {
-  const cell = (press.target as SVGRectElement).getBoundingClientRect()
+  const cell = measureRect((press.target as SVGRectElement))
   pointed.value = {
     day,
     at: { x: cell.x, y: cell.y, width: cell.width, height: cell.height },

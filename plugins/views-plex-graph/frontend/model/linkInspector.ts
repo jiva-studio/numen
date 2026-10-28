@@ -1,6 +1,7 @@
 /**
  * The links between two notes as the link inspector shows them, and the edits a person makes to the rows.
  */
+import { hasWindow, win } from '../dom'
 import type { PlexRelation } from '../plex'
 import type { Neighbourhood, DirectionalLinkItem } from '../types'
 
@@ -207,9 +208,9 @@ export function resolvePopoverPosition({
   const width = popoverSize.width || 320
   const height = popoverSize.height || 160
   const containerW =
-    containerSize.width || (typeof window !== 'undefined' ? window.innerWidth : 800)
+    containerSize.width || (hasWindow() ? win.innerWidth : 800)
   const containerH =
-    containerSize.height || (typeof window !== 'undefined' ? window.innerHeight : 600)
+    containerSize.height || (hasWindow() ? win.innerHeight : 600)
 
   return {
     left: Math.round(getLeftPosition(point.x, width, containerW, margin)),

@@ -65,12 +65,12 @@ function onOpenSettings(): void {
   font-size: 2.5rem;
   margin-block-end: 0.75rem;
   line-height: 1;
-  color: var(--numen-warning, #e6a700);
+  color: var(--numen-warning);
 }
 
 .tab-unavailable__title {
   margin: 0 0 0.5rem 0;
-  font-size: var(--numen-text-4, 1.25rem);
+  font-size: var(--numen-text-4);
   font-weight: 600;
   color: var(--numen-ink);
 }
@@ -78,29 +78,29 @@ function onOpenSettings(): void {
 .tab-unavailable__message {
   margin: 0 0 0.75rem 0;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-2, 0.95rem);
+  font-size: var(--numen-text-2);
   line-height: 1.4;
 }
 
 .tab-unavailable__button {
   margin-block-start: 0.5rem;
   padding: 0.5rem 1.25rem;
-  font-size: var(--numen-text-2, 0.875rem);
+  font-size: var(--numen-text-2);
   font-family: inherit;
   font-weight: 500;
-  border-radius: var(--numen-radius-small, 4px);
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  background: var(--numen-surface, #fff);
+  border-radius: var(--numen-radius-small);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  background: var(--numen-surface);
   color: var(--numen-ink);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .tab-unavailable__button:hover {
-  background-color: var(--numen-surface-hover, rgba(125, 125, 125, 0.08));
+  background-color: var(--numen-surface-hover);
 }
 
 .tab-unavailable__button:active {
-  background-color: var(--numen-surface-active, rgba(125, 125, 125, 0.16));
+  background-color: var(--numen-surface-active);
 }
 </style>

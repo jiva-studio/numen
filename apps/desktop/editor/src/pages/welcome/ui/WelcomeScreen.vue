@@ -16,6 +16,7 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { findIcon } from '@/shared/icons'
+import { getUserAgent } from '@/shared/lib/dom'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
 import { WORDS as words } from '@/shared/words'
@@ -31,7 +32,7 @@ const adding = computed(() => {
     text: words.newVault,
     detail: words.newVaultDetail,
     ...(icon ? { icon } : {}),
-    ...createRowKeys('newVault', navigator.userAgent),
+    ...createRowKeys('newVault', getUserAgent()),
   }
 })
 
@@ -40,7 +41,7 @@ const ways = computed(() => {
   return createWelcomeActions(
     { vault: target.vault.id, isReady: target.isReady },
     words,
-    navigator.userAgent,
+    getUserAgent(),
     props.pluginWays,
   ).map((one) => {
     const icon = one.icon ?? findIcon(one.id)

@@ -3,6 +3,7 @@
  * Status bar indicator and details popover announcing new application releases.
  */
 import { onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { listenWindowPointerAndEscape } from '@/shared/lib/dom'
 import { useAppUpdate, type UpdateOptions } from '../model/useAppUpdate'
 import UpdatePopover from './UpdatePopover.vue'
 import './updateIndicator.css'
@@ -32,19 +33,16 @@ const isOpen = ref(false)
 const rootRef = useTemplateRef<HTMLElement>('rootRef')
 
 /* --------------------------------- Hooks ---------------------------------- */
+let releaseListeners: (() => void) | null = null
+
 watch(isOpen, (open) => {
-  if (open) {
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onKeyDown)
-  } else {
-    window.removeEventListener('pointerdown', onPointerDown)
-    window.removeEventListener('keydown', onKeyDown)
-  }
+  releaseListeners?.()
+  releaseListeners = open ? listenWindowPointerAndEscape(onPointerDown, onKeyDown) : null
 })
 
 onUnmounted(() => {
-  window.removeEventListener('pointerdown', onPointerDown)
-  window.removeEventListener('keydown', onKeyDown)
+  releaseListeners?.()
+  releaseListeners = null
 })
 
 /* -------------------------------- Handlers -------------------------------- */

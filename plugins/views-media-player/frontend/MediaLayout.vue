@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from './dom'
 /**
  * A recording and its transcript: the player at the top of the pane, and under it the words.
  *
@@ -43,7 +44,7 @@ const menu = ref<{ at: Position; from: HTMLElement } | null>(null)
 function onOpenMenu(event: Event) {
   const button = event.currentTarget
   if (!(button instanceof HTMLElement)) return
-  const box = button.getBoundingClientRect()
+  const box = measureRect(button)
   menu.value = { at: { x: box.left, y: box.bottom }, from: button }
 }
 

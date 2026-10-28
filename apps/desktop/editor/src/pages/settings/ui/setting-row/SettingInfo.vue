@@ -35,14 +35,14 @@ defineProps<{
   display: inline-flex;
   padding: 0.125rem;
   border: none;
-  border-radius: var(--numen-radius-pill, 9999px);
+  border-radius: var(--numen-radius-pill);
   background: none;
   color: var(--numen-hushed);
   cursor: help;
 }
 
 .setting-info__button:focus-visible {
-  outline: var(--numen-stroke, 1px) solid var(--numen-accent, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-accent);
 }
 
 .setting-info__tooltip {
@@ -53,9 +53,9 @@ defineProps<{
   inline-size: max-content;
   max-inline-size: 20rem;
   padding: 0.375rem 0.5rem;
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  border-radius: var(--numen-radius-small, 4px);
-  background: var(--numen-raised, var(--numen-surface));
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-small);
+  background: var(--numen-raised);
   color: var(--numen-ink);
   font-size: var(--numen-text-1);
   font-weight: 400;

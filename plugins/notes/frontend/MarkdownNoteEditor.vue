@@ -131,10 +131,10 @@ defineExpose({
   gap: 0.5rem;
   margin: 0;
   padding: 0.4rem 1rem;
-  font-family: var(--numen-font-sans, inherit);
-  font-size: var(--numen-text-2, 0.875rem);
-  background-color: var(--numen-caution-bg, light-dark(#f7e9c8, #42321c));
-  color: var(--numen-caution-fg, light-dark(#8a5410, #eec26a));
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-2);
+  background-color: var(--numen-caution-bg);
+  color: var(--numen-caution-fg);
   overflow-wrap: break-word;
 }
 
@@ -153,13 +153,13 @@ defineExpose({
   font-size: 1.125rem;
   line-height: 1;
   cursor: pointer;
-  border-radius: var(--numen-radius-pill, 9999px);
+  border-radius: var(--numen-radius-pill);
   opacity: 0.8;
 }
 
 .caution__dismiss:hover {
   opacity: 1;
-  background-color: var(--numen-highlight, rgba(0, 0, 0, 0.08));
+  background-color: var(--numen-highlight);
 }
 
 .markdown-note-editor__pane {

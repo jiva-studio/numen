@@ -8,7 +8,6 @@
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import Player from './Player.vue'
 import MediaLayout from './MediaLayout.vue'
-import { recordings as servedRecordings } from './api/wire'
 import { useTranscript, type TranscriptOptions } from './model/transcript'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import type { Recordings, TextRange } from './types'
@@ -28,7 +27,7 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const targetPath = props.path || props.file || props.state?.path || props.state?.file || ''
 
-const tab = useTranscript(props.recordings ?? servedRecordings, targetPath, props.how)
+const tab = useTranscript(props.recordings, targetPath, props.how)
 const { now, runs, isPlaying, isUnplayable } = tab.playback
 const { isRetranscribable, isProofreadable, isDeletable } = tab.offers
 

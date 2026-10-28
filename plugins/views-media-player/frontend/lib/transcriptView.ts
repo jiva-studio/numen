@@ -3,6 +3,7 @@
  * the extensions the caller adds, such as the time gutter. Transcript text is not Markdown, so the
  * view draws no syntax.
  */
+import { doc } from '../dom'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, drawSelection, keymap } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
@@ -79,7 +80,7 @@ export function createTranscriptView(options: TranscriptViewOptions): Transcript
     rootNode instanceof Document ||
     (typeof ShadowRoot !== 'undefined' && rootNode instanceof ShadowRoot)
       ? rootNode
-      : document
+      : doc
 
   const view = new EditorView({
     parent: options.parent,

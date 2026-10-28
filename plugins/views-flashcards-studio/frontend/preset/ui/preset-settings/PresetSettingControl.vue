@@ -157,22 +157,22 @@ function onDateChange(event: Event) {
 }
 
 .preset-settings__number {
-  inline-size: var(--preset-settings-value, 6rem);
+  inline-size: var(--preset-settings-value);
 }
 
 .preset-settings__slider {
-  inline-size: var(--preset-settings-track, 9rem);
+  inline-size: var(--preset-settings-track);
 }
 
 .preset-settings__percent {
-  min-inline-size: var(--preset-settings-percent, 2.25rem);
+  min-inline-size: var(--preset-settings-percent);
   color: var(--numen-hushed);
   font-variant-numeric: tabular-nums;
   text-align: end;
 }
 
 .preset-settings__choice {
-  inline-size: var(--preset-settings-choice, 10rem);
+  inline-size: var(--preset-settings-choice);
 }
 
 .preset-settings__day {
@@ -199,7 +199,7 @@ function onDateChange(event: Event) {
 }
 
 .preset-settings__day:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-ring, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-ring);
   outline-offset: var(--numen-stroke);
 }
 </style>

@@ -21,7 +21,7 @@ import {
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '@numen/plugin-host'
-import type { AnyTabKind } from '@/entities/tab/@x/plugin'
+import type { AnyTabKind } from '@/shared/model/tabKinds'
 import {
   attachPluginShadow,
   extractFilename,

@@ -53,9 +53,9 @@ const trimmedDetail = computed(() => props.detail.trim())
   display: grid;
   grid-template-columns: minmax(0, 1fr) fit-content(24rem);
   align-items: center;
-  gap: 0.5rem var(--numen-panel-gap, 1rem);
+  gap: 0.5rem var(--numen-panel-gap);
   padding-block: 0.625rem;
-  border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .settings__row:last-child {
@@ -97,7 +97,7 @@ const trimmedDetail = computed(() => props.detail.trim())
 
 .settings__value :deep(.settings__choice),
 .settings__value :deep(.settings__text-input) {
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
   max-inline-size: 100%;
 }
 

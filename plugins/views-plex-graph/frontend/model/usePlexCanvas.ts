@@ -1,6 +1,7 @@
 /**
  * Canvas interaction and viewport gestures for the plex graph view.
  */
+import { measureRect } from '../dom'
 import { ref, useTemplateRef } from 'vue'
 import type { PlexTabState } from '../types'
 
@@ -15,7 +16,7 @@ export function usePlexCanvas(options: PlexCanvasOptions) {
   const lastPointer = ref<{ x: number; y: number }>({ x: 300, y: 300 })
 
   function onPointerUp(event: PointerEvent) {
-    const rect = rootElement.value?.getBoundingClientRect()
+    const rect = measureRect(rootElement.value)
     if (rect) {
       lastPointer.value = {
         x: event.clientX - rect.left,
@@ -37,7 +38,7 @@ export function usePlexCanvas(options: PlexCanvasOptions) {
   }
 
   function onEdgeMenu(pair: string, position: { x: number; y: number }) {
-    const rect = rootElement.value?.getBoundingClientRect()
+    const rect = measureRect(rootElement.value)
     if (rect) {
       const localX = position.x - rect.left
       const localY = position.y - rect.top

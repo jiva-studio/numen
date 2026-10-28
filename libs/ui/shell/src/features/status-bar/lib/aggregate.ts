@@ -1,7 +1,7 @@
 /**
  * Pure calculations for aggregate status bar progress and group arrangements.
  */
-import type { StatusBarAggregate, StatusBarTask, TaskGroupData } from '../model/types'
+import type { StatusBarAggregate, StatusBarTask, TaskGroupData } from './types'
 
 interface ActiveAccumulator {
   determinateSum: number

@@ -1,7 +1,7 @@
 /**
  * Network fetching and manifest evaluation for application updates.
  */
-import type { ReleaseFile, ReleaseManifest, UpdateInfo } from '../model/types'
+import type { ReleaseFile, ReleaseManifest, UpdateInfo } from './types'
 import { findPlatformFile, isNewerRelease, parseBuildNumber, type ClientPlatform } from './release'
 
 export const DEFAULT_ENDPOINT = '/api/app-update/latest.json'

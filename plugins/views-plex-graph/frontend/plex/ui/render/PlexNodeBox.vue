@@ -70,11 +70,11 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
 .plex__box {
   rx: var(--radius);
   fill: var(--numen-raised);
-  stroke: var(--numen-relation-hue, var(--numen-rule));
+  stroke: var(--numen-relation-hue);
   stroke-width: var(--numen-stroke);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
-    stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
+    stroke var(--numen-plex-move) var(--numen-easing);
 }
 
 /* Icon then title, centred together in a box of a size the arrangement chose. A
@@ -94,14 +94,14 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  transition: color var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
+  transition: color var(--numen-plex-move) var(--numen-easing);
 }
 
 .plex__icon {
   flex: none;
   display: flex;
   align-items: center;
-  color: var(--numen-relation-hue, var(--numen-ink));
+  color: var(--numen-relation-hue);
 }
 
 .plex__title-text {

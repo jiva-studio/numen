@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from '../../dom'
 /**
  * Renders the deck preset schedule bar and selector menu.
  */
@@ -36,7 +37,7 @@ const scheduleMenuTarget = ref<{ at: Position; from: HTMLElement } | null>(null)
 function onOpenScheduleMenu(event: Event) {
   const line = event.currentTarget
   if (!(line instanceof HTMLElement)) return
-  const box = line.getBoundingClientRect()
+  const box = measureRect(line)
   scheduleMenuTarget.value = { at: { x: box.left, y: box.bottom }, from: line }
 }
 
@@ -114,7 +115,7 @@ function onDismissScheduleMenu() {
 }
 
 .deck-tab__choice:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-ring, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-ring);
   outline-offset: var(--numen-stroke);
 }
 

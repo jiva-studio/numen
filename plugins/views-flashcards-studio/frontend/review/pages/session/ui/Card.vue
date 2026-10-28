@@ -83,7 +83,7 @@ function decodeHref(href: string): string {
 .card {
   /* A card is read, not scanned, so it is set at the size reading is set at,
      and so is the prose inside it. */
-  --numen-prose-size: var(--numen-reading-size);
+  --local-prose-size: var(--numen-reading-size);
 
   display: flex;
   flex: 1;

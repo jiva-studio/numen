@@ -79,6 +79,10 @@ function getOtherSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
   return plugin.settings.filter((one) => one.type !== AGENT_SETTING_TYPE)
 }
 
+function getEnumChoices(setting: PluginSettingInfo) {
+  return (setting.options ?? []).map((opt) => ({ id: opt.value, text: opt.title || opt.value }))
+}
+
 /** The models a string setting is chosen from, and none where it is typed or the program lists none. */
 function getProgramChoices(plugin: PluginInfo, setting: PluginSettingInfo) {
   if (!setting.modelsOf) return []
@@ -177,7 +181,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
         <Select
           v-else-if="setting.type === 'enum' && setting.options"
           :model-value="getStringSetting(plugin.id, setting.key, setting.default)"
-          :choices="setting.options.map((opt) => ({ id: opt.value, text: opt.title || opt.value }))"
+          :choices="getEnumChoices(setting)"
           :name="setting.title"
           :aria-labelledby="labelledBy"
           class="settings__choice"
@@ -216,13 +220,13 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
 
 <style scoped>
 .settings__group {
-  max-inline-size: var(--settings-measure, 54rem);
-  margin-block-end: var(--settings-apart, 1.75rem);
+  max-inline-size: var(--settings-measure);
+  margin-block-end: var(--settings-apart);
   margin-inline: auto;
 }
 
 .settings__heading {
-  margin: 0 0 var(--settings-near, 0.375rem);
+  margin: 0 0 var(--settings-near);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   font-weight: 600;
@@ -231,25 +235,25 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
 }
 
 .settings__number {
-  inline-size: var(--settings-value, 6rem);
+  inline-size: var(--settings-value);
   text-align: end;
 }
 
 .settings__slider {
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
 }
 
 .settings__text-input {
   box-sizing: border-box;
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
   padding: 0.25rem 0.5rem;
-  background-color: var(--numen-surface, transparent);
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  border-radius: var(--numen-radius-small, 4px);
+  background-color: var(--numen-surface);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-small);
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
@@ -257,6 +261,6 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
 }
 
 .settings__text-input:focus {
-  outline: var(--numen-stroke, 1px) solid var(--numen-accent, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-accent);
 }
 </style>

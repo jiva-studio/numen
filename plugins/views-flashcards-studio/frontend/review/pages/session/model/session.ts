@@ -6,6 +6,7 @@
  * is asked and what their vault is told, and a rule inside a component is a rule
  * only exercised by looking at the screen.
  */
+import { getNow } from '../../../../dom'
 import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
@@ -264,7 +265,7 @@ function createSessionOpener(deps: {
 }
 
 export function useReviewSession(deps: SessionDeps) {
-  const now = deps.now ?? (() => Date.now())
+  const now = deps.now ?? (() => getNow())
   const vault = ref('')
   const run = ref('')
   const writing = ref(false)

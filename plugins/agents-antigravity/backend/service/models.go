@@ -60,23 +60,27 @@ func (c *modelCache[M]) get(ctx context.Context, key string, list func(context.C
 		return nil
 	}
 	if c.isAsync {
-		if !c.inFlight[key] {
-			if c.inFlight == nil {
-				c.inFlight = make(map[string]bool)
-			}
-			c.inFlight[key] = true
-			go c.fetchInBackground(key, list)
-		}
-		if cached := readAntigravityCache[M](key); len(cached) > 0 {
-			c.key, c.models, c.isCached = key, cached, true
-			c.mu.Unlock()
-			return cached
-		}
-		c.mu.Unlock()
-		return nil
+		return c.getAsyncLocked(key, list)
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, key, list)
+}
+
+func (c *modelCache[M]) getAsyncLocked(key string, list func(context.Context) ([]M, error)) []M {
+	if !c.inFlight[key] {
+		if c.inFlight == nil {
+			c.inFlight = make(map[string]bool)
+		}
+		c.inFlight[key] = true
+		go c.fetchInBackground(key, list)
+	}
+	if cached := readAntigravityCache[M](key); len(cached) > 0 {
+		c.key, c.models, c.isCached = key, cached, true
+		c.mu.Unlock()
+		return cached
+	}
+	c.mu.Unlock()
+	return nil
 }
 
 func (c *modelCache[M]) fetchInBackground(key string, list func(context.Context) ([]M, error)) {

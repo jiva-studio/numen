@@ -9,6 +9,7 @@ import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'
 import { usePlayback } from './playback'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
+import { recordings as servedRecordings } from '../api/wire'
 import type { MenuEntry, Recordings, TextRange } from '../types'
 import { WORDS } from '../words'
 
@@ -49,7 +50,12 @@ function createRequestGuard() {
   }
 }
 
-export function useTranscript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
+export function useTranscript(
+  recordingsParam: Recordings | undefined,
+  path: string,
+  how: TranscriptOptions = {},
+) {
+  const recordings = recordingsParam ?? servedRecordings
   const audioPlayer = how.audioPlayer ?? player
   const idleMs = how.idleMs ?? WRITE_IDLE_MS
   const plays = how.plays ?? createMediaTypeProbe()

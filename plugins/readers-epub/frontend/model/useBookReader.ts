@@ -6,6 +6,7 @@ import type { ContentsEntry } from '../book'
 import { formatErrorMessage, type TextRange } from '@numen/plugin-sdk'
 import type { MessageWriter } from './useBookDocument'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
+import { books as servedBooks } from '../api/wire'
 import { useBookDocument } from './useBookDocument'
 import { useBookHighlights } from './useBookHighlights'
 import type {
@@ -148,7 +149,15 @@ function createBookCloser(
   }
 }
 
-export function useBookReader(books: Books, path: string, options: BookReaderOptions) {
+export function useBookReader(
+  booksOrPath: Books | string,
+  pathOrOptions: string | BookReaderOptions,
+  maybeOptions?: BookReaderOptions,
+) {
+  const books = typeof booksOrPath === 'string' ? servedBooks : booksOrPath
+  const path = typeof booksOrPath === 'string' ? booksOrPath : (pathOrOptions as string)
+  const options =
+    typeof booksOrPath === 'string' ? (pathOrOptions as BookReaderOptions) : maybeOptions!
   const { words, writeMessage = () => {} } = options
   const state = useBookState()
   let isOpen = true

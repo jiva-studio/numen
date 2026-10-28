@@ -5,7 +5,7 @@
  */
 import { shallowReactive, type Component } from 'vue'
 import { FileText } from '@lucide/vue'
-import type { NoteType } from '@/entities/file/@x/note'
+import type { NoteType } from '@/shared/model/fileTypes'
 
 const icons = shallowReactive(new Map<NoteType, Component>())
 

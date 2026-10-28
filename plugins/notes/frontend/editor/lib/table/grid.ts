@@ -4,6 +4,7 @@
  * Where the grid stands is kept on its own element: a widget is told nothing
  * but what it draws.
  */
+import { doc } from '../../../dom'
 import type { ChangeDesc, EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
@@ -28,7 +29,7 @@ class Grid extends WidgetType {
   }
 
   toDOM(view: EditorView) {
-    const frame = document.createElement('div')
+    const frame = doc.createElement('div')
     frame.className = 'cm-table'
     this.paint(frame)
     listen(frame, view)
@@ -50,19 +51,19 @@ class Grid extends WidgetType {
     viewElement.forEach((element, index) => {
       const cell = cells[index]
       place(element, cell ?? null, this.isWritable)
-      if (cell && element !== document.activeElement) element.textContent = readCell(cell.text)
+      if (cell && element !== doc.activeElement) element.textContent = readCell(cell.text)
     })
     return true
   }
 
   private paint(frame: HTMLElement) {
-    const table = document.createElement('table')
+    const table = doc.createElement('table')
 
     const draw = (row: Row, index: number, tag: 'th' | 'td') => {
-      const line = document.createElement('tr')
+      const line = doc.createElement('tr')
       line.dataset['row'] = String(index)
       row.forEach((cell, column) => {
-        const element = document.createElement(tag)
+        const element = doc.createElement(tag)
         element.className = 'cm-cell'
         element.dataset['column'] = String(column)
         const align = this.table.align[column]
@@ -75,8 +76,8 @@ class Grid extends WidgetType {
       return line
     }
 
-    const top = document.createElement('thead')
-    const rest = document.createElement('tbody')
+    const top = doc.createElement('thead')
+    const rest = doc.createElement('tbody')
     getRows(this.table).forEach((row, index) => {
       if (index === 0) top.appendChild(draw(row, index, 'th'))
       else rest.appendChild(draw(row, index, 'td'))
@@ -98,7 +99,7 @@ const span = (frame: HTMLElement, table: Table) => {
 }
 
 const createAddButton = (name: string) => {
-  const button = document.createElement('button')
+  const button = doc.createElement('button')
   button.className = name
   button.textContent = '+'
   return button

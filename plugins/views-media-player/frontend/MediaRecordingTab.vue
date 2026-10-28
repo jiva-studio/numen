@@ -84,9 +84,9 @@ function onSave(blob: Blob) {
   block-size: 100%;
   min-block-size: 0;
   inline-size: 100%;
-  background: var(--numen-surface, #1e1e24);
-  color: var(--numen-ink, #f3f4f6);
-  font-family: var(--numen-font-sans, system-ui, sans-serif);
+  background: var(--numen-surface);
+  color: var(--numen-ink);
+  font-family: var(--numen-font-sans);
   padding: 1.5rem;
   box-sizing: border-box;
   overflow-y: auto;
@@ -110,31 +110,31 @@ function onSave(blob: Blob) {
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 9999px;
-  background: var(--numen-field-bg, rgba(255, 255, 255, 0.1));
+  background: var(--numen-field-bg);
 }
 
 .media-recorder__status--recording {
-  background: #ef4444;
-  color: #fff;
+  background: var(--numen-danger);
+  color: var(--numen-surface);
   animation: pulse 1.5s infinite;
 }
 
 .media-recorder__status--paused {
-  background: #f59e0b;
-  color: #000;
+  background: var(--numen-warning);
+  color: var(--numen-ink);
 }
 
 .media-recorder__status--stopped {
-  background: #10b981;
-  color: #fff;
+  background: var(--numen-success);
+  color: var(--numen-surface);
 }
 
 .media-recorder__error {
   padding: 0.75rem 1rem;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid #ef4444;
+  background: var(--numen-danger-soft);
+  border: 1px solid var(--numen-danger);
   border-radius: 6px;
-  color: #fca5a5;
+  color: var(--numen-danger);
   font-size: 0.875rem;
 }
 

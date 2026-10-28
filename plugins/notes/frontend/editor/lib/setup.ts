@@ -5,6 +5,7 @@
  * without the editor being built again; with it off what is left is markdown
  * with its syntax coloured.
  */
+import { doc } from '../../dom'
 import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { bracketMatching, indentUnit, syntaxHighlighting, syntaxTree } from '@codemirror/language'
@@ -92,7 +93,7 @@ class BlockLineNumberMarker extends GutterMarker {
   }
 
   override toDOM(): Node {
-    return document.createTextNode(this.label)
+    return doc.createTextNode(this.label)
   }
 }
 

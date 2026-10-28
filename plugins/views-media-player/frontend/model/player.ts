@@ -6,6 +6,7 @@
  * One sound plays at a time: a recording asked to play takes it from whatever
  * held it.
  */
+import { doc } from '../dom'
 import { readonly, ref, type Ref } from 'vue'
 import { WORDS } from '../words'
 
@@ -268,7 +269,7 @@ export type MediaTypeProbe = (type: string) => boolean
 const probeWindow: MediaTypeProbe = (type) => {
   try {
     const mediaType = type === 'audio/vnd.wave' ? 'audio/wav' : type
-    return document.createElement('audio').canPlayType(mediaType) !== ''
+    return doc.createElement('audio').canPlayType(mediaType) !== ''
   } catch {
     // A window that cannot be asked has not said yes, and what is offered is
     // what the window says it can play.

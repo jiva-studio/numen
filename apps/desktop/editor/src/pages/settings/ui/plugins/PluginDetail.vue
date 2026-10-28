@@ -257,7 +257,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: var(--settings-measure, 54rem);
+  max-inline-size: var(--settings-measure);
   margin-inline: auto;
 }
 
@@ -269,9 +269,9 @@ watch(
 
 .plugin-detail__settings {
   padding-inline: 1rem;
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  border-radius: var(--numen-radius, 0.375rem);
-  background-color: var(--numen-raised, rgba(125, 125, 125, 0.04));
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
 }
 
 .plugin-detail__settings + .plugin-detail__settings {
@@ -285,19 +285,19 @@ watch(
 .plugin-detail__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--numen-panel-gap, 0.75rem);
+  column-gap: var(--numen-panel-gap);
   row-gap: 0.625rem;
   align-items: center;
   padding: 0.875rem 1rem;
   margin-block-end: 1.25rem;
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  border-radius: var(--numen-radius, 0.375rem);
-  background-color: var(--numen-raised, rgba(125, 125, 125, 0.04));
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
 }
 
 .plugin-detail__title {
   margin: 0;
-  font-size: var(--numen-text-3, 1.25rem);
+  font-size: var(--numen-text-3);
   font-weight: 600;
   color: var(--numen-ink);
 }
@@ -306,11 +306,11 @@ watch(
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.4375rem;
-  border-radius: var(--numen-radius-pill, 9999px);
+  border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
   color: var(--numen-accent);
-  font-size: var(--numen-text-1, 0.75rem);
+  font-size: var(--numen-text-1);
   font-weight: 500;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -350,7 +350,7 @@ watch(
 .plugin-detail__more {
   grid-column: 1 / -1;
   padding-block-start: 0.625rem;
-  border-block-start: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
   font-size: var(--numen-text-2);
 }
 
@@ -375,7 +375,7 @@ watch(
 }
 
 .plugin-detail__toggle-icon {
-  transition: transform var(--numen-motion-hover, 110ms) ease;
+  transition: transform var(--numen-motion-hover) ease;
 }
 
 .plugin-detail__toggle-icon--open {
@@ -389,13 +389,13 @@ watch(
     'reason  actions'
     'when    actions'
     'detail  detail';
-  column-gap: var(--numen-panel-gap, 0.75rem);
+  column-gap: var(--numen-panel-gap);
   row-gap: 0.125rem;
   align-items: start;
-  margin-block-end: var(--settings-apart, 1.75rem);
+  margin-block-end: var(--settings-apart);
   padding: 0.5rem 0.75rem;
-  border: var(--numen-stroke, 1px) solid var(--numen-alarm, #d14);
-  border-radius: var(--numen-radius-small, 4px);
+  border: var(--numen-stroke) solid var(--numen-alarm);
+  border-radius: var(--numen-radius-small);
   color: var(--numen-ink);
 }
 
@@ -428,7 +428,7 @@ watch(
 .plugin-detail__stopped-detail code {
   display: block;
   margin-block-start: 0.25rem;
-  font-family: var(--numen-font-mono, monospace);
+  font-family: var(--numen-font-mono);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
@@ -436,7 +436,7 @@ watch(
 .plugin-detail__stopped-actions {
   grid-area: actions;
   display: flex;
-  gap: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
 }
 
 .plugin-detail__asking {
@@ -444,22 +444,22 @@ watch(
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--settings-near, 0.375rem);
-  margin-block-start: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
+  margin-block-start: var(--settings-near);
   padding: 0.5rem 0.75rem;
-  border: var(--numen-stroke, 1px) solid var(--numen-alarm, #d14);
-  border-radius: var(--numen-radius-small, 4px);
+  border: var(--numen-stroke) solid var(--numen-alarm);
+  border-radius: var(--numen-radius-small);
   color: var(--numen-ink);
 }
 
 .plugin-detail__asking-answers {
   display: flex;
-  gap: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
 }
 
 .plugin-detail__problem {
-  margin: var(--settings-near, 0.375rem) 0 0;
-  color: var(--numen-alarm, #d14);
+  margin: var(--settings-near) 0 0;
+  color: var(--numen-alarm);
   font-size: var(--numen-text-1);
 }
 </style>

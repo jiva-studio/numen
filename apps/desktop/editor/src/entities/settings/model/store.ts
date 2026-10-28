@@ -9,7 +9,7 @@ import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { Model, PluginInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
-import { createPendingWrites } from '../lib/pending'
+import { createPendingWrites } from './pending'
 
 /** Everything this says in the window's voice. */
 export interface Words {

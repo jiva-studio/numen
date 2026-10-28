@@ -15,6 +15,7 @@ import { useTreeLayout } from '../model/layout'
 import { useDrawnRows } from '../model/rows'
 import { useRowSelection } from '../model/selection'
 import { browserClock } from '@/shared/lib/time/clock'
+import { measureElementRect } from '@/shared/lib/dom'
 import { createRefRegistry } from '@/shared/lib/dom/refs'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
@@ -74,11 +75,11 @@ const drag = useRowDrag({
   getShownRows: () => visibleRows.value,
   measure: () => {
     const listEl = list.value
-    const overBox = box.value?.getBoundingClientRect()
+    const overBox = box.value ? measureElementRect(box.value) : undefined
     if (!listEl || !overBox) return null
     const anyRow = listEl.querySelector('[data-tree-row]')
-    const rowHeight = anyRow ? anyRow.getBoundingClientRect().height : 24
-    return { hoverRect: overBox, top: listEl.getBoundingClientRect().top, height: rowHeight }
+    const rowHeight = anyRow ? measureElementRect(anyRow).height : 24
+    return { hoverRect: overBox, top: measureElementRect(listEl).top, height: rowHeight }
   },
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
@@ -106,7 +107,8 @@ const {
   selection,
   drag,
   getMenuAt: (row) => {
-    const targetBox = rows.getRowElement(row)?.getBoundingClientRect()
+    const rowEl = rows.getRowElement(row)
+    const targetBox = rowEl ? measureElementRect(rowEl) : undefined
     return targetBox ? { x: targetBox.left, y: targetBox.bottom } : null
   },
   tell: emit,
@@ -116,7 +118,7 @@ const {
 function getRowHeight(): number {
   const listEl = list.value
   const anyRow = listEl?.querySelector('[data-tree-row]')
-  const height = anyRow?.getBoundingClientRect().height
+  const height = anyRow ? measureElementRect(anyRow).height : undefined
   return height && height > 0 ? height : 24
 }
 </script>

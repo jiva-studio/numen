@@ -5,7 +5,8 @@
 import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '@numen/ui'
 import type { PlexRelation } from '../plex'
-import { hasExactNoteMatch, useSearchResults } from '../lib/search'
+import { hasExactNoteMatch } from '../lib/search'
+import { useSearchResults } from '../model/useSearchResults'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -191,9 +192,9 @@ function submitHighlighted() {
 }
 .plex-quick-link__node,
 .plex-quick-link__dropdown {
-  background: var(--numen-surface-raised, var(--numen-surface));
-  border: var(--numen-stroke, 1px) solid var(--relation-color, var(--numen-rule));
-  border-radius: var(--radius, 0.375rem);
+  background: var(--numen-surface-raised);
+  border: var(--numen-stroke) solid var(--relation-color);
+  border-radius: var(--radius);
 }
 .plex-quick-link__node {
   position: absolute;
@@ -201,10 +202,10 @@ function submitHighlighted() {
   margin-block-start: calc(var(--plex-quick-link-height) / -2);
   inline-size: var(--plex-quick-link-width);
   block-size: var(--plex-quick-link-height);
-  padding-inline: var(--numen-node-padding, 0.625rem);
+  padding-inline: var(--numen-node-padding);
   display: flex;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--numen-shadow);
 }
 .plex-quick-link__input,
 .plex-quick-link__option {
@@ -212,7 +213,7 @@ function submitHighlighted() {
   background: transparent;
   color: var(--numen-ink);
   font: inherit;
-  font-size: var(--numen-font-size, 0.8125rem);
+  font-size: var(--numen-font-size);
 }
 .plex-quick-link__input {
   inline-size: 100%;
@@ -234,7 +235,7 @@ function submitHighlighted() {
   display: flex;
   flex-direction: column;
   padding: 0.25rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--numen-shadow);
   gap: 0.125rem;
 }
 .plex-quick-link__option {
@@ -249,7 +250,7 @@ function submitHighlighted() {
   color: var(--numen-accent-ink);
 }
 .plex-quick-link__option + .plex-quick-link__option--create {
-  border-top: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-top: var(--numen-stroke) solid var(--numen-rule);
   margin-top: 0.125rem;
   padding-top: 0.375rem;
 }

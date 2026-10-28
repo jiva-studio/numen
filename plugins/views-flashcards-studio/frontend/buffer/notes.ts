@@ -1,6 +1,7 @@
 /**
  * Open deck and card model buffer store for flashcards studio.
  */
+import { getNow } from '../dom'
 import { shallowReactive } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'
 import type {
@@ -47,7 +48,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     if (existing) {
       clearTimeout(existing)
     }
-    const now = Date.now()
+    const now = getNow()
     if (!firstChangeTime.has(id)) {
       firstChangeTime.set(id, now)
     }

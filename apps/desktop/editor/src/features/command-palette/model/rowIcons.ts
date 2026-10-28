@@ -2,9 +2,9 @@ import type { Component } from 'vue'
 import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
-import { CREATE_NOTE_ID } from './offers'
-import type { Commands } from '../../model/palette/palette'
-import type { SearchState } from '../../model/search/search'
+import { CREATE_NOTE_ID } from '../lib/offers/offers'
+import type { Commands } from './palette/palette'
+import type { SearchState } from './search/search'
 
 export function findRowIcon(
   id: string,

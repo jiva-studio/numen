@@ -139,16 +139,16 @@ function isPluginEnabled(pluginId: string): boolean {
   box-sizing: border-box;
   inline-size: 100%;
   padding: 0.5rem 0.75rem;
-  background-color: var(--numen-field-bg, var(--numen-surface, transparent));
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  border-radius: var(--numen-radius-small, 4px);
+  background-color: var(--numen-field-bg);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-small);
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
 }
 
 .plugins-list__search-input:focus {
-  outline: var(--numen-stroke, 1px) solid var(--numen-accent, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-accent);
 }
 
 .plugins-list__items {
@@ -157,7 +157,7 @@ function isPluginEnabled(pluginId: string): boolean {
 }
 
 .plugins-list__empty {
-  padding-block: var(--numen-gutter, 1rem);
+  padding-block: var(--numen-gutter);
   color: var(--numen-hushed);
   font-style: italic;
 }

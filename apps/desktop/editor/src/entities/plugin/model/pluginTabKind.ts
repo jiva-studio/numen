@@ -4,7 +4,7 @@
  */
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
-import type { AnyTabKind } from '@/entities/tab/@x/plugin'
+import type { AnyTabKind } from '@/shared/model/tabKinds'
 import { adoptPluginStyle, getPluginStyle } from '@numen/plugin-host'
 import { renderFallback, resolvePluginComponent } from './styles'
 

@@ -876,6 +876,7 @@ export function createBaseConfig(dirname, options = {}) {
         '**/testing/**',
         '**/clock.ts',
         '**/drop.ts',
+        '**/dom.ts',
         'src/entities/note/model/notes.ts',
         'src/app/window/useWindowKinds.ts',
         ...(options.portIgnores || []),

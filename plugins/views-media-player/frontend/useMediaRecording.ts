@@ -1,3 +1,4 @@
+import { getNow } from './dom'
 import { computed, onUnmounted, ref } from 'vue'
 
 export type RecordingStatus = 'idle' | 'recording' | 'paused' | 'stopped'
@@ -42,9 +43,9 @@ export function useMediaRecording(emit: MediaRecordingEmit) {
 
   function startTimer() {
     stopTimer()
-    const startedAt = Date.now() - elapsedMs.value
+    const startedAt = getNow() - elapsedMs.value
     timerInterval = setInterval(() => {
-      elapsedMs.value = Date.now() - startedAt
+      elapsedMs.value = getNow() - startedAt
     }, 100)
   }
 

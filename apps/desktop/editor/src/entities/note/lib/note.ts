@@ -1,10 +1,14 @@
 import type { Result } from '@numen/plugin-sdk'
-import type { NoteContents } from '../model/buffer'
 import type { ErrorCode } from '@/shared/errors'
 import type { TextRange } from '@/shared/textRange'
-import type { MoveResult, NoteType } from '@/entities/file/@x/note'
+import type { MoveResult, NoteType } from '@/shared/model/fileTypes'
 
-export type { NoteContents }
+/** The prose a read gave back, and what the vault says came with it. */
+export interface NoteContents {
+  readonly body: string
+  /** The file the prose came out of, as the next write presents it again. */
+  readonly at?: string
+}
 
 /**
  * One report of a change being made to the prose of a note, while it is being

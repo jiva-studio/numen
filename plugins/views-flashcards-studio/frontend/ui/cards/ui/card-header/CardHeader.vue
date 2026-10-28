@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { win } from '../../../../dom'
 /**
  * The strip a tile or a block is dragged by.
  *
@@ -44,15 +45,15 @@ const isDraggable = shallowRef(true)
  */
 const release = (): void => {
   isDraggable.value = true
-  window.removeEventListener('pointerup', release)
-  window.removeEventListener('pointercancel', release)
+  win.removeEventListener('pointerup', release)
+  win.removeEventListener('pointercancel', release)
 }
 
 const press = (event: PointerEvent): void => {
   if ((event.target as HTMLElement | null)?.closest?.(WORKED) == null) return
   isDraggable.value = false
-  window.addEventListener('pointerup', release)
-  window.addEventListener('pointercancel', release)
+  win.addEventListener('pointerup', release)
+  win.addEventListener('pointercancel', release)
 }
 
 onScopeDispose(release)

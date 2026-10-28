@@ -38,8 +38,8 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
   align-items: center;
   gap: 1rem;
   padding: 2rem;
-  background: var(--numen-field-bg, rgba(255, 255, 255, 0.05));
-  border-radius: var(--numen-radius-card, 8px);
+  background: var(--numen-field-bg);
+  border-radius: var(--numen-radius-card);
 }
 
 .media-recorder__timer {
@@ -47,7 +47,7 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
-  color: var(--numen-ink, #f3f4f6);
+  color: var(--numen-ink);
 }
 
 .media-recorder__waveform {
@@ -61,7 +61,7 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
 
 .media-recorder__waveform-bar {
   inline-size: 4px;
-  background: var(--numen-rule, #4b5563);
+  background: var(--numen-rule);
   border-radius: 2px;
   transition:
     height 0.1s ease,
@@ -69,6 +69,6 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
 }
 
 .media-recorder__waveform-bar--active {
-  background: #ef4444;
+  background: var(--numen-danger);
 }
 </style>

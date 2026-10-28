@@ -147,7 +147,7 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
   flex-direction: column;
   /* The room between rows is the editor's, and this is what it evaluates to
      where the rows stand anywhere else. */
-  gap: var(--row-gap, 0.5rem);
+  gap: var(--row-gap);
   inline-size: 100%;
   margin: 0;
   padding: 0;

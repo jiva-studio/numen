@@ -7,6 +7,7 @@
  * labels wrap, collide or read well at a glance, which is the whole reason to
  * look at one.
  */
+import { getNow } from '../../dom'
 const NAMES = [
   'Hexagonal architecture',
   'Ports and adapters',
@@ -95,4 +96,4 @@ export const createName = (stem: string, index: number): string =>
  * should really be called is the application's to decide; this is what a
  * story uses in its place.
  */
-export const nameNow = (): string => createName(String(Date.now()), 0)
+export const nameNow = (): string => createName(String(getNow()), 0)

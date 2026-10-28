@@ -4,6 +4,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import MenuRow from './MenuRow.vue'
+import { getNow, measureElementRect } from '@/shared/lib/dom'
 import type { Position } from '@/shared/lib/math/geometry'
 import { useMenuDismissal } from './interaction/menuDismissal'
 import { useMenuLifecycle } from './interaction/useMenuLifecycle'
@@ -26,7 +27,7 @@ const props = withDefaults(defineProps<MenuProps>(), {
   isSearchable: false,
   canEnterCustom: false,
   searchName: 'Search',
-  clock: () => Date.now(),
+  clock: () => getNow(),
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -87,12 +88,12 @@ useMenuLifecycle({
 
 /* --------------------------------- Helpers -------------------------------- */
 function getSubmenuPosition(el: HTMLElement | null): Position | null {
-  const box = el?.getBoundingClientRect()
+  const box = el ? measureElementRect(el) : undefined
   return box ? { x: box.right, y: box.top } : null
 }
 
 function measure(): void {
-  const box = menu.value?.getBoundingClientRect()
+  const box = menu.value ? measureElementRect(menu.value) : undefined
   if (box) setSize({ width: box.width, height: box.height })
 }
 </script>
@@ -181,12 +182,12 @@ function measure(): void {
   /* A menu is as long as what it offers up to this, and its items scroll
      beyond it. */
   --tallest: min(24rem, var(--room));
-  --lift: var(--numen-lift-menu, 99999);
+  --lift: var(--numen-lift-menu);
   --inset: 0.375rem;
 
   box-sizing: border-box;
   position: fixed;
-  z-index: var(--lift, 99999);
+  z-index: var(--lift);
   display: flex;
   flex-direction: column;
   padding: var(--inset);
@@ -195,16 +196,16 @@ function measure(): void {
   line-height: var(--numen-line-height);
   color: var(--numen-ink);
   inline-size: max-content;
-  min-inline-size: max(var(--narrowest), var(--asking), var(--opened-width, 0px));
+  min-inline-size: max(var(--narrowest), var(--asking), var(--opened-width));
   max-inline-size: max(var(--widest), var(--asking));
   max-block-size: var(--tallest);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  background-color: var(--numen-raised, #27221d);
-  border: 1px solid var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
-  border-radius: var(--numen-radius, 0.375rem);
-  box-shadow: var(--numen-panel-shadow, 0 12px 32px rgba(0, 0, 0, 0.5));
+  background-color: var(--numen-raised);
+  border: 1px solid var(--numen-panel-border);
+  border-radius: var(--numen-radius);
+  box-shadow: var(--numen-panel-shadow);
 }
 
 .menu--searchable {
@@ -234,9 +235,9 @@ function measure(): void {
   flex-shrink: 0;
   margin: 0 calc(-1 * var(--inset)) 0.25rem;
   padding: 0.375rem 0.5rem;
-  background-color: var(--numen-raised, #27221d);
+  background-color: var(--numen-raised);
   border-block-end: 1px solid
-    var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
+    var(--numen-panel-border);
 }
 
 .menu__search {

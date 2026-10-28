@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { doc, getCurrentDate } from './dom'
 import { ref, useTemplateRef } from 'vue'
 import { Pause, Play } from '@lucide/vue'
 import { clock } from '@numen/ui'
@@ -54,9 +55,9 @@ function onSaveRecording() {
   if (!props.blob) return
   emit('save', props.blob)
 
-  const anchor = document.createElement('a')
+  const anchor = doc.createElement('a')
   anchor.href = props.audioUrl
-  anchor.download = `recording-${new Date().toISOString().replace(/[:.]/g, '-')}.webm`
+  anchor.download = `recording-${getCurrentDate().toISOString().replace(/[:.]/g, '-')}.webm`
   anchor.click()
 }
 </script>
@@ -108,8 +109,8 @@ function onSaveRecording() {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.25rem;
-  background: var(--numen-field-bg, rgba(255, 255, 255, 0.05));
-  border-radius: var(--numen-radius-card, 8px);
+  background: var(--numen-field-bg);
+  border-radius: var(--numen-radius-card);
 }
 
 .media-recorder__preview-title {
@@ -131,11 +132,11 @@ function onSaveRecording() {
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button, 6px);
+  border-radius: var(--numen-radius-button);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: #fff;
+  color: var(--numen-surface);
 }
 
 .media-recorder__btn--play {
@@ -145,7 +146,7 @@ function onSaveRecording() {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--numen-accent, #3b82f6);
+  background: var(--numen-accent);
 }
 
 .media-recorder__icon {
@@ -156,11 +157,11 @@ function onSaveRecording() {
 .media-recorder__time {
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
-  color: var(--numen-hushed, #9ca3af);
+  color: var(--numen-hushed);
 }
 
 .media-recorder__time-divider {
-  color: var(--numen-hushed, #9ca3af);
+  color: var(--numen-hushed);
 }
 
 .media-recorder__save-btn {
@@ -168,10 +169,10 @@ function onSaveRecording() {
   padding: 0.5rem 1rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button, 6px);
-  border: 1px solid var(--numen-accent, #3b82f6);
-  background: var(--numen-accent, #3b82f6);
-  color: #fff;
+  border-radius: var(--numen-radius-button);
+  border: 1px solid var(--numen-accent);
+  background: var(--numen-accent);
+  color: var(--numen-surface);
   cursor: pointer;
   transition: opacity 0.15s ease;
 }

@@ -5,6 +5,7 @@
  * being said, and whether the view moves to keep it in sight, are the caller's
  * to say.
  */
+import { doc } from '../dom'
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codemirror/view'
 
@@ -67,7 +68,7 @@ class Time extends GutterMarker {
   }
 
   override toDOM(): Node {
-    const mark = document.createElement('button')
+    const mark = doc.createElement('button')
     mark.type = 'button'
     mark.className = 'cm-time'
     // The gutter holds one of these for every line on screen, and the tab key

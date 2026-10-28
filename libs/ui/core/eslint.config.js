@@ -129,6 +129,7 @@ export default tseslint.config(
       'src/**/fixtures/**',
       // The port itself.
       'src/shared/lib/time/clock.ts',
+      'src/shared/lib/dom.ts',
     ],
     rules: {
       'no-restricted-globals': [

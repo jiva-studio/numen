@@ -17,9 +17,9 @@
 
   display: inline-block;
   flex: none;
-  inline-size: var(--spinner-size, 0.9em);
-  block-size: var(--spinner-size, 0.9em);
-  border: var(--spinner-thickness, 1.5px) solid currentColor;
+  inline-size: var(--spinner-size);
+  block-size: var(--spinner-size);
+  border: var(--spinner-thickness) solid currentColor;
   /* One arc left open is what makes the turning visible on a ring. */
   border-block-start-color: transparent;
   border-radius: 50%;

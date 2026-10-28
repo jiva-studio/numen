@@ -1,7 +1,7 @@
 /**
  * Pure functions for version comparison, platform resolution, and release assets.
  */
-import type { ReleaseFile } from '../model/types'
+import type { ReleaseFile } from './types'
 
 export type ClientPlatform = 'darwin' | 'windows' | 'linux'
 

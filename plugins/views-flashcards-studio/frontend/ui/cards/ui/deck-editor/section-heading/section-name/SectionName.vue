@@ -68,7 +68,7 @@ const emit = defineEmits<{
 /* Hidden mirror pseudo-element matching input text for auto-sizing. */
 .section-heading__name::after {
   content: attr(data-typed);
-  padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
+  padding: var(--card-row-pad-block) var(--card-row-pad-inline);
   visibility: hidden;
   white-space: pre;
 }

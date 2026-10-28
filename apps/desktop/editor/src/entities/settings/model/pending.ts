@@ -4,7 +4,7 @@
  * after it are done; a read that answers after a newer one is not taken.
  */
 import { shallowRef } from 'vue'
-import type { SettingEdit } from './configuration'
+import type { SettingEdit } from '../lib/configuration'
 
 const PATH_JOIN = '\u0000'
 

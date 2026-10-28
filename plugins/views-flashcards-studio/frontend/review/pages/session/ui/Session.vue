@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nav } from '../../../../dom'
 /**
  * The session: one card in front of a person, and the four ways of answering it.
  *
@@ -42,7 +43,7 @@ defineEmits<{
 
 /* -------------------------------- Helpers --------------------------------- */
 /** The panels are held with the overlay key, drawn as this machine's own. */
-const chord = (letter: string) => keyChord(letter, navigator.userAgent)
+const chord = (letter: string) => keyChord(letter, nav.userAgent)
 </script>
 
 <template>

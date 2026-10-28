@@ -3,6 +3,7 @@
  * events and screen pixels is here; which relation a place evaluates to is worked out
  * in `arrange/drop.ts`, as a value.
  */
+import { win } from '../../../dom'
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { getDropRelation, type PlexOptions, type Size } from '../../lib/arrange'
 import { getPosition } from './gesture'
@@ -100,18 +101,18 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
     }
 
     detach = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp, CAPTURE)
-      window.removeEventListener('pointercancel', onLost)
-      window.removeEventListener('keydown', onKey)
+      win.removeEventListener('pointermove', onMove)
+      win.removeEventListener('pointerup', onUp, CAPTURE)
+      win.removeEventListener('pointercancel', onLost)
+      win.removeEventListener('keydown', onKey)
     }
 
-    window.addEventListener('pointermove', onMove)
+    win.addEventListener('pointermove', onMove)
     // The release is answered on its way down the page, ahead of whoever is
     // dragging them and puts them down on the way back up.
-    window.addEventListener('pointerup', onUp, CAPTURE)
-    window.addEventListener('pointercancel', onLost)
-    window.addEventListener('keydown', onKey)
+    win.addEventListener('pointerup', onUp, CAPTURE)
+    win.addEventListener('pointercancel', onLost)
+    win.addEventListener('keydown', onKey)
   }
 
   watch(

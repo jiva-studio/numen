@@ -85,7 +85,7 @@ const onWrite = (text: string): void =>
 /* A value no cardModel names is read where it would be typed, and keeps the
    breaks it was written with. */
 .card__wrote {
-  padding-block: var(--box-air, 0.5rem);
+  padding-block: var(--box-air);
   white-space: pre-wrap;
 }
 </style>

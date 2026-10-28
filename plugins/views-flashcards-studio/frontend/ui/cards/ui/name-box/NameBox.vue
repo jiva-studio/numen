@@ -52,7 +52,7 @@ function onKeydown(event: KeyboardEvent): void {
 <style scoped>
 /* Input padding when rendered inside a card row container. */
 .name-box {
-  padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
+  padding: var(--card-row-pad-block) var(--card-row-pad-inline);
   border: none;
   background: none;
   color: inherit;

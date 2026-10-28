@@ -152,18 +152,18 @@ const says = computed(() => {
 .template__amiss {
   position: absolute;
   z-index: 5;
-  inset-block-end: var(--box-air, 0.5rem);
-  inset-inline-end: var(--box-pad-inline, 0.5rem);
+  inset-block-end: var(--box-air);
+  inset-inline-end: var(--box-pad-inline);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.125rem;
-  max-inline-size: calc(100% - 2 * var(--box-pad-inline, 0.5rem));
+  max-inline-size: calc(100% - 2 * var(--box-pad-inline));
   pointer-events: none;
 }
 
 :global(.template:has(.template__pane .template__amiss)) .template__amiss {
-  inset-block-end: calc(var(--box-air, 0.5rem) + 1.875rem);
+  inset-block-end: calc(var(--box-air) + 1.875rem);
 }
 
 /* What is wrong is read over whatever it covers, so it carries a ground. */

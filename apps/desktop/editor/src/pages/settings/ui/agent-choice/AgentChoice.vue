@@ -64,6 +64,6 @@ function onModelChange(model: string) {
 
 <style scoped>
 .settings__choice {
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
 }
 </style>

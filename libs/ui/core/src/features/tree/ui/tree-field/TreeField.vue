@@ -94,7 +94,7 @@ defineExpose({ focus })
 .tree__field {
   box-sizing: border-box;
   inline-size: 100%;
-  block-size: calc(var(--row, 1.5rem) - 2px);
+  block-size: calc(var(--row) - 2px);
   margin-inline-start: -3px;
   padding-inline: 2px;
   padding-block: 0;

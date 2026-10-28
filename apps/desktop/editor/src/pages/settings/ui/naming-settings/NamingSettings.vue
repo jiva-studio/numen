@@ -33,13 +33,13 @@ const installation = computed(() => props.state.installation)
 <style scoped>
 .settings__group {
   inline-size: 100%;
-  max-inline-size: var(--settings-measure, 54rem);
-  margin-block-end: var(--settings-apart, 1.75rem);
+  max-inline-size: var(--settings-measure);
+  margin-block-end: var(--settings-apart);
   margin-inline: auto;
 }
 
 .settings__heading {
-  margin: 0 0 var(--settings-near, 0.375rem);
+  margin: 0 0 var(--settings-near);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   font-weight: 600;

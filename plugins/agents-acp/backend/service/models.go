@@ -131,26 +131,31 @@ func (c *acpModelCache) get(ctx context.Context, agent acpAgent) acpListing {
 		return listing
 	}
 	if c.isAsync {
-		if !c.inFlight[key] {
-			if c.inFlight == nil {
-				c.inFlight = make(map[string]bool)
-			}
-			c.inFlight[key] = true
-			go c.fetchInBackground(agent, key)
-		}
-		if cached, found := readACPCache(key); found {
-			if c.entries == nil {
-				c.entries = make(map[string]acpListing)
-			}
-			c.entries[key] = cached
-			c.mu.Unlock()
-			return cached
-		}
-		c.mu.Unlock()
-		return acpListing{}
+		return c.getAsyncLocked(agent, key)
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, agent, key)
+}
+
+func (c *acpModelCache) getAsyncLocked(agent acpAgent, key string) acpListing {
+	if !c.inFlight[key] {
+		if c.inFlight == nil {
+			c.inFlight = make(map[string]bool)
+		}
+		c.inFlight[key] = true
+		go c.fetchInBackground(agent, key)
+	}
+	cached, found := readACPCache(key)
+	if !found {
+		c.mu.Unlock()
+		return acpListing{}
+	}
+	if c.entries == nil {
+		c.entries = make(map[string]acpListing)
+	}
+	c.entries[key] = cached
+	c.mu.Unlock()
+	return cached
 }
 
 func (c *acpModelCache) fetchInBackground(agent acpAgent, key string) {

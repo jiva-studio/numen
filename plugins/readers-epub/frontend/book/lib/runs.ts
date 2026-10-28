@@ -8,6 +8,7 @@
  * offsets and they are kept in it, so the run an offset falls in is the last
  * one beginning at or before it.
  */
+import { doc } from '../../dom'
 import { countBytes, getUnitOffset } from './bytes'
 import type { TextRange } from '@numen/ui'
 import type { Mark } from './spread'
@@ -94,7 +95,7 @@ const getPlaceInRun = (
   run: HTMLElement,
   into: number,
 ): { node: Text; offset: number } | undefined => {
-  const walk = document.createTreeWalker(run, NodeFilter.SHOW_TEXT)
+  const walk = doc.createTreeWalker(run, NodeFilter.SHOW_TEXT)
   let counted = 0
   let node = walk.nextNode() as Text | null
   while (node) {
@@ -116,7 +117,7 @@ const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => 
   const from = getPlaceInRun(opens.element, span.start - opens.at)
   const to = getPlaceInRun(closes.element, endBytes)
   if (!from || !to) return undefined
-  const range = document.createRange()
+  const range = doc.createRange()
   range.setStart(from.node, from.offset)
   range.setEnd(to.node, to.offset)
   return range

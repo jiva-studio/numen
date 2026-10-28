@@ -47,7 +47,7 @@ function onBack(): void {
   display: flex;
   flex-direction: column;
   inline-size: 100%;
-  max-inline-size: var(--settings-measure, 54rem);
+  max-inline-size: var(--settings-measure);
   margin-inline: auto;
 }
 
@@ -62,10 +62,10 @@ function onBack(): void {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--numen-panel-gap, 0.75rem);
-  margin-block-end: var(--settings-apart, 1.75rem);
+  gap: var(--numen-panel-gap);
+  margin-block-end: var(--settings-apart);
   padding-block-end: 1rem;
-  border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .system-detail__file {

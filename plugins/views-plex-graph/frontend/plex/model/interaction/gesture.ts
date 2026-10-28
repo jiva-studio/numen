@@ -2,6 +2,7 @@
  * The pointer. Everything that knows about events and screen pixels is here;
  * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
  */
+import { win } from '../../../dom'
 import { computed, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
 import { resolveDrop, getRelationWithoutDirection, type Drop } from '../../lib/arrange'
 import type { PlexOptions } from '../../lib/arrange'
@@ -101,16 +102,16 @@ function listenGesture(pointerId: number, handlers: GestureListenerHandlers): ()
     if (key.key === 'Escape') handlers.onCancel()
   }
 
-  window.addEventListener('pointermove', onMove)
-  window.addEventListener('pointerup', onUp)
-  window.addEventListener('pointercancel', onLost)
-  window.addEventListener('keydown', onKey)
+  win.addEventListener('pointermove', onMove)
+  win.addEventListener('pointerup', onUp)
+  win.addEventListener('pointercancel', onLost)
+  win.addEventListener('keydown', onKey)
 
   return () => {
-    window.removeEventListener('pointermove', onMove)
-    window.removeEventListener('pointerup', onUp)
-    window.removeEventListener('pointercancel', onLost)
-    window.removeEventListener('keydown', onKey)
+    win.removeEventListener('pointermove', onMove)
+    win.removeEventListener('pointerup', onUp)
+    win.removeEventListener('pointercancel', onLost)
+    win.removeEventListener('keydown', onKey)
   }
 }
 

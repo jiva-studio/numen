@@ -5,7 +5,7 @@
  * registered for its extension, at the selector given.
  */
 import { describe, expect, it } from 'vitest'
-import type { FileKind } from '@/entities/file/@x/tab'
+import type { FileKind } from '@/shared/model/fileTypes'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
 /** A vault that answers what it was told, and counts the questions. */

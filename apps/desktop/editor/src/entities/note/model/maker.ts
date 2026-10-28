@@ -7,7 +7,7 @@
  */
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { Link, NewNote, NoteRelation, PairLink, Role } from '../lib/note'
-import type { CreateResult } from '@/entities/file/@x/note'
+import type { CreateResult } from '@/shared/model/fileTypes'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'

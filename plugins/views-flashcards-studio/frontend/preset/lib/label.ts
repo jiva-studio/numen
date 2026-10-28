@@ -6,7 +6,12 @@
  * touch are two words that would print over each other, and the picture drops
  * one of them.
  */
-import type { CSSProperties } from 'vue'
+export interface InlinePositionStyle {
+  readonly insetInlineStart?: string
+  readonly insetBlockStart?: string
+  readonly translate?: string
+}
+type CSSProperties = InlinePositionStyle
 import type { Position } from '@numen/ui'
 import {
   BACKLOG_PLOT,

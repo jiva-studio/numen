@@ -5,9 +5,11 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { splitParagraphs } from '../lib/text'
+import { links as servedLinks } from '../api/wire'
 import type { LinkFacts, Links, LinkSource, Outcome } from '../types'
 
-export function useLink(links: Links, path: string) {
+export function useLink(links: Links | undefined, path: string) {
+  const activeLinks = links ?? servedLinks
   const url = ref('')
   const text = ref('')
   const source = shallowRef<LinkSource | null>(null)
@@ -23,15 +25,15 @@ export function useLink(links: Links, path: string) {
   const load = async (): Promise<void> => {
     const mine = ++turn
     try {
-      const facts = await links.getLink(path)
+      const facts = await activeLinks.getLink(path)
       if (mine !== turn) return
       if (!facts.ok) {
         error.value = facts.error
         return
       }
       const [article, [played, framed]] = await Promise.all([
-        links.readArticle(path),
-        readPlayback(links, path, facts.value),
+        activeLinks.readArticle(path),
+        readPlayback(activeLinks, path, facts.value),
       ])
       if (mine !== turn) return
       url.value = facts.value.url
@@ -43,7 +45,7 @@ export function useLink(links: Links, path: string) {
       error.value = ''
       if (!article && !facts.value.isTextDeleted && !isWorking.value && !isFetchAsked) {
         isFetchAsked = true
-        await run(() => links.fetchText(path, false))
+        await run(() => activeLinks.fetchText(path, false))
       }
     } catch (failure) {
       if (mine === turn) error.value = describeFailure(failure)
@@ -61,7 +63,7 @@ export function useLink(links: Links, path: string) {
     }
   }
 
-  const stop = links.watchWork(path, (working) => {
+  const stop = activeLinks.watchWork(path, (working) => {
     isWorking.value = working
     if (!working) void load()
   })
@@ -76,10 +78,10 @@ export function useLink(links: Links, path: string) {
     status: { isCopyable, isTextDeleted, isWorking, isLoaded },
     error,
     actions: {
-      fetchText: () => run(() => links.fetchText(path, true)),
-      copyVideo: () => run(() => links.copyVideo(path)),
+      fetchText: () => run(() => activeLinks.fetchText(path, true)),
+      copyVideo: () => run(() => activeLinks.copyVideo(path)),
       deleteCopy: async () => {
-        await run(() => links.deleteCopy(path))
+        await run(() => activeLinks.deleteCopy(path))
         await load()
       },
     },

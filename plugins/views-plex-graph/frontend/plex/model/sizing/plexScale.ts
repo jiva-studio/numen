@@ -5,6 +5,7 @@
  * number the arrangement is handed. Every length here is multiplied by what
  * the type was multiplied by, so a box goes on holding its label.
  */
+import { doc, hasDocument } from '../../../dom'
 import { onScopeDispose, ref, type Ref } from 'vue'
 import { DEFAULT_OPTIONS, type PlexOptions, type Size } from '../../lib/arrange'
 
@@ -65,16 +66,16 @@ const PROBE =
  */
 export function useTypeSize(): Ref<number> {
   const type = ref(DESIGNED_TYPE)
-  if (typeof document === 'undefined' || typeof ResizeObserver === 'undefined') return type
+  if (!hasDocument() || typeof ResizeObserver === 'undefined') return type
 
-  const probe = document.createElement('div')
+  const probe = doc.createElement('div')
   probe.setAttribute('aria-hidden', 'true')
   probe.style.cssText = PROBE
   const observer = new ResizeObserver(([entry]) => {
     const box = entry?.contentRect
     if (box && box.width > 0) type.value = box.width
   })
-  document.body.appendChild(probe)
+  doc.body.appendChild(probe)
   observer.observe(probe)
 
   onScopeDispose(() => {

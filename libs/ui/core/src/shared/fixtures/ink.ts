@@ -76,9 +76,11 @@ const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
   return { top, bottom: bottom + 1, run: acrossIndices[acrossIndices.length >> 1] ?? 0 }
 }
 
+import { measureElementRect } from '@/shared/lib/dom'
+
 /** The ink of a drawing, painted again large and read back into the box it fills. */
 export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
-  const box = drawing.getBoundingClientRect()
+  const box = measureElementRect(drawing)
   const copy = drawing.cloneNode(true) as SVGElement
   copy.setAttribute('width', String(GRAIN))
   copy.setAttribute('height', String(GRAIN))

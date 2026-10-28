@@ -11,7 +11,7 @@ export type {
   SourceReader,
 } from './model/openers'
 export type { OpenTabs, Tab } from './lib/tab'
-export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './lib/kinds'
+export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './model/kinds'
 export { useWindowTabs } from './model/windowTabs'
 export type { SavedTab } from './model/windowTabs'
 export { createWorkspace, generateId, NOTE, SETTINGS } from './lib/workspace'

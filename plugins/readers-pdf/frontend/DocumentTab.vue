@@ -12,7 +12,6 @@ import type { TextRange } from './types'
 import type { DocumentTabState } from './model/useDocumentTab'
 import { useDocumentTab } from './model/useDocumentTab'
 import { useDocumentReader } from './model/useDocumentReader'
-import { documents } from './api/wire'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -44,7 +43,7 @@ const targetPath = computed(() => {
 
 const internalState =
   !isDocumentTabState(props.state) && targetPath.value
-    ? useDocumentTab(useDocumentReader(documents, targetPath.value))
+    ? useDocumentTab(useDocumentReader(targetPath.value))
     : null
 
 const activeState = computed<DocumentTabState | null>(() => {
@@ -166,6 +165,6 @@ function onSetPageHandle(reader: unknown) {
 
 .fallback-message {
   font-size: 14px;
-  color: var(--text-secondary, #666);
+  color: var(--text-secondary);
 }
 </style>

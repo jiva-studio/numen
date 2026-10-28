@@ -159,13 +159,13 @@ function formatPathLabel(rawPath: string): string {
 
 .settings__path-header-action + .settings__path-item {
   padding-block-start: 0.375rem;
-  border-block-start: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .settings__path-line {
   display: flex;
   align-items: center;
-  gap: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
   min-inline-size: 0;
   max-inline-size: 100%;
 }
@@ -181,7 +181,7 @@ function formatPathLabel(rawPath: string): string {
 
 .settings__path-label--full {
   max-inline-size: 100%;
-  font-family: var(--numen-font-mono, monospace);
+  font-family: var(--numen-font-mono);
   font-size: var(--numen-text-2);
 }
 
@@ -190,17 +190,17 @@ function formatPathLabel(rawPath: string): string {
 }
 
 .settings__path-clear:hover {
-  color: var(--numen-alarm, #d14);
+  color: var(--numen-alarm);
 }
 
 .settings__path-choose {
-  background-color: var(--numen-field-bg, var(--numen-surface));
-  border-color: var(--numen-field-rule, var(--numen-rule));
+  background-color: var(--numen-field-bg);
+  border-color: var(--numen-field-rule);
 }
 
 .settings__path-problem {
   grid-column: 1 / -1;
-  color: var(--numen-alarm, #d14);
+  color: var(--numen-alarm);
   font-size: var(--numen-text-1);
 }
 </style>

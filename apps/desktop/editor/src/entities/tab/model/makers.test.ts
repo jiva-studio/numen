@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { ErrorCode } from '@/shared/errors'
-import type { CreateResult } from '@/entities/file/@x/tab'
+import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
 import { ERRORS } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'

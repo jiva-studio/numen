@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, createNoteWriter, type NoteMaker } from './maker'
 import type { Link, NewNote, Role } from '@/entities/note'
-import type { CreateResult } from '@/entities/file/@x/note'
+import type { CreateResult } from '@/shared/model/fileTypes'
 import type { ErrorCode } from '@/shared/errors'
 import { writer } from '@/testing/writer'
 

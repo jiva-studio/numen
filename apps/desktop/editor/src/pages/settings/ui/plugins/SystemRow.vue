@@ -51,16 +51,16 @@ function onKeydown(e: KeyboardEvent): void {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--numen-panel-gap, 0.75rem);
+  gap: var(--numen-panel-gap);
   min-block-size: 3.5rem;
   padding: 0.625rem 0.75rem;
-  border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   cursor: pointer;
   user-select: none;
   transition:
     background-color 0.15s ease,
     opacity 0.15s ease;
-  border-radius: var(--numen-radius-small, 4px);
+  border-radius: var(--numen-radius-small);
 }
 
 .plugin-row:last-child {
@@ -68,11 +68,11 @@ function onKeydown(e: KeyboardEvent): void {
 }
 
 .plugin-row:hover {
-  background-color: var(--numen-surface-hover, rgba(125, 125, 125, 0.08));
+  background-color: var(--numen-surface-hover);
 }
 
 .plugin-row:focus-visible {
-  outline: 2px solid var(--numen-accent, #0066cc);
+  outline: 2px solid var(--numen-accent);
   outline-offset: -2px;
 }
 
@@ -93,7 +93,7 @@ function onKeydown(e: KeyboardEvent): void {
 .plugin-row__name {
   color: var(--numen-ink);
   font-weight: 500;
-  font-size: var(--numen-text-2, 0.95rem);
+  font-size: var(--numen-text-2);
 }
 
 .plugin-row__description {
@@ -109,7 +109,7 @@ function onKeydown(e: KeyboardEvent): void {
 .plugin-row__trail {
   display: flex;
   align-items: center;
-  gap: var(--numen-panel-gap, 0.75rem);
+  gap: var(--numen-panel-gap);
   flex-shrink: 0;
 }
 

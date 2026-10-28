@@ -155,28 +155,32 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 		return one.models, nil
 	}
 	if c.isAsync {
-		hasFailed := c.failed[key]
-		c.enqueueAsyncFetchLocked(key, command, env)
-		if found {
-			c.mu.Unlock()
-			return one.models, nil
-		}
-		if cached := readClaudeCache(key); len(cached) > 0 {
-			if c.lists == nil {
-				c.lists = map[string]modelList{}
-			}
-			c.lists[key] = modelList{models: cached}
-			c.mu.Unlock()
-			return cached, nil
-		}
-		c.mu.Unlock()
-		if hasFailed {
-			return fallbackModels, nil
-		}
-		return nil, nil
+		return c.getAsyncLocked(key, command, env, one.models, found)
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, key, command, env)
+}
+
+func (c *modelCache) getAsyncLocked(key string, command, env []string, current []claudeModel, found bool) ([]claudeModel, error) {
+	hasFailed := c.failed[key]
+	c.enqueueAsyncFetchLocked(key, command, env)
+	if found {
+		c.mu.Unlock()
+		return current, nil
+	}
+	if cached := readClaudeCache(key); len(cached) > 0 {
+		if c.lists == nil {
+			c.lists = map[string]modelList{}
+		}
+		c.lists[key] = modelList{models: cached}
+		c.mu.Unlock()
+		return cached, nil
+	}
+	c.mu.Unlock()
+	if hasFailed {
+		return fallbackModels, nil
+	}
+	return nil, nil
 }
 
 func (c *modelCache) enqueueAsyncFetchLocked(key string, command, env []string) {

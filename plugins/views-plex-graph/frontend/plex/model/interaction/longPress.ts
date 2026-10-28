@@ -5,6 +5,7 @@
  *
  * A mouse is left alone: it has the handle.
  */
+import { win } from '../../../dom'
 import { onScopeDispose, ref } from 'vue'
 
 /** How long a finger rests on a node before it is reaching out, in milliseconds. */
@@ -36,7 +37,7 @@ export function useLongPress(
 
   const letGo = () => {
     if (!target.value) return
-    window.clearTimeout(target.value.timer)
+    win.clearTimeout(target.value.timer)
     target.value = null
   }
 
@@ -46,7 +47,7 @@ export function useLongPress(
     target.value = {
       x: event.clientX,
       y: event.clientY,
-      timer: window.setTimeout(() => {
+      timer: win.setTimeout(() => {
         target.value = null
         onReach(event)
       }, after()),

@@ -93,40 +93,40 @@ function onAction(type: RecordAction) {
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button, 6px);
+  border-radius: var(--numen-radius-button);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: #fff;
+  color: var(--numen-surface);
 }
 
 .media-recorder__btn--record {
-  background: #ef4444;
+  background: var(--numen-danger);
 }
 
 .media-recorder__btn--record:hover {
-  background: #dc2626;
+  background: var(--numen-danger);
 }
 
 .media-recorder__btn--pause {
-  background: #f59e0b;
-  color: #000;
+  background: var(--numen-warning);
+  color: var(--numen-ink);
 }
 
 .media-recorder__btn--resume {
-  background: #10b981;
+  background: var(--numen-success);
 }
 
 .media-recorder__btn--stop {
-  background: #4b5563;
+  background: var(--numen-rule);
 }
 
 .media-recorder__btn--stop:hover {
-  background: #374151;
+  background: var(--numen-rule);
 }
 
 .media-recorder__btn--new {
-  background: var(--numen-accent, #3b82f6);
+  background: var(--numen-accent);
 }
 
 .media-recorder__icon {

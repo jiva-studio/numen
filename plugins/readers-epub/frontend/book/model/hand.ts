@@ -3,6 +3,7 @@
  * does a press near either edge. Words taken up in the text are being read, and
  * letting go of them turns nothing.
  */
+import { win } from '../../dom'
 import type { ShallowRef } from 'vue'
 
 import type { PageNavigationAction } from '@numen/ui'
@@ -25,7 +26,7 @@ export function createBookHand(options: BookHandOptions) {
 
   /** Whether words of the text stand taken up. */
   const isSelecting = (): boolean => {
-    const currentSelection = window.getSelection()
+    const currentSelection = win.getSelection()
     if (
       !currentSelection ||
       currentSelection.isCollapsed ||

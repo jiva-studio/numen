@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from '../../../dom'
 /**
  * One node: its box, its title, and the handle to reach out from. Every number
  * it draws with is already on the node it was handed, but for what it is to a
@@ -98,7 +99,7 @@ watch(
 function getMiddle(): Position | null {
   const element = group.value
   if (!element) return null
-  const rect = element.getBoundingClientRect()
+  const rect = measureRect(element)
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
@@ -182,8 +183,8 @@ defineExpose({ focus: () => group.value?.focus() })
 
 [data-moving] .plex__node :deep(.plex__box) {
   transition:
-    fill var(--numen-plex-move, var(--numen-motion)) var(--numen-easing),
-    stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
+    fill var(--numen-plex-move) var(--numen-easing),
+    stroke var(--numen-plex-move) var(--numen-easing);
 }
 
 /* The node a link would be made to, while the pointer is still on it. */
@@ -202,7 +203,7 @@ defineExpose({ focus: () => group.value?.focus() })
 
 .plex__node--ghost :deep(.plex__box) {
   fill: none;
-  stroke: var(--numen-relation-hue, var(--numen-ring));
+  stroke: var(--numen-relation-hue);
   stroke-dasharray: var(--ghost-dash);
   transition: none;
 }

@@ -6,6 +6,7 @@
  * window, and the strip settles on the nearest of the three where a hand lets
  * go.
  */
+import { win } from '../../../../dom'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Ref, ShallowRef } from 'vue'
 
@@ -105,11 +106,11 @@ function createCarouselMover(
   let aim: PanelPlace | null = null
 
   const slideTo = (where: PanelPlace) => {
-    window.clearTimeout(snapTimer)
+    win.clearTimeout(snapTimer)
     const place = window_.value
     if (!place || Math.abs(place.scrollLeft - getStops()[where]) <= 1) return
-    window.clearTimeout(sending)
-    sending = window.setTimeout(() => {
+    win.clearTimeout(sending)
+    sending = win.setTimeout(() => {
       sending = 0
       aim = null
     }, SLIDE_DURATION_MS)
@@ -120,8 +121,8 @@ function createCarouselMover(
   const placeAt = (where: PanelPlace) => {
     const place = window_.value
     if (!place) return
-    window.clearTimeout(snapTimer)
-    window.clearTimeout(sending)
+    win.clearTimeout(snapTimer)
+    win.clearTimeout(sending)
     sending = 0
     aim = null
     place.style.scrollBehavior = 'auto'
@@ -130,21 +131,21 @@ function createCarouselMover(
   }
 
   const snapTo = (where: PanelPlace) => {
-    window.clearTimeout(snapTimer)
-    snapTimer = window.setTimeout(() => slideTo(aim ?? where), SNAP_DELAY_MS)
+    win.clearTimeout(snapTimer)
+    snapTimer = win.setTimeout(() => slideTo(aim ?? where), SNAP_DELAY_MS)
   }
 
   const checkArrived = (scrollLeft: number) => {
     if (aim && Math.abs(scrollLeft - getStops()[aim]) <= 1) {
       aim = null
-      window.clearTimeout(sending)
+      win.clearTimeout(sending)
       sending = 0
     }
   }
 
   const clear = () => {
-    window.clearTimeout(sending)
-    window.clearTimeout(snapTimer)
+    win.clearTimeout(sending)
+    win.clearTimeout(snapTimer)
   }
 
   return { slideTo, placeAt, snapTo, checkArrived, clear, isAiming: () => aim !== null }
@@ -184,11 +185,11 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
 
   onMounted(() => {
     mover.placeAt(currentPlace.value)
-    window.addEventListener('resize', onResize)
+    win.addEventListener('resize', onResize)
   })
 
   onBeforeUnmount(() => {
-    window.removeEventListener('resize', onResize)
+    win.removeEventListener('resize', onResize)
     mover.clear()
   })
 

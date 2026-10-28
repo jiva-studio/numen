@@ -4,12 +4,8 @@
 import type { Result } from '@numen/plugin-sdk'
 import type { NoteBaseline, NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
-/** The prose a read gave back, and what the vault says came with it. */
-export interface NoteContents {
-  readonly body: string
-  /** The file the prose came out of, as the next write presents it again. */
-  readonly at?: string
-}
+import type { NoteContents } from '../../lib/note'
+export type { NoteContents }
 
 /**
  * What a read came back with: the contents, or the code of why there are none.

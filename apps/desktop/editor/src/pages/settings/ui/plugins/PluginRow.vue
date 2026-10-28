@@ -128,16 +128,16 @@ function onChooseMenuItem(id: string): void {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--numen-panel-gap, 0.75rem);
+  gap: var(--numen-panel-gap);
   min-block-size: 3.5rem;
   padding: 0.625rem 0.75rem;
-  border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   cursor: pointer;
   user-select: none;
   transition:
     background-color 0.15s ease,
     opacity 0.15s ease;
-  border-radius: var(--numen-radius-small, 4px);
+  border-radius: var(--numen-radius-small);
 }
 
 .plugin-row:last-child {
@@ -145,11 +145,11 @@ function onChooseMenuItem(id: string): void {
 }
 
 .plugin-row:hover {
-  background-color: var(--numen-surface-hover, rgba(125, 125, 125, 0.08));
+  background-color: var(--numen-surface-hover);
 }
 
 .plugin-row:focus-visible {
-  outline: 2px solid var(--numen-accent, #0066cc);
+  outline: 2px solid var(--numen-accent);
   outline-offset: -2px;
 }
 
@@ -181,24 +181,24 @@ function onChooseMenuItem(id: string): void {
 .plugin-row__category {
   color: var(--numen-hushed);
   font-weight: 400;
-  font-size: var(--numen-text-2, 0.95rem);
+  font-size: var(--numen-text-2);
 }
 
 .plugin-row__name {
   color: var(--numen-ink);
   font-weight: 500;
-  font-size: var(--numen-text-2, 0.95rem);
+  font-size: var(--numen-text-2);
 }
 
 .plugin-version-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.4375rem;
-  border-radius: var(--numen-radius-pill, 9999px);
+  border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
   color: var(--numen-accent);
-  font-size: var(--numen-text-1, 0.75rem);
+  font-size: var(--numen-text-1);
   font-weight: 500;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -219,19 +219,19 @@ function onChooseMenuItem(id: string): void {
 .plugin-row__trail {
   display: flex;
   align-items: center;
-  gap: var(--numen-panel-gap, 0.75rem);
+  gap: var(--numen-panel-gap);
   flex-shrink: 0;
 }
 
 .plugin-row__badge {
-  font-size: var(--numen-text-1, 0.75rem);
+  font-size: var(--numen-text-1);
   padding: 0.125rem 0.375rem;
-  border-radius: var(--numen-radius-small, 3px);
+  border-radius: var(--numen-radius-small);
 }
 
 .plugin-row__badge--stopped {
-  color: var(--numen-danger, #d14);
-  background-color: var(--numen-danger-soft, rgba(221, 17, 68, 0.1));
+  color: var(--numen-danger);
+  background-color: var(--numen-danger-soft);
 }
 
 .plugin-row__chevron {

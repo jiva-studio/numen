@@ -94,6 +94,7 @@ export default tseslint.config(
       // The one function that turns an element into the rectangle the pure
       // core reasons about.
       'src/features/workspace/lib/drop.ts',
+      'src/shared/lib/dom.ts',
     ],
     rules: {
       'no-restricted-globals': [

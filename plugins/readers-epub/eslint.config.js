@@ -52,7 +52,7 @@ export default [
   },
   {
     files: ['**/*.{ts,vue}'],
-    ignores: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**', '**/testing/**', '**/clock.ts', '**/drop.ts'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**', '**/testing/**', '**/clock.ts', '**/drop.ts', '**/dom.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

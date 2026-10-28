@@ -79,28 +79,28 @@ function onDelete() {
 .settings__secret {
   display: flex;
   align-items: center;
-  gap: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
   min-inline-size: 0;
   max-inline-size: 100%;
 }
 
 .settings__secret-input {
   box-sizing: border-box;
-  inline-size: var(--settings-choice, 16rem);
-  block-size: var(--numen-action-size, 2rem);
+  inline-size: var(--settings-choice);
+  block-size: var(--numen-action-size);
   flex: 1 1 auto;
   min-inline-size: 0;
   max-inline-size: 24rem;
   padding: 0.25rem 0.625rem;
-  background-color: var(--numen-field-bg, var(--numen-surface, transparent));
-  border: var(--numen-stroke, 1px) solid var(--numen-field-rule, var(--numen-rule));
-  border-radius: var(--numen-radius, 0.375rem);
+  background-color: var(--numen-field-bg);
+  border: var(--numen-stroke) solid var(--numen-field-rule);
+  border-radius: var(--numen-radius);
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
 }
 
 .settings__secret-input:focus {
-  outline: var(--numen-stroke, 1px) solid var(--numen-accent, currentColor);
+  outline: var(--numen-stroke) solid var(--numen-accent);
 }
 </style>

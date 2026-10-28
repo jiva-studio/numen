@@ -4,14 +4,15 @@
  * One width serves the whole document, so a page turned to is already drawn at
  * it, and it follows the row only once the row has stood still.
  */
+import { hasWindow, win } from '../../dom'
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 
 /** How many device pixels a CSS pixel is. One, where there is no window to ask. */
 const pixelRatio = (): number =>
-  typeof window === 'undefined' || !Number.isFinite(window.devicePixelRatio)
+  !hasWindow() || !Number.isFinite(win.devicePixelRatio)
     ? 1
-    : window.devicePixelRatio
+    : win.devicePixelRatio
 
 /** The width a page is asked for at, staged. */
 const roundUpWidth = (pixels: number): number => Math.ceil(pixels / WIDTH_STEP) * WIDTH_STEP

@@ -6,6 +6,7 @@
  * it. Both are relative to the window's own address, and the reader turns one
  * into a move within the book.
  */
+import { win } from '../../dom'
 import { isExternalLink } from '@numen/ui'
 
 /** Where a link inside a book points. */
@@ -25,7 +26,7 @@ export function parseBookLink(href: string): BookLink {
 
 /** Whether an address names somewhere the window is not served from. */
 export function isExternalHref(href: string): boolean {
-  const here = new URL(window.location.href)
+  const here = new URL(win.location.href)
   try {
     return isExternalLink(new URL(href, here), here)
   } catch {

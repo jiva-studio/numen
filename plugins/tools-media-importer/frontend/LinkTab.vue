@@ -5,7 +5,6 @@
  */
 import { onUnmounted } from 'vue'
 import LinkPlayer from './LinkPlayer.vue'
-import { links as servedLinks } from './api/wire'
 import { useLink } from './model/link'
 import type { Links } from './types'
 import { WORDS as words } from './words'
@@ -19,7 +18,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const tab = useLink(props.links ?? servedLinks, props.state?.path ?? props.path ?? '')
+const tab = useLink(props.links, props.state?.path ?? props.path ?? '')
 const { url, paragraphs, source, embedSource, error } = tab
 const { isCopyable, isTextDeleted, isWorking, isLoaded } = tab.status
 

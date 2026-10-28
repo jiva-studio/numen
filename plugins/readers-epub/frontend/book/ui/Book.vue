@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from '../../dom'
 /**
  * A book made for a screen, read: its text set in columns and turned a page at
  * a time.
@@ -48,7 +49,7 @@ const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
 
 /** The near edge of a box, which every place across the columns is read from. */
-const getEdge = (of: HTMLElement) => of.getBoundingClientRect().left
+const getEdge = (of: HTMLElement) => measureRect(of).left
 
 const links = createBookLinks(props, {
   reportMove: (pos) => emit('move', pos),

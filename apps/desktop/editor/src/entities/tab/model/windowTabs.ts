@@ -18,9 +18,9 @@ import {
 import type { Result } from '@numen/plugin-sdk'
 import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/shell'
 import type { Tab, Workspace } from '@numen/shell'
-import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
+import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from './kinds'
 import { createWorkspace, generateId } from '../lib/workspace'
-import { createUnavailableKind, isUnavailableKind, type UnavailableState } from '../lib/unavailable'
+import { createUnavailableKind, isUnavailableKind, type UnavailableState } from './unavailable'
 
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()

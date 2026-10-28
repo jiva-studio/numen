@@ -8,7 +8,6 @@ import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
 import { WORDS as words } from './words'
-import { books } from './api/wire'
 import { useBookReader } from './model/useBookReader'
 import { useBookTab, type BookTabState } from './model/useBookTab'
 import { useBookPlace } from './model/useBookPlace'
@@ -34,7 +33,7 @@ const targetPath =
 const isExistingState = isBookTabState(props.state)
 const internalState = isExistingState
   ? null
-  : useBookTab(useBookReader(books, targetPath, { words }))
+  : useBookTab(useBookReader(targetPath, { words }))
 const tabState = isExistingState ? props.state! : internalState!
 
 /* --------------------------------- State ---------------------------------- */

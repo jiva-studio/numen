@@ -60,7 +60,7 @@ defineExpose({
 .autosize {
   display: grid;
   min-block-size: calc(
-    var(--autosize-lines, 1) * var(--numen-line-height) * 1em + 2 * var(--box-air, 0.5rem)
+    var(--autosize-lines) * var(--numen-line-height) * 1em + 2 * var(--box-air)
   );
 }
 
@@ -78,7 +78,7 @@ defineExpose({
 .autosize__box,
 .autosize::after {
   grid-area: 1 / 1;
-  padding: var(--box-air, 0.5rem) var(--box-pad-inline, var(--numen-box-air));
+  padding: var(--box-air) var(--box-pad-inline);
   border: none;
   background: none;
   color: var(--numen-ink);

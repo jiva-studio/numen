@@ -12,6 +12,7 @@
  * its own.
  */
 import { computed, useId, useTemplateRef } from 'vue'
+import { getUserAgent } from '@/shared/lib/dom'
 import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
 import { PaletteField } from './palette-field'
@@ -37,7 +38,7 @@ const props = withDefaults(defineProps<PaletteProps>(), {
   to: 'body',
   name: 'Palette',
   actionWords: () => ACTION_WORDS,
-  actionKey: () => commandKeyChord(navigator.userAgent),
+  actionKey: () => commandKeyChord(getUserAgent()),
 })
 
 const searchQuery = defineModel<string>({ default: '' })

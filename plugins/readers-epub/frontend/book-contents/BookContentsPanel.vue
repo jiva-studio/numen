@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { win } from '../dom'
 /**
  * The contents of the book, standing over the page it is read on. A pointer
  * landing outside it and the Escape key both put it away.
@@ -29,8 +30,8 @@ watch(
   () => props.isOpen,
   (isOpen) => {
     if (!isOpen) return cleanupWindowListeners()
-    window.addEventListener('keydown', onWindowKey, true)
-    detach = () => window.removeEventListener('keydown', onWindowKey, true)
+    win.addEventListener('keydown', onWindowKey, true)
+    detach = () => win.removeEventListener('keydown', onWindowKey, true)
   },
 )
 

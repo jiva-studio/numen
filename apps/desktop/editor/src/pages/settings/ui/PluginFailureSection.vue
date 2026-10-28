@@ -71,13 +71,13 @@ function onDisable(pluginId: string) {
 
 <style scoped>
 .settings__group {
-  max-inline-size: var(--settings-measure, 54rem);
-  margin-block-end: var(--settings-apart, 1.75rem);
+  max-inline-size: var(--settings-measure);
+  margin-block-end: var(--settings-apart);
   margin-inline: auto;
 }
 
 .settings__heading {
-  margin: 0 0 var(--settings-near, 0.375rem);
+  margin: 0 0 var(--settings-near);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   font-weight: 600;
@@ -90,11 +90,11 @@ function onDisable(pluginId: string) {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--settings-near, 0.375rem);
-  margin-block-end: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
+  margin-block-end: var(--settings-near);
   padding: 0.5rem 0.75rem;
-  border: var(--numen-stroke, 1px) solid var(--numen-alarm, currentColor);
-  border-radius: var(--numen-radius-small, 4px);
+  border: var(--numen-stroke) solid var(--numen-alarm);
+  border-radius: var(--numen-radius-small);
   color: var(--numen-ink);
 }
 
@@ -119,6 +119,6 @@ function onDisable(pluginId: string) {
 
 .settings__stopped-answers {
   display: flex;
-  gap: var(--settings-near, 0.375rem);
+  gap: var(--settings-near);
 }
 </style>

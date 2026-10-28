@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { measureRect } from '../../dom'
 /* --------------------------------- Props ---------------------------------- */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
@@ -50,7 +51,7 @@ function onToggle() {
     isOpen.value = false
     return
   }
-  const rect = trigger.value?.getBoundingClientRect()
+  const rect = measureRect(trigger.value)
   if (rect) {
     menuPosition.value = { x: rect.left, y: rect.bottom + 4 }
   }

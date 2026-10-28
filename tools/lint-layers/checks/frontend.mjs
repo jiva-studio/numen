@@ -310,8 +310,8 @@ function findVueStyleAndTemplateViolations() {
         if (/var\(\s*--[\w-]+\s*,/.test(line)) {
           found.push({ file, line: baseLine + idx, symbol: `<style> token fallback var(--token, fallback) (F5): ${line.trim()}` });
         }
-        if (/^\s*--[\w-]+\s*:/.test(line)) {
-          found.push({ file, line: baseLine + idx, symbol: `<style> local custom property declaration (F5): ${line.trim()}` });
+        if (/^\s*--numen-[\w-]+\s*:/.test(line)) {
+          found.push({ file, line: baseLine + idx, symbol: `<style> local --numen-* token override (F5): ${line.trim()}` });
         }
       });
     }

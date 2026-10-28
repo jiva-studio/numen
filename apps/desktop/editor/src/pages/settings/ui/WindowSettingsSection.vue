@@ -126,13 +126,13 @@ function onTextScaleChange(size: number | null) {
 <style scoped>
 .settings__group {
   inline-size: 100%;
-  max-inline-size: var(--settings-measure, 54rem);
-  margin-block-end: var(--settings-apart, 1.75rem);
+  max-inline-size: var(--settings-measure);
+  margin-block-end: var(--settings-apart);
   margin-inline: auto;
 }
 
 .settings__heading {
-  margin: 0 0 var(--settings-near, 0.375rem);
+  margin: 0 0 var(--settings-near);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   font-weight: 600;
@@ -141,11 +141,11 @@ function onTextScaleChange(size: number | null) {
 }
 
 .settings__number {
-  inline-size: var(--settings-value, 6rem);
+  inline-size: var(--settings-value);
   text-align: end;
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 16rem);
+  inline-size: var(--settings-choice);
 }
 </style>

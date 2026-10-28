@@ -5,7 +5,7 @@
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { CreateResult } from '@/entities/file/@x/tab'
+import type { CreateResult } from '@/shared/model/fileTypes'
 import type { FileOpeners } from './openers'
 
 /** The kind of tab a file is created as. */

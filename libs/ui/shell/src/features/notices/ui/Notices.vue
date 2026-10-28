@@ -9,6 +9,7 @@
  * It takes no room from what it covers, and what each card says is the caller's.
  */
 import { useTemplateRef } from 'vue'
+import { getNow, isDocumentHidden } from '@/shared/lib/dom'
 import { LiveRegions } from './live-regions'
 import NoticeCard from './NoticeCard.vue'
 import { CARD_DELAY } from '../lib/duration'
@@ -25,8 +26,8 @@ const props = withDefaults(defineProps<NoticesProps>(), {
   more: 'more',
   wait: CARD_DELAY,
   room: ROOM,
-  clock: () => Date.now(),
-  hidden: () => document.hidden,
+  clock: () => getNow(),
+  hidden: () => isDocumentHidden(),
 })
 
 /* --------------------------------- Events --------------------------------- */

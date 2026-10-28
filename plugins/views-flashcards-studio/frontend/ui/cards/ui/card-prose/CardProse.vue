@@ -41,7 +41,7 @@ const onClick = (press: MouseEvent) => {
 
 <style scoped>
 .prose {
-  font-size: var(--numen-prose-size);
+  font-size: var(--local-prose-size);
   user-select: text;
   -webkit-user-select: text;
 

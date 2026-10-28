@@ -4,6 +4,7 @@
  * Apart from the template because it is asked for when a vault is opened and
  * again whenever that vault moves, and what is held between the two is a rule.
  */
+import { getCurrentDate } from '../../../../dom'
 import { ref } from 'vue'
 import { getStretch as getHeatmapStretch } from '../../../../ui/heatmap'
 import type { Tally as HeatmapTally } from '../../../../ui/heatmap'
@@ -51,7 +52,7 @@ export interface ReviewDaysDeps {
 }
 
 export function useReviewDays(deps: ReviewDaysDeps) {
-  const now = deps.now ?? (() => new Date())
+  const now = deps.now ?? (() => getCurrentDate())
   /** How much was answered on each day, by the day it was answered on. */
   const days = ref<ReadonlyMap<string, HeatmapTally>>(new Map())
   /** How much falls on each day still to come, by the day it falls on. */

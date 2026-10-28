@@ -6,6 +6,7 @@
  * `turns.ts`. What is here is the settling that joins them — the text set
  * again, with one offset kept in front — and what asks for it.
  */
+import { doc } from '../../dom'
 import { onMounted, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
@@ -76,7 +77,7 @@ function watchBookLayout(
 
   onMounted(() => {
     context.settle(props.at)
-    void document.fonts?.ready.then(() => context.settle(context.getKeptOffset()))
+    void doc.fonts?.ready.then(() => context.settle(context.getKeptOffset()))
   })
 }
 

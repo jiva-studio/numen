@@ -102,10 +102,10 @@ function onClose() {
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius-panel, 0.75rem);
+  border-radius: var(--numen-radius-panel);
   box-shadow:
-    0 10px 25px -5px rgba(0, 0, 0, 0.2),
-    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    0 10px 25px -5px var(--numen-backdrop),
+    0 8px 10px -6px var(--numen-backdrop);
   overflow: hidden;
   z-index: 50;
 }
@@ -136,7 +136,7 @@ function onClose() {
   border: none;
   background: transparent;
   color: var(--numen-hushed);
-  border-radius: var(--numen-radius-tight, 0.1875rem);
+  border-radius: var(--numen-radius-tight);
   cursor: pointer;
 }
 

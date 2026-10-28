@@ -15,34 +15,8 @@ import {
 } from '@numen/plugin-sdk'
 import { theme } from '@/shared/clients'
 
-/** Which half of a `light-dark()` pair every token is read as. */
-export type Mode = 'system' | 'light' | 'dark'
-
-/** One theme as the list refers to it. */
-export interface Theme {
-  /** The origin and the filename, which is how the theme is asked for again. */
-  readonly name: string
-  /** What the file is called, without the origin. */
-  readonly title: string
-  /** Whether it ships inside the application. Every other theme is a file of the person's. */
-  readonly isBuiltIn: boolean
-  /** It declares light and dark itself, so the mode has nothing left to choose. */
-  readonly isPinned: boolean
-}
-
-/**
- * One thing said of each of the two sizes: how large the interface is drawn,
- * and how large the text a person reads is set.
- */
-export interface Scales<T> {
-  readonly interfaceScale: T
-  readonly textScale: T
-}
-
-export interface Bounds {
-  readonly min: number
-  readonly max: number
-}
+import type { Bounds, Mode, Scales, Theme } from '../lib/appearance'
+export type { Bounds, Mode, Scales, Theme }
 
 /** The two multipliers the window is drawn at. One is as designed. */
 export type Sizes = Scales<number>

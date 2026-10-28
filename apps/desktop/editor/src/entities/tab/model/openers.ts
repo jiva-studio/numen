@@ -7,7 +7,7 @@
  */
 import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
-import type { FileKind, NoteType } from '@/entities/file/@x/tab'
+import type { FileKind, NoteType } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/textRange'
 
 /** What a file the window opens is opened as: which type of note it is, or the kind a plugin registers. */
@@ -39,8 +39,8 @@ export type FileOpener = (
   options?: FilePlacement | OpenPlacement,
 ) => void
 
-/** A file put in front of the person in its reader, at the place the selector names. */
-export type SourceReader = (path: string, selector: Selector | null) => void
+import type { SourceReader } from '@/shared/model/tabKinds'
+export type { SourceReader }
 
 /** What the window asks the vault about the file it is opening. */
 export interface FileOpenerDeps {
