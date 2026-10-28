@@ -159,10 +159,11 @@ interface SettingsTabConfigDeps {
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
+  scheduleRefresh: () => void
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, rest, secrets, retry, core } = deps
+  const { appearance, sync, rest, secrets, retry, core, scheduleRefresh } = deps
   return {
     themes: appearance.list,
     applied: appearance.applied,
@@ -177,7 +178,11 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     }),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
-    write: (content: readonly SettingEdit[]) => rest.writeSettings(content),
+    write: (content: readonly SettingEdit[]) => {
+      const promise = rest.writeSettings(content)
+      void promise.then(scheduleRefresh)
+      return promise
+    },
     writeSecret: (pluginId: string, name: string, key: string) =>
       secrets.writeSecret(pluginId, name, key),
     deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
@@ -185,7 +190,10 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {
         const answer = await core.choosePluginPath(pluginId, key)
-        if (answer.isChosen) await rest.start()
+        if (answer.isChosen) {
+          await rest.start()
+          scheduleRefresh()
+        }
         return answer.problem
       } catch (caughtError) {
         return formatErrorMessage(caughtError)
@@ -245,21 +253,45 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
+  const refreshTimers: ReturnType<typeof setTimeout>[] = []
+
+  const clearRefreshTimers = () => {
+    while (refreshTimers.length > 0) {
+      clearTimeout(refreshTimers.pop())
+    }
+  }
+
+  const scheduleRefresh = () => {
+    clearRefreshTimers()
+    for (const delayMs of [1500, 3500, 7000]) {
+      refreshTimers.push(
+        setTimeout(() => {
+          void rest.start()
+        }, delayMs),
+      )
+    }
+  }
+
+  const refreshAndSchedule = async () => {
+    await rest.start()
+    scheduleRefresh()
+  }
+
   const secrets = createSecretStore(core, {
     words,
     notify: log.getWriter('keys'),
-    refresh: rest.start,
+    refresh: refreshAndSchedule,
   })
   const retry = createPluginRetry(core, {
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
-    refresh: rest.start,
+    refresh: refreshAndSchedule,
     getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, core }),
+    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, core, scheduleRefresh }),
   )
 
   watch(appearance.sized, () => onSizeChanged())
@@ -273,9 +305,11 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     void sync.start()
     // The plugins the window starts are named by what this read answers.
     await rest.start()
+    scheduleRefresh()
   }
 
   const close = () => {
+    clearRefreshTimers()
     appearance.close()
   }
 

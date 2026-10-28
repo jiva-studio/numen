@@ -137,6 +137,7 @@ type modelList struct {
 type modelCache struct {
 	mu       sync.Mutex
 	lists    map[string]modelList
+	failed   map[string]bool
 	inFlight map[string]bool
 	isAsync  bool
 }
@@ -151,6 +152,7 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 		return one.models, nil
 	}
 	if c.isAsync {
+		hasFailed := c.failed[key]
 		if !c.inFlight[key] {
 			if c.inFlight == nil {
 				c.inFlight = make(map[string]bool)
@@ -164,7 +166,10 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 		if found {
 			return one.models, nil
 		}
-		return fallbackModels, nil
+		if hasFailed {
+			return fallbackModels, nil
+		}
+		return nil, nil
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, key, command, env)
@@ -181,15 +186,20 @@ func (c *modelCache) fetchInBackground(key string, command, env []string) {
 
 func (c *modelCache) fetchAndStore(ctx context.Context, key string, command, env []string) ([]claudeModel, error) {
 	models, err := fetchModels(ctx, command, env)
-	if err != nil {
-		return nil, err
-	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if err != nil {
+		if c.failed == nil {
+			c.failed = make(map[string]bool)
+		}
+		c.failed[key] = true
+		return nil, err
+	}
 	if c.lists == nil {
 		c.lists = map[string]modelList{}
 	}
 	c.lists[key] = modelList{models: models, fetchedAt: time.Now()}
+	delete(c.failed, key)
 	return models, nil
 }
 

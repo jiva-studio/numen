@@ -13,11 +13,17 @@ import (
 func TestTheModelsAreTheLinesThatHoldANameAndATitle(t *testing.T) {
 	got := parseAntigravityModels([]byte(
 		"Fetching available models...\n" +
+			"\r⠋ Fetching available models...\rgemini-4-argon-high     Gemini 4 Argon (High)\n" +
 			"m-high\tModel (High)\n" +
 			"bare\t\n" +
 			"\tno name\n" +
 			"m-low\tModel (Low)\n"))
-	want := []antigravityModel{{"m-high", "Model (High)"}, {"bare", "bare"}, {"m-low", "Model (Low)"}}
+	want := []antigravityModel{
+		{"gemini-4-argon-high", "Gemini 4 Argon (High)"},
+		{"m-high", "Model (High)"},
+		{"bare", "bare"},
+		{"m-low", "Model (Low)"},
+	}
 	if !slices.Equal(got, want) {
 		t.Errorf("the models are %v, want %v", got, want)
 	}

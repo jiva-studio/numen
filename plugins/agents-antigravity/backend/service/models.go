@@ -113,8 +113,7 @@ func parseAntigravityModels(output []byte) []antigravityModel {
 	var models []antigravityModel
 	lines := bufio.NewScanner(bytes.NewReader(output))
 	for lines.Scan() {
-		name, title, found := strings.Cut(lines.Text(), "\t")
-		name, title = strings.TrimSpace(name), strings.TrimSpace(title)
+		name, title, found := cutAntigravityModelLine(lines.Text())
 		if !found || name == "" {
 			continue
 		}
@@ -124,4 +123,20 @@ func parseAntigravityModels(output []byte) []antigravityModel {
 		models = append(models, antigravityModel{Name: name, Title: title})
 	}
 	return models
+}
+
+func cutAntigravityModelLine(line string) (string, string, bool) {
+	if idx := strings.LastIndexByte(line, '\r'); idx >= 0 {
+		line = line[idx+1:]
+	}
+	if name, title, found := strings.Cut(line, "\t"); found {
+		return strings.TrimSpace(name), strings.TrimSpace(title), true
+	}
+	if name, title, found := strings.Cut(line, "  "); found {
+		name = strings.TrimSpace(name)
+		if name != "" && !strings.Contains(name, " ") {
+			return name, strings.TrimSpace(title), true
+		}
+	}
+	return "", "", false
 }

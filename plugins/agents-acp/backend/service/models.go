@@ -11,7 +11,7 @@ import (
 )
 
 // acpListLimit is how long an agent has to open the session its models are read from.
-const acpListLimit = 3 * time.Second
+const acpListLimit = 15 * time.Second
 
 // acpFailureBackoff is how long an agent that failed to list is left alone.
 const acpFailureBackoff = 30 * time.Second
