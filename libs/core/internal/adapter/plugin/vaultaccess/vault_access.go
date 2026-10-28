@@ -154,7 +154,7 @@ func (a Vault) Write(
 	}
 	pos, err := writer.Write(ctx, path, content, baseline)
 	if err == nil {
-		a.notifyFileWritten()
+		_ = a.Scan(ctx, []string{path})
 	}
 	return pos, err
 }
@@ -173,7 +173,7 @@ func (a Vault) Create(ctx context.Context, path string, content []byte) error {
 	if err := writer.Create(ctx, path, content); err != nil {
 		return err
 	}
-	a.notifyFileWritten()
+	_ = a.Scan(ctx, []string{path})
 	return nil
 }
 
@@ -187,10 +187,13 @@ func (a Vault) Lock(ctx context.Context) (func(), error) {
 
 func (a Vault) Scan(ctx context.Context, paths []string) error {
 	v, err := a.open()
-	if err != nil || a.Index == nil {
+	if err != nil {
 		return err
 	}
 	a.notifyFileWritten()
+	if a.Index == nil {
+		return nil
+	}
 	return a.Index(ctx, v, paths)
 }
 

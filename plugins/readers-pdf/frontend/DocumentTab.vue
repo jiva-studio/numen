@@ -72,9 +72,19 @@ const readerTab = computed(() => props.state as Partial<ReaderTabState> | undefi
 watch(
   () => readerTab.value?.selector,
   (selector: Selector | null | undefined) => {
-    if (activeState.value && typeof selector?.page === 'number') {
-      void activeState.value.goToPage(selector.page)
+    if (!activeState.value || typeof selector?.page !== 'number') return
+    const page = Math.max(0, selector.page - 1)
+    if (Array.isArray(selector.boxes) && selector.boxes.length > 0) {
+      const rects = selector.boxes.map(([minX, minY, maxX, maxY]) => ({
+        minX,
+        minY,
+        maxX,
+        maxY,
+      }))
+      void activeState.value.applyHighlights([[{ page, rects }]])
+      return
     }
+    void activeState.value.goToPage(page)
   },
   { immediate: true },
 )
@@ -82,7 +92,9 @@ watch(
 watch(
   () => activeState.value?.pageNumber.value,
   (page) => {
-    if (typeof page === 'number' && page > 0) readerTab.value?.savePlace?.({ page })
+    if (typeof page === 'number' && !activeState.value?.isLoading.value) {
+      readerTab.value?.savePlace?.({ page: page + 1 })
+    }
   },
 )
 

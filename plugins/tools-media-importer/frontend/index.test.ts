@@ -15,6 +15,11 @@ describe('the media importer frontend', () => {
     expect(kind?.getTitle?.(kind.open?.('links/Tidal mills.md', 'tab') as never)).toBe(
       'Tidal mills',
     )
+    expect(kind?.getTarget?.({ path: 'links/Tidal mills.md' })).toEqual({
+      path: 'links/Tidal mills.md',
+      file: 'links/Tidal mills.md',
+      title: 'Tidal mills',
+    })
   })
 
   it('watches the work of its own tasks through the task host', () => {

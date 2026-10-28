@@ -59,7 +59,7 @@ defineExpose({
     :path="props.path"
     :span="props.documentSpan"
     :book="props.bookSpan"
-    :offset="props.offset"
+    :at="props.offset"
     :highlights="props.highlights"
     :other-highlights="props.otherHighlights"
     :chapter="props.chapter"

@@ -36,7 +36,8 @@ function createPluginSettingsAccessor(settingsHolder: {
   const getSetting = (pluginId: string, key: string): unknown => {
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
-    const value = rest.getSetting?.(['plugins', pluginId, key])
+    const read = rest.getCommittedSetting ?? rest.getSetting
+    const value = read?.(['plugins', pluginId, key])
     if (value !== undefined) return value
     return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
   }

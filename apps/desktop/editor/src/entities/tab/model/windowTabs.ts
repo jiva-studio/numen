@@ -296,7 +296,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
     ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind: one, state })
   }
 
-  const createTab = async (kind: string, targetPath = ''): Promise<string> => {
+  const createTabSync = (kind: string, targetPath: string): string => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind)
     const id = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
     if (ctx.open.value.has(id)) return id
@@ -307,24 +307,25 @@ function createTabOpeners(ctx: TabOpenerContext) {
     return id
   }
 
+  const createTab = async (kind: string, targetPath = ''): Promise<string> =>
+    createTabSync(kind, targetPath)
+
   const show = (id: string) => {
     ctx.layout.value = openTab(ctx.layout.value, id)
   }
 
   const openTabOfKind = async (kind: string, target = ''): Promise<string> => {
-    const id = await createTab(kind, target)
-    if (id) show(id)
+    const id = createTabSync(kind, target)
+    show(id)
     return id
   }
 
   const openTabBesideOfKind = async (kind: string, target = ''): Promise<string> => {
-    const id = await createTab(kind, target)
-    if (id) {
-      ctx.layout.value = openTabBeside(ctx.layout.value, id, {
-        side: 'right',
-        createId: generatePaneId,
-      })
-    }
+    const id = createTabSync(kind, target)
+    ctx.layout.value = openTabBeside(ctx.layout.value, id, {
+      side: 'right',
+      createId: generatePaneId,
+    })
     return id
   }
 

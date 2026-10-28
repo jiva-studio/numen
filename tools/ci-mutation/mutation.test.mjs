@@ -92,7 +92,7 @@ test('the tree yields the core module and the components package, with what thei
   assert.equal(core?.kind, 'go')
   assert.ok(core.shards > 1)
   assert.equal(ui?.kind, 'ts')
-  assert.ok(ui.testdata.includes('libs/protocol/testdata'))
+  assert.deepEqual(ui.testdata, [])
   assert.equal(new Set(found.map((one) => one.name)).size, found.length)
 })
 

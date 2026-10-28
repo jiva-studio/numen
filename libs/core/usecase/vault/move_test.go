@@ -195,7 +195,7 @@ func walkSources(t *testing.T, f filing, path string) []string {
 	}
 	var out []string
 	if err := reader.WalkFiles(t.Context(), func(ref domain.FileStat) error {
-		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
+		if ref.Kind == domain.KindNote && (ref.Path == path || strings.HasPrefix(ref.Path, path+"/")) {
 			out = append(out, ref.Path)
 		}
 		return nil

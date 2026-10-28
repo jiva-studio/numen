@@ -45,29 +45,37 @@ func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	}
 	version := domain.TextVersion{Path: path, PluginID: "test.transcriber", Key: "k", Kind: "transcript"}
 	text := domain.NewVersionText(version, segments)
-	second := len(segments[0].Text)
+	whole := segments[0].Text + segments[1].Text
 	if err := c.db.Sources().SaveExtraction(ctx, c.first.ID, domain.SourceChunks{
 		Source: domain.Source{
 			FileStat: domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1},
 			Hash:     "h", Recipe: "r", Producer: string(version.GetID()),
 		},
 		Chunks: []domain.Chunk{
-			{Start: 0, Length: second, Text: segments[0].Text},
-			{Start: second, Length: len(segments[1].Text), Text: segments[1].Text},
+			{Start: 0, Length: len(whole), Text: whole, Opens: []string{"zzqqxx"}},
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
+	searches := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, versionTexts{text: text}, nil, 0, nil)
 
-	found, err := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, versionTexts{text: text}, nil, 0, nil).
-		Execute(ctx, c.first, "kingfisher", search.Parameters{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(found) != 1 || found[0].Source != path {
-		t.Fatalf("found %+v, want the lecture", found)
-	}
-	if found[0].Selector != `{"t":[2,5]}` {
-		t.Fatalf("the passage carries selector %q, want the second segment's", found[0].Selector)
+	for _, tc := range []struct {
+		query string
+		want  domain.Selector
+	}{
+		{query: "kingfisher", want: `{"t":[2,5]}`},
+		{query: "food river", want: `{"t":[0,2]}`},
+		{query: "zzqqxx", want: `{"t":[0,2]}`},
+	} {
+		found, err := searches.Execute(ctx, c.first, tc.query, search.Parameters{Kinds: []domain.SourceKind{domain.KindFile}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(found) != 1 || found[0].Source != path {
+			t.Fatalf("%q found %+v, want the lecture", tc.query, found)
+		}
+		if found[0].Selector != tc.want {
+			t.Fatalf("%q carries selector %q, want %q", tc.query, found[0].Selector, tc.want)
+		}
 	}
 }

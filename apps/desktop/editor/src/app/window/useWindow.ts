@@ -59,7 +59,9 @@ function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
     declaredCommands: useDeclaredCommands(),
-    fileMenuCommands: useFileMenuCommands(),
+    fileMenuCommands: useFileMenuCommands({
+      onRun: (file) => deps.pluginHost?.notifyVaultChange({ paths: [file] }),
+    }),
     core,
     words,
     log: deps.log,

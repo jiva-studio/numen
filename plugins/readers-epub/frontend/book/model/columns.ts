@@ -18,6 +18,7 @@ import {
   columnHeight,
   columnWidth,
   countColumns,
+  countFilledColumns,
   countSpreads,
   type Flow,
 } from '../lib/spread'
@@ -121,8 +122,13 @@ export function useBookColumns(options: BookColumnsOptions) {
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
     text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
-    contentWidth.value = text.scrollWidth
     gather()
+    const isSingleColumn =
+      flow.value.columns === 1 &&
+      text.clientWidth > 0 &&
+      text.scrollWidth <= text.clientWidth &&
+      countFilledColumns(marks.value, flow.value) === 1
+    contentWidth.value = isSingleColumn ? box.clientWidth : text.scrollWidth
   }
 
   const state = {

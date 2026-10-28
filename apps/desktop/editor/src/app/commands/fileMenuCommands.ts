@@ -37,6 +37,7 @@ export function createFileMenuPaletteCommands(
 export interface FileMenuCommandsDeps {
   readonly get?: typeof getFileMenu
   readonly run?: typeof runFileMenuEntry
+  readonly onRun?: (file: string) => void
 }
 
 /**
@@ -59,6 +60,7 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
       registerCommand(getFileMenuId(entry), async (invocation, on) => {
         try {
           await run(invocation.file, entry)
+          deps.onRun?.(invocation.file)
           on.writeMessage(WORDS.textAsked(entry.pluginName), 'info')
         } catch (error) {
           on.writeMessage(formatErrorMessage(error), 'error')

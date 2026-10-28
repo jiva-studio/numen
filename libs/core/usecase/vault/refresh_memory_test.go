@@ -402,8 +402,7 @@ func TestAFolderThatWentConsumesItsBooksAndRecordingsOutOfTheIndexByKind(t *test
 	execute(t, w.refresh(), "Gone")
 
 	want := []sourceRemoval{
-		{kind: domain.KindFile, paths: []string{"Gone/b.epub"}},
-		{kind: domain.KindFile, paths: []string{"Gone/c.mp3"}},
+		{kind: domain.KindFile, paths: []string{"Gone/c.mp3", "Gone/b.epub"}},
 	}
 	if fmt.Sprint(w.removedSources) != fmt.Sprint(want) {
 		t.Errorf("removed %v, want %v", w.removedSources, want)

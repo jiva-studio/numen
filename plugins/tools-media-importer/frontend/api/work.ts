@@ -51,5 +51,12 @@ export function createWorkWatcher(watchTasks: TaskSource) {
         }
       }
     },
+    refresh(paths: readonly string[]): void {
+      for (const one of listeners.values()) {
+        if ((paths.length === 0 || paths.includes(one.path)) && !working.has(one.path)) {
+          one.onChange(false)
+        }
+      }
+    },
   }
 }

@@ -191,7 +191,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
     await shape
     const offset = await books.findOffset(path, cfi)
     if (offset === null || !isOpen) return false
-    await nav.goToOffset(offset)
+    await marks.focusSpans({ start: offset, end: offset })
     return true
   }
 

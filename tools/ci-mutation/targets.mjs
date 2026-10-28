@@ -146,7 +146,10 @@ const findTsTargets = (tracked) => {
     .map((at) => {
       const sources = tracked.filter((path) => isUnder(path, `${at}/src`) && isMutatedSource(path))
       const tests = tracked
-        .filter((path) => isUnder(path, at) && /\.test\.ts$/.test(path))
+        .filter(
+          (path) =>
+            isUnder(path, at) && (/\.test\.ts$/.test(path) || path === `${at}/vitest.config.ts`),
+        )
         .map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
       return { kind: 'ts', at, lines: countLines(sources), testdata: findTestdata(at, tests) }
     })

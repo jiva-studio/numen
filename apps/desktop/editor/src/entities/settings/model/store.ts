@@ -88,6 +88,12 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     return value !== undefined ? value : getPluginDefault(plugins.value, path)
   }
 
+  /** Reads a setting from the last committed read, without unconfirmed edits. */
+  const getCommittedSetting = (path: readonly string[]): unknown => {
+    const value = getSettingAt(target.value, path)
+    return value !== undefined ? value : getPluginDefault(plugins.value, path)
+  }
+
   /** The models one setting can be set to, in the order they are offered. */
   const getModelsAt = (path: readonly string[]): readonly Model[] =>
     models.value.filter((one) => one.namedAt.join('.') === path.join('.'))
@@ -120,6 +126,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     plugins,
     start,
     getSetting,
+    getCommittedSetting,
     getModelsAt,
     writeSettings,
     writeSetting,

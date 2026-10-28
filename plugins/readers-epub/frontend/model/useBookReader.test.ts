@@ -197,6 +197,7 @@ describe('a book opened', () => {
     expect(await readItem.goToCfi('epubcfi(/8/4!/4/4/1:600)')).toBe(true)
 
     expect(readItem.offset.value).toBe(3_600)
+    expect(readItem.highlights.value).toStrictEqual([{ start: 3_600, end: 3_600 }])
     expect(placeCalls).toStrictEqual(['offset library/Mahabharata.epub epubcfi(/8/4!/4/4/1:600)'])
   })
 

@@ -155,7 +155,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("got %v", err)
 	}
-	if !strings.Contains(err.Error(), "books") {
+	if !strings.Contains(err.Error(), "file texts") {
 		t.Errorf("the pass that met the limit is not named in %v", err)
 	}
 	if strings.Contains(err.Error(), "embedding") {

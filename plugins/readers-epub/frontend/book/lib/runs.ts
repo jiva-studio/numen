@@ -111,8 +111,10 @@ const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => 
   const opens = findRun(runs, span.start)
   const closes = findRun(runs, span.end)
   if (!opens || !closes) return undefined
+  const endBytes =
+    span.end > span.start ? span.end - closes.at : countBytes(closes.element.textContent ?? '')
   const from = getPlaceInRun(opens.element, span.start - opens.at)
-  const to = getPlaceInRun(closes.element, span.end - closes.at)
+  const to = getPlaceInRun(closes.element, endBytes)
   if (!from || !to) return undefined
   const range = document.createRange()
   range.setStart(from.node, from.offset)

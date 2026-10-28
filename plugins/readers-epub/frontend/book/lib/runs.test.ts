@@ -104,6 +104,14 @@ describe('a stretch of the book marked at its current position', () => {
     expect(range?.toString()).toBe('Один')
   })
 
+  it('covers the whole run when start and end name the same byte offset', () => {
+    const paper = createMarkupPaper(TWO)
+
+    const [range] = rangesOver(getRuns(paper), [{ start: 8, end: 8 }])
+
+    expect(range?.toString()).toBe('два')
+  })
+
   it('opens and closes inside the runs, and not at their edges', () => {
     // Two bytes a letter, so four bytes into the first run is two letters in,
     // and the stretch closes one letter into the second.

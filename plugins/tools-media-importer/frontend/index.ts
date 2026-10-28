@@ -5,7 +5,7 @@
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
 import LinkTab from './LinkTab.vue'
 import './styles.css'
-import { createLinks, setTaskHost } from './api/wire'
+import { createLinks, refreshLinks, setTaskHost } from './api/wire'
 import { getUrls, URI_LIST } from './lib/uriList'
 import type { Outcome } from './types'
 import { WORDS as words } from './words'
@@ -28,6 +28,7 @@ export type CreateLinks = (
 
 export const activate = (context: PluginContext, create: CreateLinks = createLinks): void => {
   setTaskHost(context.tasks)
+  context.onVaultChange?.((event) => refreshLinks(event.paths ?? []))
   context.registerDropHandler?.({
     types: [URI_LIST],
     drop: async (folder, data) => {
@@ -44,7 +45,7 @@ export const activate = (context: PluginContext, create: CreateLinks = createLin
     open: (path) => ({ path }),
     getTitle: (state) => getTitle(state.path),
     identity: (path) => path,
-    getTarget: (state) => ({ path: state.path, title: getTitle(state.path) }),
+    getTarget: (state) => ({ path: state.path, file: state.path, title: getTitle(state.path) }),
     getOpenTab: (state) => ({ path: state.path }),
   })
 }

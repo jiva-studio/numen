@@ -500,6 +500,8 @@ describe('createMediaTypeProbe', () => {
     expect(createMediaTypeProbe()('audio/mpeg')).toBe(true)
     expect(create).toHaveBeenCalledWith('audio')
     expect(canPlayType).toHaveBeenCalledWith('audio/mpeg')
+    expect(createMediaTypeProbe()('audio/vnd.wave')).toBe(true)
+    expect(canPlayType).toHaveBeenCalledWith('audio/wav')
   })
 
   it('says no to a type the audio element answers with nothing for', () => {

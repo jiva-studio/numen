@@ -137,6 +137,54 @@ describe('the settings and notices a plugin is given', () => {
     expect(ctx.getSetting('missing')).toBeUndefined()
   })
 
+  it('prefers the committed setting over an unconfirmed pending write', () => {
+    const rest = {
+      getCommittedSetting: (path: readonly string[]) => (path[2] === 'enabled' ? false : undefined),
+      getSetting: () => true,
+    }
+    const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
+    const ctx = pluginHost.createContext('md.numen.a')
+
+    expect(ctx.getSetting('enabled')).toBe(false)
+  })
+
+  it('registers the extensions declared for a reader in the plugin settings', () => {
+    const registerExtensionReader = vi.fn(() => () => undefined)
+    const rest = {
+      plugins: ref([
+        {
+          id: 'md.numen.other',
+          readers: [{ id: 'document', extensions: ['.other'] }],
+        },
+        {
+          id: 'md.numen.pdf',
+          readers: [
+            { id: 'book', extensions: ['.epub'] },
+            { id: 'document', extensions: ['.pdf'] },
+          ],
+        },
+      ]),
+    }
+    const { pluginHost } = createWith({
+      tabOpeners: {
+        registerExtensionReader,
+        registerEditor: vi.fn(() => () => undefined),
+      } as never,
+      settingsHolder: { current: { rest } as never },
+    })
+
+    pluginHost
+      .createContext('md.numen.pdf')
+      .registerReader({ id: 'document', title: 'Document', component: null })
+
+    expect(registerExtensionReader).toHaveBeenCalledTimes(1)
+    expect(registerExtensionReader).toHaveBeenCalledWith(
+      '.pdf',
+      expect.any(Function),
+      undefined,
+    )
+  })
+
   it('reads no setting before the window has its settings', () => {
     const { pluginHost } = createWith({})
 

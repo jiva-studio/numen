@@ -1,6 +1,7 @@
 package vaultaccess
 
 import (
+	"context"
 	"errors"
 	"io/fs"
 	"os"
@@ -51,6 +52,15 @@ func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) 
 
 func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	access, v := diskVault(t, map[string]string{"samples/A.md": "body"})
+	var indexed []string
+	var writeCount int
+	access.Written = func() { writeCount++ }
+	access.Index = func(_ context.Context, got domain.Vault, paths []string) error {
+		if got.ID == v.ID {
+			indexed = append(indexed, paths...)
+		}
+		return nil
+	}
 	_, pos, err := access.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
@@ -64,6 +74,9 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	if !errors.Is(err, vaultport.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)
 	}
+	if writeCount != 0 || len(indexed) != 0 {
+		t.Errorf("a refused write notified %d times and indexed %v", writeCount, indexed)
+	}
 	_, now, err := access.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
@@ -71,16 +84,32 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	if _, err := access.Write(t.Context(), "samples/A.md", []byte("mine"), now); err != nil {
 		t.Errorf("a write over what was read was %v", err)
 	}
+	if writeCount != 1 || !slices.Equal(indexed, []string{"samples/A.md"}) {
+		t.Errorf("a write notified %d times and indexed %v", writeCount, indexed)
+	}
 }
 
 func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T) {
-	access, _ := diskVault(t, map[string]string{"samples/A.md": "body"})
+	access, v := diskVault(t, map[string]string{"samples/A.md": "body"})
+	var indexed []string
+	access.Index = func(_ context.Context, got domain.Vault, paths []string) error {
+		if got.ID == v.ID {
+			indexed = append(indexed, paths...)
+		}
+		return nil
+	}
 
 	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); err != nil {
 		t.Fatal(err)
 	}
+	if !slices.Equal(indexed, []string{"samples/B.md"}) {
+		t.Errorf("a created file indexed %v", indexed)
+	}
 	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultport.ErrAlreadyExists) {
 		t.Errorf("a file made over one was %v", err)
+	}
+	if !slices.Equal(indexed, []string{"samples/B.md"}) {
+		t.Errorf("a refused create indexed %v", indexed)
 	}
 	release, err := access.Lock(t.Context())
 	if err != nil {

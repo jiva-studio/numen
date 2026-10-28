@@ -86,6 +86,57 @@ describe('the open tabs', () => {
     expect(tab.writeOpenTabs).toHaveBeenCalledTimes(2)
   })
 
+  it('waits for an in-flight write before sending the latest list', async () => {
+    let releaseFirst!: () => void
+    let calls = 0
+    const received: unknown[] = []
+    const writeOpenTabs = vi.fn((open: unknown) => {
+      calls++
+      received.push(open)
+      if (calls === 1) {
+        return new Promise<void>((resolve) => {
+          releaseFirst = resolve
+        })
+      }
+      return Promise.resolve()
+    })
+    const tabs = ref([{ id: 'a', title: 'A' }])
+    const windowTabs = {
+      handle: { front: () => null },
+      tabs,
+      getTab: (id: string) => ({ state: {}, kind: { kind: 'note', getOpenTab: () => ({ path: `${id}.md` }) } }),
+    } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
+
+    useOpenTabs({ core: { writeOpenTabs }, windowTabs })
+    expect(writeOpenTabs).toHaveBeenCalledTimes(1)
+
+    tabs.value = [
+      { id: 'a', title: 'A' },
+      { id: 'b', title: 'B' },
+    ]
+    await new Promise((r) => setTimeout(r))
+    tabs.value = [
+      { id: 'a', title: 'A' },
+      { id: 'b', title: 'B' },
+      { id: 'c', title: 'C' },
+    ]
+    await new Promise((r) => setTimeout(r))
+    expect(writeOpenTabs).toHaveBeenCalledTimes(1)
+
+    releaseFirst()
+    await new Promise((r) => setTimeout(r))
+    expect(writeOpenTabs).toHaveBeenCalledTimes(2)
+    expect((received[1] as { tabs: { id: string }[] }).tabs.map((t) => t.id)).toStrictEqual([
+      'a',
+      'b',
+      'c',
+    ])
+
+    tabs.value = [{ id: 'a', title: 'A' }]
+    await new Promise((r) => setTimeout(r))
+    expect(writeOpenTabs).toHaveBeenCalledTimes(3)
+  })
+
   it('carries on when the core cannot take the list', () => {
     const rejecting = {
       core: { writeOpenTabs: () => Promise.reject(new Error('down')) },

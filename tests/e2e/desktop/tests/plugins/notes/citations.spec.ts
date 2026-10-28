@@ -60,8 +60,8 @@ test.describe('Audio Citation and Backlink Navigation', () => {
       // Background worker might have already triggered transcription
     }
     const cue = page
-      .getByRole('button', { name: '0:00' })
-      .or(page.getByRole('textbox', { name: 'Editor' }))
+      .locator('.cm-time', { hasText: '0:00' })
+      .or(page.getByRole('textbox', { name: 'Transcript' }))
       .first()
     await expect(cue).toBeVisible({ timeout: 15_000 })
   })

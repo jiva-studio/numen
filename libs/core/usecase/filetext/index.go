@@ -427,6 +427,9 @@ func (u Index) source(
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
+		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
+			return nil
+		}
 		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, Hash: hash}, err, res)
 	}
 

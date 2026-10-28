@@ -65,10 +65,14 @@ describe('what remains at a setting', () => {
       response,
     )
 
+    expect(retainedState.models.value).toStrictEqual([])
+    expect(retainedState.plugins.value).toStrictEqual([])
     await retainedState.start()
 
     expect(retainedState.getSetting(['agent'])).toBeUndefined()
     expect(retainedState.path.value).toBe('')
+    expect(retainedState.models.value).toStrictEqual([])
+    expect(retainedState.plugins.value).toStrictEqual([])
   })
 
   it('returns empty when response is not valid JSON', async () => {
@@ -76,6 +80,12 @@ describe('what remains at a setting', () => {
     await kept.start()
     expect(kept.getSetting(['agent'])).toBeUndefined()
     expect(notify).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
+  })
+
+  it('keeps an empty plugin list when the vault omits plugins', async () => {
+    const { kept } = createStore('{}')
+    await kept.start()
+    expect(kept.plugins.value).toStrictEqual([])
   })
 
   it('falls back to declarative plugin default when unset in settings file', async () => {
@@ -115,7 +125,12 @@ describe('what remains at a setting', () => {
     await store.start()
 
     expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(true)
+    expect(store.getCommittedSetting(['plugins', 'my.plugin', 'enabled'])).toBe(true)
     expect(store.getSetting(['plugins', 'my.plugin', 'nonexistent'])).toBeUndefined()
+    expect(store.getSetting(['plugins', 'other.plugin', 'enabled'])).toBeUndefined()
+    expect(store.getSetting(['other', 'my.plugin', 'enabled'])).toBeUndefined()
+    expect(store.getSetting(['plugins', 'my.plugin'])).toBeUndefined()
+    expect(store.getSetting(['plugins', 'my.plugin', 'enabled', 'extra'])).toBeUndefined()
   })
 
   it('prefers explicit configuration over declarative plugin default', async () => {
@@ -155,6 +170,7 @@ describe('what remains at a setting', () => {
     await store.start()
 
     expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(false)
+    expect(store.getCommittedSetting(['plugins', 'my.plugin', 'enabled'])).toBe(false)
   })
 })
 
@@ -239,18 +255,21 @@ describe('a setting written twice in quick succession', () => {
     const first = retainedState.writeSetting(settingPath, false)
     const second = retainedState.writeSetting(settingPath, true)
     expect(retainedState.getSetting(settingPath)).toBe(true)
+    expect(retainedState.getCommittedSetting(settingPath)).toBeUndefined()
 
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve('{"appearance":{"nest_headings_under_notes":false}}')
     await first
     expect(retainedState.getSetting(settingPath)).toBe(true)
+    expect(retainedState.getCommittedSetting(settingPath)).toBe(false)
 
     vault.writes[1]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
     await second
     expect(retainedState.getSetting(settingPath)).toBe(true)
+    expect(retainedState.getCommittedSetting(settingPath)).toBe(true)
   })
 
   it('does not take a read that answers after a newer one', async () => {

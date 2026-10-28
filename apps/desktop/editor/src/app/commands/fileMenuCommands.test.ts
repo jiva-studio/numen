@@ -88,7 +88,8 @@ describe('useFileMenuCommands', () => {
   it('loads the menu of the file and reports a started run', async () => {
     const get = vi.fn().mockResolvedValue([recognise])
     const run = vi.fn().mockResolvedValue(undefined)
-    const menu = useFileMenuCommands({ get, run })
+    const onRun = vi.fn()
+    const menu = useFileMenuCommands({ get, run, onRun })
     await menu.load('books/Scan.pdf')
     const writeMessage = vi.fn()
 
@@ -100,6 +101,7 @@ describe('useFileMenuCommands', () => {
 
     expect(get).toHaveBeenCalledWith('books/Scan.pdf')
     expect(run).toHaveBeenCalledWith('books/Scan.pdf', recognise)
+    expect(onRun).toHaveBeenCalledWith('books/Scan.pdf')
     expect(writeMessage).toHaveBeenLastCalledWith(WORDS.textAsked('Example OCR'), 'info')
     expect(menu.paletteCommands.value.map((one) => one.id)).toStrictEqual([
       getFileMenuId(recognise),

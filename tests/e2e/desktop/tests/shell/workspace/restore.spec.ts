@@ -14,8 +14,10 @@ const getPageField = (page: Page, name: RegExp) =>
 const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Settings', /^Settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
-  await settings.getByRole('button', { name: /PDF Reader/ }).click()
   const toggle = settings.getByRole('switch', { name: /Enabled PDF Reader/ })
+  if (!(await toggle.isVisible())) {
+    await settings.getByRole('button', { name: /PDF Reader/ }).click()
+  }
   await toggle.setChecked(isEnabled)
   await expect(toggle).toBeChecked({ checked: isEnabled })
 }
@@ -44,7 +46,7 @@ test.describe('The tabs of the window after a restart', () => {
     await page.reload()
 
     const panel = page.getByRole('tabpanel', { name: /sample/i })
-    await expect(panel.locator('.book-tab__reading')).toHaveText(textBefore)
+    await expect(panel.locator('.book-tab__reading')).toHaveText(textBefore, { useInnerText: true })
   })
 
   test('open a recording at the time it was left at', async ({ page }) => {

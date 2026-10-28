@@ -122,4 +122,36 @@ describe('how tall a column is once the text is drawn', () => {
   it('is the height of the box where the lines have no height to be read', () => {
     expect(readItem(createArea(800, 100), createText('normal'))).toBe('100px')
   })
+
+  it('keeps the single-column width at the box width when only the first column has text', () => {
+    const area = createArea(420, 600)
+    const paper = document.createElement('div')
+    const run = document.createElement('p')
+    run.dataset['offset'] = '0'
+    Object.defineProperty(run, 'getClientRects', { value: () => [{ left: 0 }] })
+    paper.append(run)
+    let columns!: ReturnType<typeof useBookColumns>
+    mount(
+      defineComponent({
+        setup() {
+          columns = useBookColumns({
+            area: shallowRef(area),
+            paper: shallowRef(paper),
+            props: props(1),
+            getEdge: () => 0,
+          })
+          return () => null
+        },
+      }),
+    )
+    const box = createArea(420, 600)
+    const text = createText('20px')
+    Object.defineProperty(text, 'clientWidth', { value: 840 })
+    Object.defineProperty(text, 'scrollWidth', { value: 840 })
+
+    columns.readColumns(box, text)
+
+    expect(columns.flow.value.contentWidth).toBe(420)
+    expect(columns.spreadCount.value).toBe(1)
+  })
 })

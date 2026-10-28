@@ -104,32 +104,11 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (vector
 
 // CutOne cuts one file again from whatever its live text version now says. A
 // plugin that writes text in batches asks for this, so a file being read
-// answers about what has been read. A note is cut from its own words by the
-// scan, so a note is left as it is.
+// answers about what has been read. A note with no live text version is left
+// with the chunks the scan cut from its own words.
 func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
-	isNote, err := u.isNote(ctx, v, path)
-	if err != nil {
-		return err
-	}
-	if isNote {
-		return nil
-	}
 	if _, err := u.texts.IndexOne(ctx, v, path); err != nil {
 		return fmt.Errorf("cutting %s: %w", path, err)
 	}
 	return nil
-}
-
-// isNote reports whether the vault holds a note at the path.
-func (u ReadWholeVault) isNote(ctx context.Context, v domain.Vault, path string) (bool, error) {
-	if u.notes.readers == nil {
-		return false, nil
-	}
-	reader, err := u.notes.readers.Open(v)
-	if err != nil {
-		return false, err
-	}
-	// A path that cannot be stated is left to the cut, which says what stands there.
-	ref, statErr := reader.StatFile(ctx, path)
-	return statErr == nil && ref.Kind == domain.KindNote, nil
 }

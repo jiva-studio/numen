@@ -50,14 +50,30 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
   })
 
   const open = computed<OpenTabs>(() => getOpenTabs())
+  let pendingWrite: OpenTabs | null = null
+  let isSending = false
+  const flushOpenTabs = async (next: OpenTabs): Promise<void> => {
+    pendingWrite = next
+    if (isSending) return
+    isSending = true
+    while (pendingWrite) {
+      const current = pendingWrite
+      pendingWrite = null
+      try {
+        await core.writeOpenTabs(current)
+      } catch {
+        // A list that did not reach the core is written again by the next tab
+        // opened, closed or moved, and the window draws from its own state
+        // meanwhile. There is nothing here for a person to do.
+      }
+    }
+    isSending = false
+  }
   watch(
     [open, isWriting],
     ([now, isOn]) => {
       if (!isOn) return
-      // A list that did not reach the core is written again by the next tab
-      // opened, closed or moved, and the window draws from its own state
-      // meanwhile. There is nothing here for a person to do.
-      void core.writeOpenTabs(now).catch(() => {})
+      void flushOpenTabs(now)
     },
     { immediate: true },
   )

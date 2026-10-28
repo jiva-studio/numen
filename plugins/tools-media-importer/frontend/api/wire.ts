@@ -46,6 +46,11 @@ const readOutcome = (answer: { readonly error: LinkErrorCode }): Outcome<null> =
 
 const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
 
+/** Tells open tabs on the paths named to read their link again. */
+export const refreshLinks = (paths: readonly string[]): void => {
+  work.refresh(paths)
+}
+
 export const links: Links = {
   getLink: async (path) => {
     const answer = await retryWhileBusy(() => client.links.getLink({ path }))

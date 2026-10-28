@@ -174,7 +174,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	if err != nil {
 		return nil, err
 	}
-	return u.read(ctx, v, collapse(merge(a.getRankings(p)...), a.named, p.Each, p.Limit))
+	return u.readForQuery(ctx, v, query, collapse(merge(a.getRankings(p)...), a.named, p.Each, p.Limit))
 }
 
 // answers is what each half of a search returned.
@@ -318,6 +318,10 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 // as its own passages are filled in. The first error, or the end of ctx, stops
 // the sources not yet started.
 func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
+	return u.readForQuery(ctx, v, "", found)
+}
+
+func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
 	}
@@ -347,7 +351,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 		}
 		indices := groups[source]
 		g.Go(func() error {
-			return fillSource(gctx, of, source, indices, found, filled, keep)
+			return fillSource(gctx, of, source, query, indices, found, filled, keep)
 		})
 	}
 	if err := g.Wait(); err != nil {
@@ -380,6 +384,7 @@ func fillSource(
 	ctx context.Context,
 	of sourceTexts,
 	source string,
+	query string,
 	indices []int,
 	found, filled []domain.Passage,
 	keep []bool,
@@ -404,12 +409,31 @@ func fillSource(
 		p.Text = span(prose, p.Start, p.Length)
 		p.Line = lineOf(prose, opens, p.Start+p.HitAt)
 		if version != nil {
-			p.Selector = version.GetSelector(p.Start + p.HitAt)
+			hitAt := p.HitAt
+			if hitAt == 0 {
+				hitAt = findHitOffset(p.Text, query)
+			}
+			p.Selector = version.GetSelector(p.Start + hitAt)
 		}
 		filled[i] = p
 		keep[i] = true
 	}
 	return nil
+}
+
+// findHitOffset is the byte offset of the first query word in text, and zero where none appears.
+func findHitOffset(text, query string) int {
+	lower := strings.ToLower(text)
+	best := len(text) + 1
+	for _, word := range strings.Fields(strings.ToLower(query)) {
+		if pos := strings.Index(lower, word); pos >= 0 && pos < best {
+			best = pos
+		}
+	}
+	if best > len(text) {
+		return 0
+	}
+	return best
 }
 
 // groupBySource is the index of each passage in `found`, grouped by source and
