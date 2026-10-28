@@ -47,6 +47,7 @@ describe('closing the tabs of a plugin', () => {
       kind: 'a-kind',
       targetPath: 'x',
       saved: undefined,
+      title: 'x',
     })
   })
 
@@ -109,6 +110,7 @@ describe('the tab kind a plugin adds', () => {
       kind: 'chat',
       targetPath: '',
       saved: undefined,
+      title: 'Chat',
     })
   })
 })

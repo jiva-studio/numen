@@ -15,6 +15,14 @@ export interface UnavailableKindOptions {
   readonly icon?: Component | undefined
 }
 
+const READER_PREFIX = 'reader:'
+
+function stripReaderKind(kind: string): string {
+  return kind.startsWith(READER_PREFIX)
+    ? kind.slice(READER_PREFIX.length).replace(/^reader-/, '')
+    : kind
+}
+
 const UNAVAILABLE_TAB_TITLES: Readonly<Record<string, string>> = {
   files: 'Files',
   plex: 'Plex',
@@ -25,24 +33,20 @@ const UNAVAILABLE_TAB_TITLES: Readonly<Record<string, string>> = {
   note: 'Note',
   document: 'Document',
   book: 'Book',
-  'reader:markdown': 'Note',
-  'reader:pdf': 'Document',
-  'reader:reader-pdf': 'Document',
-  'reader:epub': 'Book',
-  'reader:reader-epub': 'Book',
-  'reader:media-player': 'Recording',
+  markdown: 'Note',
+  pdf: 'Document',
+  epub: 'Book',
+  'media-player': 'Recording',
 }
 
 const UNAVAILABLE_FEATURE_NAMES: Readonly<Record<string, string>> = {
-  'reader:markdown': 'Markdown notes',
+  markdown: 'Markdown notes',
   note: 'Markdown notes',
-  'reader:pdf': 'PDF documents',
-  'reader:reader-pdf': 'PDF documents',
+  pdf: 'PDF documents',
   document: 'PDF documents',
-  'reader:epub': 'EPUB books',
-  'reader:reader-epub': 'EPUB books',
+  epub: 'EPUB books',
   book: 'EPUB books',
-  'reader:media-player': 'audio playback and recording',
+  'media-player': 'audio playback and recording',
   recording: 'audio playback and recording',
   files: 'file tree',
   plex: 'plex graph',
@@ -51,16 +55,13 @@ const UNAVAILABLE_FEATURE_NAMES: Readonly<Record<string, string>> = {
   preset: 'flashcard presets',
 }
 
-const UNAVAILABLE_PLUGIN_FILTERS: Readonly<Record<string, string>> = {
-  'reader:markdown': 'reader:markdown',
-  note: 'reader:markdown',
-  'reader:pdf': 'reader:pdf',
-  'reader:reader-pdf': 'reader:pdf',
-  document: 'reader:pdf',
-  'reader:epub': 'reader:epub',
-  'reader:reader-epub': 'reader:epub',
-  book: 'reader:epub',
-  'reader:media-player': 'reader:media-player',
+const UNAVAILABLE_READER_TARGETS: Readonly<Record<string, string>> = {
+  markdown: 'markdown',
+  note: 'markdown',
+  'media-player': 'media-player',
+}
+
+const UNAVAILABLE_FEATURE_FILTERS: Readonly<Record<string, string>> = {
   recording: 'feature:recording',
   files: 'feature:files',
   plex: 'feature:plex',
@@ -71,29 +72,33 @@ const UNAVAILABLE_PLUGIN_FILTERS: Readonly<Record<string, string>> = {
 
 /** Formats the tab title for an unavailable kind when the tab is not backed by a file path. */
 export function formatUnavailableKindTitle(kind: string): string {
-  const mapped = UNAVAILABLE_TAB_TITLES[kind]
+  const normalized = stripReaderKind(kind)
+  const mapped = UNAVAILABLE_TAB_TITLES[normalized]
   if (mapped) return mapped
-  const stripped = kind.startsWith('reader:') ? kind.slice('reader:'.length) : kind
+  const stripped = kind.startsWith(READER_PREFIX) ? kind.slice(READER_PREFIX.length) : kind
   if (!stripped) return 'Tab'
   return stripped.charAt(0).toUpperCase() + stripped.slice(1)
 }
 
 /** Formats the human-readable feature name for an unavailable tab kind. */
 export function formatUnavailableFeature(kind: string): string {
-  const mapped = UNAVAILABLE_FEATURE_NAMES[kind]
+  const normalized = stripReaderKind(kind)
+  const mapped = UNAVAILABLE_FEATURE_NAMES[normalized]
   if (mapped) return mapped
-  if (kind.startsWith('reader:')) {
-    const readerName = kind.slice('reader:'.length).replace(/^reader-/, '')
-    return readerName ? `${readerName} files` : kind
+  if (kind.startsWith(READER_PREFIX)) {
+    return normalized ? `${normalized} files` : kind
   }
   return kind
 }
 
 /** Returns the settings plugin search filter for an unavailable tab kind. */
 export function getUnavailablePluginFilter(kind: string): string {
-  const mapped = UNAVAILABLE_PLUGIN_FILTERS[kind]
-  if (mapped) return mapped
-  if (kind.startsWith('reader:')) return kind
+  const normalized = stripReaderKind(kind)
+  const readerTarget = UNAVAILABLE_READER_TARGETS[normalized]
+  if (readerTarget) return `${READER_PREFIX}${readerTarget}`
+  const featureFilter = UNAVAILABLE_FEATURE_FILTERS[normalized]
+  if (featureFilter) return featureFilter
+  if (kind.startsWith(READER_PREFIX)) return `${READER_PREFIX}${normalized}`
   return `feature:${kind}`
 }
 

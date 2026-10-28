@@ -150,7 +150,7 @@ describe('what the page asks for', () => {
 })
 
 describe('a picture written into a note', () => {
-  it('is drawn at the address the note gave, which the policy refuses', async () => {
+  it('stays plain text on the page, and the policy refuses its address', async () => {
     const core = {
       notes: {
         readNote: vi.fn().mockResolvedValue({
@@ -162,17 +162,9 @@ describe('a picture written into a note', () => {
 
     const sheet = mount(NoteSheet, { props: { core, path: 'Synced.md' }, attachTo: document.body })
     await flushPromises()
-    await vi.waitFor(() => {
-      expect(document.querySelectorAll('.cm-picture img')).toHaveLength(1)
-    })
-
-    // The editor draws a picture where one was written, at the address written,
-    // and a note came from wherever it was synced from.
-    const viewElement = [...document.querySelectorAll('.cm-picture img')].map(
-      (each) => (each as HTMLImageElement).src,
-    )
-    expect(viewElement).toStrictEqual(['https://evil.example/pixel.png'])
-    for (const address of viewElement) expect(isAllowed('img-src', address)).toBe(false)
+    expect(sheet.get('textarea').element.value).toContain('https://evil.example/pixel.png')
+    expect(document.querySelectorAll('img[src]')).toHaveLength(0)
+    expect(isAllowed('img-src', 'https://evil.example/pixel.png')).toBe(false)
 
     sheet.unmount()
   })

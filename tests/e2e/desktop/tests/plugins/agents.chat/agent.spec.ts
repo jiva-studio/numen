@@ -60,4 +60,28 @@ test.describe('Agent Plugin and Interface', () => {
       timeout: 10_000,
     })
   })
+
+  test('opens note tab without 404 navigation when clicking a relative note link in agent reply', async ({
+    page,
+  }) => {
+    await page.goto('/')
+
+    await expect(page.locator('text=Ready')).toBeVisible()
+    await page.getByText('Agent').first().click()
+
+    const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
+    await expect(input).toBeVisible({ timeout: 10_000 })
+
+    await input.fill('Link to Entropy')
+    await page.getByRole('button', { name: 'Send' }).first().click()
+
+    const noteLink = page.getByRole('link', { name: 'Entropy', exact: true }).first()
+    await expect(noteLink).toBeVisible({ timeout: 10_000 })
+    await noteLink.click()
+
+    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
+    await expect(page.getByText('404 page not found')).toHaveCount(0)
+  })
 })

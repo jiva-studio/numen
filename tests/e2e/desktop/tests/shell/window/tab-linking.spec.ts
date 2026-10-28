@@ -61,9 +61,17 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await expect(page.getByRole('tab', { name: /sample\.pdf/i }).first()).toBeVisible({
       timeout: 10_000,
     })
-    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({
+    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
+    await expect(entropyTab).toBeVisible({
       timeout: 10_000,
     })
+
+    // Right-click Files tab and verify the Note tab is offered under "Link with tab"
+    const filesTab = page.getByRole('tab', { name: /^Files/ }).first()
+    await filesTab.click({ button: 'right' })
+    const linkMenuItem = page.getByRole('menuitem', { name: /Entropy/i }).first()
+    await expect(linkMenuItem).toBeVisible({ timeout: 5_000 })
+    await linkMenuItem.click()
   })
 
   test('cleans up tab link group when one linked tab is closed', async ({ page }) => {

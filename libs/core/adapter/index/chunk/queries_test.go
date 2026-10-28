@@ -313,7 +313,7 @@ func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	pos := time.Date(2022, 5, 6, 7, 8, 9, 10, time.UTC)
 	source{path: "physics/Entropy.md", kind: "note", size: 40, mtime: pos.UnixNano()}.save(t, db)
 	source{path: "physics/heat/Heat.md", kind: "note", size: 41}.save(t, db)
-	source{path: "physics/A Book.epub", kind: "book", size: 42}.save(t, db)
+	source{path: "physics/A Book.epub", kind: "file", size: 42}.save(t, db)
 	source{path: "physics-old/Stray.md", kind: "note", size: 43}.save(t, db)
 	source{vault: vaultB, path: "physics/Other.md", kind: "note", size: 44}.save(t, db)
 	queries := db.ChunkQueries()
@@ -370,7 +370,7 @@ func searchFixture(t *testing.T) *index.DB {
 	t.Helper()
 	db := openIndex(t)
 	source{
-		path: "lib/zebra.epub", kind: "book", producer: "ocr", hash: "h-zebra", location: "chapter 4",
+		path: "lib/zebra.epub", kind: "file", producer: "ocr", hash: "h-zebra", location: "chapter 4",
 		large: "umbrella zebra stripes at dawn", smalls: []string{"zebra", "zebra stripes at dawn and padding words around them"},
 	}.save(t, db)
 	source{
@@ -378,7 +378,7 @@ func searchFixture(t *testing.T) *index.DB {
 		large: "zebra note", smalls: []string{"zebra note"},
 	}.save(t, db)
 	source{
-		vault: vaultB, path: "lib/other.epub", kind: "book",
+		vault: vaultB, path: "lib/other.epub", kind: "file",
 		large: "zebra elsewhere", smalls: []string{"zebra elsewhere"},
 	}.save(t, db)
 	return db
@@ -504,7 +504,7 @@ func TestASearchByWordsNeedsAPositiveLimit(t *testing.T) {
 
 func TestASearchByWordsFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	seed := func(db *index.DB) {
-		source{path: "lib/a.epub", large: "zebra", smalls: []string{"zebra"}}.save(t, db)
+		source{path: "lib/a.epub", kind: "file", large: "zebra", smalls: []string{"zebra"}}.save(t, db)
 	}
 	for name, queries := range map[string]*chunk.Queries{
 		"closed":      closed(t),
@@ -523,14 +523,14 @@ func TestASearchByWordsFailsOnAClosedOrBrokenIndex(t *testing.T) {
 func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 	db := openIndex(t)
 	source{
-		path: "lib/guide.epub", kind: "book", producer: "ocr", hash: "h-guide", location: "chapter 9",
+		path: "lib/guide.epub", kind: "file", producer: "ocr", hash: "h-guide", location: "chapter 9",
 		large: "text of the chapter", opens: []string{"Gardening"},
 		smalls: []string{"first words of it"},
 	}.save(t, db)
 	source{
 		path: "notes/Gardening.md", kind: "note", large: "text", opens: []string{"Gardening notes"}, smalls: []string{"x"},
 	}.save(t, db)
-	source{vault: vaultB, path: "lib/other.epub", large: "t", opens: []string{"Gardening"}, smalls: []string{"x"}}.save(t, db)
+	source{vault: vaultB, path: "lib/other.epub", kind: "file", large: "t", opens: []string{"Gardening"}, smalls: []string{"x"}}.save(t, db)
 	queries := db.ChunkQueries()
 
 	got, err := queries.GetNamedPassages(t.Context(), vaultA, "gardening", nil, 10, false)
@@ -597,7 +597,7 @@ func TestASearchByNameHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 
 func TestASearchByNameFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	seed := func(db *index.DB) {
-		source{path: "lib/a.epub", large: "t", opens: []string{"Name"}, smalls: []string{"t"}}.save(t, db)
+		source{path: "lib/a.epub", kind: "file", large: "t", opens: []string{"Name"}, smalls: []string{"t"}}.save(t, db)
 	}
 	for name, queries := range map[string]*chunk.Queries{
 		"closed":      closed(t),
@@ -624,11 +624,11 @@ func meaningFixture(t *testing.T) *index.DB {
 		kind  string
 		seed  byte
 	}{
-		{vaultA, "lib/near.epub", "book", 0xF0},
-		{vaultA, "lib/middle.epub", "book", 0xF8},
-		{vaultA, "lib/far.epub", "book", 0x0F},
+		{vaultA, "lib/near.epub", "file", 0xF0},
+		{vaultA, "lib/middle.epub", "file", 0xF8},
+		{vaultA, "lib/far.epub", "file", 0x0F},
 		{vaultA, "notes/far.md", "note", 0x0F},
-		{vaultB, "lib/elsewhere.epub", "book", 0xF0},
+		{vaultB, "lib/elsewhere.epub", "file", 0xF0},
 	} {
 		source{
 			vault: b.vault, path: b.path, kind: b.kind, producer: "ocr", hash: "h-" + b.path,

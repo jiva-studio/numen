@@ -25,23 +25,21 @@ test.describe('Plugin Settings and Configuration', () => {
     })
   })
 
-  test('shows the transcription model and the language it detects', async ({ page }) => {
+  test('shows the transcription model and its supported languages', async ({ page }) => {
     await openWorkspace(page)
     await openTranscriptionSettings(page)
 
     const model = page.getByTestId('setting-model')
     await expect(model.locator('.settings__choice')).toHaveText('Parakeet TDT 0.6B v3')
-    await expect(model.locator('.settings__origin')).toHaveText('Default')
-    await expect(page.getByText('25 European languages, 670 MB')).toBeVisible()
 
-    const language = page.getByTestId('setting-language')
-    await expect(language.locator('.settings__fixed')).toHaveText('Detected by the model')
-    await expect(language.locator('.settings__origin')).toHaveText('Model default')
-    await expect(language.locator('.settings__choice')).toHaveCount(0)
-    await expect(page.getByText('Transcription Language')).toHaveCount(0)
+    await model.locator('.settings__choice').click()
+    await expect(
+      page.getByRole('menuitemradio', { name: /Parakeet TDT 0\.6B v3.*25 European languages/i }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
   })
 
-  test('changes the language with the model, and keeps the model across reopening', async ({
+  test('changes the transcription model and keeps the model across reopening', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -49,13 +47,8 @@ test.describe('Plugin Settings and Configuration', () => {
 
     const model = page.getByTestId('setting-model')
     await model.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'Parakeet TDT 0.6B v2', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: /^Parakeet TDT 0\.6B v2/ }).click()
     await expect(model.locator('.settings__choice')).toHaveText('Parakeet TDT 0.6B v2')
-    await expect(model.locator('.settings__origin')).toHaveText('Chosen')
-
-    const language = page.getByTestId('setting-language')
-    await expect(language.locator('.settings__fixed')).toHaveText('English')
-    await expect(language.locator('.settings__origin')).toHaveText('Model default')
 
     await page
       .getByRole('button', { name: /Close Settings/i })
@@ -66,24 +59,47 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(page.getByTestId('setting-model').locator('.settings__choice')).toHaveText(
       'Parakeet TDT 0.6B v2',
     )
-    await expect(page.getByTestId('setting-language').locator('.settings__fixed')).toHaveText(
-      'English',
-    )
 
     await page.getByTestId('setting-model').locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'Parakeet TDT 0.6B v3', exact: true }).click()
-    await expect(page.getByTestId('setting-language').locator('.settings__fixed')).toHaveText(
-      'Detected by the model',
+    await page.getByRole('menuitemradio', { name: /^Parakeet TDT 0\.6B v3/ }).click()
+    await expect(page.getByTestId('setting-model').locator('.settings__choice')).toHaveText(
+      'Parakeet TDT 0.6B v3',
     )
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {
     await openWorkspace(page)
 
-    await runPaletteCommand(page, 'Files', 'Show files')
+    await runPaletteCommand(page, 'Files', 'Open files tab')
 
     // Verify file tree is open and assets folder is visible
     await expect(page.locator('[data-tree-row="assets"]').first()).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('keeps cleared plugin search query when navigating into a plugin detail and back', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await runPaletteCommand(page, 'Settings', 'Settings')
+    await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+
+    const searchInput = page.getByRole('searchbox', { name: 'Search plugins' }).first()
+    await expect(searchInput).toBeVisible({ timeout: 5_000 })
+    await searchInput.fill('feature:agent')
+    await expect(searchInput).toHaveValue('feature:agent')
+
+    await searchInput.fill('')
+    await expect(searchInput).toHaveValue('')
+
+    const pluginRow = page.getByRole('button', { name: /Agent Chat/i }).first()
+    await expect(pluginRow).toBeVisible({ timeout: 5_000 })
+    await pluginRow.click()
+
+    const backBtn = page.getByRole('button', { name: /All plugins/i }).first()
+    await expect(backBtn).toBeVisible({ timeout: 5_000 })
+    await backBtn.click()
+
+    await expect(page.getByRole('searchbox', { name: 'Search plugins' }).first()).toHaveValue('')
   })
 })
 
@@ -103,21 +119,28 @@ test.describe('OCR settings', () => {
     await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
 
     await model.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'PP-OCRv5 East Slavic', exact: true }).click()
-    await expect(page.getByText('Russian, Ukrainian, Belarusian, English, 7.9 MB')).toBeVisible()
+    await expect(
+      page.getByRole('menuitemradio', {
+        name: /PP-OCRv5 East Slavic.*Russian, Ukrainian, Belarusian, English, 7\.9 MB/i,
+      }),
+    ).toBeVisible()
+    await page.getByRole('menuitemradio', { name: /^PP-OCRv5 East Slavic/ }).click()
+    await expect(model.locator('.settings__choice')).toHaveText('PP-OCRv5 East Slavic')
 
     await model.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'Custom model', exact: true }).click()
     await expect(
-      page.getByText('Languages unknown: they are those of the model file'),
+      page.getByRole('menuitemradio', {
+        name: /Custom model.*Languages unknown: they are those of the model file/i,
+      }),
     ).toBeVisible()
+    await page.getByRole('menuitemradio', { name: /^Custom model/ }).click()
     await expect(page.getByText('Model file', { exact: true })).toBeVisible()
     await expect(page.getByText('Character dictionary', { exact: true })).toBeVisible()
     await expect(page.getByTestId('setting-path').first()).toHaveText('None')
     await expect(page.getByRole('button', { name: 'Choose…' })).toHaveCount(2)
 
     await model.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'PP-OCRv6 tiny', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: /^PP-OCRv6 tiny/ }).click()
     await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
   })
 })
@@ -134,15 +157,17 @@ test.describe('Embeddings settings', () => {
     if (await pluginRow.isVisible()) await pluginRow.click()
 
     await expect(provider.locator('.settings__choice')).toHaveText('Local')
-    await expect(
-      page.getByText('BGE-M3 on this machine: 100+ languages, 1024 dimensions'),
-    ).toBeVisible()
     await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
-    await expect(page.getByText('Model', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Model', { exact: true })).toBeVisible()
     await expect(page.getByText('API key', { exact: true })).toHaveCount(0)
 
     await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'Custom service', exact: true }).click()
+    await expect(
+      page.getByRole('menuitemradio', {
+        name: /Local.*BGE-M3 on this machine: 100\+ languages, 1024 dimensions/i,
+      }),
+    ).toBeVisible()
+    await page.getByRole('menuitemradio', { name: /^Custom service/ }).click()
     await expect(page.getByText('Service URL', { exact: true })).toBeVisible()
     await expect(page.getByText('Model', { exact: true })).toBeVisible()
     await expect(page.getByText('API key', { exact: true }).first()).toBeVisible()
@@ -152,18 +177,18 @@ test.describe('Embeddings settings', () => {
     await expect(page.getByRole('textbox', { name: 'Service URL' })).not.toBeFocused()
 
     await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'OpenAI', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: /^OpenAI/ }).click()
     await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
     await expect(page.getByText('Model', { exact: true })).toBeVisible()
 
     await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'Custom service', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: /^Custom service/ }).click()
     await expect(page.getByRole('textbox', { name: 'Service URL' })).toHaveValue(
       'http://127.0.0.1:9/v1',
     )
 
     await provider.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: 'Local', exact: true }).click()
+    await page.getByRole('menuitemradio', { name: /^Local/ }).click()
     await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
   })
 })

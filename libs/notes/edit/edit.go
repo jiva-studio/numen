@@ -170,6 +170,9 @@ func (e Edit) getExpected(path string, on domain.FileStat, looked error) (domain
 	if looked != nil {
 		return domain.FileStat{}, fmt.Errorf("look at %s: %w", path, MapMissingNote(looked))
 	}
+	if on.Kind != "" && on.Kind != domain.KindNote {
+		return domain.FileStat{}, fmt.Errorf("look at %s: %w", path, ErrNotANote)
+	}
 	return on, nil
 }
 

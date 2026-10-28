@@ -549,12 +549,12 @@ func TestScanReportsTheBooksItRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"  extracting bee.epub\r", "1 sources: 1 read, 0 unchanged, "} {
+	for _, want := range []string{"  cutting bee.epub\r", "1 sources: 1 read, 0 unchanged, "} {
 		if !strings.Contains(out, want) {
 			t.Errorf("scan did not say %q:\n%q", want, out)
 		}
 	}
-	if strings.Contains(out, "extracting \r") {
+	if strings.Contains(out, "cutting \r") {
 		t.Errorf("scan named a book when none was open:\n%q", out)
 	}
 }

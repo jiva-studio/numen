@@ -10,6 +10,7 @@ import {
   reactive,
   ref,
   shallowReactive,
+  shallowRef,
   type Component,
 } from 'vue'
 import {
@@ -54,8 +55,8 @@ export function createPluginPaneWrapper(
     props: { state: { type: null, required: true } },
     setup(props) {
       const error = ref<Error | null>(null)
-      const hostEl = ref<HTMLElement | null>(null)
-      const shadowRoot = ref<ShadowRoot | null>(null)
+      const hostEl = shallowRef<HTMLElement | null>(null)
+      const shadowRoot = shallowRef<ShadowRoot | null>(null)
       const isReady = ref(false)
       let releaseStyle: (() => void) | undefined
 

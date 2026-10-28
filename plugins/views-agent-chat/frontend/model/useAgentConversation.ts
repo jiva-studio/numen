@@ -190,9 +190,7 @@ function createConversationLinkFollower(
     if (vaultPath) {
       press.preventDefault()
       openResolvedOrDirect(deps, vaultPath)
-      return
     }
-    press.preventDefault()
   }
 }
 

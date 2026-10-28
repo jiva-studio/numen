@@ -493,7 +493,7 @@ func (s *saying) getBooks(t *testing.T) []int {
 		if !found {
 			continue
 		}
-		count, _, found := strings.Cut(response, " books,")
+		count, _, found := strings.Cut(response, " file texts,")
 		if !found {
 			continue
 		}

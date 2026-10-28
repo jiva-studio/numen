@@ -9,6 +9,9 @@ import vue from '@vitejs/plugin-vue'
 
 const alias = {
   '@': fileURLToPath(new URL('./src', import.meta.url)),
+  '@numen/plugin-host': fileURLToPath(
+    new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
+  ),
   '@numen/plugin-sdk': fileURLToPath(
     new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
   ),

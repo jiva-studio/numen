@@ -79,6 +79,15 @@ const text = (state: StateInline, silent: boolean): boolean => {
 
 /** Draws the pieces a parse's env names as links. */
 export const linkPieces = (md: MarkdownIt): void => {
+  const parseLinkLabel = md.helpers.parseLinkLabel
+  md.helpers.parseLinkLabel = (state, start, disableNested) => {
+    if (disableNested) state.linkLevel++
+    try {
+      return parseLinkLabel(state, start, disableNested)
+    } finally {
+      if (disableNested) state.linkLevel--
+    }
+  }
   md.inline.ruler.at('text', text)
   md.inline.ruler.before('text', 'link_piece', linkPiece)
 }

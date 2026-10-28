@@ -21,6 +21,8 @@ test.describe('Note editor features and editing', () => {
 
     const cmContent = page.locator('.cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.cm-lineWrapping').first()).toBeVisible()
+    await expect(page.locator('.cm-lineNumbers')).toHaveCount(0)
 
     // 2. Click editor, move to end, type wikilink trigger "[["
     await cmContent.click()
@@ -56,6 +58,8 @@ test.describe('Note editor features and editing', () => {
 
     const cmContent = page.locator('.cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.cm-lineWrapping').first()).toBeVisible()
+    await expect(page.locator('.cm-lineNumbers')).toHaveCount(0)
 
     // Type a heading
     await cmContent.click()
@@ -81,6 +85,8 @@ test.describe('Note editor features and editing', () => {
     // The note is typed into once it is read and the editor accepts input
     const cmContent = page.locator('.cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.cm-lineWrapping').first()).toBeVisible()
+    await expect(page.locator('.cm-lineNumbers')).toHaveCount(0)
     await expect(cmContent).toContainText('A measure of uncertainty')
     await expect(cmContent).toHaveAttribute('contenteditable', 'true')
 

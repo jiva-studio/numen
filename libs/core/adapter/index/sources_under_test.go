@@ -68,7 +68,7 @@ func TestWhatIsBelowAPathReturnsWhichKindEachSourceIs(t *testing.T) {
 	if kind := target["physics/Entropy.md"]; kind != domain.KindNote {
 		t.Errorf("the note came back as %q", kind)
 	}
-	if kind := target["physics/A Book.epub"]; kind != domain.KindFile {
+	if kind := target["physics/A Book.epub"]; kind != "book" {
 		t.Errorf("the book came back as %q", kind)
 	}
 }

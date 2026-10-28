@@ -63,7 +63,7 @@ func TestWhatTheSharedFileRuleRefuses(t *testing.T) {
 			"declares NoteService", "imports numen/v1/file.proto", "imports numen/v1/shared.proto",
 		}},
 		{path: "numen/v1/search.proto", why: []string{
-			"declares SearchService", "imports numen/v1/file.proto",
+			"declares SearchService",
 			"imports numen/v1/note.proto", "imports numen/v1/shared.proto",
 		}},
 	} {

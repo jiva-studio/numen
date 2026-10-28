@@ -25,14 +25,17 @@ const handle = (req, res) => {
     return
   }
   if (req.method === 'POST' && pathname === '/v1/chat/completions') {
-    req.resume()
-    req.on('end', () =>
+    const chunks = []
+    req.on('data', (chunk) => chunks.push(chunk))
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8')
+      const content = raw.includes('Link to Entropy')
+        ? `${STAND_IN_REPLY} See [Entropy](notes/Entropy.md).`
+        : STAND_IN_REPLY
       sendJson(res, 200, {
-        choices: [
-          { message: { role: 'assistant', content: STAND_IN_REPLY }, finish_reason: 'stop' },
-        ],
-      }),
-    )
+        choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
+      })
+    })
     return
   }
   sendJson(res, 404, { error: `the stand-in answers no ${req.method} ${pathname}` })
