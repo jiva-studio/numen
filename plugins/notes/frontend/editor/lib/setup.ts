@@ -18,8 +18,10 @@ import {
 import {
   type KeyBinding,
   EditorView,
+  GutterMarker,
   drawSelection,
   keymap,
+  lineNumberWidgetMarker,
   lineNumbers,
   placeholder,
   rectangularSelection,
@@ -76,7 +78,30 @@ export const createEditable = (isOn: boolean): Extension => [
 export const getWrapExtension = (softWrap: boolean): Extension =>
   softWrap ? EditorView.lineWrapping : []
 
-export const getLineNumbersExtension = (show: boolean): Extension => (show ? lineNumbers() : [])
+class BlockLineNumberMarker extends GutterMarker {
+  constructor(readonly label: string) {
+    super()
+  }
+
+  override eq(other: BlockLineNumberMarker): boolean {
+    return this.label === other.label
+  }
+
+  override toDOM(): Node {
+    return document.createTextNode(this.label)
+  }
+}
+
+export const getLineNumbersExtension = (show: boolean): Extension =>
+  show
+    ? [
+        lineNumbers(),
+        lineNumberWidgetMarker.of(
+          (view, _widget, block) =>
+            new BlockLineNumberMarker(String(view.state.doc.lineAt(block.from).number)),
+        ),
+      ]
+    : []
 
 export const getTabSizeExtension = (tabSize: number): Extension => {
   const size = Math.max(1, Math.trunc(tabSize))

@@ -212,6 +212,20 @@ describe('editor preferences in setup', () => {
     expect(open({ lineNumbers: true }).dom.querySelector('.cm-lineNumbers')).not.toBeNull()
   })
 
+  it('numbers horizontal rule block widgets continuously alongside text lines and themes the gutter', () => {
+    const view = open({ lineNumbers: true }, '---\ntype: stencil\n---')
+    const numbers = Array.from(
+      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement'),
+    )
+      .filter((el) => el.style.visibility !== 'hidden')
+      .map((el) => el.textContent?.trim())
+      .filter(Boolean)
+    expect(numbers).toEqual(['1', '2', '3'])
+
+    const gutters = view.dom.querySelector<HTMLElement>('.cm-gutters')!
+    expect(getComputedStyle(gutters).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+  })
+
   it('indents with the configured tabSize', () => {
     const view = open({ tabSize: 4 }, 'one')
     expect(view.state.tabSize).toBe(4)

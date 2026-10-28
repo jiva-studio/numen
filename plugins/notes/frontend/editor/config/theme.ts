@@ -67,7 +67,28 @@ export const theme = EditorView.theme({
     paddingBottom: 'var(--numen-gutter)',
     maxWidth: 'var(--editor-measure, none)',
   },
-  '.cm-gutters': { maxWidth: 'var(--editor-measure, none)' },
+  '&.cm-editor .cm-gutters, &.cm-editor .cm-gutters.cm-gutters-before, &.cm-editor .cm-gutters.cm-gutters-after':
+    {
+      maxWidth: 'var(--editor-measure, none)',
+      backgroundColor: 'transparent',
+      border: 'none',
+      color: 'var(--numen-hushed)',
+      fontFamily: 'var(--editor-mono)',
+    },
+  '.cm-lineNumbers': {
+    minWidth: '3ch',
+    fontVariantNumeric: 'tabular-nums',
+  },
+  '.cm-lineNumbers .cm-gutterElement': {
+    padding: '0 0.5rem 0 0.75rem',
+    fontSize: '0.8em',
+    lineHeight: '2',
+    userSelect: 'none',
+  },
+  '&.cm-editor .cm-activeLineGutter': {
+    backgroundColor: 'transparent',
+    color: 'var(--numen-ink)',
+  },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-ink)' },
   '.cm-line': { padding: '0 var(--numen-gutter)' },
   '.cm-placeholder': { color: 'var(--numen-edge-label)' },
@@ -99,7 +120,7 @@ export const theme = EditorView.theme({
   '.cm-heading': {
     fontWeight: '600',
     lineHeight: '1.3',
-    paddingTop: 'var(--editor-block-gap)',
+    marginTop: 'var(--editor-block-gap)',
   },
   '.cm-heading-1': { fontSize: '1.75em' },
   '.cm-heading-2': { fontSize: '1.5em' },
@@ -109,7 +130,7 @@ export const theme = EditorView.theme({
   '.cm-heading-6': { fontSize: '1em' },
 
   /* Nothing stands above the first line, so it takes no gap. */
-  '.cm-content > .cm-line:first-child': { paddingTop: '0' },
+  '.cm-content > .cm-line:first-child': { marginTop: '0', paddingTop: '0' },
 
   '.cm-strong': { fontWeight: '600' },
   '.cm-em': { fontStyle: 'italic' },
