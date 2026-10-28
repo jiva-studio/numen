@@ -15,20 +15,16 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
-const linkColor = computed(() => {
-  switch (props.colorIndex) {
-    case 1:
-      return 'var(--numen-blue, #3b82f6)'
-    case 2:
-      return 'var(--numen-leaf, #22c55e)'
-    case 3:
-      return 'var(--numen-amber, #f59e0b)'
-    case 4:
-      return 'var(--numen-purple, #a855f7)'
-    default:
-      return 'var(--numen-blue, #3b82f6)'
-  }
-})
+const LINK_COLORS: Readonly<Record<number, string>> = {
+  1: 'var(--numen-blue, #3b82f6)',
+  2: 'var(--numen-leaf, #22c55e)',
+  3: 'var(--numen-amber, #f59e0b)',
+  4: 'var(--numen-purple, #a855f7)',
+}
+
+const linkColor = computed(
+  () => LINK_COLORS[props.colorIndex ?? 1] ?? 'var(--numen-blue, #3b82f6)',
+)
 
 const iconStyle = computed(() => ({
   color: linkColor.value,

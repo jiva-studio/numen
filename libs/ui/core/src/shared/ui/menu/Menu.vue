@@ -38,7 +38,7 @@ defineSlots<MenuSlots>()
 const menu = useTemplateRef<HTMLElement>('menu')
 const search = useTemplateRef<HTMLInputElement>('search')
 
-const { setSize, menuStyle } = useMenuPlacement({
+const { setSize, resetSize, menuStyle } = useMenuPlacement({
   at: () => props.at,
   viewport: () => props.viewport,
   margin: () => props.margin,
@@ -77,7 +77,10 @@ useMenuLifecycle({
   release,
   measure,
   focusInitial,
-  onReset: onResetNavigation,
+  onReset: () => {
+    resetSize()
+    onResetNavigation()
+  },
   getFrom: () => props.from,
   getWatchedDeps: () => [visibleItems.value, props.at],
 })
@@ -100,6 +103,7 @@ function measure(): void {
       v-if="isMenuVisible"
       ref="menu"
       class="menu numen"
+      :class="{ 'menu--searchable': isSearchable }"
       role="menu"
       tabindex="-1"
       :aria-label="name"
@@ -191,7 +195,7 @@ function measure(): void {
   line-height: var(--numen-line-height);
   color: var(--numen-ink);
   inline-size: max-content;
-  min-inline-size: max(var(--narrowest), var(--asking));
+  min-inline-size: max(var(--narrowest), var(--asking), var(--opened-width, 0px));
   max-inline-size: max(var(--widest), var(--asking));
   max-block-size: var(--tallest);
   overflow-y: auto;
@@ -199,8 +203,12 @@ function measure(): void {
   overscroll-behavior: contain;
   background-color: var(--numen-raised, #27221d);
   border: 1px solid var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
-  border-radius: var(--numen-radius-panel, 0.75rem);
+  border-radius: var(--numen-radius, 0.375rem);
   box-shadow: var(--numen-panel-shadow, 0 12px 32px rgba(0, 0, 0, 0.5));
+}
+
+.menu--searchable {
+  padding-block-start: 0;
 }
 
 .menu:focus-visible {
@@ -221,10 +229,10 @@ function measure(): void {
 
   box-sizing: border-box;
   position: sticky;
-  inset-block-start: calc(-1 * var(--inset));
-  z-index: 1;
+  inset-block-start: 0;
+  z-index: 2;
   flex-shrink: 0;
-  margin: calc(-1 * var(--inset)) calc(-1 * var(--inset)) 0.25rem;
+  margin: 0 calc(-1 * var(--inset)) 0.25rem;
   padding: 0.375rem 0.5rem;
   background-color: var(--numen-raised, #27221d);
   border-block-end: 1px solid

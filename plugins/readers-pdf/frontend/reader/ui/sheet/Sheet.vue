@@ -54,8 +54,8 @@ const givenUp = computed(() => tries.value > ATTEMPTS)
 /** The address it is asked for at, this attempt. */
 const pictureUrl = computed(() => {
   if (!props.picture || givenUp.value) return ''
-  if (tries.value === 0) return props.picture
-  return `${props.picture}${props.picture.includes('?') ? '&' : '?'}again=${tries.value}`
+  const separator = props.picture.includes('?') ? '&' : '?'
+  return tries.value === 0 ? props.picture : `${props.picture}${separator}again=${tries.value}`
 })
 
 /* ---------------------------------- Hooks --------------------------------- */

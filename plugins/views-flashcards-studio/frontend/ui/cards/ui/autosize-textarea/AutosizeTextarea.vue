@@ -27,9 +27,7 @@ const attrs = useAttrs()
 
 /** What the caller handed the box itself. */
 const handed = computed(() => {
-  const rest = { ...attrs }
-  delete rest['class']
-  delete rest['style']
+  const { class: _class, style: _style, ...rest } = attrs
   return rest
 })
 

@@ -94,7 +94,7 @@ const onKey = (event: KeyboardEvent) => {
     :class="
       cn(
         'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
-        'h-action rounded-tight border-field-rule bg-field border px-2',
+        'h-action rounded-node border-field-rule bg-field border px-2.5',
         'text-ink text-left font-sans text-base leading-none',
         'ease-numen cursor-pointer transition-colors duration-100 outline-none',
         'hover:border-rule',

@@ -4,7 +4,11 @@
  */
 import { computed } from 'vue'
 import type { UpdateInfo } from '../model/types'
-import { formatReleaseDate, type ClientPlatform } from '../lib/release'
+import {
+  formatReleaseDate,
+  getPlatformUpdateMessage,
+  type ClientPlatform,
+} from '../lib/release'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -25,15 +29,7 @@ const formattedDate = computed(() => {
   return formatReleaseDate(props.updateInfo.releasedAt)
 })
 
-const platformMessage = computed(() => {
-  if (props.platform === 'windows') {
-    return 'Download the installer to update Numen.'
-  }
-  if (props.platform === 'darwin') {
-    return 'Download the disk image to update Numen.'
-  }
-  return 'Visit the download page or update via your package manager.'
-})
+const platformMessage = computed(() => getPlatformUpdateMessage(props.platform))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {

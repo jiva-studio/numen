@@ -116,12 +116,19 @@ const createTab = (
     choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
   }
+  const initialSearchQuery = ref('')
   const tab = mount(SettingsTab, {
-    props: { state: { installation } },
+    props: { state: { installation, initialSearchQuery } },
     attachTo: document.body,
   })
   mountedWrappers.push(tab)
-  return { recorded: isDone, written: content, recordedWrites: content, tab }
+  return {
+    recorded: isDone,
+    written: content,
+    recordedWrites: content,
+    tab,
+    initialSearchQuery,
+  }
 }
 
 /** Every tab this file drew, put away between one test and the next. */
@@ -290,5 +297,42 @@ describe('the settings tab', () => {
     // Back to main settings page
     expect(tab.find('.plugin-detail').exists()).toBe(false)
     expect(tab.find('.system-row').exists()).toBe(true)
+  })
+
+  it('keeps the cleared search query when navigating into a plugin detail and back', async () => {
+    const samplePlugin: PluginInfo = {
+      id: 'md.numen.views.agent-chat',
+      name: 'Agent Chat',
+      version: '1.0.0',
+      description: 'Interactive chat tab',
+      isActive: true,
+      capabilities: ['agent'],
+      secrets: [],
+      storedSecrets: [],
+      consent: 'none',
+      hasFrontend: true,
+      settings: [],
+    }
+    const { tab, initialSearchQuery } = createTab(false, {}, [samplePlugin])
+    initialSearchQuery.value = 'feature:agent'
+    await nextTick()
+
+    const searchInput = tab.get('.plugins-list__search-input')
+    expect((searchInput.element as HTMLInputElement).value).toBe('feature:agent')
+
+    await searchInput.setValue('')
+    await nextTick()
+    expect(initialSearchQuery.value).toBe('')
+
+    const rows = tab.findAll('.plugin-row')
+    await rows[1]!.trigger('click')
+    await nextTick()
+    expect(tab.find('.plugin-detail').exists()).toBe(true)
+
+    await tab.find('.plugin-detail__back').trigger('click')
+    await nextTick()
+
+    const restoredInput = tab.get('.plugins-list__search-input')
+    expect((restoredInput.element as HTMLInputElement).value).toBe('')
   })
 })

@@ -161,7 +161,7 @@ func (m PluginManifest) resolveValue(s PluginManifestSetting, values map[string]
 	if s.OptionsBy == nil {
 		return value, ok
 	}
-	if s.Type == "string" {
+	if s.Type == SettingTypeString {
 		if str, isStr := value.(string); ok && isStr && str != "" {
 			return value, true
 		}

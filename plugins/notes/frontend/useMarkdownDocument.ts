@@ -311,7 +311,12 @@ export function useMarkdownDocument(
     }
   })
 
-  watch(activePath, (newPath) => {
+  watch(activePath, (newPath, oldPath) => {
+    if (oldPath !== undefined && newPath !== oldPath) {
+      const nextBody = getInitialBody()
+      docContent.value = nextBody
+      initialContent.value = nextBody
+    }
     if (newPath && !docContent.value) {
       void loadContentFromPath(newPath)
     }

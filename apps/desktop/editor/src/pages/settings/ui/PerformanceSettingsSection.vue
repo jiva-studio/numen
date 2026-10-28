@@ -22,21 +22,20 @@ const profiles = [
   { id: 'maximum', text: words.maximum },
 ]
 
+const PROFILE_DETAILS: Readonly<Record<string, string>> = {
+  eco: words.ecoDetail,
+  balanced: words.balancedDetail,
+  maximum: words.maximumDetail,
+}
+
 const currentProfile = computed<string>(() => {
   const profile = fields.getString(paths.performanceProfile)
-  return profiles.some((one) => one.id === profile) ? profile : 'balanced'
+  return profile in PROFILE_DETAILS ? profile : 'balanced'
 })
 
-const profileDetail = computed<string>(() => {
-  switch (currentProfile.value) {
-    case 'eco':
-      return words.ecoDetail
-    case 'maximum':
-      return words.maximumDetail
-    default:
-      return words.balancedDetail
-  }
-})
+const profileDetail = computed<string>(
+  () => PROFILE_DETAILS[currentProfile.value] ?? words.balancedDetail,
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onProfileChange(choice: string): void {

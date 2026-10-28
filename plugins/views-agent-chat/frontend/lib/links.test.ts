@@ -2,7 +2,7 @@
  * Links written into prose.
  */
 import { describe, expect, it } from 'vitest'
-import { parseLinkTarget, extractLinkTargets } from './links'
+import { parseLinkTarget, parseVaultFileLink, extractLinkTargets } from './links'
 
 const remuna = { path: 'library/A Book.pdf', start: 62690, length: 1246 }
 
@@ -98,5 +98,16 @@ describe('the targets a piece of prose links to', () => {
 describe('a link with a broken escape', () => {
   it('names no file', () => {
     expect(parseLinkTarget('numen:100%?start=1&length=2')).toBeNull()
+  })
+})
+
+describe('parseVaultFileLink', () => {
+  it('parses numen: links without span parameters and relative markdown note paths', () => {
+    expect(parseVaultFileLink('numen:notes%2FAmazon%20river.md')).toBe('notes/Amazon river.md')
+    expect(parseVaultFileLink('notes/Amazon%20river.md')).toBe('notes/Amazon river.md')
+    expect(parseVaultFileLink('./notes/Amazon%20river.md#heading')).toBe('notes/Amazon river.md')
+    expect(parseVaultFileLink('/Amazon%20river.md')).toBe('Amazon river.md')
+    expect(parseVaultFileLink('https://example.com/page')).toBeNull()
+    expect(parseVaultFileLink('#section')).toBeNull()
   })
 })

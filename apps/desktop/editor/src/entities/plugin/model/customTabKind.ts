@@ -9,13 +9,15 @@ import {
   onMounted,
   reactive,
   ref,
+  shallowReactive,
   type Component,
 } from 'vue'
-import type {
-  PluginContext,
-  ReaderRegistration,
-  Selector,
-  TabKindRegistration,
+import {
+  isNotePath,
+  type PluginContext,
+  type ReaderRegistration,
+  type Selector,
+  type TabKindRegistration,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '@numen/plugin-host'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
@@ -164,6 +166,7 @@ const FORBIDDEN_ACTION_NAMES = new Set([
   'body',
   'updateBody',
   'save',
+  'navigate',
 ])
 
 function bindCustomTabHandlers(
@@ -219,18 +222,28 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   const noteRef = ref({ path: targetPath, body: '' })
   const errorMessageRef = ref('')
   const isLoading = ref(deps.hostDeps?.readNote !== undefined)
+  let currentPath = targetPath
   let hasEdited = false
-  const write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
+  let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
-  if (deps.hostDeps?.readNote) {
-    startNoteRead(targetPath, deps.hostDeps.readNote, {
+  const readAt = (pathToRead: string): void => {
+    const readNote = deps.hostDeps?.readNote
+    if (!readNote) {
+      isLoading.value = false
+      return
+    }
+    isLoading.value = true
+    startNoteRead(pathToRead, readNote, {
       note: noteRef,
       errorMessage: errorMessageRef,
       isLoading,
-      hasEdited: () => hasEdited,
+      hasEdited: () => hasEdited || currentPath !== pathToRead,
     })
   }
-  return {
+
+  readAt(targetPath)
+
+  const state = shallowReactive({
     at: targetPath,
     path: targetPath,
     pluginId: deps.pluginId,
@@ -241,15 +254,28 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     body: computed(() => noteRef.value.body),
     updateBody: (body: string) => {
       hasEdited = true
-      noteRef.value = { path: targetPath, body }
+      noteRef.value = { path: currentPath, body }
       write(body)
     },
     save: () => {
       if (isLoading.value && !hasEdited) return
       write(noteRef.value.body)
     },
+    navigate: (nextPath: string, nextTitle?: string) => {
+      if (!nextPath || nextPath === currentPath) return
+      currentPath = nextPath
+      hasEdited = false
+      state.at = nextPath
+      state.path = nextPath
+      state.title = resolveTargetTitle(nextTitle, stripMarkdownExtension(extractFilename(nextPath)))
+      errorMessageRef.value = ''
+      noteRef.value = { path: nextPath, body: '' }
+      write = createNoteWriter(nextPath, deps.hostDeps?.writeNote, errorMessageRef)
+      readAt(nextPath)
+    },
     ...createTabActions(targetPath, deps.registration, deps.hostDeps),
-  }
+  })
+  return state
 }
 
 function resolveTargetTitle(title?: string, defaultName?: string, fallback = ''): string {
@@ -265,6 +291,26 @@ function resolveCustomTabTarget(state: unknown, registration: TabKindRegistratio
   return {
     ...(stateFile ? { file: stateFile, path: stateFile } : {}),
     title,
+  }
+}
+
+function measureCustomTab(state: unknown): void {
+  const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
+  s?.measure?.()
+  s?.editor?.measure?.()
+}
+
+function notifyCustomTabShown(
+  state: unknown,
+  id: string | undefined,
+  deps?: PluginHostDeps,
+): void {
+  measureCustomTab(state)
+  if (!id || !deps?.getWorkspace) return
+  const s = state as { path?: string; at?: string; title?: unknown } | undefined
+  const path = s?.path || s?.at
+  if (path) {
+    deps.getWorkspace()?.syncPath(id, path, extractTitleValue(s?.title))
   }
 }
 
@@ -291,10 +337,11 @@ export function createCustomTabKind(
     },
     pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
     identity: (targetPath: string) => targetPath || registration.kind,
-    onShow: (state: unknown) => {
-      const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
-      s?.measure?.()
-      s?.editor?.measure?.()
+    onShow: (state: unknown, id?: string) => notifyCustomTabShown(state, id, deps),
+    navigate: (state: unknown, targetPath: string, title?: string) => {
+      if (!isNotePath(targetPath)) return
+      const s = state as { navigate?: (path: string, title?: string) => void } | undefined
+      s?.navigate?.(targetPath, title)
     },
     getTarget: (state: unknown) => resolveCustomTabTarget(state, registration),
     getOpenTab: (state: unknown) => {

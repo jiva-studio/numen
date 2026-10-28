@@ -38,10 +38,8 @@ function isDocumentTabState(val: unknown): val is DocumentTabState {
 }
 
 const targetPath = computed(() => {
-  if (props.path) return props.path
-  if (props.file) return props.file
   const s = props.state as { path?: string; file?: string } | undefined
-  return s?.path ?? s?.file ?? ''
+  return props.path || props.file || s?.path || s?.file || ''
 })
 
 const internalState =

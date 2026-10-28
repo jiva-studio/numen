@@ -300,10 +300,28 @@ function createTabOpeners(ctx: TabOpenerContext) {
     ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind: one, state })
   }
 
+  const findOpenTabAt = (kind: string, targetPath: string): string | undefined => {
+    for (const [existingId, existingTab] of ctx.open.value) {
+      if (existingTab.kind.kind === kind && getTabPath(existingTab) === targetPath) {
+        return existingId
+      }
+    }
+    return undefined
+  }
+
   const createTabSync = (kind: string, targetPath: string): string => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind)
-    const id = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
-    if (ctx.open.value.has(id)) return id
+    if (targetPath && one.identity) {
+      const matchedId = findOpenTabAt(kind, targetPath)
+      if (matchedId) return matchedId
+    }
+    const candidateId = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
+    const existing = ctx.open.value.get(candidateId)
+    if (existing) {
+      const existingPath = getTabPath(existing)
+      if (!targetPath || !existingPath || existingPath === targetPath) return candidateId
+    }
+    const id = existing ? generateId(kind) : candidateId
     const scope = effectScope(true)
     const state = openInScope(scope, () => one.open(targetPath, id))
     ctx.scopes.set(id, scope)

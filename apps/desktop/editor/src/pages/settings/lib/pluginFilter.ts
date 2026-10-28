@@ -53,53 +53,50 @@ const KEY_VALUE_ALIASES: Readonly<Record<string, Readonly<Record<string, FilterQ
   },
 }
 
-const FEATURE_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  files: ['file.tree', 'file-tree', 'files'],
-  plex: ['plex'],
-  agent: ['agent.chat', 'agent-chat', 'agent chat'],
-  flashcards: ['flashcards'],
-  cards: ['flashcards'],
-  preset: ['flashcards'],
-  recording: ['media.player', 'media-player', 'recording', 'audio'],
-  audio: ['media.player', 'media-player', 'audio', 'recording'],
-  note: ['notes', 'markdown'],
-  markdown: ['notes', 'markdown'],
-  document: ['pdf'],
-  pdf: ['pdf'],
-  book: ['epub'],
-  epub: ['epub'],
-}
-
 const SYSTEM_KEYWORDS = ['system', 'theme', 'appearance', 'window', 'scale', 'naming', 'sync']
+
+function toSearchStems(value: string): readonly string[] {
+  const clean = value.trim().toLowerCase()
+  if (!clean) return []
+  const singular = clean.length > 3 && clean.endsWith('s') ? clean.slice(0, -1) : clean
+  return singular !== clean ? [clean, singular] : [clean]
+}
 
 function matchesReader(plugin: PluginInfo, value: string): boolean {
   if (!value) return (plugin.readers ?? []).length > 0
-  const hasReader = (plugin.readers ?? []).some(
-    (reader) =>
-      reader.id.toLowerCase().includes(value) ||
-      reader.extensions.some((ext) => ext.toLowerCase().includes(value)),
-  )
+  const stems = toSearchStems(value)
+  const hasReader = (plugin.readers ?? []).some((reader) => {
+    const readerId = reader.id.toLowerCase()
+    return (
+      stems.some((stem) => readerId.includes(stem)) ||
+      reader.extensions.some((ext) => stems.some((stem) => ext.toLowerCase().includes(stem)))
+    )
+  })
   if (hasReader) return true
-  const aliases = FEATURE_ALIASES[value] ?? [value]
   const id = plugin.id.toLowerCase()
-  return aliases.some((alias) => id.includes(alias))
+  return stems.some((stem) => id.includes(stem))
 }
 
 function matchesCapability(plugin: PluginInfo, value: string): boolean {
   if (!value) return (plugin.capabilities ?? []).length > 0
-  return (plugin.capabilities ?? []).some((cap) => cap.toLowerCase().includes(value))
+  const stems = toSearchStems(value)
+  return (plugin.capabilities ?? []).some((cap) =>
+    stems.some((stem) => cap.toLowerCase().includes(stem)),
+  )
 }
 
 function matchesFeature(plugin: PluginInfo, value: string): boolean {
   if (!value) return true
-  const candidates = FEATURE_ALIASES[value] ?? [value]
+  const stems = toSearchStems(value)
   const id = plugin.id.toLowerCase()
   const name = plugin.name.toLowerCase()
+  const description = (plugin.description ?? '').toLowerCase()
   const caps = (plugin.capabilities ?? []).map((cap) => cap.toLowerCase())
-  return candidates.some(
+  return stems.some(
     (term) =>
       id.includes(term) ||
       name.includes(term) ||
+      description.includes(term) ||
       caps.some((cap) => cap.includes(term)) ||
       matchesReader(plugin, term),
   )

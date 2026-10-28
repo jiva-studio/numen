@@ -9,6 +9,7 @@
 import type { CSSProperties } from 'vue'
 import type { Position } from '@numen/ui'
 import {
+  BACKLOG_PLOT,
   PLOT_BOTTOM,
   PLOT_HEIGHT,
   PLOT_LEFT,
@@ -229,6 +230,30 @@ export const createAxisLabels = (
     ]
   }
   return [...measureHeightAt(PLOT_TOP, '-100%', most), ...measureHeightAt(PLOT_BOTTOM, '0', least)]
+}
+
+/**
+ * Computes the axis height labels for the backlog plot.
+ */
+export const createBacklogAxisLabels = (
+  extent: Extent,
+  places: readonly Position[],
+  formatValue: (value: number) => string,
+): readonly { at: CSSProperties; text: string }[] => {
+  const { min: least, max: most } = extent
+  const createLabel = (y: number, lift: string, value: number) =>
+    isAxisLabelClear(y, places, [])
+      ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
+      : []
+  if (most === least) {
+    return [
+      { at: getAxisNumber(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: formatValue(least) },
+    ]
+  }
+  return [
+    ...createLabel(BACKLOG_PLOT.top, '-100%', most),
+    ...createLabel(BACKLOG_PLOT.foot, '0', least),
+  ]
 }
 
 /**

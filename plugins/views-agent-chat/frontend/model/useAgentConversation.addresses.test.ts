@@ -200,4 +200,21 @@ describe('a link inside an answer', () => {
     expect(one.besideItems).toEqual([])
     expect(press.was()).toBe(false)
   })
+
+  it('prevents default browser navigation and opens relative or spanless numen note links', async () => {
+    const one = open([turn('a', 'See [Amazon river](Amazon%20river.md).')], {
+      'name://Amazon river': 'notes/Amazon river.md',
+    })
+    const press1 = createPress()
+    one.state.followLink(one.turns.value[0]!, 'Amazon%20river.md', press1.press)
+    expect(press1.was()).toBe(true)
+    await settle()
+    expect(one.besideItems).toEqual(['notes/Amazon river.md'])
+
+    const press2 = createPress()
+    one.state.followLink(one.turns.value[0]!, 'numen:notes%2FDirect.md', press2.press)
+    expect(press2.was()).toBe(true)
+    await settle()
+    expect(one.besideItems).toEqual(['notes/Amazon river.md', 'notes/Direct.md'])
+  })
 })

@@ -4,7 +4,12 @@
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import type { AgentModelOption } from '../message-composer'
 import type { Conversation, Turn } from '../thread'
-import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../lib/links'
+import {
+  areLinkTargetsEqual,
+  parseLinkTarget,
+  parseVaultFileLink,
+  extractLinkTargets,
+} from '../lib/links'
 import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 import type { SavedConversation } from '../lib/saved'
@@ -146,6 +151,19 @@ function useReasoningSelection(
 const isSameList = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((one, index) => one === b[index])
 
+function openResolvedOrDirect(deps: AgentTabDeps, vaultPath: string): void {
+  const linkName = vaultPath.replace(/\.md$/i, '')
+  void deps
+    .resolveLinks(`[[${linkName}]]`)
+    .then((found) => {
+      const resolvedPath = found[0]?.path || vaultPath
+      deps.openFileBeside(resolvedPath)
+    })
+    .catch(() => {
+      deps.openFileBeside(vaultPath)
+    })
+}
+
 function createConversationLinkFollower(
   deps: AgentTabDeps,
   getResolved: (href: string) => string | undefined,
@@ -164,7 +182,17 @@ function createConversationLinkFollower(
       return
     }
     const path = getResolved(href)
-    if (path) deps.openFileBeside(path)
+    if (path !== undefined) {
+      if (path) deps.openFileBeside(path)
+      return
+    }
+    const vaultPath = parseVaultFileLink(href)
+    if (vaultPath) {
+      press.preventDefault()
+      openResolvedOrDirect(deps, vaultPath)
+      return
+    }
+    press.preventDefault()
   }
 }
 

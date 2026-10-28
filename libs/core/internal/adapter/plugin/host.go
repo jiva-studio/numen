@@ -1430,6 +1430,48 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	return secretsErr
 }
 
+func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
+	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
+	for _, s := range manifestSettings {
+		defVal := resolveSettingDefault(s)
+		defJSON := ""
+		if defVal != nil {
+			if b, err := json.Marshal(defVal); err == nil {
+				defJSON = string(b)
+			}
+		}
+		var minPtr, maxPtr, stepPtr *float64
+		if s.Min != 0 || s.Max != 0 {
+			minVal := s.Min
+			maxVal := s.Max
+			minPtr = &minVal
+			maxPtr = &maxVal
+		}
+		if s.Step != 0 {
+			stepVal := s.Step
+			stepPtr = &stepVal
+		}
+		settings = append(settings, pluginport.PluginSetting{
+			Key:         s.Key,
+			Type:        s.Type,
+			Title:       s.Title,
+			Description: s.Description,
+			DefaultJSON: defJSON,
+			Palette:     s.Palette,
+			Options:     s.Options,
+			Min:         minPtr,
+			Max:         maxPtr,
+			Step:        stepPtr,
+			ModelsOf:    s.ModelsOf,
+			Replaces:    s.Replaces,
+			OptionsBy:   s.OptionsBy,
+			When:        s.When,
+			Accept:      s.Accept,
+		})
+	}
+	return settings
+}
+
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
 func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
@@ -1439,45 +1481,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	result := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
-
-		settings := make([]pluginport.PluginSetting, 0, len(p.Manifest.Settings))
-		for _, s := range p.Manifest.Settings {
-			defVal := resolveSettingDefault(s)
-			defJSON := ""
-			if defVal != nil {
-				if b, err := json.Marshal(defVal); err == nil {
-					defJSON = string(b)
-				}
-			}
-			var minPtr, maxPtr, stepPtr *float64
-			if s.Min != 0 || s.Max != 0 {
-				minVal := s.Min
-				maxVal := s.Max
-				minPtr = &minVal
-				maxPtr = &maxVal
-			}
-			if s.Step != 0 {
-				stepVal := s.Step
-				stepPtr = &stepVal
-			}
-			settings = append(settings, pluginport.PluginSetting{
-				Key:         s.Key,
-				Type:        s.Type,
-				Title:       s.Title,
-				Description: s.Description,
-				DefaultJSON: defJSON,
-				Palette:     s.Palette,
-				Options:     s.Options,
-				Min:         minPtr,
-				Max:         maxPtr,
-				Step:        stepPtr,
-				ModelsOf:    s.ModelsOf,
-				Replaces:    s.Replaces,
-				OptionsBy:   s.OptionsBy,
-				When:        s.When,
-				Accept:      s.Accept,
-			})
-		}
+		settings := toPluginSettings(p.Manifest.Settings)
 
 		result = append(result, pluginport.PluginInfo{
 			ID:            p.Manifest.ID,

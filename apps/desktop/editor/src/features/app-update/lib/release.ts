@@ -110,3 +110,16 @@ export function formatReleaseDate(isoDate?: string, locale: string = 'en-GB'): s
     year: 'numeric',
   })
 }
+
+/**
+ * Returns the platform-specific installation instruction for an update.
+ */
+export function getPlatformUpdateMessage(platform?: ClientPlatform): string {
+  if (platform === 'windows') {
+    return 'Download the installer to update Numen.'
+  }
+  if (platform === 'darwin') {
+    return 'Download the disk image to update Numen.'
+  }
+  return 'Visit the download page or update via your package manager.'
+}

@@ -114,6 +114,9 @@ var (
 	manifestVersionPattern  = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
+// SettingTypeString is the type of a setting that holds a text string.
+const SettingTypeString = "string"
+
 // SettingTypeEnum is the type of a setting that holds one of its options.
 const SettingTypeEnum = "enum"
 
@@ -123,7 +126,7 @@ const (
 	SettingTypeFolder = "folder"
 )
 
-var validSettingTypes = []string{"boolean", "string", "number", SettingTypeEnum, "select", "range", SettingTypeAgent, SettingTypeFile, SettingTypeFolder}
+var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "select", "range", SettingTypeAgent, SettingTypeFile, SettingTypeFolder}
 
 // PluginLifecycle defines when the host evicts an idle plugin from memory.
 type PluginLifecycle struct {

@@ -35,7 +35,21 @@ if [ -n "$PRETTIER_FILES" ]; then
 fi
 
 
-# 4. Narrative identifiers, test names and comments in staged files
+# 4. ESLint conventions and Vue thin-computed gate on staged TS/Vue files
+FRONTEND_STAGED=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue)$' || true)
+if [ -n "$FRONTEND_STAGED" ] && [ -x "$root/node_modules/.bin/eslint" ]; then
+  for pkg in "libs/ui/core" "libs/ui/shell" "apps/desktop/editor" "apps/desktop/flashcards" "apps/mobile" "plugins"; do
+    PKG_FILES=$(echo "$FRONTEND_STAGED" | grep "^${pkg}/" | sed "s|^${pkg}/||" || true)
+    if [ -n "$PKG_FILES" ] && [ -d "$root/$pkg" ]; then
+      (cd "$root/$pkg" && "$root/node_modules/.bin/eslint" $PKG_FILES) || {
+        echo "❌ Error: staged files in $pkg failed ESLint checks (e.g. numen/thin-computed, component structure, or naming rules)."
+        exit 1
+      }
+    fi
+  done
+fi
+
+# 5. Narrative identifiers, test names and comments in staged files
 if ! NARRATIVE_REPORT=$(node "$root/tools/lint-narrative/scan.mjs" "$root" --staged --check 2>&1); then
   echo "$NARRATIVE_REPORT"
   echo "❌ Error: staged files contain narrative identifiers, test names or comments (see AGENTS.md §13)."

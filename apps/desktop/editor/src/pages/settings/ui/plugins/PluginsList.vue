@@ -41,6 +41,13 @@ watch(
   },
 )
 
+watch(searchQuery, (newQuery) => {
+  const initialQuery = props.state.initialSearchQuery
+  if (initialQuery && initialQuery.value !== newQuery) {
+    initialQuery.value = newQuery
+  }
+})
+
 const categoryLabels: Readonly<Record<string, string>> = {
   agents: words.categoryAgents,
   editors: words.categoryEditors,

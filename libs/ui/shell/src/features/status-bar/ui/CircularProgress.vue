@@ -39,8 +39,7 @@ const strokeDasharray = computed(() => {
 })
 
 const strokeDashoffset = computed(() => {
-  if (isIndeterminate.value) return 0
-  if (props.progress === undefined) return 0
+  if (isIndeterminate.value || props.progress === undefined) return 0
   const clamped = Math.max(0, Math.min(100, props.progress))
   return circumference.value - (clamped / 100) * circumference.value
 })

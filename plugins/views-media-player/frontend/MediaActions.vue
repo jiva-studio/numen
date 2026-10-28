@@ -37,7 +37,6 @@ function onOpenMenu(event: Event) {
       type="button"
       class="media__follow"
       :aria-label="words.follow"
-      :title="words.follow"
       :aria-pressed="props.isFollowing ? 'true' : 'false'"
       @click="onToggleFollow"
     >
@@ -48,7 +47,6 @@ function onOpenMenu(event: Event) {
       type="button"
       class="media__more"
       :aria-label="words.more"
-      :title="words.more"
       aria-haspopup="menu"
       @click="onOpenMenu"
     >

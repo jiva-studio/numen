@@ -601,10 +601,12 @@ const numenPlugin = {
         messages: {
           tooManyStatements:
             'computed() has {{count}} statements (max: {{max}}). Extract data transformations and business logic into a pure module.',
+          forbiddenBranch:
+            'Branching ({{kind}}) inside computed() in a .vue file is forbidden. Move conditional business logic into a composable or pure module.',
           forbiddenLoop:
             'Loops inside computed() in a .vue file are forbidden. Move iteration and data transformation into a pure module.',
           forbiddenTransform:
-            'Array .{{method}}() inside computed() in a .vue file is forbidden. Move sorting and reduction into a pure module.',
+            'Array .{{method}}() inside computed() in a .vue file is forbidden. Move sorting, filtering, and reduction into a pure module.',
         },
         schema: [
           {
@@ -617,7 +619,7 @@ const numenPlugin = {
         ],
       },
       create(context) {
-        const maxStatements = context.options[0]?.maxStatements ?? 5
+        const maxStatements = context.options[0]?.maxStatements ?? 3
         const LOOP_TYPES = new Set([
           'ForStatement',
           'ForInStatement',
@@ -625,9 +627,28 @@ const numenPlugin = {
           'WhileStatement',
           'DoWhileStatement',
         ])
+        const FORBIDDEN_ARRAY_METHODS = new Set(['sort', 'reduce', 'some', 'every'])
 
-        function inspectBody(node) {
+        function inspectBody(node, state) {
           if (!node) return
+          if (node.type === 'SwitchStatement') {
+            context.report({
+              node,
+              messageId: 'forbiddenBranch',
+              data: { kind: 'switch' },
+            })
+            return
+          }
+          if (node.type === 'IfStatement') {
+            state.ifCount += 1
+            if (state.ifCount > 1) {
+              context.report({
+                node,
+                messageId: 'forbiddenBranch',
+                data: { kind: 'multiple if statements' },
+              })
+            }
+          }
           if (LOOP_TYPES.has(node.type)) {
             context.report({
               node,
@@ -639,7 +660,7 @@ const numenPlugin = {
             node.type === 'CallExpression' &&
             node.callee?.type === 'MemberExpression' &&
             node.callee.property?.type === 'Identifier' &&
-            (node.callee.property.name === 'sort' || node.callee.property.name === 'reduce')
+            FORBIDDEN_ARRAY_METHODS.has(node.callee.property.name)
           ) {
             context.report({
               node: node.callee.property,
@@ -652,10 +673,10 @@ const numenPlugin = {
             const child = node[key]
             if (Array.isArray(child)) {
               for (const item of child) {
-                if (item && typeof item === 'object' && item.type) inspectBody(item)
+                if (item && typeof item === 'object' && item.type) inspectBody(item, state)
               }
             } else if (child && typeof child === 'object' && child.type) {
-              inspectBody(child)
+              inspectBody(child, state)
             }
           }
         }
@@ -679,7 +700,7 @@ const numenPlugin = {
                 })
               }
             }
-            inspectBody(fn.body)
+            inspectBody(fn.body, { ifCount: 0 })
           },
         }
       },
@@ -786,7 +807,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-inline-props': ['error', { max: 6 }],
         'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
         'numen/max-script-lines': ['error', { max: 100 }],
-        'numen/thin-computed': ['error', { maxStatements: 5 }],
+        'numen/thin-computed': ['error', { maxStatements: 3 }],
         'numen/boolean-prop-naming': 'error',
         'numen/handler-naming': 'error',
         'vue/max-lines-per-block': [

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
+import { renderPaneContent } from './styles'
 
 describe('createPluginPaneWrapper', () => {
   it('unwraps es module default export and forwards normalized props', async () => {
@@ -312,6 +313,24 @@ describe('createReaderTabKind (place)', () => {
 
     expect(kind.icon).toBe(icon)
   })
+
+  it('omits title from top-level VNode props so it never leaks as a native HTML tooltip', () => {
+    const FakeReader = { name: 'FakeReader', render: () => null }
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: FakeReader })
+    const state = kind.open('audio/730707BG.LON.mp3', 'tab')
+    const nodes = renderPaneContent({
+      pluginId: 'viewer-plugin',
+      component: FakeReader,
+      state,
+      shadowRoot: null,
+      containerClass: 'reader-pane',
+    }) as unknown[]
+    const wrapperVNode = nodes[2] as { children?: Array<{ props?: Record<string, unknown> }> }
+    const childProps = wrapperVNode.children?.[0]?.props ?? {}
+    expect(childProps.path).toBe('audio/730707BG.LON.mp3')
+    expect(childProps.title).toBeUndefined()
+    expect((childProps.state as { title?: string })?.title).toBe('730707BG.LON.mp3')
+  })
 })
 
 describe('createCustomTabKind (actions)', () => {
@@ -376,5 +395,56 @@ describe('createCustomTabKind (actions)', () => {
     expect(state.path).toBe('samples/secure.md')
     expect(state.file).toBeUndefined()
     expect(typeof state.path).toBe('string')
+  })
+
+  it('navigates note tab in place and syncs path when shown', async () => {
+    const syncPath = vi.fn(() => true)
+    const writeCalls: Array<{ path: string; body: string }> = []
+    const kind = createCustomTabKind(
+      'md.numen.notes',
+      {
+        kind: 'note',
+        component: null,
+        title: 'Note',
+      },
+      {
+        registerKind: () => () => {},
+        registerExtensionReader: () => () => {},
+        openTab: async () => '',
+        readNote: async (path: string) =>
+          path === 'notes/first.md' ? '# First' : path === 'notes/second.md' ? '# Second' : '',
+        writeNote: async (path: string, body: string) => {
+          writeCalls.push({ path, body })
+        },
+        getWorkspace: () => ({ syncPath }) as never,
+      },
+    )
+
+    expect(typeof kind.navigate).toBe('function')
+
+    const state = kind.open('notes/first.md', 'note:notes/first.md') as {
+      path: string
+      at: string
+      title: string
+      body: { value: string }
+      updateBody: (body: string) => void
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(state.body.value).toBe('# First')
+    expect(kind.getTitle!(state)).toBe('first')
+
+    kind.navigate!(state, 'notes/second.md', 'Second Note')
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    expect(state.path).toBe('notes/second.md')
+    expect(state.at).toBe('notes/second.md')
+    expect(kind.getTitle!(state)).toBe('Second Note')
+    expect(state.body.value).toBe('# Second')
+
+    state.updateBody('# Second Edited')
+    expect(writeCalls).toEqual([{ path: 'notes/second.md', body: '# Second Edited' }])
+
+    kind.onShow!(state, 'note:notes/first.md')
+    expect(syncPath).toHaveBeenCalledWith('note:notes/first.md', 'notes/second.md', 'Second Note')
   })
 })

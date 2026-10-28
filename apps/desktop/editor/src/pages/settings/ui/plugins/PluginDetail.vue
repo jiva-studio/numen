@@ -193,39 +193,44 @@ watch(
       </div>
     </div>
 
-    <!-- AI consent -->
-    <SettingRow
-      v-if="hasConsent"
-      v-slot="{ labelledBy }"
-      :at="`ai-consent-${props.plugin.id}`"
-      :name="words.consentAllowed"
-      :detail="words.consentDetail[props.plugin.consent]"
+    <div
+      v-if="hasConsent || hasDeclarativeSettings || shownSecrets.length > 0 || fileCount > 0"
+      class="plugin-detail__settings"
     >
-      <Switch
-        :model-value="props.plugin.consent === 'allowed'"
-        :aria-labelledby="labelledBy"
-        @update:model-value="onConsentChange"
+      <!-- AI consent -->
+      <SettingRow
+        v-if="hasConsent"
+        v-slot="{ labelledBy }"
+        :at="`ai-consent-${props.plugin.id}`"
+        :name="words.consentAllowed"
+        :detail="words.consentDetail[props.plugin.consent]"
+      >
+        <Switch
+          :model-value="props.plugin.consent === 'allowed'"
+          :aria-labelledby="labelledBy"
+          @update:model-value="onConsentChange"
+        />
+      </SettingRow>
+
+      <!-- Declarative settings and secrets -->
+      <PluginFields
+        v-if="hasDeclarativeSettings || shownSecrets.length > 0"
+        :state="props.state"
+        :plugin="props.plugin"
       />
-    </SettingRow>
 
-    <!-- Declarative settings and secrets -->
-    <PluginFields
-      v-if="hasDeclarativeSettings || shownSecrets.length > 0"
-      :state="props.state"
-      :plugin="props.plugin"
-    />
-
-    <!-- Data the plugin keeps in the shown vault -->
-    <SettingRow
-      v-if="fileCount > 0"
-      :at="`data-${props.plugin.id}`"
-      :name="words.pluginData"
-      :detail="words.pluginDataDetail(fileCount)"
-    >
-      <Button variant="danger" size="small" @click="onDeleteData">
-        {{ words.pluginDataDelete }}
-      </Button>
-    </SettingRow>
+      <!-- Data the plugin keeps in the shown vault -->
+      <SettingRow
+        v-if="fileCount > 0"
+        :at="`data-${props.plugin.id}`"
+        :name="words.pluginData"
+        :detail="words.pluginDataDetail(fileCount)"
+      >
+        <Button variant="danger" size="small" @click="onDeleteData">
+          {{ words.pluginDataDelete }}
+        </Button>
+      </SettingRow>
+    </div>
     <div
       v-if="isAskingDelete"
       class="plugin-detail__asking"
@@ -258,8 +263,18 @@ watch(
 .plugin-detail__back {
   align-self: flex-start;
   margin-block-end: 0.75rem;
-  margin-inline-start: -0.5rem;
   color: var(--numen-hushed);
+}
+
+.plugin-detail__settings {
+  padding-inline: 1rem;
+  border: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-radius: var(--numen-radius, 0.375rem);
+  background-color: var(--numen-raised, rgba(125, 125, 125, 0.04));
+}
+
+.plugin-detail__settings :deep(.settings__row:last-child) {
+  border-block-end: none;
 }
 
 .plugin-detail__header {

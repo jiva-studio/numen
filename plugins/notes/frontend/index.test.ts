@@ -44,6 +44,14 @@ describe('notes plugin lifecycle', () => {
     expect(registerView).toHaveBeenCalledWith(expect.objectContaining({ capability: NOTE_EDITOR }))
   })
 
+  it('defaults softWrap to true and lineNumbers to false when no settings are stored', () => {
+    expect(readMarkdownEditorPreferences()).toStrictEqual({
+      softWrap: true,
+      lineNumbers: false,
+      tabSize: 2,
+    })
+  })
+
   it('wires plugin settings into open note editors and updates them when settings change', async () => {
     const settings: Record<string, unknown> = {
       soft_wrap: false,

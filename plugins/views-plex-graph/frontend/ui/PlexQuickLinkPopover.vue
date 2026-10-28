@@ -5,7 +5,7 @@
 import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '@numen/ui'
 import type { PlexRelation } from '../plex'
-import { useSearchResults } from '../lib/search'
+import { hasExactNoteMatch, useSearchResults } from '../lib/search'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -33,16 +33,7 @@ const { results, isLoading, setQuery } = useSearchResults((text) => props.search
 
 const trimmedQuery = computed(() => query.value.trim())
 
-const hasExactMatch = computed(() => {
-  const q = trimmedQuery.value.toLowerCase()
-  if (!q) return false
-  return results.value.some(
-    (item) =>
-      item.title.toLowerCase() === q ||
-      item.path.toLowerCase() === q ||
-      item.path.toLowerCase() === `${q}.md`,
-  )
-})
+const hasExactMatch = computed(() => hasExactNoteMatch(results.value, trimmedQuery.value))
 
 const showCreateOption = computed(() => {
   if (!trimmedQuery.value) return false

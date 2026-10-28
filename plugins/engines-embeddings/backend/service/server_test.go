@@ -68,6 +68,40 @@ func TestLifecycleConfigure(t *testing.T) {
 	if emb.modelInfo.Name != "text-embedding-3-small" {
 		t.Errorf("expected model text-embedding-3-small, got %s", emb.modelInfo.Name)
 	}
+	if emb.modelInfo.Dimensions != 1536 {
+		t.Errorf("expected 1536 dimensions for text-embedding-3-small, got %d", emb.modelInfo.Dimensions)
+	}
+}
+
+func TestModelDimensionResolutionAcrossProviders(t *testing.T) {
+	emb := newEmbeddingServer()
+	cases := []struct {
+		provider string
+		model    string
+		wantDims int32
+	}{
+		{provider: "local", model: "Xenova/bge-m3", wantDims: 1024},
+		{provider: "local", model: "Xenova/multilingual-e5-small", wantDims: 384},
+		{provider: "openrouter", model: "openai/text-embedding-3-small", wantDims: 1536},
+		{provider: "openrouter", model: "openai/text-embedding-3-large", wantDims: 3072},
+		{provider: "openrouter", model: "baai/bge-m3", wantDims: 1024},
+		{provider: "openrouter", model: "qwen/qwen3-embedding-8b", wantDims: 4096},
+		{provider: "openai", model: "text-embedding-3-large", wantDims: 3072},
+	}
+
+	for _, tc := range cases {
+		emb.updateConfig(map[string]string{
+			"provider": tc.provider,
+			"model":    tc.model,
+		})
+		info, err := emb.GetModelInfo(t.Context())
+		if err != nil {
+			t.Fatalf("%s/%s: %v", tc.provider, tc.model, err)
+		}
+		if info.GetDimensions() != tc.wantDims {
+			t.Errorf("%s/%s: got %d dimensions, want %d", tc.provider, tc.model, info.GetDimensions(), tc.wantDims)
+		}
+	}
 }
 
 func TestEmbeddingServerCustomRepositoryIsNotPinned(t *testing.T) {

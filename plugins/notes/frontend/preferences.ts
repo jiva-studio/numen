@@ -29,7 +29,7 @@ export function readMarkdownEditorPreferences(
   const tabSize = readSetting(getSetting, 'tab_size')
   return {
     softWrap: typeof softWrap === 'boolean' ? softWrap : true,
-    lineNumbers: typeof lineNumbers === 'boolean' ? lineNumbers : true,
+    lineNumbers: typeof lineNumbers === 'boolean' ? lineNumbers : false,
     tabSize: typeof tabSize === 'number' && Number.isFinite(tabSize) ? Math.max(1, Math.trunc(tabSize)) : 2,
   }
 }

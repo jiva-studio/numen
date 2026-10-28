@@ -45,6 +45,34 @@ export function parseLinkTarget(href: string): LinkTarget | null {
   return { path, start, length }
 }
 
+const URI_SCHEME_PATTERN = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
+
+function extractRawVaultPath(href: string): string | null {
+  if (!href || href.startsWith('#')) return null
+  if (href.startsWith(LINK_SCHEME)) return href.slice(LINK_SCHEME.length)
+  if (!URI_SCHEME_PATTERN.test(href)) return href
+  return null
+}
+
+/**
+ * Parses a vault file or note path from a `numen:` link without a span or a relative markdown link.
+ */
+export function parseVaultFileLink(href: string): string | null {
+  const raw = extractRawVaultPath(href.trim())
+  if (!raw) return null
+  const [withoutHash = ''] = raw.split('#', 2)
+  const [escapedPath = ''] = withoutHash.split('?', 2)
+  if (!escapedPath) return null
+  try {
+    const decoded = decodeURIComponent(escapedPath)
+      .trim()
+      .replace(/^(\.\/+|\/+)/, '')
+    return decoded || null
+  } catch {
+    return null
+  }
+}
+
 /**
  * Whether two link targets name the same span of the same file.
  */

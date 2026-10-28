@@ -23,9 +23,12 @@ const nothing = computed(() => getIdleReason(curve.value))
 
 /** What is said in the control's place where the goal has nothing to work on. */
 const emptyGoalExplanation = computed(() => {
-  if (nothing.value === 'unpointed') return words.unpointed
   if (nothing.value === 'noCards') return words.noCards(curve.value.decks)
-  return nothing.value === 'beginsNothing' ? words.beginsNothing : ''
+  return nothing.value === 'unpointed'
+    ? words.unpointed
+    : nothing.value === 'beginsNothing'
+      ? words.beginsNothing
+      : ''
 })
 
 /** The three goals, as the switch above the curve offers them. */

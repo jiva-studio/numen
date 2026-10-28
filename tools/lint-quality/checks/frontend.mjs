@@ -70,6 +70,7 @@ export async function runFrontendCheck({ repoRoot, warnOnly = false }) {
 
   const targets = [
     { relDir: "libs/ui/core", name: "libs/ui/core" },
+    { relDir: "libs/ui/shell", name: "libs/ui/shell" },
     { relDir: "apps/desktop/editor", name: "desktop/editor" },
     { relDir: "apps/desktop/flashcards", name: "desktop/flashcards" },
     { relDir: "apps/mobile", name: "mobile" },

@@ -169,9 +169,10 @@ export function renderPaneContent(deps: PaneContentDeps) {
     typeof deps.state === 'object' && deps.state !== null
       ? (deps.state as Record<string, unknown>)
       : {}
+  const { title: _title, ...restState } = stateObj
   const path = extractStatePath(deps.state)
   const child = h(deps.component, {
-    ...stateObj,
+    ...restState,
     ...(path ? { path, filePath: path, file: path } : {}),
     state: deps.state,
     ...(deps.context ? { context: deps.context } : {}),

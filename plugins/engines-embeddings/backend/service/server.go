@@ -92,6 +92,25 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	if s.provider != providerLocal && s.remoteModel != "" {
 		s.modelInfo.Name = s.remoteModel
 	}
+	if !s.isMock {
+		s.modelInfo.Dimensions = resolveModelDimensions(s.modelInfo.Name)
+		applyDimensionEnv(&s.modelInfo)
+	}
+}
+
+func resolveModelDimensions(model string) int {
+	switch model {
+	case "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5":
+		return 384
+	case "openai/text-embedding-3-small", "text-embedding-3-small", "openai/text-embedding-ada-002", "text-embedding-ada-002":
+		return 1536
+	case "openai/text-embedding-3-large", "text-embedding-3-large":
+		return 3072
+	case "qwen/qwen3-embedding-8b":
+		return 4096
+	default:
+		return 1024
+	}
 }
 
 func (s *embeddingServer) updateLocalModelLocked(model string) {
@@ -252,6 +271,11 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 			vec, err := computeServiceVector(ctx, key, baseURL, model, t)
 			if err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
+			}
+			if len(vec) > 0 {
+				s.mu.Lock()
+				s.modelInfo.Dimensions = len(vec)
+				s.mu.Unlock()
 			}
 			vectors[i] = vec
 		}

@@ -32,7 +32,7 @@
       "type": "boolean",
       "title": "Line Numbers",
       "description": "Show line numbers in the editor margin",
-      "default": true
+      "default": false
     }
   ]
 }

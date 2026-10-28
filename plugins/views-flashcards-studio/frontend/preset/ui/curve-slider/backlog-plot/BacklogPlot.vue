@@ -7,10 +7,9 @@
  * above; the run itself is drawn by `BacklogPicture`.
  */
 import { computed } from 'vue'
-import { isAxisLabelClear, getAxisNumber } from '../../../lib/label'
+import { createBacklogAxisLabels } from '../../../lib/label'
 import {
   BACKLOG_PLOT_HEIGHT,
-  BACKLOG_PLOT,
   getBacklogPositions,
   getBacklogExtent,
   createLinePath,
@@ -55,23 +54,9 @@ const hasBacklog = computed(() => props.isHonest && backlog.value.length > 1)
  * overdue is the foot, so a run holding nothing at all is that one number on
  * the floor it lies along.
  */
-const heights = computed(() => {
-  const { min: least, max: most } = extent.value
-  const formatValue = (value: number) => words.formatBacklogCards(value)
-  const createAxisLabels = (y: number, lift: string, value: number) =>
-    isAxisLabelClear(y, positions.value, [])
-      ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
-      : []
-  if (most === least) {
-    return [
-      { at: getAxisNumber(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: formatValue(least) },
-    ]
-  }
-  return [
-    ...createAxisLabels(BACKLOG_PLOT.top, '-100%', most),
-    ...createAxisLabels(BACKLOG_PLOT.foot, '0', least),
-  ]
-})
+const heights = computed(() =>
+  createBacklogAxisLabels(extent.value, positions.value, (value) => words.formatBacklogCards(value)),
+)
 
 /** The days at either end of the extent, which the grid says nothing about. */
 const ends = computed(() => [
