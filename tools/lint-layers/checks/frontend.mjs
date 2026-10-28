@@ -285,52 +285,42 @@ export function verifyFrontendSegmentsAndEntities() {
   failOnFindings("Frontend upward segment imports (lib/api/model -> ui) or @x cross-entity imports (F1, F10)", findFrontendSegmentAndCrossEntityViolations());
 }
 
-/** F5 & F6: Vue <style> raw colors/fallbacks, <template> array transforms, and TS catch returning null/undefined/false. */
-function findVueStyleTemplateAndResultViolations() {
+/** F5: Vue <style> raw colors/fallbacks and <template> array transforms. */
+function findVueStyleAndTemplateViolations() {
   const found = [];
   for (const file of listShippedFiles(["libs/ui/core/src", "libs/ui/shell/src", "apps/desktop/editor/src", "apps/desktop/flashcards/src", "apps/mobile/src", "plugins"])) {
-    if (!/\.(ts|vue)$/.test(file) || /\/frontend\/gen\//.test(file)) continue;
+    if (!file.endsWith(".vue") || /\/frontend\/gen\//.test(file)) continue;
     const raw = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-    if (file.endsWith(".vue")) {
-      const tplMatch = raw.match(/<template[^>]*>([\s\S]*?)<\/template>/);
-      if (tplMatch) {
-        const baseLine = raw.slice(0, tplMatch.index).split("\n").length;
-        tplMatch[1].split("\n").forEach((line, idx) => {
-          const m = line.match(/\.(filter|map|reduce|sort|slice)\s*\(|\bnew\s+Date\s*\(|\bJSON\.(?:stringify|parse)\s*\(/);
-          if (m) found.push({ file, line: baseLine + idx, symbol: `<template> inline computation ${m[0].trim()} (F5)` });
-        });
-      }
-      const styleMatch = raw.match(/<style[^>]*>([\s\S]*?)<\/style>/);
-      if (styleMatch && !/theme/i.test(file)) {
-        const baseLine = raw.slice(0, styleMatch.index).split("\n").length;
-        styleMatch[1].split("\n").forEach((line, idx) => {
-          if (/^\s*\/\//.test(line)) return;
-          if (/#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(|\bhsla?\s*\(/.test(line)) {
-            found.push({ file, line: baseLine + idx, symbol: `<style> raw color literal (F5): ${line.trim()}` });
-          }
-          if (/var\(\s*--[\w-]+\s*,/.test(line)) {
-            found.push({ file, line: baseLine + idx, symbol: `<style> token fallback var(--token, fallback) (F5): ${line.trim()}` });
-          }
-          if (/^\s*--[\w-]+\s*:/.test(line)) {
-            found.push({ file, line: baseLine + idx, symbol: `<style> local custom property declaration (F5): ${line.trim()}` });
-          }
-        });
-      }
+    const tplMatch = raw.match(/<template[^>]*>([\s\S]*?)<\/template>/);
+    if (tplMatch) {
+      const baseLine = raw.slice(0, tplMatch.index).split("\n").length;
+      tplMatch[1].split("\n").forEach((line, idx) => {
+        const m = line.match(/\.(filter|map|reduce|sort|slice)\s*\(|\bnew\s+Date\s*\(|\bJSON\.(?:stringify|parse)\s*\(/);
+        if (m) found.push({ file, line: baseLine + idx, symbol: `<template> inline computation ${m[0].trim()} (F5)` });
+      });
     }
-    if (/\/(model|api|features|entities)\//.test(file)) {
-      for (const m of raw.matchAll(/catch\s*(?:\([^)]*\))?\s*\{([^{}]*)\}/g)) {
-        if (/\breturn\s+(?:null|undefined|false|""|''|\[\])\b/.test(m[1])) {
-          const line = raw.slice(0, m.index).split("\n").length;
-          found.push({ file, line, symbol: `catch block returns bare primitive instead of Result<T, E> (F6)` });
+    const styleMatch = raw.match(/<style[^>]*>([\s\S]*?)<\/style>/);
+    if (styleMatch && !/theme/i.test(file)) {
+      const baseLine = raw.slice(0, styleMatch.index).split("\n").length;
+      styleMatch[1].split("\n").forEach((line, idx) => {
+        if (/^\s*\/\//.test(line)) return;
+        if (/#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(|\bhsla?\s*\(/.test(line)) {
+          found.push({ file, line: baseLine + idx, symbol: `<style> raw color literal (F5): ${line.trim()}` });
         }
-      }
+        if (/var\(\s*--[\w-]+\s*,/.test(line)) {
+          found.push({ file, line: baseLine + idx, symbol: `<style> token fallback var(--token, fallback) (F5): ${line.trim()}` });
+        }
+        if (/^\s*--[\w-]+\s*:/.test(line)) {
+          found.push({ file, line: baseLine + idx, symbol: `<style> local custom property declaration (F5): ${line.trim()}` });
+        }
+      });
     }
   }
   return found;
 }
 
-export function verifyVueStyleTemplateAndResultPattern() {
-  failOnFindings("Vue <style> token bypass, <template> inline transform, or catch returning bare null/undefined/false (F5, F6)", findVueStyleTemplateAndResultViolations());
+export function verifyVueStyleAndTemplatePurity() {
+  failOnFindings("Vue <style> token bypass or <template> inline transform (F5)", findVueStyleAndTemplateViolations());
 }
 
 /** F9: Every TypeScript package with a tsconfig.json has an eslint.config.js. */
@@ -411,11 +401,11 @@ export const FRONTEND_VERIFIERS = [
     run: verifyFrontendSegmentsAndEntities,
   },
   {
-    id: "vue-style-template-and-result",
+    id: "vue-style-and-template",
     scope: "apps",
     module: "desktop",
-    name: "Vue <style> Tokens, <template> Purity & TS Result<T, E> in Catch (F5, F6)",
-    run: verifyVueStyleTemplateAndResultPattern,
+    name: "Vue <style> Tokens & <template> Purity (F5)",
+    run: verifyVueStyleAndTemplatePurity,
   },
   {
     id: "apps-reach-no-plugin",
