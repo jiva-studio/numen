@@ -120,7 +120,10 @@ export const createAgentPort = (agent: AgentClient): AgentPort => ({
   async *ask(query: AgentQuery) {
     for await (const step of agent.askAgent(createAgentRequest(query), { signal: query.signal })) {
       const converted = getAgentStep(step)
-      if (converted) yield converted
+      if (converted) {
+        yield converted
+        if (converted.kind === 'stopped') return
+      }
     }
   },
 

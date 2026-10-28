@@ -174,6 +174,21 @@ func TestTheResponseOfTheCliIsSaidWhereNoTextWasStreamed(t *testing.T) {
 	}
 }
 
+// A result event ends the run even when a child process keeps the output pipe open.
+func TestResultEventEndsRunWithOpenChildOutput(t *testing.T) {
+	script := agenttest.WriteScript(t, "agy",
+		"(sleep 60) &\n"+
+			`echo '{"event":"step_update","step_update":{"step_type":"agent_response","text_delta":"done"}}'`+"\n"+
+			`echo '{"event":"result","result":{"status":"SUCCESS","response":"done"}}'`+"\n"+
+			"wait\n")
+
+	got, _ := collect(t, script)
+
+	if len(got) != 1 || got[0].GetText() != "done" {
+		t.Errorf("the steps are %v", got)
+	}
+}
+
 // A result in error stops the run with the error the CLI gave.
 func TestAnErrorResultOfTheCliStopsTheRunWithItsError(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy",

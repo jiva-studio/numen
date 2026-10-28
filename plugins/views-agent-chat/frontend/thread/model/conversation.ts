@@ -276,6 +276,7 @@ async function readAgentSteps(
   for await (const step of agent.ask(query)) {
     if (query.signal.aborted) break
     applyAgentStep(step, stepContext)
+    if (step.kind === 'stopped') break
   }
 
   return error

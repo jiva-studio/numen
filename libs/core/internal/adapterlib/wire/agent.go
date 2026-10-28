@@ -48,7 +48,7 @@ func StreamAgentTask(
 			}
 		case step, working := <-work.GetSteps():
 			if !working {
-				return nil
+				return finishStream(stream, "done")
 			}
 			if isDone, err := sendStep(stream, step); err != nil || isDone {
 				return err
@@ -60,12 +60,27 @@ func StreamAgentTask(
 // sendStep writes a step to the stream in the schema's words, and says whether
 // the step was the last of the work.
 func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentport.Step) (bool, error) {
+	if step.Kind == domain.StepStop {
+		return true, finishStream(stream, step.Detail)
+	}
 	for _, out := range convertSteps(step) {
 		if err := stream.Send(out); err != nil {
 			return false, err
 		}
 	}
-	return step.Kind == domain.StepStop, nil
+	return false, nil
+}
+
+// finishStream writes why the work stopped, followed by an empty frame that hands the stop to the
+// window. An empty detail is work that finished.
+func finishStream(stream *connect.ServerStream[v1.AskAgentResponse], detail string) error {
+	if detail == "" {
+		detail = "done"
+	}
+	if err := stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: detail}}); err != nil {
+		return err
+	}
+	return stream.Send(&v1.AskAgentResponse{})
 }
 
 // convertSteps says a step of an agent's work in the schema's words.

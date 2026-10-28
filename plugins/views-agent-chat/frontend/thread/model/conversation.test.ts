@@ -716,6 +716,22 @@ describe('an exchange that is over', () => {
     expect(conversation.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
   })
 
+  it('settles the answer and stops working once a stopped step arrives', async () => {
+    const conversation = useConversation(
+      createPort([createSaidStep('Hey! How can I help you today?'), createStopped()], new Promise(() => {})),
+      words,
+      called,
+      now,
+    )
+    await conversation.ask('hey', '')
+
+    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])).toEqual([
+      ['prompt', 'hey', undefined],
+      ['response', 'Hey! How can I help you today?', undefined],
+    ])
+  })
+
   it('leaves nothing saying so when the agent could not be reached', async () => {
     const conversation = useConversation(
       {

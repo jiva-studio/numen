@@ -127,10 +127,14 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(home, ".gemini", "config", "mcp_config.json"), []byte(userServers), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(filepath.Join(home, ".gemini", "config", "config.json"), []byte(`{"auth":"ok"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	script := agenttest.WriteScript(t, "agy",
 		"pwd > "+agenttest.QuoteShell(out+".dir")+"\n"+
 			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+agenttest.QuoteShell(out+".argv")+"\n"+
-			"cat \"$HOME/.gemini/config/mcp_config.json\" > "+agenttest.QuoteShell(out+".mcp")+"\n")
+			"cat \"$HOME/.gemini/config/mcp_config.json\" > "+agenttest.QuoteShell(out+".mcp")+"\n"+
+			"cat \"$HOME/.gemini/config/config.json\" > "+agenttest.QuoteShell(out+".cfg")+"\n")
 
 	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
 		Prompt:       "the question",
@@ -157,6 +161,10 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 	}
 	if strings.Contains(string(mcp), "127.0.0.1") || strings.Contains(string(mcp), "numen") || strings.Contains(string(mcp), "mine") {
 		t.Errorf("the program was given the servers %s", mcp)
+	}
+	cfg, err := os.ReadFile(out + ".cfg")
+	if err != nil || string(cfg) != `{"auth":"ok"}` {
+		t.Errorf("the program read config.json %q, %v", cfg, err)
 	}
 	dir, err := os.ReadFile(out + ".dir")
 	if err != nil {

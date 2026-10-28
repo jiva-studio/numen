@@ -67,15 +67,16 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var text string
+	var text, stopped string
 	for stream.Receive() {
 		text += stream.Msg().GetText()
+		stopped += stream.Msg().GetStopped()
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if text != "an answer" {
-		t.Errorf("the agent said %q", text)
+	if text != "an answer" || stopped != "done" {
+		t.Errorf("the agent said %q and stopped with %q", text, stopped)
 	}
 	if task := <-agent.tasks; task.Question != "Where does it live?" || task.Focus != "samples/animals.md" ||
 		task.Conversation != "c-1" || task.Agent != "" || task.Context["org.example.sample/item"] != "k7" ||

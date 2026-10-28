@@ -37,6 +37,7 @@ type reader struct {
 	limit        int
 	completed    int
 	sentCount    int
+	isFinished   bool
 }
 
 func (r *reader) Send(resp *agentrun.AskAgentResponse) {
@@ -129,6 +130,7 @@ func runReader(
 	stderr *strings.Builder, w *agentrun.Work, reg *agentrun.Registry, s spec, cleanup func(),
 ) {
 	defer func() {
+		stop()
 		cleanup()
 		w.End()
 		reg.Remove(w)
@@ -137,7 +139,7 @@ func runReader(
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(nil, maxLine)
 	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps}
-	isLimited := scanOutput(scanner, s.NewHandler(r), r, w, stop)
+	isEnded := scanOutput(scanner, s.NewHandler(r), r, w, stop)
 	scanErr := scanner.Err()
 	isCancelled := runCtx.Err() != nil
 	if scanErr != nil {
@@ -145,7 +147,7 @@ func runReader(
 	}
 	_ = stdout.Close()
 	waitErr := cmd.Wait()
-	if isLimited || isCancelled {
+	if isEnded || isCancelled {
 		return
 	}
 	reportExit(r, scanErr, waitErr, stderr.String())
@@ -161,6 +163,10 @@ func scanOutput(
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
 			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text + "\n"}})
+		}
+		if r.isFinished {
+			stop()
+			return true
 		}
 		if r.isOverLimit() {
 			r.reportLimit()

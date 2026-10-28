@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/usecase/completion"
 
+	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
@@ -177,9 +178,13 @@ func (c Config) Plugins() func() []pluginport.PluginInfo {
 // force; a file that cannot be read is answered against the defaults. The
 // programs and their models are the ones the agent plugins list.
 func (c Config) Models() func() []settingsport.Model {
+	return c.modelsForProvider(c.AgentProvider())
+}
+
+func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
 	return func() []settingsport.Model {
 		target := c.getSettingsOrDefaults()
-		return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(target.Agent))
+		return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(provider, target.Agent))
 	}
 }
 

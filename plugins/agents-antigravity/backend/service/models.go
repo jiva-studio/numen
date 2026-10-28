@@ -67,7 +67,9 @@ func (c *modelCache[M]) get(ctx context.Context, key string, list func(context.C
 // line as its name, a tab and its title.
 func listAntigravityModels(ctx context.Context, command []string) ([]antigravityModel, error) {
 	name, args := resolveCommand(command)
-	out, err := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...).Output()
+	cmd := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...)
+	supervise(cmd)
+	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("list the models of %s: %w", name, err)
 	}

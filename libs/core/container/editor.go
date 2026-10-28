@@ -37,6 +37,7 @@ type EditorAssembly struct {
 	cfg      Config
 	registry vaultport.VaultRegistry
 	db       *Index
+	provider agentport.AgentProvider
 	// agent keeps which plugin each conversation was asked in, so it is made once for the window.
 	agent agentport.Agent
 }
@@ -59,7 +60,8 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 // NewEditorAssembly is that assembly over a list of vaults and a cache already
 // open, for a caller that opened them itself.
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
-	return EditorAssembly{cfg: cfg, registry: registry, db: db, agent: cfg.serveTools(cfg.AgentProvider())}
+	provider := cfg.AgentProvider()
+	return EditorAssembly{cfg: cfg, registry: registry, db: db, provider: provider, agent: cfg.serveTools(provider)}
 }
 
 func (e EditorAssembly) GetPluginDir(id string) (string, bool) { return e.cfg.GetPluginDir(id) }
@@ -95,7 +97,7 @@ func (e EditorAssembly) GetPassageQueries() sourceport.PassageQueries     { retu
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
 func (e EditorAssembly) OpenGetSettings() *settings.Get {
-	return settings.NewGet(e.cfg.ReadSettings(), e.cfg.Models(), e.cfg.Plugins())
+	return settings.NewGet(e.cfg.ReadSettings(), e.cfg.modelsForProvider(e.provider), e.cfg.Plugins())
 }
 
 func (e EditorAssembly) OpenWriteSettings() *settings.Write {

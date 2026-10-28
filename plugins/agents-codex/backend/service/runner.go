@@ -130,6 +130,7 @@ func runReader(
 	stderr *strings.Builder, w *agentrun.Work, reg *agentrun.Registry, s spec, cleanup func(),
 ) {
 	defer func() {
+		stop()
 		cleanup()
 		w.End()
 		reg.Remove(w)

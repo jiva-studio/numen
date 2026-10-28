@@ -31,15 +31,18 @@ func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 
 	realGemini := filepath.Join(realHome, ".gemini")
 	tempGemini := filepath.Join(tempHome, ".gemini")
-	_ = agentrun.CreateDir(filepath.Join(tempGemini, "config"), 0o700)
+	realConfig := filepath.Join(realGemini, "config")
+	tempConfig := filepath.Join(tempGemini, "config")
+	_ = agentrun.CreateDir(tempConfig, 0o700)
 	agentrun.LinkEntries(realGemini, tempGemini, "config")
+	agentrun.LinkEntries(realConfig, tempConfig, "mcp_config.json")
 
 	mcpConfig := map[string]any{"mcpServers": map[string]any{}}
 	if tools != nil {
-		mcpConfig = makeMCPConfig(*tools, filepath.Join(realGemini, "config", "mcp_config.json"))
+		mcpConfig = makeMCPConfig(*tools, filepath.Join(realConfig, "mcp_config.json"))
 	}
 	if encoded, err := json.MarshalIndent(mcpConfig, "", "  "); err == nil {
-		_ = agentrun.WriteFile(filepath.Join(tempGemini, "config", "mcp_config.json"), append(encoded, '\n'), 0o600)
+		_ = agentrun.WriteFile(filepath.Join(tempConfig, "mcp_config.json"), append(encoded, '\n'), 0o600)
 	}
 
 	return tempHome, cleanup, nil

@@ -125,6 +125,32 @@ describe('createAgentPort', () => {
     expect(await steps([stoppedResponse])).toEqual([{ kind: 'stopped', error: '' }])
   })
 
+  it('ends the stream once a stopped step arrives', async () => {
+    const agent: AgentClient = {
+      async *askAgent() {
+        yield create(AskAgentResponseSchema, { step: { case: 'text', value: 'Hey!' } })
+        yield create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'done' } })
+        await new Promise<void>(() => {})
+      },
+      async finishConversation() {
+        return {}
+      },
+    }
+    const read: AgentStep[] = []
+    for await (const step of createAgentPort(agent).ask({
+      question: 'hey',
+      focus: '',
+      conversation: 'one',
+      signal: new AbortController().signal,
+    })) {
+      read.push(step)
+    }
+    expect(read).toEqual([
+      { kind: 'said', text: 'Hey!' },
+      { kind: 'stopped', error: '' },
+    ])
+  })
+
   it('says nothing for a step it does not know', async () => {
     expect(await steps([create(AskAgentResponseSchema, {})])).toEqual([])
   })

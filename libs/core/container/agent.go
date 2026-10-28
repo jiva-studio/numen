@@ -28,8 +28,7 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 
 // getAgentPrograms are the programs the agent plugins list, asked for with the command lines the
 // settings give. A provider that does not answer in time lists none.
-func (c Config) getAgentPrograms(target settings.Agent) []agentport.AgentProgram {
-	provider := c.AgentProvider()
+func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settings.Agent) []agentport.AgentProgram {
 	if provider == nil {
 		return nil
 	}

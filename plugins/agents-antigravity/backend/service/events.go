@@ -205,6 +205,7 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 // handleCliResult says the response of a run that streamed none, and stops a run whose status is
 // not success with the error the CLI gave.
 func (r *eventReader) handleCliResult(result map[string]any) {
+	r.reader.isFinished = true
 	if session, ok := result["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}

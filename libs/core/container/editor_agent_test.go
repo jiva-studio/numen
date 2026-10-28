@@ -23,3 +23,21 @@ func TestTheEditorsAgentEndsAConversationAskedThroughAnEarlierCall(t *testing.T)
 		t.Errorf("the plugin finished %v", one.getFinished())
 	}
 }
+
+// Listing models for the settings populates the editor's agent router so a task started afterward
+// goes straight to its plugin without listing the programs a second time.
+func TestEditorSettingsShareAgentRouter(t *testing.T) {
+	host, one, _ := twoProviders(t)
+	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+
+	if _, err := assembly.OpenGetSettings().Execute(); err != nil {
+		t.Fatal(err)
+	}
+	listedBefore := len(one.getCommands())
+
+	runTask(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
+
+	if got := len(one.getCommands()); got != listedBefore {
+		t.Errorf("GetAgentPrograms called %d times after settings, want %d", got, listedBefore)
+	}
+}
