@@ -152,6 +152,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
           :run-command="runCommand"
           :open-current-vault="openCurrentVault"
         />
+        <div v-else />
       </template>
     </WorkspaceLayout>
 

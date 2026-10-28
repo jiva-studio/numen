@@ -97,7 +97,7 @@ export const createProgramModels =
     )
     if (!program) return []
     return [
-      createModel(settingPath, { title: 'Whatever this machine answers with', isDefault: true }),
+      createModel(settingPath, { title: 'Default model', isDefault: true }),
       ...(program.models ?? []).map((one) => createModel(settingPath, one)),
     ]
   }
