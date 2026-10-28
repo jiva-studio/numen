@@ -27,6 +27,7 @@ const layerElements = createLayerElements({
 const layerPolicies = createLayerPolicies({
   order: layerOrder,
   sliceLayers,
+  indexOnly: true,
   extra: [
     { allow: { to: { element: { type: 'testing' } } } },
     { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
@@ -44,7 +45,7 @@ export default tseslint.config(
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/elements': layerElements,
       'boundaries/files': [
-        { category: 'crossImport', pattern: 'src/*/*/@x/*' },
+        { category: 'public', pattern: 'src/*/*/index.ts' },
         { category: 'entry', pattern: 'src/main.ts' },
         { category: 'test', pattern: 'src/**/*.test.ts' },
         { category: 'story', pattern: 'src/**/*.stories.ts' },

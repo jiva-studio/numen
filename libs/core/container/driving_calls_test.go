@@ -15,15 +15,9 @@ import (
 )
 
 // wiring are the files of a driving adapter that bind the ports the composition
-// root hands it. They hold a port in a field and call it; every other file asks
-// a use case.
-var wiring = []string{
-	"adapter/cli/deps.go",
-	"adapter/window/editor/state.go",
-	"adapter/window/editor/services.go",
-	"adapter/window/editor/index.go",
-	"adapter/window/editor/serve.go",
-}
+// root hands it. Under strict Clean Architecture (G1), zero files are exempted:
+// every driving adapter speaks only to usecase/* and never holds or calls a port directly.
+var wiring []string
 
 // getPortFields are the names of the struct fields a file types port.X.
 func getPortFields(file *ast.File) []string {
@@ -214,14 +208,45 @@ func getUncovered(patterns []string) []string {
 	return found
 }
 
-// Every driving adapter is on the lint rule that keeps it off the ports.
+// Every driving adapter is on the lint rule that keeps it off the ports, with zero ! file exemptions.
 func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 	patterns := depguardFiles(t)
 	if len(patterns) == 0 {
 		t.Fatal("the driving-adapter rule lists no file: the config is not being read")
 	}
+	for _, p := range patterns {
+		if strings.HasPrefix(p, "!") && p != "!$test" {
+			t.Errorf("driving-adapter depguard rule contains file exemption %s: all driving adapters must go through use cases", p)
+		}
+	}
 	for _, one := range getUncovered(patterns) {
 		t.Errorf("%s is a driving adapter and the depguard driving-adapter rule does not list it", one)
+	}
+}
+
+// TestNoDrivingAdapterImportsAPortDirectly verifies G1 across all driving adapters in libs/core and apps/desktop.
+func TestNoDrivingAdapterImportsAPortDirectly(t *testing.T) {
+	roots := []string{"../adapter/cli", "../adapter/window", "../internal/adapter/plugin", "../internal/adapter/theme", "../../../apps/desktop"}
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+			if err != nil {
+				return err
+			}
+			for _, imp := range file.Imports {
+				val := strings.Trim(imp.Path.Value, `"`)
+				if strings.HasPrefix(val, module+"port/") || val == module+"port" {
+					t.Errorf("%s imports %s: driving adapter must depend on usecase, not port", path, val)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

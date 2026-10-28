@@ -15,7 +15,7 @@ const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
 const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
-const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers })
+const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
@@ -30,7 +30,7 @@ export default tseslint.config(
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/elements': layerElements,
       'boundaries/files': [
-        { category: 'crossImport', pattern: 'src/*/*/@x/*' },
+        { category: 'public', pattern: 'src/*/*/index.ts' },
         { category: 'entry', pattern: 'src/main.ts' },
       ],
     },

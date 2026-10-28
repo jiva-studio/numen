@@ -868,8 +868,18 @@ export function createBaseConfig(dirname, options = {}) {
     },
 
     {
-      files: ['src/**/*.{ts,vue}'],
-      ignores: ['src/**/clock.ts', 'src/**/drop.ts', ...(options.portIgnores || [])],
+      files: ['**/*.{ts,vue}'],
+      ignores: [
+        '**/*.test.ts',
+        '**/*.stories.ts',
+        '.storybook/**',
+        '**/testing/**',
+        '**/clock.ts',
+        '**/drop.ts',
+        'src/entities/note/model/notes.ts',
+        'src/app/window/useWindowKinds.ts',
+        ...(options.portIgnores || []),
+      ],
       rules: {
         'no-restricted-globals': [
           'error',
@@ -877,6 +887,99 @@ export function createBaseConfig(dirname, options = {}) {
             name: l.name,
             message: `reach through ${l.port}`,
           })),
+        ],
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector: 'MemberExpression[object.name="Date"][property.name="now"]',
+            message: 'the clock is a port — take the now a Clock carries',
+          },
+          {
+            selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
+            message: 'the clock is a port — take the now a Clock carries',
+          },
+          {
+            selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+            message: 'the same input gives the same numbers on any machine on any day',
+          },
+          {
+            selector: 'MemberExpression[property.name="getBoundingClientRect"]',
+            message: 'what the window measures is a port — take it as a value',
+          },
+          {
+            selector: 'MemberExpression[property.name="matchMedia"]',
+            message: 'a reader who asks for less motion is answered in CSS',
+          },
+        ],
+      },
+    },
+
+    {
+      files: ['**/lib/**/*.ts'],
+      ignores: ['**/*.test.ts', '**/*.stories.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              { name: 'vue', message: 'lib/ is pure TypeScript and must not depend on Vue reactivity' },
+              { name: 'pinia', message: 'lib/ is pure TypeScript and must not depend on Pinia' },
+            ],
+            patterns: [
+              { group: ['@vue/*'], message: 'lib/ is pure TypeScript and must not depend on @vue/*' },
+              { group: ['../ui/*', '../ui/**', './ui/*', '../model/*', '../model/**', './model/*', '../api/*', '../api/**', './api/*'], message: 'lib/ is the lowest segment and cannot import from api/, model/, or ui/' },
+            ],
+          },
+        ],
+        'no-restricted-globals': [
+          'error',
+          { name: 'window', message: 'lib/ is pure TypeScript and must not access DOM window' },
+          { name: 'document', message: 'lib/ is pure TypeScript and must not access DOM document' },
+          { name: 'navigator', message: 'lib/ is pure TypeScript and must not access browser navigator' },
+          { name: 'localStorage', message: 'lib/ is pure TypeScript and must not access localStorage' },
+          { name: 'sessionStorage', message: 'lib/ is pure TypeScript and must not access sessionStorage' },
+        ],
+      },
+    },
+
+    {
+      files: ['**/model/**/*.ts'],
+      ignores: ['**/*.test.ts', '**/*.stories.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              { group: ['../ui/*', '../ui/**', './ui/*'], message: 'model/ must not import upward from ui/' },
+            ],
+          },
+        ],
+        'no-restricted-globals': [
+          'error',
+          { name: 'window', message: 'model/ must not access window directly — use a platform/DOM port' },
+          { name: 'document', message: 'model/ must not access document directly — use a platform/DOM port' },
+          { name: 'navigator', message: 'model/ must not access navigator directly — use a platform/DOM port' },
+        ],
+      },
+    },
+
+    {
+      files: ['**/*.vue'],
+      ignores: ['**/*.stories.ts', '.storybook/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              { group: ['**/api/wire*', './api/wire*', '../api/wire*', '@connectrpc/*', '@bufbuild/*'], message: '.vue components are humble views and must talk to model/composables, never directly to wire/RPC' },
+            ],
+          },
+        ],
+        'no-restricted-globals': [
+          'error',
+          { name: 'window', message: '.vue components must not access window directly — delegate to a composable or port' },
+          { name: 'document', message: '.vue components must not access document directly — use template refs or a composable' },
+          { name: 'navigator', message: '.vue components must not access navigator directly — delegate to a composable or port' },
         ],
       },
     },

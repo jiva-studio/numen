@@ -52,10 +52,6 @@ export function createLayerPolicies({ order, sliceLayers, indexOnly = false, ext
           },
         },
       },
-      {
-        from: { element: { type: layer } },
-        allow: { to: { element: { type: layer }, file: { categories: 'crossImport' } } },
-      },
     ]),
   ]
 }

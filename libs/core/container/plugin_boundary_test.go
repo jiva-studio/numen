@@ -123,10 +123,13 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T)
 	builds := []struct {
 		module    string
 		dir       string
+		forbidSDK bool
 		platforms []struct{ goos, goarch string }
 	}{
-		{"the core", "..", shipped},
-		{"the desktop", filepath.Join("..", "..", "..", "apps", "desktop"), shipped[:3]},
+		{"the core", "..", true, shipped},
+		{"notes", filepath.Join("..", "..", "notes"), true, shipped},
+		{"protocol", filepath.Join("..", "..", "protocol"), true, shipped},
+		{"the desktop", filepath.Join("..", "..", "..", "apps", "desktop"), false, shipped[:3]},
 	}
 	for _, build := range builds {
 		for _, one := range build.platforms {
@@ -137,7 +140,7 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T)
 				}
 				for _, pkg := range packages {
 					for _, dep := range pkg.Deps {
-						if isPlugin(dep) || isSDK(dep) {
+						if isPlugin(dep) || (build.forbidSDK && isSDK(dep)) {
 							t.Errorf("%s reaches %s", pkg.ImportPath, dep)
 						}
 					}

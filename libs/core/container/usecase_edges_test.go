@@ -11,8 +11,9 @@ import (
 	"testing"
 )
 
-// useCaseEdges are the use cases each use case may build on. A use case listed
-// with nothing depends on no other.
+// useCaseEdges are the use cases each use case may build on. Under strict Clean
+// Architecture (G4), use cases are independent application scenarios that compose
+// via ports or in the composition root, never by importing sibling usecase packages.
 var useCaseEdges = map[string][]string{
 	"note":          nil,
 	"settings":      nil,
@@ -21,11 +22,11 @@ var useCaseEdges = map[string][]string{
 	"vectors":       nil,
 	"file":          nil,
 	"search":        nil,
-	"vault":         {"filetext", "note", "vectors"},
-	"indexing":      {"filetext", "run", "vault", "vectors"},
-	"completion":    {"agent"},
-	"plugincommand": {"file"},
-	"textversion":   {"file"},
+	"vault":         nil,
+	"indexing":      nil,
+	"completion":    nil,
+	"plugincommand": nil,
+	"textversion":   nil,
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.
@@ -102,9 +103,7 @@ func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
 	if importsRead < 50 {
 		t.Fatalf("%d edges of this module read: the walk is not reading the use cases", importsRead)
 	}
-	if useCaseImportsRead < 5 {
-		t.Fatalf("%d edges between use cases read: the walk is not reading them", useCaseImportsRead)
-	}
+	_ = useCaseImportsRead
 	for name := range useCaseEdges {
 		if !visited[name] {
 			t.Errorf("usecase/%s has no file the walk read: the rule stops at that use case", name)
@@ -118,10 +117,10 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		from, to  string
 		isRefused bool
 	}{
-		// The declared edges.
-		{"usecase/vault", "usecase/note", false},
-		{"usecase/vault", "usecase/filetext", false},
-		{"usecase/vault", "usecase/vectors", false},
+		// Cross-use-case edges are refused.
+		{"usecase/vault", "usecase/note", true},
+		{"usecase/vault", "usecase/filetext", true},
+		{"usecase/vault", "usecase/vectors", true},
 
 		// The same edges reversed, and the edges skipping the declaration.
 		{"usecase/note", "usecase/vault", true},
@@ -138,7 +137,7 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 
 		// A package under a use case is that use case.
 		{"usecase/note/sub", "usecase/vault", true},
-		{"usecase/vault/sub", "usecase/note", false},
+		{"usecase/vault/sub", "usecase/note", true},
 		{"usecase/note/sub", "usecase/note", false},
 
 		// Pairs with a side that is not a use case are not this rule's.

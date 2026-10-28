@@ -88,8 +88,8 @@ export async function runInterfacesCheck({ repoRoot, warnOnly = false }) {
   const pass = allIssues.length === 0 || warnOnly;
   const summary =
     allIssues.length === 0
-      ? `Zero bloated interfaces across ${targets.length} Go modules (all interfaces <= 10 methods)`
-      : `${allIssues.length} interfaces exceed 10 methods across Go modules`;
+      ? `Zero bloated interfaces across ${targets.length} Go modules (all interfaces <= 5 methods)`
+      : `${allIssues.length} interfaces exceed 5 methods across Go modules`;
 
   return {
     id: "interfaces",

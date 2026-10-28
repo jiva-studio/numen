@@ -6,7 +6,10 @@ const MAX_SOURCE_FILES_PER_DIR = 20;
 const IGNORED_DIRS = new Set([
   "node_modules",
   ".git",
+  ".claude",
   "dist",
+  "built",
+  "coverage",
   "gen",
   "proto",
   "assets",
@@ -96,9 +99,9 @@ export async function runStructureCheck({
   changedOnly = false,
 }) {
   const start = Date.now();
-  const rootModules = path.join(repoRoot, "modules");
+  const rootDirs = ["libs", "plugins", "apps"].map((d) => path.join(repoRoot, d));
 
-  const allOvercrowded = scanDirectory(rootModules, repoRoot);
+  const allOvercrowded = rootDirs.flatMap((d) => scanDirectory(d, repoRoot));
 
   let activeTargetDirs = targetDirs;
   if (changedOnly && changedFiles && changedFiles.length > 0 && !activeTargetDirs) {

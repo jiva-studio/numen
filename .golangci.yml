@@ -45,13 +45,14 @@ linters:
     - wastedassign
     - interfacebloat
     - goconst
+    - containedctx
 
   settings:
     maintidx:
       under: 20
 
     interfacebloat:
-      max: 10
+      max: 5
 
     goconst:
       min-len: 3
@@ -105,13 +106,16 @@ linters:
               desc: "the domain performs no I/O"
 
         # Every module of the plugin SDK, the base and each feature module under it.
+        # Only plugins and applications may import the plugin SDK.
         plugin-sdk:
           list-mode: lax
           files:
-            - "$all"
+            - "**/libs/core/**"
+            - "**/libs/notes/**"
+            - "**/libs/protocol/**"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin-sdk-go"
-              desc: "the core and the applications meet a plugin through the protocol and name no SDK module"
+              desc: "only plugins and applications may import the plugin SDK"
 
         usecase:
           list-mode: lax
@@ -124,6 +128,28 @@ linters:
               desc: "a use case does not reach concrete adapters"
             - pkg: "github.com/jiva-studio/numen/libs/core/container"
               desc: "a use case does not reach the composition root"
+            - pkg: "encoding/json"
+              desc: "a use case does not parse wire or storage formats"
+            - pkg: "path/filepath"
+              desc: "a use case uses slash-separated vault paths (path), not OS filepath"
+            - pkg: "io/fs"
+              desc: "a use case uses domain/port error sentinels, not io/fs"
+
+        port:
+          list-mode: lax
+          files:
+            - "**/port/**"
+          deny:
+            - pkg: "encoding/json"
+              desc: "a port defines pure contracts without serialization formats"
+            - pkg: "net/url"
+              desc: "a port uses domain value objects instead of net/url"
+            - pkg: "path/filepath"
+              desc: "a port does not depend on OS filepath"
+            - pkg: "io/fs"
+              desc: "a port defines its own sentinels and does not leak io/fs"
+            - pkg: "github.com/jiva-studio/numen/libs/core/port/"
+              desc: "a port package is an independent contract and imports no sibling port package"
 
         driven-adapter:
           list-mode: lax
@@ -131,13 +157,11 @@ linters:
             - "**/adapter/index/**"
             - "**/adapter/settings/**"
             - "**/internal/adapter/appstate/**"
-            - "**/internal/adapter/download/**"
-            - "**/internal/adapter/embed/**"
             - "**/internal/adapter/filesystem/**"
-            - "**/internal/adapter/keychain/**"
-            - "**/internal/adapter/proofreading/**"
-            - "**/internal/adapter/recognition/**"
-            - "**/internal/adapter/transcription/**"
+            - "**/internal/adapter/models/**"
+            - "**/internal/adapter/onnxruntime/**"
+            - "**/internal/adapter/provision/**"
+            - "**/internal/adapter/sharedmimeinfo/**"
             - "**/internal/adapter/trash/**"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/usecase"
@@ -145,32 +169,19 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/container"
               desc: "an adapter is given what it needs and assembles nothing"
 
-        # The files named with ! below hold a port in their signature; each one
-        # is on the list for one reason:
-        # editor/assembly.go, serve.go, state.go, services.go and index.go
-        # bind the window to the ports the container hands it; shell/index.go
-        # answers the plugins in pluginport.PluginIndexState; editor/agent.go
-        # and focus.go hand port.Task and port.Window across the wire;
-        # editor/viewer.go and pool/documents.go hold the open document and the
-        # vault readers the viewer reads through;
-        # cli/deps.go holds the ports the command line is handed.
         driving-adapter:
           list-mode: lax
           files:
             - "**/adapter/window/**"
             - "**/adapter/mcp/**"
             - "**/adapter/cli/**"
+            - "**/internal/adapter/plugin/**"
+            - "**/internal/adapter/theme/**"
+            - "**/apps/desktop/**"
             - "!$test"
-            - "!**/adapter/window/editor/assembly/**"
-            - "!**/adapter/window/editor/serve.go"
-            - "!**/adapter/window/editor/state.go"
-            - "!**/adapter/window/editor/index.go"
-            - "!**/adapter/window/editor/services.go"
-            - "!**/adapter/window/shell/index.go"
-            - "!**/adapter/cli/deps.go"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/port"
-              desc: "a driving adapter calls the use case layer; a port or sentinel it needs is re-exported there"
+              desc: "a driving adapter calls the use case layer and imports no port directly"
 
     errcheck:
       # A type assertion that fails is a panic, and the core does not panic.

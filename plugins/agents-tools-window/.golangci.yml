@@ -1,0 +1,112 @@
+version: "2"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - nilerr
+    - forbidigo
+    - bodyclose
+    - sqlclosecheck
+    - rowserrcheck
+    - contextcheck
+    - noctx
+    - exhaustive
+    - exhaustruct
+    - importas
+    - usetesting
+    - gocritic
+    - nolintlint
+    - staticcheck
+    - unused
+    - revive
+    - depguard
+    - cyclop
+    - gocognit
+    - nestif
+    - funlen
+    - nakedret
+    - maintidx
+    - wastedassign
+    - interfacebloat
+    - goconst
+    - containedctx
+
+  settings:
+    maintidx:
+      under: 20
+
+    interfacebloat:
+      max: 5
+
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+      ignore-tests: true
+
+    cyclop:
+      max-complexity: 15
+
+    gocognit:
+      min-complexity: 15
+
+    nestif:
+      min-complexity: 4
+
+    funlen:
+      lines: 80
+      statements: 50
+
+    nakedret:
+      max-func-lines: 5
+
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^time\.Now$
+          pkg: ^time$
+          msg: the domain does not know what time it is — take a clock port
+        - pattern: ^time\.Since$
+          pkg: ^time$
+          msg: the domain does not know what time it is — take a clock port
+        - pattern: ^panic$
+          msg: what a call could not answer is that call's error
+        - pattern: ^fmt\.Print.*$
+          pkg: ^fmt$
+          msg: a plugin writes to no stream of its own
+
+    depguard:
+      rules:
+        plugin-isolation:
+          list-mode: lax
+          files:
+            - "$all"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core"
+              desc: "a plugin names the plugin SDK and no core package"
+            - pkg: "github.com/jiva-studio/numen/libs/notes"
+              desc: "a plugin reaches notes through the plugin SDK"
+            - pkg: "github.com/jiva-studio/numen/libs/protocol"
+              desc: "a plugin communicates through the plugin SDK and imports no raw protocol"
+            - pkg: "github.com/jiva-studio/numen/apps"
+              desc: "a plugin reaches no application"
+
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - text: "SA1019.*h2c"
+        linters: [staticcheck]
+      - source: ^\s*(defer )?.*\.Close\(\)$
+        linters: [errcheck]
+      - source: ^\s*os\.Stdout\.Sync\(\)$
+        linters: [errcheck]
+      - path: _test\.go$
+        text: "QF1001"
+        linters: [staticcheck]
+      - path: _test\.go$
+        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive, exhaustruct, depguard, cyclop, gocognit, nestif, funlen, nakedret]

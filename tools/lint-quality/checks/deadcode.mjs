@@ -109,20 +109,39 @@ export async function runDeadcodeCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
   const configFile = path.join(repoRoot, ".golangci.yml");
 
-  const [coreUnparam, desktopUnparam, uiKnip, editorKnip, flashcardsKnip] = await Promise.all([
-    checkUnparam(path.join(repoRoot, "libs/core"), configFile, "libs/core"),
-    checkUnparam(path.join(repoRoot, "apps/desktop"), configFile, "apps/desktop"),
-    checkKnip(repoRoot, "libs/ui/core", "libs/ui/core"),
-    checkKnip(repoRoot, "apps/desktop/editor", "desktop/editor"),
-    checkKnip(repoRoot, "apps/desktop/flashcards", "desktop/flashcards"),
+  const goModules = [
+    { dir: path.join(repoRoot, "libs/core"), name: "libs/core" },
+    { dir: path.join(repoRoot, "libs/notes"), name: "libs/notes" },
+    { dir: path.join(repoRoot, "libs/plugin-sdk-go"), name: "libs/plugin-sdk-go" },
+    { dir: path.join(repoRoot, "apps/desktop"), name: "apps/desktop" },
+  ];
+  const pluginsDir = path.join(repoRoot, "plugins");
+  if (fs.existsSync(pluginsDir)) {
+    for (const e of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+      if (e.isDirectory() && fs.existsSync(path.join(pluginsDir, e.name, "go.mod"))) {
+        goModules.push({ dir: path.join(pluginsDir, e.name), name: `plugins/${e.name}` });
+      }
+    }
+  }
+
+  const tsPackages = [
+    { relDir: "libs/ui/core", name: "libs/ui/core" },
+    { relDir: "libs/ui/shell", name: "libs/ui/shell" },
+    { relDir: "libs/plugin-sdk-ts", name: "libs/plugin-sdk-ts" },
+    { relDir: "libs/plugin-host-ts", name: "libs/plugin-host-ts" },
+    { relDir: "apps/desktop/editor", name: "desktop/editor" },
+    { relDir: "apps/desktop/flashcards", name: "desktop/flashcards" },
+    { relDir: "apps/mobile", name: "apps/mobile" },
+  ];
+
+  const [unparamResults, knipResults] = await Promise.all([
+    Promise.all(goModules.map((m) => checkUnparam(m.dir, configFile, m.name))),
+    Promise.all(tsPackages.map((p) => checkKnip(repoRoot, p.relDir, p.name))),
   ]);
 
   const allIssues = [
-    ...coreUnparam,
-    ...desktopUnparam,
-    ...uiKnip,
-    ...editorKnip,
-    ...flashcardsKnip,
+    ...unparamResults.flat(),
+    ...knipResults.flat(),
   ];
   const durationMs = Date.now() - start;
   const pass = allIssues.length === 0 || warnOnly;

@@ -108,10 +108,29 @@ func getUseCases(t *testing.T) []string {
 	return findings
 }
 
-// A use case is made with everything it needs, or it is not made.
+// A use case or service across the repository is made with everything it needs, or it is not made (G8).
 func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	for _, one := range getUseCases(t) {
 		t.Error(one + ": a use case is made with what it needs, and not given it afterwards")
+	}
+	roots := []string{"../adapter", "../internal", "../../notes", "../../../plugins"}
+	for _, root := range roots {
+		_ = filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			if strings.HasSuffix(path, ".pb.go") || strings.HasSuffix(path, ".connect.go") {
+				return nil
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				return nil
+			}
+			for _, found := range getExposedDependencies(file) {
+				t.Errorf("%s %s exposes constructor-injected field(s) %s", path, found.in, strings.Join(found.fields, ", "))
+			}
+			return nil
+		})
 	}
 }
 

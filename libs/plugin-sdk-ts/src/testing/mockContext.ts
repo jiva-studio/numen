@@ -37,6 +37,58 @@ export interface MockPluginContext extends PluginContext {
   dispose(): void
 }
 
+function addDisposable(subscriptions: Disposable[], disposable: Disposable): Disposable {
+  subscriptions.push(disposable)
+  return disposable
+}
+
+function registerInList<T>(list: T[], item: T, subscriptions: Disposable[]): Disposable {
+  list.push(item)
+  return addDisposable(subscriptions, {
+    dispose: () => {
+      const idx = list.indexOf(item)
+      if (idx !== -1) {
+        list.splice(idx, 1)
+      }
+    },
+  })
+}
+
+function addSetListener<T>(
+  listeners: Set<T>,
+  handler: T,
+  subscriptions: Disposable[],
+): Disposable {
+  listeners.add(handler)
+  return addDisposable(subscriptions, {
+    dispose: () => {
+      listeners.delete(handler)
+    },
+  })
+}
+
+const OPTIONAL_SERVICE_KEYS = [
+  'workspace',
+  'notes',
+  'files',
+  'agent',
+  'buffers',
+  'texts',
+  'notices',
+  'closeTab',
+] as const
+
+function getOptionalServices(initialValues?: Partial<PluginContext>): Partial<PluginContext> {
+  if (!initialValues) return {}
+  const picked: Partial<PluginContext> = {}
+  for (const key of OPTIONAL_SERVICE_KEYS) {
+    if (initialValues[key] !== undefined) {
+      Object.assign(picked, { [key]: initialValues[key] })
+    }
+  }
+  return picked
+}
+
 // createMockPluginContext builds a controllable context for unit tests.
 export function createMockPluginContext(
   initialValues?: Partial<PluginContext> & {
@@ -44,7 +96,7 @@ export function createMockPluginContext(
     initialSettings?: Record<string, unknown>
   },
 ): MockPluginContext {
-  const pluginId = initialValues?.pluginId ?? 'test.plugin'
+  const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
@@ -53,123 +105,51 @@ export function createMockPluginContext(
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
   const mounted: MockMountedView[] = []
-  const settings = new Map<string, unknown>(Object.entries(initialValues?.initialSettings ?? {}))
+  const settings = new Map<string, unknown>(Object.entries(init.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: unknown) => void>>()
   const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
   const subscriptions: Disposable[] = []
 
-  function addDisposable(d: Disposable): Disposable {
-    subscriptions.push(d)
-    return d
-  }
-
   const context: MockPluginContext = {
-    pluginId,
-    target: initialValues?.target ?? 'desktop.editor',
+    pluginId: init.pluginId ?? 'test.plugin',
+    target: init.target ?? 'desktop.editor',
     subscriptions,
-    ...(initialValues?.workspace ? { workspace: initialValues.workspace } : {}),
-    ...(initialValues?.notes ? { notes: initialValues.notes } : {}),
-    ...(initialValues?.files ? { files: initialValues.files } : {}),
-    ...(initialValues?.agent ? { agent: initialValues.agent } : {}),
-    ...(initialValues?.buffers ? { buffers: initialValues.buffers } : {}),
-    ...(initialValues?.texts ? { texts: initialValues.texts } : {}),
-    ...(initialValues?.notices ? { notices: initialValues.notices } : {}),
-    ...(initialValues?.closeTab ? { closeTab: initialValues.closeTab } : {}),
+    ...getOptionalServices(init),
 
     registerReader(registration: ReaderRegistration): Disposable {
-      readers.push(registration)
-      const disposable: Disposable = {
-        dispose: () => {
-          const idx = readers.indexOf(registration)
-          if (idx !== -1) {
-            readers.splice(idx, 1)
-          }
-        },
-      }
-      return addDisposable(disposable)
+      return registerInList(readers, registration, subscriptions)
     },
 
     registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
-      tabKinds.push(registration)
-      const disposable: Disposable = {
-        dispose: () => {
-          const idx = tabKinds.indexOf(registration)
-          if (idx !== -1) {
-            tabKinds.splice(idx, 1)
-          }
-        },
-      }
-      return addDisposable(disposable)
+      return registerInList(tabKinds, registration, subscriptions)
     },
 
     registerCommand(registration: CommandRegistration): Disposable {
-      commands.push(registration)
-      const disposable: Disposable = {
-        dispose: () => {
-          const idx = commands.indexOf(registration)
-          if (idx !== -1) {
-            commands.splice(idx, 1)
-          }
-        },
-      }
-      return addDisposable(disposable)
+      return registerInList(commands, registration, subscriptions)
     },
 
     registerContextMenu(registration: ContextMenuRegistration): Disposable {
-      contextMenus.push(registration)
-      const disposable: Disposable = {
-        dispose: () => {
-          const idx = contextMenus.indexOf(registration)
-          if (idx !== -1) {
-            contextMenus.splice(idx, 1)
-          }
-        },
-      }
-      return addDisposable(disposable)
+      return registerInList(contextMenus, registration, subscriptions)
     },
 
     registerAgentProvider(registration: AgentProviderRegistration): Disposable {
-      agentProviders.push(registration)
-      const disposable: Disposable = {
-        dispose: () => {
-          const idx = agentProviders.indexOf(registration)
-          if (idx !== -1) {
-            agentProviders.splice(idx, 1)
-          }
-        },
-      }
-      return addDisposable(disposable)
+      return registerInList(agentProviders, registration, subscriptions)
     },
 
     registerDropHandler(registration: DropRegistration): Disposable {
-      drops.push(registration)
-      return addDisposable({
-        dispose: () => {
-          const idx = drops.indexOf(registration)
-          if (idx !== -1) drops.splice(idx, 1)
-        },
-      })
+      return registerInList(drops, registration, subscriptions)
     },
 
     registerView(registration: ViewRegistration): Disposable {
-      views.push(registration)
-      const disposable: Disposable = {
-        dispose: () => {
-          const idx = views.indexOf(registration)
-          if (idx !== -1) {
-            views.splice(idx, 1)
-          }
-        },
-      }
-      return addDisposable(disposable)
+      return registerInList(views, registration, subscriptions)
     },
 
-    mountView(capability: string, element: HTMLElement, context: unknown): MountedView {
+    mountView(capability: string, element: HTMLElement, viewContext: unknown): MountedView {
       const view: MockMountedView = {
         capability,
         element,
-        context,
+        context: viewContext,
         isDisposed: false,
         focusCount: 0,
       }
@@ -194,14 +174,7 @@ export function createMockPluginContext(
         listeners = new Set()
         settingListeners.set(key, listeners)
       }
-      const genericHandler = handler as (val: unknown) => void
-      listeners.add(genericHandler)
-      const disposable: Disposable = {
-        dispose: () => {
-          listeners?.delete(genericHandler)
-        },
-      }
-      return addDisposable(disposable)
+      return addSetListener(listeners, handler as (val: unknown) => void, subscriptions)
     },
 
     setSetting<T = unknown>(key: string, value: T): void {
@@ -215,23 +188,11 @@ export function createMockPluginContext(
     },
 
     onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable {
-      vaultListeners.add(handler)
-      const disposable: Disposable = {
-        dispose: () => {
-          vaultListeners.delete(handler)
-        },
-      }
-      return addDisposable(disposable)
+      return addSetListener(vaultListeners, handler, subscriptions)
     },
 
     onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable {
-      fileSelectListeners.add(handler)
-      const disposable: Disposable = {
-        dispose: () => {
-          fileSelectListeners.delete(handler)
-        },
-      }
-      return addDisposable(disposable)
+      return addSetListener(fileSelectListeners, handler, subscriptions)
     },
 
     emitVaultChange(event: VaultChangeEvent): void {
@@ -247,12 +208,12 @@ export function createMockPluginContext(
     },
 
     openTab(kind: string, path?: string): Promise<string> | void {
-      if (initialValues?.openTab) return initialValues.openTab(kind, path)
+      if (init.openTab) return init.openTab(kind, path)
       return Promise.resolve(`${kind}:${path ?? ''}`)
     },
 
     navigateTab(kind: string, path: string): Promise<string> | void {
-      if (initialValues?.navigateTab) return initialValues.navigateTab(kind, path)
+      if (init.navigateTab) return init.navigateTab(kind, path)
       return Promise.resolve(`${kind}:${path}`)
     },
 

@@ -179,10 +179,10 @@ type depguardRule struct {
 	} `yaml:"deny"`
 }
 
-// getDepguardGaps lists what the depguard rules of a golangci configuration
-// leave open: each plugin has a rule over its own folder that denies the core
-// and every other plugin, as a package and as a folder of packages.
-func getDepguardGaps(config []byte, plugins []string) ([]string, error) {
+// getDepguardGaps lists what the depguard rules of a plugin golangci
+// configuration leave open: a rule over "$all" denies the core, the notes, the
+// raw protocol and the applications.
+func getDepguardGaps(config []byte) ([]string, error) {
 	var parsed struct {
 		Linters struct {
 			Settings struct {
@@ -195,32 +195,27 @@ func getDepguardGaps(config []byte, plugins []string) ([]string, error) {
 	if err := yaml.Unmarshal(config, &parsed); err != nil {
 		return nil, err
 	}
-	var gaps []string
-	for _, plugin := range plugins {
-		glob := "**/plugins/" + plugin + "/**"
-		var denied []string
-		for _, rule := range parsed.Linters.Settings.Depguard.Rules {
-			if !slices.Contains(rule.Files, glob) {
-				continue
-			}
-			for _, deny := range rule.Deny {
-				denied = append(denied, deny.Pkg)
-			}
-		}
-		if denied == nil {
-			gaps = append(gaps, plugin+" has no depguard rule")
+	var denied []string
+	for _, rule := range parsed.Linters.Settings.Depguard.Rules {
+		if !slices.Contains(rule.Files, "$all") {
 			continue
 		}
-		wanted := []string{strings.TrimSuffix(module, "/")}
-		for _, other := range plugins {
-			if other != plugin {
-				wanted = append(wanted, pluginsPrefix+other+"$", pluginsPrefix+other+"/")
-			}
+		for _, deny := range rule.Deny {
+			denied = append(denied, deny.Pkg)
 		}
-		for _, pkg := range wanted {
-			if !slices.Contains(denied, pkg) {
-				gaps = append(gaps, plugin+" does not deny "+pkg)
-			}
+	}
+	if denied == nil {
+		return []string{"no depguard rule over $all"}, nil
+	}
+	var gaps []string
+	for _, pkg := range []string{
+		strings.TrimSuffix(module, "/"),
+		notesModule,
+		wire,
+		numenRoot + "apps",
+	} {
+		if !slices.Contains(denied, pkg) {
+			gaps = append(gaps, "does not deny "+pkg)
 		}
 	}
 	return gaps, nil
@@ -228,58 +223,52 @@ func getDepguardGaps(config []byte, plugins []string) ([]string, error) {
 
 // What getDepguardGaps says is the whole of the rule, so it is asked directly.
 func TestWhatTheDepguardRulesRefuse(t *testing.T) {
-	plugins := []string{"a", "b"}
 	complete := `
 linters:
   settings:
     depguard:
       rules:
-        a:
-          files: ["**/plugins/a/**"]
+        plugin-isolation:
+          files: ["$all"]
           deny:
             - pkg: "` + strings.TrimSuffix(module, "/") + `"
-            - pkg: "` + pluginsPrefix + `b$"
-            - pkg: "` + pluginsPrefix + `b/"
-        b:
-          files: ["**/plugins/b/**"]
-          deny:
-            - pkg: "` + strings.TrimSuffix(module, "/") + `"
-            - pkg: "` + pluginsPrefix + `a$"
-            - pkg: "` + pluginsPrefix + `a/"
+            - pkg: "` + notesModule + `"
+            - pkg: "` + wire + `"
+            - pkg: "` + numenRoot + `apps"
 `
-	gaps, err := getDepguardGaps([]byte(complete), plugins)
+	gaps, err := getDepguardGaps([]byte(complete))
 	if err != nil || len(gaps) != 0 {
 		t.Fatalf("a complete configuration has gaps %v (%v)", gaps, err)
 	}
-	missingRule := strings.Replace(complete, "plugins/b/**", "plugins/c/**", 1)
-	missingDeny := strings.Replace(complete, pluginsPrefix+`a/"`, pluginsPrefix+`z/"`, 1)
+	missingRule := strings.Replace(complete, "$all", "**/other/**", 1)
+	missingDeny := strings.Replace(complete, wire, numenRoot+"other", 1)
 	for name, config := range map[string]string{
-		"a plugin without a rule":         missingRule,
-		"a rule that leaves a plugin out": missingDeny,
+		"a configuration without a rule over $all": missingRule,
+		"a rule that leaves a boundary out":        missingDeny,
 	} {
-		if gaps, err := getDepguardGaps([]byte(config), plugins); err != nil || len(gaps) == 0 {
+		if gaps, err := getDepguardGaps([]byte(config)); err != nil || len(gaps) == 0 {
 			t.Errorf("%s is not found (%v)", name, err)
 		}
 	}
 }
 
-// Every plugin module has a depguard rule that denies the core and every other
-// plugin.
+// Every plugin module and the golden template have a depguard rule that denies
+// the core, the notes, the raw protocol and the applications.
 func TestEveryPluginModuleHasADepguardRuleDenyingTheCoreAndThePlugins(t *testing.T) {
-	var plugins []string
-	for _, dir := range listPluginModules(t) {
-		plugins = append(plugins, filepath.Base(dir))
-	}
-	config, err := os.ReadFile(filepath.Join(numenModulesDir, "plugins", ".golangci.yml"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	gaps, err := getDepguardGaps(config, plugins)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, gap := range gaps {
-		t.Error(gap)
+	dirs := append([]string{filepath.Join(numenModulesDir, "plugins", ".example")}, listPluginModules(t)...)
+	for _, dir := range dirs {
+		path := filepath.Join(dir, ".golangci.yml")
+		config, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		gaps, err := getDepguardGaps(config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, gap := range gaps {
+			t.Errorf("%s: %s", path, gap)
+		}
 	}
 }
 

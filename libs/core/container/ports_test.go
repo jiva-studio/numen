@@ -203,3 +203,55 @@ func (c Config) Options(opts filesystem.Options) error { return nil }`,
 		}
 	}
 }
+
+// TestCompositionRootDefinesNoAdapterStructs verifies G9: container/ is a pure Composition Root
+// that wires adapters to ports and defines no inline adapter structs with methods of its own.
+func TestCompositionRootDefinesNoAdapterStructs(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), name, nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		structTypes := map[string]bool{}
+		for _, decl := range file.Decls {
+			gd, ok := decl.(*ast.GenDecl)
+			if !ok || gd.Tok != token.TYPE {
+				continue
+			}
+			for _, spec := range gd.Specs {
+				ts, ok := spec.(*ast.TypeSpec)
+				if !ok {
+					continue
+				}
+				if _, isStruct := ts.Type.(*ast.StructType); isStruct && ts.Name.Name != "Config" {
+					structTypes[ts.Name.Name] = true
+				}
+			}
+		}
+		methodsByRecv := map[string][]string{}
+		for _, decl := range file.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv == nil || len(fn.Recv.List) == 0 {
+				continue
+			}
+			recv := fn.Recv.List[0].Type
+			if star, ok := recv.(*ast.StarExpr); ok {
+				recv = star.X
+			}
+			if id, ok := recv.(*ast.Ident); ok && structTypes[id.Name] {
+				methodsByRecv[id.Name] = append(methodsByRecv[id.Name], fn.Name.Name)
+			}
+		}
+		for st, methods := range methodsByRecv {
+			t.Errorf("container/%s defines inline adapter struct %s with methods [%s]: move adapter and business logic out of Composition Root", name, st, strings.Join(methods, ", "))
+		}
+	}
+}

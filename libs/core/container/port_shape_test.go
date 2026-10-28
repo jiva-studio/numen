@@ -201,3 +201,42 @@ type Reader interface {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
 }
+
+// TestPortsAreIndependentAndPure verifies G11: no port/* package imports another port/* package,
+// and no port/* package imports infrastructure/OS packages (net/url, encoding/json, path/filepath, io/fs, os).
+func TestPortsAreIndependentAndPure(t *testing.T) {
+	dir := filepath.Join("..", "port")
+	entries, err := readTree(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	forbiddenStd := map[string]bool{
+		"net/url":       true,
+		"encoding/json": true,
+		"path/filepath": true,
+		"io/fs":         true,
+		"os":            true,
+	}
+	for _, item := range entries {
+		if !strings.HasSuffix(item.name, ".go") || strings.HasSuffix(item.name, "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.name), nil, parser.ImportsOnly)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rel := "port/" + item.name
+		for _, imp := range file.Imports {
+			target, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				continue
+			}
+			if strings.HasPrefix(target, module+"port/") {
+				t.Errorf("%s imports sibling port %s: port packages must be independent contracts", rel, strings.TrimPrefix(target, module))
+			}
+			if forbiddenStd[target] {
+				t.Errorf("%s imports %s: port packages must use pure domain value objects", rel, target)
+			}
+		}
+	}
+}

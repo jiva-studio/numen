@@ -1125,6 +1125,9 @@ func getRefusal(from, to string) string {
 		if strings.HasPrefix(to, "usecase/") && !driving[family(from)] {
 			return "a driven adapter stands behind a port and runs no scenario"
 		}
+		if isUnder(to, "port") && driving[family(from)] {
+			return "a driving adapter calls the use case layer and imports no port directly"
+		}
 	case from == "container":
 		if !isAssembled(to) {
 			return "the composition root assembles the core and does none of its work"
@@ -1671,4 +1674,178 @@ func getPortNames() []string {
 		}
 	}
 	return names
+}
+
+var serializationImports = map[string]bool{
+	"encoding/json":                 true,
+	"encoding/xml":                  true,
+	"gopkg.in/yaml.v3":              true,
+	"github.com/BurntSushi/toml":    true,
+	"google.golang.org/protobuf":    true,
+}
+
+var serializationTags = []string{"json:", "yaml:", "sql:", "db:", "xml:", "protobuf:"}
+
+// TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies G3: port/, usecase/, and domain/
+// import no wire/storage format packages and carry no serialization struct tags.
+func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
+	for _, root := range []string{"../port", "../usecase", "../../notes/domain"} {
+		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				return err
+			}
+			for _, imp := range file.Imports {
+				to, err := strconv.Unquote(imp.Path.Value)
+				if err != nil {
+					continue
+				}
+				if serializationImports[to] || strings.HasPrefix(to, "google.golang.org/protobuf/") {
+					t.Errorf("%s imports %s: inner layers do not parse wire or storage formats", path, to)
+				}
+			}
+			ast.Inspect(file, func(n ast.Node) bool {
+				spec, ok := n.(*ast.TypeSpec)
+				if !ok {
+					return true
+				}
+				st, ok := spec.Type.(*ast.StructType)
+				if !ok || st.Fields == nil {
+					return true
+				}
+				for _, field := range st.Fields.List {
+					if field.Tag == nil {
+						continue
+					}
+					for _, tag := range serializationTags {
+						if strings.Contains(field.Tag.Value, tag) {
+							fieldName := "<embedded>"
+							if len(field.Names) > 0 {
+								fieldName = field.Names[0].Name
+							}
+							t.Errorf("%s %s.%s has serialization tag %s: format tags belong on adapter DTOs", path, spec.Name.Name, fieldName, field.Tag.Value)
+						}
+					}
+				}
+				return true
+			})
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// TestUseCasesImportNoOSFilepathOrFS verifies G12: usecase/ never imports path/filepath or io/fs.
+func TestUseCasesImportNoOSFilepathOrFS(t *testing.T) {
+	err := filepath.WalkDir("../usecase", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		for _, imp := range file.Imports {
+			to, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				continue
+			}
+			if to == "path/filepath" || to == "io/fs" {
+				t.Errorf("%s imports %s: use cases operate on slash-separated vault paths and domain sentinels, not OS filepath or io/fs", path, to)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestNoStructCarriesAContext verifies G6: no struct field across Go modules holds context.Context.
+func TestNoStructCarriesAContext(t *testing.T) {
+	roots := []string{"..", "../../notes", "../../plugin-sdk-go", "../../../plugins", "../../../apps/desktop"}
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			if strings.HasSuffix(path, ".pb.go") || strings.HasSuffix(path, ".connect.go") {
+				return nil
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				return err
+			}
+			ast.Inspect(file, func(n ast.Node) bool {
+				spec, ok := n.(*ast.TypeSpec)
+				if !ok {
+					return true
+				}
+				st, ok := spec.Type.(*ast.StructType)
+				if !ok || st.Fields == nil {
+					return true
+				}
+				for _, field := range st.Fields.List {
+					if getTypeName(field.Type) == "context.Context" {
+						fieldName := "<embedded>"
+						if len(field.Names) > 0 {
+							fieldName = field.Names[0].Name
+						}
+						t.Errorf("%s %s.%s holds context.Context in a struct field (pass context per method call instead)", path, spec.Name.Name, fieldName)
+					}
+				}
+				return true
+			})
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// TestNothingOutsideAdaptersReadsClockOrRandom verifies G7 across libs/notes, plugins, and apps/desktop.
+func TestNothingOutsideAdaptersReadsClockOrRandom(t *testing.T) {
+	roots := []string{"../../notes", "../../../plugins", "../../../apps/desktop"}
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			slash := filepath.ToSlash(path)
+			if strings.Contains(slash, "/cmd/") || strings.Contains(slash, "/internal/adapter/") || strings.Contains(slash, "/testsupport/") {
+				return nil
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				return err
+			}
+			reads, arms := getClockReads(file)
+			for _, one := range reads {
+				t.Errorf("%s runs %s: inject a clock port instead of reading the machine clock", path, one)
+			}
+			for _, one := range arms {
+				t.Errorf("%s runs %s: inject a clock/timer port instead of arming machine timers", path, one)
+			}
+			ast.Inspect(file, func(n ast.Node) bool {
+				sel, ok := n.(*ast.SelectorExpr)
+				if !ok {
+					return true
+				}
+				if id, ok := sel.X.(*ast.Ident); ok && id.Name == "rand" && (sel.Sel.Name == "Read" || strings.HasPrefix(sel.Sel.Name, "Int")) {
+					t.Errorf("%s runs rand.%s: inject an entropy source instead of calling global rand", path, sel.Sel.Name)
+				}
+				return true
+			})
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }
