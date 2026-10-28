@@ -48,7 +48,6 @@ export interface LoadModuleOptions {
   readonly fetchFn: typeof fetch
   readonly importFn: (url: string) => Promise<unknown>
   readonly manifests: Map<string, PluginManifest>
-  readonly getImportToken: () => number
 }
 
 async function loadDynamicModule(
@@ -69,9 +68,8 @@ async function loadDynamicModule(
     : undefined
   const entrypoint = manifest.frontend.entrypoint ?? 'dist/index.js'
   const normalizedEntrypoint = entrypoint.startsWith('/') ? entrypoint.slice(1) : entrypoint
-  const token = options.getImportToken()
   const [loaded] = await Promise.all([
-    importFn(`${baseUrl}/${pluginId}/${normalizedEntrypoint}?activation=${token}`),
+    importFn(`${baseUrl}/${pluginId}/${normalizedEntrypoint}`),
     style,
   ])
   return loaded

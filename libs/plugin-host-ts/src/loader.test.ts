@@ -250,7 +250,7 @@ describe('createPluginLoader', () => {
     expect(success).toBe(true)
     expect(activated).toBe(true)
     expect(manifestFetchedUrl).toBe('/plugin/dynamic.sample/manifest.json')
-    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/bundle.js?activation=1')
+    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/bundle.js')
 
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
     expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
@@ -511,7 +511,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     expect(host.onSettingChange).toHaveBeenCalledTimes(1)
   })
 
-  it('imports a dynamic plugin from a new url at each activation', async () => {
+  it('imports a dynamic plugin from its entrypoint url at each activation', async () => {
     const { host } = createHost()
     const imports: string[] = []
     const loader = createPluginLoader({
@@ -530,10 +530,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.deactivatePlugin('dyn')
     await loader.activatePlugin('dyn')
 
-    expect(imports).toStrictEqual([
-      '/plugin/dyn/dist/index.js?activation=1',
-      '/plugin/dyn/dist/index.js?activation=2',
-    ])
+    expect(imports).toStrictEqual(['/plugin/dyn/dist/index.js', '/plugin/dyn/dist/index.js'])
   })
 
   it('neither imports nor fails a plugin whose manifest has no frontend', async () => {
