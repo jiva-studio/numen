@@ -4,12 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 const (
@@ -61,6 +66,11 @@ func (c *modelCache[M]) get(ctx context.Context, key string, list func(context.C
 			c.inFlight[key] = true
 			go c.fetchInBackground(key, list)
 		}
+		if cached := readAntigravityCache[M](key); len(cached) > 0 {
+			c.key, c.models, c.isCached = key, cached, true
+			c.mu.Unlock()
+			return cached
+		}
 		c.mu.Unlock()
 		return nil
 	}
@@ -91,7 +101,59 @@ func (c *modelCache[M]) fetchAndStore(ctx context.Context, key string, list func
 	}
 	c.key, c.models, c.isCached = key, models, true
 	c.failedKey = ""
+	if c.isAsync {
+		writeAntigravityCache(key, models)
+	}
 	return c.models
+}
+
+type persistedAntigravityModels[M any] struct {
+	Key    string `json:"key"`
+	Models []M    `json:"models"`
+}
+
+func antigravityCachePath() (string, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			return "", err
+		}
+		dir = filepath.Join(home, ".cache")
+	}
+	return filepath.Join(dir, "numen", "models-antigravity.json"), nil
+}
+
+func readAntigravityCache[M any](key string) []M {
+	path, err := antigravityCachePath()
+	if err != nil {
+		return nil
+	}
+	data, err := agentrun.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var cached persistedAntigravityModels[M]
+	if json.Unmarshal(data, &cached) != nil || cached.Key != key {
+		return nil
+	}
+	return cached.Models
+}
+
+func writeAntigravityCache[M any](key string, models []M) {
+	if len(models) == 0 {
+		return
+	}
+	path, err := antigravityCachePath()
+	if err != nil {
+		return
+	}
+	data, err := json.Marshal(persistedAntigravityModels[M]{Key: key, Models: models})
+	if err != nil {
+		return
+	}
+	_ = agentrun.CreateDir(filepath.Dir(path), 0o700)
+	_ = agentrun.WriteFile(path, data, 0o600)
 }
 
 // listAntigravityModels asks the program for its models: the output of "models", one model to a

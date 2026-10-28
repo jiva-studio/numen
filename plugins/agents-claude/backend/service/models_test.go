@@ -143,6 +143,8 @@ func TestACachedListIsNotAskedAgain(t *testing.T) {
 }
 
 func TestAnAsyncCacheReturnsEmptyWhileInFlightAndFallbackAfterFailure(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
 	cache := modelCache{
 		isAsync:  true,
 		inFlight: map[string]bool{"x": true},
