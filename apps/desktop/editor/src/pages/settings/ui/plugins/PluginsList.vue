@@ -8,7 +8,9 @@ import PluginRow from './PluginRow.vue'
 import SystemRow from './SystemRow.vue'
 import type { SettingsTabState } from '../../types'
 import {
-  matchesPluginQuery,
+  formatCategoryLabel,
+  getFilteredPluginItems,
+  getPluginCategory,
   matchesSystemRow,
   parsePluginQuery,
   type PluginFilterContext,
@@ -39,51 +41,28 @@ watch(
   },
 )
 
-const CATEGORY_ORDER = ['agents', 'editors', 'engines', 'readers', 'tools', 'views']
-
-interface FlatPluginItem {
-  category: string
-  categoryLabel: string
-  plugin: PluginInfo
+const categoryLabels: Readonly<Record<string, string>> = {
+  agents: words.categoryAgents,
+  editors: words.categoryEditors,
+  engines: words.categoryEngines,
+  readers: words.categoryReaders,
+  tools: words.categoryTools,
+  views: words.categoryViews,
 }
-
-const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 
 const filterContext: PluginFilterContext = {
   isEnabled: isPluginEnabled,
   getCategory: getPluginCategory,
-  getCategoryLabel: formatCategoryLabel,
+  getCategoryLabel: (category) => formatCategoryLabel(category, categoryLabels),
 }
+
+const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 
 const showsSystem = computed(() => matchesSystemRow(parsedQuery.value))
 
-const flatPlugins = computed<readonly FlatPluginItem[]>(() => {
-  const query = parsedQuery.value
-  const matching =
-    query.qualifiers.length > 0 || query.terms.length > 0
-      ? props.plugins.filter((plugin) => matchesPluginQuery(plugin, query, filterContext))
-      : props.plugins
-
-  const items: FlatPluginItem[] = matching.map((plugin) => {
-    const category = getPluginCategory(plugin)
-    return {
-      category,
-      categoryLabel: formatCategoryLabel(category),
-      plugin,
-    }
-  })
-
-  return items.sort((a, b) => {
-    const idxA = CATEGORY_ORDER.indexOf(a.category)
-    const idxB = CATEGORY_ORDER.indexOf(b.category)
-    if (idxA >= 0 && idxB >= 0 && idxA !== idxB) return idxA - idxB
-    if (idxA >= 0 && idxB < 0) return -1
-    if (idxB >= 0 && idxA < 0) return 1
-    const catComp = a.category.localeCompare(b.category)
-    if (catComp !== 0) return catComp
-    return a.plugin.name.localeCompare(b.plugin.name)
-  })
-})
+const flatPlugins = computed(() =>
+  getFilteredPluginItems(props.plugins, parsedQuery.value, filterContext),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {
@@ -99,32 +78,6 @@ function onTogglePlugin(pluginId: string, enabled: boolean): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getPluginCategory(plugin: PluginInfo): string {
-  if ('category' in plugin && typeof plugin.category === 'string' && plugin.category.length > 0) {
-    return plugin.category.toLowerCase()
-  }
-  const parts = plugin.id.split('.')
-  if (parts.length >= 3 && parts[0] === 'md' && parts[1] === 'numen' && parts[2]) {
-    return parts[2].toLowerCase()
-  }
-  if (parts.length >= 2 && parts[0]) {
-    return parts[0].toLowerCase()
-  }
-  return 'other'
-}
-
-function formatCategoryLabel(category: string): string {
-  const map: Record<string, string> = {
-    agents: words.categoryAgents,
-    editors: words.categoryEditors,
-    engines: words.categoryEngines,
-    readers: words.categoryReaders,
-    tools: words.categoryTools,
-    views: words.categoryViews,
-  }
-  return map[category] ?? category.charAt(0).toUpperCase() + category.slice(1)
-}
-
 function isPluginEnabled(pluginId: string): boolean {
   const val = props.state.installation.getSetting(['plugins', pluginId, 'enabled'])
   return typeof val === 'boolean' ? val : true

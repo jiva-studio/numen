@@ -8,6 +8,24 @@ export interface MediaRecordingEmit {
   (e: 'record-stop', blob: Blob | null): void
 }
 
+export function getWaveformBars(
+  elapsedMs: number,
+  isRecording: boolean,
+  count = 32,
+): readonly number[] {
+  const bars: number[] = []
+  for (let i = 0; i < count; i++) {
+    if (isRecording) {
+      const phase = (elapsedMs / 150 + i * 0.4) % (Math.PI * 2)
+      const height = Math.max(12, Math.round(Math.abs(Math.sin(phase)) * 85 + 15))
+      bars.push(height)
+    } else {
+      bars.push(15)
+    }
+  }
+  return bars
+}
+
 export function useMediaRecording(emit: MediaRecordingEmit) {
   const status = ref<RecordingStatus>('idle')
   const elapsedMs = ref(0)

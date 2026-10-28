@@ -6,7 +6,11 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from './editor'
 import type { Extension } from '@codemirror/state'
 import { editorPreferences } from './preferences'
-import { useMarkdownDocument, type EditorHandle } from './useMarkdownDocument'
+import {
+  getEditorLanguage,
+  useMarkdownDocument,
+  type EditorHandle,
+} from './useMarkdownDocument'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -60,18 +64,7 @@ watch(displayErrorMessage, () => {
   isDismissed.value = false
 })
 
-const editorLanguage = computed(() => {
-  const p =
-    props.filePath ||
-    props.path ||
-    (props.state?.path as string) ||
-    (props.state?.file as string) ||
-    (props.state?.at as string) ||
-    ''
-  if (p.endsWith('.txt')) return 'plaintext'
-  if (p.endsWith('.json')) return 'json'
-  return 'markdown'
-})
+const editorLanguage = computed(() => getEditorLanguage(props))
 
 const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
 const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)

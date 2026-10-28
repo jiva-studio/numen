@@ -34,6 +34,21 @@ export function toSelectChoices(options: readonly PluginSettingOption[]): readon
   }))
 }
 
+/** Sorts themes with built-in themes first and maps them into grouped select choices. */
+export function toThemeChoices(
+  themes: readonly { readonly name: string; readonly title: string; readonly isBuiltIn: boolean }[],
+  shippedLabel: string,
+  ownedLabel: string,
+): readonly SelectChoice[] {
+  return [...themes]
+    .sort((one, other) => Number(other.isBuiltIn) - Number(one.isBuiltIn))
+    .map((one) => ({
+      id: one.name,
+      text: one.title,
+      group: one.isBuiltIn ? shippedLabel : ownedLabel,
+    }))
+}
+
 /** Finds the setting key after which a secret should be placed, or null for the top. */
 function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>): string | null {
   if (secret.when?.setting && shownKeys.has(secret.when.setting)) {

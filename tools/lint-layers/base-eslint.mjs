@@ -590,6 +590,100 @@ const numenPlugin = {
         }
       },
     },
+
+    'thin-computed': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Enforce that computed properties in Vue components remain thin projections without loops, sorting, or multi-step business logic',
+        },
+        messages: {
+          tooManyStatements:
+            'computed() has {{count}} statements (max: {{max}}). Extract data transformations and business logic into a pure module.',
+          forbiddenLoop:
+            'Loops inside computed() in a .vue file are forbidden. Move iteration and data transformation into a pure module.',
+          forbiddenTransform:
+            'Array .{{method}}() inside computed() in a .vue file is forbidden. Move sorting and reduction into a pure module.',
+        },
+        schema: [
+          {
+            type: 'object',
+            properties: {
+              maxStatements: { type: 'integer', minimum: 1 },
+            },
+            additionalProperties: false,
+          },
+        ],
+      },
+      create(context) {
+        const maxStatements = context.options[0]?.maxStatements ?? 5
+        const LOOP_TYPES = new Set([
+          'ForStatement',
+          'ForInStatement',
+          'ForOfStatement',
+          'WhileStatement',
+          'DoWhileStatement',
+        ])
+
+        function inspectBody(node) {
+          if (!node) return
+          if (LOOP_TYPES.has(node.type)) {
+            context.report({
+              node,
+              messageId: 'forbiddenLoop',
+            })
+            return
+          }
+          if (
+            node.type === 'CallExpression' &&
+            node.callee?.type === 'MemberExpression' &&
+            node.callee.property?.type === 'Identifier' &&
+            (node.callee.property.name === 'sort' || node.callee.property.name === 'reduce')
+          ) {
+            context.report({
+              node: node.callee.property,
+              messageId: 'forbiddenTransform',
+              data: { method: node.callee.property.name },
+            })
+          }
+          for (const key of Object.keys(node)) {
+            if (key === 'parent') continue
+            const child = node[key]
+            if (Array.isArray(child)) {
+              for (const item of child) {
+                if (item && typeof item === 'object' && item.type) inspectBody(item)
+              }
+            } else if (child && typeof child === 'object' && child.type) {
+              inspectBody(child)
+            }
+          }
+        }
+
+        return {
+          'CallExpression[callee.name="computed"]'(node) {
+            const arg = node.arguments?.[0]
+            if (!arg) return
+            const fn =
+              arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression'
+                ? arg
+                : null
+            if (!fn) return
+            if (fn.body?.type === 'BlockStatement') {
+              const count = fn.body.body.length
+              if (count > maxStatements) {
+                context.report({
+                  node,
+                  messageId: 'tooManyStatements',
+                  data: { count, max: maxStatements },
+                })
+              }
+            }
+            inspectBody(fn.body)
+          },
+        }
+      },
+    },
   },
 }
 
@@ -692,6 +786,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-inline-props': ['error', { max: 6 }],
         'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
         'numen/max-script-lines': ['error', { max: 100 }],
+        'numen/thin-computed': ['error', { maxStatements: 5 }],
         'numen/boolean-prop-naming': 'error',
         'numen/handler-naming': 'error',
         'vue/max-lines-per-block': [
@@ -786,6 +881,7 @@ export function createBaseConfig(dirname, options = {}) {
         'vue/max-template-depth': 'off',
         'vue/max-lines-per-block': 'off',
         'numen/max-script-lines': 'off',
+        'numen/thin-computed': 'off',
         'numen/vue-script-sections': 'off',
         'numen/boolean-prop-naming': 'off',
         'numen/handler-naming': 'off',

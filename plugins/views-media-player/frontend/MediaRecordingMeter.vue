@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { clock } from '@numen/ui'
+import { getWaveformBars } from './useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -9,20 +10,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const liveBars = computed(() => {
-  const count = 32
-  const bars: number[] = []
-  for (let i = 0; i < count; i++) {
-    if (props.isRecording) {
-      const phase = (props.elapsedMs / 150 + i * 0.4) % (Math.PI * 2)
-      const height = Math.max(12, Math.round(Math.abs(Math.sin(phase)) * 85 + 15))
-      bars.push(height)
-    } else {
-      bars.push(15)
-    }
-  }
-  return bars
-})
+const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecording))
 </script>
 
 <template>

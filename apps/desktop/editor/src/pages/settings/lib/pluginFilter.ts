@@ -23,6 +23,14 @@ export interface PluginFilterContext {
   readonly getCategoryLabel: (category: string) => string
 }
 
+export interface FlatPluginItem {
+  readonly category: string
+  readonly categoryLabel: string
+  readonly plugin: PluginInfo
+}
+
+const CATEGORY_ORDER = ['agents', 'editors', 'engines', 'readers', 'tools', 'views']
+
 type QualifierMatcher = (
   plugin: PluginInfo,
   value: string,
@@ -192,4 +200,59 @@ export function matchesSystemRow(query: ParsedPluginQuery): boolean {
   return query.terms.every((term) =>
     SYSTEM_KEYWORDS.some((keyword) => keyword.includes(term) || term.includes(keyword)),
   )
+}
+
+/** Resolves the normalized category key for a plugin. */
+export function getPluginCategory(plugin: PluginInfo): string {
+  if ('category' in plugin && typeof plugin.category === 'string' && plugin.category.length > 0) {
+    return plugin.category.toLowerCase()
+  }
+  const parts = plugin.id.split('.')
+  if (parts.length >= 3 && parts[0] === 'md' && parts[1] === 'numen' && parts[2]) {
+    return parts[2].toLowerCase()
+  }
+  if (parts.length >= 2 && parts[0]) {
+    return parts[0].toLowerCase()
+  }
+  return 'other'
+}
+
+/** Formats a category key into its display label using localized category names. */
+export function formatCategoryLabel(
+  category: string,
+  labels: Readonly<Record<string, string>> = {},
+): string {
+  return labels[category] ?? category.charAt(0).toUpperCase() + category.slice(1)
+}
+
+/** Filters, categorizes, and sorts plugins for the settings plugin list. */
+export function getFilteredPluginItems(
+  plugins: readonly PluginInfo[],
+  query: ParsedPluginQuery,
+  context: PluginFilterContext,
+): readonly FlatPluginItem[] {
+  const matching =
+    query.qualifiers.length > 0 || query.terms.length > 0
+      ? plugins.filter((plugin) => matchesPluginQuery(plugin, query, context))
+      : plugins
+
+  const items: FlatPluginItem[] = matching.map((plugin) => {
+    const category = context.getCategory(plugin)
+    return {
+      category,
+      categoryLabel: context.getCategoryLabel(category),
+      plugin,
+    }
+  })
+
+  return items.sort((a, b) => {
+    const idxA = CATEGORY_ORDER.indexOf(a.category)
+    const idxB = CATEGORY_ORDER.indexOf(b.category)
+    if (idxA >= 0 && idxB >= 0 && idxA !== idxB) return idxA - idxB
+    if (idxA >= 0 && idxB < 0) return -1
+    if (idxB >= 0 && idxA < 0) return 1
+    const catComp = a.category.localeCompare(b.category)
+    if (catComp !== 0) return catComp
+    return a.plugin.name.localeCompare(b.plugin.name)
+  })
 }

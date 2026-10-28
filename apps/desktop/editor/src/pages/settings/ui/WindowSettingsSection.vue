@@ -8,6 +8,7 @@ import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import { NamingSettings } from './naming-settings'
 import type { SettingsTabState } from '../types'
+import { toThemeChoices } from '../lib/enums'
 import type { Mode } from '@/entities/settings'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/features/settings-commands'
 import { WORDS as words } from '../words'
@@ -27,13 +28,7 @@ const modes = [
 ]
 
 const themes = computed<readonly SelectChoice[]>(() =>
-  [...installation.value.themes.value]
-    .sort((one, other) => Number(other.isBuiltIn) - Number(one.isBuiltIn))
-    .map((one) => ({
-      id: one.name,
-      text: one.title,
-      group: one.isBuiltIn ? words.shipped : words.owned,
-    })),
+  toThemeChoices(installation.value.themes.value, words.shipped, words.owned),
 )
 
 const STEP = 0.1

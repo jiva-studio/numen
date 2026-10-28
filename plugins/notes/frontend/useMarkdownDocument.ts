@@ -198,6 +198,19 @@ function checkFrontmatterError(content: string): string {
   return ''
 }
 
+export function getEditorLanguage(props: DocumentOptions): 'markdown' | 'json' | 'plaintext' {
+  const path =
+    props.filePath ||
+    props.path ||
+    (props.state?.path as string) ||
+    (props.state?.file as string) ||
+    (props.state?.at as string) ||
+    ''
+  if (path.endsWith('.txt')) return 'plaintext'
+  if (path.endsWith('.json')) return 'json'
+  return 'markdown'
+}
+
 export function useMarkdownDocument(
   props: DocumentOptions,
   emit: DocumentEmit,

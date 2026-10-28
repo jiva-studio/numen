@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createPluginInfo } from '@/testing/installation'
 import {
+  formatCategoryLabel,
+  getFilteredPluginItems,
+  getPluginCategory,
   matchesPluginQuery,
   matchesSystemRow,
   parsePluginQuery,
@@ -9,8 +12,8 @@ import {
 
 const createContext = (disabledIds: readonly string[] = []): PluginFilterContext => ({
   isEnabled: (id) => !disabledIds.includes(id),
-  getCategory: (plugin) => plugin.id.split('.')[2] ?? 'other',
-  getCategoryLabel: (cat) => cat.toUpperCase(),
+  getCategory: getPluginCategory,
+  getCategoryLabel: (cat) => formatCategoryLabel(cat, { views: 'Views', readers: 'Readers' }),
 })
 
 describe('parsePluginQuery', () => {
@@ -83,5 +86,26 @@ describe('matchesPluginQuery and matchesSystemRow', () => {
     expect(matchesSystemRow(parsePluginQuery('theme'))).toBe(true)
     expect(matchesSystemRow(parsePluginQuery('@disabled'))).toBe(false)
     expect(matchesSystemRow(parsePluginQuery('whisper'))).toBe(false)
+  })
+
+  it('filters, categorizes, and sorts plugins by category order and name', () => {
+    const ctx = createContext(['md.numen.notes'])
+    const items = getFilteredPluginItems(
+      [filesPlugin, notesPlugin, agentPlugin],
+      parsePluginQuery(''),
+      ctx,
+    )
+    expect(items.map((item) => [item.category, item.plugin.name])).toStrictEqual([
+      ['agents', 'Claude Code Agent'],
+      ['views', 'File Tree Explorer'],
+      ['notes', 'Notes'],
+    ])
+
+    const disabledItems = getFilteredPluginItems(
+      [filesPlugin, notesPlugin, agentPlugin],
+      parsePluginQuery('@disabled'),
+      ctx,
+    )
+    expect(disabledItems.map((item) => item.plugin.id)).toStrictEqual(['md.numen.notes'])
   })
 })
