@@ -62,9 +62,22 @@ watch(
 
 <style scoped>
 .transcript-text {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
   min-block-size: 0;
-  overflow: auto;
+  overflow: hidden;
   user-select: text;
   -webkit-user-select: text;
+}
+
+.transcript-text :deep(.cm-editor) {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  height: 100%;
+}
+
+.transcript-text :deep(.cm-scroller) {
+  overflow-y: auto;
 }
 </style>

@@ -1,8 +1,10 @@
-# File Tree Explorer Plugin
+# File Tree Explorer
 
-Modular frontend view plugin that decouples file tree exploration and vault navigation from the core desktop editor.
+Provides the sidebar file tree for browsing, creating, renaming, moving, and organizing files and folders in the active vault.
+
+<!-- more -->
 
 ## Features
 
-- Registers the `file-tree` tab kind via `@numen/plugin-sdk`.
-- Refreshes tree contents when vault files or roots change.
+- **Live vault synchronization**: Automatically updates the folder hierarchy as notes, recordings, books, and documents are added or changed on disk.
+- **Drag-and-drop & context actions**: Supports moving files between folders, creating notes and folders, and running file-specific commands (such as **Transcribe**, **Recognise text**, and **Proofread**).

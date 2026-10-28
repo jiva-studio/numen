@@ -21,6 +21,9 @@ const props = withDefaults(defineProps<EditorProps>(), {
   keys: 'Tab indents. Press Escape, then Tab, to leave the editor.',
   change: null,
   extensions: () => [],
+  softWrap: true,
+  lineNumbers: false,
+  tabSize: 2,
 })
 
 const text = defineModel<string>({ default: '' })
@@ -45,6 +48,9 @@ const { focus, measure, reveal } = useEditor({
   text,
   keysId,
   emit,
+  softWrap: () => props.softWrap,
+  lineNumbers: () => props.lineNumbers,
+  tabSize: () => props.tabSize,
 })
 
 /* --------------------------------- Helpers -------------------------------- */

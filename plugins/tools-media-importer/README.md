@@ -1,10 +1,13 @@
-# Media Importer Plugin
+# Media Importer
 
-Keeps web addresses as link notes (`type: link`, the address under `url`), fetches what is published there into text versions of them, and copies videos to play from this disk. See [Importing an address](../../docs/importing.md).
+Saves web pages and online videos as vault link notes (`type: link`), extracting readable article text, captions, and local video copies for offline playback.
+
+<!-- more -->
 
 ## Features
 
-- Declares the note type `link` and a text input of notes of that type. An article is an `article` version of its link, captions a `transcript` one, both in the common JSON Lines format.
-- Declares `playback` of notes of type `link`: a copy of a video is kept in the plugin's store folder as `<hash>.<ext>`, `<hash>` the content hash of the link note, and played through `numen.v1.MediaService`.
-- Serves its own `numen.links.v1.LinkService` (`proto/numen/links/v1/link.proto`, generated with `make plugin_importer_generate`) to the link's tab, and the command `import` (**Import from URL**).
-- Reaches a video site with `yt-dlp` and `ffmpeg`, from the paths the settings name or `PATH`; neither is required. Under `NUMEN_MOCK_ML` a video site is reached through a stand-in that copies a clip of quiet sound, offline.
+- **Import from URL**: Captures web articles into structured `article` text versions and video captions into time-aligned `transcript` versions.
+- **Offline video playback**: Downloads video streams into `.numen/md.numen.tools.media.importer/<hash>.<ext>` using `yt-dlp` and `ffmpeg` for local playback through `numen.v1.MediaService`.
+- **Settings**:
+  - **yt-dlp path**: Optional path to the `yt-dlp` executable (resolved from `PATH` when empty).
+  - **ffmpeg path**: Optional path to the `ffmpeg` executable (resolved from `PATH` when empty).

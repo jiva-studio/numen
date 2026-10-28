@@ -1,9 +1,12 @@
-# OpenAI Codex Agent Plugin
+# OpenAI Codex Agent
 
-OpenAI Codex CLI agent runner and provider service.
+Runs the OpenAI Codex CLI (`codex`) as a local agent provider for vault queries, note editing, and completions.
 
-## Features
+<!-- more -->
 
-- Executes Codex CLI processes to handle code and query requests.
-- Serves `numen.v1.AgentService`.
-- Started by the host when a task is routed to it.
+## How It Works
+
+- **Local CLI integration**: Spawns the `codex` CLI binary and connects it to Numen's vault MCP tools via `numen.v1.AgentService`.
+- **Models**: Uses the OpenAI reasoning and coding models available in your local Codex CLI configuration.
+- **Settings**:
+  - **Executable path**: Optional custom path to the `codex` binary. When empty, `codex` is resolved from your system `PATH`.

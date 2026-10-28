@@ -1,18 +1,18 @@
 <script setup lang="ts">
 /**
- * Declarative settings fields for a plugin: agent choices, switches,
- * number inputs, sliders, selects, paths, and text fields. A setting whose
- * condition fails is not shown, and keeps its value.
+ * Declarative settings fields and secrets for a plugin: agent choices, switches,
+ * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
+ * secret whose condition fails is not shown, and keeps its value.
  */
 import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { AgentChoice } from '../agent-choice'
 import { PathField } from '../path-field'
+import { SecretField } from '../secret-field'
 import type { SettingsTabState } from '../../types'
 import {
   createSettingFields,
-  isShown,
   type CompletionChoice,
   type PluginInfo,
   type PluginSettingInfo,
@@ -41,20 +41,16 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
-
 const agents = computed(() => getAgents(installation.value))
 const defaultAgent = computed(() => fields.getString(DEFAULT_AGENT_AT))
-const agentSettings = computed(() => props.plugin.settings.filter((one) => one.type === AGENT_TYPE))
-const otherSettings = computed(() =>
-  props.plugin.settings.filter(
-    (one) => one.type !== AGENT_TYPE && isShown(props.plugin, one.when, readSetting),
-  ),
-)
-const { getEnumOptions, getEnumValue, getDetail, getOrigin } = createEnumFields(
-  () => props.plugin,
-  readSetting,
-  words,
-)
+const {
+  getEnumOptions,
+  getEnumChoices,
+  getEnumValue,
+  getShownSettings,
+  getTopSecrets,
+  getSecretsAfter,
+} = createEnumFields(() => props.plugin, readSetting)
 /** Why a path setting did not take the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
 const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
@@ -78,13 +74,21 @@ function onAgentChoose(key: string, choice: CompletionChoice): void {
   fields.setValue(['plugins', props.plugin.id, key], choice)
 }
 
+function onSecretSave(name: string, key: string): void {
+  installation.value.writeSecret(props.plugin.id, name, key)
+}
+
+function onSecretDelete(name: string): void {
+  installation.value.deleteSecret(props.plugin.id, name)
+}
+
 /* -------------------------------- Helpers --------------------------------- */
 function readSetting(key: string): unknown {
   return installation.value.getSetting(['plugins', props.plugin.id, key])
 }
 
 function getChoice(key: string): CompletionChoice {
-  return readChoice(installation.value.getSetting(['plugins', props.plugin.id, key]))
+  return readChoice(readSetting(key))
 }
 
 function getAgentChoices(choice: CompletionChoice) {
@@ -106,32 +110,37 @@ function getProgramChoices(setting: PluginSettingInfo) {
   return createProgramModelChoices(models, getStringSetting(setting.key, setting.default))
 }
 
-function getSetting(key: string, fallback: unknown): unknown {
-  const val = installation.value.getSetting(['plugins', props.plugin.id, key])
-  return val !== undefined ? val : fallback
-}
-
 function getBooleanSetting(key: string, fallback: unknown): boolean {
-  const val = getSetting(key, fallback)
+  const val = readSetting(key) ?? fallback
   return typeof val === 'boolean' ? val : Boolean(fallback)
 }
 
 function getNumberSetting(key: string, fallback: unknown): number {
-  const val = getSetting(key, fallback)
+  const val = readSetting(key) ?? fallback
   return typeof val === 'number' ? val : Number(fallback ?? 0)
 }
 
 function getStringSetting(key: string, fallback: unknown): string {
-  const val = getSetting(key, fallback)
+  const val = readSetting(key) ?? fallback
   return typeof val === 'string' ? val : String(fallback ?? '')
 }
 </script>
 
 <template>
-  <div class="plugin-fields">
+  <SecretField
+    v-for="secret in getTopSecrets()"
+    :key="`${props.plugin.id}-${secret.name}`"
+    :at="`key-${props.plugin.id}-${secret.name}`"
+    :name="secret.title"
+    :is-stored="props.plugin.storedSecrets.includes(secret.name)"
+    :words="words"
+    @save="(key) => onSecretSave(secret.name, key)"
+    @delete="onSecretDelete(secret.name)"
+  />
+
+  <template v-for="setting in getShownSettings()" :key="setting.key">
     <AgentChoice
-      v-for="setting in agentSettings"
-      :key="setting.key"
+      v-if="setting.type === AGENT_TYPE"
       :at="`${props.plugin.id}-${setting.key}`"
       :agent-name="setting.title"
       :agent-detail="setting.description"
@@ -144,12 +153,11 @@ function getStringSetting(key: string, fallback: unknown): string {
     />
 
     <SettingRow
-      v-for="setting in otherSettings"
-      :key="setting.key"
+      v-else
       v-slot="{ labelledBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
-      :detail="getDetail(setting)"
+      :detail="setting.description"
     >
       <Switch
         v-if="setting.type === 'boolean'"
@@ -200,15 +208,12 @@ function getStringSetting(key: string, fallback: unknown): string {
         <Select
           v-else
           :model-value="getEnumValue(setting)"
-          :choices="
-            getEnumOptions(setting).map((opt) => ({ id: opt.value, text: opt.title || opt.value }))
-          "
+          :choices="getEnumChoices(setting)"
           :name="setting.title"
           :aria-labelledby="labelledBy"
           class="settings__choice"
           @update:model-value="(val) => onSettingChange(setting.key, val)"
         />
-        <span class="settings__origin">{{ getOrigin(setting) }}</span>
       </span>
 
       <PathField
@@ -222,12 +227,26 @@ function getStringSetting(key: string, fallback: unknown): string {
       />
 
       <Select
+        v-else-if="setting.type === 'string' && getEnumOptions(setting).length > 0"
+        :model-value="getEnumValue(setting) || getStringSetting(setting.key, setting.default)"
+        :choices="getEnumChoices(setting)"
+        :name="setting.title"
+        :aria-labelledby="labelledBy"
+        is-searchable
+        can-enter-custom
+        :search-name="words.searchModels"
+        class="settings__choice"
+        @update:model-value="(val) => onSettingChange(setting.key, val)"
+      />
+
+      <Select
         v-else-if="getProgramChoices(setting).length > 0"
         :model-value="getStringSetting(setting.key, setting.default)"
         :choices="getProgramChoices(setting)"
         :name="setting.title"
         :aria-labelledby="labelledBy"
         is-searchable
+        can-enter-custom
         :search-name="words.searchModels"
         class="settings__choice"
         @update:model-value="(val) => onSettingChange(setting.key, val)"
@@ -243,17 +262,24 @@ function getStringSetting(key: string, fallback: unknown): string {
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
-  </div>
+
+    <SecretField
+      v-for="secret in getSecretsAfter(setting.key)"
+      :key="`${props.plugin.id}-${secret.name}`"
+      :at="`key-${props.plugin.id}-${secret.name}`"
+      :name="secret.title"
+      :is-stored="props.plugin.storedSecrets.includes(secret.name)"
+      :words="words"
+      @save="(key) => onSecretSave(secret.name, key)"
+      @delete="onSecretDelete(secret.name)"
+    />
+  </template>
 </template>
 
 <style scoped>
-.plugin-fields {
-  display: flex;
-  flex-direction: column;
-}
-
 .settings__number {
   inline-size: var(--settings-value, 6rem);
+  text-align: end;
 }
 
 .settings__slider-container {
@@ -284,17 +310,11 @@ function getStringSetting(key: string, fallback: unknown): string {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.125rem;
 }
 
 .settings__fixed {
   color: var(--numen-ink);
   font-size: var(--numen-text-2);
-}
-
-.settings__origin {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
 }
 
 .settings__text-input {
@@ -307,6 +327,7 @@ function getStringSetting(key: string, fallback: unknown): string {
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
+  text-align: end;
 }
 
 .settings__text-input:focus {

@@ -24,7 +24,7 @@
       "key": "baseUrl",
       "type": "string",
       "title": "Chat API",
-      "description": "Base URL of an OpenAI-compatible chat API, such as http://localhost:11434/v1 for Ollama",
+      "description": "Base URL of an OpenAI-compatible chat API, such as https://openrouter.ai/api/v1 or http://localhost:11434/v1. Available models are fetched from <Chat API>/models.",
       "default": "https://openrouter.ai/api/v1"
     },
     {

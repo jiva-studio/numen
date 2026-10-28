@@ -124,6 +124,40 @@ describe('the window’s commands over a row', () => {
     ])
   })
 
+  it('includes dynamic file menu items over a file that is no note', () => {
+    const getFileMenuItems = vi.fn((path: string) =>
+      path === 'Lecture.mp3'
+        ? [
+            {
+              id: 'file-menu:create-text:whisper:',
+              text: 'Transcribe with Whisper',
+              group: 'file',
+            },
+            {
+              id: 'file-menu:create-text:proofread:v1',
+              text: 'Proofread with Claude',
+              group: 'file',
+            },
+          ]
+        : [],
+    )
+    const host = createPathCommandHost({
+      getTarget: () => target as never,
+      runCommand: vi.fn(),
+      getFileMenuItems,
+    })
+
+    const ids = host.getPathCommands({ entry: entry('Lecture.mp3', false), isSeveral: false })
+
+    expect(getFileMenuItems).toHaveBeenCalledWith('Lecture.mp3')
+    expect(ids.map((one) => one.id)).toStrictEqual([
+      'file-menu:create-text:whisper:',
+      'file-menu:create-text:proofread:v1',
+      'copy',
+      'remove',
+    ])
+  })
+
   it('offers removal over several rows and file commands over a file', () => {
     const { host } = createCommands()
 

@@ -20,6 +20,7 @@ import {
   runInvocation,
   type CommandDeps,
   type CommandTarget,
+  type PathContribution,
 } from '@/features/command-palette'
 import type { NoteCreator } from '@/entities/note'
 import { WORDS as words } from '@/shared/words'
@@ -125,6 +126,8 @@ export interface PathCommandDeps {
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
   readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
+  /** The entries of the menu a file's text versions make, for the file at the path. */
+  readonly getFileMenuItems?: (path: string) => readonly PathContribution[]
   /** The icon a plugin draws its menu item with, and nothing for an item it draws none for. */
   readonly getContextMenuIcon?: (id: string) => unknown
   /** The icon a plugin draws its command with, and nothing for one it draws none for. */
@@ -142,6 +145,7 @@ export function createPathCommandHost(
     runCommand,
     getContextMenuItems,
     runContextMenu,
+    getFileMenuItems,
     getContextMenuIcon,
     getPluginCommandIcon,
   } = deps
@@ -154,7 +158,10 @@ export function createPathCommandHost(
         isNote: entry.isNote,
         isSeveral,
       }
-      const contributions = getContextMenuItems ? getContextMenuItems(target) : []
+      const contributions = [
+        ...(getContextMenuItems ? getContextMenuItems(target) : []),
+        ...(!isSeveral && !entry.isFolder && getFileMenuItems ? getFileMenuItems(entry.path) : []),
+      ]
       return createPathCommands(
         { isNote: entry.isNote, isFolder: entry.isFolder },
         isSeveral,

@@ -1,17 +1,14 @@
 <script setup lang="ts">
 /**
- * One settings row: the title and a one-sentence description on the left, the
- * control on the right. Text after the first sentence of `detail` goes into a
- * tooltip behind an info icon next to the title. When the nearest size
- * container (the settings column) is narrower than 34rem, the control moves
- * under the description at full width.
+ * One settings row: the title and an info tooltip on the left, the control on
+ * the right. When the nearest size container (the settings column) is narrower
+ * than 34rem, the control moves under the title at full width.
  *
  * The title carries the id the control is labelled by, because switches,
  * segments and composite controls have no element a `<label for>` can target.
  */
 import { computed } from 'vue'
 import SettingInfo from './SettingInfo.vue'
-import { splitDetail } from './detail'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -29,7 +26,7 @@ defineSlots<{
 
 /* --------------------------------- State ---------------------------------- */
 const nameId = computed(() => `settings-${props.at}`)
-const parts = computed(() => splitDetail(props.detail))
+const trimmedDetail = computed(() => props.detail.trim())
 </script>
 
 <template>
@@ -38,13 +35,12 @@ const parts = computed(() => splitDetail(props.detail))
       <span class="settings__title">
         <span :id="nameId" class="settings__name">{{ name }}</span>
         <SettingInfo
-          v-if="parts.more"
+          v-if="trimmedDetail"
           :at="`${nameId}-more`"
           :label="words.aboutSetting(name)"
-          :text="parts.more"
+          :text="trimmedDetail"
         />
       </span>
-      <span v-if="parts.summary" class="settings__detail">{{ parts.summary }}</span>
     </div>
     <div class="settings__value">
       <slot v-bind="{ labelledBy: nameId }" />
@@ -56,7 +52,7 @@ const parts = computed(() => splitDetail(props.detail))
 .settings__row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) fit-content(24rem);
-  align-items: start;
+  align-items: center;
   gap: 0.5rem var(--numen-panel-gap, 1rem);
   padding-block: 0.625rem;
   border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
@@ -69,7 +65,6 @@ const parts = computed(() => splitDetail(props.detail))
 .settings__label {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
   min-inline-size: 0;
 }
 
@@ -86,12 +81,6 @@ const parts = computed(() => splitDetail(props.detail))
   overflow-wrap: anywhere;
   color: var(--numen-ink);
   font-weight: 500;
-}
-
-.settings__detail {
-  overflow-wrap: anywhere;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
 }
 
 .settings__value {

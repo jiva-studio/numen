@@ -1442,9 +1442,10 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 
 		settings := make([]pluginport.PluginSetting, 0, len(p.Manifest.Settings))
 		for _, s := range p.Manifest.Settings {
+			defVal := resolveSettingDefault(s)
 			defJSON := ""
-			if s.Default != nil {
-				if b, err := json.Marshal(s.Default); err == nil {
+			if defVal != nil {
+				if b, err := json.Marshal(defVal); err == nil {
 					defJSON = string(b)
 				}
 			}
@@ -1488,6 +1489,22 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 		})
 	}
 	return result
+}
+
+func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
+	if s.Default == "" {
+		switch s.Key {
+		case "yt_dlp":
+			if path, err := exec.LookPath("yt-dlp"); err == nil {
+				return path
+			}
+		case "ffmpeg":
+			if path, err := exec.LookPath("ffmpeg"); err == nil {
+				return path
+			}
+		}
+	}
+	return s.Default
 }
 
 func formatPluginSettings(rawSettings map[string]any) map[string]string {

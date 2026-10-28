@@ -1,8 +1,11 @@
-# Agent Chat Plugin
+# Agent Chat
 
-The conversation tab where the person asks the agent about the vault.
+Provides the interactive conversation tab where you ask AI agents questions about your vault, search sources, and review proposed note edits.
+
+<!-- more -->
 
 ## Features
-- Registers the `agent` tab kind: the composer, the turns of the talk, the choice of agent and model.
-- Follows the links an answer makes into the vault and opens the passages it names.
-- Asks the host's agent, resolves the notes an answer names, and reads and writes the choice of agent and model through the plugin SDK.
+
+- **Agent & model selector**: Switch between installed agents (Numen Agent, Claude Code, Antigravity, Codex, ACP) and their models per conversation.
+- **Grounded vault citations**: Follows `[[Note]]` wikilinks and `numen:` passage links in agent responses, opening cited books, PDFs, and transcripts at the exact passage.
+- **Tool call inspection**: Displays each MCP tool call and its result inline as the agent works.

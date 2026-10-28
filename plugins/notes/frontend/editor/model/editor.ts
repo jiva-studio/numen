@@ -10,12 +10,18 @@ import {
   previewCompartment,
   createEditable,
   editableCompartment,
+  getLineNumbersExtension,
+  getTabSizeExtension,
+  getWrapExtension,
+  lineNumbersCompartment,
   preview,
   prose,
   setup,
   showChange,
   changeCompartment,
   languageCompartment,
+  tabSizeCompartment,
+  wrapCompartment,
 } from '../lib/setup'
 import { loadLanguage } from '../config/languages'
 import { addressOpener, addressResolver, saveHandler } from '../lib/outside'
@@ -33,11 +39,19 @@ export interface EditorStateOptions {
   readonly text: Ref<string>
   readonly keysId: string
   readonly emit: EditorEmit
+  readonly softWrap?: () => boolean | undefined
+  readonly lineNumbers?: () => boolean | undefined
+  readonly tabSize?: () => number | undefined
 }
 
 export function useEditor(options: EditorStateOptions) {
   let view: EditorView | null = null
   let lastEmitted: string | null = null
+
+  const readSoftWrap = () => (options.softWrap ? options.softWrap() : options.props.softWrap)
+  const readLineNumbers = () =>
+    options.lineNumbers ? options.lineNumbers() : options.props.lineNumbers
+  const readTabSize = () => (options.tabSize ? options.tabSize() : options.props.tabSize)
 
   async function applyLanguage(name: string): Promise<void> {
     const support = name ? await loadLanguage(name) : null
@@ -47,8 +61,15 @@ export function useEditor(options: EditorStateOptions) {
 
   onMounted(() => {
     if (!options.host.value) return
+    const rootNode = options.host.value.getRootNode()
+    const root =
+      rootNode instanceof Document ||
+      (typeof ShadowRoot !== 'undefined' && rootNode instanceof ShadowRoot)
+        ? rootNode
+        : document
     view = new EditorView({
       parent: options.host.value,
+      root,
       state: EditorState.create({
         doc: options.text.value,
         extensions: [
@@ -60,6 +81,9 @@ export function useEditor(options: EditorStateOptions) {
             describedBy: options.keysId,
             change: options.props.change,
             extensions: options.props.extensions,
+            softWrap: readSoftWrap(),
+            lineNumbers: readLineNumbers(),
+            tabSize: readTabSize(),
           }),
           addressResolver.of((address) => options.props.resolve?.(address) ?? address),
           addressOpener.of((address) => options.emit('open', address)),
@@ -111,6 +135,22 @@ export function useEditor(options: EditorStateOptions) {
   watch(
     () => options.props.extensions,
     (more) => view?.dispatch({ effects: extensionsCompartment.reconfigure(more ?? []) }),
+  )
+
+  watch(readSoftWrap, (softWrap) =>
+    view?.dispatch({ effects: wrapCompartment.reconfigure(getWrapExtension(softWrap ?? true)) }),
+  )
+
+  watch(readLineNumbers, (show) =>
+    view?.dispatch({
+      effects: lineNumbersCompartment.reconfigure(getLineNumbersExtension(show ?? false)),
+    }),
+  )
+
+  watch(readTabSize, (tabSize) =>
+    view?.dispatch({
+      effects: tabSizeCompartment.reconfigure(getTabSizeExtension(tabSize ?? 2)),
+    }),
   )
 
   const focus = (): boolean => {

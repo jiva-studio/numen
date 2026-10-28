@@ -7,6 +7,7 @@ import { isLetter } from './typeahead'
 
 export interface MenuSearchOptions {
   readonly isSearchable: () => boolean
+  readonly canEnterCustom?: (() => boolean) | undefined
   readonly items: () => readonly MenuItem[]
   readonly searchRef: Ref<HTMLInputElement | null>
   readonly menuRef: Ref<HTMLElement | null>
@@ -26,9 +27,19 @@ export interface MenuSearchState {
 export function useMenuSearch(options: MenuSearchOptions): MenuSearchState {
   const query = ref('')
 
-  const visibleItems = computed(() =>
-    options.isSearchable() ? filterItems(options.items(), query.value) : options.items(),
-  )
+  const visibleItems = computed(() => {
+    if (!options.isSearchable()) return options.items()
+    const filtered = filterItems(options.items(), query.value)
+    const custom = query.value.trim()
+    if (
+      options.canEnterCustom?.() &&
+      custom !== '' &&
+      !options.items().some((one) => one.id === custom)
+    ) {
+      return [...filtered, { id: custom, text: custom, detail: 'Use custom value' }]
+    }
+    return filtered
+  })
 
   watch(query, () => options.onResetHere())
 

@@ -1,10 +1,10 @@
 /** Which files work is going on, from one shared subscription to the plugin tasks. */
 import { describe, expect, it } from 'vitest'
-import { createWorkWatcher, type TaskSource } from './work'
+import { createWorkWatcher, type TaskSource, type WatchedTask } from './work'
 
 /** A task source a test pushes lists through, and how many times it was opened and closed. */
 function createSource() {
-  let handler: ((tasks: readonly { about: string }[]) => void) | null = null
+  let handler: ((tasks: readonly WatchedTask[]) => void) | null = null
   const counts = { opened: 0, disposed: 0 }
   const source: TaskSource = (onTasks) => {
     counts.opened++
@@ -16,7 +16,7 @@ function createSource() {
       },
     }
   }
-  const push = (list: readonly { about: string }[]) => handler?.(list)
+  const push = (list: readonly WatchedTask[]) => handler?.(list)
   return { source, push, counts }
 }
 
@@ -58,5 +58,18 @@ describe('a watcher of work', () => {
     watcher.watch('a.wav', (isWorking) => changes.push(isWorking))
 
     expect(changes).toStrictEqual([true])
+  })
+
+  it('ignores tasks that have finished or failed', () => {
+    const { source, push } = createSource()
+    const changes: boolean[] = []
+    const watcher = createWorkWatcher(source)
+    watcher.watch('a.wav', (isWorking) => changes.push(isWorking))
+
+    push([{ about: 'a.wav', done: 1, total: 3 }])
+    push([{ about: 'a.wav', done: 3, total: 3 }])
+    push([{ about: 'a.wav', done: 1, total: 3, error: 'failed' }])
+
+    expect(changes).toStrictEqual([true, false])
   })
 })

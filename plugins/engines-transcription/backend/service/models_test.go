@@ -39,69 +39,40 @@ func TestTheRecogniserOpensWithTheModelAndLanguageOfTheSettings(t *testing.T) {
 	}
 }
 
-// Each model the manifest offers is one the engine provisions, with the languages the manifest
-// lists for it.
+// Each model the manifest offers is one the engine provisions.
 func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
-	options := readManifestOptions(t)
-	if len(options.models) == 0 {
+	models := readManifestModels(t)
+	if len(models) == 0 {
 		t.Fatal("the manifest offers no model")
 	}
-	for _, name := range options.models {
-		model, ok := engine.FindModel(name)
-		if !ok {
+	for _, name := range models {
+		if _, ok := engine.FindModel(name); !ok {
 			t.Errorf("the manifest offers %s, which the engine does not run", name)
-			continue
-		}
-		languages := options.languages[name]
-		if len(languages) != len(model.Languages) {
-			t.Errorf("%s: the manifest lists %v and the engine %v", name, languages, model.Languages)
-			continue
-		}
-		for place, one := range model.Languages {
-			if languages[place] != one {
-				t.Errorf("%s: the manifest lists %v and the engine %v", name, languages, model.Languages)
-			}
 		}
 	}
 }
 
-// manifestOptions are the models the manifest offers and the languages it lists under each.
-type manifestOptions struct {
-	models    []string
-	languages map[string][]string
-}
-
-func readManifestOptions(t *testing.T) manifestOptions {
+func readManifestModels(t *testing.T) []string {
 	t.Helper()
 	type option struct {
 		Value string `json:"value"`
 	}
 	var manifest struct {
 		Settings []struct {
-			Key       string   `json:"key"`
-			Options   []option `json:"options"`
-			OptionsBy struct {
-				Options map[string][]option `json:"options"`
-			} `json:"optionsBy"`
+			Key     string   `json:"key"`
+			Options []option `json:"options"`
 		} `json:"settings"`
 	}
 	if err := json.Unmarshal(transcription.Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	read := manifestOptions{languages: map[string][]string{}}
+	var models []string
 	for _, setting := range manifest.Settings {
-		switch setting.Key {
-		case "model":
+		if setting.Key == "model" {
 			for _, one := range setting.Options {
-				read.models = append(read.models, one.Value)
-			}
-		case "language":
-			for model, list := range setting.OptionsBy.Options {
-				for _, one := range list {
-					read.languages[model] = append(read.languages[model], one.Value)
-				}
+				models = append(models, one.Value)
 			}
 		}
 	}
-	return read
+	return models
 }

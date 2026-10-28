@@ -43,6 +43,8 @@ export interface MenuProps {
    * are those that name every word typed in their text, detail or group.
    */
   isSearchable?: boolean
+  /** Whether a search query not matching any item is offered as a custom value. */
+  canEnterCustom?: boolean
   /** What the search line is announced as. */
   searchName?: string
 }

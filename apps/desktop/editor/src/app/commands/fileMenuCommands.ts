@@ -52,29 +52,56 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
     entries: [],
   })
   let unregisterAll: readonly (() => void)[] = []
+  let inFlightFile = ''
+  let settledFile = ''
 
   const load = async (file: string): Promise<void> => {
-    const entries = file ? await get(file) : []
-    for (const unregister of unregisterAll) unregister()
-    unregisterAll = entries.map((entry) =>
-      registerCommand(getFileMenuId(entry), async (invocation, on) => {
-        try {
-          await run(invocation.file, entry)
-          deps.onRun?.(invocation.file)
-          on.writeMessage(WORDS.textAsked(entry.pluginName), 'info')
-        } catch (error) {
-          on.writeMessage(formatErrorMessage(error), 'error')
-        }
-      }),
-    )
-    menu.value = { file, entries }
+    inFlightFile = file
+    try {
+      const entries = file ? await get(file) : []
+      for (const unregister of unregisterAll) unregister()
+      unregisterAll = entries.map((entry) =>
+        registerCommand(getFileMenuId(entry), async (invocation, on) => {
+          try {
+            await run(invocation.file, entry)
+            deps.onRun?.(invocation.file)
+            on.writeMessage(WORDS.textAsked(entry.pluginName), 'info')
+          } catch (error) {
+            on.writeMessage(formatErrorMessage(error), 'error')
+          }
+        }),
+      )
+      settledFile = file
+      menu.value = { file, entries }
+      setTimeout(() => {
+        if (settledFile === file) settledFile = ''
+      }, 0)
+    } finally {
+      if (inFlightFile === file) inFlightFile = ''
+    }
   }
+
+  const getForFile = (file: string): readonly Command[] => {
+    const current = menu.value
+    if (file && inFlightFile !== file && settledFile !== file) {
+      void load(file).catch(() => {})
+    }
+    return current.file === file
+      ? createFileMenuPaletteCommands(current.file, current.entries)
+      : []
+  }
+
+  const getIcon = (id: string) =>
+    createFileMenuPaletteCommands(menu.value.file, menu.value.entries).find((one) => one.id === id)
+      ?.icon
 
   return {
     paletteCommands: computed(() =>
       createFileMenuPaletteCommands(menu.value.file, menu.value.entries),
     ),
     load,
+    getForFile,
+    getIcon,
   }
 }
 

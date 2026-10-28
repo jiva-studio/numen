@@ -161,6 +161,11 @@ func (m PluginManifest) resolveValue(s PluginManifestSetting, values map[string]
 	if s.OptionsBy == nil {
 		return value, ok
 	}
+	if s.Type == "string" {
+		if str, isStr := value.(string); ok && isStr && str != "" {
+			return value, true
+		}
+	}
 	options := m.GetSettingOptions(s, values)
 	if _, isOption := options.Find(FormatSettingValue(value)); ok && isOption {
 		return value, true
@@ -216,8 +221,8 @@ func (m PluginManifest) listOptionsByIssues(s PluginManifestSetting, declared ma
 	if s.OptionsBy == nil {
 		return nil
 	}
-	if s.Type != SettingTypeEnum || len(s.Options) > 0 {
-		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
+	if (s.Type != SettingTypeEnum && s.Type != "string") || len(s.Options) > 0 {
+		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum or string without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
 	}
 	parent, ok := declared[s.OptionsBy.Setting]
 	if !ok || parent.Type != SettingTypeEnum || parent.OptionsBy != nil || len(parent.Options) == 0 {
@@ -225,7 +230,7 @@ func (m PluginManifest) listOptionsByIssues(s PluginManifestSetting, declared ma
 	}
 	var issues []error
 	for _, option := range parent.Options {
-		if len(s.OptionsBy.Options[option.Value]) == 0 {
+		if s.Type == SettingTypeEnum && len(s.OptionsBy.Options[option.Value]) == 0 {
 			issues = append(issues, fmt.Errorf("%w: %s lists no options under %s %q", ErrInvalidSetting, s.Key, parent.Key, option.Value))
 		}
 	}

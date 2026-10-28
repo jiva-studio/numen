@@ -79,7 +79,7 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() || len(programs[0].GetModels()) != 1 {
+	if programs := res.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() || len(programs[0].GetModels()) != 2 {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
@@ -110,7 +110,7 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res.Msg.GetPrograms(); len(programs) != 1 || len(programs[0].GetModels()) != 1 {
+	if programs := res.Msg.GetPrograms(); len(programs) != 1 || len(programs[0].GetModels()) != 2 {
 		t.Errorf("the programs are %+v", programs)
 	}
 }

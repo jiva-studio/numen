@@ -128,6 +128,8 @@ export const WORDS = {
   systemSettingsDetail: 'Theme, scale and filename sync.',
   searchPlugins: 'Search plugins…',
   noPluginsFound: 'No plugins found.',
+  readMore: 'Read more',
+  showLess: 'Show less',
   /** Where the value of a plugin's setting comes from. */
   valueChosen: 'Chosen',
   valueDefault: 'Default',

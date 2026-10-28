@@ -79,11 +79,31 @@
       "key": "model",
       "type": "string",
       "title": "Model",
-      "description": "Model name the service lists, for example text-embedding-3-small",
-      "default": "text-embedding-3-small",
-      "when": {
+      "description": "Model identifier. Local models are downloaded from Hugging Face (<org>/<repo> containing onnx/model.onnx and tokenizer.json); remote providers use the model ID listed by the service.",
+      "default": "Xenova/bge-m3",
+      "optionsBy": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "options": {
+          "local": [
+            { "value": "Xenova/bge-m3", "title": "BGE-M3 (int8)", "detail": "100+ languages, 1024 dims · Hugging Face" },
+            { "value": "Xenova/multilingual-e5-small", "title": "Multilingual E5 Small", "detail": "100 languages, 384 dims · Hugging Face" },
+            { "value": "Xenova/bge-small-en-v1.5", "title": "BGE Small English v1.5", "detail": "English, 384 dims · Hugging Face" }
+          ],
+          "openrouter": [
+            { "value": "openai/text-embedding-3-small", "title": "OpenAI: text-embedding-3-small", "detail": "1536 dims · OpenRouter" },
+            { "value": "openai/text-embedding-3-large", "title": "OpenAI: text-embedding-3-large", "detail": "3072 dims · OpenRouter" },
+            { "value": "baai/bge-m3", "title": "BAAI: BGE-M3", "detail": "1024 dims · OpenRouter" },
+            { "value": "qwen/qwen3-embedding-8b", "title": "Qwen3 Embedding 8B", "detail": "4096 dims · OpenRouter" }
+          ],
+          "openai": [
+            { "value": "text-embedding-3-small", "title": "text-embedding-3-small", "detail": "1536 dims · OpenAI" },
+            { "value": "text-embedding-3-large", "title": "text-embedding-3-large", "detail": "3072 dims · OpenAI" },
+            { "value": "text-embedding-ada-002", "title": "text-embedding-ada-002", "detail": "1536 dims · OpenAI" }
+          ],
+          "custom": [
+            { "value": "text-embedding-3-small", "title": "text-embedding-3-small", "detail": "OpenAI-compatible model ID" }
+          ]
+        }
       }
     }
   ]

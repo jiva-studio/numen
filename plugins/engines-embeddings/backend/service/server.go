@@ -77,16 +77,43 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	if provider := values["provider"]; provider != "" {
 		s.provider = provider
 	}
-	if model := values["model"]; model != "" {
+	model := values["model"]
+	if model != "" {
 		s.remoteModel = model
 	}
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
 	}
 	s.baseURL = values["baseUrl"]
+	if s.provider == providerLocal || s.provider == "" {
+		s.updateLocalModelLocked(model)
+	}
 	s.modelInfo.Name = s.localName
 	if s.provider != providerLocal && s.remoteModel != "" {
 		s.modelInfo.Name = s.remoteModel
+	}
+}
+
+func (s *embeddingServer) updateLocalModelLocked(model string) {
+	if s.isMock {
+		return
+	}
+	prevRepo := s.localModel.Name
+	switch model {
+	case "", "Xenova/bge-m3", "bge-m3", "bge-m3-int8", "text-embedding-3-small":
+		_, defLocal := engine.DefaultBGEM3Config()
+		applyModelOverrides(&s.modelInfo, &defLocal)
+		applyRuntimeEnv(&defLocal)
+		s.localModel = defLocal
+		s.localName = "bge-m3"
+	default:
+		s.localModel = s.localModel.WithRepository(model)
+		s.localModel.File = ""
+		s.localName = model
+	}
+	if s.localModel.Name != prevRepo && s.embedder != nil {
+		_ = s.embedder.Close()
+		s.embedder = nil
 	}
 }
 

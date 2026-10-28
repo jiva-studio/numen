@@ -200,3 +200,22 @@ describe('an editor with no placeholder', () => {
     expect(view.contentDOM.querySelector('.cm-placeholder')).toBeNull()
   })
 })
+
+describe('editor preferences in setup', () => {
+  it('wraps lines by default and disables wrapping when softWrap is false', () => {
+    expect(open({}).contentDOM.classList.contains('cm-lineWrapping')).toBe(true)
+    expect(open({ softWrap: false }).contentDOM.classList.contains('cm-lineWrapping')).toBe(false)
+  })
+
+  it('shows line numbers only when lineNumbers is true', () => {
+    expect(open({}).dom.querySelector('.cm-lineNumbers')).toBeNull()
+    expect(open({ lineNumbers: true }).dom.querySelector('.cm-lineNumbers')).not.toBeNull()
+  })
+
+  it('indents with the configured tabSize', () => {
+    const view = open({ tabSize: 4 }, 'one')
+    expect(view.state.tabSize).toBe(4)
+    expect(tabKeyBinding.run?.(view)).toBe(true)
+    expect(view.state.doc.toString()).toBe('    one')
+  })
+})

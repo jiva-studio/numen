@@ -74,8 +74,16 @@ export function createTranscriptView(options: TranscriptViewOptions): Transcript
   // Text set from outside is not reported back as an edit.
   let isSetting = false
 
+  const rootNode = options.parent.getRootNode()
+  const root =
+    rootNode instanceof Document ||
+    (typeof ShadowRoot !== 'undefined' && rootNode instanceof ShadowRoot)
+      ? rootNode
+      : document
+
   const view = new EditorView({
     parent: options.parent,
+    root,
     state: EditorState.create({
       doc: options.text,
       extensions: [

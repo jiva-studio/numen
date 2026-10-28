@@ -138,6 +138,8 @@ export interface TimeGutter {
   readonly extension: Extension
   /** What the editor shows now. */
   show(state: TimeGutterState): void
+  /** Centres the current line in the view once. */
+  centerCurrent(): void
 }
 
 /** Whether two of these say the same thing. */
@@ -189,12 +191,20 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
       state.current < view.state.doc.lines
     ) {
       const { from } = view.state.doc.line(state.current + 1)
-      effects.push(EditorView.scrollIntoView(from))
+      effects.push(EditorView.scrollIntoView(from, { y: 'center' }))
     }
     view.dispatch({ effects })
   }
 
   const show = (state: TimeGutterState) => applyState(state, true)
+
+  const centerCurrent = () => {
+    if (!view) return
+    const { current } = view.state.field(timeGutterField)
+    if (current < 0 || current >= view.state.doc.lines) return
+    const { from } = view.state.doc.line(current + 1)
+    view.dispatch({ effects: [EditorView.scrollIntoView(from, { y: 'center' })] })
+  }
 
   return {
     extension: [
@@ -205,5 +215,6 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
       attachPlugin,
     ],
     show,
+    centerCurrent,
   }
 }

@@ -424,3 +424,24 @@ describe('a document written in one language', () => {
     editor.unmount()
   })
 })
+
+describe('editor preferences reconfiguration', () => {
+  it('reconfigures softWrap, lineNumbers, and tabSize when props change', async () => {
+    const { wrapper, view } = editor({
+      modelValue: 'one',
+      softWrap: true,
+      lineNumbers: false,
+      tabSize: 2,
+    })
+
+    expect(view.contentDOM.classList.contains('cm-lineWrapping')).toBe(true)
+    expect(view.dom.querySelector('.cm-lineNumbers')).toBeNull()
+    expect(view.state.tabSize).toBe(2)
+
+    await wrapper.setProps({ softWrap: false, lineNumbers: true, tabSize: 4 })
+
+    expect(view.contentDOM.classList.contains('cm-lineWrapping')).toBe(false)
+    expect(view.dom.querySelector('.cm-lineNumbers')).not.toBeNull()
+    expect(view.state.tabSize).toBe(4)
+  })
+})

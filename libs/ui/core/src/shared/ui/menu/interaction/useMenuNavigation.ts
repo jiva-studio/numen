@@ -33,6 +33,7 @@ export interface MenuSubmenuState {
 export interface MenuNavigationOptions {
   readonly items: () => readonly MenuItem[]
   readonly isSearchable: () => boolean
+  readonly canEnterCustom?: (() => boolean) | undefined
   readonly trigger: () => MenuTrigger
   readonly current: () => string | null
   readonly clock: () => number
@@ -115,6 +116,7 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     focusInitial,
   } = useMenuSearch({
     isSearchable: options.isSearchable,
+    canEnterCustom: options.canEnterCustom,
     items: options.items,
     searchRef: options.searchRef,
     menuRef: options.menuRef,

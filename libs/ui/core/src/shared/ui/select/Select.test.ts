@@ -224,6 +224,22 @@ describe('searching the choices', () => {
     await nextTick()
     expect(control.emitted('update:modelValue')).toStrictEqual([['large']])
   })
+
+  it('offers a custom value when canEnterCustom is enabled and query matches no choice id', async () => {
+    const control = mountSelect({ isSearchable: true, canEnterCustom: true })
+    await openSelect(control)
+    const search = getSearch()!
+    search.value = 'custom/model-v1'
+    search.dispatchEvent(new Event('input'))
+    await nextTick()
+    expect(words()).toStrictEqual(['custom/model-v1'])
+    expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
+      'Use custom value',
+    )
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await nextTick()
+    expect(control.emitted('update:modelValue')).toStrictEqual([['custom/model-v1']])
+  })
 })
 
 describe('the value written on the line', () => {

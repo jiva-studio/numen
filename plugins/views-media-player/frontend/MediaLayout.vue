@@ -13,19 +13,26 @@ import { WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  state: TranscriptState
-  /** What the menu at the end of the strip offers, and nothing where it offers none. */
-  menuItems?: readonly MenuItem[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    state: TranscriptState
+    /** What the menu at the end of the strip offers, and nothing where it offers none. */
+    menuItems?: readonly MenuItem[]
+    isPlaying?: boolean | undefined
+  }>(),
+  { isPlaying: undefined },
+)
 
 const emit = defineEmits<{ choose: [id: string] }>()
 
 /* --------------------------------- State ---------------------------------- */
 const { following } = props.state.content
 const { timed } = props.state.lines
+const { isProofreadable } = props.state.offers
+const { isPlaying: playbackIsPlaying } = props.state.playback
 
 const isFollowing = computed(() => following.value)
+const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
 const items = computed(() => props.menuItems ?? [])
 
@@ -52,6 +59,10 @@ function onDismissMenu() {
 function onToggleFollow() {
   props.state.content.setFollowing(!isFollowing.value)
 }
+
+function onProofread() {
+  void props.state.offers.proofread()
+}
 </script>
 
 <template>
@@ -60,16 +71,18 @@ function onToggleFollow() {
       <slot name="player" />
 
       <MediaActions
-        v-if="timed || items.length"
+        v-if="timed || isProofreadable || items.length"
         :is-timed="timed"
         :is-following="isFollowing"
+        :is-proofreadable="isProofreadable"
         :has-menu="items.length > 0"
         @toggle-follow="onToggleFollow"
+        @proofread="onProofread"
         @open-menu="onOpenMenu"
       />
     </div>
 
-    <Transcript :state="props.state" />
+    <Transcript :state="props.state" :is-playing="isPlaying" />
 
     <Menu
       v-if="menu"

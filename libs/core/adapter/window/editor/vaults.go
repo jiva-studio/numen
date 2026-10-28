@@ -224,10 +224,8 @@ func (h *workspaceHandler) WriteOpenTabs(
 	if h.state.NotifyOpenTabs != nil {
 		h.state.NotifyOpenTabs(open)
 	}
-	if v := h.state.GetCurrentVault(); h.state.OpenTabsStore != nil && v.Path != "" {
-		if err := h.state.OpenTabsStore.WriteOpenTabs(ctx, v, open); err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
+	if err := h.state.writeOpenTabs(ctx, open); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
 }
@@ -236,13 +234,12 @@ func (h *workspaceHandler) WriteOpenTabs(
 func (h *workspaceHandler) ReadOpenTabs(
 	ctx context.Context, _ *connect.Request[v1.ReadOpenTabsRequest],
 ) (*connect.Response[v1.ReadOpenTabsResponse], error) {
-	v := h.state.GetCurrentVault()
-	if h.state.OpenTabsStore == nil || v.Path == "" {
-		return connect.NewResponse(&v1.ReadOpenTabsResponse{}), nil
-	}
-	open, err := h.state.OpenTabsStore.ReadOpenTabs(ctx, v)
+	open, err := h.state.readOpenTabs(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	if len(open.Tabs) == 0 && open.ActiveID == "" {
+		return connect.NewResponse(&v1.ReadOpenTabsResponse{}), nil
 	}
 	out := &v1.ReadOpenTabsResponse{Tabs: make([]*v1.Tab, 0, len(open.Tabs)), ActiveId: open.ActiveID}
 	for _, one := range open.Tabs {

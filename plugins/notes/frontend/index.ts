@@ -10,27 +10,23 @@ import {
   type WikilinkOptions,
 } from './extensions/wikilinks'
 import { parseFrontmatter, type FrontmatterResult } from './frontmatter'
+import {
+  bindMarkdownEditorPreferences,
+  readMarkdownEditorPreferences,
+  type MarkdownEditorPreferences,
+} from './preferences'
 
-export { MarkdownNoteEditor, createWikilinkExtension, parseFrontmatter }
-export type { WikilinkOption, WikilinkOptions, FrontmatterResult }
-
-export interface MarkdownEditorPreferences {
-  softWrap?: boolean
-  lineNumbers?: boolean
-  tabSize?: number
+export {
+  MarkdownNoteEditor,
+  createWikilinkExtension,
+  parseFrontmatter,
+  readMarkdownEditorPreferences,
 }
-
-export function readMarkdownEditorPreferences(
-  getSetting?: (path: readonly string[]) => unknown,
-): MarkdownEditorPreferences {
-  return {
-    softWrap: (getSetting?.(['soft_wrap']) as boolean | undefined) ?? true,
-    lineNumbers: (getSetting?.(['line_numbers']) as boolean | undefined) ?? true,
-    tabSize: (getSetting?.(['tab_size']) as number | undefined) ?? 2,
-  }
-}
+export type { WikilinkOption, WikilinkOptions, FrontmatterResult, MarkdownEditorPreferences }
 
 export function activate(context: PluginContext): void {
+  const preferences = bindMarkdownEditorPreferences(context)
+
   context.registerReader({
     id: 'markdown',
     component: MarkdownNoteEditor,
@@ -43,7 +39,7 @@ export function activate(context: PluginContext): void {
     title: 'Note',
   })
 
-  if (context.notes) context.registerView(createNoteEditorView(context.notes))
+  if (context.notes) context.registerView(createNoteEditorView(context.notes, preferences))
 }
 
 export function deactivate(): void {

@@ -3,10 +3,21 @@
  * open while any tab listens to it.
  */
 
+/** One task reported by the host: the file it is on, its progress, and any error. */
+export interface WatchedTask {
+  readonly about: string
+  readonly done?: number | undefined
+  readonly total?: number | undefined
+  readonly error?: string | undefined
+}
+
 /** Subscribes to the plugin task lists: each task by the file it is about. */
-export type TaskSource = (onTasks: (tasks: readonly { readonly about: string }[]) => void) => {
+export type TaskSource = (onTasks: (tasks: readonly WatchedTask[]) => void) => {
   dispose(): void
 }
+
+const isActiveTask = (task: WatchedTask): boolean =>
+  !task.error && ((task.total ?? 0) === 0 || (task.done ?? 0) < (task.total ?? 0))
 
 /** Tells each listener whether work on its file is going, from one subscription to the tasks. */
 export function createWorkWatcher(watchTasks: TaskSource) {
@@ -29,7 +40,9 @@ export function createWorkWatcher(watchTasks: TaskSource) {
       const id = nextId++
       listeners.set(id, { path, onChange })
       if (working.has(path)) onChange(true)
-      subscription ??= watchTasks((tasks) => publish(new Set(tasks.map((task) => task.about))))
+      subscription ??= watchTasks((tasks) =>
+        publish(new Set(tasks.filter(isActiveTask).map((task) => task.about))),
+      )
       return () => {
         listeners.delete(id)
         if (listeners.size === 0 && subscription) {

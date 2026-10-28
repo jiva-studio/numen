@@ -133,6 +133,23 @@ func (s *State) GetCurrentVault() domain.Vault {
 	return domain.Vault{}
 }
 
+// writeOpenTabs records the open tabs of the vault in the window.
+func (s *State) writeOpenTabs(ctx context.Context, open domain.OpenTabs) error {
+	if v := s.GetCurrentVault(); s.OpenTabsStore != nil && v.Path != "" {
+		return s.OpenTabsStore.WriteOpenTabs(ctx, v, open)
+	}
+	return nil
+}
+
+// readOpenTabs reads the open tabs kept for the vault in the window.
+func (s *State) readOpenTabs(ctx context.Context) (domain.OpenTabs, error) {
+	v := s.GetCurrentVault()
+	if s.OpenTabsStore == nil || v.Path == "" {
+		return domain.OpenTabs{}, nil
+	}
+	return s.OpenTabsStore.ReadOpenTabs(ctx, v)
+}
+
 // setVault puts a vault in front of whoever asks from now on.
 func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 

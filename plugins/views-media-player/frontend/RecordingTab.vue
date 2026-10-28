@@ -13,7 +13,7 @@ import { useTranscript, type TranscriptOptions } from './model/transcript'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import type { Recordings, TextRange } from './types'
 import { createTimeSelector, getSelectorStart } from './lib/place'
-import { DELETE_TEXT, PROOFREAD, WORDS as words } from './words'
+import { DELETE_TEXT, PROOFREAD, TRANSCRIBE, WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -30,11 +30,12 @@ const targetPath = props.path || props.file || props.state?.path || props.state?
 
 const tab = useTranscript(props.recordings ?? servedRecordings, targetPath, props.how)
 const { now, runs, isPlaying, isUnplayable } = tab.playback
-const { isProofreadable, isDeletable } = tab.offers
+const { isRetranscribable, isProofreadable, isDeletable } = tab.offers
 
 /** What the menu offers over this recording: each item only where it applies. */
 const menuItems = computed(() => [
   ...(isProofreadable.value ? [{ id: PROOFREAD, text: words.proofread }] : []),
+  ...(isRetranscribable.value ? [{ id: TRANSCRIBE, text: words.transcribe }] : []),
   ...(isDeletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : []),
 ])
 
@@ -78,6 +79,7 @@ onUnmounted(() => {
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
   if (id === PROOFREAD) void tab.offers.proofread()
+  if (id === TRANSCRIBE) void tab.offers.transcribe()
   if (id === DELETE_TEXT) void tab.offers.deleteTranscript()
 }
 

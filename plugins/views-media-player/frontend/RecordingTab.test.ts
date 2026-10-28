@@ -115,6 +115,39 @@ describe('a recording tab', () => {
     tab.unmount()
   })
 
+  it('shows the proofread button in the media strip and re-transcribe in the overflow menu when a transcript exists', async () => {
+    const proofreadEntry = {
+      ...TRANSCRIBE_ENTRY,
+      pluginId: 'md.test.proofreading',
+      versionId: DELETE_ENTRY.versionId,
+      isLive: true,
+    }
+    const { recordings, state } = createRecordings(CUES, [
+      TRANSCRIBE_ENTRY,
+      proofreadEntry,
+      DELETE_ENTRY,
+    ])
+    const { tab } = mountTab(recordings)
+    await flush()
+
+    const proofreadBtn = tab.find('.media__proofread')
+    expect(proofreadBtn.exists()).toBe(true)
+    await proofreadBtn.trigger('click')
+    await flush()
+    expect(state.runs).toStrictEqual([proofreadEntry])
+
+    await tab.find('.media__more').trigger('click')
+    const retranscribeItem = [...document.querySelectorAll('[role="menuitem"]')].find(
+      (one) => one.textContent?.trim() === WORDS.transcribe,
+    ) as HTMLElement | undefined
+    expect(retranscribeItem).toBeDefined()
+    retranscribeItem!.click()
+    await flush()
+
+    expect(state.runs).toStrictEqual([proofreadEntry, TRANSCRIBE_ENTRY])
+    tab.unmount()
+  })
+
   it('seeks to the cue of a search hit span', async () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)

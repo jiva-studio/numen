@@ -119,16 +119,17 @@ export const NarrowRowsStackTheControl: Story = {
   },
 }
 
-/** A description of several sentences shows the first and puts the rest in a tooltip. */
+/** The row description renders inside the info button tooltip. */
 export const LongDescriptionGoesToATooltip: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Time a review day starts.')).toBeVisible()
     const button = canvas.getByRole('button', { name: 'About Day starts at' })
-    const tooltip = canvas.getByText('Answers before it count toward the day before.')
+    const tooltip = canvas.getByText(
+      'Time a review day starts. Answers before it count toward the day before.',
+    )
     await expect(tooltip).not.toBeVisible()
     await expect(button).toHaveAccessibleDescription(
-      'Answers before it count toward the day before.',
+      'Time a review day starts. Answers before it count toward the day before.',
     )
     button.focus()
     await expect(tooltip).toBeVisible()

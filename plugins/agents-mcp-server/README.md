@@ -1,5 +1,11 @@
-# MCP Server Plugin
+# MCP Server
 
-Standalone Model Context Protocol (MCP) server plugin for Numén.
+Exposes Numen's vault and window tools over the Model Context Protocol (MCP) to external editors, IDEs, and coding agents.
 
-It exposes an external MCP SSE, Streamable HTTP, and stdio server that aggregates the tools of the plugins declaring the `tools` capability. It reaches them through `numen.v1.PluginToolService` on the host, which runs each call in the vault the host shows, with no context.
+<!-- more -->
+
+## How It Works
+
+- **External MCP endpoint**: Serves SSE, Streamable HTTP, and stdio MCP transports aggregating every tool declared by active Numen tool plugins.
+- **Live vault routing**: Forwards incoming tool calls through `numen.v1.PluginToolService` on the host, executing against the currently active vault.
+- **Supported clients**: Works with Claude Desktop, Cursor, Windsurf, Claude Code, Antigravity, and any MCP-compatible client.

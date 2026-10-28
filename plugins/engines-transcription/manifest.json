@@ -130,7 +130,7 @@
       "key": "model",
       "type": "enum",
       "title": "Model",
-      "description": "Speech recognition model",
+      "description": "Speech recognition model downloaded from Hugging Face. Parakeet v3 supports 25 European languages with automatic language detection; Parakeet v2 is English-only.",
       "default": "parakeet-tdt-0.6b-v3-int8",
       "options": [
         {
@@ -157,30 +157,6 @@
         }
       ],
       "palette": true
-    },
-    {
-      "key": "language",
-      "type": "enum",
-      "title": "Language",
-      "description": "Language of the recordings",
-      "optionsBy": {
-        "setting": "model",
-        "options": {
-          "parakeet-tdt-0.6b-v3-int8": [
-            {
-              "value": "auto",
-              "title": "Detected by the model",
-              "detail": "Bulgarian, Croatian, Czech, Danish, Dutch, English, Estonian, Finnish, French, German, Greek, Hungarian, Italian, Latvian, Lithuanian, Maltese, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Spanish, Swedish, Ukrainian"
-            }
-          ],
-          "parakeet-tdt-0.6b-v2-int8": [
-            {
-              "value": "en",
-              "title": "English"
-            }
-          ]
-        }
-      }
     }
   ]
 }

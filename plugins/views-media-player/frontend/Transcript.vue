@@ -3,7 +3,7 @@
  * The words under the player, with the times they were said at, or what stands where there are
  * none. A time in the gutter is clicked to play from there.
  */
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
 import { createTimeGutter } from './lib/timeGutter'
 import TranscriptText from './TranscriptText.vue'
@@ -11,29 +11,46 @@ import { WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ state: TranscriptState }>()
+const props = withDefaults(
+  defineProps<{
+    state: TranscriptState
+    isPlaying?: boolean | undefined
+  }>(),
+  { isPlaying: undefined },
+)
 
 /* --------------------------------- State ---------------------------------- */
-const { failure } = props.state.playback
+const { failure, isPlaying: playbackIsPlaying } = props.state.playback
 const { current, following, note, isLoading, error, isEditable } = props.state.content
 const { prose, typing } = props.state.draft
 const { timed, times: cueTimes, hasText } = props.state.lines
 const { isTranscribable } = props.state.offers
+const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
 /** The times in the editor's gutter, and the line being said. */
 const times = createTimeGutter((line) => props.state.navigation.goToLine(line))
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(
-  [cueTimes, current, following, typing],
-  ([timesValue, currentLine, isFollowing, isTyping]) => {
+  [cueTimes, current, following, isPlaying, typing],
+  ([timesValue, currentLine, isFollowing, isPlayingValue, isTyping]) => {
     times.show({
       times: timesValue,
       current: currentLine,
-      isFollowing: isFollowing && !isTyping,
+      isFollowing: isFollowing && isPlayingValue && !isTyping,
     })
   },
   { immediate: true, flush: 'post' },
+)
+
+watch(
+  following,
+  (isFollowing, wasFollowing) => {
+    if (isFollowing && !wasFollowing && !isPlaying.value && !typing.value) {
+      times.centerCurrent()
+    }
+  },
+  { flush: 'post' },
 )
 
 /* -------------------------------- Handlers -------------------------------- */

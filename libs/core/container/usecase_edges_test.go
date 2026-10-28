@@ -14,16 +14,18 @@ import (
 // useCaseEdges are the use cases each use case may build on. A use case listed
 // with nothing depends on no other.
 var useCaseEdges = map[string][]string{
-	"note":       nil,
-	"settings":   nil,
-	"run":        nil,
-	"filetext":   nil,
-	"vectors":    nil,
-	"file":       nil,
-	"search":     nil,
-	"vault":      {"filetext", "note", "vectors"},
-	"indexing":   {"filetext", "run", "vault", "vectors"},
-	"completion": {"agent"},
+	"note":          nil,
+	"settings":      nil,
+	"run":           nil,
+	"filetext":      nil,
+	"vectors":       nil,
+	"file":          nil,
+	"search":        nil,
+	"vault":         {"filetext", "note", "vectors"},
+	"indexing":      {"filetext", "run", "vault", "vectors"},
+	"completion":    {"agent"},
+	"plugincommand": {"file"},
+	"textversion":   {"file"},
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.

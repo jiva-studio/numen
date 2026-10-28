@@ -730,7 +730,7 @@ func TestAModelThatListsAReasoningParameterOffersLevels(t *testing.T) {
 	for _, one := range res.Msg.GetPrograms()[0].GetModels() {
 		proposed = append(proposed, len(one.GetReasoningLevels()))
 	}
-	if !slices.Equal(proposed, []int{3, 3, 0}) {
+	if !slices.Equal(proposed, []int{3, 3, 0, 0}) {
 		t.Errorf("the levels offered are %v", proposed)
 	}
 }

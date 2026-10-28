@@ -327,33 +327,37 @@ describe('PluginDetail', () => {
     expect(root.firstElementChild?.classList.contains('plugin-detail__back')).toBe(true)
   })
 
-  it('shows the plugin state as a badge', () => {
-    const failure = { reason: 'Failed to start', detail: 'exec format error', failedAt: 0 }
-    expect(
-      createDetail(createPluginInfo('a', 'A')).wrapper.find('.plugin-detail__state').text(),
-    ).toBe('Enabled')
-    expect(
-      createDetail(createPluginInfo('a', 'A'), { plugins: { a: { enabled: false } } })
-        .wrapper.find('.plugin-detail__state')
-        .text(),
-    ).toBe('Disabled')
-    expect(
-      createDetail(createPluginInfo('a', 'A', { failure }))
-        .wrapper.find('.plugin-detail__state')
-        .text(),
-    ).toBe('Stopped')
+  it('renders a header card without a state badge and expands README details on Read more', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        headers: { get: () => 'text/markdown' },
+        text: async () =>
+          '# Super Engine\n\nShort summary line.\n\n<!-- more -->\n\nDetailed documentation body.',
+      })),
+    )
+    const { wrapper } = createDetail(
+      createPluginInfo('a', 'Super Engine', { description: 'Fallback' }),
+    )
+    await flushPromises()
+
+    expect(wrapper.find('.plugin-detail__state').exists()).toBe(false)
+    expect(wrapper.find('.plugin-detail__description').text()).toBe('Short summary line.')
+    expect(wrapper.find('.plugin-detail__more').exists()).toBe(false)
+
+    const toggle = wrapper.find('.plugin-detail__toggle')
+    expect(toggle.exists()).toBe(true)
+    expect(toggle.text()).toBe(words.readMore)
+
+    await toggle.trigger('click')
+    expect(wrapper.find('.plugin-detail__more').text()).toContain('Detailed documentation body.')
+    expect(toggle.text()).toBe(words.showLess)
   })
 
-  it('draws no divider and no filler text under a plugin without settings', () => {
-    const { wrapper } = createDetail(createPluginInfo('a', 'A', { description: 'Plays audio' }))
-    expect(wrapper.find('.plugin-detail__header--ruled').exists()).toBe(false)
-    expect(wrapper.find('.plugin-detail__header').element.nextElementSibling).toBeNull()
-  })
-
-  it('draws the divider when something follows the header', () => {
+  it('draws no stopped details disclosure when failure detail is empty', () => {
     const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
     const { wrapper } = createDetail(createPluginInfo('a', 'A', { failure }))
-    expect(wrapper.find('.plugin-detail__header--ruled').exists()).toBe(true)
     expect(wrapper.find('.plugin-detail__stopped details').exists()).toBe(false)
   })
 })
@@ -424,30 +428,25 @@ describe('PluginDetail with settings that follow one another', () => {
   const findRow = (wrapper: ReturnType<typeof mount>, key: string) =>
     wrapper.findAllComponents(SettingRow).find((r) => r.props('at') === `test.linked-${key}`)
 
-  it('lists the languages of the current model and the origin of the value', () => {
+  it('lists the languages of the current model with their detail subtitles and no narrative origin text', () => {
     const { wrapper } = createDetail(LINKED)
     const row = findRow(wrapper, 'language')!
     expect(row.findComponent(Select).props('choices')).toEqual([
-      { id: 'auto', text: 'Detected by the model' },
+      { id: 'auto', text: 'Detected by the model', detail: 'Among 3 languages' },
       { id: 'en', text: 'English' },
     ])
-    expect(row.props('detail')).toBe('Among 3 languages')
-    expect(row.find('.settings__origin').text()).toBe(words.valueFollowed('Model'))
+    expect(row.props('detail')).toBe('Spoken language')
+    expect(row.find('.settings__origin').exists()).toBe(false)
   })
 
-  it('shows the one language of a model as fixed, and a choice as the person’s', () => {
+  it('shows the one language of a model as fixed', () => {
     const small = createDetail(LINKED, { plugins: { 'test.linked': { model: 'small' } } })
     const row = findRow(small.wrapper, 'language')!
     expect(row.findComponent(Select).exists()).toBe(false)
     expect(row.find('.settings__fixed').text()).toBe('English')
-
-    const choice = createDetail(LINKED, { plugins: { 'test.linked': { language: 'en' } } })
-    expect(findRow(choice.wrapper, 'language')!.find('.settings__origin').text()).toBe(
-      words.valueChosen,
-    )
   })
 
-  it('shows the settings and the key of a provider only while it is chosen', () => {
+  it('shows the settings and the key of a provider only while it is chosen, placing the key after provider', () => {
     const local = createDetail(LINKED)
     expect(findRow(local.wrapper, 'url')).toBeUndefined()
     expect(local.wrapper.findComponent(SecretField).exists()).toBe(false)
@@ -455,6 +454,13 @@ describe('PluginDetail with settings that follow one another', () => {
     const remote = createDetail(LINKED, { plugins: { 'test.linked': { provider: 'remote' } } })
     expect(findRow(remote.wrapper, 'url')).toBeDefined()
     expect(remote.wrapper.findComponent(SecretField).props('name')).toBe('API key')
+    const rowIds = remote.wrapper.findAllComponents(SettingRow).map((r) => r.props('at'))
+    const providerIndex = rowIds.indexOf('test.linked-provider')
+    const keyIndex = rowIds.indexOf('key-test.linked-apiKey')
+    const urlIndex = rowIds.indexOf('test.linked-url')
+    expect(providerIndex).toBeGreaterThanOrEqual(0)
+    expect(keyIndex).toBe(providerIndex + 1)
+    expect(urlIndex).toBeGreaterThan(keyIndex)
   })
 
   it('chooses a path with the picker, says why it was not taken, and clears it', async () => {
@@ -468,7 +474,7 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(label.text()).toBe('…/ru/letters.txt')
     expect(label.attributes('title')).toBe('/home/a/dicts/ru/letters.txt')
 
-    const [choose, clear] = row.findAll('button')
+    const [choose, clear] = row.find('.settings__value').findAll('button')
     await choose!.trigger('click')
     await flushPromises()
     expect(choosePath).toHaveBeenCalledWith('test.linked', 'dictionary')

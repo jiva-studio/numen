@@ -55,11 +55,14 @@ export function getValue(
 ): PluginValue {
   const stored = read(setting.key)
   if (setting.optionsBy) {
+    if (setting.type === 'string' && typeof stored === 'string' && stored !== '') {
+      return { value: stored, origin: 'chosen' }
+    }
     const options = getOptions(plugin, setting, read)
     if (options.some((one) => one.value === formatValue(stored)) && stored !== undefined) {
       return { value: stored, origin: 'chosen' }
     }
-    return { value: options[0]?.value, origin: 'followed' }
+    return { value: options[0]?.value ?? setting.default, origin: 'followed' }
   }
   if (stored === undefined || formatValue(stored) === formatValue(setting.default)) {
     return { value: stored ?? setting.default, origin: 'default' }

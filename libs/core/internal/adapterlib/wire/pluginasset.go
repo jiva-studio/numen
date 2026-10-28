@@ -22,10 +22,18 @@ func setPluginAssetContentType(w http.ResponseWriter, path string) {
 		w.Header().Set("Content-Type", "text/css")
 	case ".json":
 		w.Header().Set("Content-Type", "application/json")
+	case ".md":
+		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	case ".svg":
 		w.Header().Set("Content-Type", "image/svg+xml")
 	case ".png":
 		w.Header().Set("Content-Type", "image/png")
+	case ".jpg", ".jpeg":
+		w.Header().Set("Content-Type", "image/jpeg")
+	case ".webp":
+		w.Header().Set("Content-Type", "image/webp")
+	case ".gif":
+		w.Header().Set("Content-Type", "image/gif")
 	case ".wasm":
 		w.Header().Set("Content-Type", "application/wasm")
 	}

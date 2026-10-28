@@ -1,16 +1,18 @@
 <script setup lang="ts">
 /**
- * Dedicated settings view for a single selected plugin: status, enabled switch,
- * failure recovery, secrets, AI consent, and declarative settings fields.
+ * Dedicated settings view for a single selected plugin: header card with
+ * expandable README documentation, enabled switch, failure recovery, AI
+ * consent, declarative settings fields, and vault data cleanup.
  */
 import { computed, ref, watch } from 'vue'
-import { Button, Switch } from '@numen/ui'
+import { ChevronDown } from '@lucide/vue'
+import { Button, Prose, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
-import { SecretField } from '../secret-field'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, isShown, write, type PluginInfo } from '@/entities/settings'
-import { formatFailedAt, getPluginState, type PluginState } from '../../lib/failures'
+import { formatFailedAt } from '../../lib/failures'
+import { parsePluginReadme } from '../../lib/readme'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -43,15 +45,11 @@ const hasDeclarativeSettings = computed(() => props.plugin.settings.length > 0)
 const fileCount = ref(0)
 const isAskingDelete = ref(false)
 const deleteProblem = ref('')
-const hasBody = computed(
-  () =>
-    failure.value !== undefined ||
-    hasConsent.value ||
-    shownSecrets.value.length > 0 ||
-    hasDeclarativeSettings.value ||
-    fileCount.value > 0,
+const readmeText = ref('')
+const isExpanded = ref(false)
+const readmeParts = computed(() =>
+  parsePluginReadme(readmeText.value, props.plugin.id, props.plugin.description ?? ''),
 )
-const pluginState = computed<PluginState>(() => getPluginState(props.plugin, isEnabled.value))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -62,6 +60,10 @@ function onToggleEnabled(val: boolean): void {
   fields.setValue(['plugins', props.plugin.id, 'enabled'], val)
 }
 
+function onToggleReadme(): void {
+  isExpanded.value = !isExpanded.value
+}
+
 function onRetry(): void {
   installation.value.retryPlugin(props.plugin.id)
 }
@@ -70,14 +72,6 @@ function onConsentChange(isAllowed: boolean): void {
   installation.value.write([
     { at: ['plugins', props.plugin.id, 'aiConsent'], value: write(isAllowed) },
   ])
-}
-
-function onSecretSave(name: string, key: string): void {
-  installation.value.writeSecret(props.plugin.id, name, key)
-}
-
-function onSecretDelete(name: string): void {
-  installation.value.deleteSecret(props.plugin.id, name)
 }
 
 function onDeleteData(): void {
@@ -103,12 +97,31 @@ async function readFileCount(): Promise<void> {
   }
 }
 
+async function readReadme(pluginId: string): Promise<void> {
+  try {
+    if (typeof fetch !== 'function') return
+    const response = await fetch(`/plugin/${pluginId}/README.md`)
+    if (!response.ok) return
+    const contentType = response.headers?.get?.('content-type') ?? ''
+    if (contentType.includes('text/html')) return
+    const text = await response.text()
+    if (props.plugin.id === pluginId) {
+      readmeText.value = text
+    }
+  } catch {
+    // Fallback to manifest description when README cannot be fetched.
+  }
+}
+
 watch(
   () => props.plugin.id,
-  () => {
+  (pluginId) => {
     isAskingDelete.value = false
     deleteProblem.value = ''
+    readmeText.value = ''
+    isExpanded.value = false
     void readFileCount()
+    void readReadme(pluginId)
   },
   { immediate: true },
 )
@@ -120,7 +133,7 @@ watch(
       &larr; {{ words.backToPlugins }}
     </Button>
 
-    <div class="plugin-detail__header" :class="{ 'plugin-detail__header--ruled': hasBody }">
+    <div class="plugin-detail__header">
       <h2 class="plugin-detail__title">
         <span>{{ props.plugin.name }}</span>
         <span v-if="props.plugin.version" class="plugin-version-badge">
@@ -134,12 +147,30 @@ watch(
           @update:model-value="onToggleEnabled"
         />
       </div>
-      <span class="plugin-detail__state" :class="`plugin-detail__state--${pluginState}`">
-        {{ words.pluginState[pluginState] }}
-      </span>
-      <p v-if="props.plugin.description" class="plugin-detail__description">
-        {{ props.plugin.description }}
-      </p>
+
+      <div v-if="readmeParts.summary" class="plugin-detail__description">
+        <Prose :text="readmeParts.summary" />
+      </div>
+
+      <div v-if="isExpanded && readmeParts.more" class="plugin-detail__more">
+        <Prose :text="readmeParts.more" />
+      </div>
+
+      <button
+        v-if="readmeParts.more"
+        type="button"
+        class="plugin-detail__toggle"
+        :aria-expanded="isExpanded"
+        @click="onToggleReadme"
+      >
+        <span>{{ isExpanded ? words.showLess : words.readMore }}</span>
+        <ChevronDown
+          :size="14"
+          class="plugin-detail__toggle-icon"
+          :class="{ 'plugin-detail__toggle-icon--open': isExpanded }"
+          aria-hidden="true"
+        />
+      </button>
     </div>
 
     <div
@@ -177,20 +208,12 @@ watch(
       />
     </SettingRow>
 
-    <!-- Secrets / API keys -->
-    <SecretField
-      v-for="secret in shownSecrets"
-      :key="`${props.plugin.id}-${secret.name}`"
-      :at="`key-${props.plugin.id}-${secret.name}`"
-      :name="secret.title"
-      :is-stored="props.plugin.storedSecrets.includes(secret.name)"
-      :words="words"
-      @save="(key) => onSecretSave(secret.name, key)"
-      @delete="onSecretDelete(secret.name)"
+    <!-- Declarative settings and secrets -->
+    <PluginFields
+      v-if="hasDeclarativeSettings || shownSecrets.length > 0"
+      :state="props.state"
+      :plugin="props.plugin"
     />
-
-    <!-- Declarative settings -->
-    <PluginFields v-if="hasDeclarativeSettings" :state="props.state" :plugin="props.plugin" />
 
     <!-- Data the plugin keeps in the shown vault -->
     <SettingRow
@@ -199,7 +222,7 @@ watch(
       :name="words.pluginData"
       :detail="words.pluginDataDetail(fileCount)"
     >
-      <Button variant="outline" size="small" @click="onDeleteData">
+      <Button variant="danger" size="small" @click="onDeleteData">
         {{ words.pluginDataDelete }}
       </Button>
     </SettingRow>
@@ -211,7 +234,9 @@ watch(
     >
       <span>{{ words.pluginDataAsking(props.plugin.name, fileCount) }}</span>
       <span class="plugin-detail__asking-answers">
-        <Button size="small" @click="onConfirmDeleteData">{{ words.pluginDataConfirm }}</Button>
+        <Button variant="danger" size="small" @click="onConfirmDeleteData">
+          {{ words.pluginDataConfirm }}
+        </Button>
         <Button variant="outline" size="small" @click="onKeepData">
           {{ words.pluginDataKeep }}
         </Button>
@@ -240,24 +265,17 @@ watch(
 .plugin-detail__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'title switch'
-    'state state'
-    'desc  desc';
   column-gap: var(--numen-panel-gap, 0.75rem);
-  row-gap: 0.375rem;
+  row-gap: 0.625rem;
   align-items: center;
-  justify-items: start;
-}
-
-.plugin-detail__header--ruled {
-  padding-block-end: 1rem;
-  border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
-  margin-block-end: 1rem;
+  padding: 0.875rem 1rem;
+  margin-block-end: 1.25rem;
+  border: var(--numen-stroke, 1px) solid var(--numen-rule);
+  border-radius: var(--numen-radius, 0.375rem);
+  background-color: var(--numen-raised, rgba(125, 125, 125, 0.04));
 }
 
 .plugin-detail__title {
-  grid-area: title;
   margin: 0;
   font-size: var(--numen-text-3, 1.25rem);
   font-weight: 600;
@@ -281,40 +299,67 @@ watch(
 }
 
 .plugin-detail__master-switch {
-  grid-area: switch;
   justify-self: end;
   display: flex;
   align-items: center;
-}
-
-.plugin-detail__state {
-  grid-area: state;
-  border: var(--numen-stroke, 1px) solid var(--numen-rule);
-  padding: 0.125rem 0.375rem;
-  border-radius: var(--numen-radius-small, 3px);
-  font-size: var(--numen-text-1, 0.75rem);
-}
-
-.plugin-detail__state--enabled {
-  color: var(--numen-ink);
-  background-color: var(--numen-surface, rgba(125, 125, 125, 0.12));
-}
-
-.plugin-detail__state--disabled {
-  color: var(--numen-hushed);
-  background-color: var(--numen-surface, rgba(125, 125, 125, 0.12));
-}
-
-.plugin-detail__state--stopped {
-  color: var(--numen-danger, #d14);
-  background-color: var(--numen-danger-soft, rgba(221, 17, 68, 0.1));
+  flex-shrink: 0;
 }
 
 .plugin-detail__description {
-  grid-area: desc;
+  grid-column: 1 / -1;
   margin: 0;
   color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
+}
+
+.plugin-detail__description :deep(.prose) {
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
+}
+
+.plugin-detail__description :deep(p:first-child),
+.plugin-detail__more :deep(:first-child) {
+  margin-block-start: 0;
+}
+
+.plugin-detail__description :deep(p:last-child),
+.plugin-detail__more :deep(:last-child) {
+  margin-block-end: 0;
+}
+
+.plugin-detail__more {
+  grid-column: 1 / -1;
+  padding-block-start: 0.625rem;
+  border-block-start: var(--numen-stroke, 1px) solid var(--numen-rule);
+  font-size: var(--numen-text-2);
+}
+
+.plugin-detail__toggle {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0;
+  border: none;
+  background: none;
+  color: var(--numen-hushed);
+  font-family: inherit;
   font-size: var(--numen-text-1);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.plugin-detail__toggle:hover {
+  color: var(--numen-ink);
+}
+
+.plugin-detail__toggle-icon {
+  transition: transform var(--numen-motion-hover, 110ms) ease;
+}
+
+.plugin-detail__toggle-icon--open {
+  transform: rotate(180deg);
 }
 
 .plugin-detail__stopped {

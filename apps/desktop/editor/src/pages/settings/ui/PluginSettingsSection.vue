@@ -192,6 +192,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
           :name="setting.title"
           :aria-labelledby="labelledBy"
           is-searchable
+          can-enter-custom
           :search-name="words.searchModels"
           class="settings__choice"
           @update:model-value="(val) => onSettingChange(plugin.id, setting.key, val)"
@@ -231,6 +232,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
 
 .settings__number {
   inline-size: var(--settings-value, 6rem);
+  text-align: end;
 }
 
 .settings__slider {
@@ -251,6 +253,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
+  text-align: end;
 }
 
 .settings__text-input:focus {

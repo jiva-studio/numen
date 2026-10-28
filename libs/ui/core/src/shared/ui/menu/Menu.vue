@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<MenuProps>(), {
   to: 'body',
   name: 'Menu',
   isSearchable: false,
+  canEnterCustom: false,
   searchName: 'Search',
   clock: () => Date.now(),
 })
@@ -54,6 +55,7 @@ const { query, visibleItems, rows, here, submenu, focusInitial, onKey, onResetNa
   useMenuNavigation({
     items: () => props.items,
     isSearchable: () => props.isSearchable,
+    canEnterCustom: () => props.canEnterCustom,
     trigger: () => props.trigger,
     current: () => props.current,
     clock: props.clock,

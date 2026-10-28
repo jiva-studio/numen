@@ -6,7 +6,18 @@
   "description": "Proofreads transcripts and recognised text with a language model, as a new text version",
   "targets": ["desktop.editor"],
   "activationEvents": [],
-  "permissions": ["vault:read", "vault:write", "ai:complete"],
+  "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
+  "secrets": [
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "API key for the remote chat service",
+      "when": {
+        "setting": "provider",
+        "is": ["openrouter", "openai", "custom"]
+      }
+    }
+  ],
   "textInput": {
     "kinds": ["*"],
     "menuEntry": { "title": "Proofread", "icon": "spell-check" }
@@ -21,10 +32,68 @@
   ],
   "settings": [
     {
+      "key": "provider",
+      "type": "enum",
+      "title": "Provider",
+      "description": "How proofreading requests are executed: through a Numen agent or directly against an OpenAI-compatible batch/chat API",
+      "default": "agent",
+      "options": [
+        { "value": "agent", "title": "Agent", "detail": "Uses a configured Numen agent" },
+        { "value": "openrouter", "title": "OpenRouter", "detail": "Direct parallel batch requests via OpenRouter API" },
+        { "value": "openai", "title": "OpenAI", "detail": "Direct parallel batch requests via OpenAI API" },
+        { "value": "custom", "title": "Custom service", "detail": "Any OpenAI-compatible chat completions API" }
+      ]
+    },
+    {
       "key": "agent",
       "type": "agent",
       "title": "Agent",
-      "description": "Agent and model used for proofreading"
+      "description": "Agent and model used for proofreading",
+      "when": {
+        "setting": "provider",
+        "is": ["agent"]
+      }
+    },
+    {
+      "key": "baseUrl",
+      "type": "string",
+      "title": "Service URL",
+      "description": "Base URL of the OpenAI-compatible API, for example http://localhost:11434/v1",
+      "default": "",
+      "when": {
+        "setting": "provider",
+        "is": ["custom"]
+      }
+    },
+    {
+      "key": "model",
+      "type": "string",
+      "title": "Model",
+      "description": "Model ID used for batch proofreading requests",
+      "default": "openai/gpt-4o-mini",
+      "when": {
+        "setting": "provider",
+        "is": ["openrouter", "openai", "custom"]
+      },
+      "optionsBy": {
+        "setting": "provider",
+        "options": {
+          "openrouter": [
+            { "value": "google/gemini-2.5-flash", "title": "Gemini 2.5 Flash", "detail": "Fast, low-cost batch proofreading · OpenRouter" },
+            { "value": "openai/gpt-4o-mini", "title": "GPT-4o mini", "detail": "Balanced speed and accuracy · OpenRouter" },
+            { "value": "anthropic/claude-3.5-haiku", "title": "Claude 3.5 Haiku", "detail": "High-accuracy text editing · OpenRouter" },
+            { "value": "deepseek/deepseek-chat", "title": "DeepSeek V3", "detail": "Cost-effective bulk proofreading · OpenRouter" }
+          ],
+          "openai": [
+            { "value": "gpt-4o-mini", "title": "GPT-4o mini", "detail": "Fast, low-cost proofreading · OpenAI" },
+            { "value": "gpt-4.1-mini", "title": "GPT-4.1 mini", "detail": "High accuracy · OpenAI" },
+            { "value": "gpt-4.1-nano", "title": "GPT-4.1 nano", "detail": "Lowest cost bulk proofreading · OpenAI" }
+          ],
+          "custom": [
+            { "value": "gpt-4o-mini", "title": "gpt-4o-mini", "detail": "OpenAI-compatible model ID" }
+          ]
+        }
+      }
     },
     {
       "key": "batch_size",

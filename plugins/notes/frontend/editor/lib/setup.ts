@@ -7,7 +7,7 @@
  */
 import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { bracketMatching, syntaxHighlighting } from '@codemirror/language'
+import { bracketMatching, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import {
   type Extension,
   Compartment,
@@ -20,6 +20,7 @@ import {
   EditorView,
   drawSelection,
   keymap,
+  lineNumbers,
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
@@ -38,6 +39,9 @@ export const editableCompartment = new Compartment()
 export const changeCompartment = new Compartment()
 export const extensionsCompartment = new Compartment()
 export const languageCompartment = new Compartment()
+export const wrapCompartment = new Compartment()
+export const lineNumbersCompartment = new Compartment()
+export const tabSizeCompartment = new Compartment()
 
 export interface Settings {
   /** Marks are drawn as what they mean, away from the caret. */
@@ -55,6 +59,9 @@ export interface Settings {
   readonly change?: EditorChange | null | undefined
   /** What whoever put the editor on the screen draws into it. */
   readonly extensions?: Extension | undefined
+  readonly softWrap?: boolean | undefined
+  readonly lineNumbers?: boolean | undefined
+  readonly tabSize?: number | undefined
 }
 
 export const preview = (isOn: boolean): Extension => (isOn ? [wholeLines, live, follow] : [])
@@ -65,6 +72,16 @@ export const createEditable = (isOn: boolean): Extension => [
   EditorView.editable.of(isOn),
   EditorState.readOnly.of(!isOn),
 ]
+
+export const getWrapExtension = (softWrap: boolean): Extension =>
+  softWrap ? EditorView.lineWrapping : []
+
+export const getLineNumbersExtension = (show: boolean): Extension => (show ? lineNumbers() : [])
+
+export const getTabSizeExtension = (tabSize: number): Extension => {
+  const size = Math.max(1, Math.trunc(tabSize))
+  return [EditorState.tabSize.of(size), indentUnit.of(' '.repeat(size))]
+}
 
 /**
  * The chord that asks for the text to be kept now, answered by whoever put the
@@ -129,7 +146,9 @@ export const setup = (settings: Settings = {}): Extension => [
   drawSelection(),
   rectangularSelection(),
   bracketMatching(),
-  EditorView.lineWrapping,
+  wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
+  lineNumbersCompartment.of(getLineNumbersExtension(settings.lineNumbers ?? false)),
+  tabSizeCompartment.of(getTabSizeExtension(settings.tabSize ?? 2)),
   tabCapture,
   restoreTabCapture,
   keymap.of([saveKeyBinding, escapeKeyBinding, ...defaultKeymap, ...historyKeymap, tabKeyBinding]),

@@ -1,10 +1,11 @@
-# EPUB Book Reader Plugin
+# EPUB Book Reader
 
-Reflowable EPUB book reader and metadata parser.
+Opens `.epub` books with reflowable chapter rendering, table of contents navigation, and passage linking.
+
+<!-- more -->
 
 ## Features
 
-- Parses EPUB archives, chapters, and table of contents.
-- Serves `numen.epub.v1.BookService`, its own schema in `proto/`.
-- Provides frontend reader interface with chapter navigation.
-- Opens `application/epub+zip` files as their default reader.
+- **Reflowable reading view**: Renders EPUB chapters with customizable reading scale and theme colors.
+- **Chapter & outline navigation**: Parses EPUB spine and NCX/Navigation documents via `numen.epub.v1.BookService`.
+- **Passage citations**: Supports selecting and linking exact byte stretches (`numen:<path>?start=<offset>&length=<len>`) from notes and agent answers.

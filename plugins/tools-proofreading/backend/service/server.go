@@ -4,12 +4,18 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
@@ -56,6 +62,10 @@ func openHostAt(endpoint hostcall.Endpoint) Host {
 }
 
 type proofreadingConfig struct {
+	provider        string
+	baseURL         string
+	model           string
+	apiKey          string
 	batchSize       int
 	overlap         int
 	inFlight        int
@@ -64,6 +74,8 @@ type proofreadingConfig struct {
 
 func defaultProofreadingConfig() proofreadingConfig {
 	return proofreadingConfig{
+		provider:        "agent",
+		model:           "openai/gpt-4o-mini",
 		batchSize:       DefaultBatchSize,
 		overlap:         DefaultOverlap,
 		inFlight:        DefaultInFlight,
@@ -84,6 +96,18 @@ func newSettings() *settings {
 func (s *settings) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if provider := values["provider"]; provider != "" {
+		s.cfg.provider = provider
+	}
+	if baseURL, ok := values["baseUrl"]; ok {
+		s.cfg.baseURL = baseURL
+	}
+	if model := values["model"]; model != "" {
+		s.cfg.model = model
+	}
+	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
+		s.cfg.apiKey = key
+	}
 	applyIntConfig(values, "batch_size", &s.cfg.batchSize, 1)
 	applyIntConfig(values, "overlap", &s.cfg.overlap, 0)
 	applyIntConfig(values, "in_flight", &s.cfg.inFlight, 1)
@@ -109,8 +133,14 @@ func (s *settings) getConfig() proofreadingConfig {
 }
 
 // newAskModel returns the model as a system instruction and a prompt are put to it.
-func newAskModel(complete completer) askModel {
+func newAskModel(complete completer, getConfig ...func() proofreadingConfig) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
+		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != "true" {
+			cfg := getConfig[0]()
+			if cfg.provider == "openrouter" || cfg.provider == "openai" || cfg.provider == "custom" {
+				return askDirectAPI(ctx, cfg, instruction, prompt)
+			}
+		}
 		return complete(ctx, &ai.Question{
 			Purpose: purpose,
 			Messages: []ai.Message{
@@ -119,6 +149,89 @@ func newAskModel(complete completer) askModel {
 			},
 		})
 	}
+}
+
+type chatCompletionMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type chatCompletionRequest struct {
+	Model    string                  `json:"model"`
+	Messages []chatCompletionMessage `json:"messages"`
+}
+
+type chatCompletionResponse struct {
+	Choices []struct {
+		Message chatCompletionMessage `json:"message"`
+	} `json:"choices"`
+}
+
+func resolveDirectBaseURL(cfg proofreadingConfig) string {
+	switch cfg.provider {
+	case "openrouter":
+		if cfg.baseURL != "" {
+			return cfg.baseURL
+		}
+		return "https://openrouter.ai/api/v1"
+	case "openai":
+		if cfg.baseURL != "" {
+			return cfg.baseURL
+		}
+		return "https://api.openai.com/v1"
+	default:
+		return cfg.baseURL
+	}
+}
+
+func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (string, error) {
+	baseURL := strings.TrimSuffix(resolveDirectBaseURL(cfg), "/")
+	if baseURL == "" {
+		return "", errors.New("service URL is not configured")
+	}
+	model := cfg.model
+	if model == "" {
+		model = "openai/gpt-4o-mini"
+	}
+	body, err := json.Marshal(chatCompletionRequest{
+		Model: model,
+		Messages: []chatCompletionMessage{
+			{Role: "system", Content: instruction},
+			{Role: "user", Content: prompt},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("marshal chat request: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		return "", fmt.Errorf("create chat request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if cfg.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+cfg.apiKey)
+	}
+	client := &http.Client{Timeout: 2 * time.Minute}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("send chat request: %w", err)
+	}
+	defer resp.Body.Close()
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read chat response: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("chat API status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBytes)))
+	}
+	var parsed chatCompletionResponse
+	if err := json.Unmarshal(respBytes, &parsed); err != nil {
+		return "", fmt.Errorf("decode chat response: %w", err)
+	}
+	if len(parsed.Choices) == 0 {
+		return "", errors.New("chat API returned no choices")
+	}
+	return parsed.Choices[0].Message.Content, nil
 }
 
 // Mount registers the text provider and the proofread command on s, working the host the
@@ -172,7 +285,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	if err != nil {
 		return err
 	}
-	run := newProofreading(h, kinds, newAskModel(complete), config.getConfig)
+	run := newProofreading(h, kinds, newAskModel(complete, config.getConfig), config.getConfig)
 	provider := newProvider(run)
 	commands := command.New()
 	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {

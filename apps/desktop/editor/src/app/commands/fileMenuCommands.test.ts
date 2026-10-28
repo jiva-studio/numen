@@ -141,4 +141,19 @@ describe('useFileMenuCommands', () => {
     expect(menu.paletteCommands.value).toStrictEqual([])
     expect(commands.get(getFileMenuId(recognise))).toBeUndefined()
   })
+
+  it('loads and returns commands for a file requested through getForFile', async () => {
+    const get = vi.fn().mockResolvedValue([recognise])
+    const menu = useFileMenuCommands({ get, run: vi.fn() })
+
+    expect(menu.getForFile('books/Scan.pdf')).toStrictEqual([])
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(get).toHaveBeenCalledWith('books/Scan.pdf')
+    expect(menu.getForFile('books/Scan.pdf').map((one) => one.id)).toStrictEqual([
+      getFileMenuId(recognise),
+    ])
+    expect(menu.getIcon(getFileMenuId(recognise))).toBe(getNamedIcon('scan-text'))
+  })
 })

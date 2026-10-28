@@ -500,14 +500,26 @@ describe('the view following the line being returned', () => {
     expect(moves(observed)).toHaveLength(0)
   })
 
-  it('moves to the nearest edge of the line', () => {
+  it('centres the line in the view', () => {
     const { times, view } = editor()
     const observed = recordEffects(view)
 
     times.show({ ...TIMED, current: 1, isFollowing: true })
 
     const target = moves(observed)[0]?.[1] as unknown as { value: { y: string } }
-    expect(target.value.y).toBe('nearest')
+    expect(target.value.y).toBe('center')
+  })
+
+  it('centres the current line once when centerCurrent is called', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1, isFollowing: false })
+    const observed = recordEffects(view)
+
+    times.centerCurrent()
+
+    expect(observed).toHaveLength(1)
+    const target = observed[0]?.[0] as unknown as { value: { y: string } }
+    expect(target.value.y).toBe('center')
   })
 
   it('moves to the first line', () => {

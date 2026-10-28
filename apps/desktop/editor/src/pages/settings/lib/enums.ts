@@ -1,57 +1,83 @@
 /**
- * The enum settings of a plugin as a row draws them: the options under the values in force, the
- * value, what is said under the row, and where the value comes from.
+ * The enum and option-backed settings of a plugin: the options under the values
+ * in force, their select choices with detail subtitles, the active value, and
+ * the placement of secrets alongside the settings they belong to.
  */
+import type { SelectChoice } from '@numen/ui'
 import {
-  findSetting,
   formatValue,
   getOptions,
   getValue,
+  isShown,
   type PluginInfo,
+  type PluginSecret,
   type PluginSettingInfo,
   type PluginSettingOption,
   type ReadPluginSetting,
 } from '@/entities/settings'
 
-export interface EnumWords {
-  readonly valueChosen: string
-  readonly valueDefault: string
-  valueFollowed(title: string): string
-}
-
 export interface EnumFields {
   getEnumOptions(setting: PluginSettingInfo): readonly PluginSettingOption[]
+  getEnumChoices(setting: PluginSettingInfo): readonly SelectChoice[]
   getEnumValue(setting: PluginSettingInfo): string
-  /** The detail of the option in force, else what the setting means. */
-  getDetail(setting: PluginSettingInfo): string
-  /** Where the value of an enum setting comes from. */
-  getOrigin(setting: PluginSettingInfo): string
+  getShownSettings(): readonly PluginSettingInfo[]
+  getTopSecrets(): readonly PluginSecret[]
+  getSecretsAfter(settingKey: string): readonly PluginSecret[]
+}
+
+/** Converts plugin setting options into select choices, preserving option detail. */
+export function toSelectChoices(options: readonly PluginSettingOption[]): readonly SelectChoice[] {
+  return options.map((one) => ({
+    id: one.value,
+    text: one.title || one.value,
+    ...(one.detail ? { detail: one.detail } : {}),
+  }))
+}
+
+/** Finds the setting key after which a secret should be placed, or null for the top. */
+function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>): string | null {
+  if (secret.when?.setting && shownKeys.has(secret.when.setting)) {
+    return secret.when.setting
+  }
+  if (shownKeys.has('provider')) return 'provider'
+  if (shownKeys.has('baseUrl')) return 'baseUrl'
+  return null
 }
 
 /** The plugin is asked for on every call, so a plugin that changes is followed. */
 export function createEnumFields(
   getPlugin: () => PluginInfo,
   read: ReadPluginSetting,
-  words: EnumWords,
 ): EnumFields {
   const getEnumOptions = (setting: PluginSettingInfo) => getOptions(getPlugin(), setting, read)
+  const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting))
   const getEnumValue = (setting: PluginSettingInfo) =>
     formatValue(getValue(getPlugin(), setting, read).value)
 
-  const getDetail = (setting: PluginSettingInfo): string => {
-    if (setting.type !== 'enum') return setting.description
-    const value = getEnumValue(setting)
-    const option = getEnumOptions(setting).find((one) => one.value === value)
-    return option?.detail || setting.description
+  const getShownSettings = () =>
+    getPlugin().settings.filter((one) => isShown(getPlugin(), one.when, read))
+
+  const getShownSecrets = () =>
+    getPlugin().secrets.filter((one) => isShown(getPlugin(), one.when, read))
+
+  const getShownKeys = () => new Set(getShownSettings().map((one) => one.key))
+
+  const getTopSecrets = () => {
+    const keys = getShownKeys()
+    return getShownSecrets().filter((one) => findSecretAnchor(one, keys) === null)
   }
 
-  const getOrigin = (setting: PluginSettingInfo): string => {
-    const { origin } = getValue(getPlugin(), setting, read)
-    if (origin === 'chosen') return words.valueChosen
-    if (origin === 'default' || !setting.optionsBy) return words.valueDefault
-    const followed = findSetting(getPlugin(), setting.optionsBy.setting)
-    return words.valueFollowed(followed?.title ?? '')
+  const getSecretsAfter = (settingKey: string) => {
+    const keys = getShownKeys()
+    return getShownSecrets().filter((one) => findSecretAnchor(one, keys) === settingKey)
   }
 
-  return { getEnumOptions, getEnumValue, getDetail, getOrigin }
+  return {
+    getEnumOptions,
+    getEnumChoices,
+    getEnumValue,
+    getShownSettings,
+    getTopSecrets,
+    getSecretsAfter,
+  }
 }

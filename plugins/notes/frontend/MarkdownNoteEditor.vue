@@ -5,6 +5,7 @@
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from './editor'
 import type { Extension } from '@codemirror/state'
+import { editorPreferences } from './preferences'
 import { useMarkdownDocument, type EditorHandle } from './useMarkdownDocument'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -16,6 +17,9 @@ interface Props {
   readonly isReadOnly?: boolean
   readonly extensions?: Extension | readonly Extension[]
   readonly state?: Record<string, unknown>
+  readonly softWrap?: boolean | undefined
+  readonly lineNumbers?: boolean | undefined
+  readonly tabSize?: number | undefined
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -24,6 +28,9 @@ const props = withDefaults(defineProps<Props>(), {
   filePath: '',
   errorMessage: '',
   isReadOnly: false,
+  softWrap: undefined,
+  lineNumbers: undefined,
+  tabSize: undefined,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -66,6 +73,10 @@ const editorLanguage = computed(() => {
   return 'markdown'
 })
 
+const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
+const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
+const tabSize = computed(() => props.tabSize ?? editorPreferences.tabSize)
+
 /* -------------------------------- Handlers -------------------------------- */
 function onDismiss() {
   isDismissed.value = true
@@ -100,6 +111,9 @@ defineExpose({
       :language="editorLanguage"
       is-live
       :is-readonly="isReadOnly || isLoading"
+      :soft-wrap="softWrap"
+      :line-numbers="lineNumbers"
+      :tab-size="tabSize"
       v-bind="props.extensions ? { extensions: props.extensions as Extension } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"

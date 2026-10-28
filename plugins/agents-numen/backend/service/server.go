@@ -247,10 +247,19 @@ func (s *Server) GetAgentPrograms(
 		IsInstalled: err == nil,
 		LimitsTools: true,
 	}
+	hasConfigured := false
 	for _, one := range models {
+		if one.Name == configured {
+			hasConfigured = true
+		}
 		program.Models = append(program.Models, &agentrun.AgentModel{
 			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
 			ReasoningLevels: reasoning.ToProto(one.ReasoningLevels), DefaultReasoning: one.DefaultReasoning,
+		})
+	}
+	if !hasConfigured && configured != "" && len(models) > 0 {
+		program.Models = append(program.Models, &agentrun.AgentModel{
+			Name: configured, Title: configured, IsDefault: true,
 		})
 	}
 	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{Programs: []*agentrun.AgentProgram{program}}), nil

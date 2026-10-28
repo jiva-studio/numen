@@ -53,7 +53,7 @@ function onModelChange(model: string) {
       :model-value="choice.model"
       :choices="models"
       :name="modelName"
-      :searchable="models.length >= SEARCH_FROM"
+      :is-searchable="models.length >= SEARCH_FROM"
       search-name="Search models"
       :aria-labelledby="labelledBy"
       class="settings__choice"

@@ -21,6 +21,7 @@ const props = withDefaults(defineProps<SelectProps>(), {
   name: 'Choices',
   isDisabled: false,
   isSearchable: false,
+  canEnterCustom: false,
   searchName: 'Search',
 })
 
@@ -125,6 +126,7 @@ const onKey = (event: KeyboardEvent) => {
     :name="name"
     has-groups
     :is-searchable="isSearchable"
+    :can-enter-custom="canEnterCustom"
     :search-name="searchName"
     is-open
     trigger="keyboard"

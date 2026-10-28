@@ -53,15 +53,18 @@ interface WindowCommandsOptions {
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
   pluginHost?: import('@/entities/plugin').PluginHost
+  fileMenuCommands?: ReturnType<typeof useFileMenuCommands>
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
     declaredCommands: useDeclaredCommands(),
-    fileMenuCommands: useFileMenuCommands({
-      onRun: (file) => deps.pluginHost?.notifyVaultChange({ paths: [file] }),
-    }),
+    fileMenuCommands:
+      deps.fileMenuCommands ??
+      useFileMenuCommands({
+        onRun: (file) => deps.pluginHost?.notifyVaultChange({ paths: [file] }),
+      }),
     core,
     words,
     log: deps.log,
@@ -295,6 +298,9 @@ function initWindowKindsAndCommands(
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
+  const fileMenuCommands = useFileMenuCommands({
+    onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
+  })
 
   ctx.kinds = useWindowKinds({
     core,
@@ -312,9 +318,11 @@ function initWindowKindsAndCommands(
     tabSync,
     getContextMenuItems: (target) => base.pluginHost.getContextMenuItems(target),
     runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
+    getFileMenuItems: (path) => fileMenuCommands.getForFile(path),
     getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
     getPluginCommandIcon: (id) =>
-      base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon,
+      base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
+      fileMenuCommands.getIcon(id),
     showNote: (path) => getCommands(ctx).showNote(path),
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
@@ -336,6 +344,7 @@ function initWindowKindsAndCommands(
     writeMessage: base.writeMessage,
     log: base.log,
     pluginHost: base.pluginHost,
+    fileMenuCommands,
   })
 
   return { getTarget, runCommand }

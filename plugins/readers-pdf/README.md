@@ -1,10 +1,11 @@
-# PDF Reader Plugin
+# PDF Reader
 
-Standalone PDF document viewer and page renderer powered by PDFium.
+Renders `.pdf` documents with high-DPI PDFium page rendering, document outlines, and selectable text layers.
+
+<!-- more -->
 
 ## Features
 
-- Renders PDF document pages and extracts textual outlines.
-- Serves `numen.pdf.v1.DocumentService`, its own schema in `proto/`.
-- Provides frontend document reader interface.
-- Opens `application/pdf` files as their default reader.
+- **PDFium rendering engine**: Streams rendered pages and document metadata over `numen.pdf.v1.DocumentService`.
+- **OCR integration**: Overlays positioned text recognized by the Document OCR plugin on scanned pages so every PDF is selectable and searchable.
+- **Passage citations**: Links directly to pages and text stretches from notes, flashcards, and search results.

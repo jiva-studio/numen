@@ -114,6 +114,9 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   const isTranscribable = computed(
     () => isSettled.value && !lines.timed.value && offers.value.transcribe !== undefined,
   )
+  const isRetranscribable = computed(
+    () => isSettled.value && lines.timed.value && offers.value.transcribe !== undefined,
+  )
   const isProofreadable = computed(
     () => isSettled.value && lines.timed.value && offers.value.proofread !== undefined,
   )
@@ -191,6 +194,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     },
     offers: {
       isTranscribable,
+      isRetranscribable,
       isProofreadable,
       isDeletable,
       transcribe: () => runEntry(offers.value.transcribe),

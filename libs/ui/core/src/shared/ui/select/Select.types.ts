@@ -11,6 +11,8 @@ export interface SelectProps {
   isDisabled?: boolean
   /** Whether the choices carry a line to search them by. */
   isSearchable?: boolean
+  /** Whether a search query not matching any choice is offered as a custom value. */
+  canEnterCustom?: boolean
   /** What the search line is announced as. */
   searchName?: string
   class?: HTMLAttributes['class']

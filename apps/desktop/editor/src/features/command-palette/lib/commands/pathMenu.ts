@@ -118,6 +118,34 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
 /** What a row standing for anything but a note offers. */
 const FILED: readonly PathItem[] = [...getNoteCommand('copy', GROUP.file), REMOVE]
 
+const getFileMenu = (contributions: readonly PathContribution[] = []): readonly PathItem[] => {
+  const openContributed = contributions
+    .filter((one) => one.group === GROUP.open)
+    .map((one) => ({
+      id: one.id,
+      text: one.text,
+      group: GROUP.open,
+      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+    }))
+
+  const otherContributed = contributions
+    .filter(
+      (one) =>
+        one.group !== GROUP.open &&
+        one.parentId !== 'relation' &&
+        one.group !== GROUP.relation,
+    )
+    .map((one) => ({
+      id: one.id,
+      text: one.text,
+      group: one.group ?? GROUP.file,
+      ...(one.parentId ? { parentId: one.parentId } : {}),
+      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+    }))
+
+  return [...openContributed, ...otherContributed, ...FILED]
+}
+
 /** The row a menu was asked for on: whether it is a note, and whether a folder. */
 export interface MenuRow {
   readonly isNote: boolean
@@ -147,5 +175,5 @@ export const createPathCommands = (
     return [...folderContributed, ...FILED]
   }
   if (on.isNote) return getNoteMenu(contributions)
-  return FILED
+  return getFileMenu(contributions)
 }

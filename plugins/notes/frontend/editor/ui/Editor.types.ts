@@ -25,4 +25,7 @@ export interface EditorProps {
   resolve?: ((address: string) => string) | undefined
   /** More the caller draws into this editor. */
   extensions?: Extension | undefined
+  softWrap?: boolean | undefined
+  lineNumbers?: boolean | undefined
+  tabSize?: number | undefined
 }

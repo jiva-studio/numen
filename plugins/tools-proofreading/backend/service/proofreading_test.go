@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -72,7 +75,7 @@ func newScene(t *testing.T) *scene {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, kinds, newAskModel(s.model.complete), s.settings.getConfig)
+	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, kinds, newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
 	s.provider = newProvider(s.run)
 	t.Cleanup(s.provider.Close)
 	return s
@@ -401,5 +404,64 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if names, _ := s.store.List(t.Context()); len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
+	}
+}
+
+func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
+	var gotAuth, gotModel, gotSystem, gotPrompt string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chat/completions" {
+			http.NotFound(w, r)
+			return
+		}
+		gotAuth = r.Header.Get("Authorization")
+		var req chatCompletionRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		gotModel = req.Model
+		if len(req.Messages) == 2 {
+			gotSystem = req.Messages[0].Content
+			gotPrompt = req.Messages[1].Content
+		}
+		reply := getRows(gotPrompt, func(_, text string) string {
+			return strings.NewReplacer("spinnig", "spinning", "vacum", "vacuum").Replace(text)
+		})
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{
+				{"message": map[string]any{"role": "assistant", "content": reply}},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	s := newScene(t)
+	s.settings.updateConfig(map[string]string{
+		"provider": "custom",
+		"baseUrl":  srv.URL,
+		"model":    "google/gemini-2.5-flash",
+		"apiKey":   "secret-key",
+	})
+	scan := s.holdScan(t)
+
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Corrected != 1 {
+		t.Errorf("corrected = %d, want 1", res.Corrected)
+	}
+	if len(s.model.questions) != 0 {
+		t.Errorf("agent completer was called %d times, want 0", len(s.model.questions))
+	}
+	if gotAuth != "Bearer secret-key" {
+		t.Errorf("Authorization = %q, want Bearer secret-key", gotAuth)
+	}
+	if gotModel != "google/gemini-2.5-flash" {
+		t.Errorf("model = %q, want google/gemini-2.5-flash", gotModel)
+	}
+	if gotSystem != scanInstruction {
+		t.Errorf("system instruction mismatch")
 	}
 }
