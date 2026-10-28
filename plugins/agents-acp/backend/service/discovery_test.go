@@ -62,7 +62,7 @@ func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 	if len(agents) != 3 {
 		t.Fatalf("expected 3 agents, got %d: %+v", len(agents), agents)
 	}
-	if agents[0].Program != "claude-code-acp" || agents[1].Program != "codex-acp" || agents[2].Program != "gemini" {
+	if agents[0].Program != "claude-code" || agents[1].Program != "codex" || agents[2].Program != "gemini" {
 		t.Errorf("unexpected agents: %+v", agents)
 	}
 }

@@ -1230,9 +1230,15 @@ func (h *Host) GetPluginSettings(pluginID string) map[string]any {
 // getPluginSettingsLocked returns the values in force of the settings of the plugin, the settings whose
 // condition fails left out.
 func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
-	result := maps.Clone(h.settings[pluginID])
+	rawStored := h.settings[pluginID]
+	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
+		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && h.hasExecutablePathSetting(p.Manifest) {
+			if paths := resolveDiscoveredACPPaths(); paths != "" {
+				result[keyExecutablePath] = paths
+			}
+		}
 	}
 	if result == nil {
 		result = map[string]any{}
@@ -1245,6 +1251,15 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 		}
 	}
 	return result
+}
+
+func (h *Host) hasExecutablePathSetting(manifest pluginport.PluginManifest) bool {
+	for _, s := range manifest.Settings {
+		if s.Key == keyExecutablePath {
+			return true
+		}
+	}
+	return false
 }
 
 // GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
@@ -1451,6 +1466,10 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			stepVal := s.Step
 			stepPtr = &stepVal
 		}
+		options := s.Options
+		if s.Key == keyExecutablePath && len(options) == 0 {
+			options = resolveDiscoveredACPOptions()
+		}
 		settings = append(settings, pluginport.PluginSetting{
 			Key:         s.Key,
 			Type:        s.Type,
@@ -1459,7 +1478,7 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			DefaultJSON: defJSON,
 			Palette:     s.Palette,
 			Icon:        s.Icon,
-			Options:     s.Options,
+			Options:     options,
 			Min:         minPtr,
 			Max:         maxPtr,
 			Step:        stepPtr,
@@ -1515,9 +1534,65 @@ func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
 			if path, err := exec.LookPath("ffmpeg"); err == nil {
 				return path
 			}
+		case keyExecutablePath:
+			if paths := resolveDiscoveredACPPaths(); paths != "" {
+				return paths
+			}
 		}
 	}
 	return s.Default
+}
+
+type acpExecutableCandidate struct {
+	title  string
+	binary string
+	arg    string
+}
+
+const (
+	acpSubcommand     = "acp"
+	acpFlag           = "--acp"
+	keyExecutablePath = "executable_path"
+)
+
+var acpExecutableCandidates = []acpExecutableCandidate{
+	{title: "Claude Code (ACP)", binary: "claude-code-acp"},
+	{title: "Codex (ACP)", binary: "codex-acp"},
+	{title: "Cursor Agent", binary: "cursor-agent", arg: acpSubcommand},
+	{title: "Gemini CLI", binary: "gemini", arg: acpFlag},
+	{title: "Goose", binary: "goose", arg: acpSubcommand},
+	{title: "Kimi CLI", binary: "kimi", arg: acpSubcommand},
+	{title: "OpenCode", binary: "opencode", arg: acpSubcommand},
+	{title: "Qwen Code", binary: "qwen", arg: acpFlag},
+}
+
+func resolveDiscoveredACPPaths() string {
+	options := resolveDiscoveredACPOptions()
+	paths := make([]string, 0, len(options))
+	for _, option := range options {
+		paths = append(paths, option.Value)
+	}
+	return strings.Join(paths, "\n")
+}
+
+func resolveDiscoveredACPOptions() []pluginport.PluginSettingOption {
+	var options []pluginport.PluginSettingOption
+	for _, candidate := range acpExecutableCandidates {
+		binaryPath, err := exec.LookPath(candidate.binary)
+		if err != nil || binaryPath == "" {
+			continue
+		}
+		detail := binaryPath
+		if candidate.arg != "" {
+			detail = binaryPath + " " + candidate.arg
+		}
+		options = append(options, pluginport.PluginSettingOption{
+			Value:  binaryPath,
+			Title:  candidate.title,
+			Detail: detail,
+		})
+	}
+	return options
 }
 
 func formatPluginSettings(rawSettings map[string]any) map[string]string {

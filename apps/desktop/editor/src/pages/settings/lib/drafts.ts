@@ -29,7 +29,8 @@ export function createTextDrafts(write: (key: string, text: string) => void) {
 
 /** Joins the previous newline-separated paths with the newly selected path. */
 export function appendPathEntry(previous: string, nextPath: string): string {
-  if (previous === '' || nextPath === '' || nextPath === previous) return nextPath
+  if (nextPath === '') return previous
+  if (previous === '' || nextPath === previous) return nextPath
   const existing = previous
     .split('\n')
     .map((one) => one.trim())
