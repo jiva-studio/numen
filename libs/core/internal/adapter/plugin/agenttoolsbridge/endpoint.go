@@ -19,9 +19,12 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// shutdownLimit is how long the calls in flight have to finish when the endpoint closes. A session
-// left open holds its connection until it is cut.
+// shutdownLimit is how long the calls in flight have to finish when the endpoint closes. A connection
+// with a request in progress is cut after it, and close reports the cut.
 const shutdownLimit = 2 * time.Second
+
+// shutdownPoll is how often close looks for a connection with a request in progress.
+const shutdownPoll = 10 * time.Millisecond
 
 // endpointPath is where the endpoint answers MCP over Streamable HTTP.
 const endpointPath = "/mcp"
@@ -33,8 +36,37 @@ type endpoint struct {
 	server *http.Server
 	// stopped is closed once the server no longer serves.
 	stopped chan struct{}
-	once    sync.Once
-	err     error
+	// limit is how long close waits for the requests in progress.
+	limit time.Duration
+	// states holds the state of each open connection of the server.
+	statesMu sync.Mutex
+	states   map[net.Conn]http.ConnState
+	once     sync.Once
+	err      error
+}
+
+// trackConnection records the state of a connection of the server.
+func (e *endpoint) trackConnection(conn net.Conn, state http.ConnState) {
+	e.statesMu.Lock()
+	defer e.statesMu.Unlock()
+	if state == http.StateClosed || state == http.StateHijacked {
+		delete(e.states, conn)
+		return
+	}
+	e.states[conn] = state
+}
+
+// getActiveCount is the number of connections with a request in progress.
+func (e *endpoint) getActiveCount() int {
+	e.statesMu.Lock()
+	defer e.statesMu.Unlock()
+	count := 0
+	for _, state := range e.states {
+		if state == http.StateActive {
+			count++
+		}
+	}
+	return count
 }
 
 // toolCaller runs a tool on the plugin that listed it.
@@ -75,7 +107,10 @@ func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint,
 		token:   token,
 		server:  &http.Server{Handler: requireToken(token, mux), ReadHeaderTimeout: 10 * time.Second},
 		stopped: make(chan struct{}),
+		limit:   shutdownLimit,
+		states:  make(map[net.Conn]http.ConnState),
 	}
+	served.server.ConnState = served.trackConnection
 	go func() {
 		defer close(served.stopped)
 		// Serve returns http.ErrServerClosed once close is called, which is how it is meant to end.
@@ -84,18 +119,39 @@ func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint,
 	return served, nil
 }
 
-// close stops the endpoint once and returns when it no longer serves. The calls in flight are given
-// shutdownLimit, and the connections still open after it are cut.
+// close stops the endpoint once and returns when it no longer serves. The requests in progress are
+// given the limit and the connections still serving one after it are cut, which close reports. A
+// connection with no request in progress is closed at once.
 func (e *endpoint) close(ctx context.Context) error {
 	e.once.Do(func() {
-		ctx, cancel := context.WithTimeout(ctx, shutdownLimit)
+		ctx, cancel := context.WithTimeout(ctx, e.limit)
 		defer cancel()
-		if err := e.server.Shutdown(ctx); err != nil {
-			e.err = errors.Join(err, e.server.Close())
-		}
+		e.err = e.shutdown(ctx)
 		<-e.stopped
 	})
 	return e.err
+}
+
+func (e *endpoint) shutdown(ctx context.Context) error {
+	result := make(chan error, 1)
+	go func() { result <- e.server.Shutdown(ctx) }()
+	poll := time.NewTicker(shutdownPoll)
+	defer poll.Stop()
+	for {
+		select {
+		case err := <-result:
+			if err != nil {
+				return errors.Join(err, e.server.Close())
+			}
+			return nil
+		case <-poll.C:
+			if e.getActiveCount() == 0 {
+				closed := e.server.Close()
+				<-result
+				return closed
+			}
+		}
+	}
 }
 
 // declareTool is the tool as an MCP client is told of it.
