@@ -38,7 +38,7 @@ func TestNotesInternalHexagonalLayers(t *testing.T) {
 		}
 		dir := filepath.ToSlash(filepath.Dir(path))
 		pkg, _, _ := strings.Cut(dir, "/")
-		if _, known := allowedInternalEdges[pkg]; !known {
+		if _, isListed := allowedInternalEdges[pkg]; !isListed {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)

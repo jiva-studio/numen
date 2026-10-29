@@ -252,10 +252,9 @@ func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 	}
 }
 
-// What a vault leaves alone is answered for out of the file's metadata. The
-// file here is sixteen megabytes and cannot be opened at all, and the answer
-// still comes back.
-func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
+// A file is stated out of its metadata. The file here is sixteen megabytes and
+// cannot be opened at all, and the answer still comes back.
+func TestStatingAFileOpensNothing(t *testing.T) {
 	root := t.TempDir()
 	export, err := os.OpenFile(filepath.Join(root, "export.iso"), os.O_CREATE|os.O_WRONLY, 0o000)
 	if err != nil {
@@ -273,11 +272,12 @@ func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch _, err := reader.StatFile(t.Context(), "export.iso"); {
-	case !errors.Is(err, vaultport.ErrNotANote):
-		t.Errorf("want ErrNotANote, got %v", err)
-	case errors.Is(err, fs.ErrNotExist):
-		t.Errorf("a file that is there was called missing: %v", err)
+	stat, err := reader.StatFile(t.Context(), "export.iso")
+	if err != nil {
+		t.Fatalf("a file that is there was not stated: %v", err)
+	}
+	if stat.Kind != domain.KindFile || stat.Size != 16<<20 {
+		t.Errorf("stated %+v, want a file of %d bytes", stat, 16<<20)
 	}
 
 	// Nothing at a path is the other answer, and it is not this one.
