@@ -16,9 +16,9 @@ export interface ReviewDaysClient {
 
 export interface ReviewDays {
   days: readonly Day[]
-  due: readonly { day: string; answered: number }[]
+  due: readonly { day: string; reviewed: number }[]
   streak: number
-  answered: number
+  reviewed: number
 }
 
 /** What the grid draws a day at, which is what Heatmap is left to by default. */
@@ -28,13 +28,13 @@ const GAP = 3
 /** One day, and what was answered on it. */
 interface Day {
   day: string
-  answered: number
+  reviewed: number
   again: number
   hard: number
   good: number
   easy: number
   /** The answers given to cards already being reviewed, and how many came back. */
-  asked: number
+  tested: number
   recalled: number
 }
 
@@ -84,9 +84,9 @@ export function useReviewDays(deps: ReviewDaysDeps) {
       // looking at that one, and these days are not its days.
       if (of.value !== vault) return
       days.value = new Map(reviewData.days.map((one) => [one.day, createTally(one)]))
-      due.value = new Map(reviewData.due.map((one) => [one.day, one.answered]))
+      due.value = new Map(reviewData.due.map((one) => [one.day, one.reviewed]))
       streak.value = reviewData.streak
-      reply.value = reviewData.answered
+      reply.value = reviewData.reviewed
     } catch (why) {
       if (of.value !== vault) return
       deps.reportError(why)
@@ -99,11 +99,11 @@ export function useReviewDays(deps: ReviewDaysDeps) {
 
 /** One day as the grid holds it. */
 const createTally = (one: Day): HeatmapTally => ({
-  answered: one.answered,
+  answered: one.reviewed,
   again: one.again,
   hard: one.hard,
   good: one.good,
   easy: one.easy,
-  asked: one.asked,
+  asked: one.tested,
   recalled: one.recalled,
 })

@@ -1,0 +1,19 @@
+{
+  "path": "Animal.md",
+  "fields": ["Name", "Height"],
+  "templates": [
+    {
+      "name": "Recognise",
+      "front": "{{Name}}",
+      "back": "{{Height}}",
+      "preamble": ""
+    }
+  ],
+  "baseline": {
+    "path": "decks/Animals.md",
+    "size": 412,
+    "mtime": "1767225600123456789"
+  },
+  "preamble": "",
+  "tail": ""
+}

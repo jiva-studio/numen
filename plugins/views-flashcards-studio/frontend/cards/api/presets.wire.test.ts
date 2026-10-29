@@ -17,8 +17,8 @@ const replyWith = (answer: unknown) => {
   request = []
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (_url: string, init: { body: Uint8Array }) => {
-      request.push(JSON.parse(new TextDecoder().decode(init.body)))
+    vi.fn(async (_url: string, init: { body: string }) => {
+      request.push(JSON.parse(init.body))
       return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
@@ -43,14 +43,14 @@ describe('the settings of a preset', () => {
         path: 'Daily.md',
         title: 'Daily',
         settings: {
-          goal: 'GOAL_RETENTION',
+          goal: 'retention',
           minutesADay: 30,
-          counts: 'BUDGET_UNIT_SHOWS',
-          learned: 'RULE_RETENTION',
+          counts: 'shows',
+          learned: 'retention',
           load: { mon: 50 },
         },
       },
-      at: { path: 'Daily.md', size: '12', mtime: '34' },
+      at: { path: 'Daily.md', size: 12, mtime: '34' },
     })
 
     const answer = await presets.read('Daily.md')
@@ -68,7 +68,7 @@ describe('the settings of a preset', () => {
 
   it('take the default for a rule the file leaves unnamed', async () => {
     replyWith({
-      preset: { path: 'Daily.md', title: 'Daily', settings: { learned: 'RULE_UNSPECIFIED' } },
+      preset: { path: 'Daily.md', title: 'Daily', settings: { learned: 'unspecified' } },
     })
 
     const answer = await presets.read('Daily.md')
@@ -76,7 +76,7 @@ describe('the settings of a preset', () => {
   })
 
   it('are no preset at all where the read failed', async () => {
-    replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
+    replyWith({ error: 'not_a_preset' })
 
     const answer = await presets.read('Notes.md')
 
@@ -127,11 +127,11 @@ describe('making a preset', () => {
 
 describe('putting a deck on a preset', () => {
   it('names the file the window read', async () => {
-    replyWith({ at: { path: 'Deck.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Deck.md', size: 12, mtime: '34' } })
 
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
-    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
+    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: 12, mtime: '34' })
     expect(answer.ok && answer.value.at).toBe('12 34 Deck.md')
   })
 
@@ -144,7 +144,7 @@ describe('putting a deck on a preset', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ error: 'ERROR_CODE_STALE' })
+    replyWith({ error: 'stale' })
 
     expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual(
       asFailure('changed'),
@@ -164,7 +164,7 @@ describe('the preset a deck is scheduled by', () => {
 
 describe('writing settings into a preset', () => {
   it('sends the rule and the unit as the schema names them', async () => {
-    replyWith({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34' } })
 
     await presets.write(
       'Daily.md',
@@ -173,9 +173,9 @@ describe('writing settings into a preset', () => {
     )
 
     expect(request[0]?.settings).toMatchObject({
-      goal: 'GOAL_MINUTES_A_DAY',
-      counts: 'BUDGET_UNIT_SHOWS',
-      learned: 'RULE_RETENTION',
+      goal: 'minutes_a_day',
+      counts: 'shows',
+      learned: 'retention',
       load: { mon: 50 },
     })
   })
@@ -185,7 +185,7 @@ describe('what a preset evaluates to over the range of its goal', () => {
   it('carries every place, and the day one is learned on where the rule has one', async () => {
     replyWith({
       curve: {
-        goal: 'GOAL_MINUTES_A_DAY',
+        goal: 'minutes_a_day',
         grid: [10, 20],
         days: [],
         at: [
@@ -213,7 +213,7 @@ describe('what a preset evaluates to over the range of its goal', () => {
   })
 
   it('remains nowhere where the answer suggests no place', async () => {
-    replyWith({ curve: { goal: 'GOAL_MINUTES_A_DAY', grid: [], days: [], at: [] } })
+    replyWith({ curve: { goal: 'minutes_a_day', grid: [], days: [], at: [] } })
 
     const curve = await presets.curve('Daily.md', DEFAULTS)
 
@@ -293,7 +293,7 @@ describe('the stamp of a file an answer is about', () => {
   })
 
   it('is the file a write came to', async () => {
-    replyWith({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34' } })
 
     const answer = await presets.write('Daily.md', DEFAULTS, '')
 
@@ -303,13 +303,13 @@ describe('the stamp of a file an answer is about', () => {
 
 describe('writing into a preset the window read', () => {
   it('names the file the window read', async () => {
-    replyWith({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34' } })
 
     await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')
 
     expect(request[0]).toMatchObject({
       path: 'Daily.md',
-      baseline: { path: 'Daily.md', size: '12', mtime: '34' },
+      baseline: { path: 'Daily.md', size: 12, mtime: '34' },
     })
   })
 
@@ -322,7 +322,7 @@ describe('writing into a preset the window read', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ error: 'ERROR_CODE_STALE' })
+    replyWith({ error: 'stale' })
 
     expect(await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')).toEqual(
       asFailure('changed'),
@@ -330,13 +330,13 @@ describe('writing into a preset the window read', () => {
   })
 
   it('names the rejection in the words the window uses', async () => {
-    replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
+    replyWith({ error: 'not_a_preset' })
 
     expect(await presets.write('Notes.md', DEFAULTS, '')).toEqual(asFailure('notAPreset'))
   })
 
   it('names the rejection of a scheduling in the words the window uses', async () => {
-    replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
+    replyWith({ error: 'not_a_preset' })
 
     expect(await presets.scheduleDeck('Deck.md', 'Notes.md', '')).toEqual(asFailure('notAPreset'))
   })
@@ -385,13 +385,13 @@ describe('the ends of every setting', () => {
 
 describe('the curve of a goal other than the default', () => {
   it('carries the goal the answer names', async () => {
-    replyWith({ curve: { goal: 'GOAL_RETENTION', grid: [], days: [], at: [] } })
+    replyWith({ curve: { goal: 'retention', grid: [], days: [], at: [] } })
 
     expect((await presets.curve('Daily.md', DEFAULTS)).goal).toBe('retention')
   })
 
   it('is valid and honest', async () => {
-    replyWith({ curve: { goal: 'GOAL_RETENTION', grid: [], days: [], at: [] } })
+    replyWith({ curve: { goal: 'retention', grid: [], days: [], at: [] } })
 
     expect(await presets.curve('Daily.md', DEFAULTS)).toMatchObject({
       isValid: true,
@@ -402,7 +402,7 @@ describe('the curve of a goal other than the default', () => {
   it('carries the places the answer names', async () => {
     replyWith({
       curve: {
-        goal: 'GOAL_MINUTES_A_DAY',
+        goal: 'minutes_a_day',
         grid: [],
         days: [],
         at: [],
@@ -420,7 +420,7 @@ describe('the curve of a goal other than the default', () => {
   it('names no learned figure for a place that has none', async () => {
     replyWith({
       curve: {
-        goal: 'GOAL_MINUTES_A_DAY',
+        goal: 'minutes_a_day',
         grid: [10],
         days: [],
         at: [{ reviews: 1, minutes: 10 }],

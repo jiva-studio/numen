@@ -1,0 +1,9 @@
+{
+  "deck": "decks/Animals.md",
+  "preset": "presets/Sanskrit.md",
+  "baseline": {
+    "path": "decks/Animals.md",
+    "size": 412,
+    "mtime": "1767225600123456789"
+  }
+}

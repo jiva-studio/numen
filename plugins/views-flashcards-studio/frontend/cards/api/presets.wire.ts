@@ -1,16 +1,18 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
-import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/plugin-sdk'
+import { formatFingerprint, parseFingerprint } from '../../api/fingerprint'
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { formatSettings, parseSettings } from '../wire/settings'
 import { goalOf } from '../wire/goal'
-import {
-  type Curve as CurveMessage,
-  type CurvePoint as CurvePointMessage,
-  type Point as PointMessage,
-  type Preset as PresetMessage,
-  type SettingsBounds as SettingsBoundsMessage,
-} from '../../gen/numen/flashcards/v1/presets_pb.js'
-import { type ErrorCode as ProtoErrorCode } from '../../gen/numen/flashcards/v1/errors_pb.js'
+import type {
+  Curve as CurveMessage,
+  CurvePoint as CurvePointMessage,
+  GetDeckPresetResponse,
+  Point as PointMessage,
+  Preset as PresetMessage,
+  ReadPresetResponse,
+  SettingsBounds as SettingsBoundsMessage,
+} from '../../api/types.js'
 import { presetsService } from './clients'
 import {
   DEFAULTS,
@@ -69,12 +71,7 @@ export const presets: Presets = {
 }
 
 /** What a read answered, whichever of the two asked it. */
-const parseRead = (answer: {
-  preset?: PresetMessage | undefined
-  error?: ProtoErrorCode | undefined
-  at?: { path: string; size: bigint; mtime: bigint } | undefined
-  bounds?: SettingsBoundsMessage | undefined
-}): PresetReadResult => {
+const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetReadResult => {
   const error = findErrorCode(answer)
   if (error) return asFailure(error)
   return asValue({

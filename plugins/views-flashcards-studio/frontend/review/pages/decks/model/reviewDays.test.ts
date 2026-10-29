@@ -8,19 +8,19 @@ const createReviewDays = (
   streak = 0,
   due: [string, number][] = [],
 ): ReviewDays => ({
-  days: days.map(([day, answered]) => ({
+  days: days.map(([day, reviewed]) => ({
     day,
-    answered,
+    reviewed,
     again: 0,
     hard: 0,
-    good: answered,
+    good: reviewed,
     easy: 0,
-    asked: answered,
-    recalled: answered,
+    tested: reviewed,
+    recalled: reviewed,
   })),
-  due: due.map(([day, answered]) => ({ day, answered })),
+  due: due.map(([day, reviewed]) => ({ day, reviewed })),
   streak,
-  answered: days.reduce((sum, [, answered]) => sum + answered, 0),
+  reviewed: days.reduce((sum, [, reviewed]) => sum + reviewed, 0),
 })
 
 describe('what a vault was answered on', () => {
@@ -125,7 +125,7 @@ describe('the days requested about', () => {
     const cards: ReviewDaysClient = {
       listReviewDays(query) {
         request = query
-        return Promise.resolve({ days: [], due: [], streak: 0, answered: 0 })
+        return Promise.resolve({ days: [], due: [], streak: 0, reviewed: 0 })
       },
     }
     const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })

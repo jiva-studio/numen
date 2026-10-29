@@ -74,7 +74,7 @@ vi.mock('../shared/clients', async (original) => ({
       }
     },
     watchReloads: () => waits(),
-    listReviewDays: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
+    listReviewDays: async () => ({ days: [], due: [], streak: 0, reviewed: 0 }),
     getVaultDeckPreset: async () => ({ preset: undefined }),
     startSession: async (response: { deck: string }) => {
       started.push(response)

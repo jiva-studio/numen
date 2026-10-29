@@ -1,6 +1,6 @@
 /** What this screen says of a preset: its goal, its day, and why it asks nothing. */
 // Stryker disable StringLiteral: interface copy
-import { StopReason } from '../../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../../api/types.js'
 import { formatStopReasonMessage } from '../../../cards/wire/stop'
 import { many, percent } from '@numen/ui'
 import { parseDay, daysBetween } from '../../../lib/day'

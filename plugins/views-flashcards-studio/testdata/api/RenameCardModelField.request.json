@@ -1,0 +1,10 @@
+{
+  "path": "Animal.md",
+  "from": "Name",
+  "to": "Species",
+  "baseline": {
+    "path": "decks/Animals.md",
+    "size": 412,
+    "mtime": "1767225600123456789"
+  }
+}

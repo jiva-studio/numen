@@ -1,0 +1,20 @@
+{
+  "decks": ["decks/Animals.md"],
+  "cards": 3,
+  "notWritten": [
+    {
+      "path": "decks/Old.md",
+      "problem": {
+        "kind": "field_not_renamed",
+        "field": "Name",
+        "text": "the deck could not be written"
+      }
+    }
+  ],
+  "at": {
+    "path": "decks/Animals.md",
+    "size": 412,
+    "mtime": "1767225600123456789"
+  },
+  "isUnlevelled": false
+}

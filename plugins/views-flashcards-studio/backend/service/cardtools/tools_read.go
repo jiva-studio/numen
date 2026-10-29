@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
@@ -119,7 +119,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 		return cardModelReadOutput{}, fmt.Errorf("%s: %s", in.Path, s.Outcome)
 	}
 	if s.Type != format.TypeCardModel {
-		return cardModelReadOutput{}, errors.New(describeCode(flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL))
+		return cardModelReadOutput{}, errors.New(describeCode(api.ErrorCodeNotACardModel))
 	}
 	title := s.Title
 	if title == "" {

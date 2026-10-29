@@ -11,7 +11,7 @@
 import { effectScope, isRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockAgentHost, createMockNoticeHost } from '@numen/plugin-sdk/testing'
-import { Code, ConnectError } from '@connectrpc/connect'
+import { ApiFailure } from '../../api/failure'
 
 const wire = vi.hoisted(() => {
   /** A stream that stays open, so nothing the window follows ever ends. */
@@ -96,18 +96,18 @@ vi.mock('../shared/clients', async (original) => ({
         days: [
           {
             day: '2026-04-01',
-            answered: 3,
+            reviewed: 3,
             again: 1,
             hard: 0,
             good: 2,
             easy: 0,
-            asked: 3,
+            tested: 3,
             recalled: 2,
           },
         ],
-        due: [{ day: '2026-04-03', answered: 1 }],
+        due: [{ day: '2026-04-03', reviewed: 1 }],
         streak: 4,
-        answered: 3,
+        reviewed: 3,
       }
     },
     getVaultDeckPreset: async (request: unknown) => {
@@ -119,7 +119,7 @@ vi.mock('../shared/clients', async (original) => ({
       return {
         notes: [
           {
-            written: 'Prefixes',
+            address: 'Prefixes',
             path: 'notes/Prefixes.md',
             title: 'Prefixes',
             body: 'A word before the word.',
@@ -134,7 +134,7 @@ vi.mock('../shared/clients', async (original) => ({
     startSession: async (request: unknown) => {
       wire.requestedSessions.push(request)
       if (wire.isStartRefused) {
-        throw new ConnectError('the vault is closing', Code.FailedPrecondition)
+        throw new ApiFailure({ code: 'failed_precondition', message: 'the vault is closing' })
       }
       return {
         run: 'run-1',

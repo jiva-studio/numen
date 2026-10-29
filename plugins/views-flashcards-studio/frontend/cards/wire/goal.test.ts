@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal as Goals } from '../../gen/numen/flashcards/v1/presets_pb'
+import { Goal as Goals } from '../../api/types'
 
 import { goalNames, goalOf } from './goal'
 

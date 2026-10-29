@@ -1,0 +1,47 @@
+{
+  "vaults": [],
+  "day": "",
+  "counted": {
+    "id": "v1",
+    "name": "Garden",
+    "path": "/vaults/garden",
+    "reviewCards": 30,
+    "due": 10,
+    "new": 5,
+    "decks": [
+      {
+        "deck": "decks/Animals.md",
+        "reviewCards": 30,
+        "due": 10,
+        "new": 5,
+        "reviewed": 4,
+        "learned": 12,
+        "unbegun": 8
+      }
+    ],
+    "presets": [
+      {
+        "preset": "presets/Sanskrit.md",
+        "title": "Sanskrit",
+        "decks": 2,
+        "cards": 120,
+        "owedDue": 10,
+        "owedNew": 5,
+        "reviewed": 4,
+        "durationMs": 90000,
+        "reviewedNew": 1,
+        "reviewedReviews": 3,
+        "new": 8,
+        "reviews": 45,
+        "minutes": 20,
+        "closesNew": "",
+        "closesReviews": "",
+        "closesMinutes": "minutes_a_day",
+        "closesBacklog": "",
+        "stopsOn": "nothing"
+      }
+    ],
+    "unread": "",
+    "isIndexing": false
+  }
+}

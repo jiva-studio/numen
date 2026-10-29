@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
@@ -171,53 +171,53 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 	return ref, nil
 }
 
-func convertOutcomeToErrorCode(o edit.ReadOutcome) (flashcardsv1.ErrorCode, bool) {
+func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	switch o {
 	case edit.Missing:
-		return flashcardsv1.ErrorCode_ERROR_CODE_MISSING, true
+		return api.ErrorCodeMissing, true
 	case edit.NotANote:
-		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
+		return api.ErrorCodeNotANote, true
 	case edit.NotText:
-		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_TEXT, true
+		return api.ErrorCodeNotText, true
 	case edit.TooLarge:
-		return flashcardsv1.ErrorCode_ERROR_CODE_TOO_LARGE, true
+		return api.ErrorCodeTooLarge, true
 	case edit.Unreadable:
-		return flashcardsv1.ErrorCode_ERROR_CODE_UNREADABLE, true
+		return api.ErrorCodeUnreadable, true
 	case edit.Ok:
-		return flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+		return api.ErrorCodeUnspecified, false
 	}
-	return flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+	return api.ErrorCodeUnspecified, false
 }
 
-func describeCode(reason flashcardsv1.ErrorCode) string {
+func describeCode(reason api.ErrorCode) string {
 	switch reason {
-	case flashcardsv1.ErrorCode_ERROR_CODE_MISSING:
+	case api.ErrorCodeMissing:
 		return "the vault holds no note at this path"
-	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
+	case api.ErrorCodeNotANote:
 		return "this is not a note the vault holds"
-	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_TEXT:
+	case api.ErrorCodeNotText:
 		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
-	case flashcardsv1.ErrorCode_ERROR_CODE_TOO_LARGE:
+	case api.ErrorCodeTooLarge:
 		return fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes)
-	case flashcardsv1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
+	case api.ErrorCodeBodyUnwritable:
 		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
-	case flashcardsv1.ErrorCode_ERROR_CODE_UNREADABLE:
+	case api.ErrorCodeUnreadable:
 		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	case flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
+	case api.ErrorCodeAlreadyExists:
 		return "a file is already where this note would go"
-	case flashcardsv1.ErrorCode_ERROR_CODE_INVALID_NAME:
+	case api.ErrorCodeInvalidName:
 		return "a note cannot be called this"
-	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL:
+	case api.ErrorCodeNotACardModel:
 		return "this note is not a card model"
-	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_DECK:
+	case api.ErrorCodeNotADeck:
 		return "this note is not a deck"
-	case flashcardsv1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:
+	case api.ErrorCodeDeckTooLarge:
 		return "this deck is larger than a deck is read at"
-	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET:
+	case api.ErrorCodeNotAPreset:
 		return "this note is not a preset"
-	case flashcardsv1.ErrorCode_ERROR_CODE_STALE:
+	case api.ErrorCodeStale:
 		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
 	default:
-		return reason.String()
+		return string(reason)
 	}
 }

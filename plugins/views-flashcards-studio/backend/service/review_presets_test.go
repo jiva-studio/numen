@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
@@ -31,40 +30,40 @@ var elsewhere = map[string]string{
 }
 
 // getDeckPreset is the preset one vault's deck is scheduled by.
-func getDeckPreset(t *testing.T, api *API, v domain.Vault, path string) *flashcardsv1.Preset {
+func getDeckPreset(t *testing.T, handler *API, v domain.Vault, path string) *api.Preset {
 	t.Helper()
-	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
-		&flashcardsv1.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: path}))
+	out, err := handler.GetVaultDeckPreset(t.Context(),
+		&api.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("%s failed: %v", path, out.Msg.GetError())
+	if out.Error != api.ErrorCodeUnspecified {
+		t.Fatalf("%s failed: %v", path, out.Error)
 	}
-	return out.Msg.GetPreset()
+	return out.Preset
 }
 
 // The preset a deck is scheduled by is the one the vault named in the request
 // holds. The window is over every vault at once, and the two decks here stand
 // at the same path.
 func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
-	api, target := newAPI(t, pointed, elsewhere)
+	handler, target := newAPI(t, pointed, elsewhere)
 	one, two := target[0], target[1]
 
-	first := getDeckPreset(t, api, one, "decks/Words.md")
-	if first.GetPath() != "Sanskrit.md" || first.GetTitle() != "Sanskrit" {
+	first := getDeckPreset(t, handler, one, "decks/Words.md")
+	if first.Path != "Sanskrit.md" || first.Title != "Sanskrit" {
 		t.Errorf("the first vault is scheduled by %+v", first)
 	}
-	if first.GetSettings().GetReviewsADay() != 45 {
-		t.Errorf("the first vault's settings are %+v", first.GetSettings())
+	if first.Settings.ReviewsADay != 45 {
+		t.Errorf("the first vault's settings are %+v", first.Settings)
 	}
 
-	second := getDeckPreset(t, api, two, "decks/Words.md")
-	if second.GetPath() != "Grammar.md" || second.GetTitle() != "Grammar" {
+	second := getDeckPreset(t, handler, two, "decks/Words.md")
+	if second.Path != "Grammar.md" || second.Title != "Grammar" {
 		t.Errorf("the second vault is scheduled by %+v", second)
 	}
-	if second.GetSettings().GetReviewsADay() != 11 {
-		t.Errorf("the second vault's settings are %+v", second.GetSettings())
+	if second.Settings.ReviewsADay != 11 {
+		t.Errorf("the second vault's settings are %+v", second.Settings)
 	}
 }
 
@@ -88,7 +87,7 @@ const typedManually = "---\ntype: deck\nlinks:\n" +
 // writes is level in the index by the time the session is handed over. Nothing
 // else is running over the vault, and nothing rescans it.
 func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
-	api, target := newAPI(t, handwritten)
+	handler, target := newAPI(t, handwritten)
 	v := target[0]
 
 	pos := filepath.Join(v.Path, "decks", "Words.md")
@@ -97,11 +96,11 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 	}
 
 	// The index still holds the deck as it was scanned, so it names no preset.
-	if before := getDeckPreset(t, api, v, "decks/Words.md"); before.GetPath() != "" {
+	if before := getDeckPreset(t, handler, v, "decks/Words.md"); before.Path != "" {
 		t.Fatalf("the deck already is under %+v", before)
 	}
 
-	startSession(t, api, v)
+	startSession(t, handler, v)
 
 	content, err := os.ReadFile(pos)
 	if err != nil {
@@ -111,8 +110,8 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 		t.Fatalf("the card was given no card id: %q", content)
 	}
 
-	after := getDeckPreset(t, api, v, "decks/Words.md")
-	if after.GetPath() != "Sanskrit.md" || after.GetTitle() != "Sanskrit" {
+	after := getDeckPreset(t, handler, v, "decks/Words.md")
+	if after.Path != "Sanskrit.md" || after.Title != "Sanskrit" {
 		t.Errorf("the deck is under %+v", after)
 	}
 }
@@ -120,11 +119,11 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 // A question about the presets of a vault this installation does not hold is
 // rejected, and nothing is read for it.
 func TestAQuestionAboutThePresetsOfAVaultNobodyContainsIsRefused(t *testing.T) {
-	api, _ := newAPI(t, pointed)
+	handler, _ := newAPI(t, pointed)
 
-	_, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
-		&flashcardsv1.GetVaultDeckPresetRequest{Vault: "nobody", Deck: "decks/Words.md"}))
-	if connect.CodeOf(err) != connect.CodeNotFound {
+	_, err := handler.GetVaultDeckPreset(t.Context(),
+		&api.GetVaultDeckPresetRequest{Vault: "nobody", Deck: "decks/Words.md"})
+	if codeOf(err) != server.CodeNotFound {
 		t.Errorf("reading answered %v", err)
 	}
 }
@@ -139,12 +138,12 @@ func (brokenPresetLinks) GetLinks(context.Context, domain.VaultID, string) ([]do
 // The index being out of reach is an internal failure and not a deck on the
 // defaults.
 func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
-	api, target := newAPI(t, pointed)
-	api.scenarios().flash.Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, api.scenarios().day, nil)
+	handler, target := newAPI(t, pointed)
+	handler.scenarios().flash.Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, handler.scenarios().day, nil)
 
-	_, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
-		&flashcardsv1.GetVaultDeckPresetRequest{Vault: string(target[0].ID), Deck: "decks/Words.md"}))
-	if code := connect.CodeOf(err); code != connect.CodeInternal {
+	_, err := handler.GetVaultDeckPreset(t.Context(),
+		&api.GetVaultDeckPresetRequest{Vault: string(target[0].ID), Deck: "decks/Words.md"})
+	if code := codeOf(err); code != server.CodeInternal {
 		t.Errorf("reading answered %v", err)
 	}
 }
@@ -152,22 +151,22 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 // A preset the deck names that cannot be read comes back rejected as the editor
 // refuses a note, and carries no preset.
 func TestGetVaultDeckPreset_UnreadablePresetMatchesEditorError(t *testing.T) {
-	api, target := newAPI(t, pointed)
+	handler, target := newAPI(t, pointed)
 	v := target[0]
 	if err := os.Remove(filepath.Join(v.Path, "Sanskrit.md")); err != nil {
 		t.Fatal(err)
 	}
 
-	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
-		&flashcardsv1.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: "decks/Words.md"}))
+	out, err := handler.GetVaultDeckPreset(t.Context(),
+		&api.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: "decks/Words.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetError(); got != flashcardsv1.ErrorCode_ERROR_CODE_MISSING {
+	if got := out.Error; got != api.ErrorCodeMissing {
 		t.Errorf("a preset that is not there fails as %v", got)
 	}
-	if out.Msg.GetPreset() != nil {
-		t.Errorf("a rejected preset came with %+v", out.Msg.GetPreset())
+	if out.Preset != nil {
+		t.Errorf("a rejected preset came with %+v", out.Preset)
 	}
 }
 
@@ -206,35 +205,35 @@ func newPresetName(preset string) *string { return &preset }
 
 // The window draws a tile per preset, and pressing one opens a session over the
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
-	api, target := newAPI(t, presetted)
+	handler, target := newAPI(t, presetted)
 	v := target[0]
 
-	out, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
+	out, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
 		Vault: string(v.ID), Preset: newPresetName("Steady.md"),
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	request := out.Msg.GetCards()
+	request := out.Cards
 	if len(request) != 2 {
 		t.Fatalf("a preset of two cards a day offered %d", len(request))
 	}
 	for _, one := range request {
-		if one.GetDeck() != "decks/Birds.md" {
-			t.Errorf("the session asked %s, which another preset schedules", one.GetDeck())
+		if one.Deck != "decks/Birds.md" {
+			t.Errorf("the session asked %s, which another preset schedules", one.Deck)
 		}
 	}
 }
 
 // Which cards were meant is a question, and the window is asked it again.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
-	api, target := newAPI(t, presetted)
+	handler, target := newAPI(t, presetted)
 	v := target[0]
 
-	_, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
+	_, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
 		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: newPresetName("Steady.md"),
-	}))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+	})
+	if codeOf(err) != server.CodeInvalidArgument {
 		t.Fatalf("a deck and a preset together were answered with %v", err)
 	}
 }
@@ -259,16 +258,16 @@ func TestWatchCardsDue_ReturnsStoppedReasonPerPreset(t *testing.T) {
 		"decks/Birds.md":  assigned("Steady", "3f4g5h6j7k"),
 		"decks/Rivers.md": assigned("Quiet", "zpqrstvwxy"),
 	}
-	api, _ := newAPI(t, stoppedPresetFiles)
+	handler, _ := newAPI(t, stoppedPresetFiles)
 
-	got := make(map[string]flashcardsv1.StopReason)
-	for _, one := range front(t, api).GetVaults()[0].GetPresets() {
-		got[one.GetPreset()] = one.GetStopsOn()
+	got := make(map[string]api.StopReason)
+	for _, one := range front(t, handler).Vaults[0].Presets {
+		got[one.Preset] = one.StopsOn
 	}
-	want := map[string]flashcardsv1.StopReason{
-		"Steady.md": flashcardsv1.StopReason_STOP_REASON_NOTHING,
-		"Quiet.md":  flashcardsv1.StopReason_STOP_REASON_NO_MINUTES,
-		"Lonely.md": flashcardsv1.StopReason_STOP_REASON_NO_CARDS,
+	want := map[string]api.StopReason{
+		"Steady.md": api.StopReasonNothing,
+		"Quiet.md":  api.StopReasonNoMinutes,
+		"Lonely.md": api.StopReasonNoCards,
 	}
 	for path, why := range want {
 		if got[path] != why {
@@ -280,38 +279,38 @@ func TestWatchCardsDue_ReturnsStoppedReasonPerPreset(t *testing.T) {
 // The preset a deck is scheduled by carries the same verdict, which is what a
 // window has before any curve exists.
 func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
-	api, target := newAPI(t, map[string]string{
+	handler, target := newAPI(t, map[string]string{
 		"Term.md": deck["Term.md"],
 		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\n" +
 			"minutes_a_day: 0\n---\n\n# Quiet\n",
 		"decks/Birds.md": newWordDeck("Quiet", 2, 0),
 	})
 
-	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
-		&flashcardsv1.GetVaultDeckPresetRequest{
+	out, err := handler.GetVaultDeckPreset(t.Context(),
+		&api.GetVaultDeckPresetRequest{
 			Vault: string(target[0].ID), Deck: "decks/Birds.md",
-		}))
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
-	one := out.Msg.GetPreset()
-	if got := one.GetStops(); got != flashcardsv1.StopReason_STOP_REASON_NO_MINUTES {
+	one := out.Preset
+	if got := one.Stops; got != api.StopReasonNoMinutes {
 		t.Errorf("the preset schedules nothing for %v", got)
 	}
-	if got := one.GetStopsOn(); got != flashcardsv1.StopReason_STOP_REASON_NO_MINUTES {
+	if got := one.StopsOn; got != api.StopReasonNoMinutes {
 		t.Errorf("the day schedules nothing for %v", got)
 	}
 }
 
 // window shows in place of an empty session.
 func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
-	api, target := newAPI(t, presetted)
+	handler, target := newAPI(t, presetted)
 	v := target[0]
 
-	_, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
+	_, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
 		Vault: string(v.ID), Preset: newPresetName("Lonely.md"),
-	}))
-	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+	})
+	if codeOf(err) != server.CodeFailedPrecondition {
 		t.Fatalf("a preset nothing points at was answered with %v", err)
 	}
 	if !strings.Contains(err.Error(), "no deck") {

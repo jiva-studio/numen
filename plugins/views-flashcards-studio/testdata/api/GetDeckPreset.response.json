@@ -1,0 +1,61 @@
+{
+  "preset": {
+    "path": "presets/Sanskrit.md",
+    "title": "Sanskrit",
+    "settings": {
+      "goal": "minutes_a_day",
+      "byDate": "",
+      "minutesADay": 20,
+      "newADay": 8,
+      "reviewsADay": 45,
+      "retention": 0.87,
+      "hasEvenLoad": true,
+      "counts": "cards",
+      "backlog": 0,
+      "load": {
+        "sat": 50,
+        "sun": 0
+      },
+      "learned": "interval",
+      "interval": 21
+    },
+    "problems": [],
+    "stops": "",
+    "stopsOn": "nothing"
+  },
+  "at": {
+    "path": "decks/Animals.md",
+    "size": 412,
+    "mtime": "1767225600123456789"
+  },
+  "bounds": {
+    "minutesADay": {
+      "min": 1,
+      "max": 240
+    },
+    "newADay": {
+      "min": 0,
+      "max": 200
+    },
+    "reviewsADay": {
+      "min": 0,
+      "max": 1000
+    },
+    "retention": {
+      "min": 0.7,
+      "max": 0.99
+    },
+    "backlog": {
+      "min": 0,
+      "max": 365
+    },
+    "interval": {
+      "min": 1,
+      "max": 365
+    },
+    "load": {
+      "min": 0,
+      "max": 100
+    }
+  }
+}

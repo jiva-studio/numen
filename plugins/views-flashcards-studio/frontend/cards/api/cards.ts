@@ -2,7 +2,8 @@
  * The decks and the card models a vault holds, as the window asks for them and as
  * they come back.
  */
-import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/plugin-sdk'
+import { formatFingerprint, parseFingerprint } from '../../api/fingerprint'
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { cardsService } from './clients'
 import type { Cards, DeckService, CardModelService } from '../types'
@@ -25,7 +26,7 @@ export const deckService: DeckService = {
   },
   readDeck: async (path) => {
     const answer = await cardsService.readDeck({ path })
-    const linked = Number(answer.bound)
+    const linked = answer.bound
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code || !answer.deck) return asFailure({ code: code ?? 'notADeck', bound: linked })
     return asValue({ deck: deserializeDeck(answer.deck), at: formatFingerprint(answer.at) ?? '' })
@@ -43,7 +44,7 @@ export const deckService: DeckService = {
       ...(observed === null ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
-    if (code) return asFailure({ code, bound: Number(answer.bound) })
+    if (code) return asFailure({ code, bound: answer.bound })
     return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
 }

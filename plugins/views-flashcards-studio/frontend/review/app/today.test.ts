@@ -5,7 +5,7 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../api/types.js'
 import { DEFAULT_SETTINGS, formatSettings } from '../../cards/wire/settings'
 import type { SettingsMessage } from '../../cards/wire/settings'
 

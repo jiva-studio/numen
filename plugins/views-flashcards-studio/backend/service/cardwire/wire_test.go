@@ -1,12 +1,11 @@
 package cardwire
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
-
-	"google.golang.org/protobuf/proto"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
@@ -15,10 +14,22 @@ import (
 
 func ptr(n int32) *int32 { return &n }
 
-func requireEqual(t *testing.T, got, want proto.Message) {
+// requireEqual fails unless got and want encode to the same JSON, an absent collection counting as
+// an empty one.
+func requireEqual(t *testing.T, got, want any) {
 	t.Helper()
-	if !proto.Equal(got, want) {
-		t.Errorf("got %v\nwant %v", got, want)
+	api.FillCollections(got)
+	api.FillCollections(want)
+	encodedGot, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	encodedWant, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(encodedGot) != string(encodedWant) {
+		t.Errorf("got %s\nwant %s", encodedGot, encodedWant)
 	}
 }
 
@@ -33,14 +44,14 @@ func TestACardModelGoesOutWithItsTemplatesAndProblems(t *testing.T) {
 		},
 		Problems: []format.Problem{{Fault: format.FaultNoFields, Card: format.NoPosition, Template: 1, Field: "Front", Detail: "d"}},
 	})
-	requireEqual(t, got, &flashcardsv1.CardModel{
+	requireEqual(t, got, &api.CardModel{
 		Path: "card-models/basic.md", Title: "Basic", Fields: []string{"Front", "Back"},
 		Preamble: "above", Tail: "below",
-		Templates: []*flashcardsv1.CardTemplate{
+		Templates: []*api.CardTemplate{
 			{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 			{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 		},
-		Problems: []*flashcardsv1.Problem{{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_MODEL_WITHOUT_FIELDS, Template: ptr(1), Field: "Front", Text: "d"}},
+		Problems: []*api.Problem{{Kind: api.ProblemKindCardModelWithoutFields, Template: ptr(1), Field: "Front", Text: "d"}},
 	})
 }
 
@@ -59,11 +70,11 @@ func TestACardModelWithoutProblemsCarriesNone(t *testing.T) {
 
 func TestACardModelSummaryGoesOutWhole(t *testing.T) {
 	got := NewWireSummary(cards.CardModelSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
-	requireEqual(t, got, &flashcardsv1.CardModelSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
+	requireEqual(t, got, &api.CardModelSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
 }
 
 func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
-	pos := &flashcardsv1.FileStat{}
+	pos := &api.FileStat{}
 	got := NewRenameResponse(cards.RenameResult{
 		Decks: []string{"a.md"},
 		Cards: 7,
@@ -72,11 +83,11 @@ func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
 			{Path: "y.md", Problem: format.Problem{Fault: format.FaultNoFields, Card: 2, Template: format.NoPosition}},
 		},
 	}, pos)
-	requireEqual(t, got, &flashcardsv1.RenameCardModelFieldResponse{
+	requireEqual(t, got, &api.RenameCardModelFieldResponse{
 		Decks: []string{"a.md"}, Cards: 7, At: pos,
-		NotWritten: []*flashcardsv1.UnwrittenDeck{
-			{Path: "x.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE}},
-			{Path: "y.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_MODEL_WITHOUT_FIELDS, Card: ptr(2)}},
+		NotWritten: []*api.UnwrittenDeck{
+			{Path: "x.md", Problem: &api.Problem{Kind: api.ProblemKindFieldDeclaredTwice}},
+			{Path: "y.md", Problem: &api.Problem{Kind: api.ProblemKindCardModelWithoutFields, Card: ptr(2)}},
 		},
 	})
 }
@@ -91,13 +102,13 @@ func TestADeckGoesOutWithItsSectionsCardsAndValues(t *testing.T) {
 			{Heading: "h2", Section: 1, CardModelLink: "other"},
 		},
 	}, map[string]string{"basic": "card-models/basic.md"})
-	requireEqual(t, got, &flashcardsv1.Deck{
+	requireEqual(t, got, &api.Deck{
 		Path: "decks/a.md", Title: "A", Preamble: "above", Tail: "below",
-		Sections: []*flashcardsv1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
-		Cards: []*flashcardsv1.Card{
-			{Heading: "h1", CardId: "m1", CardModelLink: "basic", CardModelPath: "card-models/basic.md", Preamble: "c1",
-				Values: []*flashcardsv1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
-			{Heading: "h2", SectionIndex: ptr(1), CardModelLink: "other", Values: []*flashcardsv1.Value{}},
+		Sections: []*api.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
+		Cards: []*api.Card{
+			{Heading: "h1", CardID: "m1", CardModelLink: "basic", CardModelPath: "card-models/basic.md", Preamble: "c1",
+				Values: []*api.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
+			{Heading: "h2", SectionIndex: ptr(1), CardModelLink: "other", Values: []*api.Value{}},
 		},
 	})
 }
@@ -110,12 +121,12 @@ func TestADeckWithNothingInItGoesOutWithEmptyLists(t *testing.T) {
 }
 
 func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
-	got := NewDeck(&flashcardsv1.WriteDeckRequest{
+	got := NewDeck(&api.WriteDeckRequest{
 		Preamble: "above", Tail: "below",
-		Sections: []*flashcardsv1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
-		Cards: []*flashcardsv1.Card{
-			{Heading: "h1", CardId: "m1", SectionIndex: ptr(1), CardModelLink: "basic", Preamble: "c1",
-				Values: []*flashcardsv1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
+		Sections: []*api.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
+		Cards: []*api.Card{
+			{Heading: "h1", CardID: "m1", SectionIndex: ptr(1), CardModelLink: "basic", Preamble: "c1",
+				Values: []*api.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2"},
 		},
 	})
@@ -134,18 +145,18 @@ func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 }
 
 func TestADeckReachesInWithoutCardsOrSections(t *testing.T) {
-	got := NewDeck(&flashcardsv1.WriteDeckRequest{})
+	got := NewDeck(&api.WriteDeckRequest{})
 	if got.Cards != nil || got.Sections != nil {
 		t.Errorf("cards %v, sections %v", got.Cards, got.Sections)
 	}
-	one := NewDeck(&flashcardsv1.WriteDeckRequest{Cards: []*flashcardsv1.Card{{Heading: "h"}}})
+	one := NewDeck(&api.WriteDeckRequest{Cards: []*api.Card{{Heading: "h"}}})
 	if len(one.Cards) != 1 {
 		t.Errorf("a single card came in as %d", len(one.Cards))
 	}
 }
 
 func TestTemplatesComeIn(t *testing.T) {
-	got := NewTemplates([]*flashcardsv1.CardTemplate{
+	got := NewTemplates([]*api.CardTemplate{
 		{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 		{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 	})
@@ -159,7 +170,7 @@ func TestTemplatesComeIn(t *testing.T) {
 	if NewTemplates(nil) != nil {
 		t.Error("no templates came in as a list")
 	}
-	if len(NewTemplates([]*flashcardsv1.CardTemplate{{Name: "x"}})) != 1 {
+	if len(NewTemplates([]*api.CardTemplate{{Name: "x"}})) != 1 {
 		t.Error("a single template did not come in")
 	}
 }

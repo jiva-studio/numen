@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
-
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
@@ -22,177 +21,177 @@ type presetsHandler struct {
 // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 // answered with the defaults under no path.
 func (h *presetsHandler) GetDeckPreset(
-	ctx context.Context, r *connect.Request[flashcardsv1.GetDeckPresetRequest],
-) (*connect.Response[flashcardsv1.GetDeckPresetResponse], error) {
+	ctx context.Context, req *api.GetDeckPresetRequest,
+) (*api.GetDeckPresetResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().flash.Presets.GetForDeck(ctx, showing, r.Msg.GetDeck())
+	found, err := h.scenarios().flash.Presets.GetForDeck(ctx, showing, req.Deck)
 	if err != nil {
-		return nil, connect.NewError(getCode(err), err)
+		return nil, newError(getCode(err), err)
 	}
 
-	out := &flashcardsv1.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
+	out := &api.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
-		out.Error = &reason
-		return connect.NewResponse(out), nil
+		out.Error = reason
+		return out, nil
 	}
 	out.Preset = presetwire.ConvertPresetToWire(found, h.getTitle(ctx, showing, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
 	out.At = writeFileStat(found.FileStat)
-	return connect.NewResponse(out), nil
+	return out, nil
 }
 
 // ListPresets is every preset the vault holds, by path and by what it is
 // called. A deck's preset is chosen from this list, and from the defaults,
 // which are no note and are not in it.
 func (h *presetsHandler) ListPresets(
-	ctx context.Context, _ *connect.Request[flashcardsv1.ListPresetsRequest],
-) (*connect.Response[flashcardsv1.ListPresetsResponse], error) {
+	ctx context.Context, _ *api.ListPresetsRequest,
+) (*api.ListPresetsResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
 	target, err := h.scenarios().flash.Presets.List(ctx, showing)
 	if err != nil {
-		return nil, connect.NewError(getCode(err), err)
+		return nil, newError(getCode(err), err)
 	}
 
-	out := &flashcardsv1.ListPresetsResponse{Presets: make([]*flashcardsv1.PresetSummary, 0, len(target))}
+	out := &api.ListPresetsResponse{Presets: make([]*api.PresetSummary, 0, len(target))}
 	for _, one := range target {
-		out.Presets = append(out.Presets, &flashcardsv1.PresetSummary{Path: one.Path, Title: one.Title})
+		out.Presets = append(out.Presets, &api.PresetSummary{Path: one.Path, Title: one.Title})
 	}
-	return connect.NewResponse(out), nil
+	return out, nil
 }
 
 // CreatePreset puts a preset naming none of its settings in the vault. A key
 func (h *presetsHandler) CreatePreset(
-	ctx context.Context, r *connect.Request[flashcardsv1.CreatePresetRequest],
-) (*connect.Response[flashcardsv1.CreatePresetResponse], error) {
+	ctx context.Context, req *api.CreatePresetRequest,
+) (*api.CreatePresetResponse, error) {
 	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return h.scenarios().cards.Create.Preset(ctx, showing, in)
-	}, r.Msg.GetTitle(), r.Msg.GetPath())
+	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&flashcardsv1.CreatePresetResponse{
+	return &api.CreatePresetResponse{
 		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
-	}), nil
+	}, nil
 }
 
 // ScheduleDeck puts a deck on a preset. A deck still holding what the client
 // read is written; one holding something else is left alone and the client is
 // told the deck changed.
 func (h *presetsHandler) ScheduleDeck(
-	ctx context.Context, r *connect.Request[flashcardsv1.ScheduleDeckRequest],
-) (*connect.Response[flashcardsv1.ScheduleDeckResponse], error) {
+	ctx context.Context, req *api.ScheduleDeckRequest,
+) (*api.ScheduleDeckResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
 	pos, err := h.scenarios().flash.Presets.Point(
-		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), readFileStat(r.Msg.GetBaseline()))
+		ctx, showing, req.Deck, req.Preset, readFileStat(req.Baseline))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the file stat it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{
+		return &api.ScheduleDeckResponse{
 			At: writeFileStat(pos), IsUnlevelled: unlevelled,
-		}), nil
+		}, nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
-		reason := flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET
-		return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{Error: &reason}), nil
+		reason := api.ErrorCodeNotAPreset
+		return &api.ScheduleDeckResponse{Error: reason}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(getCode(err), err)
+		return nil, newError(getCode(err), err)
 	}
-	return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{Error: &reason}), nil
+	return &api.ScheduleDeckResponse{Error: reason}, nil
 }
 
 // ReadPreset is the settings of one preset.
 func (h *presetsHandler) ReadPreset(
-	ctx context.Context, r *connect.Request[flashcardsv1.ReadPresetRequest],
-) (*connect.Response[flashcardsv1.ReadPresetResponse], error) {
+	ctx context.Context, req *api.ReadPresetRequest,
+) (*api.ReadPresetResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().flash.Presets.Read(ctx, showing, r.Msg.GetPath())
+	found, err := h.scenarios().flash.Presets.Read(ctx, showing, req.Path)
 	if err != nil {
-		return nil, connect.NewError(getCode(err), err)
+		return nil, newError(getCode(err), err)
 	}
 
-	out := &flashcardsv1.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
+	out := &api.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
-		out.Error = &reason
-		return connect.NewResponse(out), nil
+		out.Error = reason
+		return out, nil
 	}
 	out.Preset = presetwire.ConvertPresetToWire(found, h.getTitle(ctx, showing, found.Path))
 	out.At = writeFileStat(found.FileStat)
-	return connect.NewResponse(out), nil
+	return out, nil
 }
 
 // WritePreset puts settings into a preset. A note still holding what the client
 // read is written; one holding something else is left alone and the client is
 // told the note changed.
 func (h *presetsHandler) WritePreset(
-	ctx context.Context, r *connect.Request[flashcardsv1.WritePresetRequest],
-) (*connect.Response[flashcardsv1.WritePresetResponse], error) {
+	ctx context.Context, req *api.WritePresetRequest,
+) (*api.WritePresetResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	settings, err := presetwire.ConvertSettingsFromWire(r.Msg.GetSettings())
+	settings, err := presetwire.ConvertSettingsFromWire(req.Settings)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, newError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.scenarios().flash.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, readFileStat(r.Msg.GetBaseline()))
+	pos, err := h.scenarios().flash.Presets.Save(ctx, showing, req.Path, settings, readFileStat(req.Baseline))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the file stat it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&flashcardsv1.WritePresetResponse{
+		return &api.WritePresetResponse{
 			At: writeFileStat(pos), IsUnlevelled: unlevelled,
-		}), nil
+		}, nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
 	if errors.Is(err, flashcards.ErrOutOfBounds) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, newError(server.CodeInvalidArgument, err)
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
-		reason := flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET
-		return connect.NewResponse(&flashcardsv1.WritePresetResponse{Error: &reason}), nil
+		reason := api.ErrorCodeNotAPreset
+		return &api.WritePresetResponse{Error: reason}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(getCode(err), err)
+		return nil, newError(getCode(err), err)
 	}
-	return connect.NewResponse(&flashcardsv1.WritePresetResponse{Error: &reason}), nil
+	return &api.WritePresetResponse{Error: reason}, nil
 }
 
 // ComputeCurve is what these settings come to over the whole range of the goal
 // they name. Nothing is written: what a curve is asked for is the value a
 // person is moving and has not settled.
 func (h *presetsHandler) ComputeCurve(
-	ctx context.Context, r *connect.Request[flashcardsv1.ComputeCurveRequest],
-) (*connect.Response[flashcardsv1.ComputeCurveResponse], error) {
+	ctx context.Context, req *api.ComputeCurveRequest,
+) (*api.ComputeCurveResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	settings, err := presetwire.ConvertSettingsFromWire(r.Msg.GetSettings())
+	settings, err := presetwire.ConvertSettingsFromWire(req.Settings)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, newError(server.CodeInvalidArgument, err)
 	}
-	target, err := h.scenarios().flash.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
+	target, err := h.scenarios().flash.Curves.Execute(ctx, showing, req.Path, settings)
 	if err != nil {
-		return nil, connect.NewError(getCode(err), err)
+		return nil, newError(getCode(err), err)
 	}
-	return connect.NewResponse(&flashcardsv1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(target)}), nil
+	return &api.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(target)}, nil
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { Code, ConnectError } from '@connectrpc/connect'
 import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 
+import { ApiFailure, CANCELED } from '../../api/failure'
 import { createNotices } from './notices'
 
 const createWindowNotices = () => {
@@ -23,7 +23,7 @@ describe('what the window has to say', () => {
 
   it('says trouble in the person’s own words, as an error', () => {
     const one = createWindowNotices()
-    one.reportError(new ConnectError('Vault unreadable', Code.Unavailable))
+    one.reportError(new ApiFailure({ code: 'unavailable', message: 'Vault unreadable' }))
 
     expect(one.host.getShown()).toEqual([{ text: 'Vault unreadable.', severity: 'error' }])
   })
@@ -33,10 +33,10 @@ describe('what the window has to say', () => {
   it('says an error without the wire it came over', () => {
     const one = createWindowNotices()
     one.reportError(
-      new ConnectError(
-        'this preset schedules nothing today: it is paused',
-        Code.FailedPrecondition,
-      ),
+      new ApiFailure({
+        code: 'failed_precondition',
+        message: 'this preset schedules nothing today: it is paused',
+      }),
     )
 
     expect(one.host.getShown()[0]!.text).toBe('This preset schedules nothing today: it is paused.')
@@ -44,7 +44,9 @@ describe('what the window has to say', () => {
 
   it('leaves a sentence that already ends where it ends', () => {
     const one = createWindowNotices()
-    one.reportError(new ConnectError('The deck could not be written.', Code.Unavailable))
+    one.reportError(
+      new ApiFailure({ code: 'unavailable', message: 'The deck could not be written.' }),
+    )
 
     expect(one.host.getShown()[0]!.text).toBe('The deck could not be written.')
   })
@@ -52,7 +54,10 @@ describe('what the window has to say', () => {
   it('ends a sentence whose only stop remains inside it', () => {
     const one = createWindowNotices()
     one.reportError(
-      new ConnectError('is the preset paused? failed to open', Code.FailedPrecondition),
+      new ApiFailure({
+        code: 'failed_precondition',
+        message: 'is the preset paused? failed to open',
+      }),
     )
 
     expect(one.host.getShown()[0]!.text).toBe('Is the preset paused? failed to open.')
@@ -60,7 +65,7 @@ describe('what the window has to say', () => {
 
   it('raises nothing for a call the window itself stopped', () => {
     const one = createWindowNotices()
-    one.reportError(new ConnectError('the window closed', Code.Canceled))
+    one.reportError(new ApiFailure(CANCELED))
 
     expect(one.host.getShown()).toHaveLength(0)
   })

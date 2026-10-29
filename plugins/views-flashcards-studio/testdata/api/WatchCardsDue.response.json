@@ -1,0 +1,17 @@
+{
+  "vaults": [
+    {
+      "id": "v1",
+      "name": "Garden",
+      "path": "/vaults/garden",
+      "reviewCards": 0,
+      "due": 0,
+      "new": 0,
+      "decks": [],
+      "presets": [],
+      "unread": "",
+      "isIndexing": false
+    }
+  ],
+  "day": "2026-03-04"
+}

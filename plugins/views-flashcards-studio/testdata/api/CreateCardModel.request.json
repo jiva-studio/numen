@@ -1,0 +1,5 @@
+{
+  "title": "Animal",
+  "path": "",
+  "fields": ["Name", "Height"]
+}

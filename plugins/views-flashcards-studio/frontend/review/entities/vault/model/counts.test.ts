@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../../../api/types.js'
 
 import { useReviewCounter } from './counts'
 import type { CardsDueClient, DueCounts, VaultCounts } from './counts'
@@ -20,10 +20,10 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
       cards: 3,
       owedDue: 2,
       owedNew: 1,
-      answered: 4,
-      answeredNew: 1,
-      answeredReviews: 3,
-      tookMs: 90000n,
+      reviewed: 4,
+      reviewedNew: 1,
+      reviewedReviews: 3,
+      durationMs: 90000,
       new: 8,
       reviews: 45,
       minutes: 20,

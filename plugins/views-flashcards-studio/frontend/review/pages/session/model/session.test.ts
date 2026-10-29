@@ -278,19 +278,19 @@ describe('a session', () => {
     one.show()
     await one.answer('good')
 
-    expect(asks[0]?.request).toMatchObject({ tookMs: 4200n })
+    expect(asks[0]?.request).toMatchObject({ durationMs: 4200 })
 
     clock += 3000
     one.show()
     await one.answer('good')
 
-    expect(asks[1]?.request).toMatchObject({ tookMs: 3000n })
+    expect(asks[1]?.request).toMatchObject({ durationMs: 3000 })
 
     await one.takeBack()
     clock += 1500
     await one.answer('good')
 
-    expect(asks[2]?.request).toMatchObject({ tookMs: 1500n })
+    expect(asks[2]?.request).toMatchObject({ durationMs: 1500 })
   })
 })
 
@@ -414,7 +414,7 @@ describe('the cards a session opens on', () => {
               front: '<p>Leaf mould</p>',
               back: '<p>Compost made of fallen leaves alone</p>',
               isNew: false,
-              intervals: { again: 60n, hard: 600n, good: 86400n, easy: 345600n },
+              intervals: { again: 60, hard: 600, good: 86400, easy: 345600 },
             },
           ],
           unwritten: [],
@@ -452,7 +452,7 @@ describe('a session keeping its own time', () => {
   it('measures card review duration using timer', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-01T09:00:00Z'))
-    const response: { tookMs: bigint }[] = []
+    const response: { durationMs: number }[] = []
     const cards: SessionClient = {
       async startSession() {
         return opening('one')
@@ -472,6 +472,6 @@ describe('a session keeping its own time', () => {
     one.show()
     await one.answer('good')
 
-    expect(response.map((one) => one.tookMs)).toEqual([3000n])
+    expect(response.map((one) => one.durationMs)).toEqual([3000])
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode } from '../../../../gen/numen/flashcards/v1/errors_pb.js'
-import { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
+import { ErrorCode } from '../../../../api/types.js'
+import { StopReason } from '../../../../api/types.js'
 import { DEFAULT_SETTINGS, formatSettings } from '../../../../cards/wire/settings'
 import type { SettingsMessage } from '../../../../cards/wire/settings'
 

@@ -10,10 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"connectrpc.com/connect"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
@@ -143,10 +142,10 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 	v, err := b.vault.GetVault(ctx)
 	if errors.Is(err, host.ErrNoVault) {
-		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+		return domain.Vault{}, newError(server.CodeFailedPrecondition, errNoVault)
 	}
 	if err != nil {
-		return domain.Vault{}, connect.NewError(connect.CodeInternal, err)
+		return domain.Vault{}, newError(server.CodeInternal, err)
 	}
 	return v, nil
 }
@@ -155,10 +154,10 @@ func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 func (b *Backend) getVault(ctx context.Context, id string) (domain.Vault, error) {
 	v, err := b.vault.With(domain.VaultID(id)).GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
-		return domain.Vault{}, connect.NewError(connect.CodeNotFound, err)
+		return domain.Vault{}, newError(server.CodeNotFound, err)
 	}
 	if err != nil {
-		return domain.Vault{}, connect.NewError(connect.CodeInternal, err)
+		return domain.Vault{}, newError(server.CodeInternal, err)
 	}
 	return v, nil
 }

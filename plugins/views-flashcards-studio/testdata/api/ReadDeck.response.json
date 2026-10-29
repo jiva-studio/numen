@@ -1,0 +1,55 @@
+{
+  "deck": {
+    "path": "decks/Animals.md",
+    "title": "Animals",
+    "preamble": "about the deck",
+    "cards": [
+      {
+        "cardId": "k7m2xq9fzp",
+        "sectionIndex": 0,
+        "heading": "Llama",
+        "cardModelLink": "Animal",
+        "preamble": "",
+        "values": [
+          {
+            "field": "Name",
+            "text": "Llama"
+          },
+          {
+            "field": "Height",
+            "text": "about 45\""
+          }
+        ],
+        "cardModelPath": "Animal.md"
+      },
+      {
+        "cardId": "3n8vr4tqch",
+        "heading": "Alpaca",
+        "cardModelLink": "",
+        "preamble": "prose",
+        "values": []
+      }
+    ],
+    "sections": [
+      {
+        "name": "Camelids",
+        "preamble": ""
+      }
+    ],
+    "problems": [
+      {
+        "kind": "card_without_a_card_model",
+        "card": 1,
+        "field": "",
+        "text": "the first paragraph is not a card model link"
+      }
+    ],
+    "tail": ""
+  },
+  "at": {
+    "path": "decks/Animals.md",
+    "size": 412,
+    "mtime": "1767225600123456789"
+  },
+  "bound": 0
+}

@@ -7,7 +7,7 @@ const contract = ['plugin-sdk', 'ui']
 
 export default [
   {
-    ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'frontend/gen/**', 'stories/.storybook/**'],
+    ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'stories/.storybook/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

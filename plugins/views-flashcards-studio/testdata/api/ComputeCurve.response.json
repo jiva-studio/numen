@@ -1,0 +1,37 @@
+{
+  "curve": {
+    "goal": "minutes_a_day",
+    "grid": [5, 10, 20],
+    "days": ["2026-03-01", "2026-03-02"],
+    "at": [
+      {
+        "reviews": 45,
+        "minutes": 20.5,
+        "retained": 0.9,
+        "owed": 12,
+        "through": 0.5,
+        "isEnough": true,
+        "closed": ["minutes_a_day"],
+        "clears": 30,
+        "backlog": [3, 2, 1],
+        "learned": 40,
+        "learns": 55,
+        "short": 0
+      }
+    ],
+    "now": {
+      "at": 3,
+      "value": 20,
+      "day": "2026-03-04"
+    },
+    "suggested": {
+      "at": 3,
+      "value": 20,
+      "day": "2026-03-04"
+    },
+    "decks": 2,
+    "cards": 120,
+    "overdue": 4,
+    "unbegun": 30
+  }
+}

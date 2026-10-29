@@ -41,7 +41,7 @@ export const getDeckNeighbourhood = async (
   const answer = await cards.getDeckNeighbourhood({ vault, deck })
   return {
     notes: answer.notes.map((one) => ({
-      written: one.written,
+      written: one.address,
       path: one.path,
       title: one.title,
       body: one.body,

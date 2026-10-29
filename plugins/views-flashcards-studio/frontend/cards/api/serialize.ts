@@ -4,7 +4,7 @@ import {
   type Deck as DeckMessage,
   type Problem as ProblemMessage,
   type CardModel as CardModelMessage,
-} from '../../gen/numen/flashcards/v1/cards_pb.js'
+} from '../../api/types.js'
 import type {
   ProblemKind,
   DeckProblem,
@@ -53,7 +53,7 @@ export const deserializeCard = (one: CardMessage): VaultCard => ({
   sectionIndex: one.sectionIndex ?? null,
   heading: one.heading,
   cardModelLink: one.cardModelLink,
-  cardModelPath: one.cardModelPath,
+  cardModelPath: one.cardModelPath ?? '',
   preamble: one.preamble,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
 })

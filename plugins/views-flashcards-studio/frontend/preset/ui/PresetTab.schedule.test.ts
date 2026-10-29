@@ -4,7 +4,7 @@
  * A goal draws the settings it schedules by and no others, and a preset with
  * nothing to work on says so where the picture would stand.
  */
-import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../api/types.js'
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'

@@ -19,8 +19,8 @@ const replyWith = (answer: unknown) => {
   request = []
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (_url: string, init: { body: Uint8Array }) => {
-      request.push(JSON.parse(new TextDecoder().decode(init.body)))
+    vi.fn(async (_url: string, init: { body: string }) => {
+      request.push(JSON.parse(init.body))
       return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
@@ -51,7 +51,7 @@ describe('the card models of a vault', () => {
 
     await cards.cardModels()
 
-    expect(request[0]).toEqual({})
+    expect(request[0]).toEqual({ limit: 0 })
   })
 })
 
@@ -66,7 +66,7 @@ describe('making a deck', () => {
   })
 
   it('carries the error in the words the window uses', async () => {
-    replyWith({ ok: false, error: 'ERROR_CODE_ALREADY_EXISTS' })
+    replyWith({ ok: false, error: 'already_exists' })
 
     const createdItem = await cards.createDeck('Words', 'Decks')
     expect(createdItem.ok ? null : createdItem.error).toBe('alreadyExists')
@@ -81,7 +81,7 @@ describe('making a card model', () => {
       ok: true,
       value: { path: 'Word.md' },
     })
-    expect(request[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })
+    expect(request[0]).toEqual({ title: 'Word', path: '', fields: ['Front', 'Back'] })
   })
 })
 
@@ -102,14 +102,21 @@ describe('reading a deck', () => {
             preamble: 'a note',
             values: [{ field: 'Front', text: '<p>Entropy</p>' }],
           },
-          { cardId: 'a2', heading: 'Order', cardModelLink: 'Word', cardModelPath: 'Word.md' },
+          {
+            cardId: 'a2',
+            heading: 'Order',
+            cardModelLink: 'Word',
+            cardModelPath: 'Word.md',
+            preamble: '',
+            values: [],
+          },
         ],
         sections: [{ name: 'Physics', preamble: '' }],
         tail: 'after',
         problems: [],
       },
-      at: { path: 'Deck.md', size: '12', mtime: '34' },
-      bound: '400',
+      at: { path: 'Deck.md', size: 12, mtime: '34' },
+      bound: 400,
     })
 
     const answer = await cards.readDeck('Deck.md')
@@ -121,7 +128,7 @@ describe('reading a deck', () => {
   })
 
   it('is no deck where the answer carries none', async () => {
-    replyWith({ error: 'ERROR_CODE_NOT_A_DECK' })
+    replyWith({ error: 'not_a_deck' })
 
     const answer = await cards.readDeck('Notes.md')
 
@@ -139,8 +146,8 @@ describe('reading a deck', () => {
         sections: [],
         tail: '',
         problems: [
-          { kind: 'PROBLEM_KIND_CARD_ID_CARRIED_TWICE', card: 2, field: '', text: 'a1' },
-          { kind: 'PROBLEM_KIND_CARD_WITHOUT_A_CARD_MODEL', field: 'Front', text: '' },
+          { kind: 'card_id_carried_twice', card: 2, field: '', text: 'a1' },
+          { kind: 'card_without_a_card_model', field: 'Front', text: '' },
         ],
       },
     })
@@ -155,7 +162,7 @@ describe('reading a deck', () => {
 
 describe('writing a deck', () => {
   it('takes the file the window read back apart into what the schema holds', async () => {
-    replyWith({ at: { path: 'Deck.md', size: '12', mtime: '34' }, bound: '400' })
+    replyWith({ at: { path: 'Deck.md', size: 12, mtime: '34' }, bound: 400 })
 
     await cards.writeDeck(
       'Deck.md',
@@ -178,8 +185,10 @@ describe('writing a deck', () => {
       readItem,
     )
 
-    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
-    expect(request[0]?.cards).toEqual([{ cardId: 'a1', heading: 'Entropy', cardModelLink: 'Word' }])
+    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: 12, mtime: '34' })
+    expect(request[0]?.cards).toEqual([
+      { cardId: 'a1', heading: 'Entropy', cardModelLink: 'Word', preamble: '', values: [] },
+    ])
   })
 
   it('names no file where the window read none', async () => {
@@ -191,7 +200,7 @@ describe('writing a deck', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ error: 'ERROR_CODE_STALE' })
+    replyWith({ error: 'stale' })
 
     const answer = await cards.writeDeck(
       'Deck.md',
@@ -215,7 +224,7 @@ describe('a card model', () => {
         tail: '',
         problems: [],
       },
-      at: { path: 'Word.md', size: '12', mtime: '34' },
+      at: { path: 'Word.md', size: 12, mtime: '34' },
     })
 
     const answer = await cards.readCardModel('Word.md')
@@ -225,13 +234,13 @@ describe('a card model', () => {
   })
 
   it('is no card model where the answer carries none', async () => {
-    replyWith({ error: 'ERROR_CODE_NOT_A_CARD_MODEL' })
+    replyWith({ error: 'not_a_card_model' })
 
     expect(await cards.readCardModel('Notes.md')).toEqual(asFailure('notACardModel'))
   })
 
   it('is written with its fields and its templates', async () => {
-    replyWith({ at: { path: 'Word.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Word.md', size: 12, mtime: '34' } })
 
     const answer = await cards.writeCardModel(
       'Word.md',
@@ -254,10 +263,8 @@ describe('renaming a field', () => {
     replyWith({
       decks: ['Words.md', 'Roots.md'],
       cards: 12,
-      notWritten: [
-        { path: 'Old.md', problem: { kind: 'PROBLEM_KIND_FIELD_NOT_RENAMED', text: 'Front' } },
-      ],
-      at: { path: 'Word.md', size: '12', mtime: '34' },
+      notWritten: [{ path: 'Old.md', problem: { kind: 'field_not_renamed', text: 'Front' } }],
+      at: { path: 'Word.md', size: 12, mtime: '34' },
     })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, readItem)).toEqual(

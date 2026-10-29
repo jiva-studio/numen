@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../../../api/types.js'
 
 import Decks from './Decks.vue'
 import Presets from './Presets.vue'

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../api/types.js'
 import { DEFAULTS, NO_BOUNDS, type Cards, type Presets } from '../../cards'
 import { openNotes } from '../../buffer'
 import { useDeckScheduleSync } from './useDeckScheduleSync'

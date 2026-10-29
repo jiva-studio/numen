@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 )
 
@@ -56,21 +56,21 @@ func (b *Backend) newCreateRun(
 		if err != nil {
 			return command.Result{}, err
 		}
-		if code != nil {
-			return command.Result{}, errors.New(describeCreateError(*code))
+		if code != api.ErrorCodeUnspecified {
+			return command.Result{}, errors.New(describeCreateError(code))
 		}
 		return command.Result{OpenedPath: made.Path}, nil
 	}
 }
 
 // describeCreateError is why a file was not made, in words a person reads.
-func describeCreateError(code flashcardsv1.ErrorCode) string {
+func describeCreateError(code api.ErrorCode) string {
 	switch code {
-	case flashcardsv1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
+	case api.ErrorCodeAlreadyExists:
 		return "something of that name is filed there already, so nothing was written"
-	case flashcardsv1.ErrorCode_ERROR_CODE_INVALID_NAME:
+	case api.ErrorCodeInvalidName:
 		return "a note cannot be called that"
 	default:
-		return "the file could not be made: " + code.String()
+		return "the file could not be made: " + string(code)
 	}
 }

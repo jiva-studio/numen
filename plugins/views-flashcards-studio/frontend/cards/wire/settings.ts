@@ -2,15 +2,11 @@
  * The settings of a preset in the windows' own words, and the message they are
  * read from and written to. Both windows map the message through here.
  */
-import {
-  BudgetUnit as BudgetUnits,
-  Goal as Goals,
-  Rule as Rules,
-} from '../../gen/numen/flashcards/v1/presets_pb'
+import { BudgetUnit as BudgetUnits, Goal as Goals, Rule as Rules } from '../../api/types'
 
 import { goalNames, goalOf } from './goal'
 import type { Goal } from './goal'
-import { getNames } from '@numen/plugin-sdk'
+import { getNames } from '../../api/names'
 
 /** The unit a day's budget is spent in. */
 export type BudgetUnit = 'cards' | 'shows'

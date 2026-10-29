@@ -1,0 +1,24 @@
+{
+  "notes": [
+    {
+      "address": "Camelids",
+      "path": "notes/Camelids.md",
+      "title": "Camelids",
+      "body": "Llamas and alpacas.",
+      "label": "see",
+      "isPointedAt": true,
+      "isAmbiguous": false
+    },
+    {
+      "address": "Gone",
+      "path": "",
+      "title": "",
+      "body": "",
+      "label": "",
+      "isPointedAt": true,
+      "isAmbiguous": false,
+      "error": "missing"
+    }
+  ],
+  "unread": 0
+}

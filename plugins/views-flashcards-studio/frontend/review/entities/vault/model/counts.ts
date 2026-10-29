@@ -9,7 +9,7 @@
  * follows on its own. A vault whose count has not arrived relies on the list
  */
 import { ref, shallowRef } from 'vue'
-import type { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
+import type { StopReason } from '../../../../api/types.js'
 
 import type { VaultCardsDue } from '../types'
 
@@ -43,10 +43,10 @@ export interface VaultCounts {
     cards: number
     owedDue: number
     owedNew: number
-    answered: number
-    answeredNew: number
-    answeredReviews: number
-    tookMs: bigint
+    reviewed: number
+    reviewedNew: number
+    reviewedReviews: number
+    durationMs: number
     new: number
     reviews: number
     minutes: number
@@ -70,7 +70,7 @@ export interface DueCounts {
 }
 
 /** A length of time as the application holds one, which is in minutes. */
-const getMinutes = (ms: bigint): number => Number(ms) / 60000
+const getMinutes = (ms: number): number => ms / 60000
 
 export interface CountsDeps {
   cards: CardsDueClient
@@ -113,10 +113,10 @@ const createCountedVault = (one: VaultCounts): VaultCardsDue => ({
     decks: preset.decks,
     cards: preset.cards,
     owed: preset.owedDue + preset.owedNew,
-    answered: preset.answered,
-    answeredNew: preset.answeredNew,
-    answeredReviews: preset.answeredReviews,
-    took: getMinutes(preset.tookMs),
+    answered: preset.reviewed,
+    answeredNew: preset.reviewedNew,
+    answeredReviews: preset.reviewedReviews,
+    took: getMinutes(preset.durationMs),
     new: preset.new,
     reviews: preset.reviews,
     minutes: preset.minutes,

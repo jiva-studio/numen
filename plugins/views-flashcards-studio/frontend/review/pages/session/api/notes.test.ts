@@ -14,7 +14,7 @@ vi.mock('../../../shared/clients', () => ({
       return {
         notes: [
           {
-            written: 'Leaf mould',
+            address: 'Leaf mould',
             path: 'notes/Leaf mould.md',
             title: 'Leaf mould',
             body: 'Compost made of fallen leaves alone.',
@@ -24,7 +24,7 @@ vi.mock('../../../shared/clients', () => ({
             error: undefined,
           },
           {
-            written: 'Humus',
+            address: 'Humus',
             path: 'notes/Soil/Humus.md',
             title: 'Humus',
             body: '',

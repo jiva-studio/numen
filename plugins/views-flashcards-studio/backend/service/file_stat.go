@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 )
 
 // stamp is when a file last changed, as the schema carries it. Zero is a file nothing was said
@@ -25,18 +25,18 @@ func instant(nanos int64) time.Time {
 
 // writeFileStat is what a file was, as the schema carries it. A file nothing is known of is
 // carried as nothing.
-func writeFileStat(ref domain.FileStat) *flashcardsv1.FileStat {
+func writeFileStat(ref domain.FileStat) *api.FileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &flashcardsv1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &api.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
 // readFileStat is what a client says a file was when it read it. Nothing said is nothing
 // compared.
-func readFileStat(pos *flashcardsv1.FileStat) domain.FileStat {
+func readFileStat(pos *api.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
 	}
-	return domain.FileStat{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
+	return domain.FileStat{Path: pos.Path, Size: pos.Size, ModTime: instant(pos.Mtime)}
 }

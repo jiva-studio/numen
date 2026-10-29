@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { ErrorCode } from '../../gen/numen/flashcards/v1/errors_pb.js'
+import { ErrorCode } from '../../api/types.js'
 import { cardsService } from './clients'
 import { cards } from './cards'
 
@@ -23,11 +23,11 @@ vi.mock('./clients', () => ({
 }))
 
 /** A file the service stamped, and the one string the window carries it as. */
-const stampedAt = { path: 'Deck.md', size: 12n, mtime: 34n }
+const stampedAt = { path: 'Deck.md', size: 12, mtime: '34' }
 const carried = '12 34 Deck.md'
 
 /** A file the window read once, as the service takes it back. */
-const seenAt = { path: 'Deck.md', size: 12n, mtime: 34n }
+const seenAt = { path: 'Deck.md', size: 12, mtime: '34' }
 
 const deckMessage = {
   path: 'Deck.md',
@@ -104,25 +104,25 @@ describe('reading a deck', () => {
   })
 
   it('fails in the service words even where a deck came with them', async () => {
-    answer('readDeck', { error: ErrorCode.MISSING, deck: deckMessage, bound: 400n })
+    answer('readDeck', { error: ErrorCode.MISSING, deck: deckMessage, bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'missing', bound: 400 }))
   })
 
   it('fails in the service words where no deck came', async () => {
-    answer('readDeck', { error: ErrorCode.TOO_LARGE, bound: 900n })
+    answer('readDeck', { error: ErrorCode.TOO_LARGE, bound: 900 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'tooLarge', bound: 900 }))
   })
 
   it('is no deck where no deck and no error came', async () => {
-    answer('readDeck', { bound: 400n })
+    answer('readDeck', { bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'notADeck', bound: 400 }))
   })
 
   it('is changed where the file moved past what was requested', async () => {
-    answer('readDeck', { error: ErrorCode.STALE, bound: 400n })
+    answer('readDeck', { error: ErrorCode.STALE, bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'changed', bound: 400 }))
   })
@@ -164,7 +164,7 @@ describe('writing a deck', () => {
   })
 
   it('fails in the service words, with the bound', async () => {
-    answer('writeDeck', { error: ErrorCode.DECK_TOO_LARGE, bound: 700n })
+    answer('writeDeck', { error: ErrorCode.DECK_TOO_LARGE, bound: 700 })
 
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(
       asFailure({ code: 'deckTooLarge', bound: 700 }),

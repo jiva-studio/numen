@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
@@ -286,7 +286,7 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 		return WriteOutcome{}, fmt.Errorf("%s: %s", in.Path, current.Outcome)
 	}
 	if current.Type != format.TypeCardModel {
-		return WriteOutcome{}, errors.New(describeCode(flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL))
+		return WriteOutcome{}, errors.New(describeCode(api.ErrorCodeNotACardModel))
 	}
 	body, err := format.CardModelBody(current.Body.Preamble, newCardTemplates(in.Templates), current.Body.Tail)
 	if err != nil {

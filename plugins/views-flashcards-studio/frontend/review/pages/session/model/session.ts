@@ -11,6 +11,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 import { RATING_BY_GRADE } from '../../../entities/card'
+import type { Rating } from '../../../../api/types'
 import type { ReviewCard, Grade, Intervals } from '../../../entities/card'
 
 /** What a session asks of the application, and no more of it than that. */
@@ -25,8 +26,8 @@ export interface SessionClient {
     run: string
     cardId: string
     template: string
-    rating: number
-    tookMs: bigint
+    rating: Rating
+    durationMs: number
   }): Promise<{ answer: string }>
   takeBackAnswer(params: { vault: string; run: string; answer: string }): Promise<unknown>
 }
@@ -43,7 +44,7 @@ export interface SessionStart {
     front: string
     back: string
     isNew: boolean
-    intervals?: { again: bigint; hard: bigint; good: bigint; easy: bigint } | undefined
+    intervals?: { again: number; hard: number; good: number; easy: number } | undefined
   }[]
   unwritten: readonly string[]
   skipped: number
@@ -137,7 +138,7 @@ async function submitAnswer(deps: {
       cardId: deps.card.cardId,
       template: deps.card.template,
       rating: RATING_BY_GRADE[deps.how],
-      tookMs: BigInt(deps.elapsedMs),
+      durationMs: deps.elapsedMs,
     })
     return response.answer
   } catch (why) {
@@ -337,10 +338,10 @@ const createReviewCard = (one: SessionStart['cards'][number]): ReviewCard => ({
   isNew: one.isNew,
   ahead: one.intervals
     ? ({
-        again: Number(one.intervals.again),
-        hard: Number(one.intervals.hard),
-        good: Number(one.intervals.good),
-        easy: Number(one.intervals.easy),
+        again: one.intervals.again,
+        hard: one.intervals.hard,
+        good: one.intervals.good,
+        easy: one.intervals.easy,
       } satisfies Intervals)
     : null,
 })

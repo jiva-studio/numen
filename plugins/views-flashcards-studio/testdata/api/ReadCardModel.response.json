@@ -1,0 +1,30 @@
+{
+  "cardModel": {
+    "path": "Animal.md",
+    "title": "Animal",
+    "fields": ["Name", "Height"],
+    "templates": [
+      {
+        "name": "Recognise",
+        "front": "{{Name}}",
+        "back": "{{Height}}",
+        "preamble": ""
+      }
+    ],
+    "problems": [
+      {
+        "kind": "placeholder_undeclared",
+        "template": 0,
+        "field": "Weight",
+        "text": "Weight is not declared"
+      }
+    ],
+    "preamble": "",
+    "tail": ""
+  },
+  "at": {
+    "path": "Animal.md",
+    "size": 210,
+    "mtime": "1767225600000000001"
+  }
+}

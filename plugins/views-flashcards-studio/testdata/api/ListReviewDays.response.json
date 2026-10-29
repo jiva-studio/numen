@@ -1,0 +1,28 @@
+{
+  "days": [
+    {
+      "day": "2026-03-03",
+      "reviewed": 20,
+      "again": 2,
+      "hard": 3,
+      "good": 12,
+      "easy": 3,
+      "tested": 15,
+      "recalled": 13
+    }
+  ],
+  "due": [
+    {
+      "day": "2026-03-05",
+      "reviewed": 9,
+      "again": 0,
+      "hard": 0,
+      "good": 0,
+      "easy": 0,
+      "tested": 0,
+      "recalled": 0
+    }
+  ],
+  "streak": 4,
+  "reviewed": 120
+}

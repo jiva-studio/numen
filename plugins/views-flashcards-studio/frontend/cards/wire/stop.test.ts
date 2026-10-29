@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { StopReason, StopReasonSchema } from '../../gen/numen/flashcards/v1/presets_pb'
+import { StopReason } from '../../api/types'
 
 import { formatStopReasonMessage } from './stop'
 
-const SILENT = [StopReason.UNSPECIFIED, StopReason.NOTHING]
+const SILENT: StopReason[] = [StopReason.UNSPECIFIED, StopReason.NOTHING]
 
 describe('a stop reason', () => {
   it('says nothing for a preset that schedules', () => {
@@ -11,8 +11,7 @@ describe('a stop reason', () => {
   })
 
   it('has a clause of its own for every reason that stops', () => {
-    const values = StopReasonSchema.values
-      .map((value) => value.number as StopReason)
+    const values = Object.values(StopReason)
       .filter((reason) => !SILENT.includes(reason))
       .map((reason) => formatStopReasonMessage(reason))
     expect(values.every((one) => one !== '')).toBe(true)

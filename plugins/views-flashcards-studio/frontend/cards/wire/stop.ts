@@ -2,7 +2,7 @@
  * Why a preset schedules nothing, as a clause a window reads after something
  * that says which preset it is.
  */
-import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb'
+import { StopReason } from '../../api/types'
 
 /** The day and the weekday as a window words them; a reason that names a day reads them. */
 export interface StopDetail {

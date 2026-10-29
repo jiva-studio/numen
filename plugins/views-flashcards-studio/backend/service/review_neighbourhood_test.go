@@ -3,16 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"os"
 	"path/filepath"
 	"testing"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
@@ -34,19 +33,19 @@ var joined = map[string]string{
 // Reading around a deck reaches only the vaults this installation holds, and a
 // question about another fails.
 func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
-	api, _ := newAPI(t, joined)
+	handler, _ := newAPI(t, joined)
 
-	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
+	_, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
 		Vault: "no-vault-of-this-identity",
 		Deck:  "decks/Words.md",
-	}))
+	})
 	if err == nil {
 		t.Fatal("a vault this installation does not hold was read around")
 	}
-	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("failed with %v", connect.CodeOf(err))
+	if codeOf(err) != server.CodeNotFound {
+		t.Errorf("failed with %v", codeOf(err))
 	}
-	if !errors.Is(err, host.ErrUnknownVault) {
+	if !hasCause(err, host.ErrUnknownVault) {
 		t.Errorf("failed because %v", err)
 	}
 }
@@ -55,7 +54,7 @@ func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
 // editor names it, so a person meets one vocabulary for a rejected note and not
 // one for each window.
 func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
-	api, target := newAPI(t, joined)
+	handler, target := newAPI(t, joined)
 	v := target[0]
 
 	// The index still resolves the link; the file behind it is gone. That is
@@ -64,30 +63,30 @@ func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
+	out, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
 		Vault: string(v.ID), Deck: "decks/Words.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var found *flashcardsv1.DeckNeighbour
-	for _, one := range out.Msg.GetNotes() {
-		if one.GetPath() == "Mould.md" {
+	var found *api.DeckNeighbour
+	for _, one := range out.Notes {
+		if one.Path == "Mould.md" {
 			found = one
 		}
 	}
 	if found == nil {
-		t.Fatalf("the note the deck points at is not among %+v", out.Msg.GetNotes())
+		t.Fatalf("the note the deck points at is not among %+v", out.Notes)
 	}
-	if found.Error == nil {
+	if found.Error == api.ErrorCodeUnspecified {
 		t.Fatal("a note that is not there came back without an error")
 	}
-	if got := found.GetError(); got != flashcardsv1.ErrorCode_ERROR_CODE_MISSING {
+	if got := found.Error; got != api.ErrorCodeMissing {
 		t.Errorf("a note that is not there fails as %v", got)
 	}
-	if found.GetBody() != "" {
-		t.Errorf("a note that could not be read came with prose: %q", found.GetBody())
+	if found.Body != "" {
+		t.Errorf("a note that could not be read came with prose: %q", found.Body)
 	}
 }
 
@@ -112,14 +111,14 @@ var backlinked = map[string]string{
 // The index being out of reach is an internal failure and not an empty
 // neighbourhood.
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
-	api, target := newAPI(t, joined)
-	api.scenarios().neighbourhood = flashcards.NewShowNeighbourhood(
-		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(api.ports.Readers))
+	handler, target := newAPI(t, joined)
+	handler.scenarios().neighbourhood = flashcards.NewShowNeighbourhood(
+		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(handler.ports.Readers))
 
-	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
+	_, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",
-	}))
-	if code := connect.CodeOf(err); code != connect.CodeInternal {
+	})
+	if code := codeOf(err); code != server.CodeInternal {
 		t.Errorf("reading around answered %v", err)
 	}
 }
@@ -127,21 +126,21 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 // A note the deck points at is said to be pointed at, and a note pointing at
 // the deck is not. Every entry is a note of the vault.
 func TestGetDeckNeighbourhood_MarksOnlyDeckLinkedNotes(t *testing.T) {
-	api, target := newAPI(t, backlinked)
+	handler, target := newAPI(t, backlinked)
 
-	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
+	out, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	pointed := map[string]bool{}
-	for _, one := range out.Msg.GetNotes() {
-		if one.GetPath() == "" {
+	for _, one := range out.Notes {
+		if one.Path == "" {
 			t.Errorf("an entry stands for no note: %+v", one)
 		}
-		pointed[one.GetPath()] = one.GetIsPointedAt()
+		pointed[one.Path] = one.IsPointedAt
 	}
 	if is, found := pointed["Mould.md"]; !found || !is {
 		t.Errorf("the note the deck points at came back as %v (found %v)", is, found)

@@ -3,7 +3,7 @@ package presetwire
 import (
 	"testing"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
@@ -13,18 +13,17 @@ import (
 // it can travel, and the window's own table is keyed by the schema, so it is
 // asked for a word at the same moment.
 func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
-	target := map[flashcardsv1.BudgetName]review.BudgetName{
-		flashcardsv1.BudgetName_BUDGET_NAME_UNSPECIFIED:   review.ClosedNothing,
-		flashcardsv1.BudgetName_BUDGET_NAME_MINUTES_A_DAY: review.ClosedMinutes,
-		flashcardsv1.BudgetName_BUDGET_NAME_NEW_A_DAY:     review.ClosedNew,
-		flashcardsv1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY: review.ClosedReviews,
-		flashcardsv1.BudgetName_BUDGET_NAME_BY_DATE:       review.ClosedDate,
-		flashcardsv1.BudgetName_BUDGET_NAME_BACKLOG:       review.ClosedBacklog,
-		flashcardsv1.BudgetName_BUDGET_NAME_PAUSED:        review.ClosedPaused,
+	target := map[api.BudgetName]review.BudgetName{
+		api.BudgetNameUnspecified: review.ClosedNothing,
+		api.BudgetNameMinutesADay: review.ClosedMinutes,
+		api.BudgetNameNewADay:     review.ClosedNew,
+		api.BudgetNameReviewsADay: review.ClosedReviews,
+		api.BudgetNameByDate:      review.ClosedDate,
+		api.BudgetNameBacklog:     review.ClosedBacklog,
+		api.BudgetNamePaused:      review.ClosedPaused,
 	}
 
-	for value := range flashcardsv1.BudgetName_name {
-		named := flashcardsv1.BudgetName(value)
+	for _, named := range api.BudgetNameValues {
 		one, reply := target[named]
 		if !reply {
 			t.Errorf("the schema names %s and nothing in the core answers to it", named)
@@ -38,9 +37,9 @@ func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
 
 func TestTheBudgetsThatClosedADayTravelInTheOrderTheyWereNamed(t *testing.T) {
 	got := ConvertBudgetsToWire(review.BudgetNames{review.ClosedNew, review.ClosedReviews})
-	want := []flashcardsv1.BudgetName{
-		flashcardsv1.BudgetName_BUDGET_NAME_NEW_A_DAY,
-		flashcardsv1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY,
+	want := []api.BudgetName{
+		api.BudgetNameNewADay,
+		api.BudgetNameReviewsADay,
 	}
 
 	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {

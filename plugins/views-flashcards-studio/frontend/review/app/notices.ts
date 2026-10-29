@@ -5,7 +5,8 @@
  * error is said in the person's own words, and a call the window itself
  * stopped says nothing.
  */
-import { formatErrorMessage, type NoticeHost, type NoticeTask, type Severity } from '@numen/plugin-sdk'
+import { formatFailureMessage } from '../../api/failure'
+import type { NoticeHost, NoticeTask, Severity } from '@numen/plugin-sdk'
 
 export function createNotices(host: NoticeHost) {
   const showNotice = (text: string, severity: Severity) => host.show(text, severity)
@@ -15,7 +16,7 @@ export function createNotices(host: NoticeHost) {
    * nothing to say, and nothing is raised for it.
    */
   const reportError = (why: unknown) => {
-    const text = sentence(formatErrorMessage(why))
+    const text = sentence(formatFailureMessage(why))
     if (text) showNotice(text, 'error')
   }
 

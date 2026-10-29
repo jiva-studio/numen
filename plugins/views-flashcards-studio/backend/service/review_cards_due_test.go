@@ -2,16 +2,11 @@ package service
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
-
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -21,10 +16,10 @@ import (
 // reads every deck in it. So the vaults stand there by name and by where they
 // are, with nothing counted and nothing said about what they hold.
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
-	api, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, deck, other)
 
-	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
+	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
+		t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,22 +29,22 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	}
 
 	first := stream.Msg()
-	if first.GetDay() == "" {
+	if first.Day == "" {
 		t.Error("the vaults arrived in no day")
 	}
-	if first.GetCounted() != nil {
-		t.Errorf("a count stands beside the vaults: %+v", first.GetCounted())
+	if first.Counted != nil {
+		t.Errorf("a count stands beside the vaults: %+v", first.Counted)
 	}
-	if len(first.GetVaults()) != len(target) {
-		t.Fatalf("overview returned %d of %d vaults", len(first.GetVaults()), len(target))
+	if len(first.Vaults) != len(target) {
+		t.Fatalf("overview returned %d of %d vaults", len(first.Vaults), len(target))
 	}
-	for item, one := range first.GetVaults() {
-		if one.GetId() != string(target[item].ID) || one.GetName() == "" || one.GetPath() == "" {
+	for item, one := range first.Vaults {
+		if one.ID != string(target[item].ID) || one.Name == "" || one.Path == "" {
 			t.Errorf("the vault stands as %+v", one)
 		}
-		if one.GetReviewCards() != 0 || one.GetDue() != 0 || one.GetNew() != 0 ||
-			len(one.GetDecks()) != 0 || len(one.GetPresets()) != 0 || one.GetUnread() != "" {
-			t.Errorf("%s arrived counted: %+v", one.GetName(), one)
+		if one.ReviewCards != 0 || one.Due != 0 || one.New != 0 ||
+			len(one.Decks) != 0 || len(one.Presets) != 0 || one.Unread != "" {
+			t.Errorf("%s arrived counted: %+v", one.Name, one)
 		}
 	}
 }
@@ -57,14 +52,14 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 // Each vault's count is a message of its own, so a vault of fifty thousand
 // cards holds up nothing but itself.
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
-	api, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, deck, other)
 
 	// The vaults are read when the window opens them, and what a count evaluates to
 	// is what is under test here.
-	front(t, api)
+	front(t, handler)
 
-	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
+	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
+		t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,14 +71,14 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	counts := make(map[string]int, len(target))
 	for stream.Receive() {
 		response := stream.Msg()
-		if len(response.GetVaults()) != 0 {
-			t.Errorf("the vaults were listed again: %+v", response.GetVaults())
+		if len(response.Vaults) != 0 {
+			t.Errorf("the vaults were listed again: %+v", response.Vaults)
 		}
-		one := response.GetCounted()
-		if one.GetReviewCards() != 1 || one.GetNew() != 1 {
-			t.Errorf("%s comes to %+v", one.GetName(), one)
+		one := response.Counted
+		if one.ReviewCards != 1 || one.New != 1 {
+			t.Errorf("%s comes to %+v", one.Name, one)
 		}
-		counts[one.GetId()]++
+		counts[one.ID]++
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)
@@ -100,8 +95,8 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 // settings name, so between midnight and that hour the calendar has turned and
 // the day has not.
 func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
-	api, _ := newAPI(t, deck)
-	api.scenarios().day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
+	handler, _ := newAPI(t, deck)
+	handler.scenarios().day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {
 		currentTime time.Time
@@ -118,8 +113,8 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			api.now = func() time.Time { return c.currentTime }
-			if got := front(t, api).GetDay(); got != c.want {
+			handler.now = func() time.Time { return c.currentTime }
+			if got := front(t, handler).Day; got != c.want {
 				t.Errorf("at %v the counts stand in %q, want %q", c.currentTime, got, c.want)
 			}
 		})
@@ -141,51 +136,51 @@ var learnedDecks = map[string]string{
 // The count carries how much of each deck stands learned, so the deck screen
 // draws the core's own answer and works out no rule of its own.
 func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
-	api, target := newAPI(t, learnedDecks)
+	handler, target := newAPI(t, learnedDecks)
 	v := target[0]
-	setNow(api, firstMorning)
+	setNow(handler, firstMorning)
 
 	// One card of each deck answered, so the two decks differ by their rule
 	// alone and not by what was done to them.
-	session := startSession(t, api, v)
+	session := startSession(t, handler, v)
 	reply := map[string]bool{}
-	for _, one := range session.GetCards() {
-		if reply[one.GetDeck()] {
+	for _, one := range session.Cards {
+		if reply[one.Deck] {
 			continue
 		}
-		reply[one.GetDeck()] = true
-		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
-			Vault: string(v.ID), Run: session.GetRun(),
-			CardId: one.GetCardId(), Template: one.GetTemplate(),
-			Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 5000,
-		})); err != nil {
+		reply[one.Deck] = true
+		if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+			Vault: string(v.ID), Run: session.Run,
+			CardID: one.CardID, Template: one.Template,
+			Rating: api.RatingGood, DurationMs: 5000,
+		}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	setNow(api, firstMorning.Add(time.Minute))
+	setNow(handler, firstMorning.Add(time.Minute))
 
 	want := map[string]int32{"decks/Near.md": 1, "decks/Far.md": 0}
-	for _, one := range getVaultCount(t, api, v).GetDecks() {
-		if one.GetReviewCards() != 2 {
-			t.Errorf("%s has %d review cards, want 2", one.GetDeck(), one.GetReviewCards())
+	for _, one := range getVaultCount(t, handler, v).Decks {
+		if one.ReviewCards != 2 {
+			t.Errorf("%s has %d review cards, want 2", one.Deck, one.ReviewCards)
 		}
-		if one.GetLearned() != want[one.GetDeck()] {
+		if one.Learned != want[one.Deck] {
 			t.Errorf("%s has %d learned, want %d",
-				one.GetDeck(), one.GetLearned(), want[one.GetDeck()])
+				one.Deck, one.Learned, want[one.Deck])
 		}
 	}
 }
 
 // screen has a nought to draw.
 func TestVaultCount_UnansweredVaultHasZeroLearned(t *testing.T) {
-	api, target := newAPI(t, learnedDecks)
+	handler, target := newAPI(t, learnedDecks)
 	v := target[0]
-	setNow(api, firstMorning)
+	setNow(handler, firstMorning)
 
-	for _, one := range getVaultCount(t, api, v).GetDecks() {
-		if one.GetLearned() != 0 {
+	for _, one := range getVaultCount(t, handler, v).Decks {
+		if one.Learned != 0 {
 			t.Errorf("%s has %d learned before review",
-				one.GetDeck(), one.GetLearned())
+				one.Deck, one.Learned)
 		}
 	}
 }
@@ -203,22 +198,18 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	for range vaults {
 		target = append(target, benchDeck(cards))
 	}
-	api, all := newAPI(b, target...)
+	handler, all := newAPI(b, target...)
 	for _, v := range all {
-		benchAnswers(b, api, v, cards, days, perDay)
+		benchAnswers(b, handler, v, cards, days, perDay)
 	}
 
 	ctx := b.Context()
-	mux := http.NewServeMux()
-	mux.Handle(flashcardsv1connect.NewFlashcardsServiceHandler(api))
-	server := httptest.NewServer(mux)
-	b.Cleanup(server.Close)
-	client := flashcardsv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
+	client := reviewClient{reviewHandler: handler}
 
 	// The schedule caches are filled before the clock starts, which is what a
 	// person's second opening of a day costs.
 	for _, v := range all {
-		if _, err := api.scenarios().flash.CardsDue.Execute(ctx, v); err != nil {
+		if _, err := handler.scenarios().flash.CardsDue.Execute(ctx, v); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -226,14 +217,14 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	// A vault is read when the window opens it, and that is done before the
 	// clock starts: what is measured here is what counting one costs.
 	for _, v := range all {
-		for api.countVault(ctx, v).GetIsIndexing() {
+		for handler.countVault(ctx, v).IsIndexing {
 			time.Sleep(time.Millisecond)
 		}
 	}
 
 	b.Run("TheListOnScreen", func(b *testing.B) {
 		for b.Loop() {
-			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
+			stream, err := client.WatchCardsDue(ctx, &api.WatchCardsDueRequest{})
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -246,7 +237,7 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 
 	b.Run("EveryCountIn", func(b *testing.B) {
 		for b.Loop() {
-			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
+			stream, err := client.WatchCardsDue(ctx, &api.WatchCardsDueRequest{})
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -263,8 +254,8 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	b.Run("OneAfterAnother", func(b *testing.B) {
 		for b.Loop() {
 			for _, v := range all {
-				if one := api.countVault(ctx, v); one.GetUnread() != "" {
-					b.Fatal(one.GetUnread())
+				if one := handler.countVault(ctx, v); one.Unread != "" {
+					b.Fatal(one.Unread)
 				}
 			}
 		}
@@ -305,7 +296,7 @@ func benchMark(n int) string {
 
 // benchAnswers writes one run file for each of the last days days, each holding
 // perDay answers over the vault's cards.
-func benchAnswers(b *testing.B, api *API, v domain.Vault, cards, days, perDay int) {
+func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDay int) {
 	b.Helper()
 	ctx := b.Context()
 
@@ -313,7 +304,7 @@ func benchAnswers(b *testing.B, api *API, v domain.Vault, cards, days, perDay in
 	card := 0
 	for day := range days {
 		when := pos.Add(time.Duration(day) * 24 * time.Hour)
-		run, err := api.scenarios().flash.Log.Open(ctx, v, when)
+		run, err := handler.scenarios().flash.Log.Open(ctx, v, when)
 		if err != nil {
 			b.Fatal(err)
 		}

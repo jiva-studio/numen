@@ -7,7 +7,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
+import { StopReason } from '../../api/types.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { ErrorCode } from '../../cards/wire/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '../../cards'

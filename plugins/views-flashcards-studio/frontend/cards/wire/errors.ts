@@ -1,9 +1,9 @@
 /**
  * What a call over the card models, decks and presets failed on, in the words the
- * plugin's windows use. Every code of `numen.flashcards.v1.ErrorCode` is
+ * plugin's windows use. Every code of the API `ErrorCode` is
  * translated here into the plugin's own `ErrorCode`.
  */
-import { ErrorCode as ProtoErrorCode } from '../../gen/numen/flashcards/v1/errors_pb'
+import { ErrorCode as ProtoErrorCode } from '../../api/types'
 
 /** The error code a call of this plugin answers with. */
 export type ErrorCode =
@@ -23,7 +23,6 @@ export type ErrorCode =
 
 /** The code each schema code is, and nothing for `STALE`: the window asks the person about that one. */
 const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
-  [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
   [ProtoErrorCode.MISSING]: 'missing',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
   [ProtoErrorCode.NOT_TEXT]: 'notText',
@@ -58,7 +57,6 @@ export const ERRORS: Readonly<Record<ErrorCode, string>> = {
 
 /** What a schema code without a code of its own says. */
 const SCHEMA_ONLY_WORDS: Readonly<Partial<Record<ProtoErrorCode, string>>> = {
-  [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
   [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
 }
 

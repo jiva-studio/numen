@@ -1,18 +1,14 @@
 package service_test
 
 import (
-	"net/http"
-	"net/http/httptest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
-	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
-
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
@@ -24,7 +20,7 @@ import (
 // scheduling is a vault with the notes given in it, and a client asking about
 // its presets the way the window does.
 type scheduling struct {
-	client flashcardsv1connect.PresetsServiceClient
+	client service.PresetsAPI
 	root   string
 }
 
@@ -34,17 +30,8 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	env := vaulttest.New(t, notes)
 	backend := service.New(service.Config{Vault: env.Host, Store: env.Store})
 
-	route, handler := flashcardsv1connect.NewPresetsServiceHandler(backend.Presets())
-	mux := http.NewServeMux()
-	mux.Handle(route, handler)
-	server := httptest.NewUnstartedServer(mux)
-	server.EnableHTTP2 = true
-	server.StartTLS()
-	t.Cleanup(server.CloseClientConnections)
-	t.Cleanup(server.Close)
-
 	return &scheduling{
-		client: flashcardsv1connect.NewPresetsServiceClient(server.Client(), server.URL),
+		client: backend.Presets(),
 		root:   env.Vault.Path,
 	}
 }
@@ -68,15 +55,15 @@ var pointed = map[string]string{
 }
 
 // settings is what a preset holds, as a write hands them over.
-func settings() *flashcardsv1.Settings {
-	return &flashcardsv1.Settings{
-		Goal:        flashcardsv1.Goal_GOAL_MINUTES_A_DAY,
-		Counts:      flashcardsv1.BudgetUnit_BUDGET_UNIT_CARDS,
+func settings() *api.Settings {
+	return &api.Settings{
+		Goal:        api.GoalMinutesADay,
+		Counts:      api.BudgetUnitCards,
 		MinutesADay: 20,
 		NewADay:     8,
 		ReviewsADay: 45,
 		Retention:   0.87,
-		Learned:     flashcardsv1.Rule_RULE_INTERVAL,
+		Learned:     api.RuleInterval,
 		Interval:    21,
 		Load:        map[string]int32{"sat": 50, "sun": 0},
 		HasEvenLoad: true,
@@ -90,10 +77,10 @@ func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 
 	targetSettings := settings()
 	targetSettings.Retention = 1.5
-	_, err := f.client.WritePreset(t.Context(), connect.NewRequest(&flashcardsv1.WritePresetRequest{
+	_, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Sanskrit.md", Settings: targetSettings,
-	}))
-	if code := connect.CodeOf(err); code != connect.CodeInvalidArgument {
+	})
+	if code := codeOf(err); code != server.CodeInvalidArgument {
 		t.Errorf("a retention of 1.5 was answered %v", code)
 	}
 	if onDiskContent := onDisk(t, f.root, "Sanskrit.md"); onDiskContent != sanskrit {
@@ -104,9 +91,9 @@ func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&flashcardsv1.ReadPresetRequest{
+	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Sanskrit.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,14 +104,14 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 
 	targetSettings := settings()
 	targetSettings.MinutesADay = 35
-	answer, err := f.client.WritePreset(t.Context(), connect.NewRequest(&flashcardsv1.WritePresetRequest{
-		Path: "Sanskrit.md", Settings: targetSettings, Baseline: read.Msg.GetAt(),
-	}))
+	answer, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+		Path: "Sanskrit.md", Settings: targetSettings, Baseline: read.At,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
-		t.Errorf("a write over a preset the person had edited answered %+v", answer.Msg)
+	if answer.Error != api.ErrorCodeStale {
+		t.Errorf("a write over a preset the person had edited answered %+v", answer)
 	}
 	if onDiskContent := onDisk(t, f.root, "Sanskrit.md"); onDiskContent != concurrentEdit {
 		t.Errorf("the preset on disk is now %q", onDiskContent)
@@ -134,26 +121,26 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	answer, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckPresetRequest{
+	answer, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := answer.Error; code != api.ErrorCodeUnspecified {
 		t.Fatalf("a deck naming no preset failed %v", code)
 	}
-	if path := answer.Msg.GetPreset().GetPath(); path != "" {
+	if path := answer.Preset.Path; path != "" {
 		t.Errorf("a deck naming no preset was answered from %q", path)
 	}
-	actualSettings := answer.Msg.GetPreset().GetSettings()
-	if actualSettings.GetGoal() != flashcardsv1.Goal_GOAL_MINUTES_A_DAY {
-		t.Errorf("the defaults steer %v", actualSettings.GetGoal())
+	actualSettings := answer.Preset.Settings
+	if actualSettings.Goal != api.GoalMinutesADay {
+		t.Errorf("the defaults steer %v", actualSettings.Goal)
 	}
-	if actualSettings.GetMinutesADay() != 20 || actualSettings.GetNewADay() != 10 || actualSettings.GetReviewsADay() != 200 {
+	if actualSettings.MinutesADay != 20 || actualSettings.NewADay != 10 || actualSettings.ReviewsADay != 200 {
 		t.Errorf("the defaults are %+v", actualSettings)
 	}
-	if actualSettings.GetRetention() != 0.9 || !actualSettings.GetHasEvenLoad() {
+	if actualSettings.Retention != 0.9 || !actualSettings.HasEvenLoad {
 		t.Errorf("the defaults are %+v", actualSettings)
 	}
 }
@@ -168,16 +155,16 @@ func TestADeckWhosePresetLinkHasNoRoleIsReportedSo(t *testing.T) {
 			"## Root ^k7m2xq9fzp\n",
 	})
 
-	answer, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckPresetRequest{
+	answer, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Roots.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if path := answer.Msg.GetPreset().GetPath(); path != "" {
+	if path := answer.Preset.Path; path != "" {
 		t.Fatalf("a deck whose link has no role was answered from %q", path)
 	}
-	response := answer.Msg.GetPreset().GetProblems()
+	response := answer.Preset.Problems
 	if len(response) != 1 || !strings.Contains(response[0], "no role") {
 		t.Errorf("the deck is shown %v", response)
 	}
@@ -192,20 +179,20 @@ const counting = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
-	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&flashcardsv1.ReadPresetRequest{
+	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Shows.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	presetSettings := read.Msg.GetPreset().GetSettings()
-	if presetSettings.GetCounts() != flashcardsv1.BudgetUnit_BUDGET_UNIT_SHOWS {
-		t.Fatalf("the preset was read as counting %v", presetSettings.GetCounts())
+	presetSettings := read.Preset.Settings
+	if presetSettings.Counts != api.BudgetUnitShows {
+		t.Fatalf("the preset was read as counting %v", presetSettings.Counts)
 	}
 
-	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&flashcardsv1.WritePresetRequest{
-		Path: "Shows.md", Settings: presetSettings, Baseline: read.Msg.GetAt(),
-	})); err != nil {
+	if _, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+		Path: "Shows.md", Settings: presetSettings, Baseline: read.At,
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if raw := onDisk(t, f.root, "Shows.md"); !strings.Contains(raw, "counts: shows") {
@@ -219,31 +206,31 @@ func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 	cards := strings.Replace(counting, "counts: shows", "counts: cards", 1)
 	f := newScheduling(t, map[string]string{"Shows.md": cards})
 
-	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&flashcardsv1.ReadPresetRequest{
+	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Shows.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	presetSettings := read.Msg.GetPreset().GetSettings()
-	presetSettings.Counts = flashcardsv1.BudgetUnit_BUDGET_UNIT_SHOWS
+	presetSettings := read.Preset.Settings
+	presetSettings.Counts = api.BudgetUnitShows
 
-	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&flashcardsv1.WritePresetRequest{
-		Path: "Shows.md", Settings: presetSettings, Baseline: read.Msg.GetAt(),
-	})); err != nil {
+	if _, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+		Path: "Shows.md", Settings: presetSettings, Baseline: read.At,
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if raw := onDisk(t, f.root, "Shows.md"); !strings.Contains(raw, "counts: shows") {
 		t.Errorf("the preset on disk is now %q", raw)
 	}
 
-	again, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&flashcardsv1.ReadPresetRequest{
+	again, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Shows.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := again.Msg.GetPreset().GetSettings().GetCounts(); got != flashcardsv1.BudgetUnit_BUDGET_UNIT_SHOWS {
+	if got := again.Preset.Settings.Counts; got != api.BudgetUnitShows {
 		t.Errorf("the preset is read back as counting %v", got)
 	}
 }
@@ -255,11 +242,11 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
 	targetSettings := settings()
-	targetSettings.Counts = flashcardsv1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
-	_, err := f.client.WritePreset(t.Context(), connect.NewRequest(&flashcardsv1.WritePresetRequest{
+	targetSettings.Counts = api.BudgetUnitUnspecified
+	_, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Shows.md", Settings: targetSettings,
-	}))
-	if code := connect.CodeOf(err); code != connect.CodeInvalidArgument {
+	})
+	if code := codeOf(err); code != server.CodeInvalidArgument {
 		t.Errorf("a save naming no counts was answered %v", code)
 	}
 	if onDiskContent := onDisk(t, f.root, "Shows.md"); onDiskContent != counting {
@@ -273,33 +260,33 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	answer, err := f.client.ComputeCurve(t.Context(), connect.NewRequest(&flashcardsv1.ComputeCurveRequest{
+	answer, err := f.client.ComputeCurve(t.Context(), &api.ComputeCurveRequest{
 		Path: "Sanskrit.md", Settings: settings(),
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	curve := answer.Msg.GetCurve()
-	if curve.GetGoal() != flashcardsv1.Goal_GOAL_MINUTES_A_DAY {
-		t.Fatalf("the curve is of %v", curve.GetGoal())
+	curve := answer.Curve
+	if curve.Goal != api.GoalMinutesADay {
+		t.Fatalf("the curve is of %v", curve.Goal)
 	}
-	grid := curve.GetGrid()
-	if len(grid) == 0 || len(curve.GetAt()) != len(grid) {
+	grid := curve.Grid
+	if len(grid) == 0 || len(curve.At) != len(grid) {
 		t.Fatalf("the curve has %d places on its grid and %d points",
-			len(grid), len(curve.GetAt()))
+			len(grid), len(curve.At))
 	}
 	for _, place := range []struct {
 		what  string
-		point *flashcardsv1.CurvePoint
+		point *api.CurvePoint
 	}{
-		{"where the preset stands", curve.GetNow()},
-		{"what is suggested", curve.GetSuggested()},
+		{"where the preset stands", curve.Now},
+		{"what is suggested", curve.Suggested},
 	} {
-		if place.point.GetAt() < 0 || int(place.point.GetAt()) >= len(grid) {
-			t.Errorf("%s is at place %d of %d", place.what, place.point.GetAt(), len(grid))
+		if place.point.At < 0 || int(place.point.At) >= len(grid) {
+			t.Errorf("%s is at place %d of %d", place.what, place.point.At, len(grid))
 		}
 	}
-	if value := curve.GetNow().GetValue(); value != 20 {
+	if value := curve.Now.Value; value != 20 {
 		t.Errorf("preset retention limit is %v", value)
 	}
 }
@@ -313,18 +300,18 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 		"decks/Roots.md":  roots,
 	})
 
-	answer, err := f.client.ListPresets(t.Context(), connect.NewRequest(&flashcardsv1.ListPresetsRequest{}))
+	answer, err := f.client.ListPresets(t.Context(), &api.ListPresetsRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	presets := answer.Msg.GetPresets()
+	presets := answer.Presets
 	if len(presets) != 2 {
 		t.Fatalf("listed %+v", presets)
 	}
-	if presets[0].GetPath() != "Sanskrit.md" || presets[0].GetTitle() != "Sanskrit" {
+	if presets[0].Path != "Sanskrit.md" || presets[0].Title != "Sanskrit" {
 		t.Errorf("the first is %+v", presets[0])
 	}
-	if presets[1].GetPath() != "presets/Slow.md" || presets[1].GetTitle() != "Slow going" {
+	if presets[1].Path != "presets/Slow.md" || presets[1].Title != "Slow going" {
 		t.Errorf("the second is %+v", presets[1])
 	}
 }
@@ -334,16 +321,16 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	made, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&flashcardsv1.CreatePresetRequest{
+	made, err := f.client.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := made.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := made.Error; code != api.ErrorCodeUnspecified {
 		t.Fatalf("making a preset answered %v", code)
 	}
-	if path := made.Msg.GetPath(); path != "presets/Prosody.md" {
+	if path := made.Path; path != "presets/Prosody.md" {
 		t.Fatalf("the preset was filed at %q", path)
 	}
 	onDiskContent := onDisk(t, f.root, "presets/Prosody.md")
@@ -356,39 +343,39 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		}
 	}
 
-	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&flashcardsv1.ReadPresetRequest{
+	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "presets/Prosody.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := read.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := read.Error; code != api.ErrorCodeUnspecified {
 		t.Fatalf("the preset just made failed with %v", code)
 	}
-	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
+	if problems := read.Preset.Problems; len(problems) != 0 {
 		t.Errorf("new preset validation errors: %v", problems)
 	}
-	if stops := read.Msg.GetPreset().GetStops(); stops != flashcardsv1.StopReason_STOP_REASON_NOTHING {
+	if stops := read.Preset.Stops; stops != api.StopReasonNothing {
 		t.Errorf("the preset just made schedules nothing, and says %v", stops)
 	}
-	resolved := read.Msg.GetPreset().GetSettings()
-	if resolved.GetGoal() != flashcardsv1.Goal_GOAL_MINUTES_A_DAY || resolved.GetMinutesADay() != 20 {
-		t.Errorf("the goal is %v at %d minutes", resolved.GetGoal(), resolved.GetMinutesADay())
+	resolved := read.Preset.Settings
+	if resolved.Goal != api.GoalMinutesADay || resolved.MinutesADay != 20 {
+		t.Errorf("the goal is %v at %d minutes", resolved.Goal, resolved.MinutesADay)
 	}
-	if resolved.GetNewADay() != 10 || resolved.GetReviewsADay() != 200 {
+	if resolved.NewADay != 10 || resolved.ReviewsADay != 200 {
 		t.Errorf("a day holds %d new and %d reviews",
-			resolved.GetNewADay(), resolved.GetReviewsADay())
+			resolved.NewADay, resolved.ReviewsADay)
 	}
-	if resolved.GetRetention() != 0.9 || resolved.GetInterval() != 21 {
+	if resolved.Retention != 0.9 || resolved.Interval != 21 {
 		t.Errorf("retention %g at an interval of %d days",
-			resolved.GetRetention(), resolved.GetInterval())
+			resolved.Retention, resolved.Interval)
 	}
-	if resolved.GetCounts() != flashcardsv1.BudgetUnit_BUDGET_UNIT_CARDS || resolved.GetBacklog() != 100 {
+	if resolved.Counts != api.BudgetUnitCards || resolved.Backlog != 100 {
 		t.Errorf("a day counts %v and gives %d to the debt",
-			resolved.GetCounts(), resolved.GetBacklog())
+			resolved.Counts, resolved.Backlog)
 	}
-	if len(resolved.GetLoad()) != 0 || !resolved.GetHasEvenLoad() {
-		t.Errorf("the load is %v, evened %t", resolved.GetLoad(), resolved.GetHasEvenLoad())
+	if len(resolved.Load) != 0 || !resolved.HasEvenLoad {
+		t.Errorf("the load is %v, evened %t", resolved.Load, resolved.HasEvenLoad)
 	}
 }
 
@@ -397,19 +384,19 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	if _, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&flashcardsv1.CreatePresetRequest{
+	if _, err := f.client.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
-	})); err != nil {
+	}); err != nil {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.ListPresets(t.Context(), connect.NewRequest(&flashcardsv1.ListPresetsRequest{}))
+	answer, err := f.client.ListPresets(t.Context(), &api.ListPresetsRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	items := make([]string, 0, len(answer.Msg.GetPresets()))
-	for _, one := range answer.Msg.GetPresets() {
-		items = append(items, one.GetPath())
+	items := make([]string, 0, len(answer.Presets))
+	for _, one := range answer.Presets {
+		items = append(items, one.Path)
 	}
 	if !slices.Contains(items, "presets/Prosody.md") {
 		t.Errorf("the vault lists %v", items)
@@ -421,54 +408,54 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	placed, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
+	placed, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if placed.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the write failed: %+v", placed.Msg)
+	if placed.Error != api.ErrorCodeUnspecified {
+		t.Fatalf("the write failed: %+v", placed)
 	}
-	if placed.Msg.GetAt() == nil {
+	if placed.At == nil {
 		t.Error("the write says nothing about the file it made")
 	}
 
-	read, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckPresetRequest{
+	read, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if read.Msg.GetPreset().GetPath() != "Sanskrit.md" {
-		t.Errorf("the deck is scheduled by %+v", read.Msg.GetPreset())
+	if read.Preset.Path != "Sanskrit.md" {
+		t.Errorf("the deck is scheduled by %+v", read.Preset)
 	}
-	if read.Msg.GetPreset().GetSettings().GetMinutesADay() != 20 {
-		t.Errorf("the settings are %+v", read.Msg.GetPreset().GetSettings())
+	if read.Preset.Settings.MinutesADay != 20 {
+		t.Errorf("the settings are %+v", read.Preset.Settings)
 	}
 
 	// The file stat the write answered with is what the next write presents.
-	off, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
-		Deck: "decks/Terms.md", Baseline: placed.Msg.GetAt(),
-	}))
+	off, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+		Deck: "decks/Terms.md", Baseline: placed.At,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if off.Msg.GetError() == flashcardsv1.ErrorCode_ERROR_CODE_STALE {
+	if off.Error == api.ErrorCodeStale {
 		t.Fatal("the deck this caller had just written was answered as changed")
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(onDiskContent, "preset") {
 		t.Errorf("the deck still names a preset: %q", onDiskContent)
 	}
 
-	again, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckPresetRequest{
+	again, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again.Msg.GetPreset().GetPath() != "" {
-		t.Errorf("the deck is scheduled by %+v", again.Msg.GetPreset())
+	if again.Preset.Path != "" {
+		t.Errorf("the deck is scheduled by %+v", again.Preset)
 	}
 }
 
@@ -481,14 +468,14 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 		"decks/Terms.md": terms,
 	})
 
-	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
+	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Grammar.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET {
-		t.Errorf("the write was answered %v", answer.Msg.GetError())
+	if answer.Error != api.ErrorCodeNotAPreset {
+		t.Errorf("the write was answered %v", answer.Error)
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); onDiskContent != terms {
 		t.Errorf("the deck on disk is now %q", onDiskContent)
@@ -499,14 +486,14 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
+	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Pali.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("the write was answered %v", answer.Msg.GetError())
+	if answer.Error != api.ErrorCodeMissing {
+		t.Errorf("the write was answered %v", answer.Error)
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); onDiskContent != terms {
 		t.Errorf("the deck on disk is now %q", onDiskContent)
@@ -518,9 +505,9 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	read, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
+	read, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Preset: "Sanskrit.md",
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -530,14 +517,14 @@ func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
-		Deck: "decks/Roots.md", Baseline: read.Msg.GetAt(),
-	}))
+	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+		Deck: "decks/Roots.md", Baseline: read.At,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
-		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
+	if answer.Error != api.ErrorCodeStale {
+		t.Errorf("a write over a deck the person had edited answered %+v", answer)
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Roots.md"); onDiskContent != concurrentEdit {
 		t.Errorf("the deck on disk is now %q", onDiskContent)

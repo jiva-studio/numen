@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode as ProtoErrorCode } from '../../gen/numen/flashcards/v1/errors_pb'
+import { ErrorCode as ProtoErrorCode } from '../../api/types'
 import {
   ERRORS,
   findErrorCode,
@@ -13,7 +13,7 @@ describe('errors', () => {
     expect(findErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
     expect(findErrorCode({ error: ProtoErrorCode.NOT_A_NOTE })).toBe('notANote')
     expect(findErrorCode({ error: ProtoErrorCode.INVALID_NAME })).toBe('invalidName')
-    expect(findErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
+    expect(findErrorCode({ error: ProtoErrorCode.UNREADABLE })).toBe('unreadable')
   })
 
   it('translates the codes of a card model, a deck and a preset', () => {
@@ -34,9 +34,8 @@ describe('errors', () => {
     expect(formatErrorCodeMessage(undefined)).toBe('')
     expect(formatErrorCodeMessage(ProtoErrorCode.MISSING)).toBe(ERRORS.missing)
     expect(formatErrorCodeMessage(ProtoErrorCode.NOT_A_DECK)).toBe(ERRORS.notADeck)
-    expect(formatErrorCodeMessage(ProtoErrorCode.UNSPECIFIED)).toBe('note unreadable')
     expect(formatErrorCodeMessage(ProtoErrorCode.STALE)).toBe('not saved: the note changed on disk')
-    expect(formatErrorCodeMessage(99 as ProtoErrorCode)).toBe('internal error')
+    expect(formatErrorCodeMessage('future_code' as ProtoErrorCode)).toBe('internal error')
   })
 
   it('gives words for every plugin code', () => {

@@ -1,0 +1,24 @@
+{
+  "run": "01M647QDAZRYX9PNFRVQ3A497Y",
+  "cards": [
+    {
+      "deck": "decks/Animals.md",
+      "section": "Camelids",
+      "cardId": "k7m2xq9fzp",
+      "template": "Recognise",
+      "heading": "Llama",
+      "front": "<p>Llama</p>",
+      "back": "<p>about 45\"</p>",
+      "isNew": true,
+      "due": "2026-03-04T08:00:00Z",
+      "intervals": {
+        "again": 60,
+        "hard": 600,
+        "good": 86400,
+        "easy": 345600
+      }
+    }
+  ],
+  "unwritten": [],
+  "skipped": 0
+}

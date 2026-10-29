@@ -1,0 +1,20 @@
+{
+  "path": "presets/Sanskrit.md",
+  "settings": {
+    "goal": "minutes_a_day",
+    "byDate": "",
+    "minutesADay": 20,
+    "newADay": 8,
+    "reviewsADay": 45,
+    "retention": 0.87,
+    "hasEvenLoad": true,
+    "counts": "cards",
+    "backlog": 0,
+    "load": {
+      "sat": 50,
+      "sun": 0
+    },
+    "learned": "interval",
+    "interval": 21
+  }
+}
