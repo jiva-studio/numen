@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * A Lucide icon drawn by its name, such as a manifest writes it (`trash-2`). It draws nothing
- * until the icon is found, and nothing for a name that is none.
+ * until the icon is found, and nothing for a name with no icon.
  *
  * It is drawn for the eye alone.
  */

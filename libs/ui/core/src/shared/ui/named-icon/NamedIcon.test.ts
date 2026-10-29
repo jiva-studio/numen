@@ -19,7 +19,7 @@ describe('findNamedIcon', () => {
     expect(await findNamedIcon('git-branch')).not.toBeNull()
   })
 
-  it('finds nothing for a name that is none or empty', async () => {
+  it('finds nothing for a name with no icon or an empty name', async () => {
     expect(await findNamedIcon('no-such-icon')).toBeNull()
     expect(await findNamedIcon('')).toBeNull()
     expect(await findNamedIcon('icon')).toBeNull()
@@ -38,7 +38,7 @@ describe('NamedIcon', () => {
     expect(icon.find('svg').attributes('aria-hidden')).toBe('true')
   })
 
-  it('draws nothing for a name that is none', async () => {
+  it('draws nothing for a name with no icon', async () => {
     const icon = mount(NamedIcon, { props: { name: 'no-such-icon' } })
     await flushPromises()
 

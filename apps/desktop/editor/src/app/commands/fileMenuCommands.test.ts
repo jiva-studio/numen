@@ -66,7 +66,7 @@ const invoke = (entry: FileMenuEntry, file: string) => ({
 
 const runs = { canRun: () => true, cannotRun: () => {} }
 
-/** A request the test answers when it chooses. */
+/** A pending request that the test resolves itself. */
 const createDeferred = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((done) => (resolve = done))

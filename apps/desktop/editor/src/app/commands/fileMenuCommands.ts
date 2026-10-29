@@ -50,7 +50,7 @@ export interface FileMenuCommandsDeps {
 /**
  * The menu of one file, read by `load` for the file named. A menu read before is drawn at once and
  * read again, so what a plugin changed shows the next time. Each entry over a version has a handler
- * that runs it and writes what it came to.
+ * that runs it and writes the result.
  */
 export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   const get = deps.get ?? getFileMenu

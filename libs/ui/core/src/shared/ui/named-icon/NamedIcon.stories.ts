@@ -15,7 +15,7 @@ const meta = {
         component:
           'An icon a plugin names in its manifest, such as `trash-2`. The set of ' +
           'icons loads as one file the first time an icon is drawn, so a name ' +
-          'is drawn a moment after it is given, and a name that is none draws ' +
+          'is drawn a moment after it is given, and a name with no icon draws ' +
           'nothing.',
       },
     },
@@ -41,7 +41,7 @@ export const Playground: Story = {
   }),
 }
 
-/** A name that is none draws nothing, and leaves the text where it was. */
+/** A name with no icon draws nothing. */
 export const UnknownName: Story = {
   args: { name: 'no-such-icon' },
   render: () => ({

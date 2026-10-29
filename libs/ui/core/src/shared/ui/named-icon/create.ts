@@ -4,7 +4,7 @@ import NamedIcon from './NamedIcon.vue'
 const created = new Map<string, Component>()
 
 /**
- * The component that draws the icon of the name, for whoever takes a component and no name. The
+ * The component that draws the icon of the name, for a caller that takes a component. The
  * same name gives the same component.
  */
 export function createNamedIcon(name: string): Component {

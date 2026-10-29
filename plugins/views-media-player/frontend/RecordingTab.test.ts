@@ -19,7 +19,7 @@ import {
 import type { Recordings } from './types'
 import { WORDS } from './words'
 
-// The set of icons is a file of its own that the host loads; the tab is tested with the name it gives.
+// The host loads the icon set lazily, so the test checks the name the tab passes to NamedIcon.
 vi.mock('@numen/ui', async (original) => ({
   ...(await original<Record<string, unknown>>()),
   NamedIcon: defineComponent({
