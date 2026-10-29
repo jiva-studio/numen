@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
@@ -565,6 +565,87 @@ describe('PluginDetail with settings that follow one another', () => {
     })
     const addButton = acpRow.findAll('button').find((btn) => btn.text() === words.pathAdd)
     expect(addButton).toBeDefined()
+  })
+})
+
+describe('the settings views of a plugin', () => {
+  const View = defineComponent({
+    props: { pluginId: { type: String, required: true }, values: { type: Object, required: true } },
+    emits: ['update:setting'],
+    template:
+      '<button class="view" :data-plugin="pluginId" :data-values="JSON.stringify(values)" @click="$emit(\'update:setting\', \'floor\', 7)" />',
+  })
+  const settings = [
+    { key: 'model', type: 'string' as const, title: 'Model', description: '', default: 'a' },
+    { key: 'floor', type: 'number' as const, title: 'Floor', description: '', default: 1 },
+    { key: 'last', type: 'boolean' as const, title: 'Last', description: '', default: true },
+  ]
+  const views = [
+    { id: 'floor', title: 'Floor', after: 'model' },
+    { id: 'top', title: 'Top', after: '' },
+    { id: 'gone', title: 'Gone', after: 'last' },
+  ]
+  const mountWith = (registered: Record<string, unknown>) => {
+    const plugin = createPluginInfo('views.plugin', 'Views', { settings, settingsViews: views })
+    const recordedWrites: SettingEdit[] = []
+    const installation = createInstallation({
+      getSetting: (path) => at({ plugins: { 'views.plugin': { floor: 3 } } }, path),
+      write: (edits) => {
+        recordedWrites.push(...edits)
+      },
+      getSettingsViews: () =>
+        new Map(Object.entries(registered).map(([id, component]) => [id, { component }])),
+      plugins: ref([plugin]),
+    })
+    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin } })
+    return { wrapper, recordedWrites }
+  }
+
+  it('draws a view after the setting it follows', () => {
+    const { wrapper } = mountWith({ floor: View })
+    expect(wrapper.findAll('.view')).toHaveLength(1)
+    const html = wrapper.html()
+    expect(html.indexOf('Model')).toBeLessThan(html.indexOf('class="view"'))
+    expect(html.indexOf('class="view"')).toBeLessThan(html.indexOf('Floor'))
+  })
+
+  it('draws a view with an empty after before the settings', () => {
+    const { wrapper } = mountWith({ top: View })
+    const html = wrapper.html()
+    expect(html.indexOf('class="view"')).toBeGreaterThan(-1)
+    expect(html.indexOf('class="view"')).toBeLessThan(html.indexOf('Model'))
+  })
+
+  it('draws nothing for a view the plugin did not register', () => {
+    const { wrapper } = mountWith({})
+    expect(wrapper.findAll('.view')).toHaveLength(0)
+  })
+
+  it('passes the plugin id and the value of every declared setting', () => {
+    const { wrapper } = mountWith({ floor: View })
+    const view = wrapper.get('.view')
+    expect(view.attributes('data-plugin')).toBe('views.plugin')
+    expect(JSON.parse(view.attributes('data-values') ?? '')).toStrictEqual({
+      model: 'a',
+      floor: 3,
+      last: true,
+    })
+  })
+
+  it('writes the setting a view updates', async () => {
+    const { wrapper, recordedWrites } = mountWith({ floor: View })
+    await wrapper.get('.view').trigger('click')
+    expect(recordedWrites).toStrictEqual([{ at: ['plugins', 'views.plugin', 'floor'], value: '7' }])
+  })
+
+  it('shows the settings block for a plugin with only views', () => {
+    const plugin = createPluginInfo('views.plugin', 'Views', { settingsViews: views })
+    const installation = createInstallation({
+      getSettingsViews: () => new Map([['top', { component: View }]]),
+      plugins: ref([plugin]),
+    })
+    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin } })
+    expect(wrapper.findAll('.view')).toHaveLength(1)
   })
 })
 

@@ -114,6 +114,7 @@ describe('every setting', () => {
               completionConsent: CompletionConsent.REQUESTED,
               hasFrontend: true,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
+              settingsViews: [{ id: 'floor', title: 'Floor', after: 'language' }],
               settings: [
                 {
                   key: 'autoRun',
@@ -164,6 +165,7 @@ describe('every setting', () => {
         consent: 'requested',
         hasFrontend: true,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
+        settingsViews: [{ id: 'floor', title: 'Floor', after: 'language' }],
         settings: [
           {
             key: 'autoRun',

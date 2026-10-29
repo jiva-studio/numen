@@ -71,6 +71,21 @@ export interface ReaderRegistration {
   metadata?: Record<string, unknown>
 }
 
+// SettingsViewRegistration registers a component the plugin's settings page mounts. The manifest
+// declares, under `settingsViews` with the same id, its title and the setting it follows.
+export interface SettingsViewRegistration {
+  readonly id: string
+  readonly component: unknown
+}
+
+// SettingsViewProps are the props the settings page passes the component of a settings view. The
+// component emits `update:setting` with a key and a value; the host writes it to that setting.
+export interface SettingsViewProps {
+  readonly pluginId: string
+  /** The current value of every declared setting of the plugin, by key. */
+  readonly values: Readonly<Record<string, unknown>>
+}
+
 // ReaderTabState is the `state` prop the window passes the component of a reader tab.
 export interface ReaderTabState {
   readonly path: string
@@ -239,6 +254,8 @@ export interface PluginContext {
   readonly target: string
   readonly subscriptions: Disposable[]
   registerReader(registration: ReaderRegistration): Disposable
+  // Registers the component of the settings view the manifest declares under the same id.
+  registerSettingsView(registration: SettingsViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
   registerContextMenu(registration: ContextMenuRegistration): Disposable
@@ -316,4 +333,6 @@ export interface PluginManifest {
   readers?: { id: string; contentTypes: string[]; rank: 'default' | 'alternate' }[]
   texts?: TextMaker
   settings?: SettingDeclaration[]
+  /** The views the settings page mounts in the plugin's form, after the setting named by `after`; the top where it is empty. */
+  settingsViews?: { id: string; title: string; after?: string }[]
 }

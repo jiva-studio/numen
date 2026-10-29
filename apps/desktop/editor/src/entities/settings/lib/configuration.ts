@@ -127,8 +127,18 @@ export interface PluginInfo {
   readonly hasFrontend: boolean
   /** The readers the plugin declares, each with the extensions of the files it opens. */
   readonly readers?: readonly PluginReader[]
+  /** The views the plugin declares for its settings form, each placed after the setting named by `after`. */
+  readonly settingsViews?: readonly PluginSettingsViewInfo[]
   /** Set while the host suspends the plugin. */
   readonly failure?: PluginFailure | undefined
+}
+
+/** A view a plugin's frontend registers under `id` and the settings form mounts. */
+export interface PluginSettingsViewInfo {
+  readonly id: string
+  readonly title: string
+  /** The key of the setting the view follows; empty places the view at the top of the form. */
+  readonly after: string
 }
 
 /** A reader of a plugin and the extensions, lowercase and without the dot, of the files it opens. */

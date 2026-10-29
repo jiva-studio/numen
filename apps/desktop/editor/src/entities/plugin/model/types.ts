@@ -17,6 +17,7 @@ import type {
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
+  SettingsViewRegistration,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -39,6 +40,7 @@ export type {
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
+  SettingsViewRegistration,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -112,6 +114,7 @@ export interface PluginHostDeps {
 
 export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
+  registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
   registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable

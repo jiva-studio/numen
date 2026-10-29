@@ -80,6 +80,11 @@ export const settingsCore: SettingsPort = {
         storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
+        settingsViews: (p.settingsViews ?? []).map((one) => ({
+          id: one.id,
+          title: one.title,
+          after: one.after,
+        })),
         consent: consented[p.completionConsent],
         ...(p.failure
           ? {

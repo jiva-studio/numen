@@ -19,6 +19,22 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
   })
 
+  it('manages settings view registrations', () => {
+    const ctx = createMockPluginContext({ pluginId: 'settings-plugin' })
+    const d = ctx.registerSettingsView({ id: 'floor', component: {} })
+
+    expect(ctx.getRegisteredSettingsViews()).toEqual([{ id: 'floor', component: {} }])
+    d.dispose()
+    expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
+  })
+
+  it('removes settings views on dispose', () => {
+    const ctx = createMockPluginContext()
+    ctx.registerSettingsView({ id: 'floor', component: {} })
+    ctx.dispose()
+    expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
+  })
+
   it('keeps a kind that says what its tabs hold, with the hooks it declares', () => {
     const ctx = createMockPluginContext({ pluginId: 'graph-plugin' })
     const navigated: string[] = []

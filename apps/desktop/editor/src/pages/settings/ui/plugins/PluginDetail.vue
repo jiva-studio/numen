@@ -41,6 +41,7 @@ const shownSecrets = computed(() =>
 )
 const hasConsent = computed(() => props.plugin.consent !== 'none')
 const hasDeclarativeSettings = computed(() => props.plugin.settings.length > 0)
+const hasSettingsViews = computed(() => (props.plugin.settingsViews ?? []).length > 0)
 /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
 const fileCount = ref(0)
 const isAskingDelete = ref(false)
@@ -194,7 +195,7 @@ watch(
     </div>
 
     <div
-      v-if="hasConsent || hasDeclarativeSettings || shownSecrets.length > 0"
+      v-if="hasConsent || hasDeclarativeSettings || hasSettingsViews || shownSecrets.length > 0"
       class="plugin-detail__settings"
     >
       <!-- AI consent -->
@@ -214,7 +215,7 @@ watch(
 
       <!-- Declarative settings and secrets -->
       <PluginFields
-        v-if="hasDeclarativeSettings || shownSecrets.length > 0"
+        v-if="hasDeclarativeSettings || hasSettingsViews || shownSecrets.length > 0"
         :state="props.state"
         :plugin="props.plugin"
       />

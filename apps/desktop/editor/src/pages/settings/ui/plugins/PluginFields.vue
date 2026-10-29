@@ -10,6 +10,7 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { AgentChoice } from '../agent-choice'
 import { PathField } from '../path-field'
 import { SecretField } from '../secret-field'
+import SettingsViews from './SettingsViews.vue'
 import type { SettingsTabState } from '../../types'
 import {
   createSettingFields,
@@ -125,6 +126,8 @@ function getStringSetting(key: string, fallback: unknown): string {
 </script>
 
 <template>
+  <SettingsViews :state="props.state" :plugin="props.plugin" after="" />
+
   <SecretField
     v-for="secret in getTopSecrets()"
     :key="`${props.plugin.id}-${secret.name}`"
@@ -272,6 +275,8 @@ function getStringSetting(key: string, fallback: unknown): string {
       @save="(key) => onSecretSave(secret.name, key)"
       @delete="onSecretDelete(secret.name)"
     />
+
+    <SettingsViews :state="props.state" :plugin="props.plugin" :after="setting.key" />
   </template>
 </template>
 

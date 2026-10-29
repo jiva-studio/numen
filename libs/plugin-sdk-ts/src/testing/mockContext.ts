@@ -7,6 +7,7 @@ import type {
   FileSelectEvent,
   PluginContext,
   ReaderRegistration,
+  SettingsViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
 } from '../types'
@@ -25,6 +26,7 @@ export interface MockMountedView {
 // MockPluginContext extends PluginContext with inspection and simulation methods.
 export interface MockPluginContext extends PluginContext {
   getRegisteredReaders(): ReaderRegistration[]
+  getRegisteredSettingsViews(): SettingsViewRegistration[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
   getRegisteredContextMenus(): ContextMenuRegistration[]
@@ -54,11 +56,7 @@ function registerInList<T>(list: T[], item: T, subscriptions: Disposable[]): Dis
   })
 }
 
-function addSetListener<T>(
-  listeners: Set<T>,
-  handler: T,
-  subscriptions: Disposable[],
-): Disposable {
+function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposable[]): Disposable {
   listeners.add(handler)
   return addDisposable(subscriptions, {
     dispose: () => {
@@ -98,6 +96,7 @@ export function createMockPluginContext(
 ): MockPluginContext {
   const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
+  const settingsViews: SettingsViewRegistration[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
   const contextMenus: ContextMenuRegistration[] = []
@@ -119,6 +118,10 @@ export function createMockPluginContext(
 
     registerReader(registration: ReaderRegistration): Disposable {
       return registerInList(readers, registration, subscriptions)
+    },
+
+    registerSettingsView(registration: SettingsViewRegistration): Disposable {
+      return registerInList(settingsViews, registration, subscriptions)
     },
 
     registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
@@ -219,6 +222,10 @@ export function createMockPluginContext(
 
     getRegisteredReaders(): ReaderRegistration[] {
       return [...readers]
+    },
+
+    getRegisteredSettingsViews(): SettingsViewRegistration[] {
+      return [...settingsViews]
     },
 
     getRegisteredTabKinds(): TabKindRegistration[] {
