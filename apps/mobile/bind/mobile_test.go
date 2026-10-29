@@ -205,7 +205,7 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 
 	for _, item := range []string{
 		"/assets/Physics.md",
-		"/numen.pdf.v1.DocumentService/GetDocument",
+		"/numen.pdf/GetDocument",
 		"/numen.v1.MediaService/GetMediaSource",
 		"/numen.v1.TextService/ReadLiveText",
 		"/numen.v1.TextService/CreateTextEdit",

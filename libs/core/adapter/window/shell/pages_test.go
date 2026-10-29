@@ -134,15 +134,15 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 // A call for a service a plugin serves is forwarded to the plugin, and a path no plugin serves falls
 // through to the files.
 func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
-	forwarded := &forwarding{serves: map[string]bool{"/numen.epub.v1.BookService/GetBook": true}}
+	forwarded := &forwarding{serves: map[string]bool{"/numen.epub/GetBook": true}}
 	api := &API{PluginServices: forwarded}
 	handler := api.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("the files"))
 	}))
 
 	for path, want := range map[string]string{
-		"/numen.epub.v1.BookService/GetBook": "a plugin",
-		"/built/index.css":                   "the files",
+		"/numen.epub/GetBook": "a plugin",
+		"/built/index.css":    "the files",
 	} {
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, httptest.NewRequest(http.MethodPost, path, nil))
