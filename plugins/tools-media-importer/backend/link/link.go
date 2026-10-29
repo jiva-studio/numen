@@ -209,7 +209,7 @@ func (l *Links) getTexts(link Link) host.Texts {
 	return l.host.Texts.With(link.Vault)
 }
 
-// claim reserves one kind of work on a key of a link's vault for this run and
+// claim reserves the named work on a key of a link's vault for this run and
 // returns false when another run holds it. The same address in another vault is
 // separate work.
 func (l *Links) claim(work string, link Link, key string) bool {
@@ -229,7 +229,7 @@ func (l *Links) release(work string, link Link, key string) {
 	delete(l.running, getWorkName(work, link, key))
 }
 
-// getWorkName returns the name of one kind of work on a key in the vault of a
+// getWorkName returns the name of the work on a key in the vault of a
 // link.
 func getWorkName(work string, link Link, key string) string {
 	return work + "\x00" + string(link.Vault) + "\x00" + key
@@ -299,7 +299,7 @@ func (l *Links) StartCopy(ctx context.Context, link Link) {
 	})
 }
 
-// taskTitles are the names of each kind of work on a link in the task list.
+// taskTitles are the names of each type of work on a link in the task list.
 const (
 	fetchingText = "Fetching the text of a link"
 	copyingVideo = "Copying a video"

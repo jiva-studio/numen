@@ -113,7 +113,7 @@ func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 }
 
 func TestAJoinedWordPreservesTheHyphenBoxOneByteShorter(t *testing.T) {
-	// The hyphen is removed from the end of the box that carried it, so that box
+	// The hyphen is removed from the end of the box that carried it; that box
 	// covers only the first half of the word.
 	text, spans := Assemble([]Line{
 		line(0, 0, 100, 20, "under-"),

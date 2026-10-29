@@ -3,7 +3,7 @@
  * A field for several lines of text.
  *
  * It is sized by its parent layout. Growing with the typed text is the
- * responsibility of the surrounding component, which knows the maximum height.
+ * responsibility of the surrounding component, which defines the maximum height.
  */
 import { useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@numen/ui'

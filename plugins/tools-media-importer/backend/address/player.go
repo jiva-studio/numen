@@ -50,7 +50,7 @@ func getVideoID(parsed *url.URL) string {
 }
 
 // readVideoID returns the first segment when it is a video id (eleven
-// characters of letters, digits, `-` and `_`), and empty otherwise.
+// characters of letters, digits, `-` and `_`), and empty for any other segment.
 func readVideoID(segment string) string {
 	segment, _, _ = strings.Cut(segment, "/")
 	if len(segment) != 11 {

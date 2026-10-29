@@ -66,7 +66,7 @@ const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
 
 const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
 
-/** Tells open tabs on the named paths to reload their link. */
+/** Notifies open tabs on the named paths to reload their link. */
 export const refreshLinks = (paths: readonly string[]): void => {
   work.refresh(paths)
 }

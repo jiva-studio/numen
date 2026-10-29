@@ -50,7 +50,7 @@ func TestResamplingWhatIsAlreadyRight(t *testing.T) {
 }
 
 // An hour of audio is minutes of computation, and a cancelled context must stop
-// the conversion so that closing the window does not wait for it.
+// the conversion, and closing the window does not wait for it.
 func TestConvert_StopsOnCancelledContext(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	stop()

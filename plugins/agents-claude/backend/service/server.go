@@ -247,7 +247,7 @@ func waitAgentCompletion(
 }
 
 // getCommand returns the program to start and the arguments that precede its
-// own: the command line set by the installation, otherwise the program found on
+// own: the command line set by the installation, or else the program found on
 // the system. An empty program means none was found.
 func (s *agentServer) getCommand(command []string) (string, []string) {
 	if len(command) > 0 {

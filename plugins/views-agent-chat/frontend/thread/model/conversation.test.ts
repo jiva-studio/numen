@@ -463,8 +463,8 @@ describe('where the line about work remains', () => {
     const askPromise = conversation.ask('tell me about him', '')
     await flushPromises()
 
-    // A tool result says nothing about the result being overwritten, and a line
-    // placed back here is placed under the result for the rest of the conversation.
+    // A tool result carries no marker of being overwritten, and a line
+    // placed back here is placed after the result for the rest of the conversation.
     expect(getDrawnTurns(conversation)).toEqual([
       'prompt: tell me about him',
       'response: Bram Doyle was the chair.',

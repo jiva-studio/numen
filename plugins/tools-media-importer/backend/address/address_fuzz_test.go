@@ -36,7 +36,7 @@ func hasUserInfo(raw string) bool {
 
 // back is fetchable and stays itself when it is read again.
 //
-// A link note is written by hand in a file edited by other tools, so the input
+// A link note is authored manually in a file that other tools also edit, so the input
 // is untrusted bytes.
 func FuzzParseWebAddress(f *testing.F) {
 	for _, seed := range webSeeds {

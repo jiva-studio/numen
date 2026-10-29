@@ -14,7 +14,7 @@ export const WORDS = {
   silence: 'No transcript yet.',
   /** A run is in progress, and more words arrive as they are transcribed. */
   transcribing: 'Transcribing…',
-  /** This window cannot play this kind of audio. */
+  /** This window cannot play this type of audio. */
   unplayable: 'Audio playback not supported here.',
   /** The player stopped with no error code. */
   unreadable: 'Recording failed to play.',

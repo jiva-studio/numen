@@ -17,7 +17,7 @@ var errNoVault = errors.New("the call names no vault")
 
 // Tools provides MCP tools for AI agents interacting with the knowledge vault.
 type Tools struct {
-	// host provides access to every vault the host knows.
+	// host provides access to every vault registered with the host.
 	host host.Vault
 	// vault is the vault of the call being served.
 	vault host.Vault

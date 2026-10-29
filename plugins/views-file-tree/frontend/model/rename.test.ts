@@ -50,7 +50,7 @@ describe('a name typed over a row', () => {
 
   /**
    * A dot is punctuation more often than an extension. A note named after a
-   * chapter, a figure or a person keeps its file extension, or it stops being
+   * chapter or a figure keeps its file extension, or it stops being
    * a note once renamed.
    */
   it('reads a dot inside a sentence as punctuation, not as an ending', () => {

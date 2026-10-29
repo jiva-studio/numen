@@ -79,7 +79,7 @@ func processRow(row string, batch Batch, read map[int]string, claimedLines map[i
 }
 
 // matchLines concatenates lines from startLine to endLine and checks whether each exists in the batch.
-// If a line range extends beyond the last batch line, reaches is true.
+// The second result is true when the line range extends beyond the last batch line.
 func matchLines(read map[int]string, startLine, endLine, last int) (joined string, reaches, ok bool) {
 	was, named := read[startLine]
 	if !named {
@@ -196,7 +196,7 @@ func readLeadingDigits(row string) string {
 // isPrefixedBySymbols reports whether text is the corrected line with only
 // symbols (no letters or digits) prepended.
 //
-// A separator not otherwise recognized (a dash, an arrow, a colon) at the start
+// An unrecognized separator (a dash, an arrow, a colon) at the start
 // of the line leaves the letters on both sides identical, so letter-counting
 // checks do not detect it.
 func isPrefixedBySymbols(was, text string) bool {

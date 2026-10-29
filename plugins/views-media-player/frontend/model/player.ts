@@ -263,7 +263,7 @@ export const player: Player = createAudioPlayer()
 /** Reports whether a media type can be played. */
 export type MediaTypeProbe = (type: string) => boolean
 
-/** Asks the window whether it can play a media type. */
+/** Queries the window for whether it can play a media type. */
 const probeWindow: MediaTypeProbe = (type) => {
   try {
     const mediaType = type === 'audio/vnd.wave' ? 'audio/wav' : type

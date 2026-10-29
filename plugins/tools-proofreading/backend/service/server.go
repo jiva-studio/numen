@@ -1,5 +1,5 @@
 // Package service is the backend of the proofreading plugin: it reads a text
-// version of a file, asks a model to correct its lines, stores the corrected
+// version of a file, sends its lines to a model for correction, stores the corrected
 // text in the plugin's folder of the vault's store, and reports it to the host
 // as a version derived from the one it read.
 package service

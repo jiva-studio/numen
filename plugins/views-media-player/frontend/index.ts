@@ -7,7 +7,7 @@ import { bindTexts, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }
 
-/** The kind of the tab in which a new recording is made. */
+/** The tab kind in which a new recording is made. */
 export const RECORDER = 'recording'
 
 export function activate(context: PluginContext): void {

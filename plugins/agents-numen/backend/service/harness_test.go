@@ -854,7 +854,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	}
 }
 
-// The context of the task reaches every tool the model calls as the `_meta` of
+// The context of the task is passed to every tool the model calls as the `_meta` of
 // the call.
 func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("ok")}}

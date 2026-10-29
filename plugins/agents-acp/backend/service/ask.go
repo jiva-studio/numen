@@ -52,7 +52,7 @@ func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (s
 }
 
 // AskAgent runs the task on the ACP agent the task names, in a new session that
-// reaches the tools of the task at their endpoint.
+// connects to the tools of the task at their endpoint.
 func (s *agentServer) AskAgent(
 	ctx context.Context,
 	req *connect.Request[agentrun.AskAgentRequest],

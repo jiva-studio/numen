@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// The digest stands before the first line of the question, and the lines are
-// asked about as they always were.
+// The digest precedes the first line of the question, and the lines follow it
+// unchanged.
 func TestTheDigestExistsBeforeTheFirstLine(t *testing.T) {
 	batch := Batch{Number: 0, IsJoinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []Line{
 		{Number: 0, Text: "Ganaka spoke"},
@@ -23,7 +23,7 @@ func TestTheDigestExistsBeforeTheFirstLine(t *testing.T) {
 	}
 }
 
-// A batch nothing was said about is the lines alone.
+// A batch without a digest is the lines alone.
 func TestABatchWithNoDigestIsTheLinesAlone(t *testing.T) {
 	batch := Batch{Number: 0, Lines: []Line{{Number: 0, Text: "Ganaka spoke"}}}
 	if request := buildPrompt(batch); request != Opens+"0"+Closes+"Ganaka spoke" {

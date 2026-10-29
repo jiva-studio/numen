@@ -328,7 +328,7 @@ func (p *streamParser) reportEdit() {
 }
 
 // getUnreachableReason is why the vault's tools did not arrive, empty when they did and when the
-// line says nothing about servers.
+// line reports no server status.
 func getUnreachableReason(response event) string {
 	for _, skipped := range response.ServerErrors {
 		if skipped.Name == serverName {
@@ -350,7 +350,7 @@ func getUnreachableReason(response event) string {
 	return "the agent was started without this vault"
 }
 
-// getResultError is what the last line says went wrong.
+// getResultError is the error the last line reports.
 func getResultError(response event) string {
 	if text := strings.TrimSpace(response.Result); text != "" && text != response.Subtype {
 		return text
@@ -361,7 +361,7 @@ func getResultError(response event) string {
 	return "the agent stopped without finishing"
 }
 
-// formatSubtype words a machine error subtype for a person.
+// formatSubtype words a machine error subtype for the user.
 func formatSubtype(subtype string) string {
 	switch subtype {
 	case "error_max_turns", "max_turns":

@@ -129,9 +129,9 @@ const createScrollingThread = (turns: readonly Turn[]) => {
 
   return {
     wrapper,
-    /** How far down it stands. */
+    /** The current scroll offset. */
     at: () => top,
-    /** Read at a place of the person's own choosing. */
+    /** Scrolls to the given offset. */
     reads: async (from: number) => {
       top = from
       await wrapper.trigger('scroll')
@@ -205,8 +205,8 @@ describe('following the foot', () => {
  * The step each part of a turn is set at.
  *
  * the transcript and the line about work are set in the interface's own text,
- * and an answer is marked-up text a shade above it. The quiet step is for what
- * is said about a turn beside it.
+ * and an answer is marked-up text a shade above it. The small step is for the
+ * notice about a turn.
  */
 describe('the step each part is set at', () => {
   const createDoing = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })

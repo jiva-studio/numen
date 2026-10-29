@@ -1,6 +1,6 @@
 /**
  * Tracks which files have work in progress according to the plugin's tasks,
- * through one shared subscription that stays open while any tab listens.
+ * through one shared subscription that stays open while any tab is subscribed.
  */
 
 /** Subscribes to the plugin's task lists: each task by the file it is about. */

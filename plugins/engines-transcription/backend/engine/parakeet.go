@@ -216,7 +216,7 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 
 // decodeWith is decode with the predictor and the joiner run through the raw
 // runtime when useRaw is set and the runtime supports it, and through the
-// library otherwise. The first position of each graph always runs through the
+// library in every other case. The first position of each graph always runs through the
 // library, which validates the output size of the graph.
 func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value, useRaw bool) ([]int, error) {
 	frames, err := readFrames(out)
