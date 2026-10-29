@@ -13,16 +13,17 @@ export interface TextRange {
   readonly end: number
 }
 
-/** What an entry of a file's menu does: a plugin makes text, or the owner of a version deletes it. */
-export type MenuAction = 'createText' | 'deleteVersion'
-
 /**
- * One entry of the menu the core makes for a file. `versionId` is the version it works on, and
- * empty for text made from the file; `isLive` says that version is the one shown and indexed now.
+ * One entry of the menu of a file: a command a plugin declares. `versionId` is the version it
+ * works on, and empty for a command over the file; `isLive` says that version is the one shown and
+ * indexed now.
  */
 export interface MenuEntry {
-  readonly action: MenuAction
   readonly pluginId: string
+  readonly pluginName: string
+  readonly command: string
+  readonly title: string
+  readonly icon: string
   readonly versionId: string
   readonly isLive: boolean
 }

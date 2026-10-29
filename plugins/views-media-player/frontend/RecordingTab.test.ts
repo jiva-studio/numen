@@ -2,13 +2,14 @@
  * A recording tab drawn: the player at the top, the transcript under it, and what can be asked
  * about the words.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { reactive } from 'vue'
+import { defineComponent, h, reactive } from 'vue'
 import RecordingTab from './RecordingTab.vue'
 import {
   CUES,
   DELETE_ENTRY,
+  PROOFREAD_ENTRY,
   TALK_URL,
   TRANSCRIBE_ENTRY,
   createPlayer,
@@ -17,6 +18,18 @@ import {
 } from './model/fakes'
 import type { Recordings } from './types'
 import { WORDS } from './words'
+
+// The set of icons is a file of its own that the host loads; the tab is tested with the name it gives.
+vi.mock('@numen/ui', async (original) => ({
+  ...(await original<Record<string, unknown>>()),
+  NamedIcon: defineComponent({
+    props: { name: { type: String, required: true } },
+    setup:
+      (props, { attrs }) =>
+      () =>
+        h('i', { ...attrs, 'data-icon': props.name }),
+  }),
+}))
 
 const mountTab = (
   recordings: Recordings,
@@ -80,7 +93,7 @@ describe('a recording tab', () => {
     await flush()
 
     const ask = tab.find('.transcript__ask')
-    expect(ask.text()).toBe(WORDS.transcribe)
+    expect(ask.text()).toBe(TRANSCRIBE_ENTRY.title)
     await ask.trigger('click')
     await flush()
 
@@ -105,7 +118,7 @@ describe('a recording tab', () => {
 
     await tab.find('.media__more').trigger('click')
     const item = [...document.querySelectorAll('[role="menuitem"]')].find((one) =>
-      one.textContent?.includes(WORDS.deleteText),
+      one.textContent?.includes(DELETE_ENTRY.title),
     ) as HTMLElement | undefined
     expect(item).toBeDefined()
     item!.click()
@@ -115,42 +128,43 @@ describe('a recording tab', () => {
     tab.unmount()
   })
 
-  it('offers proofread and re-transcribe in the overflow menu when a transcript exists', async () => {
-    const proofreadEntry = {
-      ...TRANSCRIBE_ENTRY,
-      pluginId: 'md.test.proofreading',
-      versionId: DELETE_ENTRY.versionId,
-      isLive: true,
-    }
+  it('lists every entry of the menu in the overflow menu when a transcript exists', async () => {
     const { recordings, state } = createRecordings(CUES, [
       TRANSCRIBE_ENTRY,
-      proofreadEntry,
+      PROOFREAD_ENTRY,
       DELETE_ENTRY,
     ])
     const { tab } = mountTab(recordings)
     await flush()
 
-    expect(tab.find('.media__proofread').exists()).toBe(false)
-
     await tab.find('.media__more').trigger('click')
+    const titles = [...document.querySelectorAll('[role="menuitem"]')].map((one) =>
+      one.textContent?.trim(),
+    )
+    expect(titles).toStrictEqual([
+      TRANSCRIBE_ENTRY.title,
+      PROOFREAD_ENTRY.title,
+      DELETE_ENTRY.title,
+    ])
+    const icons = [...document.querySelectorAll('[role="menuitem"]')].map(
+      (one) => one.querySelector('.media__menu-icon')?.getAttribute('data-icon') ?? '',
+    )
+    expect(icons).toStrictEqual([TRANSCRIBE_ENTRY.icon, PROOFREAD_ENTRY.icon, ''])
     const proofreadItem = [...document.querySelectorAll('[role="menuitem"]')].find(
-      (one) => one.textContent?.trim() === WORDS.proofread,
-    ) as HTMLElement | undefined
-    expect(proofreadItem).toBeDefined()
-    expect(proofreadItem!.querySelector('.media__menu-icon')).not.toBeNull()
-    proofreadItem!.click()
+      (one) => one.textContent?.trim() === PROOFREAD_ENTRY.title,
+    ) as HTMLElement
+    proofreadItem.click()
     await flush()
-    expect(state.runs).toStrictEqual([proofreadEntry])
+    expect(state.runs).toStrictEqual([PROOFREAD_ENTRY])
 
     await tab.find('.media__more').trigger('click')
     const retranscribeItem = [...document.querySelectorAll('[role="menuitem"]')].find(
-      (one) => one.textContent?.trim() === WORDS.transcribe,
-    ) as HTMLElement | undefined
-    expect(retranscribeItem).toBeDefined()
-    retranscribeItem!.click()
+      (one) => one.textContent?.trim() === TRANSCRIBE_ENTRY.title,
+    ) as HTMLElement
+    retranscribeItem.click()
     await flush()
 
-    expect(state.runs).toStrictEqual([proofreadEntry, TRANSCRIBE_ENTRY])
+    expect(state.runs).toStrictEqual([PROOFREAD_ENTRY, TRANSCRIBE_ENTRY])
     tab.unmount()
   })
 

@@ -32,13 +32,5 @@ export {
 } from './errors/answers'
 export type { ErrorCode } from './errors/errorCode'
 export { ERRORS, getErrorWords, getKnownErrorCode } from './errors/codes'
-export {
-  FILE_MENU_ACTION,
-  getFileMenu,
-  getMediaSource,
-  getPageSource,
-  readFileMenuEntries,
-  runFileMenuEntry,
-  writeFileMenuAction,
-} from './media'
-export type { FileMenuActionKind, FileMenuEntry, MediaSource } from './media'
+export { getFileMenu, getMediaSource, getPageSource, runFileMenuEntry } from './media'
+export type { FileMenuEntry, MediaSource } from './media'

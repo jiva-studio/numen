@@ -5,14 +5,14 @@
  *
  * The sound plays through the window's one player, so the controls only say what a person did.
  */
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import Player from './Player.vue'
 import MediaLayout from './MediaLayout.vue'
 import { useTranscript, type TranscriptOptions } from './model/transcript'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import type { Recordings, TextRange } from './types'
 import { createTimeSelector, getSelectorStart } from './lib/place'
-import { DELETE_TEXT, PROOFREAD, TRANSCRIBE, WORDS as words } from './words'
+import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -29,14 +29,7 @@ const targetPath = props.path || props.file || props.state?.path || props.state?
 
 const tab = useTranscript(props.recordings, targetPath, props.how)
 const { now, runs, isPlaying, isUnplayable } = tab.playback
-const { isRetranscribable, isProofreadable, isDeletable } = tab.offers
-
-/** What the menu offers over this recording: each item only where it applies. */
-const menuItems = computed(() => [
-  ...(isProofreadable.value ? [{ id: PROOFREAD, text: words.proofread }] : []),
-  ...(isRetranscribable.value ? [{ id: TRANSCRIBE, text: words.transcribe }] : []),
-  ...(isDeletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : []),
-])
+const menuItems = tab.offers.items
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -77,9 +70,7 @@ onUnmounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
-  if (id === PROOFREAD) void tab.offers.proofread()
-  if (id === TRANSCRIBE) void tab.offers.transcribe()
-  if (id === DELETE_TEXT) void tab.offers.deleteTranscript()
+  void tab.offers.run(id)
 }
 
 function onPlay() {

@@ -24,7 +24,7 @@ const { failure, isPlaying: playbackIsPlaying } = props.state.playback
 const { current, following, note, isLoading, error, isEditable } = props.state.content
 const { prose, typing } = props.state.draft
 const { timed, times: cueTimes, hasText } = props.state.lines
-const { isTranscribable } = props.state.offers
+const { isStartable, starter } = props.state.offers
 const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
 /** The times in the editor's gutter, and the line being said. */
@@ -55,7 +55,7 @@ watch(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onTranscribe() {
-  void props.state.offers.transcribe()
+  void props.state.offers.start()
 }
 
 function onUpdateModelValue(text: string) {
@@ -79,11 +79,11 @@ function onSave() {
     <LoadingIndicator v-if="isLoading" :label="words.loading" />
 
     <div v-else-if="!hasText" class="transcript__silence">
-      <p v-if="!isTranscribable" class="transcript__note">
+      <p v-if="!isStartable" class="transcript__note">
         {{ note }}
       </p>
       <button v-else type="button" class="transcript__ask" @click="onTranscribe">
-        {{ words.transcribe }}
+        {{ starter?.title }}
       </button>
     </div>
 
