@@ -100,8 +100,8 @@ describe('the arrowhead of a curve whose head covers no distance', () => {
 })
 
 describe('the arrowhead of a curve that turns back within the head', () => {
-  // Rises to a peak a little past its end and comes back to it, so the piece
-  // of curve the head covers runs the way the line was going before it turned.
+  // Rises to a peak slightly past its end and returns to it, so the part of the
+  // curve under the arrowhead runs in the direction the line had before it turned.
   const turnsBackDown = axisColumn(0, 300, 300, 295)
   const turnsBackAcross = axisRow(0, 300, 300, 295)
 

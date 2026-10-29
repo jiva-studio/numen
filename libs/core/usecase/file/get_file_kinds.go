@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// GetFileKinds returns the files in the order asked, with the type of each note. The type is the
+// GetFileKinds returns the files in the requested order, with the type of each note. The type is the
 // index's, and a note the index does not hold yet, such as one a plugin has just written, is read
-// for it. A path with nothing at it is left out, and each entry carries its path and kind.
+// directly. A path with nothing at it is omitted, and each entry carries its path and kind.
 type GetFileKinds struct {
 	readers vaultport.VaultReaders
 	queries noteport.NoteQueries
@@ -35,7 +35,7 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 		if errors.Is(err, vaultport.ErrNotExist) || errors.Is(err, vaultport.ErrOutside) {
 			continue
 		}
-		// A file the vault leaves alone stands there and is no source.
+		// A file the vault ignores is present and is not a source.
 		if err != nil && !errors.Is(err, vaultport.ErrNotANote) {
 			return Folder{}, err
 		}

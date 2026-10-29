@@ -11,27 +11,27 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
-// mostPerBook is how much text one book may yield, and is the answer to an
-// archive that says its entries are small and holds a few hundred kilobytes of
-// zeros. It is the package's own bound, written again here because a target
-// that reads the bound out of the code under test measures nothing.
+// mostPerBook bounds the text one book may yield, covering an archive whose
+// entries declare small sizes but hold a few hundred kilobytes of zeros. It
+// duplicates the package's own bound because a fuzz target that reads the bound
+// from the code under test verifies nothing.
 const mostPerBook = 256 << 20
 
 // mostFuzzed is how much of one book's text is read as markup before the target
 // moves on to the next file.
 const mostFuzzed = 1 << 20
 
-// A book read without complaint is one the rest of the application can hold:
-// offset inside the text that was read, in the order they are read in, and each
-// carries a name on one line. The tier the book says its parts came from is the
-// tier that produced them.
+// A book read without error satisfies the invariants the rest of the
+// application relies on: every offset lies inside the text, parts are in reading
+// order, and each part has a one-line name. The tier recorded for the parts is
+// the tier that produced them.
 //
-// However small the file, the text it yields is bounded: what an archive says
-// about the size of its entries is believed about nothing.
+// However small the file, the text it yields is bounded; sizes declared by an
+// archive are not trusted.
 //
-// A file that could not be read fails as one that is no archive, one that
-// holds no container, one that holds no package document, or one whose spine is
-// ciphertext. A book that is empty is read, and is a different answer.
+// A file that cannot be read fails as a non-archive, an archive with no
+// container, an archive with no package document, or a book whose spine is
+// ciphertext. An empty book is read successfully and is a distinct result.
 func FuzzRead(f *testing.F) {
 	whole := tinyBook(f, nil)
 	f.Add(whole)
@@ -39,7 +39,7 @@ func FuzzRead(f *testing.F) {
 	// written over.
 	f.Add(whole[:len(whole)/2])
 	f.Add(flipByte(whole, len(whole)/3))
-	// The central directory says one thing and the entry says another: the two
+	// The central directory and the entry header disagree.
 	f.Add(renameEntry(whole))
 	// An entry whose header claims a size it has not got.
 	f.Add(overstateEntrySize(whole))
@@ -58,10 +58,10 @@ func FuzzRead(f *testing.F) {
 	f.Add(tinyBook(f, map[string]string{"OEBPS/first.xhtml": "variant/plain.xhtml"}))
 
 	parts := tinyParts(f)
-	// A spine naming a document that climbs out of the archive: once from a
-	// package document in a folder, where what it names resolves to nothing and
-	// the document is left out, and once from one at the root, where the archive
-	// holds an entry under that very name and the book is read out of it.
+	// A spine naming a document outside the archive root: once from a package
+	// document in a folder, where the name resolves to nothing and the document is
+	// omitted, and once from a package document at the root, where the archive has
+	// an entry with that exact name and the book is read from it.
 	climbing := clone(parts)
 	climbing["OEBPS/content.opf"] = bytes.ReplaceAll(
 		climbing["OEBPS/content.opf"], []byte(`href="first.xhtml"`), []byte(`href="../../first.xhtml"`))
@@ -106,9 +106,8 @@ func FuzzRead(f *testing.F) {
 	divided["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
 	f.Add(buildReversedArchive(f, divided))
 
-	// An entry of nothing but zeros, which deflates to a few hundred bytes and
-	// is read back as seventeen megabytes: a byte past what one document may
-	// spend. The bound is what refuses it.
+	// An entry of only zeros, which deflates to a few hundred bytes and expands to
+	// seventeen megabytes: more than one document may use. The bound rejects it.
 	bomb := clone(parts)
 	bomb["OEBPS/second.xhtml"] = make([]byte, 17<<20)
 	f.Add(buildReversedArchive(f, bomb))
@@ -193,8 +192,8 @@ func FuzzRead(f *testing.F) {
 				len(book.Parts), book.Tier)
 		}
 
-		// Every offset a chunk of this text could carry is one the book can be
-		// asked about, and what it answers with is what a reader is shown.
+		// Every offset a chunk of this text could carry can be located in the book,
+		// and the result is what a reader displays.
 		for _, offset := range []int{0, len(book.Text) / 2, len(book.Text)} {
 			where := book.Locate(offset)
 			if where.Document != "" && !isAtOrBefore(book.Documents, where.Document, offset) {
@@ -277,8 +276,8 @@ func renameEntry(raw []byte) []byte {
 func overstateEntrySize(raw []byte) []byte {
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
-	// The uncompressed size stands twenty-four bytes into a central directory
-	// header, four bytes wide and least significant first.
+	// The uncompressed size is at byte offset 24 of a central directory header,
+	// four bytes wide, least significant byte first.
 	if pos := bytes.Index(changed, []byte("PK\x01\x02")); pos >= 0 && pos+28 <= len(changed) {
 		copy(changed[pos+24:pos+28], []byte{0xff, 0xff, 0xff, 0x7f})
 	}
@@ -342,12 +341,12 @@ func FuzzMarkup(f *testing.F) {
 	})
 }
 
-// checkHTML holds the markup a window is handed to what a window may be handed:
-// nothing that runs, nothing that dresses the page, and no address in a scheme
-// a person may not be sent to. It is put on the page unescaped, so whatever the
-// book wrote, this is what the browser parses.
+// checkHTML verifies that the markup delivered to a window contains only what a
+// window may receive: nothing executable, no styling, and no address with a
+// scheme the user may not be sent to. The markup is inserted unescaped, so
+// whatever the book contains, this is what the browser parses.
 //
-// The runs say the document's text, in the order the markup writes them.
+// The runs give the document's text in the order the markup writes them.
 func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Markup) {
 	t.Helper()
 	root := parseHTML(t, markup.HTML())

@@ -40,8 +40,8 @@ func getRefusedImports(path string) (refuses []string, named bool) {
 	return outward, false
 }
 
-// isEdgeRefused says whether a package would be failed for the edge it has,
-// which is what inward does with what getRefusedImports says.
+// isEdgeRefused reports whether a package fails the check for the edge it has;
+// inward applies this to the result of getRefusedImports.
 func isEdgeRefused(pkg, dep string) bool {
 	isRefused, _ := getRefusedImports(module + pkg)
 	for _, blocked := range isRefused {
@@ -52,8 +52,9 @@ func isEdgeRefused(pkg, dep string) bool {
 	return false
 }
 
-// What getRefusedImports says is the whole of the rule, so it is asked directly.
-// A walk that reads the tree and refuses nothing passes: these are the edges
+// getRefusedImports defines the complete rule, so the test calls it directly.
+// A walk that reads the tree but rejects nothing would pass, so these cases pin
+// the forbidden edges.
 func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		pkg, dep  string
@@ -110,11 +111,11 @@ var shipped = []struct{ goos, goarch string }{
 	{"android", "arm64"},
 }
 
-// Imports point inward. What the build resolved is what is read, so a package
-// the core reaches through another answers for it too, and answering says how
+// Imports point inward. The test reads the build's resolved imports, so a
+// package the core reaches through another package is checked as well.
 //
-// A test file is left out: a test stands outside the package it exercises and
-// builds the adapters that stand in for the real ones.
+// A test file is excluded: a test sits outside the package it exercises and
+// builds the adapters that replace the real ones.
 func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 	for _, one := range shipped {
 		t.Run(one.goos+"/"+one.goarch, func(t *testing.T) {
@@ -123,8 +124,8 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 	}
 }
 
-// inward reads the tree as one platform's build resolves it and holds every
-// package of it to what answering says it may be compiled from.
+// inward reads the tree as one platform's build resolves it and checks every
+// package against the packages it may be compiled from.
 func inward(t *testing.T, goos, goarch string) {
 	t.Helper()
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")

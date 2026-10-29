@@ -2,9 +2,9 @@
 /**
  * A name being typed, over the row it belongs to.
  *
- * It keeps the keyboard and the pointer to itself, so nothing done in it
- * reaches the row underneath. Which row is being renamed, and where the
- * keyboard goes once the typing is over, are the tree's.
+ * It captures the keyboard and the pointer, so nothing done in it reaches the
+ * row underneath. The tree decides which row is being renamed and where
+ * keyboard focus goes after the typing ends.
  */
 import { useTemplateRef } from 'vue'
 
@@ -27,7 +27,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', name: string): void
-  /** The name left as it was, and the keyboard asked back to the row. */
+  /** The name is left unchanged, and keyboard focus returns to the row. */
   (event: 'abandon'): void
   /** The field left, the keyboard already somewhere else. */
   (event: 'blur'): void
@@ -106,7 +106,7 @@ defineExpose({ focus })
   line-height: inherit;
 }
 
-/* Where the keyboard stands. */
+/* Keyboard focus. */
 .tree__field:focus-visible {
   outline: none;
 }

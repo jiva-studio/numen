@@ -26,8 +26,8 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 	return agentbridge.NewRouter(c.PluginHost)
 }
 
-// getAgentPrograms are the programs the agent plugins list, asked for with the command lines the
-// settings give. A provider that does not answer in time lists none.
+// getAgentPrograms returns the programs the agent plugins list, requested with the command lines
+// from the settings. A provider that does not respond in time lists none.
 func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settings.Agent) []agentport.AgentProgram {
 	if provider == nil {
 		return nil
@@ -98,7 +98,7 @@ func (c Config) setCompleter() {
 // GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at
 // every task. A task naming no program goes to the one agent.use names, else to the default of the
 // plugins. Each run reaches the tools of the plugins on an endpoint of its own. It is nil where
-// AgentProvider is.
+// AgentProvider is nil.
 func (c Config) GetSettingsAgent() agentport.Agent {
 	provider := c.AgentProvider()
 	if provider == nil {

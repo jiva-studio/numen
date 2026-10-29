@@ -1,9 +1,8 @@
 /**
- * Where something chosen in the palette takes the person, asked without a
- * window.
+ * The destination of an item chosen in the palette, resolved without a window.
  *
- * Each of the three lands somewhere else, and taking the wrong one is a person
- * who asked for a passage and was given the top of a note.
+ * Each of the three resolves to a different destination, and the wrong one
+ * sends a request for a passage to the top of a note.
  */
 import { describe, expect, it } from 'vitest'
 import { openDestination, type DestinationDeps } from './destination'

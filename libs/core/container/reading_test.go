@@ -84,7 +84,7 @@ func TestSearchOver_WithoutModelUsesWords(t *testing.T) {
 	}
 }
 
-// A second opening of the index says what the vault holds.
+// A reopened index still lists the vault's sources.
 func TestReopenedIndex_KeepsSources(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 

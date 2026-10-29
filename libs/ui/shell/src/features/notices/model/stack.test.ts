@@ -1,4 +1,4 @@
-/** How long the corner has been in a person's hand, and what that does to the moment cards are read against. */
+/** How long the pointer has been over the corner, and how that affects the moment cards are read against. */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { shallowRef } from 'vue'
 import { useNoticeStack, type NoticeStackState } from './stack'
@@ -19,7 +19,7 @@ const pointerEvent = (type: string, related: EventTarget | null = null): Pointer
 const focusEvent = (type: string, related: EventTarget | null = null): FocusEvent =>
   new FocusEvent(type, { relatedTarget: related })
 
-/** A pointer arriving on the card, as the card's own listener hears it. */
+/** A pointer entering the card, as the card's own listener receives it. */
 const pointOver = (): void => {
   const event = pointerEvent('pointerover')
   card.addEventListener('pointerover', state.onPointerOver, { once: true })

@@ -9,11 +9,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// ErrFolder is what removing a path that names a folder says. Notes are removed
-// by naming each of them.
+// ErrFolder reports an attempt to remove a path that is a folder. Notes are
+// removed one by one.
 var ErrFolder = errors.New("this is a folder, and this removes notes: name the notes to remove")
 
-// RemoveNote removes one note, to the trash or outright, and refuses a folder.
+// RemoveNote removes one note, to the trash or permanently, and rejects a folder.
 type RemoveNote struct {
 	remove  Remove
 	readers vaultport.VaultReaders

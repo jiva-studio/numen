@@ -36,9 +36,10 @@ func (s *acpSession) listServers() ([]any, error) {
 	}}, nil
 }
 
-// answerPermission selects the option that allows the call once where the call is one of the run's
-// tools, and refuses anything else. The tool is told by the programmatic name ACP gives a tool call,
-// never by its title, which an agent writes for a person.
+// answerPermission selects the option that allows the call once when the call
+// is one of the run's tools, and rejects anything else. The tool is identified
+// by the programmatic name ACP gives a tool call, never by its title, which the
+// agent writes for display.
 func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
 	denial := map[string]any{"outcome": map[string]any{"outcome": "cancelled"}}
 	var request struct {
@@ -63,8 +64,9 @@ func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
 	return denial
 }
 
-// isRunTool says whether a tool call is a call of one of the run's tools, by the name the request
-// gives it, else by the name the agent reported for the call before. A call of no name is none.
+// isRunTool reports whether a tool call is a call of one of the run's tools,
+// by the name in the request, else by the name the agent reported earlier for
+// the call. A call with no name is not a run tool.
 func (s *acpSession) isRunTool(callID, name string) bool {
 	if name == "" {
 		if call := s.calls[callID]; call != nil {

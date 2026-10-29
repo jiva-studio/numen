@@ -13,7 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 )
 
-// torn append is made. It stands above anything else the run has open.
+// fileCap is the file size limit under which a partial append occurs. It is
+// larger than any other file the run has open.
 const fileCap = 1 << 20
 
 // capFileSize holds every file this process writes to a length, and returns what
@@ -21,8 +22,8 @@ const fileCap = 1 << 20
 func capFileSize(t *testing.T, to int64) func() {
 	t.Helper()
 
-	// A write that reaches the cap raises SIGXFSZ, and what the write itself
-	// returns is what this is about.
+	// A write that reaches the cap raises SIGXFSZ; the test checks the error the
+	// write itself returns.
 	signal.Ignore(syscall.SIGXFSZ)
 
 	var was syscall.Rlimit
@@ -48,8 +49,8 @@ func capFileSize(t *testing.T, to int64) func() {
 	return lift
 }
 
-// An append that does not land whole is taken back, so that the next one writes
-// a line of its own and the two are not read as one.
+// An append that does not complete is rolled back, so the next append writes
+// its own line and the two are not read as one.
 func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
@@ -60,9 +61,9 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The one call has to ask for more than the cap allows. Darwin weighs the
-	// cap against the offset the file was opened at, so the length of the
-	// append is what reaches past it.
+	// The single call must request more than the cap allows. Darwin compares the
+	// cap with the offset the file was opened at, so the append length is what
+	// exceeds it.
 	lift := capFileSize(t, fileCap)
 	divided := strings.Repeat("b", 4*fileCap) + "\n"
 	err := derived.Append(ctx, "area/run.txt", []byte(divided))

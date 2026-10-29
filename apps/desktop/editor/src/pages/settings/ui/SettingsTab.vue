@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The settings tab: everything in numen.json a person can change, grouped by
+ * The settings tab: every numen.json setting the user can change, grouped by
  * the part of the application it governs.
  */
 import { computed, ref, watch } from 'vue'

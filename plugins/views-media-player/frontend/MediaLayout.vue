@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { measureRect } from './dom'
 /**
- * A recording and its transcript: the player at the top of the pane, and under it the words.
+ * A recording and its transcript: the player at the top of the pane, and the transcript text below it.
  *
- * The player comes in through the slot, and so does whatever the tab lets a person ask over it.
+ * The player is provided through the slot, as is any tab-specific content shown over it.
  */
 import { computed, ref, type Component } from 'vue'
 import { AudioLines, SpellCheck, Trash2 } from '@lucide/vue'
@@ -37,7 +37,7 @@ const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
 const items = computed(() => props.menuItems ?? [])
 
-/** Where the menu was asked for, and nothing while it is not open. */
+/** The position the menu was requested at; null while the menu is closed. */
 const menu = ref<{ at: Position; from: HTMLElement } | null>(null)
 
 /* -------------------------------- Handlers -------------------------------- */

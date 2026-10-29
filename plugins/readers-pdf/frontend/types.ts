@@ -49,7 +49,7 @@ export interface PageHandle {
   measure(): void
   /** A key the tab caught: true where it turned the page. */
   handleKey(event: KeyboardEvent): boolean
-  /** The pages take the keyboard, so that a key struck reaches them. */
+  /** Gives the pages keyboard focus, so key presses reach them. */
   focusPages(): void
 }
 

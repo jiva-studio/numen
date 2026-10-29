@@ -1,6 +1,6 @@
 /**
- * How a line of work is laid out: which words go where, and what stands beside
- * them. The stories are where it is drawn.
+ * How a line of work is laid out: which text goes where, and what is adjacent
+ * to it. The stories render it.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'

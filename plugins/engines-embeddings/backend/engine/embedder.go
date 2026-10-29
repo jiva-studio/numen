@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 )
 
-// The inputs a sentence encoder exported to ONNX asks for.
+// The inputs a sentence encoder exported to ONNX requires.
 const (
 	inputIDs      = "input_ids"
 	attentionMask = "attention_mask"

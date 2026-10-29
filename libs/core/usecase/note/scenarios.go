@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// Scenarios is everything that acts on the notes of a vault. A window and the
-// tools an agent calls are served the same set, so what one of them refuses the
-// other refuses, and a dependency named once is named for both.
+// Scenarios is everything that acts on the notes of a vault. The window and the
+// agent tools use the same set, so both enforce the same rules and a dependency
+// is configured once for both.
 type Scenarios struct {
 	Read         Read
 	Write        Write
@@ -34,8 +34,8 @@ type Scenarios struct {
 	RemoveNote     RemoveNote
 }
 
-// FollowMoves tells a window where each note went, so whoever is showing one at
-// the name it had follows it to the name it now has. Every build with a window
+// FollowMoves notifies a window of each note move, so a view showing a note under
+// its old name switches to the new name. Every build with a window
 // binds it.
 func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
 	mover := n.Move
@@ -46,11 +46,11 @@ func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
 	return n
 }
 
-// ShowEdits tells a window what each write is doing while it is being made, so a
-// person watching the note sees the stretch that is changing.
+// ShowEdits notifies a window of each write in progress, so a user watching the
+// note sees the changing range.
 //
-// Only a caller that is not the person binds it. The window's own writes draw
-// nothing, because the person is looking at the text they typed.
+// Only a caller other than the user binds it. The window's own writes are not
+// drawn, because the user is looking at the text they typed.
 func (n Scenarios) ShowEdits(view windowport.Window) Scenarios {
 	tell := TellEdit(func(ctx context.Context, response domain.Edit) {
 		_ = view.ShowEdit(ctx, response)

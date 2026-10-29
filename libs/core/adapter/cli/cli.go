@@ -1,6 +1,6 @@
-// Package cli is a driving adapter: it turns arguments into calls on the core
-// and results into text. A graphical shell will be another such adapter, and
-// the core knows about neither.
+// Package cli is a driving adapter: it converts arguments into calls on the core
+// and results into text. A graphical shell would be another such adapter; the core
+// depends on neither.
 package cli
 
 import (
@@ -36,10 +36,10 @@ options:
   --service-dir <name>  the folder a vault keeps its identity in (default: .numen)
 `
 
-// Main runs the command line and returns a process exit code. open is asked
-// for what this run works through, once the places a person pointed it at have
-// been read off the arguments: an installation is assembled by the application,
-// and this is where one is asked for.
+// Main runs the command line and returns a process exit code. open supplies the
+// installation this run works with, once the locations given on the command line
+// have been read from the arguments: the application assembles an installation, and
+// open requests one.
 func Main(ctx context.Context, out, errOut io.Writer, args []string,
 	open func(Locations) Deps,
 ) int {
@@ -50,8 +50,8 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 	return 0
 }
 
-// Run is Main with its output injected and errors returned, so what the person
-// sees is testable. errOut carries what a command says beside its answer.
+// Run is Main with its output injected and errors returned, so the output is
+// testable. errOut carries what a command reports besides its result.
 func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	open func(Locations) Deps,
 ) error {

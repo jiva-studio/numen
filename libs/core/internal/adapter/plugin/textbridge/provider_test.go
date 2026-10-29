@@ -37,7 +37,7 @@ func (s *texts) CreateText(_ context.Context, req *connect.Request[v1.TextProvid
 	return connect.NewResponse(&v1.TextProviderServiceCreateTextResponse{}), nil
 }
 
-// host knows three plugins: one that makes text, one that makes none, and one switched off.
+// host holds three plugins: one that produces text, one that produces none, and one switched off.
 type host struct {
 	pluginport.PluginDiscoverer
 	pluginport.PluginResolver

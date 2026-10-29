@@ -65,7 +65,7 @@ const getCells = (state: EditorState, row: SyntaxNode): Cell[] => {
   return cells
 }
 
-/** What the table under `node` says, and where every part of it is written. */
+/** The structure of the table under `node`, and where every part of it is written. */
 export const readTable = (state: EditorState, node: SyntaxNode): Table => {
   let head: Cell[] = []
   const body: Cell[][] = []

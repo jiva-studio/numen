@@ -1,9 +1,9 @@
 /**
- * The stories of every plugin, drawn in a real browser as one corpus.
+ * The stories of every plugin, rendered in a real browser as one corpus.
  *
  * A plugin's unit tests run under its own `vitest.config.ts`. The stories of
- * all of them are collected here, against the components' build, the way a
- * plugin reaches them in the window.
+ * all plugins are collected here, against the components' build, as a plugin
+ * consumes them in the window.
  */
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'

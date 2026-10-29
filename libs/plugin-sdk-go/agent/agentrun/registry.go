@@ -9,8 +9,8 @@ import (
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// Registry is the work an agent started and has not been told is over, and the session each
-// conversation is on. The zero value is ready.
+// Registry tracks the work an agent started that has not ended, and the session of each
+// conversation. The zero value is ready to use.
 type Registry struct {
 	mu       sync.Mutex
 	running  map[*Work]bool
@@ -18,8 +18,8 @@ type Registry struct {
 	sessions map[string]string
 }
 
-// Add keeps the work so that Close can reach it, and counts its reader, which calls End on the work
-// when it is done. It is false once the registry is closed.
+// Add registers the work so that Close can reach it, and counts its reader, which calls End on the work
+// when it is done. It returns false once the registry is closed.
 func (r *Registry) Add(w *Work) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -80,8 +80,8 @@ func (r *Registry) EndConversation(_ context.Context, conversation string) error
 	return nil
 }
 
-// GetSession returns the session the next task of the conversation is asked in, empty where
-// nothing has been asked yet.
+// GetSession returns the session in which the next task of the conversation runs, empty when
+// nothing has run yet.
 func (r *Registry) GetSession(conversation string) string {
 	if conversation == "" {
 		return ""

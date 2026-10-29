@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * One choice out of a list, taken from the menu this product draws. Choices
- * naming a group are drawn under its name.
+ * One choice out of a list, selected from the product's menu. Choices that name
+ * a group are shown under the group name.
  *
- * A value in force that is none of the choices is written on the line as it
- * stands, and the caller is told nothing until a choice is made.
+ * A current value that matches none of the choices is displayed as it is, and
+ * no event is emitted until a choice is made.
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'

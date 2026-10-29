@@ -6,13 +6,13 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/schematest"
 )
 
-// Whether every value of a schema enum reaches something is checked by the protocol module's
-// schematest, for the core and the plugins alike.
+// The protocol module's schematest checks, for the core and the plugins alike,
+// that every value of a schema enum is handled.
 
 // SchemaEnum is one enum of the schema, as the generated code declares it.
 type SchemaEnum = schematest.SchemaEnum
 
-// CheckHandled fails for every value of the enum that reaches nothing on the way in.
+// CheckHandled fails for every value of the enum that is not handled on input.
 func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
 	schematest.CheckHandled(t, reading)

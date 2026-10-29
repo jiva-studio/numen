@@ -1,6 +1,6 @@
 /**
- * What a plex tab asks of the window, as the host's workspace and the notes of
- * the vault answer it.
+ * What a plex tab requests from the window, as answered by the host's workspace
+ * and the notes of the vault.
  */
 import { describe, expect, it } from 'vitest'
 import { createHost } from '../fixtures/host'

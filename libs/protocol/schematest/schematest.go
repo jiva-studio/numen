@@ -1,4 +1,4 @@
-// Package schematest checks, for a test, that every value of an enum of the schema reaches something.
+// Package schematest checks, for a test, that every value of a schema enum is handled.
 package schematest
 
 import (
@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// Whether every value of a schema enum reaches something.
+// Whether every value of a schema enum is handled.
 //
 // The linter reads a switch and stops at its default, and every switch over a
 // schema enum here writes one; a map keyed by an enum it does not read at all.
@@ -21,8 +21,8 @@ type SchemaEnum interface {
 	protoreflect.Enum
 }
 
-// CheckHandled fails for every value of the enum that reaches nothing on the
-// way in. Reading answers whether the value was acted on.
+// CheckHandled fails for every value of the enum that has no handler on the
+// way in. Reading reports whether the value was acted on.
 func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
 	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
@@ -32,9 +32,9 @@ func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	})
 }
 
-// CheckProduced fails for every value of the enum nothing on this side is
-// written as. From names what each value is written from, and writing does the
-// writing, so a value nobody names and a value named for the wrong thing both
+// CheckProduced fails for every value of the enum that nothing on this side
+// produces. From names what each value is written from, and writing does the
+// writing, so a value no one names and a value named for the wrong thing both
 // fail.
 func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func(C) E) {
 	t.Helper()
@@ -63,7 +63,7 @@ func RoundTrip[E SchemaEnum, C any](t *testing.T, reading func(E) C, writing fun
 }
 
 // checkEachValue runs check over every value of the enum but the unspecified zero, which
-// is what a field carries when nothing was said and is nobody's to act on.
+// is what a field carries when nothing was set and has no action.
 func checkEachValue[E SchemaEnum](t *testing.T, check func(*testing.T, protoreflect.EnumValueDescriptor, E)) {
 	t.Helper()
 	var zero E

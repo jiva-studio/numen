@@ -21,7 +21,7 @@ type indexSourceAssembly interface {
 	GetPassageQueries() sourceport.PassageQueries
 }
 
-// IndexAssembly is what this window asks the cache and index queries of an installation.
+// IndexAssembly provides the cache and index queries of an installation to this window.
 type IndexAssembly interface {
 	indexNoteAssembly
 	indexSourceAssembly

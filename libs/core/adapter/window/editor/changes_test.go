@@ -33,21 +33,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// openVault is a vault with a window's worth of machinery behind it — the index,
-// the first scan, the watcher — and a client talking to it the way the window
-// does.
+// openVault is a vault with the full window stack (index, first scan, watcher)
+// and a client connected to it as the window connects.
 //
-// What is asked here is the wire: that a change reaches a client over the
-// stream, in the shape the schema describes. What a change means is asked of
-// the use case, where no server is needed to ask it.
+// It tests the wire: that a change reaches a client over the stream in the
+// shape the schema describes. The meaning of a change is tested at the use
+// case, where no server is needed.
 func openVault(t *testing.T, notes map[string]string) (questions, string) {
 	t.Helper()
 	client, _, root, _ := openVaultWithWindow(t, notes)
 	return client, root
 }
 
-// openVaultWithWindow is that same vault, with the window's half of it as well, for a test
-// asking what something the window does reaches the client as.
+// openVaultWithWindow is openVault with the window side included, for tests of
+// what a window action delivers to the client.
 func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	questions, numenv1connect.WindowServiceClient, string, *editor.Installation,
 ) {
@@ -117,8 +116,8 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	return questions{}, nil, "", nil
 }
 
-// TestAnEditReachesAListener is the whole path: a file on disk, the watcher,
-// the index, and the stream a window listens to.
+// TestAnEditReachesAListener covers the whole path: a file on disk, the
+// watcher, the index, and the stream a window listens to.
 func TestAnEditReachesAListener(t *testing.T) {
 	client, root := openVault(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n",
@@ -136,7 +135,8 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 	defer changes.Close()
 
-	// The first message says the stream is open and nothing has changed yet.
+	// The first message reports that the stream is open and that nothing has
+	// changed.
 	if !changes.Receive() {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
@@ -221,9 +221,8 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 	}
 }
 
-// questions is everything a window asks about the vault it is showing: what the
-// One window asks every service that answers them, so a test holds one of these
-// and calls a question by its own name.
+// questions bundles the service clients a window uses to query the vault it
+// shows, so a test calls each query by its own name.
 type questions struct {
 	numenv1connect.VaultServiceClient
 	numenv1connect.WorkspaceServiceClient
@@ -256,8 +255,8 @@ func mountQuestionsServices(mux *http.ServeMux, services *editor.Services) {
 // talking to it the way the window does.
 type going struct {
 	client questions
-	// configuring is the file a person configures this installation in, which
-	// is a service of its own beside the vault.
+	// configuring is the settings file client of this installation, a service
+	// separate from the vault.
 	configuring numenv1connect.SettingsServiceClient
 	// drawn is the window itself: what is being done behind it, and the drain
 	// that holds it back when it goes.
@@ -288,9 +287,9 @@ func (o *order) getAll() []string {
 	return append([]string(nil), o.outMsg...)
 }
 
-// openWindow opens a vault the way the window does for an installation nobody has
-// configured, with the moment of each write kept and, where a test asked for
-// one, the write held there.
+// openWindow opens a vault as the window does for an installation without
+// configuration, recording the time of each write and, where a test requests
+// it, holding the write.
 func openWindow(t *testing.T, hold *held, notes map[string]string) *going {
 	t.Helper()
 	return opening(t, hold, notes, true)
@@ -308,8 +307,8 @@ func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFi
 	}
 }
 
-// opening is openWindow with a title and a filename told apart or kept as one
-// name, which is the one setting a rename reads.
+// opening is openWindow with the title and filename either synchronized or kept
+// separate, the one setting a rename reads.
 func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTitleAndFilename) *going {
 	t.Helper()
 
@@ -384,8 +383,8 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	}
 }
 
-// read waits for the walk the window started to have been through the vault, so
-// that what the index says about a note is there to be asked for.
+// read waits until the window's vault walk has finished, so the index state of
+// a note can be queried.
 func (f *going) read(t *testing.T) {
 	t.Helper()
 
@@ -401,8 +400,8 @@ func (f *going) read(t *testing.T) {
 	t.Fatal("the vault in the window was never read")
 }
 
-// held is a writer a test lets through when it says so, which is what a write
-// that is still in the air looks like from here.
+// held is a writer that blocks until a test releases it, which simulates a
+// write in progress.
 type held struct {
 	begun chan struct{}
 	until chan struct{}
@@ -415,8 +414,8 @@ func newBlockedWriter() *held {
 
 func (h *held) release() { h.once.Do(func() { close(h.until) }) }
 
-// recording is the vault's writers with the moment of a write kept, and the
-// write held where a test asked for one.
+// recording wraps the vault's writers, records the time of each write, and
+// holds the write where a test requests it.
 type recording struct {
 	vaultport.VaultWriters
 	order *order
@@ -521,8 +520,9 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	}
 }
 
-// TestQuit_WaitsForPageFlush. The owed write is a buffer in
-// the webview, so the quit asks for it and does not go until it has landed.
+// TestQuit_WaitsForPageFlush covers the pending write, which is a buffer in the
+// webview: the quit requests the flush and does not proceed until it has
+// landed.
 func TestQuit_WaitsForPageFlush(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
@@ -535,7 +535,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	}
 	defer stream.Close()
 
-	// The stream opens by handing over the token, which asks for nothing.
+	// The stream opens by delivering the token.
 	if !stream.Receive() {
 		t.Fatalf("the stream never opened: %v", stream.Err())
 	}
@@ -550,8 +550,8 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			// What a page does: it writes what only it holds, and says so
-			// afterwards.
+			// Page behavior: it writes the content only it holds, then reports
+			// the write.
 			time.Sleep(200 * time.Millisecond)
 			if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 				Path: "Note.md",
@@ -642,8 +642,8 @@ func hasBody(file, body string) bool {
 	return len(file) >= len(body) && file[len(file)-len(body):] == body
 }
 
-// speaking is a page listening for the quit the way the window's page does,
-// answering each ask with what a test told it to.
+// speaking is a page that listens for the quit as the window's page does,
+// answering each request with the result a test configured.
 type speaking struct {
 	f        *going
 	token    string
@@ -684,7 +684,8 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	return p
 }
 
-// answerFlushes is the page doing, at every ask, what a test says a page does.
+// answerFlushes answers every flush request with the result the handler
+// returns.
 func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 	go func() {
 		for token := range p.question {
@@ -718,8 +719,9 @@ func (p *speaking) endStream(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 }
 
-// TestAPageWithAQuestionStandingDoesNotLetTheWindowGo. The text is in that
-// buffer and nowhere else, and only the person says where it ends up.
+// TestAPageWithAQuestionStandingDoesNotLetTheWindowGo covers a page that
+// reports a pending question: the text exists only in that buffer, and the user
+// decides where it goes.
 func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
@@ -738,8 +740,8 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 		t.Errorf("a page that had answered was waited on for %v", took)
 	}
 
-	// The vault is as it was: the person is going back to work, and the writes
-	// they do next have to land.
+	// The vault is unchanged: the user resumes work and subsequent writes must
+	// land.
 	if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
 		Body: "written after the question was raised\n",
@@ -769,8 +771,8 @@ func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
-	// What the window does with a close it called off: it waits on a person,
-	// and that wait is not measured.
+	// A cancelled close waits for the user's answer, and that wait is not
+	// bounded by the timeout.
 	reply := make(chan bool, 1)
 	go func() { reply <- f.installation.WaitForFlush(t.Context()) }()
 
@@ -780,7 +782,7 @@ func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 	case <-time.After(300 * time.Millisecond):
 	}
 
-	// The person answered every question, and the page has nothing left.
+	// The user has answered every question and the page has no pending content.
 	page.sendFlush(page.token, v1.FlushResult_FLUSH_RESULT_WRITTEN)
 
 	select {
@@ -806,7 +808,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 		if asks == 1 {
 			return v1.FlushResult_FLUSH_RESULT_ASKING
 		}
-		// What a page does once the person has said what happens to the text.
+		// Page behavior after the user has chosen what happens to the text.
 		if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "typed and never saved\n",
@@ -840,9 +842,9 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 	}
 }
 
-// TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind. A stream
-// ending is not an answer, so what the page held is waited for; and it is
-// waited for as silence is, which is the bound and no longer.
+// TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind covers a
+// stream that ends while a question is pending. A closed stream is not an
+// answer, so the window waits for the page up to the timeout and then proceeds.
 func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
@@ -904,9 +906,8 @@ func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	}
 }
 
-// The window asks for every setting and writes one of them back.
-
-// them. What the file leaves out stands there at its default.
+// getSetting reads all settings through the window and returns the value at the
+// given path. A setting absent from the file has its default value.
 func getSetting(t *testing.T, f *going, pos ...string) any {
 	t.Helper()
 	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
@@ -948,8 +949,8 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 		t.Errorf("the settings read out as %v", target)
 	}
 
-	// A model reaches the window with the setting it is read from and what
-	// choosing it writes, which is the whole of what the window does with one.
+	// Each model exposes the setting it is read from and the value that
+	// selecting it writes.
 	models := response.Msg.GetModels()
 	if len(models) == 0 {
 		t.Fatal("no setting names a model")
@@ -961,8 +962,8 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	}
 }
 
-// A setting written is answered by the next question, and the model chosen for
-// the agent stands where the models said it would.
+// A written setting is returned by the next read, and the model selected for
+// the agent is the one the models list reports.
 func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
@@ -1109,8 +1110,8 @@ func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 	}
 }
 
-// The setting a person writes is written where they will read it, and every
-// other byte of the file is left as they typed it.
+// A written setting is stored at its path in the file, and every other byte of
+// the file keeps its original formatting.
 func TestWriteSettingsKeepsTheRestOfTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
@@ -1234,16 +1235,16 @@ func TestAPassageReturnsWhichOfFourItsNoteIs(t *testing.T) {
 	}
 }
 
-// TestAPassageSaysWhatTheVaultHoldsAtItsPath. A list a person runs their eye
-// down draws a note as the note it is, and another file as a file.
+// TestAPassageSaysWhatTheVaultHoldsAtItsPath covers the list rendering: a note
+// entry is reported as a note, and any other file as a file.
 func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
 		"library/A Book.epub": string(testsupport.Book(t)),
 	})
 
-	// The text of a book is taken out of it behind the window, and the search
-	// reaches it once that has finished.
+	// The text of a book is extracted in the background, and the search returns
+	// it once extraction has finished.
 	kinds := map[string]bool{}
 	for range 500 {
 		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
@@ -1330,8 +1331,8 @@ func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
 	}
 }
 
-// A hit is a place in a source, and the client is told which place: it is what
-// opens the source there, and nothing the client holds says it.
+// A hit is a location in a source, and the response carries that location,
+// which the client uses to open the source there.
 func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
@@ -1424,8 +1425,8 @@ func TestANoteReturnsWhatItIsDividedInto(t *testing.T) {
 	}
 }
 
-// TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws each typed note as
-// its type, and the picture is where it is told which is which.
+// TestANeighbourhoodSaysWhichOfThreeEachNoteIs covers typed notes: the graph
+// renders each typed note as its type, and the response carries the type.
 func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
@@ -1458,7 +1459,8 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 		}
 	}
 
-	// And the note in focus is said the same way, a plex standing on a typed note.
+	// The focused note carries its type in the same way, when the graph is
+	// centered on a typed note.
 	item, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
 	if err != nil {

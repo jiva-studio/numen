@@ -28,7 +28,7 @@ export interface SettingFields {
   chooseModel(path: readonly string[], name: string): void
 }
 
-/** The source is asked for on every call, so a source that changes is followed. */
+/** The source is read on every call, so changes to the source are reflected. */
 export function createSettingFields(getSource: () => SettingSource): SettingFields {
   const getString = (path: readonly string[]): string => {
     const value = getSource().getSetting(path)

@@ -197,7 +197,7 @@ func (s *spineSteps) closeElement() {
 }
 
 // Read reads the manifest and the spine. The order is the spine's: file
-// order inside the archive says nothing about the order of a book.
+// order inside the archive does not indicate the order of a book.
 func Read(files map[string]*zip.File, opfPath string) (Package, error) {
 	raw, ok := archive.ReadEntry(files[opfPath])
 	if !ok {

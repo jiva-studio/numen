@@ -1,8 +1,9 @@
 /**
- * The width the pages of a document are asked for at.
+ * The width at which the pages of a document are requested.
  *
- * One width serves the whole document, so a page turned to is already drawn at
- * it, and it follows the row only once the row has stood still.
+ * One width serves the whole document, so a page scrolled to is already
+ * rendered at it, and the width follows the row only once the row has stopped
+ * changing.
  */
 import { hasWindow, win } from '../../dom'
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
@@ -10,17 +11,15 @@ import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 
 /** How many device pixels a CSS pixel is. One, where there is no window to ask. */
 const pixelRatio = (): number =>
-  !hasWindow() || !Number.isFinite(win.devicePixelRatio)
-    ? 1
-    : win.devicePixelRatio
+  !hasWindow() || !Number.isFinite(win.devicePixelRatio) ? 1 : win.devicePixelRatio
 
-/** The width a page is asked for at, staged. */
+/** Rounds a pixel width up to the next width step. */
 const roundUpWidth = (pixels: number): number => Math.ceil(pixels / WIDTH_STEP) * WIDTH_STEP
 
 export interface PageWidthState {
-  /** What the row asks for its pages at, in device pixels. */
+  /** The width the row requests for its pages, in device pixels. */
   readonly needed: ComputedRef<number>
-  /** What each page is asked for at, which follows that once it has settled. */
+  /** The width each page is requested at; follows `needed` once it has settled. */
   readonly drawnWidth: Ref<number>
 }
 
@@ -35,8 +34,8 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
   /** Debounce before a changed width is drawn, once it stops changing. */
   let widthTimer: ReturnType<typeof setTimeout> | undefined
 
-  // The first width is asked for at once: a document opening has nothing drawn
-  // and nothing to wait for.
+  // The first width applies immediately: a document that is opening has nothing
+  // rendered and nothing to wait for.
   watch(needed, (pixels, before) => {
     if (!pixels) return
     if (!before) {

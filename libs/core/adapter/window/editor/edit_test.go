@@ -29,8 +29,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// A change reaches everyone drawing the vault the way a note put in front of
-// the person does.
+// A change reaches every subscriber drawing the vault, the same way a note
+// opened in the editor does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	state := &State{Edits: newEditBroadcaster()}
 	line, isDone := state.Edits.subscribe()
@@ -152,8 +152,8 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 	}
 }
 
-// levelNothing brings nothing level: what is asked in these tests is what the
-// schema carries, and there is no index behind them to find it in.
+// levelNothing is a no-op reconciler: the queries in these tests use only what
+// the schema carries, and no index backs them.
 func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
 // openEditor is a vault with a read and a save on it and nothing behind them.
@@ -414,8 +414,8 @@ func TestEditLoad(t *testing.T) {
 	}
 }
 
-// The window says what currently open, and whoever answers on their behalf
-// reads the last of it.
+// The window reports the tabs that are currently open, and the handler returns
+// the latest report.
 
 func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 	state := &State{}

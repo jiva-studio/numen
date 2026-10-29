@@ -1,9 +1,9 @@
 /**
- * What a command is, and what it is asked over.
+ * Command and palette types: what a command is and the context it runs over.
  *
- * Nothing here decides anything: the table of commands is `lib/table.ts`, when
- * each is offered is `lib/availability.ts`, the words they are drawn in are `words.ts`,
- * and what the window offers one being carried out is `model/deps.ts`.
+ * This file defines types only. The command table is `lib/table.ts`, availability
+ * rules are `lib/availability.ts`, display words are `words.ts`, and the services
+ * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
 import type { PaletteKeys } from '@numen/ui'
@@ -27,18 +27,17 @@ export interface CommandsDeps {
 export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 
 /**
- * Which step the palette is on: one being asked for, or the list of commands.
- * `picking` asks the vault what it holds and `vaults` asks the installation;
- * `choosing` offers a list the window holds already; `arguments` asks for one
- * of a command's `prompts`, a step to each.
+ * The palette's current step: a prompt for one value, or the list of commands.
+ * `picking` queries the vault and `vaults` queries the installation; `choosing`
+ * offers an in-memory list; `arguments` prompts for one of a command's `prompts`,
+ * one step per prompt.
  */
 export type Step =
   'commands' | 'naming' | 'picking' | 'vaults' | 'choosing' | 'asking' | 'exactly' | 'arguments'
 
 /**
- * One value a command asks for under its own name, typed in a step of its own.
- * A step that is not `isRequired` goes on with nothing typed, and the value is
- * left out.
+ * One value a command requires, entered in its own step. A step that is not
+ * `isRequired` can be skipped, and the value is then omitted.
  */
 export interface CommandPrompt {
   readonly name: string
@@ -46,7 +45,7 @@ export interface CommandPrompt {
   readonly isRequired: boolean
 }
 
-/** What a command wants before it can happen, which is the step that asks. */
+/** The input a command requires before it runs; each one adds a prompt step. */
 export type PromptStep = Exclude<Step, 'commands'>
 
 /** The vault a command is over: the identity the list gives it, and its name. */
@@ -56,8 +55,8 @@ export interface VaultRef {
 }
 
 /**
- * What is in front of the person, and the note it means. An agent tab means
- * the note the plex is standing on.
+ * The current context: the active tab and the note it resolves to. For an agent
+ * tab, the note the plex is focused on.
  */
 export interface CommandTarget {
   /** The tab in front, for a command about the tab itself. */
@@ -68,34 +67,33 @@ export interface CommandTarget {
   readonly path: string
   readonly title: string
   /**
-   * The file a run is over. A tab holding a file names the file it holds; a
-   * row of the tree names the file the row stands for.
+   * The file a run targets. A tab holding a file names that file; a tree row
+   * names the file the row represents.
    */
   readonly file: string
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef
   /**
-   * Whether the vault can be asked to do anything. A vault still being read
-   * can: the walk runs behind the window, and what it has reached already
-   * answers.
+   * Whether the vault accepts operations. A vault still being scanned does: the
+   * scan runs in the background and the files it has reached are available.
    */
   readonly isReady: boolean
 }
 
-/** One thing a person can ask for. */
+/** A command a user can invoke. */
 export interface Command {
   readonly id: string
   readonly text: string
   /** A second line under the command text, such as the plugin that carries it out. */
   readonly detail?: string
-  /** The keystroke that reaches it away from the palette. */
+  /** The keyboard shortcut that triggers it outside the palette. */
   readonly keys?: PaletteKeys
   /** The icon it is drawn with, where the one who declares it gives one. */
   readonly icon?: Component
-  /** What it asks for before it happens. */
+  /** The input it requires before it runs. */
   readonly needs?: PromptStep
-  /** The step it asks for once the first one is answered. */
+  /** The step that follows the first one. */
   readonly next?: PromptStep
   /** The values the `arguments` steps ask for, in order. */
   readonly prompts?: readonly CommandPrompt[]
@@ -104,7 +102,7 @@ export interface Command {
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string
-  /** What its step says, where that step confirms or asks for the name back. */
+  /** What its step displays, when that step confirms or prompts for the name again. */
   readonly answers?: ConfirmWords
   readonly warns?: RetypeWords
   /** The command Shift and Enter reach on the same row. */
@@ -133,18 +131,18 @@ export interface CommandInvocation {
    * offers a list the window holds puts the one that was chosen here.
    */
   readonly name: string
-  /** The kind of tab it was asked from, which is where a note it makes lands. */
+  /** The kind of tab the command was invoked from; determines where a note it creates opens. */
   readonly kind: string | null
-  /** The tab it was asked from, for a command about the tab itself. */
+  /** The tab the command was invoked from, for a command about the tab itself. */
   readonly tab: string
   /** What the `arguments` steps were answered, by the name of each prompt. */
   readonly values?: Readonly<Record<string, string>>
 }
 
 /**
- * The lists the window holds, and what it does with the one the keyboard is
- * standing on. A list is read again every time the step is drawn, so what the
- * window holds may change while the step stands open.
+ * The lists the window holds, and what it does with the entry under the keyboard
+ * selection. A list is re-read every time the step is drawn, so its contents
+ * may change while the step is open.
  */
 export interface PaletteLists {
   /**
@@ -157,9 +155,9 @@ export interface PaletteLists {
 }
 
 /**
- * What the window knows about a note by the name it is filed under. A step
- * stands open while the vault moves under it, and this is read again each time
- * the step is drawn and once more as the invocation is made.
+ * What the window knows about a note by its filed name. The step stays open
+ * while the vault changes, so this is re-read each time the step is drawn and
+ * once more when the command is invoked.
  */
 export interface NoteLookup {
   /** What it is called now, and nothing where the window names it nothing. */
@@ -169,9 +167,8 @@ export interface NoteLookup {
 }
 
 /**
- * The runs this build cannot do at all, as one window has been told them. The
- * application says so the first time one is asked for, and that window offers
- * it nowhere after that.
+ * The runs this build cannot perform. The application reports them the first
+ * time one is requested; this window stops offering it from then on.
  */
 export interface RunSupport {
   /** Whether this build can do a run at all. A view drawing it follows the answer. */
@@ -181,8 +178,8 @@ export interface RunSupport {
 }
 
 /**
- * The files the window has an editor open on, as a command reaches them. A
- * note of every type answers here.
+ * The files the window has an editor open on, as accessed by commands. Notes
+ * of every type are included.
  */
 export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
@@ -194,11 +191,11 @@ export interface Notes {
   /** The tab holding a note lets go of it. */
   close(id: string): void
   /**
-   * A file put in front of the person, in the editor made for what it is, in a
-   * tab of its own or one beside it.
+   * Opens a file in the editor matching its type, in its own tab or beside the
+   * current one.
    */
   openFile(path: string, title: string, showing: 'current' | 'split'): void
-  /** A file just made here, put in front of the person as what it was made as. */
+  /** Opens a file just created here, as the type it was created as. */
   openNewFile(
     path: string,
     title: string,
@@ -207,8 +204,8 @@ export interface Notes {
 }
 
 /**
- * One store of open files, as a command reaches what it holds. Each editor of a
- * note type keeps one.
+ * One store of open files, as accessed by commands. Each note-type editor
+ * keeps one.
  */
 export interface Store {
   /** Whether this store holds a file open under that identity. */

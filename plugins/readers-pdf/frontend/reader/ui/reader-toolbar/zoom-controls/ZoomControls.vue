@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * What a person draws the page closer and further with, a step at a time. Each
- * end is offered no press once it is reached.
+ * Zoom in and zoom out controls, one step per press. Each control is disabled
+ * once its limit is reached.
  */
 import { Button } from '@numen/ui'
 import { CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from '../../../lib/strip'

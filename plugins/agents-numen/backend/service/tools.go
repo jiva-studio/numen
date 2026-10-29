@@ -20,8 +20,8 @@ var errPlainToken = errors.New("the vault's tools are reached only over https, o
 // emptySchema is the parameters of a tool whose server declares none.
 var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
 
-// toolbox is the vault's tool server as one run reaches it, and the tools of it the run may call.
-// A toolbox with no session offers nothing.
+// toolbox is the vault's tool server as seen by one run, and the tools of it the
+// run may call. A toolbox with no session offers nothing.
 type toolbox struct {
 	session *mcp.ClientSession
 	tools   []functionTool
@@ -91,8 +91,8 @@ func readFunctionTool(tool *mcp.Tool) functionTool {
 	return proposed
 }
 
-// call runs the tool with the arguments the model wrote and returns what the model is told: the
-// tool's text, or what went wrong.
+// call runs the tool with the arguments the model wrote and returns the result
+// for the model: the tool's text, or the error.
 func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if b.session == nil || !slices.ContainsFunc(b.tools, func(t functionTool) bool { return t.Function.Name == name }) {
 		return fmt.Sprintf("error: there is no tool %q", name)

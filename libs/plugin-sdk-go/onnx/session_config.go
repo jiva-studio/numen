@@ -19,7 +19,7 @@ const (
 	ortAPIVersion = 23
 )
 
-// ortAPIConfig reaches the status and session-config slots of the OrtApi table.
+// ortAPIConfig accesses the status and session-config slots of the OrtApi table.
 type ortAPIConfig struct {
 	_                     [2]uintptr
 	GetErrorMessage       uintptr

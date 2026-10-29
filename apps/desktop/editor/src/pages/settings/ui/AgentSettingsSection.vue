@@ -3,11 +3,7 @@
  * Settings for the AI agent.
  */
 import { computed } from 'vue'
-import {
-  getProgramHooksPath,
-  getProgramModelPath,
-  getProgramStepsPath,
-} from '@numen/plugin-sdk'
+import { getProgramHooksPath, getProgramModelPath, getProgramStepsPath } from '@numen/plugin-sdk'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
@@ -26,10 +22,13 @@ const fields = createSettingFields(() => props.state.installation)
 const WHOLE = Number.MAX_SAFE_INTEGER
 const STEPS = { min: 1, max: WHOLE }
 
-/** How many steps a program takes where the file says nothing. */
+/** The step count used when the file specifies none. */
 const DEFAULT_STEPS = 100
 
-/** The program that answers: the one the file names, else the one an installation nobody configured runs on. */
+/**
+ * The active program: the one named in the file, else the default of an
+ * unconfigured installation.
+ */
 const activeProgram = computed(() => {
   const named = props.state.installation.getSetting(paths.agent)
   if (typeof named === 'string') return named

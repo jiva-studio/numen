@@ -20,8 +20,8 @@ import (
 type VaultReader struct {
 	root string
 	opts vaultconfig.Options
-	// ignored is compiled once: it is asked of every path of every event, and
-	// of every path component.
+	// ignored is compiled once and matched against every path of every event and
+	// every path component.
 	ignored *vaultconfig.Ignoring
 }
 
@@ -45,8 +45,8 @@ func Open(root string, opts vaultconfig.Options) (*VaultReader, error) {
 	if !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", abs)
 	}
-	// What the vault says not to look at is the vault's to say. A folder that
-	// has never been added has nothing to say, and reads as the default.
+	// The vault's own configuration decides what is ignored. A folder that has
+	// never been added has no configuration and uses the defaults.
 	if cfg, err := vaultconfig.ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
@@ -186,9 +186,9 @@ func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Ent
 	return entry, true
 }
 
-// getEntryInfo is what a walk knows about one entry, with a link followed: a note kept
-// as a link to a file elsewhere in the vault is that file. A link nothing is at
-// the end of, or one that leads round in a circle, is nothing to read.
+// getEntryInfo returns the file info of one entry, following links: a note stored
+// as a link to a file elsewhere in the vault is that file. A link whose target does
+// not exist, or a link cycle, is not readable.
 func getEntryInfo(path string, d fs.DirEntry) (fs.FileInfo, error) {
 	if d.Type()&fs.ModeSymlink == 0 {
 		return d.Info()
@@ -267,9 +267,8 @@ func readAll(r io.Reader, size int64) ([]byte, error) {
 	}
 }
 
-// checkSize holds a note to the most one is read whole at. A book and a recording
-// are read a part at a time by a caller that knows how large the thing it is
-// reading is.
+// checkSize limits the size at which a note is read whole. A book and a recording
+// are read in parts by a caller that knows their size.
 func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 	linked := s.opts.GetMaxNoteBytes()
 	if !s.opts.IsNote(pathpkg.Base(path)) || info.Size() <= linked {
@@ -370,9 +369,8 @@ func (s *VaultReader) getNotANoteError(path string) error {
 	return fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
 }
 
-// isSkipped says whether a walk stops at a folder and does not descend. The walk
-// and the watcher both ask it, so neither of them looks where the other does
-// not.
+// isSkipped reports whether a walk skips a folder without descending. The walk
+// and the watcher both use it, so they skip the same folders.
 func (s *VaultReader) isSkipped(path, name string) bool {
 	return s.opts.IsService(name) || s.ignored.MatchesPath(path+"/")
 }
@@ -387,9 +385,9 @@ func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 	return filepath.ToSlash(rel), true
 }
 
-// getKind reports which kind of source a path inside this vault is, and whether
-// a walk would report it at all. The walk and the watcher both ask it, so the
-// two agree about what the vault getKind.
+// getKind reports the kind of source a path inside this vault is, and whether
+// a walk would report it at all. The walk and the watcher both use it, so the
+// two agree about what the vault contains.
 func (s *VaultReader) getKind(path string) (domain.SourceKind, bool) {
 	if _, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir()); err != nil {
 		return "", false

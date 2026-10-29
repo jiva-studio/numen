@@ -6,9 +6,9 @@ import (
 	"github.com/klippa-app/go-pdfium/requests"
 )
 
-// What one outline may spend. An outline is written by whoever made the file,
-// so it is as deep and as long as they liked, and a cycle in it is a program
-// that does not stop.
+// Limits on one outline. An outline is written by the file's author, so its
+// depth and length are unbounded and it may contain a cycle, which would not
+// terminate.
 const (
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostEntries is the upper bound on outline entries to prevent runaway memory"
 	mostEntries = 10_000
@@ -41,8 +41,8 @@ type outlineWalk struct {
 	bookmarks map[references.FPDF_BOOKMARK]bool
 }
 
-// walk reads the children of a bookmark, each with what lies under it, down to
-// the deepest level the outline is read to.
+// walk reads the children of a bookmark, each with its own children, down to
+// the maximum outline depth.
 func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="recursion stops when level exceeds mostDepth"
 	if level > mostDepth {
@@ -72,8 +72,8 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	}
 }
 
-// visit reads one entry and what lies under it, and says whether the walk
-// goes on. An outline that points back at itself is read once.
+// visit reads one entry and its children, and reports whether the walk
+// continues. An outline that points back at itself is read once.
 func (w *outlineWalk) visit(pos *references.FPDF_BOOKMARK, level int) bool {
 	// gomutants:disable-next-line EXPRESSION_REMOVE reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
 	if len(w.parts) >= mostEntries || w.bookmarks[*pos] {
@@ -110,11 +110,10 @@ func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts
 	return Part{Title: title, Offset: starts[page], Level: level}, true
 }
 
-// getDestinationPage is the page an outline entry leads to.
+// getDestinationPage returns the page an outline entry leads to.
 //
-// An entry carries its getDestinationPage directly or carries an action that holds
-// one. Both are asked, because which of the two a file uses is the choice of
-// whatever wrote it.
+// An entry has a destination directly or has an action that holds one. Both are
+// checked, because files differ in which they use.
 func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, bool) {
 	dest, err := d.worker.FPDFBookmark_GetDest(&requests.FPDFBookmark_GetDest{
 		Document: d.ref, Bookmark: bookmark,

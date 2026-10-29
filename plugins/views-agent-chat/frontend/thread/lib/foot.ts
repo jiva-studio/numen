@@ -6,7 +6,7 @@
 
 /** What the foot is worked out from, in pixels. */
 export interface ScrollMetrics {
-  /** How far down from the head the area stands. */
+  /** How far down from the head the area lies. */
   readonly scrollTop: number
   /** How tall everything in the area is. */
   readonly scrollHeight: number
@@ -17,7 +17,7 @@ export interface ScrollMetrics {
 /** How near the foot still counts as being at it, in pixels. */
 export const SLACK = 16
 
-/** How far down an area stands with its foot in view. */
+/** How far down an area lies with its foot in view. */
 export const getFoot = ({ scrollHeight, clientHeight }: ScrollMetrics): number =>
   Math.max(0, scrollHeight - clientHeight)
 

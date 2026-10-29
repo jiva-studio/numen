@@ -23,8 +23,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// watchedLinks answers as the index does, remembers each note it was asked what
-// points at, and fails where it is told to.
+// watchedLinks answers like the index, records each note whose backlinks were
+// queried, and fails where configured.
 type watchedLinks struct {
 	noteport.LinkQueries
 	requested    []string
@@ -84,8 +84,8 @@ func (f filing) wiring() wiring {
 	}
 }
 
-// moveOver is the move of an installation nobody has configured, standing on
-// what the test gives it.
+// moveOver returns the move of an unconfigured installation, built from what
+// the test supplies.
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(
 		f.readers, vaultwriter.VaultWriters{},
@@ -133,7 +133,7 @@ func TestAMoveOntoItselfIsNothingCompleted(t *testing.T) {
 	}
 }
 
-// A move that cannot ask the index what travels moves nothing.
+// A move that cannot query the index for the affected notes moves nothing.
 func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
@@ -153,8 +153,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 	}
 }
 
-// What points at a folder's contents is asked of the notes under it, every one,
-// and of nothing else.
+// Backlinks are queried for every note under a folder, and for nothing else.
 func TestMove_QueriesBacklinksForNotesInFolderOnly(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
@@ -179,8 +178,8 @@ func TestMove_QueriesBacklinksForNotesInFolderOnly(t *testing.T) {
 	}
 }
 
-// Every note of a folder is told where it went, at the path it now has, and a
-// book is not a note.
+// Every note of a folder is reported with its new path, and a book is not a
+// note.
 func TestEveryNoteOfAFolderIsReportedWhereItWent(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
@@ -408,7 +407,7 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 	}
 }
 
-// A Move given another index files through that index, and says which.
+// A Move given another index files through that index, and reports which.
 func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})

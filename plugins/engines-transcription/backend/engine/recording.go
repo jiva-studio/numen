@@ -9,16 +9,16 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/sound"
 )
 
-// A recording is a file opened for listening. Its length is read out of the
-// header, and its samples are decoded when somebody asks where the speech is:
+// A recording is an audio file opened for transcription. Its length is read from
+// the header, and its samples are decoded when the speech segments are requested.
 type recording struct {
 	owner  *Transcriber
 	raw    []byte
 	length int
 
-	// segments is where the speech is, and cut says the recording has been
-	// through the segmenter. A recording carrying no speech is cut and holds
-	// none.
+	// segments holds the speech segments, and isCut reports that the recording has
+	// been through the segmenter. A recording with no speech is cut and has no
+	// segments.
 	segments []Audio
 	isCut    bool
 	mu       sync.Mutex
@@ -36,12 +36,12 @@ func (t *Transcriber) Open(ctx context.Context, raw []byte) (Recording, error) {
 // GetDuration is how long the recording is, in milliseconds.
 func (r *recording) GetDuration() int { return r.length }
 
-// GetSegments is what the segmenter cut the recording into, from a millisecond
-// onward, at most count of them. A count of none is all of them.
+// GetSegments returns the segments the segmenter cut the recording into, from a
+// millisecond offset onward, at most count of them. A count of zero returns all.
 //
-// The whole file is cut at once, when the first stretch is asked for. The
-// segmenter reads it from end to end, and where one stretch ends is decided by
-// the silence after it.
+// The whole file is cut at once, on the first request. The segmenter reads it
+// from start to end, and the end of a segment is determined by the silence
+// after it.
 func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

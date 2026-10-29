@@ -21,8 +21,8 @@ type TextClient struct {
 
 var _ Texts = (*TextClient)(nil)
 
-// NewTextClientFromEnv reaches the host the process was started for. It returns hostcall.ErrNoHost
-// where the host named none.
+// NewTextClientFromEnv connects to the host the process was started for. It
+// returns hostcall.ErrNoHost when the environment names no host.
 func NewTextClientFromEnv() (*TextClient, error) {
 	addr, err := hostcall.FromEnv()
 	if err != nil {
@@ -40,12 +40,12 @@ func NewTextClientFromVars(vars map[string]string) (*TextClient, error) {
 	return NewTextClient(addr), nil
 }
 
-// NewTextClient reaches the host at the endpoint.
+// NewTextClient connects to the host at the endpoint.
 func NewTextClient(endpoint hostcall.Endpoint) *TextClient {
 	return NewTextClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewTextClientOver reaches the host at the endpoint through the HTTP client given.
+// NewTextClientOver connects to the host at the endpoint using the given HTTP client.
 func NewTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *TextClient {
 	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
@@ -64,7 +64,7 @@ func newTextRequest[T any](c *TextClient, msg *T) *connect.Request[T] {
 	return req
 }
 
-// failText turns the code of an answer into the error it stands for.
+// failText converts the error code of a response into the corresponding error.
 func failText(code v1.TextErrorCode) error {
 	switch code {
 	case v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED:

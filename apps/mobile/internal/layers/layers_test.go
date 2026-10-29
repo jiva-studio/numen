@@ -15,7 +15,7 @@ import (
 )
 
 // named are files the walk has to have reached: the binding the phone starts
-// the core through. A count says how much was read and never what.
+// the core through. A count says how much was read and not which files.
 var named = []string{"bind/mobile.go"}
 
 // standing is a file of this application, parsed.
@@ -26,7 +26,7 @@ type standing struct {
 
 // readSources is every hand-written Go file of this application, parsed.
 //
-// A test file is left out: a test stands outside the package it exercises and
+// A test file is excluded: a test lies outside the package it exercises and
 func readSources(t *testing.T) []standing {
 	t.Helper()
 
@@ -77,7 +77,7 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. The binding is where the process's own streams are named,
 // and what it writes to standard error is for whatever the platform collects;
-// everything a person has to act on is said in the window they are looking at.
+// everything the user has to act on is shown in the window.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {

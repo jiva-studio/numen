@@ -1,15 +1,14 @@
-// Package settings is what a person configures about this installation.
+// Package settings reads and writes the installation's settings file.
 //
-// One file, JSON, in the folder this desktop keeps a person's configuration in.
-// Everything a person may want to change is a section of it, so finding a
-// setting is finding one file. It is named after the application, so the name
-// says what it configures wherever it is read out or copied to.
-// The list of vaults is not here: the application writes that itself when a
-// vault is added, and a file the application rewrites is no place for something
-// typed by hand.
+// The file is JSON, in the desktop's configuration folder. Every user-changeable
+// setting is a section of it, so all settings are in one file. It is named after
+// the application, so its purpose is clear wherever it is displayed or copied.
+// The list of vaults is not stored here: the application rewrites it when a vault
+// is added, and a file the application rewrites is unsuitable for hand-edited
+// values.
 //
-// A missing file is an untouched installation. Every field the file leaves out
-// keeps what the defaults set, so a file naming one setting is a valid file.
+// A missing file is an untouched installation. Every field the file omits keeps
+// its default, so a file naming one setting is valid.
 package settings
 
 import (
@@ -21,30 +20,28 @@ import (
 	"path/filepath"
 )
 
-// Document is the settings file as whoever composed the installation declares
-// it: one object whose fields are the sections, in the order they stand in the
-// file. This adapter reads and writes that file and owns the sections below;
-// what configures an adapter is that adapter's section, and where each stands
-// is the document's to say.
+// Document is the settings file as declared by the composition root: one object
+// whose fields are the sections, in file order. This adapter reads and writes
+// that file and owns the sections below; an adapter's configuration is that
+// adapter's section, and the document determines where each section is placed.
 //
-// A document arrives holding what an installation nobody has configured does,
-// so a file that leaves a section out, and a file that names half of one, both
-// come back whole.
+// A document is created with the defaults of an unconfigured installation, so a
+// file that omits a section, or names half of one, loads complete.
 type Document interface {
 	// GetVersion is the shape the file was written at, GetAppearance how the
 	// window is drawn. Each is read and put right as the file is read.
 	GetVersion() *int
 	GetAppearance() *Appearance
 
-	// AddNotice leaves a person one line about what the file holds.
+	// AddNotice records one line of text about the file's contents.
 	AddNotice(reply string)
 }
 
 // Titles is whether a note's title and its filename are kept in sync.
 type Titles struct {
-	// SyncTitleAndFilename is whether renaming either of the two brings the
-	// other into line. A file leaving it out keeps them one name, and a file
-	// naming false is what tells them apart.
+	// SyncTitleAndFilename is whether renaming either the title or the filename
+	// updates the other. A file that omits it keeps them identical; a file with false
+	// allows them to differ.
 	SyncTitleAndFilename *bool `json:"sync_title_and_filename"`
 }
 
@@ -63,7 +60,7 @@ func newTrue() *bool {
 // DefaultVersion is the shape a file this build writes is written at.
 const DefaultVersion = 1
 
-// DefaultAppearance and DefaultTitles are what an installation nobody has configured draws and names by.
+// DefaultAppearance and DefaultTitles are the values of an unconfigured installation.
 func DefaultAppearance() Appearance {
 	return Appearance{
 		InterfaceScale: AsDesigned,
@@ -89,9 +86,9 @@ func Path() (string, error) {
 func OpenAt(path string, into Document) error {
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		// An installation nobody has configured is written down as what it is
-		// doing, the size the desktop asks for included. A machine that will
-		// not take the file runs on the same settings.
+		// An unconfigured installation is written with its effective values, including
+		// the size the desktop requests. A machine that cannot write the file runs with
+		// the same settings.
 		into.GetAppearance().InterfaceScale = getDesktopScale()
 		_ = write(path, into)
 		return nil
@@ -102,8 +99,8 @@ func OpenAt(path string, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	// The reading above takes a bare null and leaves the defaults standing, so
-	// the bytes are asked again whether they are one object.
+	// Unmarshal accepts a bare null and leaves the defaults in place, so the bytes
+	// are checked again to be a single object.
 	if err := checkObject(raw); err != nil {
 		return err
 	}
@@ -120,9 +117,8 @@ func OpenAt(path string, into Document) error {
 	return nil
 }
 
-// checkMode stands the machine's own choice where the file names a word that is
-// no half of a colour pair, and says so. The word is left in the file, where
-// the person wrote it and where they will read it again.
+// checkMode substitutes the machine's own choice where the file names a word that
+// is not half of a colour pair, and reports it. The word remains in the file.
 func checkMode(into Document) {
 	appearance := into.GetAppearance()
 	switch appearance.Mode {
@@ -134,12 +130,12 @@ func checkMode(into Document) {
 	appearance.Mode = ModeSystem
 }
 
-// readInterfaceScale reads `appearance.zoom` as the setting that replaced it,
-// and gives the field that name in the file. Both are how large the window is
-// drawn, so the number stands as it was and the window is drawn the size it was.
+// readInterfaceScale reads `appearance.zoom` as the setting that replaced it and
+// renames the field in the file. Both express the window's display scale, so the
+// number and the resulting size are unchanged.
 //
-// A file that cannot be written is read this way at every launch, and drawn at
-// the same size at every launch.
+// A file that cannot be written is read this way at every launch and yields the
+// same size each time.
 func readInterfaceScale(into Document, path string, raw []byte) {
 	var file struct {
 		Appearance struct {
@@ -168,9 +164,8 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 		into.GetAppearance().InterfaceScale = zoom
 		_ = renameField(path, []string{"appearance", "zoom"}, "interface_scale")
 	default:
-		// One line of a band: the setting the number would be read as, and how
-		// far that goes. The number itself stays in the file, where a person
-		// wrote it and where they will read it again.
+		// Warns with the setting the number maps to and its bounds. The number remains
+		// in the file.
 		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
 			InterfaceScaleBounds.Min, InterfaceScaleBounds.Max)
 	}

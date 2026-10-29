@@ -1,8 +1,9 @@
 /**
- * What a line of choices says, what it opens, and what it returns.
+ * The select's label, the options it opens, and the value it emits.
  *
- * The choices are drawn at the end of the document, so they are read off the
- * document. A control a hand can open and a keyboard cannot is not a control.
+ * The options are rendered at the end of the document, so the tests query the
+ * document. A control that a pointer can open but a keyboard cannot is not
+ * accessible.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'

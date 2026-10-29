@@ -16,24 +16,24 @@ export interface Box {
 
 /** What placing something beside a span takes, on one axis. */
 export interface AxisPlacement {
-  /** Where the span it stands beside begins, and where it ends. */
+  /** Start and end of the anchor span the element is placed beside. */
   readonly from: number
   readonly to: number
   /** How large the thing being placed turned out to be. */
   readonly size: number
-  /** How far the area it is placed in reaches. */
+  /** Extent of the container the element is placed in. */
   readonly room: number
-  /** Kept clear of that area's edges, so nothing sits flush against them. */
+  /** Minimum distance kept from the container's edges. */
   readonly margin: number
-  /** Left between it and the span it stands beside. */
+  /** Distance between the element and the anchor span. */
   readonly gap: number
 }
 
 /**
- * A thing runs on from the far end of the span it stands beside. Where the far
- * edge is nearer than its own size it runs back from the near end, and either
- * way it is brought inside the edges it may touch. Larger than the area it is
- * placed in, it sits at the near edge.
+ * The element starts at the far end of the anchor span. When the space past the
+ * far edge is smaller than its size, it starts before the near end instead, and
+ * either way it is clamped inside the container margins. When it is larger than
+ * the container, it sits at the near edge.
  */
 export const getAdjacentPlace = ({ from, to, size, room, margin, gap }: AxisPlacement): number => {
   const on = to + gap

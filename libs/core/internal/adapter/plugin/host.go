@@ -92,8 +92,8 @@ type Host struct {
 	completer        completionport.Completer
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
-	// consentAsks holds the plugins that asked for a completion the person has
-	// not answered for, since the host started.
+	// consentAsks holds the plugins that requested a completion while the consent
+	// prompt was unanswered, since the host started.
 	consentAsks   map[string]bool
 	secretLocksMu sync.Mutex
 	secretLocks   map[string]*sync.Mutex
@@ -336,9 +336,9 @@ func (h *Host) GetPlugins() []manifestfile.DiscoveredPlugin {
 	return h.getPluginsInOrderLocked()
 }
 
-// getPluginsInOrderLocked returns the registered plugins in the order of their ids. Every lookup
-// and listing of the host walks the plugins in this order, so the first plugin to match is the one
-// with the lowest id.
+// getPluginsInOrderLocked returns the registered plugins in the order of their
+// ids. Every lookup and listing of the host uses this order, so the first match
+// is the plugin with the lowest id.
 func (h *Host) getPluginsInOrderLocked() []manifestfile.DiscoveredPlugin {
 	result := make([]manifestfile.DiscoveredPlugin, 0, len(h.plugins))
 	for _, p := range h.plugins {
@@ -407,8 +407,9 @@ func (h *Host) ResolveService(service string) (manifestfile.DiscoveredPlugin, bo
 	return manifestfile.EmptyDiscoveredPlugin(), false
 }
 
-// ResolveNoteProfile finds how the index keeps the notes of a type, as the enabled plugin with the
-// lowest id among those declaring the type says.
+// ResolveNoteProfile returns how the index stores the notes of a type, as
+// defined by the enabled plugin with the lowest id among those declaring the
+// type.
 func (h *Host) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -573,7 +574,8 @@ func (h *Host) newPluginFailureLocked(pluginID string, sup *lifecycle.Supervisor
 	}
 }
 
-// deliverPluginFailures hands the plugins that just failed for good to the failure callback, outside every lock.
+// deliverPluginFailures passes the plugins that have just failed permanently to
+// the failure callback, outside every lock.
 func (h *Host) deliverPluginFailures() {
 	h.mu.Lock()
 	failures := h.failedPlugins
@@ -1633,8 +1635,8 @@ func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 	return &failure
 }
 
-// clearFailure forgets the failed activations of a plugin and tells the cleared callback where the plugin
-// had been suspended.
+// clearFailure removes the recorded activation failures of a plugin and passes
+// the cleared callback the place where the plugin had been suspended.
 func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
 	wasFailed, _ := sup.GetActivationFailure()
 	sup.ResetActivationFailures()

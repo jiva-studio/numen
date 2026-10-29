@@ -85,13 +85,13 @@ type DependencyProvisioner interface {
 	CanProvision(req DependencyRequirement) bool
 	// Provision makes the dependency ready and reports each step to onProgress.
 	Provision(ctx context.Context, req DependencyRequirement, onProgress func(DependencyStatus)) (ResolvedDependency, error)
-	// Status answers where the dependency stands without installing it.
+	// Status reports the state of the dependency without installing it.
 	Status(ctx context.Context, req DependencyRequirement) (DependencyStatus, error)
 }
 
-// DependencyCatalog is the provisioners together: it routes a requirement to
-// the provisioner that handles it, shares one run between identical requests
-// and answers for every requirement it has been told of.
+// DependencyCatalog is the provisioners combined: it routes a requirement to the
+// provisioner that handles it, shares one run between identical requests and reports
+// on every requirement it has seen.
 type dependencyRegistry interface {
 	Register(req DependencyRequirement)
 	Lookup(id string) (DependencyRequirement, bool)

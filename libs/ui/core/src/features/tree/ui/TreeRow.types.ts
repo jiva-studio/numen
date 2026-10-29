@@ -12,7 +12,7 @@ export interface TreeRowProps {
   isDropInside: boolean
   /** A drop would land above it. */
   isDropAbove: boolean
-  /** The one row the tab key reaches. */
+  /** The one row that receives focus from the tab key. */
   isTabStop: boolean
   /** Its name is in a field. */
   isRenaming: boolean

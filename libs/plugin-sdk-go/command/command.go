@@ -50,16 +50,16 @@ type Request struct {
 
 // Result is what a command that ran answers.
 type Result struct {
-	// Message is what a person reads about the outcome.
+	// Message is the outcome text shown to the user.
 	Message string
 	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
 	// for a command that leaves nothing to open.
 	OpenedPath string
 }
 
-// Handler runs the commands a plugin declares. On failure it returns an error whose text a person
-// reads: ErrUnknownCommand for a command it does not run and ErrBadArguments for arguments it cannot
-// run with.
+// Handler runs the commands a plugin declares. On failure it returns an error
+// whose text is shown to the user: ErrUnknownCommand for a command it does not
+// run and ErrBadArguments for arguments it cannot run with.
 type Handler interface {
 	RunCommand(ctx context.Context, request Request) (Result, error)
 }
@@ -112,8 +112,8 @@ type Service struct {
 	Handler Handler
 }
 
-// RunCommand runs the command and answers what the handler said. A failure is an error code with the
-// handler's words as the message.
+// RunCommand runs the command and returns the handler's result. A failure is
+// returned as an error code with the handler's message.
 func (s Service) RunCommand(
 	ctx context.Context, req *connect.Request[numenv1.RunCommandRequest],
 ) (*connect.Response[numenv1.RunCommandResponse], error) {

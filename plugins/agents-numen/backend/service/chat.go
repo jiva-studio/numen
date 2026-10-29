@@ -16,10 +16,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 )
 
-// DefaultBaseURL is the chat API asked where the settings name none.
+// DefaultBaseURL is the chat API base URL used when the settings specify none.
 const DefaultBaseURL = "https://openrouter.ai/api/v1"
 
-// defaultModel is the model asked where neither the task nor the settings name one.
+// defaultModel is the model used when neither the task nor the settings specify one.
 const defaultModel = "openai/gpt-4o-mini"
 
 // requestLimit is how long one request to the chat API may take.
@@ -40,7 +40,7 @@ type message struct {
 	ToolCallID string     `json:"tool_call_id,omitempty"`
 }
 
-// toolCall is a call of a function the model asks for.
+// toolCall is a function call requested by the model.
 type toolCall struct {
 	ID       string `json:"id"`
 	Type     string `json:"type"`
@@ -74,7 +74,7 @@ type model struct {
 	DefaultReasoning string
 }
 
-// chatRequest is what the chat API is asked for the next message of a conversation.
+// chatRequest is the request body for the next message of a conversation.
 type chatRequest struct {
 	Model       string         `json:"model"`
 	Messages    []message      `json:"messages"`
@@ -87,8 +87,8 @@ type chatRequest struct {
 	Reasoning       *reasoningRequest `json:"reasoning,omitempty"`
 }
 
-// chat is an OpenAI-compatible chat API: its base URL and the key presented to it, empty for an
-// endpoint that asks for none.
+// chat is an OpenAI-compatible chat API: its base URL and the key sent to it, empty for an
+// endpoint that requires none.
 type chat struct {
 	baseURL     string
 	key         string
@@ -100,8 +100,8 @@ type chat struct {
 // newText is a pointer to the text, for the content of a message.
 func newText(text string) *string { return &text }
 
-// send asks the model for the next message of the conversation, offering it the tools. It returns
-// the message and why the model stopped writing it, 'length' for a message cut off at its limit.
+// send requests the next message of the conversation from the model, offering the tools. It returns
+// the message and the finish reason, 'length' for a message truncated at its limit.
 func (c chat) send(ctx context.Context, model string, effort effort, messages []message, tools []functionTool) (message, string, error) {
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
@@ -138,7 +138,7 @@ func readReply(answer []byte) (message, string, error) {
 	return reply.Choices[0].Message, reply.Choices[0].FinishReason, nil
 }
 
-// listModels asks the chat API for the models it serves.
+// listModels returns the models the chat API serves.
 func (c chat) listModels(ctx context.Context) ([]model, error) {
 	answer, err := c.do(ctx, http.MethodGet, "/models", nil)
 	if err != nil {
@@ -221,7 +221,7 @@ func (c chat) open(ctx context.Context, method, path string, body []byte) (*http
 	return resp, nil
 }
 
-// newStatusError is an answer of the chat API other than 200 OK: its status and what it said. A
+// newStatusError returns the error for a chat API response other than 200 OK: its status and body.
 func newStatusError(resp *http.Response, answer []byte) error {
 	text := fmt.Sprintf("the chat API answered %s: %s", resp.Status, strings.TrimSpace(string(answer)))
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
@@ -230,8 +230,8 @@ func newStatusError(resp *http.Response, answer []byte) error {
 	return errors.New(text)
 }
 
-// checkKey is errNoKey for a chat API that asks for a key when none is set. An endpoint on this
-// machine asks for none.
+// checkKey returns errNoKey for a chat API that requires a key when none is set. An endpoint on
+// this machine requires none.
 func (c chat) checkKey() error {
 	if c.key != "" {
 		return nil

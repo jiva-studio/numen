@@ -1,10 +1,10 @@
 /**
  * Where a link inside a book points.
  *
- * The markup reaches the window with every href already resolved against the
- * archive, so what a link carries is an entry of the archive and a place inside
- * it. Both are relative to the window's own address, and the reader turns one
- * into a move within the book.
+ * The markup arrives in the window with every href already resolved against the
+ * archive, so a link carries an archive entry and a position within it. Both
+ * are relative to the window's own address, and the reader converts one into a
+ * move within the book.
  */
 import { win } from '../../dom'
 import { isExternalLink } from '@numen/ui'
@@ -30,8 +30,8 @@ export function isExternalHref(href: string): boolean {
   try {
     return isExternalLink(new URL(href, here), here)
   } catch {
-    // An href that is no address names nowhere outward, and the book is asked
-    // for the place it names instead.
+    // An href that is not a valid address is not external, and the book is
+    // queried for the position it names.
     return false
   }
 }

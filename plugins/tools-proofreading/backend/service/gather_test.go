@@ -120,8 +120,8 @@ func TestABatchNothingCameBackAboutInsertsNothingRight(t *testing.T) {
 	}
 }
 
-// Gathered names the batches whose reply ran on past the last line they carry,
-// in the order they were asked. A batch it refuses names none.
+// Gathered lists the batches whose reply ran past the last line they carry,
+// in the order they were requested. A batch it rejects lists none.
 func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 	first, second := makeBrokenBatch(), makeBrokenBatch()
 	first.Number, second.Number = 1, 2

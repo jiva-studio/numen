@@ -80,7 +80,7 @@ export const TwoLines: Story = {
   },
 }
 
-/** Names far too long for the room give way; how far and how long do not. */
+/** Names far too long for the available width are truncated; how far and how long are still shown. */
 export const TooLong: Story = {
   args: {
     text: 'Learning what a very long name for a piece of work has to say about itself',
@@ -121,7 +121,7 @@ export const Warning: Story = {
   },
 }
 
-/** An error outranks a count: a line that is both failing and counting says it is failing. */
+/** An error outranks a count: a line that is both failing and counting reports it is failing. */
 export const Failed: Story = {
   args: {
     text: 'Reading',

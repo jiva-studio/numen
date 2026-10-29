@@ -31,7 +31,7 @@ const useConversation = (
   paint: Paint = now,
 ) => baseUseConversation({ agent, words: conversationWords, conversation, paint })
 
-/** An agent that does what it is told to, a step at a time. */
+/** An agent that does as instructed, one step at a time. */
 const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPort => ({
   async *ask(query) {
     for (const step of steps) {
@@ -271,7 +271,7 @@ describe('a wait that explains itself', () => {
     const askPromise = conversation.ask('write it up', '')
     await flushPromises()
 
-    // Which tool answered is not said, and with two in hand this is one of them.
+    // Which tool answered is not reported, and with two pending this is one of them.
     // The line keeps its name and stops claiming to be running.
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.text).toBe('Create a note')
@@ -312,10 +312,9 @@ describe('a wait that explains itself', () => {
   })
 
   /**
-   * The failure this guards against is a screen with nothing moving on it. A
-   * model that has been handed a tool's answer says nothing for as long as it
-   * takes to read it, and a person watching that has no way to tell it apart
-   * from an agent that died.
+   * Guards against a screen with nothing moving on it. A model that has
+   * received a tool's result emits nothing for as long as it takes to read it,
+   * and a user watching cannot tell that apart from an agent that died.
    */
   it('says it is working while a tool that answered leads nowhere yet', async () => {
     let release = () => {}
@@ -464,8 +463,8 @@ describe('where the line about work remains', () => {
     const askPromise = conversation.ask('tell me about him', '')
     await flushPromises()
 
-    // A tool answering says nothing about the answer being written over it, and
-    // a line put back here is placed under the answer for the rest of the conversation.
+    // A tool result says nothing about the result being overwritten, and a line
+    // placed back here is placed under the result for the rest of the conversation.
     expect(getDrawnTurns(conversation)).toEqual([
       'prompt: tell me about him',
       'response: Bram Doyle was the chair.',
@@ -697,7 +696,7 @@ describe('two tools in hand at once', () => {
     const askPromise = conversation.ask('tell me about him', '')
     await flushPromises()
 
-    // Which tool answered is not said. The one still running is not finished,
+    // Which tool answered is not reported. The one still running is not finished,
     // and what the model is doing is not known.
     const lines = conversation.turns.value.filter((turn) => turn.voice === 'doing')
     expect(lines.map((turn) => [turn.text, turn.state])).toEqual([['Read a note', 'arriving']])

@@ -1,6 +1,6 @@
 /**
- * The pointer. Everything that knows about events and screen pixels is here;
- * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
+ * The pointer. All event and screen-pixel handling is here; what a gesture
+ * *means* is computed in `arrange/drop.ts`, as a value.
  */
 import { win } from '../../../dom'
 import { computed, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
@@ -22,9 +22,9 @@ export interface Gesture {
 export interface GestureHandlers {
   readonly begin: (from: string, event: PointerEvent) => void
   /**
-   * Reach out from a node with nowhere to point — from the keyboard, where
-   * there is no direction to read. It evaluates to what a press that never
-   * travelled evaluates to, and is over as soon as it is asked for.
+   * Starts a gesture from a node without a pointer direction — from the keyboard,
+   * where there is no direction to read. It evaluates to what a press without
+   * movement evaluates to, and completes immediately.
    */
   readonly ask: (from: string) => void
   readonly cancel: () => void
@@ -33,8 +33,8 @@ export interface GestureHandlers {
 /**
  * Screen to plex coordinates.
  *
- * Through the element's own matrix, so the scale it is drawn at is whatever
- * the element says it is.
+ * Uses the element's own transform matrix, so the result matches the scale the
+ * element is rendered at.
  */
 export function getPosition(svg: SVGSVGElement, event: PointerEvent): Position | null {
   const screen = svg.getScreenCTM?.()
@@ -139,11 +139,11 @@ function useGestureOutcome(points: GesturePoints, deps: PlexGestureDeps): Comput
 }
 
 /**
- * Follow a drag from a node until it is let go or given up on.
+ * Follow a drag from a node until it is released or cancelled.
  *
- * A click without travel is a gesture too: it is the commonest thing anyone
- * wants — one more child — and asking for a drag to get it would make the
- * handle useless to a trackpad and to anyone who cannot hold a button down.
+ * A click without movement is a gesture too: it adds one more child, the most
+ * common action, and requiring a drag would make the handle unusable with a
+ * trackpad or for anyone who cannot hold a button down.
  */
 export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers {
   const surface = ref<SVGSVGElement | null>(null)

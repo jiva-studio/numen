@@ -27,9 +27,9 @@ func openEngine(libPath string) (*ort.Engine, error) {
 	return engine, nil
 }
 
-// Register takes a library that makes an engine of its own, made where this
-// process settles its runtime and given the library it opened. It is called
-// from an init, so that it stands before anything opens one.
+// Register registers a library that creates an engine of its own, created where this
+// process initializes its runtime and passed the library it opened. It must be called
+// from an init, before anything opens an engine.
 //
 // The binding gives every tensor to the engine made last and stamps it on for
 // that tensor's life, so one made on a library's first use moves what everything

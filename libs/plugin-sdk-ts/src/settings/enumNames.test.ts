@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { getNames } from './enumNames'
 
 /**
- * The reverse table is handed out as holding a key per word, and the cast that
- * says so checks nothing. A word with no key reads back as undefined wearing
- * the enum's type, and the window sends the schema a value it has no name for.
+ * The reverse table is typed as holding a key per word, and the cast asserting
+ * that checks nothing. A word with no key reads back as undefined with the
+ * enum's type, and the window sends the schema a value it has no name for.
  */
 describe('getNames', () => {
   it('reads the sending side off the table of words', () => {

@@ -28,12 +28,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// mine is a theme of the person's, carrying a colour nothing else has and
-// pinning the dark half.
+// mine is a user theme with a colour no other theme has, pinning the dark
+// scheme.
 const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 
-// newPageHandler is the whole handler as the application hands it over: the questions,
-// the themes, and the built page behind them.
+// newPageHandler is the complete handler as the application assembles it: the
+// services, the themes, and the built page behind them.
 func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
@@ -87,12 +87,13 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 	return out
 }
 
-// to say and is asserted there; what this window widens is asserted here.
+// The base policy is asserted in the csp package; what this window widens is
+// asserted here.
 //
-// A build that opened no socket plays from nowhere, so it widens nothing. A
-// theme is an ordinary stylesheet a person may have downloaded, and the policy
-// is the whole of what stops one reaching the network: a remote `url()` is
-// into is permitted by `style-src`.
+// A build that opens no socket widens nothing. A theme is an ordinary
+// stylesheet that may have been downloaded, and the policy is the only control
+// that stops it reaching the network: a remote `url()` is blocked unless its
+// origin is permitted by `style-src`.
 func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 	target := csp.Sources{}.Policy()
 
@@ -105,8 +106,7 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 }
 
 // The window frames no host. A frame runs that host's own scripts and reaches
-// that host's own machines, so a host arriving here arrives in a diff somebody
-// reads.
+// that host's own machines, so any added host must appear in a reviewed diff.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
 	response := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
@@ -124,10 +124,10 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 	}
 }
 
-// TestHandler_MountsEveryVaultService. Four services answer about the
-// handler the application hands over. A route nothing is mounted at falls
-// through to the pages and is answered not found; a route a service holds
-// answers a GET as a method that call does not take.
+// TestHandler_MountsEveryVaultService. Four services answer on the handler the
+// application assembles. A route with nothing mounted falls through to the
+// pages and returns not found; a route a service owns answers a GET with a
+// method-not-allowed error.
 func TestHandler_MountsEveryVaultService(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
@@ -142,8 +142,8 @@ func TestHandler_MountsEveryVaultService(t *testing.T) {
 	}
 }
 
-// TestPluginServiceIsMounted asserts that PluginServiceHandler is mounted behind
-// the handler the application hands over.
+// TestPluginServiceIsMounted asserts that PluginServiceHandler is mounted
+// behind the handler the application assembles.
 func TestPluginServiceIsMounted(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	route := numenv1connect.PluginServiceGetPluginsProcedure
@@ -176,7 +176,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	}
 }
 
-// The page arrives wearing the theme, at every address it is asked for under.
+// The page is served with the theme applied at every address.
 func TestThePageOpensWearingTheTheme(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
@@ -205,12 +205,12 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 // The mode's element, the theme's and the two sizes are the last three things
 // in the head, in that order.
 //
-// A theme and the built stylesheet both declare `color-scheme` at the root and
-// weigh the same, so the later of them holds. The built stylesheet's link is
-// the last element the build puts in the head, and the theme goes after the
-// mode so that a theme pinning the scheme is the one that holds. The sizes go
-// after the theme: they are what a person set this window to, inside the bounds
-// each goes to, and the window is drawn at what they say.
+// A theme and the built stylesheet both declare `color-scheme` at the root with
+// equal weight, so the later declaration wins. The built stylesheet's link is
+// the last element the build puts in the head, and the theme follows the mode,
+// so a theme pinning the scheme takes effect. The sizes follow the theme: they
+// are the window sizes configured by the user, clamped to the bounds of each,
+// and the window renders at those sizes.
 func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
@@ -262,7 +262,7 @@ func TestAFileNamingTheZoomOpensTheWindowGeneratedAtIt(t *testing.T) {
 }
 
 // The built stylesheet declares `color-scheme` at zero weight alone, so the
-// element the page carries stands unopposed whatever a theme says.
+// element the page carries takes effect regardless of the theme.
 func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 	constructed, err := wire.GetInterface(pages)
 	if err != nil {
@@ -291,7 +291,8 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 	}
 }
 
-// The head is read for each request: a theme chosen is worn by the next reload.
+// The head is read for each request: a newly chosen theme applies on the next
+// reload.
 func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
@@ -312,8 +313,8 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	}
 }
 
-// A build that cannot say what it wears serves the page as it was built, and
-// the tokens the build carries stand.
+// A build that cannot report its theme serves the page as built, and the
+// build's tokens apply.
 func TestPages_ServesUnthemedPageUnchanged(t *testing.T) {
 	files, err := Pages()
 	if err != nil {
@@ -375,10 +376,9 @@ func (blockingVaults) Save(domain.Vault) error                   { return nil }
 func (blockingVaults) Remove(domain.VaultID) error               { return nil }
 func (blockingVaults) RecordOpened(domain.VaultID) error         { return nil }
 
-// TestHandler_ClosingWaitsForInFlightRequests. A search, a note and a link
-// are answered straight from the index, and one that passed the door a moment
-// before it shut is still on the index when everything an answer reaches into
-// is taken away.
+// TestHandler_ClosingWaitsForInFlightRequests. A search, a note and a link are
+// answered from the index. A request admitted just before the handler closes
+// still uses the index while everything its answer depends on is torn down.
 func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	begun := make(chan struct{}, 1)
 	until := make(chan struct{})

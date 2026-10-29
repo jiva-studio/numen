@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
 
-// ImportedFiles is what a person handed this application, on a machine where
-// what they handed over is a path.
+// ImportedFiles is the set of files a user supplied to this application, on a
+// machine where supplied files are paths.
 type ImportedFiles struct{}
 
 func (ImportedFiles) GetName(handle string) string { return filepath.Base(handle) }

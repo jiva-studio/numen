@@ -14,7 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 )
 
-// carrying is the index as far as this window asks of it: which vaults it holds.
+// carrying is the index as this window uses it: it reports which vaults it
+// holds.
 type carrying struct {
 	noteport.NoteQueries
 	targetVault map[domain.VaultID]bool

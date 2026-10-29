@@ -1,9 +1,9 @@
 /**
- * What the corner of the window draws.
+ * The notices shown in the window's corner.
  *
- * Everything the window has to say is one card: work it is doing, a state it is
- * in, and what it answered the last thing it was asked. A new kind of any of
- * them is an entry in one of the three lists and nothing here.
+ * Everything the window reports is one card: work in progress, a current state, and
+ * the outcome of the last request. A new kind of any of them is an entry in one of
+ * the three lists and requires no change here.
  */
 import { createNotice } from '@numen/shell'
 import type { Notice, Stay, Severity } from '@numen/shell'
@@ -13,7 +13,7 @@ import type { WindowMessage } from './messages'
 
 /** The sentences the corner draws that are the window's own. */
 export interface Words {
-  /** The vault is there, and the window is not being told when it changes. */
+  /** The vault is present and the window is not notified when it changes. */
   readonly unwatched: string
   /** The vault itself could not be read. */
   readonly unread: string
@@ -27,7 +27,7 @@ export interface Words {
 
 /** What is so about the window, whatever it is doing. */
 export interface State {
-  /** The vault is there, and the window is not being told when it changes. */
+  /** The vault is present and the window is not notified when it changes. */
   readonly unwatched: string
   /** The vault itself could not be read. */
   readonly unread: string
@@ -75,11 +75,11 @@ const isSameReason = (outer: string, inner: string): boolean =>
   outer === inner || outer.endsWith(`: ${inner}`)
 
 /**
- * The work worth a card of its own.
+ * The work that gets a card of its own.
  *
- * One thing goes wrong and every pass waiting on it stops with the same
- * sentence. The one that says it and nothing more is the card, and of two
- * saying the same thing it is the one that said it first.
+ * One failure stops every dependent pass with the same message. The card is the one
+ * that states the message and nothing more, and of two stating the same message, the
+ * one reported first.
  */
 const dropDuplicateErrors = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((task, index) => {
@@ -94,9 +94,9 @@ const dropDuplicateErrors = (tasks: readonly Task[]): readonly Task[] =>
 /**
  * The cards the corner draws.
  *
- * Work first, because only work has numbers that move, and a state or a word
- * arriving must not shift what a person is reading. Within each of the three
- * the order is the order it was first seen in.
+ * Work comes first, because only work has moving numbers, and an arriving state or
+ * message must not shift what the user is reading. Within each of the three groups
+ * the order is first-seen order.
  */
 export interface CornerContext {
   state: State
@@ -130,7 +130,7 @@ export const getCornerNotices = (
       'nothingRead',
       !state.isIndexing && !state.hasNote && state.unread ? words.nothingRead : '',
     ),
-    // Said once and quietly, and it is so whether or not anything is running.
+    // Reported once, regardless of whether anything is running.
     ...createStateNotices('wordsOnly', isTextSearchOnly(vault) ? words.wordsOnly : '', {
       isUserStarted: false,
     }),

@@ -2,9 +2,9 @@ package appstate
 
 import "github.com/jiva-studio/numen/libs/notes/domain"
 
-// registryFile is the shape on disk. It carries a version because a human may
-// have to read it years from now, and a file that does not say what it is is
-// a file nobody dares change.
+// registryFile is the on-disk shape. It carries a version because it may need to be
+// read years later, and a file that does not identify its format cannot be changed
+// safely.
 type registryFile struct {
 	Version int `json:"v"`
 	// LastID is the identity of the vault opened most recently, and is absent

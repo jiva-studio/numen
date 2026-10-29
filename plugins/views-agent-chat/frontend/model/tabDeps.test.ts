@@ -1,5 +1,6 @@
 /**
- * What an agent tab asks of the window, answered by the host's workspace and agent.
+ * What an agent tab requires of the window, served by the host's workspace and
+ * agent.
  */
 import { describe, expect, it } from 'vitest'
 import { createHost } from '../fixtures'

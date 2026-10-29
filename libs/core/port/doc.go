@@ -1,7 +1,7 @@
 // Package port declares what the core needs from the world outside it.
 //
-// Every interface is small and named after the need it fills: the core asks
-// for somewhere to read a vault from. Adapters are named after the technology,
+// Every interface is small and named after the need it fills: the core needs
+// somewhere to read a vault from. Adapters are named after the technology,
 // which is the only place it is allowed to appear.
 //
 // Writing and reading are separate. A repository is a collection of aggregates —

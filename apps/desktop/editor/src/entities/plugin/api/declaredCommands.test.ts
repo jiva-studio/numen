@@ -1,6 +1,6 @@
 /**
  * The commands the plugins declare as the window reads them, and a run as the
- * window hands it over and reads what came of it.
+ * window dispatches it and reads its result.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { CommandErrorCode } from '@numen/protocol'

@@ -30,7 +30,7 @@ type Versions struct {
 	requested map[request]bool
 }
 
-// request is one plugin asked, on its own, for text of one content of a file.
+// request identifies one automatic request to a plugin for text of one file content.
 type request struct {
 	vault    domain.VaultID
 	path     string
@@ -38,10 +38,10 @@ type request struct {
 	pluginID string
 }
 
-// NewVersions is the versions recorded in repos with their files in files, the
-// plugins that make text and their providers, the vault files a note's type is
-// read from, and the clock a new version is dated by. A change is reported to
-// no one until SetListener names a listener.
+// NewVersions returns the versions use case. It takes the version repositories,
+// the file stores, the plugins that create text and their providers, the vault
+// readers that read a note's type, and the clock that dates new versions. No
+// listener is notified of changes until SetListener is called.
 func NewVersions(
 	repos textport.VersionRepositories,
 	files textport.TextFileStores,
@@ -59,8 +59,8 @@ func NewVersions(
 	}, nil
 }
 
-// SetListener names the listener of version changes: the index of the vault
-// the window shows. Nil reports to no one.
+// SetListener sets the listener of version changes, the index of the displayed
+// vault. Nil disables notifications.
 func (u *Versions) SetListener(listener textport.VersionListener) {
 	if listener == nil {
 		listener = noListener{}
@@ -70,7 +70,7 @@ func (u *Versions) SetListener(listener textport.VersionListener) {
 	u.listener = listener
 }
 
-// reportChanged tells the listener that the versions of a file changed.
+// reportChanged notifies the listener that the versions of a file changed.
 func (u *Versions) reportChanged(v domain.Vault, path string) {
 	u.mu.Lock()
 	listener := u.listener
@@ -164,8 +164,8 @@ type Listing struct {
 	Live     domain.TextVersionID
 }
 
-// ListVersions is the versions of a file and which of them is live, for the
-// file as fileHash says it is now.
+// ListVersions returns the versions of a file and the live one, evaluated for
+// the file content identified by fileHash.
 func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileHash string) (Listing, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
@@ -242,8 +242,8 @@ func (u *Versions) DeletePluginVersions(ctx context.Context, v domain.Vault, plu
 	return nil
 }
 
-// TextEdit is a person's edit of a version of a file: the segments as the
-// person left them, made from Source in the view of PluginID.
+// TextEdit is a user's edit of a version of a file: the edited segments, derived
+// from Source in the view of PluginID.
 type TextEdit struct {
 	PluginID string
 	Path     string
@@ -251,11 +251,11 @@ type TextEdit struct {
 	Segments []domain.TextSegment
 }
 
-// editPrefix starts the key of a version a person made by editing another.
+// editPrefix starts the key of a version created by editing another version.
 const editPrefix = "edit-"
 
-// CreateEdit records a person's edit as a new version made from its source.
-// The core writes the segments into the folder of the plugin the person edits
+// CreateEdit records a user's edit as a new version derived from its source.
+// The core writes the segments into the folder of the plugin the user edits
 // in. The new version is the newest, and live while its chain is valid.
 func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit) (domain.TextVersion, error) {
 	versions, err := u.getVersions(ctx, v, edit.Path)
@@ -285,8 +285,8 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 // fileExtension ends the name of a version file the core writes.
 const fileExtension = ".jsonl"
 
-// CreateText asks a plugin, for a person, for text of a file, or of one of its
-// versions where source names one. The plugin has to take the source it is given.
+// CreateText requests text of a file from a plugin on behalf of the user, or of
+// one of its versions when source names one. The plugin must accept the source it is given.
 func (u *Versions) CreateText(ctx context.Context, v domain.Vault, pluginID, path string, source domain.TextVersionID) error {
 	return u.createText(ctx, v, textport.TextCreation{Vault: v.ID, Path: path, Source: source, IsUserStarted: true}, pluginID)
 }
@@ -323,9 +323,9 @@ func (u *Versions) createText(ctx context.Context, v domain.Vault, req textport.
 	return nil
 }
 
-// RequestText asks each enabled plugin that runs on its own and reads the file
-// for text of it, once for each content of the file. A file with a live
-// version is asked for nothing.
+// RequestText requests text of the file from each enabled plugin that runs
+// automatically and reads the file, once for each content of the file. A file
+// with a live version is not requested.
 func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHash string) error {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {

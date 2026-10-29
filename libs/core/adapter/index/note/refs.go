@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// GetNotes returns what is needed to show each of the paths asked about. A path
-// that is empty is left out.
+// GetNotes returns the data needed to display each of the given paths. An empty
+// path is skipped.
 func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	out := map[string]domain.NoteRef{}
 	if len(paths) == 0 {
@@ -24,8 +24,8 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 		return nil, err
 	}
 
-	// One prepared statement, asked repeatedly: the query's text is the same
-	// whatever number of paths arrive.
+	// One prepared statement is executed repeatedly: the query text is the same
+	// for any number of paths.
 	statement, err := q.db.PrepareContext(ctx, stmt.Get("notes_at"))
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 	return out, nil
 }
 
-// GetTypes is what each of the paths asked about is. A path the index holds no
-// note at is left out, and so a listing draws it as the file it is.
+// GetTypes returns the type of each of the given paths. A path with no indexed
+// note is omitted, so a listing shows it as a plain file.
 func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
 	out := map[string]domain.NoteType{}
 	if len(paths) == 0 {
@@ -124,8 +124,8 @@ func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths
 		return nil, err
 	}
 
-	// One prepared statement, asked repeatedly: the query's text is the same
-	// whatever number of paths arrive.
+	// One prepared statement is executed repeatedly: the query text is the same
+	// for any number of paths.
 	statement, err := q.db.PrepareContext(ctx, stmt.Get("headings_of"))
 	if err != nil {
 		return nil, err

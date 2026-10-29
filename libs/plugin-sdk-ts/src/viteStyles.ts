@@ -2,7 +2,7 @@
  * The Tailwind utilities of one plugin frontend, and the check that every class its templates
  * name is defined by a stylesheet the window loads for it.
  *
- * A plugin view is drawn under the window's stylesheets, which carry the build of `@numen/ui`, and
+ * A plugin view is rendered under the window's stylesheets, which carry the build of `@numen/ui`, and
  * the plugin's own `dist/styles.css` after them: in the window's document, or in a shadow root
  * that holds a copy of the window's stylesheets. The utilities a plugin uses are built with the
  * theme of `@numen/ui` and appended to that file, less every declaration the `@numen/ui` build

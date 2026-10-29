@@ -1,23 +1,22 @@
 /**
  * A stream followed for as long as the window is open.
  *
- * The stream ends when the core stops or the connection goes, and it is taken
- * up again after a wait. A window that had stopped following would look
- * exactly like one that is up to date, so what it lost touch with is said
- * until it has it back.
+ * The stream ends when the core stops or the connection drops, and it is
+ * resumed after a delay. A window that stopped following would look identical
+ * to one that is up to date, so the lost connection is reported until the
+ * stream resumes.
  */
 
 /** How long the window waits before it takes a stream up again, in milliseconds. */
 export const AGAIN = 1000
 
 /**
- * What a stream that ended in a fault is said as.
+ * The message reported when a stream ended in a fault.
  *
- * The fault itself is a transport's, and nothing a person can act on: what they
- * can act on is that the window is behind the vault and is working its way
- * back. Every stream ends the same way and is taken up again the same way, so
- * there is one thing to say and this library can say it without knowing what
- * was being followed.
+ * The fault itself belongs to the transport and is not actionable. What is
+ * actionable is that the window is behind the vault and is retrying. Every
+ * stream ends and resumes the same way, so one message serves them all and
+ * this library needs no knowledge of what is being followed.
  */
 export const LOST = 'lost touch with numen — the window keeps trying'
 
@@ -25,7 +24,7 @@ export const LOST = 'lost touch with numen — the window keeps trying'
 export interface StreamDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
   isOpen(): boolean
-  /** What the window lost touch with, said until it has it back. */
+  /** Reports the lost connection, until the stream resumes. */
   setLost(message: string): void
   wait(ms: number): Promise<unknown>
   /**
@@ -50,9 +49,9 @@ export function createFollower(deps: StreamDeps) {
         await each(item)
       }
     } catch {
-      // Anything the reading throws ends this one and is said as losing
-      // touch, which is what all but one of them are. The exception is a
-      // fault in `each`, and this cannot tell the two apart.
+      // Any error thrown while reading ends this reading and is reported as a
+      // lost connection. This also covers a fault thrown by `each`, which cannot
+      // be distinguished from a transport fault here.
       if (!deps.isOpen()) return false
       deps.setLost(LOST)
     }
@@ -73,7 +72,7 @@ export function createFollower(deps: StreamDeps) {
       if (!(await readStream(stream, each))) return
       deps.reset?.()
       await deps.wait(again)
-      // Taken up again, so the transcript about losing it no longer holds.
+      // The stream resumed, so the lost-connection report is cleared.
       if (deps.isOpen()) deps.setLost('')
     }
   }

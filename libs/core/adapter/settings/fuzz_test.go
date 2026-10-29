@@ -10,16 +10,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 )
 
-// A file naming settings is answered for either with settings this build can be
-// run on or with what is wrong with the file. Both sizes and the count are
-// numbers their settings take, the version is one the file is read at, the mode
-// is a word the window draws.
+// A settings file yields either settings this build can run with or an error
+// describing what is wrong with the file. Both sizes and the count are numbers
+// that their settings accept, the version is one the reader supports, and the
+// mode is a word the window displays.
 //
-// Where the file names a setting this build cannot use and the defaults stand,
-// the reader says so.
+// When the file names a setting this build cannot use and the defaults apply,
+// the reader reports it.
 //
-// The values are what a person types between the braces, so each is that
-// person's and none of them is this application's.
+// The values are arbitrary user input between the braces, so none of them is
+// assumed to be valid.
 func FuzzAt(f *testing.F) {
 	// The file the application writes, a size the setting does not go to, a
 	// word no half of a colour pair is called, a theme named nothing at all, an
@@ -80,8 +80,8 @@ func FuzzAt(f *testing.F) {
 	})
 }
 
-// file is the settings as the file lays them out, so that a fuzzed value stands
-// in the file under the name the reader looks for it by.
+// file mirrors the layout of the settings file, so a fuzzed value is stored
+// under the key the reader looks up.
 type file struct {
 	Version    int        `json:"v"`
 	Appearance appearance `json:"appearance"`

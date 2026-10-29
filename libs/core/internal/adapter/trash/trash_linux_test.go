@@ -109,9 +109,9 @@ func TestAFolderWithAPunctuatedName(t *testing.T) {
 	}
 }
 
-// TestANameAlreadyTaken is what the trash does with the second vault a person
-// called the same thing: both are in there, each under its own name, and each
-// note says where its own folder came from.
+// TestANameAlreadyTaken verifies the trash handling of a second vault with the
+// same name: both are in the trash, each under its own name, and each note
+// records the origin folder.
 func TestANameAlreadyTaken(t *testing.T) {
 	data := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", data)
@@ -141,9 +141,9 @@ func TestANameAlreadyTaken(t *testing.T) {
 	}
 }
 
-// TestAVolumeThatTakesNoTrash is the rule that a folder is never deleted
-// because there is nowhere to put it: a volume whose root refuses a trash
-// directory has none, and the answer says so.
+// TestAVolumeThatConsumesNoTrash verifies that a folder is never deleted when
+// there is nowhere to move it: a volume whose root rejects a trash directory
+// has none, and the returned error says so.
 func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("root writes into a directory whose mode refuses it")
@@ -159,8 +159,8 @@ func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 	}
 }
 
-// TestNowhereToPutIt is the whole answer for a folder this machine cannot trash:
-// the sentinel, and the folder still where the person left it.
+// TestNowhereToInsertIt verifies the result for a folder this machine cannot
+// trash: the sentinel error, and the folder remains in place.
 func TestNowhereToInsertIt(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("root makes a trash directory at the root of any volume")
@@ -174,8 +174,8 @@ func TestNowhereToInsertIt(t *testing.T) {
 		t.Skipf("%s takes a trash directory on this machine", top)
 	}
 
-	// No trash of this login, so the volume's own is the only one there could
-	// be, and its root refuses one.
+	// The user has no trash, so the volume's own trash is the only candidate, and
+	// its root rejects one.
 	if err := moveToUserOrVolumeTrash(pos, ""); !errors.Is(err, machineport.ErrNoTrash) {
 		t.Errorf("trashing %s gave %v, want %v", pos, err, machineport.ErrNoTrash)
 	}

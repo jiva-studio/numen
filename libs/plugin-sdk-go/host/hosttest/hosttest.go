@@ -80,7 +80,7 @@ func newVault(v host.VaultInfo, files store) *Vault {
 	return made
 }
 
-// world is the vaults a host knows. They are worked under one lock.
+// world is the set of vaults a host knows. One lock guards them.
 type world struct {
 	mu      sync.Mutex
 	members []*Vault
@@ -113,8 +113,8 @@ func (v *Vault) Refuse(filePath string, err error) {
 	v.rejected[filePath] = err
 }
 
-// Beside makes the vault known to this one, and this one to it, so that each lists the other and
-// works it by identity. Vaults made known to one another are known to all that know either.
+// Beside links the vault with this one, so each lists the other and resolves it by
+// identity. Vaults linked to one vault are known to all vaults that know either.
 func (v *Vault) Beside(other *Vault) {
 	if v.world == other.world {
 		return
@@ -132,7 +132,7 @@ func (v *Vault) SetIndexState(state host.IndexState) {
 	v.state = state
 }
 
-// Move tells the watches of moves that something moved.
+// Move notifies the move watches that a move happened.
 func (v *Vault) Move() {
 	v.world.mu.Lock()
 	watches := append([]chan struct{}(nil), v.moves...)
@@ -145,7 +145,7 @@ func (v *Vault) Move() {
 // errGone is what a call on the files of a vault gets when its folder is not there any longer.
 var errGone = errors.New("the vault's folder is gone")
 
-// reach refuses a call that works the vault's folder when the folder is gone.
+// reach fails a call on the vault's folder when the folder is gone.
 func (v *Vault) reach() error {
 	if on, isDisk := v.files.(disk); isDisk {
 		if _, err := os.Stat(on.root); err != nil {
@@ -155,7 +155,7 @@ func (v *Vault) reach() error {
 	return nil
 }
 
-// gate refuses a call on a vault the host does not show, or does not know.
+// gate fails a call on a vault the host does not show or does not know.
 func (v *Vault) gate(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -176,8 +176,8 @@ func (v *Vault) Hide() {
 	v.isShown = false
 }
 
-// File makes a file, or replaces it, as another window would, and the index is told of it as the
-// watcher would tell it.
+// File creates or replaces a file, as another window would, and notifies the index
+// as the watcher would.
 func (v *Vault) File(filePath string, content string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
@@ -201,14 +201,14 @@ func (v *Vault) Content(filePath string) (string, bool) {
 	return string(content), err == nil
 }
 
-// Scans is the lists of paths the plugin asked the index to scan, in order.
+// Scans returns the lists of paths the plugin asked the index to scan, in order.
 func (v *Vault) Scans() [][]string {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	return append([][]string(nil), v.scanned...)
 }
 
-// Touch tells the watches of the files, as the host does when they changed outside the plugin.
+// Touch notifies the watches of the files, as the host does when files changed outside the plugin.
 func (v *Vault) Touch(paths ...string) {
 	v.world.mu.Lock()
 	watches := append([]chan host.Change(nil), v.watches...)
@@ -546,7 +546,7 @@ func (v *Vault) With(id host.VaultID) host.Vault {
 	return v.find(id)
 }
 
-// find is the vault of the identity among those the host knows. The caller holds the world's lock.
+// find returns the vault with the identity among those the host knows. The caller holds the world's lock.
 func (v *Vault) find(id host.VaultID) *Vault {
 	if v.vault.ID == id {
 		return v

@@ -29,11 +29,11 @@ var addressSeeds = []string{
 	"\x00\xff",
 }
 
-// Every string is an address of something: the addressing is total, so no
-// string of a file gives an undefined answer or none.
+// Every string is an address of something: addressing is total, so no input
+// string yields an undefined result or none.
 //
-// A note's links are written by hand in a file somebody else's editor wrote, so
-// what is put through here is a stranger's bytes.
+// A note's links are written by hand in a file that another editor wrote, so
+// the input here is arbitrary bytes.
 func FuzzParseAddress(f *testing.F) {
 	for _, seed := range addressSeeds {
 		f.Add(seed)
@@ -56,8 +56,8 @@ func FuzzParseAddress(f *testing.F) {
 				raw, a, spaced)
 		}
 
-		// A name is written as itself and a scheme carries its own name, so
-		// what a link is written as says which of the two it is.
+		// A name is written as itself and a scheme carries its own name, so the
+		// written form of a link identifies which of the two it is.
 		if content := a.GetWritten(); a.Scheme == domain.SchemeName {
 			if content != a.Value {
 				t.Fatalf("the name %q is written as %q", a.Value, content)

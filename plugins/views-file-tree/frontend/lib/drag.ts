@@ -1,9 +1,9 @@
 /**
  * What a drag from outside the window carries, as the files tree reads it.
  *
- * A file dropped in is a path and reaches the window's own drag and drop. Any other data, such as
- * an address dragged out of a browser under `text/uri-list`, is read here and handed to the plugin
- * that takes it.
+ * A dropped file is a path and is handled by the window's own drag and drop.
+ * Any other data, such as an address dragged out of a browser under
+ * `text/uri-list`, is read here and passed to the plugin that handles it.
  */
 import type { DroppedData } from '@numen/plugin-sdk'
 

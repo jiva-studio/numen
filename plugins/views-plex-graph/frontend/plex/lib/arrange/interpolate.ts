@@ -3,7 +3,7 @@
  * movement is a value with a test.
  *
  * Nodes are matched by identifier alone, and nothing here knows what a node
- * stands for.
+ * represents.
  */
 import { edgeKey, type PlacedEdge, type PlexEdge } from '../edge'
 import type { PlexFrame } from '../frame'
@@ -12,7 +12,7 @@ import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { routeEdges, createRouting, type Routing } from './edges/routing'
 
-/** What a settled arrangement says about the title an edge carries. */
+/** What a settled arrangement specifies for the title an edge carries. */
 type Title = Pick<PlacedEdge, 'heading' | 'words' | 'wordsAt'>
 
 const createTitle = (edge: PlacedEdge): Title => ({
@@ -28,7 +28,7 @@ function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Positio
   return { x: cameFrom?.x ?? 0, y: cameFrom?.y ?? 0 }
 }
 
-/** A node partway from where it stood to where it is going. */
+/** A node partway from its start position to its target position. */
 function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode {
   return {
     ...target,

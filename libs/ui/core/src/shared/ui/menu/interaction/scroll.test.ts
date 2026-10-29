@@ -1,5 +1,5 @@
 /**
- * Which scrolls are the person's.
+ * Which scrolls are initiated by the user.
  */
 import { describe, expect, it } from 'vitest'
 import { createScrollGate } from './scroll'

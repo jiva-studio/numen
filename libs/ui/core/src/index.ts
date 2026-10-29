@@ -9,7 +9,7 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
-/** One line of digits, typed by hand and held inside its bounds. */
+/** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'
 
 export { Switch } from './shared/ui/switch'
@@ -51,7 +51,7 @@ export type { LinkPiece } from './shared/lib/text/marks'
 
 export type { TextRange } from './shared/lib/text/textRange'
 
-/** The size, room and placement a component outside this module lays itself out by. */
+/** The size, space and position a component outside this module uses for its layout. */
 export type { Position, Size } from './shared/lib/math/geometry'
 export { clamp } from './shared/lib/math/bounds'
 export { getAdjacentPlace, type Box } from './shared/lib/dom/place'

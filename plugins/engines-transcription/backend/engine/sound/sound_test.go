@@ -50,7 +50,7 @@ func TestDurationFromTheHeader(t *testing.T) {
 	}
 }
 
-// A file in a container this does not read is said to be one, and is not read
+// A file in a container this does not read is reported as one, and is not read
 // as something else.
 func TestARecordingInNoContainerThisReads(t *testing.T) {
 	if _, err := GetDuration([]byte("this is not a recording")); err == nil {

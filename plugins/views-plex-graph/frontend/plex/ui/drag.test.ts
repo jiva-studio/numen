@@ -1,10 +1,10 @@
 /**
- * Something dragged over the plex from outside it, driven by hand.
+ * Items dragged over the plex from outside it, driven with synthetic events.
  *
- * jsdom lays nothing out and has no pointer, so the element's matrix is stubbed
- * and the events are made here. What is being checked is the plumbing — that
- * the plex picks a drag up, follows it, draws it and commits it — not the
- * arithmetic, which is `arrange/drop.test.ts` and needs none of this.
+ * jsdom performs no layout and has no pointer, so the element's matrix is stubbed
+ * and the events are created here. The tests cover the plumbing, that the plex
+ * accepts a drag, follows it, draws it and commits it, not the
+ * arithmetic, which `arrange/drop.test.ts` covers.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -22,7 +22,7 @@ const SEVERAL = ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md']
 
 /**
  * One plex unit to the pixel, origin in the middle, as the browser draws it.
- * Written out by hand because jsdom lays nothing out and has no matrices.
+ * Defined explicitly because jsdom performs no layout and has no matrices.
  */
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
@@ -160,8 +160,8 @@ describe('letting go of something dragged in', () => {
   })
 
   it('joins them before whoever is dragging them hears the same release', async () => {
-    // Whoever is dragging them is listening for the release too, and put them
-    // down as soon as it hears one. This has to have answered by then.
+    // The drag source also listens for the release and ends the drag as soon as it
+    // receives one. The plex must have responded by then.
     const plex = mountPlex({ dragged: [] })
 
     let reply: boolean | null = null
@@ -238,8 +238,8 @@ describe('while something is being dragged over the plex', () => {
     await plex.vm.$nextTick()
     expect(findDragged(plex).exists()).toBe(true)
 
-    // Past the edge, and towards a relation the caller left out: the picture
-    // promises only what letting go would actually do.
+    // Beyond the edge and toward a relation the caller excluded: the drag preview
+    // shows only what a drop would do.
     window.dispatchEvent(pointer('pointermove', 600, 1400))
     await plex.vm.$nextTick()
     expect(findDragged(plex).exists()).toBe(false)

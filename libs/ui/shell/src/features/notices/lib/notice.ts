@@ -7,20 +7,20 @@ import type { Tally, TallyUnit, Severity } from './tally'
 export type { Severity }
 
 /**
- * How long a notice stands.
+ * How long a notice is displayed.
  *
- * `holds` is drawn while whoever hands it in keeps handing it in. `read` goes
- * once it has been up long enough to have been read. `kept` stands until a
- * person puts it away.
+ * `holds` is displayed while its source keeps re-submitting it. `read` is
+ * removed once it has been up long enough to be read. `kept` stays until the
+ * user dismisses it.
  */
 export type Stay = 'holds' | 'read' | 'kept'
 
 /**
- * One thing the window has to say: something running behind it, something that
- * is so, or something that happened.
+ * One message of the window: a task running in the background, a standing
+ * state, or an event that happened.
  *
- * `done` and `total` are the work in hand, not the size of what it is being
- * done to: one change is one thing, however large the thing changed.
+ * `done` and `total` count the work in progress, not the size of what it is
+ * applied to: one change counts as one, however large the changed object.
  */
 export interface Notice {
   /** Whatever the caller addresses this notice by. Never read, only handed back. */
@@ -34,15 +34,15 @@ export interface Notice {
   readonly total?: number
   /** What that count counts. */
   readonly counting?: TallyUnit
-  /** Whether it is running now, or is a fact that is simply so. */
+  /** Whether it is running now, or is a standing fact. */
   readonly isWorking?: boolean
   /** How severe it is: info unless set. */
   readonly severity?: Severity
-  /** How long it stands. Held unless said otherwise. */
+  /** How long it is displayed. Defaults to held. */
   readonly stay?: Stay
   /**
-   * Whether a person asked for this and is waiting to be told it began. One of
-   * these is drawn the moment it arrives.
+   * Whether the user requested this and awaits confirmation that it began. One
+   * of these is displayed as soon as it arrives.
    */
   readonly isUserStarted?: boolean
 }
@@ -64,8 +64,8 @@ export interface Task {
 /**
  * One piece of work as a notice.
  *
- * What stopped a piece of work is what its card is called: it is the sentence a
- * person acts on, and the room on a card is the words at the front of it.
+ * What stopped the work is the card title: it is the sentence the user acts on,
+ * and a card has room only for its first words.
  */
 export const createNotice = (task: Task): Notice => {
   const error = task.error
@@ -86,9 +86,9 @@ export const createNotice = (task: Task): Notice => {
 }
 
 /**
- * The notices worth drawing: the ones that have something to say.
+ * The notices worth displaying: the ones with content.
  *
- * A notice with no words is one nobody could read.
+ * A notice with no text is unreadable.
  */
 export const getReadable = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.text !== '')
@@ -100,8 +100,8 @@ export const findTally = (notice: Notice): Tally | undefined =>
     : { completedCount: notice['done'], total: notice.total }
 
 /**
- * What is still worth remembering as put away: the notices that are still
- * there. Work that ends and begins again is news, and says so.
+ * The dismissed notices that remain relevant: those still active. Work that
+ * ends and begins again is a new notice and is reported as one.
  */
 export const getStillAway = (
   away: ReadonlySet<string>,

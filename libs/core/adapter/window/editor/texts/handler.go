@@ -1,5 +1,5 @@
 // Package texts serves a window's TextService: the live text of a file of the
-// shown vault, and a person's edit of it, for the views of plugins.
+// shown vault, and user edits of it, for plugin views.
 package texts
 
 import (
@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
-// FileText is the live text of a file and a person's edits of it.
+// FileText provides the live text of a file and records user edits of it.
 type FileText interface {
 	ReadLiveText(ctx context.Context, v domain.Vault, path string) (domain.VersionText, bool, error)
 	CreateEdit(ctx context.Context, v domain.Vault, edit textversion.TextEdit) (domain.TextVersion, error)
@@ -28,7 +28,7 @@ type VaultProvider interface {
 }
 
 // Handler serves TextService over the shown vault. A handler with no text
-// returns no live version and refuses an edit.
+// returns no live version and rejects edits.
 type Handler struct {
 	vaults VaultProvider
 	text   FileText
@@ -65,8 +65,8 @@ func (h *Handler) ReadLiveText(
 	}), nil
 }
 
-// CreateTextEdit records the person's edit as a new version in the folder of
-// the plugin the request names.
+// CreateTextEdit records a user edit as a new version in the folder of the
+// plugin named in the request.
 func (h *Handler) CreateTextEdit(
 	ctx context.Context, r *connect.Request[v1.CreateTextEditRequest],
 ) (*connect.Response[v1.CreateTextEditResponse], error) {

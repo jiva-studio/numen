@@ -15,8 +15,8 @@ func answer(blank, token, step, steps int) []float32 {
 	return out
 }
 
-// The decoding says the tokens the joiner names and steps on by the number
-// beside them. A blank is a frame carrying nothing and is not said.
+// The decoding emits the tokens the joiner names and advances by the number
+// beside them. A blank is a frame carrying nothing and is not emitted.
 func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 	const blank, steps = 3, 3
 	named := map[int][]float32{
@@ -49,7 +49,7 @@ func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 	if len(response) != 2 || response[0] != 1 || response[1] != 2 {
 		t.Errorf("the frames said %v", response)
 	}
-	// The predictor opens on the blank and is moved on by each token said.
+	// The predictor starts on the blank and advances with each emitted token.
 	if len(request) != 3 || request[0] != blank || request[1] != 1 || request[2] != 2 {
 		t.Errorf("the predictor was given %v", request)
 	}
@@ -183,7 +183,7 @@ func TestDecodeErrors(t *testing.T) {
 	})
 }
 
-// A frame that gives a duration of zero moves on once mostPerFrame tokens have been said.
+// A frame with a duration of zero advances once mostPerFrame tokens have been emitted.
 func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
 	const blank, steps = 3, 3
 	callsPerFrame := make(map[int]int)

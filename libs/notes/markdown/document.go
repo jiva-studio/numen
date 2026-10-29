@@ -1,5 +1,3 @@
-// stands as, and its prose.
-
 package markdown
 
 import (
@@ -11,21 +9,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ErrUnreadable is what opening a note says when its frontmatter is not YAML.
+// ErrUnreadable is returned when opening a note whose frontmatter is not YAML.
 // Such a note is never written.
 var ErrUnreadable = errors.New("the frontmatter of this note cannot be read")
 
 // ErrBodyUnwritable is a body that opens with the frontmatter delimiter. It is
-// a whole note handed back as prose — a caller that read a file, changed it,
-// and returned all of it. Writing it would put a second frontmatter block
-// inside the first one's note, and the block that then reads as the note's own
-// is the wrong one.
+// a whole note passed as prose, for example by a caller that read a file,
+// changed it, and returned all of it. Writing it would nest a second
+// frontmatter block in the note, and the block parsed as the note's frontmatter
+// would be the wrong one.
 var ErrBodyUnwritable = errors.New(
 	"a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
 		"send what note_read gave you, or use the link tools to change the frontmatter")
 
 // IsFrontmatterStart reports whether text begins a frontmatter block. A byte
-// order mark stands before the delimiter and is no part of the prose.
+// order mark before the delimiter is ignored and is not part of the prose.
 func IsFrontmatterStart(text string) bool {
 	opening := strings.TrimPrefix(text, "\ufeff")
 	return strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n")
@@ -33,9 +31,9 @@ func IsFrontmatterStart(text string) bool {
 
 // other part left as the bytes it arrived as.
 //
-// The frontmatter is shared with the person: their key order, their comments,
-// their quoting and their line endings are theirs. A change here is a splice —
-// the span of one key is replaced, and the rest of the file is never rewritten.
+// The frontmatter is user-authored: key order, comments, quoting and line
+// endings are preserved. A change is a splice: the span of one key is
+// replaced, and the rest of the file is never rewritten.
 type Document struct {
 	bom            []byte
 	open           []byte // the opening `---` line, with its ending
@@ -89,17 +87,17 @@ func Open(raw []byte) (*Document, error) {
 		offset = next
 	}
 
-	// A file that opens with the delimiter and never closes it is somebody's
-	// frontmatter with a line missing. The whole of it stands as body here, so
-	// nothing written to the body is written: what a write would replace is the
-	// half-written block as well as the prose.
+	// A file that opens with the delimiter and never closes it has an incomplete
+	// frontmatter block. The whole file is kept as the body, and body writes are
+	// rejected, because a write would replace the incomplete block together with
+	// the prose.
 	d.body = rest
 	d.isUnterminated = true
 	return d, nil
 }
 
-// Create is a new note: an identifier, because the application is making this
-// one, and whatever the person is starting it with.
+// Create returns the bytes of a new note: frontmatter with the given
+// identifier, followed by the initial body.
 func Create(identifier, body string) []byte {
 	var out bytes.Buffer
 	out.WriteString("---\nid: ")
@@ -112,7 +110,7 @@ func Create(identifier, body string) []byte {
 	return out.Bytes()
 }
 
-// Bytes is the note as it now stands.
+// Bytes returns the current content of the note.
 func (d *Document) Bytes() []byte {
 	out := make([]byte, 0, len(d.bom)+len(d.open)+len(d.front)+len(d.closeDelimiter)+len(d.body))
 	out = append(out, d.bom...)
@@ -145,9 +143,9 @@ func (d *Document) SetBody(body string) error {
 	return nil
 }
 
-// SpliceBody replaces one run of the prose, addressed by bytes of the body as
-// Body hands it over. Every byte outside the run is left as it arrived, and
-// what is written in its place takes the file's own line ending.
+// SpliceBody replaces one run of the prose, addressed by byte offsets into the
+// body as returned by Body. Every byte outside the run is unchanged, and the
+// replacement text uses the file's own line ending.
 func (d *Document) SpliceBody(start, end int, text string) error {
 	if d.isUnterminated {
 		return ErrUnterminated

@@ -1,5 +1,5 @@
 /**
- * What currently open is told to the core, and each tab draws the icon of its kind.
+ * The open tabs reported to the core, and each tab rendering the icon of its kind.
  */
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,7 +14,7 @@ interface Entry {
   openTab?: Record<string, string>
   /** The tab is listed but the window cannot resolve it. */
   unresolved?: boolean
-  /** The kind of the tab takes text put to it, as a conversation does. */
+  /** The tab's kind accepts text sent to it, as a conversation does. */
   takesText?: boolean
 }
 

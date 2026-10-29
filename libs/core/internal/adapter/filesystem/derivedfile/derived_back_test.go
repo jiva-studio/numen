@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// The rollback of an append cuts what that append wrote and nothing before it.
-// A second writer landing between the opening of the file and the write moves
-// where this one's bytes begin, and the length the file had is no longer it.
+// The rollback of an append truncates only what that append wrote. A second
+// writer landing between opening the file and the write moves where this
+// writer's bytes begin, so the original file length is not the rollback point.
 func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 	dir := t.TempDir()
 	pos := filepath.Join(dir, "run.txt")

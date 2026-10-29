@@ -1,5 +1,5 @@
 /**
- * The links between two notes as the link inspector shows them, and the edits a person makes to the rows.
+ * The links between two notes as the link inspector shows them, and the user's edits to its rows.
  */
 import { hasWindow, win } from '../dom'
 import type { PlexRelation } from '../plex'
@@ -35,7 +35,7 @@ function createLinkItem(
   }
 }
 
-/** The neighbour the line between two drawn notes stands for. */
+/** The neighbour that the line between two drawn notes represents. */
 export function findPairNeighbour(
   neighbourhood: Neighbourhood | null,
   pathA: string,

@@ -16,10 +16,10 @@ func getKind(filePath string) host.SourceKind {
 	return host.KindFile
 }
 
-// isNote says whether the index holds the file as a note.
+// isNote reports whether the index holds the file as a note.
 func isNote(path string) bool { return strings.HasSuffix(strings.ToLower(path), host.NoteExtension) }
 
-// isIgnored says whether the vault leaves the file alone: a file in a hidden folder, or a hidden file.
+// isIgnored reports whether the vault skips the file: a file in a hidden folder, or a hidden file.
 func isIgnored(filePath string) bool {
 	for _, segment := range strings.Split(filePath, "/") {
 		if strings.HasPrefix(segment, ".") {
@@ -29,8 +29,8 @@ func isIgnored(filePath string) bool {
 	return false
 }
 
-// parsed is every note the index holds. The index is a picture of the files as they were when it was
-// last brought level, and a file changed since is read again only once the index is told of it. The
+// parsed is every note the index holds. The index is a snapshot of the files as they were when it was
+// last brought current, and a file changed since is read again only once the index is notified. The
 // caller holds the lock.
 func (v *Vault) parsed() map[string]host.Note {
 	out := make(map[string]host.Note, len(v.indexed))
@@ -40,7 +40,7 @@ func (v *Vault) parsed() map[string]host.Note {
 	return out
 }
 
-// rescan brings the index level with the files named, the way the host does when it is told of a
+// rescan brings the index current with the named files, the way the host does when it is notified of a
 // change. The caller holds the lock.
 func (v *Vault) rescan(paths ...string) {
 	for _, filePath := range paths {
@@ -88,7 +88,7 @@ func candidates(notes map[string]host.Note, name string) []string {
 	return out
 }
 
-// resolve says where a link lands.
+// resolve returns where a link lands.
 func (v *Vault) resolve(notes map[string]host.Note, from string, r *host.ResolvedLink) {
 	switch r.Target.Scheme {
 	case host.SchemeNote:

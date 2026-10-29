@@ -7,7 +7,7 @@ import { getVaultError, mapVault, mapVaultResult } from './words'
 import type { CommandsDeps } from '@/features/command-palette'
 import type { Vaults } from '@/entities/vault'
 
-/** The vaults this installation holds, in the shape the window asks about them. */
+/** The vaults this installation holds, in the shape the window requests them. */
 export const vaults: Vaults = {
   list: async () => {
     const [answer, shown] = await Promise.all([

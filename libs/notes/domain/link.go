@@ -6,7 +6,7 @@ import (
 )
 
 // LinkRole says what a link is for. The list is closed: navigation and rendering
-// read it, so a role nobody decided on has no behaviour.
+// read it, so an undefined role has no behaviour.
 type LinkRole string
 
 const (
@@ -29,7 +29,7 @@ func IsKnownRole(r LinkRole) bool {
 
 // Address is what a link points at. Every address has a scheme, so reading one
 // is a split at the first colon: a title like "Lecture 3: entropy" carries one
-// of its own, and only a written scheme tells the two apart.
+// of its own, and only an explicit scheme tells the two apart.
 type Address struct {
 	Scheme string
 	Value  string
@@ -96,8 +96,8 @@ func isScheme(s string) bool {
 	return true
 }
 
-// Link is one edge as it was written. Where it resolves to is a question asked
-// of the index, not a fact stored in the file.
+// Link is one edge as written. Where it resolves to is a query to the index,
+// not a fact stored in the file.
 type Link struct {
 	Target Address
 	Role   LinkRole
@@ -109,10 +109,10 @@ type Link struct {
 	// Why the link exists, in the author's words.
 	Why string
 
-	// Label is what the person calls this relationship, in a few words, drawn
-	// along the line between the two notes. It is theirs, not a copy of
-	// anything: no field carries the target's name, because a name kept
-	// alongside an address is a cache in the file the address is written in.
+	// Label is the user's name for this relationship, in a few words, rendered
+	// along the line between the two notes. It is not a copy of anything: no
+	// field carries the target's name, because a name kept alongside an address
+	// is a cache in the file the address is written in.
 	Label string
 }
 
@@ -156,8 +156,8 @@ type AmbiguousLink struct {
 	Candidates []string
 }
 
-// IsNameable reports whether a filename can be written as an address that reaches
-// it back.
+// IsNameable reports whether a filename can be written as an address that
+// resolves back to it.
 //
 // A file may be called almost anything, and an address may not. `#` starts a
 // fragment, `|` starts an alias, `://` starts a scheme and `]]` ends a

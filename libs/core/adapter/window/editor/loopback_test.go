@@ -57,7 +57,7 @@ func (lockedVaults) Remove(domain.VaultID) error { return nil }
 
 func (lockedVaults) RecordOpened(domain.VaultID) error { return nil }
 
-// openLoopback is the socket a player reaches this API over, closed with the test.
+// openLoopback opens the socket a player uses to reach this API, closed with the test.
 func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	t.Helper()
 	back, err := Listen(api.server, nil)
@@ -74,9 +74,9 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 	return out
 }
 
-// statOf is what the vault says about the file at a path, which is what an
-// address names. A path the vault does not hold has an address all the same,
-// and what that address is answered with is what some of these ask about.
+// statOf returns the vault's stat for the file at a path, which is what an
+// address names. A path the vault does not contain still has an address, and
+// some tests check how that address is served.
 func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.FileStat {
 	t.Helper()
 	ref, err := api.Media.statFile.Execute(t.Context(), v, path)
@@ -86,8 +86,8 @@ func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.Fil
 	return ref
 }
 
-// takenAway is a socket that stops answering the moment it is asked to, as one
-// does where the machine takes it away.
+// takenAway is a listener that stops accepting when asked, as when the
+// system revokes the socket.
 type takenAway struct {
 	net.Listener
 	why error
@@ -99,9 +99,8 @@ func (takenAway) Close() error { return nil }
 
 func (takenAway) Addr() net.Addr { return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)} }
 
-// A socket that stopped answering is said, and gives out no more addresses. An
-// address on a dead socket is a recording that will not play, with nothing
-// anywhere to say why.
+// A failed socket is reported and issues no more addresses. An address on a
+// dead socket is a recording that cannot play, with no indication why.
 func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 
@@ -126,8 +125,8 @@ func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	}
 }
 
-// The address is the whole of what tells this window's own asking from anybody
-// else's, so a request without it is answered with nothing.
+// The address is the only thing that distinguishes this window's requests from
+// others, so a request without it is answered with nothing.
 func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
@@ -201,7 +200,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	}
 }
 
-// A player asks for a piece and is answered with that piece.
+// A player requests a byte range and receives exactly that range.
 func TestTheSocketAnswersAPiece(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
@@ -219,8 +218,8 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	}
 }
 
-// A player learns the size of a recording from the first answer and asks for its end, which is
-// what the length of a VBR mp3 with no Xing header is estimated from.
+// A player reads the size of a recording from the first response and requests
+// its end, which is used to estimate the length of a VBR mp3 with no Xing header.
 func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
@@ -251,8 +250,8 @@ func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	}
 }
 
-// The player reaches it over a socket, not through this process, so the whole
-// way in is what is asked here.
+// The player reaches the server over a socket, not in-process, so the test
+// covers the whole path.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, err := Listen(api.server, nil)

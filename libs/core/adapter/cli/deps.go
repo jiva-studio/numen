@@ -15,8 +15,8 @@ import (
 	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
 )
 
-// Locations are the places a person may point this installation at, as they
-// typed them. An empty one is the platform's own.
+// Locations are the paths a user may set for this installation, as typed. An
+// empty value selects the platform default.
 type Locations struct {
 	Index      string
 	Registry   string
@@ -24,15 +24,15 @@ type Locations struct {
 	SafeMode   bool
 }
 
-// Deps is what one run of the terminal works through: one opener for each
-// command, and nothing opened until the command that needs it asks.
+// Deps is what one run of the terminal depends on: one opener per command.
+// Nothing is opened until the command that needs it calls it.
 //
-// A command pays only for its own machinery: listing vaults opens no index, a
+// A command opens only its own machinery: listing vaults opens no index, and a
 // search opens no provider that fills one.
 type Deps struct {
-	// Vaults is the list of vaults this installation keeps and what the vault
-	// commands work on. Every command opens it: what a person typed is a name,
-	// a path or an identity, and the list is what turns it into a vault.
+	// Vaults is the list of vaults this installation keeps, which the vault
+	// commands operate on. Every command opens it: the typed argument is a name,
+	// a path or an identity, and the list resolves it to a vault.
 	Vaults func() (Vaults, error)
 
 	// Scan opens the walk that brings the index level with one vault, the
@@ -40,8 +40,8 @@ type Deps struct {
 	// file, whatever the index remembers.
 	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
 
-	// Search opens the search a question about v is answered by. errorHandler is where a
-	// half of it that could not run says so.
+	// Search opens the search that answers a query about v. errorHandler receives
+	// errors from a part of the search that could not run.
 	Search func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (Search, error)
 
 	// Links opens what a note points at and what points at it.
@@ -54,9 +54,9 @@ type Deps struct {
 	PluginCommands func() PluginCommands
 }
 
-// Vaults is what the vault commands work on: the list this installation keeps,
-// the folders it names, what gives a folder its identity, the place this
-// machine keeps what a person deleted, and what time it is.
+// Vaults is what the vault commands operate on: the list this installation keeps,
+// the folders it names, the folder identity, the trash location of this
+// machine, and the clock.
 type Vaults struct {
 	Registry vaultport.VaultRegistry
 	Readers  vaultport.VaultReaders
@@ -70,8 +70,8 @@ type Vaults struct {
 	Rows func(ctx context.Context) (VaultRows, error)
 }
 
-// find resolves what the person typed against the list and, where it resolves
-// to nothing, says what to do about it. Talking to a person belongs here.
+// find resolves the typed argument against the list and, when it resolves
+// to nothing, adds a hint on how to add the vault. User-facing messages belong here.
 func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
 	target, err := vault.NewFind(v.Registry).Execute(nameOrPath)
 	if err != nil {
@@ -90,8 +90,8 @@ type VaultRows struct {
 type Scan struct {
 	// Read is the walk, the text of the other files and the vectors, in the order they run in.
 	Read vault.ReadWholeVault
-	// Summary is what the index holds about the vault, asked once the walk is
-	// over.
+	// Summary is what the index holds about the vault, queried after the walk
+	// ends.
 	Summary func(ctx context.Context) (domain.VaultSummary, error)
 	// Unembedded is why no vectors are being made, and nothing where they are.
 	Unembedded error
@@ -113,11 +113,11 @@ type Links struct {
 	Close func() error
 }
 
-// Problems is what a scan could not act on, as the index answers about it.
+// Problems is what a scan could not act on, as reported by the index.
 //
-// The checks themselves are not opened here. Which questions are asked of a
-// vault is the core's own vocabulary and no part of an installation, so the
-// terminal takes the standard set and this opens what answers them.
+// The checks themselves are not opened here. The set of questions asked of a
+// vault is part of the core's vocabulary and not of an installation, so the
+// terminal uses the standard set and this opens what answers them.
 type Problems struct {
 	Problems problemport.ProblemQueries
 	Close    func() error

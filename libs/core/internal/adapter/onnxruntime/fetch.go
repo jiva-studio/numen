@@ -104,7 +104,7 @@ func download(ctx context.Context, client *http.Client, r Release, pos string, o
 	return nil
 }
 
-// progressWriter tells onProgress how many bytes have been written, of a total
+// progressWriter reports to onProgress how many bytes have been written, of a total
 // that is negative when unknown.
 type progressWriter struct {
 	total      int64

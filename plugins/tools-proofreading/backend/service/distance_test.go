@@ -38,7 +38,7 @@ func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
 	}
 }
 
-// An answer that empties a line which said something refuses the batch.
+// An answer that empties a line that had text rejects the batch.
 func TestGetFixedLines_RejectsEmptiedLine(t *testing.T) {
 	if _, _, ok := GetFixedLines(oneLine(asHeard), "7 | ", 0); ok {
 		t.Error("the batch was taken")

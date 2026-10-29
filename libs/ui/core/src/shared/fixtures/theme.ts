@@ -1,17 +1,17 @@
 /**
- * What a story drawn dark relies on. Storybook's furniture; it ships to
- * nobody.
+ * Helpers for stories rendered with the dark theme. Storybook test fixture
+ * only; it is not shipped.
  *
- * A theme is chosen by `color-scheme` on the root, which is what `light-dark()`
- * in the tokens reads, so that is where a story asks which set of colours it
- * was actually drawn in.
+ * The theme is selected by `color-scheme` on the root element, which is what
+ * `light-dark()` in the tokens reads, so a story checks the active token set
+ * there.
  */
 import { expect } from 'storybook/test'
 
-/** The globals a story carries to be drawn in the dark set of tokens. */
+/** The globals that render a story with the dark token set. */
 export const DARK = { theme: 'dark' } as const
 
-/** Fail unless the page around the story is standing on the dark tokens. */
+/** Fails unless the page containing the story uses the dark tokens. */
 export async function expectDark(canvas: HTMLElement): Promise<void> {
   const root = canvas.ownerDocument.documentElement
   await expect(getComputedStyle(root).colorScheme).toBe('dark')

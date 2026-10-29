@@ -1,11 +1,11 @@
 <script setup lang="ts">
-/** The foot of the palette: what a key reaches on the lit item, and the way to the rest. */
+/** The footer of the palette: the actions bound to keys on the highlighted item, and the way to the rest. */
 import { KeyCap } from '@numen/ui'
 import type { PaletteShortcut } from '../lib/keys'
 import type { PaletteKeys } from '@numen/ui'
 
 defineProps<{
-  /** The actions a key reaches, in the order they are offered. */
+  /** The actions with a key binding, in display order. */
   hinted: readonly PaletteShortcut[]
   /** The keystroke that opens the action panel, as this machine reports it. */
   actionKey: PaletteKeys
@@ -33,7 +33,7 @@ defineProps<{
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
-/* What a key reaches stands beside the cap that reaches it. */
+/* The action each key triggers is shown next to its key cap. */
 .palette__key,
 .palette__more {
   display: inline-flex;

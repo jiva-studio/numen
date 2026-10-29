@@ -94,7 +94,7 @@ describe('a press on a link', () => {
 })
 
 describe('a press that reaches the retained window without a link', () => {
-  /** The listener the window is held with, and the page it listens on. */
+  /** The listener registered on the window, and the document it listens on. */
   const hold = () => {
     const root = document.implementation.createHTMLDocument('')
     const add = vi.spyOn(root, 'addEventListener')

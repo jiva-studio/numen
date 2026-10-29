@@ -1,8 +1,8 @@
 /**
  * The wire every client in a window talks over.
  *
- * The application serves the page and answers it, so it is asked at the origin
- * the page came from.
+ * The application serves the page and answers its requests, so requests go to
+ * the origin the page was served from.
  */
 import { createConnectTransport } from '@connectrpc/connect-web'
 

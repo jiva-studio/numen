@@ -4,8 +4,8 @@ package completion
 // settings name no limit.
 const DefaultConcurrency = 1
 
-// Config is the section of the settings file that says which agent answers the
-// questions of a plugin whose own setting names none.
+// Config is the section of the settings file that selects the agent that
+// handles the queries of a plugin whose own setting names none.
 type Config struct {
 	// Default is the agent and the model a plugin naming no agent is answered
 	// by, and how many questions one agent answers at once.

@@ -69,7 +69,7 @@ func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	}
 }
 
-// walkKinds is what a walk found, as the kind of source each path is.
+// walkKinds returns what a walk found, as the kind of source for each path.
 func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]domain.SourceKind {
 	t.Helper()
 	src, err := vaultreader.Open(root, opts)
@@ -86,8 +86,8 @@ func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]d
 	return got
 }
 
-// TestWalkSaysWhichKindEachSourceIs. A walk reports the kind of each source, so
-// a file that is not a note is never handed to the markdown parser.
+// TestWalkReturnsWhichKindEachSourceIs checks that a walk reports the kind of each source, so
+// a file that is not a note is never passed to the markdown parser.
 func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
@@ -158,8 +158,8 @@ func TestStatDoesNotSayABookIsMissing(t *testing.T) {
 	}
 }
 
-// TestABookInAHiddenFolderIsNotASourceEither. One set of rules answers for every
-// kind: what the vault says to leave alone is left alone whatever is in it.
+// TestABookInAHiddenFolderIsNotASourceEither checks that one set of rules applies to every
+// kind: what the vault excludes is excluded whatever it contains.
 func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, ".obsidian/A Book.epub")
@@ -233,9 +233,9 @@ func listNames(t *testing.T, src *vaultreader.VaultReader, folder string) []stri
 	return names
 }
 
-// A listing holds every file of the folder and every folder under it, and what
-// the vault says to leave alone is left out. Folders come first, and names are
-// compared without regard to case.
+// A listing contains every file of the folder and every folder under it, and what
+// the vault excludes is omitted. Folders come first, and names are compared
+// case-insensitively.
 func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"alpha/Entropy.md":       "# Entropy\n",
@@ -256,8 +256,8 @@ func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
 	}
 }
 
-// A listing says which kind of source each file is: a note or a file. A folder
-// is of no kind and is what a listing of its own answers to.
+// A listing reports the kind of each file: a note or a file. A folder has no
+// kind and is listed by a listing of its own.
 func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"library/Notes.md":      "# Notes\n",
@@ -511,9 +511,9 @@ func TestWalk_SkipsConfiguredServiceDirWithoutDot(t *testing.T) {
 	}
 }
 
-// Containment reads the service folder's name without regard to case, because
-// that is how macOS and Windows open it. A walk reads it the same way, so a
-// file the walk reports is a file the vault will hand over.
+// Containment compares the service folder's name case-insensitively, because
+// that is how macOS and Windows open it. A walk compares it the same way, so a
+// file the walk reports is a file the vault will serve.
 func TestTheServiceFolderIsSkippedInWhateverCaseItIsSpelled(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(dir, "_NUMEN"), 0o755); err != nil {
@@ -616,8 +616,8 @@ func TestOnlyANoteIsSavedTo(t *testing.T) {
 	}
 }
 
-// A folder inside the vault may be a link to somewhere else, and a write
-// through it lands outside. The text of the path says nothing about that.
+// A folder inside the vault may be a link to a location outside it, and a write
+// through it lands outside. The text of the path does not reveal this.
 func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	outside := t.TempDir()
 	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("not yours"), 0o600); err != nil {

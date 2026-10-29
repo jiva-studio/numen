@@ -30,29 +30,25 @@ type ImportResult struct {
 
 // Import copies files from this machine into a folder of the vault.
 //
-// A person hands the window a file by letting go of it over the tree, and every
-// file that arrives comes through here. The bytes are copied: what the person
-// dropped stays where it was.
+// A file dropped onto the tree is imported through this use case. The bytes are
+// copied, and the source file is left in place.
 type Import struct {
 	writers vaultport.VaultWriters
-	// files is what the person handed over, read at its current position. Nothing here
-	// reaches the machine itself: what arrives is a path on a desktop and a
-	// content URI on a phone, and this is what tells them apart.
+	// files reads the imported handles. A handle is a path on a desktop and a
+	// content URI on a phone; this port resolves both, and nothing else in this
+	// type accesses the machine directly.
 	files sourceport.ImportedFiles
 }
 
-// NewImport is what a file a person handed over arrives through: the vault it
-// is copied into, and what reads it at its current position.
+// NewImport creates an Import from the writers of the target vault and the port
+// that reads imported files.
 func NewImport(writers vaultport.VaultWriters, files sourceport.ImportedFiles) Import {
 	return Import{writers: writers, files: files}
 }
 
-// Execute brings each handle into the folder, under the name it already
-// carries. A folder arrives with everything under it.
-//
-// nineteen pictures and a sentence. A name the folder already carries is one of
-// those errors: what a person meant by a second file of that name is theirs to
-// say.
+// Execute copies each handle into the folder under its own name. A folder is
+// copied with everything under it. Failures are collected per handle in the
+// result; a name the folder already contains is one such error.
 func (u Import) Execute(
 	ctx context.Context,
 	v domain.Vault,
@@ -152,8 +148,7 @@ func (u Import) importFile(
 	return nil
 }
 
-// errHoldsTheVault is a folder handed to the window that the vault itself sits
-// inside.
+// errHoldsTheVault marks a dropped folder that contains the vault itself.
 var errHoldsTheVault = errors.New("the vault is inside it")
 
 // errNotAFile is a device, a socket or a link handed to the window. The vault

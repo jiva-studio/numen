@@ -39,7 +39,7 @@ export function activate(context: PluginContext): void {
   )
   context.registerTabKind(chats.kind)
 
-  /** A question about a note, put in the conversation the person was last in. */
+  /** A question about a note, posted to the conversation the user was last in. */
   const askAbout = (path: string): void => workspace.ask(`${path} — `)
 
   context.registerCommand({

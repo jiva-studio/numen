@@ -1,6 +1,6 @@
 /**
- * The loader of plugin frontends: each module is fetched from the window, activated with a context
- * the host makes, and deactivated as its `enabled` setting says.
+ * Loads plugin frontends: each module is fetched from the window, activated with a context
+ * created by the host, and deactivated according to its `enabled` setting.
  */
 import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
@@ -22,7 +22,7 @@ export interface PluginLoaderDeps {
 
 export const DEFAULT_PLUGIN_ENABLED = true
 
-/** A plugin is enabled unless its setting says false. */
+/** A plugin is enabled unless its setting is false. */
 export function isPluginEnabledValue(value: unknown): boolean {
   return typeof value === 'boolean' ? value : DEFAULT_PLUGIN_ENABLED
 }

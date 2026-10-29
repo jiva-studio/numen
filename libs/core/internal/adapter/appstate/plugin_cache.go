@@ -25,8 +25,8 @@ func OpenPluginCaches() (*PluginCaches, error) {
 	return PluginCachesAt(filepath.Join(dir, "numen", "plugins")), nil
 }
 
-// PluginCachesAt is OpenPluginCaches with an explicit folder, so that a test does not touch the
-// machine's own.
+// PluginCachesAt is OpenPluginCaches with an explicit folder, so tests do not
+// touch the machine's own folder.
 func PluginCachesAt(dir string) *PluginCaches { return &PluginCaches{dir: dir} }
 
 // Read returns what is kept, and false where nothing is.

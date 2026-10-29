@@ -1,6 +1,6 @@
 /**
- * Where the phone reaches the core: the plugin it starts it through, and the
- * address each client asks it at.
+ * Where the phone connects to the core: the plugin that starts it, and the
+ * address each client uses.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startCore } from './core'

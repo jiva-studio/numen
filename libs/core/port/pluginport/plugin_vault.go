@@ -86,7 +86,7 @@ type PluginVaultReader interface {
 
 // PluginVaultWriter provides mutating operations on files in a vault.
 type PluginVaultWriter interface {
-	// Write replaces the file if it is still what the baseline says, and returns what it is now.
+	// Write replaces the file if it still matches the baseline, and returns the new file stat.
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers until the release is called.
@@ -118,7 +118,7 @@ type PluginVaultLifecycle interface {
 }
 
 // PluginVault is the open vault as the host exposes it to a plugin: its files,
-// what the index says of its notes and links, the plugin's folder in its store, and
+// the index data of its notes and links, the plugin's folder in its store, and
 // the cache the installation keeps for a plugin.
 type PluginVault interface {
 	PluginVaultReader

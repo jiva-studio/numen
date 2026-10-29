@@ -24,7 +24,7 @@ export interface DragLabelOptions {
 
 /**
  * What follows the pointer while rows are dragged, and nothing while none are.
- * One row is said by its name; several are said by how many.
+ * One row is labeled by its name; several are labeled by their count.
  */
 export function dragLabel(
   visibleRows: readonly ShownRow[],

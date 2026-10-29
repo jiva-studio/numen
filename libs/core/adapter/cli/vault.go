@@ -79,8 +79,8 @@ func listVaults(out io.Writer, deps Deps) error {
 	if err != nil {
 		return err
 	}
-	// Nobody is sitting in front of a vault here, so the current one is the
-	// vault the next window opens.
+	// No vault is specified here, so the current one is the vault the next window
+	// opens.
 	recognized, err := vault.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
 	if err != nil {
 		return err
@@ -205,8 +205,8 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	return nil
 }
 
-// confirmErase says what erasing does and reads the answer from the terminal
-// this was typed at. Only yes is a yes.
+// confirmErase describes what erasing does and reads the reply from the
+// terminal it was invoked on. Only "yes" confirms.
 func confirmErase(out io.Writer, v domain.Vault) bool {
 	fmt.Fprintf(out, "erase %s?\n  %s goes to the trash this machine keeps\n"+
 		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
@@ -233,7 +233,7 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	return nil
 }
 
-// findVault resolves what the person typed, against the list opened for it.
+// findVault resolves the user's input against the list opened for it.
 func findVault(deps Deps, nameOrPath string) (domain.Vault, error) {
 	vaults, err := deps.Vaults()
 	if err != nil {

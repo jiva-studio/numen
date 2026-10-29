@@ -8,7 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// StatFile finds what the vault says about the file at a path: its kind, its size and when it changed.
+// StatFile returns what the vault reports about the file at a path: its kind,
+// its size and its modification time.
 type StatFile struct {
 	readers vaultport.VaultReaders
 }

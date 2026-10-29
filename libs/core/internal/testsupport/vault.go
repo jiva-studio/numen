@@ -13,10 +13,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// VaultDir returns the fixture vault every test scans.
+// VaultDir returns the fixture vault that every test scans.
 //
-// It walks up from this file until it finds the repository, so a test says
-// what it wants and holds when its package moves.
+// It walks up from this file until it finds the repository root, so a test
+// works unchanged when its package moves.
 func VaultDir(t *testing.T) string {
 	t.Helper()
 

@@ -30,9 +30,9 @@ const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDo
 /**
  * A tab switched away from and come back to.
  *
- * Every tab of a pane is drawn and the ones not shown are held out of sight. The pane says which
- * tab is on screen again, so the tab can take its measurements again, and the text in it keeps
- * what was typed.
+ * Every tab of a pane is rendered and the inactive ones are hidden. The pane
+ * signals which tab is visible again, so the tab can remeasure, and the text in
+ * it keeps what was typed.
  */
 export const ShownAgain: Story = {
   args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },

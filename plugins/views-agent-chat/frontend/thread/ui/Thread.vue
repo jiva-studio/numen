@@ -18,17 +18,17 @@ const props = defineProps<{
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** A turn the person pressed, which is one that says it opens something. */
+  /** A turn the user pressed that is openable. */
   (event: 'open', turn: Turn): void
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 
 defineSlots<{
-  /** What is said when nothing has been said yet. */
+  /** Content shown when there are no turns yet. */
   silence?(): unknown
   /** How a turn is drawn, where the caller draws it itself. */
   turn?(props: { turn: Turn; state: PlacedTurn['state'] }): unknown
-  /** What is said about a turn that never sent. */
+  /** Content shown for a turn that failed to send. */
   failure?(props: { turn: Turn }): unknown
 }>()
 
@@ -59,7 +59,7 @@ function onScroll() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** Brings the foot into view. Asked to, it takes the following up again. */
+/** Scrolls the foot into view. With `again` set, it resumes following new content. */
 function toFoot(again = false) {
   if (again) follows.value = true
   if (!follows.value || !area.value) return

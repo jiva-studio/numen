@@ -3,8 +3,9 @@
  * One value along a track, moved by a handle, with the track filled behind it.
  * It draws no number of its own.
  *
- * under, is brought in and handed on. Moving the handle and letting it go are
- * two things said, and a walk with the keys is over when the key is.
+ * A value outside the bounds is clamped and emitted. Moving the handle and
+ * releasing it are separate events, and a key sequence ends when the key is
+ * released.
  */
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
@@ -17,7 +18,7 @@ defineOptions({ inheritAttrs: false })
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** How far the track runs, and what one step of it moves. */
+    /** The track range and the step size. */
     min?: number
     max?: number
     step?: number
@@ -28,11 +29,11 @@ const props = withDefaults(
 )
 
 /* --------------------------------- Events --------------------------------- */
-/** Where the handle stands. */
+/** The handle position. */
 const model = defineModel<number>({ default: 0 })
 
 const emit = defineEmits<{
-  /** The handle release, at the end of a drag or of a walk with the keys. */
+  /** The handle was released, at the end of a drag or of a key sequence. */
   commit: [value: number]
 }>()
 
@@ -55,12 +56,12 @@ const setValue = (value: number) => {
 
 const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
 
-/** Where the handle stands, which is inside the ends whatever it was given. */
+/** The handle position, clamped to the bounds. */
 const inForce = computed(() => clamp(model.value, bounds.value))
 
 watch(inForce, setValue, { immediate: true })
 
-/** Whether a key is down, and where the handle stood when it went down. */
+/** Whether a key is pressed, and the handle position when it was pressed. */
 let walking = false
 let began = 0
 

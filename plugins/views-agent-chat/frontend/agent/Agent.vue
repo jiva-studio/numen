@@ -28,7 +28,7 @@ const emit = defineEmits<{
   (event: 'submit', text: string): void
   /** Give up on the answer on its way. */
   (event: 'stop'): void
-  /** A turn the person pressed, which is one that says it opens something. */
+  /** A turn that the user activated, and that opens something. */
   (event: 'open', turn: Turn): void
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
   /** A model/agent was selected from the dropdown. */

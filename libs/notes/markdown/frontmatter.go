@@ -28,9 +28,9 @@ func render(node *yaml.Node) (string, error) {
 	return out.String(), nil
 }
 
-// put writes one top-level key and what it holds, keeping the comment written
-// on the key's own line. That comment is the person's, on a key the application
-// owns as much as on any other.
+// put writes one top-level key and its value, preserving the comment on the
+// key's own line. That comment belongs to the user, including on keys the
+// application owns.
 func (d *Document) put(key string, value *yaml.Node) error {
 	node, err := d.getWritableNode()
 	if err != nil {
@@ -45,11 +45,11 @@ func (d *Document) put(key string, value *yaml.Node) error {
 	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
 }
 
-// nodePair is the two nodes one key of a mapping stands as, and is empty where the
-// mapping has no such key.
+// nodePair holds the key node and the value node of one mapping key, and is
+// empty when the mapping has no such key.
 type nodePair struct{ name, value *yaml.Node }
 
-// pair is the two nodes one key of a mapping stands as.
+// pair returns the key node and the value node of one mapping key.
 func pair(node *yaml.Node, key string) nodePair {
 	if node == nil || node.Kind != yaml.MappingNode {
 		return nodePair{}
@@ -308,8 +308,8 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	return node, nil
 }
 
-// getWritableNode is the frontmatter when it is laid out so that one key can be
-// changed without touching another. Reading one that is not is fine; writing to
+// getWritableNode returns the frontmatter mapping when one key can be changed
+// without touching another. Other layouts can be read but not written.
 func (d *Document) getWritableNode() (*yaml.Node, error) {
 	if d.isUnterminated {
 		return nil, ErrUnterminated
@@ -327,14 +327,14 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 	return node, nil
 }
 
-// ErrInline is what a block whose keys share their lines gets. Nothing is
-// changed in it.
+// ErrInline is returned for a block whose keys share lines. The block is left
+// unchanged.
 //
-// Everything here works by replacing the lines a key occupies, and that is a
-// key's own span while one line holds one key. `{title: T, id: b}` puts them
-// all on one, so the span of any of them is the span of all of them. A value
-// written on one line — `load: {sat: 50}` — still occupies its key's own
-// lines and is replaced currently.
+// Writes replace the lines a key occupies, which is the key's own span only
+// while one line holds one key. `{title: T, id: b}` puts all keys on one line,
+// so the span of any key is the span of all of them. A value written on one
+// line, such as `load: {sat: 50}`, still occupies its key's own lines and is
+// replaced as usual.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 
 // ErrAnchored is a frontmatter carrying a YAML anchor. Nothing is changed in it.
@@ -374,9 +374,9 @@ func isFlowCollection(node *yaml.Node) bool {
 		(node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode)
 }
 
-// isNullValue reports whether a key holds nothing at all, which is a key a first
-// entry is written under. A null somebody wrote out relies on the line and is
-// not one.
+// isNullValue reports whether a key has an empty null value, the case where a
+// first entry is written under the key. An explicitly written null occupies its
+// line and does not match.
 func isNullValue(node *yaml.Node) bool {
 	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
 }

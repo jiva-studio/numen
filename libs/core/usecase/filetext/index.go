@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// sourcesPerQuery bounds one answer about what owes its text, so that a library
-// of any size is worked through in pieces.
+// sourcesPerQuery is the page size of the query for sources that need text,
+// so a library of any size is processed in pages.
 const sourcesPerQuery = 100
 
 // versionReader names the text a source is cut from: the live text version of
@@ -28,45 +28,45 @@ const versionReader = "text-version-1"
 // Index cuts the live text versions of the files a vault holds into chunks.
 //
 // It runs in two passes. The first records the files that have text or that a
-// plugin makes text of, opening nothing. The second reads the live text version
-// of every file that owes its text and cuts it into chunks, one write per file.
+// plugin can extract text from, without opening them. The second reads the
+// live text version of every file that needs text and cuts it into chunks, one
+// write per file.
 type Index struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository
 	queries sourceport.SourceQueries
 	texts   textport.TextReaders
 
-	// Sizes are how the text is cut. They are named in the recipe, so a source
-	// cut at other sizes owes its text again.
+	// Sizes are the chunk sizes. They are part of the recipe, so a source cut
+	// at other sizes needs its text cut again.
 	Sizes chunking.Sizes
 
 	// Legibility is what a chunk has to read like to be kept. It is not in the
 	// recipe: a chunk dropped as unreadable is not a different cut of the text.
 	Legibility chunking.Legibility
 
-	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
-	// index remembers about it.
+	// ShouldRebuildIndex reads every file and indexes it again, regardless of
+	// the stored index state.
 	//
-	// What it remembers is a path, a size and a modification time, so a file whose
-	// content changed while those did not is skipped — an archive restored by
-	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
-	// that, and the only one.
+	// The index compares a path, a size and a modification time, so a file whose
+	// content changed while those stayed equal is skipped, for example after
+	// restoring an archive with `unzip` or copying a tree with `rsync -tc`.
+	// Rebuilding is the only way to index such files.
 	ShouldRebuildIndex bool
 
-	// OnProgress, if set, is called as each source is opened and as each one is
-	// written. A library takes minutes, and something has to be able to say how
-	// far it has got.
+	// OnProgress, if set, is called when each source is opened and when each
+	// one is written. It reports progress on libraries that take minutes.
 	OnProgress func(IndexResult)
 
-	// ErrorHandler hears of a source whose text could not be read or asked for.
-	// The source is counted unreadable and the run goes on. Nil hears nothing.
+	// ErrorHandler receives each source whose text could not be read or
+	// requested. The source is counted as unreadable and the run continues. Nil
+	// ignores such errors.
 	ErrorHandler windowport.ErrorHandler
 }
 
-// NewIndex is what a vault's file texts are cut into chunks through: the vault
-// the files are read out of, where a source and its chunks are written, what
-// says which sources the index already holds, and the text versions of the
-// vault. Nil texts is an installation with none, where no file has text.
+// NewIndex creates an Index from the vault readers, the source repository
+// that stores sources and chunks, the source queries that report which sources
+// the index holds, and the text readers. Nil texts means no file has text.
 func NewIndex(
 	readers vaultport.VaultReaders,
 	sources sourceport.SourceRepository,
@@ -135,10 +135,10 @@ func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain
 	return stats, nil
 }
 
-// walkAndRecord walks the vault, records each file with text the index does not
-// already hold as it is, and returns every file path it found. A file the index
-// does not hold is recorded only where it has text versions or a plugin that
-// runs on its own takes it.
+// walkAndRecord walks the vault, records each file with text that the index
+// does not already hold unchanged, and returns every file path it found. A file
+// is recorded only if it has text versions or a plugin that runs on its own
+// can extract its text.
 func (u Index) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
@@ -243,9 +243,9 @@ func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string 
 	return added
 }
 
-// dropOutdatedText records afresh, with no recipe, every source cut from a
-// version that is no longer the file's live one: a plugin was switched off, a
-// version was deleted, or a newer one was made while nothing was indexing.
+// dropOutdatedText records again, with no recipe, every source cut from a
+// version that is no longer the file's live version: a plugin was switched off,
+// a version was deleted, or a newer one was created while nothing was indexing.
 func (u Index) dropOutdatedText(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
 	cut, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
@@ -292,13 +292,13 @@ func (u Index) recordIfOutdated(
 	return nil
 }
 
-// cut extracts and cuts every source that owes its text.
+// cut extracts and cuts every source that needs text.
 //
-// Which those are is asked of the data, on both keys that answer it: a source
-// with no small chunk has never been cut, and a source carrying another recipe
-// was cut by another extractor or at other sizes. Each question is asked again
-// until it is empty that has not been tried, so a run that stopped part way
-// is continued by starting another.
+// Those sources are found by two queries: a source with no small chunk has
+// never been cut, and a source with a different recipe was cut by another
+// extractor or at other sizes. Each query is repeated until it returns no
+// source that has not been tried, so an interrupted run is continued by
+// starting another.
 func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
 	sizes := u.sizes()
 	recognized := []string{recipe(versionReader, sizes)}
@@ -373,12 +373,12 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (Index
 // cut into.
 //
 // A file with no live version keeps no chunks, and the plugins that run on
-// their own are asked for its text. That is an ordinary outcome, counted, and
-// the run goes on. A vault out of reach, or an index that will not take the
-// chunks, stops it.
+// their own are asked for its text. This is an ordinary outcome, counted, and
+// the run continues. An unreachable vault, or an index that rejects the chunks,
+// stops the run.
 //
-// The file is stated before it is read, so a file that changes while it is being
-// read keeps the older file stat and is asked for again.
+// The file is stated before it is read, so a file that changes during the read
+// keeps the earlier file stat and is processed again.
 func (u Index) source(
 	ctx context.Context,
 	v domain.Vault,
@@ -445,7 +445,8 @@ func (u Index) source(
 }
 
 // saveWithoutText records a source with no live version, no chunks and no
-// recipe, which is a source that owes its text, and asks for that text. Text that could not be read is told to the error handler.
+// recipe, which marks it as needing text, and requests that text. A text read
+// error is passed to the error handler.
 func (u Index) saveWithoutText(
 	ctx context.Context,
 	v domain.Vault,
@@ -489,8 +490,8 @@ func chunksOf(doc domain.VersionText, sizes chunking.Sizes, reads chunking.Legib
 	})
 }
 
-// chunkAt is one chunk with what it holds and where the source says it is. The
-// text goes with it to be indexed for its words and is not kept.
+// chunkAt returns a chunk with its text and its location in the source. The
+// text is indexed for its words and is not stored.
 func chunkAt(doc domain.VersionText, c chunking.Chunk) domain.Chunk {
 	return domain.Chunk{
 		Start:    c.Start,
@@ -509,9 +510,9 @@ func countChunks(chunks []domain.Chunk) int {
 	return n
 }
 
-// recipe names what produced a source's text: the reader that took it out, and
-// the sizes it was cut into. Both are asked as one question — a source whose
-// recipe is not this one owes its text again.
+// recipe names what produced a source's text: the reader that extracted it
+// and the sizes it was cut into. A source whose recipe differs needs its text
+// cut again.
 func recipe(reader string, s chunking.Sizes) string {
 	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
 		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
@@ -538,8 +539,8 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 	return openVault{files: files, texts: texts}, nil
 }
 
-// noTexts is a vault with no text versions: every file is without text, and
-// nothing is asked for.
+// noTexts is a vault with no text versions: every file has no text, and no
+// text is requested.
 type noTexts struct{}
 
 func (noTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {

@@ -1,8 +1,8 @@
-// Package bind is the core as a phone reaches it.
+// Package bind exposes the core to the mobile platform.
 //
-// One call starts a server on the loopback and answers with the port it
-// listens on; everything asked of it after that is the schema in
-// modules/libs/protocol, which is what the window asks too.
+// One call starts a server on the loopback interface and returns its listening
+// port. All requests to it follow the schema in modules/libs/protocol, the same
+// schema the desktop window uses.
 package bind
 
 import (
@@ -33,18 +33,19 @@ var (
 
 type runningCore struct {
 	port int
-	// isDown says the server stopped on its own, so the port answers nothing.
+	// isDown is set when the server has stopped on its own, after which the
+	// port serves nothing.
 	isDown atomic.Bool
 	stop   context.CancelFunc
 	opened *editor.Installation
 	server *http.Server
 }
 
-// Start opens the vault under dir and serves it. The port is the answer: the
-// caller asked for no particular one.
+// Start opens the vault under dir and serves it. It returns the port, which the
+// server chooses.
 //
-// dir is the folder the platform gave the application to write in. Everything
-// this installation keeps — the vault, the index, the settings — sits under it.
+// dir is the folder the platform provides for application data. The vault, the
+// index and the settings are stored under it.
 func Start(dir string) (int, error) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -82,9 +83,10 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	// The themes are the installation's, and a folder that could not be made
-	// leaves the ones this binary ships. A theme the settings name that the
-	// catalogue has not is said where the person is.
+	// The themes come from the installation. If the themes folder cannot be
+	// created, only the themes bundled with this binary are loaded. A theme
+	// named in the settings that is missing from the catalogue is reported on
+	// the platform log.
 	themes, wrong := cfg.Themes(opened.SayTheme)
 	if wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
@@ -97,13 +99,11 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	// The phone draws the vault it is showing, the notes in it and the tree they
-	// are filed in, and asks the core nothing else. What is served here is
-	// served on a socket every process on the phone reaches, so it mounts those three
-	// and no other service: not the settings file, which holds the keys this
-	// installation reaches models with, and not the files of the person's disk
-	// beside the notes, which is a book read off the disk and a model set
-	// running over one.
+	// The phone shows the vault, its notes and the tree they are filed in, and
+	// needs no other service. The socket is reachable by every process on the
+	// phone, so only those three services are mounted. The settings file, which
+	// contains the model API keys, and the files on disk next to the notes
+	// (books and the model sets that run over them) are not served.
 	server := &http.Server{
 		Handler: allowOrigin(opened.Services.NewHandler(
 			http.NotFoundHandler(),
@@ -119,9 +119,9 @@ func Start(dir string) (int, error) {
 		server: server,
 	}
 	current := running
-	// Start has already answered with the port, so a serve that ends on its own
-	// leaves the caller holding a number nothing listens on. It is said where
-	// the platform collects it, and the port stops being answered.
+	// Start has already returned the port, so a serve that ends on its own
+	// leaves the caller with a port nobody listens on. The error is written to
+	// the stream the platform collects, and the port is reported as 0.
 	go func() {
 		err := server.Serve(listener)
 		if errors.Is(err, http.ErrServerClosed) {
@@ -133,8 +133,8 @@ func Start(dir string) (int, error) {
 	return running.port, nil
 }
 
-// setHomeFolders tells the libraries that look for a person's own folders where
-// this application's are, so nothing is looked for outside the sandbox.
+// setHomeFolders points the libraries that resolve user folders at this
+// application's folders, so nothing is resolved outside the sandbox.
 func setHomeFolders(dir string) error {
 	for _, named := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
 		if err := os.Setenv(named, dir); err != nil {
@@ -182,7 +182,7 @@ func Stop() error {
 	return err
 }
 
-// Port is what the server listens on, and zero while none does.
+// Port returns the listening port of the server, or zero when none is running.
 func Port() int {
 	mu.Lock()
 	defer mu.Unlock()
@@ -192,9 +192,9 @@ func Port() int {
 	return running.port
 }
 
-// makeConfig is what this installation starts from: everything it keeps sits
-// under the folder the platform gave it, and what the core carried on past is
-// said on the stream the platform collects.
+// makeConfig returns the configuration for this installation: all stored data
+// is under the folder the platform provides, and errors the core continues past
+// are written to the stream the platform collects.
 func makeConfig(dir string, out io.Writer) container.Config {
 	return container.Config{
 		IndexPath:    filepath.Join(dir, "index.db"),
@@ -226,17 +226,19 @@ func registerVault(cfg container.Config, root string) (string, error) {
 	return added.Path, nil
 }
 
-// Page is the origin the platform serves this application's own page from:
-// `androidScheme` in capacitor.config.ts, and no port. The core listens on the
-// loopback, so the page is asking across origins and says so.
+// Page is the origin from which the platform serves this application's page:
+// `androidScheme` in capacitor.config.ts, with no port. The core listens on the
+// loopback interface, so requests from the page are cross-origin.
 const Page = "http://localhost"
 
-// another origin than the one the webview loaded.
+// allowOrigin adds the CORS headers that permit requests from the origin the
+// webview loaded.
 //
-// It names that one origin. The socket is on the loopback and every process on
-// the phone reaches it, so a page in the person's own browser could ask it as
-// well; naming the origin is what makes a browser refuse to send that ask and
-// refuse to hand back what came of it. Nothing here is authentication: a
+// It allows only Page. The socket is on the loopback interface and reachable by
+// every process on the phone, so a page in a browser could otherwise send
+// requests to it; allowing a single origin makes the browser block such
+// requests and their responses. CORS is not authentication: it does not
+// restrict non-browser clients.
 func allowOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		head := w.Header()

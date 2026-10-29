@@ -115,7 +115,7 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	}
 }
 
-// readKind is the kind of the file a file stat names, and none for a file stat naming no file.
+// readKind returns the source kind of the file a file stat describes, or none for a file stat with no file.
 func readKind(f *v1.HostFileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
@@ -337,7 +337,7 @@ func (e *vaultEndpoint) LockVault(
 	return connect.NewResponse(&v1.LockVaultResponse{Lock: id}), nil
 }
 
-// unlock lets the writers go once, whoever asks first.
+// unlock releases the writers once, on the first call.
 func (e *vaultEndpoint) unlock(id string) {
 	e.mu.Lock()
 	release := e.locks[id]
@@ -590,8 +590,8 @@ func (e *vaultEndpoint) WatchVault(
 	return followVault(ctx, vault, watched, changes, missing, stream)
 }
 
-// followVault sends the changes of the vault until the watch ends, and says when the window moves to
-// another vault.
+// followVault sends the changes of the vault until the watch ends, and reports
+// when the window switches to another vault.
 func followVault(
 	ctx context.Context, vault pluginport.PluginVault, watched domain.Vault,
 	changes <-chan []string, lostChan <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],

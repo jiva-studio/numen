@@ -126,8 +126,8 @@ func (e *dependencyEndpoint) finishStream(
 	return nil
 }
 
-// sendLatest puts the status on the channel. A caller that lags is told the newest
-// status and not every one.
+// sendLatest sends the status on the channel. A lagging receiver gets the
+// newest status, not every one.
 func sendLatest(updates chan pluginport.DependencyStatus, status pluginport.DependencyStatus) {
 	for {
 		select {

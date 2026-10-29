@@ -1,9 +1,9 @@
 /** The plain values of a palette that every part of the slice names. */
 
 /**
- * One thing that can be done to an item, named by whoever offers it. The first
- * is what Enter reaches and the second what Shift and Enter reach; every one of
- * them is reached by its name in the action panel.
+ * One action available on an item, named by the item's provider. The first is
+ * triggered by Enter and the second by Shift+Enter; every action is available
+ * by name in the action panel.
  */
 export interface PaletteAction {
   readonly id: string

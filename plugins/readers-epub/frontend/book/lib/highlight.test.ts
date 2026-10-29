@@ -18,7 +18,7 @@ const registry = () => {
   return target
 }
 
-/** A range over nothing in particular, which is all the registry asks for. */
+/** An arbitrary range, which is all the registry requires. */
 const range = (): Range => document.createRange()
 
 /** The books a test holds, each known to the registry by being itself. */

@@ -6,8 +6,8 @@ import (
 	"unicode/utf8"
 )
 
-// How much of a transcript the digest carries: the words of its opening it
-// quotes, the words it lists, and how often one is said to be listed.
+// Digest limits: the number of opening words quoted, the number of names
+// listed, and the minimum number of occurrences for a name to be listed.
 const (
 	quoted = 60
 	listed = 24
@@ -43,10 +43,10 @@ func getOpeningWords(response []string, words int) string {
 	return strings.Join(response[:words], " ") + " …"
 }
 
-// getRecurringNames returns the words the speech carries as names: a word standing capitalised
-// somewhere other than at the opening of a sentence, and standing there more
-// than once. They come in the order they are first said, written as they were
-// first said.
+// getRecurringNames returns the words of the transcript that are names: words
+// capitalised somewhere other than at the start of a sentence, and occurring
+// there more than once. They are in order of first occurrence, spelled as in
+// the first occurrence.
 func getRecurringNames(response []string) []string {
 	times := map[string]int{}
 	content := map[string]string{}
@@ -84,9 +84,9 @@ func getRecurringNames(response []string) []string {
 	return out
 }
 
-// isName says whether a word is written the way a name is: a capital, and
-// either more than one letter before whatever is stuck to it with an apostrophe
-// or more than two after it, so that O'Brien is a name and I'm is not.
+// isName reports whether a word is written as a name: it starts with a capital
+// and has either more than one letter before an apostrophe or more than two
+// letters after it, so O'Brien is a name and I'm is not.
 func isName(word string) bool {
 	if letter, _ := utf8.DecodeRuneInString(word); !unicode.IsUpper(letter) {
 		return false
@@ -108,8 +108,9 @@ func isSentenceEnd(word string) bool {
 	return strings.ContainsRune(".!?…", last) && !isShortening(word)
 }
 
-// isShortening says whether a word ending in a stop is a shortening: a capital
-// and no more than two letters before the stop, or a stop standing inside it.
+// isShortening reports whether a word ending in a period is an abbreviation:
+// a capital with at most two letters before the period, or a period inside the
+// word.
 func isShortening(word string) bool {
 	body := strings.TrimRight(word, ".")
 	if body == "" {

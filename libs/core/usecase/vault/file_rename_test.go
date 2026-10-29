@@ -15,8 +15,8 @@ import (
 // The file tree renames a file, and the note in it is called by the name the
 // file now carries.
 
-// title is what the vault shows the note at this path as, asked of the index
-// and not of the file: it is the answer the person sees.
+// title returns the title the vault displays for the note at this path, read
+// from the index and not from the file.
 func (f filing) title(t *testing.T, path string) string {
 	t.Helper()
 	displayed, err := f.db.Queries().GetNotes(t.Context(), f.vault.ID, []string{path})
@@ -78,9 +78,9 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 	}
 }
 
-// Where a title and a filename are told apart, a renamed file leaves the note
-// as it was written. A note its filename names still changes its name, because
-// it carries it nowhere else.
+// Where title and filename are distinct, renaming the file leaves the note
+// content unchanged. A note whose name derives from its filename changes its
+// name, since the filename is its only source.
 func TestMoveFile_PreservesNoteContentWhenNameAndTitleDiffer(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
@@ -187,8 +187,8 @@ func TestARenamedFilePreservesANoteCarryingNoTitleAlone(t *testing.T) {
 	}
 }
 
-// A move that landed is settled whatever the note's own name did. Whoever is
-// drawing the note at the name it had is reading a name with no file behind it.
+// A completed move is final regardless of the note's own name. A consumer that
+// displays the note under its old name would be reading a name with no file.
 func TestAMoveThatLandedIsSettled(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n\nA measure.\n"})
@@ -220,8 +220,8 @@ func TestMoveFile_PreservesNoteWithUnreadableFrontmatter(t *testing.T) {
 	}
 }
 
-// Where the two are told apart, a renamed file is not read at all. The note is
-// opened only where the setting writes into it.
+// Where title and filename are distinct, a renamed file is not read. The note
+// is opened only when the setting rewrites it.
 func TestARenamedFileIsNotReadWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n"})

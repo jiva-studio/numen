@@ -22,13 +22,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// programName is what a task asks for the program by, and what the settings keep its section under.
+// programName is the name tasks use for the program, and the settings section key.
 const programName = "claude"
 
 // readsHooksOption is the option that lets the program read the hooks, skills and standing
 const readsHooksOption = "reads_hooks_and_skills"
 
-// programTitle is what the program is called when shown to a person.
+// programTitle is the display name of the program.
 const programTitle = "Claude Code"
 
 type agentServer struct {
@@ -246,8 +246,9 @@ func waitAgentCompletion(
 	return "done", true
 }
 
-// getCommand is the program to start and what stands before its own arguments: the command line
-// the installation set, else the program where it is found. Empty is a program nowhere to be found.
+// getCommand returns the program to start and the arguments that precede its
+// own: the command line set by the installation, otherwise the program found on
+// the system. An empty program means none was found.
 func (s *agentServer) getCommand(command []string) (string, []string) {
 	if len(command) > 0 {
 		return command[0], command[1:]
@@ -387,8 +388,9 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 	return out
 }
 
-// getReasoning returns the depth the program is started with: the one asked for, where the model
-// supports it. A model the program did not list takes the depth as asked.
+// getReasoning returns the reasoning depth the program starts with: the
+// requested depth, where the model supports it. A model the program does not
+// list uses the requested depth unchanged.
 func (s *agentServer) getReasoning(model, requested string) string {
 	if model == "" {
 		model = defaultModelName

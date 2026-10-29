@@ -38,7 +38,7 @@ export interface VaultWriter {
 
 /** The vaults this installation holds, as a command changes which one shows. */
 export interface VaultSwitcher extends Vaults {
-  /** One vault of the list under the name it was just given. */
+  /** Updates the displayed name of one vault in the list. */
   setVaultName(vault: VaultRef): void
   /**
    * The page drawn again, on the vault the window shows now. Every tab and
@@ -49,7 +49,7 @@ export interface VaultSwitcher extends Vaults {
 
 /** Where a command takes the window. */
 export interface WindowNavigator {
-  /** A note put in front of the person, where the plugin that shows notes puts it. */
+  /** Shows a note in the plugin that displays notes. */
   travel(path: string): Promise<void>
   /** Every tab standing on a note moves to another one. */
   leave(from: string, to: string): Promise<void>
@@ -66,9 +66,8 @@ export interface WindowNavigator {
 /** The settings a command writes, each under the identity the window gives it. */
 export interface SettingsWriter {
   /**
-   * The window drawn another way: a theme worn from now on, which half of a
-   * colour pair the tokens are read as, or how large one of the two kinds of
-   * text is set.
+   * Applies an appearance setting: the theme, the color scheme the tokens are
+   * read as, or the scale of the interface or the text.
    */
   chooseAppearance(selected: string): Promise<void>
   /** Whether a note's title and the name of its file are kept as one name. */
@@ -79,31 +78,31 @@ export interface SettingsWriter {
   choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
 }
 
-/** The one line the window says a command's answer in. */
+/** Reports a command's result as one line of text. */
 export interface Voice {
   /**
-   * What was done, or could not be, in words a person reads. One command's
-   * word replaces the last, and nothing said clears it.
+   * Message describing the outcome of a command. Each message replaces the
+   * previous one and is not cleared automatically.
    */
   readonly writeMessage: MessageWriter
 }
 
-/** The vault a command reaches: what it writes, and which one shows. */
+/** The vault a command operates on: what it writes, and which one is active. */
 export interface VaultContext {
   readonly files: VaultWriter
   readonly vaults: VaultSwitcher
 }
 
-/** The tabs a command reaches: the files they hold, and where the window goes. */
+/** The tabs a command operates on: their files, and where the window navigates. */
 export interface TabContext {
-  /** The open files a command reaches, whichever store holds each. */
+  /** The open files a command operates on, whichever store holds each. */
   readonly notes: Notes
   readonly navigator: WindowNavigator
 }
 
-/** The runs this build has said it cannot do. */
+/** The runs this build does not support. */
 export interface RunContext {
-  /** The runs this window has been told this build cannot do. */
+  /** The runs this window knows this build does not support. */
   readonly runSupport: RunSupport
 }
 

@@ -29,8 +29,8 @@ func cutBooks(t testing.TB, index *store, shelf *library, v domain.Vault) []stor
 }
 
 func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
-	// The book is long enough that what owes a vector is asked for more than
-	// once, so the answer pages as well as resumes.
+	// The book is long enough that the chunks still needing a vector are requested more than
+	// once, so the query pages as well as resumes.
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindFile,
@@ -87,7 +87,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 		t.Errorf("%d chunks carry a vector, want the %d that owed one", len(index.vectors), len(small))
 	}
 
-	// Nothing owes anything, so a third run does no work at all.
+	// No chunk needs a vector, so a third run does no work.
 	third, err := embed.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)

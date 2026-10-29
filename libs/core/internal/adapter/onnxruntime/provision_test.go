@@ -621,7 +621,7 @@ func writeLibraryDir(t *testing.T) string {
 	return dir
 }
 
-// refuse returns a check that refuses the libraries at the given paths.
+// refuse returns a check that rejects the libraries at the given paths.
 func refuse(paths ...string) func(string) error {
 	return func(pos string) error {
 		for _, rejected := range paths {

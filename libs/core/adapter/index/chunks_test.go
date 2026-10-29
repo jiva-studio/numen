@@ -37,8 +37,8 @@ func bits(seed byte) []byte {
 	return b
 }
 
-// getVectorForSeed is the vector a seed stands for: dimension i takes the sign of the
-// bit the coarse vector keeps it in. Quantising it gives back `bits(seed)`, so
+// getVectorForSeed returns the vector for a seed: dimension i takes the sign of the
+// bit the coarse vector stores for it. Quantising it yields `bits(seed)`, so
 // the two representations of a chunk agree.
 func getVectorForSeed(seed byte) []float32 {
 	v := make([]float32, 1024)
@@ -102,11 +102,10 @@ func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	saveSeededVectors(t, db, vault, seed)
 }
 
-// cutBook puts one source in and cuts it into a large chunk with two small ones
-// inside it.
+// cutBook saves one source and splits it into a large chunk containing two small ones.
 //
-// Every chunk carries the stem of its file name among its words, so a hit says
-// which book it came from, and two copies of one book hold the same text.
+// Every chunk includes the stem of its file name among its words, so a hit identifies
+// its book, and two copies of one book hold the same text.
 func cutBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	t.Helper()
 	ctx := t.Context()
@@ -207,8 +206,8 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 		return matches
 	}
 
-	// Asked with the second vault's own vector, the first vault must still
-	// answer with its own passages.
+	// Queried with the second vault's vector, the first vault must still
+	// return its own passages.
 	for _, m := range nearVal(first, 0xff) {
 		if !strings.HasPrefix(m.Source, "library/first") {
 			t.Errorf("the first vault answered with %s, which belongs to the second", m.Source)
@@ -296,9 +295,8 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 }
 
-// TestAPassageSaysWhatItWasReadOutOf. A list a person runs their eye down draws
-// a book and a recording as what they are, and every ranking has to say which
-// it answered with.
+// TestAPassageReturnsWhatItWasReadOutOf checks that every ranking reports the
+// source kind (book or recording) of each passage.
 func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -360,8 +358,8 @@ func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.S
 }
 
 func TestSplittingASourceTwiceDoesNotDoubleIt(t *testing.T) {
-	// Nothing cascades when a source is written again: the row survives, so its
-	// chunks are cleared by hand, and the rows in both virtual tables with them.
+	// Writing a source again does not cascade: the row survives, so its
+	// chunks and the rows in both virtual tables are cleared explicitly.
 
 	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
@@ -393,8 +391,8 @@ func TestSplittingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 
 func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	// A note is saved with ON CONFLICT DO UPDATE, so its source row survives and
-	// nothing cascades. Its chunks describe text that has changed, and one left
-	// behind sends a reader to an offset the file no longer has.
+	// nothing cascades. Its chunks describe changed text, and a stale chunk
+	// points to an offset the file no longer has.
 	ctx := t.Context()
 	db := openDB(t)
 
@@ -706,8 +704,8 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 }
 
 func TestGetUnembeddedChunks_ResumesFromLastID(t *testing.T) {
-	// A vault holds more chunks than one batch, and the question is asked again
-	// with the last id of the answer before it.
+	// A vault holds more chunks than one batch; the query is repeated with the
+	// last id of the previous batch.
 	ctx := t.Context()
 	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
@@ -733,10 +731,10 @@ func TestGetUnembeddedChunks_ResumesFromLastID(t *testing.T) {
 }
 
 func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
-	// A cascade finds children by the key they point with, and reads the whole
-	// table for every parent removed when that key has no index. Which is not
-	// something a query plan shows: the delete is a subprogram of the parent's,
-	// so this asks the schema instead.
+	// A cascade finds children by their foreign key and scans the whole table for
+	// every removed parent when that key has no index. A query plan does not show
+	// this: the delete runs as a subprogram of the parent's, so the test checks
+	// the schema.
 	ctx := t.Context()
 	db := openDB(t)
 
@@ -747,7 +745,7 @@ func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
 	}
 }
 
-// hasLeadingColumn says some index of a table has the column first.
+// hasLeadingColumn reports whether some index of a table has the column first.
 func hasLeadingColumn(ctx context.Context, t *testing.T, db *DB, table, column string) bool {
 	t.Helper()
 	rows, err := db.read.QueryContext(ctx,
@@ -808,7 +806,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if embedded != 0 {
 		t.Errorf("nothing is embedded yet, and %d are counted", embedded)
 	}
-	// The invariant: everything held either carries a vector or owes one.
+	// Invariant: every chunk either has a vector or is awaiting one.
 	if int(target) != int(embedded)+len(owing) {
 		t.Errorf("%d held is not %d embedded and %d owing", target, embedded, len(owing))
 	}
@@ -826,8 +824,8 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if len(owing) != 0 {
 		t.Errorf("%d still owe a vector", len(owing))
 	}
-	// The total is reached. A count that never reaches it is the defect this
-	// asks about.
+	// The embedded count reaches the total; a count that stays below it is the
+	// defect under test.
 	if target != embedded {
 		t.Errorf("%d held, %d embedded", target, embedded)
 	}
@@ -859,8 +857,8 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 	}
 }
 
-// TestAChunkThatWentIsWrittenNoVectorAndStopsNothing. A save cuts a note again
-// while a pass is making vectors out of what it was told owed one a moment ago.
+// TestAChunkThatWentIsSavedNoVectorAndStopsNothing checks that a save re-splitting
+// a note while a pass is embedding chunks that were pending does not stop the pass.
 func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -916,8 +914,8 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 }
 
 func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
-	// A nearest-neighbour query answers with k rows whatever was asked. What a
-	// vault holds nothing near is not an answer, and the floor is what says so.
+	// A nearest-neighbour query returns k rows regardless of distance. A chunk
+	// farther than the floor is not a match.
 	ctx := t.Context()
 	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
@@ -931,7 +929,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 		t.Errorf("a vault pointing the other way answered with %v", far)
 	}
 
-	// The same vault, asked what it does hold.
+	// The same vault, queried with a vector it contains.
 	val, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
@@ -942,10 +940,10 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 }
 
 func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
-	// The two representations of a chunk are written apart here, so the bits say
-	// one thing and the full-precision vectors another. The coarse pass keeps
-	// several times what is asked for, and what leaves is the one the real
-	// vectors put first.
+	// The two representations of a chunk are written separately here, so the bits
+	// and the full-precision vectors disagree. The coarse pass keeps several
+	// times the requested count, and the result is the chunk that the full
+	// vectors rank first.
 	ctx := t.Context()
 	db := openDB(t)
 	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
@@ -988,11 +986,11 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	}
 }
 
-// A vector outlives the chunk that asked for it.
+// A vector outlives the chunk it was created for.
 //
-// Chunks are renumbered by every cut and by every rebuild of the index. What a
-// model made is kept by the text it read, so a vault whose rows all went and
-// came back again is not bought a second time.
+// Chunk ids are renumbered by every split and every index rebuild. Vectors are
+// keyed by the text they were made from, so a vault whose rows are all deleted
+// and recreated does not recompute them.
 func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -1016,7 +1014,7 @@ func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Everything a rebuild reaches: the chunks, their vectors, the coarse index.
+	// Everything a rebuild affects: the chunks, their vectors, the coarse index.
 	for _, statement := range []string{`DELETE FROM sources`, `DELETE FROM chunks_vec`} {
 		if _, err := db.write.ExecContext(ctx, statement); err != nil {
 			t.Fatal(err)
@@ -1076,8 +1074,8 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The coarse pass answers, because the bits are there. What is asked of it
-	// afterwards is the model's own, and this vector is another model's.
+	// The coarse pass matches because the bits are present. The follow-up
+	// full-precision query is model-specific, and this vector belongs to another model.
 	itemVal, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
@@ -1086,7 +1084,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 		t.Errorf("a query of one model was answered by another model's vectors: %v", itemVal)
 	}
 
-	// Asked of the model that made them, the same rows answer.
+	// Queried with the model that created them, the same rows match.
 	its, err := queries.FindNearest(ctx, first.ID, "another-model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
@@ -1096,13 +1094,12 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 }
 
-// Text a source stopped holding takes its vector with it; a source that went
-// takes nothing.
+// Text a source stopped containing removes its vector; a removed source removes nothing.
 //
-// A cut says exactly which text this source used to hold and does not any more,
-// and that is the one moment the answer is known. A source the vault no longer
-// offers is a different thing: a folder that could not be read looks the same
-// as one whose files were deleted, and a vector was bought.
+// A split identifies exactly which text the source contained before and no longer
+// contains, which is the only point where that is known. A source the vault no
+// longer lists is different: an unreadable folder looks the same as one whose
+// files were deleted, and recomputing the vector is costly.
 func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -1154,10 +1151,10 @@ func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	}
 }
 
-// One vector answers for every chunk holding that text.
+// One vector serves every chunk containing that text.
 //
-// Two sources can hold the same passage, and a vector is made once for the
-// text. A source that stops holding it says nothing about the others.
+// Two sources can contain the same passage, and a vector is created once per
+// text. A source that stops containing it does not affect the others.
 func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -1191,7 +1188,7 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
 		t.Fatal(err)
 	}
-	// One text, one vector, whichever chunk asked for it.
+	// One text, one vector, regardless of which chunk requested it.
 	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
 		t.Fatalf("%d vectors were kept for one text, want 1", got)
 	}
@@ -1211,10 +1208,10 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 
 // Vectors carried in under an older name of the same model are taken up.
 //
-// A migration that carries vectors forward knows only what the rows it reads
-// said: which model, and how wide. The recipe in use says more. Where the model
-// and the width agree, what was carried was made by the model now in use, and
-// it is not bought a second time.
+// A migration that carries vectors forward only knows the model and the
+// dimension recorded in the rows it reads. The recipe in use adds more
+// information: when the model and dimension match, the migrated vectors were
+// created by the model currently in use and are not recomputed.
 
 // saveRecognisedSource puts in one source whose text a producer made.
 func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
@@ -1253,12 +1250,12 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-// saveSectionedBook is a book of three sections, where the words of a section's name
-// are said once in its own opening and often in the section after it.
+// saveSectionedBook saves a book of three sections, where the words of a section's
+// name occur once in its own opening and often in the following section.
 //
-// This is the shape a chapter of a scanned book has: the chapter says its
-// subject once, in its heading, and a paragraph in the middle of the next
-// section says it four times.
+// This is the shape of a scanned-book chapter: the chapter names its subject
+// once, in its heading, and a paragraph in the middle of the next section
+// names it four times.
 func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	t.Helper()
 	ctx := t.Context()
@@ -1302,8 +1299,8 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 }
 
 func TestASectionIsFoundByItsName(t *testing.T) {
-	// The words half answers with the paragraph that says the name most often.
-	// section about it.
+	// The word-search half returns the paragraph that mentions the name most often,
+	// not the section about it.
 	ctx := t.Context()
 	db := openDB(t)
 	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
@@ -1339,9 +1336,9 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 }
 
 func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
-	// A small chunk standing where a section begins is inside the chunk that
-	// opens it. One section named twice is one section answering twice, and the
-	// second answer is the same place said again.
+	// A small chunk positioned where a section begins lies inside the chunk that
+	// opens it. One section named twice would answer twice, and the second answer
+	// is the same location.
 	ctx := t.Context()
 	db := openDB(t)
 	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
@@ -1371,7 +1368,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 }
 
 func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
-	// A chunk's number is handed to the next chunk that wants one, so a name
+	// A chunk id is reused by the next chunk that needs one, so a name
 	ctx := t.Context()
 	db := openDB(t)
 	chunks := db.Chunks()
@@ -1418,9 +1415,9 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 }
 
 func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
-	// A chunk keeps its row through a cut when it says the same thing, so a
-	// name is not dropped with the chunk. A section that is no longer there
-	// answering by name is a passage opening where nothing begins.
+	// A chunk keeps its row through a split when its content is unchanged, so a
+	// name is not removed with the chunk. A section that no longer exists but still
+	// matches by name returns a passage opening where nothing begins.
 	ctx := t.Context()
 	db := openDB(t)
 	saveSectionedBook(t, db, first, "library/chaitanya.pdf")

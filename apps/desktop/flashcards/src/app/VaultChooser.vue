@@ -52,7 +52,7 @@ defineEmits<{ (event: 'open', vault: string): void }>()
 </template>
 
 <style scoped>
-/* The window's own quiet voice, which is what it says while it reads the list. */
+/* Muted status text shown while the list loads. */
 .vault-chooser__listing {
   display: flex;
   margin: 0;

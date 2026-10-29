@@ -1,10 +1,10 @@
 /**
- * The reader over the markup a book really arrives as.
+ * The reader over the markup a book is delivered as.
  *
  * The corpus is one spine document as the application writes it, and a test
- * beside the writer holds it to what that writer emits. So the attribute a run
- * carries, the elements a book is drawn from, the escaping and the offsets are
- * agreed on here and not in a fixture each side writes for itself.
+ * next to the writer verifies it against the writer's output. The run
+ * attribute, the elements a book is drawn from, the escaping and the offsets
+ * are therefore defined here and not in a separate fixture on each side.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
@@ -15,7 +15,7 @@ import { countBytes } from '../lib/bytes'
 /** The document the corpus is taken from, as the archive names it. */
 const MIDDLE = 'OEBPS/middle.xhtml'
 
-/** One run of the corpus: where it says it begins, and what it says. */
+/** One run of the corpus: its declared start offset and its text. */
 interface Run {
   readonly at: number
   readonly text: string
@@ -47,7 +47,7 @@ const span = () => {
   return { start: first.at, end: last.at + countBytes(last.text) }
 }
 
-/** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
+/** A reader rendering the corpus, in a jsdom environment that performs no layout. */
 const readSpine = async () => {
   const wrapper = mount(Book, {
     props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().start },
@@ -65,7 +65,7 @@ const press = async (wrapper: Awaited<ReturnType<typeof readSpine>>, label: stri
   await wrapper.vm.$nextTick()
 }
 
-/** The offsets the reader has asked to be sent to, in the order it asked. */
+/** The offsets the reader requested navigation to, in request order. */
 const getMoves = (wrapper: Awaited<ReturnType<typeof readSpine>>) =>
   (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 

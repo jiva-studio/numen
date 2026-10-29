@@ -41,7 +41,7 @@ func TestWhatARenameRestoresIntoLine(t *testing.T) {
 	}
 }
 
-// A setting that is asked is answered as it says, whichever way it says it.
+// A requested setting returns the value it was configured with, in either state.
 func TestNaming_ReturnsRequestedSetting(t *testing.T) {
 	t.Parallel()
 	for name, want := range map[string]note.SyncTitleAndFilename{"one name": true, "told apart": false} {

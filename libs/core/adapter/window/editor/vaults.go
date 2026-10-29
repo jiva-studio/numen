@@ -31,8 +31,8 @@ type vaultsHandler struct {
 	chooseFolder *vaults.ChooseFolder
 }
 
-// ListVaults is every vault the installation holds. Which of them the window
-// has in front of the person is asked of the window.
+// ListVaults returns every vault of the installation. The active vault is
+// queried from the window.
 func (s *vaultsHandler) ListVaults(
 	_ context.Context,
 	_ *connect.Request[v1.ListVaultsRequest],
@@ -51,7 +51,7 @@ func (s *vaultsHandler) ListVaults(
 	return connect.NewResponse(out), nil
 }
 
-// ChooseFolder puts this machine's own folder dialog in front of the person.
+// ChooseFolder opens this machine's native folder dialog.
 func (s *vaultsHandler) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
@@ -66,7 +66,7 @@ func (s *vaultsHandler) ChooseFolder(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	// A person who closed the dialog chose nothing, and that is an answer.
+	// A closed dialog is a valid response with IsChosen false.
 	return connect.NewResponse(&v1.ChooseFolderResponse{Path: selected.Path, IsChosen: selected.IsChosen}), nil
 }
 
@@ -90,8 +90,8 @@ func (s *vaultsHandler) AddVault(
 	return connect.NewResponse(&v1.AddVaultResponse{Vault: s.convertVaultToWire(added)}), nil
 }
 
-// RenameVault is what a person calls a vault. The folder keeps the name the
-// filesystem gives it.
+// RenameVault sets the display name of a vault. The folder name on the
+// filesystem is unchanged.
 func (s *vaultsHandler) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
@@ -113,7 +113,7 @@ func (s *vaultsHandler) RenameVault(
 	return connect.NewResponse(&v1.RenameVaultResponse{Vault: s.convertVaultToWire(v)}), nil
 }
 
-// RemoveVault takes a vault off the list and out of the index, and its folder
+// RemoveVault removes a vault from the list and the index, and moves its folder
 // to the trash when the request asks for it.
 func (s *vaultsHandler) RemoveVault(
 	ctx context.Context,
@@ -148,8 +148,8 @@ func (s *vaultsHandler) OpenVault(
 	if err == nil {
 		return connect.NewResponse(&v1.OpenVaultResponse{}), nil
 	}
-	// A window that is closing, or already settling what it owes, is what
-	// stopped this, and the vault asked for is as it was.
+	// A closing window or a shutdown in progress stops the operation; the requested
+	// vault is unchanged.
 	if errors.Is(err, errWindowClosing) || errors.Is(err, errShutdownInProgress) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -169,9 +169,9 @@ func (s *vaultsHandler) convertVaultToWire(v domain.Vault) *v1.Vault {
 	}
 }
 
-// vaultsErrorCodeBy says which code an error about the list carries, and
-// whether it carries one at all. Anything else is the list, the index or the
-// machine being out of reach.
+// vaultsErrorCodeBy returns the error code for a vault-list error and whether
+// the error maps to one. Any other error is a failure of the list, the index or
+// the host.
 func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaults.ErrUnreadable):
@@ -197,15 +197,15 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 	}
 }
 
-// workspaceHandler answers where the person is in the window: what they have open,
-// and what is put in front of them.
+// workspaceHandler serves the window's workspace state: the open tabs and the
+// focus requests.
 type workspaceHandler struct{ state *State }
 
-// WriteOpenTabs takes what currently open, as the window last said it, and
-// keeps it for the vault in the window.
+// WriteOpenTabs stores the currently open tabs, as last reported by the window,
+// for the vault in the window.
 //
-// It is the other direction to WatchFocus: a place is put in front of the
-// person there, and here the window says what is in front of them now.
+// It is the reverse direction of WatchFocus: WatchFocus delivers a focus request
+// to the window, and WriteOpenTabs reports the window's current tabs.
 func (h *workspaceHandler) WriteOpenTabs(
 	ctx context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
@@ -250,7 +250,7 @@ func (h *workspaceHandler) ReadOpenTabs(
 	return connect.NewResponse(out), nil
 }
 
-// DetachTab asks that a tab be opened in a new window.
+// DetachTab requests that a tab be opened in a new window.
 func (h *workspaceHandler) DetachTab(
 	ctx context.Context, r *connect.Request[v1.DetachTabRequest],
 ) (*connect.Response[v1.DetachTabResponse], error) {
@@ -263,8 +263,8 @@ func (h *workspaceHandler) DetachTab(
 	return connect.NewResponse(&v1.DetachTabResponse{}), nil
 }
 
-// GetOpenTabs is what currently open, as the window last said. A window
-// that has said nothing has nothing open as far as anyone here knows.
+// GetOpenTabs returns the open tabs as last reported by the window, or the
+// empty set when the window has not reported any.
 func (s *State) GetOpenTabs() domain.OpenTabs {
 	if open := s.openTabs.Load(); open != nil {
 		return *open
@@ -272,8 +272,7 @@ func (s *State) GetOpenTabs() domain.OpenTabs {
 	return domain.OpenTabs{}
 }
 
-// WatchFocus reports what something else asked to be put in front of the
-// person, for as long as the client listens.
+// WatchFocus streams focus requests to the client until it disconnects.
 func (h *workspaceHandler) WatchFocus(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchFocusRequest],
@@ -290,8 +289,7 @@ func (h *workspaceHandler) WatchFocus(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			// A place nobody asked for is empty, and is here to fail when
-			// the client has gone.
+			// An empty response is a keepalive that fails when the client has disconnected.
 			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
 				return err
 			}

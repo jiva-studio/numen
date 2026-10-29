@@ -33,14 +33,14 @@ func SetDev(v bool) {
 
 // The windows a plugin names as the places it works in.
 const (
-	// TargetEditor is the window a person writes in.
+	// TargetEditor is the editor window.
 	TargetEditor = "desktop.editor"
-	// TargetFlashcards is the window a person runs their cards in.
+	// TargetFlashcards is the flashcards window.
 	TargetFlashcards = "desktop.flashcards"
 )
 
-// GetConfig is the core's configuration with what this machine supplies already in
-// it. What a settings file says is read over it.
+// GetConfig returns the core's configuration with the values this machine
+// supplies. Values from a settings file are applied over it.
 func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 
 // GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
@@ -50,7 +50,7 @@ func GetConfigFor(target string) container.Config {
 		PluginHost: newPluginHost(target, getPluginsDirs()...),
 		KeyStore:   keychain.Store{},
 	}
-	// A machine with no data folder leaves the path empty, and the core refuses to start.
+	// A machine with no data folder leaves the path empty, and the core fails to start.
 	if path, err := GetIndexPath(); err == nil {
 		cfg.IndexPath = path
 	}

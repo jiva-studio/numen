@@ -59,8 +59,8 @@ describe('a writer under a name', () => {
   })
 
   it('writes nothing where the same text already remains', () => {
-    // A stream that is down says so every second, and a card that arrived
-    // again is a card read out again.
+    // A stream that is down reports it every second, and a notice that arrives
+    // again is a notice shown again.
     const log = createMessageLog()
     const aged = log.getWriter('worn')
 

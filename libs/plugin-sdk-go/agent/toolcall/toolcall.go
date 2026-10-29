@@ -1,4 +1,4 @@
-// Package toolcall tells a person about a call of a vault tool, by the declarations the host sends
+// Package toolcall describes a vault tool call to the user, using the declarations the host sends
 // with a task.
 package toolcall
 

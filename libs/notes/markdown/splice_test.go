@@ -2,9 +2,9 @@ package markdown
 
 import "testing"
 
-// YAML ends a document at `...`, so what stands below that line is inside the
-// delimiters and belongs to no key. It is the person's, and a write to the key
-// above it leaves it where it is.
+// YAML ends a document at `...`, so what follows that line is inside the
+// delimiters and belongs to no key. It is the user's content, and a write to the key
+// above it leaves it unchanged.
 func TestBytesBelongingToNoKeySurviveAWrite(t *testing.T) {
 	raw := "---\n" +
 		"title: Old\n" +

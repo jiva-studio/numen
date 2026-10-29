@@ -26,7 +26,7 @@ type Config struct {
 	// folders this platform keeps them in.
 	Machine []string
 	// Check returns an error when this machine cannot open the library at a
-	// path. Nil opens it with the platform loader and asks it for the API the
+	// path. Nil opens it with the platform loader and requests the API the
 	// plugins call.
 	Check func(targetPath string) error
 }
@@ -53,7 +53,7 @@ func New(cfg Config) *Provisioner {
 
 // Provision returns the path of the library and the name of the execution
 //
-// The library is, in order: the one a person names in the environment, used as
+// The library is, in order: the one named in the environment, used as
 // given; the first one this machine holds that opens (beside the plugin or the
 // host, in the folders shared libraries live in, in the package store, in the
 // folders the platform loader searches); and last the pinned release, fetched
@@ -64,8 +64,8 @@ func (p *Provisioner) Provision(ctx context.Context, pluginDir string) (string, 
 	return p.ProvisionWithProgress(ctx, pluginDir, nil)
 }
 
-// ProvisionWithProgress is Provision that tells onProgress how many bytes of the
-// archive have arrived.
+// ProvisionWithProgress is Provision that reports to onProgress how many bytes of the
+// archive have been received.
 func (p *Provisioner) ProvisionWithProgress(ctx context.Context, pluginDir string, onProgress func(done, total int64)) (string, string, error) {
 	select {
 	case p.gate <- struct{}{}:

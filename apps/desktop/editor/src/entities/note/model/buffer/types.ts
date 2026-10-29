@@ -45,7 +45,7 @@ export interface ConflictWords {
 export interface OpenNotesOptions {
   /** How long the typing settles for, and how long a note may go unwritten. */
   limits?: typeof DEFAULT_WRITE_LIMITS
-  /** What hears that a note on screen was replaced by what its file holds. */
+  /** Called when a note on screen is replaced by the content of its file. */
   onReplaced?(path: string): void
   /** When it is now. */
   now?(): number

@@ -18,11 +18,12 @@ import (
 // OpensAt is the document a window opens at.
 const OpensAt = "index.html"
 
-// OpenedAt are the addresses a window is handed for the page itself. A URL
-// parses to none of them empty, and a window is asked for under all three.
+// OpenedAt lists the addresses under which a window requests the page itself:
+// empty, "/" and "/index.html".
 var OpenedAt = []string{"", "/", "/" + OpensAt}
 
-// without one says so, in the words of the person who has to fix it.
+// GetInterface returns the built interface, or an error explaining how to build
+// it when the binary has none.
 func GetInterface(pages fs.FS) (fs.FS, error) {
 	missing := fmt.Errorf("no interface in this binary — run: make interface")
 	constructed, err := fs.Sub(pages, "pages/app")
@@ -44,12 +45,12 @@ func NewInterfaceServer(pages fs.FS) (http.Handler, error) {
 	return http.FileServerFS(constructed), nil
 }
 
-// WritePage writes the document a window opens at, already showing what the settings
-// say. The bytes are written here and kept nowhere, so no frame is drawn in the
-// default colours or at a size nobody asked for.
+// WritePage writes the document a window opens at, with the current settings
+// already applied. The bytes are generated per request and not cached, so no
+// frame renders with default colors or an unrequested size.
 //
-// A build carrying no interface, and a page with no head, are served as the
-// file server has them.
+// A build without an interface, and a page without a head, are served as the
+// file server provides them.
 func WritePage(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -77,13 +78,13 @@ func WritePage(
 	_, _ = w.Write(text)
 }
 
-// readAppearanceSettings is what the settings say a window shows, and whether
-// they could say anything at all.
+// readAppearanceSettings returns the appearance the settings specify for a
+// window, and whether the settings could be read.
 //
-// It is asked for every request, so a theme chosen, a size chosen, or a file in
-// the person's folder edited, shows on the next reload. Settings that cannot
-// say what they hold put nothing in the page, and the tokens the build carries
-// stand.
+// It runs on every request, so a changed theme, a changed size, or an edited
+// file in the user's folder takes effect on the next reload. When the settings
+// cannot be read, nothing is added to the page and the tokens built into the
+// bundle apply.
 func readAppearanceSettings(
 	ctx context.Context, themes numenv1connect.ThemeServiceHandler,
 ) (appearance.Settings, bool) {

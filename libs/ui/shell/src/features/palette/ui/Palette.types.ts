@@ -18,8 +18,8 @@ export interface PaletteProps {
    */
   crumb?: string
   /**
-   * Which step the caller is on. The identifier is opaque; changing it hands
-   * the keyboard back to the field with what stands there selected.
+   * Which step the caller is on. The identifier is opaque; changing it returns
+   * the keyboard focus to the field with the current text selected.
    */
   step?: string
   /**

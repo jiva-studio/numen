@@ -33,8 +33,8 @@ func (s *screen) was() []string {
 	return slices.Clone(s.events)
 }
 
-// settler is a vault whose settling a test writes the answers for, and which
-// records how many times it was asked.
+// settler is a vault whose settle results a test supplies, and which records
+// how many times it was called.
 type settler struct {
 	mu        sync.Mutex
 	answers   []bool
@@ -125,8 +125,8 @@ func TestASecondQuitStillFlushes(t *testing.T) {
 	}
 }
 
-// TestConcurrentFlushesShareOneRun. The window's hook and a quit
-// asked for elsewhere both wait, and the vault settles once for the two.
+// TestConcurrentFlushesShareOneRun. The window's hook and a quit request from
+// elsewhere both wait, and the vault settles once for both.
 func TestConcurrentFlushesShareOneRun(t *testing.T) {
 	vault := newSettler(true)
 	vault.until = make(chan struct{})
@@ -159,9 +159,9 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 	}
 }
 
-// TestRequestQuit_WaitsWhileQuestionPending. The goroutine a quit leaves
-// behind may refuse the quit and nothing else: a person is answering, and the
-// application is not to go out from under them.
+// TestRequestQuit_WaitsWhileQuestionPending. The goroutine left behind by a quit
+// may only cancel the quit: the user is responding to a prompt, and the
+// application must not exit while it is open.
 func TestRequestQuit_WaitsWhileQuestionPending(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
@@ -198,9 +198,8 @@ func TestRequestedQuitProceedsOnceVaultIsFlushed(t *testing.T) {
 	}
 }
 
-// TestCloseWindow_RepeatsCloseAfterPromptResolved. The person answers,
-// the page says it has nothing left, and the close the person asked for
-// happens.
+// TestCloseWindow_RepeatsCloseAfterPromptResolved. The user responds, the page
+// reports nothing pending, and the requested close proceeds.
 func TestCloseWindow_RepeatsCloseAfterPromptResolved(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
@@ -230,9 +229,8 @@ func TestCloseWindow_RepeatsCloseAfterPromptResolved(t *testing.T) {
 	}
 }
 
-// TestCloseWindow_NoRepeatWhenPageClosed. A page that raised a question
-// and then went says nothing more, and the window stays where the person left
-// it.
+// TestCloseWindow_NoRepeatWhenPageClosed. A page that raised a prompt and then
+// closed reports nothing more, and the window stays as the user left it.
 func TestCloseWindow_NoRepeatWhenPageClosed(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
@@ -263,8 +261,8 @@ func TestWindowWithFlushedVaultIsDestroyed(t *testing.T) {
 	}
 }
 
-// TestWindowIsHiddenBeforeFlushBegins. The window goes from the
-// screen when the close is asked for, and everything owed lands behind it.
+// TestWindowIsHiddenBeforeFlushBegins. The window is hidden when the close is
+// requested, and the pending writes complete while it is hidden.
 func TestWindowIsHiddenBeforeFlushBegins(t *testing.T) {
 	observed := makeScreen()
 	begun := make(chan []string, 1)
@@ -293,9 +291,9 @@ func TestWindowIsHiddenBeforeFlushBegins(t *testing.T) {
 	}
 }
 
-// TestQuestionRestoresWindowAndBlocksQuit. A settling that ends with a
-// question standing is a window on the screen the person answers on, and an
-// application that has not gone.
+// TestQuestionRestoresWindowAndBlocksQuit. A settle that ends with a pending
+// prompt leaves the window visible for the user's response, and the application
+// running.
 func TestQuestionRestoresWindowAndBlocksQuit(t *testing.T) {
 	observed := makeScreen()
 	g := &vaultFlush{flush: newSettler(false).settle}

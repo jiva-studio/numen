@@ -10,7 +10,7 @@ export interface ActionWords {
   readonly name: string
   /** The words standing in for what has not been typed in its field. */
   readonly placeholder: string
-  /** What it says when the words in its field leave no action. */
+  /** The text shown when the words in its field leave no action. */
   readonly silence: string
 }
 
@@ -27,7 +27,7 @@ export interface PlacedAction {
   readonly at: number
   /** Its name, with the run the words in the panel's field picked out. */
   readonly name: readonly PalettePart[]
-  /** The key that reaches it without the panel, and nothing where none does. */
+  /** The key that triggers it without the panel, absent where none does. */
   readonly key: PaletteKeys | null
 }
 
@@ -59,9 +59,9 @@ export const placeActions = (
 }
 
 /**
- * Where the panel appears once its list has changed under it: on the action it
- * was on, wherever that action has moved to. An action that is gone hands it to
- * the first there is; a list holding none takes it nowhere.
+ * Where the panel focus lands once its list has changed: on the action it was
+ * on, wherever that action moved to. If that action is gone, focus goes to the
+ * first action; if the list is empty, nowhere.
  */
 export const findKeptAction = (actions: readonly PlacedAction[], was: string): number => {
   const pos = actions.findIndex((one) => one.action.id === was)

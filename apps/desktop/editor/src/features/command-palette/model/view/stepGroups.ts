@@ -1,10 +1,10 @@
 /**
- * What a step of a command draws while it asks: a name to give, the notes or the
- * vaults to pick from, a list the window holds, and the two answers of a
+ * What a command step draws while it prompts: a name to enter, the notes or
+ * vaults to choose from, a list the window holds, and the two answers of a
  * confirmation.
  *
- * Nothing here decides anything or asks the application for anything:
- * `palette.ts` holds the steps and does that.
+ * Nothing here makes decisions or calls the application: `palette.ts` holds the
+ * steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import type { NoteType } from '@/entities/file'

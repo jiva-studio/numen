@@ -25,12 +25,12 @@ export function build(title: string, counts: RelationCounts): PlexNeighbourhood 
 }
 
 /**
- * The same, around a chosen node, with the one it was chosen from placed as a
- * parent. Both keep their identifiers, so the plex recognises them in the new
- * picture and carries them to their relations and not blinking out and back.
+ * The same, around a chosen node, with the node it was chosen from placed as a
+ * parent. Both keep their identifiers, so the plex recognizes them in the new
+ * layout and moves them to their relations instead of removing and re-adding them.
  *
- * Names come from a pool and not being numbered, because a plex of
- * "Child 1, Child 2" says nothing about whether real titles wrap or collide.
+ * Names come from a pool and are not numbered, because a plex of
+ * "Child 1, Child 2" does not show whether real titles wrap or collide.
  */
 export function buildAround(
   focus: TitledNode,
@@ -48,10 +48,10 @@ export function buildAround(
 
   // The node it was chosen from takes the first parent relation, keeping its id.
   //
-  // And it is taken out of what was invented, or walking back up would hold it
-  // twice: from the parent's side, the node you came down from is one of the
-  // children about to be invented, and it already has an identifier. A plex
-  // refuses a neighbourhood that holds the same node twice, and rightly.
+  // It is also removed from the generated nodes: from the parent's side, the
+  // node navigated from is one of the children about to be generated, and it
+  // already has an identifier. A plex rejects a neighbourhood that contains the
+  // same node twice.
   const others = from ? invented.filter((node) => node.id !== from.id) : invented
 
   const related: PlexNode[] = from

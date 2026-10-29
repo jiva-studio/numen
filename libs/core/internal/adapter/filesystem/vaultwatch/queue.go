@@ -12,11 +12,11 @@ import (
 
 // queue holds the events between the goroutine that reads them from the
 // watcher and the goroutine that debounces them. It is bounded at `bound` events:
-// at that many waiting, what is held is dropped and the overflow is
-// remembered, and a caller of take is told of it exactly.
+// when that many are waiting, the queued events are dropped and the overflow is
+// recorded, and a caller of take is informed of it exactly.
 //
-// The watcher discards an event that finds its channel full and says nothing,
-// so the channel it writes into is read by a goroutine that only reads.
+// The watcher silently discards an event that finds its channel full, so the
+// channel it writes into is drained by a goroutine that only reads.
 type queue struct {
 	maxBound int
 	woke     chan struct{}
@@ -44,7 +44,7 @@ func (q *queue) put(event notify.EventInfo) {
 	q.wake()
 }
 
-// stop says the watcher's channel is closed and nothing more is coming.
+// stop records that the watcher's channel is closed and no more events are coming.
 func (q *queue) stop() {
 	q.mu.Lock()
 	q.isDone = true
@@ -52,8 +52,8 @@ func (q *queue) stop() {
 	q.wake()
 }
 
-// wake carries one edge: whoever is woken empties the queue, so a wake that
-// does not fit is a wake already about to happen.
+// wake signals one edge: the woken goroutine empties the queue, so a wake that
+// does not fit is a wake already pending.
 func (q *queue) wake() {
 	select {
 	case q.woke <- struct{}{}:
@@ -61,7 +61,7 @@ func (q *queue) wake() {
 	}
 }
 
-// take empties the queue and says whether it overflowed since the last take.
+// take empties the queue and reports whether it overflowed since the last take.
 func (q *queue) take() (events []notify.EventInfo, finished, completed bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()

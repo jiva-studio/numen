@@ -1,4 +1,4 @@
-/** A clock that only moves when a test says so. */
+/** A clock that advances only when a test advances it. */
 import type { Clock } from '@numen/ui'
 
 export function stubClock() {
@@ -32,7 +32,7 @@ export function stubClock() {
       next = null
       run?.(current)
     },
-    /** Every frame that is asked for, from a moment to the end of the movement. */
+    /** Every frame requested, from a given time to the end of the animation. */
     run(from = 0) {
       for (let moment = from; this.pending; moment += 20) this.tick(moment)
     },

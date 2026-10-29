@@ -1,6 +1,6 @@
 /**
- * The window put together: the vault it reads, the kinds it declares, and the
- * few things one kind asks of another.
+ * The window composed: the vault it reads, the kinds it declares, and the
+ * few requests one kind makes of another.
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
@@ -101,7 +101,7 @@ interface AppLifecycleDeps {
   onLayoutStarted(): void
 }
 
-/** The tabs the core kept for the vault, and none where it cannot be asked. */
+/** The tabs the core stored for the vault, and none where the core cannot be queried. */
 const readSavedTabs = async () => {
   try {
     return await core.readOpenTabs()

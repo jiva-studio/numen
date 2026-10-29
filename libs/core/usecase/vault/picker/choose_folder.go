@@ -10,8 +10,8 @@ import (
 // ErrNoTrash is a machine with nowhere to put what is deleted.
 var ErrNoTrash = machineport.ErrNoTrash
 
-// ChooseFolder puts this machine's folder dialog in front of the person, under
-// the title and at the folder it is given.
+// ChooseFolder shows this machine's folder dialog with the given title and
+// starting folder.
 type ChooseFolder struct {
 	dialog machineport.FolderDialog
 }
@@ -20,8 +20,8 @@ func NewChooseFolder(dialog machineport.FolderDialog) ChooseFolder {
 	return ChooseFolder{dialog: dialog}
 }
 
-// Execute returns the folder the person chose. IsChosen is false when the person
-// closed the dialog and chose none.
+// Execute returns the folder the user chose. IsChosen is false when the user
+// closed the dialog without choosing.
 func (u ChooseFolder) Execute(ctx context.Context, title, startingAt string) (PickedFolder, error) {
 	selected, isChosen, err := u.dialog.ChooseFolder(ctx, title, startingAt)
 	if err != nil {
@@ -30,14 +30,14 @@ func (u ChooseFolder) Execute(ctx context.Context, title, startingAt string) (Pi
 	return PickedFolder{Path: selected, IsChosen: isChosen}, nil
 }
 
-// GetPickFolder is the use case that puts the same dialog in front of the person
-// under the title a vault is added with.
+// GetPickFolder returns the use case that shows the same dialog with the title
+// used when adding a vault.
 func (u ChooseFolder) GetPickFolder() PickFolder {
 	return NewPickFolder(u.dialog)
 }
 
-// IsFolderDialogUnavailable is whether an error says the dialog cannot be put up
-// now: one is already open, or this machine has none.
+// IsFolderDialogUnavailable reports whether an error means the dialog cannot be
+// shown: one is already open, or this machine has none.
 func IsFolderDialogUnavailable(err error) bool {
 	return errors.Is(err, machineport.ErrChoosing) || errors.Is(err, machineport.ErrNoFolderDialog)
 }

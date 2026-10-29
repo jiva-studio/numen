@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 // fakeACPAgent returns an agent served by this test binary. The behaviour is one of: "config"
 // reports models m1 and m2 as a config option, "thought" does so and adds the depths low, medium and high of
 // the category thought_level, "legacy" reports them the older way, "plain"
-// reports none, "tools" reports none, takes MCP servers over HTTP and calls tools as callTools says, "fail" exits at once, "refuse" ends its turn refusing, and "hang" never ends it.
+// reports none, "tools" reports none, accepts MCP servers over HTTP and calls tools as callTools specifies, "fail" exits immediately, "refuse" ends its turn declining to answer, and "hang" never ends it.
 // Every line the agent reads is appended to the record.
 func fakeACPAgent(t *testing.T, program, behaviour string) (acpAgent, string) {
 	t.Helper()
@@ -153,8 +153,8 @@ func (a *fakeAgent) getSession() map[string]any {
 	return session
 }
 
-// answerPrompt asks for a permission and a file, then says the answer in chunks among updates the
-// client keeps nothing of.
+// answerPrompt requests a permission and a file, then sends the answer in chunks
+// among updates the client ignores.
 func (a *fakeAgent) answerPrompt(id any) {
 	if a.behaviour == "hang" {
 		return
@@ -184,10 +184,10 @@ func (a *fakeAgent) answerPrompt(id any) {
 	a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": stopReason}})
 }
 
-// callTools reports a call of note_read whose title holds its arguments, as Gemini writes one, asks
-// to run it by its id alone and reports it completed. Then it asks to run a shell command titled as
-// a run tool, a call of no name titled as a run tool, and a call named as the MCP server's
-// note_read. The client's answers are kept under "reply" in that order.
+// callTools reports a call of note_read whose title holds its arguments, as Gemini writes one, requests
+// to run it by its id alone and reports it completed. It then requests to run a shell command titled as
+// a run tool, a call with no name titled as a run tool, and a call named as the MCP server's
+// note_read. The client's replies are recorded under "reply" in that order.
 func (a *fakeAgent) callTools() {
 	a.update(map[string]any{
 		"sessionUpdate": "tool_call", "toolCallId": "c0", "name": "note_read", "title": `{"path":"Garden.md"}`,
@@ -206,7 +206,7 @@ func (a *fakeAgent) update(update map[string]any) {
 	a.send(map[string]any{"method": "session/update", "params": map[string]any{"sessionId": "s1", "update": update}})
 }
 
-// askPermission asks to run the tool call and reads the answer.
+// askPermission requests to run the tool call and reads the reply.
 func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
 	a.send(map[string]any{"id": id, "method": "session/request_permission", "params": map[string]any{
 		"sessionId": "s1", "toolCall": toolCall,

@@ -1,7 +1,7 @@
-// Package pdf turns the bytes of a PDF file into the text it carries and the
-// places it names. It reads no file, asks no clock and holds no database, and
-// the same bytes give the same text at the same offsets, which is what lets a
-// chunk keep an offset and not the text.
+// Package pdf converts the bytes of a PDF file into the text they contain and
+// the locations they name. It reads no file, uses no clock and holds no
+// database, and the same bytes produce the same text at the same offsets, so
+// stored offsets stay valid.
 //
 // It does hold one thing with a lifetime: a pool of WebAssembly workers,
 // started when the first document is opened and kept for the life of the
@@ -11,9 +11,8 @@
 // order, as one stream. Everything the document names — an outline entry, a
 // printed page — is an offset into that stream.
 //
-// A page whose text layer says nothing is an ordinary page. A document that
-// says nothing at all is a scan, and it is read to an empty text rather than
-// the file is not a PDF.
+// A page with an empty text layer is an ordinary page. A document with no text
+// on any page is a scan, and it yields empty text and not a not-a-PDF error.
 package pdf
 
 import (
@@ -35,8 +34,8 @@ type Book struct {
 	// made for a screen, a PDF always has them.
 	Pages []Page
 
-	// Parts are what the outline names, ascending by offset. Structure says
-	// where they came from.
+	// Parts are the outline entries, ascending by offset. Structure records their
+	// source.
 	Parts []Part
 
 	// Structure names the tier that produced Parts.
@@ -56,14 +55,14 @@ type Part struct {
 // A Page is one page of the document, at the offset where its text begins.
 //
 // It carries no name. A document that numbers its pages and a viewer that opens
-// them count differently, and two numbers for one page is a way to be wrong
-// about which page a person is looking at.
+// them count differently, and two numbers for one page risk identifying the
+// wrong page.
 type Page struct {
 	Offset int
 }
 
-// A Structure is the tier that answered when the document was asked what its
-// parts are. Each tier is tried only when the one before it yields nothing.
+// A Structure is the tier that supplied the document's parts. Each tier is tried
+// only when the one before it yields nothing.
 type Structure string
 
 const (
@@ -87,8 +86,8 @@ const minimumParts = 2
 // bound on pages is what a reader can be shown before the offsets stop meaning
 // anything to anybody.
 //
-// The bound on pixels is what one page is drawn at, whatever its page box says.
-// A page of A2 at 300 dots to the inch is inside it.
+// The bound on pixels limits the rendered size of one page, regardless of its
+// page box. A page of A2 at 300 dots per inch is within it.
 const (
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostPages limits maximum processed pages in a document"
 	mostPages = 20_000
@@ -140,8 +139,8 @@ func readBook(doc *document) *Book {
 			continue
 		}
 		text.WriteString(page)
-		// Every page ends a line, so that the last word of one page and the
-		// first of the next are two words.
+		// Every page ends a line, so the last word of one page and the first word of
+		// the next are separate words.
 		if !strings.HasSuffix(page, "\n") {
 			text.WriteString("\n")
 		}

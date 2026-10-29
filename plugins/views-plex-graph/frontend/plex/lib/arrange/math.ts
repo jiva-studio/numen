@@ -3,10 +3,10 @@ import type { Extent } from '../frame'
 export const lerp = (from: number, to: number, t: number): number => from + (to - from) * t
 
 /**
- * A fraction of the way through, and never anything else.
+ * A fraction clamped to the range 0 to 1.
  *
- * Not a number is caught here. It reaches a transform as `opacity="NaN"` and
- * the node is simply not drawn, with nothing to say why.
+ * NaN is caught here. Otherwise it reaches a transform as `opacity="NaN"` and
+ * the node is not drawn, with no indication why.
  */
 export const clamp01 = (value: number): number => {
   if (Number.isNaN(value)) return 1

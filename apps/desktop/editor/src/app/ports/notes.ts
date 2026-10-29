@@ -1,4 +1,4 @@
-/** What the window asks of the vault about notes. */
+/** The vault operations on notes available to the window. */
 import type {
   Link,
   Neighbourhood,
@@ -19,15 +19,15 @@ import type { CreateResult } from '@/entities/file'
 export interface NotePort {
   neighbourhood(path: string): Promise<Neighbourhood>
   /**
-   * What each of the notes asked about is divided into, by the path it was
-   * asked about. A note with no headings in it is absent.
+   * The headings of each note, keyed by path. A note with no headings is absent.
    */
   headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   /**
-   * The wikilinks of a text, read by the core, and the note each reaches: empty
-   * where it reaches none, or one in another vault. A name resolves by a path
-   * relative to the note it is written in, which is `from`. `vault` is the
-   * id of the vault the text is written in; empty is the one the window shows.
+   * The wikilinks of a text, parsed by the core, with the note each resolves to:
+   * empty when it resolves to none, or to a note in another vault. A name resolves
+   * by a path relative to the note it is written in, which is `from`. `vault` is
+   * the id of the vault the text is written in; empty means the vault the window
+   * shows.
    */
   resolveLinks(from: string, text: string, vault?: string): Promise<readonly TextLink[]>
   /** A change being made to a note's prose, reported while it is being made. */
@@ -58,8 +58,8 @@ export interface NotePort {
    */
   removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
   /**
-   * The links between two notes made exactly the ones given: each note holds one
-   * link to the other, or none. The answer says why nothing was replaced.
+   * Replaces the links between two notes with exactly the ones given: each note
+   * holds one link to the other, or none. On failure the result gives the reason.
    */
   replaceLinks(first: string, second: string, links: readonly PairLink[]): Promise<ErrorCode | null>
   /**
@@ -69,9 +69,9 @@ export interface NotePort {
    */
   rename(path: string, title: string): Promise<RenameResult>
   /**
-   * A file or a folder taken out of the vault, into the trash it can be brought
-   * back from. Destroying takes the file off the disk and brings nothing back,
-   * and is asked of a note only.
+   * A file or folder moved out of the vault into the trash, from which it can be
+   * restored. A permanent removal deletes the file from disk and cannot be undone;
+   * it is available for notes only.
    */
   remove(path: string, isPermanent?: boolean): Promise<RemoveResult>
 }

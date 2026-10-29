@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The vaults this installation holds, under what the window calls them, and
- * the row it offers below the list.
+ * The vaults this installation holds, under their display names, and the row
+ * offered below the list.
  *
- * Each vault is opened by the letter at the end of its row, as far down the
- * list as the alphabet reaches.
+ * Each vault is opened by the letter shown at the end of its row, as many rows
+ * down the list as the alphabet has letters.
  */
 import { WelcomeRow } from '../welcome-row'
 import { VaultList } from './vault-list'
@@ -29,7 +29,7 @@ defineEmits<{
 }>()
 
 defineSlots<{
-  /** What stands where the list would be while there is no list yet. */
+  /** Content displayed while the list is not yet loaded. */
   waiting?(): unknown
   /** How a vault on the list is drawn. */
   vault?(props: { vault: VaultRow }): unknown
@@ -71,8 +71,8 @@ defineSlots<{
   text-transform: uppercase;
 }
 
-/* Where the rows will stand, so what is said while they are on their way is
-   said in the middle of the room they will take. */
+/* Reserves the space the rows will occupy, so the loading text is centred in
+   the area they will take. */
 .welcome-page__waiting {
   display: flex;
   align-items: center;
@@ -80,9 +80,8 @@ defineSlots<{
   min-block-size: 4rem;
 }
 
-/* Where the screen stands as two columns, the heading holds its place at the
-   head of this one and the offer holds its place at the foot; the rows between
-   them are scrolled. */
+/* In the two-column layout, the heading stays at the top of this column and
+   the offer at the bottom; the rows between them scroll. */
 @container (max-height: 27.55rem) and (min-width: 45.4rem) {
   .welcome-page__vaults {
     display: flex;

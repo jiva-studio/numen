@@ -1,8 +1,8 @@
 /**
- * A time against every line, and the line being read now.
+ * A timestamp for every line, and the line currently being read.
  *
- * The gutter and the decoration are read out of the view the extension was put
- * in, which is what a person sees.
+ * The gutter and the decoration are read from the view the extension was
+ * installed in, which is what the user sees.
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
@@ -36,7 +36,7 @@ const waitTick = () => new Promise((isDone) => setTimeout(isDone, 0))
 const gutter = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) => one.textContent ?? '')
 
-/** The lines drawn as being said. */
+/** The lines rendered as active. */
 const current = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-content .cm-current')].map((one) => one.textContent ?? '')
 
@@ -217,9 +217,9 @@ describe('the times in the gutter', () => {
 
 describe('the view going after the line being returned', () => {
   /**
-   * Every scroll the extension asked for, counted. It shows what it shows in
-   * one effect and asks to be moved in a second, so a dispatch carrying two is
-   * a dispatch that moves the view.
+   * Every scroll the extension requested, counted. It reports a line in one
+   * effect and requests a move in a second, so a dispatch carrying two is a
+   * dispatch that moves the view.
    */
   const watchView = (view: EditorView) => {
     let scrolls = 0
@@ -240,8 +240,8 @@ describe('the view going after the line being returned', () => {
     times.show({ ...TIMED, current: 1, isFollowing: true })
 
     const scrolls = watchView(view)
-    // The transcript grows: another line arrives, and the line being said is
-    // the one it was.
+    // The transcript grows: another line arrives, and the active line is
+    // unchanged.
     times.show({ times: [...TIMED.times, '0:09'], current: 1, isFollowing: true })
 
     expect(scrolls()).toBe(0)
@@ -266,8 +266,8 @@ describe('an editor drawn a second time', () => {
     times.show({ ...TIMED, current: 2, isFollowing: true })
     view.destroy()
 
-    // A tab moved between panes is drawn again while the recording stands
-    // where it stood.
+    // A tab moved between panes is rendered again while the recording position
+    // is unchanged.
     const again = drawGutter(times)
     let effects = 0
     const was = again.dispatch.bind(again)
@@ -305,8 +305,8 @@ describe('an editor drawn again while the recording remains still', () => {
       return was(...specs)
     }) as EditorView['dispatch']
 
-    // The transcript is asked for again while nothing is being said: the words
-    // grow and the line being said is the one it was.
+    // The transcript is requested again while no line is active: the words grow
+    // and the active line is unchanged.
     times.show({ times: [...TIMED.times, '0:09'], current: 2, isFollowing: true })
 
     expect(effects).toBe(0)
@@ -327,7 +327,7 @@ const recordEffects = (view: EditorView) => {
   return observed
 }
 
-/** The dispatches that asked the view to move. */
+/** The dispatches that requested a view move. */
 const moves = (observed: StateEffect<unknown>[][]) =>
   observed.filter((effects) => effects.length > 1)
 

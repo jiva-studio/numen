@@ -14,7 +14,7 @@ import (
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 )
 
-// ErrNoAgent is an installation with none. Whether one can be reached is asked of GetAgentState.
+// ErrNoAgent means the installation has no agent. Reachability of an agent is reported by GetAgentState.
 var ErrNoAgent = errors.New("no agent is set up for this vault")
 
 // AgentHandler answers AgentService for a window: the agent its tasks go to, the folder a task
@@ -22,7 +22,7 @@ var ErrNoAgent = errors.New("no agent is set up for this vault")
 type AgentHandler struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 
-	// GetAgent is the agent asked at each call. Nil, or one returning nil, is a window with none.
+	// GetAgent returns the agent used at each call. Nil, or a nil return, means the window has no agent.
 	GetAgent func() agentport.Agent
 	// GetRoot is the folder a task naming none is started in. Nil leaves it empty.
 	GetRoot func() string
@@ -40,8 +40,8 @@ func (h *AgentHandler) getAgent() agentport.Agent {
 	return h.GetAgent()
 }
 
-// GetAgentState is whether an agent can be reached at all. Which agent answers is the
-// installation's, so every window asks it here.
+// GetAgentState reports whether an agent can be reached at all. The installation
+// chooses which agent responds, so every window queries it here.
 func (h *AgentHandler) GetAgentState(
 	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],
 ) (*connect.Response[v1.GetAgentStateResponse], error) {

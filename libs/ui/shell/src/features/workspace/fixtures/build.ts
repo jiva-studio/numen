@@ -43,10 +43,10 @@ export const sideBySide = (): Workspace =>
     splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]),
   )
 
-/** One stack holding both, so that only one shows at a time. */
+/** One stack holding both tabs, of which only one is visible at a time. */
 export const oneStack = (): Workspace => createWorkspace(stack('main', 'plex', 'chat'))
 
-/** Two stacks, the second with a tab to spare, so that neither empties. */
+/** Two stacks, the second with an extra tab, so neither becomes empty. */
 export const withSpare = (): Workspace =>
   createWorkspace(
     splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat', 'notes')], [0.7, 0.3]),

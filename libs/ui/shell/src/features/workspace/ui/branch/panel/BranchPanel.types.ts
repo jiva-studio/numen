@@ -3,7 +3,7 @@ import type { Orientation, WorkspaceNode } from '../../../lib/node'
 
 export interface BranchPanelProps {
   node: WorkspaceNode
-  /** Where the child stands among its siblings; the first is given no handle. */
+  /** The child's position among its siblings; the first child gets no handle. */
   index: number
   /** The share of the branch the panel opens at, in percent. */
   share: number

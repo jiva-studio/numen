@@ -62,7 +62,7 @@ const grow = (frame: HTMLElement, view: EditorView) => {
   }
 }
 
-/** Tab walks the cells; the last one makes a row. Escape leaves the table. */
+/** Tab moves between cells; in the last cell it adds a row. Escape leaves the table. */
 export const listen = (frame: HTMLElement, view: EditorView) => {
   frame.addEventListener('input', (event) => {
     const cell = (event.target as HTMLElement).closest<HTMLElement>('.cm-cell')

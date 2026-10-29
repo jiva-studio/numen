@@ -1,8 +1,8 @@
 // Package sqlfile loads the SQL that lives beside each repository.
 //
-// Statements are files: SQL is a language of its own, and anything that reads,
-// formats or checks SQL can see it there — the person reviewing a change to it
-// included.
+// Statements are files: SQL is a language of its own, and tools that read,
+// format or check SQL can process it there, as can a reviewer of a change
+// to it.
 package sqlfile
 
 import (

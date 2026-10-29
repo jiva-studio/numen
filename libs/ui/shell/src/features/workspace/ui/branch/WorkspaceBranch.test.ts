@@ -1,8 +1,8 @@
 /**
- * The splitter that composes panes, and what a handle reports back.
+ * The splitter that composes panes, and what a handle reports.
  *
- * The shares a handle settles on are what the workspace is told; the
- * arithmetic on them is `shares.test.ts`.
+ * The shares a handle settles on are what the workspace receives; the
+ * arithmetic on them is tested in `shares.test.ts`.
  */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
@@ -56,9 +56,9 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
 }
 
 /**
- * How long the branch is on screen, which is what the smallest share is worked
- * out from. Nothing here has a size, so the observer the branch follows its own
- * element with is stood in for. Call it before mounting.
+ * The branch length, from which the smallest share is computed. Nothing here
+ * has a size, so the observer that tracks the branch element is replaced by a
+ * stub. Call it before mounting.
  */
 const stubResizeObserver = (): ((length: number) => void) => {
   const callbacks: ResizeObserverCallback[] = []

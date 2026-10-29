@@ -19,7 +19,7 @@ const textKey = "layer"
 // pagesPerBatch is how many pages of a document are cut into segments at once.
 const pagesPerBatch = 16
 
-// textKind is the kind of the text versions the plugin makes.
+// textKind is the kind of the text versions the plugin creates.
 const textKind domain.TextKind = "page-text"
 
 // TextServer writes the text layer of the vault's PDF files into the plugin's folder as text
@@ -71,7 +71,7 @@ type layer struct {
 	book *pdf.Book
 }
 
-// hasText reports whether the layer says anything. A scan says nothing.
+// hasText reports whether the layer contains any text. A scan contains none.
 func (l layer) hasText() bool { return strings.TrimSpace(l.book.Text) != "" }
 
 // readLayer reads the file at a path of the vault. The document last read is kept while the file is

@@ -7,8 +7,8 @@ export interface FileBuffers {
 
 // BufferHost carries what a window does with the files its tabs hold open, when it quits.
 export interface BufferHost {
-  // What the buffers hold unwritten is written when the window quits, and a file that moved under
-  // one is put to the person before the window goes.
+  // The unwritten buffer contents are written when the window quits, and a file that changed on disk under
+  // a buffer is reported to the user before the window closes.
   track(buffers: FileBuffers): Disposable
   // Work the window finishes before it quits.
   addFlushHandler(handler: () => Promise<unknown>): Disposable
@@ -16,7 +16,7 @@ export interface BufferHost {
 
 export type FileConflict = 'gone' | 'stale' | null
 
-// parseFileConflict says which conflict a state names, and nothing for every other state.
+// parseFileConflict returns the conflict a state names, and nothing for every other state.
 export function parseFileConflict(state: string): FileConflict {
   return state === 'gone' || state === 'stale' ? state : null
 }

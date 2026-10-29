@@ -1,6 +1,6 @@
 /**
- * The menu that links a tab to another: which tab it was asked on, where, and
- * what choosing an item does.
+ * The menu that links a tab to another: the tab it was requested on, its position, and
+ * the effect of choosing an item.
  */
 import { computed, ref } from 'vue'
 import { getEligibleTabs, getLinkedTitle } from '../lib/eligibility'
@@ -39,7 +39,7 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
     () => tabId.value !== null && deps.tabLinks.getGroupOf(tabId.value) !== null,
   )
 
-  /** The menu asked for on a tab; a tab of a kind that cannot be linked has none. */
+  /** Opens the menu on a tab; a tab of a kind that cannot be linked has none. */
   const open = (tab: TabId, where: { x: number; y: number }): void => {
     if (!deps.isLinkable(tab)) return
     tabId.value = tab

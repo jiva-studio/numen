@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * One line of digits, typed by hand and held inside its bounds, worked as a
+ * A single-line digit input, typed manually and clamped to its bounds, behaving as a
  * spin button.
  *
- * What was typed stands as it was typed, and the number is written out only
- * once the field is left. Bounds that move under the number bring it in.
+ * The text stays as typed, and the number is written out only when the field loses
+ * focus. If the bounds change under the number, it is clamped to them.
  */
 import { computed, useId, useTemplateRef } from 'vue'
 import { cn } from '@/shared/lib/dom/classes'

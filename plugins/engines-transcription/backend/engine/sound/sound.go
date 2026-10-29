@@ -80,8 +80,8 @@ func isWav(raw []byte) bool {
 	return len(raw) >= 12 && bytes.HasPrefix(raw, riff) && bytes.Equal(raw[8:12], wave)
 }
 
-// isMP3 says whether a file is an mp3: a tag of what it holds, or the first
-// frame's own mark.
+// isMP3 reports whether a file is an mp3: it starts with a tag, or with a
+// frame sync mark.
 func isMP3(raw []byte) bool {
 	if bytes.HasPrefix(raw, id3) {
 		return true
@@ -89,8 +89,7 @@ func isMP3(raw []byte) bool {
 	return len(raw) >= 2 && raw[0] == 0xFF && raw[1]&0xE0 == 0xE0
 }
 
-// A riffWave is what a wav file's header says, and the bytes of the samples
-// themselves.
+// riffWave is the header fields of a wav file and the bytes of its samples.
 type riffWave struct {
 	format   int
 	channels int
@@ -99,8 +98,8 @@ type riffWave struct {
 	samples  []byte
 }
 
-// The two ways a wav file writes a sample, and the mark of a header that says
-// which of them further along.
+// The two sample encodings of a wav file, and the format tag that defers the
+// encoding to the extended header further on.
 const (
 	wavInteger  = 1
 	wavFloating = 3
@@ -157,8 +156,8 @@ func (w *riffWave) readFormat(body []byte) error {
 	w.channels = int(binary.LittleEndian.Uint16(body[2:4]))
 	w.rate = int(binary.LittleEndian.Uint32(body[4:8]))
 	w.bits = int(binary.LittleEndian.Uint16(body[14:16]))
-	// An extended header says what the samples really are in its own tail,
-	// where the first two bytes stand for the whole format.
+	// An extended header declares the actual sample format in its tail; the first
+	// two bytes then hold only a marker for the extension.
 	if w.format == wavExtended && len(body) >= 26 {
 		w.format = int(binary.LittleEndian.Uint16(body[24:26]))
 	}

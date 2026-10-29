@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-// A Decoder is the three graphs as the decoding sees them: how many frames
-// there are, how to reach one, what the predictor says after a token, and what
-// the two say together.
+// Decoder holds the three graphs used for decoding: the encoder (frame count
+// and per-frame access), the predictor (output after a token) and the joiner
+// (combines both).
 type Decoder struct {
 	Frames    int
 	Blank     int
@@ -17,13 +17,13 @@ type Decoder struct {
 	Joint     func(frame, predicted []float32) ([]float32, error)
 }
 
-// Decode reads the frames from the first to the last and answers with the
-// tokens they carry.
+// Decode reads the frames from first to last and returns the tokens they carry.
 //
-// The joiner names a token and how many frames it covers. A token that is not
-// way, so that a stretch is always read to its end.
+// The joiner names a token and how many frames it covers. A step of zero stays
+// on the frame, except for the blank or a frame at mostPerFrame, which advance
+// by one.
 func (d Decoder) Decode(ctx context.Context) ([]int, error) {
-	// The predictor opens on the blank: nothing has been said yet.
+	// The predictor starts from the blank token: no token has been emitted yet.
 	upto, err := d.Predictor(d.Blank)
 	if err != nil {
 		return nil, err
@@ -76,9 +76,8 @@ func (d Decoder) choose(frame, upto []float32) (choice, error) {
 	return choice{token: findLargest(scores[:d.Blank+1]), step: findLargest(scores[d.Blank+1:])}, nil
 }
 
-// getStep is how far the decoding moves on. The blank moves on whatever it
-// says, and a frame that has given all the words one frame may give moves on
-// too.
+// getStep returns how far the decoding advances. The blank advances by at
+// least one, and a frame that has emitted mostPerFrame tokens advances too.
 func (d Decoder) getStep(c choice, tokensInFrame int) int {
 	if c.step < 1 && (c.token == d.Blank || tokensInFrame >= mostPerFrame) {
 		return 1
@@ -86,12 +85,12 @@ func (d Decoder) getStep(c choice, tokensInFrame int) int {
 	return c.step
 }
 
-// mostPerFrame is how many words one frame may give before the decoding moves
-// on whatever the model says. It is what keeps a run of durations of nothing
-// from standing on one frame for ever.
+// mostPerFrame is how many tokens one frame may emit before decoding advances
+// regardless of the model's output. It bounds a run of zero durations on one
+// frame.
 const mostPerFrame = 10
 
-// findLargest is where the highest of a run of scores stands.
+// findLargest returns the index of the highest score.
 func findLargest(scores []float32) int {
 	pos := 0
 	for i, v := range scores {

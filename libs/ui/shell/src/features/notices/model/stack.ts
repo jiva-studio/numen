@@ -1,14 +1,14 @@
 /**
- * How long a person has had the corner in hand, and the moment cards are read
- * against.
+ * The time the notice corner has been held by the user, and the timestamp that
+ * cards are read against.
  *
- * Time spent with the corner under a pointer, with the keyboard in it, or away
- * from the window entirely, is not time spent reading it. What that evaluates to is
- * kept here; nothing here draws anything.
+ * Time with the pointer over the corner, with keyboard focus in it, or with the
+ * window hidden does not count as reading time. That duration is tracked here;
+ * nothing here renders anything.
  */
 import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 
-/** What the corner keeps of a person's attention. */
+/** The attention state of the notice corner. */
 export interface NoticeStackState {
   /** The moment itself. */
   readonly now: Ref<number>
@@ -45,9 +45,9 @@ export function useNoticeStack(
   let on: Element | null = null
 
   /**
-   * A card is taken out from under whatever was on it, and a browser owes
-   * nothing about the boundary event for one that has gone, so what holds the
-   * corner is asked of the page each time.
+   * A card can be removed while the pointer is over it, and a browser does not
+   * guarantee a boundary event for a removed element, so the pointer and focus
+   * state is re-checked against the page on each beat.
    */
   const beat = (): void => {
     if (pointed.value && on !== null && !on.isConnected) {

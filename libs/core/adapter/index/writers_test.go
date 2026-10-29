@@ -104,8 +104,8 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	}
 	wg.Wait()
 
-	// A writer that could not have its turn says so; it does not come back
-	// having written nothing.
+	// A writer that could not get its turn reports that; it does not return having
+	// written nothing.
 	for _, err := range failed {
 		t.Errorf("a write failed: %v", err)
 	}

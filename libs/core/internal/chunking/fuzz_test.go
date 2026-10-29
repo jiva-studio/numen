@@ -24,11 +24,11 @@ var cutSeeds = []string{
 	"",
 }
 
-// Every chunk of a cut is a stretch of the text it was cut from: inside it, of
-// no negative length, and cut at a character and never through one. A small
-// chunk is placed under a large chunk that reaches its middle.
+// Every chunk of a cut is a range of the text it was cut from: inside it, of
+// non-negative length, and aligned to character boundaries. A small
+// chunk is nested in a large chunk that covers its midpoint.
 //
-// The text is a stranger's: a source's text is whatever the file held.
+// The text is arbitrary: a source's text is whatever the file contained.
 func FuzzCut(f *testing.F) {
 	for _, seed := range cutSeeds {
 		f.Add(seed, 8, 2, 3, 1, 40, 3)
@@ -44,8 +44,8 @@ func FuzzCut(f *testing.F) {
 			LargeOverlap: largeOverlap, SmallOverlap: smallOverlap,
 			Limit: limit,
 		}
-		// character. A part offset inside one is not a text a caller can hand
-		// over, and the chunks cut from it begin inside a character too.
+		// Part offsets are aligned to a character start. An offset inside a character is not a text a caller can supply,
+		// and the chunks cut from it would begin inside a character too.
 		var parts []domain.PartStart
 		if len(text) > 0 {
 			pos := part % len(text)

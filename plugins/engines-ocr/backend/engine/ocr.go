@@ -90,8 +90,8 @@ func isInside(a, b image.Rectangle) bool {
 	return float64(both.Dx()*both.Dy()) > 0.9*float64(a.Dx()*a.Dy())
 }
 
-// Assemble writes one region out as running prose, and says where on the page
-// each run of it was read.
+// Assemble writes one region out as running prose, and reports where on the
+// page each run of it was read.
 func Assemble(lines []Line) (string, []Box) {
 	size := len(lines)
 	// gomutants:disable-next-line RANGE_BREAK reason="size is a capacity hint for make; the assembled text and spans are identical at any capacity"

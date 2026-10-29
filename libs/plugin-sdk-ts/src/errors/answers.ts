@@ -25,12 +25,12 @@ export const parseFingerprint = (stat: string) => {
 }
 
 /**
- * What each error code the schema carries is called in the window's own words.
+ * Maps each error code of the schema to the window's own message code.
  *
- * A file that moved past what the caller read has no word: that one is a
- * question for the person and not a message, and the window carries it as
- * `changed`. Keyed by the schema, so an error code added to it has to be given a
- * word or that same silence here before this compiles.
+ * A file that changed since the caller read it has no message: it is a prompt
+ * for the user, not a message, and the window reports it as `changed`. The map
+ * is keyed by the schema, so a new error code must be given a message or an
+ * explicit empty entry here before this compiles.
  */
 export const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
@@ -54,16 +54,15 @@ export const isStaleAnswer = (from: { error?: number | undefined }): boolean =>
   from.error === ProtoErrorCode.STALE
 
 /**
- * Where a file of the vault is asked about. The path is written out whole, so a
- * file in a folder is one part of the address and the facet asked of it is the
- * next.
+ * The address of a vault file query. The path is written in full, so a file in
+ * a folder is one part of the address and the queried facet is the next.
  */
 export const getAssetUrl = (path: string): string => `/assets/${encodeURIComponent(path)}`
 
 /**
- * Which bytes an address is about, as the address writes them. The path is a
- * part of the address already, so what is written here is the rest of what says
- * which file it is.
+ * Which bytes an address refers to, as the address spells them. The path is
+ * already part of the address, so this holds the remaining parts that identify
+ * the file.
  */
 export const getBytesQuery = (file: string): string => {
   const stat = parseFingerprint(file)
@@ -77,8 +76,9 @@ export const MAX_BUSY_RETRIES = 3
 const BUSY_RETRY_DELAY_MS = 1000
 
 /**
- * What the application answered. A document held by whoever is drawing from it
- * says so, and is asked again after a wait.
+ * Retries a call while the application reports that the document is busy: a
+ * document held by a client that is rendering from it is requested again after
+ * a delay.
  */
 export const retryWhileBusy = async <T>(ask: () => Promise<T>): Promise<T> => {
   for (let attempt = 0; ; attempt++) {

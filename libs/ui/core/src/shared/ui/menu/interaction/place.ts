@@ -1,15 +1,15 @@
 /**
- * How big a menu turned out to be, and where that size puts it.
+ * The measured size of a menu and the position derived from it.
  *
- * Only the drawing knows the size, so it arrives here as a value and the
- * placement is worked out from it.
+ * Only the rendering knows the size, so it is passed in as a value and the
+ * placement is computed from it.
  */
 import { computed, ref, type ComputedRef } from 'vue'
 import { placeMenu } from '../items/item'
 import type { Position, Size } from '@/shared/lib/math/geometry'
 
 export interface MenuPlacementOptions {
-  /** Where it was asked for, in the coordinates of the area it is drawn into. */
+  /** The requested position, in the coordinates of the area the menu is drawn into. */
   readonly at: () => Position
   /** The area it is placed in, and the browser's own where there is none. */
   readonly viewport: () => Size | null

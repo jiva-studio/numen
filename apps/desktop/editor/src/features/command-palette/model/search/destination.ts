@@ -10,20 +10,20 @@ import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
 import type { SearchDestination } from './search'
 
-/** What the window offers whatever was chosen. */
+/** The window operations that open a chosen destination. */
 export interface DestinationDeps {
-  /** A note put in front of the person, where the plugin that shows notes puts it. */
+  /** Shows a note in the plugin that displays notes. */
   travel(path: string): Promise<void>
   /**
-   * A file put in front of the person, in the editor or reader made for it, at
-   * the line or the selector it was chosen at.
+   * Shows a file in the editor or reader for its type, at the chosen line or
+   * selector.
    */
   openFile(path: string, title: string, line?: number, selector?: Selector): void
-  /** The icon of the reader that opens a file that is no note, and nothing where none does. */
+  /** The icon of the reader that opens a non-note file, or undefined when none does. */
   findFileIcon?(path: string): Component | undefined
 }
 
-/** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
+/** Opens the chosen destination. A null destination does nothing. */
 export async function openDestination(
   destination: SearchDestination | null,
   places: DestinationDeps,

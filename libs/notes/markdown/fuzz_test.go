@@ -31,7 +31,7 @@ var spliceSeeds = []string{
 	"",
 }
 
-// A write to one key leaves every byte the key does not own where it stood.
+// A write to one key leaves every byte outside that key unchanged.
 func FuzzSetTitle(f *testing.F) {
 	for _, seed := range spliceSeeds {
 		f.Add(seed, "New")
@@ -48,7 +48,7 @@ func FuzzSetTitle(f *testing.F) {
 	})
 }
 
-// Writing a link leaves every byte outside the `links:` block where it stood.
+// Writing a link leaves every byte outside the `links:` block unchanged.
 func FuzzAddLink(f *testing.F) {
 	for _, seed := range spliceSeeds {
 		f.Add(seed, "Somewhere Else")
@@ -132,8 +132,8 @@ func checkWriteInsideKey(t *testing.T, before, after, key string) {
 	}
 }
 
-// getChangedRun is the run of the note a write replaced: what stands after the
-// bytes both spellings open with, and before the bytes both close with.
+// getChangedRun returns the range of the note that a write replaced: the bytes
+// after the common prefix of both versions and before their common suffix.
 func getChangedRun(before, after string) (int, int) {
 	from := 0
 	for from < len(before) && from < len(after) && before[from] == after[from] {
@@ -150,9 +150,9 @@ func getChangedRun(before, after string) (int, int) {
 	return from, to
 }
 
-// getOwnedLines is the widest run of frontmatter one top-level key can be said
-// to own: the key's own line, and the lines below it standing indented under it
-// or hanging from it as a list. It says nothing of a key it cannot find.
+// getOwnedLines returns the widest range of frontmatter that one top-level key
+// owns: the key's own line, and the following lines that are indented under it
+// or continue it as a list. It reports found=false when the key is absent.
 func getOwnedLines(note, key string) (start, end int, found bool) {
 	var starts []int
 	var lines []string

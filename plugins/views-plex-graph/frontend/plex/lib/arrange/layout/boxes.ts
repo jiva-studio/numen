@@ -1,4 +1,4 @@
-/** Upright boxes in the plex's own coordinates: the room a node takes, and the room a run of a line takes. */
+/** Upright boxes in the plex's own coordinates: the area a node occupies, and the area a run of a line occupies. */
 import { createPointOnCurve, type PlacedEdge } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
 
@@ -24,10 +24,10 @@ export const getBox = (node: PlacedNode, apart: number): Box => ({
 })
 
 /**
- * The room a title takes up, step by step along the run it is set on.
+ * The area a title occupies, step by step along the run it is set on.
  *
- * A title set across the picture is a ribbon and not a rectangle: the box
- * picture, and a line crossing anywhere near it would find nowhere to be.
+ * A title set across the plex is a ribbon, not a rectangle: a single box would
+ * cover the whole plex and leave no placement for a line crossing near it.
  */
 export interface BoxSpan {
   readonly from: number

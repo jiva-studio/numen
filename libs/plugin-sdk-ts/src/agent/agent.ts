@@ -1,9 +1,9 @@
 /**
- * The agent port, answered from the wire.
+ * The agent port implemented over the wire.
  *
- * Every window asks the same agent the same way, so what a step on the wire
- * evaluates to in the port is written down once. The window makes the client; this
- * says what its answers mean.
+ * Every window queries the same agent the same way, so the meaning of each wire
+ * step in the port is defined once. The window creates the client; this module
+ * defines what its responses mean.
  */
 import type { AgentPort, AgentQuery, AgentStep } from '../agent'
 
@@ -43,7 +43,7 @@ const normalizeRange = (range: WireRange | undefined) => ({
 /** The reason a stopped step gives when the agent stopped because it was done. */
 const STOPPED_DONE = 'done'
 
-/** As much of the agent service as the port asks of it. */
+/** The subset of the agent service that the port uses. */
 export interface AgentClient {
   askAgent(
     request: {
@@ -63,7 +63,7 @@ export interface AgentClient {
 
 type AgentRequest = Parameters<AgentClient['askAgent']>[0]
 
-/** The request a query is asked with. An empty agent, model, reasoning, context or vault is left out. */
+/** The request built from a query. An empty agent, model, reasoning, context or vault is omitted. */
 const createAgentRequest = (query: AgentQuery): AgentRequest => {
   const {
     question: prompt,

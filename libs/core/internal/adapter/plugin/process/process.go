@@ -91,9 +91,10 @@ func isPathWithin(base, child string) bool {
 	return true
 }
 
-// IsWhitelistedEnv reports whether a variable of the host's environment reaches a plugin process:
-// the system's own, the proxy the machine reaches the network through, and NUMEN_MOCK_ML, which
-// runs a plugin on its mock models.
+// IsWhitelistedEnv reports whether a variable of the host environment is
+// passed to a plugin process: the system's own variables, the proxy the machine
+// uses for network access, and NUMEN_MOCK_ML, which runs a plugin on its mock
+// models.
 func IsWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
@@ -166,7 +167,7 @@ const (
 )
 
 // LaunchEnvironment is what the host tells a plugin process about its launch.
-// Neither a secret nor a setting is part of it: both reach a plugin through
+// It contains neither secrets nor settings: both reach a plugin through
 // Configure.
 type LaunchEnvironment struct {
 	VaultPath   string

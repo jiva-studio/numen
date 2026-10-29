@@ -13,8 +13,8 @@ type Half = keyof typeof SURFACE
 const MODE_NAMES = { light: 'Light', dark: 'Dark', system: 'System' } as const
 
 /**
- * The colour `--numen-surface` resolves to in the window, in the files view, which is drawn in the
- * window's document, and in the EPUB reader, which is drawn in a shadow root.
+ * The colour `--numen-surface` resolves to in the window, in the files view, which is rendered in the
+ * window's document, and in the EPUB reader, which is rendered in a shadow root.
  */
 const getSurfaces = (page: Page) =>
   page.evaluate(() => {
@@ -57,7 +57,7 @@ const getColour = (locator: Locator) => locator.evaluate((node) => getComputedSt
 
 /**
  * The colour of the text of three plugin views: the body and the heading of a book in the EPUB
- * reader, which is drawn in a shadow root, a template of a card model in the flashcards studio, and a
+ * reader, which is rendered in a shadow root, a template of a card model in the flashcards studio, and a
  * reply in the agent chat.
  */
 const getProseColours = async (page: Page) => {

@@ -1,9 +1,9 @@
 package domain
 
-// OpenTabs is what a person has open: every tab of their window, and which of
-// them they are looking at.
+// OpenTabs is the set of tabs open in the user's window and the tab that is
+// active.
 type OpenTabs struct {
-	// Tabs are every tab open, in the order the person was last in them.
+	// Tabs are every open tab, in the order they were last active.
 	Tabs []Tab
 	// ActiveID is the id of the active tab. Empty where the window has
 	// nothing open.
@@ -29,7 +29,7 @@ type Tab struct {
 	Kind string
 	// Path is the file the tab holds, empty for a tab holding no file.
 	Path string
-	// Title is what the tab is called, as the person reads it.
+	// Title is the display title of the tab.
 	Title string
 	// State is the JSON the plugin owning the kind saved, empty where it saved none.
 	State string

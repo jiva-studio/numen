@@ -1,15 +1,14 @@
-// Correctness for the manual: the frontmatter of each component, the collection
-// it is built from, and the node scripts that write the pages and take the
-// pictures. Nothing here is about how the code looks: the formatting is done by
-// hand and a rule with an opinion about it would start rewriting files nobody
-// asked it to.
+// Correctness rules for the manual: the frontmatter of each component, the
+// collection it is built from, and the node scripts that write the pages and
+// take the screenshots. Formatting is done by hand, so no rule here concerns
+// code style.
 
 import js from '@eslint/js'
 import globals from 'globals'
 import astro from 'eslint-plugin-astro'
 import tseslint from 'typescript-eslint'
 
-/** A parameter named and unused is a signature to honour; a leading underscore says so. */
+/** An unused parameter is a required signature; a leading underscore marks it. */
 const unused = [
   'error',
   { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
@@ -37,8 +36,8 @@ export default tseslint.config(
     rules: { 'no-unused-vars': unused },
   },
 
-  // The camera drives a browser, and what it asks the page to wait for is
-  // written here and evaluated there.
+  // The screenshot script drives a browser: the code it passes to the page to
+  // wait for is written here and evaluated there.
   {
     files: ['tools/shoot.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },

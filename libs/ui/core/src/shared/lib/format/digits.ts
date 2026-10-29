@@ -1,10 +1,10 @@
 /**
- * Numbers as they are read out. A count of text reaches six figures on an
- * ordinary vault, and the grouping is the same wherever it is drawn.
+ * Number formatting for display. A count of text reaches six figures in an
+ * ordinary vault, and the grouping is identical wherever it is rendered.
  */
 
 /**
- * A share as a person reads one, which is a percentage and not a fraction.
+ * A share as a percentage, not a fraction.
  *
  * Rounded, so a half is read as fifty and a whole as a hundred. A count that
  * has still to finish reads by `percentWord`, which never rounds up to a
@@ -23,8 +23,8 @@ export const plural = (count: number, one: string, other = `${one}s`): string =>
 /**
  * A count and the thing it counts, in the singular where there is one of it.
  *
- * The count is rounded before it is read and before it is made plural, because
- * a curve answers in fractions and a person is being told how many cards.
+ * The count is rounded before it is formatted and before the plural is chosen,
+ * because a curve produces fractions and the user is shown how many cards.
  */
 export const many = (count: number, one: string): string =>
   `${Math.round(count)} ${plural(count, one)}`

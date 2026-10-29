@@ -1,12 +1,12 @@
 /**
  * What a branch does with the shares a splitter reports.
  *
- * A splitter moves the panels itself while a handle is held, and the model is
- * told once, where the handle came to rest.
+ * A splitter moves the panels itself while a handle is dragged, and the model
+ * is notified once, at the drop position.
  */
 import { onBeforeUnmount } from 'vue'
 
-/** What a held handle is marked by, on the branch so that it reaches the panels the drag divides. */
+/** What marks a dragged handle, on the branch so that it reaches the panels the drag divides. */
 export const RESIZING = 'data-resizing'
 
 /** How close two shares are before they are the same share. */
@@ -23,7 +23,7 @@ export interface BranchResizeOptions {
   readonly getShares: () => readonly number[]
   /** The branch's own element, which carries the mark. */
   readonly getFrame: () => HTMLElement | undefined
-  /** The model told where the shares came to rest. */
+  /** The model, notified of the final shares. */
   readonly resize: (branch: string, shares: readonly number[]) => void
 }
 

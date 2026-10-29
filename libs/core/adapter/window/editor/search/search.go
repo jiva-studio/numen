@@ -38,9 +38,9 @@ func NewHandler(vaults VaultProvider) *Handler {
 // errNoMode is a search that named no mode to ask it in.
 var errNoMode = errors.New("a search requires a mode")
 
-// How many answers a client gets when it names no number, and the most it may
-// ask for. A window draws a list a person reads; a number past that is a
-// question about the corpus and is answered as the ceiling.
+// The default number of results when a client specifies none, and the maximum
+// it may request. A window displays a list for reading; a larger number is a
+// corpus query and is clamped to the maximum.
 const (
 	mostFound      = 20
 	maxQueryLength = 200
@@ -76,13 +76,13 @@ func (h *Handler) SearchNames(
 	return connect.NewResponse(out), nil
 }
 
-// SearchPassages hands the client the text the vault holds that answers what
-// was typed.
+// SearchPassages returns the text of the vault that matches the query.
 //
-// Which way it is asked is the client's, so a client drawing what is written apart
-// from what it means asks twice and each answer fills its own list.
+// The search mode is chosen by the client, so a client that displays the
+// written form and the meaning separately issues two requests and fills each
+// list from its own response.
 //
-// A window standing on nothing holds no text.
+// A window with no open vault has no text and returns no passages.
 func (h *Handler) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
@@ -103,9 +103,9 @@ func (h *Handler) SearchPassages(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// The note each passage was read out of, asked once for the whole answer. A
+	// The note each passage was read from, resolved once for the whole response. A
 	// source that is not a note is absent, and a window offering to open notes
-	// offers nothing for it.
+	// offers none for it.
 	sources := getPassageSources(found)
 	noted, err := h.GetTitles.Execute(ctx, showing, sources)
 	if err != nil {
@@ -175,7 +175,7 @@ func ConvertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	}
 }
 
-// atMost is how many answers to give, from what the client asked for.
+// atMost returns the number of results to return for the limit the client requested.
 func atMost(limit int32) int {
 	if limit <= 0 {
 		return mostFound

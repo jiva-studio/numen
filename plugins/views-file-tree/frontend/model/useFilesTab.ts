@@ -74,7 +74,7 @@ interface FileMenuDeps {
   isNoteAt: (path: string) => boolean
 }
 
-/** The entry a menu asked for on a path stands for, and a file that is no note where the tree holds none. */
+/** The entry for a path requested from a menu, and a non-note file where the tree has none. */
 const getMenuEntry = (list: FileTree, path: string): Entry =>
   list.getEntryAt(path) ?? {
     path,

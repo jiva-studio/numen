@@ -1,9 +1,10 @@
 /**
- * The words as they now read, back against the milliseconds they were said in.
+ * Transcript words mapped back to the millisecond positions they were recorded
+ * at.
  *
- * The application refuses a transcript whose cues run backwards, overlap, or
- * end before they begin, so every result here is checked for that as well as for
- * the times it works out.
+ * The application rejects a transcript whose cues run backwards, overlap, or end
+ * before they begin, so every result is checked for that as well as for the
+ * computed times.
  */
 import { describe, expect, it } from 'vitest'
 import { applyCues, findCueAt, isSame, spanCues, getText, type Cue } from './cues'

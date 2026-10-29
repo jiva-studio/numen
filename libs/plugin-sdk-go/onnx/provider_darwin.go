@@ -79,7 +79,7 @@ func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
 	return nil
 }
 
-// ortAPIProviderTable reaches the runtime's keyed execution-provider entry point.
+// ortAPIProviderTable is the layout of the runtime's API table up to the keyed execution-provider entry point.
 type ortAPIProviderTable struct {
 	_                                     [216]uintptr
 	SessionOptionsAppendExecutionProvider uintptr

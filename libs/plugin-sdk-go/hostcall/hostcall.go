@@ -1,5 +1,5 @@
 // Package hostcall is how a plugin calls the host: where the host endpoint is, and the token that
-// says which plugin is calling.
+// identifies the calling plugin.
 package hostcall
 
 import (

@@ -2,7 +2,7 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
-// ErrClosing is work asked for once the window has begun closing.
+// ErrClosing is returned for work requested after the window began closing.
 var ErrClosing = vault.ErrClosing
 
 // OpenVaults is every vault this window has open.

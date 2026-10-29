@@ -5,8 +5,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
 )
 
-// Themes is what a person may dress the window in: the catalogue of themes, and
-// the settings file a choice out of it is written into.
+// Themes provides the themes the window can use: the catalogue of themes, and
+// the settings file that stores the selection.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.getCatalogue()
 	scales := theme.NewScales(c.InterfaceScale, c.TextScale)

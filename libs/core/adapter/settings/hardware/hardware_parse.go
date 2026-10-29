@@ -186,7 +186,7 @@ func parseWindowsCores(buffer []byte, maskSize int) ([]windowsCore, error) {
 	return cores, nil
 }
 
-// parseWindowsCore reads one core record, which lies at offset in the buffer.
+// parseWindowsCore parses one core record located at offset in the buffer.
 func parseWindowsCore(record []byte, offset, maskSize int) (windowsCore, error) {
 	if len(record) < windowsGroupMaskOffset {
 		return windowsCore{}, fmt.Errorf("parse processor information: short core record at %d", offset)

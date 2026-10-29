@@ -112,7 +112,7 @@ func (c *configured) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-// Shutdown counts the shutdowns the plugin is asked for.
+// Shutdown counts the shutdown requests the plugin receives.
 func (c *configured) Shutdown(
 	_ context.Context, _ *connect.Request[v1.ShutdownRequest],
 ) (*connect.Response[v1.ShutdownResponse], error) {
@@ -196,7 +196,8 @@ func TestTheKeyReachesThePluginOnlyAsTheValueOfItsSecret(t *testing.T) {
 	}
 }
 
-// A secret without a key is handed over empty, which tells the plugin it has none.
+// A secret without a key is delivered as empty, which tells the plugin it has
+// no value.
 func TestASecretWithoutAKeyIsHandedOverEmpty(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
@@ -305,8 +306,8 @@ func TestAHostWithoutAKeyStoreFailsToStoreASecret(t *testing.T) {
 	}
 }
 
-// A key set through the host lands in the store under the plugin and the name,
-// reaches the running plugin at once, and is gone from it once deleted.
+// A key set through the host is stored under the plugin and name, reaches the
+// running plugin immediately, and is removed from it when deleted.
 func TestAKeySetThroughTheHostReachesTheRunningPlugin(t *testing.T) {
 	store := newKeys(map[string]string{})
 	host, probe := newSecretHost(t, store)
@@ -332,7 +333,8 @@ func TestAKeySetThroughTheHostReachesTheRunningPlugin(t *testing.T) {
 	}
 }
 
-// Only a secret the manifest declares can be stored, and only for a plugin the host knows.
+// Only a secret declared in the manifest can be stored, and only for a plugin
+// known to the host.
 func TestOnlyADeclaredSecretIsStored(t *testing.T) {
 	store := newKeys(map[string]string{})
 	host, _ := newSecretHost(t, store)
@@ -351,7 +353,8 @@ func TestOnlyADeclaredSecretIsStored(t *testing.T) {
 	}
 }
 
-// A store that fails to keep a key says so, and the plugin is not told it changed.
+// A store that fails to save a key returns an error, and the plugin is not
+// notified of a change.
 func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = pluginport.ErrNoKeyStore
@@ -365,8 +368,8 @@ func TestAKeyTheStoreCannotKeepIsAnError(t *testing.T) {
 	}
 }
 
-// A plugin that does not answer Configure cannot be handed its key, and the
-// change of the key says so; a plugin without secrets that does not answer is
+// A plugin that does not respond to Configure cannot receive its key, and the
+// key change returns an error; a plugin without secrets that does not respond is
 // not an error.
 func TestAPluginThatCannotBeConfiguredHasNotBeenHandedItsKey(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
@@ -476,8 +479,8 @@ func (u untouchable) DeleteKey(context.Context, string) error {
 	return nil
 }
 
-// A secret nobody stored is handed over empty with no access to the key store,
-// at the start of the plugin and on every change of a setting.
+// A secret that was never stored is delivered as empty without any access to
+// the key store, at plugin start and on every setting change.
 func TestASecretNobodyStoredPreservesTheKeyStoreAlone(t *testing.T) {
 	host, probe := newSecretHost(t, untouchable{t})
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {

@@ -1,9 +1,8 @@
-// Package segmenter finds where in a recording somebody is speaking.
+// Package segmenter finds the speech segments in a recording.
 package segmenter
 
-// Model is how the segmenter finds where in a recording somebody is speaking. What it cuts is
-// what the transcriber is given, so where it cuts is part of what the words
-// are.
+// Model finds the speech segments in a recording. Its cuts are the transcriber's
+// input, so where it cuts is part of the resulting words.
 type Model struct {
 	// Name is what this segmenter is called in the record kept beside a text.
 	Name string `json:"name"`
@@ -16,8 +15,8 @@ type Model struct {
 	Threshold float32 `json:"threshold"`
 	// Silence is how much quiet, in milliseconds, closes a segment.
 	Silence int `json:"silence"`
-	// Pad is how many milliseconds are kept on each side of a segment, so that
-	// the first and last sound of a word are inside it.
+	// Pad is how many milliseconds are kept on each side of a segment, so the first
+	// and last sound of a word are inside it.
 	Pad int `json:"pad"`
 	// Longest is how many milliseconds one segment may run to. Speech that goes
 	// on longer is cut at the quietest window this side of the limit.
@@ -25,8 +24,8 @@ type Model struct {
 	// Shortest is how many milliseconds a segment carries to be a segment at
 	// all.
 	Shortest int `json:"shortest"`
-	// Least is how many milliseconds a segment runs to before it stands as a
-	// line of its own. A shorter one is put together with the segment after it.
+	// Least is the minimum duration in milliseconds for a segment to stand as a
+	// line of its own. A shorter one is merged with the following segment.
 	Least int `json:"least"`
 }
 
@@ -68,8 +67,8 @@ func (s Model) getShortestSegment() int {
 	return s.Shortest
 }
 
-// A line of a transcript is read, so it holds a phrase and not a breath. A
-// speaker hesitating in the middle of a sentence stops for about this long.
+// A transcript line holds a phrase and not a pause. A speaker hesitating in the
+// middle of a sentence pauses for about this long.
 func (s Model) getShortestPause() int {
 	if s.Least <= 0 {
 		return 2500

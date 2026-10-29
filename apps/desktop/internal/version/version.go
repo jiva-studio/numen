@@ -6,17 +6,17 @@ package version
 
 import "fmt"
 
-// The tag this build was made from, how many commits stood behind it, and the
-// commit itself. A build made by hand carries what stands here.
+// The tag this build was made from, the number of commits since it, and the
+// commit. A build made by hand carries these defaults.
 var (
 	version = "0.0.0-dev"
 	build   = "0"
 	commit  = "unknown"
 )
 
-// GetVersionLine is what the binary of this name says when it is asked: the
-// version a person reads, the number that tells apart two builds of one
-// version, and the commit that names the source it was made from.
+// GetVersionLine returns the line the binary prints when queried: the version,
+// the build number that distinguishes two builds of one version, and the commit
+// the source was built from.
 func GetVersionLine(name string) string {
 	return fmt.Sprintf("%s %s (build %s, commit %s)", name, version, build, commit)
 }

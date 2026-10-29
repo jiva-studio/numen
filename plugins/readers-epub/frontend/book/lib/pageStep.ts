@@ -1,9 +1,9 @@
 /**
- * What turns a book from one spread to the next by hand, and where a turn
- * lands. Which key turns which way is settled for every reader in
+ * Manual page turns of a book from one spread to the next, and where a turn
+ * lands. The key-to-direction mapping is shared by every reader in
  * `shared/lib/turn.ts`.
  *
- * lifted again means is a decision, and a test asks it without a browser.
+ * What a turn means is a pure decision, which a test checks without a browser.
  */
 import type { TextRange } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
@@ -48,8 +48,8 @@ export interface Destination {
   /** The spread the turn lands on, absent past the ends of the document. */
   readonly spread?: number
   /**
-   * The offset asked for past an end of the document, which the holder of the
-   * book answers by opening the document next to it.
+   * The offset requested past an end of the document, which the owner of the
+   * book resolves by opening the adjacent document.
    */
   readonly offset?: number
 }
@@ -62,9 +62,9 @@ export interface TurnContext {
 }
 
 /**
- * Where a turn lands. A turn inside the document lands on the spread it asks
- * for; past either end stands the document beside this one, which the holder
- * of the book opens at the offset the turn names.
+ * Where a turn lands. A turn inside the document lands on the spread it
+ * requests; a turn past either end targets the adjacent document, which the
+ * owner of the book opens at the offset the turn names.
  */
 export function goToPage(way: PageNavigationAction, context: TurnContext): Destination {
   if (way === 'first') return { spread: 0 }

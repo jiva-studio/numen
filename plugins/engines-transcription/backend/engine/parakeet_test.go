@@ -10,10 +10,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/sound"
 )
 
-// openTranscriber is the models a machine holds, and the recording to hear with them.
-// They are hundreds of megabytes and are not in the repository, so a machine
-// without them says so and the rest of the package is still tested. NUMEN_MODEL names the model the
-// files are of, the default one where it names none.
+// openTranscriber returns the models available on the machine and the recording
+// to transcribe with them. The models are hundreds of megabytes and are not in
+// the repository, so a machine without them skips the test and the rest of the
+// package is still tested. NUMEN_MODEL names the model the files belong to,
+// defaulting to the default model when unset.
 func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	t.Helper()
 	dir, recorded := os.Getenv("NUMEN_MODELS"), os.Getenv("NUMEN_RECORDING")

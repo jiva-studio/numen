@@ -14,8 +14,8 @@ import type {
 export type ReadPluginSetting = (key: string) => unknown
 
 /**
- * Where the value in force comes from: the person's choice, the setting's default, or the first
- * option the setting it follows offers.
+ * Where the effective value comes from: the user's choice, the setting's default, or the first
+ * option offered by the setting it follows.
  */
 export type ValueOrigin = 'chosen' | 'default' | 'followed'
 

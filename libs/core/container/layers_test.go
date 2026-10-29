@@ -27,11 +27,10 @@ var driving = map[string]bool{
 	"internal/adapterlib/wire": true,
 }
 
-// The core is reached by the adapters and reaches none of them, an adapter is
-// given what it needs and not taking another, and what is assembled is
-// assembled in one place.
+// The core is reached by the adapters and reaches none of them; an adapter is
+// given what it needs and takes no other adapter; assembly happens in one place.
 //
-// A test file is left out: a test stands outside the package it exercises and
+// Test files are excluded: a test is external to the package it exercises and
 // builds the adapters that stand in for the real ones.
 func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	var wrong []string
@@ -68,22 +67,22 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 		t.Error(one)
 	}
 
-	// A walk that read no edge of this module is a rule checked against
-	// nothing, and it passes. The count is a floor well under what the core
-	// holds, so it says the walk found the tree and not how big the tree is.
+	// A walk that reads no edge of this module checks nothing and passes. The count
+	// is a lower bound well below the core's edge count; it confirms the walk found
+	// the tree, not how large the tree is.
 	if read < 100 {
 		t.Fatalf("%d edges of this module read: the walk is not reading the core", read)
 	}
 }
 
-// A port is named after the need and an adapter after the technology, and the
-// binding between them is the composition root's. An adapter that writes
-// `var _ port.X = …` puts that binding in two places.
+// A port is named after the need and an adapter after the technology; the
+// composition root owns the binding between them. An adapter that declares
+// `var _ port.X = …` duplicates that binding.
 //
-// A method returning `port.X` is not that claim. Where a port opens another —
-// `VaultReaders.Open` answers with a `VaultReader` — the return type is the
-// port's own signature, and an adapter bound to the first has to write the
-// second. What this refuses is the free-standing claim.
+// A method returning `port.X` is not such a declaration. Where a port opens
+// another (`VaultReaders.Open` returns a `VaultReader`), the return type is part
+// of the port's signature, and an adapter bound to the first must declare the
+// second. The rule rejects only free-standing assertions.
 func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	var read int
@@ -114,9 +113,8 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 		t.Error(one)
 	}
 
-	// A walk that read no file of an adapter is a rule checked against nothing,
-	// and it passes. Every adapter there is is named, so the count stands
-	// against all of them.
+	// A walk that reads no file of an adapter checks nothing and passes. Every
+	// adapter is named, so the count is compared against all of them.
 	if read < 50 {
 		t.Fatalf("%d files of the adapters read: the walk is not reading them", read)
 	}
@@ -132,13 +130,13 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 }
 
-// A test that builds an adapter stands outside the package it exercises. That
-// is what the rules above are left out of a test file for: an adapter built
-// from within is in the package's own compilation unit when the tests build,
-// and every other scenario in the core is tested from a package_test.
+// A test that builds an adapter is external to the package it exercises. The
+// rules above skip test files for that reason: an adapter built from within the
+// package sits in its compilation unit when the tests build, and every other
+// scenario in the core is tested from a package_test.
 //
-// An adapter's own test is not this. It builds the thing it is about, and so
-// does the composition root's.
+// An adapter's own test is not covered by this: it builds the adapter under test,
+// as does the composition root's.
 func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	var wrong []string
 	var read int
@@ -192,12 +190,12 @@ func isShared(pkg string) bool {
 	return strings.HasPrefix(pkg, "internal/adapterlib/")
 }
 
-// theMachine are the packages that are the machine and the world beyond it: the
-// process's files and its children, a socket, and the kernel itself. Each one
-// is an answer a scenario asks a port for.
+// theMachine are the packages that expose the machine and the world beyond it:
+// the process's files and children, sockets, and the kernel. A scenario obtains
+// each of these through a port.
 //
-// net/url is not here. An address taken apart and put together again is
-// arithmetic over a string, and nothing is dialled to do it.
+// net/url is excluded. Parsing and building addresses is string arithmetic and
+// dials nothing.
 var theMachine = map[string]bool{
 	"os": true, "os/exec": true, "net": true, "net/http": true, "syscall": true,
 }
@@ -210,20 +208,19 @@ const systemCalls = "golang.org/x/sys/"
 func isTheMachine(to string) bool { return theMachine[to] || strings.HasPrefix(to, systemCalls) }
 
 // looking are the functions of path/filepath that are not path arithmetic.
-// Each one asks the machine what is there, and Abs answers against the folder
-// the process was started in, which a scenario is not written against.
+// Each queries the filesystem, and Abs resolves against the folder the process
+// started in, which a scenario must not depend on.
 var looking = map[string]bool{
 	"EvalSymlinks": true, "Glob": true, "Walk": true, "WalkDir": true, "Abs": true,
 }
 
-// A scenario asks a port what is on the machine, and never the machine. What a
-// path is once every link on the way to it is resolved is one such question,
-// and a folder handed in as a content URI has no answer for it: the disk this
-// would read is not the one the file is on. A file, a socket and a system call
-// are the same question asked further down.
+// A scenario asks a port about the machine and never queries the machine itself.
+// Resolving a path through every link is one such query, and it has no answer
+// for a folder passed as a content URI: the disk it would read is not the one
+// holding the file. A file, a socket and a system call are the same kind of query.
 //
-// A path taken apart and put together again is arithmetic over a string and
-// stays here. What separates the two is whether the answer is on the disk.
+// Taking a path apart and joining it is string arithmetic and is allowed. The
+// distinction is whether the answer is on the disk.
 func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 	var wrong []string
 	var read int
@@ -380,13 +377,12 @@ var logging = map[string]bool{
 // logs answers whether an import is a logger.
 func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 
-// Nothing here logs. A log is a record kept for somebody who was not there, and
-// the person this application is for is in front of the window: what has to be
-// said is said there, or on the stream whoever started the process is reading.
-// A logger bound anywhere would write to neither.
+// Nothing here logs. A log is a record for a reader who was not present; the
+// application's user is in the window, and messages are shown there or on the
+// output stream of the process. A bound logger would write to neither.
 //
-// The rule is the whole core's and not a layer's, so the adapters and the
-// composition root are read too.
+// The rule covers the whole core, so the adapters and the composition root are
+// read too.
 func TestNothingOfTheCoreLogs(t *testing.T) {
 	var wrong []string
 	var read int
@@ -443,9 +439,9 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	}
 }
 
-// telling are the functions of time that answer from the machine's clock, and
-// waiting are the ones that arm the machine's timers. The rest of the package
-// is arithmetic over an instant somebody was given.
+// telling are the functions of time that read the machine's clock, and waiting
+// are the ones that arm the machine's timers. The rest of the package is
+// arithmetic over a given instant.
 var (
 	telling = map[string]bool{"Now": true, "Since": true}
 	waiting = map[string]bool{
@@ -476,13 +472,13 @@ func getClockReads(file *ast.File) (reads, arms []string) {
 	return reads, arms
 }
 
-// The domain does not know what time it is. A clock is a port, so a scenario
-// that stamps a note or asks what is due today is handed one, and the
-// composition root is where it is bound to this machine's.
+// The domain has no access to the current time. A clock is a port: a scenario
+// that stamps a note or evaluates what is due today receives one, and the
+// composition root binds it to this machine's clock.
 //
-// A scenario reading the clock itself cannot be exercised at a chosen instant,
-// and much of the work here is about when: the day a plugin schedules
-// something for, and the identifier a note is stamped with, both turn on it.
+// A scenario that reads the clock itself cannot be exercised at a chosen
+// instant. Much of the work here depends on time: the day a plugin schedules
+// something for, and the identifier a note is stamped with.
 func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	var wrong []string
 	var read int
@@ -570,14 +566,13 @@ func getTypeName(pos ast.Expr) string {
 	return ""
 }
 
-// An identity the core carries is a word of the core's own. A row number is the
-// store's: it says which row of which table, whatever counts rows hands it out,
-// and it can be ordered and paged when the thing it names cannot. A core
-// carrying one has taken the store's numbering into its language, and then into
-// what a scenario does — which is how a use case evaluates to loop on ascending
-// integer keys.
+// An identity in the core is a type of the core's own. A row number belongs to the
+// store: it identifies a row of a table, is assigned by whatever counts rows, and
+// can be ordered and paged where the entity it names cannot. A core carrying one
+// imports the store's numbering into its language and into scenario logic, such
+// as a use case looping over ascending integer keys.
 //
-// Every identity here is its own type, and this is what keeps it so.
+// Every identity is its own type; this rule enforces that.
 func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var wrong []string
 	var read int
@@ -701,12 +696,12 @@ func mount() {
 	}
 }
 
-// schema is the generated messages. An adapter that takes one and answers with
-// one is answering something outside, whether it is served over the wire or
-// called by another adapter, and that is what makes it a driving adapter.
+// schema is the generated messages. An adapter that accepts and returns them
+// serves something outside the core, whether over the wire or to another adapter,
+// which makes it a driving adapter.
 //
-// The handler it satisfies is not what says so: an adapter never names the
-// interface it answers to, so nothing but the messages is left to read.
+// The handler interface it satisfies does not show this: an adapter never names
+// the interface it implements, so only the messages identify it.
 const schema = wire + "/gen/numen/v1"
 
 // TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
@@ -749,12 +744,11 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 	}
 }
 
-// A port is a conversation the core holds with something outside it, and a
-// conversation nothing asks for is not one. An interface left in port/ after
-// the last caller went is indirection standing on its own, and the composition
-// root goes on binding an adapter to it.
+// A port is a dependency the core has on something outside it, and a port with no
+// caller is dead. An interface left in port/ after its last caller was removed is
+// unused indirection, and the composition root keeps binding an adapter to it.
 //
-// The tests are read: a port a test alone still asks for is asked for.
+// Test files are read: a port called only from a test counts as used.
 func TestPorts_EveryPortTypeIsReferenced(t *testing.T) {
 	unasked, err := getUnnamedTypes("..", filepath.Join("..", "port"), true)
 	if err != nil {
@@ -765,14 +759,14 @@ func TestPorts_EveryPortTypeIsReferenced(t *testing.T) {
 	}
 }
 
-// A port is named in the words of what it is about, and those words are
-// declared beside it: the identity of a model, a page of audio, a row of the
-// settings file. A word nothing outside port/ says is a word of no
-// conversation, and it stays behind when the conversation it belonged to goes.
+// A port is named in the words of its own domain, and those words are declared
+// next to it: the identity of a model, a page of audio, a row of the settings
+// file. A word that nothing outside port/ uses belongs to no port, and remains
+// after the port that used it is removed.
 //
-// This does not say which words belong here. Whether a type is the domain's or
-// the boundary's is read, not parsed: what the index holds is the domain's, and
-// what an adapter is configured with is the boundary's.
+// This rule does not decide which words belong here. Whether a type is domain or
+// boundary is judged by reading: what the index holds is domain, and what an
+// adapter is configured with is boundary.
 func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 	unnamed, err := getUnnamedTypes("..", filepath.Join("..", "port"), false)
 	if err != nil {
@@ -783,9 +777,9 @@ func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 	}
 }
 
-// Read against port/ as the whole tree, nothing outside it names anything, and
-// the rule has to come back with the names below. It is what says the passes
-// above are passing on the naming and not on an empty walk.
+// With port/ read as the whole tree, nothing outside it names anything, and the
+// rule must return the names below. This confirms the passes above pass on naming
+// and not on an empty walk.
 func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	pos := filepath.Join("..", "port")
 	unnamed, err := getUnnamedTypes(pos, pos, false)
@@ -799,15 +793,14 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	}
 }
 
-// A port is asked for as a whole, and a method of it is one thing the core can
-// ask. A method nothing calls is a question never put: the adapters go on
-// answering it, and the day it is wrong nothing says so.
+// A port is consumed as a whole, and each of its methods is one operation the
+// core can call. A method with no caller is never exercised, adapters keep
+// implementing it, and a defect in it goes unnoticed.
 //
-// The tests are not read here, and that asymmetry is the rule. A port a test
-// alone asks for is still a conversation, so the two rules above read them. A
-// method a test alone calls is the opposite: the only caller is the thing that
-// was written to check the answer, so the method exists to be tested and
-// nothing else is asking.
+// Test files are not read here, and that asymmetry is the rule. A port used only
+// by a test is still a port, so the two rules above read tests. A method called
+// only by a test exists to be tested: its only caller is the code written to
+// check it.
 func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 	uncalled, err := getUncalledMethods("..", filepath.Join("..", "port"))
 	if err != nil {
@@ -833,12 +826,12 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	}
 }
 
-// getUncalledMethods are the methods port/'s interfaces declare that no file of
-// the tree outside it, and outside a test, names as a selector.
+// getUncalledMethods returns the methods declared by port/'s interfaces that no
+// non-test file outside port/ names as a selector.
 //
-// A selector is what a call site of a method looks like whatever holds the
-// value, so the match is on the name alone: an interface the core reaches
-// through a variable never says port.X at the call site.
+// A selector is the form of a method call site regardless of the receiver's
+// type, so matching is on the name alone: an interface the core reaches through
+// a variable never writes port.X at the call site.
 func getUncalledMethods(root, dir string) ([]string, error) {
 	declared, err := methodsIn(dir)
 	if err != nil {
@@ -984,8 +977,8 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 	return unnamed, nil
 }
 
-// getDeclaredTypes are the exported types a folder's own files declare, each
-// said to be an interface or not.
+// getDeclaredTypes returns the exported types a folder's files declare, each
+// flagged as an interface or not.
 func getDeclaredTypes(dir string) (map[string]bool, error) {
 	target, err := readTree(dir)
 	if err != nil {
@@ -1111,8 +1104,7 @@ func isAdapter(pkg string) bool {
 		strings.HasPrefix(pkg, "internal/adapter/")
 }
 
-// getRefusal says why one package may not reach another, and nothing where it
-// may.
+// getRefusal returns why one package may not import another.
 func getRefusal(from, to string) string {
 	switch {
 	case isAdapter(from) || isShared(from):
@@ -1142,7 +1134,7 @@ func getRefusal(from, to string) string {
 	return ""
 }
 
-// isAmong says whether a package is one of these, or is placed under one.
+// isAmong reports whether a package is one of these or is placed under one.
 func isAmong(these []string, pkg string) bool {
 	for _, one := range these {
 		if pkg == one || strings.HasPrefix(pkg, one+"/") {
@@ -1152,24 +1144,24 @@ func isAmong(these []string, pkg string) bool {
 	return false
 }
 
-// isAssembled says whether a package is one the composition root puts together:
-// an adapter, a scenario, and the two languages the two are named in.
+// isAssembled reports whether a package is one the composition root assembles:
+// an adapter, a scenario, or one of the two language packages they are named in.
 func isAssembled(to string) bool {
 	return to == "container" || to == "domain" || isUnder(to, "port") ||
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
-// sibling says whether two packages are one adapter: its own folder and every
-// package under it, which share the settings section they are built from.
+// sibling reports whether two packages belong to one adapter: its own folder and
+// every package under it, which share the settings section they are built from.
 func sibling(from, to string) bool { return family(from) == family(to) }
 
-// grouping are the folders that hold adapters and are none themselves: adapter/
-// itself, the folder the compiler holds them in, and the folder holding one
-// adapter to a window. What stands directly under any of them is an adapter.
+// grouping are the folders that contain adapters and are not adapters themselves:
+// adapter/ itself, the compiler-restricted internal folder, and the folder
+// holding one adapter per window. A package directly under any of them is an adapter.
 var grouping = []string{"adapter", "internal/adapter", "adapter/window", "internal/adapterlib"}
 
-// family is the adapter a package belongs to: what stands directly under the
-// grouping folder it is in, and every package beneath that.
+// family is the adapter a package belongs to: the package directly under its
+// grouping folder, and every package beneath that.
 func family(pkg string) string {
 	depth := 2
 	for _, one := range grouping {
@@ -1220,9 +1212,9 @@ var public = []string{
 	"window/editor", "window/shell",
 }
 
-// The core's surface is these adapters and no others. A driven adapter nothing
-// outside composes sits under internal/adapter, where the compiler holds it, so
-// binding it to a port stays this package's work.
+// The core's surface is these adapters and no others. A driven adapter that
+// nothing outside composes lives under internal/adapter, which the compiler
+// restricts, so binding it to a port stays this package's responsibility.
 func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 	found, err := getAdaptersIn(filepath.Join("..", "adapter"), "adapter")
 	if err != nil {
@@ -1287,9 +1279,9 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"adapter/window/shell", "adapter/window/editor", true},
 		{"adapter/window/editor/pages", "adapter/window/editor", false},
 
-		// A driven adapter runs no scenario, and takes no other adapter. Which
-		// of the two an adapter is has nothing to do with the folder it sits
-		// in: the one the compiler holds here serves the schema.
+		// A driven adapter runs no scenario and takes no other adapter. Which of the
+		// two an adapter is does not depend on its folder: the compiler-restricted
+		// folder here also serves the schema.
 		{"adapter/index", "usecase/note", true},
 		{"internal/adapter/filesystem", "usecase/note", true},
 		{"internal/adapter/theme", "usecase/note", false},
@@ -1297,7 +1289,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/adapter/theme/presets", "internal/adapter/theme", false},
 		{"adapter/index/chunk", "adapter/index", false},
 
-		// The core reaches no adapter and nothing that assembles one.
+		// The core imports no adapter and no package that assembles one.
 		{"usecase/note", "internal/adapter/trash", true},
 		{"usecase/note", "container", true},
 		{"usecase/note", "port", false},
@@ -1364,13 +1356,13 @@ func getInstants(file *ast.File) []identity {
 	return found
 }
 
-// An instant the core carries is a time.Time. A second count and a millisecond
-// count are both integers, so one written where the other is read compiles and
-// is wrong by a factor of a thousand; the zero of either is a real instant in
-// 1970, and the clock it was read from is nowhere in the name.
+// An instant in the core is a time.Time. A second count and a millisecond count
+// are both integers, so using one where the other is expected compiles and is
+// off by a factor of a thousand; the zero of either is a valid instant in 1970,
+// and the name does not say which clock it came from.
 //
-// The rule holds over domain/ and port/, which is where the core says what it
-// is about and what it asks of the outside.
+// The rule applies to domain/ and port/, where the core declares its own types
+// and what it requires of the outside.
 func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var wrong []string
 	var read int
@@ -1475,9 +1467,9 @@ func getMethodIdentities(file *ast.File) []identity {
 	return found
 }
 
-// The same rule over what a port asks for. An identity handed across a port as
-// a number is the store's numbering crossing into the language the core is
-// written in, and a signature is where it crosses.
+// The same rule applied to port signatures. An identity passed through a port as
+// a number brings the store's numbering into the core's language, and a signature
+// is where the crossing occurs.
 func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	var wrong []string
 	var read int
@@ -1514,8 +1506,8 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	}
 }
 
-// reaches a parameter and a result alike, lets through the one that is the
-// core's own word, and reads nothing into a parameter with no name.
+// checks parameters and results alike, accepts the type that is the core's own,
+// and ignores unnamed parameters.
 func TestIdentityRule_RejectsIdentitySignatureParams(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "asking.go", `package p
 
@@ -1650,13 +1642,13 @@ func readTree(dir string) ([]treeEntry, error) {
 	return found, err
 }
 
-// isUnder says whether a package is a folder or placed beneath it.
+// isUnder reports whether a package is a folder or lies beneath it.
 func isUnder(pkg, folder string) bool {
 	return pkg == folder || strings.HasPrefix(pkg, folder+"/")
 }
 
-// isPortName says whether a name is one a file imports a package of port/
-// under: the folder name each of them is declared as.
+// isPortName reports whether a name is one under which a file imports a package
+// of port/: the folder name each of them is declared as.
 func isPortName(name string) bool {
 	return slices.Contains(getPortNames(), name)
 }

@@ -1,11 +1,11 @@
-/** What a files tab says: what it is called, and what it offers on a row. */
+/** The strings of a files tab: its name and the actions it offers on a row. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   files: 'Files',
   /** The commands the plugin declares: a files tab opened, and a note shown in one. */
   showFiles: 'Open files tab',
   reveal: 'Show in files',
-  /** The tree, announced to whoever is not looking at it. */
+  /** The tree, announced to screen readers. */
   tree: 'Vault files',
   empty: 'No files in this vault',
   /** What the tab itself offers in the menu on a row. */

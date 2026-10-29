@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// model is a model whose reply is whatever its script makes of the prompt, and
-// which remembers what it was asked.
+// model is a model whose reply is computed from the prompt by its script, and
+// which records the instructions and prompts it received.
 type model struct {
 	script       func(prompt string) string
 	instructions []string
@@ -23,7 +23,7 @@ func (m *model) ask(_ context.Context, instruction, prompt string) (string, erro
 	return m.script(prompt), nil
 }
 
-// says is a model answering every prompt with the same reply.
+// newReplyModel returns a model that answers every prompt with the same reply.
 func newReplyModel(reply string) *model {
 	return &model{script: func(string) string { return reply }}
 }

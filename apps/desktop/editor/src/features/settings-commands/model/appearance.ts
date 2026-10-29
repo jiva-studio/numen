@@ -1,10 +1,10 @@
 /**
- * The window as it is drawn — the theme it wears, which half of a colour pair
- * its tokens are read as, and how large it is drawn and its reading text set.
+ * The window appearance: the theme applied, which half of a color pair its
+ * tokens are read as, and the interface and reading-text sizes.
  *
- * A theme and a mode are worn the moment the keyboard lands on them. A size is
- * held until the keyboard has stood on the row for HELD, and what the settings
- * name is put back the moment the keyboard leaves the list.
+ * A theme and a mode are applied as soon as the keyboard reaches them. A size
+ * is applied after the keyboard has rested on the row for HELD, and the
+ * settings values are restored as soon as the keyboard leaves the list.
  */
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'

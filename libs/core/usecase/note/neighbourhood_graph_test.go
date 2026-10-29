@@ -14,8 +14,8 @@ import (
 
 const graphVault domain.VaultID = "graph"
 
-// graph is the links of a vault written out by hand: what each note points at,
-// and what points at it, in the order they are returned.
+// graph is a hand-written link set for a vault: the outgoing and incoming links
+// of each note, in return order.
 type graph struct {
 	noteport.LinkQueries
 	out     map[string][]domain.ResolvedLink
@@ -47,14 +47,14 @@ func createOutgoingLink(to string, role domain.LinkRole, label string) domain.Re
 	}
 }
 
-// writtenIn is a link the note at from writes, as the note it points at is
-// told of it.
+// writtenIn returns a link written by the note at from, as seen from the note
+// it points at.
 func writtenIn(from string, role domain.LinkRole) domain.ResolvedLink {
 	return domain.ResolvedLink{Link: domain.Link{Role: role}, From: from}
 }
 
-// asked is what is needed to show notes: it answers for every path but the
-// ones it is told it has not heard of, and keeps the paths it was asked for.
+// asked is a note lookup that returns every path except those marked unknown,
+// and records the paths requested.
 type asked struct {
 	err     error
 	unknown string
@@ -81,8 +81,8 @@ func showGraph(g graph, refs *asked, focus string) (domain.Neighbourhood, error)
 }
 
 // Siblings are the other children of a parent, and only of a parent. A child's
-// children and a parent's own parents and jumps are not siblings, and the notes
-// shown are each asked for once.
+// children and a parent's own parents and jumps are not siblings, and each note
+// shown is requested once.
 func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 	t.Parallel()
 	g := graph{
@@ -151,8 +151,8 @@ func TestANeighbourhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
 	}
 }
 
-// A note the vault does not know is the centre of nothing, whoever points at
-// it.
+// A note unknown to the vault is the center of no neighbourhood, regardless of
+// which notes link to it.
 func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 	t.Parallel()
 	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("C.md", domain.RoleChild, "")}}}
@@ -166,8 +166,8 @@ func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 	}
 }
 
-// A link that is no place in the hierarchy relates nobody, whichever end finds it,
-// and a note that both ends name does not hide the notes after it.
+// A link with no place in the hierarchy relates no notes from either end, and a
+// note named from both ends does not hide the notes after it.
 func TestShowGraph_RelatesOnlyHierarchyRolesFromIncoming(t *testing.T) {
 	t.Parallel()
 	g := graph{

@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
 )
 
-// A copy is at the schema the migrations leave behind, and says what ran, so a
-// migration added later starts from where a real index would.
+// A copy is at the schema the migrations produce and reports which migrations
+// ran, so a migration added later starts from the state of a real index.
 func TestACopyIsAMigratedIndex(t *testing.T) {
 	t.Parallel()
 

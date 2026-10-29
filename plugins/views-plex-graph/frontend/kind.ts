@@ -1,9 +1,9 @@
 /**
- * The plex tab kind: a graph of the vault around one note, a tab of it per graph.
+ * The plex tab kind: a graph of the vault around one note, with one tab per
+ * graph.
  *
- * The kind keeps its own tabs in the order the person was last in them, so a
- * new plex opens where the last one stands and a change to the vault reaches
- * every plex.
+ * The kind keeps its own tabs ordered by last use, so a new plex opens beside
+ * the most recent one and a change to the vault reaches every plex.
  */
 import { watch } from 'vue'
 import { Waypoints } from '@lucide/vue'
@@ -31,7 +31,7 @@ const readSavedFocus = (saved: unknown): string => {
 /** What a plex tab is called: the note it relies on. */
 const getPlexTitle = (note: string): string => note || words.plex
 
-/** Every plex tab, the one the person was last in last. */
+/** Every plex tab, the most recently used last. */
 function createPlexTabs() {
   const tabs = new Map<string, PlexTabState>()
   const getLast = (): PlexTabState | null => [...tabs.values()].at(-1) ?? null
@@ -49,7 +49,10 @@ function createPlexTabs() {
   }
 }
 
-/** Every plex follows a change to the vault, and relies on the opening note where it stood on none. */
+/**
+ * Every plex follows a change to the vault, and falls back to the opening note
+ * when it was showing none.
+ */
 async function refreshTabs(
   host: PlexHost,
   tabs: readonly PlexTabState[],
@@ -60,7 +63,7 @@ async function refreshTabs(
     try {
       await host.workspace.readOpeningPath()
     } catch {
-      // The next change asks again.
+      // The next change retries.
     }
   }
   await Promise.all(

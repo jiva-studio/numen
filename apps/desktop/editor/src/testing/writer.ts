@@ -1,8 +1,8 @@
 /**
- * A message writer a test hands over, which keeps what was written through it.
+ * A message writer for tests that records what was written through it.
  *
- * Everything in the window that has something to say takes a `MessageWriter`,
- * so a test that wants to read what was written hands one of these over.
+ * Every part of the window that reports messages takes a `MessageWriter`, so a
+ * test that checks the messages passes one of these.
  */
 import type { Severity, MessageWriter } from '@/shared/notices/messages'
 

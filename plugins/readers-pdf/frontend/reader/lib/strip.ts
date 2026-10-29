@@ -1,9 +1,9 @@
 /**
- * Where the pages of a document stand when they are laid in a row.
+ * Page positions when the pages of a document are laid out in a row.
  *
- * Apart from the component the way `plex/arrange` is: where a page begins, which
- * pages are in the viewport and which one is in front are arithmetic, and a test
- * asks them without a browser.
+ * Separate from the component, like `plex/arrange`: where a page begins, which
+ * pages are in the viewport and which one is in front are arithmetic, and a
+ * test evaluates them without a browser.
  */
 import type { Size } from '@numen/ui'
 import { getPageNavigationAction } from '@numen/ui'
@@ -47,15 +47,15 @@ export interface Page {
 export const GAP = 16
 
 /**
- * The shape of a page nothing said the size of. A document answers with its
- * pages' sizes, and one that has not answered yet still has to be laid out.
+ * The default page size, used for pages whose size is unknown. A document
+ * reports its page sizes, and a document that has not reported yet is still laid out.
  */
 export const UPRIGHT: Page = { width: 612, height: 792 }
 
 /**
- * How much beyond the edge of the viewport is drawn, as a share of it. A page
- * turned to is drawn before it is reached, and a page just left is kept in case
- * the hand comes back.
+ * How far beyond the viewport edge pages are drawn, as a fraction of the
+ * viewport. A target page is drawn before it is reached, and a page just left
+ * stays drawn in case the scroll reverses.
  */
 const BEYOND = 1.5
 
@@ -78,15 +78,15 @@ export interface Row {
 }
 
 /**
- * The row a document makes in a viewport, drawn `zoom` times the size at which
+ * The row a document forms in a viewport, drawn at `zoom` times the base size.
  *
- * A page whose size is not known takes the first page's, and a document that
- * has said nothing takes an upright page. Laying the row out on nothing would
- * put every page at the same place, and the row would jump as the sizes came.
+ * A page of unknown size takes the first page's size, and a document with no
+ * reported sizes uses the default page size. Laying out the row with no sizes
+ * would place every page at the same position, and the row would shift as the
+ * sizes arrive.
  *
- * A viewport with no height makes no row. Until something has been measured
- * there is no width to draw a page at, and a page drawn at a made-up one is a
- * page drawn and thrown away.
+ * A viewport with no height forms no row. Until a size is measured there is no
+ * width to draw a page at, and a page drawn at an arbitrary width is discarded.
  */
 export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   const height = Math.round((viewport.height - 2 * GAP) * zoom)
@@ -113,10 +113,10 @@ function getSize(pages: readonly Page[], page: number): Page {
 }
 
 /**
- * The pages to draw: those in the viewport, and a little either side of it.
+ * The pages to draw: those in the viewport and a margin on either side.
  *
- * A book is five hundred pages and a page is half a megabyte. A row that drew
- * all of them would ask for a book's worth of pixels to show one page.
+ * A book has five hundred pages at half a megabyte each. Drawing all of them
+ * would allocate a book's worth of pixels to show one page.
  */
 export function getPagesWithin(row: Row, viewport: Size, offset: number): number[] {
   const from = offset - viewport.width * BEYOND
@@ -130,8 +130,8 @@ export function getPagesWithin(row: Row, viewport: Size, offset: number): number
 }
 
 /**
- * The page in front: the one under the middle of the viewport. A page scrolled
- * halfway off is not the page a person is reading.
+ * The page in front: the one at the middle of the viewport. A page scrolled
+ * halfway out of view is not the page being read.
  */
 export function inFront(row: Row, viewport: Size, offset: number): number {
   const center = offset + viewport.width / 2
@@ -189,15 +189,16 @@ export const CLOSEST = 6
 export const NEARER = 1.25
 
 /**
- * The widths a page is asked for, in device pixels. Dragging the edge of a pane
- * it.
+ * The quantization step for requested page widths, in device pixels. Dragging a
+ * pane edge changes the width continuously, and quantizing limits the number of
+ * distinct widths requested.
  */
 export const WIDTH_STEP = 128
 
 /**
- * How long a width has to have stood still before a page is asked for at it, in
- * milliseconds. A pane edge dragged across a screen crosses a dozen widths, and
- * each one is a page drawn and thrown away.
+ * How long a width must stay unchanged before a page is requested at it, in
+ * milliseconds. Dragging a pane edge across the screen crosses a dozen widths,
+ * and each would produce a page that is drawn and discarded.
  */
 export const WIDTH_DEBOUNCE = 150
 

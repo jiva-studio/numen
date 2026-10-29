@@ -1,7 +1,7 @@
 /**
- * What the window asked the application for, in the order it asked.
+ * The requests the window made to the application, in order.
  *
- * Every mock writes down what it was handed here, and a test reads it back.
+ * Every mock records its arguments here, and a test reads them back.
  */
 import type { Tab } from '@/entities/tab'
 
@@ -12,19 +12,19 @@ export const requests = {
   moved: [] as string[],
   folders: [] as string[],
   worn: [] as string[],
-  /** How often an open editor was told to take its measurements again. */
+  /** How often an open editor was told to remeasure. */
   measured: 0,
   /** Every key the window handed down to the book it is showing. */
   pressed: [] as string[],
-  /** The vaults the window asked to be shown, in the order it asked. */
+  /** The vaults the window requested to show, in request order. */
   opened: [] as string[],
-  /** How often a folder was asked for, which is a vault being added. */
+  /** How often a folder was requested, which corresponds to a vault being added. */
   chose: 0,
-  /** What the window said currently open, the last of it last. */
+  /** What the window reported as currently open, most recent last. */
   openTabs: [] as { tabs: readonly Tab[]; activeId: string }[],
 }
 
-/** Nothing asked yet, which is where every test begins. */
+/** No requests yet: the initial state of every test. */
 export const forgetRequests = () => {
   requests.made = []
   requests.renamed = []

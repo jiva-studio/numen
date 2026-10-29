@@ -2,7 +2,7 @@
 /**
  * The window: one vault, and tabs to divide the screen between.
  *
- * What the window is made of is `window.ts`. What is here is what a person
+ * The window's structure is defined in `window.ts`. This file holds what the user
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'

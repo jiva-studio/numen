@@ -15,14 +15,15 @@ import (
 // ErrTurnRefused is what EnqueueWork returns when the host ended the wait without a turn.
 var ErrTurnRefused = errors.New("host: the queue gave no turn")
 
-// Queue is the core's shared queue of heavy work and its list of tasks. The queue is the one the
-// core's own heavy work waits in, and a reported task is shown beside the core's own. The host
-// removes the plugin's tasks and ends its turns when the plugin stops. A plugin reaches it through
-// QueueClient; tests through hosttest.Queue.
+// Queue is the core's shared queue of heavy work and its list of tasks. It is
+// the same queue that the core's own heavy work uses, and a reported task is
+// listed with the core's tasks. The host removes the plugin's tasks and ends
+// its turns when the plugin stops. Plugins use it through QueueClient; tests
+// use hosttest.Queue.
 type Queue interface {
-	// EnqueueWork waits for the work's turn in the queue and returns it. Work a person started runs
-	// before work nobody asked for. A context that ends while waiting takes no turn, and one that
-	// ends during the turn ends it.
+	// EnqueueWork waits for the work's turn in the queue and returns it. Work
+	// that the user started runs before other work. A context that ends while
+	// waiting acquires no turn, and one that ends during the turn ends the turn.
 	EnqueueWork(ctx context.Context, work Work) (Turn, error)
 	// ReportTask shows the task, or replaces the one shown under its id.
 	ReportTask(ctx context.Context, task Task) error
@@ -46,9 +47,10 @@ type Turn interface {
 	WatchWaiting() <-chan struct{}
 }
 
-// Task is one piece of the plugin's work as a person is shown it. ID is the plugin's own. Done and
-// Total are counted in Unit, and both zero is work with nothing to count. A task with an Error
-// stays shown until it is finished.
+// Task is one piece of the plugin's work as displayed to the user. ID is
+// chosen by the plugin. Done and Total are counted in Unit, and both zero means
+// there is nothing to count. A task with an Error stays listed until it is
+// finished.
 type Task struct {
 	ID            string
 	Title         string
@@ -76,8 +78,8 @@ type QueueClient struct {
 
 var _ Queue = (*QueueClient)(nil)
 
-// NewQueueClientFromEnv reaches the host the process was started for. It returns hostcall.ErrNoHost
-// where the host named none.
+// NewQueueClientFromEnv connects to the host the process was started for. It
+// returns hostcall.ErrNoHost when no host is configured.
 func NewQueueClientFromEnv() (*QueueClient, error) {
 	addr, err := hostcall.FromEnv()
 	if err != nil {
@@ -95,12 +97,12 @@ func NewQueueClientFromVars(vars map[string]string) (*QueueClient, error) {
 	return NewQueueClient(addr), nil
 }
 
-// NewQueueClient reaches the host at the endpoint.
+// NewQueueClient connects to the host at the endpoint.
 func NewQueueClient(endpoint hostcall.Endpoint) *QueueClient {
 	return NewQueueClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewQueueClientOver reaches the host at the endpoint through the HTTP client given.
+// NewQueueClientOver connects to the host at the endpoint through the given HTTP client.
 func NewQueueClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *QueueClient {
 	return &QueueClient{rpc: numenv1connect.NewHostQueueServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }

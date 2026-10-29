@@ -14,7 +14,7 @@ export interface NameMatch {
   path: string
   title: string
   heading: string
-  /** Where that heading stands, counted from the first line of the prose. */
+  /** Position of that heading, counted from the first line of the prose. */
   line: number
   at: readonly TextRange[]
   type: NoteType
@@ -26,11 +26,11 @@ export interface Passage {
   /** What the note is called. Empty for a source that is not a note. */
   title: string
   /**
-   * Whether the text was read out of a note. It says what the palette offers
-   * over the passage: a book is no note, so nothing puts it in front as one.
+   * Whether the text was read from a note. It determines what the palette
+   * offers over the passage: a book is no note, so it is not presented as one.
    */
   isNote: boolean
-  /** Which type of note it is. It says nothing about a file that is no note. */
+  /** The note type. It is meaningless for a file that is no note. */
   type: NoteType
   /** Where in a file that is no note the text was found, and null for a note. */
   selector: Selector | null
@@ -45,9 +45,9 @@ export interface Passage {
 }
 
 /**
- * Where an item chosen takes the person. A file names the file and the place
- * inside it, and nothing about which editor it opens in: a note carries a
- * line, any other file the selector its reader moves to.
+ * Where a chosen item leads. A file names the file and the position inside it,
+ * and nothing about which editor it opens in: a note carries a line, any other
+ * file the selector its reader moves to.
  */
 export interface SearchDestination {
   at: 'locate' | 'file'
@@ -90,7 +90,7 @@ export interface SearchRow {
   hit: SearchHit
 }
 
-/** What the search says over a note, the action that puts it in front among them where there is one. */
+/** The search results over a note, including the action that shows it where one exists. */
 const getNoteActions = (travel: string, first: { id: string; text: string }) => ({
   actions: travel ? [first, { id: LOCATE, text: travel }] : [first],
   offers: travel ? [first.id, LOCATE] : [first.id],

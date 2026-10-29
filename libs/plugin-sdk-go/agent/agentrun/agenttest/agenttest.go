@@ -92,8 +92,9 @@ func IsDir(got, want string) bool {
 	return got == want || got == resolved
 }
 
-// CheckLinkedHandler serves the handler a host that links the plugin in gets and checks that it
-// answers GetAgentState with the token it was given and refuses a call without it.
+// CheckLinkedHandler serves the handler a host that links the plugin in
+// provides, and checks that it answers GetAgentState with the token it was
+// given and rejects a call without it.
 func CheckLinkedHandler(t *testing.T, newHandler func(map[string]string) (http.Handler, error)) {
 	t.Helper()
 	handler, err := newHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"})

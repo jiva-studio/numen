@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
 )
 
-// A Task is one piece of work, as a person is shown it.
+// A Task is one unit of work, as displayed to the user.
 type Task = vaultreading.Task
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
@@ -35,11 +35,10 @@ type Tasks struct {
 // NewTasks is what the application is doing now.
 func NewTasks() *Tasks { return &Tasks{activeItem: map[string]Task{}} }
 
-// Set puts one task in the list, or replaces it where it is.
+// Set adds a task to the list, or replaces it if it exists.
 //
-// The order tasks were first seen in is the order they are shown in, so a list
-// that changes while a person is reading it does not rearrange itself under
-// them.
+// Tasks are shown in the order they were first seen, so a list that changes
+// while the user is reading it does not reorder.
 func (t *Tasks) Set(task Task) {
 	if task.ID == "" {
 		return
@@ -53,7 +52,7 @@ func (t *Tasks) Set(task Task) {
 	t.notifyWatchers()
 }
 
-// Remove takes one task out. A task that is not there is the outcome asked for.
+// Remove deletes a task. Removing a task that does not exist is not an error.
 func (t *Tasks) Remove(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()

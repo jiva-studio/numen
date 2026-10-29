@@ -1,9 +1,9 @@
 /**
  * When a command is offered, and when it is not.
  *
- * A command is offered over what is in front of the person: a note or a vault.
- * Each answer here is one such question, and the table in `table.ts` names
- * which it asks.
+ * A command is offered for what is currently selected: a note or a vault.
+ * Each function here answers one such question, and the table in `table.ts` names
+ * which one a command uses.
  */
 import type { CommandTarget } from '../../types'
 

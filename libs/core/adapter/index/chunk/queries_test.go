@@ -45,7 +45,7 @@ func seedBits(seed byte) []byte {
 	return b
 }
 
-// seedVector is the vector a seed stands for; quantised it gives seedBits.
+// seedVector is the vector a seed maps to; quantised it gives seedBits.
 func seedVector(seed byte) []float32 {
 	v := make([]float32, 1024)
 	for i := range v {
@@ -155,7 +155,7 @@ func getOwed(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
 	return owed
 }
 
-// embed gives every small chunk of the path that owes a vector one at the seed.
+// embed assigns a vector at the seed to every small chunk of the path that lacks one.
 func embed(t *testing.T, db *index.DB, vault domain.VaultID, path string, seed byte) {
 	t.Helper()
 	var vectors []chunk.Vector

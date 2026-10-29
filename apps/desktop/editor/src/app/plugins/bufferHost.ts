@@ -8,7 +8,7 @@ function hasNoteConflicts(buffers: FileBuffers): buffers is FileBuffers & Notes 
   return 'getOpenIds' in buffers
 }
 
-/** What the open files are written out and asked about through. */
+/** The file flush through which the open files are written and queried. */
 export interface BufferHostDeps {
   readonly fileFlush: Pick<ReturnType<typeof createFileFlush>, 'addHandler' | 'raise'>
 }

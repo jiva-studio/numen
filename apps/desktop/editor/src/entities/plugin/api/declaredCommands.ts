@@ -1,7 +1,7 @@
 /**
  * The commands the enabled plugins declare in their manifests, which the
  * plugins' backends run. The application checks a run against the declaration
- * before it reaches the plugin.
+ * before it is sent to the plugin.
  */
 import { COMMAND_ERROR_CODE } from '@numen/plugin-sdk'
 import { pluginCommands } from '@/shared/clients'
@@ -48,8 +48,8 @@ export interface DeclaredCommandRun {
 }
 
 /**
- * What a run came to: what the plugin said and the file to open once it ran,
- * either of them empty, or why it did not succeed.
+ * The outcome of a run: the plugin's message and the file to open after the run,
+ * either of them empty, or the reason the run failed.
  */
 export type DeclaredCommandOutcome =
   | { ok: true; value: { readonly message: string; readonly openedPath: string } }

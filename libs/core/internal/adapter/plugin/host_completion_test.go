@@ -41,7 +41,7 @@ func newAskingHost(t *testing.T) *Host {
 	return host
 }
 
-// The choice is read from the setting of type agent, as the person stored it.
+// The choice is read from the setting of type agent, as the user stored it.
 func TestTheChoiceIsTheStoredValueOfTheAgentSetting(t *testing.T) {
 	host := newAskingHost(t)
 	if got := host.GetCompletionChoice(askingPluginID); got != (completionport.CompletionChoice{}) {
@@ -73,8 +73,8 @@ func TestAChoiceOfAnotherShapeIsEmpty(t *testing.T) {
 	}
 }
 
-// A plugin is answered only once the person allowed it. One not answered for is
-// recorded as asking; a rejected one is not asking.
+// A plugin is served only after the user has allowed it. A plugin that is not
+// served is recorded as asking; a rejected plugin is not recorded as asking.
 func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 	host := newAskingHost(t)
 	info := func() pluginport.CompletionConsent {

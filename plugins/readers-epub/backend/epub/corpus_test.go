@@ -11,8 +11,8 @@ import (
 )
 
 // The corpus is forty EPUB files of the Mahābhārata, in four languages and from
-// a dozen converters. It is not in the repository: it is read where it is, and
-// the test stands aside when it is not there.
+// a dozen converters. It is not in the repository: it is read from its
+// location, and the test is skipped when the corpus is absent.
 const corpusEnv = "NUMEN_EPUB_CORPUS"
 
 // What the corpus holds, measured. These numbers are the test: a change that
@@ -77,8 +77,8 @@ func TestTheCorpusIsRead(t *testing.T) {
 	}
 }
 
-// checkBook holds every book to what a caller is promised: the text is the
-// documents in order, and every offset lands where it says.
+// checkBook verifies the guarantees to callers: the text is the documents in
+// order, and every offset points to the position it states.
 func checkBook(t *testing.T, book *epub.Book) {
 	t.Helper()
 
@@ -139,10 +139,10 @@ func checkBook(t *testing.T, book *epub.Book) {
 	checkMarkup(t, book)
 }
 
-// checkPages holds every page of a book to beginning at a letter and on the page
-// it says. Half this corpus is written in Devanagari or Cyrillic, where a letter
-// is two or three bytes, so a page counted in bytes alone opens in the middle of
-// one.
+// checkPages verifies that every page of a book begins at a letter boundary
+// and on the stated page. Half of this corpus is in Devanagari or Cyrillic,
+// where a letter is two or three bytes, so a page counted in bytes alone can
+// start in the middle of a letter.
 func checkPages(t *testing.T, book *epub.Book) {
 	t.Helper()
 
@@ -185,8 +185,8 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 	}
 }
 
-// to where the next one begins, and what it and everything under it says is that
-// it was written in is a word a reader draws in the wrong place.
+// to where the next one begins, so that text within a node is attributed to
+// that node and not drawn at the wrong position.
 func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node, limit int) {
 	t.Helper()
 	for i, node := range nodes {

@@ -5,10 +5,10 @@ import (
 	"sync"
 )
 
-// changeSubscribers is everyone listening for something moving underneath the window.
+// changeSubscribers is the set of listeners notified when the window's source data changes.
 //
-// A listener that is busy is passed over: every message says the same thing, and one lost is one the
-// next says over.
+// A busy listener is skipped: every message carries the same signal, and a
+// dropped message is covered by the next one.
 type changeSubscribers struct {
 	mu          sync.Mutex
 	next        int
@@ -46,14 +46,14 @@ func (f *changeSubscribers) notify() {
 	}
 }
 
-// ReportChange says that something the window draws from has changed.
+// ReportChange reports that data the window renders from has changed.
 //
-// What changed is not carried and not acted on. Whoever draws asks what the vaults come to now, which
-// is the one answer that cannot go stale.
+// The change itself is not carried. Receivers query the current state of the
+// vaults, which cannot be stale.
 func (a *API) ReportChange() { a.subscribers.notify() }
 
-// ReportChangesFrom says ReportChange for everything one channel reports, until it closes or ctx is
-// done.
+// ReportChangesFrom calls ReportChange for every signal on the channel, until
+// it closes or ctx is done.
 func (a *API) ReportChangesFrom(ctx context.Context, moved <-chan struct{}) {
 	go func() {
 		for {
@@ -70,8 +70,8 @@ func (a *API) ReportChangesFrom(ctx context.Context, moved <-chan struct{}) {
 	}()
 }
 
-// WatchMoves tells that something moved, until ctx is done. It is what the plugins of the installation
-// are told through the host.
+// WatchMoves signals that something moved, until ctx is done. Plugins of the
+// installation receive it through the host.
 func (a *API) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 	line, isDone := a.subscribers.subscribe()
 	out := make(chan struct{}, 1)

@@ -19,9 +19,9 @@ import (
 
 // failWithDialog shows what stopped the application, in a window.
 //
-// A person who opened numen from a dock has no terminal, and a message written
-// to one is a window that never appeared. Whatever this build could not do, it
-// says here, with what it knows about the state it found.
+// A user who launched numen from a dock has no terminal, and a message written
+// to one is never seen. Whatever this build could not do is reported here,
+// with what it knows about the state it found.
 func failWithDialog(cfg container.Config, why error) {
 	page, err := fatalReport{}.page(cfg, why)
 	if err != nil {
@@ -58,8 +58,8 @@ type fatalReport struct {
 	Sentence string
 	Facts    []detail
 	Remedy   string
-	// Error is the underlying error text, shown on request. Empty where the
-	// sentence already says everything.
+	// Error is the underlying error text, shown on request. Empty when the
+	// sentence is complete.
 	Error string
 }
 
@@ -103,8 +103,8 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return getSizeFatalReport(cfg, outside)
 	}
 
-	// sqlite says what it could not do as a result code, and the sentence it
-	// carries beside it is the library's own.
+	// sqlite reports a failure as a result code, and the accompanying message
+	// is the library's own.
 	var coded interface{ Code() int }
 	if errors.As(why, &coded) {
 		return getIndexFatalReport(cfg, coded.Code(), why)
@@ -212,8 +212,8 @@ func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport 
 // getIndexPath is the file the index is kept in.
 func getIndexPath(cfg container.Config) string { return cfg.IndexPath }
 
-// getSettingsPath is the file a person configures this installation in. A registry
-// pointed somewhere chosen takes the settings with it.
+// getSettingsPath returns the file this installation is configured in. A registry
+// at a custom location takes the settings file with it.
 func getSettingsPath(cfg container.Config) string {
 	if cfg.SettingsPath != "" {
 		return cfg.SettingsPath

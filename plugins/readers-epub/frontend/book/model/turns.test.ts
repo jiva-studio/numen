@@ -1,9 +1,9 @@
 /**
- * Where in a book the reader stands, and what turning a page evaluates to.
+ * The reader's position in a book, and what turning a page evaluates to.
  *
  * The document is four spreads of one column, each holding one run. The style
- * of the drawn text is stood in for, so a test reads what was written to it and
- * in what order.
+ * of the rendered text is replaced by a stub, so a test can read what was
+ * written to it and in what order.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, shallowRef } from 'vue'

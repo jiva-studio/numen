@@ -7,7 +7,7 @@ import (
 )
 
 // mockVideo replaces yt-dlp on the video sites: it publishes the captions of a short
-// clip and copies a clip of quiet sound written here, and reaches no network.
+// clip and copies a clip of silent audio written here, and makes no network request.
 type mockVideo struct{}
 
 // NewMock is a downloader that answers a video site with the mock and reads every other page as

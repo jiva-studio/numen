@@ -103,8 +103,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	}
 }
 
-// Two passes that failed are two things wrong with the vault, and the caller is
-// told both.
+// Two failed passes are two faults in the vault, and the caller receives both.
 func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
@@ -132,9 +131,9 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	}
 }
 
-// A run given a time limit ends on a different error from one that was
-// cancelled, and both are the run being over: the pass that met the limit is
-// what the caller is told, and nothing is asked of the context afterwards.
+// A run with a time limit ends with a different error from a cancelled run,
+// and both mean the run is over: the caller receives the error of the pass that
+// reached the limit, and the context is not consulted afterwards.
 func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
@@ -202,9 +201,9 @@ func (unwilling) Embed(context.Context, []string) ([][]float32, error) {
 
 func (unwilling) Close() error { return nil }
 
-// limited is a run under a time limit, reaching it where the test says. What it
-// ends with is the error a deadline gives, which is not the error a cancelled
-// run gives.
+// limited is a run under a time limit that reaches it where the test
+// specifies. It ends with the deadline error, which differs from the error of a
+// cancelled run.
 type limited struct {
 	overChan  chan struct{}
 	deadline  func() (time.Time, bool)
@@ -254,7 +253,7 @@ func (refusing) Open(domain.Vault) (vaultport.VaultReader, error) {
 	return nil, errors.New("this vault is not here")
 }
 
-// counting says how many times a vault was opened for reading.
+// counting records how many times a vault was opened for reading.
 type counting struct {
 	vaultport.VaultReaders
 	opened int

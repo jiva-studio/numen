@@ -16,7 +16,8 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-// Host is the plugin host as the tools reach it: the plugins it knows, each started on demand.
+// Host is the plugin host used by the tools: it lists the known plugins and
+// starts each on demand.
 type Host interface {
 	pluginport.PluginActivator
 	GetPluginInfos() []pluginport.PluginInfo
@@ -42,7 +43,8 @@ type tool struct {
 	spec     *v1.PluginTool
 }
 
-// plugins reaches the PluginToolService of every plugin that declares the tools capability.
+// plugins calls the PluginToolService of every plugin that declares the tools
+// capability.
 type plugins struct {
 	host Host
 }
@@ -106,8 +108,9 @@ func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope
 	return res.Msg, nil
 }
 
-// isAvailable says whether the tool is offered on the server. A tool that names no server is
-// offered on the full one alone, and a tool of no effect nowhere.
+// isAvailable reports whether the tool is offered on the server. A tool that
+// names no server is offered on the full server only, and a tool with no effect
+// is offered nowhere.
 func isAvailable(spec *v1.PluginTool, server Server) bool {
 	if spec.GetName() == "" || spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED {
 		return false
@@ -118,7 +121,8 @@ func isAvailable(spec *v1.PluginTool, server Server) bool {
 	return slices.Contains(spec.GetServers(), v1.ToolServer(server))
 }
 
-// hasPermission says whether the plugin holds the permission a tool of the effect needs.
+// hasPermission reports whether the plugin holds the permission that a tool
+// with the given effect requires.
 func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 	if effect == v1.ToolEffect_TOOL_EFFECT_READ_WRITE {
 		return slices.Contains(permissions, pluginport.PermissionVaultWrite)

@@ -84,13 +84,13 @@ interface Knobs {
   naming: () => string
 
   /**
-   * What is being dragged over the picture from somewhere else, each of them
-   * opaque, and empty while nothing is. The story plays the part of whoever is
-   * dragging them, since a plex has no way to pick anything up.
+   * Identifiers of the opaque items dragged over the plex from outside it;
+   * empty when nothing is dragged. The story plays the drag source, since a
+   * plex cannot start a drag.
    */
   dragged: readonly string[]
 
-  /** What the shape under the pointer says while something is dragged in. */
+  /** The label for the relation under the pointer while an item is dragged in. */
   dropName: (relation: PlexRelation) => string
 
   /** Component props the panel has no business showing. */
@@ -119,9 +119,9 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
 })
 
 /**
- * The knobs, at the size the type in a node is being set at. The toolbar says
- * how large the interface is drawn, the label follows it, and the boxes and
- * the clearances are handed in to hold that label.
+ * The knobs at the type size of a node. The toolbar sets the interface size,
+ * the label follows it, and the box sizes and clearances are passed in to fit
+ * that label.
  */
 const createOptions = (a: Knobs, type: number): PlexOptionsInput =>
   optionsForType(type, resolveOptions(getOptions(a)))
@@ -140,11 +140,11 @@ const createCounts = (a: Knobs) => ({
 
 /**
  * Every story is walkable: choosing a node builds the next neighbourhood
- * around it. The first picture is whatever the story starts from; after that
- * the counts invent one, which is the application's part being played.
+ * around it. The first neighbourhood is the story's starting point; later ones
+ * are generated from the counts, standing in for the application.
  *
- * The neighbourhood is computed: a fresh object on every render tells the plex
- * it has somewhere new to go, and it re-aims once a frame.
+ * The neighbourhood is computed: a new object on every render signals the plex
+ * to re-target, and it re-aims once per frame.
  */
 const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
   components: { Plex },
@@ -196,9 +196,9 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     }
 
     /**
-     * A new node arrives finished: related, linked and already called
-     * something. The gesture ends where the hand let go, and what the node is
-     * really to be called is a later idea and somebody else's screen.
+     * A new node arrives complete: related, linked and already named. The
+     * gesture ends at the pointer release; the final name is chosen later by the
+     * application.
      */
     const create = (from: string, relation: PlexRelation) => {
       createRelated(from, args.naming(), relation)
@@ -259,10 +259,10 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
 })
 
 /**
- * Choosing a node moves the focus, which is what the story is for.
+ * Choosing a node moves the focus, which is what the story verifies.
  *
- * The neighbourhood is computed: a fresh object on every render tells the plex
- * it has somewhere new to go, and it re-aims once a frame.
+ * The neighbourhood is computed: a new object on every render signals the plex
+ * to re-target, and it re-aims once per frame.
  */
 const renderWalk = (args: Knobs) => ({
   components: { Plex },
@@ -440,15 +440,14 @@ const invented = {
 export const Playground: Story = invented
 
 /**
- * Reaching out of a node, and what comes back.
+ * Dragging out of a node and the result.
  *
- * Its own story and not a check on the playground: a play function runs
- * the moment a story is opened, and a plex that has already made a node is
- * not the one anyone meant to look at.
+ * A dedicated story, not a check on the playground: a play function runs when
+ * a story opens, and a plex that has already created a node is not the state
+ * under test.
  *
- * It hands in a naming of its own, which is both how the check knows what to
- * look for and the whole point being shown — the plex reports the gesture and
- * the caller decides what the node is called.
+ * It passes its own naming, which the check reads and which shows the contract:
+ * the plex reports the gesture and the caller names the node.
  */
 export const MakingOne: Story = {
   args: { ...invented.args, naming: () => 'Reached for' },
@@ -465,9 +464,8 @@ export const MakingOne: Story = {
     const handle = canvasElement.querySelector('.plex__handle')
     await expect(handle).not.toBeNull()
 
-    // Nothing the hand crosses on the way is text to select — the labels a
-    // connection carries least of all, since a gesture passes right over them.
-    // Read under the spelling WebKit answers for.
+    // Labels on a connection are not text-selectable during the gesture, since
+    // the pointer passes over them. Read under the WebKit property spelling.
     await expect(
       getComputedStyle(canvasElement.querySelector('.plex__edge-label')!).getPropertyValue(
         '-webkit-user-select',
@@ -490,17 +488,17 @@ export const MakingOne: Story = {
       canvasElement.querySelector('.plex__node--ghost .plex__title-text')?.textContent,
     ).toBe('parent')
 
-    // Let go by hand: a second `userEvent.pointer` call does not know a button
-    // is still down from the first, so its release is a no-op.
+    // Release the pointer by dispatching the event: a second `userEvent.pointer`
+    // call does not track the button state of the first, so its release is a no-op.
     surface.dispatchEvent(new PointerEvent('pointerup', { ...above, pointerId: 1, bubbles: true }))
     await expect(args.onCreate).toHaveBeenCalledWith(expect.any(String), 'parent')
 
-    // answer it: whether letting go of a captured pointer somewhere else says
-    // so to the node it was captured from.
+    // Verifies that releasing a captured pointer elsewhere notifies the node it
+    // was captured from.
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
 
-    // The story answers by relating the node, already called what its own
-    // naming said to call it. Nothing is asked for and nothing is typed.
+    // The story relates the node and applies the name returned by its own
+    // naming. No prompt is shown and no text is typed.
     await waitFor(async () => {
       await expect(canvas.getByLabelText('Reached for, parent')).toBeInTheDocument()
     })
@@ -508,19 +506,18 @@ export const MakingOne: Story = {
 }
 
 /**
- * Something dragged over the picture from outside it.
+ * Items dragged over the plex from outside it.
  *
- * The gesture starts where the plex cannot see it, so all the plex is handed
- * is a list of identifiers and all it answers is a relation, measured from the
- * focus. Several are one line and one relation, and whoever is dragging them says
- * how many, at the pointer, in its own words.
+ * The gesture starts outside the plex, so the plex receives only a list of
+ * identifiers and returns a relation, measured from the focus. Several items
+ * form one line and one relation; the drag source provides the count label,
+ * drawn at the pointer.
  *
- * The line and the words are drawn while the pointer travels, so what letting
- * go would do is plain before it happens — which is what this is here to be
- * looked at for, and it is left mid-drag.
+ * The line and the label are drawn while the pointer moves, so the outcome of a
+ * drop is visible before it happens. The story stops mid-drag.
  *
- * Only a browser can answer any of it: a real matrix, a pointer the plex never
- * took hold of, and a drawing that follows it across.
+ * Only a browser can verify it: a real matrix, a pointer the plex never
+ * captured, and a drawing that follows the pointer across.
  */
 export const DraggingThemIn: Story = {
   args: {
@@ -561,7 +558,7 @@ export const DraggingThemIn: Story = {
     await expectDraggedTitle(null)
     await expect(canvasElement.querySelector('.plex__dragged')).toBeNull()
 
-    // Back over the picture, and left there to be looked at.
+    // Return over the plex and stay there for inspection.
     dragTo(middle, box.y - 220)
     await expectDraggedTitle('as parent')
   },
@@ -573,15 +570,15 @@ interface KeyboardFocus extends FocusOptions {
 }
 
 /**
- * Where the handle is, and how few of them there are.
+ * Handle placement and the one-handle limit.
  *
- * A handle belongs to the box under the hand, and to the box the keyboard is
- * visibly on. A click leaves a box holding a focus that is neither, so a box
- * clicked and then left alone wears nothing at all.
+ * A handle belongs to the box under the pointer and to the box with visible
+ * keyboard focus. A click leaves a box with a focus that is neither, so a box
+ * that was clicked and then released shows no handle.
  *
- * Only a browser can answer any of it: a click and a tab leave the same focus
- * behind, and which of them the keyboard is visibly on is the browser's own
- * reckoning. A hand driven from a story is untrusted and does not reach that
+ * Only a browser can verify it: a click and a tab leave the same focus, and
+ * which of them counts as visible keyboard focus is decided by the browser. A
+ * pointer driven from a story is untrusted and does not trigger that state.
  */
 export const OneHandleAtATime: Story = {
   args: invented.args,
@@ -595,16 +592,16 @@ export const OneHandleAtATime: Story = {
     ]
     const first = boxes[0]!
 
-    // A picture nobody is on offers nothing.
+    // A plex with no pointer or keyboard focus on a node shows no handle.
     await expect(getHandles()).toHaveLength(0)
 
-    // The focus a click leaves is one the keyboard is not visibly on, and no
-    // hand is anywhere near.
+    // The focus left by a click is not visible keyboard focus, and the pointer
+    // is not over the box.
     first.focus({ focusVisible: false } as KeyboardFocus)
     await expect(first).toHaveFocus()
     await expect(getHandles()).toHaveLength(0)
 
-    // The hand across the picture, box after box. One handle in the whole
+    // Hover each box in turn; exactly one handle exists at a time.
     for (const box of boxes) {
       await userEvent.hover(box)
       await expect(getHandles()).toHaveLength(1)
@@ -613,8 +610,7 @@ export const OneHandleAtATime: Story = {
       await expect(getHandles()).toHaveLength(0)
     }
 
-    // Arriving by tab is the keyboard being used, and the box it stops at
-    // wears one.
+    // Arriving by tab is keyboard use, and the box it stops at shows a handle.
     first.blur()
     await userEvent.tab()
     const stop = canvasElement.ownerDocument.activeElement!
@@ -625,15 +621,15 @@ export const OneHandleAtATime: Story = {
 }
 
 /**
- * Asking a node for a menu.
+ * Requesting a context menu on a node.
  *
- * The plex says which node was asked about, where, and from what. What the
- * menu holds and what choosing an item does never reach this far.
+ * The plex reports which node was targeted, the position, and the input
+ * source. The menu content and the item actions are outside the plex.
  *
- * Only a browser can answer any of it: whether a `contextmenu` lands on an SVG
- * group at all, whether refusing it takes the webview's own menu away, and
- * whether the right button over the handle reaches the node under it instead
- * of reaching out from it.
+ * Only a browser can verify it: whether a `contextmenu` event reaches an SVG
+ * group, whether preventing it suppresses the webview's own menu, and whether
+ * the right button over the handle targets the node under it instead of the
+ * handle.
  */
 export const AskingForAMenu: Story = {
   args: invented.args,
@@ -659,7 +655,7 @@ export const AskingForAMenu: Story = {
     )
     await expect(isPrevented).toBe(true)
 
-    // right button over it reaches the node, and makes nothing.
+    // The right button over the handle targets the node and creates nothing.
     await userEvent.hover(focus)
     const handle = canvasElement.querySelector('.plex__handle')!
     await userEvent.pointer({ keys: '[MouseRight]', target: handle })
@@ -670,12 +666,12 @@ export const AskingForAMenu: Story = {
 }
 
 /**
- * Asking for a node itself, and not travelling to it.
+ * Requesting a node itself without navigating to it.
  *
- * Asked on the focus, which is the one node a click moves nothing on, so what
+ * Triggered on the focus, the one node where a click does not move the focus.
  *
- * Only a browser can answer any of it: whether a double click reaches an SVG
- * group at all, and whether a modifier held over it arrives with it.
+ * Only a browser can verify it: whether a double click reaches an SVG group,
+ * and whether a held modifier arrives with it.
  */
 export const AskingForANode: Story = {
   args: invented.args,
@@ -684,16 +680,17 @@ export const AskingForANode: Story = {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
 
-    // One session throughout, so that a modifier held down is still held when
-    // the hand arrives.
+    // One user session throughout, so a modifier held down is still held at the
+    // later pointer event.
     const hand = userEvent.setup()
 
     await hand.dblClick(focus)
     await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'current')
     await expect(args.onActivate).not.toHaveBeenCalled()
 
-    // The same gesture with the modifier held asks for it beside where the
-    // reader is. What that means is the application's, and never reaches here.
+    // The same gesture with the modifier held requests the node next to the
+    // reader's position. Its meaning belongs to the application and never
+    // reaches the plex.
     await hand.keyboard('{Alt>}')
     await hand.dblClick(focus)
     await hand.keyboard('{/Alt}')
@@ -741,15 +738,15 @@ const titledLines: PlexNeighbourhood = {
 }
 
 /**
- * What a line does with the title it carries: it is set along it, and cut to
- * it where the words are longer.
+ * How a line renders the title it carries: the title is set along the line and
+ * truncated where the words are longer.
  *
- * Only a browser can answer any of it: how wide the words are in the type they
- * are set in, how long the curve is that they are set on, and whether the two
- * layers a title is painted in land on one another.
+ * Only a browser can verify it: the width of the words in the chosen type, the
+ * length of the curve they are set on, and whether the two paint layers of a
+ * title coincide.
  *
- * The picture arrives at once, since a title is a property of a line that has
- * come to rest, and a line on its way somewhere cannot be pointed at.
+ * The layout is complete on load: a title belongs to a line at rest, and a line
+ * in motion cannot be targeted.
  */
 export const TitledLines: Story = {
   // At the settings, so the story is about the cutting and not about how far
@@ -800,8 +797,8 @@ export const TitledLines: Story = {
     await expect(halo!.getComputedTextLength()).toBe(letters!.getComputedTextLength())
     const haloAtRest = Number.parseFloat(getComputedStyle(halo!).strokeWidth)
 
-    // The hand on that line lifts it, and the lifted title is painted the same
-    // way on a heavier halo.
+    // Hovering the line raises it, and the raised title is painted the same way
+    // on a heavier halo.
     const axisHref = halo!.querySelector('textPath')!.getAttribute('href')!
     const viewElement = canvasElement
       .querySelector(`defs path[id="${axisHref.slice(1)}"]`)!
@@ -837,11 +834,10 @@ interface Edges {
 }
 
 /**
- * Every title that is drawn stands clear: none of its letters lies over a box,
- * and none of them lies over another title's.
+ * No drawn title overlaps a box or another title: none of its letters lies over
+ * a box, and none lies over another title's letters.
  *
- * Two counts, and the assertion is the count itself, so a picture that gets
- * worse says by how much.
+ * Two counts are asserted directly, so a regression reports its magnitude.
  */
 const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   /** Whether two boxes on the screen share any of it. */
@@ -852,9 +848,9 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     other.top < one.bottom
 
   /**
-   * Where each letter of a title stands, on the screen. A title set along a
-   * curve is a ribbon of letters: the box around the whole of a diagonal one
-   * covers a quarter of the picture the letters are nowhere near.
+   * The screen rectangle of each letter of a title. A title set along a curve
+   * is a ribbon of letters: the box around a diagonal title covers an area
+   * that the letters do not occupy.
    */
   const getLetters = (text: SVGTextElement): Edges[] => {
     const onScreen = text.getScreenCTM()!
@@ -923,16 +919,15 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
 }
 
 /**
- * How much of the picture the titles cover each other in. The playground's own
- * neighbourhood, which is the crowded one: a fan of lines out of every node,
- * many of them saying the same word.
+ * Overlap between titles. Uses the playground's neighbourhood, which is dense:
+ * a fan of lines out of every node, many with the same word.
  *
- * Two counts, and the assertion is the count itself, so a picture that gets
- * worse says by how much. Only a browser can answer either: how wide the words
- * are in the type they are set in, and where the glyphs land once they are
- * bent along their curves.
+ * Two counts are asserted directly, so a regression reports its magnitude. Only
+ * a browser can verify either: the width of the words in the chosen type, and
+ * the glyph positions after they are bent along their curves.
  *
- * It relies on its own, since the playground is a plex to turn knobs on.
+ * It uses its own neighbourhood, since the playground exists for adjusting
+ * knobs.
  */
 export const TitlesFindSpace: Story = {
   args: { ...invented.args, duration: 0 },
@@ -944,10 +939,10 @@ export const TitlesFindSpace: Story = {
  * The lines of one note, every one of them named, and more children than a row
  * holds.
  *
- * The lines to the far row cross the near one, so their titles are looking for
- * room in a band the near row's titles already stand in. A title with nowhere
- * clear is cut to the room it has, and one with room for less than half of its
- * words is not written at all.
+ * The lines to the far row cross the near row, so their titles compete for
+ * space in a band that the near row's titles already occupy. A title without a
+ * clear span is truncated to the space available, and a title with space for
+ * less than half of its words is not drawn.
  */
 export const TitlesAcrossRows: Story = {
   args: { neighbourhood: neighbourhoods.labelledRows, duration: 0 },
@@ -955,8 +950,8 @@ export const TitlesAcrossRows: Story = {
 }
 
 /**
- * One note's lines: two the plex is asked to draw an arrow on, one it is not,
- * and a sibling's line hanging off the parent the two of them share.
+ * One note's lines: two lines with an arrow, one without, and a sibling's line
+ * attached to the parent that the two share.
  */
 const arrowedLines: PlexNeighbourhood = {
   nodes: [
@@ -975,14 +970,13 @@ const arrowedLines: PlexNeighbourhood = {
 }
 
 /**
- * The arrow a line carries, drawn at whichever of its two ends it was given.
+ * The arrow a line carries, drawn at either of the two ends it was given.
  *
- * Only a browser can answer any of it: whether a head comes out of the style
- * at all, where it lands once the turn it is given is applied, and which side
- * of the box it ends up on.
+ * Only a browser can verify it: whether the style produces a head, where the
+ * head lands once its rotation is applied, and which side of the box it is on.
  *
- * The picture arrives at once: a line on its way somewhere has not reached the
- * end its arrow belongs at.
+ * The layout is complete on load: a line in motion has not reached the end its
+ * arrow belongs at.
  */
 export const ArrowedLines: Story = {
   args: { neighbourhood: arrowedLines, duration: 0 },
@@ -1026,7 +1020,7 @@ export const ArrowedLines: Story = {
     const getHead = (end: DOMPoint) =>
       heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
 
-    /** Where every head and every end of every line stands, as one reading. */
+    /** The positions of every head and every line end, as one snapshot. */
     const readView = () =>
       JSON.stringify([
         heads().map((head) => {
@@ -1039,8 +1033,8 @@ export const ArrowedLines: Story = {
     /** A frame, after which what was arranged on the last one can be read. */
     const frame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
-    // The window is measured after the first drawing, so the plex settles on
-    // its second, and the picture stands still once it has.
+    // The viewport is measured after the first drawing, so the plex settles on
+    // its second drawing and the layout is stable afterwards.
     await waitFor(async () => {
       await expect(heads()).toHaveLength(2)
       const was = readView()
@@ -1048,7 +1042,7 @@ export const ArrowedLines: Story = {
       await expect(readView()).toBe(was)
     })
 
-    // A head is really drawn, and is not an empty path.
+    // A head is drawn and is not an empty path.
     for (const head of heads()) {
       const box = head.getBoundingClientRect()
       await expect(box.width).toBeGreaterThan(0)
@@ -1063,8 +1057,8 @@ export const ArrowedLines: Story = {
     await expect(getHead(getEnd('Cora Hale, jump'))).toBe(false)
     await expect(getHead(getEnd('The question of the rota, sibling'))).toBe(false)
 
-    // The head stands outside the box it points into: it is turned along the
-    // line, and its tip is what touches the border.
+    // The head lies outside the box it points into: it is rotated along the
+    // line, and its tip touches the border.
     const jump = getLine('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
     const head = heads().find((one) => hasPoint(one.getBoundingClientRect(), jump.end))!
@@ -1089,7 +1083,7 @@ export const ArrowedLines: Story = {
       await expect(Math.hypot(point.x - jump.end.x, point.y - jump.end.y)).toBeGreaterThan(clear)
     }
 
-    // The hand on that line lifts it, and the head is brightened with it.
+    // Hovering the line raises it, and the head is brightened with it.
     const restingLightness = getComputedStyle(head).fill
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === jump.line.getAttribute('d'),
@@ -1115,12 +1109,11 @@ export const AwkwardLabels: Story = {
 }
 
 /**
- * A title too long for its box, read by leaving a hand on the box.
+ * A title too long for its box, read by hovering the box.
  *
- * Only a browser can answer it: how wide a title runs is what the type it is
- * set in evaluates to, whether the box holds the whole of it is the browser's own
- * reckoning, and a box drawn over its neighbours is a matter of what was
- * painted last.
+ * Only a browser can verify it: the width of a title is the evaluated width in
+ * the chosen type, whether the box contains it is decided by the browser, and
+ * overlap with neighbouring boxes depends on paint order.
  */
 export const RestingOnATitle: Story = {
   args: { neighbourhood: neighbourhoods.awkwardLabels },
@@ -1134,8 +1127,8 @@ export const RestingOnATitle: Story = {
     const nodeWidth = getWidth(node)
     const adjacentX = adjacentNode.getBoundingClientRect().x
 
-    // Cut short in the box the arrangement drew, and the whole of it under a
-    // hand that stays.
+    // Truncated in the box the arrangement drew, and shown in full while the
+    // pointer stays on it.
     const words = node.querySelector<HTMLElement>('.plex__title-text')!
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
@@ -1151,7 +1144,7 @@ export const RestingOnATitle: Story = {
     const boxes = canvasElement.querySelectorAll('.plex__node')
     await expect(boxes[boxes.length - 1]).toBe(node)
 
-    // The hand leaves, and the picture is the one it was.
+    // After the pointer leaves, the title returns to its original state.
     await userEvent.unhover(node)
     await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
   },
@@ -1172,10 +1165,9 @@ export const Walk: Story = {
     const middle = canvasElement.getBoundingClientRect()
 
     /**
-     *
-     * Measured on the box and not the group around it: a node that has
-     * just been clicked holds the focus, and so wears a handle that hangs off
-     * its trailing edge and would count towards the group's width.
+     * Measured on the box, not on the surrounding group: a node that was just
+     * clicked holds the focus and shows a handle at its trailing edge, which
+     * would add to the group's width.
      */
     const waitForNode = async (label: string) =>
       await waitFor(
@@ -1190,9 +1182,9 @@ export const Walk: Story = {
         { timeout: 3000 },
       )
 
-    // The keyboard, in a real browser: whether tab actually stops on an SVG
-    // group. The focus is a stop too, although it cannot be chosen — a menu is
-    // asked for from wherever the keyboard is.
+    // The keyboard, in a real browser: whether tab stops on an SVG group. The
+    // focus is also a tab stop although it cannot be chosen; a menu is requested
+    // from the keyboard position.
     await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveAttribute(
       'tabindex',
       '0',
@@ -1283,10 +1275,10 @@ export const HeadingsInside: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
     const getHeadings = (node: Element) => [...node.querySelectorAll('.plex__heading')]
 
-    /** How many stand in the window at once, which the knob says. */
+    /** The maximum number of headings shown at once, set by the knob. */
     const most = args.maxHeadings
 
-    // Nothing hangs until the hand has been on it a while.
+    // No headings appear until the pointer has stayed on the node for a while.
     await expect(getHeadings(focus)).toHaveLength(0)
 
     await userEvent.hover(focus)
@@ -1294,19 +1286,19 @@ export const HeadingsInside: Story = {
       timeout: 3000,
     })
 
-    // The nesting is drawn by setting a heading in, and the deeper of them stands
-    // further in than the one it sits under.
+    // Nesting is drawn by indenting a heading, so a deeper heading is indented
+    // further than its parent.
     const getIndent = (heading: Element) =>
       Number.parseFloat(getComputedStyle(heading).paddingInlineStart)
     const [first, second, third] = getHeadings(focus)
     await expect(getIndent(second!)).toBeGreaterThan(getIndent(first!))
     await expect(getIndent(third!)).toBeGreaterThan(getIndent(second!))
 
-    // The hand leaves, and they go back under the box.
+    // After the pointer leaves, the headings are hidden again.
     await userEvent.unhover(focus)
     await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
 
-    // Choosing one says which heading it was, on the node it hangs from.
+    // Choosing a heading reports which heading it was, on the node it belongs to.
     await userEvent.hover(focus)
     await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
       timeout: 3000,

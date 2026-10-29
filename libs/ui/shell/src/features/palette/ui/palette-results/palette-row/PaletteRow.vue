@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * One row of the list: what is drawn before its words, the words themselves
- * with their hits marked, and the key that reaches it written at the end.
+ * One row of the list: the leading element, the label with its hits marked, and the key
+ * that selects it, shown at the end.
  *
  * `data-palette` names each part: `icon`, `name`, `detail` and `hint`.
  */
@@ -22,7 +22,7 @@ defineProps<{
 const emit = defineEmits<{
   /** The pointer crossed the row, and the move that took it there. */
   (event: 'point-at', hasMoved: PointerEvent): void
-  /** The row was pressed, and whether the second action was asked for. */
+  /** The row was pressed; `second` is whether the secondary action was requested. */
   (event: 'choose', second: boolean): void
 }>()
 
@@ -114,7 +114,7 @@ defineSlots<{
   overflow: hidden;
 }
 
-/* Why the item is here. It sits under words that are being read, so it is a
+/* Marks why the item matched. It overlays text being read, so it is a
    tint and not a colour. */
 .palette__name [data-hit],
 .palette__detail [data-hit] {

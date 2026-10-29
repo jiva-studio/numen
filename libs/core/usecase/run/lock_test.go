@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// Work a person is sitting in front of takes the lock before work the vault set
-// itself, whatever order they arrived in.
+// Work the user is waiting on takes the lock before background work of the
+// vault, regardless of arrival order.
 func TestLock_GrantsToRequestedHolderFirst(t *testing.T) {
 	var g Lock
 

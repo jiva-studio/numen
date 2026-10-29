@@ -6,8 +6,8 @@ import (
 )
 
 // A section is placed under the key the document spells on the field that holds
-// it, and what a model row writes is put under that same word. A key said twice
-// is a row writing a setting nothing reads.
+// it, and what a model row writes is placed under that same key. A key that
+// appears twice is a row writing a setting nothing reads.
 func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 	for _, one := range []struct {
 		in         any

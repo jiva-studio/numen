@@ -20,7 +20,7 @@ type StoreClient struct {
 
 var _ Store = (*StoreClient)(nil)
 
-// NewStoreClientFromEnv reaches the host the process was started for. It returns hostcall.ErrNoHost
+// NewStoreClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost
 // where the host named none.
 func NewStoreClientFromEnv() (*StoreClient, error) {
 	addr, err := hostcall.FromEnv()
@@ -39,12 +39,12 @@ func NewStoreClientFromVars(vars map[string]string) (*StoreClient, error) {
 	return NewStoreClient(addr), nil
 }
 
-// NewStoreClient reaches the host at the endpoint.
+// NewStoreClient connects to the host at the endpoint.
 func NewStoreClient(endpoint hostcall.Endpoint) *StoreClient {
 	return NewStoreClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewStoreClientOver reaches the host at the endpoint through the HTTP client given.
+// NewStoreClientOver connects to the host at the endpoint through the given HTTP client.
 func NewStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *StoreClient {
 	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }

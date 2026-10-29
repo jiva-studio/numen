@@ -13,9 +13,9 @@ document.addEventListener('contextmenu', (event) => event.preventDefault())
 const runtime = '/wails/runtime.js'
 const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
 
-// A note may have been written by anybody, and this window has no address bar
-// to say where it has ended up. Nothing takes it off the pages it serves: an
-// address that leads outward is opened where the person opens everything else.
+// A note can contain any link, and this window has no address bar to show the
+// current location. Links stay inside the served pages, and an external
+// address opens in the system browser.
 interceptExternalLinks((href) => {
   void wails.then((it) => {
     if (it?.Browser?.OpenURL) {

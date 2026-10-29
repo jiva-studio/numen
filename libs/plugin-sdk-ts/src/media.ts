@@ -15,13 +15,13 @@ export interface MediaSource {
   readonly mediaType: string
 }
 
-/** Asks the host for the address and content type a media file of the vault is served with. */
+/** Requests from the host the address and content type under which a vault media file is served. */
 export async function getMediaSource(path: string): Promise<MediaSource> {
   const answer = await retryWhileBusy(() => mediaClient.getMediaSource({ path }))
   return { mediaUrl: answer.src, mediaType: answer.mediaType }
 }
 
-/** Asks the host for the address a saved web page of a plugin is served at. */
+/** Requests from the host the address at which a plugin's saved web page is served. */
 export async function getPageSource(pluginId: string, path: string): Promise<string> {
   const answer = await retryWhileBusy(() => mediaClient.getPageSource({ pluginId, path }))
   return answer.src
@@ -77,7 +77,7 @@ export const readFileMenuEntries = (
       : []
   })
 
-/** Asks the host for the text-version menu entries of a file. */
+/** Requests the text-version menu entries of a file from the host. */
 export async function getFileMenu(path: string): Promise<readonly FileMenuEntry[]> {
   const answer = await retryWhileBusy(() => textVersionClient.getFileMenu({ path }))
   return readFileMenuEntries(answer.entries)

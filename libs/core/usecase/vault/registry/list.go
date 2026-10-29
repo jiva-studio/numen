@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// List reports the vaults this installation knows.
+// List returns the vaults this installation knows.
 type List struct {
 	registry vaultport.VaultRegistry
 }

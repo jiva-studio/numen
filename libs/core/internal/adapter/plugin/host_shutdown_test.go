@@ -169,8 +169,8 @@ func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 	}
 }
 
-// ResolveCapability says why no plugin answers: none declares the capability,
-// or the ones that do are disabled or switched off by safe mode.
+// ResolveCapability reports why no plugin responds: none declares the
+// capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
@@ -218,8 +218,8 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	}
 }
 
-// A plugin EnsureActive cannot start is told apart from one that is not there
-// or is switched off.
+// A plugin EnsureActive cannot start is distinguished from one that is absent
+// or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost("desktop.editor")
 	host.plugins["md.numen.a"] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}

@@ -5,7 +5,7 @@ import { useBookPlace, type PlacedTab } from './useBookPlace'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A reader whose CFIs are answered when the test says, in any order. */
+/** A reader whose CFIs resolve when the test triggers them, in any order. */
 const createReader = (isLoading = false) => {
   const offset = ref(0)
   const loading = ref(isLoading)

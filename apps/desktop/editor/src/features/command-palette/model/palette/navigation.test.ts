@@ -1,7 +1,7 @@
 /**
- * The steps a command asks for stand one above another: each step opens with
- * its own field and prompt, going back takes the last one off, and what is
- * chosen on a step is carried out only where it answers that step.
+ * The steps a command requests stack: each step opens with its own field and
+ * prompt, going back removes the last one, and what is chosen on a step is
+ * carried out only for that step.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'

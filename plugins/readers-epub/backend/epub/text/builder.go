@@ -58,9 +58,9 @@ func (b *builder) close() {
 	b.appendChild(isDone)
 }
 
-// run marks a run of text written at an offset, whether it was written from the
-// markup or to end a line. What it says is filled in when the document has been
-// read, so a space taken back by the line that follows is taken back here too.
+// run marks a run of text written at an offset, whether written from the markup or
+// to end a line. Its content is filled in when the document has been read, so a space
+// removed by the following line is removed here too.
 //
 // one standing between the cells out in front of the table.
 func (b *builder) run(offset int) {
@@ -107,14 +107,14 @@ func (b *builder) appendChild(n markup.Node) {
 
 // document.
 //
-// A run reaches to where the next one begins, so every byte of the document is
-// said once and in one place.
+// A run extends to where the next one begins, so every byte of the document is
+// covered exactly once.
 func (b *builder) finish(text string, end int) []markup.Node {
 	nodes := b.stack[0].Children
 	found := collectNodes(nodes, nil)
 
-	// The line a block ends takes back the space before it, and an element
-	// standing on that space stands where the line ends instead.
+	// The line a block ends removes the space before it, and an element on that space
+	// moves to where the line ends.
 	pos := end
 	for i := len(found) - 1; i >= 0; i-- {
 		found[i].Offset = min(found[i].Offset, pos)

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The one field the window is asked things through: the commands over what is
- * in front, and the search under them.
+ * The single input field of the window: the commands for the current target,
+ * and the search.
  *
- * The two share a field, and which of them is open decides what is drawn in it
- * and what a keystroke in it means. Two chords put each up and take it down.
+ * The two share a field, and which one is active determines what is drawn in it
+ * and what a keystroke in it means. Two chords open and close each.
  */
 import { computed } from 'vue'
 import { Palette, type ActionWords } from '@numen/shell'
@@ -26,7 +26,7 @@ const props = defineProps<{
   commands: Commands
   search: SearchState
   doing: CommandDeps
-  /** What the commands are over, as the window stands now. */
+  /** The target the commands apply to, as the window is now. */
   getTarget: () => CommandTarget
   /** Where the window is taken by what the search turns up. */
   places: DestinationDeps

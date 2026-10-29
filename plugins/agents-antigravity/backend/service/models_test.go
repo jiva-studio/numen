@@ -98,8 +98,9 @@ func TestTheLevelOfARequestChoosesTheListedModel(t *testing.T) {
 	}
 }
 
-// stubCli is a program that lists the models of the folded family "m" and answers a run only for the
-// model it lists, the way the real CLI refuses a model it does not list.
+// stubCli is a program that lists the models of the folded family "m" and
+// answers a run only for a listed model, as the real CLI rejects an unlisted
+// model.
 func stubCli(t *testing.T, listing string) string {
 	t.Helper()
 	return agenttest.WriteScript(t, "agy",
@@ -116,7 +117,7 @@ esac
 `)
 }
 
-// askStub runs a request with no tool against the stub and returns what the run said and why it stopped.
+// askStub runs a request with no tool against the stub and returns the reply text and the stop reason.
 func askStub(t *testing.T, script, model, level string) (said, stopReason string) {
 	t.Helper()
 	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{

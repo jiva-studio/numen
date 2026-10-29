@@ -120,8 +120,8 @@ func (m PluginManifest) listReaderIssues() []error {
 	return issues
 }
 
-// listContentTypesIssues checks that each type or mask is one in its lowercase spelling, and names
-// the declaration of the kind of the issue for each that is not.
+// listContentTypesIssues checks that each type or mask is lowercase, and
+// returns an issue of the given kind for each one that is not.
 func listContentTypesIssues(kind error, types []domain.ContentType) []error {
 	var issues []error
 	for _, one := range types {

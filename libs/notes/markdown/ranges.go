@@ -5,24 +5,23 @@ import (
 	"unicode/utf8"
 )
 
-// Range is a run of prose, by where it begins and where it ends, as byte offsets
-// into the text it was found in. Where a client is told about a run it is told
-// in the units a client counts in, which is domain.UnitRange, and CountUTF16 is
-// the way across; nothing crosses that boundary unconverted.
+// Range is a run of prose, given by its start and end as byte offsets into the text
+// it was found in. A client counts in other units (domain.UnitRange); CountUTF16
+// converts, and no offset crosses that boundary unconverted.
 type Range struct {
 	Start int
 	End   int
 }
 
-// currently, then punctuation and spacing read as the marks they stand for,
-// then a run of spacing inside a line read as one space. A span that stands
-// exactly is therefore never reported where it only nearly stands.
+// currently, then punctuation and spacing are normalised to the marks they represent,
+// then a run of spacing inside a line is read as one space. A span that matches
+// exactly is therefore never reported where it only nearly matches.
 //
-// The offsets are into `text` as it was given, whichever reading found them, so
-// what is replaced is the bytes the person wrote.
+// The offsets are into `text` as given, whichever reading found them, so the
+// replaced bytes are the ones the user wrote.
 //
-// isApproximate is true when the span was found only once punctuation or
-// spacing were allowed to differ.
+// isApproximate is true when the span was found only once punctuation or spacing
+// were allowed to differ.
 func FindRanges(text, wanted string) (spans []Range, isApproximate bool) {
 	if wanted == "" {
 		return nil, false
@@ -111,9 +110,9 @@ func foldSpacing(text string) mappedText {
 	return mappedText{text: out.String(), offsets: append(offsets, len(text))}
 }
 
-// getPlainRune is the mark a rune stands for, or the rune itself. Dashes, quotes and
-// the spaces that are not the space bar are what a person's editor puts in
-// their prose and a program writing about that prose rarely reproduces.
+// getPlainRune returns the mark a rune represents, or the rune itself. Dashes, quotes
+// and non-standard spaces are what a user's editor inserts into prose and what a
+// program writing about that prose rarely reproduces.
 func getPlainRune(r rune) rune {
 	switch {
 	// Hyphens and dashes, U+2010 to U+2015, and the minus sign U+2212.
@@ -134,12 +133,11 @@ func getPlainRune(r rune) rune {
 	return r
 }
 
-// Diff is the span of `was` that `now` does not have, and the text that
-// stands there instead.
+// Diff is the span of `was` that `now` does not have, and the replacement text.
 //
-// What the two share at either end is left out, so replacing one whole note's
-// prose with another names the sentence that changed. The span is widened to
-// whole words, and two texts that are the same name no span at all.
+// The common prefix and suffix are excluded, so replacing one note's whole prose
+// with another names only the sentence that changed. The span is widened to whole
+// words, and two identical texts yield no span.
 func Diff(was, now string) (Range, string) {
 	if was == now {
 		return Range{Start: len(was), End: len(was)}, ""
@@ -166,7 +164,7 @@ func Diff(was, now string) (Range, string) {
 }
 
 // canSpanBeginAt reports whether a span may begin at `at`: at the start of the text,
-// or where a rune begins and spacing stands before it.
+// or where a rune begins and spacing precedes it.
 func canSpanBeginAt(text string, offset int) bool {
 	if offset <= 0 {
 		return true
@@ -178,7 +176,7 @@ func canSpanBeginAt(text string, offset int) bool {
 }
 
 // canSpanEndAt reports whether a span may end at `at`: at the end of the text, or
-// where spacing stands.
+// where spacing is.
 func canSpanEndAt(text string, offset int) bool {
 	if offset >= len(text) {
 		return true

@@ -36,7 +36,7 @@ func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClie
 	return stream
 }
 
-// receiveTasks is the list the stream says next.
+// receiveTasks returns the next task list from the stream.
 func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTasksResponse]) []*v1.Task {
 	t.Helper()
 	if !stream.Receive() {
@@ -45,9 +45,9 @@ func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTa
 	return stream.Msg().GetTasks()
 }
 
-// A window is handed each list by the write that follows it, so a list with
-// nothing after it is a list nobody is holding: work that ended relies on
-// screen as work still running.
+// A client receives each list when the following write arrives, so a list with
+// no write after it is never delivered. The stream repeats an unchanged
+// snapshot; otherwise finished work would stay displayed as running.
 func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 	tasks := run.NewTasks()
 	stream := openTaskStream(t, tasks)
@@ -72,8 +72,9 @@ func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 	}
 }
 
-// Two windows can be open on the same vault, so a question about a window says which. One naming
-// another window is not answered with this one's.
+// Two windows can be open on the same vault, so a request identifies its
+// window. A request naming another window is not answered with this window's
+// list.
 func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 	route, handler := numenv1connect.NewWindowServiceHandler(
 		&Window{Named: "another", Tasking: run.NewTasks()},

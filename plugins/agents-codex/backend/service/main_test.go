@@ -111,8 +111,8 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 	}
 }
 
-// A command line the installation set counts as the program being installed, and its models are
-// asked of that command.
+// A command line set by the installation counts as the program being installed, and its models are
+// listed by running that command.
 func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	appServer := agenttest.WriteScript(t, "codex",
@@ -134,7 +134,7 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	}
 }
 
-// A listing that failed is left alone for a while and then asked for again, and what Codex lists then is
+// A failed listing is not retried for a while and is then requested again, and the models Codex lists then are
 // cached.
 func TestModels_FailedListingIsRequeried(t *testing.T) {
 	agenttest.NeedsShell(t)

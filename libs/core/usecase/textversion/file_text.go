@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// FileText is the live text of a vault file and a person's edits of it, for
-// the views of a window. Which version is live is decided for the file as it
-// is now.
+// FileText is the live text of a vault file and the user's edits of it, for the
+// views of a window. Which version is live is determined for the file as it is
+// now.
 type FileText struct {
 	versions *Versions
 	readers  vaultport.VaultReaders
@@ -48,7 +48,7 @@ func (u *FileText) ReadLiveText(ctx context.Context, v domain.Vault, path string
 	return text, true, nil
 }
 
-// CreateEdit records a person's edit as a new version made from its source.
+// CreateEdit records a user's edit as a new version created from its source.
 func (u *FileText) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit) (domain.TextVersion, error) {
 	return u.versions.CreateEdit(ctx, v, edit)
 }

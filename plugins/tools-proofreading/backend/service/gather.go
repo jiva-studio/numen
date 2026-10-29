@@ -41,15 +41,15 @@ func getReachingRuns(batch Batch, reply string) []int {
 	return starts
 }
 
-// gatherAnswers is what the answers put right, keyed by the first line of each
-// correction, and the numbers of the batches whose reply ran on past the last
-// line they carry, in the order they were asked.
+// gatherAnswers returns the accepted corrections keyed by the first line of
+// each, and the numbers of the batches whose reply ran past the last line they
+// carry, in request order.
 //
-// Where two batches answer about one line, the correction is the one from the
-// batch in which the line stands further from the end; where they stand equally
-// every line it covers, and a correction that takes a line from a kept run
-// takes the whole run out. No two corrections cover one line. A line no
-// accepted reply covers is not in the result.
+// Where two batches answer for one line, the correction from the batch in which
+// the line is further from the end wins, and on a tie the later batch wins. A
+// correction is kept only if it wins on every line it covers, and a correction
+// that displaces part of a kept run replaces the whole run. No two corrections
+// cover one line. A line no accepted reply covers is not in the result.
 func gatherAnswers(answers []answer) (map[int]Line, []int) {
 	collector := gathering{
 		lines: make(map[int]Line),

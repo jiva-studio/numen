@@ -24,9 +24,9 @@ import { moveBlock } from '../table/grid'
 import { type BlockNode, blockMarks, findBlocks, getMarks } from './marks'
 
 /**
- * How far past the lines on screen the marks are drawn, in characters. A pane
- * being resized moves the viewport a line at a time, and marks already drawn
- * answer for the lines it reaches.
+ * How far beyond the visible lines the marks are drawn, in characters. Resizing
+ * a pane moves the viewport a line at a time, and marks already drawn cover the
+ * lines it reaches.
  */
 const margin = 2000
 
@@ -65,7 +65,7 @@ const createBlocks = (state: EditorState): Blocks => ({
 const isSelected = (selection: EditorSelection, node: BlockNode) =>
   selection.ranges.some((range) => range.from <= node.to && range.to >= node.from)
 
-/** Whether a changed range reaches the node. `start` is where the range's bounds begin in `ranges`. */
+/** Whether a changed range overlaps the node. `start` is the offset in `ranges` where the range bounds begin. */
 const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => {
   // Stryker disable next-line EqualityOperator: a read past the last range is undefined, and no comparison with it holds
   for (let i = 0; i < ranges.length; i += 4) {
@@ -77,8 +77,8 @@ const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => 
 }
 
 /**
- * Whether the marks of `was` still stand after the transaction: the same
- * tables and rules are written in the same places, no change reaches any of
+ * Whether the marks of `was` are still valid after the transaction: the same
+ * tables and rules are written in the same places, no change overlaps any of
  * them, and the selection is in the same ones.
  */
 const isUnchanged = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction) => {
@@ -138,7 +138,7 @@ export const wholeLines = StateField.define<Blocks>({
 export const live = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet
-    /** The span the marks in hand were drawn for. */
+    /** The span the current marks were drawn for. */
     span: { from: number; to: number } | null
 
     constructor(view: EditorView) {
@@ -149,16 +149,16 @@ export const live = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      // A parse finishes in chunks, and the transaction that announces one
-      // changes neither the document nor the selection. Past the first chunk
-      // the document is drawn as it is written until this is asked.
+      // A parse completes in chunks, and the transaction announcing a chunk
+      // changes neither the document nor the selection, so the syntax tree
+      // comparison below detects it.
       const afresh =
         update.docChanged ||
         update.selectionSet ||
         syntaxTree(update.startState) !== syntaxTree(update.state)
 
-      // The lines on screen, against the wider span the marks in hand were
-      // drawn for. A viewport still inside them is already drawn.
+      // The visible lines, compared with the wider span the current marks were
+      // drawn for. A viewport inside that span is already drawn.
       const observed = onScreen(update.view)
       if (
         !afresh &&

@@ -2,9 +2,9 @@ package onnxruntime
 
 import "fmt"
 
-// Provider is the execution provider a plugin opens its sessions on. The plugin
-// enables it; the host passes the name on and refuses a GPU provider for the
-// pinned CPU archive.
+// Provider is the execution provider that a plugin opens its sessions on. The
+// plugin enables it; the host passes the name through and rejects a GPU
+// provider for the pinned CPU archive.
 type Provider string
 
 // The providers, and the spellings that name them. Auto lets the plugin pick the

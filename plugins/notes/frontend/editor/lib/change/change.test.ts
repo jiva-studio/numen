@@ -1,8 +1,8 @@
 /**
  * How much of a change is shown, as plain values, and what is drawn for it.
  *
- * The arithmetic has no clock in it: a moment of the showing is a value the
- * tests name. The clock is a port, wound here by hand.
+ * The arithmetic does not read a clock: each moment of the display is a value
+ * set by the tests. The clock is a port, advanced manually here.
  */
 import { describe, expect, it } from 'vitest'
 import { Compartment, EditorState, StateEffect } from '@codemirror/state'
@@ -191,7 +191,7 @@ describe('a change whose text has arrived', () => {
   })
 })
 
-/** A clock the test winds by hand. */
+/** A clock the test advances manually. */
 const createClock = () => {
   let pending: ((now: number) => void) | null = null
   const clock: Clock = {
@@ -206,7 +206,7 @@ const createClock = () => {
   }
   return {
     clock,
-    /** Hand the frame that is waiting its timestamp. */
+    /** Runs the pending frame callback with the timestamp. */
     tick: (now: number) => {
       const run = pending
       pending = null
@@ -278,7 +278,7 @@ describe('the showing, setReveal by the clock', () => {
   })
 })
 
-/** A clock that keeps every frame it was asked for, and what it was told to cancel. */
+/** A clock that records every requested frame and every cancelled handle. */
 const createLedgerClock = () => {
   const pendingState = new Map<number, (now: number) => void>()
   const request: ((now: number) => void)[] = []
@@ -300,14 +300,14 @@ const createLedgerClock = () => {
     cancelled,
     /** How many frames are waiting for their timestamp. */
     getWaiting: () => pendingState.size,
-    /** Hand the latest frame that is waiting its timestamp. */
+    /** Runs the latest pending frame callback with the timestamp. */
     tick: (now: number) => {
       const [id, run] = [...pendingState.entries()].at(-1) ?? []
       if (id === undefined || !run) return
       pendingState.delete(id)
       run(now)
     },
-    /** Hand a frame that was asked for earlier, waiting or not. */
+    /** Runs an earlier requested frame callback, whether pending or not. */
     fire: (index: number, now: number) => request[index]?.(now),
   }
 }

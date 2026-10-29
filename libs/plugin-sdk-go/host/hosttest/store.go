@@ -87,8 +87,8 @@ func (m *memory) paths() []string {
 	return out
 }
 
-// disk keeps the files in a folder, so that a test can change them and read them as another program
-// would, and make them refuse the plugin with the permissions of the folder.
+// disk stores the files in a folder, so that a test can modify and read them as another program
+// would, and make writes fail through the permissions of the folder.
 type disk struct {
 	root string
 }
@@ -110,7 +110,7 @@ func (d disk) write(filePath string, content []byte) (host.FileStat, error) {
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return host.FileStat{}, err
 	}
-	// A save lands by renaming over the name, so what refuses it is the folder the name is in.
+	// A save is a rename over the target name, so permission to write is decided by the folder containing the name.
 	temp, err := os.CreateTemp(filepath.Dir(target), ".write-*")
 	if err != nil {
 		return host.FileStat{}, err

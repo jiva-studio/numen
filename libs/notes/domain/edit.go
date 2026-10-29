@@ -1,11 +1,11 @@
 package domain
 
-// Edit is a change to a note's prose as it is being made, for whoever is
-// looking at that note while it happens.
+// Edit is a change to a note's prose, reported while it is being made, to
+// anyone viewing that note.
 //
-// It is a report and never the change itself: the file is what the note says,
-// and this only says what is about to happen to it. A report that never arrives
-// costs a drawing, not a note.
+// It is a report, not the change itself: the file is authoritative, and this
+// announces what is about to happen to it. A lost report degrades the display,
+// not the note.
 type Edit struct {
 	// Change names one change. Every report of the same change carries the same
 	// name, and no two changes carry one.
@@ -16,22 +16,22 @@ type Edit struct {
 	// text: in UTF-16 code units over the prose a read hands out.
 	From int
 	To   int
-	// Text is what is going in where that stretch stands.
+	// Text is the replacement for that range.
 	Text string
 	// IsDone is the last report of this change. It arrives whether the change
 	IsDone bool
 }
 
-// Move is a note that is no longer where it was, and where it now is.
+// Move is a note that is no longer at its previous path, with its new path.
 //
-// The bytes do not change on the way, so this says nothing about what the note
-// holds. It says only that a name stopped naming it.
+// The content does not change, so this carries no information about the note's
+// content; it records only that the path changed.
 type Move struct {
 	From string
 	To   string
 }
 
-// MoveResult says where the note went and what it did to the links that
+// MoveResult reports where the note went and the effect on the links that
 // pointed at it.
 type MoveResult struct {
 	From string

@@ -1,12 +1,11 @@
 /**
  * How much of the vault the index has covered, and whether it is still working.
  *
- * A search by meaning is asked of the vectors, and a vault holding none
- * answers nothing however it is asked. The corner and the palette both say so,
- * and both say it from here.
+ * A search by meaning queries the vectors, and a vault with none returns nothing
+ * however it is queried. The corner and the palette both report this, from here.
  */
 
-/** What the vault says about itself about having been read for meaning. */
+/** The vault's state with respect to being indexed for meaning. */
 export interface IndexCoverage {
   /** Spans of text the index holds. */
   readonly chunks: number

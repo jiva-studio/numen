@@ -231,7 +231,7 @@ func TestAnElementContainsNoTextOfItsOwn(t *testing.T) {
 }
 
 // The text of a book is bounded as a whole: a document is read only while the
-// documents before it have left room.
+// documents before it leave capacity.
 const mostPerDocument = 16 << 20
 
 func TestHowMuchOfABookIsRead(t *testing.T) {

@@ -17,8 +17,8 @@ import (
 type Extractor struct {
 	out []byte
 
-	// path is the document being read, and starts holds where each document
-	// began, so that an href with no fragment still has an offset.
+	// path is the document being read, and starts holds the offset at which each
+	// document begins, so an href with no fragment still resolves to an offset.
 	path   string
 	starts map[string]int
 
@@ -51,8 +51,8 @@ func NewExtractor() *Extractor {
 
 // ReadDocument reads one spine document into the text.
 //
-// The markup is parsed as HTML: a document with three opening body tags is still
-// a document a person can read.
+// The markup is parsed as HTML, so a document with three opening body tags is
+// still readable.
 func (x *Extractor) ReadDocument(docPath string, raw []byte) Document {
 	start := len(x.out)
 	x.path = docPath

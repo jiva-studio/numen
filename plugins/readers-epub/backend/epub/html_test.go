@@ -59,8 +59,8 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 	}
 }
 
-// The markup a window is handed says every offset it needs, so the window reads
-// them off it and counts none itself.
+// The markup carries every offset the consumer needs, so the consumer reads
+// them from it and counts none itself.
 func TestEveryRunOfTextReturnsWhereItExists(t *testing.T) {
 	book := read(t, tinyBook(t, map[string]string{secondDoc: "variant/drawn.xhtml"}))
 	rendered, err := book.Markup(secondDoc)
@@ -120,16 +120,15 @@ type run struct {
 	text   string
 }
 
-// offsets are the runs of text the markup says, in the order the markup writes
-// them.
+// offsets returns the runs of text with their offset attributes, in markup order.
 func offsets(t *testing.T, root *html.Node) []run {
 	t.Helper()
 	var out []run
 	var walk func(*html.Node)
 	walk = func(n *html.Node) {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			// A book writes spans of its own, and the run is the one that says
-			// at its current position.
+			// A book writes spans of its own, and a run is a node with an offset
+			// attribute at its current position.
 			if response := getAttribute(c, epub.OffsetAttribute); response != "" {
 				pos, err := strconv.Atoi(response)
 				if err != nil {
@@ -166,7 +165,7 @@ func elements(n *html.Node, name string) []*html.Node {
 	return out
 }
 
-// text is what a parsed page says.
+// text returns the text content of a parsed node.
 func text(n *html.Node) string {
 	if n.Type == html.TextNode {
 		return n.Data

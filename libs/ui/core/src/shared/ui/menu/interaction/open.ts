@@ -4,11 +4,11 @@
 import { nextTick, onBeforeUnmount, watch } from 'vue'
 
 export interface MenuOpenOptions {
-  /** Whether the menu is asked to be drawn. */
+  /** Whether the menu is requested to be rendered. */
   readonly isOpen: () => boolean
-  /** The window listened to, as the menu opens. */
+  /** Registers the window listeners as the menu opens. */
   readonly listen: () => void
-  /** The window release, as it closes. */
+  /** Removes the window listeners as the menu closes. */
   readonly release: () => void
   /** Its size taken, once it is drawn. */
   readonly measure: () => void
@@ -21,12 +21,13 @@ export interface MenuOpenOptions {
 }
 
 /**
- * Follows `isOpen`: opening listens, measures and takes the keyboard a tick
- * after the menu is drawn; closing, and unmounting while open, lets go of the
- * window and gives the keyboard back to `getFrom` where it is still on the page.
+ * Follows `isOpen`: opening registers the window listeners, measures and takes
+ * keyboard focus one tick after the menu renders; closing, and unmounting while
+ * open, removes the window listeners and returns focus to `getFrom` when it is
+ * still on the page.
  */
 export const useMenuOpen = (options: MenuOpenOptions): void => {
-  /** Whether the menu stands: what entering put in place, leaving takes away. */
+  /** Whether the menu is anchored: set on enter, cleared on leave. */
   let isAnchored = false
 
   const enter = async (): Promise<void> => {

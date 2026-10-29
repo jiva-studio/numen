@@ -12,13 +12,13 @@ import (
 )
 
 const (
-	// asks is how many times a write asks for the lock. The driver waits the
-	// busy timeout on each of them, so the wait is that timeout this many times
-	// over, and no longer than the caller's context allows.
+	// asks is the number of attempts a write makes to take the lock. The driver
+	// waits the busy timeout on each attempt, so the total wait is that timeout
+	// multiplied by asks, bounded by the caller's context.
 	asks = 3
-	// between is the pause before asking again. The write connection is back in
-	// the pool while it lasts, so whatever else this process wants to write is
-	// not queued behind a writer that is only waiting.
+	// between is the pause before the next attempt. The write connection returns
+	// to the pool during the pause, so other writes in this process are not
+	// queued behind a writer that is only waiting.
 	between = 100 * time.Millisecond
 )
 
@@ -73,9 +73,9 @@ func (t *Transaction) QueryContext(ctx context.Context, query string, args ...an
 	return prepared.QueryContext(ctx, args...)
 }
 
-// QueryRowContext hands a statement that could not be prepared to the
-// transaction itself, which is where the reason reaches the caller: a row
-// carries what went wrong and there is no other way to put it there.
+// QueryRowContext passes a statement that could not be prepared to the
+// transaction itself, so the error reaches the caller: a row carries the error
+// and there is no other channel for it.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
 	prepared, err := t.prepare(ctx, query)
@@ -85,9 +85,9 @@ func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ..
 	return prepared.QueryRowContext(ctx, args...)
 }
 
-// prepare is the statement this text was prepared as, preparing it the first
-// time it is asked for. One transaction is written by one goroutine, which is
-// what the pool of one write connection leaves it.
+// prepare returns the prepared statement for this text, preparing it on first
+// use. One transaction is written by one goroutine, because the pool has a
+// single write connection.
 func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, error) {
 	if target, ok := t.ready[query]; ok {
 		return target, nil
@@ -112,8 +112,8 @@ func Exec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Resul
 	return out, err
 }
 
-// retry runs a write, and runs it retry where the answer was that the database
-// is locked. It is only for a write that has done nothing when it says so.
+// retry runs a write again when the database is locked. It applies only to a
+// write that has made no change when it reports the lock.
 func retry(ctx context.Context, write func() error) error {
 	var err error
 	for ask := range asks {
@@ -131,8 +131,8 @@ func retry(ctx context.Context, write func() error) error {
 	return err
 }
 
-// isLocked says the database was held by a writer this one waited out. The
-// extended result codes carry the primary one in their low byte.
+// isLocked reports whether the database was locked by another writer. The
+// extended result codes carry the primary code in their low byte.
 func isLocked(err error) bool {
 	var response *sqlite.Error
 	if !errors.As(err, &response) {

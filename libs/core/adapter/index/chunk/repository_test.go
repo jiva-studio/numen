@@ -41,9 +41,9 @@ func TestFullTextRowsAreAddressedByTheChunkNumber(t *testing.T) {
 }
 
 func TestTheCoarsePassIsConstrainedInsideTheQuery(t *testing.T) {
-	// A nearest-neighbour search answers with the whole table's best k. A vault
-	// filter applied to the answer instead returns fewer than k passages, or
-	// none, and a query plan shows neither case: it says only that the virtual
+	// A nearest-neighbour search returns the best k of the whole table. A vault
+	// filter applied to the result instead returns fewer than k passages, or
+	// none, and a query plan shows neither case: it shows only that the virtual
 	// table was read.
 	statement := withoutComments(stmt.Get("coarse"))
 	for _, want := range []string{"MATCH", "vault_id = ?", "k = ?", "ORDER BY distance"} {

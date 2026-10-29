@@ -16,8 +16,8 @@ var (
 	kanaDecomposed   = norm.NFD.String("がき")
 )
 
-// A link written in one case reaches the note filed under another, in every
-// script that has cases.
+// A link written in one case resolves to the note filed under another case, in
+// every script that has cases.
 func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 	for _, one := range []struct {
 		what   string
@@ -99,7 +99,7 @@ func TestAPathReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 	}
 }
 
-// The note a link reaches lists it back.
+// The note a link resolves to lists it as a backlink.
 func TestANoteListsABacklinkSavedInAnotherCase(t *testing.T) {
 	db, v := newIndexedVault(t, map[string]string{
 		"source.md":   "Points at [[энтропия]].\n",

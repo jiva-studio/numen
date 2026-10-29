@@ -1,9 +1,9 @@
 /**
- * What is drawn in place of a mark.
+ * What is rendered in place of a mark.
  *
- * A widget is told nothing but what it draws. at its current position is read back
- * from the editor when it acts, so a widget kept from an earlier draw still
- * writes in the right place.
+ * A widget holds only what it renders. Its current position is read from the
+ * editor when it acts, so a widget kept from an earlier render still writes at
+ * the correct position.
  */
 import { doc } from '../../../dom'
 import { EditorView, WidgetType } from '@codemirror/view'
@@ -56,7 +56,7 @@ export class Box extends WidgetType {
   }
 }
 
-/** The line a `---` stands for. */
+/** The horizontal rule that a `---` renders. */
 export class Rule extends WidgetType {
   override eq() {
     return true

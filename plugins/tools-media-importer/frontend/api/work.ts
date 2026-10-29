@@ -1,6 +1,6 @@
 /**
- * Which files work is going on, as the plugin's own tasks say: one shared subscription, open while
- * any tab listens to it.
+ * Tracks which files have work in progress according to the plugin's tasks,
+ * through one shared subscription that stays open while any tab listens.
  */
 
 /** Subscribes to the plugin's task lists: each task by the file it is about. */
@@ -9,8 +9,9 @@ export type TaskSource = (onTasks: (tasks: readonly { readonly about: string }[]
 }
 
 /**
- * Tells each listener whether work on its file is going, from one subscription to the tasks: on
- * the first list it hears, and on every list after that changes the answer.
+ * Notifies each listener whether work on its file is in progress, from one
+ * subscription to the task lists: on the first list received, and on every
+ * later list that changes the result.
  */
 export function createWorkWatcher(watchTasks: TaskSource) {
   const listeners = new Map<

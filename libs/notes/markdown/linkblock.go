@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrNotOwned is what changing an entry says when the entry carries something
-// the application does not own. A collision is the person's win: the link is
-// named in the error and left as they wrote it.
+// ErrNotOwned is returned when a change targets an entry that holds content the
+// application does not own. On a collision the user's entry wins: the link is named
+// in the error and left as written.
 var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
@@ -20,18 +20,16 @@ var owned = map[string]bool{
 	"to": true, "role": true, "type": true, "note": true, "label": true,
 }
 
-// entry is one record of the `links:` block: what it says, and the bytes it
-// occupies.
+// entry is one record of the `links:` block: its content and the bytes it occupies.
 //
-// An entry is changed by replacing its own span and nothing else, so the
-// entries around it — including ones the parser could not act on, keys the
-// application has never heard of, and comments somebody wrote to themselves —
-// come out of a write as they went in.
+// An entry is changed by replacing its own span only, so neighbouring entries,
+// including ones the parser could not interpret, unknown keys, and user comments,
+// survive a write unchanged.
 type entry struct {
 	link       domain.Link
 	start, end int
-	// isReadable is whether the application could act on this entry at all. One
-	// it could not is still somebody's writing and is never rewritten.
+	// isReadable is whether the application can interpret this entry. An entry it
+	// cannot interpret is user content and is never rewritten.
 	isReadable bool
 	// isOwned is whether every key in it is one the application owns.
 	isOwned bool
@@ -40,8 +38,8 @@ type entry struct {
 	address *yaml.Node
 }
 
-// block is the `links:` key: where it is located, what is in it, and how it is laid
-// out, so that a new entry looks like the ones already there.
+// block is the `links:` key: its location, its contents, and its layout, so a new
+// entry matches the existing ones.
 type block struct {
 	start, end int
 	entries    []entry
@@ -113,11 +111,11 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 	return entries, indent
 }
 
-// AddLink writes one relationship into the block, leaving every other entry as
-// the bytes it was.
+// AddLink writes one relationship into the block and leaves every other entry
+// byte-for-byte unchanged.
 //
-// A note names another in one role: the place already named takes the role
-// written, and what the person wrote on that entry is kept.
+// A note names another in one role: an existing entry for the same target takes
+// the new role, and the text the user wrote on that entry is kept.
 func (d *Document) AddLink(add domain.Link) error {
 	b, err := d.block()
 	if err != nil {
@@ -183,12 +181,12 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 
 // SetLinkOfType makes the block name one note under a `type`.
 //
-// The first entry carrying that type is pointed at the address and keeps the
-// role and the words the person wrote on it; any further entry carrying it is
-// taken out, so a note names one place under one type. An empty address takes
-// them all out, and an empty block goes with them.
+// The first entry with that type is pointed at the address and keeps its role and
+// the user's text; any further entry with that type is removed, so a note has one
+// target per type. An empty address removes all of them, and an empty block is
+// removed with them.
 //
-// cannot read is left as it was written.
+// An entry the parser cannot read is left as written.
 func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
 	remainingCount := 0
@@ -237,12 +235,12 @@ func (d *Document) appendEntry(b block, l domain.Link) error {
 
 // SetLinkOfType makes the block name one note under a `type`.
 //
-// The first entry carrying that type is pointed at the address and keeps the
-// role and the words the person wrote on it; any further entry carrying it is
-// taken out, so a note names one place under one type. An empty address takes
-// them all out, and an empty block goes with them.
+// The first entry with that type is pointed at the address and keeps its role and
+// the user's text; any further entry with that type is removed, so a note has one
+// target per type. An empty address removes all of them, and an empty block is
+// removed with them.
 //
-// cannot read is left as it was written.
+// An entry the parser cannot read is left as written.
 func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()
 	if err != nil {
@@ -312,7 +310,7 @@ func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Li
 	return edits, nil
 }
 
-// UpdateLink changes what an entry says about itself without moving where it
+// UpdateLink changes the content of an entry without changing its target
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
 	b, err := d.block()
 	if err != nil {
@@ -334,8 +332,8 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 // was written and is visible as a problem.
 func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 	if !domain.IsNameable(to) {
-		// Nothing a link could say reaches it. The link stays as it was
-		// written, and shows as a problem.
+		// A name that cannot be a link target leaves the link unchanged; it is reported
+		// as a problem.
 		return 0, nil
 	}
 	b, err := d.block()
@@ -445,9 +443,9 @@ func hasOnlyOwnedKeys(item *yaml.Node) bool {
 	return true
 }
 
-// keepLinkNotation is a name in the notation the name it replaces was in. Double
-// brackets are how a person writes a link, and an alias after `|` or a place
-// after `#` is theirs: the target is what moved, and the rest is left standing.
+// keepLinkNotation returns a name in the notation of the name it replaces. Double
+// brackets are the user's link notation, and an alias after `|` or a heading after
+// `#` belongs to the user: only the target changes.
 func keepLinkNotation(was, to string) string {
 	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {
 		return to

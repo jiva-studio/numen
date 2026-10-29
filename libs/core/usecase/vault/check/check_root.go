@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// CheckRoot refuses a root that is not a folder somebody keeps notes in: a
-// path that is not absolute, a filesystem root, and the person's home directory.
+// CheckRoot rejects a root that is not a suitable notes folder: a path that is
+// not absolute, a filesystem root, and the user's home directory.
 type CheckRoot struct {
 	identity vaultport.VaultIdentity
 	home     machineport.HomeFolder
@@ -20,8 +20,8 @@ func NewCheckRoot(identity vaultport.VaultIdentity, home machineport.HomeFolder)
 	return &CheckRoot{identity: identity, home: home}
 }
 
-// Execute returns nil for a root that may become a vault. A use case not made
-// refuses every root.
+// Execute returns nil for a root that may become a vault. A use case that is
+// not fully configured rejects every root.
 func (u *CheckRoot) Execute(root string) error {
 	if u == nil || u.identity == nil || u.home == nil {
 		return fmt.Errorf("%s cannot be checked here, so it is not added", root)

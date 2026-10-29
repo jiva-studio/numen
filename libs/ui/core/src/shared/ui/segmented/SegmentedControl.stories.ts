@@ -15,7 +15,7 @@ import { DARK, expectDark } from '@/shared/fixtures/theme'
 const UNBROKEN = 'supercalifragilisticexpialidocious'
 
 interface Knobs {
-  /** What each segment says, one to a line. */
+  /** Label of each segment, one per line. */
   words: string
   chosen: string
   isDisabled: boolean
@@ -183,23 +183,23 @@ export const AValueNotAmongThem: Story = {
 }
 
 /**
- * Nothing said on the segments at all. The keyboard rule is off here because
- * these are segments with nothing to read out, which is what the story draws.
+ * Segments without any text. The keyboard rule is off because the segments
+ * have no readable label, which is what the story renders.
  */
 export const NoTextAtAll: Story = {
   args: { words: ' \n \n ', chosen: '' },
   parameters: { reach: false },
 }
 
-/** A control nobody may turn. */
+/** A disabled control. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
 /**
- * The same control on the dark set of tokens, where the segment in force is
- * told from the two beside it by a blend.
+ * The same control on the dark token set, where the selected segment is
+ * distinguished from the two adjacent segments by a background blend.
  *
- * The accent carries its own ink, and on the dark set it stands above the
- * ground the quiet segments keep while that ink stands below theirs.
+ * The accent carries its own text color. On the dark set the selected
+ * background is lighter than the unselected segments' while its text is darker.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -210,8 +210,8 @@ export const Dark: Story = {
     expect(segments(canvasElement)).toHaveLength(3)
     expect(getChosen(canvasElement)).toBe('Medium')
 
-    // A quiet segment keeps no ground of its own, so both are read over the
-    // ground the control itself lays down.
+    // An unselected segment has no background of its own, so both are measured
+    // over the background of the control itself.
     const slotBg = getComputedStyle(
       canvasElement.querySelector('[data-slot="segmented"]') as HTMLElement,
     ).backgroundColor

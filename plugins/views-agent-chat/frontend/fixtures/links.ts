@@ -1,6 +1,7 @@
 /**
- * A stand-in for the core reading the wikilinks of a text: each `[[name|alias]]` is `name://name`,
- * reads as its alias or its name, and reaches the path `notes` gives it, or nothing.
+ * A stand-in for the core extracting the wikilinks of a text: each
+ * `[[name|alias]]` becomes `name://name`, reads as its alias or its name, and
+ * resolves to the path `notes` gives it, or to nothing.
  */
 import type { TextLink } from '@numen/plugin-sdk'
 

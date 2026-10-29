@@ -1,8 +1,7 @@
 /**
- * The plex the window opens on, around a note on entropy: the map with the
- * room, the menu asked for on a node, and the headings of a note hung under its
- * box. These are the stories the manual and the landing page take the plex's
- * pictures from.
+ * The plex of a note on entropy: the map, the menu on a node, and the
+ * headings of a note shown under its box. The manual and the landing page take
+ * their plex images from these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
@@ -68,7 +67,7 @@ const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood
   edges: neighbours.map(createEdge),
 })
 
-/** What the map has the room for: wide at the sides, and no deeper. */
+/** A wide neighbourhood: more nodes at the sides than in depth. */
 const WIDE = createNeighbourhood([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
@@ -78,8 +77,8 @@ const WIDE = createNeighbourhood([
 ])
 
 /**
- * The headings of two notes. The focus has more of them than stand at once, so
- * the mark saying there is more to wind to is drawn as well.
+ * The headings of two notes. The focus note has more headings than fit at once,
+ * so the overflow mark is drawn as well.
  */
 const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
   focus: [
@@ -99,9 +98,8 @@ const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
 }
 
 /**
- * What the menu on a node offers, in the groups the window draws it in: what
- * opens the note, what is done to its file, what is made off it in the plex,
- * what is asked of the agent, and what takes it out of the vault.
+ * The menu items of a node, in display groups: open the note, file actions,
+ * create from it in the plex, agent actions, and removal from the vault.
  */
 const MENU: readonly MenuItem[] = [
   { id: 'read', text: 'Open note', group: 'open' },
@@ -136,7 +134,7 @@ interface MapScreen {
   readonly headings?: (id: string) => readonly PlexHeading[]
   /** The relations a new note may be made in. */
   readonly creatable?: readonly PlexRelation[]
-  /** Where the menu on a node stands, and none where no menu is open. */
+  /** The position of the node menu, or null when no menu is open. */
   readonly menu?: { x: number; y: number } | null
 }
 
@@ -176,21 +174,20 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The map with the menu asked for on a node. */
+/** The map with the menu open on a node. */
 export const Mapping: Story = {
   render: () =>
     map({
       headings: (id: string) => HEADINGS[id] ?? [],
       creatable: RELATION_NAMES,
-      // Asked for on a node off to the trailing side, at its current position clear of
-      // the map and of what a node is hanging.
+      // Position of a node at the trailing side, clear of the map and of the
+      // headings shown under a node.
       menu: { x: 902, y: 396 },
     }),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
 
-    // The menu was asked for on a node, and every item of it is in the window
-    // and not off the edge it was asked near.
+    // The menu opens on a node and lies entirely inside the viewport.
     const menu = within(document.body).getByRole('menu', {
       name: 'What can be done to this note',
     })
@@ -204,7 +201,7 @@ export const Mapping: Story = {
   },
 }
 
-/** A hand resting on the focus, and the headings of its note hung under the box. */
+/** The pointer on the focus node, with the headings of its note shown under the box. */
 export const Nesting: Story = {
   render: () =>
     map({
@@ -215,19 +212,19 @@ export const Nesting: Story = {
     const canvas = within(canvasElement)
     const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
 
-    // They come in one after another, so the picture is let settle first.
+    // The headings appear one after another, so wait until the display settles.
     const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
     const suspended = () => titles.filter((words) => canvas.queryByText(words))
     await hoverOver(focus)
     await waitFor(() => expect(suspended().length).toBeGreaterThan(4), { timeout: 5000 })
 
-    // As many as the panel has room for, taken from the top of the note: what
-    // does not fit is wound to, not dropped from the middle.
+    // The headings shown are the leading ones of the note, as many as fit; the
+    // remainder is truncated at the end, not dropped from the middle.
     const suspendedView = suspended()
     expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
 
-    // They hang under the box, in the order the note sets them out. The box is
-    // the node's own rectangle: the group around it has grown to hold them.
+    // The headings are under the box, in note order. The box is the node's own
+    // rectangle; the surrounding group has grown to contain them.
     const box = focus.querySelector('rect')!.getBoundingClientRect()
     const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
     expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)

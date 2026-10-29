@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * What the window has to say, as cards in its bottom corner.
+ * What the window reports, as cards in its bottom corner.
  *
- * Work appears once it has lasted and goes when the work does; something that is
- * so stands while it is so; something that happened stands to be read and then
- * goes, unless it is trouble, which stands until it is put away.
+ * Work appears once it has lasted and is removed when the work ends; a standing
+ * state stays while it holds; an event stays to be read and is then removed,
+ * unless it is an error, which stays until dismissed.
  *
- * It takes no room from what it covers, and what each card says is the caller's.
+ * It takes no space from what it covers, and each card's content is the caller's.
  */
 import { useTemplateRef } from 'vue'
 import { getNow, isDocumentHidden } from '@/shared/lib/dom'

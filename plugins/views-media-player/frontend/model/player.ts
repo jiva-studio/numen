@@ -1,10 +1,8 @@
 /**
- * The one sound the window makes, through a single element that belongs to no
- * tab and is not in the page, so a tab moved between panes keeps playing without a
- * gap.
+ * The single audio output, backed by one element that belongs to no tab and is not
+ * in the page, so a tab moved between panes keeps playing without a gap.
  *
- * One sound plays at a time: a recording asked to play takes it from whatever
- * held it.
+ * One recording plays at a time: starting a recording replaces the one playing.
  */
 import { doc } from '../dom'
 import { readonly, ref, type Ref } from 'vue'
@@ -19,7 +17,7 @@ const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
 /** The readyState at which the element has read the metadata. */
 const HAVE_METADATA = 1
 
-/** What each of them is called where a person reads it. */
+/** Display text for each media error code. */
 const FAILED: Record<number, string> = {
   [MEDIA_ERR_ABORTED]: WORDS.stopped,
   [MEDIA_ERR_NETWORK]: WORDS.unreached,
@@ -40,7 +38,7 @@ const DURATION_EVENTS = [
 /** How long reading the length of a recording that does not hold the player may take. */
 const DURATION_READ_TIMEOUT_MS = 20_000
 
-/** How often, and how many times, a length still unknown once the metadata is read is asked for again. */
+/** Poll interval and maximum poll count for re-reading a duration that is still unknown after the metadata is read. */
 const DURATION_POLL_MS = 250
 const DURATION_POLLS = 40
 
@@ -48,12 +46,12 @@ const DURATION_POLLS = 40
 export interface Player {
   /** What is loaded now, and nothing where the window is silent. */
   readonly url: Readonly<Ref<string>>
-  /** Where it stands, in milliseconds. */
+  /** Playback position in milliseconds. */
   readonly position: Readonly<Ref<number>>
-  /** How long it runs, in milliseconds, and zero until the recording says. */
+  /** Length in milliseconds, zero until the recording reports it. */
   readonly duration: Readonly<Ref<number>>
   readonly isPlaying: Readonly<Ref<boolean>>
-  /** What it could not do, in words a person reads. */
+  /** Failure message for display. */
   readonly error: Readonly<Ref<string>>
 
   /** Load a recording, leaving whatever was loaded before it. */
@@ -69,15 +67,15 @@ export interface Player {
   getDuration(url: string): Promise<number>
 }
 
-/** What makes the element a sound is played through. A test says otherwise. */
+/** Creates the audio element. Tests substitute their own. */
 export type AudioFactory = () => HTMLAudioElement
 
 const createAudioElement: AudioFactory = () => new Audio()
 
 /**
  * Reports the length of the element's recording in milliseconds, zero while it is unknown, each
- * time it may have changed. Gives back the function that reads it, for the events a caller
- * already listens to.
+ * time it may have changed. Returns the function that reads it, for events a caller already
+ * handles.
  *
  * WebKitGTK reports a VBR mp3 with no Xing header as 0 s long at durationchange and
  * loadedmetadata, then sets the estimated length without another durationchange. The length is
@@ -157,7 +155,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     try {
       audio = create()
     } catch {
-      // A window that cannot make the element plays nothing, and says so.
+      // An element that cannot be created plays nothing and sets an error.
       error.value = WORDS.unreadable
       return null
     }
@@ -237,9 +235,9 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       if (!audio) return
       void audio.play().catch((thrown: unknown) => {
         isPlaying.value = false
-        // A play the window itself cut short is not a failure. Anything else is
-        // a press that did nothing, and no `error` event fires on it, so this
-        // is the only place it can be said.
+        // An AbortError from a play interrupted by the window is not a failure. Any other
+        // rejection is a play request with no effect and fires no `error` event, so the
+        // error is set here.
         if ((thrown as { name?: string } | null)?.name === 'AbortError') return
         if (error.value === '') error.value = WORDS.unreadable
       })
@@ -262,24 +260,23 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
 /** The one player this window has. Every recording is played through it. */
 export const player: Player = createAudioPlayer()
 
-/** What is asked whether a kind of sound can be played. */
+/** Reports whether a media type can be played. */
 export type MediaTypeProbe = (type: string) => boolean
 
-/** What the window itself says about a kind of sound. */
+/** Asks the window whether it can play a media type. */
 const probeWindow: MediaTypeProbe = (type) => {
   try {
     const mediaType = type === 'audio/vnd.wave' ? 'audio/wav' : type
     return doc.createElement('audio').canPlayType(mediaType) !== ''
   } catch {
-    // A window that cannot be asked has not said yes, and what is offered is
-    // what the window says it can play.
+    // A probe that throws counts as unsupported.
     return false
   }
 }
 
 /**
- * What this window can play. The answer is the window's own, and it is asked
- * once for each kind of sound however many recordings are open.
+ * Reports whether this window can play a media type. Answers come from the window and are
+ * cached per type, regardless of how many recordings are open.
  */
 export function createMediaTypeProbe(answers: MediaTypeProbe = probeWindow): MediaTypeProbe {
   const answersByType = new Map<string, boolean>()

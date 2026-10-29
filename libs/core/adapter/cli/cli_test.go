@@ -29,7 +29,7 @@ type session struct {
 	// bin is where an erased folder goes. A test sends nothing to the trash of
 	// the machine it runs on.
 	bin *fakeTrash
-	// said is what the commands run here wrote beside their answers.
+	// reply is the text the commands wrote besides their answers.
 	reply bytes.Buffer
 }
 
@@ -74,7 +74,7 @@ func (s *session) addVault(name string) string {
 	return dir
 }
 
-// types is what the person answers when a command asks.
+// types supplies the answer a command prompts for.
 func (s *session) types(answer string) {
 	s.t.Helper()
 	read, write, err := os.Pipe()
@@ -153,8 +153,8 @@ func TestAddScanSearch(t *testing.T) {
 		t.Errorf("search said:\n%s", found)
 	}
 
-	// An installation with no model searches by words alone and says nothing
-	// about it: half a search is a whole answer.
+	// An installation with no model searches by words alone and writes nothing
+	// extra: a words-only search is a complete result.
 	if s.reply.Len() > 0 {
 		t.Errorf("the commands said beside their answers:\n%s", s.reply.String())
 	}
@@ -248,10 +248,10 @@ func parseIdentity(output string) string {
 }
 
 func TestACopiedVaultIsRefusedInsteadOfIndexed(t *testing.T) {
-	// Copying a vault folder copies its identity, and two folders claiming one
-	// identity cannot be told apart. Indexing either would write one vault's
-	// notes under the other's rows, so adding the second fails and the
-	// error says what to do about it.
+	// Copying a vault folder copies its identity, and two folders with one
+	// identity are indistinguishable. Indexing either would write one vault's
+	// notes under the other's rows, so adding the second fails and the error
+	// states the remedy.
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "original")
 
@@ -274,8 +274,8 @@ func TestACopiedVaultIsRefusedInsteadOfIndexed(t *testing.T) {
 }
 
 func TestAMovedVaultIsRecognisedInsteadOfRefused(t *testing.T) {
-	// Identity does not depend on the path precisely so that a folder can move.
-	// The registry is what has to catch up.
+	// Identity does not depend on the path, so a folder can move; the registry
+	// must update to match.
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "moved")
 	s.mustRun("scan", "moved")
@@ -333,9 +333,8 @@ func TestLinksShowsBothDirections(t *testing.T) {
 
 	out := s.mustRun("links", "demo", "notes/Entropy.md")
 	// Thermodynamics names it as a child and mentions it in prose; the fixture
-	// is what says so.
-	// The child edge is the one that makes the hierarchy, and it is written as a
-	// path — which is exactly the form a text match misses.
+	// defines both. The child edge defines the hierarchy and is written as a
+	// path, the form a text match misses.
 	if !strings.Contains(out, "child      Thermodynamics.md") {
 		t.Errorf("the child edge is missing:\n%s", out)
 	}
@@ -344,7 +343,7 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	if !strings.Contains(from, "points at:") {
 		t.Errorf("links said:\n%s", from)
 	}
-	// A link that answers to nothing says so and not being left out.
+	// A link with no target is reported explicitly rather than omitted.
 	broken := s.mustRun("links", "demo", "edge/broken-links.md")
 	if !strings.Contains(broken, "nothing by that name") {
 		t.Errorf("a dangling link was not reported:\n%s", broken)
@@ -352,8 +351,8 @@ func TestLinksShowsBothDirections(t *testing.T) {
 }
 
 func TestRenamingPreservesTheFolderWhereItIs(t *testing.T) {
-	// The name is what a person calls the collection; the folder keeps the name
-	// the filesystem gives it.
+	// The name is the collection's display name; the folder keeps the name
+	// assigned by the filesystem.
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "before")
 

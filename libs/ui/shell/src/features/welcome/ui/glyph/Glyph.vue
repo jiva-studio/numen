@@ -2,8 +2,8 @@
 /**
  * The numen glyph.
  *
- * One outline and no ground of its own, set in the ink of whatever it stands
- * on, so it reads at any size and in either half of a theme.
+ * One outline with no background of its own, drawn in the text colour of its
+ * container, so it is legible at any size and in either half of a theme.
  */
 </script>
 

@@ -37,16 +37,16 @@ const (
 // UnavailableError is a plugin, or a capability, that no plugin answers for, and why. It is
 // ErrUnavailable.
 type UnavailableError struct {
-	// Capability is what was asked for. Empty where a plugin was asked for by its id.
+	// Capability is what was requested. Empty where a plugin was requested by its id.
 	Capability string
-	// PluginID is the plugin asked for or found. Empty where none was found.
+	// PluginID is the plugin requested or found. Empty where none was found.
 	PluginID string
 	Reason   UnavailableReason
 	// Err is the cause the host gave.
 	Err error
 }
 
-// Error says what is unavailable and why.
+// Error reports what is unavailable and why.
 func (e *UnavailableError) Error() string {
 	subject := "plugin " + e.PluginID
 	if e.PluginID == "" {
@@ -82,7 +82,7 @@ func (e *UnavailableError) Unwrap() error {
 // PluginFailure is a plugin the host suspends after it failed to start, and why.
 type PluginFailure struct {
 	PluginID string
-	// Name is what the plugin is called to a person.
+	// Name is the display name of the plugin.
 	Name string
 	// Reason is a short UI label for the failure, such as "Failed to start".
 	Reason string
@@ -143,7 +143,7 @@ type PluginResolver interface {
 	// to the windows, and false where none does.
 	ResolveService(service string) (DiscoveredPlugin, bool)
 	// ResolveNoteProfile returns how the index keeps the notes of a type, as the enabled plugin that
-	// declares the type says, and false where none does.
+	// declares the type defines, and false where none does.
 	ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool)
 	GetPlugin(id string) (DiscoveredPlugin, bool)
 }

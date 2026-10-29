@@ -16,10 +16,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
-// ProgramName is what a task asks for the agent by, and what the settings keep its section under.
+// ProgramName is the identifier a task uses to select the agent, and the key of its settings section.
 const ProgramName = "numen"
 
-// programTitle is what the agent is called when shown to a person.
+// programTitle is the agent's display name.
 const programTitle = "Numen Agent"
 
 // The settings Configure reads.
@@ -36,9 +36,9 @@ const modelsLimit = 15 * time.Second
 
 var errClosing = errors.New("this agent is closing")
 
-// Server is numen's own agent: it works a task by asking an OpenAI-compatible chat API and calling
-// the vault's tools over MCP on the model's behalf. It answers AgentService, in a plugin's process
-// or linked into the one that hosts the vault. The zero value asks the default chat API with no
+// Server is numen's own agent: it works a task by calling an OpenAI-compatible chat API and calling
+// the vault's tools over MCP on the model's behalf. It implements AgentService, in a plugin's process
+// or linked into the process that hosts the vault. The zero value uses the default chat API with no
 // key.
 type Server struct {
 	agentrun.UnimplementedAgentServiceHandler
@@ -59,9 +59,9 @@ type Server struct {
 	registry agentrun.Registry
 }
 
-// Configure takes the settings: the base URL of the chat API, the key presented to it and the model
-// asked where a task names none. A setting the values do not carry is left as it was, and an empty
-// key is no key.
+// Configure applies the settings: the base URL of the chat API, the key sent to it and the model
+// used when a task names none. A setting absent from the values keeps its current value, and an empty
+// key means no key.
 func (s *Server) Configure(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -100,7 +100,7 @@ func (s *Server) getChat() chat {
 	}
 }
 
-// getModel is the model asked: the one named, else the configured one, else the default.
+// getModel returns the model to use: the one named, else the configured one, else the default.
 func (s *Server) getModel(named string) string {
 	if named != "" {
 		return named
@@ -113,8 +113,8 @@ func (s *Server) getModel(named string) string {
 	return defaultModel
 }
 
-// AskAgent works the task and reports each request to the model, what it says, each tool it calls
-// and why it stopped. A conversation goes on from the transcript in it before.
+// AskAgent works the task and reports each request to the model, its output, each tool call
+// and the stop reason. A conversation continues from the transcript stored for it.
 func (s *Server) AskAgent(
 	ctx context.Context,
 	req *connect.Request[agentrun.AskAgentRequest],
@@ -204,8 +204,8 @@ func (s *Server) appendConversation(conversation string, transcript []message) {
 	s.conversations[conversation] = append(s.conversations[conversation], transcript...)
 }
 
-// FinishConversation stops what is still being answered in the conversation and forgets what was
-// said in it.
+// FinishConversation stops what is still running in the conversation and discards its
+// history.
 func (s *Server) FinishConversation(
 	ctx context.Context,
 	req *connect.Request[agentrun.FinishConversationRequest],
@@ -283,7 +283,7 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 		return nil, ctx.Err()
 	}
 
-	// A failure is asked again, and what was listed under settings that have changed since is not kept.
+	// A failure triggers a new request, and a tool list fetched under settings that have since changed is not cached.
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err == nil && s.baseURL == request.baseURL && s.key == request.key {
@@ -292,13 +292,13 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 	return models, err
 }
 
-// Close stops every task still being worked and refuses new ones.
+// Close stops every running task and rejects new ones.
 func (s *Server) Close() error {
 	return s.registry.Close()
 }
 
-// getEffort is the depth of reasoning asked of the model the chat API lists: none where the task asks
-// for none, the API does not list the model, or the model takes no depth.
+// getEffort returns the reasoning depth requested from the model the chat API lists: none when the task requests
+// none, the API does not list the model, or the model takes no depth.
 func (s *Server) getEffort(ctx context.Context, name, level string) effort {
 	if level == "" {
 		return effort{}

@@ -38,8 +38,8 @@ describe('player status notifications', () => {
     expect(button(player).attributes('aria-label')).toBe('Играть')
   })
 
-  // The bar is a row of numbers to a reader who is listening, so where it
-  // stands is read out as the clock says it.
+  // A screen reader announces the bar position as a clock time, not as a
+  // number of milliseconds.
   it('reads the bar out as a time and not as a count of milliseconds', () => {
     expect(bar(mountPlayer({ at: 65_400 })).attributes('aria-valuetext')).toBe('1:05')
   })
@@ -75,8 +75,8 @@ describe('what a person did', () => {
 })
 
 describe('a sound longer than it was returned to be', () => {
-  // What plays says how far in it is, and it can be further in than whatever
-  // said how long it was. The bar runs that far and not stopping short.
+  // The playback position can exceed the reported length. The bar extends to the
+  // position and does not stop at the reported length.
   it('runs as far as the getFurthest anything has stood in it', () => {
     const player = mountPlayer({ at: 200_000, length: 125_000 })
     expect(bar(player).attributes('max')).toBe('200000')

@@ -40,8 +40,8 @@ export interface FileMenuCommandsDeps {
 }
 
 /**
- * The menu of one file, read again by `load` for the file named, each entry
- * with a handler that runs it and says the plugin is at work.
+ * The menu of one file, reloaded by `load` for the named file, each entry with a
+ * handler that runs it and reports that the plugin is working.
  */
 export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   const get = deps.get ?? getFileMenu

@@ -13,7 +13,7 @@ type RetryPlugin struct {
 	retry func(ctx context.Context, pluginID string) (*PluginFailure, error)
 }
 
-// NewRetryPlugin makes the use case over the host's retry. It refuses a nil retry.
+// NewRetryPlugin creates the use case over the host's retry. It rejects a nil retry.
 func NewRetryPlugin(retry func(ctx context.Context, pluginID string) (*PluginFailure, error)) (*RetryPlugin, error) {
 	if retry == nil {
 		return nil, ErrNoRetrier

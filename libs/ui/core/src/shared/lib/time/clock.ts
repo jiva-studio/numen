@@ -1,4 +1,4 @@
-/** The clock, and the only thing in the library that knows what time it is. */
+/** The clock, and the only place in the library that reads the current time. */
 
 export interface Clock {
   /** Milliseconds, monotonic. Only differences are used. */
@@ -14,8 +14,8 @@ export const browserClock: Clock = {
 }
 
 /**
- * When work is put on the screen. A component takes one as a default and a
- * test hands in its own, so what is drawn is drawn when the test says.
+ * Schedules work to be drawn on screen. A component takes one as its default,
+ * and a test supplies its own, so drawing happens when the test triggers it.
  */
 export type Paint = (draw: () => void) => void
 

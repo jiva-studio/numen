@@ -14,8 +14,8 @@ import type { PaletteKeys } from './keys'
 const props = defineProps<{ keys: PaletteKeys }>()
 
 /**
- * The keystroke in words, in the order it is held. This is the whole of what a
- * reader who is listening is told, and everything drawn is hidden from them.
+ * The keystroke as words, in the order the keys are pressed. This is all that
+ * screen reader users receive, and everything drawn is hidden from them.
  */
 const labelText = computed(() =>
   [...props.keys.icons.map((icon) => ICONS[icon].label), props.keys.letter]
@@ -44,9 +44,8 @@ const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills 
 </template>
 
 <style scoped>
-/* Small print on the ground a box is drawn on, inside a line that is a quarter
-   of the ink it is set in. The type is a token, so a cap in the foot of the
-   palette and a cap on a row are one object. */
+/* Small text on the cap's background, inside a line at a quarter of the text color. */
+/* The type is a token, so a cap in the palette footer and a cap on a row are identical. */
 .cap {
   /* The corner of a key cap, which is tighter than the corner of a node. */
   --cap-radius: 0.25rem;

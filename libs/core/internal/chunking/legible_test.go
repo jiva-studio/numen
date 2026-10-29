@@ -15,8 +15,8 @@ func TestACJKParagraphWithSentencePunctuationIsClean(t *testing.T) {
 }
 
 // Mixed scripts with a high ratio of unrelated symbols are what the dirty
-// threshold exists to catch, and a wider isAllowedInside must not let that
-// kind of token through.
+// threshold exists to catch, and a wider isAllowedInside must not let that kind of
+// token through.
 func TestMixedScriptNoiseStaysDirty(t *testing.T) {
 	noisy := "wo¤rda wo§rdb wo¥rdc wo¦rdd wo¨rde wo¤rdf wo§rdg wo¥rdh"
 
@@ -26,7 +26,7 @@ func TestMixedScriptNoiseStaysDirty(t *testing.T) {
 	}
 }
 
-// A negative threshold asks for none, for both of them. A corpus written in a
+// A negative threshold disables the check, for both fractions. A corpus written in a
 // script these fractions were not measured on is indexed whole.
 func TestANegativeThresholdAsksForNone(t *testing.T) {
 	rubbish := "|| $$ ?? %%% ### @@@ ~~~ ^^^"

@@ -4,19 +4,22 @@
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { MessageWriter } from '@/shared/notices/messages'
 
-/** Everything this says in the window's voice. */
+/** The messages this module shows in the window. */
 export interface SecretWords {
   /** The key could not be stored or removed. */
   readonly secretFailed: string
 }
 
-/** What this asks of the vault. */
+/** The vault operations this module uses. */
 export interface SecretDeps {
   writePluginSecret(pluginId: string, name: string, key: string): Promise<void>
   deletePluginSecret(pluginId: string, name: string): Promise<void>
 }
 
-/** Where this says what happened, and how the settings are read again after. */
+/**
+ * The messages this module shows, and how the settings are reloaded
+ * afterwards.
+ */
 export interface SecretOptions {
   readonly words: SecretWords
   readonly notify: MessageWriter

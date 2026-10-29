@@ -24,8 +24,8 @@ type Plugins interface {
 }
 
 // Proxy forwards the calls a window receives for the services a plugin serves, with the
-// token the plugin knows the host by. It holds a reference on the plugin from the first byte of a
-// call to the last, so a stream outlives no plugin.
+// token by which the plugin identifies the host. It holds a reference on the plugin from the first byte of a
+// call to the last, so a stream cannot outlive its plugin.
 type Proxy struct {
 	host Plugins
 }

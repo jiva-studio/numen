@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-// Texts is the text versions of a vault in memory, worked as one plugin works them through the
+// Texts is the text versions of a vault in memory, used as a plugin uses them through the
 // host. A version's file is read from the folder of the plugin that made it, as the host reads it:
 // the store SetStore names, or a folder in memory. The live version is the one the core would show:
 // the newest whose sources are unchanged and whose file still has the hash it was recorded with.
-// With reaches the texts of another vault of the same host, made empty on first use.
+// With returns the texts of another vault of the same host, empty on first use.
 type Texts struct {
 	world    *textWorld
 	pluginID string
@@ -101,7 +101,7 @@ func (w *textWorld) getStore(pluginID string) host.Store {
 	return store
 }
 
-// TakeChanges is every file whose versions changed since the last time it was asked, in order.
+// TakeChanges returns every file whose versions changed since the last call, in order.
 func (t *Texts) TakeChanges() []string {
 	t.world.mu.Lock()
 	defer t.world.mu.Unlock()

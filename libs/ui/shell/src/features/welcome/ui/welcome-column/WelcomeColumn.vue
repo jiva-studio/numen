@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The column the screen is read in: the mark and the ways in at its head, the
- * vaults under them.
+ * The column of the welcome screen: the mark and the entry points at its head, the
+ * vaults below them.
  *
- * Short of the height the column needs, it stands as two, the ways in beside
- * the list.
+ * When the available height is less than the column needs, it becomes two columns:
+ * the entry points beside the list.
  */
 import { WelcomeLead } from '../welcome-lead'
 import { WelcomeVaults } from '../welcome-vaults'
@@ -12,7 +12,7 @@ import type { Offer, VaultRow, WelcomeAction } from '../../lib/welcome'
 
 withDefaults(
   defineProps<{
-    /** What is placed under the mark, telling a person which window they opened. */
+    /** Text placed under the mark, identifying which window the user opened. */
     name?: string
     /** The ways in, above the list. */
     ways?: readonly WelcomeAction[]
@@ -35,7 +35,7 @@ defineEmits<{
 }>()
 
 defineSlots<{
-  /** What stands where the list would be while there is no list yet. */
+  /** Content shown in place of the list while no list is loaded. */
   waiting?(): unknown
   /** How a vault on the list is drawn. */
   vault?(props: { vault: VaultRow }): unknown

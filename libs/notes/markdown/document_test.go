@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-// A note that is opened and not changed comes back byte for byte. Anything less
-// is a diff the person did not ask for, on every save, forever.
+// A note that is opened and not changed is returned byte for byte. Anything less
+// is an unrequested diff on every save.
 func TestOpenAndCloseChangesNothing(t *testing.T) {
 	for name, raw := range map[string]string{
 		"no frontmatter":     "# Entropy\n\nA measure.\n",

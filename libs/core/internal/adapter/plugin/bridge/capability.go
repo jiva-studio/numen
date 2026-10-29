@@ -1,6 +1,7 @@
 package bridge
 
-// The capabilities the core asks a plugin for, as a manifest declares them.
+// The capabilities the core requests from a plugin, as declared in its
+// manifest.
 const (
 	CapabilityEmbedding = "embedding"
 	// CapabilityTools marks a plugin that serves PluginToolService: the tools it offers an agent.

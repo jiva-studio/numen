@@ -1,8 +1,8 @@
 // Package tools lets a plugin offer an agent tools: it lists them, runs them, and answers
 // PluginToolService for the host.
 //
-// A tool is a function of a struct of arguments that answers with a struct. The schemas an agent is
-// told are derived from the two structs.
+// A tool is a function from an argument struct to a result struct. The schemas
+// presented to an agent are derived from the two structs.
 package tools
 
 import (
@@ -34,7 +34,7 @@ const (
 	ReadWrite
 )
 
-// Step is how a call of a tool is shown to a person.
+// Step is how a call of a tool is displayed to the user.
 type Step int
 
 const (
@@ -58,16 +58,16 @@ const (
 	Reading
 )
 
-// Spec says what a tool is called, what it is for and where it is offered.
+// Spec describes a tool: its name, its purpose and where it is offered.
 type Spec struct {
 	// Name is what an agent calls the tool by.
 	Name string
-	// Title is what a person reads the tool as.
+	// Title is the tool's display name.
 	Title string
-	// Description is what the tool is for and when an agent reaches for it.
+	// Description is what the tool is for and when an agent uses it.
 	Description string
 	Effect      Effect
-	// Step is how a call is shown to a person.
+	// Step is how a call is displayed to the user.
 	Step Step
 	// Servers are the servers the tool is offered on. None is the full server alone.
 	Servers []Server
@@ -189,9 +189,10 @@ type callContextKey struct{}
 
 type vaultKey struct{}
 
-// GetCallContext returns the context of the question the call was made under: what the asking view
-// shows, under keys that start with the id of the plugin that wrote them and a slash. It is empty for
-// a question asked with none. A tool reads it as data about the call, and it is no part of the arguments.
+// GetCallContext returns the context of the query the call was made under: what
+// the originating view shows, under keys that start with the id of the plugin
+// that wrote them and a slash. It is empty for a query with none. A tool reads
+// it as data about the call; it is not part of the arguments.
 func GetCallContext(ctx context.Context) map[string]string {
 	request, _ := ctx.Value(callContextKey{}).(map[string]string)
 	return request

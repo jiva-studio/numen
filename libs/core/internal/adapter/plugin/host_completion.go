@@ -5,9 +5,9 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-// GetCompletionChoice returns the agent and the model the plugin's setting of
-// type agent holds, as the person stored it. A plugin declaring no such setting,
-// or one never set, holds the empty choice.
+// GetCompletionChoice returns the agent and the model stored by the user in the
+// plugin's setting of type agent. A plugin declaring no such setting, or one
+// never set, yields the empty choice.
 func (h *Host) GetCompletionChoice(pluginID string) completionport.CompletionChoice {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -22,9 +22,9 @@ func (h *Host) GetCompletionChoice(pluginID string) completionport.CompletionCho
 	return completionport.ReadCompletionChoice(h.settings[pluginID][key])
 }
 
-// CheckCompletionConsent answers nil for a plugin the person lets ask for model
-// completions, and port.ErrNoConsent for any other. A plugin the person has not
-// answered for is recorded as asking, so the window can put the question to them.
+// CheckCompletionConsent returns nil for a plugin the user allows to request
+// model completions, and port.ErrNoConsent for any other. A plugin with no
+// recorded answer is recorded as asking, so the window can put the question to the user.
 func (h *Host) CheckCompletionConsent(pluginID string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -38,8 +38,8 @@ func (h *Host) CheckCompletionConsent(pluginID string) error {
 	return completionport.ErrNoConsent
 }
 
-// getCompletionConsentLocked is whether the person lets the plugin ask for model
-// completions, for a caller holding h.mu.
+// getCompletionConsentLocked reports whether the user allows the plugin to
+// request model completions, for a caller holding h.mu.
 func (h *Host) getCompletionConsentLocked(manifest pluginport.PluginManifest) pluginport.CompletionConsent {
 	if !manifest.HasPermission(pluginport.PermissionAIComplete) {
 		return pluginport.ConsentNone

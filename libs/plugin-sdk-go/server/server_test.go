@@ -586,7 +586,7 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 	}
 }
 
-// A server refuses to start when the auth token is empty.
+// A server fails to start when the auth token is empty.
 func TestServerRejectsEmptyToken(t *testing.T) {
 	s := New(
 		WithPort(0),

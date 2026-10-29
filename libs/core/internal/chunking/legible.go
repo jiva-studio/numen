@@ -5,9 +5,9 @@ import (
 	"unicode/utf8"
 )
 
-// isLegible says whether a chunk reads as text. Recognition that went wrong reads
-// as punctuation with letters in it, and it is caught by two fractions: how much
-// of the chunk is letters, and how many of its words carry a mark inside them.
+// isLegible reports whether a chunk reads as text. Failed recognition reads
+// as punctuation with letters in it, and it is detected by two fractions: how
+// much of the chunk is letters, and how many of its words carry a mark inside them.
 //
 // Both thresholds are configuration, because where they sit depends on the
 // scripts a corpus is written in.
@@ -72,7 +72,7 @@ func countWords(chunk string) (words, dirty int) {
 	return words, dirty
 }
 
-// isSpelled says whether one word is written the way words are: letters, the marks
+// isSpelled reports whether one word is written the way words are: letters, the marks
 // that belong to them, digits, and the few characters that join a word to
 // itself, with anything else only at its ends.
 func isSpelled(token string) bool {
@@ -177,7 +177,7 @@ func isAllowedInside(r rune) bool {
 	}
 }
 
-// isCJKPunctuation says whether r falls in the two Unicode blocks CJK text is
+// isCJKPunctuation reports whether r falls in the two Unicode blocks CJK text is
 // punctuated with: CJK Symbols and Punctuation (U+3000–U+303F — the
 // ideographic full stop and comma, corner brackets, the wave dash) and
 // Halfwidth and Fullwidth Forms (U+FF00–U+FFEF — the fullwidth comma,

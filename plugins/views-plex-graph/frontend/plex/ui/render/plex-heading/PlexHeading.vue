@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * One place inside a node, drawn in a box of its own on the ground the headings
- * stand on.
+ * One place inside a node, drawn in a box of its own on the surface the headings sit on.
  */
 import { computed } from 'vue'
 import type { NodeHeadings } from '../../../lib/inside'
@@ -10,7 +9,7 @@ import type { DrawnHeading } from '../../../lib/open'
 const props = defineProps<{
   /** The heading, as far out from under the box as it has come. */
   heading: DrawnHeading
-  /** The headings and the room they are given. */
+  /** The headings and the space they are given. */
   hung: NodeHeadings
 }>()
 
@@ -63,7 +62,7 @@ const headingStyle = computed(() => ({
   transition: background var(--numen-motion-hover) var(--numen-easing);
 }
 
-/* A ground under the one the hand is on, which is what says it can be pressed. */
+/* A highlighted surface under the pointer indicates the heading can be pressed. */
 .plex__heading:hover {
   background: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 12%);
 }

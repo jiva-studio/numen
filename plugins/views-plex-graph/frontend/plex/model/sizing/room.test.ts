@@ -1,7 +1,7 @@
 /**
- * The room a plex has and what is measured against it: the viewport it is
- * watching, the room kept for an icon, and the widths and headings handed to the
- * drawing. The measuring of text is `measure.test.ts`; here it is a stand-in.
+ * The space a plex has and what is measured against it: the viewport it
+ * observes, the space reserved for an icon, and the widths and headings passed
+ * to the drawing. Text measurement is covered by `measure.test.ts`; here it is a stub.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -48,7 +48,7 @@ const NODE: PlacedNode = {
   opacity: 1,
 }
 
-/** A viewport that reports a size when asked and records the stopping. */
+/** A viewport that reports a size on request and records when observation stops. */
 function createViewport() {
   const stop = vi.fn<() => void>()
   const watching: Array<(size: Size) => void> = []

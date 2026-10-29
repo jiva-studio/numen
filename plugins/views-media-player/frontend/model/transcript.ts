@@ -24,7 +24,7 @@ export interface TranscriptOptions {
   audioPlayer?: Player
   /** How long the typing settles for before the words are written. */
   idleMs?: number
-  /** Whether this window can play a kind of sound. */
+  /** Whether this window can play a media type. */
   plays?: MediaTypeProbe
 }
 
@@ -149,7 +149,7 @@ export function useTranscript(
     return isWorking.value ? WORDS.transcribing : WORDS.silence
   })
 
-  /** The person is taken to the moment the first of the spans was said at. */
+  /** Moves playback to the start time of the first of the spans. */
   const reach = async (...spans: readonly TextRange[]) => {
     await firstRead
     if (!isOpen || spans.length === 0) return

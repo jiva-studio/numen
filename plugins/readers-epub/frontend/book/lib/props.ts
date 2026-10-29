@@ -1,12 +1,12 @@
 import type { TextRange } from '@numen/ui'
 import type { BookWords } from './words'
 
-/** What one document of a book reaches the reader as. */
+/** The props of the reader for one document of a book. */
 export interface BookProps {
   /**
    * One document of the book, as it is drawn. Every run of text in it carries
    * `data-offset`, the byte offset at which that run begins in the book's text.
-   * It reaches this component already measured against what may be drawn.
+   * It arrives at this component already measured against the drawable content.
    */
   markup?: string
   /** The document being drawn, as the book's archive names it. */

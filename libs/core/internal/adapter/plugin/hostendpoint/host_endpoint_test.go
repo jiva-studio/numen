@@ -23,7 +23,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// callers is a host that knows the plugins it was told of and answers with the completer it was given.
+// callers is a host that resolves the plugins registered with it and answers
+// with the completer it was given.
 type callers struct {
 	mu        sync.Mutex
 	plugins   map[string]string
@@ -97,7 +98,7 @@ func (c *callers) getAcquired(pluginID string) int {
 	return c.acquired[pluginID]
 }
 
-// callerCompleter answers with the id of the plugin it was told asks.
+// callerCompleter answers with the id of the calling plugin.
 type callerCompleter struct{}
 
 func (callerCompleter) Complete(_ context.Context, pluginID string, _ completionport.Question) (string, error) {
@@ -140,8 +141,8 @@ func readCode(t *testing.T, err error) connect.Code {
 	return failure.Code()
 }
 
-// A plugin holding the permission is answered with the text, and the completer
-// is told the question as the plugin put it.
+// A plugin holding the permission receives the text, and the completer
+// receives the question as the plugin sent it.
 func TestHostEndpoint_ServesPluginWithPermission(t *testing.T) {
 	var requestVal completionport.Question
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(_ context.Context, question completionport.Question) (string, error) {
@@ -166,7 +167,7 @@ func TestHostEndpoint_ServesPluginWithPermission(t *testing.T) {
 	}
 }
 
-// A plugin without the ai:complete permission fails, and nothing is asked of a model.
+// A plugin without the ai:complete permission fails, and no model is called.
 func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
 	request := false
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) {
@@ -245,7 +246,7 @@ func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 	}
 }
 
-// A host with nothing to answer completions refuses with NO_ROUTE.
+// A host without a completion backend returns NO_ROUTE.
 func TestAHostWithoutACompleterAnswersNoRoute(t *testing.T) {
 	res, err := newHostClient(t, newCallers(nil), "token-a").Complete(t.Context(), newHostQuestion())
 	if err != nil {
@@ -328,8 +329,8 @@ func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	}
 }
 
-// A plugin the person has not let ask a model is answered NO_CONSENT, and
-// nothing is asked of a model.
+// A plugin without user consent to call a model receives NO_CONSENT, and no
+// model is called.
 func TestHostEndpoint_ReturnsNoConsentWithoutConsent(t *testing.T) {
 	request := false
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) {
@@ -359,7 +360,8 @@ func TestThePermissionIsCheckedBeforeTheConsent(t *testing.T) {
 	}
 }
 
-// The completer is told the plugin the token names, whatever the question says.
+// The completer receives the plugin identified by the token, regardless of the
+// question's content.
 func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 	request := newHostQuestion()
 	request.Msg.Question.Purpose = "md.numen.c"

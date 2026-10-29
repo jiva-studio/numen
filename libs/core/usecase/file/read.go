@@ -1,5 +1,5 @@
-// Package file holds the scenarios that act on a vault's files by their path,
-// whatever kind of file the vault holds each of them as.
+// Package file holds the scenarios that act on a vault's files by path,
+// regardless of the kind of file the vault classifies each as.
 package file
 
 import (
@@ -36,34 +36,34 @@ const (
 	NotText ReadOutcome = "not text"
 )
 
-// ReadResult is one range of a file as a read hands it over.
+// ReadResult is one range of a file returned by a read.
 type ReadResult struct {
 	Outcome ReadOutcome
 	// Text is the range that was read. It is empty for every outcome but Ok.
 	Text string
-	// Start and Length are the range that came back: what was asked for, held
-	// within the file and cut at the characters around it.
+	// Start and Length are the returned range: the requested range clamped
+	// to the file and aligned to character boundaries.
 	Start  int
 	Length int
-	// Whole is how long the file is, in bytes, so a caller knows what relies on
-	// either side of the range.
+	// Whole is the length of the file in bytes, so a caller knows what lies
+	// before and after the range.
 	Whole int
 }
 
-// Read hands over a range of one file's bytes, addressed by its path from the
+// Read returns a range of one file's bytes, addressed by its path from the
 // vault root.
 //
-// What the vault passes over is passed over here: the folder belonging to the
-// application, and every name the vault's ignore rules match.
+// Paths the vault excludes are excluded here: the application's own folder and
+// every name matched by the vault's ignore rules.
 type Read struct {
 	Readers vaultport.VaultReaders
 }
 
 // Execute reads length bytes of the file at path, beginning at start. A length
-// of zero asks for as much as one read carries.
+// of zero requests the maximum a single read returns.
 //
-// An error is the vault being out of reach, or a path that does not name a file
-// inside it. What is wrong with the file itself is an outcome.
+// An error means the vault is unreachable or the path does not name a file
+// inside it. A problem with the file itself is reported as an outcome.
 func (u Read) Execute(
 	ctx context.Context, v domain.Vault, path string, start, length int,
 ) (ReadResult, error) {
@@ -100,8 +100,8 @@ func (u Read) Execute(
 	return readRange(file, path, start, length)
 }
 
-// checkRange is the length a read asks for, with zero standing for as much as
-// one read carries, or the error of a range no read can serve.
+// checkRange returns the length a read requests, where zero means the maximum a
+// single read returns, or the error for a range no read can serve.
 func checkRange(path string, start, length int) (int, error) {
 	if start < 0 {
 		return 0, fmt.Errorf("a range of %s begins at %d", path, start)

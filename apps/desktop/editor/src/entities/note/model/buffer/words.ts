@@ -1,4 +1,4 @@
-/** What a note tab says when its file stops it. */
+/** Note tab text shown when its file blocks it. */
 // Stryker disable StringLiteral: interface copy
 import type { NoteErrorCode } from './tabState'
 

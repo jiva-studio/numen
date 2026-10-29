@@ -1,8 +1,8 @@
 /**
- * The hand on a book: which gestures turn the page and which turn nothing.
+ * Pointer gestures on a book: which gestures turn the page and which do not.
  *
- * The browser's selection is stood in for, so a test says what is taken up and
- * where, and the reader is asked what it turned.
+ * The browser's selection is replaced by a stub, so a test sets what is
+ * selected and where, and checks whether the reader turned the page.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
@@ -35,7 +35,7 @@ const setUp = (edge = 0) => {
 const pointer = (clientX: number, target: unknown = null, button = 0): PointerEvent =>
   ({ button, clientX, target }) as unknown as PointerEvent
 
-/** A selection standing where the test says. */
+/** A selection at the position the test sets. */
 const select = (selection: {
   isCollapsed: boolean
   text: string

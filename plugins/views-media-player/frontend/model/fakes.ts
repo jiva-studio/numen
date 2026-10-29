@@ -26,8 +26,8 @@ export const DELETE_ENTRY: MenuEntry = {
 }
 
 /**
- * A recording the tests change as the application would. `setWorking` says work on it began or
- * ended, the way the window's tasks say it.
+ * A recording that tests modify as the application would. `setWorking`
+ * reports that work on it began or ended, as the window's tasks do.
  */
 export function createRecordings(
   cues: readonly Cue[] = CUES,
@@ -88,5 +88,5 @@ export function createPlayer() {
   return { player, seeks }
 }
 
-/** Everything asked for has been answered. */
+/** Resolves once every pending request has been answered. */
 export const flush = () => new Promise((resolve) => setTimeout(resolve, 0))

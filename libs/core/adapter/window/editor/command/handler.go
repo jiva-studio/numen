@@ -33,7 +33,7 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler 
 }
 
 // ListCommands lists the commands of every enabled plugin that the palette offers. The palette
-// tells a file by its extension, so a command over notes of a type is offered by its plugin's own
+// identifies a file by its extension, so a command over notes of a type is offered by its plugin's own
 // view and not listed.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
@@ -49,8 +49,8 @@ func (h *Handler) ListCommands(
 	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
 }
 
-// RunPluginCommand runs one of them. A call that is no command, does not meet one, fails, or reaches
-// no plugin is answered with an error code and what a person reads about it.
+// RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or reaches
+// no plugin is answered with an error code and a user-readable message.
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {

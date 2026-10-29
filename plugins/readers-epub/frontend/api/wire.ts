@@ -23,7 +23,7 @@ const PLUGIN_ROUTE = '/plugin/md.numen.readers.epub'
 /** The service name the manifest declares. */
 const SERVICE = 'numen.epub'
 
-/** How often a method that answers `unavailable` is asked again before it fails. */
+/** How often a method that answers `unavailable` is retried before it fails. */
 const MAX_BUSY_RETRIES = 3
 
 /** How long the window waits before asking an unavailable method again. */
@@ -59,7 +59,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Creates the books port over the client of the numen.epub API. */
 export const createBooks = (api: Api): Books => {
-  /** The response of a method, asked again while the method is unavailable. */
+  /** The response of a method, retried while the method is unavailable. */
   const call = async <Req, Res>(method: string, request: Req): Promise<Res> => {
     for (let attempt = 0; ; attempt++) {
       const result = await api.call<Req, Res>(method, request)

@@ -1,11 +1,11 @@
-// Package host is the vault as a plugin works it through the host: its files, its notes and links
-// as the index knows them, the cache the installation keeps for it, and its own folder of the
+// Package host is the plugin's view of the vault through the host: its files, its notes and links
+// as the index knows them, the cache the installation keeps for it, and the plugin's own folder in the
 // vault's store.
 // It is also the core's shared queue of heavy work and its list of tasks.
 //
-// The host answers each call as the plugin it knows by its token. It holds a call on the vault that
-// reads to vault:read and one that changes anything to vault:write; the plugin's own folder takes
-// no permission.
+// The host identifies the calling plugin by its token. A call on the vault that reads requires
+// vault:read and one that changes anything requires vault:write; the plugin's own folder requires no
+// permission.
 package host
 
 import (
@@ -51,8 +51,8 @@ type IndexState struct {
 	Reason string
 }
 
-// Change is what a watch tells: the files that changed, or that the host now shows another vault and
-// the watch has to begin again.
+// Change is what a watch reports: the files that changed, or that the host now shows another vault and
+// the watch must restart.
 type Change struct {
 	Paths          []string
 	IsVaultChanged bool
@@ -63,22 +63,22 @@ type Change struct {
 type Vault interface {
 	// GetVault names the vault, or returns ErrNoVault.
 	GetVault(ctx context.Context) (VaultInfo, error)
-	// GetVaults lists every vault the installation knows.
+	// GetVaults lists every vault in the installation.
 	GetVaults(ctx context.Context) ([]VaultInfo, error)
-	// With is the vault of the identity, worked as the shown vault is. A call on it returns
-	// ErrUnknownVault when the installation knows no such vault.
+	// With returns the vault with the given identity, used as the shown vault is. A call on it returns
+	// ErrUnknownVault when the installation has no such vault.
 	With(id VaultID) Vault
-	// EnsureIndexed starts reading the vault into the index when it is not there, and says where
-	// that stands. The work goes on after it returns.
+	// EnsureIndexed starts reading the vault into the index when it is not there, and returns the index
+	// state. The work continues after it returns.
 	EnsureIndexed(ctx context.Context) (IndexState, error)
-	// WatchMoves tells that something moved in some vault, until ctx is done. It returns once the
-	// watch is on, and the channel closes when the watch ends.
+	// WatchMoves signals that something moved in some vault, until ctx is done. It returns once the
+	// watch is active, and the channel closes when the watch ends.
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
 
 	StatFile(ctx context.Context, path string) (FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, FileStat, error)
-	// Write replaces the file if it is still what the baseline says, else it returns ErrStale.
+	// Write replaces the file if it still matches the baseline, otherwise it returns ErrStale.
 	Write(ctx context.Context, path string, content []byte, baseline FileStat) (FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error
@@ -100,7 +100,7 @@ type Vault interface {
 	ReadCache(ctx context.Context, name string) ([]byte, bool, error)
 	WriteCache(ctx context.Context, name string, content []byte) error
 
-	// Watch tells of the files that changed until ctx is done. It returns once the watch is on, and
+	// Watch reports the files that changed until ctx is done. It returns once the watch is active, and
 	// the channel closes when the watch ends.
 	Watch(ctx context.Context) (<-chan Change, error)
 }

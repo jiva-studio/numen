@@ -16,22 +16,22 @@ import (
 // Files is the vault's files as an edit works them.
 type Files interface {
 	Reader
-	// Write replaces the file if it is still what the file stat says, else it returns ErrStale.
-	// An empty file stat holds the write to nothing.
+	// Write replaces the file if it still matches the file stat, else it returns ErrStale.
+	// An empty file stat disables the staleness check.
 	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
 	// Lock holds the vault's writers until the release is called.
 	Lock(ctx context.Context) (release func(), err error)
 }
 
-// Levels brings the named notes up to date in the index, so that what a write changed is findable
-// before the write is reported done.
+// Levels updates the named notes in the index, so that what a write changed is searchable
+// before the write is reported complete.
 type Levels func(ctx context.Context, v domain.Vault, paths []string) error
 
 // Baseline is what a caller last saw of the note it is saving.
 //
-// Prose answers first: text that is still what the caller was given is the text it read, whatever
-// the file's size and time say. A synchroniser, a checkout and a touch all move those over text that
-// did not change, and comparing them alone is what asks a person about a file nobody edited.
+// Prose is compared first: text equal to the text the caller read is unchanged,
+// regardless of file size and time. A synchroniser, a checkout and a touch all change those
+// without changing the text, and comparing them alone would report a conflict for a file nobody edited.
 //
 // FileStat answers for text that did move, and is what makes a save that follows a save land: the
 // note is at the file stat the last write produced, so it is the note this caller put there.
@@ -66,8 +66,8 @@ type Edit struct {
 	Entropy io.Reader
 
 	FileStat domain.FileStat
-	// ShouldOverwrite is a caller writing what is in front of the person: the note on disk is replaced
-	// stamped.
+	// ShouldOverwrite is set by a caller writing the user's current text: the note on disk is
+	// replaced and no identifier is added.
 	ShouldOverwrite bool
 	// Bound is the most the file may be. Zero holds it to nothing.
 	Bound int
@@ -105,8 +105,8 @@ func (e Edit) splice(
 	}
 	defer release()
 
-	// What the file is, asked before its bytes are read, which is the order a read hands its
-	// file stat over in.
+	// The file stat is read before the file bytes, matching the order in which a read
+	// returns them.
 	on, looked := e.statNote(ctx, files, path)
 	raw, err := e.readNote(ctx, files, path)
 	if err != nil {
@@ -133,8 +133,8 @@ func (e Edit) splice(
 		return domain.FileStat{}, err
 	}
 
-	// Every change to a note's contents comes through here, so the size it is written within is asked
-	// once, of the file the change came to.
+	// Every change to a note's contents passes through here, so the size limit is checked
+	// once, against the content being written.
 	content := doc.Bytes()
 	if err := CheckSize(path, len(content), e.Bound); err != nil {
 		return domain.FileStat{}, err
@@ -151,9 +151,9 @@ func (e Edit) statNote(ctx context.Context, files Reader, path string) (domain.F
 	return domain.FileStat{}, nil
 }
 
-// readNote is the bytes of the note at path. A caller overwriting a note that is not there gets no
-// bytes: the write makes the note out of the person's own text, with no frontmatter and no
-// identifier.
+// readNote returns the bytes of the note at path. A caller overwriting a note that does not
+// exist gets no bytes: the write creates the note from the user's own text, with no
+// frontmatter and no identifier.
 func (e Edit) readNote(ctx context.Context, files Reader, path string) ([]byte, error) {
 	raw, err := files.Read(ctx, path)
 	switch {
@@ -179,8 +179,8 @@ func (e Edit) getExpected(path string, on domain.FileStat, looked error) (domain
 	return on, nil
 }
 
-// addIdentifier writes the identifier a note arrived without. A caller writing over what is there
-// leaves the frontmatter as the person wrote it.
+// addIdentifier writes an identifier into a note that has none. A caller overwriting
+// existing content leaves the frontmatter unchanged.
 func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil

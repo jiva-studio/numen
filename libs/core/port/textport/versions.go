@@ -46,7 +46,7 @@ type TextFileStores interface {
 	Open(v domain.Vault) (TextFiles, error)
 }
 
-// VersionListener is told that the versions of a file changed: one was put,
+// VersionListener is notified that the versions of a file changed: one was added,
 // removed or moved, so the live version may differ.
 type VersionListener interface {
 	ReportVersionsChanged(v domain.Vault, path string)

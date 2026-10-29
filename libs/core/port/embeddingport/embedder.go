@@ -17,8 +17,8 @@ type EmbeddingModel struct {
 	Name       string
 	Dimensions int
 
-	// MaxTokens is where the model truncates what it is given. Zero is a model
-	// that did not say, and then a chunk is cut at whatever the caller asks.
+	// MaxTokens is the model's truncation limit. Zero means the model did not
+	// report one, and a chunk is then cut at the length the caller requests.
 	//
 	// A chunk is cut in words and bounded in characters, so this is turned into
 	// characters by a floor and not a measurement: text of another script takes
@@ -44,14 +44,13 @@ func (m EmbeddingModel) String() string {
 // Recipe is everything about this model that decides what a vector is, as one
 // value.
 //
-// A vector kept beyond the row that pointed at it is claimed again by the text
+// A vector retained beyond the row that pointed at it is looked up by the text
 // it was made from and the recipe it was made under. Anything left out of the
-// recipe is something that can change while the key does not, and a vector
-// found under a key that no longer describes it is worse than one that was
-// never kept.
+// recipe can change while the key does not, and a vector found under a key that
+// no longer describes it is worse than no stored vector.
 //
-// Where the vector was made leads it. Two places serving one name are two sets
-// of rows, and a question is asked under the recipe the index was filled with.
+// The provider of the vector comes first. Two places serving one name are two
+// sets of rows, and a query uses the recipe the index was filled with.
 //
 // How the numbers are stored is the quantisation and the scale it was applied
 // at. The scale is the grid the bytes sit on, so a scale moved makes every byte
@@ -61,8 +60,8 @@ func (m EmbeddingModel) Recipe() string {
 		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8, Int8Scale)
 }
 
-// Embedder turns text into vectors. The core asks for it and does not know
-// whether the answer is computed on this machine or bought from a service.
+// Embedder converts text into vectors. The core requests them and does not know
+// whether they are computed on this machine or obtained from a service.
 //
 // Vectors are unit length, so a dot product is a cosine and the sign of a
 // dimension carries meaning.

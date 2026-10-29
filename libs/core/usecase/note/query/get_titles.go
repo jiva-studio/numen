@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 )
 
-// Titles is what the notes at some paths are called. Missing is every path that
-// names no note, in the order it was asked for.
+// Titles is the titles of the notes at some paths. Missing is every path that
+// matches no note, in the order requested.
 type Titles struct {
 	Notes   []domain.NoteRef
 	Missing []string

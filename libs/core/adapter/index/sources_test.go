@@ -60,7 +60,7 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 	}
 }
 
-// getUnembeddedPassages is every chunk of a vault that owes a vector, asked in one page.
+// getUnembeddedPassages returns every chunk of a vault that needs a vector, fetched in one page.
 func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	t.Helper()
 	owed, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, benchModel, "", 1000)
@@ -70,9 +70,8 @@ func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Pa
 	return owed
 }
 
-// getUnembeddedPassagesPaged is every chunk of a vault that owes a vector, asked a page of the
-// size given at a time, each page carrying on from the cursor the last handed
-// back.
+// getUnembeddedPassagesPaged returns every chunk of a vault that needs a vector, fetched in pages
+// of the given size, each page continuing from the cursor returned by the previous one.
 func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
 	t.Helper()
 	var visited []domain.Passage
@@ -108,9 +107,9 @@ func getSourcePaths(passages []domain.Passage) []string {
 	return out
 }
 
-// A walk over what owes a vector visits every owed chunk of its own vault once,
-// newest source first, whatever the page size, whatever instant a source is
-// stamped with and however high its rows are numbered.
+// A paged walk over the chunks that need a vector visits each such chunk of its
+// own vault once, newest source first, regardless of page size, source
+// timestamp, or row numbering.
 func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
 	db := openDB(t)
 	numberRowsPast2To62(t, db)
@@ -177,7 +176,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 	}
 }
 
-// A cursor this index did not hand out fails, and nothing is visited.
+// A cursor this index did not issue is rejected, and nothing is visited.
 func TestGetUnembeddedChunks_RejectsForeignCursor(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
@@ -250,8 +249,8 @@ func TestGetSourceText_UnknownPathReturnsNotFound(t *testing.T) {
 	}
 }
 
-// Vectors saved through the port settle what the chunks owed, and a vector for
-// a chunk this index did not hand out fails.
+// Vectors saved through the port clear the chunks that needed them, and a
+// vector for a chunk this index did not issue is rejected.
 func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)

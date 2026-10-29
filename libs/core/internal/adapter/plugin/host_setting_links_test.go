@@ -40,8 +40,8 @@ func newLinkedHost(t *testing.T) *Host {
 	return host
 }
 
-// The plugin is launched with the weights of the model the person chose, and handed the settings
-// whose condition holds.
+// The plugin is launched with the weights of the selected model and receives
+// the settings whose condition holds.
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * What is being dragged, said beside the pointer and catching nothing. One
- * line, then an ellipsis.
+ * The dragged item's label, shown next to the pointer without capturing events.
+ * One line, then an ellipsis.
  */
 import { computed } from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'

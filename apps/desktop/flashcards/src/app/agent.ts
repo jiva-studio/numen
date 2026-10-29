@@ -1,6 +1,7 @@
 /**
- * The agent of the window, which the plugins ask about what they show. Whether it can be reached
- * is asked once as the window opens; until the answer comes, it is taken to be reachable.
+ * The agent of the window, which plugins query for what they show. Whether it is
+ * reachable is queried once when the window opens; until the answer arrives, it
+ * is assumed reachable.
  */
 import { shallowRef } from 'vue'
 import {
@@ -12,7 +13,7 @@ import {
 } from '@numen/plugin-sdk'
 import { WORDS } from '@/shared/words'
 
-/** As much of the agent service as the window asks of it. */
+/** The part of the agent service that the window uses. */
 export interface WindowAgentClient extends AgentClient {
   getAgentState(
     request: Record<string, never>,

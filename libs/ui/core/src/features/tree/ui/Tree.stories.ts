@@ -2,8 +2,8 @@
  * Every situation the tree has to survive. Also the test corpus: each story is
  * run in a browser by `@storybook/addon-vitest`.
  *
- * What a row stands for is a plain glyph here. The tree knows nothing about
- * what it draws, and neither do these.
+ * A row is represented by a plain glyph here. The tree has no knowledge of
+ * what it renders, and neither do these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
@@ -12,7 +12,7 @@ import Tree from './Tree.vue'
 import type { Row, RowId } from '../lib/row'
 import type { RowDropTarget } from '../lib/drop'
 
-/** A row taken out of wherever it stands. */
+/** A row removed from its position. */
 const removeRow = (rows: readonly Row[], id: RowId): readonly Row[] =>
   rows
     .filter((row) => row.id !== id)
@@ -27,7 +27,7 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
   return null
 }
 
-/** Rows put where a drop target says, in the order they were dragged. */
+/** Rows placed where a drop target indicates, in drag order. */
 const insertRows = (
   rows: readonly Row[],
   target: RowDropTarget,
@@ -281,7 +281,7 @@ export const AFew: Story = {}
 /** Fourteen levels, each inside the one above. */
 export const Nested: Story = { args: { corpus: 'nested' } }
 
-/** Two thousand rows, far more than the window has room for. */
+/** Two thousand rows, far more than the window can display. */
 export const Many: Story = { args: { corpus: 'many' } }
 
 /** Names that are not Latin. */
@@ -328,7 +328,7 @@ const getMiddle = (element: Element) => {
   return { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 }
 }
 
-/** A row picked up and let go somewhere, in as many steps as a hand takes. */
+/** A row picked up and dropped elsewhere, in as many steps as a pointer takes. */
 async function dragTo(from: Element, to: { clientX: number; clientY: number }): Promise<void> {
   const start = getMiddle(from)
   await userEvent.pointer([
@@ -407,7 +407,7 @@ export const DragsBetweenRows: Story = {
 export const JoinsARow: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    // One hand, so what it holds down is still held down at the press.
+    // A single pointer, so any key held down is still held at the press.
     const hand = userEvent.setup()
     await hand.click(getRow(canvasElement, 'work'))
 
@@ -421,7 +421,7 @@ export const JoinsARow: Story = {
   },
 }
 
-/** A press with Shift held reaches from the anchor, wherever the rows are drawn. */
+/** A press with Shift held extends the selection from the anchor, wherever the rows are rendered. */
 export const ReachesToARow: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {

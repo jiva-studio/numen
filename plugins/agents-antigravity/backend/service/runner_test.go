@@ -118,7 +118,7 @@ func setUnusableTempDir(t *testing.T) {
 	}
 }
 
-// collect reads every response of the run of the script a request with no tools asks for.
+// collect returns every response of a run of the script, for a request that has no tools.
 func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentrun.Registry) {
 	t.Helper()
 	var reg agentrun.Registry
@@ -135,8 +135,8 @@ func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentr
 	return got, &reg
 }
 
-// The answer of the CLI arrives as the text deltas of its response steps, and its result, which
-// repeats them, is not said again.
+// The CLI answer arrives as the text deltas of its response steps. Its final
+// result repeats them, so it is not emitted again.
 func TestRunner_CLIAnswerEmittedOnce(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy",
 		`echo '{"event":"init","conversation_id":"s-1","init":{"model":"m"}}'`+"\n"+
@@ -162,7 +162,7 @@ func TestRunner_CLIAnswerEmittedOnce(t *testing.T) {
 	}
 }
 
-// A result with a response and no streamed text says the response.
+// A result with a response and no streamed text emits the response.
 func TestRunner_CLIResponseEmittedWhenNothingStreamed(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy",
 		`echo '{"event":"result","result":{"status":"SUCCESS","response":"fine"}}'`+"\n")

@@ -27,8 +27,8 @@ func (s trashSources) GetSourcesUnder(context.Context, domain.VaultID, string) (
 	return s.underCtx, s.err
 }
 
-// trashLinks is the index saying which notes point at a path, and recording
-// which paths it was asked about.
+// trashLinks is the index reporting which notes point at a path, and recording
+// which paths it was queried for.
 type trashLinks struct {
 	noteport.LinkQueries
 	pointing  map[string][]domain.ResolvedLink
@@ -41,7 +41,7 @@ func (l trashLinks) GetBacklinks(_ context.Context, _ domain.VaultID, to string)
 	return l.pointing[to], l.err
 }
 
-// trashWriter is a vault whose move and remove answer as they were told to.
+// trashWriter is a vault whose move and remove return the results configured for them.
 type trashWriter struct {
 	vaultport.VaultWriter
 	move   func(from, to string) error
@@ -62,7 +62,7 @@ func (w trashWriters) Open(domain.Vault) (vaultport.VaultWriter, error) {
 	return w.writer, w.openErr
 }
 
-// trashing is one removal with everything it asks of the vault faked.
+// trashing is one removal with every vault call faked.
 type trashing struct {
 	sources   trashSources
 	links     trashLinks
@@ -151,7 +151,7 @@ func TestRemovingStopsWhenTheVaultCannotBeOpenedForWriting(t *testing.T) {
 	}
 }
 
-// Only a note has links, so nothing else under a folder is asked about.
+// Only a note has links, so nothing else under a folder is queried.
 func TestRemove_QueriesBacklinksForNotesOnly(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
@@ -315,7 +315,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	}
 }
 
-// The file is gone and the index is not level: the answer says both.
+// The file is gone and the index is not level: the response reports both.
 func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()

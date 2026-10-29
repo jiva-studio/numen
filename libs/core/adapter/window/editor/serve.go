@@ -42,12 +42,11 @@ type Installation struct {
 	State    *State
 	Services *Services
 
-	// Embedder fills the index, and Asking turns a query into a vector. They
-	// are one object where the settings name one provider, and two providers
-	// of one model where a vault indexed over a network is asked on a machine
-	// that has none. Nil for an installation with none, and for Asking also
-	// where the two turned out not to be one model; then a search is answered
-	// by words alone.
+	// Embedder fills the index and Asking converts a query into a vector. They
+	// are one object when the settings name one provider, and two providers of
+	// one model when a vault indexed over a network is queried on a machine
+	// without that provider. Nil when the installation has no embedder; Asking
+	// is also nil when the two are not one model. Search then uses words only.
 	Embedder embeddingport.Embedder
 	Asking   embeddingport.Embedder
 
@@ -60,7 +59,7 @@ type Installation struct {
 	made  Assembly
 	tasks *run.Tasks
 	out   io.Writer
-	// checkIdentity refuses a vault whose folder no longer carries its identity.
+	// checkIdentity rejects a vault whose folder no longer carries its identity.
 	checkIdentity vaults.CheckIdentity
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.
@@ -77,8 +76,7 @@ type Installation struct {
 	shutdown shutdownState
 }
 
-// errNoVault is a question about a vault, asked of a window standing on
-// nothing.
+// errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
 // Open initializes the editor window session for the specified vault.
@@ -92,10 +90,9 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		return nil, err
 	}
 
-	// One list of what is being done, for everything that does anything and for
-	// the window that shows it. One job behind it too: what a person asked for
-	// is one piece of work however they asked for it. It is made before
-	// anything that reports itself into it.
+	// One task list serves every operation and the window that displays it.
+	// A request is one task regardless of how it was issued. The list is created
+	// before any component that reports into it.
 	tasks := run.NewTasks()
 	models := &run.Lock{}
 	made.ReportPluginFailures(tasks)
@@ -117,11 +114,10 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
-	// The search the window offers is the search the application already does.
-	// It is built once the embedder is settled, so a model that could not be
-	// fitted leaves the words half to answer on its own.
-	// A search short of a half is said where the person is. A window opened
-	// from a desktop entry has no terminal to write to.
+	// The window's search is the application's search. It is built after the
+	// embedder is resolved; when the model could not be loaded, search uses words
+	// only. The degraded state is reported as a task because a window opened
+	// from a desktop entry has no terminal.
 	finds := made.NewSearch(asking, func(err error) {
 		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
@@ -145,17 +141,17 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 
 	pool.wireUseCases()
 
-	// Indexing every file again is what this launch was asked for, and is not
-	// carried to a vault opened later.
+	// Reindexing every file applies to this launch only; it is not carried to a
+	// vault opened later.
 	if err := pool.startVault(ctx, first, made.IsRebuildingIndex()); err != nil {
 		_ = closeEmbedder()
 		_ = made.CloseIndex()
 		return nil, err
 	}
 
-	// A recording is played over a socket of its own, opened once everything it
-	// answers through is in place. A machine that refuses one leaves the player
-	// with no address, and the words are still read.
+	// Recordings are served over a dedicated socket, opened after every
+	// dependency it answers through is in place. When the socket cannot be opened,
+	// the player has no address and the transcript is still readable.
 	onStop := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
 	if playing, why := Listen(services.server, onStop); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)
@@ -168,8 +164,8 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 // Close shuts the door on every question, stops the passes behind the vault,
 // waits for them, and closes the index.
 func (o *Installation) Close() error {
-	// First: a search, a note and a link are answered straight from the index,
-	// and the index closes here. This stands until the last of them is off it.
+	// Searches, note reads and link lookups read the index directly; the index
+	// closes here, after the last of them has finished.
 	o.State.Close()
 	o.stopVault()
 	// The socket a recording was played over answers with the vault's files, so
@@ -184,9 +180,9 @@ func (o *Installation) Close() error {
 	return err
 }
 
-// The cache this window answers out of, as the ports it hands on. Whatever else
-// works the same vault in the same process asks it here, so the window and the
-// tools an agent calls read one index.
+// Queries returns the window's index cache as a port; Problems, Passages and
+// SourcesKnown do the same. Other components working the same vault in this
+// process, including agent tools, read the same index.
 func (o *Installation) Queries() noteport.NoteQueries        { return o.made.GetNoteQueries() }
 func (o *Installation) Problems() problemport.ProblemQueries { return o.made.GetProblemQueries() }
 func (o *Installation) Passages() sourceport.PassageQueries  { return o.made.GetPassageQueries() }
@@ -197,14 +193,13 @@ func (o *Installation) SourcesKnown() sourceport.SourceQueries {
 // GetCurrentVault is the vault the window has open.
 func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
 
-// Notes is the use cases this window works its vault through.
-// Whatever else works the same vault in the same process is served these, so
-// what one of them refuses the other refuses and neither is built short of
-// something the other has. What a person does to the list of vaults is
-// Services.Vaults, where the window itself reaches it.
+// Notes returns the use cases this window works its vault through.
+// Other components working the same vault in this process, such as agent
+// tools, use the same instances, so they share error behavior and
+// dependencies. Operations on the list of vaults are in Services.Vaults.
 //
-// A caller that is not the person draws what it is doing over the note, which
-// is Notes.Drawing and is asked for there.
+// Activity from callers other than the user is rendered over the note through
+// Notes.Drawing.
 func (o *Installation) Notes() note.Scenarios { return o.notes }
 
 // DraftingLocation locates where target text occurs in a note as UTF-16 count offsets.
@@ -244,7 +239,7 @@ const (
 	walkingNotes  = indexing.WalkingNotes
 	indexingTexts = indexing.IndexingTexts
 	makingVectors = indexing.MakingVectors
-	// wordsAlone is a search answered short of the half that asks by meaning.
+	// wordsAlone is the task ID for a search that runs without semantic retrieval.
 	wordsAlone = "answering by words alone"
 	// wearingATheme is a theme the settings name that the catalogue has not.
 	wearingATheme = "wearing a theme"
@@ -303,9 +298,9 @@ func createWindow(
 	// The editor is open on one vault, and answers which as itself.
 	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
 	state.Indexing.Progress = made.GetIndexProgress()
-	// Named before anything is read: it is what decides whether a chunk already
-	// carries a vector, and what tells the window that something is going to
-	// embed what was cut.
+	// Set before any chunk is read: the model name and recipe determine whether
+	// a chunk already carries a vector, and tell the window that chunks will be
+	// embedded.
 	if embedder != nil {
 		name, recipe := vectors.DescribeModel(embedder)
 		state.Indexing.Model.Store(name)
@@ -319,12 +314,12 @@ func createWindow(
 func (o *Installation) wireUseCases() {
 	made, services := o.made, o.Services
 
-	// Everything that acts on this installation's notes and vaults, built
-	// once. Whatever else works the same vault — the tools an agent calls — is
-	// served these and builds none of its own.
+	// Use cases for this installation's notes and vaults, built once. Other
+	// components working the same vault, such as agent tools, use these instances
+	// and build none of their own.
 	//
-	// A note the person saves is level before the save is answered, so the vault
-	// finds what it now holds without waiting on the watch.
+	// A note saved by the user is refreshed in the index before the save returns,
+	// so the vault reflects its content without waiting for the watcher.
 	o.notes = made.OpenNotes(o.level).FollowMoves(o.State.GetWindow())
 	o.vaults = made.OpenVaults(o.notes.Move)
 
@@ -380,9 +375,8 @@ func (o *Installation) wireUseCases() {
 	services.server.find = &target.Find
 }
 
-// Vaults is the use cases that act on the list of vaults, built once. An agent
-// that works the list is served these, so what one of them refuses the other
-// refuses.
+// Vaults returns the use cases that act on the list of vaults, built once.
+// Agent components use the same instances, so both observe the same errors.
 func (o *Installation) Vaults() *vaults.Scenarios { return &o.vaults }
 
 // GetSearch is the search the window offers.
@@ -437,8 +431,8 @@ var errShutdownInProgress = errors.New("the window is flushing pending writes")
 
 // FlushPending has every page write what only it holds, then waits for the
 // writes already taken. It is called while the window is still showing, and
-// calling it again returns true at once. It returns false where a page holds
-// work a person has to answer for, and then nothing has been taken away.
+// calling it again returns true immediately. It returns false when a page holds
+// work that needs user confirmation; no write has been discarded.
 //
 // A vault swap flushes too. A close that arrives while a flush runs returns
 // false: the window stays, and the next close flushes again.
@@ -464,9 +458,9 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 // flushPending has every client write what only it holds, then waits for the
 // writes already taken. It returns whether the flush completed.
 //
-// A silent client is bounded by ctx. A client raising a question ends the
-// flush with false: the vault stays open and the wait is on a person. The
-// writes themselves have no bound.
+// A silent client is bounded by ctx. A client with a pending user prompt ends the
+// flush with false: the vault stays open until the user responds. The writes
+// themselves have no bound.
 func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) bool {
 	if !pages.RequestFlush(ctx) {
 		return false
@@ -475,9 +469,9 @@ func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) boo
 	return true
 }
 
-// FlushTimeout is how long a page has to write what only it holds when the
-// vault goes. A page raising a question has answered, and the wait from there
-// is on a person.
+// FlushTimeout bounds how long a page may take to write its unsaved data when
+// the vault closes. A page with a pending user prompt counts as responded;
+// further waiting depends on the user.
 const FlushTimeout = 3 * time.Second
 
 type Assembly = assembly.Assembly
@@ -495,14 +489,14 @@ const importingFiles = "importing files"
 // the rest are counted.
 const namedInAnError = 3
 
-// Imports copies files a person release over the window into a folder of the
-// vault, the root being the empty path.
+// Imports copies files dropped onto the window into a folder of the vault; the
+// root is the empty path.
 //
-// It runs where the drop reached the application, which is off the thread the
-// page is served on, and it answers nothing: what arrived is said to everyone
+// It runs where the drop reached the application, off the thread the page is
+// served on, and returns no value: results are reported to all listeners.
 //
-// The watcher reports a picture or an archive to nobody, so what arrived is
-// named to the listeners here.
+// The watcher does not report images or archives, so Imports names what
+// arrived to the listeners itself.
 func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
 	state := o.State
 	if len(paths) == 0 {

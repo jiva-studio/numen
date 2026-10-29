@@ -1,5 +1,5 @@
 /**
- * What the page opens, and what it says when the core cannot be reached.
+ * What the page opens, and what it shows when the core cannot be reached.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'

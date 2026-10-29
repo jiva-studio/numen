@@ -9,7 +9,7 @@ import (
 )
 
 // embedPattern is where the page that frames a video's player is served below the plugin route.
-// The window asks for /plugin/md.numen.tools.media.importer/embed?address=<web address>.
+// The window requests /plugin/md.numen.tools.media.importer/embed?address=<web address>.
 const embedPattern = "embed"
 
 // getEmbedPage is the page below the plugin route that frames the player of the video at the

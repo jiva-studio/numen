@@ -25,7 +25,7 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
 
-  /** The note put in front in the plex the person was last in, and in a new plex where none is open. */
+  /** Opens the note in the plex that was last active, or in a new plex when none is open. */
   const travel = async (path: string): Promise<void> => {
     await context.navigateTab?.(PLEX, path)
   }

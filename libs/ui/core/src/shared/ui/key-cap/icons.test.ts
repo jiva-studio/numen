@@ -3,8 +3,8 @@
  *
  * An icon drawn larger than the box has to be stroked thinner by the same
  * amount, or it arrives heavier than the icons beside it — which is the
- * raggedness the icons were brought in to end. The story measures the ink that
- * comes out; this measures the numbers that go in.
+ * raggedness the icons were introduced to end. The story measures the rendered
+ * stroke; this measures the numbers that go in.
  */
 import { describe, expect, it } from 'vitest'
 import { ICONS } from './icons'

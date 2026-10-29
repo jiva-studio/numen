@@ -21,7 +21,7 @@ const createEmptyNeighbourhood = (): Neighbourhood => ({
   related: [],
 })
 
-/** A vault that answers whatever it is told to. */
+/** A vault whose neighbourhood response is supplied by the test. */
 const fake = (neighbourhood: Neighbours['neighbourhood']): Neighbours => ({ neighbourhood })
 
 describe('a plex still being read', () => {
@@ -171,7 +171,7 @@ describe('the note in focus goes away', () => {
     holds = false
     await plex.go('Note.md')
     expect(plex.error.value).toContain('Note.md')
-    // The path it asked about is kept, which is the only way back to it.
+    // The requested path is kept, so the user can return to it.
     expect(plex.here.value).toBe('Note.md')
     expect(plex.neighbourhood.value?.focus.path).toBe('Note.md')
 

@@ -1,9 +1,9 @@
 /**
- * What a file of the vault is put in front of the person with.
+ * The openers that display a vault file.
  *
  * A note opens in the editor of its type. Any other file opens in the reader
- * the core chose for its content type, which a plugin registers by extension.
- * A kind of tab hands over the way it opens a file and keeps none.
+ * the core selects for its content type, which a plugin registers by extension.
+ * A tab kind registers how it opens a file and holds no file state.
  */
 import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
@@ -13,7 +13,7 @@ import type { TextRange } from '@/shared/textRange'
 /** What a file the window opens is opened as: which type of note it is, or the kind a plugin registers. */
 export type EditorKind = NoteType
 
-/** Where a file opens: in the pane the person is in, or beside it. */
+/** Where a file opens: in the current pane or in a split. */
 export type FilePlacement = 'current' | 'split'
 
 export interface OpenPlacement {
@@ -30,8 +30,8 @@ export interface OpenNewFileOptions {
 }
 
 /**
- * A file put in front of the person in one editor. A line is somewhere inside
- * the file, and what standing there evaluates to is the editor's own.
+ * Opens a file in one editor. `line` is a position inside the file; its
+ * interpretation belongs to the editor.
  */
 export type FileOpener = (
   path: string,
@@ -42,7 +42,7 @@ export type FileOpener = (
 import type { SourceReader } from '@/shared/model/tabKinds'
 export type { SourceReader }
 
-/** What the window asks the vault about the file it is opening. */
+/** The vault queries the window uses to open a file. */
 export interface FileOpenerDeps {
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   reconcileTab?(path: string, newKind: string): void
@@ -54,7 +54,7 @@ interface ExtensionReader {
   readonly icon: Component | undefined
 }
 
-/** What a file the vault could not be asked about at all is opened as. */
+/** The kind assumed for a file the vault cannot be queried about. */
 const ORDINARY: FileKind = { isNote: true, type: 'note' }
 
 /** The extension of a path, lowercase and without the dot, and empty where it has none. */
@@ -73,13 +73,13 @@ const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileK
 }
 
 export function fileOpeners(vault: FileOpenerDeps) {
-  /** The editor each kind of note opens in, as its kind handed it over. */
+  /** The editor for each note type, as registered by its tab kind. */
   const editors = new Map<EditorKind, FileOpener>()
 
   /** The reader of each extension, as the core chose it for the extension's content type. */
   const extensionReaders = new Map<string, ExtensionReader>()
 
-  /** A kind of tab hands over the way it puts a file in front of the person. */
+  /** A tab kind registers how it opens a file. */
   const registerEditor = (type: EditorKind, open: FileOpener): (() => void) => {
     editors.set(type, open)
     return () => {
@@ -110,8 +110,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
     extensionReaders.get(getExtension(path))?.read(path, selector)
 
   /**
-   * A file just made here, put in front of the person as what it was made as.
-   * The vault is not asked what stands there.
+   * Opens a newly created file as the kind it was created as, without querying
+   * the vault for its kind.
    */
   const openNewFile = (
     path: string,
@@ -127,8 +127,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 
   /**
-   * A file put in front of the person: a note in the editor of its type, any
-   * other file in its reader at the selector given.
+   * Opens a file: a note in the editor of its type, any other file in its reader
+   * at the given selector.
    */
   const openFile = async (
     path: string,
@@ -144,7 +144,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     readFile(path, placement?.selector ?? null)
   }
 
-  /** A file put in front of the person with runs of a note's text marked. */
+  /** Opens a file with ranges of a note's text marked. */
   const openFileAt = async (path: string, _spans: readonly TextRange[]): Promise<void> => {
     const kind = await fetchFileKind(vault, path)
     if (kind?.isNote) return void openNewFile(path, '', kind.type)
@@ -161,5 +161,5 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 }
 
-/** What the window puts files in front of the person with. */
+/** The openers the window uses to display files. */
 export type FileOpeners = ReturnType<typeof fileOpeners>

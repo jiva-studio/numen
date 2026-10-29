@@ -5,7 +5,7 @@ import { Activity } from './activity'
 import { findTally, type Notice } from '../lib/notice'
 
 defineProps<{
-  /** The notice this card stands for. */
+  /** The notice this card represents. */
   one: Notice
   /** What the way to dismiss it is called. */
   dismiss: string
@@ -14,11 +14,11 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  /** A person pressed the way away. */
+  /** The dismiss control was pressed. */
   (event: 'dismiss'): void
 }>()
 
-/** The way away, which whoever draws the card keeps the keyboard on. */
+/** The dismiss control; the parent that renders the card manages its keyboard focus. */
 const way = useTemplateRef<HTMLElement>('way')
 
 defineExpose({ way })

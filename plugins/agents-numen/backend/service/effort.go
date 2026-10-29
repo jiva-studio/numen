@@ -13,7 +13,7 @@ const (
 	fieldReasoning       = "reasoning"
 )
 
-// effortNone is the entry of a list of depths that stands for reasoning switched off.
+// effortNone is the entry in a list of depths that means reasoning is disabled.
 const effortNone = "none"
 
 // commonLevels are the depths offered for a model whose listing names the field that takes the depth and
@@ -33,8 +33,8 @@ type reasoningRequest struct {
 	Effort string `json:"effort"`
 }
 
-// effort is the depth of reasoning asked of the model, and the field it goes in. The zero value asks
-// for none.
+// effort is the reasoning depth requested from the model, and the field it is sent in. The zero value
+// requests none.
 type effort struct {
 	field string
 	level string
@@ -88,8 +88,8 @@ func newModel(name, title string, supported []string, listing *reasoningListing)
 	return one
 }
 
-// newEffort is the depth of reasoning asked of the model: the level if the model lists a field to take
-// it and the level is one it offers, else none.
+// newEffort returns the reasoning depth requested from the model: the level if the model lists a field to
+// receive it and offers the level, else none.
 func newEffort(m model, level string) effort {
 	if m.ReasoningField == "" || reasoning.Pick(m.ReasoningLevels, level) == "" {
 		return effort{}

@@ -1,9 +1,9 @@
 /**
- * Where each run of the drawn document stands, and which of them are marked.
+ * Position of each run of the rendered document, and which runs are marked.
  *
- * The runs are read off the text itself, so they are gathered again whenever the
- * columns are set again. What is marked is asked for in bytes of the book's
- * text, and the marks are what turn that into a place on the page.
+ * The runs are read from the text itself, so they are gathered again whenever
+ * the columns are laid out again. Marked ranges are expressed as byte offsets of
+ * the book's text, and the marks map those to positions on the page.
  */
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
@@ -22,7 +22,7 @@ export function useBookMarks(
   props: SettledBookProps,
   getEdge: (of: HTMLElement) => number,
 ) {
-  /** Where each run of the text stands. */
+  /** Position of each run of the text. */
   const marks = shallowRef<readonly Mark[]>([])
 
   /** Each run of the text, in the order the document sets them. */
@@ -44,7 +44,7 @@ export function useBookMarks(
     return text ? findOffset(text, runs, fragment) : undefined
   }
 
-  /** The runs asked about marked where they stand, and the rest more faintly. */
+  /** Highlights the runs in `highlights`, and the runs in `otherHighlights` more faintly. */
   const markRuns = () => {
     highlight(HIGHLIGHT, props, rangesOver(runs, props.highlights))
     highlight(OTHER_HIGHLIGHT, props, rangesOver(runs, props.otherHighlights))

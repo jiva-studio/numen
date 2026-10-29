@@ -6,11 +6,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/appearance"
 )
 
-// ConvertModeToWire is which half of a colour pair the tokens are read as, as
-// the schema says it, and ConvertModeFromWire is the schema's value in the
-// core's own words.
+// ConvertModeToWire maps the core's mode to the schema value that selects which
+// half of a colour pair the tokens are read as, and ConvertModeFromWire maps
+// the schema value back to the core's mode.
 //
-// A value the schema does not name, and the value it names for nothing said,
+// A value the schema does not name, and the value it names for unspecified,
 // are both the machine's own choice.
 func ConvertModeToWire(mode appearance.ColorScheme) v1.Mode {
 	switch mode {

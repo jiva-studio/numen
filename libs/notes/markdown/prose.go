@@ -6,17 +6,17 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// RedirectProse sends every wikilink in the prose that goes to one address to
-// another, and says how many it moved.
+// RedirectProse redirects every wikilink in the prose that targets one address
+// to another, and returns how many it changed.
 //
 // Only the target inside the brackets changes. An alias after `|` is how the
-// link is read in the sentence and a fragment after `#` names a place inside
-// the note; both survive.
+// link reads in the sentence and a fragment after `#` names a location inside
+// the note; both are preserved.
 //
-// as it was written.
+// Everything else is left as it was written.
 //
-// A note whose frontmatter block is never closed holds no prose of its own —
-// ErrUnterminated and the file is left as it is.
+// A note whose frontmatter block is never closed has no prose of its own:
+// ErrUnterminated is returned and the file is unchanged.
 func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	if d.isUnterminated {
 		return 0, ErrUnterminated

@@ -30,7 +30,7 @@ const resolved = {
   agentUnreachable: '',
 }
 
-/** A core that answers whatever it is told to, and records what it was asked. */
+/** A core that answers whatever it is configured to, and records the calls it receives. */
 function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
   const request: string[] = []
   return {
@@ -84,9 +84,8 @@ function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 /**
- * What the window makes of what it is told: that the vault changed, and that a
- * note is wanted in front of the person. What each tab does about either is
- * asked where that tab is.
+ * What the window does with a vault-changed signal and a request to show a note.
+ * What each tab does about either is determined by that tab.
  */
 const createDisplay = (
   core: Core,
@@ -232,8 +231,8 @@ describe('the stream of changes', () => {
 })
 
 /**
- * A vault is swapped from outside this window, and the reload that says so
- * looks exactly like the one that says the whole vault changed on disk. The
+ * A vault is swapped from outside this window; the resulting reload is
+ * indistinguishable from the one signalling that the whole vault changed on disk.
  */
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
@@ -288,9 +287,9 @@ describe('another vault under this window', () => {
   })
 
   /**
-   * The vault is read again for every change it reports, and a change of the
-   * vault that arrived reaches the window before the reload does. The folder
-   * the page was drawn on is what the reload is measured against.
+   * The vault is re-read for every change it reports, and a change of vault reaches the
+   * window before the reload does. The folder the page was rendered on is what the reload
+   * is compared against.
    */
   it('draws the page again where the vault that arrived was read first', async () => {
     const folders = ['/vaults/Physics']
@@ -361,7 +360,7 @@ describe('a note requested for from outside the window', () => {
 })
 
 describe('a place inside a source requested for from outside the window', () => {
-  /** A window that records the documents it was asked to open, and where. */
+  /** A window that records the documents it opens, and where. */
   const createRecordingWindow = (core: Core) => {
     const openedWindows: string[] = []
     const one = createDisplay(core, (path, spans) =>

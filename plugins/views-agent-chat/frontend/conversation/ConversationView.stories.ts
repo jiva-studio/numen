@@ -29,7 +29,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Mounted for a card, before anything is asked. */
+/** Mounted for a card, before any message is sent. */
 export const Empty: Story = {
   args: { context: { agent, focus: 'decks/Words.md', placeholder: 'Ask about this card' } },
   play: async ({ canvasElement }) => {
@@ -53,7 +53,7 @@ export const Answered: Story = {
   },
 }
 
-/** Mounted where the agent cannot be reached: the reason stands where the answers would. */
+/** Mounted where the agent is unreachable: the failure reason is shown in place of the answers. */
 export const Unreachable: Story = {
   args: {
     context: {

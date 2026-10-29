@@ -9,10 +9,10 @@ import { ref } from 'vue'
 import Reader from './Reader.vue'
 
 /**
- * The document a search sends a person into, as the lines standing on each of
- * its pages. It is set here and not fetched, so the picture of a book is
- * a book and not a placeholder — and broken into lines by hand, because what
- * draws a page below cannot break one.
+ * The document a search navigates into, as the lines on each of its pages. It is
+ * defined here and not fetched, so the book story shows a real book and not a
+ * placeholder, and it is broken into lines by hand because the page renderer
+ * below cannot break lines.
  */
 const BOOK_PAGES: readonly (readonly string[])[] = [
   [
@@ -69,9 +69,9 @@ const BOOK_PAGES: readonly (readonly string[])[] = [
 ]
 
 /**
- * The volume those pages were bound in, and where in it they stand. The reader
- * counts the pages of the document it is given, so the number it says and the
- * number printed on the page are the same number.
+ * The volume those pages belong to, and their position in it. The reader counts
+ * the pages of the document it receives, so the page number it reports equals
+ * the number printed on the page.
  */
 const BOOK_LEAVES = 412
 const BOOK_FIRST = 372

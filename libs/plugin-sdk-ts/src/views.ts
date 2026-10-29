@@ -22,24 +22,24 @@ export const CONVERSATION = 'conversation'
 
 // ConversationContext is what a plugin passes the conversation view it mounts.
 export interface ConversationContext {
-  // What answers the questions asked in the view. A plugin passes a port that sends what the
-  // questions are about beside each one, such as the card in front of the person.
+  // Handles the queries made in the view. A plugin passes a port that sends the subject of each query
+  // with it, such as the current card.
   readonly agent: AgentPort
   // The vault path the questions are about, sent as their focus.
   readonly focus: string
-  // What the empty field says; it names the field.
+  // Placeholder text of the empty field; it names the field.
   readonly placeholder?: string
-  // Why nothing can be asked, empty while something can. The view shows it where the answers stand.
+  // Why no query can be made; empty while one can. The view shows it in place of the answers.
   readonly getUnreachable?: () => string
 }
 
-// VAULT_SUMMARY is the capability of a view drawn beside a vault on the list a window offers to
-// choose from, such as what the vault owes today. A window mounts one for each vault on its list.
+// VAULT_SUMMARY is the capability of a view shown next to a vault on the list a window offers to
+// choose from, such as what the vault has due today. A window mounts one for each vault on its list.
 export const VAULT_SUMMARY = 'vault-summary'
 
 // VaultSummaryContext is what a window passes the vault summary view it mounts.
 export interface VaultSummaryContext {
-  // The identity of the vault the row stands for.
+  // The identity of the vault the row represents.
   readonly vault: string
 }
 

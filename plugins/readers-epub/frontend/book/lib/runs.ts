@@ -88,8 +88,9 @@ export function findOffset(
 }
 
 /**
- * into that node it reaches. The distance from the run's own offset is a number
- * of bytes, and only `getUnitOffset` turns one of those into a place in a string.
+ * The text node and offset within `run` at the byte distance `into`. The
+ * distance from the run's own offset is a number of bytes, and only
+ * `getUnitOffset` converts one into a position in a string.
  */
 const getPlaceInRun = (
   run: HTMLElement,

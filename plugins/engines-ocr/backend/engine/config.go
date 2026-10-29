@@ -36,7 +36,7 @@ type DetectModel struct {
 	Minimum float32 `json:"minimum"`
 }
 
-// RecogniserModel reads what a line says.
+// RecogniserModel configures the model that recognizes the text of a line.
 type RecogniserModel struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
@@ -48,7 +48,7 @@ type RecogniserModel struct {
 	Threads int    `json:"threads"`
 }
 
-// RegionKinds says what the parts of a page are for.
+// RegionKinds classifies page regions as body or head.
 type RegionKinds struct {
 	Body []string `json:"body"`
 	Head []string `json:"head"`

@@ -1,10 +1,9 @@
 // Correctness and boundaries for the window, on the rules `@numen/ui` already
-// states. Nothing here is about how the code looks: the formatting is done by
-// hand and a rule with an opinion about it would start rewriting files nobody
-// asked it to.
+// states. Nothing here concerns code style: formatting is done manually and a
+// formatting rule would start rewriting files.
 //
 // The library's ban on importing the domain is the one rule that stops at this
-// package: a window is the thing that knows what a vault is.
+// package: a window is the layer that knows what a vault is.
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
@@ -14,7 +13,7 @@ import { createLayerElements, createLayerPolicies } from '../../../tools/lint-la
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
-// A plugin is an element of its own, and no policy reaches it: the window
+// A plugin is an element of its own, and no policy applies to it: the window
 // loads a plugin over HTTP and imports nothing of it.
 const pluginElement = { type: 'plugin', pattern: '../../../plugins/*', capture: ['name'] }
 

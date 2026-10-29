@@ -30,11 +30,11 @@ export interface EditorChange {
   /** The stretch about to be replaced, as offsets into the text. */
   readonly from: number
   readonly to: number
-  /** What is going in where that stretch stands. */
+  /** The text inserted in place of that range. */
   readonly text: string
 }
 
-/** How much of a change's text is shown, and which of it arrived just now. */
+/** How much of a change's text is shown, and which part arrived most recently. */
 export interface Reveal {
   /** Characters from the start of the text that are shown. */
   readonly visibleLength: number
@@ -59,10 +59,10 @@ const boundaries = (text: string): number[] => {
 }
 
 /**
- * How much of `text` is shown `part` of the way through showing it.
+ * How much of `text` is shown after `part` of the reveal has completed.
  *
- * A word has a step to itself, and one step past the last word is where all of
- * the text stands and none of it is arriving.
+ * Each word is one step, and the step after the last word shows all of the text
+ * with none of it still arriving.
  */
 export const createReveal = (text: string, part: number): Reveal => {
   const ends = boundaries(text)
@@ -134,8 +134,8 @@ const getDecorations = (
 }
 
 /**
- * Whether the text is in the document where the change said it would be. A
- * change that puts nothing in has no text to wait for.
+ * Whether the text is in the document at the position the change specified. A
+ * change that inserts nothing has no text to wait for.
  */
 const hasArrived = (state: EditorState, change: EditorChange, from: number) =>
   change.text.length > 0 && state.doc.sliceString(from, from + change.text.length) === change.text
@@ -153,7 +153,7 @@ const start = (state: EditorState): Mark => {
   return { change, from, to, reveal, decorations: getDecorations(change, { from, to }, reveal) }
 }
 
-/** How far a transaction says the showing has got, and nothing where it says nothing. */
+/** The reveal progress a transaction reports, or null when it reports none. */
 const getStepped = (transaction: Transaction): Reveal | null => {
   let stepping: Reveal | null = null
   for (const effect of transaction.effects) if (effect.is(setReveal)) stepping = effect.value

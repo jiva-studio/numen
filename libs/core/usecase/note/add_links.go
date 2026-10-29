@@ -18,8 +18,8 @@ type LinkAddition struct {
 	FileStatError error
 }
 
-// LinkAdded is what happened to one addition. Error is nil when it was
-// written, and FileStat is then the note as it now stands.
+// LinkAdded is the outcome of one addition. Error is nil when the link was
+// written, and FileStat is then the note's current state.
 type LinkAdded struct {
 	FileStat domain.FileStat
 	Error    error

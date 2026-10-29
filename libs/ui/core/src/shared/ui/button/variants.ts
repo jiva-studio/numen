@@ -2,10 +2,10 @@ import type { VariantProps } from 'class-variance-authority'
 import { cva } from 'class-variance-authority'
 
 /**
- * Hover mixes a little of a variant's own text into its ground, so one
- * expression darkens a light button and lightens a dark one. Focus wears the
- * ring at the width the tokens name, which is the treatment every focusable
- * thing in this library uses.
+ * Hover mixes a fraction of a variant's own text colour into its background,
+ * so one expression darkens a light button and lightens a dark one. Focus draws
+ * the ring at the width the tokens define, which is the treatment every
+ * focusable element in this library uses.
  */
 export const buttonVariants = cva(
   [

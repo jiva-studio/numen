@@ -10,7 +10,7 @@ import (
 )
 
 // Catalog lists and calls the tools of the plugins for a plugin that serves them to programs
-// outside Numen. No question was asked in Numen, so every call is made with no context.
+// outside Numen. No user query originates in Numen, so every call is made with no context.
 type Catalog struct {
 	plugins plugins
 	server  Server

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// A container nobody configured builds no embedder, and the machine's own
+// A container with no configuration builds no embedder, and the machine's own
 // settings are not read here.
 func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
 	cfg := container.Config{}
@@ -125,7 +125,7 @@ func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
 }
 
 // The provider is the plugin that declares the capability. A plugin that only
-// names the embedding service is not asked for vectors.
+// names the embedding service is not queried for vectors.
 func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 	host := writeEmbeddingPlugin(t, `{
 		"id": "test.vectors",

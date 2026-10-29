@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * A ring turning beside something still filling: more of it is on its way. It
- * says nothing about how much is left.
+ * A rotating ring beside something still loading: more of it is on its way. It
+ * does not indicate how much is left.
  *
- * It is drawn for the eye alone, and whoever draws it marks the region busy.
+ * It is decorative, and the component that renders it marks the region busy.
  */
 </script>
 
@@ -33,7 +33,7 @@
   }
 }
 
-/* Still, it is a mark that is simply there beside the name: the band is
+/* Static, the mark sits beside the name: the band is
    filling, and nothing moves to say so. */
 @media (prefers-reduced-motion: reduce) {
   .spinner {

@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// A file naming no size is drawn at what the desktop asks for, so the session
-// these tests run in is asked nothing.
+// A file without a size uses the desktop's scale; unsetting GDK_DPI_SCALE keeps
+// the tests independent of the session environment.
 func TestMain(m *testing.M) {
 	os.Unsetenv("GDK_DPI_SCALE")
 	os.Exit(m.Run())
@@ -36,8 +36,7 @@ func openAt(path string) (container.Settings, error) {
 	return container.Config{SettingsPath: path}.Settings()
 }
 
-// newDocument is the whole file as the installation declares it, holding what
-// an installation nobody has configured does.
+// newDocument is the complete settings file of an unconfigured installation.
 func newDocument() *container.Settings {
 	target := container.DefaultSettings()
 	return &target
@@ -51,8 +50,8 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	if cfg.Indexing.Embedding.MaxTokens == 0 {
 		t.Errorf("no chunk bound: %+v", cfg.Indexing.Embedding)
 	}
-	// Both sizes are as designed, so an installation nobody has sized draws
-	// every length at the number it was drawn with.
+	// Both scales default to 1, so an unconfigured installation renders every
+	// length at its designed size.
 	if cfg.Appearance.InterfaceScale != 1 || cfg.Appearance.TextScale != 1 {
 		t.Errorf("drawn at %+v", cfg.Appearance)
 	}
@@ -67,8 +66,8 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	}
 }
 
-// The window's settings are four fields of one section, and a file writing one
-// of them says nothing about the rest.
+// The appearance settings are four fields of one section; a file that sets one
+// of them leaves the others at their defaults.
 func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 	cfg, err := openAt(write(t, `{"appearance":{"text_scale":1.5}}`))
 	if err != nil {
@@ -82,8 +81,8 @@ func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 	}
 }
 
-// A number the setting does not take stops the settings being read. Nothing is
-// drawn at a number nobody asked for, and the file says what a person wrote.
+// A number outside the setting's range makes reading the settings fail; no
+// scale is applied that the file does not contain.
 func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	for _, body := range []string{
 		`{"appearance":{"interface_scale":2.5}}`,
@@ -108,8 +107,7 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	if outside.Min != settings.TextScaleBounds.Min || outside.Max != settings.TextScaleBounds.Max {
 		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
 	}
-	// What is wrong is the number and how far the setting goes, in the sentence
-	// a person is shown.
+	// The error message states the value and the allowed range.
 	if response := outside.Error(); !strings.Contains(response, "appearance.text_scale is 3") {
 		t.Errorf("says %q", response)
 	}
@@ -148,15 +146,15 @@ func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
 	if want := `{"appearance":{"interface_scale":1.5}}`; string(raw) != want {
 		t.Errorf("the file is now %s, and not %s", raw, want)
 	}
-	// Nothing to tell a person: the window is the size it was, and the file
-	// says what this build reads.
+	// No notice is produced: the scale is unchanged, and the file contains what
+	// this build reads.
 	if len(cfg.Notices) != 0 {
 		t.Errorf("the person is told %q", cfg.Notices)
 	}
 }
 
-// The file a person arranged comes back from the renaming with one word of it
-// changed, down to the blank lines and a number written to two places.
+// Renaming changes one word of the file and preserves everything else, including
+// blank lines and a number written in two places.
 func TestTheRenamingPreservesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
 	path := write(t, arranged)
 	if _, err := openAt(path); err != nil {
@@ -324,10 +322,9 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 	}
 }
 
-// A number the setting does not take is not carried onto it, and a window whose
-// file was written by an older build opens. The field keeps the name it has, so
-// the launch after this one is not rejected over a number a person never wrote
-// under that name.
+// A number outside the setting's range is not carried over, and a file written by
+// an older build opens. The field keeps its name, so the next launch does not
+// fail on a number the user never wrote under that name.
 func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	const target = `{"appearance":{"zoom":3}}`
 	path := write(t, target)
@@ -358,13 +355,13 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	}
 }
 
-// The line is shown on one line of a band, which gives it about sixty
-// characters and cuts what is past that off the end. The end is where what a
-// person can do about it is written, so the line is one a number cannot
-// lengthen: every number a setting refuses says the same thing.
+// The message is displayed on one line of a band with about sixty characters;
+// overflow is truncated at the end. The end carries the corrective action, so
+// the message length does not depend on the number: every rejected value yields
+// the same text.
 func TestOpen_OutOfRangeErrorMessageLength(t *testing.T) {
-	// Numbers a file can hold and this setting will not take, written the ways
-	// a person and a machine write them.
+	// Numbers a file can hold and this setting rejects, in human-written and
+	// machine-written formats.
 	for _, zoom := range []string{
 		"3",
 		"2.0001",
@@ -418,8 +415,8 @@ func TestAWindowIsDressedByWhatTheFileNames(t *testing.T) {
 	}
 }
 
-// A person who has run the binary and nothing else has a file to read and
-// change, holding what the application is doing.
+// A first run with no other configuration has a settings file to read and edit,
+// containing the application's active settings.
 func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
 	cfg, err := openAt(path)
@@ -434,12 +431,12 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 	if err := json.Unmarshal(raw, &back); err != nil {
 		t.Fatal(err)
 	}
-	// Read back, the file says what the run it was written by was doing.
+	// Read back, the file contains the settings of the run that wrote it.
 	if back.Indexing.Embedding != cfg.Indexing.Embedding {
 		t.Errorf("the embedding section is %+v, was %+v",
 			back.Indexing.Embedding, cfg.Indexing.Embedding)
 	}
-	// A key nobody set is not a field of the file.
+	// An unset key is not a field of the file.
 	if strings.Contains(string(raw), `"key"`) {
 		t.Errorf("the file offers a key:\n%s", raw)
 	}
@@ -453,8 +450,8 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	if cfg.Appearance.InterfaceScale != 1.5 {
 		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
-	// A file that names the window must leave the index alone. Both are
-	// sections of one file, and the section nobody wrote about is unchanged.
+	// A file that sets the appearance leaves the index unchanged. Both are sections
+	// of one file, and a section absent from the file keeps its defaults.
 	if cfg.Indexing.Embedding != container.DefaultEmbedding() {
 		t.Errorf("the embedding section is %+v", cfg.Indexing.Embedding)
 	}
@@ -601,10 +598,9 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	}
 }
 
-// A setting that is on where a file says nothing is read through a pointer:
-// leaving the section out, leaving the field out and writing false are three
-// different things a person can write, and the last of them is the only one
-// that turns it off.
+// A setting that defaults to on is read through a pointer: omitting the section,
+// omitting the field and writing false are three distinct inputs, and only the
+// last turns it off.
 func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) {
 	for name, c := range map[string]struct {
 		file       string
@@ -642,8 +638,8 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) 
 	}
 }
 
-// An installation nobody has configured is written down as what it is doing, so
-// the setting a person turns off is in front of them.
+// An unconfigured installation writes out its active settings, so a setting the
+// user can turn off is visible in the file.
 func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if _, err := openAt(path); err != nil {

@@ -105,7 +105,7 @@ func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
 	return listing.Live, text.Text
 }
 
-// requireLive says which version is live and what its text says.
+// requireLive asserts which version is live and what its text is.
 func (s *scene) requireLive(t *testing.T, step string, wantID domain.TextVersionID, wantText string) {
 	t.Helper()
 	id, text := s.getLive(t)
@@ -132,7 +132,7 @@ func (s *scene) runEntry(t *testing.T, pluginID string) {
 	}
 }
 
-// requestText asks the plugins that run on their own for text of the scan.
+// requestText requests text for the scan from the standalone plugins.
 func (s *scene) requestText(t *testing.T) {
 	t.Helper()
 	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.fileHash()); err != nil {
@@ -155,7 +155,7 @@ func TestThePDFExampleShowsTheLiveVersionAtEveryStep(t *testing.T) {
 	c := domain.NewTextVersionID(ocr, "file-"+s.fileHash()[:8])
 	d := getProofreadingOf(c)
 
-	// A: the file has no version, so the reader that runs on its own is asked for one.
+	// A: the file has no version, so the standalone reader is asked for one.
 	s.requestText(t)
 	s.requireLive(t, "A from the file", a, "layer teh ")
 	if got := s.listener.take(); !slices.Equal(got, []string{scanPath}) {

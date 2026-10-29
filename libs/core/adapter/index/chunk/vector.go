@@ -25,14 +25,8 @@ type Vector struct {
 // committing and checkpointing the WAL, to keep its footprint bounded.
 var VectorBatchSize = 1000
 
-// SaveVectors writes both representations of each vector.
-//
-// They go in batched transactions, and both are written by reading the chunk they
-// belong to. A chunk with only one of the two is absent from the coarse pass
-// and invisible to the question of what has no vector.
-//
-// A vector naming a chunk the index no longer holds is written nowhere, and
-// what is left of the group is written currently.
+// A vector for a chunk that the index no longer holds is not written, and the
+// rest of the group is written.
 func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	if len(vectors) == 0 {
 		return nil
@@ -83,12 +77,10 @@ func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
 	return nil
 }
 
-// deleteOrphanVectors takes out the vectors made for text no chunk holds.
-//
-// It is asked where a source was cut again, so the text is known to have been
-// replaced. A source the vault no longer offers takes nothing with it: a folder
-// that could not be read looks the same from here as one whose files were
-// deleted, and a vector was bought.
+// deleteOrphanVectors is called when a source was cut again, which means its
+// text was replaced. A source the vault no longer offers deletes nothing: a
+// folder that could not be read looks the same from here as one whose files
+// were deleted, and a vector is expensive to recompute.
 func deleteOrphanVectors(ctx context.Context, tx *sqlwrite.Transaction, texts []string) error {
 	for _, hash := range texts {
 		if err := exec(ctx, tx, "forget_vector", hash, hash); err != nil {

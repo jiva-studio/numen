@@ -65,8 +65,8 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 	return domain.NewVersionText(version, splitAt(text, starts, titles)), nil
 }
 
-// splitAt is text cut into segments where each start says. A segment with a
-// title opens a heading; one without is a page, numbered by its place from 1.
+// splitAt cuts text into segments at the given starts. A segment with a title
+// opens a heading; one without is a page, numbered by position from 1.
 func splitAt(text string, starts []int, titles []string) []domain.TextSegment {
 	parts := make([]domain.TextSegment, 0, len(starts))
 	for i, from := range starts {
@@ -106,7 +106,7 @@ func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.T
 
 func (vaultTexts) RequestText(context.Context, string, string) error { return nil }
 
-// IsTextSource says a file has text where Texts reads a version of it.
+// IsTextSource reports whether a file has text, where Texts reads a version of it.
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
 	_, err := t.read(ctx, path)
 	return err == nil, nil

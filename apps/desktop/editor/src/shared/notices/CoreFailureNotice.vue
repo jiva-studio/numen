@@ -1,12 +1,10 @@
 <script setup lang="ts">
 /**
- * What the window says when it cannot reach the core.
- *
- * cannot put it away.
+ * Message shown when the window cannot reach the core.
  */
 // --- Props & Emits ---
 const props = defineProps<{
-  /** The core could not be reached, in words a person reads. */
+  /** Why the core could not be reached, in user-readable text. */
   failure: string
 }>()
 

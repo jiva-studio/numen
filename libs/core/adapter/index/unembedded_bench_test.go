@@ -11,18 +11,19 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-// The embedding walk asks for a page of chunks, reads the text of each and
-// writes a vector back. The index holds a chunk on a numbered row and the core
-// addresses it by a domain.ChunkID, so every row read is spelled out and every
-// vector written is read back in. What that costs is measured here against the
+// The embedding walk requests a page of chunks, reads the text of each and
+// writes a vector back. The index stores a chunk on a numbered row and the core
+// addresses it by a domain.ChunkID, so every row read is converted to an ID and
+// every vector written is converted back to a row. These benchmarks measure
+// that conversion against the index's native row queries.
 
-// chunksPerPage is what the walk asks for at a time, as usecase/source does.
+// chunksPerPage is the page size the walk requests, as usecase/source does.
 const chunksPerPage = 200
 
 // benchVault holds every chunk these benchmarks read.
 var benchVault = domain.Vault{ID: "01BENCH", Name: "bench", Path: "/bench"}
 
-// benchModel is a model nothing was embedded with, so every chunk owes it one.
+// benchModel is a model with no embeddings, so every chunk lacks a vector for it.
 var benchModel = embeddingport.EmbeddingModel{
 	Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
 }
@@ -71,10 +72,10 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 	return db
 }
 
-// BenchmarkUnembedded is one page of the embedding walk, asked of the index in
-// its own words and asked of it through the port. The two run the same
-// statement over the same rows and differ by the identifier each row is handed
-// back under.
+// BenchmarkUnembedded measures one page of the embedding walk, queried through the
+// index's native interface and through the port. Both run the same
+// statement over the same rows and differ only in the identifier returned
+// for each row.
 func BenchmarkUnembedded(b *testing.B) {
 	db := openUnembeddedDB(b, 200, 100)
 	ctx := b.Context()

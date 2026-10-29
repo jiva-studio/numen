@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-// FindSVGImage is the picture an SVG is drawn around: the first image element of it
-// naming an entry the archive holds, or one written into the file itself.
+// FindSVGImage returns the image an SVG wraps: the first image element in it
+// naming an entry the archive holds, or one embedded in the file itself.
 func FindSVGImage(base string, raw []byte, has func(string) bool) (string, bool) {
 	decoder := xml.NewDecoder(bytes.NewReader(raw))
 	decoder.Strict = false

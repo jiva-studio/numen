@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// TestTheCoreSaysWhatItCarriedOnPast. The core reports what went wrong in work
-// it does not stop for, and a configuration naming nowhere to say it is a
-// failure nobody is ever told about.
+// TestCoreErrorHandler_ReportError checks that the core reports errors from
+// work it does not stop for. A configuration with no error destination makes
+// such failures invisible.
 func TestCoreErrorHandler_ReportError(t *testing.T) {
 	var response strings.Builder
 	cfg := makeConfig(t.TempDir(), &response)

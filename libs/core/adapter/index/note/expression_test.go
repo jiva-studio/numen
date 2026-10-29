@@ -22,7 +22,7 @@ func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {
 			"Heat and work",
 			[]domain.UnitRange{{Start: 0, End: 4}, {Start: 9, End: 13}},
 		},
-		// A run with nothing in it says nothing, and is not one.
+		// A run with no content produces no span.
 		{"\x02\x03Entropy", "Entropy", nil},
 		// A character outside the basic plane is two code units to a client,
 		// and a run after one begins that much further along.

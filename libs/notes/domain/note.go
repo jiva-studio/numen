@@ -12,8 +12,8 @@ type Note struct {
 	Type NoteType
 
 	// ID is what the note carries in its frontmatter, if it carries one. A note
-	// written outside the application has none: it is indexed in full and simply
-	// cannot be a stable target.
+	// written outside the application has none: it is indexed in full and cannot
+	// be a stable target.
 	ID string
 
 	Frontmatter map[string]any
@@ -33,9 +33,9 @@ type Note struct {
 	FrontmatterErr string
 }
 
-// NoteType is what a note is: the `type` key of its frontmatter. A note carrying
-// none is an ordinary note. The application knows one type; a plugin gives a
-// note any other, and says in its manifest how the index keeps notes of it.
+// NoteType is the `type` key of a note's frontmatter. A note without one is an
+// ordinary note. The application defines one type; a plugin assigns any other
+// and declares in its manifest how the index stores notes of that type.
 type NoteType string
 
 // TypeNote is an ordinary note, which is a note carrying no `type` at all and
@@ -54,17 +54,16 @@ type Heading struct {
 	Offset int
 }
 
-// VaultProblem is something in a vault that could not be acted on and was not
-// guessed at. It is shown to the person: repairing it means deciding what they
-// meant.
+// VaultProblem is a condition in a vault that was not acted on automatically.
+// It is shown to the user: repairing it requires deciding the intended meaning.
 //
-// Every problem belongs to one note: the file somebody would open to settle it.
-// For a link that reaches two notes that is the note the link is written in,
-// and neither of the notes it could mean.
+// Every problem belongs to one note: the file to open to resolve it.
+// For a link that matches two notes, that is the note the link is written in,
+// not either of the candidates.
 type VaultProblem struct {
 	Path string
 	Kind Check
-	// Detail says what is wrong, in the terms the file itself uses.
+	// Detail describes the problem in the terms of the file itself.
 	Detail string
 
 	// Target is where the link goes, for the checks that are about one.
@@ -73,25 +72,24 @@ type VaultProblem struct {
 	Candidates []string
 }
 
-// Check is one thing that can be wrong with a vault, and the name of whatever
-// noticed it.
+// Check is one kind of vault problem and the name of the rule that detected it.
 //
-// It is on the problem so a person tidying a vault can take one kind at a
-// time. A new rule is a new name here.
+// It is stored on the problem so that one kind can be handled at a time. A new
+// rule adds a new name here.
 type Check string
 
 const (
-	// CheckParse is what reading one file turned up: a link with no role, a role
-	// nobody decided on, an identifier that is not one.
+	// CheckParse is a failure while reading one file: a link with no role, an
+	// unlisted role, an invalid identifier.
 	CheckParse Check = "parse"
 	// CheckFrontmatter is a frontmatter block that is not YAML. The note is
 	// still indexed, and nothing may write to it until the block reads.
 	CheckFrontmatter Check = "frontmatter"
-	// CheckAmbiguous is a link that reaches more than one note. It is not
-	// broken — it reaches the nearest — but which one that is can change when
-	// either of them moves.
+	// CheckAmbiguous is a link that matches more than one note. It is not
+	// broken — it resolves to the nearest — but the result can change when
+	// either note moves.
 	CheckAmbiguous Check = "ambiguous"
-	// CheckDangling is a link that reaches nothing. Legitimate while a note is
-	// being written and worth seeing afterwards.
+	// CheckDangling is a link that matches no note. Expected while a note is
+	// being written; worth reviewing afterwards.
 	CheckDangling Check = "dangling"
 )

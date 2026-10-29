@@ -83,8 +83,8 @@ body
 }
 
 func TestAnAnnotatedLinkWinsOverTheSameLinkInProse(t *testing.T) {
-	// The same target written in both places is one link, and the record that
-	// says more is the one that survives.
+	// The same target written in both places is one link, and the record with more
+	// information is the one that survives.
 	n := parse(t, `---
 links:
   - to: "[[Entropy]]"
@@ -118,8 +118,8 @@ body
 }
 
 func TestAnUnknownRoleIsRefused(t *testing.T) {
-	// The list of roles is closed: navigation reads it, so a role nobody decided
-	// on has no behaviour and storing it would pretend otherwise.
+	// The list of roles is closed: navigation reads it, so a role with no decided
+	// behaviour has none, and storing it would misrepresent that.
 	n := parse(t, `---
 links:
   - to: "[[Entropy]]"

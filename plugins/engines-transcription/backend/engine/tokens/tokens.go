@@ -8,18 +8,18 @@ import (
 	"strings"
 )
 
-// The model writes word pieces, and a piece that opens a word carries a mark
+// The model emits word pieces, and a piece that opens a word carries a mark
 // where the space before it was. Joining the pieces and reading that mark back
-// as a space is the whole of turning what it said into text.
+// as a space is the whole of converting its output into text.
 const wordMark = "▁"
 
 // Pieces are what a model can say, at the place its own numbers put them, with
 // the mark already read as a space.
 type Pieces []string
 
-// Read reads a model's pieces out of the file published beside it. Each line
-// is a piece and the number that names it, and a number the file skips says
-// nothing.
+// Read reads a model's pieces from the file published alongside it. Each line
+// is a piece and the number that identifies it, and a number the file skips
+// has no piece.
 func Read(path string) (Pieces, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -63,7 +63,7 @@ func (p Pieces) GetIndex(piece string) int {
 	return -1
 }
 
-// GetText is what a run of tokens says. A token the model knows and this file does
+// GetText returns the text of a run of tokens. A token the model knows and this file does
 // not is left out.
 func (p Pieces) GetText(response []int) string {
 	size := 0

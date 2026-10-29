@@ -6,12 +6,12 @@
  * at.
  */
 
-/** A row's identity. What it stands for is the caller's to decide. */
+/** A row's identity. What it represents is the caller's to decide. */
 export type RowId = string
 
 /**
  * One row: what it is called, and whether it can hold other rows. What is
- * drawn beside the name belongs to whoever renders the tree.
+ * rendered beside the name belongs to whoever renders the tree.
  */
 export interface Row {
   readonly id: RowId
@@ -28,7 +28,7 @@ export interface Row {
  */
 export interface RowMarker {
   readonly attribute: string
-  /** What the attribute says on a row, and nothing for a row left unmarked. */
+  /** The attribute value on a row, and nothing for an unmarked row. */
   readonly getAttributeValue: (row: RowId | null) => string | null
 }
 
@@ -48,7 +48,7 @@ export interface ShownRow {
   readonly hasChildren: boolean
   /** The row holding it. Null at the top level. */
   readonly parent: RowId | null
-  /** How deep it stands, counting from one, which is what it is announced as. */
+  /** Depth, counting from one, which is what it is announced as. */
   readonly level: number
   /** The last of the rows its holder holds. */
   readonly isLast: boolean

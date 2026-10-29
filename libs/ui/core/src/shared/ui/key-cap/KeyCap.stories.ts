@@ -1,10 +1,10 @@
 /**
- * Every cap the palette can be asked to draw, and the two measurements that say
- * a cap is one object: every icon is centred on the line the letter is set on,
- * and every icon is stroked as thick as every other.
+ * Every cap the palette can draw, and the two measurements that check a cap is
+ * one visual unit: every icon is vertically centred on the letter's line, and
+ * every icon has the same stroke weight.
  *
- * Both are measured in the browser that paints the ink, against the cap's own
- * boxes, which come from the tokens.
+ * Both are measured in the browser that renders the glyphs, against the cap's
+ * own boxes, which come from the tokens.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
@@ -45,7 +45,7 @@ export const One: Story = { args: { keys: { icons: ['command'], letter: 'K' } } 
 /** A cap that is icons alone, which is what the foot of the palette draws. */
 export const Icons: Story = { args: { keys: { icons: ['shift', 'return'], letter: '' } } }
 
-/** A cap holding every key there is, which no keyboard asks for. */
+/** A cap with every icon at once, a combination no keyboard produces. */
 export const FarTooMany: Story = { args: { keys: { icons: EVERY, letter: 'W' } } }
 
 /** Every key on its own, beside the letter it would be held with. */
@@ -69,16 +69,16 @@ export const EveryIcon: Story = {
         0.02,
       )
 
-      // One line: an icon's ink is centred on that line, within a fiftieth of
-      // the type the cap is set in. What is left over is the asymmetry of the
-      // icon's own grid.
+      // One line: the icon's glyph is centred on that line, within 2% of the
+      // cap's font size. The remaining offset is the asymmetry of the icon's own
+      // grid.
       const icon = await getDrawingStroke(cap.querySelector('svg')!)
       await expect(Math.abs(icon.middle - middle) / activeSet).toBeLessThanOrEqual(0.02)
       weights.push(icon.stroke / activeSet)
     }
 
-    // One weight: every icon's ink is as thick as every other's, which is what
-    // the thinner stroke of an icon drawn larger is for.
+    // One weight: every icon has the same stroke weight, which the thinner
+    // stroke of a larger icon compensates for.
     await expect(Math.max(...weights) / Math.min(...weights) - 1).toBeLessThanOrEqual(0.05)
   },
 }
@@ -101,7 +101,7 @@ export const OneHeight: Story = {
   },
 }
 
-/** Every key on the dark set of tokens, where the cap's ground is a blend. */
+/** Every key with the dark token set, where the cap background is a blend. */
 export const Dark: Story = {
   globals: DARK,
   args: { keys: { icons: [], letter: 'W' } },
@@ -111,9 +111,9 @@ export const Dark: Story = {
     const caps = Array.from(canvasElement.querySelectorAll('.cap'))
     await expect(caps).toHaveLength(EVERY.length)
 
-    // A cap keeps a ground of its own, told from the surface the row of them
-    // relies on, and is read in ink standing above that ground — which is the
-    // way round the dark set is written.
+    // A cap has its own background, distinct from the surface behind the row,
+    // and its text is lighter than that background, as the dark token set
+    // defines.
     const backdropColor = getComputedStyle(
       canvasElement.ownerDocument.documentElement,
     ).backgroundColor
@@ -129,7 +129,7 @@ export const Dark: Story = {
   },
 }
 
-/** What a reader who is listening and not looking is told. */
+/** The text alternative that a screen reader announces. */
 export const Announced: Story = {
   args: { keys: { icons: ['control', 'shift'], letter: 'W' } },
   play: async ({ canvasElement }) => {

@@ -22,7 +22,7 @@ type ShowLinks struct {
 	links noteport.LinkQueries
 }
 
-// NewShowLinks is what both halves are asked of: the index that answers what a
+// NewShowLinks returns the use case built on both halves: the index that returns what a
 // note points at and what points at it.
 func NewShowLinks(links noteport.LinkQueries) ShowLinks {
 	return ShowLinks{links: links}

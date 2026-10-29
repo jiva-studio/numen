@@ -23,7 +23,7 @@ func TestATitleNoFileCanBeNamedAfterMakesNothing(t *testing.T) {
 	}
 }
 
-// A link the note cannot carry leaves no file, wherever in the list it stands.
+// A link the note cannot carry leaves no file, wherever it is in the list.
 func TestALinkTheNoteCannotCarryPreservesNoFile(t *testing.T) {
 	t.Parallel()
 	good := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, Role: domain.RoleParent}

@@ -183,7 +183,7 @@ describe('the node under the pointer', () => {
 
   it('is not one on its way in or out, however squarely it is under it', () => {
     // The rule that decides the click and the tab stop decides this too: a link
-    // to something the reader never saw is not what the gesture asked for.
+    // to a node the reader never saw is not the intended target of the gesture.
     expect(findNode(origin, createFrame({ id: 'leaving', opacity: 0.4 }))).toBeNull()
   })
 })
@@ -241,8 +241,8 @@ describe('the relation something dragged in evaluates to', () => {
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {
-    // The picture is drawn about its focus, and a rule written against the
-    // middle of the window answers for a picture that never moved.
+    // The layout is drawn about its focus, and a rule written against the
+    // window center would give the same answer for a layout that never moved.
     const shifted: PlexFrame = {
       ...frame,
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300 })),

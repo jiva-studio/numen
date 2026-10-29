@@ -18,7 +18,7 @@ import {
 
 export * from './tabState'
 
-/** An event that asks for something and carries nothing with it. */
+/** An event that requests an action and carries no payload. */
 type RequestedKind = Exclude<Event['kind'], 'read' | 'edited' | 'written' | 'changed'>
 
 export const transitionTab = (
@@ -82,7 +82,7 @@ const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
 })
 
 /**
- * A read is applied to a tab with nothing unsaved and only for the generation asked for last.
+ * A read is applied to a tab with nothing unsaved, and only for the generation requested last.
  */
 const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
   const loading = getState(tab) === 'loading'
@@ -195,7 +195,7 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
 }
 
 /**
- * A save asked for now writes what is unsaved and owes one to a write in the air.
+ * A save requested now writes the unsaved content, and schedules another if a write is in progress.
  */
 const applySave = (tab: Tab): Transition => {
   const state = getState(tab)

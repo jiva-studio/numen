@@ -7,8 +7,8 @@ import (
 )
 
 // TestCoreErrorHandler_ReportError. The core reports what went wrong in work
-// it does not stop for, and a configuration naming nowhere to say it is a
-// failure nobody is ever told about.
+// it does not stop for, and a configuration naming no destination makes it a
+// failure that is never reported.
 func TestCoreErrorHandler_ReportError(t *testing.T) {
 	var response strings.Builder
 	cfg := makeConfig(&response)

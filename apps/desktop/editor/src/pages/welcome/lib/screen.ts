@@ -1,8 +1,8 @@
 /**
  * What the window offers while it holds no tab.
  *
- * The screen draws these rows and decides nothing, so a test can ask what a
- * window standing on a vault, or on none, puts in front of the person.
+ * The screen renders these rows and decides nothing, so a test can query what a
+ * window on a vault, or on none, presents to the user.
  */
 import type { PaletteKeys } from '@numen/ui'
 import type { VaultRow, WelcomeAction } from '@numen/shell'
@@ -12,11 +12,11 @@ import { createRowKeys } from '@/features/command-palette'
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
   readonly vault: string
-  /** Whether that vault has been read and can be asked to do anything. */
+  /** Whether that vault has been read and can serve requests. */
   readonly isReady: boolean
 }
 
-/** Everything the welcome screen says in the window's voice. */
+/** Every label the welcome screen shows. */
 export interface Words {
   /** The palette and the commands, each with the keystroke that puts it up. */
   readonly find: string
@@ -42,14 +42,14 @@ export const COMMANDS = 'commands'
 export const SETTINGS = 'settings'
 
 /**
- * The ways in, in the order they are drawn. The settings are the
- * installation's, so they are offered last and are offered always. The rest
- * stand on a vault: a window showing none offers none of them, and the list
- * below is where a person goes first. A note is offered once the vault has
- * been read. The commands the plugins declare over the window with a keystroke stand after it.
+ * The entry points, in render order. The settings belong to the installation,
+ * so they are always offered, last. The rest depend on a vault: a window
+ * showing none offers none of them, and the vault list below is where the user
+ * goes first. A note is offered once the vault has been read. The commands the
+ * plugins declare over the window with a keystroke follow it.
  *
- * Every keystroke drawn here is the one the table binds, so a key a person sees
- * is a key that works.
+ * Every keystroke shown here is the one the table binds, so a displayed key is
+ * a key that works.
  */
 export const createWelcomeActions = (
   currentVault: CurrentVault,
@@ -76,8 +76,8 @@ export const createWelcomeActions = (
 }
 
 /**
- * The vaults the installation holds. The one in front of the person says so,
- * and so does one whose folder is not there; the rest carry nothing.
+ * The vaults the installation holds. The current vault is marked, as is one
+ * whose folder is missing; the rest carry no mark.
  */
 export const createVaultRows = (list: VaultList, words: Words): readonly VaultRow[] =>
   list.vaults.map((one) => {

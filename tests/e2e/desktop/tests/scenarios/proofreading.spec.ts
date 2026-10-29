@@ -3,7 +3,10 @@ import { openVaultFile, openWorkspace, runCommand, waitForPassage } from '../sup
 
 /** Words of the text the mock recogniser of `-debug-mock-ml` reads on every page. */
 const MOCK_RECOGNISED_WORDS = 'upper reservoir'
-/** What the mock transcriber of `-debug-mock-ml` hears in every recording. */
+/**
+ * The transcript the mock transcriber of `-debug-mock-ml` produces for every
+ * recording.
+ */
 const MOCK_TRANSCRIPT = /Mock transcribed text/
 /** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = 'proofread'

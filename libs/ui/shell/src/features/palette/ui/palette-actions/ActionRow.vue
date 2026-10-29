@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** One row of the action panel: what the action is called, and the key that reaches it. */
+/** One row of the action panel: the action's name, and the key that triggers it. */
 import { useTemplateRef } from 'vue'
 import { KeyCap } from '@numen/ui'
 import type { PlacedAction } from '../../lib/actions'
@@ -52,8 +52,8 @@ defineExpose({ element })
   white-space: nowrap;
 }
 
-/* Why the action is here. It sits under words that are being read, so it is a
-   tint and not a colour. */
+/* Highlights the matched part of the name. It sits under text being read, so
+   it is a tint, not a solid colour. */
 .actions__name [data-hit] {
   border-radius: 2px;
   background: var(--numen-highlight);

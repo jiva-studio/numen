@@ -7,9 +7,9 @@ type runtimeAssembly interface {
 	ScenarioAssembly
 }
 
-// Assembly is what this window asks whoever put the application together: the
-// vault list and the cache of the installation it serves, the ports it reaches
-// a vault through, and the scenarios and passes it opens one with.
+// Assembly is what this window requires from the application's composition root:
+// the vault list and the installation's cache, the ports used to access a vault, and
+// the scenarios and passes used to open one.
 type Assembly interface {
 	VaultAssembly
 	IndexAssembly

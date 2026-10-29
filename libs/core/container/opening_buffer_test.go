@@ -74,8 +74,8 @@ func TestBufferedNoteRepository_ReturnsWriteError(t *testing.T) {
 	}
 }
 
-// Once the paths are taken the walk is over, and what is written after it is
-// held no longer; the next walk holds again.
+// After the paths are taken the walk is over and later writes are not recorded;
+// the next walk starts recording again.
 func TestBufferedNoteRepository_StopsRecordingAfterStop(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
 	buffered.StartRecording()

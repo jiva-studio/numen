@@ -1,6 +1,6 @@
 /**
- * The words as a person edits them, and the write that keeps them against the
- * recording once the typing has been still.
+ * The transcript text as the user edits it, and the debounced write that saves
+ * it to the recording after typing stops.
  */
 import { ref, type Ref } from 'vue'
 import { applyCues, isSame, type Cue } from '../lib/cues'
@@ -18,7 +18,7 @@ export interface DraftOptions {
   idleMs: number
   /** Whether the recording tab is still open. */
   isOpen: () => boolean
-  /** The words as a person has edited them, kept against the recording. */
+  /** The transcript text as the user has edited it, saved to the recording. */
   write: (cues: readonly Cue[]) => Promise<void>
 }
 
@@ -45,7 +45,7 @@ export function useTranscriptDraft(how: DraftOptions) {
 
   /** The words as the editor shows them, one cue to a line. */
   const prose = ref('')
-  /** Whether a person has been typing too recently for the view to move. */
+  /** Whether the user typed recently enough that the view must not follow playback. */
   const typing = ref(false)
 
   /** Whether what is on screen has still to reach the file. */
@@ -90,14 +90,13 @@ export function useTranscriptDraft(how: DraftOptions) {
     }
   }
 
-  /** The person typed. The words are written once they have been still. */
+  /** Applies the user's edit. The text is saved after typing stops. */
   const setProse = (body: string) => {
     if (!isOpen() || body === prose.value) return
     prose.value = body
     isPending = true
-    // An edit that adds or takes away a line moves which line is being said,
-    // and the view does not go after a line a person moved under their own
-    // hands.
+    // An edit that adds or removes a line shifts which line is active, and the
+    // view does not follow a line the user moved while typing.
     typing.value = true
     clearTimeout(followTimer)
     followTimer = setTimeout(() => void (typing.value = false), idleMs)
@@ -106,8 +105,8 @@ export function useTranscriptDraft(how: DraftOptions) {
   }
 
   /**
-   * The words the recording now has, put on screen. Words the person has typed
-   * and not yet had written stay where they are.
+   * Shows the recording's current text. Text the user typed and has not yet
+   * saved is kept.
    */
   const setText = (body: string) => {
     if (!isPending) prose.value = body

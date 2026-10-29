@@ -33,9 +33,9 @@ var (
 	errNotLoopback   = errors.New("the host endpoint is not bound to the loopback interface")
 )
 
-// Callers is what the host endpoint asks the host about a call: who made
-// it, what that plugin may do, whether the person lets it ask a model, and who
-// answers a completion.
+// Callers is what the host endpoint queries the host for about a call: who made
+// it, what that plugin may do, whether the user permits it to use a model, and
+// who serves a completion.
 type callerLease interface {
 	Acquire(pluginID string)
 	Release(pluginID string)
@@ -63,8 +63,8 @@ type Services interface {
 	workServices
 }
 
-// Endpoint answers the calls plugins make to the host. It listens on the
-// loopback interface and serves a call only for a token the host gave a
+// Endpoint serves the calls plugins make to the host. It listens on the
+// loopback interface and serves a call only for a token the host issued to a
 // running plugin.
 type Endpoint struct {
 	callers Callers
@@ -105,7 +105,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	return endpoint, nil
 }
 
-// GetPort is the loopback port the endpoint listens on.
+// GetPort returns the loopback port the endpoint listens on.
 func (e *Endpoint) GetPort() int {
 	return e.port
 }
@@ -122,9 +122,10 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	return nil
 }
 
-// Complete answers a plugin's question with text from the agent its setting
-// unauthenticated, and one without the ai:complete permission as denied. A
-// plugin the person has not let ask a model is answered NO_CONSENT.
+// Complete serves a plugin's completion request with text from the configured
+// agent. A request without a valid token is unauthenticated, one without the
+// ai:complete permission is denied, and a plugin the user has not allowed to use
+// a model receives NO_CONSENT.
 func (e *Endpoint) Complete(
 	ctx context.Context,
 	req *connect.Request[v1.HostServiceCompleteRequest],

@@ -65,17 +65,17 @@ const OCCUPIED: Notice = {
 }
 
 /**
- * A clock that runs fast, so a story does not wait as long as a person does.
+ * A clock that runs fast, so stories do not wait in real time.
  *
- * What a card decides is decided against elapsed time, so the moment it starts
- * from does not matter and every story may share one of these.
+ * Card decisions depend only on elapsed time, not on the start moment, so
+ * stories may share one clock.
  */
 const createFastClock = (times: number): (() => number) => {
   const from = Date.now()
   return () => from + (Date.now() - from) * times
 }
 
-/** Longer than a card stands when nothing is holding it. */
+/** Longer than a card stays visible when nothing holds it. */
 const AWHILE = 1200
 
 /** A window with something in it, and the cards over its corner. */
@@ -148,10 +148,9 @@ const getFoldedCard = () => document.querySelector<HTMLElement>('.notice__folded
 export const Playground: Story = {}
 
 /**
- * Nothing to say, and no card to click through.
+ * No notices and no cards.
  *
- * What reads a card out stands empty from the first drawing, before there is a
- * card to read.
+ * The live regions are empty from the first render, before any card exists.
  */
 export const Quiet: Story = {
   args: { notices: [] },
@@ -172,17 +171,17 @@ export const TwoAtOnce: Story = {
   },
 }
 
-/** A download reads out in the sizes a person reads, not in bytes. */
+/** A download is displayed in human-readable sizes, not bytes. */
 export const CountedInBytes: Story = {
   args: { notices: [FETCHING] },
 }
 
-/** Work that has not said what it found yet: words and no count. */
+/** Work without a known total: text and no count. */
 export const NoTotalYet: Story = {
   args: { notices: [{ id: 'embedding', text: 'Preparing search by meaning', isWorking: true }] },
 }
 
-/** A fact about this installation, said once and not happening. */
+/** A state of the installation, announced once and not in progress. */
 export const Resting: Story = {
   args: { notices: [{ id: 'words', text: 'Text search only: no embedding model set' }] },
 }
@@ -215,7 +214,7 @@ export const WorkAndWords: Story = {
   },
 }
 
-/** Something said goes once it has been read. */
+/** An announcement is removed after it has been read. */
 export const AnnouncedAndGone: Story = {
   args: { notices: [RENAMED], clock: createFastClock(8) },
   play: async () => {
@@ -224,7 +223,7 @@ export const AnnouncedAndGone: Story = {
   },
 }
 
-/** A failure does not go by itself. A person who has to act on it has to see it. */
+/** An error stays until it is dismissed. */
 export const FailureStays: Story = {
   args: { notices: [OCCUPIED], clock: createFastClock(8) },
   play: async () => {
@@ -247,7 +246,7 @@ export const PausedUnderThePointer: Story = {
   },
 }
 
-/** Nobody reads a window they are not looking at. */
+/** Cards are not timed out while the window is hidden. */
 export const NobodyLooking: Story = {
   args: { notices: [RENAMED], clock: createFastClock(8), hidden: () => true },
   play: async () => {
@@ -259,10 +258,10 @@ export const NobodyLooking: Story = {
 }
 
 /**
- * More said at once than there is room for.
+ * More notices at once than fit.
  *
- * What folds is what has been said. Work and what is so are what the corner is
- * for, and they stand however many of them there are.
+ * Announcements fold into a summary. Work and state notices stay expanded
+ * regardless of their count.
  */
 export const MoreThanTheCapacity: Story = {
   args: {
@@ -315,14 +314,14 @@ export const PutOneAway: Story = {
 }
 
 /**
- * Words far past the room there is, in a script that is not Latin and in one
- * with nothing to break at, beside one short word.
+ * Text far longer than the available width, in a non-Latin script and in one
+ * with no break opportunities, next to one short text.
  *
- * A card with a count keeps to two rows: what is happening, and what it is
- * happening to. A card carrying only words is carrying a path or a reason, and
+ * A card with a count keeps to two rows: the activity and its target. A card
+ * with text only carries a path or a reason, and
  *
- * A row is the type and the clearance around it, both of which the interface
- * multiplier moves, so the short card is what every size measures against.
+ * A row is the type size plus the surrounding clearance, both scaled by the
+ * interface multiplier, so the short card is the reference for every size.
  */
 export const TooMuchToSay: Story = {
   args: {
@@ -358,10 +357,10 @@ export const TooMuchToSay: Story = {
 }
 
 /**
- * Work that has only just begun.
+ * Work that has just started.
  *
- * Most passes are over before a person could read what they were called, so
- * nothing is drawn until one has lasted.
+ * Most passes finish before they could be read, so no card is rendered until
+ * the work has lasted past the delay.
  */
 export const NotWorthACardYet: Story = {
   args: { wait: 400 },
@@ -371,7 +370,7 @@ export const NotWorthACardYet: Story = {
   },
 }
 
-/** Each card names what it puts away, so two of them are told apart. */
+/** Each card's dismiss button is labelled with the notice text, so cards are distinguishable. */
 export const EachCardNamesWhatItPutsAway: Story = {
   args: { notices: [READING, EMBEDDING] },
   play: async () => {
@@ -386,7 +385,7 @@ export const EachCardNamesWhatItPutsAway: Story = {
   },
 }
 
-/** What a person was told, and what they were told over whatever they were reading. */
+/** Announcements go to the polite live region; errors go to the assertive one. */
 export const ReadOutInTurnAndOverTheRest: Story = {
   args: { notices: [READING, OCCUPIED] },
   play: async () => {
@@ -401,11 +400,11 @@ export const ReadOutInTurnAndOverTheRest: Story = {
 }
 
 /**
- * On the dark set of tokens, with a card of each severity.
+ * On the dark token set, with a card of each severity.
  *
- * A card a person has to read is framed in its own text, thinned until it is
- * nearly the ground. That frame is the thing a dark ground swallows, so it is
- * read off every card, and so is the ground the way out takes under the hand.
+ * A card that needs attention is framed in its own text color, thinned toward
+ * the background. A dark background can hide that frame, so the frame and the
+ * dismiss-button backdrop are measured on every card.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -437,20 +436,20 @@ export const Dark: Story = {
       const cardStyle = getComputedStyle(card)
       const ground = lightness(cardStyle.backgroundColor)
       const ink = lightness(cardStyle.color)
-      // Whatever its severity, a card is written in ink standing above its own
-      // ground, which is the way round the dark set is written.
+      // Every severity renders text lighter than its background, as the dark
+      // token set defines.
       await expect(ink).toBeGreaterThan(ground + 40)
 
-      // The frame is that ink, thinned: it lies between the two, and is a step
-      // away from the ground and not lost in it.
+      // The frame is the text color thinned: its lightness lies between text and
+      // background and differs from the background by more than 2.
       const frame = lightness(cardStyle.borderTopColor, cardStyle.backgroundColor)
       await expect(frame).toBeGreaterThan(Math.min(ink, ground))
       await expect(frame).toBeLessThan(Math.max(ink, ground))
       await expect(Math.abs(frame - ground)).toBeGreaterThan(2)
     }
 
-    // The way out is only ink until a hand is on it, and then it relies on a
-    // ground of its own.
+    // The dismiss button has a transparent background until hovered, then a
+    // background of its own.
     const away = within(cards[2]!).getByRole('button', { name: /^Dismiss/ })
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
 

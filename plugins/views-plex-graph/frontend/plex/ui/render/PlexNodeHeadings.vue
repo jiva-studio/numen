@@ -12,7 +12,7 @@ import { getOpenHeadings, scrollBy, type Arrow } from '../../lib/open'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The headings and the room they are given. */
+  /** The headings and the space available to them. */
   hung: NodeHeadings
   /** How far the box they hang from has opened, from nothing to the whole way. */
   open: number
@@ -31,7 +31,7 @@ const scrollOffset = ref(0)
 /** The headings, as far out from under the box as they have come. */
 const openHeadings = computed(() => getOpenHeadings(props.hung, props.open, scrollOffset.value))
 
-/** Where the ground under the headings begins across. */
+/** The x position where the backdrop behind the headings begins. */
 const backdropX = computed(() => props.hung.offset - props.hung.width / 2)
 
 /** What a wheel moved that came to no whole heading, held for the next one. */
@@ -51,9 +51,9 @@ watch(
 
 /* -------------------------------- Handlers -------------------------------- */
 /**
- * Scrolling the window over the headings. A wheel with nowhere to go is left to
- * whatever else wants it, and what it moved that came to no whole heading is
- * carried into the next one.
+ * Scrolls the headings list on wheel input. A wheel event that cannot scroll is
+ * left to other handlers, and a wheel delta that amounts to less than a whole
+ * heading is carried into the next event.
  */
 const onWheel = (event: WheelEvent) => {
   const visibleHeadings = openHeadings.value
@@ -73,8 +73,8 @@ const onWheel = (event: WheelEvent) => {
   carried = remainingDelta
   event.preventDefault()
   event.stopPropagation()
-  // Stepped from where the window really stands, which is the picture's own
-  // reckoning of it.
+  // The offset steps from the first visible heading, which is the plex's own
+  // calculation of the window position.
   scrollOffset.value = visibleHeadings.first + by
 }
 
@@ -117,7 +117,7 @@ const arrowLine = (arrow: Arrow) =>
 </template>
 
 <style scoped>
-/* The ground the headings stand on: enough of it to hold them together, and thin
+/* The backdrop behind the headings: dense enough to group them, and thin
    enough to read the picture through. */
 .plex__backdrop {
   rx: 0.25rem;

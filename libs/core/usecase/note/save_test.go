@@ -24,8 +24,8 @@ func (c changing) newWrite() note.Write {
 	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 }
 
-// openNote is a tab that has just read a note: the prose it was given, and the
-// file it came out of.
+// openNote is a tab that has just read a note: the prose it received and the
+// file it came from.
 func (c changing) openNote(t *testing.T, path string) *note.Baseline {
 	t.Helper()
 	found, err := note.NewRead(vaultreader.Readers{}).Execute(t.Context(), c.vault, path)
@@ -35,9 +35,9 @@ func (c changing) openNote(t *testing.T, path string) *note.Baseline {
 	return &note.Baseline{Prose: found.Body, FileStat: found.FileStat}
 }
 
-// A flow sequence is the commonest frontmatter line there is, and an identifier
-// stamped into a note cannot be spliced past one. The person's own save writes
-// no identifier, so such a note is saveable.
+// A flow sequence is the most common frontmatter line, and an identifier
+// stamped into a note cannot be spliced past one. The user's own save writes no
+// identifier, so such a note is saveable.
 func TestSavingANoteWhoseFrontmatterIsSavedOnOneLine(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -62,10 +62,10 @@ func TestSavingANoteWhoseFrontmatterIsSavedOnOneLine(t *testing.T) {
 }
 
 // A note whose frontmatter block is never closed has no prose of its own: the
-// whole file, keys and all, stands as its body. A save writes the tab's prose
-// over the body, so it would write over the half-written block, and the person
-// would lose the keys they were in the middle of typing. They are told the note
-// cannot be read instead, and the file is left as it is.
+// whole file, keys included, is its body. A save writes the tab's prose over
+// the body, which would overwrite the unclosed block and lose the keys being
+// typed. The save reports that the note cannot be read, and the file is
+// unchanged.
 func TestASaveOverANoteWhoseFrontmatterNeverClosesIsRefused(t *testing.T) {
 	t.Parallel()
 	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
@@ -112,14 +112,14 @@ func TestASaveRemakesANoteDeletedBelowIt(t *testing.T) {
 	}
 }
 
-// The prose the tab read is gone from the file, so the save stops and the
-// person is asked. Nothing is written.
+// The prose the tab read is absent from the file, so the save stops and asks
+// the user. Nothing is written.
 func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := c.openNote(t, "Entropy.md")
 
-	// Somebody else gets there first, between the tab's read and its save.
+	// Another writer saves between the tab's read and its save.
 	theirs := "# Entropy\n\nTheirs.\n"
 	if err := os.WriteFile(filepath.Join(c.vault.Path, "Entropy.md"), []byte(theirs), 0o644); err != nil {
 		t.Fatal(err)
@@ -134,8 +134,8 @@ func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	}
 }
 
-// The person answered the question with *keep*, which is a save holding itself
-// against nothing.
+// The user answered the prompt with *keep*: the save runs with no guard against
+// the file's current content.
 func TestASaveThatComparesNothingLands(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -153,8 +153,8 @@ func TestASaveThatComparesNothingLands(t *testing.T) {
 	}
 }
 
-// A save puts down the text a person typed and adds nothing to it, so a note
-// given a new level-one heading at the keyboard stays in the file it is in.
+// A save writes the text as typed and adds nothing, so a note given a new
+// level-one heading in the editor stays in its file.
 func TestSavingANewHeadingPreservesTheFileWhereItIs(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -169,8 +169,8 @@ func TestSavingANewHeadingPreservesTheFileWhereItIs(t *testing.T) {
 	if !isGone(t, c, "Disorder.md") {
 		t.Error("the file is at Disorder.md")
 	}
-	// A heading is prose. The note is shown by its `title` key, else by the file
-	// it is filed under, and neither of those is what the person typed.
+	// A heading is prose. The note is displayed by its `title` key, else by its
+	// file path, and neither comes from the typed heading.
 	if got := c.title(t, "Entropy.md"); got != "Entropy" {
 		t.Errorf("the vault shows it as %q", got)
 	}
@@ -270,8 +270,8 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 }
 
-// Two vaults holding the same path and no words in common. A save answers for
-// the vault it was given and reaches no other.
+// Two vaults holding the same path and no words in common. A save applies to
+// the vault it was given and to no other.
 func TestTwoVaultsHoldTheirOwnSaves(t *testing.T) {
 	t.Parallel()
 	first := openChanging(t, map[string]string{"Note.md": "# Note\n\nthermodynamics\n"})
@@ -388,9 +388,9 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	}
 }
 
-// Mending a link is a read and a write over a note the person may be typing
-// in, and the lock covers both. The repair lands while the save is waiting for
-// it, and the save carries it through.
+// Mending a link is a read and a write over a note the user may be editing, and
+// the lock covers both. The repair is applied while the save waits for the
+// lock, and the save then includes it.
 func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	t.Parallel()
 	// A note its filename names is called by the one it lands under, so the link
@@ -596,9 +596,10 @@ func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 	}
 }
 
-// A file the vault leaves alone and a path with nothing at it are two answers,
-// and a refresh acts on them differently. Neither is indexed and both leave the
-// index; only the second is a note somebody may be looking at.
+// A file the vault ignores and a path with nothing at it are distinct results,
+// and a refresh handles them differently. Neither is indexed and both are
+// removed from the index; only the second is a note that may be open in an
+// editor.
 func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -630,9 +631,8 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 	}
 }
 
-// watchedReaders says when a note was read and when it was looked at, from
-// inside the use case doing it, so that what happens in between is the test's
-// to decide.
+// watchedReaders records when a note was read and when it was inspected, from
+// inside the use case, so the test controls what happens in between.
 type watchedReaders struct {
 	inner vaultport.VaultReaders
 	read  func(path string)
@@ -669,8 +669,8 @@ func (w watchedReader) StatFile(ctx context.Context, path string) (domain.FileSt
 	return ref, err
 }
 
-// watchedWriters says when the write lock was asked for, before it is waited
-// for.
+// watchedWriters records when the write lock was requested, before waiting for
+// it.
 type watchedWriters struct {
 	inner vaultport.VaultWriters
 	hold  func()

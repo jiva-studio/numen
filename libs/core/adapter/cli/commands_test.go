@@ -27,7 +27,7 @@ import (
 
 var errRefused = errors.New("rejected on purpose")
 
-// notebook is the vault every command here is asked about.
+// notebook is the vault every command here operates on.
 var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 
 // runWithDeps runs the terminal on the values it is handed.

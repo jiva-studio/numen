@@ -1,10 +1,10 @@
 /**
- * Every colour and size a button is drawn in. Also the test corpus: each story
- * is run in a browser by `@storybook/addon-vitest`.
+ * Every color and size a button is rendered in. This is also the test corpus:
+ * each story is run in a browser by `@storybook/addon-vitest`.
  *
- * Hover is one expression for both sets of tokens — a little of a variant's own
- * text mixed into its ground — so what it evaluates to is a browser's answer and
- * nothing else can give it.
+ * Hover is one expression for both token sets: part of a variant's text color
+ * is mixed into its background. The result is a browser-computed value that
+ * nothing else can provide.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
@@ -85,12 +85,12 @@ export const Disabled: Story = {
 }
 
 /**
- * On the dark set of tokens, with the pointer walked along the row.
+ * The dark token set, with the pointer moved along the row.
  *
- * Hover mixes a little of a button's own text into its ground, so the ground
- * moves towards that text. On the dark set a filled button is light and an
- * outlined one is dark, and the one expression has to answer for both ways
- * round. A button that is only text takes a ground it did not have.
+ * Hover mixes part of a button's text color into its background, so the
+ * background moves toward the text color. On the dark set a filled button is
+ * light and an outlined one is dark, and the one expression has to work in both
+ * directions. A text-only button gains a background it did not have.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -110,8 +110,7 @@ export const Dark: Story = {
       const ink = lightness(getComputedStyle(button).color)
       const restingLightness = lightness(getComputedStyle(button).backgroundColor)
 
-      // The two are told apart, which is what makes the direction below mean
-      // anything.
+      // The two differ, which gives the direction checked below its meaning.
       expect(Math.abs(ink - restingLightness)).toBeGreaterThan(24)
 
       await hoverOver(button)
@@ -122,8 +121,7 @@ export const Dark: Story = {
       })
     }
 
-    // A button that is only text has no ground at rest, and gains one under
-    // the hand.
+    // A text-only button has no background at rest and gains one on hover.
     const ghost = canvas.getByRole('button', { name: 'ghost' })
     expect(getComputedStyle(ghost).backgroundColor).toBe('rgba(0, 0, 0, 0)')
     await hoverOver(ghost)

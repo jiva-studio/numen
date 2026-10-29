@@ -1,9 +1,9 @@
 /**
- * The settings tab drawn, in a document.
+ * The settings tab rendered in a document.
  *
- * What is asked here is that a row writes through the same value the command of
- * that name writes, that a setting read out of the file is written back where
- * it stands, and that what the file holds is what is drawn as chosen.
+ * The tests check that a row writes through the same value as the command of that
+ * name, that a setting read from the file is written back to the same place,
+ * and that what the file holds is shown as selected.
  *
  * Every value here is invented.
  */
@@ -17,7 +17,10 @@ import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
 
-/** A model somebody typed into the file themselves, addressed and not named. */
+/**
+ * A model entered in the file by the user, identified by address and not by
+ * name.
+ */
 const OWN = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
 
 /** The models the vault offers, which is what the settings are grounded in. */
@@ -72,7 +75,10 @@ const MODELS: readonly Model[] = [
   },
 ]
 
-/** An installation configured that way, and everything it was asked to change. */
+/**
+ * A tab for an installation with the given configuration, and every change it
+ * receives.
+ */
 const createTab = (
   isPinned = false,
   file: Record<string, unknown> = {},

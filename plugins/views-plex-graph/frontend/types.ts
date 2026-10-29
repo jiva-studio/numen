@@ -47,20 +47,20 @@ export type NoteRelation = PlexRelation
 /** A path rename. */
 export type { PathRename }
 
-/** The one question a plex asks of the vault: what is around a note. */
+/** The one query a plex makes of the vault: the neighbours of a note. */
 export interface Neighbours {
   neighbourhood(path: string): Promise<Neighbourhood>
 }
 
-/** Where the menu stands, and the node it was asked for on. */
+/** Position of the menu and the node it was requested on. */
 export interface MenuRequest {
-  /** The node it was asked for on, or null when asked off every node. */
+  /** The node the menu was requested on, or null when requested outside every node. */
   readonly node: string | null
   readonly at: { x: number; y: number }
   readonly opening: MenuTrigger
 }
 
-/** Where the quick link popover stands, and what relation it connects. */
+/** Position of the quick link popover and the relation it connects. */
 export interface QuickLinkRequest {
   readonly from: string
   readonly relation: PlexRelation
@@ -94,7 +94,7 @@ export interface LinkInspectorRequest {
   readonly at: { readonly x: number; readonly y: number }
 }
 
-/** Making a note from the picture, and joining two that are already on it. */
+/** Creating a note from the plex, and linking two notes already in it. */
 export interface PlexEditor {
   createInRelation(from: string, relation: PlexRelation): Promise<unknown>
   createWithTitle(
@@ -121,7 +121,7 @@ export interface PlexView {
   readonly neighbourhood: Ref<Neighbourhood | null>
   readonly here: Ref<string>
   readonly error: Ref<string>
-  /** A note asked for whose answer has not landed, or that the vault did not hold yet; empty where none is. */
+  /** A requested note whose result has not arrived, or that the vault does not hold yet; empty when none. */
   readonly nextPath: Ref<string>
   readonly isLoading: Ref<boolean>
   go(path: string): Promise<void>

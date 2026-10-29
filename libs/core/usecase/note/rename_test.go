@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// rename is the rename an installation nobody has configured does: a title and
-// a filename kept as one name.
+// rename returns the rename of an unconfigured installation, which keeps the
+// title and the filename as one name.
 func (c changing) rename() note.Rename {
 	return note.Rename{Move: c.move()}
 }
@@ -31,8 +31,8 @@ func (c changing) renameApart() note.Rename {
 	return note.Rename{Move: mover}
 }
 
-// title is what the vault shows the note at this path as, asked of the index
-// and not of the file: it is the answer the person sees.
+// title returns the title that the index reports for the note at the path,
+// which is the title the vault displays.
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
 	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{path})
@@ -42,8 +42,8 @@ func (c changing) title(t *testing.T, path string) string {
 	return displayed[path].Title
 }
 
-// Whichever of the title and the filename names the note is the one brought
-// into line, and whatever the prose says is left as it was written.
+// The rename updates whichever of the title and the filename names the note,
+// and leaves the body text unchanged.
 func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
@@ -124,9 +124,9 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 	}
 }
 
-// The vault shows the note under the title the rename was given, whichever of
-// the two carries it. A title the filename says as something else is the note
-// named something the person did not ask for.
+// The vault shows the note under the title given to the rename, whichever of
+// the title and the filename holds it. A title that the filename expresses as
+// a different name is a defect.
 func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
@@ -201,7 +201,7 @@ func TestATitleOnlyTheKeyCanCarryIsSavedThere(t *testing.T) {
 	}
 }
 
-// A link written by a name reaches the note the name is on.
+// A link written with the note's name resolves to the note after it is renamed.
 func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 	t.Parallel()
 	for name, title := range map[string]string{
@@ -271,10 +271,10 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	}
 }
 
-// A file the person renamed themselves has landed before the note is opened at
-// all, so frontmatter one key cannot be changed in leaves the title unwritten
-// and reports nothing. An anchor is that case as much as one line is: neither
-// is written, and the two come out of the same guard.
+// When the file was already renamed before the note is opened, frontmatter
+// that cannot be edited leaves the title unwritten and reports nothing. A
+// one-line block and an anchor are both such cases: neither is written, and
+// both are rejected by the same guard.
 func TestWriteFilenameAsTitle_SkipsUneditableFrontmatter(t *testing.T) {
 	t.Parallel()
 	for name, raw := range map[string]string{
@@ -319,7 +319,7 @@ func TestRename_RejectsExistingTarget(t *testing.T) {
 	}
 }
 
-// sulking is the index, refusing to be told where a file went.
+// sulking is an index that fails when told a file moved.
 type sulking struct {
 	sourceport.SourceRepository
 	moveError error
@@ -329,8 +329,8 @@ func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) er
 	return s.moveError
 }
 
-// The answer says where the file is. A move that landed says so however the
-// rest of the work goes.
+// The result reports the new file location. A move that completed is
+// reported regardless of whether the follow-up work fails.
 func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
@@ -474,8 +474,8 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	}
 }
 
-// A note taken out of the vault is taken out of it, and one that was never
-// there is said to be missing and not reported as the vault failing.
+// Removing a note deletes it from the vault. Removing a note that does not
+// exist reports it as missing, not as a vault failure.
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
@@ -520,8 +520,8 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 	}
 }
 
-// Where a title and a filename are told apart, a new title is written into the
-// note and the file stays where it is.
+// When the title and the filename are separate, a new title is written into
+// the note and the file does not move.
 func TestRename_RetitlesInFrontmatterWithoutMovingFile(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
@@ -603,7 +603,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	}
 }
 
-// isGone says whether the vault holds nothing at a path.
+// isGone reports whether the vault has no file at the path.
 func isGone(t *testing.T, c changing, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))

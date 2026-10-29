@@ -1,9 +1,9 @@
-// Package theme is the stylesheets a person may dress the window in.
+// Package theme lists and applies the stylesheets that restyle the window.
 //
-// A theme is one CSS file redeclaring the tokens the interface draws with. Some
-// ship inside the binary and the rest are files in a folder of the person's;
-// they are one list, one format, and one line applies either. Nothing here
-// reads inside a theme beyond whether it pins `color-scheme`.
+// A theme is one CSS file redeclaring the tokens the interface renders with.
+// Some ship inside the binary and the rest are files in the user's themes
+// folder; both form one list with one format, and one name applies either.
+// Nothing here reads inside a theme beyond whether it pins `color-scheme`.
 package theme
 
 import (
@@ -33,8 +33,8 @@ const Extension = ".css"
 // page before the window draws, and the presets are a few kilobytes each.
 const MaxSize = 256 << 10
 
-// Default is this product's own palette, and what a name matching nothing
-// wears. It is the theme an installation nobody has dressed is set to.
+// Default is this product's own palette, and the theme applied when a name
+// matches nothing. It is the theme of an installation with no selection.
 const Default = "preset:numen"
 
 // Origin is where a theme comes from. A theme carries its origin in its name, and
@@ -45,14 +45,14 @@ const (
 	// Preset ships inside the application.
 	Preset Origin = "preset"
 
-	// Mine is a `.css` file in the person's themes folder.
+	// Mine is a `.css` file in the user's themes folder.
 	Mine Origin = "mine"
 )
 
 // Theme is one theme as the list refers to it.
 type Theme struct {
 	// Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
-	// and it is how the theme is asked for again.
+	// and it identifies the theme in later requests.
 	Name string
 
 	// Title is what the file is called, without the origin and without `.css`.
@@ -66,14 +66,14 @@ type Theme struct {
 }
 
 // Catalogue is every theme this installation offers: the ones inside the
-// binary, and the person's folder of them.
+// binary, and the ones in the user's folder.
 //
-// A catalogue whose folder could not be made or read still offers the presets,
-// so the window opens wearing something whatever the disk says.
+// A catalogue whose folder could not be created or read still offers the
+// presets, so the window opens with a theme regardless of disk state.
 type Catalogue struct{ dir string }
 
-// Open is the catalogue at the folder this desktop keeps a person's
-// configuration in. The themes folder is made, empty, if it is not there.
+// Open returns the catalogue at the folder where this desktop keeps its
+// configuration. The themes folder is created empty if it does not exist.
 func Open() (Catalogue, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
@@ -93,12 +93,12 @@ func OpenAt(dir string) (Catalogue, error) {
 	return Catalogue{dir: dir}, made
 }
 
-// Dir is the folder the person's themes are read from.
+// Dir is the folder the user's themes are read from.
 func (c Catalogue) Dir() string { return c.dir }
 
-// Themes is every theme there is, the shipped ones first and each origin by
-// name. A file that cannot be read is not among them: a name in this list is a
-// theme that can be worn.
+// Themes is every theme, the shipped ones first and each origin ordered by
+// name. A file that cannot be read is excluded: every name in this list is a
+// theme that can be applied.
 func (c Catalogue) Themes() []Theme {
 	var themes []Theme
 	entries, err := fs.ReadDir(shipped, shippedIn)
@@ -114,8 +114,8 @@ func (c Catalogue) Themes() []Theme {
 	return append(themes, c.getOwnThemes()...)
 }
 
-// getOwnThemes is the person's themes, read flat: one level, names ending `.css`. A
-// folder is not a theme and neither is `dracula.css.bak`.
+// getOwnThemes returns the user's themes, read flat: one level, names ending
+// `.css`. A folder is not a theme and neither is `dracula.css.bak`.
 func (c Catalogue) getOwnThemes() []Theme {
 	if c.dir == "" {
 		return nil
@@ -176,8 +176,8 @@ func (c Catalogue) Text(name string) (string, error) {
 	return text, nil
 }
 
-// GetApplied is the theme a name asks for. A name matching nothing wears this
-// product's own palette, and is given back as the name that was not found.
+// GetApplied is the theme a name selects. A name matching nothing yields this
+// product's own palette, and the name that was not found is returned.
 func (c Catalogue) GetApplied(name string) (applied, missing string) {
 	if name == "" {
 		return Default, ""
@@ -233,8 +233,8 @@ func read(path string) (string, error) {
 	return string(text), nil
 }
 
-// declaresColorScheme says whether a theme declares `color-scheme` itself. The comments are
-// cut away first: a preset that declaresColorScheme says so in one of them.
+// declaresColorScheme reports whether a theme declares `color-scheme` itself.
+// Comments are stripped first, so a mention in a comment does not count.
 func declaresColorScheme(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
 
 func stripComments(css string) string {

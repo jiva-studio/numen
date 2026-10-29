@@ -38,9 +38,9 @@ func (h *noteHandler) ReadNote(
 	return connect.NewResponse(out), nil
 }
 
-// WriteNote puts prose into a note. A note still holding the prose the client
-// read is written over; one holding something else is left alone and the client
-// is told the note changed.
+// WriteNote writes prose into a note. If the note still holds the prose the
+// client read, it is overwritten; if it holds different content, it is left
+// unchanged and the client is told the note changed.
 func (h *noteHandler) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
@@ -48,21 +48,21 @@ func (h *noteHandler) WriteNote(
 	if err != nil {
 		return nil, err
 	}
-	// Counted around the write and not around the answer, so that closing waits
-	// for what reaches the vault.
+	// The counter wraps the write, not the response, so closing waits for
+	// writes that reach the vault.
 	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer h.state.Writing.finish()
 	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
-	// A write that reached the vault is a write that happened, so the client is
-	// handed the file stat it presents at its next save. It is told in the
-	// same breath where the index did not follow, because the prose is on disk
-	// and search does not hold it.
+	// A write that reached the vault has happened, so the response carries the
+	// file stat the client uses at its next save. The response also sets
+	// IsUnlevelled when the index did not follow, because the prose is on disk
+	// but search does not include it.
 	unlevelled := h.state.isUnlevelled(err)
 	if err == nil || unlevelled {
-		// What the person typed owes its vectors. Which chunks owe them is not
-		// carried: the debt is in the index, so several saves are one pass.
+		// The written prose requires new vectors. The pending chunks are
+		// tracked in the index, so several saves are embedded in one pass.
 		if h.state.NotifyNoteWritten != nil {
 			h.state.NotifyNoteWritten()
 		}
@@ -77,11 +77,11 @@ func (h *noteHandler) WriteNote(
 	return connect.NewResponse(&v1.WriteNoteResponse{Error: &reason}), nil
 }
 
-// CreateNote makes a note, named after the title it is given and joined to
-// whatever the request says it is joined to.
+// CreateNote creates a note named after the given title and linked as the
+// request specifies.
 //
-// The index is brought level before the answer comes back, so the note is in
-// the picture as soon as it is on disk.
+// The index is synchronized before the response, so the note is searchable as
+// soon as it is on disk.
 func (h *noteHandler) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
@@ -105,9 +105,9 @@ func (h *noteHandler) CreateNote(
 	})
 	unlevelled := h.state.isUnlevelled(err)
 	if made.Path != "" {
-		// The note is on disk under that name, so that is the answer. What comes
-		// after the write is the index catching up, and the watcher does it
-		// again.
+		// The note is on disk under that name, so the response carries it. The
+		// index catches up after the write, and the watcher repeats that
+		// update.
 		return connect.NewResponse(&v1.CreateNoteResponse{
 			Path: made.Path, IsUnlevelled: unlevelled,
 		}), nil
@@ -252,8 +252,8 @@ func (h *noteHandler) GetNeighbourhood(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// The type of each note on the picture, asked once for the whole of
-	// it, so a client draws a note of a plugin type as what it is.
+	// The note types are fetched once for the whole graph, so a client renders
+	// each plugin-typed note with its type.
 	paths := []string{found.Focus.Path}
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
@@ -300,8 +300,8 @@ func (h *noteHandler) ResolveAddresses(
 	return connect.NewResponse(out), nil
 }
 
-// getLinks turns the links a request carries into the links a note is written
-// with, and refuses the lot where one of them cannot be written.
+// getLinks converts the links of a request into the links a note is written
+// with, and fails the whole request if any link cannot be written.
 func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
@@ -390,8 +390,9 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-// newBaseline is what a client says it last saw of a note. Nothing said is nothing
-// compared, and the write lands on whatever the note now holds.
+// newBaseline converts the baseline a client last read of a note. A nil
+// baseline disables the comparison, and the write overwrites the current
+// content.
 func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
 	if baseline == nil {
 		return nil
@@ -399,8 +400,8 @@ func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
 	return &note.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
 }
 
-// convertFileStatFromWire is a file stat as the core holds one. The kind is left empty: what
-// the file is was decided when it was asked for.
+// convertFileStatFromWire converts a wire file stat to the core representation.
+// The kind is left empty because it is determined when the file is fetched.
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
@@ -447,8 +448,8 @@ func (h *noteHandler) ListHeadings(
 	return connect.NewResponse(out), nil
 }
 
-// WatchEdits reports a change being made to a note's prose while it is being
-// made, for as long as the client listens.
+// WatchEdits streams each change to a note's prose as it happens, until the
+// client disconnects.
 func (h *noteHandler) WatchEdits(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchEditsRequest],
@@ -457,8 +458,8 @@ func (h *noteHandler) WatchEdits(
 	line, isDone := h.state.Edits.subscribe()
 	defer isDone()
 
-	// A stream that says nothing until a note is changed is indistinguishable
-	// from one that never opened.
+	// The empty first message confirms the stream is open; without it a stream
+	// with no changes cannot be distinguished from one that failed to open.
 	if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
 		return err
 	}
@@ -522,8 +523,8 @@ func (h *noteHandler) RenameNote(
 		case out.GetPath() == "":
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		// The note was opened and its name was written, so what stands is the
-		// answer. A rename that came apart afterwards is a rename that happened.
+		// The note was opened and its name was written, so the response is
+		// returned as is. A later failure of the rename does not undo it.
 	}
 	return connect.NewResponse(out), nil
 }

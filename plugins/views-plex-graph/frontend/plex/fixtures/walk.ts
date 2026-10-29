@@ -1,10 +1,9 @@
 /**
- * A small graph, and the rule for cutting one neighbourhood out of it.
+ * A small graph, and the rule for extracting one neighbourhood from it.
  *
- * This is the application's job, standing in for it. None of it may move into
- * the component: the moment the plex works out who a sibling is, it knows the
- * domain. It exists because the movement can only be judged by walking a real
- * graph back and forth.
+ * This is the application's job, stubbed. None of it may move into the component:
+ * once the plex works out who a sibling is, it knows the domain. It exists because
+ * movement can only be judged by walking a real graph back and forth.
  */
 import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
@@ -77,8 +76,8 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
       .filter((other) => other !== id && GRAPH[other] !== undefined)
       .map((other) => ({ id: other, title: GRAPH[other]!.title, relation }))
 
-  // A node reachable two ways takes one relation, first match wins. The plex
-  // refuses a neighbourhood that holds the same node twice.
+  // A node reachable two ways takes one relation, first match wins. The plex rejects
+  // a neighbourhood that contains the same node twice.
   const related: PlexNode[] = []
   const visited = new Set<string>([id])
   for (const group of [

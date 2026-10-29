@@ -12,8 +12,8 @@ type askModel func(ctx context.Context, instruction, prompt string) (string, err
 type textResult struct {
 	corrections []Line
 	uncorrected int
-	// next is the line to continue from, and isDone says nothing is left after
-	// the lines answered. Both are for speech.
+	// next is the line to continue from, and isDone reports that nothing is left
+	// after the lines answered. Both are for speech.
 	next   int
 	isDone bool
 }
@@ -27,8 +27,8 @@ func getScanDistance(maxDistance float64) float64 {
 	return maxDistance
 }
 
-// proofreadScan asks the model about each page and returns the corrections the
-// replies make, in the order of the lines they put right.
+// proofreadScan queries the model about each page and returns the corrections
+// its replies contain, in the order of the lines they correct.
 func proofreadScan(ctx context.Context, ask askModel, pages []Batch, maxDistance float64) (textResult, error) {
 	answers, err := askBatches(ctx, ask, scanInstruction, pages, getScanDistance(maxDistance))
 	if err != nil {
@@ -48,10 +48,10 @@ func proofreadScan(ctx context.Context, ask askModel, pages []Batch, maxDistance
 	return out, nil
 }
 
-// proofreadSpeech asks the model about the lines of a recording from a line on,
-// at most limit of them where that is above zero. The batches are cut by size
-// and overlap, and a sentence reaching across a cut is asked about whole in a
-// batch over that cut. The next line is where a sentence reaching past the last
+// proofreadSpeech queries the model about the lines of a recording from a given
+// line on, at most limit of them when limit is above zero. The batches are cut
+// by size and overlap, and a sentence spanning a cut is queried whole in a
+// batch over that cut. The next line is where a sentence spanning past the last
 // line answered begins, or the lines shared with the end of the window.
 func proofreadSpeech(
 	ctx context.Context, ask askModel, lines []Line, size, overlap, from, limit int,
@@ -113,7 +113,7 @@ func getLineIndex(lines []Line, number int) int {
 	return sort.Search(len(lines), func(i int) bool { return lines[i].Number >= number })
 }
 
-// askBatches asks the model about each batch in turn.
+// askBatches queries the model about each batch in turn.
 func askBatches(
 	ctx context.Context, ask askModel, instruction string, batches []Batch, maxDistance float64,
 ) ([]answer, error) {

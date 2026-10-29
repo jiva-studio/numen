@@ -1,14 +1,13 @@
-// Correctness for the site: the frontmatter of each page and the node scripts
-// that name the stories and take the pictures. Nothing here is about how the
-// code looks: the formatting is done by hand and a rule with an opinion about
-// it would start rewriting files nobody asked it to.
+// Correctness checks for the site: the frontmatter of each page and the node
+// scripts that name the stories and take the screenshots. Formatting is not
+// checked: it is applied manually, and a formatting rule would rewrite files.
 
 import js from '@eslint/js'
 import globals from 'globals'
 import astro from 'eslint-plugin-astro'
 import tseslint from 'typescript-eslint'
 
-/** A parameter named and unused is a signature to honour; a leading underscore says so. */
+/** A parameter that is named and unused is part of a required signature; a leading underscore marks it. */
 const unused = [
   'error',
   { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

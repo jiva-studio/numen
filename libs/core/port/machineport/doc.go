@@ -1,2 +1,2 @@
-// Package machineport declares what the core asks of the machine: its clock, trash, home folder and folder picker.
+// Package machineport declares what the core requires of the machine: its clock, trash, home folder and folder picker.
 package machineport

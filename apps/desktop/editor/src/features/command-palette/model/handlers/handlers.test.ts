@@ -1,9 +1,4 @@
-/**
- * Carrying a command out, asked without a window.
- *
- * Two things are asked here: that a note's pending write is flushed before its
- * the person.
- */
+/** Command execution against a window double. */
 import { describe, expect, it } from 'vitest'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
@@ -57,22 +52,18 @@ const createRemoveResult = (override: Partial<RemovedNote> = {}): RemoveResult =
     ...override,
   })
 
-/**
- * A window that writes down everything a command asked of it, in order.
- *
- * before it moved can be carried out after.
- */
+/** A window double that records every call a command makes, in order. */
 const window = (
   answers: {
     renamed?: RenameResult
     removed?: RemoveResult
     wasMade?: boolean
-    /** Where the tab holding the note stands now. */
+    /** The current path of the tab holding the note. */
     targetPath?: string
     at?: string
-    /** The note is waiting on the person, so nothing may move its file. */
+    /** The note has a pending confirmation prompt, so its file must not move. */
     isAsking?: boolean
-    /** The folder the person chose in the machine's own picker. */
+    /** The folder selected in the system folder picker. */
     chose?: string
     /** What the list of vaults answered adding or renaming one. */
     added?: VaultResult
@@ -85,13 +76,13 @@ const window = (
 ) => {
   const isDone: string[] = []
   const notices: string[] = []
-  /** The voice each sentence was said in, one to a sentence. */
+  /** The severity of each notice, one per notice. */
   const severities: string[] = []
   /** Every call to the voice, the empty ones and the missing severities included. */
   const calls: [string | undefined, string | undefined][] = []
   const targetPath = answers.targetPath ?? answers.at ?? 'physics/Ontology.md'
   const turnedDown = answers.turnedDown ?? null
-  /** The runs this one window has been told this build cannot do. */
+  /** The unsupported runs reported by this window for this build. */
   const runs = runSupport()
   const on: CommandDeps = {
     files: {
@@ -417,7 +408,7 @@ describe('a note removed', () => {
     expect(one.actions[1]).toBe('remove physics/Ontology.md true')
   })
 
-  /** The row has gone from the tree, which is the whole of what a person needs. */
+  /** The row is removed from the tree, which is all the user needs to see. */
   it('says nothing about a note that went where it was requested to go', async () => {
     const one = window()
 
@@ -633,8 +624,8 @@ describe('a folder made', () => {
 })
 
 /**
- * An invocation is made when a person answers and carried out a moment later, and the
- * vault moves in between. The tab holding the note is what says where it is.
+ * An invocation is made when the user answers and executed afterwards, and the
+ * vault moves in between. The tab holding the note defines its current path.
  */
 describe('a note that moved between the answer and the invocation', () => {
   it('is renamed at its current position now, not at the name the invocation was made over', async () => {

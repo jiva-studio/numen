@@ -15,7 +15,7 @@ import type {
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 
-/** What the field asks for on each step that asks for one thing. */
+/** The field placeholder for each step that requires a single input. */
 const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
   naming: words.typeName,
   picking: words.typeNote,

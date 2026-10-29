@@ -26,11 +26,11 @@ func (s SyncTitleAndFilename) GetRenameEffects(source NameSource) (moves, writes
 	return bool(s), bool(s)
 }
 
-// SyncSetting is asked as each rename is made, so a person who turns the
-// setting is answered by the next rename.
+// SyncSetting is queried at each rename, so a changed setting applies to the next
+// rename.
 //
-// Nothing asked keeps the two one name, which is what an installation nobody
-// has configured does.
+// When no setting is supplied the title and filename stay identical, which is the
+// default of an unconfigured installation.
 type SyncSetting func() SyncTitleAndFilename
 
 // GetSetting is what a rename reads.

@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// host knows three plugins: one that keeps copies of link notes, one that keeps none, and one
-// switched off that would keep copies of link notes too.
+// host has three plugins: one that keeps copies of link notes, one that keeps none, and
+// one disabled plugin that is configured to keep copies of link notes.
 type host struct {
 	pluginport.PluginDiscoverer
 	pluginport.PluginResolver

@@ -1,5 +1,5 @@
 /**
- * What an open menu listens to on the window, and what it lets go of.
+ * The window events an open menu subscribes to, and releases.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'

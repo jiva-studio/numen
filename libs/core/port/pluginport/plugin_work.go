@@ -29,8 +29,8 @@ type Lease interface {
 	WatchEnd() <-chan struct{}
 }
 
-// PluginTask is one piece of a plugin's work, as a person is shown it. ID is
-// the plugin's own, and Done and Total are counted in Unit.
+// PluginTask is one piece of a plugin's work, as shown to the user. ID is the
+// plugin's own identifier, and Done and Total are counted in Unit.
 type PluginTask struct {
 	ID            string
 	Title         string

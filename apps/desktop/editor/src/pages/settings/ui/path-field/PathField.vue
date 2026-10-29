@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * The path a plugin's setting of type file or folder holds: its last parts label and the whole
- * path on hover, the machine's own picker to choose another, and the path cleared. Why the setting
- * did not take the path chosen is said under it.
+ * The path held by a plugin setting of type file or folder: its last parts as the label with the full
+ * path on hover, the platform file picker to choose another path, and a clear action. The reason a
+ * chosen path was rejected is shown below it.
  */
 import { computed } from 'vue'
 import { Trash2 } from '@lucide/vue'

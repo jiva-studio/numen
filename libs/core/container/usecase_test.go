@@ -19,8 +19,8 @@ type exposed struct {
 	fields []string
 }
 
-// getExposedDependencies are the types of one file whose constructor asks for a
-// collaborator that the type then carries in an exported field.
+// getExposedDependencies returns the types of one file whose constructor requires a
+// collaborator that the type then stores in an exported field.
 func getExposedDependencies(file *ast.File) []exposed {
 	// A constructor is what a New function answers with.
 	ctors := map[string][]string{}

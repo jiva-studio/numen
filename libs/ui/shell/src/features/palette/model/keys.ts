@@ -1,10 +1,9 @@
 /**
- * The keyboard, while the palette stands: what each key does, where the
- * keyboard goes as a step opens, and where it goes back to when the palette
+ * Keyboard handling while the palette is open: the action of each key, where
+ * focus moves when a step opens, and where focus returns when the palette
  * closes.
  *
- * Everything the keys do not answer reaches the field, which is where a person
- * is typing.
+ * Keys without a palette action go to the field, where the user types.
  */
 import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type ShallowRef } from 'vue'
 import { stepTo } from '@numen/ui'
@@ -122,9 +121,10 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   }
 
   /**
-   * The keyboard put where the step wants it: on the value in force, else on
-   * whatever it was standing on. Opening a step this way moves nothing, so a
-   * caller that acts on what is lit acts on what is already so.
+   * Moves focus to where the step requires: the current value, otherwise the
+   * previously focused item. Opening a step this way changes no selection, so a
+   * caller that acts on the highlighted item acts on the item already
+   * highlighted.
    */
   const enter = async (): Promise<void> => {
     isPanelOpen.value = false

@@ -18,7 +18,7 @@ const reasonDone = "done"
 
 var errAgentNotInstalled = errors.New("the ACP agent is not installed")
 
-// question is one task as a session is asked it.
+// question is one task as it is posed to a session.
 type question struct {
 	model     string
 	reasoning string
@@ -31,9 +31,9 @@ type question struct {
 	report func(*agentrun.AskAgentResponse) error
 }
 
-// answer asks the agent one question in a session of its own, with the model the agent reports by
-// the id and the tools of the question, reports each tool call as it happens, and returns the text
-// of its answer.
+// answer poses one question to the agent in a new session, using the model the
+// agent reports for the id and the tools of the question. It reports each tool
+// call as it happens and returns the text of the answer.
 func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (string, error) {
 	session, err := openACPSession(ctx, agent, q.tools)
 	if err != nil {
@@ -50,8 +50,8 @@ func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (s
 	return session.ask(q.system, q.prompt)
 }
 
-// AskAgent answers the task with the ACP agent the task names, in a session of its own that reaches
-// the tools of the task at their endpoint.
+// AskAgent runs the task on the ACP agent the task names, in a new session that
+// reaches the tools of the task at their endpoint.
 func (s *agentServer) AskAgent(
 	ctx context.Context,
 	req *connect.Request[agentrun.AskAgentRequest],
@@ -105,8 +105,9 @@ func (s *agentServer) findAgent(program string, command []string) (acpAgent, err
 	return acpAgent{}, errAgentNotInstalled
 }
 
-// GetAgentPrograms lists, for each agent the command lines of the settings name, the program it is
-// asked for by and the models it reports, and keeps the command lines.
+// GetAgentPrograms lists, for each agent named by the command lines in the
+// settings, its program name and the models it reports, and keeps the command
+// lines.
 func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[agentrun.GetAgentProgramsRequest],

@@ -25,9 +25,9 @@ func CheckSize(path string, size, limit int) error {
 // ErrBodyUnwritable is a body that opens with the frontmatter delimiter.
 var ErrBodyUnwritable = edit.ErrBodyUnwritable
 
-// ErrUnreadable is a note whose frontmatter is not YAML. A write discovers it
-// on the way past and leaves the file alone: repairing the block means guessing
-// at what the person wrote.
+// ErrUnreadable is a note whose frontmatter is not YAML. A write detects it and
+// leaves the file unchanged: repairing the block would mean guessing the user's
+// content.
 var ErrUnreadable = edit.ErrUnreadable
 
 // ErrInline, ErrUnterminated and ErrAnchored are frontmatter one key cannot be
@@ -39,12 +39,11 @@ var (
 	ErrAnchored     = edit.ErrAnchored
 )
 
-// Write replaces the prose of a note and leaves its frontmatter alone.
+// Write replaces the prose of a note and leaves its frontmatter unchanged.
 //
-// The two are separate on purpose. The body is what the person wrote and is
-// replaced wholesale; the frontmatter is shared with them, and the keys the
-// application does not own survive because nothing here rewrites them. How
-// somebody's YAML is formatted stays theirs.
+// The body belongs to the user and is replaced entirely. The frontmatter is
+// shared with the user, and keys the application does not own are preserved
+// because nothing here rewrites them. The user's YAML formatting is retained.
 type Write struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
@@ -53,14 +52,13 @@ type Write struct {
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
 	Bound int
-	// Drawing is told what a write is doing while it is being made. Nothing is
-	// told where nobody is drawing the note.
+	// Drawing receives the edit being applied while a write is in progress. It
+	// is unset when no viewer renders the note.
 	Drawing TellEdit
 }
 
-// NewWrite is the writer a note somebody is saving goes to disk through: the
-// vault it is read and written through, what brings it level in the index, and
-// what time it is.
+// NewWrite returns the writer that saves a note to disk. It takes the vault
+// readers and writers, the index synchronizer, and the clock.
 func NewWrite(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) Write {
@@ -85,15 +83,15 @@ func (u Write) WithIndex(index Levels) Write {
 	return u
 }
 
-// Execute puts body in the note at path.
+// Execute writes body to the note at path.
 //
-// FileStat, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrStale comes
-// back: someone editing their own note outranks a caller that read it, thought
-// about it, and arrived late.
+// FileStat, when set, is the file state the caller expects on disk. A note
+// changed since it was read is left unchanged and port.ErrStale is returned:
+// the user's edits to their own note take precedence over a caller working from
+// an older read.
 //
-// What comes back is the file stat of the file this write produced, which is
-// what the caller presents at its next write.
+// The returned file stat describes the file this write produced, which the
+// caller presents at its next write.
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (domain.FileStat, error) {
@@ -108,8 +106,8 @@ func (u Write) Execute(
 	defer func() { ends() }()
 
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		// A note rewritten whole is drawn as the stretch that changed, so what
-		// a person watching sees is the change and not the note.
+		// A note rewritten whole is rendered as the changed range, so an
+		// observer sees the change and not the whole note.
 		was := markdown.Normalise(doc.Body())
 		pos, insert := markdown.Diff(was, markdown.Normalise(body))
 		// watching should see change.
@@ -128,20 +126,19 @@ func (u Write) Execute(
 	})
 }
 
-// Save puts body in the note at path, and makes the note where there is none.
+// Save writes body to the note at path, creating the note if it does not exist.
 //
-// This is the person writing their own note in their own window. The body lands
-// on the frontmatter the file holds at the moment the write goes in, and a note
-// carrying no identifier keeps none. A note made here is made with no
-// frontmatter at all.
+// This is the user saving their own note in the window. The body is written
+// onto the frontmatter the file holds when the write begins, and a note without
+// an identifier keeps none. A note created here has no frontmatter.
 //
-// Baseline is what the caller last saw of the note. Under the write lock the file
-// is read and held against it: a note the caller has baseline is written over, and
-// a note holding prose it has not is left alone with port.ErrStale. Nil is a
-// caller that compares nothing, and its body lands.
+// Baseline is the state the caller last read. Under the write lock the file is
+// compared with it: a note matching the baseline is overwritten, and a note
+// whose prose differs is left unchanged and port.ErrStale is returned. A nil
+// Baseline skips the comparison and the body is written.
 //
-// What comes back is the file stat of the file the save produced, which is
-// what the caller presents at its next save.
+// The returned file stat describes the file the save produced, which the caller
+// presents at its next save.
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, baseline *Baseline,
 ) (domain.FileStat, error) {

@@ -1,9 +1,9 @@
 /**
  * A neighbourhood of a vault, as something the plex can draw.
  *
- * This is the only file that knows both. The plex is told about nodes with a
- * relation and edges between them; it is not told what a note is, and the schema
- * says nothing about drawing.
+ * This is the only file that knows both sides. The plex receives nodes with a
+ * relation and edges between them; it does not know what a note is, and the
+ * schema does not know about drawing.
  */
 import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../types'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'
@@ -27,7 +27,7 @@ function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | un
 
 /**
  * A node is drawn under the token its note holds, and so is each end of an
- * edge. The caller says what a note's token is.
+ * edge. The caller supplies the token of a note.
  *
  * An edge runs the way the relationship runs, and a sibling's does not touch
  * the focus at all: it is another of a parent's children, so it hangs off that
@@ -64,9 +64,8 @@ export function convertNeighbourhood(
     items.push({
       id,
       relation: related.relation,
-      // What the person wrote on the link. A line with nothing written on it
-      // carries nothing: a word put there by the application would be read as
-      // one they had written themselves.
+      // The text on the link. A line with no text carries nothing: a word added
+      // by the application would be read as written by the user.
       label: related.label,
       through: related.through,
       isMutual: related.isMutual,
@@ -93,8 +92,8 @@ export function convertNeighbourhood(
 /**
  * The headings of a note as the lines its node hangs.
  *
- * A heading is named by the line it relies on: that is what taking someone to it
- * needs, and it tells two headings of one wording apart.
+ * A heading is identified by the line it depends on: that is what navigating
+ * to it needs, and it distinguishes two headings of the same wording.
  */
 export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
   return headings.map((heading) => ({
@@ -105,12 +104,12 @@ export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[]
 }
 
 /**
- * Whether two neighbourhoods draw one picture: the note in focus, and every
- * note joined to it in the order they arrived, each with what the line between
- * them says.
+ * Whether two neighbourhoods draw one graph: the note in focus, and every
+ * note joined to it in arrival order, each with the label of the line between
+ * them.
  *
- * A vault that changed somewhere else answers with a neighbourhood equal to the
- * one on screen, and a picture equal to the one on screen is left standing.
+ * A vault that changed elsewhere returns a neighbourhood equal to the one on
+ * screen, and a graph equal to the one on screen is left unchanged.
  */
 export function areNeighbourhoodsEqual(
   one: Neighbourhood | null,

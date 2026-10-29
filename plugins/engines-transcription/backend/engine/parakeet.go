@@ -1,14 +1,14 @@
-// Package transcription turns a recording into words with models running on
+// Package transcription converts a recording into text with models running on
 // this machine.
 //
-// A recording goes through two of them: one finds the stretches that carry
-// speech, and one hears what each stretch says. They are run through ONNX
-// Runtime, reached by name at run time, so this builds with CGO_ENABLED=0 and
-// cross-compiles from any machine to any other.
+// A recording passes through two models: one detects the segments that contain
+// speech, and one transcribes each segment. They run through ONNX Runtime, which
+// is loaded by name at run time, so the package builds with CGO_ENABLED=0 and
+// cross-compiles from any host to any target.
 //
-// The transducer is exported as three graphs. An encoder turns a spectrogram
-// into frames, a predictor carries what has been said so far, and a joiner puts
-// the two together into one token and how many frames to step on by.
+// The transducer is exported as three graphs. The encoder converts a spectrogram
+// into frames, the predictor carries the state of the tokens emitted so far, and
+// the joiner combines both into one token and the number of frames to advance.
 package engine
 
 import (
@@ -27,7 +27,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/transducer"
 )
 
-// The names the graphs give what they are asked and what they answer.
+// The input and output names of the graphs.
 const (
 	inputSignal  = "audio_signal"
 	inputLength  = "length"
@@ -62,11 +62,12 @@ var (
 	joinerOutputs     = ortraw.MakeCNames(outputFrames)
 )
 
-// blankPiece is what the model says when a frame carries no token. It stands
-// last in the file of pieces, after every token the model can write.
+// blankPiece is the token the model emits when a frame carries no token. It is
+// the last entry in the pieces file, after every token the model can emit.
 const blankPiece = "<blk>"
 
-// A Transcriber is the models this machine hears a recording with.
+// A Transcriber is the set of models this machine transcribes a recording
+// with.
 type Transcriber struct {
 	encoder *ort.Session
 	decoder *ort.Session
@@ -207,9 +208,9 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 }
 
 // decodeWith is decode with the predictor and the joiner run through the raw
-// runtime when useRaw holds and the runtime offers it, and through the library
-// otherwise. The first position of each graph always runs through the library,
-// which checks the size of what the graph answers.
+// runtime when useRaw is set and the runtime supports it, and through the
+// library otherwise. The first position of each graph always runs through the
+// library, which validates the output size of the graph.
 func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value, useRaw bool) ([]int, error) {
 	frames, err := readFrames(out)
 	if err != nil {
@@ -413,7 +414,8 @@ func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, jo
 	return decoderRun, joinerRun
 }
 
-// predict is one position of the predictor: the token that was said and the
+// predict runs the predictor for one position: it takes the previous token and
+// the recurrent state and cell, and returns the prediction.
 func (t *Transcriber) predict(inputs map[string]*ort.Value, response, state, cell []float32) ([]float32, error) {
 	out, err := t.decoder.Run(inputs)
 	if err != nil {

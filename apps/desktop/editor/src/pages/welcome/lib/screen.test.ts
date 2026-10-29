@@ -1,5 +1,5 @@
 /**
- * What a window holding nothing offers, asked without a screen.
+ * What a window with no content offers, resolved without a screen.
  *
  * The negatives are the ones worth having: a window over no vault offers no
  * way into one, a vault that never opened offers no new note, and a key is
@@ -21,7 +21,7 @@ import {
 const APPLE = 'MacIntel'
 const LINUX = 'Linux x86_64'
 
-/** What the screen says, each word standing for itself. */
+/** The screen's strings. Each word is its own value. */
 const words: Words = {
   find: 'find',
   findKeys: keyChord('k', APPLE),

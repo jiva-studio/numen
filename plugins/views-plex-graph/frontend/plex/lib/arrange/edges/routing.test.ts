@@ -29,7 +29,7 @@ describe('edges', () => {
 
       // Every child hangs from the same point under the focus...
       expect(edge!.fromPoint).toStrictEqual({ x: focus.x, y: focus.y + focus.height / 2 })
-      // ...and meets its own box square on top, however far sideways it sits.
+      // ...and ends at the top of its own box, however far sideways it is offset.
       expect(edge!.toPoint).toStrictEqual({ x: child.x, y: child.y - child.height / 2 })
     }
   })
@@ -85,7 +85,7 @@ describe('edges', () => {
   })
 
   it('joins two nodes on the same line side to side, not under and back', () => {
-    // The relation says vertical, but there is no vertical room between them.
+    // The relation is vertical, but there is no vertical space between them.
     const layout = arrangePlex(neighbourhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
@@ -102,13 +102,13 @@ describe('edges', () => {
   it('takes the heading from the curve, and not from the relation', () => {
     const layout = arrangePlex(neighbourhoods.typical)
 
-    // A sibling sits under a parent, and its line runs left to right.
+    // A sibling is below a parent, and its line runs left to right.
     for (const sibling of getNodesByRelation(layout, 'sibling')) {
       const edge = layout.edges.find((e) => e.to === sibling.id)!
       expect(edge.heading, `sibling ${sibling.id}`).toBe('along')
     }
 
-    // A jump sits sideways, and its line arrives from the left.
+    // A jump is offset sideways, and its line arrives from the left.
     for (const jump of getNodesByRelation(layout, 'jump')) {
       const edge = layout.edges.find((e) => e.from === jump.id)!
       expect(edge.heading, `jump ${jump.id}`).toBe('along')
@@ -135,8 +135,8 @@ describe('edges', () => {
   })
 
   it('takes the reading direction from the curve, not from which end is which', () => {
-    // One jump sits level with the focus, so the line between them is straight
-    // and runs whichever way the pair was written.
+    // One jump is level with the focus, so the line between them is straight and runs
+    // the same way whichever order the pair was written.
     const nodes = [
       { id: 'focus', title: 'Here', relation: 'focus' as const },
       { id: 'aside', title: 'Aside', relation: 'jump' as const },
@@ -158,8 +158,8 @@ describe('edges', () => {
 })
 
 /**
- * A title is always set along its line, so words longer than the line are cut
- * to it. What the person wrote is kept; what is drawn is the cut.
+ * A title is always set along its line, so words longer than the line are truncated
+ * to it. The stored text is unchanged; the rendered text is the truncation.
  */
 describe('a title cut to the line it is set on', () => {
   const sideways: PlexNeighbourhood = {
@@ -215,7 +215,7 @@ describe('a title cut to the line it is set on', () => {
   })
 
   it('leaves no space hanging before the ellipsis', () => {
-    // Ten letters' room, and the tenth letter of this label is a space.
+    // Space for ten letters; the tenth letter of this label is a space.
     const edge = routeWithLabel(perLetter(arc / 10))
     expect(edge.words).toBe('the scene…')
   })
@@ -514,7 +514,7 @@ describe('the run of a line between two boxes', () => {
     const half = { ...edgeRouting, curvature: 0.5, minReach: 0 }
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 0, 200), half)
 
-    // The gates are 160 apart, so each control stands 80 out of its gate.
+    // The gates are 160 apart, so each control is offset 80 from its gate.
     expect(edge.control1).toStrictEqual({ x: 0, y: 100 })
     expect(edge.control2).toStrictEqual({ x: 0, y: 100 })
   })

@@ -10,7 +10,7 @@ import (
 )
 
 // PluginRoute is the path prefix of everything a window loads from a plugin. /plugin/<id>/<rest>
-// is the file <rest> of the plugin's folder where the folder holds one, and otherwise reaches the
+// is the file <rest> of the plugin's folder where the folder holds one, and otherwise routes to the
 // backend of the plugin at /plugin/<rest>.
 const PluginRoute = "/plugin/"
 
@@ -129,7 +129,7 @@ func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
 const maxPluginAssetLinks = 40
 
 // isPluginAssetEscape follows the links on name one component at a time and reports whether
-// the walk reaches an absolute target or climbs above the root.
+// the walk resolves to an absolute target or climbs above the root.
 func isPluginAssetEscape(root *os.Root, name string) bool {
 	pending := strings.Split(filepath.ToSlash(name), "/")
 	var resolved []string

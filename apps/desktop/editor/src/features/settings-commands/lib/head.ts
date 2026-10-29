@@ -1,9 +1,9 @@
 /**
- * The style elements the page is dressed in, and what is written into them.
+ * The style elements the page is styled with, and what is written into them.
  *
- * The page is served with three at the end of the head, each marked as the one
- * of the three it is: the mode, the theme's own file, and the two multipliers.
- * The theme's stands after the mode's and the sizes after both.
+ * The page is served with three at the end of the head, each marked with which of the
+ * three it is: the mode, the theme's own file, and the two multipliers. The theme's
+ * follows the mode's and the sizes follow both.
  */
 import type { Sizes } from '@/entities/settings'
 
@@ -16,8 +16,8 @@ export interface StyleElements {
 }
 
 /**
- * The attribute each of the three carries, and what each of them says it is.
- * The application writes these where it dresses the page.
+ * The attribute each of the three carries, and which element it identifies.
+ * The application writes these when it styles the page.
  */
 export const MARKER = 'data-appearance'
 export const IS_MODE = 'mode'

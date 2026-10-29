@@ -6,17 +6,21 @@ import "encoding/json"
 // say nothing about it.
 const DefaultAgentSteps = 100
 
-// Agent is which agent answers in the panel, and what it may reach.
+// Agent selects the agent that answers in the panel and configures how each
+// program runs.
 //
-// A program's section is kept whether it is the one in use or not: a person trying another agent
-// for an afternoon comes back to what they had. The programs are the ones the plugins that provide
+// A program's section is kept whether or not the program is selected, so
+// switching to another agent preserves the settings of the previous one. The
+// programs are the ones listed by the plugins that provide agents.
 type Agent struct {
-	// Use names the program that answers. Absent, the program the providers mark as the default
-	// answers. Empty answers with none, and the panel says so.
+	// Use names the program that answers. When absent, the program that the
+	// providers mark as default answers. When empty, no program answers and the
+	// panel reports it.
 	Use *string `json:"use"`
 
-	// ShouldServeTools puts the tools on a port, which is how an agent a person runs themselves
-	// reaches this vault. It is off; the agent Use names is served on the port either way.
+	// ShouldServeTools exposes the tools on a port, which lets an agent that the
+	// user runs externally reach this vault. It defaults to off; the agent
+	// named by Use is served on the port in either case.
 	ShouldServeTools bool `json:"serve_tools"`
 
 	// Programs is how each program is run, by the name it is listed under.
@@ -25,22 +29,25 @@ type Agent struct {
 
 // AgentProgram is how one program is run.
 type AgentProgram struct {
-	// Command starts it: the command line's path, and anything it is started through. Empty asks
-	// the path, then the folders its installers write to.
+	// Command is the command line that starts the program: its path and any
+	// launcher it runs through. When empty, the path is searched, then the
+	// folders its installers write to.
 	Command []string `json:"command"`
 
-	// Model is which of its models answers, by the name the program knows it as.
+	// Model is the model that answers, by the name the program uses for it.
 	Model string `json:"model"`
 
-	// Reasoning is the depth of reasoning the person last chose for the program, by the name of one of
-	// the levels a model offers. The panel offers it again; a task names the depth it asks for.
+	// Reasoning is the reasoning depth last selected for the program, by the
+	// name of one of the levels a model offers. The panel preselects it; a task
+	// can specify its own depth.
 	Reasoning string `json:"reasoning"`
 
 	// MaxSteps is how many times it may go to the model before it is stopped.
 	MaxSteps int `json:"max_steps"`
 
-	// Options are the settings only the program knows, by key, each as the JSON the file holds. The
-	// plugin that lists the program says what they mean.
+	// Options are program-specific settings by key, each as the JSON value
+	// stored in the file. The plugin that lists the program defines their
+	// meaning.
 	Options map[string]string `json:"-"`
 }
 
@@ -180,8 +187,8 @@ func (p AgentProgram) MarshalJSON() ([]byte, error) {
 	return json.Marshal(content)
 }
 
-// AI is the section of the settings file that says which agent answers the
-// questions of a plugin whose own setting names none.
+// AI is the section of the settings file that selects the agent that answers
+// for a plugin whose own setting names none.
 type AI struct {
 	Default AIRoute `json:"default"`
 }

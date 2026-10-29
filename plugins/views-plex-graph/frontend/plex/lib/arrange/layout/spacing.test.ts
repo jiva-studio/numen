@@ -1,4 +1,4 @@
-/** Opening the gaps into the room the window leaves. */
+/** Expanding the gaps into the space the window leaves. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'

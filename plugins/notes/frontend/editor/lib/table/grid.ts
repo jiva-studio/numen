@@ -1,8 +1,7 @@
 /**
  * A table drawn as a table.
  *
- * Where the grid stands is kept on its own element: a widget is told nothing
- * but what it draws.
+ * The grid's position is kept on its own element: a widget receives only what it draws.
  */
 import { doc } from '../../../dom'
 import type { ChangeDesc, EditorState } from '@codemirror/state'

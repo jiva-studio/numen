@@ -8,7 +8,7 @@ import {
   type WriteResult,
 } from '@/entities/note'
 
-/** What the vault is asked, as a plugin's note tab asks it. */
+/** The queries a plugin's note tab makes to the vault. */
 export interface PluginNotesDeps {
   readonly read: (path: string) => Promise<NoteResult>
   readonly write: (path: string, body: string, baseline: null) => Promise<WriteResult>
@@ -29,10 +29,10 @@ interface QueuedWrite {
 }
 
 /**
- * Each path has one write in the air at a time. Writes made while one is in the
- * air share the next write, which carries the newest body. A read of a path
- * answers after the writes made before it and none made after it, and a write
- * that fails rejects only the callers that asked for it.
+ * Each path has at most one write in flight. Writes made while one is in flight
+ * are merged into the next write, which carries the newest body. A read of a
+ * path resolves after the writes made before it and none made after it, and a
+ * failed write rejects only the callers that requested it.
  */
 export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   const queued = new Map<string, QueuedWrite>()

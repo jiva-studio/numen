@@ -66,8 +66,8 @@ const onKey = (event: KeyboardEvent) => {
       :class="
         cn(
           'rounded-tight inline-flex shrink-0 items-center justify-center whitespace-nowrap',
-          // A segment fills the height of the row and keeps its own clearance
-          // at the ends, which is measured to the ink the screen paints.
+          // A segment fills the row height and keeps its own clearance at the ends, measured
+          // to the painted glyph edge.
           'px-1.5',
           'text-ink font-sans text-base leading-none font-medium',
           'duration-hover ease-numen cursor-pointer transition-[background-color,color]',

@@ -1,12 +1,12 @@
 /**
- * A book made for a screen, read in one piece: its text in columns, the countSpreads
- * it evaluates to, and the controls floating over them.
+ * A book rendered for a screen and read as one piece: its text in columns, the
+ * computed spread count, and the controls overlaid on them.
  *
- * Where the layout is judged, because nothing without a layout can judge it:
- * whether a narrow area takes one column and a wide one two, whether a spread
- * of two turns as one, whether a picture, a table and a word with nothing to
- * break at stay inside their column, and whether the place a person is reading
- * survives the text being set at another size.
+ * Layout is verified here, since it cannot be verified without a layout:
+ * whether a narrow area takes one column and a wide area two, whether a spread
+ * of two turns as one, whether an image, a table and an unbreakable word stay
+ * inside their column, and whether the reading position survives a change of
+ * text size.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -32,7 +32,7 @@ type Render = NonNullable<Story['render']>
  */
 const ITS_OWN_PACE = 10_000
 
-/** A room of a fixed width, so a story is read at the measure it is judged at. */
+/** A container of fixed width, so a story renders at the measure it is judged at. */
 const room =
   (width: number): Decorator =>
   (story) => ({
@@ -80,8 +80,8 @@ const activeReading =
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
 
-      // Keys belong to whatever holds the reader too. The story listens where
-      // the tab listens, and the book answers whether it took the key.
+      // Keys also go to the element that hosts the reader. The story listens where
+      // the tab listens, and the book reports whether it handled the key.
       const book = ref<{ handleKey(event: KeyboardEvent): boolean } | null>(null)
       const turns = (event: KeyboardEvent) => {
         if (book.value?.handleKey(event)) event.preventDefault()
@@ -123,8 +123,8 @@ const activeReading =
   })
 
 /**
- * The reader drawn where a tab held out of sight is drawn: no room to lay
- * anything out, and the document arriving after the room does.
+ * The reader rendered as a hidden tab is rendered: no space to lay out content,
+ * and the document arrives after the container is measured.
  */
 const outOfSight =
   (chapter: Chapter): Render =>
@@ -179,13 +179,13 @@ const getRunsOf = (canvasElement: HTMLElement) => [
   ...getPaper(canvasElement).querySelectorAll<HTMLElement>('[data-offset]'),
 ]
 
-/** The offset the reader says is in front. */
+/** The offset the reader reports as current. */
 const getFrontOffset = (canvasElement: HTMLElement) =>
   Number(canvasElement.querySelector('[data-front]')?.getAttribute('data-front'))
 
 /**
- * The text set in columns, once the browser has laid it out. The count is drawn
- * from the countSpreads the text came to, so it stands there when it has.
+ * The text set in columns, once the browser has laid it out. The count is
+ * derived from the spread count of the laid-out text and shown once known.
  */
 const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(
@@ -222,9 +222,9 @@ export const OneColumn: Story = {
 }
 
 /**
- * The column is set to a whole number of lines, so the line at the foot of it
- * stands whole. A column set to the height of the area ends part of the way
- * through a line, and the half of it below the edge is cut away.
+ * The column height is a whole number of lines, so the last line of a column is
+ * complete. A column set to the area height ends mid-line, and the lower half
+ * of that line is clipped at the edge.
  */
 export const NoLineCutInHalf: Story = {
   decorators: [WIDE],
@@ -280,8 +280,8 @@ export const OneColumnTurns: Story = {
 }
 
 /**
- * A wide area takes two columns, and the two turn together. A spread turned one
- * column at a time is a person reading the right-hand page twice.
+ * A wide area takes two columns, and the two turn together. Turning one column
+ * at a time shows the right-hand page twice.
  */
 export const TwoColumns: Story = {
   decorators: [WIDE],
@@ -309,8 +309,8 @@ export const TwoColumns: Story = {
 }
 
 /**
- * is cut in half by the column edge, and half of it is on a page nobody turns
- * to.
+ * An image taller than the column is cut by the column edge, and the cut part
+ * lies on a page that is never turned to.
  */
 export const ImageTallerThanTheColumn: Story = {
   decorators: [WIDE],
@@ -346,8 +346,8 @@ export const AWordWithNothingToBreakAt: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    // The run's own box is the column's whatever it holds, so what is asked is
-    // whether the text inside it runs past the box.
+    // The run's own box equals the column's regardless of content, so the check is
+    // whether the text inside it overflows the box.
     const run = getRunsOf(canvasElement)[0]!
     await expect(run.scrollWidth).toBeLessThanOrEqual(run.clientWidth + 1)
     await expect(run.getClientRects()[0]!.width).toBeLessThanOrEqual(
@@ -407,9 +407,8 @@ export const VerseSetInAPreElement: Story = {
 }
 
 /**
- * The words are there to be taken up. The window takes selection away from
- * everything it draws, so a book that did not ask for it back is a book nobody
- * can quote a line of.
+ * The text is selectable. The window disables selection on everything it
+ * renders, so a book that does not re-enable it has no quotable lines.
  */
 export const WordsCanBeTakenUp: Story = {
   decorators: [WIDE],
@@ -443,12 +442,12 @@ export const OneLine: Story = {
 }
 
 /**
- * A document with no text at all is drawn and counts nothing. A book carries a
- * document of navigation with no prose in it, and a reader that throws over one
- * is a book that will not open.
+ * A document with no text is rendered and counts nothing. A book can contain a
+ * navigation document with no prose, and a reader that fails on one makes the
+ * book unopenable.
  *
- * The line under the text stands there, because the way into the contents
- * relies on it; what a document of no pages puts on it is neither a count nor a
+ * The line below the text is present, because navigation into the contents
+ * depends on it; for a document of no pages it is neither a count nor a
  * chapter to finish.
  */
 export const NoTextAtAll: Story = {
@@ -464,8 +463,8 @@ export const NoTextAtAll: Story = {
 }
 
 /**
- * The place a person is reading is an offset, so setting the text larger lays
- * the columns out again and leaves them where they were.
+ * The reading position is an offset, so enlarging the text re-lays out the
+ * columns and keeps the position.
  */
 export const SetLarger: Story = {
   decorators: [WIDE],
@@ -488,8 +487,8 @@ export const SetLarger: Story = {
       { timeout: ITS_OWN_PACE },
     )
 
-    // The columns are set again and there are more of them, so the spread is
-    // another spread. What the person was reading is on it.
+    // The columns are laid out again and there are more of them, so the spread
+    // differs. The reading position lies on it.
     await waitFor(
       async () => {
         const activeRun = getRunsOf(canvasElement).find(
@@ -550,9 +549,9 @@ export const TurnedManually: Story = {
 }
 
 /**
- * A book is turned and never scrolled, so a reader drawn out of sight shows
- * nothing until it has been measured, and is set in columns as soon as it has
- * room, with nobody asking.
+ * A book is turned and never scrolled, so a reader rendered off screen shows
+ * nothing until measured, and is set in columns once it has space, without any
+ * request.
  */
 export const DrawnOutOfSight: Story = {
   decorators: [WIDE],

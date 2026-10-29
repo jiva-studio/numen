@@ -9,7 +9,7 @@ const stylesRegistry = new Map<string, string>()
 const sheets = new Map<string, CSSStyleSheet>()
 const adoptions = new WeakMap<StyleRoot, Map<CSSStyleSheet, number>>()
 
-/** A document or a shadow root, which a constructed sheet is adopted into. */
+/** A document or a shadow root that can adopt a constructed sheet. */
 export type StyleRoot = Document | ShadowRoot
 
 export function registerPluginStyle(pluginId: string, url: string): void {
@@ -31,7 +31,7 @@ export function clearPluginStyles(): void {
   sheets.clear()
 }
 
-/** Whether this engine builds a stylesheet from text and lets a document or shadow root adopt it. */
+/** Whether this engine can build a stylesheet from text and let a document or shadow root adopt it. */
 export function canConstructSheets(): boolean {
   return (
     typeof CSSStyleSheet !== 'undefined' &&

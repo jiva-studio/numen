@@ -29,7 +29,7 @@ const BUSY_RETRY_DELAY_MS = 1000
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** Asks a method, asks again while the backend is unavailable, and throws the failure. */
+/** Calls a method, retries while the backend is unavailable, and throws on failure. */
 const callWhileBusy = async <Req, Res>(api: Api, method: string, request: Req): Promise<Res> => {
   for (let attempt = 0; ; attempt++) {
     const result = await api.call<Req, Res>(method, request)
@@ -49,7 +49,7 @@ const toRect = (rect: DocumentRect): Rect => ({
   maxY: rect.maxY,
 })
 
-/** Where one run of the text stands, page by page. */
+/** The location of one run of text, page by page. */
 const toHighlightedPages = (run: DocumentRun): PageHighlight[] =>
   run.places.map((place) => ({ page: place.page, rects: place.rects.map(toRect) }))
 

@@ -43,10 +43,10 @@ func spans(text, query string) []domain.UnitRange {
 	return mergeRanges(offset)
 }
 
-// isWordRune is what a word is made of, so that what stands either side of one is
-// what tells a word from a run of letters inside one. A Chinese, Japanese or
-// Korean character is never counted: those scripts hold no word-internal
-// letters to tell apart from a boundary, so every character in them is one.
+// isWordRune reports whether r can be part of a word, so the runes adjacent to
+// a match distinguish a whole word from letters inside one. Chinese, Japanese
+// and Korean characters are excluded: those scripts have no word-internal
+// letters to distinguish from a boundary, so every character is a word.
 func isWordRune(r rune) bool { return (unicode.IsLetter(r) || unicode.IsDigit(r)) && !isCJKRune(r) }
 
 // isCJKRune is a character of a Chinese, Japanese or Korean script.
@@ -103,9 +103,9 @@ func getFoldedRunes(text string) ([]rune, []int) {
 	return runes, append(units, pos)
 }
 
-// How much of a passage is drawn at most, and how much of that stands before
-// the span that matched, both counted in UTF-16 code units. The words a hit sits
-// among are read from their own beginning and not from the middle of one.
+// glancing is the maximum passage length and leading is how much of it may
+// precede the matched span, both in UTF-16 code units. Matched words are cut at
+// word starts, not mid-word.
 const (
 	glancing = 240
 	leading  = 60
@@ -127,8 +127,8 @@ func getTextAround(text string, spans []domain.UnitRange, from int) (string, []d
 		return text, spans
 	}
 
-	// Where the window opens on: the first span that matched, and where the hit
-	// itself stands when no word matched at all.
+	// The window starts at the first matched span, or at the hit itself when no
+	// word matched.
 	point := from
 	if len(spans) > 0 {
 		point = spans[0].Start
@@ -155,8 +155,7 @@ func getTextAround(text string, spans []domain.UnitRange, from int) (string, []d
 
 	snippet := string(runes[first:last])
 	if first > 0 {
-		// The mark for what was left off stands before the text, so everything
-		// in it begins one unit further along.
+		// The ellipsis prepended to the text shifts every span in it one unit right.
 		snippet = "…" + snippet
 		for i := range clippedSpans {
 			clippedSpans[i] = domain.UnitRange{Start: clippedSpans[i].Start + 1, End: clippedSpans[i].End + 1}
@@ -209,10 +208,10 @@ func getClosingRune(units []int, pos int) int {
 	return len(units) - 1
 }
 
-// How far either side of a hit a passage is read at all, in bytes. The window
-// drawn opens a little before the first word that matched and runs on from
-// there, so what is read has to hold the widest window that can open near the
-// hit and the words that can open it.
+// reach is how far on either side of a hit a passage is read, in bytes. The
+// window opens slightly before the first matched word and extends from there, so
+// the range read must contain the widest window that can open near the hit and
+// the words that can open it.
 const reach = 8 * glancing
 
 // nearby is the part of a passage the window is cut from, and where the hit

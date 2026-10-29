@@ -14,8 +14,8 @@ import type { Words } from '../../words'
 export const CREATE_NOTE_ID = 'creating'
 
 /**
- * The note a search did not find, made under the words that were looked for.
- * A relation hangs it off the note in front; anything else stands it on its own.
+ * The note a search did not find, created under the words that were searched for.
+ * A relation attaches it to the focused note; anything else creates it standalone.
  */
 export const createNoteInvocation = (
   relation: string,

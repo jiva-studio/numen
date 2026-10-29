@@ -28,9 +28,9 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
 
   /** The words each card was last read out by. */
   const announced = shallowRef<ReadonlyMap<string, string>>(new Map())
-  /** Whether both regions have stood empty, which is what makes them read. */
+  /** Whether both regions have been empty, which is what makes them announce. */
   let isListening = false
-  /** Which reading is the one in hand, and what is waiting to be read out. */
+  /** Which message is current, and what is waiting to be announced. */
   let activeReadCount = 0
   let pendingNotices: readonly Notice[] = []
 

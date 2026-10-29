@@ -7,8 +7,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// Shut makes a file nobody may open, and opens it again when the test ends.
-// Here that is an entry on the file refusing everyone every right to it.
+// Shut makes a file that nobody may open, and restores access when the test ends.
+// On Windows that is an entry on the file denying every right to everyone.
 func Shut(tb testing.TB, path string) {
 	tb.Helper()
 
@@ -39,8 +39,8 @@ func Shut(tb testing.TB, path string) {
 	}
 	tb.Cleanup(func() { opening(tb, path) })
 
-	// An account holding the right to back a disk up reads the file whatever
-	// the entry on it refuses, the way root does where a mode is what refuses.
+	// An account holding the backup privilege reads the file regardless of the
+	// entry denying it, as root does where a mode denies access.
 	if _, err := os.ReadFile(path); err == nil {
 		tb.Skip("this account opens a file whatever the entry on it refuses")
 	}

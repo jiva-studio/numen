@@ -22,8 +22,8 @@ type mediaHandler struct {
 	mediaTypes *file.GetMediaType
 }
 
-// GetMediaSource returns the loopback address of the file's bytes and the media type a player is
-// told. A file a plugin keeps a copy of is loaded from the copy.
+// GetMediaSource returns the loopback address of the file's bytes and the media
+// type for a player. A file that a plugin keeps a copy of is loaded from the copy.
 func (h *mediaHandler) GetMediaSource(
 	ctx context.Context, r *connect.Request[v1.GetMediaSourceRequest],
 ) (*connect.Response[v1.GetMediaSourceResponse], error) {
@@ -75,7 +75,7 @@ func (h *mediaHandler) GetPageSource(
 	}), nil
 }
 
-// errNoPlugin is a page asked of no plugin id.
+// errNoPlugin reports a request that names no plugin id.
 var errNoPlugin = errors.New("the request names no plugin")
 
 // getMediaType is the content type a file is served as, and empty where nothing names one.

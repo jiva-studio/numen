@@ -15,9 +15,9 @@ import (
 type Identity struct{ Options vaultconfig.Options }
 
 // GetName is the folder with every link on the way to it resolved, which is
-// what this machine calls it however it was reached. A path that resolves to
-// nothing — there is no such folder, or a link along it is broken — is named as
-// it was given, and what is wrong with it is said by whoever opens it.
+// the machine's own name for it however it was reached. A path that resolves
+// to nothing — there is no such folder, or a link along it is broken — is
+// returned as given, and the caller that opens it reports the error.
 func (i Identity) GetName(root string) string {
 	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
@@ -40,8 +40,7 @@ func (i Identity) EnsureIdentity(root string, timestamp time.Time) (domain.Vault
 }
 
 // GetVaultID reads the identity a folder carries without creating one. A folder that is
-// gone, or was never a vault, simply carries none — that is an answer rather
-// than a failure.
+// gone, or was never a vault, carries none; that is a result, not a failure.
 func (i Identity) GetVaultID(root string) (domain.VaultID, bool, error) {
 	cfg, err := vaultconfig.ReadConfig(root, i.Options.ServiceDir)
 	if errors.Is(err, vaultconfig.ErrNotAVault) {

@@ -1,9 +1,9 @@
 /**
  * The AI settings, and the agent setting of a plugin, drawn in a browser.
  *
- * What is asked here is what only a browser can answer: that the two lists of a
- * choice end at the one edge, that the question put to the person fits the
- * page at the width of a narrow window, and that a key typed is never drawn.
+ * Only a browser can verify these: that the two lists of a choice end at the
+ * same edge, that the prompt shown to the user fits the page at the width of a
+ * narrow window, and that a typed key is never displayed.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
@@ -142,7 +142,7 @@ export const TheDefaultAgentAndItsModel: Story = {
   },
 }
 
-/** A plugin that asked is put to the person above the rows, and fits a narrow window. */
+/** A plugin's request is shown to the user above the rows, and fits a narrow window. */
 export const APluginAskingIsPutToThePerson: Story = {
   render: sections('20rem'),
   play: async ({ canvasElement }) => {
@@ -177,7 +177,7 @@ export const AKeyIsNeverDrawn: Story = {
   },
 }
 
-/** A plugin's agent setting offers the default, said with the agent answering it. */
+/** A plugin's agent setting offers the default, labeled with the agent that answers it. */
 export const APluginsAgentSetting: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

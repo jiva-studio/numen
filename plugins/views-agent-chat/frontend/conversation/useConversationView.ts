@@ -21,14 +21,14 @@ export function useConversationView(context: ConversationContext, paint?: Paint)
     question.value = text
   }
 
-  /** What the person wrote is sent alone; what it is about goes as the focus beside it. */
+  /** The user's text is sent alone; the subject it concerns goes as the focus alongside it. */
   const send = async (text: string) => {
     if (!text) return
     question.value = ''
     await conversation.ask(text, context.focus)
   }
 
-  /** What stands where the answers do while there are none. */
+  /** The text shown where the answers appear while there are none. */
   const getSilence = () => context.getUnreachable?.() || WORDS.noTranscript
 
   onScopeDispose(() => conversation.finish())

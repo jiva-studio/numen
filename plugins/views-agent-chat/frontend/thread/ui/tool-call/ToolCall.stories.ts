@@ -1,5 +1,5 @@
 /**
- * A tool in hand, and a tool put down. What the thread shows while the agent
+ * A running tool and a completed tool: what the thread shows while the agent
  * works.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -30,7 +30,7 @@ type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {}
 
-/** Still in hand: the dots say the answer has not come back yet. */
+/** Running: the dots indicate the result has not returned yet. */
 export const Working: Story = {
   args: { tool: 'note_neighbourhood', subject: 'Harmonic oscillator', isWorking: true },
 }

@@ -43,7 +43,7 @@ const VAULTS: readonly VaultRow[] = [
   createVault('Fieldwork', '/home/rowan/Documents/fieldwork'),
 ]
 
-/** More vaults than a short window has room for, which is where the list scrolls. */
+/** More vaults than fit in a short window, where the list scrolls. */
 const MANY: readonly VaultRow[] = [
   ...VAULTS,
   createVault('Птицы', '/home/rowan/vaults/birds'),

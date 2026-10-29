@@ -13,7 +13,7 @@ import { dragLabel, type DragLabel } from '../lib/drag'
 import { findHolder, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
 
-/** The tree as it relies on screen, which only the drawing knows. */
+/** Screen measurements of the tree, available only from the rendering. */
 export interface TreeMetrics {
   /** What the tree takes up: a drop lands only over it. */
   readonly hoverRect: {
@@ -24,7 +24,7 @@ export interface TreeMetrics {
   }
   /** Where the rows begin, down the window. */
   readonly top: number
-  /** How tall one row stands. */
+  /** The height of one row. */
   readonly height: number
 }
 
@@ -34,12 +34,12 @@ export interface RowDragOptions {
   readonly getShownRows: () => readonly ShownRow[]
   /** The tree as it relies on screen, and nothing until it is drawn. */
   readonly measure: () => TreeMetrics | null
-  /** How far the pointer travels before a press becomes a drag. */
+  /** The distance the pointer travels before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
-  /** How many rows are being dragged, said at the pointer. */
+  /** The number of rows being dragged, shown at the pointer. */
   readonly getCountWords: () => (rows: number) => string
-  /** What the tree says a drag came to. */
+  /** The callback through which the tree reports drag events. */
   readonly tell: RowDragTell
 }
 

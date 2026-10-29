@@ -68,7 +68,7 @@ func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
 	}
 }
 
-// Nothing said about a file is not the epoch, either way round.
+// An absent stamp is neither a time nor the epoch, in either direction.
 func TestNoStampIsNoTimeAndNotTheEpoch(t *testing.T) {
 	if target := chunk.ConvertTimeToNanos(time.Time{}); target != 0 {
 		t.Errorf("no stamp goes into the column as %d", target)

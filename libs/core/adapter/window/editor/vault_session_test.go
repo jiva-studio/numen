@@ -28,7 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// The two vaults a swap is asked about, and one note in each.
+// The two vaults a swap targets, and one note in each.
 const (
 	entropy  = "Entropy.md"
 	enthalpy = "Enthalpy.md"
@@ -42,8 +42,7 @@ func noteNamed(title string) string {
 // first and a client talking to it the way the window does.
 type showing struct {
 	client questions
-	// drawn is the window itself, which the drain that holds it back is asked
-	// of.
+	// drawn is the window itself, which the blocking drain queries.
 	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
 	cfg          container.Config
@@ -166,8 +165,8 @@ func (f *showing) getFoundNames(t *testing.T, query string) []string {
 }
 
 // TestTheWindowSaysWhichVaultItIsShowing. Two windows are open on one
-// installation, so the identity of the vault in front of the person is the
-// window's answer and not the list's.
+// installation, so the vault identity is the window's answer and not the
+// list's.
 func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 
@@ -184,8 +183,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 		t.Errorf("after the swap it says %q, want %s", got, string(f.second.ID))
 	}
 
-	// And the question is the window's, so another window's name reaches
-	// nothing here.
+	// The query targets this window, so another window's name matches nothing here.
 	_, err := f.canvas.GetCurrentVault(t.Context(),
 		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: "another"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -193,7 +191,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	}
 }
 
-// getShownVault returns the identity of the vault the named window says it is showing.
+// getShownVault returns the identity of the vault the named window is showing.
 func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
@@ -205,9 +203,9 @@ func (f *showing) getShownVault(t *testing.T, window string) string {
 	return out.Msg.GetVault()
 }
 
-// TestAnotherVaultOpensInTheWindowThatIsOpen. What the window answers about
-// afterwards is the vault that arrived and nothing of the one that went, and
-// every page is told that what it holds was read somewhere else.
+// TestAnotherVaultOpensInTheWindowThatIsOpen. Afterwards the window reports
+// the new vault only, and every page is notified that its content was read
+// from another vault.
 func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	f := openTwoVaults(t)
 
@@ -248,8 +246,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 		t.Errorf("the vault that went still answers for %v", got)
 	}
 
-	// The settling shut the door on writes, and the vault that arrived is one
-	// a person types in.
+	// The swap closes writes on the old vault; the new vault accepts edits.
 	if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: enthalpy,
 		Body: "what a person typed in the vault that arrived\n",
@@ -276,8 +273,8 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 }
 
-// TestTheWindowOpensTheVaultItShowedLast, so that a person who changed vault
-// finds it there the next time.
+// TestTheWindowOpensTheVaultItShowedLast: the vault shown last is reopened on
+// the next start.
 func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	f := openTwoVaults(t)
 
@@ -300,7 +297,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 }
 
 // TestTheVaultThatWentIsNoLongerFollowed. The watch and the passes behind a
-// vault end with it, so what happens in that vault afterwards reaches nobody.
+// vault end with it, so later changes in that vault produce no events.
 func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	f := openTwoVaults(t)
 
@@ -375,8 +372,8 @@ func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	}
 }
 
-// TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays. Nothing is taken away
-// until the vault asked for is one the window can stand on.
+// TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays. Nothing changes
+// until the requested vault can be shown by the window.
 func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 	for _, one := range []struct {
 		name  string
@@ -424,7 +421,7 @@ func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.Wat
 		hangUp()
 		t.Fatal(err)
 	}
-	// The token before anything is asked for.
+	// The token before the first request.
 	if !stream.Receive() {
 		hangUp()
 		t.Fatalf("the stream never opened: %v", stream.Err())
@@ -435,12 +432,12 @@ func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.Wat
 	}
 }
 
-// TestAPageThatSaysNothingCostsTheSwapItsBound. A page whose script has stopped
-// answers never, and the vault asked for arrives once the bound is spent.
+// TestAPageThatSaysNothingCostsTheSwapItsBound. A page whose script stopped
+// responding never answers; the swap proceeds once the bound elapses.
 func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
-	// A page that listens and answers nothing.
+	// A page that subscribes and never answers.
 	_, isDone := f.watchQuit(t)
 	defer isDone()
 
@@ -460,9 +457,9 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	}
 }
 
-// TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff. What a person is being
-// asked about is theirs to answer, and the vault it was typed in stays in front
-// of them.
+// TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff. A pending prompt
+// belongs to the user to answer, and the vault it was entered in stays
+// displayed.
 func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
@@ -572,17 +569,16 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	}
 }
 
-// Two processes write the index, so a write that reached the vault may find the
-// the index is behind: the file is on disk and search does not hold what it now
-// says.
+// Two processes write the index, so a write can complete while the index is
+// behind: the file is on disk and search does not yet contain its content.
 
 // refuseToLevel is an index that will not come level with what was written.
 func refuseToLevel(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is held open elsewhere")
 }
 
-// unwritten is a vault with those notes in it and an index that will not come level with anything
-// written to it, asked the way the editor's window does.
+// unwritten is a vault with those notes in it and an index that never catches
+// up with any write, queried the way the editor's window queries.
 func unwritten(t *testing.T, notes map[string]string) *going {
 	t.Helper()
 
@@ -605,8 +601,8 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("saving answered %+v", answer.Msg)
 	}
-	// Without it the next save has nothing to present and is answered as a note
-	// somebody else touched.
+	// Without it the next save has no token to present and is rejected as a
+	// conflicting external change.
 	if answer.Msg.GetAt() == nil {
 		t.Error("the save landed and the client was handed no fingerprint")
 	}
@@ -618,9 +614,9 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-// TestASaveTheIndexCameLevelWithSaysNothingIsBehind is the control. A flag
-// every save carries says nothing, and a client shown a warning after every
-// save learns to ignore it.
+// TestASaveTheIndexCameLevelWithSaysNothingIsBehind is the control. A flag set
+// on every save carries no information, and a client shown a warning after
+// every save learns to ignore it.
 func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	waitForScan(t, f)
@@ -640,9 +636,9 @@ func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 	}
 }
 
-// TestASaveTheIndexWouldNotComeLevelWithStandsInTheList. A person saving a
-// second note has no reason to look at what the first one answered, and the
-// list of what is being done is where they are.
+// TestASaveTheIndexWouldNotComeLevelWithStandsInTheList. The task list reports
+// the behind-index state of the save, so a second save does not depend on the
+// response to the first.
 func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
@@ -662,8 +658,8 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 		t.Fatalf("what a person is shown after a save search cannot see is %+v", pos)
 	}
 
-	// The index is behind until something puts it right, and the save that does
-	// is what says so. A list nothing leaves is a list nobody reads.
+	// The index stays behind until a later write brings it level, and that write
+	// reports the state.
 	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
 	save()
 	if offset := findLevellingTask(t, f); offset != nil {
@@ -671,9 +667,9 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	}
 }
 
-// findLevellingTask is what the list of what is being done says about the index, asked
-// for the way the window asks for it. The first message of the stream is the
-// list currently, so nothing here waits on anything.
+// findLevellingTask returns the task-list entry about the index, requested the
+// way the window requests it. The first stream message is the current list, so
+// nothing here waits.
 func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 
@@ -747,8 +743,8 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-// openInstallation is a window put together the way a person's window is:
-// through the composition root, on a vault of this test's own.
+// openInstallation returns a window composed the way the application composes
+// it: through the composition root, on a vault owned by this test.
 func openInstallation(t *testing.T) *editor.Installation {
 	t.Helper()
 
@@ -824,9 +820,9 @@ type nothing struct {
 
 // openEmptyWindow opens a window on an installation that has added nothing.
 //
-// Both the folder this system keeps documents in and the home it would fall
-// back on are somewhere a test owns, so anything made for a person to write in
-// is made where this can see it.
+// The documents folder and the fallback home directory are both test-owned
+// locations, so anything created for the user lands where the test can inspect
+// it.
 func openEmptyWindow(t *testing.T) *nothing {
 	t.Helper()
 
@@ -864,9 +860,8 @@ func openEmptyWindow(t *testing.T) *nothing {
 	}
 }
 
-// TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing, and makes
-// nothing to stand on. A folder appearing in a person's documents is a folder
-// they did not ask for.
+// TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing, and creates
+// no folder. A folder appearing in the user's documents is unrequested.
 func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
@@ -947,9 +942,9 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	}
 }
 
-// TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs. The window listens
-// to four streams as it opens and draws nothing until each has said its first
-// word.
+// TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs. The window
+// subscribes to four streams as it opens and renders nothing until each has
+// delivered its first message.
 func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	f := openEmptyWindow(t)
 
@@ -986,9 +981,9 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Errorf("a window standing on nothing is doing %+v", executing)
 	}
 
-	// Focus opens on the first place asked for, and a place reaches only a
-	// stream already listening. So it is asked for over and over while the
-	// stream opens, and the asking stops with the place that arrived.
+	// Focus opens on the first requested place, and a place reaches only a stream
+	// that is already subscribed. The place is therefore requested repeatedly
+	// while the stream opens, until it arrives.
 	asking, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	go func() {
@@ -1097,8 +1092,8 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 	}
 }
 
-// TestAWindowStandingOnNothingSearchesNothing. The palette is a keystroke away
-// from a person who has added no vault, and typing in it turns up nothing.
+// TestAWindowStandingOnNothingSearchesNothing. The palette is reachable
+// without any vault added, and a query in it returns no results.
 func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 

@@ -46,7 +46,7 @@ func TestTheLinkedHandlerAnswersTheDocumentAPI(t *testing.T) {
 	}
 }
 
-// A linked handler reaches the host at the port of its variables.
+// A linked handler connects to the host at the port set in its variables.
 func TestTheLinkedHandlerReachesTheHostOfItsVariables(t *testing.T) {
 	hostServer := httptest.NewServer(http.NotFoundHandler())
 	defer hostServer.Close()

@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
 )
 
-// MockMark is what the mock proofreader adds to the end of every line it is asked about.
+// MockMark is appended by the mock proofreader to the end of every line in the prompt.
 const MockMark = "[proofread]"
 
-// completeMock answers a question as a model would, with no model: every numbered line of the
-// prompt comes back with MockMark after its words. It reaches nothing outside the process.
+// completeMock responds to a request as a model would, with no model: every numbered line of the
+// prompt comes back with MockMark after its words. It touches nothing outside the process.
 func completeMock(ctx context.Context, question *ai.Question) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err

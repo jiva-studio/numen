@@ -25,15 +25,15 @@ type VaultSummary struct {
 	Headings int
 }
 
-// ErrOverlaps is a folder that lies inside a vault on the list, or holds one.
+// ErrOverlaps reports a folder that lies inside a vault on the list, or contains one.
 var ErrOverlaps = errors.New("a vault does not lie inside another")
 
-// Vaults is the vaults this installation knows about, and the rules that hold
-// over the list as a whole.
+// Vaults is the list of vaults this installation knows about, and the rules
+// that apply to the list as a whole.
 type Vaults []Vault
 
-// CheckOverlap says whether a folder can be a vault of its own. The vault in the way is
-// named, because the person is choosing a folder and needs to know which one.
+// CheckOverlap reports whether a folder can be a vault of its own. The error
+// names the overlapping vault so the user knows which one conflicts.
 func (vs Vaults) CheckOverlap(path string) error {
 	for _, other := range vs {
 		if other.Path == path {
@@ -51,12 +51,12 @@ func (vs Vaults) CheckOverlap(path string) error {
 	return nil
 }
 
-// FindByName is the vault of this name. The vault self is not an answer: it is
-// the one being named.
+// FindByName returns the vault with this name, excluding the vault `self`,
+// which is the vault being named.
 //
-// A name from a file picker and the same name typed at a command line are
-// composed differently, and the case is the person's to choose, so neither
-// tells two vaults apart.
+// Names are compared after folding. A name from a file picker and the same
+// name typed at a command line differ in composition and case, and neither
+// distinguishes two vaults.
 func (vs Vaults) FindByName(name string, self VaultID) (Vault, bool) {
 	for _, v := range vs {
 		if v.ID != self && FoldName(v.Name) == FoldName(name) {

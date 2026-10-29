@@ -1,5 +1,5 @@
-// Correctness and boundaries, as in `libs/ui/core`. The shell reaches the
-// components through `@numen/ui` and nothing else of ours.
+// Correctness and boundaries, as in `libs/ui/core`. The shell imports components
+// through `@numen/ui` and no other first-party package.
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'

@@ -9,8 +9,8 @@
 export const getFileName = (path: string): string => path.split('/').pop() ?? path
 
 /**
- * The file's name without its ending, which is what a link writes and what a
- * name resolves by. A link therefore stands where the file is moved.
+ * The file's name without its extension, which is what a link writes and what a
+ * name resolves by. A link therefore remains valid when the file is moved.
  */
 export const getFileStem = (path: string): string => {
   const file = getFileName(path)
@@ -18,7 +18,7 @@ export const getFileStem = (path: string): string => {
   return dot > 0 ? file.slice(0, dot) : file
 }
 
-/** A note or file that is no longer where it was, and where it now is. */
+/** A note or file that moved, with its previous and new path. */
 export interface PathRename {
   readonly from: string
   readonly to: string

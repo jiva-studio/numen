@@ -6,11 +6,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// VaultRepository holds the vaults the index knows about.
+// VaultRepository stores the vaults that the index knows.
 type VaultRepository interface {
-	// Register gives the vault a row for other rows to point at. A vault the
-	// index already knows keeps the row it has; there is nothing else here for
-	// it to write.
+	// Register creates the vault row that other rows reference. A vault that the
+	// index already knows keeps its row and nothing else is written.
 	Register(ctx context.Context, vaultID domain.VaultID) error
 	// Unregister takes everything the index holds for one vault, and the vault's own
 	// row with it.

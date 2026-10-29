@@ -57,8 +57,8 @@ describe('the row a document makes', () => {
   })
 
   it('lays out a page whose size nothing returned', () => {
-    // A page the document could not measure stands here all the same, and the
-    // pages after it are still where they were. A page at no width at all is a
+    // A page the document could not measure is still laid out, and the
+    // pages after it keep their positions. A page with zero width would be a
     // row that jumps once its size is known.
     const stripLayout = row(
       [
@@ -224,7 +224,7 @@ describe('where the row remains', () => {
 
 describe('how close a page is drawn', () => {
   it('goes no further out than a whole page in the viewport', () => {
-    // is room going to waste.
+    // Zooming out beyond one whole page in the viewport wastes space.
     expect(clampZoom(FURTHEST / NEARER)).toBe(FURTHEST)
     expect(clampZoom(FURTHEST)).toBeCloseTo(FURTHEST, 5)
   })

@@ -1,8 +1,8 @@
 /**
- * The splitter that composes panes, drawn on its own.
+ * The splitter that composes panes, rendered on its own.
  *
- * A branch is told what the workspace holds and not handed it, so these
- * provide that themselves and keep the shares a handle settles on.
+ * A branch receives the workspace contents as a dependency, so these stories
+ * provide them and keep the shares a handle settles on.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
@@ -44,7 +44,7 @@ type Arrangement = keyof typeof ARRANGEMENTS
 
 interface Knobs {
   arrangement: Arrangement
-  /** The least room a pane is worth drawing in. */
+  /** The minimum size at which a pane is worth rendering. */
   minimum: number
   /** How wide the box holding the branch is drawn. */
   room: string
@@ -164,9 +164,9 @@ export const ThreeAcross: Story = {
 }
 
 /**
- * A pane given less room than it is worth drawing in: three panes in a box too
- * narrow to give any of them the least room. The floor a handle leaves is then
- * an equal share, and driving the first handle as far as it goes stops there.
+ * A pane given less space than its minimum: three panes in a box too narrow
+ * to give any of them the minimum. The floor a handle leaves is then an equal
+ * share, and dragging the first handle as far as it goes stops there.
  */
 export const CrowdedByTheLeastSpace: Story = {
   args: { arrangement: 'three across, unevenly', minimum: 400, room: '600px' },
@@ -177,8 +177,8 @@ export const CrowdedByTheLeastSpace: Story = {
       )
     await expect(widths()).toHaveLength(3)
 
-    // The crowding the story is named for: three panes each worth 400 pixels do
-    // not fit in the room the branch has.
+    // The crowding the story is named for: three panes of 400 pixels each do not
+    // fit in the space the branch has.
     const room = widths().reduce((all, one) => all + one, 0)
     await expect(room).toBeLessThan(3 * 400)
 

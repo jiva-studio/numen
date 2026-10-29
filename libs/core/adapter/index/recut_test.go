@@ -14,9 +14,8 @@ import (
 // chunks that carry the vectors, once inside each section the note's headings
 // name. These tests are about what a second cut of the same note keeps.
 
-// wordsOf is a body of n words, each one different from every other, so that a
-// chunk is recognisable by what it holds and no two chunks of one note hold
-// the same text.
+// wordsOf is a body of n words, each distinct from every other, so a chunk is
+// identifiable by its content and no two chunks of one note have the same text.
 func wordsOf(n int) string { return wordsBetween(0, n) }
 
 // wordsBetween is the words from one point in that body to another.
@@ -46,8 +45,8 @@ func insertWordBefore(body string, pos int) string {
 	return strings.Replace(body, word, "wordzz "+word, 1)
 }
 
-// spellNumber writes a number in letters, so that a word is letters throughout and a
-// chunk made of these reads as text.
+// spellNumber writes a number in letters, so each word consists of letters only
+// and chunks made of these words read as text.
 func spellNumber(i int) string {
 	digits := []byte(strconv.Itoa(i))
 	for item, d := range digits {
@@ -86,8 +85,8 @@ func save(t *testing.T, db *DB, vault domain.Vault, n domain.Note) {
 	}
 }
 
-// vector for each, and says how many it was asked for. That number is what a
-// save costs.
+// vector for each, and reports how many vectors were requested. That number is
+// the cost of a save.
 type embedder struct{ seed byte }
 
 func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
@@ -154,8 +153,8 @@ func rowsOf(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	return out
 }
 
-// hasVector says whether one chunk carries a vector, in the table and in the
-// coarse index both.
+// hasVector reports whether one chunk has a vector, in the table and in the
+// coarse index.
 func hasVector(t *testing.T, db *DB, chunk int64) bool {
 	t.Helper()
 	stored := countRows(t, db, `SELECT COUNT(*) FROM chunks c
@@ -169,9 +168,9 @@ func hasVector(t *testing.T, db *DB, chunk int64) bool {
 }
 
 func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
-	// A person types a word at the end of a note. The chunks before the edit
-	// hold the text they held, so they keep their rows and their vectors, and the
-	// model is asked for the one chunk the edit landed in.
+	// A word is typed at the end of a note. The chunks before the edit keep their
+	// text, rows and vectors, and the model is called for the one chunk the edit
+	// landed in.
 	db := openDB(t)
 	model := embedder{seed: 0x11}
 
@@ -314,9 +313,9 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 // cost is what one save of a note costs the model, and how much of what the
 // index held survived it.
 type cost struct {
-	// asked is the vectors the save left owing, kept the chunks that carried one
-	// and still do, and was and now how many chunks carry a vector on either
-	// side of the save.
+	// asked is the number of vectors the save left to create, kept the chunks that
+	// had a vector and still do, and was and now the number of chunks with a
+	// vector before and after the save.
 	requested, preserved, was, now int
 }
 
@@ -404,8 +403,8 @@ func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
 }
 
 func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
-	// Chunks are tiled from the first word of the note, so a word put in front
-	// of it moves every chunk after it, and every one owes a vector again.
+	// Chunks are tiled from the first word of the note, so a word inserted in front
+	// shifts every following chunk, and each needs a new vector.
 	db := openDB(t)
 	model := embedder{seed: 0x11}
 
@@ -774,9 +773,9 @@ func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
 }
 
 func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
-	// What parts cost. A chunk is cut inside one section and never across a
-	// heading, so a note of many short sections is cut into many short chunks, and
-	// every one of them owes a vector of its own.
+	// Cost of each part. A chunk is cut inside one section and never across a
+	// heading, so a note of many short sections yields many short chunks, and
+	// each needs its own vector.
 	//
 	// The figures are in docs/performance.md.
 	db := openDB(t)

@@ -1,7 +1,7 @@
 /**
  * What a model is called, and what the list of them offers.
  *
- * The list is built from the file first: what a person has configured is on it
+ * The list is built from the file first: what the user has configured is on it
  * and is the one in force, whatever the presets say. Every value here is
  * invented.
  */

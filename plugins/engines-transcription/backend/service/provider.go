@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-// provider makes the plugin's texts on the host's request: what the model hears in a recording.
+// provider creates the plugin's texts on the host's request: the model's transcription of a recording.
 type provider struct {
 	transcriber *Transcriber
 }

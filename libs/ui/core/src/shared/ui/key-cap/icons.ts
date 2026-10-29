@@ -2,8 +2,8 @@
  * What draws each key a cap holds, and how large.
  *
  * The icons are Lucide's, which is the set `components.json` names. Each is
- * drawn on a 24 grid and stroked at a width given here, so a cap is one line of
- * ink: every icon weighs what the letter beside it weighs.
+ * drawn on a 24 grid and stroked at a width given here, so a cap has a uniform
+ * stroke: every icon has the same weight as an adjacent letter.
  */
 import {
   ArrowBigUp,
@@ -26,8 +26,8 @@ const STROKE = 2.4
 export interface DrawnIcon {
   readonly icon: LucideIcon
   /**
-   * How many icon boxes across this one is drawn. An icon drawn larger is
-   * stroked thinner by as much, so its ink is the same thickness.
+   * How many icon boxes wide this one is drawn. An icon drawn larger is stroked
+   * thinner by the same factor, so the rendered stroke thickness is unchanged.
    */
   readonly fills: number
   /** How thick to stroke it, in the 24 units it is drawn on. */
@@ -47,8 +47,8 @@ const createIcon = (icon: LucideIcon, label: string, fills = 1): DrawnIcon => ({
  * Every key a cap can hold. Four are Lucide's own key icons and fill the box.
  *
  * Control is a chevron, which Lucide draws twelve units wide where it draws the
- * shift arrow's head sixteen. It is given the four thirds that makes the two
- * the same width, and the thinner stroke that keeps its ink the same weight.
+ * shift arrow's head sixteen. It is scaled by four thirds to give the two the
+ * same width, with a thinner stroke that keeps the stroke weight the same.
  */
 export const ICONS = {
   control: createIcon(ChevronUp, 'Control', 4 / 3),

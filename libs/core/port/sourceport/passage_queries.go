@@ -6,25 +6,25 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Every half takes the kinds of source a question is about. None of them is
-// every kind, which is what a question that says nothing about the sort of file
-// it wants asks for.
+// Every method takes the kinds of source a question is about. The list has no
+// wildcard value: a question that does not restrict the kind of file passes
+// every kind.
 //
 // PassageQueries is the two indexes a search runs over. Both are built on the
-// chunk, so a hit from either half names the same kind of row and the two
-// answers can be placed in one list.
+// chunk, so a hit from either half has the same row type and the two result
+// sets can be merged into one list.
 //
-// Neither half returns the text: a passage is a place in a file, and the file is
-// what holds the words.
+// Neither half returns the text: a passage is a location in a file, and the
+// file holds the words.
 type PassageQueries interface {
 	// FindLexical is the chunks of one vault whose text matches the words typed,
-	// best first, at most `limit` of them. `growing` says the last word may
-	// still be being typed, and is then matched by its opening.
+	// best first, at most `limit` of them. `growing` marks the last word as possibly
+	// still being typed, and it is then matched by prefix.
 	FindLexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// GetNamedPassages is the sections of one vault whose names match the words
-	// typed, best first. A section answers with the chunk it opens, so what
-	// comes back stands where the section begins.
+	// typed, best first. A section is returned as the chunk it opens, so each
+	// result is located where the section begins.
 	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// FindNearest is the chunks of one vault nearest a query vector, nearest first,

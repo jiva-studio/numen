@@ -1,6 +1,6 @@
 /**
- * The notes an answer names: when the core is asked about a turn's wikilinks, and which turns are
- * drawn again as the answers come back.
+ * The notes an answer names: when the core is queried for a turn's wikilinks, and which turns are
+ * redrawn as the answers arrive.
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
@@ -12,7 +12,7 @@ import { createLinkResolver } from '../fixtures/links'
 /** A line of an answer. */
 const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
 
-/** An agent tab over turns already said, and a vault that answers for the notes given. */
+/** An agent tab over existing turns, and a vault that resolves the given notes. */
 const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
   const turns = ref<Turn[]>(turn)
   const conversation: Conversation = {

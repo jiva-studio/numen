@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// block is the awkward frontmatter every key written here is written into: a
-// key nobody owns above, a key nobody owns below, a comment somebody wrote to
-// themselves, and a list in the middle.
+// block is the irregular frontmatter that every key written here is written
+// into: a key owned by no test above, a key owned by none below, a comment the
+// author wrote for themselves, and a list in the middle.
 const block = "---\n" +
 	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
 	"# a note to myself\n" +
@@ -73,8 +73,8 @@ func TestAListIsRead(t *testing.T) {
 	}
 }
 
-// How somebody spells their own frontmatter is theirs, so a name that survives
-// a write survives it spelled as it was.
+// The author's spelling of their frontmatter is preserved, so a name that
+// survives a write keeps its original spelling.
 func TestANamePreservesTheWayItWasSaved(t *testing.T) {
 	doc := openDocument(t, "---\nfields:\n  - \"Height\"\n  - 'Weight'\n---\n")
 	if err := doc.SetList("fields", []string{"Height", "Weight", "Life span"}); err != nil {

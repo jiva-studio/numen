@@ -1,4 +1,4 @@
-/** The side a point asks for, and the slot in a strip of tabs. */
+/** The side a point selects, and the slot in a strip of tabs. */
 import { describe, expect, it } from 'vitest'
 import {
   getCaretRect,

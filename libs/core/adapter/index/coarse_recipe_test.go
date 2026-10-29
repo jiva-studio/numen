@@ -11,8 +11,8 @@ import (
 
 const otherRecipe = "other-model"
 
-// saveSeededVectorsUnder gives every chunk of a vault that owes a vector under the
-// recipe one at the seed given.
+// saveSeededVectorsUnder stores, under the recipe, a vector with the given seed
+// for every chunk of the vault that lacks one.
 func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe string, seed byte) int {
 	t.Helper()
 	ctx := t.Context()

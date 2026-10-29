@@ -21,7 +21,7 @@ export const addressOpener = Facet.define<Open, Open>({
   combine: (all) => all[0] ?? (() => {}),
 })
 
-/** Who is told that the person asked for the text to be kept now. */
+/** Who is notified that the user requested the text to be saved now. */
 export const saveHandler = Facet.define<Save, Save>({
   combine: (all) => all[0] ?? (() => {}),
 })

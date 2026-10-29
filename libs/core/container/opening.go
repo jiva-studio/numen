@@ -9,7 +9,7 @@ import (
 // VaultOpener is how this installation opens a vault.
 type VaultOpener = vault.VaultOpener
 
-// VaultChanges is what an opener tells its callers.
+// VaultChanges is what an opener reports to its callers.
 type VaultChanges = vault.VaultChanges
 
 // OpenVault is one vault an application has opened.

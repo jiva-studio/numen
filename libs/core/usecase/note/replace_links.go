@@ -14,7 +14,7 @@ import (
 var ErrNotAPair = errors.New("a link must run between the two notes given")
 
 // PairLink is one relationship between two notes: the note it is written in,
-// the note it goes to, and what it says.
+// the note it points to, and its role.
 type PairLink struct {
 	From  string
 	To    string
@@ -74,8 +74,8 @@ func (u ReplaceLinks) replaceIn(
 	return err
 }
 
-// checkPairLinks answers the link each note is to hold, and refuses links that
-// do not run between the two notes, repeat an end, or carry no known role.
+// checkPairLinks returns the link each note holds, and rejects links that do
+// not run between the two notes, repeat an end, or have an unknown role.
 func checkPairLinks(first, second string, links []PairLink) (map[string]*PairLink, error) {
 	if first == "" || second == "" || first == second {
 		return nil, fmt.Errorf("%w: %q and %q", ErrNotAPair, first, second)

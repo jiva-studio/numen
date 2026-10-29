@@ -1,30 +1,29 @@
 /**
- * The vaults an installation holds, and what the window asks of the list.
+ * The vaults an installation holds, and the operations on the list.
  */
 import type { Result } from '@numen/plugin-sdk'
 
 /** One vault the installation holds, as the list has it. */
 export interface Vault {
-  /** The identity the folder carries, and how the vault is asked for again. */
+  /** The identity stored in the folder, used to look up the vault. */
   readonly id: string
-  /** What the person calls the collection. */
+  /** The display name of the vault. */
   readonly name: string
   /** The folder, absolute on this machine. */
   readonly path: string
-  /** Whether nothing is at the path. The vault stays on the list. */
+  /** Whether the path does not exist. The vault stays on the list. */
   readonly isMissing: boolean
 }
 
 export interface VaultList {
   readonly vaults: readonly Vault[]
-  /** The identity of the vault in front of the person. */
+  /** The identity of the vault currently shown. */
   readonly showing: string
 }
 
 /**
- * What adding a vault came back with, and what renaming one comes back with. A
- * value of null is a list that is as it was, which is an answer and not a
- * failure.
+ * The result of adding or renaming a vault. A null value means the list is
+ * unchanged, which is a valid outcome and not a failure.
  */
 export type VaultResult = Result<Vault | null, VaultErrorCode>
 
@@ -43,22 +42,22 @@ export type VaultErrorCode =
 export interface Vaults {
   list(): Promise<VaultList>
   /**
-   * This machine's own folder picker, put in front of the person. It answers
-   * with the folder they chose, and with nothing where they closed it.
+   * Opens the native folder picker. It resolves to the chosen folder, or to an
+   * empty string when the picker is dismissed.
    */
   choose(title: string): Promise<string>
   /**
-   * A folder turned into a vault and put on the list. The folder is given an
-   * identity that stays with it wherever it moves to.
+   * Adds a folder to the list as a vault. The folder is assigned an identity
+   * that stays with it when it moves.
    */
   add(path: string, name: string): Promise<VaultResult>
-  /** What a person calls a vault. The folder keeps the name the filesystem gives it. */
+  /** Sets the display name of a vault. The folder keeps its filesystem name. */
   rename(id: string, name: string): Promise<VaultResult>
   /**
-   * A vault taken off the list. The folder stays where it is, and goes to the
-   * trash this machine keeps when the call asks for it.
+   * Removes a vault from the list. The folder stays in place, and is moved to
+   * the system trash when `trash` is true.
    */
   remove(id: string, trash: boolean): Promise<VaultErrorCode | null>
-  /** Another vault shown in this window, in place of the one it was showing. */
+  /** Shows another vault in this window, replacing the current one. */
   open(id: string): Promise<VaultErrorCode | null>
 }

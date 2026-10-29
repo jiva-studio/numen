@@ -1,8 +1,8 @@
 /**
- * The two cases a call can answer with, and nothing between them.
+ * The two cases of a call result, with no state in between.
  *
- * A caller reads `ok` and the other field is there only in that case, which is
- * what the compiler is asked to hold.
+ * A caller reads `ok`, and the other field exists only in the matching case,
+ * which the compiler enforces.
  */
 import { describe, expect, it } from 'vitest'
 import { asFailure, asValue, type Result } from './result'

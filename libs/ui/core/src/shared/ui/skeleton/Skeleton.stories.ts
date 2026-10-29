@@ -89,7 +89,10 @@ export const AsWideAsWhatHoldsIt: Story = {
   }),
 }
 
-/** On a filled ground, where the fill has to read against the colour under it. */
+/**
+ * On a filled background, where the fill must contrast with the colour beneath
+ * it.
+ */
 export const OnAFilledBackground: Story = {
   args: { wide: '4rem', high: '1em', isPill: true },
   render: (args) => ({
@@ -107,9 +110,9 @@ export const OnAFilledBackground: Story = {
 }
 
 /**
- * On the dark set of tokens, on the surface and on a filled ground. The fill is
- * taken from the text of whatever holds it, so it has to be told from the
- * ground under it in both places.
+ * On the dark token set, on the surface and on a filled background. The fill
+ * derives from the text colour of its container, so it must contrast with the
+ * background in both places.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -137,8 +140,8 @@ export const Dark: Story = {
       await expect(fill).not.toBe(getComputedStyle(ground).backgroundColor)
     }
 
-    // The shape is drawn from the ink of whatever it relies on. On the dark set
-    // that is a light shape on the surface and a dark one on the accent.
+    // The shape derives from the text colour of its container. On the dark token
+    // set that is a light shape on the surface and a dark one on the accent.
     const measureContrast = (ground: HTMLElement) => {
       const backdropColor = getComputedStyle(ground).backgroundColor
       const shape = ground.querySelector<HTMLElement>('.skeleton')!

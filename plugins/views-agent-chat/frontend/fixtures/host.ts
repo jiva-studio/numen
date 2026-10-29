@@ -1,6 +1,6 @@
 /**
- * The window an agent chat is drawn in, and the agent behind it, made up for a
- * test. Everything the chat asks of either is written down in the order asked.
+ * A window host and an agent double for rendering an agent chat in tests. Every
+ * call the chat makes on either is recorded in call order.
  */
 import { ref } from 'vue'
 import type {
@@ -17,7 +17,7 @@ import { createLinkResolver } from './links'
 export interface HostOptions {
   /** The note the window relies on. */
   readonly focus?: NoteRef
-  /** The vault path each written name stands for. */
+  /** The vault path for each written name. */
   readonly notes?: Readonly<Record<string, string>>
   /** The models the settings list, by the path they are listed at. */
   readonly models?: Readonly<Record<string, readonly AgentModel[]>>
@@ -27,7 +27,7 @@ export interface HostOptions {
   readonly unreachable?: string
 }
 
-/** A window and an agent that answer a chat, and what the chat asked of them. */
+/** A host and an agent that serve a chat, and the calls the chat made on them. */
 export function createHost({
   focus = { path: '', title: '' },
   notes = {},

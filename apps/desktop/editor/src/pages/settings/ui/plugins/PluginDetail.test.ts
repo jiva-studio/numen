@@ -571,7 +571,7 @@ describe('PluginDetail with settings that follow one another', () => {
 describe('the data of a plugin', () => {
   const TRANSCRIBER = createPluginInfo('test.transcriber', 'Transcriber')
 
-  /** A plugin page over a folder of `files` files, which a delete empties or refuses with `problem`. */
+  /** A plugin page over a folder of `files` files, which a delete empties or rejects with `problem`. */
   const createDataDetail = async (files: number, problem = '') => {
     let count = files
     const getPluginData = vi.fn(async () => count)

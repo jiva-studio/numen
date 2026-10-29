@@ -36,9 +36,9 @@ type Repository struct {
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// exec runs a named statement and says which one failed. A bare driver error
-// from one of the many statements in a transaction is a schema mistake nobody
-// can locate.
+// exec runs a named statement and reports which one failed. A bare driver
+// error from one of the many statements in a transaction does not locate the
+// schema fault.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
@@ -230,8 +230,9 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 	return string(raw), ""
 }
 
-// noteType is what the file said it is. A note whose file says nothing is a
-// note, and the column holds one of the four words either way.
+// noteType is the type declared by the note's file. A note whose file declares
+// no type is a plain note, and the column holds one of the four values either
+// way.
 func noteType(n domain.Note) domain.NoteType {
 	if n.Type == "" {
 		return domain.TypeNote
@@ -239,8 +240,8 @@ func noteType(n domain.Note) domain.NoteType {
 	return n.Type
 }
 
-// newNullable keeps an empty string out of the database, so that "nothing was
-// written" and "an empty value was written" stay different questions.
+// newNullable stores an empty string as NULL, so "nothing was written" and "an
+// empty value was written" remain distinguishable.
 func newNullable(s string) any {
 	if s == "" {
 		return nil

@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-// Store is the plugin's folder in the store of a vault, held in memory. It answers as the host does:
-// a vault the host does not show, does not know, or whose folder is gone refuses it.
+// Store is the plugin's folder in the store of a vault, held in memory. It behaves as the host does:
+// a vault the host does not have open, does not know, or whose folder is gone rejects the call.
 type Store struct {
 	vault *Vault
 }
@@ -59,7 +59,7 @@ func (s *Store) With(id host.VaultID) host.Store {
 	return &Store{vault: s.vault.find(id)}
 }
 
-// reach refuses a call on a vault the host does not show, does not know, or whose folder is gone.
+// reach rejects a call on a vault the host does not have open, does not know, or whose folder is gone.
 // The caller holds the world's lock.
 func (s *Store) reach(ctx context.Context) (*folder, error) {
 	if err := s.vault.gate(ctx); err != nil {

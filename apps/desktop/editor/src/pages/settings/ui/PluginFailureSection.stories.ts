@@ -1,9 +1,9 @@
 /**
- * A plugin the host suspends, drawn in a browser.
+ * A plugin that the host suspended, rendered in a browser.
  *
- * What is asked here is what only a browser can answer: that the reason and the
- * two answers fit the page at the width of a narrow window, and that each
- * answer is announced with the plugin it is for.
+ * These stories check what only a browser can verify: that the reason and the
+ * two actions fit the page at the width of a narrow window, and that each
+ * action is announced together with its plugin.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
@@ -59,7 +59,7 @@ export const APluginIsSuspended: Story = {
   },
 }
 
-/** Each answer is announced with its plugin, and asks the window for it. */
+/** Each action is announced with its plugin, and requests the action from the window. */
 export const TheTwoAnswers: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

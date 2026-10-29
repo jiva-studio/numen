@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// TestFlushClearsTheBackingArray: a flushed group must not go on holding the
+// TestFlushClearsTheBackingArray: a flushed group must not keep referencing the
 // notes it just wrote through the slice's backing array, so the GC can
 // reclaim them before the next group fills those slots.
 func TestFlushClearsTheBackingArray(t *testing.T) {

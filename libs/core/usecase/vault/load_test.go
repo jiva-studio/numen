@@ -17,17 +17,15 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The load test runs at the size the product is designed for, which no
-// benchmark does: a hundred thousand notes takes minutes and gigabytes, and
-// putting that in the ordinary suite would make everyone wait for something
-// almost nobody needs.
+// The load test runs at the size the product is designed for: a hundred
+// thousand notes takes minutes and gigabytes, so it is opt-in and excluded from
+// the ordinary suite.
 //
 //	NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
-// It reports and not asserts. A threshold that fails on a slower laptop
-// teaches people to ignore the test; the numbers belong in docs/performance.md,
-// where a human compares them.
+// It reports measurements and does not assert thresholds; the numbers belong
+// in docs/performance.md.
 func TestLoad(t *testing.T) {
 	t.Parallel()
 	if os.Getenv("NUMEN_LOAD") == "" {
@@ -87,8 +85,8 @@ func TestLoad(t *testing.T) {
 
 	// Two queries, because they measure different things. The common one matches
 	// every note in a generated vault and therefore measures ranking a hundred
-	// thousand rows; the rare one matches a hundred and is what a person
-	// searching for something in particular actually does.
+	// thousand rows; the rare one matches a hundred and measures a targeted
+	// search.
 	t.Run("common term while a scan runs", func(t *testing.T) {
 		measureUnderLoad(t, db, v, scan, "entropy observer")
 	})

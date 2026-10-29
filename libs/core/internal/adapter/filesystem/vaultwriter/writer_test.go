@@ -106,8 +106,7 @@ func TestANoteMovesWhereANoteMayLive(t *testing.T) {
 	}
 }
 
-// A vault holds books and whatever else the person filed there, and every one
-// of them moves.
+// A vault holds books and other files, and every one of them can be moved.
 func TestAnyFileOfTheVaultMoves(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -190,8 +189,8 @@ func TestAnyFileOfTheVaultIsRemoved(t *testing.T) {
 	}
 }
 
-// A folder is made on its own, with the folders above it, and one that is
-// already there is the outcome that was asked for.
+// A folder is created together with its missing parent folders, and creating a
+// folder that already exists succeeds.
 func TestAFolderIsMade(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -289,8 +288,8 @@ func TestStatingAFileOpensNothing(t *testing.T) {
 	}
 }
 
-// One vault is held by one writer at a time, and holding one says nothing
-// about the next.
+// One vault is locked by one writer at a time, and locking one vault does not
+// affect another.
 func TestLock_AllowsOneWriterPerVault(t *testing.T) {
 	writers := vaultwriter.VaultWriters{}
 	here := testsupport.NewVault(t, nil)
@@ -320,8 +319,8 @@ func TestLock_AllowsOneWriterPerVault(t *testing.T) {
 	again()
 }
 
-// A note kept as a link may point at another note and nowhere else. The rule is
-// asked of where the bytes land, not only of the name they were asked for by.
+// A note stored as a symbolic link may point only at another note. The rule is
+// checked against the resolved target of the write, not only the requested name.
 func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	for _, item := range []struct {
 		name  string
@@ -370,8 +369,8 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	}
 }
 
-// A folder does not go inside itself. The window's tree refuses the gesture, and
-// a caller that asks for it anyway fails here.
+// A folder cannot be moved inside itself. The tree rejects the gesture, and a
+// caller that requests it anyway receives an error.
 func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -393,8 +392,8 @@ func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	}
 }
 
-// A file handed to the window is any kind of file, and it lands under the name
-// it was handed over with.
+// An imported file can be of any kind, and it is stored under the name it was
+// imported with.
 func TestAFileIsBroughtInFromOutside(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -495,7 +494,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	}
 }
 
-// errorOf is a write's error, where only that is being asked about.
+// errorOf returns only the error of a write.
 func errorOf(_ domain.FileStat, err error) error { return err }
 
 // A vault may be reached through a link: a home folder on another disk, a
@@ -532,9 +531,9 @@ func TestAVaultReachedThroughALinkIsSavedLikeAnyOther(t *testing.T) {
 	}
 }
 
-// A person names a note in their own editor, and a name the filesystem accepts
-// is a name this vault saves. The temporary file written beside it carries a
-// leading dot and a suffix of its own, and the whole of that has to fit as well.
+// A note name accepted by the filesystem is a name this vault saves. The
+// temporary file next to the note carries a leading dot and a suffix, and the
+// whole temporary name must also fit the filesystem limit.
 func TestCreate_AcceptsLongNoteName(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -575,10 +574,10 @@ func TestCreate_AcceptsLongNoteName(t *testing.T) {
 	}
 }
 
-// Correcting a note's capitalisation, or the spelling of an accent in it, is a
-// move onto a name a filesystem that tells neither apart already answers with
-// the note itself. What the writer sees is two names for one file, which is
-// what a filesystem that does tell them apart is given a link to make.
+// Correcting the capitalisation or the accent spelling of a note name is a
+// move onto a name that a filesystem which does not distinguish them resolves
+// to the note itself. The writer then sees two names for one file, which a
+// filesystem that does distinguish them can only satisfy by creating a link.
 func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
@@ -602,8 +601,8 @@ func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
 	if string(body) != "# Note\n" {
 		t.Errorf("the note holds %q", body)
 	}
-	// A filesystem that tells the two names apart is asked which of them it
-	// wrote down: opening the note by either name says nothing about that.
+	// On a filesystem that distinguishes the two names, the directory listing
+	// shows which name was written; opening the note by either name does not.
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		t.Fatal(err)
@@ -613,8 +612,8 @@ func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
 	}
 }
 
-// sameFile says whether two names are already one file. A filesystem that tells
-// capitalisation apart answers no for two spellings of a name it has one of.
+// sameFile reports whether two names refer to one file. A filesystem that
+// distinguishes capitalisation reports false for two spellings of an existing name.
 func sameFile(t *testing.T, one, other string) bool {
 	t.Helper()
 	first, err := os.Lstat(one)

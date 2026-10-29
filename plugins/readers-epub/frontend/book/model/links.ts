@@ -1,17 +1,17 @@
 /**
- * A link pressed in a book's text. Nothing a book contains navigates the
- * window: a link inside the book is a move within the book, and one leading out
- * of it is the window's own to hand on.
+ * A link activated in a book's text. Nothing a book contains navigates the
+ * window: a link inside the book moves within the book, and a link leading out
+ * of it is passed to the window.
  *
- * A link to another document of the book names a place inside markup that has
- * not been drawn yet, so where it targetLink is held until that document is there.
+ * A link to another document of the book names a location inside markup that has
+ * not been rendered yet, so the link is held until that document is available.
  */
 import { isExternalHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
-/** What the reader says when a link is followed. */
+/** What the reader reports when a link is followed. */
 export interface BookLinkReporter {
-  /** The offset now in front, in bytes of the book's text. */
+  /** A link to another document of the book, named as the archive names it. */
   readonly reportMove: (pos: number) => void
   /** A link targetLink to another document of the book, named as the archive names it. */
   readonly reportFollow: (path: string) => void

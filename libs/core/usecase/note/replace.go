@@ -23,20 +23,18 @@ type Replace struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
 	index   Levels
-	// Drawing is told what this change is doing while it is being made. Nothing
-	// is told where nobody is drawing the note.
+	// Drawing is notified of each change while it is applied. When nil, no
+	// notification is sent.
 	Drawing TellEdit
 	now     machineport.Clock
 }
 
-// NewReplace is what one stretch of a note is put right through: the vault it
-// is read and written through, what brings it level in the index, and what time
-// it is.
+// NewReplace creates a Replace from the vault readers and writers, the index
+// leveller and the clock.
 //
-// All four are named here for the reason NewWrite names them: a replacement
-// short of the levelling changes the file and leaves the vault unable to find
-// what it now says, and one short of the clock stamps the note off the
-// machine's.
+// All four are required, as for NewWrite: without the leveller, a replacement
+// changes the file but the index does not reflect the new content, and without
+// the clock the note is stamped with the machine's time.
 func NewReplace(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) Replace {
@@ -47,21 +45,22 @@ func NewReplace(
 type ReplaceResult struct {
 	// FileStat is of the file this write produced.
 	FileStat domain.FileStat
-	// Range is where the span stood, as byte offsets into the prose a read hands
-	// out.
+	// Range is the location of the span, as byte offsets into the prose that a
+	// read returns.
 	Range markdown.Range
-	// Matched is the span as the note held it, which is not always the text the
-	// caller asked for.
+	// Matched is the span as stored in the note, which can differ from the text
+	// the caller requested.
 	Matched string
-	// IsPlain says the span was found only once punctuation or spacing were
-	// allowed to differ.
+	// IsPlain reports that the span matched only after ignoring differences in
+	// punctuation or spacing.
 	IsPlain bool
 }
 
 // MissingSpan is a span that is not in the note, and where a copy of it stopped
 // agreeing with what is there.
 type MissingSpan struct {
-	// Matched is the longest opening of what was asked for that does stand in
+	// Matched is the longest prefix of the requested span that is present in the
+	// note.
 	Matched string
 	Instead string
 }

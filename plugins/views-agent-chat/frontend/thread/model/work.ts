@@ -1,12 +1,13 @@
 /**
- * The line that says what the agent has in hand, and the line under it that
+ * The status line showing the tool the agent is running, and the wait line
+ * under it, shown whenever no more specific status is known.
  */
 import { writeCharCount, type Turn } from '../lib/turn'
 import type { SourceLocation } from '@numen/plugin-sdk'
 
 /**
- * A tool as the panel says it. A tool served with a title of its own arrives
- * with one; the rest arrive named the way a program is named.
+ * A tool name as displayed in the panel. A tool with its own title arrives with
+ * it; the others arrive named as a program is named.
  */
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
@@ -38,14 +39,14 @@ export interface WorkLineOptions {
 }
 
 /**
- * The two lines of one exchange. `workId` and `wait` name them, and `locations`
- * holds the source a line that says it opens one leads to.
+ * The two lines of one exchange. `workId` and `wait` are their identifiers, and
+ * `locations` holds the source location a line opens when pressed.
  */
 export function createWorkLine(options: WorkLineOptions, workId: string, wait: string): WorkLine {
   const { put, drop, locations, waitWords } = options
-  // What the agent has in hand, as far as anything has said. A call carrying
-  // the text of a source is reported again every time more of it is written, so
-  // the count is what moves while it is being written.
+  // The status text for the current call. A call carrying the text of a source
+  // is reported again each time more of it is written, so the written count is
+  // what changes while it is being written.
   let says = waitWords
   let subject: string
 

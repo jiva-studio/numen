@@ -46,7 +46,7 @@ async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDep
     try {
       await deps.readInitialNote()
     } catch {
-      // The next change asks again.
+      // The next change retries.
     }
   }
   try {
@@ -90,8 +90,8 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
     follows(
       () => core.watchEdits(listening.signal),
       (response) => {
-        // The stream opens by saying nothing, which is how an open one is told
-        // from one that never opened.
+        // The stream opens with an empty message, which distinguishes an open
+        // stream from one that never opened.
         if (response.path) reportChange(response)
       },
     )
@@ -112,7 +112,7 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
         try {
           await deps.ask()
         } catch {
-          // The pass after this one asks again.
+          // The next pass retries.
         }
       },
     )

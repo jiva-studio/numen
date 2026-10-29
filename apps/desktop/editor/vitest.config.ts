@@ -1,11 +1,11 @@
 /**
  * How the window's tests are run.
  *
- * A unit test runs in a document, so a component can be mounted and asked what
- * it drew. A story runs in a real browser, which is the only thing that can
- * answer what a browser decides: what is clipped, where a drag lands, what a
- * blend came to. The build in `vite.config.ts` writes into the Go package's
- * assets and has nothing to say about either.
+ * A unit test runs in a document, so a component can be mounted and queried for
+ * what it drew. A story runs in a real browser, the only environment that can
+ * determine browser behavior: what is clipped, where a drag lands, what a
+ * blend produces. The build in `vite.config.ts` writes into the Go package's
+ * assets and does not apply to either.
  */
 import { fileURLToPath, URL } from 'node:url'
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'

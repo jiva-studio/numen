@@ -1,9 +1,9 @@
 /**
  * The name a row is given, read without a screen.
  *
- * A name is punctuated the way a person writes one, and the rule has to tell a
- * sentence's dot from a file's ending. The negatives are the ones worth having:
- * a name that moves nothing asks the vault for nothing.
+ * A name is punctuated the way a user writes one, and the rule has to tell a
+ * sentence's dot from a file's ending. The negative cases are the valuable ones:
+ * a name that changes nothing sends no request to the vault.
  */
 import { describe, expect, it } from 'vitest'
 import { resolveRenamePath } from './rename'
@@ -49,9 +49,9 @@ describe('a name typed over a row', () => {
   })
 
   /**
-   * A dot is punctuation more often than it is an ending. A note called after a
-   * chapter, a figure or a person keeps the ending its file carries, or it
-   * stops being a note the moment it is named.
+   * A dot is punctuation more often than an extension. A note named after a
+   * chapter, a figure or a person keeps its file extension, or it stops being
+   * a note once renamed.
    */
   it('reads a dot inside a sentence as punctuation, not as an ending', () => {
     expect(resolveRenamePath('physics/Kelvin.md', 'Ch. 2 heat')).toBe('physics/Ch. 2 heat.md')

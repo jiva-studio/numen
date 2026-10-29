@@ -1,8 +1,8 @@
 /**
- * Every situation the menu has to survive. Also the test corpus: each story is
- * run in a browser by `@storybook/addon-vitest`, which is the only place the
- * things this component exists for can fail — being clipped by what it stands
- * inside, folding back at an edge, and holding the keyboard.
+ * Menu scenarios. Also the test corpus: each story runs in a browser through
+ * `@storybook/addon-vitest`, the only environment where the behaviors this
+ * component exists for can fail: clipping by an ancestor, flipping at an edge,
+ * and keyboard focus.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -37,7 +37,7 @@ interface Knobs {
   onDismiss: () => void
 }
 
-/** What the plan asks a node for. Nothing here knows what any of them do. */
+/** Items passed to the menu. The stories do not interpret them. */
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
   { id: 'child', text: 'New child note' },
@@ -49,9 +49,8 @@ const ITEMS: MenuItem[] = [
 const menuElement = () => document.body.querySelector<HTMLElement>('.menu')
 
 /**
- * A surface with something on it to ask a menu of. The menu opens where it was
- * asked, and the story plays the caller's part: it holds whether the menu is
- * open, and it puts it away when the menu says so.
+ * A surface that opens a menu at the requested position. The story acts as the
+ * caller: it holds the open state and closes the menu when the menu requests it.
  */
 const renderMenu = (args: Knobs) => ({
   components: { Menu },
@@ -154,8 +153,8 @@ type Story = StoryObj<typeof meta>
 export const Playground: Story = {}
 
 /**
- * Choosing one. The identifier is handed back as given, and the menu asks to
- * be put away in the same breath.
+ * Choosing one. The identifier is emitted as given, and the menu requests to be
+ * closed at the same time.
  */
 export const Choosing: Story = {
   play: async ({ args }) => {
@@ -168,11 +167,11 @@ export const Choosing: Story = {
 }
 
 /**
- * Opened by hand: nothing is chosen, so Enter chooses nothing, and the first
- * step down lands on the first item.
+ * Opened programmatically: nothing is chosen, so Enter chooses nothing, and the
+ * first ArrowDown lands on the first item.
  *
- * Only a browser can answer it. Enter reaches whatever holds the keyboard, so
- * what is lit and what would be chosen are one fact.
+ * Only a browser can verify this. Enter acts on the element holding keyboard
+ * focus, so the highlighted item and the item that would be chosen are the same.
  */
 export const OpenedManually: Story = {
   play: async ({ args }) => {
@@ -192,11 +191,11 @@ export const OpenedManually: Story = {
 }
 
 /**
- * Escape, and the keyboard goes back to the thing the menu was asked of.
+ * Escape returns keyboard focus to the element that opened the menu.
  *
- * Only a browser can answer it: whether the keyboard actually lands on the
- * first item of a list drawn at the far end of the document, and whether it
- * finds its way back to an element the menu never contained.
+ * Only a browser can verify this: whether focus lands on the first item of a
+ * list rendered at the far end of the document, and whether it returns to an
+ * element the menu never contained.
  */
 export const GivingItBack: Story = {
   args: { trigger: 'keyboard' },
@@ -218,11 +217,11 @@ export const GivingItBack: Story = {
 }
 
 /**
- * Asked for inside a box that clips everything in it, at the corner getFurthest
- * from where a menu would like to open.
+ * Opened inside a box that clips its contents, at the corner furthest from
+ * where the menu would prefer to open.
  *
- * This is the whole reason the menu is drawn where it is drawn. In jsdom
- * nothing is laid out and nothing is clipped, so this can only fail here.
+ * This is why the menu renders where it does. jsdom performs no layout and no
+ * clipping, so this can only fail in a browser.
  */
 export const NotClipped: Story = {
   render: (args) => ({
@@ -286,8 +285,8 @@ export const NotClipped: Story = {
 }
 
 /**
- * A choice between the items, one of them in force. Each says whether it is
- * the one, and the keyboard opens on it.
+ * A choice between the items, one of them selected. Each item reports whether
+ * it is the selected one, and the keyboard opens on it.
  */
 export const TheOneInForce: Story = {
   args: { trigger: 'keyboard', current: 'child' },
@@ -315,8 +314,8 @@ export const One: Story = {
 }
 
 /**
- * Icons, which are the caller's. The room for one is kept on every item, so
- * the words line up down the menu whether or not each of them draws anything.
+ * Icons are supplied by the caller. Space for an icon is reserved on every item,
+ * so the text aligns whether or not each item renders one.
  */
 export const Icons: Story = {
   args: {
@@ -389,14 +388,14 @@ export const FarTooLong: Story = {
 }
 
 /**
- * Asked for beside the far edge, where the room left is narrower than the
- * choices. A menu is as wide as the longest thing it offers, so the words are
- * read whole and the menu is the thing that moves.
+ * Opened at the far edge, where the remaining space is narrower than the
+ * items. The menu is as wide as its longest item, so the text is shown in full
+ * and the menu moves.
  */
 export const RequestedAtTheEdge: Story = {
   args: {
-    // Counted back from the far edge: the room left is narrower than the
-    // words, whatever the page is drawn at.
+    // Measured from the far edge: the remaining space is narrower than the
+    // text at any page width.
     at: { x: -200, y: 200 },
     items: [
       { id: 'wide', text: 'As wide as the longest of its words' },
@@ -409,7 +408,7 @@ export const RequestedAtTheEdge: Story = {
     const lines = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__text'))
     expect(lines).toHaveLength(2)
     for (const line of lines) {
-      // Nothing is cut short: what the line holds fits the room it has.
+      // Nothing is truncated: the line content fits its width.
       expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
     }
     const box = menu!.getBoundingClientRect()
@@ -418,7 +417,7 @@ export const RequestedAtTheEdge: Story = {
   },
 }
 
-/** Nothing to break at: one word, and the URL anybody actually pastes. */
+/** Nothing to break at: one word, and a URL as users paste it. */
 export const NothingToBreakAt: Story = {
   args: {
     items: [
@@ -511,7 +510,7 @@ export const GroupsNamed: Story = {
   },
 }
 
-/** What an item says beside its words: the address a model is fetched from. */
+/** What an item shows beside its text: the address a model is fetched from. */
 export const ASecondLine: Story = {
   args: {
     items: [
@@ -536,8 +535,8 @@ export const TypingToJump: Story = {
 
 /**
  * A menu opened near the bottom of a scrolling container, which scrolls
- * itself as the menu opens. The menu stays open through that scroll, and a
- * scroll the person makes afterwards closes it.
+ * scrolls itself as the menu opens. The menu stays open through that scroll, and
+ * a scroll by the user afterwards closes it.
  */
 const renderScrollingOpening = (args: Knobs) => ({
   components: { Menu },

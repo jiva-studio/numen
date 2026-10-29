@@ -12,18 +12,18 @@ import (
 type MenuAction string
 
 const (
-	// ActionCreateText asks a plugin for text of the file, or of Version where it is set.
+	// ActionCreateText requests text for the file from a plugin, or for Version
+	// when it is set.
 	ActionCreateText MenuAction = "create-text"
 	// ActionDeleteVersion deletes a version and its file.
 	ActionDeleteVersion MenuAction = "delete-version"
 )
 
-// MenuEntry is one entry of a file's menu. Version is the input of a text made
-// from a version and the target of a deletion, and empty for a text made from
-// the file. PluginName is the name of the plugin that does it, as a person
-// reads it. Item is what the plugin declares its entry reads and is drawn
-// with, and is empty for a deletion. IsLive says Version is the version shown
-// and indexed now.
+// MenuEntry is one entry of a file's menu. Version is the input of a text
+// created from a version and the target of a deletion, and is empty for a text
+// created from the file. PluginName is the plugin's display name. Item is the
+// entry the plugin declares, used for its label, and is empty for a deletion.
+// IsLive marks Version as the version currently shown and indexed.
 type MenuEntry struct {
 	Action     MenuAction
 	PluginID   string
@@ -33,11 +33,11 @@ type MenuEntry struct {
 	IsLive     bool
 }
 
-// GetMenu is what a file's menu offers, as the enabled plugins and the file's
-// versions say: the entry of every plugin that declares one and takes the
-// file's type or the kind of its live version, and a deletion of every
-// version, whether or not its plugin is enabled. A plugin that takes both is
-// offered the file.
+// GetMenu returns the menu of a file as determined by the enabled plugins and
+// the file's versions: the entry of every plugin that declares one and accepts
+// the file's type or the kind of its live version, and a deletion of every
+// version, whether or not its plugin is enabled. A plugin that accepts both is
+// offered once for the file.
 func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash string) ([]MenuEntry, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {

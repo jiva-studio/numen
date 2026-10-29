@@ -21,23 +21,23 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// Refresh brings named notes up to date, for when something says which files
-// changed. A scan asks the whole vault what it looks like; this asks a handful
-// of files.
+// Refresh brings named notes up to date when a watcher reports which files
+// changed. A scan inspects the whole vault; Refresh inspects only the named
+// files.
 //
-// The names it is handed come from a watcher, which reports every kind of
-// source. A path that is not a note is said back and left alone.
+// The paths come from a watcher, which reports every kind of source. A path
+// that is not a note is reported in the result and skipped.
 type Refresh struct {
 	readers vaultport.VaultReaders
 	// vaults is where the vault gets the row every note of it points at.
 	vaults vaultport.VaultRepository
 	notes  noteport.NoteRepository
-	// queries says which kind of source the index holds at a path, and sources
-	// takes those rows out.
+	// queries returns which kind of source the index holds at a path, and sources
+	// deletes those rows.
 	queries sourceport.SourceQueries
 	sources sourceport.SourceRepository
-	// now says which notes were modified recently enough to be edited again under
-	// the same modification time.
+	// now identifies notes modified recently enough to be edited again with the
+	// same modification time.
 	now machineport.Clock
 
 	// Cut is how the notes named are cut into the chunks the index keeps.
@@ -137,10 +137,9 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 	return u.now().Sub(mtime) < TimestampGranularity
 }
 
-// NewRefresh is how the index is brought level with a handful of files: the
-// vault they are read out of, the row it is filed under, where a note is filed,
-// the two the rows of the other files are swept through, and the clock
-// that says which notes were modified recently.
+// NewRefresh creates a Refresh from the vault readers, the vault repository,
+// the note repository, the source queries and repository used to sweep the rows
+// of other files, and the clock that identifies recently modified notes.
 func NewRefresh(
 	readers vaultport.VaultReaders,
 	vaults vaultport.VaultRepository,
@@ -181,7 +180,7 @@ func (r RefreshResult) GetChangedPaths() []string {
 // Indexed without being saved, unless Force is set. It is skipped without a read
 // when its modification time is at least TimestampGranularity old; a more recent
 // one is skipped only when its bytes hash to what the ledger recorded at its last
-// save. A recent note is hashed only when the ledger knows it. A scan decides on
+// save. A recent note is hashed only when the ledger has an entry for it. A scan decides on
 // size and modification time alone.
 func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error) {
 	if len(paths) == 0 {
@@ -287,9 +286,9 @@ func readListedFile(ctx context.Context, reader vaultport.VaultReader, path stri
 	return nil, false
 }
 
-// statNote is the file stat of the file at path and whether it is a note. A
-// path that is not one is filed in res under the list that says why, and nothing
-// is lost by it: one file nobody can read costs that file and not the others.
+// statNote returns the file stat of the file at path and whether it is a note.
+// A path that is not a note is recorded in res under the list stating why; an
+// unreadable file affects only itself.
 func (u Refresh) statNote(
 	ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult,
 ) (domain.FileStat, bool) {
@@ -325,9 +324,10 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 	}
 }
 
-// dropSources takes out the rows of every source at a path the vault no longer
-// holds. A note leaves through the note repository; another file is filed
-// by kind and leaves through its own, with its chunks and its vectors.
+// dropSources deletes the rows of every source at a path the vault no longer
+// holds. A note is deleted through the note repository; other files are grouped
+// by kind and deleted through their own repository, with their chunks and
+// vectors.
 func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string) error {
 	// A path names one file, and a folder names everything under it.
 	target := make(map[domain.SourceKind][]string)

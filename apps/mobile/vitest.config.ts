@@ -1,9 +1,9 @@
 /**
  * How the phone's tests are run.
  *
- * A test runs in a document, so a component can be mounted and asked what it
- * drew. The build in `vite.config.ts` writes the page the WebView loads and has
- * nothing to say about that.
+ * A test runs in a document, so a component can be mounted and its rendered
+ * output inspected. The build in `vite.config.ts` writes the page the WebView
+ * loads and does not provide that.
  */
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'

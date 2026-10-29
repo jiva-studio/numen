@@ -44,7 +44,7 @@ func (h *standInHost) record(header http.Header, call *tools.Call) {
 	}
 }
 
-// A program outside Numen lists and calls a vault tool, which the plugin reaches through the host
+// A program outside Numen lists and calls a vault tool, which the plugin invokes through the host
 // under its own token, with no context.
 func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	host := &standInHost{}

@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// CheckIdentity refuses a vault whose folder no longer carries its identity.
+// CheckIdentity rejects a vault whose folder no longer carries its identity.
 type CheckIdentity struct {
 	identity vaultport.VaultIdentity
 }

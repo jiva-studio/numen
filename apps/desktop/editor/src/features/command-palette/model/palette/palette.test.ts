@@ -1,10 +1,8 @@
 /**
- * What a step asks for and what it draws while active open, without a
- * window.
+ * Palette step requests and the active step's rendering, without a window.
  *
- * Two things are asked here: that a tab holding something that is not a note
- * is offered nothing to do to a note, and that destroying is reached by typing
- * the name of the note and by nothing else.
+ * Covered: a tab holding a non-note is offered no note actions, and a
+ * destructive action is reached only by typing the note's name.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
@@ -84,7 +82,7 @@ const createLookup = () => {
   }
 }
 
-/** The lists the window holds, and every row a step said it was standing on. */
+/** The step lists of the window and every row previewed by a step. */
 const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
   const displayedItems: string[] = []
@@ -95,7 +93,7 @@ const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   return { paletteLists, lists, displayedLists: displayedItems }
 }
 
-/** The commands over what a test says is in front, asked without a hold. */
+/** The commands over the test's current state, without a pending action. */
 const createPalette = (
   override: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
@@ -140,7 +138,7 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const getItemIds = (groups: ReturnType<typeof createPalette>['commands']['groups']) =>
   Object.fromEntries(groups.value.map((group) => [group.id, group.items.map((item) => item.id)]))
 
-/** What one group says while it holds nothing. */
+/** The message one group shows while it has no items. */
 const getEmptyMessage = (
   groups: ReturnType<typeof createPalette>['commands']['groups'],
   id: string,
@@ -221,7 +219,7 @@ describe('what is in front', () => {
     expect(getItemIds(commands.groups).note).toBeUndefined()
   })
 
-  /** A vault that will not open is the one a person most needs to leave. */
+  /** A vault that cannot be opened must still be possible to leave. */
   it('says the vault could not be opened, and offers nothing over the note', () => {
     const { commands } = createPalette({ isReady: false })
 
@@ -412,8 +410,8 @@ describe('destroying a note', () => {
 })
 
 /**
- * The vault moves while a person is answering. A step is about the note they
- * named, and the name that note is filed under is not what it was.
+ * The vault changes while a step is active. A step targets the note the user
+ * named, and the note's path differs from the original.
  */
 describe('a note that moves under an open step', () => {
   it('is renamed where it now is, and never at the name it left', () => {
@@ -793,7 +791,7 @@ describe('a command that asks for a vault', () => {
     expect(commands.groups.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
   })
 
-  /** The folder may be on a volume nobody has mounted, and the vault stays. */
+  /** The folder may be on an unmounted volume, and the vault stays listed. */
   it('marks the vault whose folder is not there, and names where it looked', async () => {
     const { commands } = createPalette({}, [], {}, installation(vault('gone', 'Gone', true)))
     commands.startCommand('openVault', front())
@@ -978,8 +976,8 @@ describe('a vault taken off the list', () => {
 })
 
 /**
- * The commands over a vault that answers when the test says so, and a hold
- * that ends when the test says so. Nothing is opened.
+ * The commands over a vault that responds when the test resolves it, and a
+ * pending action that ends when the test resolves it. Nothing is opened.
  */
 const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) => {
   const names: Deferred<readonly NameMatch[]>[] = []
@@ -1018,7 +1016,7 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
   return { commands, names, lists, holds, hold, requests: request }
 }
 
-/** How the one group a step draws stands. */
+/** The state of the one group a step renders. */
 const describeGroup = (groups: ReturnType<typeof createPalette>['commands']['groups']) => {
   const group = groups.value[0]
   return {

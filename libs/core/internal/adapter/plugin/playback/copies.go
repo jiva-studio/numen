@@ -29,7 +29,7 @@ type Copies struct {
 	stores pluginport.PluginStores
 }
 
-// NewProxies reaches the plugins of the host and their folders in the vaults' stores.
+// NewProxies returns the proxies for the plugins of the host and their folders in the vaults' stores.
 func NewProxies(host Host, stores pluginport.PluginStores) Copies {
 	return Copies{host: host, stores: stores}
 }
@@ -115,7 +115,6 @@ func isPlayed(contentType domain.ContentType) bool {
 	}
 	return false
 }
-
 
 // NoProxies is an installation where no plugin keeps a copy.
 type NoProxies struct{}

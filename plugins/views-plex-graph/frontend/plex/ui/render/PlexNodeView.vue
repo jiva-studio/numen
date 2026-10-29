@@ -44,8 +44,8 @@ const press = useNodePress(props, getMiddle, {
 const { isGhost, canStop, isAnnounced, listening } = press
 
 /**
- * When there is a handle to press. Under the hand, or under the keyboard while
- * the keyboard is what is being used.
+ * Whether the handle is shown: while the pointer is over the node, or while
+ * keyboard focus is on it and the keyboard is in use.
  */
 const hasDropTarget = computed(
   () =>
@@ -64,7 +64,8 @@ const role = computed(() => {
 const canOpen = computed(() => !!props.wide || !!props.hung)
 
 /**
- * What is hovered or focused, and where that stands.
+ * The position of the node while it is hovered or focused and can open; null
+ * otherwise.
  */
 const openPosition = computed(() =>
   canOpen.value && props.node.opacity >= 1 && props.gestureRole === 'open' && hoverFocus.isOn.value
@@ -103,7 +104,7 @@ function getMiddle(): Position | null {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
-/** The keyboard put back on this node by whoever took it away. */
+/** Restores keyboard focus to this node's group when it was lost. */
 defineExpose({ focus: () => group.value?.focus() })
 </script>
 
@@ -166,9 +167,9 @@ defineExpose({ focus: () => group.value?.focus() })
   cursor: pointer;
 }
 
-/* Hover mixes a little of a node's own text into the ground under it, which
-   darkens a light node and lightens a dark one. The outline is left to the
-   relation's hue, and the focused node is painted from the pair it wears. */
+/* Hover mixes a fraction of the node's text color into its fill, which darkens
+   a light node and lightens a dark one. The outline keeps the relation's hue,
+   and the focused node is painted from the pair it uses. */
 .plex__node:hover :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }

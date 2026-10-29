@@ -73,7 +73,7 @@ func (p *provider) finish(key string) {
 	delete(p.running, key)
 }
 
-// newProofreadCommand proofreads the live text of the file a person named and waits for it.
+// newProofreadCommand proofreads the live text of the file the user named and waits for the result.
 func newProofreadCommand(proofreading *Proofreading) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		res, err := proofreading.Proofread(ctx, Request{Path: req.Path, IsUserStarted: true})

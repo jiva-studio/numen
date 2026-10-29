@@ -1,7 +1,6 @@
 /**
- * The typing a person does before it reaches the recording: the words stand
- * on screen as they are edited, and reach the file only once they have been
- * still.
+ * The typing a user does before it reaches the recording: the words show on
+ * screen as they are edited, and reach the file only once typing pauses.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -42,7 +41,7 @@ const TEST_WRITE_IDLE_MS = 100
 const EDITED = 'The first thing meant.\nThe second thing said.'
 const EDITED_AGAIN = 'The first thing meant twice.\nThe second thing said.'
 
-/** A write that stays in the air until the test answers it. */
+/** A write that stays pending until the test resolves it. */
 const createPendingWrite = () => {
   const calls: (readonly Cue[])[] = []
   const answers: { resolve: () => void; reject: (why: Error) => void }[] = []
@@ -53,7 +52,7 @@ const createPendingWrite = () => {
   return { calls, answers, write }
 }
 
-/** A draft of the two cues on screen, over a recording that writes as the test says. */
+/** A draft of the two cues on screen, over a recording that writes as the test directs. */
 const createDraft = (
   how: {
     write?: (cues: readonly Cue[]) => Promise<void>

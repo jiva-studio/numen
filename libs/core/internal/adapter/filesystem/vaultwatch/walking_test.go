@@ -93,8 +93,8 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 	}
 }
 
-// TestAFolderThatArrivesIsReportedThroughTheDebounce. The walk stands beside
-// the debounce, so what it finds has to come back to it.
+// TestAFolderThatArrivesIsReportedThroughTheDebounce. The walk runs alongside
+// the debounce, so what it finds has to be reported back through it.
 func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
 	pos := writeFolderOfNotes(t, root, "library", 2)

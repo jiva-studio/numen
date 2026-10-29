@@ -6,7 +6,7 @@ import (
 	"slices"
 )
 
-// Config is the programs this machine reaches a video site with.
+// Config lists the programs that this machine uses to access a video site.
 type Config struct {
 	Video Tool
 	Sound Tool

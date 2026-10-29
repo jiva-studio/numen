@@ -42,7 +42,7 @@ type Services struct {
 	Media     *mediaHandler
 	// TextVersion answers the menu a file's text versions make.
 	TextVersion *textmenu.Handler
-	// Text serves the live text of a file and a person's edit of it to the views.
+	// Text serves the live text of a file and its edits to the views.
 	Text *texts.Handler
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
@@ -63,12 +63,11 @@ type Services struct {
 	// getPluginDir returns the root directory of an installed plugin by ID, or false if not found.
 	getPluginDir func(id string) (string, bool)
 
-	// Playing is the socket a recording is played from. A build without one
-	// answers with no address, and the window says the recording cannot be
-	// played here.
+	// Playing is the socket that serves recording playback. A build without one
+	// returns no address, and the window reports that playback is unavailable.
 	Playing *Loopback
 
-	// UpdateEndpoint is where the release manifest is asked for. Empty asks the published one.
+	// UpdateEndpoint is the URL of the release manifest. When empty, the published URL is used.
 	UpdateEndpoint string
 
 	server *fileServer
@@ -132,8 +131,8 @@ type noteHandler struct {
 	getLinkAddress    *note.GetLinkAddress
 }
 
-// SetFolderDialog puts the machine's file and folder dialogs in front of the person when a
-// client asks for one.
+// SetFolderDialog sets the native file and folder dialog used when a client
+// requests one.
 func (s *Services) SetFolderDialog(dialog machineport.PathDialog) {
 	choose := vaults.NewChooseFolder(dialog)
 	s.Vaults.chooseFolder = &choose
@@ -142,8 +141,8 @@ func (s *Services) SetFolderDialog(dialog machineport.PathDialog) {
 	}
 }
 
-// GetPickFolder is the use case that lets an agent put the same dialog in front
-// of the person, or nil where the window has none.
+// GetPickFolder returns the use case that lets an agent open the same dialog,
+// or nil when the window has no dialog.
 func (s *Services) GetPickFolder() *vaults.PickFolder {
 	if s.Vaults.chooseFolder == nil {
 		return nil

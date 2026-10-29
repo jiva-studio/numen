@@ -29,8 +29,8 @@ func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
 	opening := cfg.VaultOpener(db)
 	open := opening.Begin(t.Context(), v)
 
-	// Written through the levelling while the walk is running, which is what the
-	// window does when a person saves.
+	// Written through Level while the walk is running, as the window does when
+	// the user saves.
 	if _, err := open.Read(t.Context(), func() {
 		write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 		if err := opening.Level(t.Context(), v, []string{"Leaf.md"}); err != nil {
@@ -55,8 +55,8 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 	opening := cfg.VaultOpenerWith(db, target, cfg.VaultWatcher())
 	open := opening.Begin(t.Context(), v)
 
-	// The first walk goes through, and the second is held with the note's old
-	// bytes in the walk's hand.
+	// The first walk completes, and the second is held while it carries the
+	// note's old bytes.
 	target.release()
 	if _, err := open.Read(t.Context(), nil); err != nil {
 		t.Fatal(err)
@@ -90,7 +90,7 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 	}
 }
 
-// A vault that cannot be watched is opened all the same, and says why.
+// A vault that cannot be watched is still opened, and the error is reported.
 func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
@@ -107,9 +107,9 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
 	}
 }
 
-// A vault is walked once at a time, and what the watch collected is acted on
-// once the first walk is over. The note on disk is what the index says
-// afterwards, however old the copy the first walk was holding.
+// A vault is walked one at a time, and what the watch collected is processed
+// after the first walk ends. The note on disk is what the index contains
+// afterwards, however old the copy held by the first walk.
 func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 
@@ -129,7 +129,7 @@ func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 		walked <- err
 	}()
 
-	// The first walk has the note's old bytes in hand.
+	// The first walk holds the note's old bytes.
 	if path := receiveFrom(t, readers.read, "the walk read nothing"); path != "Leaf.md" {
 		t.Fatalf("the walk is reading %q", path)
 	}
@@ -170,8 +170,8 @@ func receiveFrom[T any](t *testing.T, from <-chan T, what string) T {
 	}
 }
 
-// makeWatcher is a watcher whose events a test sends itself, so what happens
-// when a vault changes can be asked without a filesystem or a timer.
+// makeWatcher returns a watcher whose events the test sends, so vault changes
+// can be simulated without a filesystem or timer.
 func makeWatcher() *waves {
 	return &waves{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
@@ -185,9 +185,9 @@ func (w *waves) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 	return w.changes, w.lostChan, nil
 }
 
-// makeStagedReaders is readers whose first walk holds every note it has read,
-// and whose later walks read straight through. A second walk of the vault can
-// then be asked for while the first is still holding an older copy.
+// makeStagedReaders returns readers whose first walk holds every note it has
+// read and whose later walks read straight through. A second walk can then
+// start while the first holds an older copy.
 func makeStagedReaders() *staged {
 	return &staged{
 		VaultReaders: vaultreader.Readers{},
@@ -237,8 +237,8 @@ func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-// makeGatedReaders is readers that hold each read open once the bytes are in
-// hand, so a test can change the file the walk is holding a copy of.
+// makeGatedReaders returns readers that hold each read open once the bytes are
+// read, so a test can change the file while the walk holds a copy.
 func makeGatedReaders() *gate {
 	return &gate{
 		VaultReaders: vaultreader.Readers{},
@@ -343,7 +343,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 	}
 }
 
-// titleOf is what the index says a note is called.
+// titleOf returns the title the index holds for a note.
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
 

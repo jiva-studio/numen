@@ -50,9 +50,8 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
    */
   readonly words?: string | undefined
   /**
-   * Where those words sit: the fraction of the line they are read along that
-   * the middle of them relies on. The middle of the line, unless the title
-   * had to slide along it to find room.
+   * Position of the label's midpoint as a fraction of the line's length: the
+   * middle of the line, unless the title was shifted along it to find space.
    */
   readonly wordsAt: number
   /** Where the arrowhead goes and which way it is aimed, for an edge with one. */
@@ -96,9 +95,9 @@ const getPoint = (edge: EdgeCurve, t: number): Position => {
 const LENGTH_SAMPLES = 24
 
 /**
- * How far along the curve each of two dozen points on it lies, the whole
- * length last. Every step is a chord, which is shorter than the arc it spans,
- * so the answer runs a little under.
+ * Cumulative curve length at each of 24 sample points, the full length last.
+ * Each step is a chord, shorter than the arc it spans, so the result slightly
+ * underestimates.
  */
 function measureAxis(edge: EdgeCurve): number[] {
   const axisOffset = [0]
@@ -115,9 +114,9 @@ function measureAxis(edge: EdgeCurve): number[] {
 export const getLength = (edge: EdgeCurve): number => measureAxis(edge)[LENGTH_SAMPLES]!
 
 /**
- * Which `t` stands a fraction of the way along the measured length. The steps
- * are chords of even parameter, so the answer walks them and lands between the
- * two the fraction falls across.
+ * The parameter `t` at the given fraction of the measured length. The steps are
+ * chords of even parameter spacing, so the function walks them and interpolates
+ * within the step the fraction falls in.
  */
 function getParameter(offsets: readonly number[], fraction: number): number {
   const total = offsets[LENGTH_SAMPLES]!
@@ -162,13 +161,13 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
 }
 
 /**
- * Which way round a curve is taken for the words set on it, read off the
- * tangent at `at`, where the middle of the title sits. A curve with no
- * sideways run at all is taken down the page.
+ * Direction in which a curve is traversed for the label set on it, taken from
+ * the tangent at `at`, the midpoint of the title. A curve with no horizontal run
+ * is traversed downward.
  *
- * A relation says which way an edge was routed, and the curve says something else:
- * one that loops out of a column arrives at its midpoint running back the way
- * it came, and one that doubles back turns twice over a short run.
+ * The relation gives the edge's routing direction, which can differ from the
+ * curve's: one that loops out of a column arrives at its midpoint running back
+ * the way it came, and one that doubles back turns twice over a short run.
  */
 export const getHeading = (edge: EdgeCurve, pos: number): EdgeHeading => {
   const way = getTangent(edge, getParameter(measureAxis(edge), pos))
@@ -176,7 +175,7 @@ export const getHeading = (edge: EdgeCurve, pos: number): EdgeHeading => {
   return way.y < 0 ? 'against' : 'along'
 }
 
-/** How far back from its point an arrowhead reaches, in the units it is drawn in. */
+/** How far back from its point an arrowhead extends, in drawing units. */
 export const ARROW_LENGTH = 15
 
 /**

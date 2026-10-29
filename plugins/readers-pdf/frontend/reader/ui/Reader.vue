@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * A document read: its pages in a row, scrolled through left to right.
+ * A document: its pages in a horizontal row, scrolled left to right.
  *
- * The row is laid out against the viewport it is read in, and the page in front
- * is the one under the middle of that viewport. It fills whatever it is put in,
- * and says nothing about where that is.
+ * The row is laid out against the viewport, and the current page is the one
+ * under the viewport's midpoint. The component fills its container and does not
+ * depend on the container's position.
  */
 import { computed, useTemplateRef, ref, watch } from 'vue'
 import { ReaderToolbar } from './reader-toolbar'
@@ -53,7 +53,7 @@ const area = useTemplateRef<HTMLElement>('area')
 /** The viewport the pages are read in, taken again whenever it changes. */
 const { viewport, measure } = useViewport(area)
 
-/** Where the row stands, and what a hand or a wheel does to it. */
+/** Row scroll state, and pointer and wheel handling. */
 const {
   along: scrollOffset,
   isDragging,
@@ -72,7 +72,7 @@ const visiblePages = computed(() =>
 )
 const middle = computed(() => inFront(pageLayout.value, viewport.value, scrollOffset.value))
 
-/** What each page is asked for at. */
+/** Width at which each page is requested. */
 const { drawnWidth } = usePageWidth(
   () => pageLayout.value,
   (pixels) => emit('measure', pixels),
@@ -85,18 +85,18 @@ const rowStyle = computed(() => ({
 
 defineExpose({
   /**
-   * Take the viewport again. A reader drawn out of sight has none, and the
-   * caller says when it is on screen.
+    * Re-measures the viewport. A reader rendered while hidden has none, so the
+    * caller invokes this when the reader becomes visible.
    */
   measure,
   handleKey: (event: KeyboardEvent) => onKey(event),
-  /** The pages take the keyboard, so that a key struck reaches them. */
+  /** Focuses the pages so key events reach them. */
   focusPages: () => area.value?.focus(),
 })
 
 /* ---------------------------------- Hooks --------------------------------- */
-// A page asked for from outside is scrolled to. One reached by the hand is
-// already there.
+// A page requested from outside is scrolled to. A page reached by the user's
+// scrolling is already in view.
 watch(
   () => props.at,
   (page) => {
@@ -104,8 +104,8 @@ watch(
   },
 )
 
-// Zooming keeps the page in front in front. Every page changes width, so the
-// place along the row the hand was looking at has moved.
+// Zooming keeps the current page in view. Every page changes width, so the
+// scroll position along the row shifts.
 watch(
   () => pageLayout.value.height,
   () => {
@@ -115,9 +115,9 @@ watch(
 
 /* -------------------------------- Handlers -------------------------------- */
 /**
- * The row moved, so the page in front is whichever is under the viewport now. A
- * row still on its way to where it was sent says nothing: the pages it passes
- * over are pages nobody turned to.
+ * The row scrolled, so the current page is the one under the viewport. While the
+ * row is still animating to a target it emits nothing: pages passed on the way
+ * are not navigation targets.
  */
 const onScroll = () => {
   if (!isStill()) return
@@ -125,8 +125,8 @@ const onScroll = () => {
 }
 
 /**
- * A key the tab caught: true where it turned the page. The page asked for is
- * emitted, so whoever holds `at` is the one that moves it.
+ * A key handled by the tab: returns true when it turned the page. The target
+ * page is emitted, so the owner of `at` performs the move.
  */
 const onKey = (event: KeyboardEvent): boolean => {
   const to = getTurnTarget(event.key, props.at, props.pages.length)
@@ -139,7 +139,7 @@ const onKey = (event: KeyboardEvent): boolean => {
 /** Where one page is drawn, once a width has been settled on. */
 const getImageUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
-/** The row put where a page stands, with that page against the left edge. */
+/** Scrolls the row so the page sits at the left edge. */
 const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {
   const to = getScrollTarget(pageLayout.value, viewport.value, page)
   if (to !== undefined) send(to, how)

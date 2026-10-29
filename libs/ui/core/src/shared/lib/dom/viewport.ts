@@ -1,4 +1,4 @@
-/** How much room a component has, and the only thing in the library that measures it. */
+/** The available size of a component, and the only measurement entry point in the library. */
 
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
@@ -7,20 +7,20 @@ import type { Size } from '../math/geometry'
 
 export interface Viewport {
   /**
-   * Watch an element and be told every size it takes. Nothing is said about a
-   * box with no width or no height: an element drawn out of sight has one, and
-   * it is not a measurement. Calling what comes back stops the watching.
+   * Observes an element and reports every size it takes. Boxes with zero width
+   * or zero height are not reported, since an element that is not rendered
+   * has one and it is not a measurement. The returned function stops observing.
    */
   readonly watch: (of: HTMLElement, took: (size: Size) => void) => () => void
   /**
-   * The room a component has when nobody hands it one, now and every time it
-   * changes. Calling what comes back stops the watching.
+   * Observes the available size of a component when no size is passed in, and
+   * reports it now and on every change. The returned function stops observing.
    */
   readonly watchFreeSpace: (took: (size: Size) => void) => () => void
   /**
-   * Watch an element and be told the room it takes up with its padding and its
-   * edge, which is what anything standing clear of it has to clear. Calling
-   * what comes back stops the watching.
+   * Observes an element and reports its size including padding and border,
+   * which is the extent that adjacent content must clear. The returned
+   * function stops observing.
    */
   readonly watchWhole: (of: HTMLElement, took: (size: Size) => void) => () => void
 }
@@ -64,9 +64,9 @@ export const browserViewport: Viewport = {
 }
 
 /**
- * Follows the element for the component's life: watched from the moment it
- * stands, and again whenever it is replaced by another. `onFound` hears of each
- * element before the watching of it begins.
+ * Follows the element for the component's lifetime: it is observed from mount
+ * and again whenever it is replaced by another element. `onFound` is called
+ * with each element before observation of it begins.
  */
 interface FollowOptions {
   readonly took: (size: Size) => void
@@ -98,10 +98,10 @@ const useFollowed = (
 }
 
 /**
- * The room one element of a drawn component has, held for the component's
- * life: measured at its current position and again at every size it takes. A viewport
- * with no size is not a measurement, and a component drawn out of sight has
- * none until it is drawn where somebody can see it.
+ * The size of one element of a rendered component, kept for the component's
+ * lifetime: measured at its current position and again at every size change.
+ * A zero-sized viewport is not a measurement, so a component that is not
+ * rendered has none until it is displayed.
  */
 export function useViewport(area: Readonly<Ref<HTMLElement | null>>): {
   viewport: Ref<Size>
@@ -128,8 +128,8 @@ export function useViewport(area: Readonly<Ref<HTMLElement | null>>): {
 }
 
 /**
- * The room one element takes up with its padding and its edge, which is what
- * anything standing clear of it has to clear, held for the component's life.
+ * The size of one element including padding and border, which is the extent
+ * that adjacent content must clear, kept for the component's lifetime.
  */
 export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
   viewport: Ref<Size>
@@ -146,8 +146,9 @@ export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
 }
 
 /**
- * The room a component has when nobody hands it one, held for the component's
- * life and measured at once. `onChange` hears of each size as it is taken.
+ * The available size of a component when no size is passed in, kept for the
+ * component's lifetime and measured immediately. `onChange` is called with each
+ * new size.
  */
 export function useFreeSpace(
   port: Viewport = browserViewport,

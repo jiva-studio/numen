@@ -21,8 +21,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// changing is a vault that can be both asked about and written to, with the
-// index kept level as a real caller would keep it.
+// changing is a vault that can be both queried and written to, with the index
+// kept current as a real caller would keep it.
 type changing struct {
 	db    *container.Index
 	vault domain.Vault
@@ -99,7 +99,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 		t.Errorf("nothing else answers to this name: %v", created.Shares)
 	}
 
-	// The index is level before the caller is told, so this finds it.
+	// The index is current before the caller is notified, so this finds it.
 	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -157,8 +157,8 @@ func TestCreate_RejectsExistingNote(t *testing.T) {
 	}
 }
 
-// The whole point of resolving a name at the moment it is asked: a note moves
-// and the links written by its name follow it, untouched.
+// A name is resolved at the moment it is requested: a note moves and the links
+// written by its name follow it, unchanged.
 func TestMovingPreservesLinksSavedByNameAlone(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -211,8 +211,8 @@ func TestMove_RetitledNoteKeepsNameLinksResolving(t *testing.T) {
 	}
 }
 
-// A `title` key names the note whatever the filename says, so a file renamed
-// under it leaves the note called what the file says it is called.
+// A `title` key names the note regardless of the filename, so a file renamed
+// under it leaves the note named by its `title`.
 func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -305,8 +305,8 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 	}
 }
 
-// A link that reaches a different note of the same name is not broken, so it is
-// left alone: which of two notes under one name it means is the person's.
+// A link that reaches a different note of the same name is not broken, so it
+// is left unchanged: which of two notes with one name it means is the user's.
 func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -331,9 +331,9 @@ func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 	}
 }
 
-// The note lands under a name another note is already filed under, and a name
-// is read back as an exact path from the root before anything else. The repair
-// writes the path, which is what reaches the note that moved.
+// The note lands under a name another note already uses, and a name is
+// resolved as an exact path from the root first. The repair writes the path,
+// which reaches the moved note.
 func TestRepairingALinkWritesThePathWhereTheNameIsShared(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -572,7 +572,7 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Somebody else gets there first.
+	// Another writer gets there first.
 	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}

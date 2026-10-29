@@ -1,13 +1,12 @@
 // Package check is what a vault is checked against.
 //
-// A vault is edited by hand, by other tools and by whatever else the person
-// runs, so it accumulates things the application will not act on and will not
-// guess at: a link with no role, a frontmatter block that is not YAML, a name
-// two notes answer to. None of it stops a scan, and without somewhere to look
-// all of it is invisible.
+// A vault is edited by hand, by other tools and by other programs, so it
+// accumulates things the application does not act on and does not guess at: a
+// link with no role, a frontmatter block that is not YAML, a name shared by two
+// notes. None of it stops a scan, and without a check it goes unreported.
 //
-// The shape is a list of checks, one to a file. A new thing worth noticing is a
-// new file and a line in Standard, and nothing that already works changes.
+// The structure is a list of checks, one per file. A new check is a new file
+// and a line in Standard; existing checks are unchanged.
 package check
 
 import (
@@ -24,15 +23,15 @@ import (
 
 // A Checker is one thing that can be wrong with a vault, and what notices it.
 //
-// The name it answers to is a domain.Check: what the check is called travels
-// out to a person, and the thing that runs stays in here.
+// The name it answers to is a domain.Check: the check's name is reported to
+// users, and the implementation stays in this package.
 type Checker interface {
-	// Name is what it is called, and what a person asks for by.
+	// Name is the check's name, used to select it.
 	Name() domain.Check
-	// FindProblems reports what it found, each finding against the note somebody would
-	// open to settle it.
+	// FindProblems reports the problems found, each against the note to open to
+	// resolve it.
 	FindProblems(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error)
-	// IsOptIn reports whether this check is left out unless it is asked for.
+	// IsOptIn reports whether this check is omitted unless requested.
 	IsOptIn() bool
 }
 
@@ -58,8 +57,8 @@ func Standard(queries problemport.ProblemQueries) Checks {
 // Run looks the vault over.
 //
 // Named checks are the ones that run; naming none runs every check that is not
-// quiet. A quiet check is one whose findings are ordinary in a vault somebody is
-// still writing, and which would bury the rest if it arrived unasked.
+// opt-in. An opt-in check has findings that are ordinary in a vault under
+// active editing and would bury the rest if reported unrequested.
 func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.VaultProblem, error) {
 	wanted, err := c.getWanted(named)
 	if err != nil {
@@ -75,8 +74,8 @@ func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) 
 		out = append(out, found...)
 	}
 
-	// By note, so that what a person has to open is together, and by check
-	// within it, so that the order does not move between two runs.
+	// Sorted by note, so the notes to open are grouped, and by check within a note,
+	// so the order is stable between runs.
 	slices.SortStableFunc(out, func(a, b domain.VaultProblem) int {
 		return cmp.Or(cmp.Compare(a.Path, b.Path), cmp.Compare(a.Kind, b.Kind))
 	})
@@ -130,7 +129,7 @@ func (c Checks) Loud() []domain.Check {
 	return out
 }
 
-// getDefaultCheckers is every check that does not wait to be asked for.
+// getDefaultCheckers returns every check that is not opt-in.
 func (c Checks) getDefaultCheckers() []Checker {
 	var out []Checker
 	for _, check := range c.List {

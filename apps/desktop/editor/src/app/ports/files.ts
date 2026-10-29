@@ -1,11 +1,11 @@
-/** What the window asks of the vault about files and folders. */
+/** The vault operations on files and folders available to the window. */
 import type { ErrorCode } from '@/shared/errors'
 import type { Entry, FileKind, Movement } from '@/entities/file'
 
 export interface FilePort {
   /**
-   * kind comes off the vault itself, so a path nothing has scanned is answered
-   * with what stands there; a path with nothing at it is absent.
+   * Kind is read from the vault itself, so a path not yet scanned returns what
+   * exists there; a path with nothing at it is absent.
    */
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   /**

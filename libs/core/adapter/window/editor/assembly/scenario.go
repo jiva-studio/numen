@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 type textScenarioAssembly interface {
@@ -24,7 +24,7 @@ type fileScenarioAssembly interface {
 	GetRefresh() vaults.Refresh
 }
 
-// ScenarioAssembly is what this window asks for scenarios, search, and refresh.
+// ScenarioAssembly is what this window requires for scenarios, search, and refresh.
 type ScenarioAssembly interface {
 	GetClock() machineport.Clock
 	NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search

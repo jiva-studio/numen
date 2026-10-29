@@ -108,7 +108,7 @@ func (a *SettingsAgent) StartRun(ctx context.Context, task agentport.Task) (agen
 	return a.programs.StartRun(ctx, task)
 }
 
-// EndConversation says a conversation is over to every plugin it was asked in.
+// EndConversation notifies every plugin the conversation was started in that it is over.
 func (a *SettingsAgent) EndConversation(ctx context.Context, conversation string) error {
 	return a.programs.provider.EndConversation(ctx, conversation)
 }

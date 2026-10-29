@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// pathDialog answers every picker with the path it holds, and keeps what it was asked.
+// pathDialog answers every picker with the path it holds, and records what it was asked.
 type pathDialog struct {
 	path     string
 	isFolder bool

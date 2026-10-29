@@ -54,8 +54,8 @@ func (r *vaultRows) getForgotten() []domain.VaultID {
 	return append([]domain.VaultID(nil), r.forgot...)
 }
 
-// bin is where a test puts what a person deleted, and a machine with nowhere to
-// put it where refuse is set.
+// bin collects what a test deletes, and models a machine with no trash
+// location when refuse is set.
 type bin struct {
 	mu    sync.Mutex
 	fails error
@@ -84,8 +84,8 @@ func (b *bin) getTrashed() []string {
 	return append([]string(nil), b.moved...)
 }
 
-// folders is the person choosing a folder, as a test answers for them. The real
-// dialog is this machine's own and needs a window.
+// folders answers the folder picker in a test. The real dialog is
+// machine-specific and needs a window.
 type folders struct {
 	mu       sync.Mutex
 	pick     string
@@ -102,7 +102,7 @@ func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (str
 	return f.pick, f.isChosen, f.fails
 }
 
-// getRequested is what the dialog was told to say and where to open.
+// getRequested returns what the dialog was asked to display and where to open.
 func (f *folders) getRequested() (string, string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -179,14 +179,14 @@ func onAList(t *testing.T) *onTheList {
 	return f
 }
 
-// opening is what the window answers when it is asked to show a vault.
+// opening is what the window returns when asked to show a vault.
 func (f *onTheList) opening(why error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.refuses = why
 }
 
-// getShown is every vault the window was asked to show.
+// getShown returns every vault the window was asked to show.
 func (f *onTheList) getShown() []domain.Vault {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -282,7 +282,7 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 }
 
 // TestACopyOfAVaultOnTheListIsRefused. Two folders carrying one identity cannot
-// both be indexed, and this is how they are told from a folder that moved.
+// both be indexed, and the check distinguishes them from a folder that moved.
 func TestACopyOfAVaultOnTheListIsRefused(t *testing.T) {
 	f := onAList(t)
 	copied := folderNamed(t, "copy")
@@ -371,8 +371,8 @@ func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	}
 }
 
-// TestTheVaultTheWindowIsShowingStaysOnTheList. The use cases are not told
-// which vault is in front of the person; the handler is.
+// TestTheVaultTheWindowIsShowingStaysOnTheList. The use cases do not know which
+// vault is current; the handler does.
 func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	f := onAList(t)
 
@@ -432,7 +432,7 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	onList(t, f.getList(t), string(f.first.ID))
 }
 
-// TestAnIdentityOnNoListIsUnknown, whichever way it is asked about.
+// TestAnIdentityOnNoListIsUnknown, regardless of how it is queried.
 func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 	f := onAList(t)
 	const nobody = "01JZZZZZZZZZZZZZZZZZZZZZZZ"
@@ -550,9 +550,8 @@ func TestOpenVault_ErrorsWhilePageHasPendingQuestion(t *testing.T) {
 	}
 }
 
-// TestAWindowThatIsGoingIsNotACodeAboutTheVault. What stopped the swap is the
-// window, so it is said as a status and not as a code about the vault asked
-// for.
+// TestAWindowThatIsGoingIsNotACodeAboutTheVault. The window stopped the swap,
+// so it is reported as a status and not as a code about the requested vault.
 func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 	for _, one := range []struct {
 		name string
@@ -607,7 +606,8 @@ func TestChooseFolder_ReturnsChosenPath(t *testing.T) {
 	}
 }
 
-// TestASecondFolderDialogIsRefusedWhileOneIsUp. A person answers one at a time.
+// TestASecondFolderDialogIsRefusedWhileOneIsUp. Only one dialog is answered at
+// a time.
 func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	f := onAList(t)
 	f.dialog.fails = machineport.ErrChoosing

@@ -1,8 +1,8 @@
 /**
- * The window keeping tabs of kinds it knows nothing about.
+ * The window managing tabs of tab kinds it has no knowledge of.
  *
- * Everything asked here is asked of a kind made up for the test: what the
- * window does with a kind is the whole of what a real one can count on.
+ * The tests use a kind created for the test: the window's behaviour toward a
+ * kind is all a real kind can rely on.
  */
 import { describe, expect, it } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
@@ -14,8 +14,8 @@ import { fileOpeners } from './openers'
 import { useWindowTabs } from './windowTabs'
 
 /**
- * A kind that records what it was asked to do, under the names it opened on. A
- * kind that keeps its tabs has something to finish and never lets one go.
+ * A kind that records the calls it receives and the names it opened with. A
+ * kind that retains its tabs has pending work and never releases one.
  */
 const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: boolean } = {}) => {
   const openedTab: string[] = []
@@ -41,7 +41,10 @@ const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: b
   return { declared: () => one, one, opened: openedTab, closedPaths, inspected: observed }
 }
 
-/** A window told what kinds it draws, each of them made with what it is given. */
+/**
+ * A window with the declared kinds registered, each created from the handle it
+ * receives.
+ */
 const notifiedCalls = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
   const window = useWindowTabs()
   window.registerKinds(declared.map((one) => one(window.handle)))
@@ -253,7 +256,7 @@ describe('the tab the person is looking at', () => {
     const one = await window.openTabOfKind('thing', 'One.md')
     const two = await window.handle.openTabAdjacent('thing', 'Two.md')
     window.show(one)
-    // Every pane says what it is showing when it is drawn.
+    // Every pane reports the tab it is showing when it renders.
     window.onTabShown(two)
 
     expect(window.handle.front()?.id).toBe(one)
@@ -295,8 +298,8 @@ describe('a key struck on the window', () => {
   const createKeyEvent = (key: string) => new KeyboardEvent('keydown', { key })
 
   it('routes to the tab of the pane the person is in, and to no other', async () => {
-    // Two panes are drawn at once, so a tab that listened for itself would have
-    // both of them answering the one key.
+    // Two panes render at once, so a tab that listened on its own would cause both
+    // to respond to the same key.
     const readItem = readTabs()
     const window = notifiedCalls([readItem.one.declared])
     const one = await window.openTabOfKind('thing', 'One.epub')
@@ -591,7 +594,10 @@ describe('the tab in front, with the pane in front unknown to the layout', () =>
 })
 
 describe('a key struck on the window, offered in turn', () => {
-  /** Tabs of a kind that records who was offered the key and takes it only where told. */
+  /**
+   * Tabs of a kind that records which of them were offered the key and accept it
+   * only where configured.
+   */
   const createKeyRecorderTab = (takes: string) => {
     const proposed: string[] = []
     const one = kind({
@@ -974,7 +980,7 @@ describe('a placed kind whose tab fails to open', () => {
 })
 
 describe('a tab of a kind moved to a path', () => {
-  /** A kind whose tabs stand on a path, and move when asked. */
+  /** A kind whose tabs have a path and move when requested. */
   const walker = (name = 'walker') =>
     kind({
       kind: name,
@@ -1113,7 +1119,7 @@ describe('a file made as the kind that edits it', () => {
   })
 })
 
-/** A kind of a plugin that keeps a page in each tab and saves it. */
+/** A plugin kind that keeps a page in each tab and saves it. */
 const pagedKind = (pluginId = 'viewer.plugin'): AnyTabKind => ({
   kind: 'paged',
   pluginId,

@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// theList is the vaults an installation holds, held in memory: the rows, which
-// of them was opened last, and how often that was asked.
+// theList is the vaults an installation holds, in memory: the rows, the
+// last-opened vault, and how often the last-opened vault was queried.
 type theList struct {
 	rows      []domain.Vault
 	last      domain.Vault
@@ -45,7 +45,7 @@ func (f folders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return nil, fs.ErrNotExist
 }
 
-// two vaults, both of whose folders are where the list says they are.
+// two vaults, both of whose folders exist where the list says.
 func twoRows() (*theList, folders) {
 	return &theList{rows: []domain.Vault{
 		{ID: "wren", Name: "Wren", Path: "/notes/wren"},
@@ -75,8 +75,8 @@ func TestEveryVaultOnTheListIsKnown(t *testing.T) {
 	}
 }
 
-// Where nobody says which vault is being worked, the one opened last is the
-// current one: that is the vault the next window opens.
+// When no vault is specified as being worked, the last-opened vault is the
+// current one: it is the vault the next window opens.
 func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
@@ -128,7 +128,7 @@ func TestTheCurrentVaultReachesFirst(t *testing.T) {
 	}
 }
 
-// A caller sitting in front of a vault says which, and what the list remembers
+// A caller working in a specific vault names it, and that takes precedence over what the list remembers.
 func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
@@ -146,8 +146,8 @@ func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	}
 }
 
-// Nothing is current where the list has never been opened and nobody says which
-// vault is being worked.
+// Nothing is current when the list has never been opened and no vault is
+// specified as being worked.
 func TestAListNobodyHasOpenedHasNoCurrentVault(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
@@ -163,8 +163,8 @@ func TestAListNobodyHasOpenedHasNoCurrentVault(t *testing.T) {
 	}
 }
 
-// A folder that is not there to be read is marked, and the vault stays on the
-// list: it is forgotten when somebody says so and not before.
+// A folder that cannot be read is marked missing, and the vault stays on the
+// list: it is removed only by an explicit request.
 func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
@@ -184,8 +184,8 @@ func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 	}
 }
 
-// A build with nothing to open a vault through marks no folder missing. It
-// never looked, and every vault marked gone is a person told their notes have
+// A build with no way to open a vault marks no folder missing, since it never
+// checked, and a vault wrongly marked missing tells the user their notes have
 // vanished.
 func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 	t.Parallel()
@@ -202,8 +202,8 @@ func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 	}
 }
 
-// An empty list is no vaults, and what was opened last is not asked: there is
-// nothing for the answer to be about.
+// An empty list contains no vaults, and the last-opened vault is not queried:
+// there is nothing for the result to describe.
 func TestAnEmptyListIsNoVaults(t *testing.T) {
 	t.Parallel()
 	list := &theList{}

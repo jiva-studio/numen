@@ -21,12 +21,12 @@ export type Drop =
     }
 
 /**
- * The relation a gesture that went nowhere asks for.
+ * The relation requested by a gesture that moved nowhere.
  *
- * One more child, because that is what anyone reaches for; failing that, the
- * first relation the caller allows. A gesture goes nowhere when it is a press
- * and not a drag — from a trackpad, from a hand that cannot hold a button
- * down, or from the keyboard, where there is no direction to read at all.
+ * One more child is the default; failing that, the first relation the caller
+ * allows. A gesture moves nowhere when it is a press and not a drag: from a
+ * trackpad, from a pointer that cannot hold a button down, or from the
+ * keyboard, where there is no direction to read at all.
  */
 export const getRelationWithoutDirection = (
   relations: readonly PlexRelation[],
@@ -35,10 +35,10 @@ export const getRelationWithoutDirection = (
 /**
  * Which way a point lies from another.
  *
- * Not simply the axis it lies getFurthest along: rows are wide and columns are
- * bias of one, the outermost child of a wide row is further sideways than it
- * is down, and dragging towards where the children plainly are would name
- * something off to the side.
+ * Not simply the axis with the larger distance: rows are wide and columns are
+ * narrow, so the outermost child of a wide row is further sideways than it is
+ * down, and a drag towards where the children are would name a direction off to
+ * the side.
  */
 function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null
@@ -49,10 +49,10 @@ function getDropDirection(dx: number, dy: number, bias: number): Direction | nul
 }
 
 /**
- * The relation a direction stands for — the inverse of the arrangement's own map.
+ * The relation a direction maps to: the inverse of the arrangement's own map.
  *
- * It is read off `direction`, which is what put the relations where they are: with
- * parents sent down, dragging down means a parent.
+ * It is derived from `direction`, which places the relations: with parents
+ * placed downward, dragging down means a parent.
  */
 export function getRelationTowards(
   from: Position,
@@ -95,10 +95,10 @@ export interface DropInput {
 }
 
 /**
- * Landing on another node makes a link; landing on nothing makes a node. That
- * one rule is also what keeps a gesture from a node other than the focus
- * workable: the relations around a child overlap the rest of the picture, and
- * whatever the gesture crosses, only where it stops decides.
+ * Landing on another node creates a link; landing on nothing creates a node.
+ * That one rule also keeps a gesture from a node other than the focus usable:
+ * the relations around a child overlap the rest of the graph, and whatever the
+ * gesture crosses, only where it ends decides.
  */
 export function resolveDrop({ frame, options, from, point, relations }: DropInput): Drop | null {
   const source = frame.nodes.find((node) => node.id === from)
@@ -123,7 +123,7 @@ export interface DroppedInput {
   readonly point: Position
   /** Relations a gesture is allowed to produce. */
   readonly relations: readonly PlexRelation[]
-  /** How far from the focus the pointer stands before it names a direction. */
+  /** Distance from the focus the pointer must exceed to name a direction. */
   readonly threshold: number
 }
 
@@ -148,7 +148,7 @@ export function getDropRelation({
   // Past the edge of the window is over whatever is drawn beside the plex.
   if (Math.abs(point.x) > viewport.width / 2 || Math.abs(point.y) > viewport.height / 2) return null
 
-  // Close enough to the focus that the direction is the tremor of a hand.
+  // Close enough to the focus that the direction is pointer jitter.
   if (Math.hypot(point.x - focus.x, point.y - focus.y) < threshold) return null
 
   const relation = getRelationTowards(focus, point, options)

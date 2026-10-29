@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
 )
 
-// Config is what a person may change about listening to a recording: which
-// models, where they came from, how the speech in a file is found, and how much
-// of the machine one recording may use.
+// Config is what a user may change about transcription: which models, where
+// they came from, how the speech in a file is found, and how much of the
+// machine one recording may use.
 //
 // A zero field takes its default, so a settings file naming one thing leaves
 // the rest alone.
@@ -39,9 +39,8 @@ type Config struct {
 	Model     ParakeetModel   `json:"model"`
 	Segmenter segmenter.Model `json:"segmenter"`
 
-	// Progress is told how far a download has got, when anything is listening.
-	// It is not a setting and is not written down: it is how the wait reaches
-	// whoever is watching it.
+	// Progress receives the download progress when a listener is set. It is not a
+	// setting and is not persisted: it carries progress to the observer.
 	Progress func(what string, done, total int64) `json:"-"`
 }
 

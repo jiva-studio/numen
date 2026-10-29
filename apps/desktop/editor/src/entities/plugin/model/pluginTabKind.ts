@@ -1,6 +1,6 @@
 /**
- * A tab kind a plugin declares whole: what its tabs hold, and every hook the
- * window asks of a kind.
+ * A tab kind that a plugin declares in full: the content of its tabs, and every
+ * hook the window calls on a kind.
  */
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
@@ -8,12 +8,12 @@ import type { AnyTabKind } from '@/shared/model/tabKinds'
 import { adoptPluginStyle, getPluginStyle } from '@numen/plugin-host'
 import { renderFallback, resolvePluginComponent } from './styles'
 
-/** A registration that says what its tabs hold. */
+/** A registration that declares the content of its tabs. */
 export type DeclaredTabKindRegistration = TabKindRegistration & {
   open: NonNullable<TabKindRegistration['open']>
 }
 
-/** Whether the registration says what its tabs hold. */
+/** Whether the registration declares the content of its tabs. */
 export const isDeclaredTabKind = (
   registration: TabKindRegistration,
 ): registration is DeclaredTabKindRegistration => typeof registration.open === 'function'

@@ -1,10 +1,10 @@
 /**
- * What the vault says, read by the client the schema generates.
+ * What the vault returns, as read by the client the schema generates.
  *
- * `vault.test.ts` hands the mapping plain objects of its own making. This one
- * answers the window over the transport, so the message it reads is the one the
- * generated code builds: a field left at its default is one the answer does not
- * carry, and an enum arrives as the number the schema gave it.
+ * `vault.test.ts` passes the mapping plain objects of its own construction. This test
+ * serves the window over the transport, so the message it reads is the one the
+ * generated code builds: a field left at its default is not carried in the response,
+ * and an enum arrives as the number the schema assigns.
  */
 import { describe, expect, it, vi } from 'vitest'
 

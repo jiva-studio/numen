@@ -1,11 +1,11 @@
 /**
- * A window-sized area for a panel to sit in, so a story shows it at the size
- * it is used at. Storybook's furniture; it ships to nobody.
+ * A window-sized area that contains a panel, so a story shows it at its real
+ * size. Storybook test fixture only; it is not shipped.
  *
- * The room is in pixels and stays there while the interface multiplier moves.
- * A window is a fixed number of pixels and a pane is a share of one, so a
- * larger interface is drawn in the same room and the crowding a story shows at
- * 2× is the crowding the window has.
+ * The area is fixed in pixels and does not change with the interface
+ * multiplier. A window has a fixed pixel size and a pane is a share of it, so a
+ * larger interface is drawn in the same area, and the crowding a story shows at
+ * 2× matches the crowding in the window.
  */
 import type { Decorator } from '@storybook/vue3-vite'
 

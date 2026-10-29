@@ -47,8 +47,8 @@ func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 	return nil
 }
 
-// describeLink says where a link goes and, when it goes nowhere, says that
-// too — a dangling link is a fact about the vault, not an omission.
+// describeLink reports where a link goes and, when it goes nowhere, reports
+// that too: a dangling link is a fact about the vault, not an omission.
 func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 	where := l.To
 	switch {

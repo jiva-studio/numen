@@ -9,10 +9,10 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// A note is saved while another program holds the file open. Windows refuses a
-// move over a file opened without a share on deletion, and the programs that do
-// it — the search indexer, a backup reader, a virus scanner — let go within
-// moments.
+// A note is saved while another program has the file open. Windows rejects a
+// rename over a file opened without a delete share, and programs that do this
+// (the search indexer, a backup reader, a virus scanner) release the file
+// within moments.
 func TestASaveWaitsOutAHandleAnotherProgramContains(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")
@@ -55,8 +55,9 @@ func TestASaveWaitsOutAHandleAnotherProgramContains(t *testing.T) {
 	}
 }
 
-// openHandle holds a file the way another program does. The share leaves out
-// deletion, and Windows refuses a rename over the file while the handle stands.
+// openHandle opens a file as another program does. The share mode excludes
+// deletion, and Windows rejects a rename over the file while the handle is
+// open.
 func openHandle(t *testing.T, path string) windows.Handle {
 	t.Helper()
 
@@ -79,7 +80,7 @@ func openHandle(t *testing.T, path string) windows.Handle {
 	return handle
 }
 
-// A file nothing lets go of fails, and the save says so.
+// A file that is never released fails, and the save reports the failure.
 func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")

@@ -1,14 +1,14 @@
 /**
- * Flushing the window's unwritten work, when the application asks to quit. A
- * tab saves once the typing stops, so the last seconds of work are in a buffer
- * here and nowhere else, and the application asks for them over a stream this
- * page listens on for as long as it is drawn. Text that cannot be written
- * raises a conflict, and the window stays until every conflict is settled.
+ * Flushes the window's unsaved work when the application requests quit. A tab
+ * saves after typing stops, so the latest edits exist only in its buffer; the
+ * application requests them over a stream this page listens on while rendered.
+ * Text that cannot be written raises a conflict, and the window stays open
+ * until every conflict is resolved.
  */
 import { shallowRef, type Ref } from 'vue'
 import { createFollower } from '@numen/ui'
 
-/** How a flush came out: everything written, or a person still being asked. */
+/** Outcome of a flush: everything written, or a user decision pending. */
 export type FlushResult = 'written' | 'asking'
 
 /** What the flush needs of the core. */
@@ -24,13 +24,13 @@ export type FlushHandler = () => Promise<unknown>
 export interface Conflict {
   /** The identity the note holding the text opened under. */
   readonly note: string
-  /** Write what the person has, over what the file holds. */
+  /** Write the user's text over the file's content. */
   readonly keep: () => Promise<unknown>
   /** Take what the file holds, and let the typing go. */
   readonly take: () => Promise<unknown>
 }
 
-/** A conflict as the window puts it to the person. */
+/** A conflict as presented to the user. */
 export interface ConflictPrompt {
   readonly note: string
   readonly keep: () => Promise<unknown>
@@ -40,12 +40,8 @@ export interface ConflictPrompt {
 }
 
 /**
- * Answering the application when it asks the window to write out what it holds.
- *
- * Whatever holds unwritten work adds itself, and every one of them is written
- * before the answer goes back. An error is not a reason to keep the window
- * open: the person asked for it to go. A conflict is: the text is still here,
- * and nothing but the person decides where it goes.
+ * Tracks unresolved conflicts. `raise` registers one and returns a function
+ * that removes it; a postponed conflict stays outstanding but is not prompted.
  */
 function createConflictRegistry(onChanged: () => void) {
   const outstanding = new Set<Conflict>()
@@ -87,12 +83,11 @@ function createConflictRegistry(onChanged: () => void) {
 }
 
 /**
- * Answering the application when it asks the window to write out what it holds.
- *
- * Whatever holds unwritten work adds itself, and every one of them is written
- * before the answer goes back. An error is not a reason to keep the window
- * open: the person asked for it to go. A conflict is: the text is still here,
- * and nothing but the person decides where it goes.
+ * Answers the application's quit request: every registered handler writes its
+ * unsaved work, and all writes finish before the response is sent. An error
+ * does not keep the window open, since the user requested the close. A conflict
+ * does: the text is still present and only the user decides where it is
+ * written.
  */
 function createFlushReporter(
   core: FlushDeps,

@@ -1,7 +1,6 @@
 /**
- * The window a files tab is drawn in, and the files of a vault behind it, made
- * up for a test. Everything the tab asks of either is written down in the order
- * asked.
+ * A fake window hosting a files tab, and the files of a vault behind it, for
+ * tests. Every request the tab makes to either is recorded in call order.
  */
 import { defineComponent, h, ref } from 'vue'
 import {
@@ -57,7 +56,7 @@ export const getPathCommands = ({ entry, isSeveral }: PathMenuRow): readonly Men
 /** The icon a command or an entry is drawn with, one made-up component for each. */
 const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
-/** What a files tab asks of the window to draw its menu and its rows. */
+/** What a files tab requests from the window to render its menu and rows. */
 export const renderDeps = {
   getPathCommands,
   getCommandIcon: (id: string) => (id === 'unknown' ? null : Icon),
@@ -71,7 +70,7 @@ export interface HostOptions {
   readonly folders?: Readonly<Record<string, readonly VaultEntry[]>>
 }
 
-/** A window and a vault that answer a files tab, and what the tab asked of them. */
+/** A fake window and vault that serve a files tab, and the requests the tab made to them. */
 export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   const recorded = {
     synced: [] as [string, string, string | undefined][],

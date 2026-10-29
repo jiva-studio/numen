@@ -10,22 +10,22 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// ErrUnreadable is a path that is not a folder, or a folder this application
-// cannot read as the vault it was asked about.
+// ErrUnreadable is returned for a path that is not a folder, or a folder this
+// application cannot read as the requested vault.
 var ErrUnreadable = errors.New("this folder cannot be read as a vault")
 
 // ErrCopy is one identity carried by two folders that are both there. One index
 // cannot hold both.
 var ErrCopy = errors.New("one vault cannot be in two places")
 
-// Add turns a folder into a vault this installation knows about.
+// Add registers a folder as a vault known to this installation.
 //
-// Two things happen, in this order and no other: the folder is given an
-// identity that stays with it, and that identity is remembered here. A folder
-// is recognised after it moves by the identity it carries.
+// Two steps happen, in this order: the folder is given an identity that stays with
+// it, and that identity is recorded here. A folder is recognised after it moves by
+// the identity it carries.
 //
-// A name another vault has gets a number appended, and the person renames it
-// afterwards.
+// A name already used by another vault gets a number appended, and the user can
+// rename it afterwards.
 type Add struct {
 	identity vaultport.VaultIdentity
 	registry vaultport.VaultRegistry
@@ -39,9 +39,9 @@ func NewAdd(identity vaultport.VaultIdentity, registry vaultport.VaultRegistry, 
 	return Add{identity: identity, registry: registry, now: now}
 }
 
-// Execute takes a path that is already absolute: resolving one against the
-// process working directory is something only the caller knows how to do, and a
-// use case whose result depends on where it was invoked from is not one.
+// Execute requires an absolute path. Resolving one against the process working
+// directory is the caller's responsibility; a use case must not depend on where it
+// was invoked from.
 func (u Add) Execute(root, name string) (domain.Vault, error) {
 	if !domain.IsAbsPath(root) {
 		return domain.Vault{}, fmt.Errorf("vault path must be absolute, got %q", root)
@@ -67,13 +67,13 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}
 
-	// This identity may already be registered somewhere else, and that is either
-	// a move or a copy. A move is ordinary and the whole reason identity does
-	// not depend on the path; a copy cannot be indexed, because two folders
-	// claiming one identity would write each other's notes under the same rows.
+	// This identity may already be registered elsewhere, as either a move or a copy.
+	// A move is ordinary, and is why identity does not depend on the path; a copy
+	// cannot be indexed, because two folders claiming one identity would write each
+	// other's notes under the same rows.
 	//
-	// They are told apart by looking: if the old location still carries this
-	// identity, both exist and it is a copy.
+	// They are distinguished by checking whether the old location still carries this
+	// identity: if so, both exist and it is a copy.
 	existing, found, err := u.registry.FindVault(string(id))
 	if err != nil {
 		return domain.Vault{}, err
@@ -90,8 +90,8 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 					"vault, delete its service folder and add it again",
 				ErrCopy, root, existing.Path, id)
 		}
-		// The old location is gone, or is no longer this vault: the folder
-		// moved, and the registry is what has to catch up.
+		// The old location is gone, or is no longer this vault: the folder moved, and the
+		// registry must be updated.
 	}
 
 	v := domain.Vault{ID: id, Name: name, Path: root}

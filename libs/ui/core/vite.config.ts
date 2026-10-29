@@ -32,10 +32,10 @@ export default defineConfig({
       output: {
         preserveModules: true,
         preserveModulesRoot: fileURLToPath(new URL('./src', import.meta.url)),
-        // A dependency kept as its own file is filed under `vendor/`. Left
-        // where rollup puts it, the path says `node_modules`, and a test
-        // runner takes that as a package to load outside the bundle — which
-        // hands the page a second Vue and breaks every render.
+        // A dependency emitted as its own file is placed under `vendor/`. With rollup's
+        // default path, the path contains `node_modules`, and a test runner
+        // treats that as a package to load outside the bundle, which
+        // supplies the page a second Vue and breaks every render.
         entryFileNames: (chunk) => `${chunk.name.replaceAll('node_modules/', 'vendor/')}.js`,
       },
     },

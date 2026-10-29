@@ -1,11 +1,10 @@
 /**
  * Plausible titles for an invented neighbourhood.
  *
- * Picked from the identifier and not at random, so a walk is repeatable
- * and a screenshot of it means something. Real-looking names matter here: a
- * plex of "Child 1, Child 2, Child 3" tells a reader nothing about whether the
- * labels wrap, collide or read well at a glance, which is the whole reason to
- * look at one.
+ * Chosen from the identifier and not at random, so a layout is repeatable and a
+ * screenshot of it is comparable. Realistic names matter here: a plex of
+ * "Child 1, Child 2, Child 3" does not show whether labels wrap, collide or
+ * read well at a glance, which is the purpose of inspecting one.
  */
 import { getNow } from '../../dom'
 const NAMES = [
@@ -89,11 +88,10 @@ export const createName = (stem: string, index: number): string =>
   NAMES[(hash(stem) + index) % NAMES.length]!
 
 /**
- * A name for a node made just now, seeded by the moment it was made.
+ * A name for a node created now, seeded by the creation time.
  *
- * Something to call a node the instant it exists, so nothing is ever
- * nameless and nothing has to be typed to finish a gesture. What a new node
- * should really be called is the application's to decide; this is what a
- * story uses in its place.
+ * A name available the instant a node exists, so no node is unnamed and no
+ * typing is needed to finish a gesture. The final name of a new node is the
+ * application's decision; stories use this in its place.
  */
 export const nameNow = (): string => createName(String(getNow()), 0)

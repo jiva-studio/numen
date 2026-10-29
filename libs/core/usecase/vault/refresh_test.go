@@ -67,9 +67,9 @@ func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []s
 	return out
 }
 
-// TestANoteIsLevelledInAVaultNothingHasWalked. A note is filed under the
-// vault's row in the index, and a vault nothing has walked has none. A person
-// who writes in the moment a vault opens is racing the first walk, and their
+// TestANoteIsLevelledInAVaultNothingHasWalked checks that a note is stored
+// under the vault's row in the index, and that a vault that has not been walked
+// has none. A write at the moment a vault opens races the first walk, and the
 // note is findable either way.
 func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
 	t.Parallel()
@@ -136,9 +136,9 @@ func TestADeletedNotePreservesTheIndex(t *testing.T) {
 	}
 }
 
-// TestARefreshDoesNotTakeABookForARemovedNote. A refresh asks the reader whether
-// each path is still there and reads fs.ErrNotExist as "it was removed". A book
-// the vault holds is there, and taking its text out of it is its own step.
+// TestARefreshDoesNotTakeABookForARemovedNote checks that a refresh queries the
+// reader about each path and reads fs.ErrNotExist as removed. A book the vault
+// holds exists; extracting its text is a separate step.
 func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{
@@ -209,8 +209,8 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	}
 }
 
-// TestARefreshedBookThatWentIsStillGone. Nothing about a second kind of source
-// changes what a path that is not there means.
+// TestARefreshedBookThatWentIsStillMissing checks that a second kind of source
+// does not change what a missing path means.
 func TestARefreshedBookThatWentIsStillMissing(t *testing.T) {
 	t.Parallel()
 	refresh, _, v := newRefresh(t, map[string]string{

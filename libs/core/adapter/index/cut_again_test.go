@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 )
 
-// vocabulary is the words a generated cutting draws its chunks from. It is
-// small, so one text stands twice in a source about as often currently
-// once, and a large chunk holds what a chunk inside one holds.
+// vocabulary is the words a generated cutting draws its chunks from. It is small,
+// so a text repeats within a source often, and a large chunk contains what a chunk
+// inside it contains.
 var vocabulary = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
 
 // generateChunks generates a source cut into large chunks with small chunks inside
@@ -53,7 +53,7 @@ type textOf struct {
 	isSmall bool
 }
 
-// countChunks is what a cut asks the index to hold, as many times as it asks.
+// countChunks returns the chunks a cut requires the index to hold, with multiplicity.
 func countChunks(chunks []chunk.Chunk) map[textOf]int {
 	out := map[textOf]int{}
 	for _, large := range chunks {
@@ -151,14 +151,14 @@ func TestReplaceChunks_RetainsRowsOfRepeatedText(t *testing.T) {
 		}
 		after := getSourceRows(outer, db, source)
 
-		// The source relies on exactly the chunks this cut asked for.
+		// The source holds exactly the chunks this cut requested.
 		if want := countChunks(now); !maps.Equal(countByText(after), want) {
 			t.Fatalf("previous %v cut again as %v: got %v, want %v",
 				was, now, countByText(after), want)
 		}
 
-		// The text it held before, at the size it held it at, keeps the rows it
-		// stood on — as many of them as both cuts ask for.
+		// The text it held before, at the size it held it at, keeps its rows, as many as
+		// both cuts request.
 		for key, target := range after {
 			survived := 0
 			for _, row := range target {
@@ -184,9 +184,8 @@ func TestReplaceChunks_RetainsRowsOfRepeatedText(t *testing.T) {
 			}
 		}
 	})
-	// A run in which no row was ever kept, or one where a source never held one
-	// text twice, or one where nothing was ever cut away, asks nothing of any of
-	// the three rules.
+	// A run in which no row was ever kept, or no source ever held one text twice, or
+	// nothing was ever removed, exercises none of the three rules.
 	if retained < 20 || twice < 10 || removed < 25 {
 		t.Fatalf("%d rows were kept, %d texts stood twice in one source, "+
 			"and %d texts were cut away", retained, twice, removed)

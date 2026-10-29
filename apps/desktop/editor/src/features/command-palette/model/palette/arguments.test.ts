@@ -1,6 +1,6 @@
 /**
- * A command that asks for its arguments one step each: what each step draws,
- * what it goes on with, and the values the invocation carries.
+ * A command that requests its arguments one step each: what each step renders,
+ * what it continues with, and the values the invocation carries.
  */
 import { describe, expect, it } from 'vitest'
 import { shallowRef } from 'vue'

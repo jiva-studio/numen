@@ -22,8 +22,8 @@ func writeSettings(t *testing.T, body string) container.Config {
 	return container.Config{RegistryPath: filepath.Join(target, "vaults.json")}
 }
 
-// The setting is read as each rename is made, so a person who turns it in the
-// palette is answered by the next rename and not by the next launch.
+// The setting is read at each rename, so changing it in the palette applies
+// to the next rename and not only after a restart.
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	cfg := writeSettings(t, `{"naming":{"sync_title_and_filename":true}}`)
 	setting := cfg.SyncSetting()

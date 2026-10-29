@@ -19,7 +19,7 @@ export interface PlexMetrics {
   readonly label: (label: string) => number
   /** The width a heading's box needs for its words, padding included. */
   readonly heading: (text: string) => number
-  /** How deep one line of a label stands, across the line it is set on. */
+  /** The depth of one line of a label, perpendicular to the line it is set on. */
   readonly labelDepth: number
 }
 
@@ -70,14 +70,13 @@ const parsePixels = (value: string): number => {
 }
 
 /**
- * The measurers for the titles a plex draws, taking their type and their
- * lengths from the document and remade whenever that type changes. The first
- * reading is taken before anything is drawn, and a reading that says what the
- * last one said changes nothing.
+ * The measurers for the titles a plex draws, taking their type and lengths from the
+ * document and rebuilt whenever that type changes. The first measurement is taken before
+ * anything is drawn, and a measurement equal to the last changes nothing.
  *
- * `icon` is the room to keep beside a title for one the caller draws there.
- * Nothing at all where there is no canvas to measure against, and the
- * arrangement then draws every box at its widest.
+ * `icon` is the space reserved beside a title for an icon the caller draws there.
+ * Undefined where there is no canvas to measure against, and the arrangement then draws
+ * every box at its widest.
  */
 export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined> {
   const probe = openProbe()
@@ -154,7 +153,7 @@ function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
   const title = textWidths(context, type.font)
   const label = textWidths(context, type.labelFont)
 
-  // An icon stands a gap from the title, and both stand inside the padding.
+  // An icon is a gap away from the title, and both are inside the padding.
   const room = 2 * type.padding + (icon > 0 ? icon + type.gap : 0)
 
   return {
@@ -166,9 +165,8 @@ function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
 }
 
 /**
- * How deep a line of one type stands: what the font gives its letters above the
- * baseline and below it. The size the type is set at where a platform reports
- * no such thing.
+ * How deep a line of one type is: what the font gives its letters above the baseline
+ * and below it. The type's size is used where the platform reports no such value.
  */
 function lineDepth(context: CanvasRenderingContext2D, font: string): number {
   context.font = font

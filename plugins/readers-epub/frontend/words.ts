@@ -1,4 +1,4 @@
-/** What a book tab says: turning its spreads, and what the book divides into. */
+/** What a book tab displays: turning its spreads, and what the book divides into. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   back: 'Previous page',
@@ -7,7 +7,7 @@ export const WORDS = {
   pages: 'Pages',
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',
-  /** Where in the book the page in front stands. */
+  /** Where in the book the current page is. */
   of: (page: number, pages: number) => `${page} of ${pages}`,
   /** How much of the chapter in front is still to come. */
   left: (pages: number) => `${pages} ${pages === 1 ? 'page' : 'pages'} left in chapter`,

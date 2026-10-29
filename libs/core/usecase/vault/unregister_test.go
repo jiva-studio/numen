@@ -49,8 +49,8 @@ func (r *indexRows) Unregister(_ context.Context, vaultID domain.VaultID) error 
 	return nil
 }
 
-// twoVaults is two folders this installation knows about, and the registry it
-// knows them through.
+// twoVaults returns two folders registered with this installation, and the
+// registry that holds them.
 func twoVaults(t *testing.T) (domain.Vault, domain.Vault, *appstate.VaultRegistry) {
 	t.Helper()
 	add, registry := newAdd(t)
@@ -177,7 +177,7 @@ func TestEitherVaultOfTwoMayBeForgotten(t *testing.T) {
 	}
 }
 
-// A vault the list no longer holds is not the last one, whatever else is left.
+// A vault no longer in the list is not the last vault, regardless of what else remains.
 func TestAVaultNotOnTheListIsNotTheLastVault(t *testing.T) {
 	t.Parallel()
 	first, _, registry := twoVaults(t)

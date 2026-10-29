@@ -38,7 +38,8 @@ import (
 )
 
 // The two vocabularies a note in these tests is written in. A save changes
-// which one it holds, so what the model was handed says which body reached it.
+// which one it holds, so the text the model received identifies which body
+// reached it.
 var (
 	before = []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
 	after  = []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
@@ -60,9 +61,9 @@ func noteWith(vocabulary []string, n int) string {
 	return "---\ntitle: Note\n---\n\n" + prose(vocabulary, n)
 }
 
-// asked is a model that answers a direction belonging to the text it was given.
-// It reaches nothing outside this process, and counts what it was asked, which
-// is how a test says how many passes ran.
+// asked is a model that returns a vector direction determined by the input
+// text. It makes no calls outside this process and counts its requests, which
+// gives the number of passes run.
 type fakeEmbedder struct {
 	dims int
 
@@ -96,7 +97,7 @@ func (a *fakeEmbedder) times() int {
 	return a.calls
 }
 
-// saw says whether a word reached the model in any text it was handed.
+// saw reports whether a word reached the model in any text it received.
 func (a *fakeEmbedder) saw(word string) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -108,9 +109,9 @@ func (a *fakeEmbedder) saw(word string) bool {
 	return false
 }
 
-// sulking is a model that turns down the first few askings, which is what a
-// service that was not answering when the window opened looks like from here.
-// What it turned down still owes a vector.
+// sulking is a model that rejects the first few requests, simulating a service
+// that is unavailable when the window opens. Rejected requests still need a
+// vector.
 type sulking struct {
 	*fakeEmbedder
 
@@ -159,8 +160,8 @@ func direction(text string, dims int) []float32 {
 }
 
 // walking counts the walks of a vault. Reading the sources walks the whole
-// vault before it embeds anything; embedding on its own opens the files the
-// index already holds a chunk of, and walks nothing.
+// vault before embedding; embedding alone opens the files the index already
+// holds a chunk of, and does not walk.
 type walking struct {
 	vaultport.VaultReaders
 	walks atomic.Int64
@@ -226,9 +227,9 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	}
 }
 
-// TestTheCooldownDoesNotFirePerSave. The bound in note/tab.ts writes an
-// unfinished edit while the person is still typing, so saves arrive one inside
-// the next and one pass answers them all.
+// TestTheCooldownDoesNotFirePerSave. The binding in note/tab.ts writes an
+// unfinished edit during typing, so saves arrive in quick succession and one
+// pass handles them all.
 func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	const saves = 8
 
@@ -246,8 +247,8 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	})
 	first := model.times()
 
-	// Every save leaves the note a word longer, so each one owes a vector the
-	// one before it did not.
+	// Every save lengthens the note by a word, so each one needs a vector the
+	// previous save did not.
 	for i := range saves {
 		write(t, f.vault, "Note.md", noteWith(after, 200+i))
 		sendChange(t, watcher, "Note.md")
@@ -266,9 +267,9 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	}
 }
 
-// TestASaveEmbedsWhereTheWatchNeverStarted. A vault nobody is following is a
-// vault somebody is still writing in, and a save is what starts the pass that
-// pays what the index says is owed.
+// TestASaveEmbedsWhereTheWatchNeverStarted. A vault with no watcher can still
+// be written to, and a save starts the pass that embeds the chunks the index
+// lists as missing.
 func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	// The first asking is turned down, so the note's chunks come out of the
 	// first reading still owing their vectors.
@@ -287,8 +288,8 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 		t.Fatalf("%d of %d chunks carry a vector with nothing saved yet", embedded, target)
 	}
 
-	// Longer than what is on disk, so every chunk's place is still inside the
-	// note the person saved.
+	// Longer than the file on disk, so every chunk position lies within the saved
+	// note.
 	save(t, f, "Note.md", prose(after, 240))
 
 	waitFor(t, "what was saved stayed out of search by meaning", func() bool {
@@ -298,7 +299,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 }
 
 // TestANoteWrittenAfterTheScanFailedIsEmbedded. A vault that could not be read
-// is a vault somebody is still writing in, and what they write is embedded.
+// can still be written to, and the notes written are embedded.
 func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	watcher := newManualWatcher()
 	model := &fakeEmbedder{dims: 64}
@@ -366,8 +367,8 @@ func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Co
 	return cfg
 }
 
-// The embedder an installation configured reaches the search as well as the
-// filling of the index, and this asks for it.
+// The embedder configured for an installation serves search as well as index
+// filling; this test checks both.
 func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
@@ -430,7 +431,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 }
 
-// An installation with no model opens, and says so by having none.
+// An installation with no model opens, and reports that by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	installation, err := Open(
 		t.Context(), NewAssembly(t, vaultConfig(t, container.EmbeddingConfig{})), "", os.Stderr)
@@ -444,9 +445,9 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 }
 
-// Reading a vault is work, and work is one entry in the list of what is being
-// done. A pass that reports itself anywhere else draws a second entry for the
-// same work, with a count of its own that nobody can place.
+// Reading a vault is work, and work is one entry in the list of operations. A
+// pass that reports itself elsewhere creates a second entry for the same work,
+// with a separate count.
 func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vaultConfig(t, container.EmbeddingConfig{})
 
@@ -456,20 +457,20 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = installation.Close() })
 
-	// Said before the reading goroutine starts, so a window that opens on a
-	// fresh vault is shown the walk from its first moment.
+	// Reported before the reading goroutine starts, so a window opening on a new
+	// vault shows the walk from its start.
 	list := installation.State.Window.Tasking.List()
 	if len(list) != 1 {
 		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
 	}
-	// Nobody asked for it, so it is drawn once it has lasted.
+	// Not requested by the user, so it is displayed only once it has lasted.
 	for _, item := range list {
 		if item.IsUserStarted {
 			t.Errorf("%q says a person asked for it", item.Title)
 		}
 	}
 
-	// Each pass takes itself out when it ends, so a vault that has been read
-	// says it is doing nothing.
+	// Each pass removes its entry when it ends, so a fully read vault reports no
+	// operations.
 	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasking.List()) == 0 })
 }

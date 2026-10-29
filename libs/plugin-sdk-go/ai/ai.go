@@ -1,4 +1,4 @@
-// Package ai asks the host for a model completion.
+// Package ai requests a model completion from the host.
 //
 // A plugin names a purpose and states what it needs; the host decides which
 // model answers.
@@ -124,7 +124,7 @@ func toProtoQuestion(q *Question) *numenv1.CompletionQuestion {
 	}
 }
 
-// Complete asks the host to answer the question and returns the text.
+// Complete sends the question to the host and returns the answer text.
 func (c *Client) Complete(ctx context.Context, question *Question) (string, error) {
 	res, err := c.host.Complete(ctx, connect.NewRequest(&numenv1.HostServiceCompleteRequest{Question: toProtoQuestion(question)}))
 	if err != nil {
@@ -154,7 +154,7 @@ func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
 	return fmt.Errorf("ai: unknown error code %d", code)
 }
 
-// Complete asks the host named by the environment to answer the question.
+// Complete sends the question to the host named by the environment.
 func Complete(ctx context.Context, question *Question) (string, error) {
 	c, err := NewClientFromEnv()
 	if err != nil {

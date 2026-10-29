@@ -93,7 +93,7 @@ func parseModels(lines io.Reader, requestID string) ([]claudeModel, error) {
 	return nil, errors.New("the program ended without listing its models")
 }
 
-// fetchModels asks the program, started as command with env, for the models it offers.
+// fetchModels queries the program, started as command with env, for the models it offers.
 func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, error) {
 	ctx, cancel := context.WithTimeout(ctx, modelsTimeout)
 	defer cancel()

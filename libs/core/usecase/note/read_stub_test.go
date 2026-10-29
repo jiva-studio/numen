@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// statedReader is a vault that answers a stat and a read with whatever it was
-// told to.
+// statedReader is a vault that returns a configured result for a stat and a
+// read.
 type statedReader struct {
 	vaultport.VaultReader
 	ref     domain.FileStat

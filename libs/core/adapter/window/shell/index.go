@@ -95,19 +95,19 @@ func (r *indexRuns) record(v domain.Vault, err error) {
 	r.indexed[v.ID] = true
 }
 
-// SetVaultIndexer is how a vault is brought up to date in the index, and the life those
-// runs have. A window naming none counts a vault from the index as it
-// stands.
+// SetVaultIndexer sets how a vault is brought up to date in the index, and the lifecycle of
+// those runs. A window without an indexer counts a vault from the index as it
+// currently is.
 func (a *API) SetVaultIndexer(ctx context.Context, read IndexVault) {
 	a.indexRuns.setIndexer(ctx, read)
 }
 
-// startIndexing brings a vault up to date in the index. It says whether an indexing of
-// that vault is running now, and why the last one failed, when one did.
+// startIndexing brings a vault up to date in the index. It reports whether an indexing of
+// that vault is running, and why the last one failed, if it did.
 //
-// A vault is indexed once for the life of the window, and the watcher carries it
-// from there. One vault is indexed once at a time however many counts ask for it,
-// and an indexing that failed is not begun again until the vault moves.
+// A vault is indexed once for the lifetime of the window, and the watcher keeps it current
+// afterwards. One vault is indexed at most once at a time however many counts request it,
+// and a failed indexing is not restarted until the vault changes.
 func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool, reason string) {
 	read, closing, running, reason := a.indexRuns.tryStart(v)
 	if read == nil {
@@ -131,14 +131,12 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 	return true, ""
 }
 
-// runIndexing is one vault indexed, reported as work for as long as it runs. An indexing
-// that finished wakes the counts, which is what puts the vault's numbers on the
-// page.
+// runIndexing indexes one vault and reports it as work for as long as it runs. A finished
+// indexing wakes the counts, which puts the vault's numbers on the page.
 //
-// held says the index already carries the vault. A vault it does not carry has
-// nothing to show until this is done and the person is waiting on it, so that
-// work is drawn the moment it begins; a vault it carries is work drawn once it
-// has lasted.
+// target is true when the index already carries the vault. A vault the index does not
+// carry has nothing to show until indexing completes, so its work is displayed
+// immediately; for a carried vault the work is displayed only once it has lasted.
 func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
 	pos := run.Task{
 		ID:            "indexing\t" + string(v.ID),
@@ -167,9 +165,9 @@ func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
 	a.indexRuns.clear(vaultID)
 }
 
-// EnsureIndexed brings a vault into the index when it is not there and says where that stands, which
-// is what a plugin counting the vault is told. A window that reads no vault says that the index does
-// not carry the ones it does not.
+// EnsureIndexed brings a vault into the index when it is missing and reports its state, which
+// is what a plugin counting the vault is told. A window that reads no vault reports that the
+// index does not carry the vaults it does not read.
 func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error) {
 	underway, reason := a.startIndexing(ctx, v)
 	switch {

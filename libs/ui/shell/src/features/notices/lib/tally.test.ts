@@ -125,8 +125,8 @@ describe('getRate', () => {
   })
 
   it('remains where it is when nothing moved, so no estimate grows out of it', () => {
-    // A count written in groups stands still between them. Decaying the rate
-    // here divides into a longer and longer estimate every time it is drawn.
+    // A count updated in groups is constant between updates. Decaying the rate
+    // here would divide into an ever longer estimate each time it is drawn.
     let rate = 8
     for (let stalled = 0; stalled < 40; stalled++) {
       rate = getRate({ completedCount: 100, rate }, 100, 2)

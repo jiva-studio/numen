@@ -32,10 +32,16 @@ export interface Links {
   getSource(path: string): Promise<LinkSource>
   /** Where a page below the plugin route is loaded from in a frame. */
   getPageSource(page: string): Promise<string>
-  /** Starts fetching the text. A fetch the person did not ask for leaves a deleted text deleted. */
+  /**
+   * Starts fetching the text. A fetch not requested by the user does not restore
+   * a deleted text.
+   */
   fetchText(path: string, isUserStarted: boolean): Promise<Outcome<null>>
   copyVideo(path: string): Promise<Outcome<null>>
   deleteCopy(path: string): Promise<Outcome<null>>
-  /** Tells onChange whether work on the file is going, and stops telling once called back. */
+  /**
+   * Calls onChange with whether work on the file is running; the returned
+   * function stops the notifications.
+   */
   watchWork(path: string, onChange: (isWorking: boolean) => void): () => void
 }

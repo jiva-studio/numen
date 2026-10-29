@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
-// askAgent sends the task and returns the text it said and why it stopped.
+// askAgent sends the task and returns the response text and the stop reason.
 func askAgent(t *testing.T, svc *agentServer, task *agentrun.AskAgentRequest) (said, stopReason string) {
 	t.Helper()
 	stream, err := agenttest.Serve(t, svc).AskAgent(t.Context(), connect.NewRequest(task))
@@ -79,9 +79,9 @@ func TestAskAgentOpensTheSessionWithTheRunEndpoint(t *testing.T) {
 	}
 }
 
-// A permission is granted once to a call of a tool of the task, told by the name ACP gives the call
+// A permission is granted once to a call of a tool of the task, identified by the name ACP gives the call
 // or, where the request names none, by the name the agent reported for that call. A title naming a
-// tool of the task allows nothing.
+// tool of the task grants nothing.
 func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "tools")
 
@@ -343,8 +343,8 @@ func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
 	}
 }
 
-// Each agent lists the models its session reports, the one it answers with the default; an agent
-// that reports none, or cannot be asked, is listed with none.
+// Each agent lists the models its session reports, with the one it responds with as the default; an agent
+// that reports none, or cannot be queried, is listed with none.
 func TestTheModelsOfAProgramAreThoseTheACPAgentReports(t *testing.T) {
 	config, _ := fakeACPAgent(t, "config", "config")
 	legacy, _ := fakeACPAgent(t, "legacy", "legacy")
@@ -404,7 +404,7 @@ func TestNoProgramIsListedWithoutAnACPAgent(t *testing.T) {
 	}
 }
 
-// An agent that failed to list is not asked again until the backoff has passed.
+// An agent that failed to list is not queried again until the backoff has elapsed.
 func TestAnAgentThatFailedToListIsLeftAlone(t *testing.T) {
 	agent, record := fakeACPAgent(t, "failing", "fail")
 	now := time.Unix(1000, 0)

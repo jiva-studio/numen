@@ -19,19 +19,19 @@ type ShowNeighbourhood struct {
 	notes RefQueries
 }
 
-// RefQueries is the one question a neighbourhood asks about the notes it has
-// found: what is needed to show each of them.
+// RefQueries is the single query a neighbourhood makes about the notes it found:
+// what is needed to display each of them.
 type RefQueries interface {
-	// GetNotes returns what is needed to show a note, for the paths asked about.
-	// Paths that name nothing are absent from the answer: a link resolves as
-	// of now, and what it resolved to a moment ago may be gone.
+	// GetNotes returns what is needed to display a note, for the given paths. Paths
+	// that match nothing are absent from the result: a link resolves at call time, and
+	// what it resolved to earlier may no longer exist.
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 
-// NewShowNeighbourhood is what a picture of one note is drawn from: where its
-// links land, and what is needed to show each note they reach.
+// NewShowNeighbourhood builds the neighbourhood of one note: where its links lead,
+// and what is needed to display each linked note.
 //
-// The notes are asked for once, after every link has been followed.
+// The notes are queried once, after every link has been followed.
 func NewShowNeighbourhood(links noteport.LinkQueries, notes RefQueries) ShowNeighbourhood {
 	return ShowNeighbourhood{links: links, notes: notes}
 }
@@ -71,9 +71,9 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	return out, nil
 }
 
-// addSiblings adds the other children of every parent, which is the whole of
-// what a sibling is. Each parent is asked in turn, and the sibling keeps the
-// parent it came through: that is the note the relationship runs from.
+// addSiblings adds the other children of every parent, which is the definition of a
+// sibling. Each parent is queried in turn, and the sibling keeps the parent it came
+// through: that is the note the relationship runs from.
 func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, targetSet *neighbourSet) error {
 	for _, parent := range targetSet.getAll() {
 		if parent.Relation != domain.RelationParent {
@@ -100,9 +100,9 @@ func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, targ
 
 // getNeighbours returns everything one note is joined to, from both ends of its links.
 //
-// Which end a link was written at says nothing about the shape of the graph:
-// `parent: B` in A and `child: A` in B are the same edge, so the answer has to
-// read the role together with the direction it was found in.
+// The end at which a link was written does not determine the graph's shape:
+// `parent: B` in A and `child: A` in B are the same edge, so the role is read
+// together with the direction in which the link was found.
 func (u ShowNeighbourhood) getNeighbours(ctx context.Context, v domain.Vault, path string) (*neighbourSet, error) {
 	found := &neighbourSet{}
 
@@ -181,11 +181,10 @@ func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 	}
 }
 
-// neighbourSet collects notes in the order they were found: the links this note
-// wrote, in the order it wrote them; then the links that point at it, in the
-// order the query returns; then the siblings each parent brings. The order is
-// part of the answer, because it is what the picture is drawn in — and it is
-// total, so the same vault gives the same picture twice.
+// neighbourSet collects notes in discovery order: the links this note declares, in
+// declaration order; then the links that point at it, in query order; then the
+// siblings of each parent. The order is part of the result, because it is the
+// drawing order, and it is total, so the same vault always gives the same layout.
 type neighbourSet struct {
 	order      []domain.Neighbour
 	targetPath map[string]int
@@ -227,8 +226,8 @@ func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
 	s.order[i] = current
 }
 
-// remove takes a note out of the order the picture is drawn in. Nothing is added to
-// the relations after it.
+// remove deletes a note from the drawing order. Nothing is added to the relations
+// afterwards.
 func (s *neighbourSet) remove(path string) {
 	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbour) bool { return n.Path == path })
 }

@@ -1,10 +1,10 @@
 /**
- * The row of an appearance list the keyboard relies on, and what standing on it
- * or choosing it does.
+ * The row of an appearance list the keyboard focus is on, and what focusing or
+ * choosing it does.
  *
- * A theme and a mode are worn while the keyboard is on their row. A size is
- * worn once the keyboard has stood on it for HELD, and what the settings name
- * is put back the moment the keyboard leaves the list.
+ * A theme and a mode are applied while the keyboard is on their row. A size is
+ * applied once the keyboard has stayed on it for HELD, and what the settings
+ * name is restored as soon as the keyboard leaves the list.
  */
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
@@ -14,7 +14,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { HELD, its, parseMode, onto, parseSize } from '../lib/appearanceValues'
 import type { ScaleChoice } from '../lib/appearanceValues'
 
-/** What choosing a row reaches: the settings it writes, and what it wears. */
+/** What choosing a row affects: the settings it writes, and what it applies. */
 export interface ChoiceDeps {
   readonly core: Pick<Themes, 'writeAppearance'>
   readonly write: MessageWriter
@@ -23,7 +23,7 @@ export interface ChoiceDeps {
   readonly mode: Ref<Mode>
   readonly settings: Ref<Sizes>
   readonly bounds: Ref<Ranges>
-  /** The theme and the mode named, worn at once. */
+  /** The theme and the mode named, applied at once. */
   readonly wear: (theme: string, half: Mode) => Promise<void>
 }
 

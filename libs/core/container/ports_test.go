@@ -21,9 +21,9 @@ import (
 // back as; those are named in driving and are not this rule's business.
 const compilerHolds = module + "internal/adapter/"
 
-// getRetainedAdapters is every place src answers with an adapter the compiler
-// holds, said in full. A method on an unexported receiver is left out: it is
-// not the root's answer to anybody outside.
+// getRetainedAdapters is every place src returns an adapter the compiler holds,
+// listed in full. A method on an unexported receiver is left out: it is not part
+// of the root's interface to outside callers.
 func getRetainedAdapters(name, src string) []string {
 	f, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
 	if err != nil {
@@ -126,8 +126,8 @@ func (c Config) Trash() port.Trash { return nil }
 	}
 }
 
-// What the rule refuses, asked directly. Each case is a shape the walk meets in
-// this package, so an error here is the whole of the rule and not a sample.
+// What the rule rejects, checked directly. Each case is a shape the walk meets
+// in this package, so a failure here is the whole of the rule and not a sample.
 func TestPortsRule_RejectsRootPackageAdapters(t *testing.T) {
 	for _, one := range []struct {
 		what      string

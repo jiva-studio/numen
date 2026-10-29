@@ -48,7 +48,7 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, state
 	return out, rows.Err()
 }
 
-// GetDanglingLinks is every link that reaches nothing.
+// GetDanglingLinks returns every link that resolves to nothing.
 //
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
@@ -78,12 +78,12 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 	return out, rows.Err()
 }
 
-// GetAmbiguousLinks is every link that more than one note answers to.
+// GetAmbiguousLinks returns every link that more than one note matches.
 //
 // The query narrows to links written by a shared name; whether one of those is
-// really ambiguous is settled by the same resolution a link goes through
-// anywhere else. Writing that rule a second time in SQL is how two answers to
-// one question start disagreeing.
+// ambiguous is decided by the same resolution a link goes through anywhere
+// else. Duplicating that rule in SQL would let two answers to one question
+// diverge.
 func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -135,7 +135,7 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 	return out, nil
 }
 
-// scanLinkAsWritten reads one link as it was written, before anything asks where it
+// scanLinkAsWritten reads one link as written, before anything queries where it
 // currently goes.
 func scanLinkAsWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
 	var l domain.ResolvedLink

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrClosing is work asked for once the window has begun closing.
+// ErrClosing is returned for work requested after the window began closing.
 var ErrClosing = errors.New("the window is closing")
 
 // OpenerFactory provides a VaultOpener for an index.
@@ -112,7 +112,7 @@ func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *o
 	}
 }
 
-// IndexVault walks a vault into the index.
+// IndexVault scans a vault and adds its files to the index.
 func (o *OpenVaults[C, I]) IndexVault(ctx context.Context, v domain.Vault) error {
 	if !o.tryBeginWork() {
 		return ErrClosing

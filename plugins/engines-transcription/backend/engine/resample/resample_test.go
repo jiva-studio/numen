@@ -27,8 +27,8 @@ func TestResamplingKeepsTheTone(t *testing.T) {
 		t.Fatalf("half a second at %d hertz came out as %d samples", from, len(out))
 	}
 
-	// Away from the ends, where the kernel reaches past the signal, the sample
-	// is what the tone says at that moment.
+	// Away from the ends, where the kernel extends past the signal, each sample
+	// equals the tone value at that time.
 	for n := 64; n < len(out)-64; n++ {
 		want := math.Sin(2 * math.Pi * hz * float64(n) / signal.SampleRate)
 		if math.Abs(float64(out[n])-want) > 1e-2 {
@@ -49,8 +49,8 @@ func TestResamplingWhatIsAlreadyRight(t *testing.T) {
 	}
 }
 
-// An hour of sound is minutes of arithmetic, and a person closing the window
-// waits for none of it.
+// An hour of audio is minutes of computation, and a cancelled context must stop
+// the conversion so that closing the window does not wait for it.
 func TestConvert_StopsOnCancelledContext(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	stop()

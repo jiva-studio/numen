@@ -1,11 +1,11 @@
 /**
- * What the editor is painted in. Every colour is a token, and the `--editor-`
- * names are this file's own.
+ * What the editor is styled with. Every colour is a token, and the `--editor-`
+ * names belong to this file.
  *
- * Three of them are left to whoever puts the editor on the screen, set on the
- * element the editor is drawn in: `--editor-measure`, how wide the column of
- * words may be, `--editor-lead`, the room above the first line, and
- * `--editor-margin`, the room either side of the column and its gutter.
+ * The embedder sets three of them on the element that hosts the editor:
+ * `--editor-measure`, the maximum width of the text column, `--editor-lead`, the
+ * space above the first line, and `--editor-margin`, the space on either side of
+ * the column and its gutter.
  */
 import { EditorView } from '@codemirror/view'
 
@@ -29,7 +29,7 @@ export const theme = EditorView.theme({
     '--editor-cell-padding': '4px 8px',
     '--editor-grow': '16px',
     '--editor-block-gap': '0.6em',
-    /* The room above the first line. */
+    /* The space above the first line. */
     '--editor-room': '0.5rem',
     /* How thick a quotation's rule is, and how much of the gutter it takes. */
     '--editor-quote-rule': '3px',
@@ -51,16 +51,16 @@ export const theme = EditorView.theme({
     height: '100%',
   },
   '&.cm-focused': { outline: 'none' },
-  /* The words stand in the middle of whatever room there is, which is where a
-     measure narrower than the room puts them. */
+  /* The text is centred within the available width; a measure narrower than that
+     width leaves equal space on both sides. */
   '.cm-scroller': {
     fontFamily: 'inherit',
     lineHeight: 'inherit',
     justifyContent: 'center',
     paddingInline: 'var(--editor-margin, 0)',
   },
-  /* The prose opens close to the top of its box and keeps the gutter's room
-     below it, so the last line can be brought clear of the edge. */
+  /* The prose starts near the top of its box and keeps the gutter's space below
+     it, so the last line can be scrolled clear of the edge. */
   '.cm-content': {
     caretColor: 'var(--numen-ink)',
     paddingTop: 'var(--editor-lead, var(--editor-room))',
@@ -134,8 +134,8 @@ export const theme = EditorView.theme({
     backgroundColor: 'var(--numen-selection)',
   },
 
-  /* The ground the base theme lays under a line and a special character is the
-     one it picks for a light page. */
+  /* The base theme paints the active line and special characters for a light
+     page; both are reset here. */
   '.cm-activeLine': { backgroundColor: 'transparent' },
   '.cm-specialChar': { color: 'var(--editor-mark)' },
   '.cm-selectionMatch': { backgroundColor: 'var(--numen-selection-match)' },
@@ -153,7 +153,7 @@ export const theme = EditorView.theme({
   '.cm-heading-5': { fontSize: '1.05em' },
   '.cm-heading-6': { fontSize: '1em' },
 
-  /* Nothing stands above the first line, so it takes no gap. */
+  /* The first line has no space above it, so it takes no gap. */
   '.cm-content > .cm-line:first-child': { paddingTop: '0' },
 
   '.cm-strong': { fontWeight: '600' },
@@ -169,8 +169,8 @@ export const theme = EditorView.theme({
     padding: '1px 4px',
   },
 
-  /* A fenced block is one slab: every line takes the ground, and the first
-     and the last round it off. */
+  /* A fenced block is one slab: every line takes the code background, and the
+     first and last lines round its corners. */
   '.cm-code': {
     fontFamily: 'var(--editor-mono)',
     fontSize: '0.9em',

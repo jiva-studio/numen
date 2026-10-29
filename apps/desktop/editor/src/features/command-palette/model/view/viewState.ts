@@ -14,7 +14,7 @@ import type { NameMatch } from '../search/search'
 /** Everything the view reads, which is the palette's own state. */
 export interface ViewState {
   readonly words: Words
-  /** Every command, and the one another command's row reaches by its id. */
+  /** Every command, and the command addressed by its id from another command's row. */
   readonly commands: readonly Command[]
   readonly byId: ReadonlyMap<string, Command>
   readonly runs: RunSupport
@@ -26,7 +26,7 @@ export interface ViewState {
   readonly showing: Readonly<Ref<string>>
   readonly isWorking: Readonly<Ref<boolean>>
   readonly failureMessage: Readonly<Ref<string>>
-  /** What a step is over, in the words a person reads it as. */
+  /** The step title and label, in the words displayed to the user. */
   readonly getStepTitle: (step: PendingStep) => string
   readonly getStepLabel: (step: PendingStep) => string
 }

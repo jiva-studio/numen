@@ -33,9 +33,8 @@ export interface BlockNode {
 /**
  * What is drawn between `from` and `to`.
  *
- * A widget standing for whole lines has to come from the state; everything
- * else is drawn for the lines on screen. `pass` says which of the two this
- * pass is collecting.
+ * A widget replacing whole lines must come from the state; everything else is drawn
+ * for the lines on screen. `pass` says which of the two this pass is collecting.
  */
 interface MarkSpan {
   readonly from: number
@@ -231,7 +230,7 @@ const build = (state: EditorState, span: MarkSpan, pass: 'blocks' | 'getMarks'):
   return Decoration.set(builder.found, true)
 }
 
-/** What is drawn inside the lines: the getMarks, and what stands for them. */
+/** What is drawn inside the lines: the marks, and the widgets that replace them. */
 export const getMarks = (state: EditorState, from: number, to: number) =>
   build(state, { from, to }, 'getMarks')
 

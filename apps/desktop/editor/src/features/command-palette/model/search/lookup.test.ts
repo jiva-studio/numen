@@ -1,5 +1,5 @@
 /**
- * What a hit of the search stands for, and where choosing one takes the person.
+ * What a search hit stands for, and where choosing one takes the user.
  */
 import { describe, expect, it } from 'vitest'
 import {

@@ -21,7 +21,7 @@ export const UNBREAKABLE =
   'Donaudampfschiffahrtselektrizitaetenhauptbetriebswerkbauunterbeamtengesellschaft' +
   'Rindfleischetikettierungsueberwachungsaufgabenuebertragungsgesetz'
 
-/** A URL, which is the unbreakable word anyone actually pastes. */
+/** A URL, the unbreakable word that users commonly paste. */
 export const LINK =
   'https://example.invalid/a/very/long/path/that/keeps/going/and/going?with=query&and=more#and-a-fragment'
 

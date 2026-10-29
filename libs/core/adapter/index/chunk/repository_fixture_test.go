@@ -170,8 +170,8 @@ func withHash(row int64, hash []byte, recipe string, fill byte) chunk.Vector {
 	return chunk.Vector{Chunk: row, Hash: hash, Recipe: recipe, Value: value, Coarse: coarse}
 }
 
-// wantSQLiteError fails unless the error still carries the database's own, so a
-// caller can ask what the database said.
+// wantSQLiteError fails unless the error still wraps the database's own error,
+// so callers can inspect what the database reported.
 func wantSQLiteError(t *testing.T, err error, contains string) {
 	t.Helper()
 	if err == nil {

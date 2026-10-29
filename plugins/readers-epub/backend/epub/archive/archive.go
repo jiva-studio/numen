@@ -25,10 +25,10 @@ func ReadEntry(f *zip.File) ([]byte, bool) {
 // MostPerDocument is how much of one document inside an archive is read, and
 // MostPerBook how much of all of them together.
 //
-// An archive says how large its entries are and is believed about nothing: a few
-// hundred kilobytes of zeros expand to as much as the format allows, and reading
-// that is how opening a book ends the process. What is over the bound is left
-// unread, which is what a document the archive does not hold amounts to.
+// An archive's declared entry sizes are not trusted: a few hundred kilobytes of
+// zeros expand to the maximum the format allows, and reading that would
+// exhaust memory and terminate the process. An entry over the bound is not
+// read and is treated as absent.
 const (
 	MostPerDocument = 16 << 20
 	MostPerBook     = 256 << 20
@@ -47,8 +47,8 @@ func ReadBounded(f *zip.File, most int64) ([]byte, bool) {
 		return nil, false
 	}
 	defer r.Close()
-	// The archive reader refuses an entry whose bytes differ in number from the
-	// size it declares.
+	// The archive reader rejects an entry whose byte count differs from its
+	// declared size.
 	raw, err := io.ReadAll(r)
 	if err != nil {
 		return nil, false

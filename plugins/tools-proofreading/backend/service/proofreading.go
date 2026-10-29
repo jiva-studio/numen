@@ -19,7 +19,7 @@ var (
 )
 
 // Request is one text to proofread. Source is the version read, and empty for the live one.
-// IsUserStarted is set where a person asked for it.
+// IsUserStarted is set when a user requested it.
 type Request struct {
 	Vault         domain.VaultID
 	Path          string
@@ -155,7 +155,7 @@ func readParts(ctx context.Context, texts host.Texts, version domain.TextVersion
 	}
 }
 
-// correct asks the model about the lines as their selectors place them: timed cues as speech, a
+// correct queries the model about the lines as their selectors place them: timed cues as speech, one
 // window at a time, and the lines of each page as a scan.
 func (p *Proofreading) correct(
 	ctx context.Context, parts []domain.TextSegment, lines []Line, task *host.Task,
@@ -166,7 +166,7 @@ func (p *Proofreading) correct(
 	return p.correctScan(ctx, readPages(parts, lines), task)
 }
 
-// correctSpeech asks about the lines a window at a time. A correction is kept from the window it
+// correctSpeech queries the model about the lines one window at a time. A correction is kept from a window if it
 // begins before the next window's first line, and the next window starts after the last line kept.
 func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *host.Task) ([]Line, int, error) {
 	cfg := p.getConfig()
@@ -196,7 +196,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 	}
 }
 
-// correctScan asks about the lines of each page in turn.
+// correctScan queries the model about the lines of each page in turn.
 func (p *Proofreading) correctScan(ctx context.Context, pages []Batch, task *host.Task) ([]Line, int, error) {
 	cfg := p.getConfig()
 	var out []Line

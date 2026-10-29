@@ -9,13 +9,13 @@ export type { CompletionChoice, PluginSettingType } from '@numen/plugin-sdk'
 export interface SettingEdit {
   /** The setting key path through the JSON file (e.g. ['indexing', 'provider']). */
   readonly at: readonly string[]
-  /** What stands there, as serialized JSON. */
+  /** The value at that path, as serialized JSON. */
   readonly value: string
 }
 
 /**
- * What a model's files are on this machine. A model reached over the network
- * has nothing to fetch, and where files stand says nothing about it.
+ * Whether a model's files are on this machine. A model reached over the network
+ * has nothing to fetch, so file presence does not apply to it.
  */
 export type Presence = 'present' | 'not fetched' | 'nothing to fetch'
 
@@ -36,18 +36,18 @@ export interface Model {
   readonly writes: readonly SettingEdit[]
   /** Availability of model files on the local machine. */
   readonly presence: Presence
-  /** The depths of reasoning the model can be asked to work at, from the least to the most. */
+  /** The reasoning levels the model supports, from lowest to highest. */
   readonly reasoningLevels?: readonly { readonly name: string; readonly title: string }[]
   /** The level the model works at unasked, empty where it names none. */
   readonly defaultReasoning?: string
 }
 
-/** One value an enum setting can hold, and what a person reads for it. */
+/** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
   readonly value: string
   /** Empty shows the value. */
   readonly title: string
-  /** What a person reads under the setting while the value is in force. */
+  /** Text displayed under the setting while the value is selected. */
   readonly detail: string
 }
 
@@ -63,7 +63,7 @@ export interface PluginSettingOptionsBy {
   readonly options: Readonly<Record<string, readonly PluginSettingOption[]>>
 }
 
-/** A secret, such as an API key, a plugin asks the host to keep. */
+/** A secret, such as an API key, that a plugin asks the host to store. */
 export interface PluginSecret {
   /** What the plugin reads the key under. */
   readonly name: string
@@ -89,14 +89,14 @@ export interface PluginSettingInfo {
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined
-  /** The agent program whose models the setting is offered; empty where a person types its value. */
+  /** The agent program whose models the setting offers; empty when the user types the value. */
   readonly modelsOf?: string | undefined
 }
 
 /**
- * Whether the person lets a plugin ask a model: `none` is a plugin that does
- * not hold the ai:complete permission, `asked` one that asked since the host
- * started and has had no answer.
+ * Whether the user permits a plugin to call a model: `none` is a plugin without
+ * the ai:complete permission, `asked` is a plugin that requested it since the
+ * host started and has received no answer.
  */
 export type Consent = 'none' | 'pending' | 'requested' | 'allowed' | 'denied'
 

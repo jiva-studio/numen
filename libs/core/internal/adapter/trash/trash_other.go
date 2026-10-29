@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
-// moveToTrash is a platform this application knows no trash on.
+// moveToTrash is the fallback for platforms with no supported trash.
 func moveToTrash(path string) error {
 	return fmt.Errorf("%s: %w", path, machineport.ErrNoTrash)
 }

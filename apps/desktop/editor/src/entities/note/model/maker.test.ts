@@ -1,8 +1,8 @@
 /**
- * Making a note from the picture, and joining two that are already on it.
+ * Creating a note from the graph, and linking two notes already on it.
  *
- * What is checked here is what the vault cannot answer for: which relation the new
- * note writes about the one it was made from, where it is filed, and what
+ * The tests cover what the vault cannot answer for: which relation the new note
+ * records about the note it was created from, where it is filed, and what
  * happens when the name is already taken.
  */
 import { describe, expect, it } from 'vitest'
@@ -17,8 +17,8 @@ const getNotePath = (note: NewNote): string =>
   note.folder ? `${note.folder}/${note.title}.md` : `${note.title}.md`
 
 /**
- * A core that keeps what it was asked to write and answers what a test told it
- * to, falling back on making the note.
+ * A core double that records the writes it receives and answers as the test
+ * configures, falling back to creating the note.
  */
 function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
   const request: NewNote[] = []
@@ -237,7 +237,7 @@ describe('joining two notes that are both there', () => {
 })
 
 describe('removing a relationship from a note', () => {
-  /** A core whose removal answers as told and keeps what it was asked. */
+  /** A core double whose removal answers as configured and records the requests. */
   const removing = (answer: () => Promise<ErrorCode | null>) => {
     const request: { path: string; to: string; role: Role | undefined }[] = []
     const core = {
@@ -309,7 +309,10 @@ describe('replacing the links between two notes', () => {
     { from: 'Entropy.md', to: 'Ontology.md', relation: 'parent' as const, label: '' },
   ]
 
-  /** A core whose replacement answers as told and keeps what it was asked. */
+  /**
+   * A core double whose replacement answers as configured and records the
+   * requests.
+   */
   const replacing = (answer: () => Promise<ErrorCode | null>) => {
     const request: { first: string; second: string; roles: Role[] }[] = []
     const core = {

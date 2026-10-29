@@ -1,15 +1,15 @@
 /**
- * A hand left on a box opens it at its current position, until the whole of a title too
- * long for it is there. Every other box keeps its place.
+ * A pointer left on a box opens it at its current position, until the whole of
+ * a title too long for it is visible. Every other box keeps its position.
  *
- * The opening is drawn frame by frame, off the same clock the plex moves on.
+ * The opening is rendered frame by frame, off the same clock the plex moves on.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { easeOut, lerp, type Size } from '../../lib/arrange'
 import { browserClock, type Clock } from '../transition'
 import { getHandle, type PlacedNode } from '../../lib/node'
 
-/** How long a hand stays on a box before it opens, in milliseconds. */
+/** How long a pointer stays on a box before it opens, in milliseconds. */
 export const EXPANSION_DELAY = 500
 
 /**
@@ -21,7 +21,7 @@ export const EXPANSION_DURATION = 280
 
 export interface WideBox {
   readonly width: number
-  /** How far its middle stands from where the node is placed. */
+  /** Distance from its midpoint to where the node is placed. */
   readonly offset: number
 }
 
@@ -31,9 +31,9 @@ export interface WideBoxBounds {
 }
 
 /**
- * The box a node opens to: the room its whole title asks for, held inside the
- * window. It grows about its own middle, and slides back inside the window
- * where the middle leaves it no room to grow.
+ * The box a node opens to: the space its whole title requires, clamped inside
+ * the window. It grows about its own midpoint, and shifts back inside the
+ * window where the midpoint leaves no room to grow.
  *
  * Nothing where the box already holds the title, and nothing where the window
  */
@@ -61,13 +61,13 @@ export function interpolateBox(node: PlacedNode, expanded: WideBox | null, open:
 }
 
 /**
- * How far open a box stands, from nothing at all to the whole way: shut until
- * the attention has been on it for the wait, then open, and shut again the
- * moment the attention leaves.
+ * How far open a box is, from fully closed to fully open: closed until the
+ * attention has been on it for the wait, then open, and closed again as soon
+ * as the attention leaves.
  *
- * `on` names what the attention is on, and nothing when it is on none. A thing
- * that moves is another thing: the box shuts and the wait for it begins again.
- * A wait of nothing at all never opens.
+ * `on` names what the attention is on, and is empty when it is on nothing. A
+ * change of target is a different target: the box closes and the wait for it
+ * begins again. A wait of zero never opens.
  */
 export function useExpansion(
   on: () => string | null,

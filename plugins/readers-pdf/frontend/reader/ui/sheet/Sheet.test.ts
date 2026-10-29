@@ -12,9 +12,9 @@ const sheet = (picture = '/assets/book/pages/0?wide=400') =>
 
 describe('a page still coming', () => {
   it('paints nothing of the picture', () => {
-    // An `img` pointed at a picture that is not there yet is the browser's own
-    // broken-picture mark and the words standing in for it, drawn in the shape
-    // of a page nobody has drawn.
+    // An `img` pointing at an image that has not loaded yet shows the browser's
+    // broken-image mark and its alt text, rendered in the shape of an undrawn
+    // page.
     const page = sheet()
 
     expect(page.find('.reader__picture').classes()).toContain('invisible')
@@ -54,8 +54,8 @@ describe('a page that has come', () => {
   })
 
   it('marks the other places apart from the one it was opened at', async () => {
-    // Two ways of drawing one page: the place the person was sent to, and the
-    // others, which say there is something here and are not where they are.
+    // Two ways of rendering one page: the location the user was sent to, and the
+    // others, which indicate content is present but are not the target.
     const otherHighlights = [{ minX: 0.1, minY: 0.6, maxX: 0.5, maxY: 0.66 }]
     const page = mount(Sheet, {
       props: {
@@ -106,7 +106,7 @@ describe('a page that will not come', () => {
 
 describe('a page pointed somewhere else', () => {
   it('is requested for afresh', async () => {
-    // Reset retry state when the picture URL changes.
+    // Reset retry state when the page image URL changes.
     const page = sheet()
     await page.find('.reader__picture').trigger('error')
     await page.find('.reader__picture').trigger('load')

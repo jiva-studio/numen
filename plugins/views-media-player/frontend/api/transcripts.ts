@@ -40,7 +40,7 @@ export const findSegmentTime = (
 
 const toMS = (seconds: number): number => Math.round(seconds * 1000)
 
-/** Whether a live text is a transcript: every segment that says anything names its span. */
+/** Whether a live text is a transcript: every segment with text has a time span. */
 const isTimed = (live: LiveText): boolean =>
   live.segments.some((segment) => segment.selector?.t !== undefined)
 

@@ -1,7 +1,7 @@
 /**
- * The open files a command reaches, over every store the window keeps them in.
- * An identity is answered by the store holding it, and one nobody holds by
- * nothing at all.
+ * The open files a command can access, across every store the window keeps them in.
+ * An identity is resolved by the store holding it, and an identity no store holds
+ * resolves to nothing.
  */
 import type { Notes, Store } from '../../types'
 

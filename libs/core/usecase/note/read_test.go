@@ -46,8 +46,9 @@ func TestAReadProducesTheProseAndWhatTheFileWas(t *testing.T) {
 	}
 }
 
-// A path with no file behind it is an answer. The tab that asked keeps what the
-// person is reading, and the next write makes the note.
+// A path with no file behind it returns a result, not an error. The tab that
+// requested it keeps what the user is reading, and the next write creates the
+// note.
 func TestAPathWithNoFileIsMissing(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -80,9 +81,9 @@ func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 	}
 }
 
-// The body goes out in a string field, and one byte that is not UTF-8 turns
-// into U+FFFD wherever it is shown. The note fails, and its bytes stay as
-// the person left them.
+// The body is sent in a string field, and a byte that is not UTF-8 becomes
+// U+FFFD wherever it is displayed. The note fails, and its bytes are left as the
+// user wrote them.
 func TestAFileThatIsNotTextIsRefused(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n\xff\xfe pasted\n"})
@@ -114,8 +115,8 @@ func TestANoteOverTheCeilingIsRefused(t *testing.T) {
 	}
 }
 
-// A note whose frontmatter is not YAML can be neither read nor written from
-// here, and the outcome says which note that is.
+// A note whose frontmatter is not YAML can be neither read nor written here,
+// and the outcome identifies the note.
 func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "---\nid: [unterminated\n---\n# Entropy\n"})
@@ -129,9 +130,9 @@ func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 	}
 }
 
-// The prose a person is handed has one kind of line break in it. The file keeps
-// its own: a chunk's offsets are byte offsets into it, so the bytes the index
-// is built from are the bytes on disk.
+// The prose returned to the caller has one kind of line break. The file keeps
+// its own: a chunk's offsets are byte offsets into it, so the bytes the index is
+// built from are the bytes on disk.
 func TestAReadNormalisesTheProseAndPreservesTheFileAlone(t *testing.T) {
 	t.Parallel()
 	raw := "---\r\nid: 01J8F3K2M9QRSTVWXYZ012\r\n---\r\n# Entropy\r\n\r\nA measure of disorder.\r\n"

@@ -36,9 +36,8 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			want:  []domain.UnitRange{{Start: 0, End: 7}, {Start: 15, End: 22}},
 		},
 		{
-			// The index matched a word. A run of the same letters inside another
-			// word is not that word, and a mark on it says a passage is here for
-			// something nobody typed.
+			// The index matched a word. A run of the same letters inside another word is not
+			// that word, and marking it would indicate a passage for something not typed.
 			name:  "letters standing inside another word are not marked",
 			text:  "the party started early",
 			query: "art",
@@ -116,9 +115,8 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			want:  []domain.UnitRange{{Start: 7, End: 10}},
 		},
 		{
-			// A Han run stands directly against a Latin word with no space
-			// between them; the match on the Latin side still opens only where
-			// the Latin word itself begins.
+			// A Han run is directly adjacent to a Latin word with no space between them; the
+			// match on the Latin side still opens only where the Latin word itself begins.
 			name:  "a Latin word standing against a Chinese run with no space",
 			text:  "测试test",
 			query: "test",
@@ -211,8 +209,8 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 		if len(retainedRecord) != 1 {
 			t.Fatalf("kept %+v spans, want the one that matched", retainedRecord)
 		}
-		// The mark for what was left off stands before the text, so the span
-		// begins one unit further along than the words before it.
+		// The mark for the omitted text precedes the text, so the span begins one unit
+		// later than the words before it.
 		if retainedRecord[0].Start > leading+1 {
 			t.Errorf("the span opens %d units in, want no more than %d",
 				retainedRecord[0].Start, leading+1)

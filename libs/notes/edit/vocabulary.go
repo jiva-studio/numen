@@ -11,56 +11,58 @@ import (
 
 // MaxBytes is the most a note may be and still be read here.
 //
-// A note is prose somebody wrote, and a megabyte of it is a quarter of a million words. Something
-// larger is a pasted export or a mistake. The size is asked of the file before it is opened, so a
+// A megabyte of prose is about a quarter of a million words. A larger file is
+// a pasted export or an error. The size is checked before the file is opened.
 const MaxBytes = 1 << 20
 
 var (
-	// ErrStale is what a write says when the file it was about to replace is no longer what the
-	// caller read.
+	// ErrStale is returned by a write when the file to be replaced differs from
+	// the content the caller read.
 	ErrStale = errors.New("the note changed since it was read")
-	// ErrNotANote is what a path gets when there is a file at it and the vault does not hold it as
-	// a note.
+	// ErrNotANote is returned for a path that holds a file the vault does not
+	// treat as a note.
 	ErrNotANote = errors.New("not a note this vault holds")
-	// ErrNoNote is what an operation gets when the vault holds no note at the path it was given.
+	// ErrNoNote is returned when the vault holds no note at the given path.
 	ErrNoNote = errors.New("the vault holds no note at this path")
-	// ErrUnlevelled is a file that was written and an index that could not be brought up to date
-	// with it. The vault holds what the write put there, and the path is levelled again at the next
-	// scan.
+	// ErrUnlevelled is returned when a file was written but the index could not
+	// be updated. The vault holds the written content, and the next scan
+	// updates the index for the path.
 	ErrUnlevelled = errors.New("the vault was written and the index was not brought level with it")
-	// ErrTooLarge is what a note over MaxBytes gets. Nothing is written. The bound is measured
-	// against the whole file about to be stored, which is what a read measures.
+	// ErrTooLarge is returned for a note over MaxBytes. Nothing is written. The
+	// limit applies to the whole file to be stored, as it does for a read.
 	ErrTooLarge = errors.New("this is more text than a note is written with")
-	// ErrNotExist is what a path with nothing at it gets.
+	// ErrNotExist is returned for a path with no file.
 	ErrNotExist = fs.ErrNotExist
-	// ErrExist is what a path that already holds a file gets when a write requires an unoccupied path.
+	// ErrExist is returned when a write requires an unoccupied path and the path already holds a file.
 	ErrExist = fs.ErrExist
 )
 
 // ErrBodyUnwritable is a body that opens with the frontmatter delimiter.
 var ErrBodyUnwritable = markdown.ErrBodyUnwritable
 
-// ErrUnreadable is a note whose frontmatter is not YAML. A write discovers it on the way past and
-// leaves the file alone: repairing the block means guessing at what the person wrote.
+// ErrUnreadable is returned for a note whose frontmatter is not YAML. A write
+// that finds it leaves the file unchanged, because repairing the block would
+// require guessing the author's intent.
 var ErrUnreadable = markdown.ErrUnreadable
 
-// ErrInline, ErrUnterminated and ErrAnchored are frontmatter one key cannot be changed in: a block
-// written on one line, a block that is never closed, and a block carrying a YAML anchor. Such a
-// note is left alone.
+// ErrInline, ErrUnterminated and ErrAnchored identify frontmatter in which a
+// single key cannot be changed: a block written on one line, a block that is
+// never closed, and a block with a YAML anchor. Such a note is left unchanged.
 var (
 	ErrInline       = markdown.ErrInline
 	ErrUnterminated = markdown.ErrUnterminated
 	ErrAnchored     = markdown.ErrAnchored
 )
 
-// IsNoNote reports whether the error says the vault holds no note at the path: nothing is there, or
-// what is there is not a note.
+// IsNoNote reports whether the error means the vault holds no note at the
+// path: no file exists there, or the file is not a note.
 func IsNoNote(err error) bool {
 	return errors.Is(err, fs.ErrNotExist) || errors.Is(err, ErrNotANote)
 }
 
-// WrapUnlevelled is what bringing the index up to date came to, said so that a caller can tell it
-// from a write that never landed. The paths are the ones the index was queried about.
+// WrapUnlevelled wraps an index update failure in ErrUnlevelled, which
+// distinguishes it from a write that failed. The paths are the ones the index
+// update covered.
 func WrapUnlevelled(err error, paths ...string) error {
 	if err == nil {
 		return nil
@@ -68,8 +70,8 @@ func WrapUnlevelled(err error, paths ...string) error {
 	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, strings.Join(paths, ", "), err)
 }
 
-// MapMissingNote is ErrNoNote where the vault holds no note at the path, and the error as it arrived
-// otherwise.
+// MapMissingNote returns ErrNoNote when the vault holds no note at the path,
+// and err unchanged otherwise.
 func MapMissingNote(err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
 		return ErrNoNote

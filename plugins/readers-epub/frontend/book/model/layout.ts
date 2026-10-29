@@ -1,10 +1,11 @@
 /**
- * The layout of a book drawn in columns: the columns set against the room they
- * are read in, and the spread in front carried to the edge of it.
+ * The layout of a book rendered in columns: the columns are fitted to the
+ * container they are read in, and the visible spread is moved to the container
+ * edge.
  *
- * What the columns are is `columns.ts` and where the reader stands is
- * `turns.ts`. What is here is the settling that joins them — the text set
- * again, with one offset kept in front — and what asks for it.
+ * `columns.ts` defines the columns and `turns.ts` tracks the current position.
+ * This module joins the two: it re-lays out the text, keeps one offset current,
+ * and triggers that re-layout.
  */
 import { doc } from '../../dom'
 import { onMounted, watch } from 'vue'
@@ -17,9 +18,9 @@ import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
 /**
- * The room one document of a book is read in, and everything measured from it.
- * `onMove` is what the reader says when the offset in front changes, and
- * `takeLed` hands over the place a link led to, once.
+ * The container in which one document of a book is read, and the measurements
+ * derived from it. `onMove` is called when the front offset changes, and
+ * `takeLed` returns the position a followed link led to, once.
  */
 export interface BookLayoutOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
@@ -142,9 +143,9 @@ export function createBookSettling(options: BookSettlingOptions) {
 }
 
 /**
- * The room one document of a book is read in, and everything measured from it.
- * `onMove` is what the reader says when the offset in front changes, and
- * `takeLed` hands over the place a link led to, once.
+ * The container in which one document of a book is read, and the measurements
+ * derived from it. `onMove` is called when the front offset changes, and
+ * `takeLed` returns the position a followed link led to, once.
  */
 export function useBookLayout(options: BookLayoutOptions) {
   const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =

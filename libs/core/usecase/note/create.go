@@ -21,16 +21,16 @@ import (
 type Create struct {
 	writers vaultport.VaultWriters
 	names   NameQueries
-	// index brings the named notes up to date, so that a caller which creates
-	// a note and searches for it in the next breath finds it.
+	// index brings the named notes up to date, so a note that is created and then
+	// searched for immediately is found.
 	index Levels
 	// now is when this is happening. An identifier carries it.
 	now machineport.Clock
 }
 
-// NewCreate is what a note is made through: the vault it is written into, what
-// is asked which names are taken, what brings the new file level in the index,
-// and what time it is.
+// NewCreate builds the use case that creates notes. It takes the vault the note
+// is written into, the query for which names are taken, the index update for
+// the new file, and the clock.
 func NewCreate(
 	writers vaultport.VaultWriters, names NameQueries, index Levels, now machineport.Clock,
 ) Create {
@@ -50,8 +50,8 @@ type NewNote struct {
 	// Path is the folder it goes in, relative to the root. Empty is the root
 	// itself: the application does not arrange anyone's folders.
 	Path string
-	// Links are what it is joined to, written in the same breath as the note
-	// itself, so that it never exists as an island.
+	// Links are what the note is joined to, written together with the note itself,
+	// so the note is never created without them.
 	Links []domain.Link
 }
 
@@ -60,8 +60,8 @@ type CreateResult struct {
 	Path  string
 	ID    string
 	Title string
-	// Shares is the other notes already filed under this name. Creating one
-	// anyway is allowed, and said out loud.
+	// Shares is the other notes already filed under this name. Creating a note
+	// under a shared name is allowed and is reported.
 	Shares []string
 }
 
@@ -136,8 +136,8 @@ func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-// writeLinks writes relationships into frontmatter that has just been made,
-// through the splicing every other link goes through: one set of quoting rules.
+// writeLinks writes relationships into freshly created frontmatter, through the
+// same splicing every other link uses: one set of quoting rules.
 func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 	doc, err := markdown.Open(content)
 	if err != nil {

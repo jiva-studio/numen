@@ -1,11 +1,11 @@
 import { test, expect } from '../support/test.js'
 import { openVaultFile, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
 
-/** What the mock transcriber of `-debug-mock-ml` hears in every recording. */
+/** What the mock transcriber of `-debug-mock-ml` returns for every recording. */
 const MOCK_TRANSCRIPT = 'Mock transcribed text for automated test.'
 
-// A recording is transcribed when a person asks, and each test after the one that asks reads the
-// transcript it made.
+// A recording is transcribed on request, and each test after the one that
+// requests it reads the transcript it produced.
 test.describe.configure({ mode: 'serial' })
 
 test.describe('A recording', () => {

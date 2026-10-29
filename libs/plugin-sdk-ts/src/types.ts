@@ -25,9 +25,9 @@ export type { Failure, Result } from './result'
 // SettingOption declares one choice in an enumerated setting.
 export interface SettingOption {
   value: string
-  /** What a person reads for the value; absent shows the value. */
+  /** The display title for the value; when absent the value is displayed. */
   title?: string
-  /** What a person reads under the setting while the value is in force. */
+  /** Text displayed under the setting while the value is selected. */
   detail?: string
   /** The ids of the dependencies the host provisions only while the value is in force. */
   dependencies?: string[]
@@ -75,8 +75,8 @@ export interface ReaderRegistration {
 export interface ReaderTabState {
   readonly path: string
   readonly title: string
-  // The place to show: the selector of a search hit, or the place saved before a restart. The
-  // window sets a new object each time it asks for a place; null shows the file from its start.
+  // The location to show: the selector of a search hit, or the location saved before a restart. The
+  // window sets a new object each time it requests a location; null shows the file from its start.
   readonly selector: Selector | null
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
@@ -92,7 +92,7 @@ export interface ReaderPaneProps {
   readonly state?: unknown
 }
 
-// TabTarget is what a command asked over one tab is over.
+// TabTarget identifies the tab a command applies to.
 export interface TabTarget {
   readonly path?: string
   readonly title?: string
@@ -108,9 +108,9 @@ export interface TabPlacement {
 }
 
 // TabKindRegistration registers a kind of workspace tab. A registration that
-// declares open owns what its tabs hold; one that does not holds the note at
-// the path its tab opens on. A kind that declares getState has its tabs opened
-// again after a restart with the state it saved.
+// declares open owns the content of its tabs; one that does not displays the
+// note at the path its tab opens on. A kind that declares getState has its
+// tabs reopened after a restart with the saved state.
 export interface TabKindRegistration<State = unknown> {
   kind: string
   component: unknown
@@ -175,8 +175,8 @@ export interface CommandRegistration {
   scope?: 'note'
   // The icon the command is drawn with wherever it is offered.
   icon?: unknown
-  // With scope 'note': the command puts a note in front of the person. The window runs it for a note
-  // chosen in the search, gone to, or named by the agent, and opens the note's file where none declares it.
+  // With scope 'note': the command opens a note in the editor. The window runs it for a note
+  // selected in the search, navigated to, or named by the agent, and opens the note's file when no command declares one.
   isNoteDestination?: boolean
 }
 
@@ -255,7 +255,7 @@ export interface PluginContext {
   emitVaultChange(event: VaultChangeEvent): void
   emitFileSelect(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string> | void
-  // The tab of the kind the person was last in, put in front and moved to `path`; a tab of it opened there where none is open.
+  // Brings the tab of the kind last used to the front and navigates it to `path`; opens a tab of that kind at `path` when none is open.
   navigateTab?(kind: string, path: string): Promise<string> | void
   closeTab?(id: string): void
   hasPermission?(permission: string): boolean
@@ -265,7 +265,7 @@ export interface PluginContext {
   readonly notes?: VaultNotes
   // The folders and files of the vault, where the host offers them.
   readonly files?: VaultFiles
-  // The agent the window asks, where the host offers one.
+  // The agent the window talks to, when the host provides one.
   readonly agent?: AgentHost
   // The open files of the window, where the host offers them.
   readonly buffers?: BufferHost
@@ -294,7 +294,7 @@ export interface PluginManifest {
   activationEvents?: string[]
   permissions?: string[]
   runtimes?: string[]
-  /** The secrets the plugin asks the host to keep and hand it in Configure. */
+  /** The secrets the plugin asks the host to store and pass to it in Configure. */
   secrets?: { name: string; title: string; description?: string; when?: SettingCondition }[]
   lifecycle?: {
     idleTimeoutSeconds?: number

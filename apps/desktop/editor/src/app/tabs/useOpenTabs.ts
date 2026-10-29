@@ -1,5 +1,5 @@
 /**
- * What currently open, told to the application, and the icon each tab carries.
+ * What is currently open, reported to the application, and the icon each tab carries.
  */
 import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { findTabKindIcon } from '@/entities/tab'
@@ -63,8 +63,8 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
         await core.writeOpenTabs(current)
       } catch {
         // A list that did not reach the core is written again by the next tab
-        // opened, closed or moved, and the window draws from its own state
-        // meanwhile. There is nothing here for a person to do.
+        // opened, closed or moved, and the window renders from its own state
+        // meanwhile. There is no user action to take here.
       }
     }
     isSending = false

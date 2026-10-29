@@ -123,8 +123,9 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	vaults.RecordVault(target[0])
 }
 
-// The plugins are lent every vault the installation holds, each worked by its identity, and a vault
-// that is not in the index is read into it when a plugin asks.
+// The plugins receive every vault the installation holds, each keyed by its
+// identity, and a vault that is not in the index is read into it when a plugin
+// requests it.
 func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
 	registry, err := cfg.Registry()
@@ -157,7 +158,8 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	}
 }
 
-// The page is told the plugins of the flashcards target, and is served the files of their frontends.
+// The page receives the plugins of the flashcards target and is served the
+// files of their frontends.
 func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	cfg, db, vaults, _, _ := makeWindow(t)
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))

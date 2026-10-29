@@ -36,8 +36,8 @@ func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	return out
 }
 
-// A folder is filed somewhere else with everything under it, whatever kind of
-// file that is, and what was made from each source stays on the source.
+// A folder is moved with everything under it, whatever kind of file that is,
+// and what was derived from each source stays with the source.
 func TestAMovedFolderConsumesEverythingBelowIt(t *testing.T) {
 	db := openDB(t)
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")

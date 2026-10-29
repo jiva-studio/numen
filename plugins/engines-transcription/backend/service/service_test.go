@@ -8,9 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
@@ -21,8 +21,8 @@ const (
 	lectureSound = "RIFF the bytes of a lecture"
 )
 
-// heardModel hears every stretch as the words given for the moment it begins, and records each
-// moment a recording was asked for segments from.
+// heardModel returns, for every audio segment, the words configured for the moment the segment
+// begins, and records each moment a recording was requested for segments from.
 type heardModel struct {
 	mu            sync.Mutex
 	segments      []engine.Audio

@@ -152,8 +152,8 @@ describe('what a tab carries', () => {
 })
 
 /**
- * A workspace is one pane or a branch of them, and a slot reaches a tab down
- * whichever of the two it was drawn as.
+ * A workspace is one pane or a branch of panes, and a slot resolves to a tab
+ * whichever of the two it was rendered as.
  */
 describe('what is drawn before a tab’s name', () => {
   const mountWithIcon = (state: State) =>

@@ -26,9 +26,9 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/adapter/clock"
 )
 
-// Serve answers with handler at addr until ctx is done or the process is interrupted. It serves TLS
-// on a certificate of its own unless NUMEN_DEBUG_TLS is "false", and writes the address it listens on
-// to out once it does.
+// Serve serves handler at addr until ctx is done or the process is interrupted.
+// It serves TLS with its own certificate unless NUMEN_DEBUG_TLS is "false", and
+// writes the listening address to out once it listens.
 func Serve(ctx context.Context, addr string, handler http.Handler, out io.Writer) error {
 	server := &http.Server{Addr: addr, Handler: newHandler(handler)}
 

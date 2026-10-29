@@ -11,12 +11,12 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// DependencyClient asks the host about the dependencies plugins declare, through DependencyService.
+// DependencyClient queries the host about the dependencies plugins declare, through DependencyService.
 type DependencyClient struct {
 	rpc numenv1connect.DependencyServiceClient
 }
 
-// NewDependencyClientFromEnv reaches the host the process was started for. It returns
+// NewDependencyClientFromEnv connects to the host the process was started for. It returns
 // hostcall.ErrNoHost where the host named none.
 func NewDependencyClientFromEnv() (*DependencyClient, error) {
 	addr, err := hostcall.FromEnv()
@@ -26,12 +26,12 @@ func NewDependencyClientFromEnv() (*DependencyClient, error) {
 	return NewDependencyClient(addr), nil
 }
 
-// NewDependencyClient reaches the host at the endpoint.
+// NewDependencyClient connects to the host at the endpoint.
 func NewDependencyClient(endpoint hostcall.Endpoint) *DependencyClient {
 	return NewDependencyClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewDependencyClientOver reaches the host at the endpoint through the HTTP client given.
+// NewDependencyClientOver connects to the host at the endpoint through the given HTTP client.
 func NewDependencyClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *DependencyClient {
 	return &DependencyClient{rpc: numenv1connect.NewDependencyServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
@@ -104,7 +104,7 @@ func (c *DependencyClient) GetStatus(ctx context.Context, id string) (*Dependenc
 	return readDependencyStatus(res.Msg.GetStatus()), nil
 }
 
-// Provision asks the host to install the requirement and yields each status the host streams, ending
+// Provision requests installation of the requirement and yields each status the host streams, ending
 // with READY or FAILED. A broken stream yields its error once and stops.
 func (c *DependencyClient) Provision(ctx context.Context, requirement *DependencyRequirement) iter.Seq2[*DependencyStatus, error] {
 	return func(yield func(*DependencyStatus, error) bool) {
@@ -125,7 +125,7 @@ func (c *DependencyClient) Provision(ctx context.Context, requirement *Dependenc
 	}
 }
 
-// List answers the state of every dependency the host knows.
+// List returns the state of every dependency the host knows.
 func (c *DependencyClient) List(ctx context.Context) ([]*DependencyStatus, error) {
 	res, err := c.rpc.ListDependencies(ctx, connect.NewRequest(&v1.ListDependenciesRequest{}))
 	if err != nil {

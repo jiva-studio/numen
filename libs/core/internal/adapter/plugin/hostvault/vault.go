@@ -29,16 +29,16 @@ type Vault struct {
 	Stores   pluginport.PluginStores
 	Cache    pluginport.PluginCache
 	Watcher  vaultport.VaultWatcher
-	// Vaults lists every vault the installation knows, and Find returns the vault of an identity or
-	// fs.ErrNotExist. Without them the installation knows the vault Current names and no other.
+	// Vaults lists every vault in the installation, and Find returns the vault with a given identity or
+	// fs.ErrNotExist. Without them the installation contains only the vault Current names.
 	Vaults func() ([]domain.Vault, error)
 	Find   func(id domain.VaultID) (domain.Vault, error)
-	// IndexState starts reading a vault into the index when it is not there and says where that
-	// stands. Without it every vault is taken to be in the index.
+	// IndexState starts reading a vault into the index when it is not there and returns the index state.
+	// Without it every vault is treated as indexed.
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
-	// Moved tells that something moved in some vault. Without it nothing is told.
+	// Moved signals that something moved in some vault. Without it nothing is signalled.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
-	// Written is told after a plugin has changed the vault.
+	// Written is called after a plugin has changed the vault.
 	Written func()
 	// Index brings the index level with the paths a plugin changed. Without it nothing is done.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error

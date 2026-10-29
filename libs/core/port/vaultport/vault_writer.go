@@ -9,12 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/edit"
 )
 
-// ErrStale is what a write says when the file it was about to replace is no
-// longer the one the caller read.
+// ErrStale is the write error returned when the file it was about to replace is
+// no longer the one the caller read.
 var ErrStale = edit.ErrStale
 
-// ErrAlreadyExists is what a move says when something already sits where a note was
-// going.
+// ErrAlreadyExists is the move error returned when something already exists
+// where a note was to go.
 var ErrAlreadyExists = errors.New("a file is already there")
 
 type vaultPathWriter interface {

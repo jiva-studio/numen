@@ -26,8 +26,8 @@ type scanFile struct {
 	readErr error
 }
 
-// scanVault is a vault held in memory, answering to a scan as a reader and, for
-// the rows a scan writes, as every repository it asks.
+// scanVault is an in-memory vault that serves as the reader for a scan and as
+// every repository that the scan writes rows to.
 type scanVault struct {
 	files   map[string]scanFile
 	openErr error

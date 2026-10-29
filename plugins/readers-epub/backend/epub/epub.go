@@ -43,8 +43,8 @@ type Book struct {
 	// Documents are the spine documents and where each begins in Text.
 	Documents []Document
 
-	// Parts are what the book names, ascending by offset. Tier says where they
-	// came from.
+	// Parts are the parts the book declares, ascending by offset. Tier records
+	// which source they came from.
 	Parts []Part
 
 	// Pages are the pages of the printed book this file was made from,
@@ -56,8 +56,8 @@ type Book struct {
 
 	Layout Layout
 
-	// Direction is the direction the book's pages progress in, and empty for a
-	// book that says nothing.
+	// Direction is the page progression direction of the book, and empty for a
+	// book that declares none.
 	Direction Direction
 
 	// files is the archive the book was read out of, which Markup reads one
@@ -75,8 +75,8 @@ type Book struct {
 	pageBytes int
 }
 
-// A Structure is the tier that answered when the book was asked what its parts
-// are. Each tier is tried only when the one before it yields nothing.
+// A Structure is the tier that supplied the book's parts. Each tier is tried
+// only when the one before it yields nothing.
 type Structure string
 
 const (
@@ -88,8 +88,8 @@ const (
 	FromNothing Structure = "none"
 )
 
-// The four ways a file can fail to be a book, and the one way a document of one
-// can fail to be asked for.
+// The four ways a file can fail to be a book, and the one way a document of a
+// book can fail to be requested.
 var (
 	ErrNotArchive  = errors.New("epub: not a zip archive")
 	ErrNoContainer = container.ErrNoContainer
@@ -216,14 +216,14 @@ func readEntry(files map[string]*zip.File, name string) ([]byte, error) {
 }
 
 // An Archive is the index of the entries of one EPUB file, read through a reader that
-// stays open. Only the entry asked for is read, and any number of goroutines may
-// ask at once while the reader serves concurrent reads.
+// stays open. Only the requested entry is read, and any number of goroutines may
+// request entries at once while the reader serves concurrent reads.
 type Archive struct {
 	files map[string]*zip.File
 }
 
-// OpenArchive indexes the EPUB behind r, of size bytes, and refuses what
-// Read refuses.
+// OpenArchive indexes the EPUB behind r, of size bytes, and rejects what
+// Read rejects.
 func OpenArchive(r io.ReaderAt, size int64) (*Archive, error) {
 	files, _, err := openPackage(r, size)
 	if err != nil {

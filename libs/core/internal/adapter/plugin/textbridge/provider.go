@@ -29,7 +29,7 @@ type Plugins struct {
 	host Host
 }
 
-// NewPlugins reaches the text plugins of the host.
+// NewPlugins connects to the text plugins of the host.
 func NewPlugins(host Host) Plugins {
 	return Plugins{host: host}
 }

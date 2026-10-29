@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * What the words turned up: rows in named groups, the one the keyboard stands
- * on lit, and the key that reaches a row written at the end of it.
+ * The search results: rows in named groups, the row with keyboard focus
+ * highlighted, and each row's shortcut key shown at its end.
  *
- * A group still filling says so beside its name, and one that came back with
- * nothing says what it has instead. Where the keyboard stands and what a press
- * means are the caller's.
+ * A group that is still loading shows a loading indicator next to its name, and
+ * a group with no results shows a placeholder. The caller handles keyboard
+ * focus and the meaning of a press.
  *
  * `data-palette` names each part: `list`, `title`, `icon`, `name`, `detail`,
  * `hint` and `silence`. A group is drawn as a group and a row as an option.
@@ -14,45 +14,45 @@ import { nextTick, useTemplateRef } from 'vue'
 import { PaletteGroup } from './palette-group'
 import { listId, type PlacedGroup } from '../../lib/place'
 
-/** What a drawn group answers to, which is the one item it may hold. */
+/** The handle of a rendered group, which can reveal one of its items. */
 interface PaletteGroupHandle {
   readonly reveal: (item: string) => void
 }
 
 defineProps<{
-  /** The groups as they are drawn, their rows numbered over the whole list. */
+  /** The groups, with their rows numbered across the whole list. */
   groups: readonly PlacedGroup[]
-  /** The number of the row the keyboard relies on, and -1 for none. */
+  /** The number of the row with keyboard focus, or -1 for none. */
   here: number
   /**
-   * What the list and its rows are addressed by. The field beside the list
-   * names the row that is lit, so the two are addressed off one prefix.
+   * The identifier prefix of the list and its rows. The search field refers to
+   * the highlighted row, so both derive their identifiers from one prefix.
    */
   uid: string
-  /** What the list is announced as. */
+  /** The accessible name of the list. */
   name: string
 }>()
 
 const emit = defineEmits<{
-  /** The pointer crossed a row: its number, and the move that took it there. */
+  /** The pointer moved over a row: its number and the pointer event. */
   (event: 'point-at', pos: number, hasMoved: PointerEvent): void
-  /** A row was pressed: its number, and whether the second action was asked for. */
+  /** A row was pressed: its number, and whether the secondary action was requested. */
   (event: 'choose', pos: number, second: boolean): void
 }>()
 
 defineSlots<{
   /**
-   * What is drawn before a row's words. The room for it is kept on every row
-   * once the slot is filled, so the words line up down the list whether or not
-   * each of them draws anything.
+   * The icon before a row's text. When the slot is used, space for it is
+   * reserved on every row, so the text aligns down the list whether or not a
+   * row renders an icon.
    */
   icon(props: { id: string }): unknown
 }>()
 
-/** The groups as they are drawn, each holding the rows it was given. */
+/** The rendered groups, each with its rows. */
 const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
-/** One item brought into sight, once whatever moved has been drawn. */
+/** Scrolls one item into view after the pending render. */
 const reveal = async (item: string): Promise<void> => {
   await nextTick()
   for (const group of groupRefs.value ?? []) group.reveal(item)
@@ -88,10 +88,10 @@ defineExpose({ reveal })
 
 <style scoped>
 .palette__list {
-  /* How large an icon is drawn on a row. */
+  /* Icon size on a row. */
   --icon: 1rem;
 
-  /* The line under the field belongs to what stands beneath it. */
+  /* Divider between the search field and the list. */
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
   max-block-size: var(--tallest);
   padding: var(--numen-field-padding);

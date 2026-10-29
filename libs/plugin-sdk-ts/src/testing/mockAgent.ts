@@ -1,9 +1,9 @@
 import type { AgentHost, AgentQuery, AgentStep } from '../agent'
 
-// MockAgentHost is an AgentHost that answers every question with the same steps and keeps what it
-// was asked, so a test can read the questions a plugin put.
+// MockAgentHost is an AgentHost that returns the same steps for every query and
+// records the queries, so a test can read the queries a plugin sent.
 export interface MockAgentHost extends AgentHost {
-  // Every question asked, in the order it was.
+  // Every query received, in order.
   getQueries(): readonly AgentQuery[]
   // Every conversation finished, in the order it was.
   getFinished(): readonly string[]

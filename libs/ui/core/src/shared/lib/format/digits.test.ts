@@ -34,8 +34,8 @@ describe('the thing a count counts', () => {
     expect(plural(1.5, 'card')).toBe('cards')
   })
 
-  // An `s` on the end reaches neither an irregular noun nor a phrase whose
-  // plural falls inside it, so the whole plural can be handed in.
+  // An `s` suffix does not form the plural of an irregular noun or of a phrase whose
+  // plural falls inside it, so the whole plural can be supplied.
   it('takes the whole plural where an s does not give it', () => {
     expect(plural(1, 'child', 'children')).toBe('child')
     expect(plural(2, 'child', 'children')).toBe('children')
@@ -50,9 +50,9 @@ describe('a count and the thing it counts', () => {
     expect(many(2, 'day')).toBe('2 days')
   })
 
-  // A curve answers in fractions, and the two windows read one number to a
-  // person: the count is rounded before it is read and before it is made
-  // plural, so nothing anywhere says "1.4 cards".
+  // A curve returns fractions, and the two windows display one number to the user:
+  // the count is rounded before it is formatted and pluralised, so no text reads
+  // "1.4 cards".
   it('rounds a fraction before it is read out', () => {
     expect(many(1.4, 'card')).toBe('1 card')
     expect(many(1.5, 'card')).toBe('2 cards')

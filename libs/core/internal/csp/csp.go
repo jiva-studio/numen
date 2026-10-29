@@ -1,9 +1,8 @@
 // Package csp is the Content-Security-Policy a window is served under: what it
 // may load, and from where.
 //
-// It is not how a window looks. A policy is what a browser refuses on a page's
-// behalf, and widening it is a decision about what may run in front of a
-// person's vault.
+// It is not about appearance. A policy is what a browser blocks on a page, and
+// widening it is a decision about what may run in front of the user's vault.
 package csp
 
 import "strings"
@@ -37,9 +36,9 @@ type Sources struct {
 	// Media fills media-src, which is where sound and video are loaded from. A
 	// of the world and not the scheme a window is drawn from.
 	Media []string
-	// Frames fills frame-src, which is where a page a link note points at is
-	// played from. Every host here runs its own scripts inside its own frame
-	// and reaches its own machines, and the window is what names them.
+	// Frames fills frame-src, the origins that pages pointed to by a link note
+	// are loaded from. Every host here runs its own scripts inside its own frame
+	// and reaches its own machines, and the window names them.
 	Frames []string
 	// Connect fills connect-src, which is where fetch, WebSocket, and
 	// EventSource may connect besides what the window serves itself.

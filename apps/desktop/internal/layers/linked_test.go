@@ -17,10 +17,10 @@ const plugins = "github.com/jiva-studio/numen/plugins"
 // terminal is the binary the command line is served through.
 const terminal = apps + "desktop/cmd/numen-cli"
 
-// isLinked says whether a listing was compiled from a package, reading a dep as
-// the package itself or as something under it. A prefix on its own would take
-// adapter/mcpsomething for the tools and a rule that refuses more than it was
-// given is as wrong as one that refuses less.
+// isLinked reports whether a dependency listing contains a package, matching a
+// dependency equal to the package or under it. A bare prefix match would match
+// adapter/mcpsomething for the tools, and a rule that rejects more than it
+// should is as wrong as one that rejects less.
 func isLinked(deps []string, pkg string) bool {
 	for _, dep := range deps {
 		if dep == pkg || strings.HasPrefix(dep, pkg+"/") {
@@ -73,8 +73,8 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	}
 }
 
-// linking is the whole of the rule above, so it is asked directly. A rule that
-// has never been seen to refuse is an assumption.
+// linking is the whole of the rule above, so it is tested directly. A rule that
+// has never been observed to reject is an assumption.
 func TestPluginsRule_RejectsPluginsDependency(t *testing.T) {
 	deps := []string{
 		core + "adapter/cli",

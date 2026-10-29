@@ -18,8 +18,8 @@ func (b Bounds) Check(targetPath string, value float64) error {
 	return &OutsideBounds{At: targetPath, Number: value, Bounds: b}
 }
 
-// OutsideBounds is a number a setting does not take, and how far that setting
-// goes. The number is left as the person wrote it and nothing is drawn at it.
+// OutsideBounds is a number a setting does not accept, with the setting's
+// range. The number is kept as the user wrote it and is not applied.
 type OutsideBounds struct {
 	At     string
 	Number float64

@@ -1,9 +1,9 @@
 /**
- * Making a note from the picture, and joining two that are already on it.
+ * Creating a note from the graph, and joining two notes already on it.
  *
- * A note is made in a relation of another one, and the link that puts it there is
- * written into it as it is made. What a relation means for what gets written is
- * decided here: the plex reports the shape of a gesture and nothing else.
+ * A note is created in a relation to another note, and the link that records
+ * the relation is written into it on creation. The meaning of a relation for
+ * what is written is decided here; the plex reports only the shape of a gesture.
  */
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { Link, NewNote, NoteRelation, PairLink, Role } from '../lib/note'
@@ -12,7 +12,7 @@ import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
 
-/** What making a note asks of the vault. */
+/** The operations note creation needs from the vault. */
 export interface NoteMaker {
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
@@ -32,7 +32,7 @@ export interface NoteMaker {
 /** The relations a link can put a note in. Each is also the role the link carries. */
 type CreatableRelation = 'parent' | 'child' | 'jump'
 
-/** Relations a person may make a note in: exactly those a link can write. */
+/** The relations a note can be created in: exactly those a link can write. */
 export const CREATABLE: readonly CreatableRelation[] = ['parent', 'child', 'jump']
 
 /** The role a link carries to put a note in that relation, and nothing for a sibling. */
@@ -63,10 +63,10 @@ const resolveRelationLinks = (
   return role ? [{ to: from, role }] : null
 }
 
-/** What a note is called before the person has called it anything. */
+/** The title of a note before the user has named it. */
 export const UNTITLED = 'Untitled note'
 
-/** How many names are asked for before the vault refusing them all is said. */
+/** The number of names tried before reporting that the vault rejected all of them. */
 const names = 100
 
 const words: Record<ErrorCode, string> = ERRORS
@@ -200,7 +200,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
 
 export type NoteCreator = ReturnType<typeof createNoteWriter>
 
-/** The name the note asked for after that many taken ones is filed under. */
+/** The name of a note, given the number of names already taken. */
 const createNumberedName = (count: number): string =>
   count === 1 ? UNTITLED : `${UNTITLED} ${count}`
 

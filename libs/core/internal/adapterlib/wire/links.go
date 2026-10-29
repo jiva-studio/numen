@@ -12,9 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// ResolveAddresses answers where the addresses of a request and the wikilinks
-// of its text land in one vault. An address that reaches nothing is left out of
-// the resolved ones. Every window that resolves links answers with it.
+// ResolveAddresses resolves the addresses of a request and the wikilinks of its
+// text within one vault. An address that resolves to nothing is omitted from the
+// result. Every window that resolves links uses it.
 func ResolveAddresses(
 	ctx context.Context, resolve *note.ResolveLinks, v domain.Vault, r *v1.ResolveAddressesRequest,
 ) (*v1.ResolveAddressesResponse, error) {
@@ -25,8 +25,8 @@ func ResolveAddresses(
 		return nil, err
 	}
 
-	// In the order they were asked about, and an address asked about twice is
-	// one answer.
+	// Results are in request order, and an address requested twice yields one
+	// result.
 	out := &v1.ResolveAddressesResponse{Found: inText}
 	observed := make(map[string]bool, len(found))
 	for _, content := range requested {

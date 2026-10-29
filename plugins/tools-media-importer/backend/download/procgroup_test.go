@@ -115,8 +115,8 @@ func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 	}
 }
 
-// A run that ends by itself is unchanged: its output comes back, and a failure
-// carries the last line the tool said.
+// A run that ends by itself is unchanged: its output is returned, and a failure
+// carries the last line the tool printed.
 func TestARunThatEndsByItselfAnswersAsBefore(t *testing.T) {
 	dir := t.TempDir()
 	good := filepath.Join(dir, "good")

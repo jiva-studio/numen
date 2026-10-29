@@ -4,7 +4,7 @@ import type { AgentPort, AgentStep, ConversationContext } from '@numen/plugin-sd
 import { WORDS } from '../words'
 import { useConversationView } from './useConversationView'
 
-/** A port that keeps what it was questions and what it was told is over, and says what a test told it to. */
+/** A port that records the questions it receives and the conversations it is told have finished, and replies with the steps a test supplies. */
 const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leaves.' }]) => {
   const questions: { question: string; focus: string; conversation: string }[] = []
   const finished: string[] = []

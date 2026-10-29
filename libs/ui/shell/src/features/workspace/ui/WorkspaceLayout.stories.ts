@@ -1,9 +1,9 @@
 /**
- * Every situation the workspace has to survive. Also the test corpus: each
- * story is run in a browser by `@storybook/addon-vitest`.
+ * Every situation the workspace has to handle. Also the test corpus: each story
+ * is run in a browser by `@storybook/addon-vitest`.
  *
- * What the tabs hold is a plain panel with a name on it. The workspace knows
- * nothing about its contents, and neither do these.
+ * Tab content is a plain panel with a name. The workspace has no knowledge of
+ * its contents, and neither do these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
@@ -119,13 +119,13 @@ type Story = StoryObj<Knobs>
 /** What the desktop opens with. */
 export const SideBySide: Story = {}
 
-/** Both in one stack, so that only one shows at a time. */
+/** Both panes in one stack, so that only one is visible at a time. */
 export const OneStack: Story = { args: { arrangement: 'one stack' } }
 
 /** Four levels, each turning a quarter from the one above. */
 export const Nested: Story = { args: { arrangement: 'nested' } }
 
-/** More tabs than a strip has room for. */
+/** More tabs than fit in the tab strip. */
 export const Crowded: Story = { args: { arrangement: 'crowded' } }
 
 /** A workspace holding nothing: one pane, no strip, and the silence. */
@@ -159,9 +159,9 @@ interface Position {
 }
 
 /**
- * A place of the story told to the window that drives the pointer, and where
- * that whole pixel of the window falls back in the story. The story is drawn
- * at a scale, and the pointer goes to whole pixels of the window.
+ * Maps a story position to the window position that drives the pointer, and
+ * back to the story position of that whole window pixel. The story is drawn at
+ * a scale, and the pointer moves in whole window pixels.
  */
 const mapToFrame = (point: Position): { window: Position; story: Position } => {
   const frame = window.frameElement as HTMLElement | null
@@ -184,8 +184,8 @@ const mapToFrame = (point: Position): { window: Position; story: Position } => {
 }
 
 /**
- * A drag the browser makes itself, from one place to another. The splitter
- * catches the pointer by where it is, which is something only a browser says.
+ * A drag performed by the browser, from one position to another. The splitter
+ * captures the pointer by position, which only a browser can verify.
  */
 const sweep = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
@@ -255,7 +255,7 @@ function getFurthest(places: readonly Caught[]): Position {
   return edge
 }
 
-/** A tab picked up and let go somewhere, in as many steps as a hand takes. */
+/** Drags a tab from one position to another in incremental pointer steps. */
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
   const start = getRect(from)
   const point = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }
@@ -280,8 +280,8 @@ export const DividesOnAnEdge: Story = {
       y: main.y + main.height / 2,
     })
 
-    // The pane it came from held nothing else, so that pane went and a fresh
-    // one holds the chat.
+    // The source pane held no other tab, so it is removed and a new pane holds
+    // the chat.
     const now = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
     const named = now.map((pane) => pane.getAttribute('data-workspace-pane'))
 
@@ -289,7 +289,7 @@ export const DividesOnAnEdge: Story = {
     await expect(named).toContain('main')
     await expect(named).not.toContain('aside')
 
-    // The two share the room the two before them had, and evenly.
+    // The two panes share the space of the former two panes, evenly.
     const boxes = now.map(getRect)
     expect(boxes.reduce((wide, box) => wide + box.width, 0)).toBeCloseTo(
       main.width + before.width,
@@ -428,11 +428,11 @@ export const WalksWithTheKeyboard: Story = {
 }
 
 /**
- * A tab pressed takes the keyboard, so the strip is walked on from the tab the
- * hand chose.
+ * Pressing a tab moves keyboard focus to it, so arrow-key navigation in the
+ * strip continues from the pressed tab.
  *
- * Only a browser can answer it: the press refuses the default the browser
- * would answer with, and the focus that comes with it is part of that default.
+ * Only a browser can verify it: the press prevents the default action, and the
+ * focus change is part of that default.
  */
 export const WalksOnFromAPress: Story = {
   tags: ['!dev'],
@@ -477,10 +477,10 @@ export const FollowsTheModel: Story = {
 }
 
 /**
- * A handle dragged across the text moves the handle and selects nothing.
+ * Dragging a handle across the text moves the handle and selects nothing.
  *
- * A selection running through what the panels hold is one the engine works out
- * again for every movement of the pointer, which is what a person feels.
+ * A selection spanning the panel content is recomputed by the engine on every
+ * pointer move, so a text selection would be visible during the drag.
  */
 export const SelectsNothingWhileResizing: Story = {
   tags: ['!dev'],
@@ -517,13 +517,13 @@ export const SelectsNothingWhileResizing: Story = {
 }
 
 /**
- * The reach around a handle catches a press on either side of the line.
+ * The hit area around a handle captures a press on either side of the line.
  *
- * The splitter answers a press from a few pixels away, and those pixels stand
- * over the panels. Whichever panel is drawn after the handle takes them unless
- * the reach stands above it, and what that panel holds then reads the press as
- * its own — an editor there starts a selection and runs it through its text for
- * the whole drag.
+ * The splitter accepts a press from a few pixels away, and those pixels overlap
+ * the panels. A panel drawn after the handle receives the press unless the hit
+ * area is stacked above it, and the panel then treats the press as its own: an
+ * editor there starts a selection that extends through its text for the whole
+ * drag.
  */
 export const CatchesAPressOnEitherSideOfTheLine: Story = {
   tags: ['!dev'],

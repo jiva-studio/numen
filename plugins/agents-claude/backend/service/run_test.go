@@ -16,9 +16,10 @@ import (
 	"connectrpc.com/connect"
 )
 
-// The token grants read and write over the whole vault, and a command line is readable by every
-// user on the machine. It travels in a file of this user's alone that the child is given the path
-// of, and the file goes when the run does.
+// The token grants read and write access to the whole vault, and every user on
+// the machine can read a command line. The token is passed in a file readable
+// only by this user, whose path is given to the child process, and the file is
+// removed when the run ends.
 func TestTheTokenTravelsInAFileOfThisUserAlone(t *testing.T) {
 	dir := t.TempDir()
 	script := writeScript(t, "claude",
@@ -92,9 +93,10 @@ func verifyTokenConfigFile(t *testing.T, dir string, argv []string) {
 	}
 }
 
-// A file in a synced vault is named by whoever synced it, and the system prompt is the one place a
-// name would be read as instruction. The note in front of the person is named by a tool, so no
-// part of the vault reaches it.
+// File names in a synced vault are chosen by the syncing party, and the system
+// prompt is the one place where a name would be read as an instruction. The
+// current note is identified through a tool, so no part of the vault reaches the
+// prompt.
 func TestTheSystemPromptIsTheTasksInstructionsAndNoNoteName(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "argv")
 	script := writeScript(t, "claude", "for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n")
@@ -122,8 +124,8 @@ func TestTheSystemPromptIsTheTasksInstructionsAndNoNoteName(t *testing.T) {
 	}
 }
 
-// echoSession is a program that reports the session "s-" and what it was asked, and writes down the
-// session it was told to resume.
+// echoSession is a program that reports the session "s-" and the prompt it
+// received, and records the session it was asked to resume.
 func echoSession(t *testing.T, dir string) string {
 	t.Helper()
 	return writeScript(t, "claude",
@@ -136,7 +138,7 @@ func echoSession(t *testing.T, dir string) string {
 			"printf '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"s-%s\"}\\n' \"$asked\"\n")
 }
 
-// resumed are the sessions a question was asked in, one to a task.
+// resumed returns the sessions each task asked to resume, one per task.
 func resumed(t *testing.T, dir, requested string) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+requested))
@@ -149,7 +151,8 @@ func resumed(t *testing.T, dir, requested string) []string {
 	return strings.Split(strings.TrimSpace(string(raw)), "\n")
 }
 
-// A person has several conversations open at once, and each goes on from the session it was on.
+// A user can have several conversations open at once, and each continues from
+// its own session.
 func TestEachConversationGoesOnInItsOwn(t *testing.T) {
 	dir := t.TempDir()
 	script := echoSession(t, dir)
@@ -204,7 +207,7 @@ func TestAQuestionInNoConversationCarriesNothing(t *testing.T) {
 // announce is what a script writes to tell the test it is running: one word of the answer.
 const announce = `printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"up"}}}'` + "\n"
 
-// awaitUp reads the stream until the program has said it is running.
+// awaitUp reads the stream until the program reports that it is running.
 func awaitUp(t *testing.T, stream *connect.ServerStreamForClient[agentrun.AskAgentResponse]) {
 	t.Helper()
 	for stream.Receive() {
@@ -236,7 +239,8 @@ func TestFinish_ConcurrentConversations(t *testing.T) {
 	if err := exec.Command("mkfifo", fifo).Run(); err != nil {
 		t.Skipf("no named pipe to wait on: %v", err)
 	}
-	// Each program says it runs, waits to be let go on, says so again, and then waits for good.
+	// Each program reports that it runs, waits for the pipe to be released,
+	// reports again, and then waits indefinitely.
 	script := writeScript(t, "claude", announce+"read go < "+fifo+"\n"+announce+"sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
@@ -265,7 +269,7 @@ func TestFinish_ConcurrentConversations(t *testing.T) {
 	finish("one")
 	endsWithin(t, "the finished conversation", 30*time.Second, func() { _, _ = readSteps(streams["one"]) })
 
-	// Only the program that still runs reads the pipe, and it says so again.
+	// Only the program that is still running reads the pipe, and it reports again.
 	if err := os.WriteFile(fifo, []byte("go\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}

@@ -70,7 +70,7 @@ func TestAnswerToAnotherRequestOrWithoutModelsIsAnError(t *testing.T) {
 	}
 }
 
-// The program is asked over stdin and its answer carries the id of the request.
+// The program receives the request over stdin and its answer carries the request id.
 func TestModels_QueriesProgramForModels(t *testing.T) {
 	request := t.TempDir() + "/asked"
 	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)

@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// dressing is the themes an installation holds, as this window asks for them.
+// dressing is the themes an installation holds, as this window requests them.
 type dressing struct{ wearing string }
 
 func (d dressing) ListThemes(
@@ -44,8 +44,8 @@ func (dressing) WatchThemes(
 	return nil
 }
 
-// The window is dressed from the installation's themes, so a person who chose
-// one in the editor meets it here as well.
+// The window uses the installation's themes, so a theme chosen in the editor
+// is applied here as well.
 func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 	api := newAPI(t)
 	api.Themes = dressing{wearing: "Evening"}
@@ -87,8 +87,8 @@ func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 	}
 }
 
-// The page itself is asked for at its addresses, and a build carrying no
-// interface answers them with the files the window was given.
+// The page itself is served at its addresses, and a build with no
+// interface serves them with the files the window was given.
 func TestHandler_ServesPageAtRootAndIndex(t *testing.T) {
 	files := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("the files"))

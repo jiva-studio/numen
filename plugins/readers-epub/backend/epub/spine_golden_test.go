@@ -13,24 +13,24 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
-// update writes the goldens down again, and compares against none of them.
+// update rewrites the goldens and compares against none of them.
 var update = flag.Bool("update", false, "write the goldens of the corpus again")
 
 // spineCorpus is one spine document as this package emits it, which the window
-// that draws it is tested against. It stands with the corpora the two sides
+// that renders it is tested against. It sits with the corpora the two sides
 // share, because it is the one thing about a book that crosses as neither the
 // schema nor bytes: an attribute name, a set of elements, an escaping and a set
 // of offsets, agreed on by a producer here and a reader there.
 const spineCorpus = "../../frontend/testdata/spine.html"
 
-// middleDoc is the document the corpus is taken from. A document stands before
-// it in the spine, so its offsets begin where nothing else does.
+// middleDoc is the document the corpus is taken from. A document precedes it
+// in the spine, so its offsets start at a non-zero position.
 const middleDoc = "OEBPS/middle.xhtml"
 
 // textGolden is the whole of one book as this package reads it: the text, and
-// where every document, part and printed page of it stands. A chunk keeps an
-// offset into that text and not the text itself, so a byte moving here moves
-// every chunk cut before it, and the name of the reader has to move with it.
+// the position of every document, part and printed page. A chunk stores an
+// offset into that text, not the text itself, so a byte moving here moves
+// every chunk split before it, and the reader name has to change with it.
 const textGolden = "testdata/seam.text"
 
 // A change meaning to move the text moves this file with it, under -update, and

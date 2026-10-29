@@ -33,35 +33,35 @@ const (
 	Unreadable ReadOutcome = "unreadable"
 )
 
-// Reader is what a read asks of the files.
+// Reader is the file access a read requires.
 type Reader interface {
-	// StatFile says what the file is without opening it. It returns fs.ErrNotExist for a file
-	// that is not there and ErrNotANote for one the vault does not hold as a note.
+	// StatFile reports what the file is without opening it. It returns fs.ErrNotExist for a file
+	// that is missing and ErrNotANote for one the vault does not hold as a note.
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the bytes of the file.
 	Read(ctx context.Context, path string) ([]byte, error)
 }
 
-// Contents is one note as a read hands it over.
+// Contents is one note as returned by a read.
 type Contents struct {
 	Path    string
 	Outcome ReadOutcome
 	// Body is the prose below the frontmatter, with every line break written as one \n. It is empty
 	// for every outcome but Ok.
 	Body string
-	// FileStat is what the file was when it was asked about, which is before its bytes were read.
-	// size still says what it was.
+	// FileStat is the file's state when it was queried, before its bytes were read. size is the size at
+	// that time.
 	FileStat domain.FileStat
 }
 
-// Read hands over the prose of the note at path, refusing what is larger than MaxBytes.
+// Read returns the prose of the note at path, rejecting files larger than MaxBytes.
 //
-// An error is the vault being out of reach. What is wrong with the note itself is an outcome, and
-// the caller is told which one.
+// An error means the vault is unreachable. A fault in the note itself is an outcome, and
+// the caller receives which one.
 func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	out := Contents{Path: path}
 
-	// The vault says what is at a path without opening it: a note, a file it leaves alone, or
+	// The vault reports what is at a path without opening it: a note, a file it ignores, or
 	// nothing.
 	ref, err := files.StatFile(ctx, path)
 	target := err == nil
@@ -96,8 +96,8 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 		return Contents{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
-	// The body goes out in a string field. A browser turns an ill-formed sequence into U+FFFD, and
-	// the next save puts those characters where the person's bytes were.
+	// The body is returned in a string field. A browser converts an ill-formed sequence to U+FFFD, and
+	// the next save would write those characters in place of the original bytes.
 	if !utf8.Valid(raw) {
 		out.Outcome = NotText
 		return out, nil

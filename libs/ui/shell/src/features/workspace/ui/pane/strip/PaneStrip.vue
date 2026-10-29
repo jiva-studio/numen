@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The list of tabs a pane is chosen from. It carries the pane's identity on the
- * element, so that a drag can find out what the pointer is over by asking the
+ * element, so a drag can identify the pane under the pointer by querying the
  * document.
  *
  * The strip is walked with the arrows, and what is reached is shown.
@@ -39,7 +39,7 @@ defineSlots<{
 /* ---------------------------------- State --------------------------------- */
 const workspace = inject(WORKSPACE_CONTEXT)
 
-/** The tabs as they are drawn, each under the tab it stands for. */
+/** The tabs as rendered, each paired with its tab. */
 const drawnTabs = new Map<TabId, { focus: () => void }>()
 
 /* -------------------------------- Handlers -------------------------------- */

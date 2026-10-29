@@ -9,7 +9,7 @@ import { getStoryBrowser } from '../core/.storybook/browser'
 const src = fileURLToPath(new URL('./src', import.meta.url))
 
 /**
- * The shell reaches `@numen/ui` through its build, the way a window does: run
+ * The shell imports `@numen/ui` through its build, the way a window does: run
  * `npm run build` in `libs/ui/core` first.
  */
 const alias = [

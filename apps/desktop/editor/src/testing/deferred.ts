@@ -1,8 +1,8 @@
 /**
- * An answer a test hands over when it chooses to.
+ * A promise a test resolves or rejects at a time of its choosing.
  *
- * Two questions in the air at once come back in whatever order the test says,
- * which is how what the window does with the slower of them is asked.
+ * Two pending requests can be settled in any order the test chooses, which
+ * exercises how the window handles the slower of them.
  */
 export interface Deferred<T> {
   promise: Promise<T>

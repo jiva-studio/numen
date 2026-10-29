@@ -1,9 +1,9 @@
 /**
- * Typing a name to land the keyboard on it.
+ * Typeahead: typing a name moves the keyboard focus to the matching item.
  *
- * Letters struck close together are one word, and one letter struck again and
- * again walks the items beginning with it. When a letter arrived is handed in,
- * so nothing here reads a clock.
+ * Letters typed in quick succession form one word, and one letter typed
+ * repeatedly cycles through the items beginning with it. The time of each
+ * keystroke is a parameter, so nothing here reads a clock.
  */
 import type { MenuItem } from './item'
 
@@ -21,11 +21,11 @@ export const NOTHING_TYPED: Typeahead = { word: '', struck: 0 }
 
 export interface Jump {
   readonly typed: Typeahead
-  /** The item to stand on, and nothing where no item begins with the word. */
+  /** The item to focus, or null when no item begins with the word. */
   readonly at: number | null
 }
 
-/** A key that stands for a letter a person meant to type. */
+/** A key press that types a single printable character, without a modifier. */
 export const isLetter = (press: {
   key: string
   ctrlKey: boolean
@@ -35,13 +35,12 @@ export const isLetter = (press: {
   press.key.length === 1 && press.key !== ' ' && !press.ctrlKey && !press.metaKey && !press.altKey
 
 /**
- * Where a letter struck at `now` lands the keyboard, counting on from where it
- * stands and passing over the items that cannot be chosen.
+ * The item a letter typed at `now` moves the keyboard to, counting on from the
+ * current item and skipping the items that cannot be chosen.
  *
- * A letter that lengthens the word looks for the whole word from where the
- * keyboard already is, so a word being typed stands still while it grows. A
- * letter that begins a word, and the same letter struck again, look on from the
- * item after it.
+ * A letter that lengthens the word searches for the whole word from the current
+ * item, so the focus stays in place while the word grows. A letter that begins
+ * a word, and the same letter typed again, search from the next item.
  */
 export interface JumpStrike {
   readonly letter: string

@@ -23,15 +23,14 @@ const DefaultServiceDir = ".numen"
 
 const configName = "config.json"
 
-// Config is what a vault knows about itself: an identity, a format version,
-// and what the person has said not to look at. Nothing that could be
-// recomputed.
+// Config is what a vault records about itself: an identity, a format version,
+// and what the user has excluded. Nothing that could be recomputed.
 type Config struct {
 	Version int    `json:"v"`
 	ID      string `json:"id"`
-	// Ignore is written by the person, in the syntax of `.gitignore`. An
+	// Ignore is written by the user, in the syntax of `.gitignore`. An
 	// attachments folder, an export directory, a sync client's scratch space:
-	// what is noise is a property of this vault.
+	// what counts as noise is a property of this vault.
 	Ignore []string `json:"ignore,omitempty"`
 }
 
@@ -67,8 +66,8 @@ func ReadConfig(root, serviceDir string) (Config, error) {
 }
 
 // Initialize gives a folder an identity, which is the moment it becomes a vault.
-// This is the one write the application makes into a vault without being asked
-// to edit something, and it happens because the user added the vault.
+// This is the one write the application makes into a vault without a request to
+// edit something, and it happens because the user added the vault.
 //
 // An existing configuration is returned untouched: the identity is what every
 // row in the index points at.

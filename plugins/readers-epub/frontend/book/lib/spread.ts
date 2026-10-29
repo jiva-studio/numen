@@ -1,14 +1,14 @@
 /**
- * Where the countSpreads of a book stand when its text is set in columns.
+ * Spread layout of a book when its text is set in columns.
  *
- * Apart from the component the way the reader's own arithmetic is: how many
- * countSpreads a laid-out document evaluates to, where each one begins, which one a run
- * of text falls in and how far into a run a byte offset reaches are arithmetic,
- * and a test asks them without a browser.
+ * The arithmetic is separate from the component: the number of spreads in a
+ * laid-out document, where each begins, which spread a run of text falls in,
+ * and how far into a run a byte offset lies. A test evaluates it without a
+ * browser.
  */
 import type { TextRange } from '@numen/ui'
 
-/** Where one run of the text stands, once the document is laid out. */
+/** The position of one run of text in the laid-out document. */
 export interface Mark {
   /** The byte offset the run begins at, read off `data-offset`. */
   readonly at: number
@@ -83,10 +83,10 @@ export function columnsInAll(flow: Flow): number {
 }
 
 /**
- * Which column a place along them falls in, counted from the first. A column
- * begins half a gap into its share of the area, and the browser lays the
- * columns out in whole device pixels, so that half gap is also what a run
- * measured a fraction of a pixel short of its own column is read against.
+ * The column that a horizontal position falls in, counted from the first. A
+ * column begins half a gap into its share of the area. The browser lays out
+ * columns in whole device pixels, so a run measured a fraction of a pixel short
+ * of its own column is compared against that half gap.
  */
 export function getColumn(flow: Flow, x: number): number {
   const pitch = columnPitch(flow)
@@ -95,9 +95,9 @@ export function getColumn(flow: Flow, x: number): number {
 }
 
 /**
- * How many columns the text of this document actually fills. The layout renders
- * as many column boxes as a spread has, so a single-line document occupies one
- * column beside an empty one, and only the marks indicate which.
+ * The number of columns that the text of the document fills. The layout
+ * renders as many column boxes as a spread has, so a single-line document
+ * fills one column next to an empty one, and only the marks show which.
  */
 export function countFilledColumns(marks: readonly Mark[], flow: Flow): number {
   if (columnWidth(flow) <= 0 || marks.length === 0) return 0

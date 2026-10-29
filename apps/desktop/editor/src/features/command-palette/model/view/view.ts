@@ -1,10 +1,10 @@
 /**
- * What the palette draws at its current position: the commands offered over what is in
- * front, and the groups whichever step is open asks in.
+ * What the palette renders at its current position: the commands offered over
+ * the current content, and the groups of the open step.
  *
- * Every one of these is the state read again, so a vault moving under an open
- * step is drawn as it is. Nothing here decides anything or asks the
- * application for anything: `palette.ts` holds the steps and does that.
+ * Every value here is derived again from the current state, so a vault that
+ * changes under an open step is rendered as it is. Nothing here makes decisions
+ * or calls the application: `palette.ts` holds the steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import { getGroupCommands } from '../../lib/commands/commands'

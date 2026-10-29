@@ -18,9 +18,9 @@ import type { AgentPort, AgentQuery, AgentStep, SourceLocation } from '@numen/pl
 export interface ConversationStrings {
   /** The line shown before the agent has reached for anything. */
   readonly thinking: string
-  /** What is said when the agent could not be reached at all. */
+  /** Shown when the agent could not be reached at all. */
   readonly unreachable: string
-  /** What is said when the agent finished having said nothing. */
+  /** Shown when the agent finished without saying anything. */
   readonly nothing: string
 }
 
@@ -36,13 +36,13 @@ export interface Conversation {
   /** An answer is being written; the composer shows it. */
   readonly isWorking: Ref<boolean>
   readonly ask: (question: string, focus: string, options?: AskOptions) => Promise<void>
-  /** Where in a source one line was isWorking, for a line that says it opens one. */
+  /** The location in a source that a line refers to, for a line that opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
-  /** The answer on its way is release, and the conversation keeps what arrived. */
+  /** Stops the answer in progress; the conversation keeps what arrived. */
   readonly stop: () => void
   /**
-   * The conversation is over: the answer on its way is release, and the agent
-   * is told so it can release what it kept of the talk.
+   * The conversation has ended: the answer in progress is stopped, and the agent
+   * is notified so it can release its conversation state.
    */
   readonly finish: () => void
 }

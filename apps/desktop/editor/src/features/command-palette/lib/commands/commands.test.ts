@@ -1,7 +1,6 @@
 /**
- * What is offered over what is in front, and what a command carries out of it.
- *
- * and which of them another command's row reaches.
+ * The commands offered for the current selection, what a command executes on
+ * it, and which commands the row of another command reaches.
  */
 import { describe, expect, it } from 'vitest'
 import { createCommands, isCommandPrefixTyped, getNoteCommands } from './commands'

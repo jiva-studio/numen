@@ -42,8 +42,8 @@ func readArrived(t *testing.T, root, path string) string {
 	return string(body)
 }
 
-// Files a person lets go of over a folder are copied into it, whatever kind of
-// file they are, and what they release stays where it was.
+// Files dropped onto a folder are copied into it, whatever their kind, and the
+// source files stay in place.
 func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
@@ -109,8 +109,8 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 	}
 }
 
-// A name the folder already carries is a question only the person can answer,
-// so that file stays outside and the rest arrive.
+// A name that already exists in the folder is a conflict only the user can
+// resolve, so that file is skipped and the rest are copied.
 func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})

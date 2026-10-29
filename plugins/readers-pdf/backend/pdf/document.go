@@ -63,8 +63,8 @@ var idleRelease = 5 * time.Minute
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idleMemoryPercent is the 5 percent memory cap for idle workers"
 const idleMemoryPercent = 5
 
-// workerBytes is the memory one worker holds once it has read a document: the
-// linear memory of a freshly instantiated pdfium module plus room for the
+// workerBytes is the memory one worker holds after reading a document: the
+// linear memory of a freshly instantiated pdfium module plus space for the
 // document's working set.
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="workerBytes is the 32 megabyte working set estimate per worker"
 const workerBytes int64 = 32 << 20
@@ -110,9 +110,9 @@ func getPoolSize() int {
 	return max(runtime.NumCPU(), minWorkers)
 }
 
-// waitForWorker is how long a reader waits for one to come free. Reading a
-// document takes a second or two, and the wait is bounded so that a worker
-// wedged inside the library is a failure and not a program that stops.
+// waitForWorker is how long a reader waits for a free worker. Reading a
+// document takes a second or two, and the wait is bounded so that a worker stuck
+// inside the library produces an error instead of a hang.
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 
@@ -213,8 +213,8 @@ type document struct {
 	file   io.Closer
 }
 
-// source is where a document's bytes are read from, a block at a time as the
-// library asks for them.
+// source supplies a document's bytes, one block at a time as the library
+// requests them.
 type source struct {
 	reader io.ReadSeeker
 	size   int64
@@ -263,8 +263,8 @@ func open(src source) (*document, error) {
 	if err != nil {
 		putWorker(worker)
 		closeFile()
-		// A file that asks for a password is a file whose text nobody here can
-		// read, and it is worth saying so and not saying it is malformed.
+		// A file that requires a password has text no one here can read; it is
+		// reported as encrypted, not malformed.
 		// gomutants:disable-next-line EXPRESSION_REMOVE reason="password-protected PDFs return ErrEncrypted"
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
 			return nil, fmt.Errorf("%w: %w", ErrEncrypted, err)
@@ -293,8 +293,8 @@ func (d *document) close() {
 	}
 }
 
-// title is what the document says it is called. Most say nothing, and a good
-// many of the rest say the name of the program that made them.
+// title returns the document's title metadata. Most documents have none, and
+// many of the rest contain the name of the program that produced them.
 func (d *document) title() string {
 	meta, err := d.worker.FPDF_GetMetaText(&requests.FPDF_GetMetaText{Document: d.ref, Tag: "Title"})
 	if err != nil {
@@ -305,8 +305,8 @@ func (d *document) title() string {
 
 // text is the text layer of one page, and is empty for a page that has none.
 //
-// A page that cannot be read is a page that says nothing: one page of a
-// document is not worth refusing the document over.
+// A page that cannot be read yields empty text: one unreadable page does not
+// justify rejecting the document.
 func (d *document) text(index int) string {
 	page, err := d.worker.GetPageText(&requests.GetPageText{
 		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}},

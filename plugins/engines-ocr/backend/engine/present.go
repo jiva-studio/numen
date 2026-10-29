@@ -2,7 +2,7 @@ package engine
 
 import "os"
 
-// IsFetched says whether one recogniser model file is on this machine.
+// IsFetched reports whether one recogniser model file is on this machine.
 func IsFetched(cfg Config, model RecogniserModel) bool {
 	if model.Path != "" {
 		return isPresent(model.Path)

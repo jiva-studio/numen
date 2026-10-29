@@ -28,7 +28,7 @@ func getListedWords(t *testing.T, about string) string {
 	return ""
 }
 
-// A digest says how the speech opens and which of its words recur.
+// A digest reports how the speech opens and which of its words recur.
 func TestADigestReturnsWhatTheRecordingContains(t *testing.T) {
 	about := describeSpeech(makeLines(
 		"The assembly at Mithila heard Ganaka.",
@@ -44,7 +44,7 @@ func TestADigestReturnsWhatTheRecordingContains(t *testing.T) {
 	}
 }
 
-// A word said once is not a word that recurs.
+// A word that occurs once is not a recurring word.
 func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 	about := describeSpeech(makeLines("The teacher named Ganaka once.", "Nothing else was said of him."))
 	if response := getListedWords(t, about); response != "" {
@@ -52,8 +52,8 @@ func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 	}
 }
 
-// A word standing capitalised only where a sentence opens is a sentence's first
-// word and not a name, however often it is said.
+// A word capitalised only where a sentence opens is a sentence's first word and not
+// a name, however often it occurs.
 func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 	about := describeSpeech(makeLines("Ganaka spoke. Ganaka listened. Ganaka left."))
 	if response := getListedWords(t, about); response != "" {
@@ -61,7 +61,7 @@ func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 	}
 }
 
-// A shortening ends no sentence, so the name it stands before is a name.
+// An abbreviation does not end a sentence, so the name following it is a name.
 func TestANamePriorAShorteningIsStillAName(t *testing.T) {
 	about := describeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left."))
 	if response := getListedWords(t, about); response != "Ganaka" {
@@ -80,8 +80,8 @@ func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
 	}
 }
 
-// The opening is as much of the speech as the digest quotes, and says it was
-// cut short.
+// The opening is as much of the speech as the digest quotes, and it is marked as
+// truncated.
 func TestTheOpeningIsSplitShort(t *testing.T) {
 	var response []string
 	for item := range 200 {

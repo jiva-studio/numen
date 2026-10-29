@@ -68,8 +68,8 @@ export const findHolder = (
     : (visibleRows.find((row) => row.id === target.before)?.parent ?? null)
 
 /**
- * Rows cannot land in one of themselves, nor in anything one of them holds.
- * Everything else is allowed, and the top level refuses nothing.
+ * Rows cannot be dropped into themselves or into any of their descendants.
+ * Everything else is allowed, and the top level rejects nothing.
  */
 export function isRefused(
   rows: readonly Row[],

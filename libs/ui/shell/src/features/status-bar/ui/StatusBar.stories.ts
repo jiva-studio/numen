@@ -108,7 +108,7 @@ export const WithAFailure: Story = {
   },
 }
 
-/** Far more tasks than the popover has room for. */
+/** Many more tasks than fit in the popover. */
 export const FarTooMany: Story = {
   args: {
     tasks: Array.from({ length: 40 }, (_, index) => ({
@@ -174,8 +174,8 @@ export const DismissedByEscape: Story = {
 }
 
 /**
- * The trigger rings in no colour of the machine's, pressed or reached by Tab: the bar stands
- * outside the workspace, and what says where focus stands is its own hover ground.
+ * The trigger shows no system focus ring, whether pressed or reached by Tab:
+ * the bar is outside the workspace, and its own hover background indicates focus.
  */
 export const NoRingOnFocus: Story = {
   play: async ({ canvasElement }) => {

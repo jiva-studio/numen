@@ -1,9 +1,8 @@
 /**
- * Every situation the palette has to survive. Also the test corpus: each story
- * is run in a browser by `@storybook/addon-vitest`, which is the only place the
- * things this component exists for can fail — a list that scrolls, an item
- * brought into sight, a line too long for the panel, and a panel that stands
- * over everything the window holds.
+ * Palette stories. Also the test corpus: each story runs in a browser through
+ * `@storybook/addon-vitest`, the only place the behaviors this component exists
+ * for can fail: a scrolling list, scrolling the active item into view, a line
+ * too long for the panel, and a panel stacked above all other content.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -46,7 +45,7 @@ const READ = [{ id: 'read', text: 'Open note' }]
 /** What a command offers: doing it. */
 const RUN = [{ id: 'run', text: 'Run' }]
 
-/** Everything one thing can be asked, which is more than the keys reach. */
+/** An item with a primary and a secondary action; the keys reach only the primary. */
 const EVERYTHING = [
   { id: 'travel', text: 'Show in plex' },
   { id: 'read', text: 'Open note' },
@@ -59,7 +58,8 @@ const EVERYTHING = [
 ]
 
 /**
- * fixture's own arithmetic: the palette is told where the runs are.
+ * Builds highlight ranges for each occurrence of `word` in `text`. The palette
+ * receives the ranges as given and does no matching of its own.
  */
 const marks = (text: string, word: string): TextRange[] => {
   if (!word) return []
@@ -232,11 +232,11 @@ const searchInput = () => document.body.querySelector<HTMLInputElement>('[data-a
 const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
-/** What a line says, with the runs it is written in run together. */
+/** The text of a line, with its highlighted runs concatenated. */
 const getText = (of: Element | null | undefined): string =>
   (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
-/** The keystroke a cap is announced as, which is all of it a reader hears. */
+/** The keystroke announced for a key cap, which is the text a screen reader receives. */
 const getSpokenKey = (cap: Element | null | undefined): string =>
   getText(cap?.querySelector('.sr-only'))
 
@@ -248,8 +248,8 @@ const OTHER = 'Linux x86_64'
 export const Playground: Story = {}
 
 /**
- * Choosing one. Both identifiers are handed back as given, and Shift reaches
- * the second thing the item offers.
+ * Choosing an item. Both identifiers are returned as given, and Shift selects
+ * the item's secondary action.
  */
 export const Choosing: Story = {
   play: async ({ args }) => {
@@ -264,9 +264,9 @@ export const Choosing: Story = {
 }
 
 /**
- * Nothing behind it is reachable while active, which is what a palette is.
- * Tab is answered here and moves nowhere, and the panel over the palette says
- * the same of the palette under it.
+ * Content behind the palette is unreachable while it is active.
+ * Tab does not move focus out of the palette, and the action panel applies the
+ * same rule to the palette beneath it.
  */
 export const NothingBelowIt: Story = {
   play: async () => {
@@ -291,8 +291,8 @@ export const NothingBelowIt: Story = {
 }
 
 /**
- * Where the keyboard is standing, said as it moves. A caller showing what is
- * lit — a theme worn while it is walked past — draws from this alone.
+ * The active item is announced on every keyboard move. A caller that previews
+ * the active item, such as a theme, reads it from this announcement alone.
  */
 export const Lit: Story = {
   play: async ({ args }) => {
@@ -307,9 +307,8 @@ export const Lit: Story = {
 }
 
 /**
- * A list of values opens standing on the value in force, wherever in the list
- * it sits. Nothing has to be walked back, and a caller acting on what is lit
- * acts on what is already so.
+ * A list of values opens with the current value active, wherever it sits in the
+ * list. The caller acts on the active item without first navigating to it.
  */
 export const OpensOnAValue: Story = {
   args: { opensOn: 'gibbs' },
@@ -336,8 +335,8 @@ export const OpensOnNothingThere: Story = {
 }
 
 /**
- * One item, which is where it opens. Walking a list of one moves nothing, so
- * it is said once and not again.
+ * A single item is active on open. Navigating a one-item list does not move the
+ * active item, so it is announced once.
  */
 export const LitAlone: Story = {
   args: {
@@ -365,7 +364,7 @@ export const LitNothing: Story = {
   },
 }
 
-/** Far too many, walked to the end: every row it crosses is said, in order. */
+/** Many items, navigated to the end: every row crossed is announced, in order. */
 export const LitFarDown: Story = {
   args: {
     groups: [
@@ -389,9 +388,9 @@ export const LitFarDown: Story = {
 }
 
 /**
- * What is never said: a row that cannot be chosen, and anything at all while
- * the action panel stands. The panel is about the item that was lit when it
- * opened, and the keyboard is in a list of its own.
+ * Announcements that do not occur: a row that cannot be chosen, and any row
+ * while the action panel is open. The panel applies to the item that was active
+ * when it opened, and the keyboard operates a separate list.
  */
 export const NotLit: Story = {
   args: {
@@ -470,12 +469,11 @@ export const Filling: Story = {
 }
 
 /**
- * A search that came back with nothing, and what a reader is told of it.
+ * A search that returned no results, and what a screen reader announces for it.
  *
- * A group that answered with rows is read out by the row the keyboard lands
- * on. A group that answered with none has no row to land on, so what it says
- * in place of one is read out where a sighted person reads it. While it is
- * still working it has answered nothing, and nothing is said.
+ * A group with rows is announced through the row the keyboard lands on. A group
+ * with no rows has no such row, so its empty-state text is announced in place
+ * of one. A group that is still loading has no result yet and announces nothing.
  */
 export const NothingHeard: Story = {
   render: (args) => ({
@@ -522,9 +520,8 @@ export const NothingHeard: Story = {
 }
 
 /**
- * Every group was asked and answered with nothing. A group that has answered and
- * has nothing to say is worth no heading of its own, so none of them is drawn
- * and what stands there is what the caller says in place of a list.
+ * Every group returned no results. A group with no results has no heading, so
+ * none is drawn and the caller's empty-state content replaces the list.
  */
 export const Nothing: Story = {
   args: {
@@ -545,9 +542,8 @@ export const Nothing: Story = {
 }
 
 /**
- * One group answered with nothing and another could not be asked at all. The
- * first is drawn nowhere; the second says why in its own words, which is
- * something a person needs to be told.
+ * One group returned no results and another failed to load. The empty group is
+ * not drawn; the failed group shows its error text.
  */
 export const CouldNotBeQueried: Story = {
   args: {
@@ -622,10 +618,9 @@ const getIcon = (row: Element | null | undefined): string =>
   )?.[1] ?? ''
 
 /**
- * An icon before every row, drawn by whoever offered the row: here a note, a
- * sample, a form, a sheet, a book and a recording, each drawn as itself. A
- * row the caller has no icon for keeps the room, so the names line up down the
- * list.
+ * An icon before every row, supplied by the caller: here a note, a sample, a
+ * form, a sheet, a book and a recording. A row without an icon reserves the
+ * icon column, so the names stay aligned.
  */
 export const Icons: Story = {
   args: {
@@ -664,7 +659,7 @@ export const Icons: Story = {
       'audio-lines',
       '',
     ])
-    // The row with no icon keeps the room for one, so the names line up.
+    // The row without an icon reserves the icon column, so the names stay aligned.
     await expect(options()[6]?.querySelector('[data-palette="icon"]')).not.toBeNull()
   },
 }
@@ -843,9 +838,8 @@ export const NotToBeChosen: Story = {
 }
 
 /**
- * One group answered, another is still filling, and a third could not be asked.
- *
- * of the way of what a person is actually reading.
+ * One group returned results, another is still loading, and a third failed to
+ * load.
  */
 export const SomeCameBackEmpty: Story = {
   args: {
@@ -945,11 +939,9 @@ export const ActionPanel: Story = {
 }
 
 /**
- * Two steps: pick a thing, then name it. The palette draws one step at a time;
- * the caller keeps the stack and swaps the groups, the words in the field and
- * the chip that says which step this is.
- *
- * typing replaces it.
+ * Two steps: pick an item, then name it. The palette draws one step at a time;
+ * the caller owns the step stack and swaps the groups, the field text and the
+ * chip that identifies the current step.
  */
 export const Steps: Story = {
   render: (args) => ({
@@ -1024,9 +1016,9 @@ export const Steps: Story = {
 }
 
 /**
- * Items carrying the keystroke that reaches them away from the palette: an
- * Apple keyboard's row, the row of every other keyboard, and a cap holding one
- * icon and a cap holding four.
+ * Items with a keystroke hint shown outside the palette: an Apple keyboard
+ * layout, the layout of other keyboards, a key cap with one icon and a key cap
+ * with four.
  */
 export const KeyHints: Story = {
   args: {

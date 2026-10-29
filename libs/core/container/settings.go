@@ -24,15 +24,15 @@ const (
 	agentAt     = "agent"
 )
 
-// Settings is the file a person configures this installation in: one object
-// whose fields are its sections, in the order they stand in the file. The
-// settings adapter owns the file and the sections about the window; what
-// configures an adapter is that adapter's own shape, and the union of them is
-// made here, where every adapter is bound.
+// Settings is the file that configures this installation: one object whose
+// fields are its sections, in file order. The settings adapter owns the file
+// and the window sections; each adapter defines the shape of its own section,
+// and the union of the sections is assembled here, where every adapter is
+// bound.
 type Settings = settings.File
 
-// Settings reads the file a person configures this installation in. An
-// installation nobody has configured is written down as what it is doing.
+// Settings reads the settings file. An unconfigured installation returns the
+// default settings.
 func (c Config) Settings() (Settings, error) {
 	path, err := c.settingsFile()
 	if err != nil {
@@ -50,13 +50,13 @@ func (c Config) getSettingsAt(path string) (Settings, error) {
 	return target, nil
 }
 
-// DefaultSettings is what an installation nobody has configured does.
+// DefaultSettings returns the settings of an unconfigured installation.
 func DefaultSettings() Settings {
 	return settings.DefaultFile()
 }
 
-// getSettingsOrDefaults is that document, and what an installation nobody has
-// configured does where the file cannot be read.
+// getSettingsOrDefaults returns the settings document, or the defaults when
+// the file cannot be read.
 func (c Config) getSettingsOrDefaults() Settings {
 	if path, err := c.settingsFile(); err == nil {
 		if target, err := c.getSettingsAt(path); err == nil {
@@ -66,11 +66,9 @@ func (c Config) getSettingsOrDefaults() Settings {
 	return DefaultSettings()
 }
 
-// SetSettings is this configuration carrying what a settings file says.
-//
-// Every section of it is carried here, in one place both entry points use. A
-// nothing and says nothing, since naming no model is how a person turns one
-// off.
+// SetSettings returns the configuration with the values of a settings file
+// applied. Both entry points use it. An empty embedding model disables
+// embedding.
 func (c Config) SetSettings(s Settings) Config {
 	c.Embedding = s.Indexing.Embedding
 	c.Agent = s.Agent
@@ -100,8 +98,8 @@ func (c Config) SetSettings(s Settings) Config {
 	return c
 }
 
-// Plugins reads, as the window asks, the discovered plugins and their settings
-// schemas.
+// Plugins returns a function that lists the discovered plugins and their
+// settings schemas.
 func (c Config) Plugins() func() []pluginport.PluginInfo {
 	return func() []pluginport.PluginInfo {
 		if c.PluginHost == nil {
@@ -112,12 +110,12 @@ func (c Config) Plugins() func() []pluginport.PluginInfo {
 	}
 }
 
-// Models reads, as the window asks, the models each setting that names one can
-// be set to, and the programs the agent setting can name.
+// Models returns a function that lists the models each model setting accepts,
+// and the programs the agent setting accepts.
 //
-// The settings are read with them, so every row is answered against what is in
-// force; a file that cannot be read is answered against the defaults. The
-// programs and their models are the ones the agent plugins list.
+// The settings are read with them, so every row reflects the effective
+// settings; an unreadable file uses the defaults. The programs and their
+// models are the ones listed by the agent plugins.
 func (c Config) Models() func() []settingsport.Model {
 	return c.modelsForProvider(c.AgentProvider())
 }
@@ -132,10 +130,11 @@ func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []set
 	return c.listModels
 }
 
-// MigratePluginSettings gives a person's plugin the settings that were theirs before the plugin took
-// them over. A setting whose manifest says what it replaces is written into the plugin's section of
-// the file from the first place the file still holds the old one, unless the section already holds
-// the setting. The old keys stay in the file as the person wrote them.
+// MigratePluginSettings copies settings that existed before a plugin took
+// them over into the plugin's section. A setting whose manifest names the key
+// it replaces is written to the plugin's section of the file from the first
+// location that still holds the old key, unless the section already holds the
+// setting. The old keys remain in the file.
 func (c Config) MigratePluginSettings() error {
 	if c.PluginHost == nil {
 		return nil

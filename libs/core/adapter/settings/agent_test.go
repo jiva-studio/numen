@@ -19,8 +19,8 @@ func read(t *testing.T, file string) settings.Agent {
 	return target
 }
 
-// A settings file that names no agent names no agent. A file that leaves the name out leaves the
-// choice to the default, and an empty name is what a person wrote.
+// A settings file that names no agent selects no agent. A file that omits the
+// name defers to the default, and an empty name is an explicit choice of none.
 func TestNamingNoAgentIsCached(t *testing.T) {
 	var unmodified settings.Agent
 	if !unmodified.IsNamed() || unmodified.GetUse() != "" {
@@ -43,8 +43,9 @@ func TestNamingNoAgentIsCached(t *testing.T) {
 	}
 }
 
-// What puts the tools on a port: an agent named for the panel, or a person asking for the port
-// itself. An installation asking for neither opens none.
+// The tools are served on a port when an agent is named for the panel or when
+// the user requests the port explicitly. An installation requesting neither
+// serves none.
 func TestWhatOpensThePort(t *testing.T) {
 	var defaultAgent settings.Agent
 	if defaultAgent.ShouldServeTools {
@@ -118,7 +119,7 @@ func TestTheFieldsASectionNamesAreTaken(t *testing.T) {
 	}
 }
 
-// A file read twice into one section keeps what the first said and the second left out.
+// A file read twice into one section keeps the values of the first read that the second omits.
 func TestAgentUnmarshal_RepeatedReadMergesSection(t *testing.T) {
 	var target settings.Agent
 	for _, file := range []string{`{"claude": {"model": "opus"}}`, `{"claude": {"max_steps": 5}}`} {
@@ -140,8 +141,8 @@ func TestTheCommandsAreThoseTheSettingsSet(t *testing.T) {
 	}
 }
 
-// The section is written with the programs beside the two keys of it, and a choice left to the
-// default is written as null, so that it reads back the same.
+// The section is written with the programs next to its two keys, and a choice
+// left to the default is written as null, so it reads back unchanged.
 func TestTheSectionIsSavedAsItIsRead(t *testing.T) {
 	file := `{"use":"claude","serve_tools":true,"claude":{"command":["/c"],"model":"opus","reasoning":"high","max_steps":7,"reads_hooks_and_skills":true}}`
 	content, err := json.Marshal(read(t, file))

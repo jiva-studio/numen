@@ -9,7 +9,7 @@ import { WORDS as words } from './words'
 const props = defineProps<{
   /** Whether the text carries times, which is what following goes by. */
   isTimed?: boolean
-  /** Whether the view keeps the line being said in sight. */
+  /** Whether the view keeps the active line in view. */
   isFollowing?: boolean
   /** Whether the menu at the end of the strip offers anything. */
   hasMenu?: boolean

@@ -11,11 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Index is the cache, seen as the ports the core asks for.
+// Index is the cache, exposed as the ports that the core uses.
 type Index = vault.Index
 
-// OpenIndex opens the cache. Closing it belongs to the caller, which is what
-// knows when it is finished.
+// OpenIndex opens the cache. The caller closes it.
 func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 	path, err := c.indexPath()
 	if err != nil {

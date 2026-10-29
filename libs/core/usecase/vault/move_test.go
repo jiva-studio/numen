@@ -31,7 +31,7 @@ type filing struct {
 	// readers is every reader this vault is opened through, keeping the tally of
 	// files whose bytes were read.
 	readers *countingReaders
-	// went is every note whoever is drawing was told about, in order.
+	// went is every move reported to the observer, in order.
 	went *[]domain.Move
 }
 
@@ -56,7 +56,7 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 	}
 }
 
-// move is the move an installation nobody has configured does: a title and a
+// move returns the move an unconfigured installation performs: title and
 // filename kept as one name.
 func (f filing) move() vaults.Move { return f.newMove(true) }
 
@@ -78,7 +78,7 @@ func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 	)
 }
 
-// resolves is where the one link written in a note reaches.
+// resolves returns the target of the one link written in a note.
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
 	found, err := f.db.Links().GetLinks(t.Context(), f.vault.ID, in)
@@ -100,9 +100,8 @@ func (f filing) read(t *testing.T, path string) string {
 	return string(raw)
 }
 
-// A folder moves with everything under it, whatever kind of file that is. The
-// notes are filed where they now are, and the links written by their names
-// follow them.
+// A folder moves with everything under it, whatever kind of file. The notes are
+// filed at their new paths, and links written by name follow them.
 func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{
@@ -157,8 +156,8 @@ func (f filing) sources(t *testing.T, path string) []string {
 	return out
 }
 
-// What the vault holds under a path is asked of the index, and it is the same
-// answer walking the folder gives.
+// What the vault holds under a path is read from the index, and it matches what
+// walking the folder gives.
 func TestWhatIsBelowAPathIsWhatAWalkFinds(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{
@@ -206,9 +205,8 @@ func walkSources(t *testing.T, f filing, path string) []string {
 	return out
 }
 
-// A folder that travelled is filed where it now is, and what was derived from
-// each source is still the source's. The files say what they said, so none of
-// them is opened.
+// A moved folder is filed at its new path, and what was derived from each source
+// is still that source's. The file contents are unchanged, so none is opened.
 func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{
@@ -252,8 +250,8 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 	}
 }
 
-// A destination that is taken fails, and nothing has moved when the caller
-// is told.
+// A move to a taken destination fails, and nothing has moved when the caller is
+// notified.
 func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{

@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// walked is when a walk said every file these tests put in last changed.
+// walked is the modification time that the scan reports for every file these tests add.
 var walked = time.Unix(0, 1)
 
 func TestEveryConnectionGetsThePragmas(t *testing.T) {
@@ -80,9 +80,8 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 		if busyTimeout[i] != 5000 {
 			t.Errorf("connection %d has busy_timeout = %d, want 5000", i, busyTimeout[i])
 		}
-		// NORMAL is 1. FULL asks the disk to settle at every commit, which a
-		// rebuild does thousands of times, and nothing else in the suite
-		// notices which one is set.
+		// NORMAL is 1. FULL syncs the disk at every commit, which a rebuild does
+		// thousands of times, and no other test depends on the setting.
 		if synchronous[i] != 1 {
 			t.Errorf("connection %d has synchronous = %d, want 1 (NORMAL)", i, synchronous[i])
 		}

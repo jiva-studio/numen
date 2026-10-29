@@ -23,8 +23,8 @@ export const isPartialNumber = (text: string): boolean => {
 }
 
 /**
- * The number the text stands for; nothing at its current position for none. The shape
- * is what a person types: no exponent, no hexadecimal, no word for infinity.
+ * The number the text represents; null when it does not represent one. The
+ * accepted shape is what a user types: no exponent, no hexadecimal, no word for infinity.
  */
 export const parseNumber = (text: string): number | null => {
   const cleanText = text.trim()
@@ -71,11 +71,11 @@ export const stepForKey = (key: string, value: number | null, bounds: Bounds): n
 /** How a number is written into the field. */
 export const formatNumber = (value: number | null): string => (value === null ? '' : String(value))
 
-/** Whether what is typed stands for the number in force. An empty field holds none. */
+/** Whether the text represents the current value. An empty field represents null. */
 export const isTextForValue = (text: string, value: number | null): boolean =>
   value === null ? text.trim() === '' : parseNumber(text) === value
 
-/** What the field relies on while a person types, and what each act does with it. */
+/** The field's state while the user types, and what each action does with it. */
 export interface NumberEntry {
   readonly typed: Ref<string>
   readonly isInvalid: ComputedRef<boolean>
@@ -91,10 +91,10 @@ export interface NumberEntry {
 /**
  * The typed, model and rested state of a number field.
  *
- * What was typed stands as it was typed, and the number is written out only
- * once the field is left. A number the bounds no longer hold is brought in, and
- * stands there written out. `onCommit` hears of a rest at a number other than
- * the one the field was resting at.
+ * The typed text is kept as typed, and the number is formatted only once the
+ * field is left. A number outside the current bounds is clamped and shown
+ * formatted. `onCommit` fires when the field settles on a number different from
+ * the previously settled one.
  */
 const checkInvalid = (raw: string, getBounds: () => Bounds): boolean => {
   const text = raw.trim()
@@ -140,7 +140,7 @@ export const useNumberEntry = (
 ): NumberEntry => {
   const formattedValue = ref(formatNumber(model.value))
 
-  /** The number the field last stood at rest at. Committing is what moves it. */
+  /** The number the field last settled on. Committing updates it. */
   let rested = model.value
 
   const isInvalid = computed(() => checkInvalid(formattedValue.value, getBounds))
@@ -158,9 +158,9 @@ export const useNumberEntry = (
   }
 
   /**
-   * Leaving writes back what holds: the number on a place of the step, in
-   * bounds. A field left standing where it stood has not committed anywhere new.
-   * The field relies on whatever the caller holds once it has answered.
+   * Leaving the field writes back the number snapped to the step and the bounds.
+   * A field left at its previous number commits nothing new. Afterwards the field
+   * shows the value the caller holds once it has handled the commit.
    */
   const commit = async (): Promise<void> => {
     const value = parseNumber(formattedValue.value)

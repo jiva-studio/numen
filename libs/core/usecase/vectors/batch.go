@@ -6,8 +6,8 @@ import "unicode/utf8"
 const defaultBatchCharacters = 32000
 
 // splitBatches groups texts into requests, bounded by the characters of the whole
-// group. A model bounds a request by everything in it, and a count of texts says
-// nothing about their size: the same number of chunks carries several times the
+// group. A model bounds a request by everything in it, and a count of texts does
+// not indicate their size: the same number of chunks carries several times the
 // tokens in transliterated Sanskrit that it does in English.
 //
 // The groups are subslices, in order, so their answers concatenate into an

@@ -13,10 +13,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// A Task is one piece of work, as a person is shown it.
+// A Task is one unit of work as presented to the user.
 type Task struct {
-	// ID is what this work is called, so that the same work reported again
-	// replaces itself.
+	// ID identifies the work, so a repeated report of the same work replaces
+	// the earlier one.
 	ID string
 
 	// Title is the work, in the words to show: "Recognising a scan".
@@ -29,11 +29,11 @@ type Task struct {
 	// against. Both zero is work that is running with nothing to count.
 	Count, Total int64
 
-	// Error is why the work stopped, when it stopped badly. A task that stopped
-	// badly stays in the list until whoever put it there takes it out.
+	// Error is why the work failed. A failed task stays in the list until its
+	// creator removes it.
 	Error string
 
-	// IsUserStarted is set for work a person started and is waiting to be told about.
+	// IsUserStarted is set for work the user started and expects a report on.
 	IsUserStarted bool
 
 	// Unit is what Count and Total are counted in.
@@ -131,8 +131,8 @@ func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbed
 	return ReadWholeVault{notes: notes, texts: texts, vectors: vectors}
 }
 
-// ReadWholeVaultResult is what each pass did. A pass that did not run is a zero
-// value, and nothing here tells that apart from a pass that found nothing.
+// ReadWholeVaultResult is the outcome of each pass. A pass that did not run is
+// a zero value, indistinguishable from a pass that found nothing.
 type ReadWholeVaultResult struct {
 	Notes   ScanResult
 	Texts   IndexResult
@@ -171,7 +171,7 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (IndexRe
 	return res, nil
 }
 
-// MakeVectors gives every chunk that owes a vector one.
+// MakeVectors embeds every chunk that lacks a vector.
 func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (EmbedResult, error) {
 	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress)
 	if err != nil {
@@ -180,7 +180,7 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (EmbedR
 	return res, nil
 }
 
-// CutOne cuts one file again from whatever its live text version now says.
+// CutOne re-chunks one file from its current live text version.
 func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
 	if _, err := u.texts.IndexOne(ctx, v, path); err != nil {
 		return fmt.Errorf("cutting %s: %w", path, err)

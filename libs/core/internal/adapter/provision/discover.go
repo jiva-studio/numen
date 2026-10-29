@@ -30,7 +30,8 @@ func getSystemDirs() []string {
 // discovery looks for a dependency the machine already holds.
 type discovery struct {
 	dirs []string
-	// ldconfig lists the libraries the loader knows, as `ldconfig -p` prints them.
+	// ldconfig returns the libraries known to the loader, in the format printed
+	// by `ldconfig -p`.
 	ldconfig func() []byte
 }
 

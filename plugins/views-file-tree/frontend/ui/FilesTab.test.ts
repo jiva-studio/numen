@@ -26,10 +26,10 @@ const target: Record<string, readonly Entry[]> = {
   physics: [file('physics/Kelvin.md')],
 }
 
-/** A moment for whatever the tab asked the vault for to come back. */
+/** Waits one tick for the responses to the tab's vault requests. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A tab of that vault, drawn, and what it asked of the window written down. */
+/** Mounts a tab of that vault, and records what it requested from the window. */
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
   const list = useFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })

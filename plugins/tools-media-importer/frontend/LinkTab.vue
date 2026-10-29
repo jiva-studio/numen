@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * A link's tab: the address it holds, the copy of its video where one is kept, the text fetched
- * from it, and the work a person starts on it.
+ * A link's tab: the address it holds, the copy of its video where one is kept, the text
+ * fetched from it, and the work a user starts on it.
  */
 import { onUnmounted } from 'vue'
 import LinkPlayer from './LinkPlayer.vue'

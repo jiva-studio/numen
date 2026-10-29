@@ -16,10 +16,10 @@ import (
 // BenchmarkRun is what opening the problems view costs.
 //
 // Two of these checks read rows a scan already stored and are a query each. Two
-// work the whole vault out at the moment they are asked, and this is the number
-// that says whether that stays affordable — a vault where every note answers to
-// one of a handful of names is the shape that costs the most, because every
-// link written by one of them is a candidate.
+// work out the whole vault at the time they run, and this number shows whether
+// that stays affordable — a vault where every note has one of a handful of
+// names is the costliest shape, because every link written by one of them is a
+// candidate.
 func BenchmarkRun(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {

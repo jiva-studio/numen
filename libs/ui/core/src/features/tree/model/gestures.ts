@@ -1,8 +1,8 @@
 /**
- * What a press, a double press, a key or a menu asked for on a row evaluates to.
+ * The evaluation of a press, a double press, a key or a menu request on a row.
  *
- * The selection and the drag work out what a gesture makes of them; this is
- * where a gesture is read and the tree says what happened.
+ * The selection and the drag compute what a gesture means for them; this is
+ * where a gesture is read and the tree emits the resulting event.
  */
 import type { Ref } from 'vue'
 import { getDraggedRows } from '../lib/drag'
@@ -14,7 +14,7 @@ import type { RowDragState } from './drag'
 import type { DrawnRowsState } from './rows'
 import type { RowSelectionState } from './selection'
 
-/** What the tree says a gesture came to. */
+/** The events the tree emits for a gesture. */
 export interface TreeGesturesTell {
   (event: 'open', row: RowId): void
   (event: 'close', row: RowId): void
@@ -32,7 +32,7 @@ export interface TreeGesturesOptions {
   readonly rows: DrawnRowsState
   readonly selection: RowSelectionState
   readonly drag: RowDragState
-  /** Where a menu asked for by the keyboard opens, off the row it is on. */
+  /** Where a menu requested from the keyboard opens, positioned from its row. */
   readonly getMenuAt: (row: RowId) => Position | null
   readonly tell: TreeGesturesTell
 }

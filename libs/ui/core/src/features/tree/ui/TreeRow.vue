@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * One row of a tree: what is drawn beside the name, the name, and the field a
- * new name is typed in. What the row stands for, and what a press on it means,
- * are the tree's.
+ * One row of a tree: the content drawn beside the name, the name, and the field
+ * a new name is typed in. What the row represents, and what a press on it means,
+ * are decided by the tree.
  */
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import type { TreeRowProps } from './TreeRow.types'
@@ -15,7 +15,7 @@ const props = defineProps<TreeRowProps>()
 const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', name: string): void
-  /** The name left as it was, and the keyboard asked back to the row. */
+  /** Renaming was cancelled with the name unchanged, and keyboard focus returns to the row. */
   (event: 'abandon'): void
   /** The field left, the keyboard already somewhere else. */
   (event: 'blur'): void
@@ -108,7 +108,7 @@ watch(
   opacity: var(--dragged-fade);
 }
 
-/* Where the keyboard stands. */
+/* Keyboard focus indicator. */
 .tree__row:focus-visible {
   outline: none;
 }
@@ -131,7 +131,7 @@ watch(
   background: var(--numen-ring);
 }
 
-/* A name stands clear of the mark beside it. */
+/* Spacing between the icon and the name. */
 .tree__icon {
   margin-inline-end: var(--gap);
 }

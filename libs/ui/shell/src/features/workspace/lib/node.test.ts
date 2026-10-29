@@ -1,4 +1,4 @@
-/** The orientation a side asks for, and how a depth turns it. */
+/** The orientation of a side, and how a depth changes it. */
 import { describe, expect, it } from 'vitest'
 import { getOrientation, findSideOrientation, orthogonal, type Side } from './node'
 

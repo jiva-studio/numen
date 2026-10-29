@@ -1,10 +1,9 @@
 <script setup lang="ts">
 /**
- * The controls a sound is played by: start it, stop it, see at its current position
- * and put it somewhere else.
+ * Playback controls: start, stop, show the current position and seek.
  *
- * It plays nothing of its own. What plays lives where being drawn cannot
- * reach it, and this only says what a person did.
+ * It does not play audio itself. Playback runs outside the rendered view, and
+ * this component only emits the user's actions.
  */
 import { computed, ref } from 'vue'
 import { Pause, Play } from '@lucide/vue'
@@ -13,12 +12,12 @@ import { clock } from '@numen/ui'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** Where the sound stands, in milliseconds. */
+    /** The current playback position, in milliseconds. */
     at: number
     /** How long it runs, in milliseconds. */
     length: number
     isPlaying: boolean
-    /** What the controls are called, where a person is read to. */
+    /** The accessible name of the controls. */
     label?: string
     play?: string
     pause?: string
@@ -34,12 +33,12 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-/** A sound is at least as long as the furthest anything has stood in it. */
+/** The duration is at least the furthest position reached. */
 const runs = computed(() => Math.max(props.length, props.at, 0))
 
 /**
- * While a person drags the bar, where they dragged it is shown rather than
- * where the sound stood before the move landed.
+ * While the bar is dragged, the dragged position is shown instead of the
+ * playback position, until the seek takes effect.
  */
 const dragging = ref<number | null>(null)
 
@@ -90,7 +89,7 @@ function onSeekChange() {
 </template>
 
 <style scoped>
-/* The controls are drawn flat, on whatever ground they stand on. */
+/* The controls are flat and inherit the surrounding background. */
 .player {
   display: flex;
   align-items: center;
@@ -123,7 +122,7 @@ function onSeekChange() {
   fill: currentColor;
 }
 
-/* The two times take the room the longer of them needs, so the bar does not
+/* The two times share the width of the longer one, so the bar does not
    move as the seconds count up. */
 .player__at {
   flex: none;

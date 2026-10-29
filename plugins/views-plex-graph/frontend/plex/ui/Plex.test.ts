@@ -95,8 +95,8 @@ describe('asking for a node on its own', () => {
 
 describe('what a screen reader and a keyboard are given', () => {
   it('makes every node reachable by tab, the focus included', () => {
-    // The focus cannot be chosen and is still stopped at: a menu is asked for
-    // from wherever the keyboard is.
+    // The focus cannot be chosen but is still a stop: a menu is requested from
+    // wherever the keyboard is.
     const plex = mountPlex()
     expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(
       neighbourhoods.typical.nodes.length,
@@ -128,8 +128,8 @@ describe('what did not fit', () => {
     const plex = mountPlex({ neighbourhood: neighbourhoods.overcrowded })
     const status = plex.get('[role="status"]').text()
 
-    // How much fits depends on the window, so the sentence is read against
-    // what was actually drawn and not against a number written here.
+    // How much fits depends on the window, so the sentence is checked against what
+    // was rendered and not against a hard-coded number.
     const countDrawn = (relation: string) =>
       plex
         .findAll('.plex__node')
@@ -202,7 +202,7 @@ describe('how wide a box is drawn', () => {
     }) as typeof window.getComputedStyle)
   }
 
-  /** A window that says something has changed size when a test says it has. */
+  /** A window that reports a size change when a test triggers it. */
   const stubObserver = (): (() => void)[] => {
     const rings: (() => void)[] = []
 
@@ -252,8 +252,8 @@ describe('how wide a box is drawn', () => {
   })
 
   it('remains still while the type it was measured in remains', async () => {
-    // The box of the plex's own type is watched, and it is looked at again
-    // whenever the window says it may have moved.
+    // The box of the plex's own type is observed, and measured again whenever the
+    // window reports it may have moved.
     stubCanvas()
     stubStyles()
     const rings = stubObserver()
@@ -269,8 +269,8 @@ describe('how wide a box is drawn', () => {
   })
 
   it('measures again when a theme changes the type under it', async () => {
-    // A theme is worn by rewriting a style element, with nothing remounted.
-    // Every box then holds a title set in type the plex has never measured.
+    // A theme is applied by rewriting a style element, with nothing remounted.
+    // Every box then holds a title set in a type the plex has not measured.
     stubCanvas()
     stubStyles()
     const rings = stubObserver()

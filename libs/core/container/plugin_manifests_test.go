@@ -392,7 +392,7 @@ func listFrontendSources(t *testing.T, dir string) []string {
 	return files
 }
 
-// isNamedIn says whether a source names a key as a string.
+// isNamedIn reports whether a source contains a key as a string.
 func isNamedIn(source, key string) bool {
 	for _, quote := range []string{`"`, `'`, "`"} {
 		if strings.Contains(source, quote+key+quote) {

@@ -17,7 +17,7 @@ var ErrInvalidContentType = errors.New("invalid content type")
 // to case.
 type ContentType string
 
-// UnknownContentType is the type of a file whose name no table knows (RFC 2046 §4.5.1).
+// UnknownContentType is the type of a file whose name matches no table entry (RFC 2046 §4.5.1).
 const UnknownContentType ContentType = "application/octet-stream"
 
 // AnyContentType is the mask of every type, a file of an unknown type among them.
@@ -35,7 +35,7 @@ func ParseContentType(text string) (ContentType, error) {
 	return "", fmt.Errorf("%w: %q", ErrInvalidContentType, text)
 }
 
-// IsMask reports whether the type stands for more than one type.
+// IsMask reports whether the type matches more than one type.
 func (t ContentType) IsMask() bool {
 	return strings.HasSuffix(string(t), "/*")
 }
@@ -62,8 +62,8 @@ func (t ContentType) getWidth() int {
 	return 0
 }
 
-// HandlerRank is how a handler stands among the others of a type: a default one is chosen without
-// asking, an alternate one only when the person asks for it.
+// HandlerRank is the priority of a handler among the handlers of a type: a default handler is chosen
+// without prompting, an alternate handler only on explicit request.
 type HandlerRank string
 
 const (

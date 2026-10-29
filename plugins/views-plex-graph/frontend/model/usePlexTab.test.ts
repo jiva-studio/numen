@@ -1,9 +1,9 @@
 /**
- * What a gesture in a plex evaluates to, asked without a screen.
+ * Gesture evaluation in a plex, without a rendered screen.
  *
- * A note made from a node other than the focus is the one to watch: it is
- * written into the vault whatever happens, and a picture one relation deep draws
- * it only from the node it was made from.
+ * A note created from a node other than the focus is the case under test: it
+ * is written into the vault regardless, and a graph one relation deep renders
+ * it only from the node it was created from.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
@@ -32,19 +32,19 @@ const tab = (
   const request: string[] = []
   const ran: [string, string, string][] = []
   const messages: string[] = []
-  /** Every note the vault was asked to make on its own. */
+  /** Every note the vault was asked to create standalone. */
   const wrote: string[] = []
   /** The notes the window is dragging over this picture, which a test sets. */
   const dragging = ref<readonly string[]>([])
   /** Where a note made on its own lands, which a test empties for a vault refusing. */
   const writes = ref('Untitled note.md')
-  /** Every note put in front of the person on a line of its own prose. */
+  /** Every note shown on a line of its own prose. */
   const entered: [string, number][] = []
-  /** What the vault says each note is divided into, which a test sets. */
+  /** The sections each note is divided into, set per test. */
   const divides = ref<ReadonlyMap<string, readonly NoteHeading[]>>(new Map())
   /** Whether a node nests the headings of its note, which a test turns. */
   const isNesting = ref(true)
-  /** Every question the vault was asked about what the notes hold. */
+  /** Every query the vault received about note contents. */
   const requestedHeadings: (readonly string[])[] = []
   const deps: PlexTabDeps = {
     editor: vault.editor,
@@ -55,7 +55,7 @@ const tab = (
       openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current'])
       if (options?.line !== undefined) entered.push([path, options.line])
     },
-    // The vault answers about the notes it was asked about and no others.
+    // The vault answers only for the notes it was queried about.
     readHeadings: async (paths) => {
       requestedHeadings.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
@@ -75,7 +75,7 @@ const tab = (
     creatable: ['parent', 'child', 'jump'],
   }
   const state = usePlexTab(plex.view, deps)
-  /** What the picture calls a note, which is what a gesture in it carries. */
+  /** The label of a note in the graph, which a gesture on it carries. */
   const node = (path: string) => getNode(state, path.replace(/\.md$/, ''))
   return {
     state,
@@ -97,7 +97,7 @@ const tab = (
   }
 }
 
-/** The node of the picture drawn for the note of this title, if it draws one. */
+/** The node of the graph drawn for the note of this title, if one is drawn. */
 const getNode = (state: PlexTabState, title: string): string =>
   state.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
@@ -529,7 +529,7 @@ describe('the headings a node nests', () => {
     })
     const node = () => getNode(plex, 'Root')
 
-    // The picture asks once as it is built, and that answer is left pending.
+    // The graph queries once when built, and that response stays pending.
     const request = answers.length
     void plex.readHeadings()
     void plex.readHeadings()
@@ -607,7 +607,7 @@ describe('the headings a node nests', () => {
   })
 
   it('are hung again once the setting is turned back on', async () => {
-    // Turning it is all a person does; nothing else asks for them again.
+    // Turning is the only user action; nothing else requests them again.
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
@@ -669,12 +669,11 @@ type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: st
 const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
 /**
- * A plex standing in a vault whose files a person can move.
+ * A plex in a vault whose files can be moved.
  *
- * The vault answers what is around whatever note it is asked about, and no note
- * in it carries an identifier — this is the vault of somebody who writes in
- * another editor. A move renames its files and is told to the plex as a change
- * arriving tells it.
+ * The vault returns the neighbours of any note it is queried about, and no note
+ * has an identifier: this is a vault written in another editor. A move renames
+ * its files and is reported to the plex like an incoming change.
  */
 const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[] = []) => {
   let relatedItems = initialNeighbours.map(([path, relation, through]) => ({
@@ -685,7 +684,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   /** An answer the vault is holding back, and what lets it go. */
   let pendingGate: Promise<void> | null = null
   let release = () => {}
-  /** Every note the vault was asked about, in the order it was asked. */
+  /** Every note the vault was queried about, in query order. */
   const request: string[] = []
   const vault = createVault()
   const openedCalls: [string, string, string][] = []
@@ -731,15 +730,15 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   })
   await view.go(focus)
 
-  /** The picture currently, which is what a drawn window reads. */
+  /** The current graph, which a rendered window reads. */
   const picture = () => state.picture.value
-  /** What the picture calls the note shown by this title. */
+  /** The label of the note shown by this title. */
   const node = (title: string) => getNode(state, title)
   const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.relation} ${one.id}`)
-  /** Every edge of the picture, as the two nodes it runs between. */
+  /** Every edge of the graph, as the pair of nodes it connects. */
   const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)
 
-  /** Files moved in the vault, and the plex told what went where. */
+  /** Files moved in the vault, and the plex notified of the old and new paths. */
   const moveFiles = (...renamed: readonly PathRename[]) => {
     relatedItems = relatedItems.map((one) => ({
       ...one,
@@ -748,12 +747,12 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     }))
     state.followMoves(renamed)
   }
-  /** A move, followed by the picture being asked for again. */
+  /** A move, followed by a new graph request. */
   const moveFilesAndReload = async (...renamed: readonly PathRename[]) => {
     moveFiles(...renamed)
     await view.go(view.here.value)
   }
-  /** The person travels to another note, which is a picture of its own. */
+  /** The user navigates to another note, which is a graph of its own. */
   const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
     relatedItems = now.map(([at, relation, through]) => ({
       path: at,
@@ -969,8 +968,8 @@ describe('a plex that travelled', () => {
     expect(nextNodeIds).toHaveLength(2)
     expect(nextNodeIds.filter((id) => initialNodeIds.includes(id))).toStrictEqual([])
 
-    // A node stands for nothing once a navigation has passed it by twice, so
-    // a gesture dragging one asks the vault about nothing.
+    // A node is invalid after two navigations, so a drag on it issues no vault
+    // query.
     await one.goToNote('Warm.md', ['Fire.md', 'child'])
     for (const node of initialNodeIds) one.state.activate(node)
     expect(one.requested.at(-1)).toBe('Warm.md')
@@ -1004,8 +1003,8 @@ describe('a plex that travelled', () => {
     const one = await inVault('One.md', [['Heat.md', 'child']])
     const before = one.nodes()
 
-    // The vault is asked about the note where it was, and the file moves while
-    // that answer is on its way.
+    // The vault is queried for the note at its old path, and the file moves while
+    // that query is pending.
     one.holdAnswers()
     const nav = one.view.go('One.md')
     one.moveFiles({ from: 'One.md', to: 'moved/One.md' }, { from: 'Heat.md', to: 'moved/Heat.md' })

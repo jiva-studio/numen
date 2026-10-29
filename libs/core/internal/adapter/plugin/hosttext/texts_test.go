@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// openFailure fails to open every vault, and records the vaults it was asked to open.
+// openFailure fails to open every vault, and records the vaults it received open requests for.
 type openFailure struct {
 	opened *[]domain.VaultID
 }

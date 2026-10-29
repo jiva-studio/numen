@@ -54,9 +54,9 @@ func TestSplitNotes_LimitFollowsEmbeddingMaxTokens(t *testing.T) {
 	}
 }
 
-// A note is cut at the sizes the settings say. The chunks a vault owes vectors
-// for are its small ones, and each is under the input limit of the model that
-// will read it.
+// A note is split at the sizes the settings define. The chunks a vault needs
+// vectors for are its small ones, and each is under the input limit of the
+// model that will embed it.
 func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
 	if err != nil {
@@ -117,8 +117,8 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	if _, err := target.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {
 		t.Fatal(err)
 	}
-	// A width the index cannot be built for is the reason nothing is made
-	// searchable, and it is found before a vector is asked of anything.
+	// A width the index cannot be built for prevents anything from becoming
+	// searchable, and it is detected before any vector is requested.
 	_, err = target.ReadWholeVault(t.Context(), db, wide{0}, v)
 	if err == nil || !strings.Contains(err.Error(), "not a vector") {
 		t.Fatalf("got %v", err)
@@ -158,9 +158,8 @@ func TestNothingElseAssemblesASplit(t *testing.T) {
 			return err
 		}
 		ast.Inspect(file, func(n ast.Node) bool {
-			// A note is cut by whatever the repository was told when it was
-			// built, so a repository taken without being told cuts at the
-			// package's own defaults.
+			// A note is split at the sizes the repository was configured with, so a
+			// repository created without configuration splits at the package's defaults.
 			if call, ok := n.(*ast.CallExpr); ok {
 				if named, ok := call.Fun.(*ast.SelectorExpr); ok && named.Sel.Name == "Notes" {
 					if target, ok := named.X.(*ast.Ident); ok && target.Name == "db" {

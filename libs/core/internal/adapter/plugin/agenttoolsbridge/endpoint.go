@@ -34,7 +34,7 @@ type endpoint struct {
 	url    string
 	token  string
 	server *http.Server
-	// stopped is closed once the server no longer serves.
+	// stopped is closed once the server has stopped serving.
 	stopped chan struct{}
 	// limit is how long close waits for the requests in progress.
 	limit time.Duration
@@ -119,9 +119,9 @@ func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint,
 	return served, nil
 }
 
-// close stops the endpoint once and returns when it no longer serves. The requests in progress are
-// given the limit and the connections still serving one after it are cut, which close reports. A
-// connection with no request in progress is closed at once.
+// close stops the endpoint once and returns when it has stopped serving. Requests in progress
+// get the limit to finish, and connections still serving a request after it are cut, which close
+// reports as an error. A connection with no request in progress is closed immediately.
 func (e *endpoint) close(ctx context.Context) error {
 	e.once.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, e.limit)
@@ -154,7 +154,7 @@ func (e *endpoint) shutdown(ctx context.Context) error {
 	}
 }
 
-// declareTool is the tool as an MCP client is told of it.
+// declareTool returns the tool as an MCP client sees it.
 func declareTool(spec *v1.PluginTool) *sdk.Tool {
 	declared := &sdk.Tool{
 		Name:        spec.GetName(),

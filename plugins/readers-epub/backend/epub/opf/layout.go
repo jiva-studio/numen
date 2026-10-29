@@ -12,8 +12,8 @@ const (
 type Direction string
 
 const (
-	// DefaultDirection: the book says nothing, and a reader lays it out the way
-	// its language is written.
+	// DefaultDirection: the book specifies none, and a reader lays it out in the direction
+	// of its language.
 	DefaultDirection Direction = ""
 	LeftToRight      Direction = "ltr"
 	RightToLeft      Direction = "rtl"

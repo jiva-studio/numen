@@ -1,6 +1,6 @@
 /**
- * What the vault says about itself, read into the window's own words: a part
- * of the answer the vault left out reads as nothing done and nothing counted.
+ * The vault state response mapped to window values: a field omitted from the
+ * response maps to an empty or zero value.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FlushResult, Unit } from '@numen/protocol'

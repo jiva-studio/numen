@@ -116,7 +116,7 @@ func TestEveryLineIsInABatchHoweverSpeechIsSplit(t *testing.T) {
 					}
 				}
 
-				// Each batch reaches further than the one before it, so the walk
+				// Each batch extends further than the one before it, so the walk
 				// through the transcript never stalls.
 				for i := 1; i < len(batches); i++ {
 					last, before := batches[i].Lines, batches[i-1].Lines
@@ -248,7 +248,7 @@ func TestASeamContainsTheLinesOnBothSidesOfASplit(t *testing.T) {
 	}
 }
 
-// A batch over a cut is built for the cuts it is asked for and no others. The cut after
+// A batch over a cut is built for the requested cuts and no others. The cut after
 // the last batch is no cut at all.
 func TestSplitBatches_BuildsOnlyRequestedBatches(t *testing.T) {
 	cues := makeTranscript(8)
@@ -271,7 +271,7 @@ func TestATranscriptOfOneBatchHasNoSeams(t *testing.T) {
 	}
 }
 
-// A batch of one line has no room for a line on either side of a cut.
+// A batch of one line has no space for a line on either side of a cut.
 func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 	if batchesAcrossCuts := cutBatches(makeTranscript(6), 1, 0, cuts(6)); batchesAcrossCuts != nil {
 		t.Errorf("gave back %v", batchesAcrossCuts)
@@ -322,8 +322,8 @@ func TestASentenceCrossingASplitExistsWholeInASeam(t *testing.T) {
 	}
 }
 
-// Each batch over a cut reaches further into the transcript than the one before it, so a
-// run taking up in the pass over the cuts never stalls and never skips one.
+// Each batch over a cut extends further into the transcript than the one before it, so a
+// run resuming in the pass over the cuts never stalls and never skips one.
 func TestEachSeamReachesFurtherThanTheOneBefore(t *testing.T) {
 	for _, count := range []int{2, 3, 5, 8, 13, 21} {
 		for size := 2; size <= 8; size++ {

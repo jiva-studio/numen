@@ -40,8 +40,8 @@ type acpModel struct {
 }
 
 // acpSession is one ACP session with an agent started for it alone. The client offers the agent no
-// file system and no terminal, and the tools of the run as its one MCP server. It grants the
-// permission to call one of those tools and refuses every other.
+// file system and no terminal, and offers the tools of the run as its one MCP server. It grants the
+// permission to call one of those tools and rejects every other.
 type acpSession struct {
 	cmd      *exec.Cmd
 	stdin    io.WriteCloser
@@ -373,7 +373,7 @@ func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 		fmt.Errorf("%s exited before answering %s", s.program, method), s.stderr.String()))
 }
 
-// answerRequest grants the permission to call one of the run's tools, refuses every other, and
+// answerRequest grants the permission to call one of the run's tools, rejects every other, and
 // serves none of the agent's other methods.
 func (s *acpSession) answerRequest(request rpcMessage) error {
 	reply := rpcRequest{ID: request.ID}

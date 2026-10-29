@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * The plex: one node in focus, everything else placed by its relation.
+ * The plex: one focused node, with all other nodes placed by their relation to it.
  *
- * Takes a neighbourhood, gives back an identifier when one is chosen. It does
- * not fetch, does not know what an identifier addresses, and does not work out
- * who is related to whom. Answer `activate` with the next neighbourhood and it
- * travels there by itself.
+ * Takes a neighbourhood and emits an identifier when one is chosen. It does not
+ * fetch data, does not interpret what an identifier addresses, and does not
+ * compute who is related to whom. The caller answers `activate` with the next
+ * neighbourhood, and the plex transitions to it.
  */
 import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
@@ -77,18 +77,18 @@ const { frame, isMoving } = usePlexTransition(
 )
 
 /**
- * A caller that allows no relation at all has turned the gesture off, and a handle
- * that can come to nothing is a lie. Where a pointer happens to be is the
- * node's own affair, and never reaches this far.
+ * A caller that allows no relation has disabled the gesture, so no handle is
+ * shown. Pointer position over a node is handled by the node and does not
+ * affect this.
  */
 const canReach = computed(() => props.creatable.length > 0)
 
 /**
- * Reaching out from a node.
+ * Dragging out from a node.
  *
- * The plex works out the shape of it — where it started, which way it went,
- * what it landed on — and says so. Whether a parent may be made, and what
- * making one writes, is the application's.
+ * The plex reports the shape of the gesture: where it started, which way it
+ * went and what it ended on. Whether a parent may be created, and what
+ * creating one writes, is decided by the application.
  */
 const gesture = usePlexGesture({
   frame: () => frame.value,
@@ -102,10 +102,10 @@ const gesture = usePlexGesture({
 })
 
 /**
- * Something dragged across the picture from outside it.
+ * An item dragged onto the plex from outside it.
  *
- * The plex works out which relation letting go evaluates to, measured from the focus,
- * and says so. What is being dragged it never looks at.
+ * The plex determines which relation the drop evaluates to, measured from the
+ * focus, and reports it. It does not inspect the dragged item.
  */
 const dragging = usePlexDrag({
   getSurface: () => view.value?.svg ?? null,
@@ -130,8 +130,8 @@ watch(
 )
 
 /**
- * What did not fit, as `[relation, count]` pairs. The words belong to whoever
- * renders the plex, through the `overflow` slot.
+ * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
+ * the labels through the `overflow` slot.
  */
 const overflow = computed(() =>
   (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
@@ -145,7 +145,7 @@ const frameStyle = computed(() => ({
 
 defineExpose({
   isMoving: toRef(isMoving),
-  /** The keyboard put back on a node by whoever took it away. */
+  /** Restores keyboard focus to a node. */
   focusNode: (id: string) => view.value?.focusNode(id),
 })
 </script>

@@ -1,9 +1,9 @@
 /**
- * What the quit is told to wait for, asked without a window.
+ * What the quit waits for, tested without a window.
  *
- * A question that outlives what raised it holds the window open on a note the
- * person has already answered; one that is never raised lets the window go
- * with the text still unwritten.
+ * A prompt that outlives the conflict that raised it holds the window open on a
+ * note the user has already resolved; a conflict that never raises a prompt
+ * lets the window close with the text still unsaved.
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'

@@ -1,11 +1,11 @@
 /**
- * A document read, in one piece: its pages side by side, what is highlighted
- * over them, and the controls floating over the page.
+ * A document in the reader: pages side by side, highlights over them, and the
+ * controls floating over the page.
  *
- * the width asked for is the width of the screen and not of the layout, whether
- * a rectangle given as a fraction lands where it belongs and stays there when
- * the page is drawn larger, and whether a book of five hundred pages draws five
- * hundred pages to show one.
+ * The stories check that the requested width is the screen width and not the
+ * layout width, that a rectangle given as a fraction lands in place and stays
+ * there when the page is drawn larger, and that a book of five hundred pages
+ * draws only the visible pages.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -48,8 +48,8 @@ const createPages = (pageCount: number) =>
   Array.from({ length: pageCount }, () => ({ width: 612, height: 792 }))
 
 /**
- * A page, drawn to the width it was asked for. What a document does for real;
- * this one carries its own number and nothing else.
+ * A page drawn to the requested width. Stands in for the document renderer and
+ * draws only its own page number.
  */
 const renderPage = (label: string, width: number): string => {
   const tall = Math.round((width * 792) / 612)
@@ -61,8 +61,8 @@ const renderPage = (label: string, width: number): string => {
 }
 
 /**
- * The reader with a document behind it. The width it asks for is what a page is
- * drawn to, and it is written on the frame so a test can read it.
+ * The reader with a document. Pages are drawn to the width the reader requests,
+ * and the requested width is written on the frame so a test can read it.
  */
 const book =
   (highlights: readonly Rect[] = [], pageCount = PAGES): Render =>
@@ -70,7 +70,7 @@ const book =
     components: { Reader },
     setup() {
       const page = ref(0)
-      /** The width the reader last asked for, in device pixels. */
+      /** The width the reader last requested, in device pixels. */
       const width = ref(0)
       const picture = (index: number) =>
         width.value > 0 ? renderPage(String(index + 1), width.value) : ''
@@ -105,18 +105,18 @@ const TEMPLATE = `
 const getSheet = (canvasElement: HTMLElement, page: number) =>
   canvasElement.querySelector(`.reader__page[data-page="${page}"]`) as HTMLElement | null
 
-/** The picture on one page, where it has been drawn. */
+/** The image of one page, once drawn. */
 const getImage = (canvasElement: HTMLElement, page: number) =>
   getSheet(canvasElement, page)?.querySelector('.reader__picture') as HTMLImageElement | null
 
-/** The room the strip is scrolled in. */
+/** The scroll container of the strip. */
 const getFreeSpace = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.reader__viewport') as HTMLElement
 
 /**
- * The row has arrived at a page when that page stands against the near edge of
- * the room. A turn is a scroll the browser animates at its own pace, and this
- * is where it ends.
+ * The strip has reached a page when that page is at the leading edge of the
+ * scroll container. A page turn is a browser-animated scroll, and this is the
+ * position where it ends.
  */
 const waitForPage = async (canvasElement: HTMLElement, page: number) =>
   await waitFor(
@@ -134,8 +134,8 @@ export const Playground: Story = {
 }
 
 /**
- * the layout. A page cut off at the foot is a person scrolling two ways to read
- * one page.
+ * The page fits the layout. A page cut off at the bottom would force two-axis
+ * scrolling to read it.
  */
 export const Opened: Story = {
   render: book(),
@@ -152,8 +152,8 @@ export const Opened: Story = {
 }
 
 /**
- * A book of five hundred pages draws the few in the room and not the rest. Half
- * a megabyte a page is a book's worth of pixels asked for to show one of them.
+ * A book of five hundred pages draws only the pages in the viewport. Drawing
+ * every page at half a megabyte each would allocate a book's worth of pixels.
  */
 export const OnlyWhatIsInTheViewport: Story = {
   render: book([], MANY),
@@ -168,8 +168,8 @@ export const OnlyWhatIsInTheViewport: Story = {
     await expect(drawnNow).toBeLessThan(MANY)
     await expect(drawnNow).toBeGreaterThanOrEqual(isAcross)
 
-    // The strip is as long as the whole book, so the scrollbar says how much of
-    // it there is even though only a few pages are drawn.
+    // The strip is as long as the whole book, so the scrollbar reflects the full
+    // length even though only a few pages are drawn.
     const room2 = getFreeSpace(canvasElement)
     await expect(room2.scrollWidth).toBeGreaterThan(box.width * MANY * 0.9)
   },
@@ -182,8 +182,8 @@ export const Turning: Story = {
     const canvas = within(canvasElement)
     await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
 
-    // The row travels to the page turned to, and what the controls say is
-    // where the row stands, so each is pressed once the last one has arrived.
+    // The strip scrolls to the requested page, and the controls report the
+    // position of the strip, so each control is used after the previous scroll ends.
     await userEvent.click(canvas.getByLabelText('Next page'))
     await waitForPage(canvasElement, 1)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(2))
@@ -326,9 +326,8 @@ export const HighlightedOnlyOnceThePageIsThere: Story = {
 }
 
 /**
- * The row taken hold of and pulled. A book on a table is moved by putting a hand
- * on it, and a row five hundred pages long is a long way to travel by a
- * scrollbar.
+ * Dragging the strip. A strip of five hundred pages is too long to cross with
+ * the scrollbar alone.
  */
 export const Pulled: Story = {
   render: book([], MANY),

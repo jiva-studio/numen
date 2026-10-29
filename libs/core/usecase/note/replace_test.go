@@ -16,7 +16,7 @@ func (c changing) replace() note.Replace {
 	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 }
 
-// What is asked for is replaced, and what is not asked for is the bytes it was.
+// The requested span is replaced and every other byte is unchanged.
 func TestReplace_ChangesOnlyRequestedSpan(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -44,8 +44,8 @@ func TestReplace_ChangesOnlyRequestedSpan(t *testing.T) {
 	}
 }
 
-// The offsets answer where the new text now stands, so a window can draw it
-// without being told anything else.
+// The returned offsets locate the new text, so the editor can draw it without
+// further queries.
 func TestAReplacementReturnsWhereItLanded(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
@@ -59,8 +59,8 @@ func TestAReplacementReturnsWhereItLanded(t *testing.T) {
 	}
 }
 
-// The frontmatter is the person's, and a replacement in the prose is not a
-// reason to touch it.
+// The frontmatter belongs to the user, and a replacement in the prose does not
+// modify it.
 func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 	t.Parallel()
 	front := "---\nkeep: 'this'   # and this\nid: 01J8XYZ\n---\n"
@@ -96,8 +96,8 @@ func TestASpanActiveTwiceIsRefused(t *testing.T) {
 	}
 }
 
-// A span that is not there is answered with where a copy of it stopped
-// agreeing, which is what tells a caller its copy is one character out.
+// A span that is not found returns the position where the caller's copy stops
+// matching, which tells the caller its copy differs by a character.
 func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
@@ -129,8 +129,9 @@ func TestReplace_ReportsReplacementAlreadyPresent(t *testing.T) {
 	}
 }
 
-// A person's editor writes the quotes and dashes; a program writing about that
-// prose rarely reproduces them. The stretch is found, and the reading is said.
+// A user's editor writes typographic quotes and dashes; a program writing about
+// that prose rarely reproduces them. The span is found, and the match is
+// reported as normalized.
 func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{

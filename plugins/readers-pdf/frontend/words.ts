@@ -1,5 +1,5 @@
 /**
- * What a PDF document reader says: page turning, zoom, and loading state.
+ * Strings of the PDF document reader: page turning, zoom, and loading state.
  */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {

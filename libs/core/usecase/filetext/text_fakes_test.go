@@ -160,7 +160,7 @@ func (t libraryVaultTexts) RequestText(_ context.Context, path, _ string) error 
 	return nil
 }
 
-// IsTextSource says every file is a text source but the ones a test set aside with leaveOut.
+// IsTextSource reports every file as a text source except those a test excluded with leaveOut.
 func (t libraryVaultTexts) IsTextSource(_ context.Context, path string) (bool, error) {
 	t.texts.mu.Lock()
 	defer t.texts.mu.Unlock()

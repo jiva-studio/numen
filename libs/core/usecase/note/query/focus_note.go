@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// FocusNote makes a note the one the person is looking at.
+// FocusNote sets the focused note.
 type FocusNote struct {
 	queries noteport.NoteQueries
 	view    windowport.Window

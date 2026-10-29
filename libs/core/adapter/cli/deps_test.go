@@ -70,8 +70,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			books.ShouldRebuildIndex = rebuild
 
-			// No vectors: a test reaches no model, and a vault answers by its
-			// words alone.
+			// No vectors: a test uses no model, and a vault is searched by words alone.
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			embed.Texts = testsupport.Texts{Readers: readers}
 
@@ -84,8 +83,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}, nil
 		},
 
-		// No embedder: a test reaches no model, so a question is answered by its
-		// words alone.
+		// No embedder: a test uses no model, so a query is answered by words alone.
 		Search: func(ctx context.Context, _ domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
@@ -143,8 +141,8 @@ func (fixedLinkQueries) ResolveLinks(
 	return nil, nil
 }
 
-// A command runs on what the terminal is handed, and a test that hands it
-// values reaches no disk, no database and no model. The openers are what make
+// A command runs on the values the terminal supplies, and a test that supplies values
+// uses no disk, no database and no model. The openers are what make this possible.
 func TestACommandRunsOnValuesAlone(t *testing.T) {
 	t.Parallel()
 	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}

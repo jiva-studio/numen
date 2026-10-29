@@ -25,7 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// EditorAssembly is this installation as the window a person writes in asks it.
+// EditorAssembly is this installation as the editor window requests it.
 type EditorAssembly = assembly.Runtime[PluginVaultHooks, pluginport.PluginVault]
 
 // UnknownVaultError is a vault named at start that the registry does not hold.

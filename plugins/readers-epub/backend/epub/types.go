@@ -7,7 +7,7 @@ import (
 )
 
 // The types a Book is made of are read by their own packages and named here for
-// whoever holds a Book.
+// every user of a Book.
 type (
 	Document  = text.Document
 	Part      = text.Part

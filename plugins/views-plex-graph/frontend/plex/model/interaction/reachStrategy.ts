@@ -1,10 +1,10 @@
 /**
- * How a node offers to be reached out of. A hand finds a handle by moving over
- * the node and presses it; a finger has no hover, so it rests on the node and
- * the gesture carries on from where it rested.
+ * How a node offers a gesture start. A mouse finds a handle by hovering over
+ * the node and presses it; touch has no hover, so the press rests on the node
+ * and the gesture continues from there.
  *
- * Which of the two a plex offers is the caller's, so neither is written into
- * the node.
+ * The caller of the plex chooses which of the two applies, so neither is
+ * hard-coded in the node.
  */
 import { useLongPress, LONG_PRESS_DELAY } from './longPress'
 
@@ -19,11 +19,11 @@ export interface ReachSite {
 export interface ReachStrategy {
   /** Whether the node draws a handle for a pointer to press. */
   readonly hasHandle: boolean
-  /** What the node listens for besides. Called once, inside the node's scope. */
+  /** The additional listeners the node attaches. Called once, inside the node's scope. */
   readonly listeners: (site: ReachSite) => Record<string, (event: PointerEvent) => void>
 }
 
-/** The handle, under the hand and under the keyboard. */
+/** The handle strategy, for pointer and keyboard. */
 export const byHandle: ReachStrategy = {
   hasHandle: true,
   listeners: () => ({}),

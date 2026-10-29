@@ -1,5 +1,5 @@
 /**
- * Which row the tab key reaches, and the keyboard put onto a row once it is drawn.
+ * Which row receives the Tab key, and keyboard focus moving onto a row once it is rendered.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flatten, type Row, type RowId } from '../lib/row'
@@ -17,7 +17,7 @@ const create = (rows: readonly Row[] = ROWS, selection: readonly RowId[] = []) =
     () => selection,
   )
 
-/** A drawn row: what a row component hands over, with the element under `$el`. */
+/** A rendered row: what a row component provides, with the element under `$el`. */
 const createDrawn = () => {
   const focus = vi.fn<() => void>()
   return { focus, rendered: { $el: { focus } } }

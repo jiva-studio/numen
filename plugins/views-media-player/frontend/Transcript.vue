@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The words under the player, with the times they were said at, or what stands where there are
- * none. A time in the gutter is clicked to play from there.
+ * The transcript under the player, with the time of each line, or an empty-state
+ * message when there is none. Clicking a time in the gutter plays from there.
  */
 import { computed, watch } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
@@ -27,7 +27,7 @@ const { timed, times: cueTimes, hasText } = props.state.lines
 const { isTranscribable } = props.state.offers
 const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
-/** The times in the editor's gutter, and the line being said. */
+/** The times in the editor's gutter, and the line being played. */
 const times = createTimeGutter((line) => props.state.navigation.goToLine(line))
 
 /* --------------------------------- Hooks ---------------------------------- */

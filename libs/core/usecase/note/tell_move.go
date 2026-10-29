@@ -6,9 +6,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// TellMove is told where a note went, for whoever is showing it.
+// TellMove receives the destination of a moved note, for the viewer that shows
+// it.
 //
-// A person reading a note that is renamed under them is reading a name with no
-// file behind it, and every change made to that note afterwards is made
-// somewhere they are not looking. Nothing is told where nobody is drawing.
+// A viewer of a renamed note holds a name with no file behind it, and every
+// later change to the note is applied to a path the viewer does not show.
+// TellMove is not called when no viewer renders the note.
 type TellMove func(ctx context.Context, went domain.Move)

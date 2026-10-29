@@ -8,9 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// paths is the table the settings page draws its rows from, which it holds in a
-// file of its own so that this can be read against the same table the window
-// reads.
+// paths is the table the settings page renders its rows from. It lives in its
+// own file, so this test reads the same table as the window.
 const paths = "../../editor/src/pages/settings/paths.json"
 
 // Every path the settings page reads is a path through the file this build

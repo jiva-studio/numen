@@ -9,8 +9,8 @@ describe('a wheel turned over the row', () => {
   })
 
   it('moves the row down where there is something below', () => {
-    // Drawn closer the room has both axes, and then down means down the way it
-    // does everywhere else in the window.
+    // When zoomed in, the view scrolls on both axes, and scrolling down moves
+    // down as it does everywhere else in the window.
     expect(getWheelOffset({ x: 0, y: 120 }, true)).toEqual({ x: 0, y: 120 })
   })
 
@@ -57,8 +57,8 @@ describe('a hand on the row', () => {
   })
 
   it('moves the row against the hand', () => {
-    // A hand pulled left brings the pages after this one into the room, the way
-    // a book on a table is pushed aside.
+    // Dragging left brings the following pages into view, like pushing a book
+    // aside on a table.
     const hand = new Hand()
     hand.take(createPoint(200), createPoint(500))
 

@@ -30,7 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// eventRecorder serves numen.v1.PluginEventService and keeps every event it is handed. It refuses each
+// eventRecorder serves numen.v1.PluginEventService and records every event it receives.
 type eventRecorder struct {
 	numenv1connect.UnimplementedPluginEventServiceHandler
 	mu      sync.Mutex

@@ -18,8 +18,8 @@ const meta = {
   component: Editor,
   parameters: {
     layout: 'fullscreen',
-    // Tab indents while the editor holds it, and Escape hands it back to the
-    // page. What a reader is told on arrival is that way out.
+    // Tab indents while the editor has focus; Escape returns Tab to the page.
+    // The announcement on focus names that exit.
     reach: { keeps: 'Escape hands Tab back to the page' },
     docs: {
       description: {
@@ -218,10 +218,9 @@ export const Steady: Story = {
 }
 
 /**
- * A table on its own. Click a cell and type: what is typed is written back
- * over that cell alone. Tab walks the cells and makes a row at the end,
- * Escape leaves the table. The two buttons along its edges make a row and a
- * column.
+ * A table in isolation. Typing in a cell writes back to that cell only. Tab
+ * moves between cells and adds a row at the end, Escape leaves the table, and
+ * the buttons on its edges add a row or a column.
  */
 export const Table: Story = { render: renderEditor(TABLE) }
 
@@ -273,7 +272,7 @@ export const TableTypedInto: Story = {
   play: async ({ canvasElement }) => {
     await asATable(canvasElement)
 
-    // The shape the markdown says, drawn as a table and not as three lines.
+    // The markdown renders as a table, not as three lines.
     const head = canvasElement.querySelectorAll('.cm-table thead .cm-cell')
     const body = canvasElement.querySelectorAll('.cm-table tbody tr')
     await expect(head).toHaveLength(3)
@@ -288,8 +287,8 @@ export const TableTypedInto: Story = {
     await userEvent.tab()
     await expect(document.activeElement).toBe(cells(canvasElement)[1])
 
-    // What is typed is written back over that cell alone. The browser does the
-    // typing: the cell takes plain text, and only a real keystroke reaches it.
+    // Typing writes back to that cell only. The browser performs the typing: the
+    // cell accepts plain text, and only a real keystroke reaches it.
     const context = await import('vitest/browser')
     await context.userEvent.fill(cells(canvasElement)[3] as HTMLElement, 'Enthalpy')
 
@@ -321,9 +320,10 @@ export const TableGrown: Story = {
   },
 }
 
-/* Three fenced blocks: two written in something the editor knows and one in a
-   word no pack answers to. The word after the fence is the whole of what
-   chooses a pack. */
+/*
+ * Three fenced blocks: two in languages the editor supports and one in a
+ * language no pack matches. The word after the fence selects the pack.
+ */
 const FENCED = [
   '```javascript',
   'const answerVal = 42',
@@ -347,7 +347,7 @@ const codeLine = (canvas: HTMLElement, text: string) =>
     line.textContent?.includes(text),
   )
 
-/** Everything on that line painted in something other than the line's own ink. */
+/** Every span on the line painted in a colour other than the line's own. */
 const getColouredSpans = (line: HTMLElement) => {
   const ink = getComputedStyle(line).color
   return [...line.querySelectorAll('span')].filter((span) => getComputedStyle(span).color !== ink)
@@ -383,7 +383,7 @@ export const FencedInEveryLanguage: Story = {
 /** Nothing written yet, and something to say so. */
 export const Empty: Story = { render: renderEditor('', { placeholder: 'Write' }) }
 
-/** No text, and nothing said about there being none. */
+/** Empty text with an empty placeholder. */
 export const NothingAtAll: Story = { render: renderEditor('', { placeholder: '' }) }
 
 /** One line, which is what a note is for its first minute. */
@@ -440,9 +440,9 @@ const topmost = (view: EditorView): number => {
 }
 
 /**
- * The text read again from under the person: the same file, changed by
- * somebody else while it was open. The caret stays on its line, the scroll
- * offset stays where it was, and an undo does not bring the old text back.
+ * The text reloaded after an external change to the same file while it is
+ * open. The caret stays on its line, the scroll offset is unchanged, and undo
+ * does not restore the old text.
  */
 export const ReadAgain: Story = {
   render: () => ({
@@ -536,11 +536,11 @@ export const TenOpenTabs: Story = {
 }
 
 /**
- * The chord that keeps the text.
+ * The save chord.
  *
- * Put the caret in the text and press Ctrl+S. The editor says the person asked
- * for the text to be kept, the text is left as it was, and the page's own
- * answer to the chord does not run.
+ * Put the caret in the text and press Ctrl+S. The editor emits a save request,
+ * leaves the text unchanged, and the page's own handler for the chord does not
+ * run.
  */
 export const Kept: Story = {
   render: () => ({
@@ -590,12 +590,12 @@ export const Kept: Story = {
 const NESTED = '- a bullet\n'
 
 /**
- * Tabbing in, and tabbing out again.
+ * Tab in and Tab out.
  *
- * Tab indents, which is what it does in every editor a list is written in, so
- * a person who tabbed into a note would be kept in it. Escape hands Tab back
- * to the page and the next Tab walks on; coming back arms it again, so every
- * visit begins the same way. The way out is read out as the keyboard arrives.
+ * Tab indents, as in any editor for lists, so focus would stay inside the note.
+ * Escape returns Tab to the page and the next Tab moves on. Re-entering the
+ * editor re-arms the trap, so every visit starts the same way. The exit is
+ * announced when the keyboard arrives.
  */
 export const LeftByTheKeyboard: Story = {
   render: () => ({
@@ -622,7 +622,7 @@ export const LeftByTheKeyboard: Story = {
     const view = getView(canvasElement)
     const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
 
-    // What a reader is told on arrival is the way back out.
+    // The announcement on arrival names the exit.
     const notifiedElement = document.getElementById(
       view.contentDOM.getAttribute('aria-describedby') ?? '',
     )
@@ -632,12 +632,12 @@ export const LeftByTheKeyboard: Story = {
     await userEvent.tab()
     await expect(view.hasFocus).toBe(true)
 
-    // Tab is the editor's while a person is writing: it indents and stays.
+    // While writing, Tab belongs to the editor: it indents and keeps focus.
     await userEvent.tab()
     await expect(view.hasFocus).toBe(true)
     await expect(view.state.doc.toString()).not.toBe(NESTED)
 
-    // Escape hands it to the page, and the next Tab is the page's.
+    // Escape releases Tab to the page, and the next Tab moves focus on.
     await userEvent.keyboard('{Escape}')
     await userEvent.tab()
     await expect(document.activeElement).toBe(stop('data-after'))
@@ -658,7 +658,7 @@ const NOTE =
   'A note is an ordinary file in an ordinary folder. Not a database and not ' +
   'an export: the files are the notes.\n'
 
-/** Where a run of the text stands, as a change addresses it. */
+/** The range of a run of text, as a change addresses it. */
 const findSpan = (text: string, run: string) => {
   const from = text.indexOf(run)
   return { from, to: from + run.length }
@@ -695,8 +695,8 @@ const MIDDLE: EditorChange = {
 }
 
 /**
- * A change partway through the text. The mark says where it is coming, and
- * the words arrive one at a time once the text has landed.
+ * A change in the middle of the text. The mark shows where it will land, and
+ * the words arrive one at a time once the text is in place.
  */
 export const Changed: Story = {
   render: renderWithChange(NOTE, MIDDLE),
@@ -733,7 +733,7 @@ export const Changed: Story = {
   },
 }
 
-/** A change at the very first character of the text. */
+/** A change at the first character of the text. */
 export const ChangedAtTheStart: Story = {
   render: renderWithChange(NOTE, {
     id: 'start',
@@ -744,7 +744,7 @@ export const ChangedAtTheStart: Story = {
 
 const ENDING = NOTE.trimEnd()
 
-/** A change running to the very last character of the text. */
+/** A change that extends to the last character of the text. */
 export const ChangedAtTheEnd: Story = {
   render: renderWithChange(ENDING, {
     id: 'end',

@@ -30,8 +30,8 @@ func Open() (*VaultRegistry, error) {
 	return OpenAt(filepath.Join(dir, "numen", "vaults.json")), nil
 }
 
-// OpenAt is Open with an explicit path, so that a test does not touch the
-// machine's real configuration.
+// OpenAt is Open with an explicit path, so tests do not touch the machine's
+// real configuration.
 func OpenAt(path string) *VaultRegistry { return &VaultRegistry{path: path} }
 
 func (r *VaultRegistry) Path() string { return r.path }
@@ -125,9 +125,9 @@ func (r *VaultRegistry) List() ([]domain.Vault, error) {
 	return f.Vaults, err
 }
 
-// Save records a vault. Re-adding the same identity updates its path, which is
-// how a moved vault is recognised: the identity travels with the folder, the
-// registry only remembers where it was last seen.
+// Save records a vault. Saving the same identity again updates its path, which
+// recognises a moved vault: the identity stays with the folder, and the registry
+// records the last known path.
 func (r *VaultRegistry) Save(v domain.Vault) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

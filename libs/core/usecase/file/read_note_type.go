@@ -14,8 +14,8 @@ func IsNote(path string) bool {
 	return vaultport.IsNote(path)
 }
 
-// ReadNoteType is the type the note at the path carries in its frontmatter as the file now reads,
-// so a note just written has its type before the index holds it. A file that is no note has no
+// ReadNoteType returns the type the note at the path carries in its frontmatter as the file currently reads,
+// so a note just written has its type before the index holds it. A file that is not a note has no
 // type and is not read.
 func ReadNoteType(ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
 	return vaultport.ReadNoteType(ctx, readers, v, path)

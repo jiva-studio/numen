@@ -63,7 +63,7 @@ export const ASwitch: Story = {}
 /** A switch that is off. */
 export const Off: Story = { args: { isOn: false } }
 
-/** A switch nobody may turn. */
+/** A switch that cannot be toggled. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
 /** A name in another script. */
@@ -83,9 +83,7 @@ export const Unbroken: Story = { args: { label: UNBROKEN } }
  */
 export const NoTextAtAll: Story = { args: { label: '' }, parameters: { reach: false } }
 
-/**
- * The switch on the dark set of tokens. Which way it stands is told by the
- */
+/** The switch with the dark token set. */
 export const Dark: Story = {
   globals: DARK,
   args: { isOn: false },
@@ -98,8 +96,8 @@ export const Dark: Story = {
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
     await waitFor(() => expect(getComputedStyle(control).backgroundColor).not.toBe(off))
 
-    // The accent the track evaluates to rest in stands above the quiet colour it
-    // was, which is the way round the dark set is written.
+    // The on-state track colour is lighter than the off-state colour, as the dark token
+    // set defines it.
     await waitFor(() =>
       expect(lightness(getComputedStyle(control).backgroundColor)).toBeGreaterThan(
         lightness(off) + 8,
@@ -108,7 +106,7 @@ export const Dark: Story = {
   },
 }
 
-/** It is announced as a switch, and says which way it is. */
+/** It is announced as a switch with its on/off state. */
 export const AnnouncedAsASwitch: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
@@ -118,9 +116,8 @@ export const AnnouncedAsASwitch: Story = {
 }
 
 /**
- * What a person actually sees: the thumb slides across the track and the track
- * fills behind it. Neither is a state a test can read off an attribute, so
- * both are measured where they are drawn.
+ * What the user sees: the thumb slides along the track and the track fills behind it.
+ * Neither is readable from an attribute, so both are measured where rendered.
  */
 export const TheThumbSlidesAndTheTrackFills: Story = {
   args: { isOn: false },
@@ -153,7 +150,7 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
   },
 }
 
-/** The space bar turns it, and the ring says the keyboard is on it. */
+/** The space bar toggles it, and the focus ring shows keyboard focus. */
 export const TheSpaceBarTurnsIt: Story = {
   args: { isOn: false },
   play: async ({ canvasElement }) => {
@@ -170,7 +167,7 @@ export const TheSpaceBarTurnsIt: Story = {
   },
 }
 
-/** The keyboard goes nowhere near a switch nobody may turn. */
+/** The keyboard has no effect on a disabled switch. */
 export const DisabledTakesNoKeyboard: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {

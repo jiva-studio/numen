@@ -148,8 +148,8 @@ func TestEveryFilenameATitleReducesToCanBeSavedAsALink(t *testing.T) {
 	}
 }
 
-// The characters a name cannot carry are reduced, and the ones it can are left
-// where the person put them.
+// The characters a name cannot contain are replaced, and the ones it can are left
+// unchanged.
 func TestAFilenamePreservesWhatALinkCanBeSavedWith(t *testing.T) {
 	for title, want := range map[string]string{
 		"C#":              "C-",

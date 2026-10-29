@@ -34,13 +34,13 @@ const (
 	wordGap  = 0.25
 )
 
-// Highlights is where the words of some pages of the document sit: one box a
-// word, at the offset in Text where that word begins.
+// Highlights returns the locations of the words of some pages of the document:
+// one box per word, at the offset in Text where that word begins.
 //
-// The pages wanted are given by their index, and only those are read. The
-// boxes come back ascending by offset.
+// The requested pages are given by index, and only those are read. The boxes
+// are returned in ascending offset order.
 //
-// A page whose text layer says nothing gives no boxes, and a scan gives none at
+// A page whose text layer is empty yields no boxes, and a scan yields none at
 // all.
 func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
@@ -61,8 +61,8 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
 	return boxes, nil
 }
 
-// getOrderedPages is the pages asked for, each of them once and in reading order. A
-// page the document does not have is not a page.
+// getOrderedPages returns the requested pages, each once and in reading order. A
+// page the document does not have is dropped.
 func getOrderedPages(pages []int, most int) []int {
 	observed := make(map[int]bool, len(pages))
 	out := make([]int, 0, len(pages))
@@ -77,11 +77,10 @@ func getOrderedPages(pages []int, most int) []int {
 	return out
 }
 
-// words is where the words of one page sit, as boxes in the document's text.
+// words returns the locations of the words of one page, as boxes in the document's text.
 // offset is where that page's own text begins in it.
 //
-// A page that cannot be measured, or cannot be read, says nothing about where
-// its words are.
+// A page that cannot be measured, or cannot be read, yields no word locations.
 func (d *document) words(index, offset int) []HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
 	sheet, ok := d.getSheet(page)
@@ -152,8 +151,8 @@ func (r *wordReading) finish() {
 	r.length = 0
 }
 
-// isWordContinued says whether a character carries the word on: it relies on
-// the same line, within a space of where the word has got to.
+// isWordContinued reports whether a character continues the word: it is on
+// the same line, within a space of where the word has reached.
 func isWordContinued(word, mark responses.CharPosition) bool {
 	high := min(word.Top-word.Bottom, mark.Top-mark.Bottom)
 	shared := min(word.Top, mark.Top) - max(word.Bottom, mark.Bottom)
@@ -216,12 +215,12 @@ func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPos
 	}
 }
 
-// getPagePoint is where a point of the page falls on the page as it is drawn: a
+// getPagePoint returns where a point of the page falls on the page as rendered: a
 // fraction of it, measured from its top left corner.
 //
 // A page's text is written with the origin at the bottom left corner, and the
-// page is drawn with the origin at the top left and turned by however much it
-// asks to be.
+// page is rendered with the origin at the top left and rotated by the page's
+// own rotation.
 func (p pageGeometry) getPagePoint(x, y float64) (float32, float32) {
 	wide, high := p.width, p.height
 	switch p.rotation {

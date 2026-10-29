@@ -15,7 +15,7 @@ import (
 // EnvDir names the folder plugins keep their models in.
 const EnvDir = "NUMEN_MODELS_DIR"
 
-// paths are the files this run listens through, and where they were found.
+// paths are the files this run transcribes with, and where they were found.
 type paths struct {
 	encoder   string
 	decoder   string

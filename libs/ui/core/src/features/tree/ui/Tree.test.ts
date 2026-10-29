@@ -109,7 +109,7 @@ const press = async (wrapper: Tree, row: string, overrides: MouseEventInit = {})
   await on.trigger('click', overrides)
 }
 
-/** A row picked up and let go at a height, in as many steps as a hand takes. */
+/** Drags a row to a vertical position and drops it, in several pointer steps. */
 const dragTo = async (wrapper: Tree, row: string, y: number): Promise<void> => {
   const from = getRow(wrapper, row).element
   const start = getMiddle(wrapper, row)

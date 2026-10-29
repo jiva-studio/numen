@@ -36,7 +36,7 @@ import (
 // a search answer while a scan is still running.
 //
 // Several processes open the one file. Their writers queue in SQLite, under the
-// busy timeout, and a writer still waiting when it runs out asks again — see
+// busy timeout, and a writer still waiting when it runs out retries — see
 // the sqlwrite package, which every write on this pool goes through.
 type DB struct {
 	write *sql.DB
@@ -56,9 +56,9 @@ var pragmas = []string{
 	"journal_mode(WAL)",
 	// Foreign keys so removing a vault cannot leave rows pointing at nothing.
 	"foreign_keys(1)",
-	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer
-	// waited for may be in another process, and a write that waited it out asks
-	// again.
+	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer being
+	// waited for may be in another process, and a write that exhausted the wait
+	// retries.
 	"busy_timeout(5000)",
 	// Pages are read from the mapped file, shared by every connection, up to
 	// 256 MiB of it.

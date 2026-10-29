@@ -34,7 +34,7 @@ func newQueueClientOver(t *testing.T, fakeCallers *callers, work *run.PluginWork
 	return numenv1connect.NewHostQueueServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
-// openWork enqueues work and returns the stream once it says the state given.
+// openWork enqueues work and returns the stream once it reports the given state.
 func openWork(
 	t *testing.T, ctx context.Context, client numenv1connect.HostQueueServiceClient, isUserStarted bool, want v1.WorkState,
 ) *connect.ServerStreamForClient[v1.EnqueueWorkResponse] {

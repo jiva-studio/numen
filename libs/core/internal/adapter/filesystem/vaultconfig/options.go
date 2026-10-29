@@ -14,8 +14,8 @@ type Options struct {
 	// ServiceDir is the folder the application keeps its own files in. Empty
 	// means the default.
 	ServiceDir string
-	// Ignore is what the vault says not to look at, in the syntax of
-	// `.gitignore`. Empty means the default.
+	// Ignore lists the patterns the vault excludes, in `.gitignore` syntax. Empty
+	// means the default.
 	Ignore []string
 	// DebounceDelay is how long changes are kept before they are reported. Zero means
 	// the default.
@@ -29,23 +29,21 @@ type Options struct {
 // is several events, and the same path arrives more than once inside it.
 const DefaultDebounceDelay = 50 * time.Millisecond
 
-// Ignoring is what a vault leaves out: the rules no vault has to ask for, and
-// the rules the vault asked for beside them. A path either of them names is
-// left out.
+// Ignoring excludes paths from the vault: the default rules and the rules the
+// vault configures. A path matched by either set is excluded.
 //
-// They are two matchers and not one list because a vault is data. A vault's
-// configuration is written by whoever synced it, and in one list the last
-// pattern wins: `!.*` there would hand the application every dotfile folder in
-// the vault to read from and write into. A vault narrows what is read and
-// written and never widens it, so a negation it writes reaches only what the
-// same vault asked to leave out.
+// The two sets are separate matchers because vault configuration is untrusted
+// data. In a single list the last pattern wins, so a vault pattern `!.*` would
+// expose every dotfile folder to reads and writes. Keeping the sets separate
+// means a vault can only narrow what is read and written, and a negation in
+// vault rules affects only the vault's own exclusions.
 type Ignoring struct {
 	defaults *ignore.GitIgnore
 	vaults   *ignore.GitIgnore
 }
 
-// MatchesPath is asked for files and folders alike, against the path from the
-// vault root, which is what the patterns are written in terms of.
+// MatchesPath reports whether the path is excluded. It applies to files and
+// folders, and the path is relative to the vault root.
 func (i *Ignoring) MatchesPath(path string) bool {
 	return i.defaults.MatchesPath(path) || i.vaults.MatchesPath(path)
 }
@@ -57,9 +55,9 @@ func (o Options) CompileIgnoring() *Ignoring {
 	}
 }
 
-// DefaultMaxNoteBytes is the most a note is read whole at. It stands above
-// every bound a caller holds its own reads to, and a file over it is a file
-// this vault does not hold as a note.
+// DefaultMaxNoteBytes is the maximum size at which a note is read whole. It
+// exceeds every limit callers apply to their own reads, and a larger file is
+// not treated as a note by this vault.
 const DefaultMaxNoteBytes = 16 << 20
 
 func (o Options) GetMaxNoteBytes() int64 {
@@ -92,14 +90,14 @@ func (o Options) GetServiceDir() string {
 	return o.ServiceDir
 }
 
-// IsService says whether one component of a path is the folder the application
-// keeps for itself. The name is compared without regard to case, which is how
-// macOS and Windows open it, and which is how containment reads it.
+// IsService reports whether one component of a path is the application's
+// service folder. The name is compared case-insensitively, matching how macOS
+// and Windows open it and how containment checks resolve it.
 func (o Options) IsService(name string) bool {
 	return strings.EqualFold(name, o.GetServiceDir())
 }
 
-// Kind says which sort of source a file's name makes it: a note or any other file.
+// Kind returns the source kind of a file name: a note or any other file.
 func (o Options) Kind(name string) domain.SourceKind {
 	if hasExtension(name, NoteExtensions) {
 		return domain.KindNote
@@ -107,8 +105,8 @@ func (o Options) Kind(name string) domain.SourceKind {
 	return domain.KindFile
 }
 
-// IsNote says whether a file of this name is a note. The application writes
-// notes into the person's folder; every other file there is somebody else's.
+// IsNote reports whether a file of this name is a note. The application writes
+// notes into the vault folder; every other file there is user content.
 func (o Options) IsNote(name string) bool {
 	return o.Kind(name) == domain.KindNote
 }

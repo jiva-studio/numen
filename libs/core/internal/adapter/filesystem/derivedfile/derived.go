@@ -17,29 +17,29 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 )
 
-// DerivedStore is the application's own shelf inside one vault: where a file
-// it made, and cannot make again, is kept.
+// DerivedStore stores the application's own files inside one vault: files it
+// generated and cannot regenerate.
 //
-// It is a type of its own and not a method on VaultWriter, because it writes to
-// the one place VaultWriter refuses and refuses everywhere VaultWriter writes.
-// Neither can be made to do the other's work, and that is why there are two.
+// It is separate from VaultWriter because it writes to the application's own
+// folder, which VaultWriter rejects, and rejects every path VaultWriter
+// writes. Neither type can perform the other's work.
 //
-// Every name it takes begins with the name of one of its areas, and it answers
-// for no other, so the vault's identity — which is in the folder and in no area
-// — is not a name this can express.
+// Every name begins with the name of one of its areas. Names outside its areas
+// are rejected, including the vault's identity, which lives in the vault
+// folder and in no area.
 type DerivedStore struct {
 	vault   string   // the vault folder
 	service string   // the application's folder inside it
 	id      string   // the identity that folder carried when this store was opened
 	root    string   // <vault>/<serviceDir>
 	areas   []string // the folders inside it this store answers for
-	// last is the configuration file as it stood when the identity was last
-	// read out of it. Every name checks the identity, and a file that has not
-	// moved carries the identity already read.
+	// last is the configuration file state at the time the identity was last
+	// read. Every name checks the identity; an unchanged file reuses the
+	// identity already read.
 	last atomic.Pointer[fileInfo]
-	// where the store's own folder is, with every link on the way to it
-	// resolved. It is what a name is judged inside, and it is asked again
-	// whenever the store's folder is no longer there.
+	// where is the store's own folder with every link on its path resolved.
+	// Names are checked against it. It is located again when the store's
+	// folder no longer exists.
 	where atomic.Pointer[places]
 }
 
@@ -50,15 +50,15 @@ type places struct {
 	areas map[string]string
 }
 
-// isInside says a resolved name is inside the area it claims. An area is one
-// folder of the store's own, so a link standing where an area should be holds
-// nothing.
+// isInside reports whether a resolved name is inside the area it claims. An
+// area is a folder of the store, so a link at an area's position is not
+// inside it.
 func (p *places) isInside(resolved, area string) bool {
 	linked, named := p.areas[area]
 	return named && vaultconfig.IsUnderRoot(resolved, linked)
 }
 
-// isCurrent says the store's folder still resolves to the place found.
+// isCurrent reports whether the store's folder still resolves to the located path.
 func (d *DerivedStore) isCurrent(p *places) bool {
 	found, err := os.Lstat(p.root)
 	if err != nil {
@@ -81,7 +81,7 @@ func (d *DerivedStore) locate() (*places, error) {
 	return found, nil
 }
 
-// fileInfo is a file as it stood: what says whether it is still the one read.
+// fileInfo is the recorded state of a file, used to detect whether the file changed.
 type fileInfo struct{ stat os.FileInfo }
 
 // isSameFile reports whether a file is the one a fileInfo was taken of.
@@ -90,8 +90,8 @@ func (s *fileInfo) isSameFile(now os.FileInfo) bool {
 		s.stat.Size() == now.Size() && s.stat.ModTime().Equal(now.ModTime())
 }
 
-// ErrNotThisVault is what a name gets when the folder underneath it no longer
-// carries the identity the store was opened on.
+// ErrNotThisVault is returned for a name when the vault folder no longer has
+// the identity the store was opened with.
 var ErrNotThisVault = errors.New("the folder is not the vault this store was opened on")
 
 // OpenDerived opens one vault's store, and holds on to the identity that vault
@@ -227,15 +227,15 @@ func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) e
 	return atomicfile.SyncDirectory(root, filepath.Dir(pos))
 }
 
-// Append adds to the end of what is there, in place. What it is given lands
-// whole or does not land at all: a write that stopped partway is truncated back to
-// where it began, so the next append begins where this one found it.
+// Append adds to the end of the file in place. The data is written completely
+// or not at all: a partial write is truncated back to the original length, so
+// the next append starts at the original end.
 //
-// A name two callers append to is held under a claim, because the truncation reaches
-// whatever was written after this append's own bytes.
+// A name that several callers append to is guarded by a claim, because the
+// truncation removes everything written after this append's own bytes.
 //
-// A machine that stopped mid-write leaves a torn tail all the same, and what
-// reads the file back takes the whole pages and drops what follows them.
+// A crash during a write can still leave a torn tail. Readers keep the
+// complete pages and drop the remainder.
 func (d *DerivedStore) Append(_ context.Context, name string, content []byte) error {
 	target, err := d.getPath(name)
 	if err != nil {
@@ -263,7 +263,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	return file.Close()
 }
 
-// newShortAppendError is what an append that did not land says.
+// newShortAppendError describes an append that wrote fewer bytes than requested.
 func newShortAppendError(name string, output, wanted int, why error) error {
 	if why == nil {
 		why = io.ErrShortWrite
@@ -271,12 +271,13 @@ func newShortAppendError(name string, output, wanted int, why error) error {
 	return fmt.Errorf("%s: %d of %d bytes: %w", name, output, wanted, why)
 }
 
-// wrote ends where the offset now stands, so the truncation is that offset less what
-// landed, and a write that landed nothing leaves the file as it found it.
+// closeAndTruncate truncates the file back to the offset before the write.
+// The truncation length is the current offset minus the bytes written, and a
+// write that wrote nothing leaves the file unchanged.
 //
-// The truncation is made by name, once the file is closed: a file opened to append
-// carries the right to add to the end and not the right to move it. The name is
-// the store's own, so the truncation lands where the write did.
+// The truncation is performed by name after the file is closed, because a file
+// opened for append cannot be truncated through its handle. The name belongs
+// to the store, so the truncation applies to the file that was written.
 func closeAndTruncate(root *os.Root, file *os.File, name string, wrote int) error {
 	if wrote <= 0 {
 		return file.Close()
@@ -311,13 +312,12 @@ func truncateFile(root *os.Root, name string, to int64) error {
 // make another at the same path and hold it too.
 const claimSuffix = ".claim"
 
-// ClaimName holds a name until the returned function is called, and refuses one
-// another caller holds with port.ErrClaimed.
+// ClaimName holds a name until the returned function is called, and fails
+// with port.ErrClaimed when another caller holds it.
 //
-// What is held is a lock the kernel keeps on `<name>.claim` beside the
-// artifact, so the claim crosses processes and a run that was killed leaves the
-// name free. A claim file lying on disk with no lock on it is a name free to
-// take.
+// The claim is a kernel lock on `<name>.claim` next to the artifact, so it
+// applies across processes and is released when a holder is killed. A claim
+// file with no lock on it does not hold the name.
 func (d *DerivedStore) ClaimName(_ context.Context, name string) (func() error, error) {
 	target, err := d.getPath(name + claimSuffix)
 	if err != nil {
@@ -329,9 +329,8 @@ func (d *DerivedStore) ClaimName(_ context.Context, name string) (func() error, 
 	return acquireFileLock(target)
 }
 
-// List reports the files directly under a name, as names of this store, sorted.
-// A folder among them is not one: what is kept here is files, and a caller
-// after them would have to be told which entries it may read.
+// List returns the files directly under a name, as names of this store,
+// sorted. Folders are omitted because the store contains only files.
 func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
 	target, err := d.getPath(name)
 	if err != nil {
@@ -353,9 +352,8 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
 		if e.IsDir() {
 			continue
 		}
-		// A file that went between the listing and the asking is one another
-		// machine's synchroniser took away, and it is left out here rather than
-		// listed at a length nothing has.
+		// A file removed between listing and stat, for example by another
+		// machine's synchronizer, is omitted.
 		info, err := e.Info()
 		if err != nil {
 			continue
@@ -366,9 +364,8 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
 	return out, nil
 }
 
-// Remove takes a name out of the store, along with the file a claim on it is
-// held on. A caller works in names and knows of no claim, so a name it takes
-// away leaves none behind.
+// Remove deletes a name from the store, together with the file that holds a
+// claim on it, so no claim file remains.
 func (d *DerivedStore) Remove(_ context.Context, name string) error {
 	for _, one := range []string{name, name + claimSuffix} {
 		target, err := d.getPath(one)
@@ -428,16 +425,16 @@ func (d *DerivedStore) checkVaultIdentity() error {
 	if id != d.id {
 		return fmt.Errorf("%s carries %q and not %q: %w", d.vault, id, d.id, ErrNotThisVault)
 	}
-	// A folder that carried no identity carries none when it is gone, so the
-	// folder itself is what says this one is there.
+	// A folder without an identity has none after it is removed, so the
+	// folder's existence is checked directly.
 	if id == "" {
 		if _, err := os.Stat(d.vault); err != nil {
 			return fmt.Errorf("%s: %w", d.vault, err)
 		}
 	}
 	d.last.Store(was)
-	// The file the identity is written in is not the one that was read, so the
-	// folders around it are asked where they are again.
+	// The identity file differs from the one previously read, so the folder
+	// locations are resolved again.
 	if found, err := d.locate(); err == nil {
 		d.where.Store(found)
 	}
@@ -501,17 +498,16 @@ func (d *DerivedStore) findArea(clean string) (string, bool) {
 	return "", false
 }
 
-// getPath is where one name lands on this machine. Every name is answered where
-// the vault still is, so nothing here reads or writes a folder that is no
-// longer the one this store was opened on.
+// getPath returns the path of a name on this machine. The vault identity is
+// checked first, so nothing is read or written in a folder that is not the one
+// this store was opened on.
 //
-// The name is joined under the area it names and checked against it with every
-// link on the way resolved. Without that check a name stored here could be a
-// link to a note, and a recognition would be read back as what a person wrote —
-// or would be written over it.
+// The name is joined under its area and checked against it with every link on
+// the path resolved. Without the check, a name could be a link to a note, and
+// derived data could be read as, or written over, user content.
 //
-// The store's folder need not exist: as much of each path as does exist is
-// resolved, which is the same rule a write into the vault is judged by.
+// The store's folder need not exist: the existing part of the path is
+// resolved, which is the rule used for writes into the vault.
 func (d *DerivedStore) getPath(name string) (string, error) {
 	clean, err := vaultconfig.CleanPath(name)
 	if err != nil {
@@ -520,8 +516,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	if err := d.checkVaultIdentity(); err != nil {
 		return "", err
 	}
-	// A name says which area it belongs to, and a store answers for its own
-	// only.
+	// A name belongs to one area, and the store handles only its own areas.
 	area, targetVal := d.findArea(clean)
 	if !targetVal {
 		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), vaultconfig.ErrOutside)
@@ -542,13 +537,13 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	return target, nil
 }
 
-// isEnclosedBy says whether the store's area holds a name where it lands. A link
-// stays inside the area it was written into, so what no name expresses no link
-// expresses either.
+// isEnclosedBy reports whether the resolved path lies inside the store's
+// area. A link stays inside the area it was created in, so any name that
+// resolves outside the area is rejected.
 //
-// The folder it is judged against is the one resolved last, and an answer
-// persists only while the store's folder is still that one. A name it refuses,
-// and a folder that has moved, are judged against where the folder is now.
+// The check uses the most recently resolved folder, and a positive result is
+// reused only while the store's folder is still that one. A rejected name or a
+// moved folder is checked against a fresh resolution.
 func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.isCurrent(where) {
 		return true, nil

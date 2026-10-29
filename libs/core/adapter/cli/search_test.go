@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// fakeSearchIndex is what the index of a search says: the passages it names for a
-// query, or the error it fails with.
+// fakeSearchIndex is a test double of the search index: it returns the
+// configured passages for a query, or fails with the configured error.
 type fakeSearchIndex struct {
 	passages []domain.Passage
 	err      error
@@ -55,7 +55,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 	}
 }
 
-// runWithStderr runs the terminal and keeps what it said beside its answer.
+// runWithStderr runs the terminal and captures stderr separately from stdout.
 func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr string, err error) {
 	var answer, aside bytes.Buffer
 	t.Helper()

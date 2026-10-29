@@ -1,10 +1,10 @@
 /**
- * The lines of a book's contents: which one holds the offset a person is
- * reading, and which of them a typed word finds.
+ * The lines of a book's contents: which one holds the offset being read, and
+ * which of them a typed word matches.
  *
- * Apart from the panel the way `spread.ts` is apart from the reader: both are
- * arithmetic over offsets the book handed over, and a test asks them without a
- * browser.
+ * Separate from the panel the way `spread.ts` is separate from the reader: both
+ * are arithmetic over offsets the book supplies, and a test exercises them
+ * without a browser.
  */
 
 /** One line of a book's contents: a name, and where it begins. */
@@ -12,7 +12,7 @@ export interface ContentsEntry {
   readonly title: string
   /** Where the named text begins, in bytes of the book's text. */
   readonly at: number
-  /** How deep it sits, from zero for a division of the book itself. */
+  /** Depth, from zero for a division of the book itself. */
   readonly level: number
 }
 
@@ -48,7 +48,7 @@ export interface ContentsWords {
   readonly contents: string
   /** What the field the names are typed into is called. */
   readonly find: string
-  /** What is said where a book is empty and holds no pages either. */
+  /** The text shown where a book is empty and holds no pages either. */
   readonly nothing: string
 }
 

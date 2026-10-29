@@ -1,19 +1,18 @@
 /**
- * What went wrong, in words a person reads. Both are clauses, read after
- * something that says which thing went wrong — a note's title, the row an
- * error is set beside — and a window that wants a sentence of one makes it
- * one.
+ * User-facing error messages. Each message is a clause, displayed after text
+ * that identifies the failing item (a note title, a row), and a caller that
+ * needs a full sentence composes one from it.
  */
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 
-/** What is said when nothing more precise can honestly be said. */
+/** The message for failures with no more precise description. */
 const UNEXPECTED = 'internal error'
 
 /**
- * What a call that could not be answered says. Unknown is what a connection
- * that has gone arrives as, a code nothing here produces says what is true and
- * no more, and a call the window itself stopped says nothing.
+ * Messages by connection status code. Unknown is the code a lost connection
+ * produces; a code that nothing here produces gets a message that states only
+ * what is known; a call cancelled by the caller has an empty message.
  */
 const TROUBLE: Record<Code, string> = {
   [Code.Canceled]: '',
@@ -35,12 +34,12 @@ const TROUBLE: Record<Code, string> = {
 }
 
 /**
- * The codes the application raises only with a sentence of its own.
+ * The codes the application raises only with a message of its own.
  *
- * Everything under them is hand-written and reads as a clause: a vault that is
- * closing, a recording a run is holding, a setting that does not read as JSON
- * and the byte it stops at. Not found is out, because half of what it carries
- * is `fs.ErrNotExist` with a path and a stat call in front of it.
+ * Their messages are written for display and read as a clause: a vault that is
+ * closing, a recording held by a run, a setting that is not valid JSON and the
+ * byte where parsing stops. Not found is excluded because half of its messages
+ * are `fs.ErrNotExist` with a path and a stat call prefixed.
  */
 const CARRIES = new Set<Code>([
   Code.InvalidArgument,
@@ -50,7 +49,7 @@ const CARRIES = new Set<Code>([
 ])
 
 /**
- * What a caught fault says to the person who was waiting for the answer.
+ * The message for a caught error, shown to the user who awaited the result.
  */
 export const formatErrorMessage = (error: unknown): string => {
   const fault = ConnectError.from(error)
@@ -59,7 +58,7 @@ export const formatErrorMessage = (error: unknown): string => {
 }
 
 /**
- * What each error code the schema carries says.
+ * The message for each error code in the schema.
  */
 const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
@@ -74,6 +73,6 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
 }
 
-/** What one error code says, and nothing where there was no error. */
+/** The message for one error code; empty when there was no error. */
 export const formatErrorCodeMessage = (errorCode: number | undefined): string =>
   errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode as ProtoErrorCode] ?? UNEXPECTED)

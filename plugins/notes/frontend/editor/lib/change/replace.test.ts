@@ -4,7 +4,7 @@ import { replace } from './replace'
 
 const DOC = 'one\ntwo\nthree\nfour'
 
-/** A person can put a caret in several places at once. */
+/** A user can place a caret in several places at once. */
 const SEVERAL = EditorState.allowMultipleSelections.of(true)
 
 /** Where every end of every range lands, as a line and a column. */

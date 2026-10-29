@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * The window is going and these notes are not written.
+ * Shown when the window is closing with unsaved notes.
  *
- * Each stands with the three ways out of it, and the window waits until every
- * one of them has been settled or put off.
+ * Each note offers three resolutions, and the window waits until every note is
+ * resolved or deferred.
  */
 import type { ConflictPrompt } from '../model/flush'
 
-/** The words the notes still unwritten are put to a person in. */
+/** The labels shown for the unsaved notes. */
 export interface UnsavedChangesWords {
   readonly going: string
   readonly keep: string
@@ -18,7 +18,7 @@ export interface UnsavedChangesWords {
 // --- Props & Emits ---
 const props = defineProps<{
   conflicts: readonly ConflictPrompt[]
-  /** What each note is called, for a person to tell them apart by. */
+  /** The display name of a note, used to tell the notes apart. */
   called: (note: string) => string
   words: UnsavedChangesWords
 }>()
@@ -62,7 +62,7 @@ function onLater(conflict: ConflictPrompt) {
 </template>
 
 <style scoped>
-/* It sits over the work because nothing else the person does can end it. */
+/* Overlays the content, because the prompt must be resolved before anything else. */
 .unsaved {
   position: fixed;
   inset-block-end: 1rem;

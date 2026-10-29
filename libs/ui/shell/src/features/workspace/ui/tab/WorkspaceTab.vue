@@ -29,12 +29,12 @@ withDefaults(
 const emit = defineEmits<{
   (event: 'lift', pointer: PointerEvent): void
   (event: 'close'): void
-  /** A menu asked for on the tab, and where on the screen. */
+  /** A menu request on the tab, with the screen position. */
   (event: 'menu', pos: { x: number; y: number }): void
 }>()
 
 defineSlots<{
-  /** What is drawn before the name, which says what kind of tab it is. */
+  /** Rendered before the name; shows the kind of tab. */
   icon(): unknown
   /** What a mark is drawn as. Given one, the caller draws its own. */
   mark(props: { mark: string }): unknown
@@ -45,8 +45,8 @@ const root = useTemplateRef<HTMLElement>('root')
 
 /* -------------------------------- Handlers -------------------------------- */
 /**
- * A tab is lifted under the primary button and under no other. The press
- * selects no text as it travels, and takes the keyboard itself.
+ * A tab is lifted with the primary button only. The press does not select text
+ * while the tab moves, and the tab takes keyboard focus.
  */
 const onPointerDown = (event: PointerEvent) => {
   if (event.button !== 0) return
@@ -104,12 +104,11 @@ defineExpose({ focus: () => root.value?.focus() })
 
 <style scoped>
 .tab {
-  /* How tall a strip stands, and the room at its edges. The room between the
-     name and the cross is the same, so the cross stands with equal air on
-     either side of it. */
+  /* Strip height and edge padding. The space between the name and the close
+     button is the same, so the close button has equal space on both sides. */
   --height: 1.4rem;
   --pad: 0.4rem;
-  /* How far a tab reaches before its name is cut. */
+  /* The maximum width of a tab before its name is truncated. */
   --widest: 14rem;
 
   block-size: var(--height);
@@ -128,8 +127,8 @@ defineExpose({ focus: () => root.value?.focus() })
   color: var(--numen-ink);
 }
 
-/* What kind of tab this is, drawn before its name. The row's own gap is the
-   room after it, so it stands with the same air on either side. */
+/* The kind-of-tab icon, rendered before the name. The row's own gap is the
+   space after it, so it has equal space on both sides. */
 .tab__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;

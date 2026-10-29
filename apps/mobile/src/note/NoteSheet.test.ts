@@ -1,5 +1,5 @@
 /**
- * What a note the core rejected says on the phone.
+ * What the phone shows for a note the core rejected.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'

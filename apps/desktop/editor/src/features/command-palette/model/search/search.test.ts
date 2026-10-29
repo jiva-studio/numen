@@ -1,10 +1,10 @@
 /**
  * The rules the palette is filled by, without a vault and without a browser.
  *
- * Three questions are in the air at once and come back in whatever order they
- * take, so the ones that matter here are the negatives: an answer to a question
- * nobody is asking any more must not fill a list a person is reading, and a
- * group that failed must not take the other two down with it.
+ * Three queries run concurrently and return in any order, so the cases that
+ * matter are the negative ones: the response to a superseded query must not
+ * fill a list the user is reading, and a failed group must not fail the other
+ * two.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -30,7 +30,7 @@ const WORDS: Words = {
   notEmbedded: 'Semantic index not built yet',
 }
 
-/** A vault that answers when the test says so, and remembers what it was asked. */
+/** A vault that responds when the test says so, and records its requests. */
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
   const searched: { mode: SearchMode; answer: Deferred<readonly Passage[]> }[] = []
@@ -245,8 +245,8 @@ describe('answers arriving', () => {
     await flushPromises()
 
     expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
-    // The other groups are asked of the words, which a vault holding no vector
-    // still answers, and one of those that came back with nothing says nothing.
+    // The other groups query the words, which a vault with no vectors still
+    // answers, and a group that returned nothing contributes no rows.
     expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
   })
 
@@ -633,7 +633,7 @@ describe('a group landing under the keyboard', () => {
   })
 })
 
-/** A hold that ends when the test says so, one per keystroke, in order. */
+/** A gate that opens when the test releases it, one per keystroke, in order. */
 function createHolds() {
   const holds: Deferred<void>[] = []
   const wait = () => {
@@ -644,7 +644,7 @@ function createHolds() {
   return { holds, wait }
 }
 
-/** How each group stands: what it holds, whether it is working, what it says. */
+/** The state of each group: its rows, whether it is loading, and its message. */
 const describeGroups = (groups: readonly { id: string }[]) =>
   Object.fromEntries(
     ['names', 'text', 'meaning'].map((id) => {

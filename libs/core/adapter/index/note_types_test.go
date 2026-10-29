@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveTypedNote puts one note in, of the kind its file says it is.
+// saveTypedNote stores one note with the type its file declares.
 func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string, kind domain.NoteType) {
 	t.Helper()
 
@@ -63,7 +63,7 @@ func TestTheNotesOfATypeInOneVaultAreNotAnotherVaultsNotes(t *testing.T) {
 	}
 }
 
-// The type of every entry of one folder is one question, so a file tree tells a
+// The type of every entry of a folder is one query, so a file tree distinguishes a
 // typed note from a plain note without opening either.
 func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	db := openDB(t)

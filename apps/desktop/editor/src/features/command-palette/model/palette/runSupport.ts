@@ -1,13 +1,13 @@
 /**
- * The runs this build cannot do at all, as one window has been told them.
+ * The runs this build cannot perform, as reported to one window.
  *
- * The application says so the first time one is asked for, and that window
- * offers it nowhere after that.
+ * The application reports an unsupported run the first time it is requested,
+ * and the window does not offer it afterwards.
  */
 import { shallowRef } from 'vue'
 import type { RunSupport } from '../../types'
 
-/** The runs one window holds, which is every one of them until it is told otherwise. */
+/** The runs supported by one window: all of them until the application reports otherwise. */
 export const runSupport = (): RunSupport => {
   const completedRuns = shallowRef<ReadonlySet<string>>(new Set())
   return {

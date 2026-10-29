@@ -42,8 +42,9 @@ func bodyLinks(body []byte) []domain.Link {
 	return out
 }
 
-// NoRole closes what is said of a `links:` entry written with no role. A role
-// is what a link is for, and an entry carrying none is not read at all.
+// NoRole is the suffix of the message for a `links:` entry written without a
+// role. A role states what a link is for, and an entry without one is not read
+// at all.
 const NoRole = " has no role"
 
 // frontmatterLinks reads the `links:` block, which is where a link that carries

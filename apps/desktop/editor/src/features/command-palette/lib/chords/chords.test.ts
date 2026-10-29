@@ -1,9 +1,9 @@
 /**
- * The keystrokes that reach a command, asked without a window.
+ * Command key bindings, tested without a window.
  *
- * The failure this is here for is a key drawn on a row that does nothing: the
- * table is read twice, once to bind and once to draw, and a letter naming a
- * command the window does not have would draw a cap over silence.
+ * Guards against a key shown on a row that does nothing: the table is read
+ * twice, once to bind and once to draw, and a letter naming a command the window
+ * does not have would show a key cap with no action.
  */
 import { describe, expect, it } from 'vitest'
 import {

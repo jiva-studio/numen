@@ -17,14 +17,15 @@ var (
 	// all. It is an unavailability: the question has nowhere to go.
 	ErrNoRoute = fmt.Errorf("%w: no agent answers the question", ErrUnavailable)
 
-	// ErrNoConsent means the person has not let the plugin ask for completions,
+	// ErrNoConsent means the user has not allowed the plugin to request
+	// completions.
 	ErrNoConsent = errors.New("AI access not allowed — allow it in Settings → AI")
 
 	// ErrInvalidQuestion means the question holds nothing an agent can answer.
 	ErrInvalidQuestion = errors.New("invalid question")
 )
 
-// Question is what a plugin asks of a model.
+// Question is what a plugin sends to a model.
 type Question struct {
 	// Messages are the conversation so far, oldest first.
 	Messages []Message
@@ -39,8 +40,9 @@ type Message struct {
 	Text string
 }
 
-// CompletionChoice is the agent program and the model a plugin's completions go
-// to, as the person set them in the plugin's setting of type SettingTypeAgent.
+// CompletionChoice is the agent program and the model that a plugin's
+// completions go to, as the user set them in the plugin's setting of type
+// SettingTypeAgent.
 type CompletionChoice struct {
 	// Agent is the name of the agent program. Empty is the default of the
 	// settings.
@@ -65,9 +67,9 @@ func ReadCompletionChoice(value any) CompletionChoice {
 // Completer answers a question of a plugin with text, from the agent the
 // plugin's setting names, else the default of the settings.
 type Completer interface {
-	// Complete answers the question the plugin with the id given asks. A
-	// question no agent answers fails with ErrNoRoute, and an agent that cannot
-	// be reached with ErrUnavailable.
+	// Complete answers the question of the plugin with the given id. A question
+	// no agent answers fails with ErrNoRoute, and an unreachable agent with
+	// ErrUnavailable.
 	Complete(ctx context.Context, pluginID string, question Question) (string, error)
 }
 

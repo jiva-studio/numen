@@ -1,7 +1,7 @@
 /**
- * What the palette draws over the commands, without a window: which rows the
- * words typed leave in, where they are lit, and what a group says while it
- * holds nothing.
+ * What the palette renders over the commands, without a window: which rows
+ * remain for the typed words, which are highlighted, and what a group shows while it
+ * is empty.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'

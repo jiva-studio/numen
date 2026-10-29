@@ -1,4 +1,4 @@
-/** What a note tab says: the questions its file puts, and the two ways out. */
+/** Texts of a note tab: the file conflict messages and the two resolution actions. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   stale: 'Saving paused: the file changed on disk.',

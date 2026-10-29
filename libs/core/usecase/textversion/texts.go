@@ -77,8 +77,8 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 	return page, nil
 }
 
-// readText reads a version's file, and is textport.ErrNoText where the file is
-// gone or no longer has the hash the version was recorded with.
+// readText reads a version's file. It returns textport.ErrNoText when the file
+// is missing or no longer has the hash recorded with the version.
 func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.TextVersion) (domain.VersionText, error) {
 	files, err := u.files.Open(v)
 	if err != nil {

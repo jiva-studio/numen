@@ -9,16 +9,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
-// danglingCheck is a link that reaches nothing.
+// danglingCheck finds links whose target does not exist.
 //
-// It is quiet, and that is the whole design of it. Writing `[[Entropy]]` before
-// the note exists is how people work — the link is a note to themselves that
-// the note is owed — and a vault being written has hundreds of them. Reported
-// alongside everything else they would bury it, so this one arrives only when
-// it is asked for by name.
+// It is opt-in. Writing `[[Entropy]]` before the note exists is a common
+// workflow, with the link serving as a reminder to create the note, and a vault
+// being written contains hundreds of such links. Reported with the other
+// checks they would bury the results, so this check runs only when
+// requested by name.
 //
-// Adding the missing note repairs it, without anyone touching the link: what a
-// name reaches is worked out at the moment it is asked.
+// Creating the missing note resolves the problem without editing the link: the
+// target of a name is resolved when the check runs.
 type danglingCheck struct {
 	queries problemport.ProblemQueries
 }

@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/ulid"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 )
@@ -46,7 +46,7 @@ var (
 	ErrTooLarge = errors.New("the copy is larger than a copy may be")
 )
 
-// Fetcher reaches what is published at an address.
+// Fetcher retrieves the content published at an address.
 type Fetcher interface {
 	CanCopy(address string) bool
 	GetDownloadModel(address string) download.DownloadModel
@@ -64,7 +64,8 @@ type Host struct {
 	Now   func() time.Time
 }
 
-// Settings are what the person set about fetching. CopyMaxSize is in bytes, and zero is no limit.
+// Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
+// no limit.
 type Settings struct {
 	Captions    []string
 	IsAutomatic bool
@@ -86,8 +87,8 @@ type Links struct {
 	running map[string]bool
 }
 
-// New is the links worked through the host. fetcher and settings are asked at every fetch, so a
-// setting changed is taken by the next one.
+// New returns the links service for the host. fetcher and settings are
+// evaluated on every fetch, so a changed setting applies to the next one.
 func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
 	now := h.Now
 	if now == nil {
@@ -207,8 +208,9 @@ func (l *Links) getTexts(link Link) host.Texts {
 	return l.host.Texts.With(link.Vault)
 }
 
-// claim takes one kind of work on a key of a link's vault for this run alone, and returns false
-// where another run has it. The same address in another vault is other work.
+// claim reserves one kind of work on a key of a link's vault for this run and
+// returns false when another run holds it. The same address in another vault is
+// separate work.
 func (l *Links) claim(work string, link Link, key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -226,7 +228,8 @@ func (l *Links) release(work string, link Link, key string) {
 	delete(l.running, getWorkName(work, link, key))
 }
 
-// getWorkName names one kind of work on a key in the vault of a link.
+// getWorkName returns the name of one kind of work on a key in the vault of a
+// link.
 func getWorkName(work string, link Link, key string) string {
 	return work + "\x00" + string(link.Vault) + "\x00" + key
 }
@@ -295,7 +298,7 @@ func (l *Links) StartCopy(link Link) {
 	})
 }
 
-// taskTitles are what each kind of work on a link is called in the list of tasks.
+// taskTitles are the names of each kind of work on a link in the task list.
 const (
 	fetchingText = "Fetching the text of a link"
 	copyingVideo = "Copying a video"
@@ -303,10 +306,11 @@ const (
 
 func getTaskID(work, path string) string { return work + ":" + path }
 
-// FetchText fetches the text published at a link's address and puts it as a text version of the
-// link. An address that publishes none is marked as such. A fetch nobody asked for leaves alone an
-// address marked as publishing none and a text whose version a person deleted, and puts a text
-// already stored again as a version of the note as it reads now, without fetching it.
+// FetchText fetches the text published at a link's address and stores it as a
+// text version of the link. An address that publishes no text is marked as such.
+// A fetch not requested by the user skips an address marked as publishing no
+// text and a text whose version the user deleted, and re-stores an existing text
+// as a version of the note as it currently reads, without fetching it.
 func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) error {
 	if !l.claim("text", link, link.Key) {
 		return ErrBeingFetched
@@ -326,7 +330,8 @@ func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) er
 	return err
 }
 
-// reuseText settles a fetch nobody asked for from what is stored, and reports whether it did.
+// reuseText completes a fetch not requested by the user from stored data and
+// reports whether it did.
 func (l *Links) reuseText(ctx context.Context, folder folder, link Link) (bool, error) {
 	if isNone, err := folder.isNone(ctx, link.Key); err != nil || isNone {
 		return true, err
@@ -337,7 +342,8 @@ func (l *Links) reuseText(ctx context.Context, folder folder, link Link) (bool, 
 	}
 	hasText, err := folder.hasText(ctx, link.Key)
 	if err != nil || !hasText {
-		// A text fetched once and gone since is a version the person deleted.
+		// A text that was fetched earlier and is now absent is a version the user
+		// deleted.
 		return true, err
 	}
 	return true, l.ensureVersion(ctx, link, rec.Kind)

@@ -84,8 +84,8 @@ func TestAFailingCheckAfterAFindingFailsTheRun(t *testing.T) {
 	}
 }
 
-// What a person has to open is together: the problems stand by note, and by
-// check within a note, whatever order the checks found them in.
+// Problems are grouped by note, and by check within a note, regardless of the
+// order in which the checks reported them.
 func TestProblemsStandByNoteAndThenByCheck(t *testing.T) {
 	l := check.Checks{List: []check.Checker{
 		fixed{name: "first", found: []domain.VaultProblem{

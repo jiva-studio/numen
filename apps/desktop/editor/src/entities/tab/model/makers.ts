@@ -1,6 +1,6 @@
 /**
- * A file of a kind a tab makes, made in a folder under the name it is given and
- * put in front of the person in a tab of its own.
+ * A file of a kind a tab creates, created in a folder under the given name and
+ * opened in a tab of its own.
  */
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
@@ -8,20 +8,20 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import type { FileOpeners } from './openers'
 
-/** The kind of tab a file is created as. */
+/** The tab kind a file is created as. */
 export type CreateKind = string
 
 /**
- * What the window asks the vault to create from nothing. A creator that answers
- * nothing has already told the person why none was made.
+ * What the window asks the vault to create from nothing. A creator that returns
+ * nothing has already reported the failure to the user.
  */
 export interface VaultCreator {
   createFile(kind: string, title: string, folder: string): Promise<CreateResult | null>
 }
 
-/** What creating a file says in the window's voice. */
+/** What creating a file reports to the window. */
 export interface CreateWords {
-  /** What the vault reported as error, in words a person reads. */
+  /** The vault's reported error, in user-readable words. */
   readonly errors: Record<ErrorCode, string>
 }
 
@@ -33,9 +33,9 @@ export interface FileCreatorsOptions {
 }
 
 /**
- * A file of a kind, made in a folder under the name it is given. The vault names
- * the file after it and answers at its current position. A vault that answers
- * nothing at all is said here.
+ * A file of a kind, created in a folder under the given name. The vault names
+ * the file after it and reports its current position. A vault that returns
+ * nothing is reported here.
  */
 export function createFileCreators(
   vault: VaultCreator,
@@ -63,7 +63,7 @@ export function createFileCreators(
     }
   }
 
-  /** The same, put in front of the person in a tab of its own. */
+  /** The same, opened in a tab of its own. */
   const createAndOpenFile = async (
     what: CreateKind,
     folder: string,

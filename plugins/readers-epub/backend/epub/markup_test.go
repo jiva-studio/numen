@@ -99,8 +99,8 @@ func TestMarkup(t *testing.T) {
 				t.Errorf("a link points at %q", got)
 			}
 		}
-		// A book draws the files it carries, and asks nobody for a picture: a
-		// picture fetched is a book reporting that it was opened.
+		// A book renders the files it contains and fetches no external image: a
+		// fetched image would tell a server that the book was opened.
 		pictures := findAll(rendered.Nodes, "img")
 		if len(pictures) != 2 {
 			t.Fatalf("pictures = %d, want the two the document holds", len(pictures))
@@ -147,8 +147,8 @@ func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {
 	}
 }
 
-// A cover naming no picture of the archive draws none: an address the window
-// refuses is a broken picture on the page.
+// A cover naming no image in the archive renders none: an address the window
+// rejects is a broken image on the page.
 func TestCover_WithoutImageReferenceYieldsNoImage(t *testing.T) {
 	for _, one := range []struct{ name, svg string }{
 		{"nothing at all", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">
@@ -173,16 +173,15 @@ func TestCover_WithoutImageReferenceYieldsNoImage(t *testing.T) {
 	}
 }
 
-// A cover written in the version of SVG that names what it draws with href, and
-// one carrying the picture itself.
+// A cover in the SVG version that names its image with href, and one embedding
+// the image data.
 func TestCover_ResolvesImageHref(t *testing.T) {
 	const content = "data:image/png;base64,iVBORw0KGgo="
 	for _, one := range []struct{ svg, want string }{
 		{`<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
 			"OEBPS/pictures/plate.png"},
 		{`<svg xmlns="http://www.w3.org/2000/svg"><g><image href="` + content + `"/></g></svg>`, content},
-		// An entity the SVG does not declare and an encoding other than UTF-8
-		// still draw the picture.
+		// An undeclared SVG entity and a non-UTF-8 encoding still resolve the image.
 		{`<svg xmlns="http://www.w3.org/2000/svg"><title>Plate&nbsp;one</title>
 			<image href="pictures/plate.png"/></svg>`, "OEBPS/pictures/plate.png"},
 		{`<?xml version="1.0" encoding="iso-8859-1"?>
@@ -291,9 +290,9 @@ func attribute(node *epub.Node, name string) string {
 	return ""
 }
 
-// A link keeps an address in a scheme a person may be sent to, or an entry of
-// the archive. A scheme is a letter followed by letters, digits, plus, minus and
-// dots, and any other scheme leads nowhere.
+// A link keeps an address whose scheme the user may be sent to, or an archive
+// entry. A scheme is a letter followed by letters, digits, plus, minus and dots;
+// any other scheme is dropped.
 func TestWhereALinkLeads(t *testing.T) {
 	for _, c := range []struct{ href, want string }{
 		{" mailto:someone@example.org", "mailto:someone@example.org"},
@@ -346,8 +345,8 @@ func TestAnAddressThatLeadsNowhereConsumesNothingElse(t *testing.T) {
 	}
 }
 
-// An element standing on the space a line's end takes back stands where the
-// line ends.
+// An element positioned on the space that a line's end absorbs is positioned at
+// the line end.
 func TestAnElementOnASpaceTakenBackExistsAtTheLineEnd(t *testing.T) {
 	book, markup := readOne(t, `<p>A <b></b></p>`)
 	if book.Text != "A\n" {

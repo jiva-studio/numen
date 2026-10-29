@@ -386,8 +386,8 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	}
 }
 
-// A setting of type agent is one at most, declared by a plugin that may ask a
-// model, and leaves the choice to the person.
+// A setting of type agent is at most one, declared by a plugin that may query a
+// model, and leaves the choice to the user.
 func TestAManifestDeclaresTheAgentSettingOnceWithoutADefault(t *testing.T) {
 	const agent = `{"key":"model","type":"agent","title":"Model"}`
 	for _, one := range []struct {

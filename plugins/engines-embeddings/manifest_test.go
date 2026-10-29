@@ -27,7 +27,7 @@ func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	}
 }
 
-// The core finds the provider by the capability; no window reaches the service.
+// The core finds the provider by its capability; no window calls the service.
 func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) {
 	var manifest struct {
 		Capabilities []string `json:"capabilities"`

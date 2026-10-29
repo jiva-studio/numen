@@ -13,8 +13,8 @@ import (
 type CutNotes struct {
 	Sizes      Sizes
 	Legibility Legibility
-	// Profiles says how the notes of a type a plugin declares are kept. Nil keeps every note as an
-	// ordinary note is kept.
+	// Profiles describes how notes of a type declared by a plugin are chunked. Nil
+	// chunks every note as an ordinary note.
 	Profiles func(domain.NoteType) (domain.NoteProfile, bool)
 }
 

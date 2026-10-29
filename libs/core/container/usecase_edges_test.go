@@ -39,7 +39,7 @@ func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	return name, true
 }
 
-// getUseCaseEdgeRefusal says why one package may not reach another, and nothing
+// getUseCaseEdgeRefusal returns why one package may not import another, and nothing
 // where it may.
 func getUseCaseEdgeRefusal(from, to string) string {
 	source, isSource := getUseCaseName(from)
@@ -53,7 +53,7 @@ func getUseCaseEdgeRefusal(from, to string) string {
 	return "a use case builds only on the use cases useCaseEdges lists for it"
 }
 
-// A use case reaches another only along an edge useCaseEdges declares.
+// A use case imports another only along an edge useCaseEdges declares.
 //
 // Test files are not walked.
 func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {

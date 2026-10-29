@@ -12,12 +12,12 @@ import (
 // folder under it with a go.mod of its own, named after that folder.
 const sdkModule = numenModules + "libs/plugin-sdk-go"
 
-// isSDK says whether a package or module is part of the plugin SDK.
+// isSDK reports whether a package or module is part of the plugin SDK.
 func isSDK(path string) bool {
 	return path == sdkModule || strings.HasPrefix(path, sdkModule+"/")
 }
 
-// getSDKRefusal says why the SDK module mod may not require dep, or "" when it
+// getSDKRefusal returns why the SDK module mod may not require dep, or "" when it
 // may. The base module requires no feature module, and a feature module
 // requires the base module at most.
 func getSDKRefusal(mod, dep string) string {
@@ -32,7 +32,7 @@ func getSDKRefusal(mod, dep string) string {
 	return ""
 }
 
-// What getSDKRefusal says is the whole of the rule, so it is asked directly.
+// getSDKRefusal defines the whole rule, so it is tested directly.
 func TestWhatTheSDKModuleRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		mod, dep  string

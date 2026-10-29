@@ -10,13 +10,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// acquireFileLock takes a lock on the first byte of the file and returns what lets it go.
+// acquireFileLock locks the first byte of the file and returns a function that releases the lock.
 //
 // Windows holds the lock against the open handle and drops it when the handle
-// file is somewhere for the lock to live and says nothing on its own.
+// is closed. The file is only the place the lock lives and carries no content.
 //
-// The handle shares the file for deletion, so a name is taken out of the store
-// with the acquireFileLock on it still held.
+// The handle shares the file for deletion, so a name can be removed from the store
+// while the acquireFileLock on it is still held.
 func acquireFileLock(path string) (func() error, error) {
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {

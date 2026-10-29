@@ -10,7 +10,7 @@ import { stepTo } from '@/shared/lib/dom/roving'
 import { canLandOn, type MenuItem } from '../items/item'
 import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from '../items/typeahead'
 
-/** A row standing now, which takes the keyboard when it is asked to. */
+/** A rendered row, which takes keyboard focus on request. */
 interface RowHandle {
   readonly focus: () => void
 }
@@ -18,7 +18,7 @@ interface RowHandle {
 export interface MenuKeysState {
   /** Which item the keyboard is on, or -1 when it is on none. */
   readonly here: Ref<number>
-  /** A row as it is drawn, held under the item it stands for. */
+  /** A rendered row, stored under the item it belongs to. */
   readonly holdRow: (item: string, row: unknown) => void
   /** The keyboard onto an item, or onto the menu itself where there is none. */
   readonly goTo: (pos: number) => void
@@ -40,7 +40,7 @@ export function useMenuKeys(
 ): MenuKeysState {
   const here = ref(-1)
 
-  /** Each item as it is drawn, each under the item it stands for. */
+  /** Each rendered row, stored under its item. */
   const renderedRows = new Map<string, RowHandle | null>()
 
   const holdRow = (item: string, row: unknown): void => {

@@ -1,9 +1,9 @@
 /**
- * The line a gesture drags behind it, and the box it would leave where it ends.
+ * The line a gesture drags behind it, and the box it would create where it ends.
  *
- * A box drawn here is a node like any other, at the same size in the same
- * place — it is only that it has no name yet, and says the relation it would take
- * instead, in whatever words it was given.
+ * A box drawn here is a node like any other, at the same size and place, except
+ * that it has no name yet and shows the relation it would take, in the words it
+ * was given.
  */
 import { createThreadPath, type Drop, type Size } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
@@ -74,11 +74,11 @@ export interface DraggedShapeOptions {
 }
 
 /**
- * Something dragged over the picture: the line from the focus to the pointer,
- * and the shape letting go would leave there.
+ * An item dragged over the plex: the line from the focus to the pointer, and
+ * the shape that dropping would create there.
  *
- * Drawn only where letting go evaluates to a relation, so what the reader sees and what
- * the gesture answers are the one thing.
+ * Drawn only where the drop evaluates to a relation, so what the user sees
+ * matches what the gesture does.
  */
 export function getDraggedShape(
   frame: PlexFrame,

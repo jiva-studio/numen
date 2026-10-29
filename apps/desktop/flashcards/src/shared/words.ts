@@ -1,11 +1,11 @@
-/** What the window says, in the words it says them by. */
+/** The strings displayed by the window. */
 export const WORDS = {
   /** What the list of vaults is called. */
   vaults: 'Vaults',
-  /** Said while the installation has not yet named the vaults it holds. */
+  /** Shown while the installation has not yet reported its vaults. */
   listing: 'Loading vaults…',
-  /** Said where no plugin of the window draws a view. */
+  /** Shown when no plugin of the window provides a view. */
   empty: 'No plugin views.',
-  /** Said where the agent cannot be asked whether it can be reached. */
+  /** Shown when the agent's availability cannot be determined. */
   agentUnreachable: 'Agent unreachable.',
 } as const

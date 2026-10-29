@@ -23,11 +23,11 @@ type TextReaders interface {
 	Open(v domain.Vault) (VaultTexts, error)
 }
 
-// VaultTexts is the text of one vault, read, and asked for where a file has none.
+// VaultTexts reads the text of one vault and requests text for files that have none.
 type VaultTexts interface {
 	Texts
-	// RequestText asks every enabled plugin that runs on its own and takes the
-	// file for text of it. A file with a live version is asked for nothing.
+	// RequestText requests text for the file from every enabled plugin that runs
+	// automatically and accepts the file. A file with a live version is not requested.
 	RequestText(ctx context.Context, path, fileHash string) error
 	// IsTextSource reports whether the index keeps the text of the file: it has
 	// text versions, or an enabled plugin that runs on its own takes it.

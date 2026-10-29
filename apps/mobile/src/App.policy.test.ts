@@ -37,10 +37,10 @@ const policy: Record<string, string[]> = Object.fromEntries(
 )
 
 /**
- * Whether a directive lets an address be asked for.
+ * Whether a directive allows a request to an address.
  *
- * Only the source forms this policy writes are understood: a keyword, a scheme
- * on its own, and a host with a port that may be any.
+ * Only the source forms that this policy uses are supported: a keyword, a
+ * bare scheme, and a host with an optional wildcard port.
  */
 function isAllowed(directive: string, address: string): boolean {
   const sources = policy[directive] ?? policy['default-src'] ?? []

@@ -18,9 +18,9 @@ import (
 // lives. A mention in prose is a link too, and is written by writing prose:
 // this is not the place for it.
 //
-// Every change here is to one entry. The entries around it are the person's —
-// including ones the application could not read — and come out of a write as
-// the bytes they went in as.
+// Every change here applies to one entry. The surrounding entries belong to the
+// user, including ones the application could not parse, and are written back
+// byte for byte.
 type EditLinks struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
@@ -28,13 +28,13 @@ type EditLinks struct {
 	now     machineport.Clock
 }
 
-// NewEditLinks is what a note's relationships are written through: the vault it
-// is read and written through, what brings it level in the index, and what time
-// it is.
+// NewEditLinks returns the use case that writes a note's relationships. It takes the
+// vault readers and writers, the index updater that makes written links searchable, and
+// the clock.
 //
-// All four are named here for the reason NewWrite names them: a link written
-// and not levelled is a relationship the vault cannot be asked about, and a
-// note stamped off the machine's clock is stamped where nobody said it may be.
+// All four are required for the reason NewWrite requires them: a written link
+// that is not indexed cannot be queried, and timestamps come from the injected
+// clock and not from the machine clock directly.
 func NewEditLinks(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
 ) EditLinks {
@@ -86,12 +86,12 @@ func (u EditLinks) Add(
 	})
 }
 
-// Update changes what an existing link says about itself — its role, its type,
-// its label, the reason it exists — without moving where it goes.
+// Update changes the properties of an existing link, its role, type,
+// label and reason, without changing its target.
 //
-// Every field left out is cleared, so what this writes is decided from what the
-// caller read. That is what the file stat is for here: the label a person
-// wrote in the meantime is not silently thrown away.
+// Every omitted field is cleared, so the result is derived from what the
+// caller read. The file stat protects against this: a label the user
+// wrote in the meantime is not silently overwritten.
 func (u EditLinks) Update(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
 	change domain.Link, stat domain.FileStat,

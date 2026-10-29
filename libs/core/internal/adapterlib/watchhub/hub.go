@@ -1,10 +1,10 @@
 // Package watchhub shares the operating system's folder watches between everything in the process
 // that follows a folder.
 //
-// The watches it places never nest: a folder asked for inside one already watched over its whole
-// tree is served from that watch, and a folder asked for over watches already placed takes them
-// over. notify's recursive tree, which FSEvents uses, takes the outer watch away when a watch
-// nested inside it stops.
+// Watches never nest: a folder requested inside a folder already watched
+// recursively is served by that watch, and a folder requested over existing
+// watches replaces them. notify's recursive tree, which FSEvents uses, removes
+// the outer watch when a watch nested inside it stops.
 package watchhub
 
 import (
@@ -46,7 +46,7 @@ type placed struct {
 	followers map[*follower]struct{}
 }
 
-// isCovering reports whether the watch reports what a follower of dir asks for.
+// isCovering reports whether the watch delivers the events a follower of dir requires.
 func (p *placed) isCovering(dir string, isRecursive bool) bool {
 	if p.isRecursive {
 		return isWithin(dir, p.dir)
@@ -181,8 +181,8 @@ func (h *hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*pl
 	return dir, isRecursive, inner
 }
 
-// start asks the system for the watch and hands its events on. A watch inner away is started again
-// on channels of its own.
+// start registers the watch with the system and forwards its events. A stopped
+// watch is started again on new channels.
 func (h *hub) start(p *placed) error {
 	target := p.dir
 	if p.isRecursive {
@@ -205,8 +205,8 @@ func (h *hub) unplace(p *placed) {
 	delete(h.placed, p)
 }
 
-// newStop is what lets the follower go, once however often it is called. The watch serving no one
-// is inner away.
+// newStop returns the function that detaches the follower; repeated calls have
+// no further effect. A watch with no remaining followers is stopped.
 func (h *hub) newStop(one *follower) func() {
 	var once sync.Once
 	return func() {

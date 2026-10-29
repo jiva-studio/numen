@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/appearance"
 )
 
-// A window dressed in everything a person can set.
+// A window styled with everything a user can set.
 func buildSettings() appearance.Settings {
 	return appearance.Settings{
 		Mode:           appearance.Dark,
@@ -20,9 +20,9 @@ func buildSettings() appearance.Settings {
 // buildElementHead is the head of one of the three elements.
 func buildElementHead(is string) string { return `<style ` + appearance.Marker + `="` + is + `">` }
 
-// Each of the three elements the head ends with says which of them it is. A
-// theme's file is a person's own CSS and says nothing about itself, so the mark
-// is the whole of what a window has to tell them apart by.
+// Each of the three elements the head ends with identifies itself. A theme's
+// file is the user's own CSS and carries no identification, so the mark is the
+// only means of telling them apart.
 func TestEachStyleElementReturnsWhichItIs(t *testing.T) {
 	head := buildSettings().Styles()
 
@@ -36,9 +36,9 @@ func TestEachStyleElementReturnsWhichItIs(t *testing.T) {
 	}
 }
 
-// The mode's element stands first, the theme's second and the sizes' last. A
-// theme pinning `color-scheme` is the later of two declarations weighing the
-// same, and the sizes are the last word on how large the window is drawn.
+// The mode's element comes first, the theme's second and the sizes' last. A
+// theme pinning `color-scheme` is the later of two declarations of equal
+// weight, and the sizes have the last word on the rendered window size.
 func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
 	head := buildSettings().Styles()
 

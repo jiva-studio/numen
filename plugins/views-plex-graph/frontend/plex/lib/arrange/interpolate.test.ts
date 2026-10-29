@@ -271,8 +271,8 @@ describe('the title a line carries while the picture moves', () => {
   it('holds where along the line the words sit', () => {
     const measureLabelWidth = (label: string) => 6 * [...label].length
 
-    // A window that wraps the fan, at the settings: what this is about is a
-    // title moving off the middle, not how much room the window has to spare.
+    // A window that wraps the fan, at the default settings: the test targets a
+    // title moving off the middle, not the amount of spare room in the window.
     const arrangeWithTitles = (neighbourhood: PlexNeighbourhood) =>
       arrangePlex(
         {

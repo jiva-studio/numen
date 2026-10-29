@@ -18,7 +18,7 @@ export function useHoverFocus() {
   const isKeyboardFocused = ref(false)
 
   return {
-    /** The hand is over it, or the keyboard is visibly on it. */
+    /** The pointer is over it, or keyboard focus is visibly on it. */
     isOn: computed(() => isHovered.value || isKeyboardFocused.value),
 
     onPointerEnter: () => {

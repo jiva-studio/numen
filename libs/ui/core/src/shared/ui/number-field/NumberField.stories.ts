@@ -70,7 +70,7 @@ const field = (canvas: HTMLElement): HTMLInputElement => {
   return found
 }
 
-/** A number a person has set. */
+/** A field with a user-set number. */
 export const ANumberField: Story = {}
 
 /** Nothing typed yet, so the words stand in for the number. */
@@ -83,8 +83,8 @@ export const AtTheFloor: Story = { args: { value: 0 } }
 export const AtTheCeiling: Story = { args: { value: 240 } }
 
 /**
- * A number the bounds do not hold. It is brought in and stands there, and
- * nothing is marked, since nobody typed it.
+ * A value outside the bounds. It is clamped to the bounds and not marked
+ * invalid, because the user did not type it.
  */
 export const PastTheCeiling: Story = {
   args: { value: 900, max: 240 },
@@ -99,13 +99,13 @@ export const PastTheCeiling: Story = {
 /** More digits than the field is wide. */
 export const FarTooMany: Story = { args: { value: 123456789, max: 999999999 } }
 
-/** A field nobody may type into. */
+/** A field that cannot be edited. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
 /** Words in another script standing in for the number. */
 export const OtherScripts: Story = { args: { value: null, placeholder: 'Минут в день' } }
 
-/** What is typed stands as it was typed, and no number is handed on. */
+/** The typed text is kept as typed, and no number is emitted. */
 export const KeepsWhatWasTyped: Story = {
   args: { value: null },
   play: async ({ canvasElement }) => {
@@ -226,7 +226,7 @@ export const TakenAwayUnderARefusedLine: Story = {
   },
 }
 
-/** The keyboard reaches it, and what it is stands where a reader can hear it. */
+/** The field is keyboard-focusable and exposes its value to screen readers. */
 export const TheKeyboardReachesIt: Story = {
   play: async ({ canvasElement }) => {
     const input = field(canvasElement)

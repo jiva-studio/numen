@@ -12,13 +12,12 @@ import (
 // ErrInvalidTextInput is a text input that points at no version, or at the wrong one.
 var ErrInvalidTextInput = errors.New("invalid text input")
 
-// PluginTextInput is what a plugin makes text from: files of the content types
+// PluginTextInput is what a plugin creates text from: files of the content types
 // ContentTypes names, text versions of the kinds Kinds names, and notes of the
-// plugin's own types NoteTypes names. IsAutoRun asks the host to run the plugin
-// on a file of its content types that has no live text version. The plugin
-// starts the text of a note of its types itself. MenuEntry is the plugin's entry
-// in the menu of a file its input takes; a plugin without one is not offered
-// there.
+// plugin's own types NoteTypes names. IsAutoRun requests the host to run the plugin
+// on a file of its content types that has no live text version. The plugin creates
+// the text of a note of its types itself. MenuEntry is the plugin's entry in the
+// menu of a file its input accepts; a plugin without one is not offered there.
 //
 // A plugin that declares one serves numen.v1.TextProviderService.
 type PluginTextInput struct {

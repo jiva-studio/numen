@@ -49,8 +49,8 @@ func TestTheLastVaultThatCannotBeReadIsAnError(t *testing.T) {
 	}
 }
 
-// Where nobody says which vault is being worked and none was opened last, no
-// vault is the current one, whatever identity it carries.
+// Where no vault is named as in use and none was opened last, no vault is the
+// current one, whatever identity it carries.
 func TestNoVaultIsCurrentWhereNoneIsNamedAndNoneWasOpened(t *testing.T) {
 	t.Parallel()
 	list := &theList{rows: []domain.Vault{{ID: "", Name: "Nameless", Path: "/notes/nameless"}}}

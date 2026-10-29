@@ -38,7 +38,7 @@ export const OnlyCreate: Story = {
     const option = await waitFor(() => canvas.getByRole('option', { name: 'Create "qq"' }))
     const dropdown = canvas.getByRole('listbox')
 
-    // The row has the same room on every side of it.
+    // The row has equal padding on every side.
     const gaps = getGaps(dropdown, option)
     await expect(gaps.top).toBeCloseTo(gaps.bottom, 1)
     await expect(gaps.top).toBeCloseTo(gaps.left, 1)

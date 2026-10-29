@@ -76,7 +76,7 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 	}
 }
 
-// The failure of a plugin travels to the window with its reason, its detail and its time, and a plugin that has not failed travels with none.
+// The failure of a plugin is delivered to the window with its reason, its detail and its time, and a plugin that has not failed carries none.
 func TestAFailedPluginTravelsWithItsReasonDetailAndTime(t *testing.T) {
 	pos := time.UnixMilli(1_700_000_000_123)
 	infos := NewWirePluginInfos([]setting.PluginInfo{

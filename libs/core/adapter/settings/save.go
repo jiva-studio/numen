@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// Setting is one field of the file and where in it that field sits:
+// Setting is one field of the file and its position in it:
 // `appearance.theme` is `Setting{At: []string{"appearance", "theme"}}`.
 type Setting struct {
 	At      []string
@@ -24,21 +24,19 @@ type Setting struct {
 
 // Save writes settings into the file, leaving every other byte of it as it was.
 //
-// The bytes of the named field's value are replaced where they sit and the rest
-// of the file is carried through untouched, so the order a person arranged
-// their sections in, the way they indented them, and `0.30` written to two
-// places all come back as they were. A field the file has not got is appended
-// to the end of the section it belongs to.
+// The bytes of the named field's value are replaced in place and the rest of
+// the file is preserved byte for byte, including section order, indentation,
+// and number formatting such as `0.30`. A field missing from the file is
+// appended to the end of the section it belongs to.
 //
-// A file that does not parse is not written: what a person has in it is worth
-// more than the setting being saved. A file that is not there is written
-// holding the named fields alone, and every field a settings file leaves out
-// keeps its default.
+// A file that does not parse is not written, so the existing content is never
+// lost to a failed save. A missing file is written containing only the named
+// fields, and every field the file omits keeps its default.
 //
-// A file the settings could not be read out of again is not written either: a
-// value of the wrong shape, and a number past what its setting goes to, are
-// into says what shape the whole file takes, so a value written into any
-// section of it is read back before it lands.
+// A result that cannot be read back into `into` is not written either: a
+// value of the wrong shape or a number outside its setting's bounds is
+// rejected. `into` defines the shape of the whole file, so a value written into
+// any section is validated by reading the result back before it is saved.
 func Save(path string, into Document, settings ...Setting) error {
 	return runOnFile(path, func(path string) error {
 		raw, err := os.ReadFile(path)
@@ -70,11 +68,12 @@ func Save(path string, into Document, settings ...Setting) error {
 	})
 }
 
-// writeSettings says what is wrong with the settings this call wrote, and
-// nothing where each is a number its setting writeSettings and an hour its
-// setting begins at.
+// writeSettings returns an error for any setting written by this call whose
+// value is outside the bounds of its setting, such as a number out of range or
+// an hour outside 0-23.
 //
-// A value outside its setting that the file already held is one the person
+// A value outside its bounds that the file already held is ignored unless this
+// call wrote that field.
 func writeSettings(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
@@ -144,7 +143,7 @@ func renameMember(object []byte, pos []string, to string) ([]byte, bool) {
 	return object, false
 }
 
-// renameInMember renames the member the path ends at, and says whether it did.
+// renameInMember renames the member the path ends at and reports whether it did.
 func renameInMember(object []byte, target shape, one member, pos []string, to string) ([]byte, bool) {
 	if len(pos) > 1 {
 		section, isDone := renameMember(object[one.from:one.to], pos[1:], to)
@@ -212,9 +211,8 @@ func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]
 // member is one member of an object: its name, where that name is written, and
 type member struct {
 	key string
-	// nameFrom and nameTo are the name as the file has it, quotes and all. Both
-	// are nought for a name written with escapes in it, which is a name this
-	// stands well back from.
+	// nameFrom and nameTo are the name as written in the file, including quotes. Both
+	// are zero for a name containing escapes, which is not renamed.
 	nameFrom, nameTo int
 	from, to         int
 }
@@ -224,8 +222,8 @@ type member struct {
 // with.
 type shape struct {
 	pairs []member
-	// last is where the final member's value ends, and where a comma and
-	// another member go. An object holding nothing has it just past the brace.
+	// last is the end offset of the final member's value, where a comma and
+	// another member are inserted. For an empty object it is the offset just after the brace.
 	last int
 	// indent is the whitespace before the first member's name. Empty for an
 	// object written on one line and for one holding nothing.
@@ -304,15 +302,15 @@ func (s shape) hasKey(key string) bool {
 	return false
 }
 
-// appendMember puts a member at the end of the object, laid out the way the
-// object already is. The end is where a name nobody has written yet belongs:
-// the order of the rest is a person's.
+// appendMember appends a member at the end of the object, using the object's
+// existing layout. A new name goes last because the order of existing members is
+// preserved.
 func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) []byte {
 	name, _ := json.Marshal(pos[0])
 
 	if len(s.pairs) == 0 {
-		// An object holding nothing says nothing about how it is laid out, so
-		// it is opened out one step past the name it hangs from.
+		// An empty object has no layout to follow, so the member is placed on its
+		// own line, indented one step deeper than the key the object belongs to.
 		indent := outer + "  "
 		body := string(name) + ": " + string(wrapInSections(pos[1:], value, indent))
 		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer))
@@ -413,9 +411,8 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 	return slices.Concat(raw[:from], with, raw[to:])
 }
 
-// writeFileAtomically writes the file beside itself and renames it over the top, so a
-// machine that dies mid-write leaves the settings whole. Where a file carries a
-// mode it is the person's alone.
+// writeFileAtomically writes the file next to its target and renames it over the
+// target, so a crash mid-write leaves the settings intact. The file mode is 0600.
 //
 // The path is the one runOnFile hands its work: the file itself, with every link
 // on the way to it already followed.

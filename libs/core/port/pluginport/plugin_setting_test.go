@@ -56,8 +56,8 @@ func TestOptionsAreReadFromValuesAndFromObjects(t *testing.T) {
 	}
 }
 
-// A setting whose options follow another holds its stored value while that value is one of them,
-// and the first of them otherwise.
+// A setting whose options follow another keeps its stored value while that value is one of them,
+// and falls back to the first of them otherwise.
 func TestASettingWhoseOptionsFollowAnotherFallsBackToTheirFirst(t *testing.T) {
 	m := readTestManifest(t)
 	for name, tc := range map[string]struct {

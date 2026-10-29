@@ -13,7 +13,8 @@ import (
 // ErrNoProxy is a file no enabled plugin keeps a copy of.
 var ErrNoProxy = errors.New("no copy of the file is kept")
 
-// Copy is a copy open to read a part of. Whoever opens it closes it.
+// Copy is an open copy of a file from which a part can be read. The opener
+// closes it.
 type Copy struct {
 	Body      io.ReadSeekCloser
 	Size      int64

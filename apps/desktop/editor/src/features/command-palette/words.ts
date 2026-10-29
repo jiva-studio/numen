@@ -1,10 +1,9 @@
 /**
- * The words the palette is drawn in: every command as it is offered, every
- * that has been carried out answers in.
+ * The palette's display strings: every command as offered, and every answer
+ * shown after a command has been carried out.
  *
- * Nothing here is a decision. `types.ts` says what a command is and
- * `lib/table.ts` which commands there are; this is only what a person reads of
- * them.
+ * Contains no decisions. `types.ts` defines what a command is and
+ * `lib/table.ts` lists which commands exist; this file holds only their text.
  */
 // Stryker disable StringLiteral: interface copy
 import type { PaletteKeys } from '@numen/ui'
@@ -19,11 +18,11 @@ export const ANSWER_WORDS: AnswerWords = {
   vaultErrors: VAULT_ERRORS,
 }
 
-/** Everything carrying a command out says in the window's voice. */
+/** The text shown for the outcome of carrying out a command. */
 export interface AnswerWords {
-  /** What the vault reported as error, in words a person reads. */
+  /** Message for each error code reported by the vault. */
   readonly errors: Record<ErrorCode, string>
-  /** What the list of vaults reported as error, in words a person reads. */
+  /** Message for each error code reported by the vault list. */
   readonly vaultErrors: Record<VaultErrorCode, string>
   /** What the machine's own folder picker is titled. */
   readonly folder: string
@@ -31,15 +30,15 @@ export interface AnswerWords {
   readonly dangling: string
   /** The vault opens with no note at all. */
   readonly nowhere: string
-  /** The note is waiting on the person, and its file stays where it is. */
+  /** The note is awaiting a reply, and its file is not moved. */
   readonly unanswered: string
-  /** The note holds prose nobody here has seen, so nothing was written. */
+  /** The note contains prose that has not been loaded, so nothing was written. */
   readonly stale: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly alreadyExists: string
 }
 
-/** The words the step that asks for the name typed back is drawn in. */
+/** Text for the step that asks the user to retype a name. */
 export interface RetypeWords {
   readonly action: string
   readonly detail: string
@@ -107,14 +106,14 @@ export interface Words extends EmptyWords {
   readonly noNote: string
   readonly command: string
   readonly typeCommand: string
-  /** A name asked for, and the one item it offers. */
+  /** A requested name, and the one item it offers. */
   readonly naming: string
   readonly typeName: string
   readonly callIt: string
-  /** A value a command asks for, and the two things its step offers. */
+  /** A value requested by a command, and the two items its step offers. */
   readonly givesIt: string
   readonly leavesOut: string
-  /** A note asked for, over the names in the vault. */
+  /** A requested note, among the names in the vault. */
   readonly names: string
   readonly typeNote: string
   /**
@@ -123,7 +122,7 @@ export interface Words extends EmptyWords {
    */
   readonly typeChoice: string
   readonly chooses: string
-  /** A vault asked for, over the vaults the installation holds. */
+  /** A requested vault, among the vaults of the installation. */
   readonly vaults: string
   readonly typeVault: string
   /** The two vaults the list draws and does not offer to choose. */
@@ -140,7 +139,7 @@ export interface Words extends EmptyWords {
   readonly keepsVault: string
   readonly removeVaultAction: string
   readonly stays: string
-  /** The name typed back, which is what destroying asks for. */
+  /** The name retyped, which confirms a destructive action. */
   readonly exactly: string
   readonly typeBack: string
   readonly destroys: string

@@ -1,16 +1,16 @@
 /**
- * What every branch and pane of one workspace shares, however deep it stands.
- * A branch holds branches, so there is no depth to thread anything through.
+ * What every branch and pane of one workspace shares, at any depth. A branch
+ * holds branches, so nothing is threaded through by depth.
  */
 import type { InjectionKey, Ref } from 'vue'
 import type { NodeId, Tab, TabId } from '../lib/node'
 
 export interface WorkspaceContext {
-  /** The tab an identity stands for, and nothing for one the workspace has lost. */
+  /** The tab an identity refers to, or nothing for an identity the workspace no longer has. */
   readonly findTab: (id: TabId) => Tab | undefined
   /** The pane a tab opens into. */
   readonly focus: NodeId
-  /** The least room a pane is worth drawing in. */
+  /** The minimum size at which a pane is worth drawing. */
   readonly minimum: number
   readonly choose: (tab: TabId) => void
   readonly close: (tab: TabId) => void

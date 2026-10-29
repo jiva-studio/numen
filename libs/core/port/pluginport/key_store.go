@@ -10,12 +10,12 @@ var (
 	ErrNoKey = errors.New("no key is stored under that name")
 
 	// ErrNoKeyStore means this machine has no store to keep a key in. A key is
-	// never kept anywhere else, and the caller is told so.
+	// never kept anywhere else, and the caller is notified.
 	ErrNoKeyStore = errors.New("this machine has no key store")
 )
 
-// KeyStore keeps the keys that open a service for a person, such as an API key,
-// by name.
+// KeyStore stores the keys that authorise a service for a user, such as an API
+// key, by name.
 type KeyStore interface {
 	// GetKey returns the key stored under the name, or ErrNoKey.
 	GetKey(ctx context.Context, name string) (string, error)

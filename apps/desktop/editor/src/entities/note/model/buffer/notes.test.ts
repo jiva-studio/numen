@@ -350,7 +350,7 @@ describe('where a note remains', () => {
   })
 
   /**
-   * under it, so whether the window has one at all is asked apart.
+   * Whether the window holds the note at all is checked separately.
    */
   it('is answered for only while the window holds the note', async () => {
     const { core, files } = fake()
@@ -871,7 +871,7 @@ describe('closing a note', () => {
 })
 
 describe('a note that could not be written, closed, and opened again', () => {
-  /** A core whose writes fail while `down.on` and land otherwise. */
+  /** A core whose writes fail while `down.on` is set and succeed otherwise. */
   const createFlakyCore = () => {
     const base = fake()
     base.files.set('Heat.md', 'one')

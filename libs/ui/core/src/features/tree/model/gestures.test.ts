@@ -1,5 +1,5 @@
 /**
- * What the keyboard asks of a row whose place on screen is not known.
+ * Keyboard behavior for a row whose screen position is not known.
  */
 import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'

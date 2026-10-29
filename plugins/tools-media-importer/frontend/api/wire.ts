@@ -30,7 +30,7 @@ export const setTaskHost = (host: TaskHost | undefined) => {
   taskHost = host
 }
 
-/** What a person reads for a failure of a method. */
+/** The message displayed to the user for a method failure. */
 export const describeError = (error: ApiError): string => {
   switch (error.code) {
     case ErrorCode.notFound:
@@ -66,7 +66,7 @@ const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
 
 const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
 
-/** Tells open tabs on the paths named to read their link again. */
+/** Tells open tabs on the named paths to reload their link. */
 export const refreshLinks = (paths: readonly string[]): void => {
   work.refresh(paths)
 }

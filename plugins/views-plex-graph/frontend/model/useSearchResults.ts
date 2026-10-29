@@ -1,6 +1,6 @@
 /**
- * A search performed as a person types: a pause after the last keystroke, and the
- * response to the latest query alone.
+ * A search performed as the user types: a pause after the last keystroke, and the
+ * response to the latest query only.
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
 import { createRequestGuard, type RequestGuard, type InFlightRequest } from '../lib/requestGuard'

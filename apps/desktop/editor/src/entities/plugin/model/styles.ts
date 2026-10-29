@@ -1,6 +1,6 @@
 /**
- * How a plugin view is drawn inside its pane: its component, its stylesheet and the shadow root it
- * is contained in.
+ * How a plugin view is rendered inside its pane: its component, its stylesheet
+ * and the shadow root that contains it.
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
@@ -98,8 +98,9 @@ function copyHostSheet(sheet: CSSStyleSheet): CSSStyleSheet | undefined {
 }
 
 /**
- * The window's sheets as copies a shadow root adopts at once, or nothing where one of them cannot
- * be copied. A cloned link would draw the pane unstyled until it loads.
+ * The window's stylesheets as copies that a shadow root adopts at once, or
+ * undefined when any of them cannot be copied. A cloned link would render the
+ * pane unstyled until it loads.
  */
 function copyHostSheets(): CSSStyleSheet[] | undefined {
   const copies: CSSStyleSheet[] = []
@@ -159,7 +160,7 @@ export interface PaneContentDeps {
   readonly shadowRoot: ShadowRoot | null
   readonly containerClass: string
   readonly context?: PluginContext | undefined
-  /** Whether the shadow root adopted the plugin's sheet, so no link is drawn for it. */
+  /** Whether the shadow root adopted the plugin's sheet, so no link element is added for it. */
   readonly hasAdoptedStyle?: boolean
 }
 

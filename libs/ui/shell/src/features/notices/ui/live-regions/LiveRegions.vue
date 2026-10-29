@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * The two regions the corner is read out through: one polite, and one that is
- * read over whatever else is being read. Neither is drawn.
+ * The two live regions that announce corner notices: one polite, and one
+ * assertive that interrupts other announcements. Neither is visible.
  */
 defineProps<{
-  /** What is read out when the reader reaches it. */
+  /** The text announced when the screen reader reaches the region. */
   told: string
-  /** What is read out at once. */
+  /** The text announced immediately. */
   cried: string
 }>()
 </script>

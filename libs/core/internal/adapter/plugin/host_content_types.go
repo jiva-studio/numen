@@ -22,8 +22,9 @@ type contentTypeTable interface {
 // or its name.
 const eventFilePrefix = "onFile:"
 
-// contentTypeCache keeps what the types of the enabled plugins come to. The text plugins are asked
-// for once for each file of a vault, and listing the extensions of a mask reads the whole table.
+// contentTypeCache stores the resolved types of the enabled plugins. The text
+// plugins are queried once for each file of a vault, and listing the extensions
+// of a mask reads the whole table.
 type contentTypeCache struct {
 	mu sync.Mutex
 	// key names the enabled plugins and their versions the rest was computed for.

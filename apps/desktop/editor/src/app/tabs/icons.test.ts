@@ -1,8 +1,8 @@
 /**
- * Every item either menu offers is drawn with an icon.
+ * Every item in either menu is drawn with an icon.
  *
- * A menu keeps the room for one on every row, so an item without one is a gap
- * where its neighbours have a picture.
+ * A menu reserves the icon column on every row, so an item without an icon
+ * leaves a gap where its neighbours have one.
  */
 import { describe, expect, it } from 'vitest'
 

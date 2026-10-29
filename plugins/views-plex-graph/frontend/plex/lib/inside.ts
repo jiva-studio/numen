@@ -1,9 +1,9 @@
 /**
- * The headings of a node, hung under its box. While the attention rests on the
- * node they come out from under it, each setting off a little behind the one
- * above, and choosing one says which it was.
+ * The headings of a node, laid out below its box. While the attention rests on
+ * the node they expand from under it, each offset slightly from the one above,
+ * and selecting one identifies it.
  *
- * They hang from the box as it is drawn, so nothing here works out a width.
+ * They are anchored to the box as drawn, so nothing here computes a width.
  */
 import type { PlexOptions, Size } from './arrange'
 import type { PlacedNode } from './node'
@@ -11,7 +11,7 @@ import type { PlacedNode } from './node'
 /** How far in a heading is ever set, counted in levels. */
 const DEEPEST = 3
 
-/** The ground kept clear around the headings, as a fraction of a heading's height. */
+/** The clearance around the headings, as a fraction of a heading's height. */
 const PAD = 0.25
 
 /**
@@ -21,7 +21,7 @@ const PAD = 0.25
 export interface PlexHeading {
   readonly id: string
   readonly text: string
-  /** How deep it sits. Only the order of the levels present is read. */
+  /** Depth of the heading. Only the order of the levels present is read. */
   readonly level: number
 }
 
@@ -40,13 +40,13 @@ export interface NodeHeadings {
   /** The edge they come out from, from the middle of the node. */
   readonly top: number
   readonly headingHeight: number
-  /** Ground kept clear around them, so none stands flush against an edge. */
+  /** Clearance around them, so none touches an edge. */
   readonly pad: number
   /** How many stand in the window at once. The rest are scrolled to. */
   readonly visibleCount: number
-  /** As wide as the longest of them asks for, held inside the window. */
+  /** As wide as the longest heading requires, clamped inside the window. */
   readonly width: number
-  /** How far their middle stands from where the node is placed. */
+  /** Distance from their midpoint to where the node is placed. */
   readonly offset: number
   readonly headings: readonly HungHeading[]
   /** How deep they stand once they are all the way open. */
@@ -61,7 +61,7 @@ export interface HeadingsDeps {
    */
   readonly measure?: ((text: string) => number) | undefined
   readonly viewport: Size
-  /** Kept clear of the window edge, so nothing sits flush against it. */
+  /** Clearance from the window edge, so nothing touches it. */
   readonly margin: number
 }
 
@@ -98,9 +98,9 @@ export function getNodeHeadings(
   const pad = Math.round(PAD * headingHeight)
   const top = node.height / 2
 
-  // They hang below the node and stay inside the window, so how many of them
-  // are drawn is how many the depth left under it holds. A node with room for
-  // none hangs nothing.
+  // They hang below the node and stay inside the window, so the number drawn is
+  // the number the remaining depth below the node can hold. A node with no
+  // space for any draws none.
   const depth = deps.viewport.height / 2 - deps.margin - (node.y + top)
   const rows = Math.min(maxHeadings + 1, Math.floor((depth - 2 * pad) / headingHeight))
   if (rows < 1) return null
@@ -132,10 +132,10 @@ interface HeadingsWidthContext {
 }
 
 /**
- * How wide the headings are drawn and where that width sits: the room the longest
- * of them asks for, never narrower than the node's own box and never wider
- * than the window. It grows about the node's middle and slides back inside the
- * window where the middle leaves it no room to grow.
+ * The width of the headings and its position: the width the longest heading
+ * requires, never narrower than the node's own box and never wider than the
+ * window. It grows about the node's midpoint and shifts back inside the window
+ * where the midpoint leaves no room to grow.
  */
 function getHeadingsWidth(
   node: PlacedNode,

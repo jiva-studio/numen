@@ -28,9 +28,9 @@ const notesModule = numenRoot + "libs/notes"
 // numenModulesDir is the folder the modules live in, relative to this package.
 var numenModulesDir = filepath.Join("..", "..", "..")
 
-// getPluginDependencyRefusal says why the plugin module mod may not name dep, in
-// a requirement or in an import, or "" when it may. A plugin names the plugin
-// SDK, the protocol and third-party code, and its own packages.
+// getPluginDependencyRefusal returns why the plugin module mod may not depend on dep, in
+// a requirement or in an import, or "" when it may. A plugin may depend on the plugin
+// SDK, the protocol, third-party code, and its own packages.
 func getPluginDependencyRefusal(mod, dep string) string {
 	switch {
 	case !strings.HasPrefix(dep, numenRoot), dep == mod, strings.HasPrefix(dep, mod+"/"):
@@ -47,8 +47,7 @@ func getPluginDependencyRefusal(mod, dep string) string {
 	return "a plugin names only the plugin SDK, the protocol, the notes and third-party code"
 }
 
-// What getPluginDependencyRefusal says is the whole of the rule, so it is asked
-// directly.
+// getPluginDependencyRefusal defines the whole rule, so it is tested directly.
 func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 	self := pluginsPrefix + "sample"
 	for _, one := range []struct {
@@ -221,7 +220,7 @@ func getDepguardGaps(config []byte) ([]string, error) {
 	return gaps, nil
 }
 
-// What getDepguardGaps says is the whole of the rule, so it is asked directly.
+// getDepguardGaps defines the whole rule, so it is tested directly.
 func TestWhatTheDepguardRulesRefuse(t *testing.T) {
 	complete := `
 linters:
@@ -298,8 +297,7 @@ func parseSource(t *testing.T, src string) *ast.File {
 	return file
 }
 
-// What getPluginIDLiterals says is the whole of the rule, so it is asked
-// directly.
+// getPluginIDLiterals defines the whole rule, so it is tested directly.
 func TestPluginIDRule_RejectsPluginIDLiterals(t *testing.T) {
 	for _, one := range []struct {
 		src       string
@@ -402,8 +400,7 @@ func getAnonymousAssertions(file *ast.File) []token.Pos {
 	return found
 }
 
-// What getAnonymousAssertions says is the whole of the rule, so it is asked
-// directly.
+// getAnonymousAssertions defines the whole rule, so it is tested directly.
 func TestAnonymousAssertionRule_RejectsInterfaceAssertions(t *testing.T) {
 	for _, one := range []struct {
 		src       string
@@ -448,8 +445,7 @@ func getManifestIssues(data []byte) []error {
 	return manifest.ListIssues()
 }
 
-// What getManifestIssues says is the whole of the rule, so it is asked
-// directly.
+// getManifestIssues defines the whole rule, so it is tested directly.
 func TestManifestValidator_RejectsInvalidManifests(t *testing.T) {
 	valid := `{"id":"org.example.sample","name":"Sample","version":"1.0.0"}`
 	if issues := getManifestIssues([]byte(valid)); len(issues) != 0 {

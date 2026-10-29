@@ -12,10 +12,10 @@ type VaultWatcher interface {
 	// WatchVault reports the paths of sources that change, folded, until ctx is
 	// done. Which kind each is comes from a stat of the path.
 	//
-	// `lost` says the vault has to be read again: more changed at once than
-	// could be reported, or something went that cannot be asked what it held.
+	// `lost` signals that the vault has to be read again: more changed at once than
+	// could be reported, or something was removed whose contents cannot be queried.
 	//
-	// Two channels: whoever implements this never has to name the interface,
-	// and Go checks the fit without either side saying so.
+	// Two channels: an implementer does not need to name the interface, and Go
+	// checks conformance implicitly.
 	WatchVault(ctx context.Context, v domain.Vault) (changes <-chan []string, lost <-chan struct{}, err error)
 }

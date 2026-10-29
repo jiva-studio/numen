@@ -1,10 +1,9 @@
 /**
- * What a line of activity is, as plain values. No DOM, no clock, no
- * measurement.
+ * The state of a line of activity, as plain values. No DOM, no clock, no measurement.
  *
- * Activity is work that runs whether or not anyone asked: a count that is
- * climbing, and a name for what is climbing it. Whoever renders this decides
- * what the words are, so nothing here knows what is being counted.
+ * Activity is work that runs without a request: a climbing count and a label for
+ * what is being counted. The renderer decides the wording, so nothing here knows
+ * what is counted.
  */
 
 import { clock } from '@numen/ui'
@@ -18,10 +17,10 @@ import { clock } from '@numen/ui'
 export type ActivityState = 'quiet' | 'working' | 'resting' | 'failed'
 
 /**
- * How a line reads.
+ * How a line is classified.
  *
- * Given by whoever draws the line, where the state above is worked out from the
- * count. A line that failed is drawn as an error.
+ * Supplied by the renderer of the line; the state above is derived from the count.
+ * A failed line is drawn as an error.
  */
 export type Severity = 'info' | 'warning' | 'error'
 
@@ -32,10 +31,10 @@ export interface Tally {
 }
 
 /**
- * What a count counts.
+ * The unit of a count.
  *
- * Bytes are read out in the sizes a person reads them in and seconds on a
- * clock. Everything else is counted one by one.
+ * Bytes are formatted as human-readable sizes and seconds as a clock. Everything
+ * else is counted one by one.
  */
 export type TallyUnit = 'items' | 'bytes' | 'seconds'
 
@@ -66,11 +65,10 @@ export const findShare = (tally: Tally): number | undefined => {
 /**
  * What to draw for a piece of work.
  *
- * Nothing to say is quiet, and a line with nothing to say draws nothing.
- * Failure outranks every other state: a line that is both failing and counting
- * says it is failing. Quiet draws nothing — which is not
- * the same as finished. Everything else is resting or working, and a count is
- * what makes the difference visible.
+ * A line with nothing to report is quiet and draws nothing; quiet is not the same
+ * as finished. Failure outranks every other state: a line that is both failing
+ * and counting reports failure. Everything else is resting or working, and a
+ * count distinguishes them.
  */
 export const activity = (input: {
   readonly text: string
@@ -81,8 +79,8 @@ export const activity = (input: {
   if (!input.text) return { state: 'quiet', hasCounts: false }
   if (input.hasFailed) return { state: 'failed', hasCounts: false }
 
-  // Work is claimed, not assumed. Words alone say something is so, and a caller
-  // that means "this is happening now" says that too.
+  // Work is stated explicitly, not inferred. Words alone do not mean work is in
+  // progress; a caller that means "this is happening now" says so.
   const share = input.tally ? findShare(input.tally) : undefined
   if (!input.isWorking && share === undefined) return { state: 'resting', hasCounts: false }
 
@@ -92,10 +90,9 @@ export const activity = (input: {
 }
 
 /**
- * A share as a percentage, for reading beside the count.
+ * A share as a percentage, shown beside the count.
  *
- * Rounded down, so that nothing says a hundred per cent until it is finished.
- * Nothing short of a whole share reads as a hundred.
+ * Rounded down, so 100% appears only when the share is complete.
  */
 export const percentWord = (share: number): string => {
   if (share >= 1) return '100%'
@@ -104,11 +101,11 @@ export const percentWord = (share: number): string => {
 }
 
 /**
- * How long the rest will take, on a clock.
+ * The time remaining, as a clock.
  *
- * `perSecond` is measured by whoever is watching the count, because a rate needs
- * a clock and this has none. A rate of nothing means nothing is known, and
- * nothing is said: an estimate from no movement is a guess dressed as a fact.
+ * `perSecond` is measured by the caller watching the count, because a rate needs a
+ * clock and this module has none. A rate of zero means the rate is unknown and no
+ * estimate is shown: an estimate from no movement is a guess.
  */
 export const getRemainingWord = (left: number, perSecond: number): string => {
   if (left <= 0 || perSecond <= 0) return ''

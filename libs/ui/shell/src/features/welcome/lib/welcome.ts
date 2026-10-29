@@ -8,7 +8,7 @@
 import type { Component } from 'vue'
 import type { PaletteKeys } from '@numen/ui'
 
-/** One way in: what it is called, what draws it, and the keystroke that reaches it. */
+/** One entry point: its name, its icon, and the keystroke that triggers it. */
 export interface WelcomeAction {
   readonly id: string
   readonly text: string
@@ -21,7 +21,7 @@ export interface WelcomeAction {
 export interface VaultRow {
   readonly id: string
   readonly name: string
-  /** The folder it stands for, absolute on this machine. */
+  /** The folder it represents, as an absolute path on this machine. */
   readonly path: string
   /** What is true of this row and not of the ones beside it. */
   readonly detail?: string
@@ -37,6 +37,6 @@ export interface Offer {
   readonly text: string
   readonly detail?: string
   readonly icon?: Component
-  /** The keystroke that reaches it, where one does. */
+  /** The keystroke that triggers it, if any. */
   readonly keys?: PaletteKeys
 }

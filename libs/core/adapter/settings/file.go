@@ -8,10 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// checkObject says what is wrong with bytes that are not the one checkObject the
-// settings are the fields of, and nothing where they are it.
-//
-// by name.
+// checkObject rejects bytes that are not a single JSON object, since the
+// settings are the fields of one object, and accepts them otherwise.
 func checkObject(raw []byte) error {
 	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {
@@ -23,8 +21,8 @@ func checkObject(raw []byte) error {
 	return nil
 }
 
-// describeErrorLocation says what is wrong with a settings file by the place it goes wrong at,
-// and by the field it goes wrong in.
+// describeErrorLocation describes a settings file error by its position and by
+// the field it occurs in.
 func describeErrorLocation(err error) string {
 	var syntax *json.SyntaxError
 	if errors.As(err, &syntax) {

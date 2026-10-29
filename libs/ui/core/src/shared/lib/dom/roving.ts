@@ -1,10 +1,10 @@
 /**
- * Where the keyboard lands next in a list, counting from `from` by `by` and
- * passing over what `canLand` refuses. It wraps, and answers -1 when there is
- * nothing to land on.
+ * The next keyboard focus position in a list, counting from `from` by `by` and
+ * skipping items `canLand` rejects. It wraps, and returns -1 when there is
+ * no item to focus.
  *
- * Counting from -1 by one is how the first is asked for, and from 0 by minus
- * one is how the last is.
+ * Counting from -1 by one returns the first item, and counting from 0 by minus
+ * one returns the last.
  */
 export interface RovingMotion {
   readonly from: number

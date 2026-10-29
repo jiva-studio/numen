@@ -1,8 +1,8 @@
-// Command numen-flashcards is the window a person runs their cards in.
+// Command numen-flashcards is the window in which the user reviews cards.
 //
 // It is a shell over the plugins whose manifests name the desktop.flashcards target: it loads their
-// frontends over HTTP, forwards the calls for the services they serve, and lends them every vault of
-// the installation. A vault the index does not carry is read into it when a plugin asks about it.
+// frontends over HTTP, forwards the calls for the services they serve, and exposes every vault of
+// the installation to them. A vault the index does not carry is read into it when a plugin queries it.
 package main
 
 import (
@@ -167,8 +167,8 @@ func bindVaultIndexer(ctx context.Context, api *shell.API, vaults *container.Ope
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
 }
 
-// followChanges tells the plugins that something moved each time the index changes, which another
-// window writing it also does.
+// followChanges notifies the plugins that something moved each time the index
+// changes, including when another window writes it.
 func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {
 	moves, err := cfg.Moves(ctx)
 	if err != nil {

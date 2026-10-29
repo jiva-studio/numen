@@ -3,8 +3,10 @@ import type { Neighbourhood, NoteRelation } from '../types'
 import { areNeighbourhoodsEqual, convertNeighbourhood, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
-/** A note and what sits around it: relation, label, the note it comes through, and
- *  whether the other note names the relationship too. */
+/**
+ * A related note: relation, label, the note it connects through, and whether
+ * the other note also names the relationship.
+ */
 type NeighbourRow = [string, NoteRelation, string, string, boolean?]
 
 const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
@@ -22,8 +24,8 @@ const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood
 })
 
 /**
- * The picture, and the note each node ID in it stands for. Every note here is
- * one carrying no identifier, which is the note the picture has to draw.
+ * The graph, and the note each node ID in it stands for. Every note here has no
+ * identifier, which is the case the graph has to render.
  */
 const renderImage = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const map = createNodeIdMap()
@@ -31,8 +33,8 @@ const renderImage = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
 }
 
 /**
- * Every edge, as the notes at its two ends. A token no note holds reads as
- * nothing, so an edge drawn under anything else says so here.
+ * Every edge, as the notes at its two ends. A token that no note holds resolves
+ * to nothing, so an edge built from any other token is visible here.
  */
 const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const { plex, note } = renderImage(neighbourhood)
@@ -55,7 +57,7 @@ describe('what the plex is handed', () => {
   })
 
   it('writes nothing on a line the person wrote nothing on', () => {
-    // A line carries only the word the person put on it.
+    // A line carries only the label the user put on it.
     const [line] = renderImage(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
     expect(line?.label).toBeUndefined()
   })
@@ -72,9 +74,9 @@ describe('what the plex is handed', () => {
   })
 
   it('hangs each sibling off its own parent when there are two', () => {
-    // Each sibling belongs to one of the two parents, and only the answer
-    // knows which. A line drawn from the other one says a note is the child of
-    // something the vault never joined it to.
+    // Each sibling belongs to one of the two parents, and only the response
+    // determines which. A line drawn from the other parent would assert a
+    // parent-child relation the vault never recorded.
     expect(
       getEdges(
         createNeighbourhood('Here', [
@@ -93,8 +95,7 @@ describe('what the plex is handed', () => {
   })
 
   it('draws no sibling edge when no parent is shown', () => {
-    // It would otherwise fall back to the focus, which says the wrong thing:
-    // a sibling is not a child.
+    // A fallback to the focus is wrong here, because a sibling is not a child.
     expect(getEdges(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual(
       [],
     )
@@ -186,8 +187,9 @@ describe('whose wording is on the line', () => {
   })
 
   it('points it out of the focus down a line the relationship runs into', () => {
-    // The same link from the other end, where Alice Fenn wrote nothing on it.
-    // An arrow says who chose the wording, whether or not there is any.
+    // The same link from the other end, where Alice Fenn wrote no label. An
+    // arrow indicates which note chose the wording, whether or not a label
+    // exists.
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
@@ -208,8 +210,8 @@ describe('whose wording is on the line', () => {
   })
 
   it('draws no arrow where only one note named a jump relationship', () => {
-    // Alice Fenn jumps to Cora Hale and Cora Hale says nothing back:
-    // an associative jump with one note naming it has no arrow.
+    // Alice Fenn links to Cora Hale and Cora Hale has no link back: an
+    // associative link named by one note has no arrow.
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [

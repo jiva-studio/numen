@@ -25,11 +25,11 @@ const OPENS: readonly (keyof Spacing)[] = ['focusGap', 'lineGap', 'gap']
 const HALVINGS = 8
 
 /**
- * The widest gaps the window still holds.
+ * The widest gaps for which the arrangement still fits in the window.
  *
- * `canFit` answers whether an arrangement laid out with the given gaps stays
- * inside the window it is given. It is asked, not worked out here, so a
- * placement of any shape is measured by the arrangement it produces.
+ * `canFit` reports whether an arrangement laid out with the given gaps stays
+ * inside the given window. It is supplied by the caller and not computed here,
+ * so a placement of any shape is measured by the arrangement it produces.
  */
 export function findSpacing(
   options: PlexOptions,

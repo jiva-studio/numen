@@ -91,8 +91,8 @@ func buildClaudeArguments(in claudeArguments) []string {
 	slices.Sort(allowed)
 	args = append(args, "--allowedTools", strings.Join(allowed, ","))
 
-	// A vault's own hooks and settings are never read. The person's own are read only when the
-	// setting allows it.
+	// A vault's own hooks and settings are never read. The user's own hooks and
+	// settings are read only when the setting allows it.
 	sources := ""
 	if in.mayReadHooks {
 		sources = "user"

@@ -17,10 +17,9 @@ import (
 
 // sources answers the source and vector ports out of the chunk tables.
 //
-// It exists because the core says what it needs in its own words and this
-// package says what SQLite holds in its own, and the two are close without being
-// the same: a source arrives here as a file reference and is stored as columns,
-// and a passage is read back as a row and handed over as a place in a file.
+// It translates between the core's types and the SQLite schema: a source
+// arrives as a file reference and is stored as columns, and a passage is read
+// back as a row and returned as a location in a file.
 
 type sources struct {
 	queries
@@ -28,15 +27,15 @@ type sources struct {
 	versions *version.Repository
 }
 
-// queries is the half of that which is asked: what the index holds about sources,
-// and which chunks owe a vector. It is queries alone, so a caller handed one has
-// nothing to write with.
+// queries is the read-only half of sources: what the index holds about sources,
+// and which chunks need a vector. A caller that receives only queries cannot
+// write.
 type queries struct {
 	read *chunk.Queries
 }
 
-// SaveSource records what a file is now, with no recipe: a source saved this way
-// owes its text.
+// SaveSource records the current state of a file with no recipe: a source saved
+// this way needs its text extracted.
 func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src domain.Source) error {
 	return s.write.SaveSource(ctx, vaultID, newChunkSource(src))
 }

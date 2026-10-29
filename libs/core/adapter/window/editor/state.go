@@ -1,9 +1,8 @@
-// Package editor answers what a client may ask about a vault.
+// Package editor serves the vault queries and commands of the editor window.
 //
-// The questions and their answers are the schema in modules/libs/protocol; this
-// is the half that answers them. The interface asks over HTTP either way, so
-// the same handler serves the window the application opens and a browser during
-// development.
+// The request and response types are defined in libs/protocol. The client
+// reaches the handlers over HTTP in both the desktop window and a browser
+// during development.
 package editor
 
 import (
@@ -36,8 +35,8 @@ type State struct {
 	// being served, so every reader takes it through GetCurrentVault.
 	vault atomic.Pointer[domain.Vault]
 
-	// closed is the door on every question. It is closed before the index and the
-	// embedder an answer reaches into are taken away.
+	// closed rejects new requests. It is set before the index and the embedder
+	// that handlers use are closed.
 	closed atomic.Bool
 
 	// questions are the questions taken and not yet answered. A search, a note
@@ -59,27 +58,23 @@ type State struct {
 	// arrived. It is bound by every build that serves the list of vaults.
 	OpenVault func(context.Context, domain.Vault) error
 
-	// NotifyNoteWritten is what a save raises: the reading behind the window asks the index
-	// what owes a vector, once the vault has been still. Nil for a build with
-	// nothing reading behind it, and then a save changes no vectors.
+	// NotifyNoteWritten is called after a note save. The embedding pipeline then
+	// queries the index for chunks without vectors once the vault is idle. Nil
+	// when no embedding pipeline runs, in which case a save changes no vectors.
 	NotifyNoteWritten func()
 
-	// Edits is everyone drawing this vault, for a change to a note being made
-	// while they may be showing it.
+	// Edits broadcasts note edits to the subscribers of this vault.
 	Edits broadcaster[domain.Edit]
 
-	// Places is everyone drawing this vault, for when something asks that a
-	// place be put in front of the person.
+	// Places broadcasts place focus requests to the subscribers of this vault.
 	Places broadcaster[domain.Place]
 
-	// openTabs is what currently open, as the window last said. It is
-	// replaced while requests are being served, so every reader takes it
-	// through GetOpenTabs.
+	// openTabs is the open-tab report most recently received from the window.
+	// It is replaced while requests are served, so readers use GetOpenTabs.
 	openTabs atomic.Pointer[domain.OpenTabs]
 
-	// NotifyOpenTabs hears what currently open each time the window says it,
-	// once what it said stands. A build without one takes the report and tells
-	// nobody.
+	// NotifyOpenTabs is called with each accepted open-tab report. Nil when
+	// nothing consumes the report.
 	NotifyOpenTabs func(domain.OpenTabs)
 
 	// OpenTabsStore keeps the open tabs of the vault across restarts. Nil keeps
@@ -92,7 +87,7 @@ type State struct {
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
-	// Ready is set when the scan finished, and Error says why it could not.
+	// Ready is set when the scan has finished. Error holds the scan failure, if any.
 	Ready atomic.Bool
 	Error wire.Reason
 	// WatchError is why the vault is not being followed, when it is not.
@@ -113,13 +108,13 @@ type State struct {
 
 // IndexState is how far the vault has been read for meaning.
 type IndexState struct {
-	// Progress answers how far cutting and embedding have got. Nil for a vault
-	// nothing is reading for meaning, and the window then says nothing about it.
+	// Progress reports chunking and embedding progress. Nil when the vault is
+	// not indexed for semantic search; the window then reports no coverage.
 	Progress indexport.IndexProgress
-	// Model is the identity vectors are being made under, which is what decides
-	// whether a chunk already carries one. Empty for an installation with no
-	// model, and then nothing is going to embed anything. It is named by the
-	// goroutine reading the vault and asked for by every request.
+	// Model is the embedding model identity that new vectors are created with.
+	// It decides whether a chunk already has a vector. Empty when no model is
+	// installed, in which case nothing is embedded. The indexing goroutine
+	// writes it and every request reads it.
 	Model atomic.Value
 	// Recipe is everything that decides what a vector is, which is what a
 	// vector is found by.
@@ -152,7 +147,7 @@ func (s *State) readOpenTabs(ctx context.Context) (domain.OpenTabs, error) {
 	return vaults.ReadOpenTabs(ctx, s.OpenTabsStore, v)
 }
 
-// setVault puts a vault in front of whoever asks from now on.
+// setVault sets the vault that subsequent requests are served over.
 func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 
 // setSession sets the session a run, a rechunk and a drop are taken through from now
@@ -166,11 +161,9 @@ func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
 // finishTask takes one piece of work out of that list.
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 
-// isUnlevelled says whether a write reached the vault and the index did not
-// follow.
-// The answer goes on the wire, so the client that saved knows search has not
-// until a write levels the index again, so a person who is not looking at that
-// note is told too.
+// isUnlevelled reports whether a write reached the vault but the index did not
+// follow. The result is returned to the client that saved, and the pending
+// task is shown until a later write brings the index level again.
 func (s *State) isUnlevelled(err error) bool {
 	if err == nil {
 		s.finishTask(levellingTheIndex)
@@ -183,9 +176,9 @@ func (s *State) isUnlevelled(err error) bool {
 	return true
 }
 
-// Close refuses every question from now on, and there is no opening it again. It
-// answers once the questions already taken have been answered, so everything an
-// answer reaches into is still there for the whole of it.
+// Close rejects all new requests permanently. It returns after the requests
+// already accepted have completed, so the index and embedder stay available
+// for their whole duration.
 func (s *State) Close() {
 	s.closed.Store(true)
 	<-s.questions.seal()
@@ -237,7 +230,7 @@ func (h *vaultHandler) GetVaultState(
 	return connect.NewResponse(out), nil
 }
 
-// WatchVaultChanges reports what moved, for as long as the caller listens.
+// WatchVaultChanges streams vault changes until the caller disconnects.
 func (h *vaultHandler) WatchVaultChanges(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchVaultChangesRequest],
@@ -246,9 +239,9 @@ func (h *vaultHandler) WatchVaultChanges(
 	line, isDone := h.state.ChangeEvents.subscribe()
 	defer isDone()
 
-	// Named as following before anything has changed. A stream that says
-	// nothing until the vault moves is indistinguishable from one that never
-	// opened, and a caller waiting on its first message waits for an edit.
+	// An initial empty message confirms the subscription. A stream that sends
+	// nothing until the vault changes is indistinguishable from one that never
+	// opened.
 	if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
 		return err
 	}
@@ -284,13 +277,11 @@ func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
 }
 
-// GetWindow is this window, for whatever asks for a place to be put in front of
-// the person.
+// GetWindow returns the window handle used to request place focus.
 func (s *State) GetWindow() windowport.Window { return view{s} }
 
-// view tells the clients and nothing more. What travelling there looks
-// like is theirs, and a place asked for while nobody is drawing is a place
-// nobody sees.
+// view forwards window requests to the subscribed clients. A place requested
+// while no client is subscribed is not shown.
 type view struct{ *State }
 
 func (v view) FocusPlace(_ context.Context, pos domain.Place) error {
@@ -326,13 +317,12 @@ func (w *inflight) open()                 { w.Inflight.Open() }
 
 var errClosing = broadcast.ErrClosing
 
-// change is what a client is told: the files that are different now, notes
-// and assets alike, or that the vault has to be read again.
+// change reports the changed file paths, notes and assets alike, or that the
+// vault must be reloaded.
 type change struct {
 	paths        []string
 	shouldReload bool
-	// renamed is the notes that are no longer where they were, each by where it
-	// was and where it now is.
+	// renamed lists notes that moved, each with its old and new path.
 	renamed []domain.Move
 }
 
@@ -346,8 +336,7 @@ func newChangeBroadcaster() broadcaster[change] {
 	}
 }
 
-// newPlaceBroadcaster delivers to every subscriber, for the places something asks to be
-// put in front of the person.
+// newPlaceBroadcaster delivers place focus requests to every subscriber.
 func newPlaceBroadcaster() broadcaster[domain.Place] {
 	return broadcaster[domain.Place]{
 		Broadcaster: broadcast.Broadcaster[domain.Place]{IsLatest: true, Capacity: 1},

@@ -58,7 +58,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 	}
 }
 
-// where reads a fixture and says where the words of some of its pages are.
+// where reads a fixture and returns the highlight boxes for some of its pages.
 func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
@@ -76,8 +76,8 @@ func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	return book, boxes
 }
 
-// A box says both where a run of the text is on the page and which run of the
-// text it is, and the two are the same run.
+// A box gives both the position of a text run on the page and the text run it
+// covers, and the two refer to the same run.
 func TestABoxCoversTheWordsItNames(t *testing.T) {
 	book, boxes := where(t, "tiny.pdf", 0, 1)
 
@@ -96,8 +96,8 @@ func TestABoxCoversTheWordsItNames(t *testing.T) {
 	}
 }
 
-// Every box of every document covers one word: the offsets are in the text the
-// document was read into, and a word is what a person sees.
+// Every box of every document covers one word: the offsets are in the text of
+// the document as read, and a word is the unit the user sees.
 func TestEveryBoxCoversOneWord(t *testing.T) {
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
@@ -136,8 +136,8 @@ func pagesOf(t *testing.T, name string) []int {
 }
 
 func TestAScanLightsNothing(t *testing.T) {
-	// A document with no text layer says nothing about where its words are,
-	// and that is the whole of what a scan is.
+	// A document with no text layer has no word positions, which is what a scan
+	// is.
 	_, boxes := where(t, "scan.pdf", 0, 1)
 
 	if len(boxes) != 0 {
@@ -179,8 +179,8 @@ func TestBoxesRiseInOrder(t *testing.T) {
 	}
 }
 
-// One page is lit on its own. A document is lit a few pages at a time, and the
-// pages nobody asked about are not read.
+// One page is highlighted on its own. A document is highlighted a few pages at
+// a time, and pages that were not requested are not read.
 func TestOnePageIsLitAndTheRestAreNot(t *testing.T) {
 	book, boxes := where(t, "outline.pdf", 2)
 
@@ -206,8 +206,8 @@ func TestPagesTheDocumentDoesNotHaveAreLitNowhere(t *testing.T) {
 	}
 }
 
-// A page is drawn turned by however much it asks to be, and a box is a fraction
-// of the page as it is drawn. A line of a turned page runs down it.
+// A page is rendered rotated by its own rotation, and a box is a fraction of
+// the page as rendered. A line of a rotated page runs down it.
 func TestATurnedPageIsLitTheWayItIsGenerated(t *testing.T) {
 	book, boxes := where(t, "turned.pdf", 0)
 

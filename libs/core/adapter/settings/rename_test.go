@@ -2,10 +2,10 @@ package settings
 
 import "testing"
 
-// A rename replaces one word of the file where it is written, so what it will
-// not touch is worth as much as what it does. A settings file is written into
-// by a person and by the window, and what one of them wrote between a read and
-// a write is still there when the write lands.
+// A rename replaces one word of the file in place, so what it leaves untouched
+// matters as much as what it changes. A settings file is edited by both the
+// user and the window, and anything written between a read and a write is still
+// there after the write.
 func TestWhatIsNotRenamed(t *testing.T) {
 	for what, target := range map[string]struct {
 		file string
@@ -43,7 +43,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 	}
 }
 
-// The name is replaced where it is written and the value is left where it is located,
+// The name is replaced where it is written and the value stays where it is,
 // whatever lies between the two.
 func TestARenamedFieldKeepsItsValueAndItsPlace(t *testing.T) {
 	const target = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"

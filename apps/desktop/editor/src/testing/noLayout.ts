@@ -1,13 +1,14 @@
 /**
  * What a document in a test can measure.
  *
- * The document a test runs in lays nothing out: an element is a box of no size
- * at the origin, and a range answers nothing at all. The editor measures the
- * text it drew on a frame of its own, after the test that mounted it is over,
- * and a range with nothing to answer with throws where nobody is listening.
+ * The document a test runs in performs no layout: every element is a zero-size
+ * box at the origin, and a range returns no measurements. The editor measures
+ * its rendered text on its own frame after the test that mounted it has
+ * finished, and a range with nothing to return throws where no handler catches
+ * it.
  *
- * A range here answers the way the elements around it do: it is there, and it
- * takes up no room.
+ * A range here behaves like the elements around it: it exists and has zero
+ * size.
  */
 
 const createEmptyRect = (): DOMRect => new DOMRect(0, 0, 0, 0)

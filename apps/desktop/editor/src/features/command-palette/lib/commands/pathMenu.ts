@@ -132,7 +132,7 @@ const getFileMenu = (contributions: readonly PathContribution[] = []): readonly 
   return [...openContributed, ...otherContributed, ...FILED]
 }
 
-/** The row a menu was asked for on: whether it is a note, and whether a folder. */
+/** The row a menu was requested for: whether it is a note, and whether it is a folder. */
 export interface MenuRow {
   readonly isNote: boolean
   readonly isFolder: boolean

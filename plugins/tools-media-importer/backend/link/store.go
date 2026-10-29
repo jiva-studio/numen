@@ -18,8 +18,8 @@ import (
 //
 //   - `<key>.jsonl` is the text, in the common format of text versions. The host deletes it with
 //     the version.
-//   - `<key>.json` says what fetched the text, what kind it is and which file holds the copy. A
-//     record of a kind whose text is gone is a version the person deleted.
+//   - `<key>.json` records what fetched the text, what kind it is and which file holds the copy. A
+//     record whose text is gone marks a version the user deleted.
 //   - `<key>.none` is an address that publishes no text.
 //   - `<hash>.part` is a copy arriving, and `<hash><ext>` the copy whole.
 const (
@@ -53,7 +53,7 @@ type record struct {
 	Copy       string          `json:"copy,omitempty"`
 }
 
-// getKind is the kind of text a fetch gave: captions, or the prose of an article.
+// getKind returns the kind of text a fetch produced: captions, or the prose of an article.
 func getKind(fetched download.Text) domain.TextKind {
 	if len(fetched.Cues) > 0 {
 		return kindCaptions

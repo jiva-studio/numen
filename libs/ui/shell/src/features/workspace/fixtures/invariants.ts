@@ -2,7 +2,7 @@
 import type { Workspace, WorkspaceNode } from '../lib/node'
 import { isBranch, getPanes } from '../lib/tree'
 
-/** Anything that does not hold about a workspace, said in words. */
+/** Describes in words any condition that does not hold for a workspace. */
 export function getFaults(workspace: Workspace): readonly string[] {
   const faults: string[] = []
   const observed = new Set<string>()

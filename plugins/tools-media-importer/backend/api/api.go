@@ -15,7 +15,7 @@ const (
 	MethodCreateLinks = "CreateLinks"
 )
 
-// GetLinkRequest asks for the facts of the link note at Path.
+// GetLinkRequest requests the facts of the link note at Path.
 type GetLinkRequest struct {
 	Path string `json:"path"`
 }
@@ -34,7 +34,7 @@ type GetLinkResponse struct {
 	EmbedPage string `json:"embedPage"`
 }
 
-// ReadArticleRequest asks for the article text of the link note at Path.
+// ReadArticleRequest requests the article text of the link note at Path.
 type ReadArticleRequest struct {
 	Path string `json:"path"`
 }
@@ -47,7 +47,7 @@ type ReadArticleResponse struct {
 // FetchTextRequest starts fetching the text of the link note at Path.
 type FetchTextRequest struct {
 	Path string `json:"path"`
-	// IsUserStarted is whether the person asked for the fetch; a fetch they did not ask for leaves a
+	// IsUserStarted is whether the user requested the fetch; a fetch they did not request leaves a
 	// deleted text deleted.
 	IsUserStarted bool `json:"isUserStarted"`
 }

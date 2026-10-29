@@ -1,15 +1,14 @@
 package domain
 
-// ChunkID names one chunk of one source. The index hands it out and answers for
-// it; nothing here reads anything into how it is spelled.
+// ChunkID names one chunk of one source. The index assigns and resolves it; nothing
+// here interprets its spelling.
 type ChunkID string
 
-// Passage is what a search returns: the text around a hit, and where it came
-// from. It is a read model — a chunk is not reconstructed from it.
+// Passage is what a search returns: the text around a hit, and where it came from.
+// It is a read model; a chunk is not reconstructed from it.
 //
-// `Start` and `Length` address the large chunk enclosing the hit, in the bytes
-// of the file `Source` names, and `Text` is what stands there once the file has
-// been read.
+// `Start` and `Length` address the large chunk enclosing the hit, in bytes of the file
+// `Source` names, and `Text` is the content there once the file has been read.
 type Passage struct {
 	// ChunkID is the chunk a ranking named. Two rankings are merged on it.
 	ChunkID ChunkID
@@ -45,9 +44,8 @@ type Passage struct {
 	// passage whose hit is the chunk itself begins at its own beginning.
 	HitAt int
 
-	// Line is where the chunk that matched stands, counted from the first line
-	// of the source's prose. A note's frontmatter is not prose and is not
-	// counted.
+	// Line is the line of the chunk that matched, counted from the first line of the
+	// source's prose. A note's frontmatter is not prose and is not counted.
 	Line int
 
 	// ChunkHash addresses the text this chunk held when the index cut it. It is

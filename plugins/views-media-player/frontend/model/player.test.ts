@@ -1,8 +1,8 @@
 /**
  * The one player the window has.
  *
- * The element is made when it is first wanted and never put in the page, so
- * what it does is asked of it here through a stand-in element.
+ * The element is created on first use and never attached to the page, so the
+ * tests exercise it through a stand-in element.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createAudioPlayer, createMediaTypeProbe, type AudioFactory } from './player'
@@ -12,8 +12,8 @@ const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'
 const OTHER = 'http://127.0.0.1:1/files/w/v/other.mp3'
 
 /**
- * An element as far as the player uses one. It records what was asked of it
- * and fires the events a real one fires, when a test says to.
+ * An element reduced to what the player uses. It records the calls made on it
+ * and fires the events a real element fires, when a test requests it.
  */
 function createElement() {
   const listeners = new Map<string, (() => void)[]>()
@@ -28,7 +28,7 @@ function createElement() {
     error: null as { code: number } | null,
     /** Every address it was given, in the order it was given them. */
     loaded: [] as string[],
-    /** How many times it was asked to play, and to stop. */
+    /** How many times play and stop were called. */
     started: 0,
     stopped: 0,
     /** What a call to play answers with, and what it fails with. */
@@ -75,7 +75,7 @@ function createElement() {
   /** How many are listening for an event. */
   const countListeners = (name: string) => (listeners.get(name) ?? []).length
 
-  /** The recording says how long it runs. */
+  /** The recording reports its duration. */
   const setDuration = (seconds: number) => {
     element.duration = seconds
     emit('durationchange')
@@ -87,7 +87,7 @@ function createElement() {
     emit('timeupdate')
   }
 
-  /** The element could not do it, and says which of the four it was. */
+  /** The element reports a failure with a media error code (one of four). */
   const setError = (code: number) => {
     element.error = { code }
     emit('error')

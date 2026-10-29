@@ -1,4 +1,4 @@
-/** How a command runs, and what a key chord asks for. */
+/** How a command runs, and what a key chord triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommandTarget } from '@/features/command-palette'
 import { useCommands, type CommandsDepsOptions } from './useCommands'

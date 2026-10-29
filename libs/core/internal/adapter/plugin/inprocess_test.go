@@ -176,7 +176,7 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	}
 }
 
-// Configure reaches the built-in plugin's own lifecycle service with its settings and secrets.
+// Configure calls the built-in plugin's own lifecycle service with its settings and secrets.
 func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
 	host := newBuiltInHost(t)
 	host.SetKeyStore(newKeys(map[string]string{firstBuiltInID + "/apiKey": fromKeychain}))

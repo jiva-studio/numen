@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * Indented rows, some of which hold other rows.
+ * Indented rows, some of which contain other rows.
  *
- * What a row stands for is the caller's: this takes names and hands identities
- * back. What is drawn beside a name comes from a slot, and which rows are open
- * and which are selected are the caller's to hold: the tree works out what a
- * press with a modifier means and says the selection it came to.
+ * What a row represents belongs to the caller: the tree takes names and returns
+ * identities. The content shown next to a name comes from a slot, and the open
+ * and selected rows are held by the caller. The tree determines what a press
+ * with a modifier means and emits the resulting selection.
  */
 import { computed, useTemplateRef } from 'vue'
 import { flatten, getMarkOf, type RowId } from '../lib/row'
@@ -177,8 +177,7 @@ function getRowHeight(): number {
 
 <style scoped>
 .tree {
-  /* How far one level is set in, how tall a row stands, the room at the edges
-     of a row, and the room between a mark and the name beside it. */
+  /* The indent per level, the row height, the padding at the row edges, and the gap between a mark and the name next to it. */
   --indent: 0.875rem;
   --row: 1.5rem;
   --pad: 0.25rem;

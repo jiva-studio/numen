@@ -1,4 +1,4 @@
-// Package schematest checks that every value of an enum of the schema reaches something.
+// Package schematest checks that every value of an enum of the schema is handled.
 package schematest
 
 import (
@@ -10,7 +10,7 @@ import (
 // SchemaEnum is one enum of the schema, as the generated code declares it.
 type SchemaEnum = protoschematest.SchemaEnum
 
-// CheckHandled fails for every value of the enum that reaches nothing on the way in.
+// CheckHandled fails for every value of the enum that is not handled on the way in.
 func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
 	protoschematest.CheckHandled(t, reading)

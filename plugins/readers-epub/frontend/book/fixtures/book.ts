@@ -1,11 +1,11 @@
 /**
- * A document of a book, marked up the way a reader is handed one: every run of
+ * A document of a book, marked up the way a reader receives one: every run of
  * text carrying the byte offset it begins at in the book's one text stream.
  *
- * The offsets are counted here the way they are counted where they come from —
- * in bytes, through `TextEncoder` — so a story written in Devanagari or in
- * Cyrillic carries the numbers such a book really carries. Storybook's
- * furniture; it ships to nobody.
+ * The offsets are counted here the way they are counted at their source,
+ * in bytes through `TextEncoder`, so a story written in Devanagari or in
+ * Cyrillic carries the offsets such a book really carries. Storybook
+ * scaffolding; it is not shipped.
  */
 import { countBytes } from '../lib/bytes'
 import type { TextRange } from '@numen/ui'

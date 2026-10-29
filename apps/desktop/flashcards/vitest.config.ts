@@ -1,7 +1,7 @@
 /**
- * How the window's tests are run: in a document, so a component can be mounted and asked what it
- * drew. The build in `vite.config.ts` writes into the Go package's assets and has nothing to say
- * about it.
+ * How the window's tests are run: in a document, so a component can be mounted
+ * and queried for what it drew. The build in `vite.config.ts` writes into the
+ * Go package's assets and does not apply to it.
  */
 import { fileURLToPath, URL } from 'node:url'
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'

@@ -1,5 +1,5 @@
 /**
- * A recording tab drawn: the player at the top, the transcript under it, and what can be asked
+ * A rendered recording tab: the player at the top, the transcript below it, and what can be queried
  * about the words.
  */
 import { describe, expect, it } from 'vitest'

@@ -87,7 +87,7 @@ const ROWS: readonly Row[] = [
 
 const OPEN = ['physics', 'computation', 'reading']
 
-/** What is drawn beside a row: a folder says whether what it holds is drawn. */
+/** What is rendered next to a row: for a folder, whether its contents are shown. */
 const getIcon = (id: string, open: boolean) => {
   const row =
     ROWS.find((one) => one.id === id) ??
@@ -133,10 +133,10 @@ The being has to know which molecule is which, and it has to hold that knowledge
 `
 
 /**
- * The document a search sends a person into, as the lines standing on each of
- * its pages. It is set here and not fetched, so the picture of a book is
- * a book and not a placeholder — and broken into lines by hand, because what
- * draws a page below cannot break one.
+ * The document a search opens, as lines on each of its pages. It is defined here
+ * and not fetched, so the book rendering shows real book text and not a
+ * placeholder, and it is broken into lines by hand because the page renderer
+ * cannot break lines.
  */
 const BOOK_PAGES: readonly (readonly string[])[] = [
   [
@@ -219,7 +219,7 @@ const renderPage = (page: number): string => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-/** Where a run of a title stands, every time it stands there. */
+/** The position of a title run, the same each time it is placed. */
 const marks = (title: string, word: string): TextRange[] => {
   const spans: TextRange[] = []
   const lower = title.toLowerCase()
@@ -490,7 +490,7 @@ const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
   return element
 }
 
-/** Whether one pane stands entirely past another's trailing edge. */
+/** Whether one pane lies entirely beyond another's trailing edge. */
 const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 
@@ -517,8 +517,8 @@ export const Writing: Story = {
       }),
     }),
   play: async ({ canvasElement }) => {
-    // Writing means somewhere to type: the note in the pane is text a person may
-    // put a caret in.
+    // Writing needs a place to type: the note in the pane is text that accepts a
+    // caret.
     const note = await waitFor(() => within(canvasElement).getByRole('textbox', { name: 'Note' }))
     expect(note).not.toHaveAttribute('readonly')
   },
@@ -577,7 +577,7 @@ export const Commanding: Story = {
   },
 }
 
-/** The agent beside the note it is being asked about. */
+/** The agent next to the note it is being queried about. */
 export const Asking: Story = {
   render: () =>
     screen({

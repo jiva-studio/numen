@@ -6,9 +6,9 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 type vaultSessionAssembly interface {
@@ -28,7 +28,7 @@ type vaultSessionAssembly interface {
 	)
 }
 
-// VaultAssembly is what this window asks to locate, read, change, and watch vaults.
+// VaultAssembly is what this window requires to locate, read, change, and watch vaults.
 type VaultAssembly interface {
 	GetRegistry() vaultport.VaultRegistry
 	GetVaultReaders() vaultport.VaultReaders

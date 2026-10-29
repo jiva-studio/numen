@@ -1,6 +1,6 @@
 import type { NoticeHost, NoticeTask, Severity } from '../notices'
 
-// MockNoticeHost is a NoticeHost that holds what it is given, so a test can read what a plugin said.
+// MockNoticeHost is a NoticeHost that records what it receives, so a test can read what a plugin reported.
 export interface MockNoticeHost extends NoticeHost {
   // Every notice shown, in the order it was, with the severity it was shown in.
   getShown(): readonly { readonly text: string; readonly severity: Severity }[]

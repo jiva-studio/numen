@@ -1,8 +1,8 @@
 /**
- * The route by which quitting reaches a buffer only the page holds.
+ * The path by which quitting reaches a buffer that only the page holds.
  *
- * The failure this guards against is silent: the window goes, the application
- * answers that everything landed, and the last seconds of typing are gone.
+ * The guarded failure is silent: the window closes, the application reports
+ * that everything was written, and the last seconds of typing are lost.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
@@ -173,7 +173,7 @@ describe('a page requested to write what it owes', () => {
     await settle()
     notes.setBody('Note.md', 'still being written')
 
-    // The stream opens by handing over the token, which asks for nothing.
+    // The stream opens with a token and no flush request.
     mockStream.send({ token: '3', flush: false })
     await settle()
 
@@ -234,8 +234,8 @@ describe('a page holding text the file changed under', () => {
     fakeCore.releaseWrites()
     await settle()
 
-    // The write landed and the conflict still stands, so nothing has changed
-    // about what the page owes.
+    // The write succeeded and the conflict remains, so the reported result is
+    // unchanged.
     expect(fakeCore.writtenFiles).toEqual([{ path: 'Other.md', body: 'on its way' }])
     expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'asking' }])
   })
@@ -258,7 +258,7 @@ describe('a page holding text the file changed under', () => {
     await going.conflicts.value.find((one) => one.note === 'One.md')?.keep()
     await settle()
 
-    // One of the two is answered, so the window is still owed something.
+    // One of the two conflicts is resolved, so the result is still pending.
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '6', result: 'asking' })
     expect(going.conflicts.value.map((one) => one.note)).toEqual(['Two.md'])
 
@@ -285,10 +285,10 @@ describe('a page holding text the file changed under', () => {
     await settle()
 
     expect(going.conflicts.value).toEqual([])
-    // Nothing was answered for it, so the window is still owed it.
+    // The conflict is not resolved, so the result is still pending.
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '8', result: 'asking' })
 
-    // And it is still owed it the next time the window is asked for.
+    // The result is still pending on the next flush request.
     mockStream.end()
     await settle()
     mockStream.send({ token: '9', flush: true })
@@ -315,7 +315,7 @@ describe('a page holding text the file changed under', () => {
     note.dismiss()
     await settle()
 
-    // Nothing answers to that token now, and the page has not been asked again.
+    // No result is reported for that token now, and the page has not been asked again.
     expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'asking' }])
 
     mockStream.send({ token: '3', flush: true })
@@ -336,7 +336,7 @@ describe('a page holding text the file changed under', () => {
 
     expect(fakeCore.reportedResults).toEqual([{ token: '9', result: 'asking' }])
 
-    // The stream drops and the page listens again under a new token.
+    // The stream drops and the page reconnects under a new token.
     mockStream.end()
     await settle()
     mockStream.send({ token: '10', flush: true })

@@ -115,7 +115,7 @@ describe('a label half again as large', () => {
   })
 })
 
-/** A window that reports a size for the boxes it is asked to watch. */
+/** A window that reports a size for the boxes it is asked to observe. */
 function stubObserver() {
   const watched: Element[] = []
   const state = { ring: (_entries: unknown[]) => {}, disconnected: 0 }

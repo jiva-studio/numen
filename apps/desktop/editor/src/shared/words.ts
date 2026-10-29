@@ -1,9 +1,9 @@
 /**
- * What the window says in its own voice.
+ * Interface text of the window.
  *
- * A sentence about what a tab holds is said by the kind that holds it, beside
- * the code that draws it. What is left here is the window itself: its tabs,
- * the palette, the commands, the corner, and the quit.
+ * Text describing a tab's content belongs to the tab kind that owns it, next to
+ * the code that renders it. This file holds the window's own text: tabs,
+ * palette, commands, status corner, and quit.
  */
 // Stryker disable StringLiteral: interface copy
 import { keyChord } from '@numen/ui'
@@ -16,7 +16,7 @@ export { ERRORS }
 const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1)
 
 export const WORDS = {
-  /** What the corner says while something about the vault is wrong. */
+  /** Status corner text shown while something about the vault is wrong. */
   unwatched: 'Vault changes not watched',
   unread: 'Vault unreadable',
   indexing: 'Indexing the vault…',
@@ -53,7 +53,7 @@ export const WORDS = {
   deleteVersion: 'Delete text',
   runWith: (title: string, plugin: string) => `${title} with ${plugin}`,
   deleteVersionOf: (plugin: string) => `Delete text from ${plugin}`,
-  /** What the corner says once a plugin was asked to make or delete a text. */
+  /** Status corner text shown while a plugin is creating or deleting a text. */
   queriedText: (plugin: string) => `${plugin}: working`,
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
@@ -92,7 +92,7 @@ export const WORDS = {
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   noVault: 'No vault open',
   noNote: 'No active note',
-  /** The steps a command asks for: the chip beside the field, and the field. */
+  /** Steps of a command: the chip next to the field, and the field. */
   command: 'Command',
   typeCommand: 'Type a command',
   naming: 'Name',
@@ -113,13 +113,13 @@ export const WORDS = {
   unlistedVaults: 'Vault list unavailable',
   /** The row a list of values opens on, which is the value in force. */
   current: 'Current',
-  /** The two origins the themes are drawn in, and where a person's own go. */
+  /** The two origins of themes: built-in, and the user's own. */
   shipping: 'Built-in',
   owned: 'Custom themes',
   noneOwned: 'Add .css files to numen/themes/ next to numen.json',
   /** The group the three halves are drawn in. */
   half: 'Light and dark',
-  /** The three halves, and why the theme worn leaves nothing to choose. */
+  /** The three appearance modes; the active theme may fix the mode, leaving nothing to choose. */
   system: 'System',
   light: 'Light',
   dark: 'Dark',

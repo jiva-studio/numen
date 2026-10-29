@@ -1,9 +1,9 @@
 /**
- * The names tabs and conversations are filed under, and what a tab is called.
+ * The names that tabs and conversations are stored under, and how a tab is titled.
  *
  * Two tabs under one name are one tab to the workspace, and two conversations
- * under one name are one conversation to the agent. The second is the worse of
- * the two: a question lands in a talk nobody can see.
+ * under one name are one conversation to the agent. The second is worse: a
+ * message lands in a conversation the user cannot see.
  */
 import { describe, expect, it } from 'vitest'
 import { getPanes } from '@numen/shell'

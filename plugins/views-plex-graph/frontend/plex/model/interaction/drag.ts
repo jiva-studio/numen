@@ -1,6 +1,6 @@
 /**
- * Something dragged over the plex from outside it. Everything that knows about
- * events and screen pixels is here; which relation a place evaluates to is worked out
+ * An item dragged over the plex from outside it. Everything that handles events
+ * and screen pixels is here; the relation a position evaluates to is computed
  * in `arrange/drop.ts`, as a value.
  */
 import { win } from '../../../dom'
@@ -20,7 +20,7 @@ export interface PlexDragState {
   readonly relation: Ref<PlexRelation | null>
 }
 
-/** What following a drag takes: the drawing, the picture, and the rules. */
+/** The dependencies of a drag: the drawing surface, the layout, and the rules. */
 export interface PlexDragDeps {
   /** The drawing, which turns screen pixels into the plex's own coordinates. */
   readonly getSurface: () => SVGSVGElement | null
@@ -31,7 +31,7 @@ export interface PlexDragDeps {
   readonly getViewport: () => Size
   /** Relations a gesture is allowed to produce. */
   readonly getAllowedRelations: () => readonly PlexRelation[]
-  /** How far from the focus the pointer stands before it names a direction. */
+  /** The distance from the focus at which the pointer selects a direction. */
   readonly getThreshold: () => number
   readonly commit: (dragged: readonly string[], relation: PlexRelation) => void
 }
@@ -65,8 +65,8 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   let detach: (() => void) | null = null
 
   /**
-   * What the drag was handed, held for the life of the gesture. Whoever is
-   * dragging them may put them down on the same release this commits on.
+   * The identifiers being dragged, kept for the duration of the gesture. The
+   * source of the drag may drop them on the same release this commits on.
    */
   let activeDragIds: readonly string[]
 
@@ -108,8 +108,8 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
     }
 
     win.addEventListener('pointermove', onMove)
-    // The release is answered on its way down the page, ahead of whoever is
-    // dragging them and puts them down on the way back up.
+    // The release is handled in the capture phase, before the drag source's
+    // own handler, which drops the items in the bubble phase.
     win.addEventListener('pointerup', onUp, CAPTURE)
     win.addEventListener('pointercancel', onLost)
     win.addEventListener('keydown', onKey)

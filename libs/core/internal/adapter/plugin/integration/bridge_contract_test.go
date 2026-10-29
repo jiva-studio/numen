@@ -23,8 +23,8 @@ type bridgeHost interface {
 	agentbridge.Host
 }
 
-// bridgeCall makes one call through an open bridge and says whether the value it
-// returned is the zero value.
+// bridgeCall makes one call through an open bridge and reports whether the
+// returned value is the zero value.
 type bridgeCall func(ctx context.Context) (isZero bool, err error)
 
 // bridgeContract opens one bridge on a host and names a call through it.
@@ -47,7 +47,7 @@ func createContract[B io.Closer](bridge B, err error, call func(B, context.Conte
 	return bridge, func(ctx context.Context) (bool, error) { return call(bridge, ctx) }, nil
 }
 
-// bridgeContracts is every bridge the host opens, each with a call that reaches
+// bridgeContracts is every bridge the host opens, each with a call that invokes
 // its plugin.
 var bridgeContracts = []bridgeContract{
 	{"embedder", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
@@ -67,8 +67,8 @@ var bridgeContracts = []bridgeContract{
 // contractPluginID is the plugin the bridges that are opened by id are opened on.
 const contractPluginID = "md.numen.stub"
 
-// listRefusalProblems opens a bridge on a plugin that cannot answer and lists
-// what is wrong with the way it refuses. A plugin that is down, and one that is
+// listRefusalProblems opens a bridge on a plugin that cannot respond and lists
+// what is wrong with its error behavior. A plugin that is down, and one that is
 // not installed, fail the bridge with port.ErrUnavailable, at the open or at the
 // call, and never with a value.
 func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error), isRefusal func(error) bool) (problems []string) {
@@ -143,8 +143,8 @@ type failingBridge struct{}
 
 func (failingBridge) Close() error { return errors.New("not closed") }
 
-// The check refuses each way a bridge can answer a plugin that cannot answer
-// wrongly, and passes the way it should.
+// The check rejects each way a bridge can respond incorrectly for a plugin that
+// cannot respond, and accepts the correct way.
 func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 	cases := []struct {
 		name string

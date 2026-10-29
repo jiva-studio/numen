@@ -1,7 +1,7 @@
 /**
  * Where a node's identity comes from.
  *
- * It reaches the DOM as the id of a splitter panel, so it is unique to the
+ * It is used in the DOM as the id of a splitter panel, so it is unique to the
  * document and not only to this tree.
  */
 import type { NodeId } from './node'

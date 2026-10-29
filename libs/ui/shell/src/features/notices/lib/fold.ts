@@ -6,10 +6,10 @@ import type { Notice } from './notice'
 export const ROOM = 4
 
 /**
- * The cards that stand, and how many are folded away behind them.
+ * The cards that remain visible, and how many are folded away behind them.
  *
- * What folds is what has been said and has gone right. Work, what is so, and
- * anything that stopped badly stand however many of them there are.
+ * Cards for completed work fold. Work in progress, current status, and anything
+ * that ended badly remain visible regardless of count.
  */
 export const foldNotices = (
   notices: readonly Notice[],

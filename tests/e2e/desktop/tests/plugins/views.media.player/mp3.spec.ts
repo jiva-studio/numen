@@ -1,7 +1,7 @@
 import { test, expect, type Locator } from '../../support/test.js'
 import { openVaultFile, openWorkspace } from '../../support/workspace.js'
 
-/** What the player says where it cannot play a recording, in any of its forms. */
+/** The message the player shows when it cannot play a recording, in any of its forms. */
 const FAILURE = /failed to play|unreadable|not supported|loading stopped/i
 
 /** The length of `fixtures/talk.mp3`, a VBR mp3 with a Xing header. */
@@ -18,8 +18,8 @@ test.describe('An mp3 recording', () => {
   test('shows its whole length, seeks, and says nothing failed while it loads', async ({
     page,
   }) => {
-    // Every text drawn in the page and in the shadow roots the plugins are drawn in is checked as
-    // it changes, so a failure shown for a moment is kept.
+    // Every text in the page and in the shadow roots of the plugins is checked as
+    // it changes, so a failure message shown briefly is still recorded.
     await page.addInitScript((source) => {
       const failure = new RegExp(source, 'i')
       const failures: string[] = []

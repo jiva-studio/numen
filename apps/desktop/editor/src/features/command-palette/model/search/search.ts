@@ -23,24 +23,24 @@ import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './sco
 export type { TextRange, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
 
 /**
- * How a search over the text is asked. Each mode is an order of its own, and
- * `hybrid` is all of them in one ranking.
+ * How a text search is run. Each mode has its own ordering, and `hybrid`
+ * combines all of them in one ranking.
  */
 export type SearchMode = 'hybrid' | 'words' | 'meaning' | 'names'
 
-/** The two questions the palette asks of the vault. */
+/** The two queries the palette makes of the vault. */
 export interface SearchDeps {
   names(query: string, limit: number): Promise<readonly NameMatch[]>
   search(query: string, mode: SearchMode, limit: number): Promise<readonly Passage[]>
 }
 
-/** What a group of a palette says when it holds nothing. */
+/** The text a palette group shows when it is empty. */
 export interface EmptyWords {
   readonly noneFound: string
   readonly noQuery: string
 }
 
-/** Everything the palette says in the window's voice. */
+/** Every user-visible string of the palette. */
 export interface Words extends EmptyWords {
   names: string
   text: string

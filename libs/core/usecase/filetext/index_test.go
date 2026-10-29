@@ -170,10 +170,9 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	}
 }
 
-// An overlap as wide as the size it belongs to is narrowed before anything is
-// cut, so that tiling advances. A recipe naming the number configuration asked
-// for would name bytes nobody wrote, and the source would be read again on
-// every run.
+// An overlap equal to its size is reduced before splitting, which keeps the
+// tiling advancing. A recipe recording the configured number would record
+// sizes that were never used, and the source would be re-read on every run.
 func TestTheRecipeNamesTheSizesTheSplitCachedTo(t *testing.T) {
 	request := chunking.Sizes{Large: 100, LargeOverlap: 100, Small: 20, SmallOverlap: 20}
 	resolved := request.Resolve()
@@ -334,9 +333,9 @@ func TestABookTheVaultNoLongerContainsIsTakenOut(t *testing.T) {
 }
 
 // A file whose content changed while its size and modification time did not is
-// skipped: the index believes those three and nothing else. An archive restored
-// by `unzip` and a tree brought over by `rsync -tc` both do that, and the chunks
-// then describe text the file no longer has. Rebuilding is the way out.
+// skipped: the index compares only those three. An archive restored by `unzip`
+// and a tree synced by `rsync -tc` both produce this, and the chunks then
+// describe text the file no longer has. Rebuilding the index reads every file.
 func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
@@ -390,8 +389,8 @@ func timedParts() []domain.TextSegment {
 	}
 }
 
-// A recording with no text version is a source found by its name, with nothing
-// to cut into chunks, and the plugins that run on their own are asked for its text.
+// A recording with no text version is a source identified by its name, with
+// nothing to split into chunks; the plugins that run on their own are queried for its text.
 func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
@@ -462,8 +461,8 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	}
 }
 
-// A version that stops being the live one leaves its chunks owed: the next run
-// cuts the file from the version that is live now, or keeps no chunks of it.
+// A version that stops being the live one leaves its chunks pending: the next run
+// splits the file from the current live version, or stores no chunks for it.
 func TestSourceExtractedFromOutdatedVersionIsExtractedAgain(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
@@ -516,8 +515,8 @@ func TestExtractOneUsesTheLiveVersion(t *testing.T) {
 	}
 }
 
-// A provider that cannot answer is one source: it is told to the error handler
-// and the run goes on.
+// A provider that cannot respond is one failed source: it is reported to the
+// error handler and the run continues.
 func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()

@@ -1,7 +1,7 @@
-// Package ulid generates the identifiers a vault carries.
+// Package ulid generates the identifiers a vault uses.
 //
-// A ULID's lexicographic order is its chronological order, which tells the
-// moment anything is sorted or merged.
+// A ULID's lexicographic order is its chronological order, which orders identifiers
+// by creation time when sorted or merged.
 package ulid
 
 import (
@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// Crockford base32: no I, L, O or U, so that an identifier read aloud or
-// retyped from a file does not turn into a different one.
+// Crockford base32: no I, L, O or U, which keeps an identifier unambiguous when read
+// aloud or retyped from a file.
 const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 // isAlphabet holds, for each byte, whether it is a character of the alphabet.

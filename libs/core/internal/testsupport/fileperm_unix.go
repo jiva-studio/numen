@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// Shut makes a file nobody may open, and opens it again when the test ends.
-// Here that is the file's own permissions.
+// Shut makes a file unopenable and restores access when the test ends. On unix
+// this changes the file's permissions.
 func Shut(tb testing.TB, path string) {
 	tb.Helper()
 	if os.Geteuid() == 0 {
@@ -21,9 +21,9 @@ func Shut(tb testing.TB, path string) {
 	tb.Cleanup(func() { os.Chmod(path, 0o644) })
 }
 
-// MakeUnwritable makes a file nothing may save over, and lets it be saved again
-// when the test ends. A save lands by renaming over the name, so what refuses
-// it is the folder the name is in.
+// MakeUnwritable makes a file impossible to save over and restores it when the
+// test ends. A save renames over the name, so the folder containing the name is
+// what blocks it.
 func MakeUnwritable(tb testing.TB, path string) {
 	tb.Helper()
 	if os.Geteuid() == 0 {

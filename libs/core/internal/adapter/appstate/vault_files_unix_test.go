@@ -30,8 +30,8 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 	}
 }
 
-// A write that runs out of room fails, leaves no temporary file and keeps no
-// descriptor open.
+// A write that exceeds the file size limit fails, leaves no temporary file and
+// keeps no descriptor open.
 func TestWrite_FileSizeLimitRemovesTempFileAndDescriptor(t *testing.T) {
 	dir := t.TempDir()
 	files := appstate.VaultFilesAt(dir)
@@ -43,8 +43,8 @@ func TestWrite_FileSizeLimitRemovesTempFileAndDescriptor(t *testing.T) {
 		t.Fatal(err)
 	}
 	limit := old
-	// The limit sits above every file the test binary writes for itself, its
-	// log among them.
+	// The limit is above every file the test binary writes for itself, its log
+	// among them.
 	limit.Cur = 1 << 20
 	if err := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &limit); err != nil {
 		t.Skipf("the file size cannot be limited: %v", err)

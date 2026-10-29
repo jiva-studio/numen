@@ -97,8 +97,9 @@ test.describe('EPUB Book Reader', () => {
     const bookTab = page.locator('.book-tab')
     await expect(bookTab).toBeVisible({ timeout: 10_000 })
 
-    // Focus book tab and press page turn keys. In WebKit the shadow root's elementsFromPoint names
-    // <html> above the book, so Playwright's hit check refuses the click the page itself receives.
+    // Focus the book tab and press page turn keys. In WebKit the shadow root's
+    // elementsFromPoint returns <html> above the book, so Playwright's hit
+    // check rejects a click that the page itself receives.
     await bookTab.click({ force: true })
     await page.keyboard.press('PageDown')
     await expect(bookTab).toBeVisible()

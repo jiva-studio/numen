@@ -1,8 +1,9 @@
 /**
- * The agents a plugin's questions to a model can go to, and their models, as
- * lists a person picks from. An agent is a program the plugins list; the core
- * routes to the one a plugin's setting names, else to the default of the
- * settings, else to the program the agent section of the settings names.
+ * The agents a plugin can send model requests to, and their models, as lists
+ * the user selects from. An agent is a program listed by the plugins. The core
+ * routes to the agent named by the plugin's setting, else to the default agent
+ * of the settings, else to the program named by the agent section of the
+ * settings.
  */
 import {
   AGENT_SETTING_TYPE,
@@ -31,7 +32,7 @@ export interface AgentModel {
 
 /** An agent program a plugin lists, with the models it offers. */
 export interface Agent {
-  /** What a task asks for the program by. */
+  /** The identifier a task uses to request the program. */
   readonly id: string
   readonly name: string
   /** Whether it answers where the settings name no agent. */
@@ -39,7 +40,7 @@ export interface Agent {
   readonly models: readonly AgentModel[]
 }
 
-/** What this says in the window's voice. */
+/** The user-facing strings of the agent settings. */
 export interface AgentWords {
   /** The row of a plugin's setting that leaves the agent to the default, with its name. */
   readonly agentByDefault: (name: string) => string
@@ -47,7 +48,7 @@ export interface AgentWords {
   readonly agentFirst: (name: string) => string
   /** That row where no agent answers. */
   readonly agentNone: string
-  /** Said beside an agent the settings name and this installation does not hold. */
+  /** Shown next to an agent that the settings name and this installation does not have. */
   readonly agentMissing: string
   /** The row that leaves the model to the agent. */
   readonly modelByAgent: string
@@ -99,8 +100,8 @@ const getAgentRows = (
 }
 
 /**
- * The agents a plugin's setting can name: the default first, said with the
- * agent that answers it now.
+ * The agents a plugin's setting can name: the default first, labelled with the
+ * agent that currently serves it.
  */
 export const createPluginAgentChoices = (
   agents: readonly Agent[],
@@ -113,8 +114,8 @@ export const createPluginAgentChoices = (
 }
 
 /**
- * The agents the default can name: the agent of the installation first, said
- * with its name, which is the one that answers while the default names none.
+ * The agents the default can name: the installation's agent first, labelled
+ * with its name, which serves requests while the default names none.
  */
 export const createDefaultAgentChoices = (
   agents: readonly Agent[],
@@ -152,8 +153,9 @@ export const getAskingPlugins = (plugins: readonly PluginInfo[]): readonly Plugi
   plugins.filter((one) => one.consent !== 'none')
 
 /**
- * The models of a program as rows a setting is chosen from, each addressed by its name. A value the
- * program does not list stands among them. A program that lists none gives no row at all.
+ * The models of a program as rows to select from, each addressed by name. A
+ * value the program does not list is included as a row. A program that lists no
+ * models yields no rows.
  */
 export const createProgramModelChoices = (
   models: readonly Model[],

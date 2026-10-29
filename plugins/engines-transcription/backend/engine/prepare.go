@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 )
 
-// Ready says whether everything a transcription needs is already on this machine.
+// Ready reports whether everything a transcription needs is already on this machine.
 func Ready(cfg Config) bool {
 	if !onnx.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false

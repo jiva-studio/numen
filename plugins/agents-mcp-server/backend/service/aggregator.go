@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// ToolClient reaches the host or plugin tool service.
+// ToolClient calls the host or plugin tool service.
 type ToolClient interface {
 	ListToolInfos(ctx context.Context) ([]*tools.ToolInfo, error)
 	InvokeTool(ctx context.Context, call tools.Call) (*tools.CallResponse, error)
@@ -108,7 +108,7 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 }
 
 // ExecuteTool forwards a tool call to the host and translates the response. The host runs it in the
-// vault it shows, with no context: no question was asked in Numen.
+// vault it has open, without request context: the call does not originate from a Numen request.
 func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json.RawMessage) (*sdk.CallToolResult, error) {
 	if a.client == nil {
 		return &sdk.CallToolResult{

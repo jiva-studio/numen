@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The drawing, and nothing else. Every number here came from `arrange/`.
+ * The drawing layer. Every number here is computed in `arrange/`.
  *
- * What it draws itself is the picture between the nodes: the window, the
- * edges, and the gesture crossing them. A node draws itself, and is told the
- * two things about it that only the whole picture knows.
+ * It draws the viewport, the edges between nodes, and the gesture across them.
+ * Each node draws itself and receives the two values that only the whole
+ * drawing can determine.
  */
 import { computed, ref, useId, useTemplateRef } from 'vue'
 import { createRefRegistry } from '@numen/ui'
@@ -118,9 +118,9 @@ const onSettle = (id: string, isResting: boolean) => {
 
 /* -------------------------------- Helpers --------------------------------- */
 /**
- * What each node is to the gesture. Only the node it left from keeps a handle
- * while one is running: the hand is somewhere else entirely, and a second
- * handle under it would offer to start a gesture already under way.
+ * The role of each node in the current gesture. While a gesture runs, only the
+ * node it started from keeps a handle, because a second handle would offer to
+ * start a gesture while one is already in progress.
  */
 const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
@@ -223,13 +223,13 @@ const getRole = (node: PlacedNode): GestureRole => {
   font-family: var(--numen-font-sans);
   user-select: none;
   -webkit-user-select: none;
-  /* Every touch on the picture belongs to the picture, and a finger that
+  /* Every touch on the drawing is handled by the drawing, and a finger that
      travels is dragging something across it. */
   touch-action: none;
   -webkit-touch-callout: none;
 }
 
-/* Wide enough for a hand to land on, and unpainted. */
+/* Wide enough to be a pointer target, and unpainted. */
 .plex__edge-hit {
   fill: none;
   stroke: transparent;
@@ -237,7 +237,7 @@ const getRole = (node: PlacedNode): GestureRole => {
   pointer-events: stroke;
 }
 
-/* While the plex is moving, every line is on its way somewhere. */
+/* While the plex animates, edges do not receive pointer events. */
 [data-moving] .plex__edge-hit {
   pointer-events: none;
 }
@@ -251,7 +251,7 @@ const getRole = (node: PlacedNode): GestureRole => {
   pointer-events: none;
 }
 
-/* What is dragged across the picture catches nothing on its way over. */
+/* The dragged element does not receive pointer events. */
 .plex__dragged {
   pointer-events: none;
 }

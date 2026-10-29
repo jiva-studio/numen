@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Downloader is the providers this machine holds, asked in order.
+// Downloader is the providers installed on this machine, tried in order.
 type Downloader struct {
 	providers []Provider
 }

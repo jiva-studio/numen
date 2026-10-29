@@ -1,6 +1,6 @@
 /**
- * The transcript as the editor lays it out: a line to a cue, and what the tab
- * says of whether there is anything written here at all.
+ * The transcript as the editor lays it out: one line per cue, and what the tab
+ * reports about whether there is any text at all.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'

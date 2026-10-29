@@ -106,7 +106,7 @@ func isNotWordRune(r rune) bool {
 	return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 }
 
-// getConcept returns the concept a word stands for: the first word of its group,
+// getConcept returns the concept a word maps to: the first word of its group,
 // or the word itself.
 func getConcept(word string) string {
 	switch word {

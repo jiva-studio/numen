@@ -8,7 +8,7 @@ const (
 	recogDefault  = rapidOCR + "PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx"
 )
 
-// RecogniserCustom is the recogniser a person names by its file.
+// RecogniserCustom is the recogniser the user selects by its file.
 const RecogniserCustom = "custom"
 
 // recognisers are the recognition models the plugin provisions, by the name the settings give each,

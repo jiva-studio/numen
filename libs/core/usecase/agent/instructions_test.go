@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 )
 
-// The person's note is named by title, never by path.
+// The user's note is identified by title, never by path.
 func TestInstructionsNameANoteByItsTitle(t *testing.T) {
 	got := agent.GetInstructions(agentport.Task{Question: "q"})
 	if !strings.Contains(got, "Call a note by its title") {

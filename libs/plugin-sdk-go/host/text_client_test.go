@@ -176,7 +176,7 @@ func TestATextClientOfAnUnknownVaultReturnsErrUnknownVault(t *testing.T) {
 	}
 }
 
-// unknownVaultTexts answers every call as a host that knows no vault of the name.
+// unknownVaultTexts responds to every call as a host that has no vault of the name.
 type unknownVaultTexts struct {
 	numenv1connect.UnimplementedHostTextServiceHandler
 }

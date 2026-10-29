@@ -102,7 +102,7 @@ func TestOneDocumentConsumesOneResult(t *testing.T) {
 }
 
 func TestCollapse_DocumentUsesNamedSection(t *testing.T) {
-	// The paragraph that says the words most often stands first in the fused
+	// The paragraph that mentions the words most often ranks first in the fused
 	// order, and the section carrying the name is further down.
 	fused := []domain.Passage{
 		{ChunkID: "2", Source: "book.epub"},
@@ -154,8 +154,8 @@ func TestCollapse_LimitsPassagesPerDocument(t *testing.T) {
 }
 
 func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
-	// The section stands lower in the fused order than the passage that says
-	// the words most often, and both come back.
+	// The section ranks lower in the fused order than the passage that mentions
+	// the words most often, and both are returned.
 	fused := []domain.Passage{
 		{ChunkID: "2", Source: "book.epub", Start: 90, Length: 10},
 		{ChunkID: "1", Source: "book.epub", Start: 0, Length: 10},

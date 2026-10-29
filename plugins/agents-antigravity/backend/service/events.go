@@ -9,7 +9,8 @@ import (
 type eventReader struct {
 	reader *reader
 
-	// isTextStreamed is set once the agent has said any of its answer in step updates.
+	// isTextStreamed is set once the agent has emitted any of its answer in
+	// step updates.
 	isTextStreamed bool
 
 	currentTool string
@@ -172,9 +173,9 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 	}
 }
 
-// handleCliEvent reads an event of the stream the CLI writes: "init", "step_update" and "result".
-// What the agent says arrives as the text deltas of its response steps, and a run that ends in
-// error does so in its result.
+// handleCliEvent handles an event of the stream the CLI writes: "init",
+// "step_update" and "result". The agent's text arrives as the text deltas of
+// its response steps, and a run that ends in error reports it in its result.
 func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
 	switch kind {
 	case "step_update":
@@ -202,8 +203,8 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 	r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
 }
 
-// handleCliResult says the response of a run that streamed none, and stops a run whose status is
-// not success with the error the CLI gave.
+// handleCliResult emits the response of a run that streamed no text, and stops
+// a run whose status is not success with the error the CLI reported.
 func (r *eventReader) handleCliResult(result map[string]any) {
 	r.reader.isFinished = true
 	if session, ok := result["conversation_id"].(string); ok {

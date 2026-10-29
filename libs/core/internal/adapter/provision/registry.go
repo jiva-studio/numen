@@ -13,8 +13,8 @@ import (
 )
 
 // Registry routes a requirement to the first provisioner that handles it,
-// shares one run between identical requests and answers for every requirement
-// it has been told of.
+// shares one run between identical requests and reports the status of every
+// registered requirement.
 type Registry struct {
 	mu           sync.Mutex
 	provisioners []pluginport.DependencyProvisioner
@@ -41,7 +41,7 @@ func (r *Registry) Add(provisioner pluginport.DependencyProvisioner) {
 	r.provisioners = append(r.provisioners, provisioner)
 }
 
-// Observe tells the observer a status, as a provisioning does.
+// Observe reports a status to the observer, as a provisioning does.
 func (r *Registry) Observe(req pluginport.DependencyRequirement, status pluginport.DependencyStatus) {
 	r.mu.Lock()
 	observer := r.observer
@@ -51,8 +51,8 @@ func (r *Registry) Observe(req pluginport.DependencyRequirement, status pluginpo
 	}
 }
 
-// SetObserver sets what is told, for every provisioning, each status it
-// reaches. The observer is called from the goroutine that runs the provisioning.
+// SetObserver sets the observer that receives every status reached by any
+// provisioning. The observer is called from the goroutine that runs the provisioning.
 func (r *Registry) SetObserver(observer func(pluginport.DependencyRequirement, pluginport.DependencyStatus)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -77,7 +77,7 @@ func (r *Registry) route(req pluginport.DependencyRequirement) (pluginport.Depen
 	return nil, false
 }
 
-// Register records the requirement so that it is answered for by its id.
+// Register records the requirement under its id.
 func (r *Registry) Register(req pluginport.DependencyRequirement) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -95,8 +95,8 @@ func (r *Registry) Lookup(id string) (pluginport.DependencyRequirement, bool) {
 	return req, ok
 }
 
-// Provision makes the dependency ready. Callers that ask for the same
-// requirement while one run is under way share it and each is told its progress.
+// Provision makes the dependency ready. Callers that request the same
+// requirement while a run is in progress share it and each receives its progress.
 func (r *Registry) Provision(
 	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
 ) (pluginport.ResolvedDependency, error) {
@@ -139,7 +139,7 @@ func (r *Registry) run(
 	return resolved, nil
 }
 
-// Status answers where the dependency stands without installing it.
+// Status returns the status of the dependency without installing it.
 func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
@@ -169,8 +169,8 @@ func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirem
 	return status, nil
 }
 
-// GetStatus answers where the registered dependency with the id stands. An id
-// nobody registered is missing.
+// GetStatus returns the status of the registered dependency with the id. An
+// unregistered id has the missing state.
 func (r *Registry) GetStatus(ctx context.Context, id string) (pluginport.DependencyStatus, error) {
 	req, ok := r.Lookup(id)
 	if !ok {
@@ -179,7 +179,7 @@ func (r *Registry) GetStatus(ctx context.Context, id string) (pluginport.Depende
 	return r.Status(ctx, req)
 }
 
-// List answers where every registered dependency stands, in the order they were registered.
+// List returns the status of every registered dependency, in registration order.
 func (r *Registry) List(ctx context.Context) ([]pluginport.DependencyStatus, error) {
 	r.mu.Lock()
 	ids := slices.Clone(r.order)

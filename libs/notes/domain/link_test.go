@@ -33,8 +33,9 @@ type written struct {
 	Value   string `json:"value"`
 }
 
-// A title carries a colon of its own, an alias and a fragment are not part of
-// where a link points, and only a written scheme tells any of them apart.
+// A title may contain a colon, and an alias and a fragment are not part of
+// where a link points; only an explicitly written scheme distinguishes any of
+// them.
 func TestAnAddressIsReadTheWayTheSchemaReturnsItIs(t *testing.T) {
 	raw, err := os.ReadFile(corpus)
 	if err != nil {

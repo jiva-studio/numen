@@ -31,7 +31,7 @@ const editor = (props: Partial<Props> = {}) => {
   return { wrapper, view, exposed: wrapper.vm as unknown as EditorHandle }
 }
 
-/** Where the caret is, as a person would say it. */
+/** The caret position as a one-based line and zero-based column. */
 const getCaret = (view: EditorView) => {
   const line = view.state.doc.lineAt(view.state.selection.main.head)
   return { line: line.number, column: view.state.selection.main.head - line.from }

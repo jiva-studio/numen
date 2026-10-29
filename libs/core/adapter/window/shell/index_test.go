@@ -47,8 +47,8 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
 }
 
-// A vault the index already carries is drawn from what it holds, so indexing it
-// again is work drawn only once it has lasted. An instant walk says nothing.
+// A vault the index already holds is rendered from what it holds, so re-indexing
+// it is displayed only once it has lasted. An instant walk is not reported.
 func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 	target := domain.Vault{ID: "held", Name: "Held"}
 	api := newAPI(t, target)
@@ -69,8 +69,8 @@ func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 	close(blockCh)
 }
 
-// An indexing that failed says why in the vault's own state, and is not begun over and over by the
-// counts that follow.
+// A failed indexing reports why in the vault's own state, and is not restarted
+// repeatedly by the counts that follow.
 func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	api := newAPI(t)
 	var tried atomic.Int64
@@ -100,7 +100,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
 
-// A window that reads no vault says that the index does not carry a vault it lacks.
+// A window that reads no vault reports that the index does not hold a vault it lacks.
 func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 	api := newAPI(t)
 
@@ -152,8 +152,8 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 }
 
 // A vault is claimed by one indexer at a time: the claim that begins an indexing
-// says it is underway, a claim while it runs says so and begins nothing, an
-// indexing that failed returns why and begins nothing, and a vault indexed clean
+// reports it is underway, a claim while it runs reports so and begins nothing, a
+// failed indexing returns why and begins nothing, and a vault indexed cleanly
 // begins nothing and is not underway.
 func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
 	r := &indexRuns{}

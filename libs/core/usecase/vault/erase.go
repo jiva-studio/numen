@@ -20,16 +20,15 @@ type Erase struct {
 	unregister Unregister
 }
 
-// NewErase is what takes a vault away: what reads the identity the folder
-// carries, where this machine keeps what a person deleted, and the Unregister it is
-// taken off the list through — the same one everything else unregisters a vault by.
+// NewErase creates an Erase from the vault identity reader, the trash, and the
+// Unregister that removes the vault from the list, the same one used for every
+// other vault unregistration.
 func NewErase(identity vaultport.VaultIdentity, trash machineport.Trash, unregister Unregister) Erase {
 	return Erase{identity: identity, trash: trash, unregister: unregister}
 }
 
-// EraseResult says what became of the folder. Whoever asked for the erasure is
-// owed the answer, and only this knows it: a folder that was already gone is
-// looked for here and nowhere else.
+// EraseResult reports what happened to the folder. Only Erase can tell whether
+// the folder was already missing, so the caller receives it from here.
 type EraseResult struct {
 	// IsTrashed is whether the folder went to the trash. A vault whose folder had
 	// already gone leaves nothing to move, and only its entry and its rows go.
@@ -37,7 +36,7 @@ type EraseResult struct {
 }
 
 func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error) {
-	// Asked before the folder is moved.
+	// The last-vault check runs before the folder is moved.
 	if err := keepTheLastVault(u.unregister.registry, v); err != nil {
 		return EraseResult{}, err
 	}

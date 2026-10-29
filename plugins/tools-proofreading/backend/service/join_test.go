@@ -11,7 +11,7 @@ func makeBrokenBatch() Batch {
 	}}
 }
 
-// A run of lines is answered for as one, and the answer says which lines it
+// A run of lines is returned as one, and the result identifies the lines it
 // covers.
 func TestASentenceBrokenAcrossLinesIsInsertBackTogether(t *testing.T) {
 	placed, _, ok := GetFixedLines(makeBrokenBatch(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
@@ -38,9 +38,9 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 	}
 }
 
-// A sentence running on past the last line a batch was given is named whole by
-// a model reading it. That run is dropped, the rest of the batch stands, and
-// the reply says a sentence ran past the end.
+// A sentence running past the last line of a batch is returned whole by the
+// model. That run is dropped, the rest of the batch is kept, and the result
+// reports that a sentence ran past the end.
 func TestARunReachingPastTheBatchIsDroppedAndTheRestExists(t *testing.T) {
 	placed, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n6 | Sure of it.", 0)
 	if !ok {
@@ -54,7 +54,7 @@ func TestARunReachingPastTheBatchIsDroppedAndTheRestExists(t *testing.T) {
 	}
 }
 
-// A reply whose runs all stand inside the batch says nothing ran past the end.
+// A reply whose runs all lie inside the batch reports that nothing ran past the end.
 func TestARunInsideTheBatchReturnsNothingRanPastIt(t *testing.T) {
 	for _, reply := range []string{"4-5 | Krishna is Radha, connected with Radhika.", "6 | Sure of it.", ""} {
 		if _, past, ok := GetFixedLines(makeBrokenBatch(), reply, 0); !ok || past {
@@ -63,7 +63,7 @@ func TestARunInsideTheBatchReturnsNothingRanPastIt(t *testing.T) {
 	}
 }
 
-// A batch the gates refuse says nothing about what ran past its end.
+// A batch rejected by the gates reports nothing about what ran past its end.
 func TestARefusedBatchReturnsNothingRanPastIt(t *testing.T) {
 	if _, past, ok := GetFixedLines(makeBrokenBatch(), "5-9 | whatever it says\n9 | no such line", 0); ok || past {
 		t.Errorf("the batch answered %v and ran past %v", ok, past)

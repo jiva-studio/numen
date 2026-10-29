@@ -256,7 +256,8 @@ describe('a label is as long as its words', () => {
       },
     })
 
-    // Once to cut the words to the line, and once to find them room along it.
+    // Called once to truncate the text to the line, and once to find a position
+    // for it along the line.
     expect(request).toStrictEqual(['the scene in the assembly', 'the scene in the assembly'])
   })
 

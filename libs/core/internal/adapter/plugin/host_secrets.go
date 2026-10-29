@@ -184,9 +184,9 @@ func readPluginSecrets(
 	return secrets, failures
 }
 
-// getSecretsError returns the failures to read secrets that the caller is told
-// of. A machine without a key store is reported once through the error handler
-// and is not returned.
+// getSecretsError returns the secret read failures that are reported to the
+// caller. A machine without a key store is reported once through the error
+// handler and is not returned.
 func (h *Host) getSecretsError(failures []error) error {
 	var notified []error
 	for _, failure := range failures {

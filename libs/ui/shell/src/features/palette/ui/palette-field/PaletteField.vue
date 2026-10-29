@@ -35,7 +35,7 @@ const searchQuery = defineModel<string>({ required: true })
 
 const field = useTemplateRef<HTMLInputElement>('field')
 
-/** The keyboard into the field, and what stands there selected. */
+/** Focuses the field and selects its text. */
 const focus = (): void => field.value?.focus()
 const select = (): void => field.value?.select()
 
@@ -74,8 +74,7 @@ defineExpose({ focus, select })
 </template>
 
 <style scoped>
-/* The clearance at the head of the row, which the step the field is on stands
-   inside. */
+/* The padding at the start of the row; the step the field belongs to is laid out inside it. */
 .palette__ask {
   padding-inline-start: var(--numen-field-text-inset);
 }

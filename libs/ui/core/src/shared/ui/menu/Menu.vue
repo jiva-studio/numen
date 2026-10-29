@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A menu: a list of things that can be chosen, put where it was asked for.
+ * A menu: a list of selectable items, positioned at the point it was requested.
  */
 import { computed, useTemplateRef } from 'vue'
 import MenuRow from './MenuRow.vue'
@@ -175,9 +175,9 @@ function measure(): void {
      the interface's own units, so they grow with everything drawn beside them. */
   --narrowest: 11.25rem;
   --widest: 22rem;
-  /* What asked for it, which it is never narrower than. */
+  /* The width of the trigger, which is the menu's minimum width. */
   --asking: 0px;
-  /* The room the area leaves it, set by the component. */
+  /* The space the available area leaves for the menu, set by the component. */
   --room: calc(100dvh - 1rem);
   /* A menu is as long as what it offers up to this, and its items scroll
      beyond it. */
@@ -225,7 +225,7 @@ function measure(): void {
 /* The search line is a row of its own at the top of the menu: it stays there
    while the items scroll beneath, and no item shows above or beside it. */
 .menu__bar {
-  /* The room the menu keeps around what it holds. */
+  /* The padding the menu keeps around its content. */
   --inset: 0.375rem;
 
   box-sizing: border-box;

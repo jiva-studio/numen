@@ -53,7 +53,7 @@ func isOver(over <-chan struct{}) bool {
 	}
 }
 
-// Close returns only once every child is over, and refuses work after it.
+// Close returns only after every child has finished, and rejects work after it.
 func TestCloseStopsEveryChildAndRejectsMore(t *testing.T) {
 	var registry agentrun.Registry
 	_, first := start(t, &registry, "one")
@@ -123,8 +123,8 @@ func TestStopEndsTheChildOnce(t *testing.T) {
 	}
 }
 
-// A work the registry has taken in is waited for by Close until its reader says it is done, even
-// where the reader has not started.
+// Close waits for work added to the registry until its reader reports it is
+// done, even when the reader has not started.
 func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 	var registry agentrun.Registry
 	w := agentrun.NewWork("", 1, func() {})

@@ -11,7 +11,7 @@ type Indexing struct {
 	Embedding EmbeddingConfig `json:"embedding"`
 }
 
-// DefaultIndexing is what an installation nobody has configured makes a vault searchable with.
+// DefaultIndexing is the indexing configuration of an unconfigured installation.
 func DefaultIndexing() Indexing {
 	return Indexing{
 		Embedding: DefaultEmbedding(),
@@ -29,7 +29,7 @@ func DefaultEmbedding() EmbeddingConfig {
 	return EmbeddingConfig{MaxTokens: 256}
 }
 
-// File is the file a person configures this installation in.
+// File is the file in which the user configures this installation.
 type File struct {
 	Version     int                       `json:"v"`
 	Appearance  Appearance                `json:"appearance"`
@@ -48,7 +48,7 @@ func (s *File) GetVersion() *int { return &s.Version }
 // GetAppearance returns a pointer to the appearance section.
 func (s *File) GetAppearance() *Appearance { return &s.Appearance }
 
-// AddNotice leaves a person one line about what the file holds.
+// AddNotice records one line about the file's contents, shown to the user.
 func (s *File) AddNotice(notice string) { s.Notices = append(s.Notices, notice) }
 
 // Sync is whether a note's title and its filename are kept as one name.
@@ -63,7 +63,7 @@ func (s File) WriteJSON() (string, error) {
 	return string(content), nil
 }
 
-// DefaultFile is what an installation nobody has configured does.
+// DefaultFile is the file of an unconfigured installation.
 func DefaultFile() File {
 	return File{
 		Version:     DefaultVersion,

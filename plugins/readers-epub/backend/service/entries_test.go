@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 )
 
-// serveEntries is the entries route over a book server whose current vault holds nothing, beside the
-// vault Chemistry holding the picture book.
+// serveEntries is the entries route over a book server whose current vault is
+// empty, plus the vault Chemistry that contains the picture book.
 func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 	t.Helper()
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})

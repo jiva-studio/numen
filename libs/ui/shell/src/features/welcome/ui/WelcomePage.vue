@@ -13,8 +13,8 @@ import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
 withDefaults(
   defineProps<{
     /**
-     * What is placed under the mark. Both windows wear the same glyph, and this is
-     * what tells a person which of them they opened.
+     * Text under the mark. Both windows use the same glyph, and this text
+     * identifies which window the user opened.
      */
     name?: string
     /** The ways in, above the list. A window offering none draws none. */
@@ -39,7 +39,7 @@ defineEmits<{
 }>()
 
 defineSlots<{
-  /** What stands where the list would be while there is no list yet. */
+  /** Content shown in place of the list while the list is not yet available. */
   waiting?(): unknown
   /** How a vault on the list is drawn. */
   vault?(props: { vault: VaultRow }): unknown
@@ -85,7 +85,7 @@ defineSlots<{
   font-size: var(--numen-font-size);
 }
 
-/* What build this is, in the far corner, where the column never reaches. */
+/* The build version, in the far corner outside the column. */
 .welcome-page__version {
   position: absolute;
   inset-block-end: var(--numen-inset);

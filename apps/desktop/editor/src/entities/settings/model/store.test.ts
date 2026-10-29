@@ -1,9 +1,9 @@
 /**
- * The settings read out of the file whole, asked without a screen.
+ * The settings read from the file as a whole, tested without a screen.
  *
- * The negatives are the ones worth having: a vault that cannot be asked leaves
- * the window holding nothing, and a write that failed is said and the
- * window goes back to what the settings hold.
+ * The negative cases matter most: a vault that cannot be read leaves the window
+ * with no settings, and a failed write is reported and the window reverts to
+ * the stored settings.
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Model } from '../lib/configuration'
@@ -26,7 +26,7 @@ const MODELS: readonly Model[] = [
   },
 ]
 
-/** A vault holding those settings, and refusing what it is told to refuse. */
+/** A vault holding those settings, and rejecting the writes it is configured to reject. */
 const createStore = (text: string, refuses: string | null = null) => {
   const request: unknown[] = []
   const core: SettingsStoreDeps = {
@@ -215,7 +215,7 @@ describe('a setting written', () => {
   })
 })
 
-/** A promise settled by hand. */
+/** A promise that the test resolves manually. */
 const defer = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((isDone) => {

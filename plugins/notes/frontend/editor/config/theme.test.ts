@@ -1,9 +1,9 @@
 /**
- * The stylesheet the editor is painted from.
+ * The stylesheet the editor is rendered from.
  *
- * A rule the browser cannot read is dropped where nobody is told, and so is a
- * colour named after a token that is not there. Both are read back here off the
- * sheet the theme actually lays down.
+ * A rule the browser cannot parse is dropped silently, and so is a colour that
+ * references a missing token. Both are checked here against the sheet the theme
+ * actually emits.
  */
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -50,8 +50,7 @@ describe('the editor’s stylesheet', () => {
     expect(getSheet()).not.toBe('')
   })
 
-  // A selector the browser cannot read takes its whole rule with it, and says
-  // nothing about it.
+  // A selector the browser cannot parse drops its whole rule silently.
   it('is written in selectors a document can be requested for', () => {
     const content = selectors(getSheet())
     expect(content.length).toBeGreaterThan(20)

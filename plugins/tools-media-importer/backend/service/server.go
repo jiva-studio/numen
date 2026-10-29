@@ -22,7 +22,7 @@ import (
 // EnvMockML names the variable that has the plugin reach video sites through the mock downloader.
 const EnvMockML = "NUMEN_MOCK_ML"
 
-// openHostAt reaches the host at the endpoint.
+// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	return link.Host{
 		Vault: host.NewClient(endpoint),
@@ -67,7 +67,7 @@ func (f *fetchers) getSettings() link.Settings {
 	return f.settings
 }
 
-// updateConfig takes the settings the host hands over. A size that is no number is left as it was.
+// updateConfig applies the settings the host supplies. A size that is not a number is left unchanged.
 func (f *fetchers) updateConfig(values map[string]string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

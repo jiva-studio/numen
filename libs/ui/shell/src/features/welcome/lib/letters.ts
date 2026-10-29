@@ -1,8 +1,8 @@
 /**
- * The letters the vaults on the welcome screen are opened by.
+ * The letters that open the vaults on the welcome screen.
  *
- * The screen draws the letter on the row and the window presses it, and both
- * windows take theirs from here, so a letter a person sees is a letter that
+ * The screen shows the letter on the row and the window handles the keypress.
+ * Both windows take their letters from here, so a displayed letter always
  * works.
  */
 
@@ -15,9 +15,8 @@ import { isTyping } from '@numen/ui'
 export const VAULT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 /**
- * The letter one vault of the list is picked by, and nothing past the alphabet:
- * an installation of thirty vaults is one where the last four are opened with
- * the hand.
+ * The letter that selects one vault of the list; positions past the alphabet
+ * have none. With thirty vaults, the last four are opened with the pointer.
  */
 export const vaultLetter = (pos: number): string => VAULT_LETTERS[pos] ?? ''
 
@@ -37,4 +36,3 @@ export function getVaultForKey(press: KeyboardEvent, vaults: number): number | n
   const index = VAULT_LETTERS.indexOf(press.key.toUpperCase())
   return index >= 0 && index < vaults ? index : null
 }
-

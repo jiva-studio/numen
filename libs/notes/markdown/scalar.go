@@ -10,15 +10,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// scalarSpan is the bytes one scalar occupies, so that changing a value leaves
-// everything else on its line — a trailing comment, the spacing, the other keys
-// of the entry — exactly where it was.
+// scalarSpan returns the byte range one scalar occupies, so that changing a value
+// leaves the rest of its line unchanged: a trailing comment, the spacing, and the
+// other keys of the entry.
 //
-// The span covers the whole token, quotes and all.
+// The span covers the whole token, including quotes.
 //
-// A scalar written over lines of its own — with `|`, with `>`, or a quoted one
-// carried across a line break — is not one token on one line. Its link stays as
-// it was written and shows as a problem.
+// A scalar spanning several lines, with `|`, with `>`, or a quoted scalar
+// continued across a line break, is not one token on one line. Its link is left
+// unchanged and reported as a problem.
 func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 	start, ok = d.readScalarStart(node)
 	if !ok {
@@ -109,8 +109,8 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	return 0, false
 }
 
-// scalar is a value as YAML has to spell it, so that a name carrying `[`, `#`,
-// `&` or a word YAML reads as a number goes into a file as the text it is.
+// scalar returns a value spelled as YAML requires, so that a name containing `[`, `#`,
+// `&` or a word YAML parses as a number is written to the file as text.
 func scalar(value string) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
@@ -124,9 +124,9 @@ func scalar(value string) (string, error) {
 	return strings.TrimRight(out.String(), "\n"), nil
 }
 
-// scalarLike is a value spelled the way the value it replaces was spelled. How
-// somebody quotes their own frontmatter is theirs. A style the value cannot be
-// written in is written as YAML has to spell it.
+// scalarLike returns a value spelled in the style of the value it replaces. The quoting
+// style of the user's frontmatter is preserved. A style the value cannot be
+// written in falls back to the YAML spelling.
 func scalarLike(value string, style yaml.Style) (string, error) {
 	if style == 0 {
 		return scalar(value)

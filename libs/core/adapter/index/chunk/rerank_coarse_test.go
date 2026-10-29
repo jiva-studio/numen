@@ -23,10 +23,10 @@ func preciseBytes(v []float32) []byte {
 	return out
 }
 
-// seedCoarseRanks stores ten small chunks whose bit vectors stand at distance
+// seedCoarseRanks stores ten small chunks whose bit vectors are at distance
 // 1 to 10 from the query, nearest first. Only the chunk at rank `exact` has a
 // full-precision vector equal to the query's; every other one is unrelated to
-// it. It returns the vault, the queries, and where the exact chunk stands
+// it. It returns the vault, the queries, and the position of the exact chunk
 // inside its large chunk.
 func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, []float32, int) {
 	t.Helper()

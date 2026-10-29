@@ -5,8 +5,8 @@ import (
 	"unicode/utf8"
 )
 
-// The offsets are into the text as it was given, so what a caller replaces is
-// the bytes the person wrote.
+// The offsets index the text as given, so a replacement by the caller affects
+// the bytes the user wrote.
 func TestASpanIsFoundWhereItExists(t *testing.T) {
 	text := "the aggressor is named"
 	spans, plainly := FindRanges(text, "aggressor")
@@ -43,8 +43,8 @@ func TestPlacesFoundDoNotOverlap(t *testing.T) {
 	}
 }
 
-// Punctuation a person's editor writes and a program rarely reproduces is read
-// as the mark it stands for, and the reading is reported.
+// Punctuation produced by user editors and rarely by programs is matched as the
+// mark it represents, and the normalization is reported.
 func TestPunctuationIsReadAsTheMarkItExistsFor(t *testing.T) {
 	for name, c := range map[string]struct{ text, wanted string }{
 		"angled double quotes": {"он сказал «да» сразу", "он сказал \"да\" сразу"},
@@ -72,8 +72,8 @@ func TestPunctuationIsReadAsTheMarkItExistsFor(t *testing.T) {
 	}
 }
 
-// The offsets are into the text currently, whichever reading found them, so
-// a replacement leaves the bytes around it as the person wrote them.
+// The offsets index the current text regardless of which matching pass found
+// them, so a replacement leaves the surrounding bytes as the user wrote them.
 func TestOffsetsAreIntoTheTextAsItExists(t *testing.T) {
 	text := "before «дa» after"
 	spans, _ := FindRanges(text, "\"дa\"")
@@ -107,7 +107,7 @@ func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
 	}
 }
 
-// A span that stands exactly is never reported where it only nearly stands.
+// An exact span takes precedence: an approximate span is never reported in its place.
 func TestFindRanges_ExactMatchPrecedesApproximate(t *testing.T) {
 	text := "he said \"yes\" and he said “yes”"
 	spans, plainly := FindRanges(text, "\"yes\"")
@@ -129,7 +129,7 @@ func TestAnEmptySpanFindsNothing(t *testing.T) {
 	}
 }
 
-// A span nobody wrote is not found, however it is read.
+// A span that does not appear in the text is not found by any matching mode.
 func TestASpanThatIsNotThereIsNotFound(t *testing.T) {
 	if spans, _ := FindRanges("the aggressor is named", "the poisoner"); spans != nil {
 		t.Errorf("found %d places", len(spans))

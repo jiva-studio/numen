@@ -6,9 +6,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// saveTypedNoteWithHeadings puts one note in, of the type its file says it is,
-// divided by the headings given. The body is the headings written out, so a
-// note that is cut has words to cut.
+// saveTypedNoteWithHeadings stores one note, of the type its file declares,
+// divided by the given headings. The body is the headings written out, so a
+// note that is cut has text to cut.
 func saveTypedNoteWithHeadings(
 	t *testing.T,
 	db *DB,

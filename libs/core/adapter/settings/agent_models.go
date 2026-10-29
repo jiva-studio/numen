@@ -14,8 +14,8 @@ const (
 	groupConfigured = "Named in the settings"
 )
 
-// AgentModels are the rows the agent section offers a person: the programs the setting can name, and
-// file under the key given.
+// AgentModels returns the rows of the agent section: the programs the setting
+// can name, each filed under the given key.
 func AgentModels(targetPath string, target Agent, programs []agentport.AgentProgram) []settingsport.Model {
 	useAt := []string{targetPath, "use"}
 	models := getProgramModels(useAt, programs)

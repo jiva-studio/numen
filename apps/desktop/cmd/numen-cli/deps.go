@@ -22,12 +22,12 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	return cfg
 }
 
-// makeDeps is what the terminal works through, built for the places one run was
-// pointed at. An installation is assembled by the application, so the openers
-// are made here and the terminal is handed them.
+// makeDeps builds what the terminal works through, for the places one run was
+// pointed at. The application assembles an installation, so the openers are
+// created here and passed to the terminal.
 //
-// Each one opens when its command asks and not before: a person listing vaults
-// waits for no index, and one asking about links starts no plugin.
+// Each opens when its command requests it, not before: listing vaults waits for
+// no index, and a links query starts no plugin.
 func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	return func(where cli.Locations) cli.Deps {
 		cfg = configureLocations(cfg, where)
@@ -47,8 +47,8 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	}
 }
 
-// createVaults is the registry of vaults with the readers over them. The index
-// behind the rows is opened only when the rows are asked for.
+// createVaults creates the registry of vaults with the readers over them. The
+// index behind the rows is opened only when the rows are requested.
 func createVaults(cfg container.Config) (cli.Vaults, error) {
 	registry, err := cfg.Registry()
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 // ErrOutside is a path that does not stay in the vault.
 var ErrOutside = vaultport.ErrOutside
 
-// IsNoNote reports whether an error says there is no note at the path.
+// IsNoNote reports whether an error means there is no note at the path.
 func IsNoNote(err error) bool { return vaultport.IsNoNote(err) }
 
 // GetMediaType finds the content type a file of the vault is served and played as, by its name.

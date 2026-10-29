@@ -9,8 +9,8 @@
 // text[Start : Start+Length]. A chunk is bounded in words, so a file that puts
 // a whole book on one line is cut like any other.
 //
-// Chunks are cut inside one division — the text from one named part to the next
-// — and never run across one. Sizes.Large set to Whole asks for a single large
+// Chunks are cut inside one division, the text from one named part to the next,
+// and never run across one. Sizes.Large set to Whole requests a single large
 // chunk over the whole text, and a text that names no parts is one division.
 //
 // Sizes.Limit is characters, and the caller sets it under the input limit of the
@@ -70,8 +70,8 @@ type Sizes struct {
 	Small int
 
 	// LargeOverlap and SmallOverlap are how many words two consecutive chunks
-	// of a size share. Each is at most one word short of its size, so that
-	// tiling advances.
+	// of a size share. Each is at most one word short of its size, which
+	// guarantees that tiling advances.
 	LargeOverlap int
 	SmallOverlap int
 
@@ -81,7 +81,7 @@ type Sizes struct {
 }
 
 // Legibility is what makes a chunk legible enough to index. A zero field takes
-// its default, and a negative one asks for no threshold.
+// its default, and a negative one disables the threshold.
 type Legibility struct {
 	// Alphabetic is the least fraction of a chunk's characters that must be
 	// letters.
@@ -110,9 +110,9 @@ func (c Chunk) ExtractText(text string) string { return text[c.Start : c.Start+c
 // chunk a small one belongs to.
 func (c Chunk) computeMiddle() int { return c.Start + c.Length/2 }
 
-// Chunks cuts the text and gives every chunk as the index holds it. The build
-// function makes one chunk from a cut one, and is told whether it is a large
-// chunk or a small one inside it.
+// Chunks cuts the text and returns every chunk as the index holds it. The
+// build function creates one chunk from a cut, and is told whether it is a
+// large chunk or a small one inside it.
 func Chunks(
 	text string, parts []domain.PartStart, sizes Sizes, reads Legibility,
 	build func(c Chunk, isLarge bool) domain.Chunk,
@@ -151,7 +151,7 @@ type division struct {
 }
 
 // divideText divides the text at the parts it names. The parts are copied
-// before they are ordered, so that Cut leaves its arguments as it found them.
+// before they are ordered, so Cut leaves its arguments unmodified.
 // Where two parts share an offset, the last of them names the text after it.
 func divideText(text string, parts []domain.PartStart) []division {
 	named := make([]domain.PartStart, 0, len(parts))
@@ -240,7 +240,7 @@ func createSmallChunks(text string, words []word, location string, s Sizes, l Le
 // enclose puts each small chunk under a large chunk holding it.
 //
 // The one preferred holds the small chunk whole. A large chunk holding only
-// part of it is what a person is shown, and the words after the part it holds
+// part of it is what a result displays, and the words after the part it holds
 // are the rest of the sentence the hit is in.
 //
 // Large chunks overlap, so where none holds the whole of it the middle decides,
@@ -375,7 +375,7 @@ func (l Legibility) resolve() Legibility {
 }
 
 // clampOverlap keeps an overlap between none and one word short of the size it belongs
-// to, so that tiling advances by at least one word.
+// to, which guarantees that tiling advances by at least one word.
 func clampOverlap(overlap, size int) int {
 	if overlap < 0 {
 		return 0

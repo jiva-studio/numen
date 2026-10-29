@@ -1,9 +1,9 @@
 // Package operation holds what one operation learned about an address for as
 // long as that operation runs.
 //
-// An operation begins at the use case that asks for an address more than once,
-// and ends when that use case returns. Whatever was remembered is released
-// then, and no later operation sees it.
+// An operation begins at the use case that requests an address more than once,
+// and ends when that use case returns. The stored state is released then, and no
+// later operation sees it.
 package operation
 
 import (
@@ -78,7 +78,7 @@ func Remember(ctx context.Context, key, value string, release func()) {
 	}
 }
 
-// IsActive says whether the context runs under an operation.
+// IsActive reports whether the context belongs to an operation.
 func IsActive(ctx context.Context) bool {
 	_, has := ctx.Value(scopeKey{}).(*scope)
 	return has

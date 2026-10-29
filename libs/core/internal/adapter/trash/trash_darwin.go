@@ -13,8 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
-// unsupported is the Cocoa error for a volume that keeps nothing a person
-// deleted.
+// unsupported is the Cocoa error code for a volume that has no trash.
 const unsupported = 3328
 
 // The selectors this file sends, registered once. Registering one takes the
@@ -39,8 +38,8 @@ var foundation = sync.OnceValue(func() error {
 	return err
 })
 
-// moveToTrash puts the folder where the Finder shows what was deleted, recording where
-// it came from so that Put Back works.
+// moveToTrash moves the folder to the trash shown by the Finder, recording its
+// origin so that Put Back works.
 func moveToTrash(path string) error {
 	if err := foundation(); err != nil {
 		return err
@@ -68,7 +67,7 @@ func moveToTrash(path string) error {
 	return fmt.Errorf("%s: %s", path, getFailureMessage(failure))
 }
 
-// getFailureMessage is what Cocoa would tell a person about the failure.
+// getFailureMessage returns the description Cocoa gives for the failure.
 func getFailureMessage(failure objc.ID) string {
 	if failure == 0 {
 		return "the trash would not take it"

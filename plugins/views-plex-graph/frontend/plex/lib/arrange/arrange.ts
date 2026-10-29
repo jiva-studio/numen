@@ -2,8 +2,8 @@
  * Turn a neighbourhood into a frame: canPlace, place, route.
  *
  * Pure — the same inputs give the same numbers on any machine. Nothing here
- * reads the clock, measures text or touches the DOM: how wide a title is
- * arrives as a number, from whoever is drawing it.
+ * reads the clock, measures text or touches the DOM: the width of a title is
+ * supplied as a number by the renderer.
  */
 import { getExtent, type PlexFrame } from '../frame'
 import { assertNeighbourhood, type PlexNeighbourhood } from '../neighbourhood'
@@ -38,9 +38,8 @@ export interface ArrangeInput {
    */
   readonly measureLabel?: ((label: string) => number) | undefined
   /**
-   * How deep a label's line stands, across the line it is set on, measured
-   * where the plex is drawn. A label is set in a type of its own, and one
-   * given no depth takes up none.
+   * The label's extent perpendicular to its line, measured where the plex is
+   * drawn. A label uses its own font, and one with no depth takes up none.
    */
   readonly labelDepth?: number | undefined
 }
@@ -72,9 +71,9 @@ export function arrangePlex(
 
   const { nodesByRelation, overflow } = canPlace(neighbourhood.nodes, limits)
 
-  // How much is admitted is settled at that packing, and the gaps then open
-  // into the room that is left. The opening is measured against the
-  // arrangement itself, so a placement of any shape keeps the window.
+  // Admission is settled at that packing, and the gaps then expand into the
+  // remaining space. The expansion is measured against the arrangement itself, so
+  // a placement of any shape fits the window.
   const lay = (spacing: Spacing) =>
     placement.place(nodesByRelation, focus, {
       options: { ...resolved, ...spacing },
@@ -99,9 +98,9 @@ export function arrangePlex(
 }
 
 /**
- * How wide each box is drawn: what the measurer asks for, held between the
- * minimum and the widest the node's relation allows. The focus is measured as
- * every other node is, against its own width.
+ * Width at which each box is drawn: the measurer's result, clamped between the
+ * minimum and the maximum the node's relation allows. The focus is measured like
+ * every other node, against its own width.
  */
 function createWidthLookup(
   options: PlexOptions,
@@ -135,8 +134,8 @@ function countRelations(nodes: readonly PlexNode[]): Record<PlexRelation, number
 }
 
 /**
- * How much of each relation the picture holds. Settled before a strategy is
- * called, so the overflow count means the same thing whichever one draws it.
+ * How many nodes of each relation fit in the drawing. Determined before a
+ * strategy runs, so the overflow count means the same for every strategy.
  */
 function canPlace(
   nodes: readonly PlexNode[],

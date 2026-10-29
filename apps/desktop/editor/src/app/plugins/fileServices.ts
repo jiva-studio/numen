@@ -38,7 +38,7 @@ export interface FileCreatorRegistry {
   getCreator(kind: string): FileCreatorFn | undefined
 }
 
-/** What making a file asks of the window. */
+/** The window operations needed to create a file. */
 export interface FileMakersDeps {
   readonly tabOpeners: FileOpeners
   readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
@@ -46,7 +46,7 @@ export interface FileMakersDeps {
   readonly creators?: Record<string, FileCreatorFn>
 }
 
-/** The files the window makes across registered kinds, each put in front of the person. */
+/** The files the window creates across registered kinds, each opened in a tab. */
 export function createFileMakers({
   tabOpeners,
   windowTabs,

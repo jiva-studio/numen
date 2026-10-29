@@ -122,9 +122,9 @@ func TestSeveralNotesByOneNameAreAmbiguousAndStillResolve(t *testing.T) {
 	}
 }
 
-// A dot in a name is part of the name, and the whole of it is what the note is
-// filed under. Both directions are asked here: the link and the backlink are
-// answered through the same stored name.
+// A dot in a name is part of the name, and the whole name is what the note is
+// stored under. Both directions are checked: the link and the backlink resolve
+// through the same stored name.
 func TestANameCarryingDotsResolvesWholeAndIsABacklink(t *testing.T) {
 	t.Parallel()
 	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
@@ -234,8 +234,8 @@ func TestANameNeverPreservesItsVault(t *testing.T) {
 
 func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 	t.Parallel()
-	// A link written by identifier finds its note wherever that note is, and
-	// says which vault that turned out to be.
+	// A link written by identifier finds its note wherever the note is, and
+	// reports which vault that is.
 	const id = "01M02DTC80PABQQW3XS3XWDVHW"
 	db, first := newIndexedVault(t, map[string]string{
 		"source.md": "---\nlinks:\n  - to: \"note://" + id + "\"\n    role: jump\n---\n\nbody\n",
@@ -332,9 +332,9 @@ func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
 
 func TestBacklinksNeverCrossVaults(t *testing.T) {
 	t.Parallel()
-	// One database for every vault makes a query that forgets its vault
-	// invisible by construction. Asked here of the direction that has to look
-	// at every link in the vault.
+	// One database for every vault makes a query that omits its vault condition
+	// invisible by construction. This case checks the direction that has to examine
+	// every link in the vault.
 	db, first := newIndexedVault(t, map[string]string{
 		"target.md": "# Target\n",
 		"source.md": "Points at [[target]].\n",

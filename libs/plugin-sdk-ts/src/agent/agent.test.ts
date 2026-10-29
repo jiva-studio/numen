@@ -21,7 +21,7 @@ const call = (place?: { path: string; range: { start: number; end: number } }): 
     },
   })
 
-/** The service, saying what a test told it to and keeping what it was asked. */
+/** The service, replaying the configured responses and recording the requests it receives. */
 const service = (says: AskAgentResponse[]) => {
   const requests: { request: unknown; signal: AbortSignal }[] = []
   const finished: string[] = []
@@ -38,7 +38,7 @@ const service = (says: AskAgentResponse[]) => {
   return { agent, requests, finished }
 }
 
-/** Everything the port yields for what the service said. */
+/** Everything the port yields for the service's responses. */
 const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
   const { agent } = service(says)
   const read: AgentStep[] = []

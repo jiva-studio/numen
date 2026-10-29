@@ -1,5 +1,5 @@
 /**
- * The behaviour a plex has when nobody says otherwise.
+ * The default behaviour of a plex when no option is set.
  */
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_BEHAVIOUR } from './behaviour'

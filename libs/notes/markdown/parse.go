@@ -94,7 +94,7 @@ func parseNoteType(fm map[string]any) (domain.NoteType, string) {
 
 // splitFrontmatter returns the YAML block and the body. The opening delimiter
 // must be the very first line: a `---` further down is a horizontal rule, and
-// treating it as frontmatter would swallow the note.
+// parsing it as frontmatter would consume the note.
 func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	// A byte order mark is stripped for the comparison and kept in the body,
 	// because the body is what gets indexed and searched, not what gets parsed.
@@ -141,17 +141,17 @@ func isFrontmatterDelimiter(line []byte) bool {
 	return len(line) == 3 && line[0] == '-' && line[1] == '-' && line[2] == '-'
 }
 
-// Body is the prose below the frontmatter, as the bytes it stands as in the
-// file. It is what a note's chunks are offsets into, so whatever cuts a note
-// and whatever reads a passage back out of one ask for it the same way.
+// Body is the prose below the frontmatter, as the bytes stored in the
+// file. A note's chunks are offsets into it, so the chunker and every reader of a
+// passage must obtain it the same way.
 func Body(raw []byte) string {
 	_, body, _ := splitFrontmatter(raw)
 	return string(body)
 }
 
-// headings walks the body a line at a time, so each heading carries the byte its
-// line begins at as well as the line's number. The offset is counted over the
-// bytes as they are, and a carriage return is dropped from the text alone.
+// headings scans the body line by line, so each heading records the byte offset
+// its line begins at as well as the line number. The offset is counted over the
+// raw bytes, and a carriage return is dropped from the text only.
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	var f Fence
@@ -211,8 +211,9 @@ func title(n domain.Note, notePath string) string {
 	return strings.TrimSuffix(path.Base(notePath), path.Ext(notePath))
 }
 
-// Fence is where a walk down the body stands: within a code fence, or outside
-// one. A block opened with backticks is closed by backticks and one opened with
+// Fence tracks the position of a scan of the body: inside a code fence or
+// outside one. A block opened with backticks is closed by backticks and one opened
+// with tildes is closed by tildes.
 type Fence struct{ mark byte }
 
 // IsCrossedBy follows one line, and reports whether that line opens or closes the
@@ -263,5 +264,5 @@ func (f *Fence) IsCrossedByBytes(line []byte) bool {
 	return true
 }
 
-// IsInside reports whether the walk stands within a fence.
+// IsInside reports whether the scan is inside a fence.
 func (f *Fence) IsInside() bool { return f.mark != 0 }

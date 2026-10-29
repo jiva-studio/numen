@@ -2,8 +2,8 @@
  * The lists the appearance commands offer: the themes on their two origins, the
  * three modes, and the sizes the window can be drawn at.
  *
- * Each list is the state currently, read again, so a row says only what is
- * true of it alone.
+ * Each list is derived from the current state on every read, so each row
+ * describes only itself.
  */
 import { percent } from '@numen/ui'
 import type { StepGroup, StepRow } from '@/shared/steps'
@@ -14,8 +14,8 @@ import { INTERFACE_SCALE, TEXT_SCALE, getModeId, getSizeId, its } from './appear
 import type { ScaleKind } from './appearanceValues'
 
 /**
- * The rows one to a title. A size the list already holds is not held twice, and
- * the first of a pair is the one that stands.
+ * The rows with one row per title. A size already in the list is not repeated,
+ * and the first of a duplicate pair is kept.
  */
 const once = (rows: readonly StepRow[]): readonly StepRow[] => {
   const seenTitles = new Set<string>()
@@ -53,8 +53,8 @@ const getThemesOfOrigin = (
 }
 
 /**
- * The themes, in the two groups they come off. The group the theme worn came
- * off stands first, so opening the list relies on what the window wears.
+ * The themes in their two origin groups. The group containing the active theme
+ * is first, so the list opens on the active theme.
  */
 export const getThemeGroups = (
   themes: readonly Theme[],
@@ -76,7 +76,7 @@ export const getThemeGroups = (
   return aged && !aged.isBuiltIn ? [own, shipping] : [shipping, own]
 }
 
-/** What is said about a mode: why it cannot be chosen, or that it is the one. */
+/** The detail text of a mode: why it cannot be chosen, or that it is the current one. */
 const getModeDetail = (
   one: Mode,
   options: { mode: Mode; isPinned: boolean },
@@ -87,8 +87,8 @@ const getModeDetail = (
 }
 
 /**
- * The three modes. Each is drawn as not to be chosen while the theme worn pins
- * light and dark: it is there, it says why, and the keyboard passes over it.
+ * The three modes. Each is marked unselectable while the active theme pins
+ * light or dark: the row is shown, states why, and keyboard navigation skips it.
  */
 export const getModeGroups = (
   mode: Mode,
@@ -115,13 +115,11 @@ export interface SizeGroupContext {
 }
 
 /**
- * The sizes one of the two commands offers, in one group of its own: every step
- * the range reaches, the size the window is drawn at, and the number a person
- * typed. Each appears once, in order, and the range is what a size has to be
- * inside to stand at all.
+ * The sizes one of the two commands offers, in one group: every step within
+ * the range, the current size, and the number the user typed. Each appears
+ * once, in order, and a size must lie inside the range to be listed.
  *
- * The one row that says anything is the size the window is drawn at, which is
- * where a person is standing before they walk.
+ * Only the current size row carries detail text, marking the starting position.
  */
 export const getSizeGroups = (
   command: string,

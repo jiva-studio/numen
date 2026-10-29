@@ -1,6 +1,7 @@
-// Package service is the backend of the proofreading plugin: it takes a text version of a file,
-// asks a model to put its lines right, keeps the corrected text in the plugin's own folder of the
-// vault's store, and reports it to the host as a version made from the one it read.
+// Package service is the backend of the proofreading plugin: it reads a text
+// version of a file, asks a model to correct its lines, stores the corrected
+// text in the plugin's folder of the vault's store, and reports it to the host
+// as a version derived from the one it read.
 package service
 
 import (
@@ -41,18 +42,18 @@ const (
 // purpose is what every question to the model is for. It routes nothing.
 const purpose = "proofreading"
 
-// completer asks the host for the answer to a question.
+// completer sends a question to the host and returns the answer.
 type completer func(ctx context.Context, question *ai.Question) (string, error)
 
-// Host is what the plugin works through the host: the plugin's folder the corrected texts are kept
-// in, the text versions it reads and reports, and the queue it runs in.
+// Host provides the plugin's host services: the store folder for corrected
+// texts, the text versions it reads and reports, and the queue it runs in.
 type Host struct {
 	Store host.Store
 	Texts host.Texts
 	Queue host.Queue
 }
 
-// openHostAt reaches the host at the endpoint.
+// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) Host {
 	return Host{
 		Store: host.NewStoreClient(endpoint),
@@ -234,8 +235,9 @@ func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prom
 	return parsed.Choices[0].Message.Content, nil
 }
 
-// Mount registers the text provider and the proofread command on s, working the host the
-// environment names. The model is the mock proofreader where the environment asks for mock models.
+// Mount registers the text provider and the proofread command on s, using the
+// host that the environment names. The model is the mock proofreader when the
+// environment enables mock models.
 func Mount(s *server.Server) error {
 	endpoint, err := hostcall.FromEnv()
 	if err != nil {
@@ -248,8 +250,9 @@ func Mount(s *server.Server) error {
 	return mount(s, openHostAt(endpoint), complete, nil)
 }
 
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given. It asks the host those name.
+// NewHandler returns the handler of the plugin's backend for a host that links
+// the plugin in, configured from the variables given to a launched plugin
+// process. It uses the host that those variables name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	endpoint, err := hostcall.FromVars(vars)
 	if err != nil {

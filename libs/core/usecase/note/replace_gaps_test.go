@@ -129,8 +129,8 @@ func TestReplace_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	}
 }
 
-// Whoever is drawing the note is told the stretch in the units a client counts,
-// and told when the change is over.
+// The observer drawing the note is told the span in the units a client counts,
+// and told when the change ends.
 func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
@@ -156,7 +156,7 @@ func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	}
 }
 
-// note, and what stands there from that point.
+// A missing span reports where a copy stopped agreeing with the note, and the text at that point.
 func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 	t.Parallel()
 	for name, tc := range map[string]struct {

@@ -18,8 +18,7 @@ func TestWhatIsBeingCompletedIsWhatIsListed(t *testing.T) {
 	if len(list) != 2 {
 		t.Fatalf("listed %d, want 2", len(list))
 	}
-	// The order they were first seen in, so a list does not rearrange itself
-	// under somebody reading it.
+	// The order they were first seen in, so a list is stable while it is being read.
 	if list[0].ID != "recognition" || list[1].ID != "indexing" {
 		t.Errorf("listed %s then %s", list[0].ID, list[1].ID)
 	}
@@ -75,8 +74,8 @@ func TestWatchingReturnsWhatIsBeingCompletedAndThenWhatChanges(t *testing.T) {
 	defer stop()
 	watching := tasks.Watch(ctx)
 
-	// What is already being done, before anything changes: a window that opened
-	// while work was running has to be told about it.
+	// What is already running, before anything changes: a window that opened while
+	// work was running has to be notified of it.
 	if list := next(t, watching); len(list) != 1 {
 		t.Fatalf("first said %+v", list)
 	}
@@ -130,8 +129,8 @@ func TestWatchingEndsWithItsContext(t *testing.T) {
 
 func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 	// Several pieces of work report at once, which is what the list is for. Each
-	// of them only ever gets further on, so a listener told that one has got less
-	// far than it already had has been handed an older list than the one before.
+	// only ever advances, so a listener notified that one has progressed less than
+	// before has received an older list than the previous one.
 	tasks := NewTasks()
 	ctx, stop := context.WithCancel(t.Context())
 	watching := tasks.Watch(ctx)
@@ -165,8 +164,8 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 	}
 	reporting.Wait()
 
-	// The stream ends with its context after the last list is in it, so what
-	// comes out of it last is what a person is left looking at.
+	// The stream ends with its context after the last list is in it, so the last
+	// item received is the final state the user sees.
 	executing := tasks.List()
 	stop()
 	if last := <-ended; !slices.Equal(last, executing) {
@@ -185,7 +184,7 @@ func next(t *testing.T, watching <-chan []Task) []Task {
 	return nil
 }
 
-// quiet fails when a listener has been told of anything.
+// quiet fails when a listener has received anything.
 func quiet(t *testing.T, watching <-chan []Task, why string) {
 	t.Helper()
 	select {

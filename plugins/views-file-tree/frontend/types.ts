@@ -4,28 +4,28 @@
 import type { Component, Ref } from 'vue'
 import type { DroppedData, MenuEntry, PathMenuRow, PathRename, VaultEntry } from '@numen/plugin-sdk'
 
-/** One file or folder of the vault, as a row of the tree stands for it. */
+/** One file or folder of the vault, as represented by a row of the tree. */
 export type Entry = VaultEntry
 
 /** What the vault holds at a path. */
 
-/** Everything a files tab asks of the file storage/vault. */
+/** What a files tab requests from the file storage/vault. */
 export interface Folders {
   /** What one folder holds, in the order to draw it. The root is the empty path. */
   list(folder: string): Promise<readonly Entry[]>
 }
 
 /**
- * One line of the tree: what it stands for, and the lines drawn under it.
+ * One row of the tree: its entry and the child rows below it.
  */
 export interface ListingRow {
   readonly entry: Entry
   readonly rows: readonly ListingRow[]
 }
 
-/** Where the menu stands, and what it was asked for on. */
+/** Where the menu opens, and the row it was opened on. */
 export interface MenuRequest {
-  /** The row it was asked for on, or null when asked off every row. */
+  /** The row the menu was opened on, or null when opened outside every row. */
   readonly path: string | null
   readonly at: { x: number; y: number }
 }
@@ -39,9 +39,9 @@ export interface FileCommandTarget {
   readonly isFolder: boolean
 }
 
-/** What a files tab asks of the window it is drawn in. */
+/** What a files tab requests from the window that hosts it. */
 export interface FilesTabDeps {
-  /** The file a row stands for, put in front of the person. */
+  /** Opens the file a row represents. */
   openEntry(entry: Entry): void
   onSelectPath?(path: string, state: FilesTabState): void
   runCommand(id: string, paths: readonly string[], target: FileCommandTarget): void
@@ -107,7 +107,7 @@ export interface FilesTabState {
   dismissMenu(): void
   chooseMenuItem(id: string): void
   getNameOf(path: string): string
-  /** What the menu offers: on the row it was asked for on, or off every row. */
+  /** The menu items: for the row the menu was opened on, or for no row. */
   getMenuItems(path: string | null): readonly MenuEntry[]
   getCommandIcon(id: string): Component | null
   getEntryIcon(entry: Entry | null, isOpen: boolean): Component

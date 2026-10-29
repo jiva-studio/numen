@@ -28,7 +28,7 @@ import (
 // The window renames a note and takes one out of the vault. What the vault
 // answers is what the window has to be able to say about either.
 
-// isGone says whether a file is off the disk.
+// isGone reports whether a file is absent from disk.
 func isGone(t *testing.T, root, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(root, filepath.FromSlash(path)))
@@ -80,8 +80,8 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 }
 
 // TestTheWindowRenamesTheWayTheSettingsSay. The palette and the plex menu both
-// ask for a rename by title, and the file tree asks for a move. The window
-// carries the one setting to all three.
+// request a rename by title, and the file tree requests a move. The window
+// applies the one setting to all three.
 func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
 		sync note.SyncTitleAndFilename
@@ -184,8 +184,7 @@ func TestRenameNote_UsesSettingChangedSinceLaunch(t *testing.T) {
 	}
 }
 
-// The setting a person turns is written where they will read it, and every
-// other byte of the file is left as they typed it.
+// The setting is written in place; every other byte of the file is preserved.
 func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
@@ -209,8 +208,8 @@ func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	}
 }
 
-// TestRenamingLeavesALinkThatMeansAnotherNoteNow. Two notes under one name is
-// the person's to settle, and a link that resolves is not repaired.
+// TestRenamingLeavesALinkThatMeansAnotherNoteNow. Two notes under one name is a
+// conflict for the user to resolve; a link that resolves is not rewritten.
 func TestRenamingPreservesALinkThatMeansAnotherNoteNow(t *testing.T) {
 	const heat = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := openWindow(t, nil, map[string]string{
@@ -285,8 +284,8 @@ func TestRenameNote_RejectsTitleWithoutFilename(t *testing.T) {
 	}
 }
 
-// TestRenamingSaysWhatItCouldNotName. Each of these is something the person can
-// see for themselves once they are told which it is.
+// TestRenamingSaysWhatItCouldNotName. Each rename failure is reported with its
+// specific error.
 func TestRenamingReturnsWhatItCouldNotName(t *testing.T) {
 	for name, c := range map[string]struct {
 		path string
@@ -625,9 +624,8 @@ func (staleWriter) Write(
 	return domain.FileStat{}, vaultport.ErrStale
 }
 
-// TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody
-// here has read is something the person settles, the way a save and a join
-// already put it to them.
+// TestRenamingANoteWrittenElsewhereIsAQuestion. A note containing unread prose
+// from another writer is resolved by the user, as in save and join.
 func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
@@ -713,7 +711,7 @@ func onDisk(t *testing.T, root, path string) string {
 
 const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 
-// getResolved is where each address landed, by what was asked about.
+// getResolved returns where each address resolved, keyed by requested address.
 func getResolved(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
 	t.Helper()
 	delta := map[string]*v1.ResolvedAddress{}
@@ -876,8 +874,8 @@ func TestResolveAddresses_DeduplicatesAddresses(t *testing.T) {
 	}
 }
 
-// The window makes a note from the picture: a name, and the one link that puts
-// it where the person reached out from.
+// The window creates a note from the request: a name, and the one link that
+// places it relative to the originating note.
 
 func fileAt(t *testing.T, root, path string) string {
 	t.Helper()
@@ -888,9 +886,9 @@ func fileAt(t *testing.T, root, path string) string {
 	return string(raw)
 }
 
-// TestANoteIsMadeCarryingTheLinkThatRelatesIt. A note made in a relation of another
-// says so itself: the link is in the note that was made, so one write leaves it
-// joined.
+// TestANoteIsMadeCarryingTheLinkThatRelatesIt. A note created in relation to
+// another carries the link itself: the link is in the created note, so one write
+// completes the join.
 func TestANoteIsMadeCarryingTheLinkThatRelatesIt(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
@@ -922,9 +920,8 @@ func TestANoteIsMadeCarryingTheLinkThatRelatesIt(t *testing.T) {
 	}
 }
 
-// TestANoteMadeInTheChildRelationIsTheParentsChild. The relation travels as the link the
-// new note writes, so the role is the one that puts each of the two where the
-// person put them.
+// TestANoteMadeInTheChildRelationIsTheParentsChild. The relation is written as
+// the link in the new note, and the link's role places each of the two notes.
 func TestANoteMadeInTheChildRelationIsTheParentsChild(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
@@ -947,8 +944,8 @@ func TestANoteMadeInTheChildRelationIsTheParentsChild(t *testing.T) {
 	}
 }
 
-// TestCreateNote_UsesRequestedFolder. The person's arrangement of their own
-// folders is followed and never altered.
+// TestCreateNote_UsesRequestedFolder. The user's folder arrangement is followed
+// and not altered.
 func TestCreateNote_UsesRequestedFolder(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"physics/Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
@@ -972,8 +969,8 @@ func TestCreateNote_UsesRequestedFolder(t *testing.T) {
 	}
 }
 
-// TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack. This is what puts a note
-// in the picture as soon as it exists.
+// TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack. The note is indexed before
+// the response returns.
 func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
@@ -1062,7 +1059,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsSavedIn(t *testing.T) {
 	if !strings.Contains(joined, "to: Entropy") || !strings.Contains(joined, "role: child") {
 		t.Errorf("the note does not say what it was joined to:\n%s", joined)
 	}
-	// The keys the person wrote are theirs, and come out as they went in.
+	// Frontmatter keys written by the user are preserved unchanged.
 	if !strings.Contains(joined, "tags:\n  - draft\n") {
 		t.Errorf("a key the application does not own was rewritten:\n%s", joined)
 	}
@@ -1071,11 +1068,11 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsSavedIn(t *testing.T) {
 	}
 }
 
-// TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake. A name is read
-// back as an exact path from the root before it is read as a neighbour, so a
-// note made from one of two notes sharing a name carries the path it was made
-// from. Written by name, it would hang off the other one, and the picture the
-// person is looking at would not draw it at all.
+// TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake. A name resolves as
+// an exact path from the root before it resolves as a neighbour, so a note
+// created from one of two notes sharing a name carries the path of its origin.
+// Resolving by name alone attaches the note to the other one, and the graph
+// omits it.
 func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	// Both are made through the window, which is what puts them in the index:
@@ -1152,11 +1149,10 @@ func TestEveryRoleTheSchemaNamesIsSavedBelowThatWord(t *testing.T) {
 	}
 }
 
-// The window draws the vault as the folders and files a person filed it under,
-// and moves them about. What the vault answers is what the window has to be
-// able to say about either.
+// The window renders the vault as folders and files and supports moving them;
+// it reports vault state for both.
 
-// getEntries is what one folder of the vault holds, as the window asks for it.
+// getEntries returns the contents of one vault folder.
 func getEntries(t *testing.T, f *going, pos string) []*v1.Entry {
 	t.Helper()
 	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: pos}))
@@ -1175,7 +1171,7 @@ func getEntryNames(entries []*v1.Entry) []string {
 	return out
 }
 
-// folder says whether a folder is on the disk.
+// folder reports whether a folder exists on disk.
 func folder(t *testing.T, root, path string) bool {
 	t.Helper()
 	info, err := os.Stat(filepath.Join(root, filepath.FromSlash(path)))
@@ -1247,7 +1243,7 @@ func TestAListingPreservesOutWhatTheVaultPreservesAlone(t *testing.T) {
 }
 
 // TestAFolderThatIsNotThereIsNotAnEmptyOne. A listing carries no error code, so
-// the two are told apart by the answer itself.
+// a missing folder and an empty folder are distinguished by the response itself.
 func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -1262,8 +1258,8 @@ func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 	}
 }
 
-// TestEverythingTheVaultHoldsMoves. A file of any kind travels, whether
-// anything reads it or not.
+// TestEverythingTheVaultHoldsMoves. A file of any kind moves, whether or not
+// anything reads it.
 func TestEverythingTheVaultContainsMoves(t *testing.T) {
 	const picture = "\x89PNG\r\n\x1a\n"
 	f := openWindow(t, nil, map[string]string{"Diagram.png": picture})
@@ -1343,8 +1339,8 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	}
 }
 
-// TestAMoveOntoATakenNameLeavesBothWhereTheyAre. Two files arriving at one path
-// is a question only the person can answer.
+// TestAMoveOntoATakenNameLeavesBothWhereTheyAre. Two files moving to one path is
+// a conflict only the user can resolve.
 func TestAMoveOntoATakenNamePreservesBothWhereTheyAre(t *testing.T) {
 	const target = "# Entropy in physics\n"
 	f := openWindow(t, nil, map[string]string{
@@ -1373,8 +1369,8 @@ func TestAMoveOntoATakenNamePreservesBothWhereTheyAre(t *testing.T) {
 	}
 }
 
-// TestAMoveOfAPathWithNothingAtItLeavesNothingBehind, and says so as a
-// an error: the core is what names a path as missing.
+// TestAMoveOfAPathWithNothingAtItLeavesNothingBehind, and reports an error: the
+// core identifies the path as missing.
 func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -1456,7 +1452,7 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 		t.Error("the folder that was made holds something")
 	}
 
-	// Making it again is the outcome that was asked for.
+	// Creating it again is idempotent.
 	again, err := f.client.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
 		Path: "science/physics",
 	}))
@@ -1487,9 +1483,9 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 	}
 }
 
-// TestAListingSaysWhichOfFourEachNoteIs. The folder says which of its entries
-// are notes and the index says what each of those notes is, so a tree draws a
-// typed note as its type without opening it.
+// TestAListingSaysWhichOfFourEachNoteIs. The folder identifies which entries are
+// notes and the index identifies each note's type, so a tree renders a typed
+// note as its type without opening it.
 func TestAListingReturnsWhichOfFourEachNoteIs(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":  "# Entropy\n",
@@ -1537,8 +1533,8 @@ func TestMorePathsThanActiveAnswersAtOnceAreRefused(t *testing.T) {
 	}
 }
 
-// getKindsByPath is what the vault says it holds at each of those paths, by
-// path.
+// getKindsByPath returns the kind the vault holds at each of those paths, keyed
+// by path.
 func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.FileKind {
 	t.Helper()
 	answer, err := f.client.ListFileKinds(t.Context(),
@@ -1553,9 +1549,8 @@ func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.File
 	return out
 }
 
-// TestAPathSaysWhatStandsThere. A window holding a path and nothing else opens
-// what stands there in the editor made for it, and this is the one question
-// that says which that is.
+// TestAPathSaysWhatStandsThere. A window holding only a path opens it in the
+// matching editor, and this query determines which editor that is.
 func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":   "# Entropy\n",
@@ -1595,8 +1590,8 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 		}
 	}
 
-	// A path with nothing at it is not a file the vault leaves alone, and the
-	// two are told apart by one being answered about and the other not.
+	// A path with nothing at it differs from a file the vault ignores: the query
+	// reports on the first and not on the second.
 	if _, replyVal := target["Gone.md"]; replyVal {
 		t.Error("a path with nothing at it was answered about anyway")
 	}
@@ -1608,8 +1603,7 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	// Written after the vault was opened and asked about at once, so nothing
-	// has had the chance to read it.
+	// Written after the vault opened and was queried, so no read has occurred.
 	if err := os.WriteFile(filepath.Join(f.root, "Physics.epub"), []byte("an epub\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -1620,12 +1614,12 @@ func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 	}
 }
 
-// TestImports_DroppedFileAppearsInTree is the path a drop takes: the
-// window hands over what the person release, the vault holds it, and everyone
-// drawing the vault is told where to look.
+// TestImports_DroppedFileAppearsInTree covers the drop path: the window passes
+// the dropped file to the vault, the vault stores it, and every window rendering
+// the vault is notified of its location.
 //
-// A picture is what the watcher reports to nobody, so the stream is the only
-// way the tree finds out about one.
+// The watcher does not report image files, so the stream is the only way the
+// tree learns of one.
 func TestImports_DroppedFileAppearsInTree(t *testing.T) {
 	client, _, root, installation := openVaultWithWindow(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
@@ -1681,8 +1675,8 @@ func TestImports_DroppedFileAppearsInTree(t *testing.T) {
 	}
 }
 
-// A file that is already there stays as it is, and what stopped the drop stands
-// in the list of what the window is doing.
+// A file that already exists is unchanged, and the cause of the failed drop is
+// listed among the window's operations.
 func TestImports_ExistingNameKeepsFileAndReportsTask(t *testing.T) {
 	_, rendered, root, installation := openVaultWithWindow(t, map[string]string{"Entropy.md": "# Mine\n"})
 

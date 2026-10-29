@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
-// pagesPattern is where the page images are served below the plugin route. The window asks for
-// /plugin/md.numen.readers.pdf/pages/<index>?path=<vault path>.
+// pagesPattern is the route under the plugin route that serves the page images.
+// The window requests /plugin/md.numen.readers.pdf/pages/<index>?path=<vault path>.
 const pagesPattern = "pages/{page}"
 
 // pageDPI is the resolution a page image is drawn at.

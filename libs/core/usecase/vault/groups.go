@@ -14,9 +14,8 @@ const (
 	bytesPerWrite = 8 << 20
 )
 
-// grouping collects parsed notes and writes them a group at a time, so that
-// neither what is held in memory nor the length of one write grows with the
-// number of notes handed to it.
+// grouping collects parsed notes and writes them one group at a time, so neither
+// memory use nor the length of one write grows with the number of notes supplied.
 //
 // A walk of a whole vault and a handful of named files are the same job at
 // different sizes: a folder dropped into a watched vault arrives as one event

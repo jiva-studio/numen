@@ -1,9 +1,9 @@
 /**
- * The commands, from the palette and from the keystrokes that reach them.
+ * The commands, invoked from the palette and from their keystrokes.
  *
- * A command is offered over what is in front, asks for what it needs, and is
- * carried out over the note the window holds it by. What each one evaluates to is
- * asked of the window drawn, since the palette is where a person meets it.
+ * A command is offered for the current selection, prompts for its inputs, and
+ * runs on the note the window holds. Results are checked on the rendered window,
+ * since the palette is where the user invokes commands.
  */
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { Layers, LayoutTemplate } from '@lucide/vue'
@@ -105,7 +105,7 @@ describe('the palette', () => {
     await runSearch(window)
 
     expect(marks()).toStrictEqual(['file', 'file', 'file', 'file'])
-    // Every row of the list carries a mark, and none of them keeps empty room.
+    // Every row of the list has a mark, and none reserves empty space.
     expect(marks().every(Boolean)).toBe(true)
   })
 
@@ -139,8 +139,8 @@ describe('the palette', () => {
 })
 
 /**
- * The keystrokes drawn on a command's row. Each is asked for on the window, as
- * a person presses it with the palette nowhere in sight.
+ * The keystrokes shown on a command's row. Each is pressed on the window with
+ * the palette closed.
  */
 describe('a command reached by its own keystroke', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
@@ -279,8 +279,8 @@ describe('a command reached by a keystroke holding Shift', () => {
 })
 
 /**
- * A vault still being read draws no picture, so a command over it is reached by
- * the keyboard: this is the window a person meets while a vault is opening.
+ * A vault that is still loading renders no tree, so commands on it are reached
+ * by keyboard: this is the window shown while a vault is opening.
  */
 describe('a command requested for while the vault is being read', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
@@ -318,9 +318,9 @@ describe('a command requested for while the vault is being read', () => {
   })
 })
 
-/** How the window is drawn, walked as a person walks it, with nothing stubbed. */
+/** The window as rendered, driven like a user with nothing stubbed. */
 
-/** Samples and forms drawn with the icons their plugin registers, for the test that asks for them. */
+/** Sample and form notes rendered with the icons their plugin registers. */
 function drawPluginTypes(): void {
   const unregister = [registerNoteIcon('sample', Layers), registerNoteIcon('form', LayoutTemplate)]
   onTestFinished(() => {

@@ -42,8 +42,8 @@ func TestASmallChunkIsSplitBelowTheLimitGiven(t *testing.T) {
 	}
 }
 
-// A type a plugin declares is kept as its profile says: here only the headings of two levels, the
-// second without the block id it ends in, and no chunks; a type with no headings keeps none.
+// A type declared by a plugin is chunked as its profile specifies: here only the headings of two levels, the
+// second without the block id it ends in, and no chunks; a type with no headings produces none.
 func TestANoteOfADeclaredTypeIsCachedAsItsProfileReturns(t *testing.T) {
 	profiles := map[domain.NoteType]domain.NoteProfile{
 		"sheet": {HasChunks: true, HeadingLevels: []int{1, 2}, IDHeadingLevels: []int{2}},

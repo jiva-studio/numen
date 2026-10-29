@@ -6,7 +6,7 @@ export function createWriteGuard() {
   let inFlight = 0
   let latest = 0
 
-  /** Runs a write; the token tells whether a newer choice was made since. */
+  /** Runs a write; the token indicates whether a newer choice was made since. */
   const run = async (token: number, send: () => Promise<string | null>) => {
     inFlight++
     try {

@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-// Clock is what time it is. The domain knows nothing that has a lifetime, so a
-// scenario that stamps a note or asks what is due today is handed one, and the
-// composition root binds it to the machine's.
+// Clock returns the current time. The domain has no time source of its own, so
+// a scenario that stamps a note or queries what is due today receives a Clock,
+// and the composition root binds it to the machine's clock.
 //
-// A scenario that takes no clock has none: there is no reading of the machine
-// behind a clock nobody gave, because a note stamped an hour out and a task due
-// on the wrong day are both wrong quietly.
+// A scenario without a Clock has no access to the machine's time. A silent
+// fallback would stamp notes with wrong times and compute due dates for the
+// wrong day without any error.
 type Clock func() time.Time
 
 // Wait holds the caller for d, or returns the context's error as soon as the
@@ -19,6 +19,6 @@ type Clock func() time.Time
 // binds it to the machine's timers.
 type Wait func(ctx context.Context, d time.Duration) error
 
-// Delay calls f once after d and returns what cancels the call. The cancel says
-// whether it stopped f before f began.
+// Delay calls f once after d and returns a cancel function. The cancel function
+// reports whether it stopped f before f began.
 type Delay func(d time.Duration, f func()) (cancel func() bool)

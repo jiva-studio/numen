@@ -1,6 +1,6 @@
 /**
- * What a component is told of the room it has. jsdom lays nothing out, so the
- * observer and the sizes are stood in for.
+ * The size a component receives. jsdom performs no layout, so the observer and
+ * the sizes are substituted.
  */
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, shallowRef } from 'vue'
@@ -40,11 +40,11 @@ const stubResizeObserver = (): Watcher[] => {
   return watchers
 }
 
-/** Tells a watcher the content box an element took. */
+/** Delivers the content box size of an element to a watcher. */
 const tellContent = (watcher: Watcher, width: number, height: number): void =>
   watcher.tell([{ contentRect: { width, height } } as ResizeObserverEntry], {} as ResizeObserver)
 
-/** Tells a watcher the border box an element took. */
+/** Delivers the border box size of an element to a watcher. */
 const tellBorder = (watcher: Watcher, inlineSize: number, blockSize: number): void =>
   watcher.tell(
     [{ borderBoxSize: [{ inlineSize, blockSize }] } as unknown as ResizeObserverEntry],
@@ -205,7 +205,7 @@ describe('the room of the window', () => {
   })
 })
 
-/** A component that holds the room of the element given, for the test to read. */
+/** A component that tracks the size of the given element, for the test to read. */
 const mountViewport = (area: HTMLElement | null) => {
   const errors: unknown[] = []
   const target: { viewport?: ReturnType<typeof useViewport> } = {}

@@ -1,9 +1,9 @@
 /**
  * Function refs for elements drawn in a loop, one per key.
  *
- * A key is handed the same function every time it is asked for, until its
- * element goes; `onChange` hears of each element as it is set and with null as
- * it goes.
+ * A key returns the same function on every request until its element is
+ * removed; `onChange` is called with each element when it is set and with null
+ * when it is removed.
  */
 export interface RefRegistry<K> {
   /** The function ref for the key. */

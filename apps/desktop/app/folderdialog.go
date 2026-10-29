@@ -10,10 +10,10 @@ import (
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 )
 
-// folderDialog is the machine's own folder dialog, put up by the toolkit that
-// owns the window. It belongs to that window, so it opens over it.
+// folderDialog is the system folder dialog, opened by the toolkit that owns the
+// window. It belongs to that window and opens over it.
 //
-// One dialog is up at a time: a person answers one at a time.
+// One dialog is open at a time.
 type folderDialog struct {
 	window application.Window
 
@@ -21,17 +21,16 @@ type folderDialog struct {
 	isOpen bool
 }
 
-// ChooseFolder answers with the folder the person chose, and with false where they
-// closed the dialog. A dialog ends when the person answers it, and that wait is
-// on a person and is not measured.
+// ChooseFolder returns the folder the user selected, and false when the user
+// closed the dialog. The dialog ends on user input, and the wait is not
+// bounded.
 //
-// It is called on a goroutine serving the page. The toolkit puts the dialog up
-// on the thread that owns the window and hands the answer back here, so the
-// wait happens off that thread.
+// It is called on a goroutine serving the page. The toolkit opens the dialog on
+// the thread that owns the window and returns the result here, so the wait
+// happens off that thread.
 func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
-	// The library the dialog is built by ends the process where this machine
-	// holds no settings for it to read, taking the window and whatever a person
-	// had not written down with it.
+	// The dialog library terminates the process when the machine has no settings
+	// schemas to read, which closes the window and discards unsaved state.
 	if !hasSchemas() {
 		return "", false, machineport.ErrNoFolderDialog
 	}
@@ -77,8 +76,9 @@ func (d *folderDialog) release() {
 	d.isOpen = false
 }
 
-// ChooseFile answers with the file the person chose, and with false where they closed the dialog.
-// The dialog shows the files whose extension is one of accept, or every file where accept is empty.
+// ChooseFile returns the file the user selected, and false when the user closed
+// the dialog. The dialog shows the files whose extension is one of accept, or
+// every file when accept is empty.
 func (d *folderDialog) ChooseFile(_ context.Context, title, startingAt string, accept []string) (string, bool, error) {
 	if !hasSchemas() {
 		return "", false, machineport.ErrNoFolderDialog

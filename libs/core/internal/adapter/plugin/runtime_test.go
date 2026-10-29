@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// fakeCatalog provisions the requirements whose id it holds and records what it was asked.
+// fakeCatalog provisions the requirements whose id it holds and records the requests.
 type fakeCatalog struct {
 	pluginport.DependencyCatalog
 	resolved map[string]pluginport.ResolvedDependency

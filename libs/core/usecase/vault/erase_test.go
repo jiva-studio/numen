@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// bin is the place this machine keeps what a person deleted.
+// bin is the place this machine keeps deleted files.
 type bin struct {
 	moved []string
 	fails error

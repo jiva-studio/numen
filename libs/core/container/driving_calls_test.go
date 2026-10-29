@@ -14,9 +14,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// wiring are the files of a driving adapter that bind the ports the composition
-// root hands it. Under strict Clean Architecture, zero files are exempted:
-// every driving adapter speaks only to usecase/* and never holds or calls a port directly.
+// wiring lists the files of a driving adapter that bind the ports supplied by
+// the composition root. Under strict Clean Architecture, zero files are
+// exempted: a driving adapter calls only usecase/* and never holds or calls a
+// port directly.
 var wiring []string
 
 // getPortFields are the names of the struct fields a file types port.X.
@@ -69,15 +70,15 @@ func getFieldCalls(file *ast.File, fields []string) []string {
 	return found
 }
 
-// isDrivingAdapterFile says whether a path, relative to the core, is a file of
-// an adapter something outside comes in through.
+// isDrivingAdapterFile reports whether a path, relative to the core, is a file
+// of a driving adapter, that is, an adapter that external callers enter through.
 func isDrivingAdapterFile(rel string) bool {
 	return isAmong([]string{"adapter/cli", "adapter/window"}, filepath.ToSlash(filepath.Dir(rel)))
 }
 
-// A driving adapter asks a use case. The port it holds in a field is the
-// composition root's to hand over, and a call made through that field is the
-// adapter doing the use case's work.
+// A driving adapter calls a use case. The composition root supplies any port
+// held in a field, and a call through that field would perform the use case's
+// work in the adapter.
 func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	fields := map[string][]string{}
 	files := map[string]*ast.File{}
@@ -189,8 +190,8 @@ func depguardFiles(t *testing.T) []string {
 	return config.Linters.Settings.Depguard.Rules["driving-adapter"].Files
 }
 
-// getUncovered are the driving adapters of adapter/ no pattern of the lint rule
-// reaches.
+// getUncovered returns the driving adapters of adapter/ that no pattern of the
+// lint rule matches.
 func getUncovered(patterns []string) []string {
 	var found []string
 	for one := range driving {

@@ -14,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// started are the notes a run begins from: one this application made, one it
-// made and nobody has titled, one written in another editor, and one written
-// there with a title of its own.
+// started are the initial notes of a run: one created by this application with
+// a title, one created by it without a title, one created in another editor,
+// and one created in another editor with a title.
 var started = []string{
 	"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\ntitle: Old\n---\n\nA measure.\n",
 	"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\n---\n\nA measure.\n",
@@ -31,9 +31,9 @@ var titles = []string{"Entropy", "Order", "TCP/IP", "Энтропия", "a: b"}
 // folders are where a note is moved to.
 var folders = []string{"", "physics", "physics/thermo"}
 
-// writeNote writes one run's note into a folder of its own and tells the index
-// about it. One vault stands for the whole check: opening an index for every
-// run of a property is what makes one too slow to keep.
+// writeNote writes one run's note into its own folder and registers it with the
+// index. One vault is shared by the whole check, because opening an index for
+// every run of a property is too slow.
 func writeNote(rt *rapid.T, c changing, folder, raw string) string {
 	rt.Helper()
 	path := folder + "/Old.md"
@@ -164,9 +164,9 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 		_, holds := getIdentifier(rt, c.vault.Path, out.Path)
 		had := strings.Contains(raw, "id: ")
 
-		// The filename says it where the note carries no title of its own and
-		// the file came to rest under the name that was asked for. Nothing is
-		// written into such a note: the bytes are the bytes that went in.
+		// The filename provides the title when the note has none and the file was
+		// renamed to the requested name. Nothing is written into such a note: the
+		// bytes are unchanged.
 		saysIt := !strings.Contains(raw, "title:") &&
 			strings.TrimSuffix(filepath.Base(out.Path), ".md") == title
 		switch {

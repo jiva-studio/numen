@@ -11,7 +11,7 @@ withDefaults(
      * the wait has lasted. It is what moves exclusively.
      */
     aside?: string
-    /** Still in hand. */
+    /** Still running. */
     isWorking?: boolean
   }>(),
   { subject: '', aside: '', isWorking: false },

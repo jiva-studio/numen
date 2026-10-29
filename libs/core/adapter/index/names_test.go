@@ -35,8 +35,8 @@ func getNames(t *testing.T, db *DB, vault domain.Vault, query string) []domain.N
 	return found
 }
 
-// describeMatch is the name a match stands for, with the runs that matched
-// wrapped in brackets, so a test reads what a person would see.
+// describeMatch returns the name of a match, with the matched runs wrapped in
+// brackets, so a test reads what the user would see.
 func describeMatch(m domain.NameMatch) string {
 	text := m.Title
 	if m.Heading != "" {
@@ -123,13 +123,13 @@ func TestOneNoteContributesOnlySoManyHeadings(t *testing.T) {
 	}
 }
 
-// mostHeadingsOfANote is what the adapter caps one note's headings at. It is
-// stated here so that the test says what it is asserting.
+// mostHeadingsOfANote is the cap the adapter applies to one note's headings. It
+// is stated here so the test shows the value it asserts against.
 const mostHeadingsOfANote = 2
 
-// TestOneNoteDoesNotCrowdOutTheOthers is the order the two cuts are made in. A
-// note with more matching headings than the whole answer holds is thinned
-// first, so the notes ranking below it still reach the person.
+// TestOneNoteDoesNotCrowdOutTheOthers checks the order of the two cuts. A note
+// with more matching headings than the whole result holds is thinned first, so
+// notes ranked below it still appear in the result.
 func TestOneNoteDoesNotCrowdOutTheOthers(t *testing.T) {
 	db := openDB(t)
 

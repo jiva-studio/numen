@@ -13,7 +13,7 @@ export function findEditorTabAt(
   return null
 }
 
-/** What the window knows of the note open at a path: the tab it is in, and what that tab is called. */
+/** What the window records for the note open at a path: the tab it is in, and the tab's title. */
 export function createNoteLookup(
   editing: {
     readonly reached: { getTabAt(path: string): string | null }

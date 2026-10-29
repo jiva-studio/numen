@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * A plain panel standing in for whatever a tab holds.
+ * A placeholder panel for whatever a tab holds.
  *
- * The workspace is told nothing about its contents, and neither is this: it
- * shows a name and fills the room it is given.
+ * The workspace has no knowledge of its contents, and neither does this: it
+ * shows a name and fills the space it is given.
  */
 defineProps<{ name: string }>()
 </script>

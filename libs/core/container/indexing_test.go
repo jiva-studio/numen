@@ -7,8 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// Every section of the settings file reaches the configuration the application
-// nothing, and turning a model off is done by naming none, so nothing says it.
+// Every section of the settings file is carried into the application configuration.
 func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	response := container.DefaultIndexing()
 	target := container.Settings{Indexing: response}
@@ -22,16 +21,15 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	}
 }
 
-// The count is here so that a section added to the settings fails this test
-// until it is carried, which is the failure the sections themselves cannot
-// have: an unconfigured model is a model nobody asked for.
+// The field count makes a section added to the settings fail this test until it
+// is carried. Per-section checks cannot detect a missing section, since an
+// unconfigured model is simply absent.
 func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
 	if target := reflect.TypeOf(container.Indexing{}).NumField(); target != 1 {
 		t.Errorf("indexing holds %d sections; carry the new one in Config.SetSettings", target)
 	}
-	// The document holds the sections the file does, and the line a person is
-	// left about what it says. The ai section is carried by the router the host is
-	// given, which reads it at every question.
+	// The document holds the sections the file does. The ai section is carried by the
+	// router given to the host, which reads it on every query.
 	if targetVal := reflect.TypeOf(container.Settings{}).NumField(); targetVal != 9 {
 		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", targetVal)
 	}

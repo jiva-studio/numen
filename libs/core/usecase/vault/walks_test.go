@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// blockedWalk is a vault whose walk says when it began and then waits to be let
-// go, so that two scans of it can be caught overlapping.
+// blockedWalk is a vault whose walk signals when it begins and then blocks until
+// released, so two overlapping scans can be detected.
 type blockedWalk struct {
 	began chan struct{}
 	let   chan struct{}
@@ -42,7 +42,7 @@ func (blockedWalk) StatFile(context.Context, string) (domain.FileStat, error) {
 	return domain.FileStat{}, nil
 }
 
-// hasWalkBegun says whether a walk began before the wait ran out.
+// hasWalkBegun reports whether a walk began before the wait ran out.
 func (h blockedWalk) hasWalkBegun() bool {
 	select {
 	case <-h.began:
@@ -52,7 +52,7 @@ func (h blockedWalk) hasWalkBegun() bool {
 	}
 }
 
-// blockedWalks opens that one vault, whichever vault is asked for.
+// blockedWalks opens that one vault, whichever vault is requested.
 type blockedWalks struct{ reader blockedWalk }
 
 func (h blockedWalks) Open(domain.Vault) (vaultport.VaultReader, error) { return h.reader, nil }

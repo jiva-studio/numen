@@ -1,8 +1,8 @@
 /**
- * Asking a node for a menu.
+ * Opening a menu from a node.
  *
- * The plex says which node was asked about, where, and from what. What the
- * menu holds and what choosing an item does never reach this far.
+ * The plex reports which node the menu was requested on, where, and from what.
+ * The menu contents and the effect of choosing an item are outside this module.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
@@ -21,7 +21,7 @@ const mountPlex = (props: Partial<PlexProps> = {}) =>
     attachTo: document.body,
   })
 
-/** A right-click, which is what a webview would otherwise answer itself. */
+/** A right-click, the event a webview would otherwise handle with its own menu. */
 const rightClick = (element: Element, pos = { x: 320, y: 240 }) => {
   const event = new MouseEvent('contextmenu', {
     clientX: pos.x,
@@ -65,8 +65,9 @@ describe('a right-click on a node', () => {
   })
 
   it('leaves the webview its own menu everywhere else', () => {
-    // The suppression is the node's. Anywhere a person may want to copy or
-    // inspect what is under the pointer, the webview answers.
+    // The suppression applies to the node only. Everywhere else, where the user
+    // may copy or inspect what is under the pointer, the webview's own menu
+    // opens.
     const plex = mountPlex()
     const event = rightClick(plex.get('svg').element)
     expect(event.defaultPrevented).toBe(false)

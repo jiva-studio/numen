@@ -36,7 +36,7 @@ func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 	}
 }
 
-// A walk that cannot open the vault says so, and nothing is reported as read.
+// A walk that cannot open the vault returns the error and reports no notes as read.
 func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	broken := errors.New("the disk is gone")
@@ -51,7 +51,7 @@ func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 	}
 }
 
-// A vault nobody can follow has nothing to run, and running it returns.
+// A vault that cannot be watched has nothing to run, and running it returns.
 func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
@@ -64,7 +64,7 @@ func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
 	receiveFrom(t, isDone, "running an unwatched vault went on")
 }
 
-// The walk an opener makes rebuilds the index exactly when the opener says so.
+// The walk of an opener rebuilds the index exactly when the opener requests it.
 func TestTheWalkRebuildsTheIndexWhenTheOpenerReturnsSo(t *testing.T) {
 	cfg, db, _ := openVault(t, note)
 	opening := cfg.VaultOpener(db)
@@ -82,8 +82,8 @@ func TestTheWalkRebuildsTheIndexWhenTheOpenerReturnsSo(t *testing.T) {
 	}
 }
 
-// What went wrong while the vault is followed reaches the opener's handler, and
-// so does the end of it.
+// Errors raised while the vault is followed reach the opener's handler, as does
+// the end of the follow.
 func TestVaultOpener_ReportsFollowErrorsAndEnd(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	watcher := makeWatcher()
@@ -122,7 +122,7 @@ func TestAnIndexPathBelowAFileCannotBeOpened(t *testing.T) {
 	}
 }
 
-// A folder is not an index, and opening one says so.
+// A folder is not an index, and opening one returns an error.
 func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 	isolate(t)
 	db, err := container.Config{IndexPath: t.TempDir()}.OpenIndex(t.Context())
@@ -144,7 +144,7 @@ func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
 	}
 }
 
-// An index answers every port it names, and says where its file is.
+// An index serves every port it names and returns the path of its file.
 func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 	cfg, db, _ := openVault(t, note)
 
@@ -156,7 +156,7 @@ func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 	}
 }
 
-// Making room in an index that is open works, and in one that is closed says so.
+// Compacting an open index succeeds, and compacting a closed one returns an error.
 func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	_, db, _ := openVault(t, note)
 
@@ -171,7 +171,7 @@ func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	}
 }
 
-// Watching an index that has no folder to stand in says so.
+// Watching an index that has no folder returns an error.
 func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 	isolate(t)
 	file := filepath.Join(t.TempDir(), "plain")
@@ -188,7 +188,7 @@ func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 	}
 }
 
-// Whether an asset owes a read is whether one changed or everything did.
+// Assets are read when an asset changed or everything changed.
 func TestShouldReadAssets_TrueForAssetsOrReload(t *testing.T) {
 	for _, one := range []struct {
 		what string
@@ -223,7 +223,7 @@ func TestTheRefreshAnOpenerPassesOutIndexesNamedNotes(t *testing.T) {
 	}
 }
 
-// A walk that stops partway still says how many notes it had read.
+// A walk that stops partway still returns how many notes it had read.
 func TestAWalkThatStopsReturnsHowManyNotesItHadRead(t *testing.T) {
 	notes := map[string]string{}
 	for _, name := range []string{"a", "b", "c", "d"} {

@@ -1,5 +1,5 @@
-// Package service is the backend of the transcription plugin: it hears the recordings a person asks
-// for, writes their transcripts into the plugin's own folder of the vault's store in the common
+// Package service is the backend of the transcription plugin: it transcribes the recordings a user
+// requests, writes the transcripts into the plugin's own folder of the vault's store in the common
 // format of text versions, and records each with the host as a version of kind "transcript".
 package service
 
@@ -9,9 +9,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
@@ -31,7 +31,7 @@ type Host struct {
 	Queue host.Queue
 }
 
-// openHostAt reaches the host at the endpoint.
+// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) Host {
 	return Host{
 		Vault: host.NewClient(endpoint),
@@ -150,7 +150,7 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
 	})
 }
 
-// newTranscribeCommand transcribes the recording a person named, in the vault the host shows, and
+// newTranscribeCommand transcribes the recording the user named, in the vault the host has open, and
 // waits for it.
 func newTranscribeCommand(transcriber *Transcriber) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {

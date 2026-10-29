@@ -3,7 +3,7 @@ import type { ErrorCode } from '@/shared/errors'
 import type { TextRange } from '@/shared/textRange'
 import type { MoveResult, NoteType } from '@/shared/model/fileTypes'
 
-/** The prose a read gave back, and what the vault says came with it. */
+/** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {
   readonly body: string
   /** The file the prose came out of, as the next write presents it again. */
@@ -22,24 +22,24 @@ export interface NoteEdit {
   readonly isComplete: boolean
 }
 
-/** Where a note joined to the note in focus sits around it. */
+/** The position of a note linked to the note in focus. */
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 /** The note a neighbourhood is drawn around. */
 export interface Focus {
-  /** at its current position in the vault. Empty for a note the vault no longer holds. */
+  /** The note's current path in the vault. Empty for a note the vault no longer contains. */
   readonly path: string
   readonly title: string
 }
 
-/** One note joined to the note in focus, and what the line between them says. */
+/** One note linked to the note in focus, with the label of the link. */
 export interface Neighbour {
   readonly path: string
   readonly title: string
   /** Which of four it is. */
   readonly type: NoteType
   readonly relation: NoteRelation
-  /** What the person wrote on the link, and nothing where they wrote nothing. */
+  /** The label written on the link; empty when none is written. */
   readonly label: string
   /** What the other note wrote on its link back, when isMutual is true. */
   readonly reverseLabel?: string
@@ -63,15 +63,15 @@ export interface Neighbourhood {
 /** One heading inside a note, which is one of the parts the note divides into. */
 export interface NoteHeading {
   readonly text: string
-  /** How deep it sits, from one for the shallowest a note can carry. */
+  /** Nesting depth, starting at one for the shallowest level a note can have. */
   readonly level: number
   /** The line it relies on, counted from the first line of the prose. */
   readonly line: number
 }
 
 /**
- * Why a note was not read or not written. Changed is the file holding prose
- * nobody here has seen, which stops a write.
+ * Why a note was not read or not written. `changed` means the file contains
+ * prose that has not been loaded, which stops a write.
  */
 export type NoteFailure = ErrorCode | 'changed'
 
@@ -91,31 +91,30 @@ export interface NewNote {
   folder: string
   links: readonly Link[]
   /**
-   * Where the note points. Given, it is made a link, and the vault refuses an
-   * address nothing can be fetched from.
+   * URL the note points to. When set, it becomes a link, and the vault rejects
+   * an address that cannot be fetched.
    */
   url?: string
 }
 
 /**
- * What kind of relationship a link is. The list is closed: navigation and
- * drawing read it, so a role nobody decided on has no behaviour.
+ * The kind of relationship a link has. The list is closed: navigation and
+ * rendering read it, so an unlisted role has no behaviour.
  */
 export type Role = 'parent' | 'child' | 'jump' | 'ref' | 'attachment'
 
 /**
- * One relationship as the note it is written in declares it: the note at the
- * other end, by the path it is filed under, and what kind of relationship it
- * is.
+ * One relationship as declared by the note it is written in: the target note
+ * by path, and the kind of relationship.
  */
 export interface Link {
   to: string
   role: Role
-  /** What the person calls this relationship, when they call it anything. */
+  /** The user-defined name of this relationship, when one is set. */
   label?: string
 }
 
-/** One relationship between two notes: the note it is written in, the note it goes to, and what it says. */
+/** One relationship between two notes: the source note, the target note, and the label. */
 export interface PairLink {
   readonly from: string
   readonly to: string

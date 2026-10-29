@@ -18,7 +18,7 @@ type Work struct {
 	stopped      chan struct{}
 }
 
-// NewWork makes the work of a task asked in a conversation, empty for none. Stop ends the child
+// NewWork creates the work of a task requested in a conversation, empty for none. Stop ends the child
 // the reader reads.
 func NewWork(conversation string, buffer int, stop func()) *Work {
 	return &Work{
@@ -29,11 +29,11 @@ func NewWork(conversation string, buffer int, stop func()) *Work {
 	}
 }
 
-// End says the reader has finished. The registry counts the reader when it takes the work in, so a
-// caller that does not start the reader says so here.
+// End signals that the reader has finished. The registry counts the reader when it takes the work in, so a
+// caller that does not start the reader calls End.
 func (w *Work) End() { w.reader.Done() }
 
-// Stopped is closed once the work is asked to stop.
+// Stopped is closed once the work is requested to stop.
 func (w *Work) Stopped() <-chan struct{} { return w.stopped }
 
 // Stop ends the child and everything it started, then waits for the reader to finish.

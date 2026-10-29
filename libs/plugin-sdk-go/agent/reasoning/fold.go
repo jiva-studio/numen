@@ -8,10 +8,10 @@ type Listed struct {
 	Title string
 }
 
-// Family is a model a person chooses, with the depths of reasoning it can work at. A model listed
-// with no depth in its title is a family of no levels.
+// Family is a model the user can choose, with the reasoning depths it supports.
+// A model listed with no depth in its title is a family with no levels.
 type Family struct {
-	// Name is what a task asks for the model by.
+	// Name is the name tasks use to request the model.
 	Name  string
 	Title string
 	// Levels run from the least reasoning to the most. None where the model offers no choice.
@@ -125,8 +125,8 @@ func getFamilyName(listings []Listed, levels []string) string {
 	return shared
 }
 
-// ResolveModel is the model a program is started with for the family named and the level asked. A name
-// that is no family's is returned as it is.
+// ResolveModel returns the model a program is started with for the named family
+// and the requested level. A name that is not a family is returned unchanged.
 func ResolveModel(families []Family, model, level string) string {
 	for _, one := range families {
 		if one.Name == model {

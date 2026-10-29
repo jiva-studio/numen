@@ -1,9 +1,8 @@
 // Package container is the composition root: the only place that knows which
 // concrete adapter satisfies which port.
 //
-// Use cases above it work with the interfaces in core/port. That is the point
-// of the arrangement: to replace the index or the vault reader, this package
-// changes and nothing else does.
+// Use cases above it work with the interfaces in core/port. To replace the index or
+// the vault reader, only this package changes.
 package container
 
 import (
@@ -67,7 +66,7 @@ type Config struct {
 	// Hardware specifies hardware specifications detected for the host system.
 	Hardware hardware.Specs
 
-	// Embedding is how the index keeps and asks vectors.
+	// Embedding is how the index stores and queries vectors.
 	Embedding EmbeddingConfig
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.

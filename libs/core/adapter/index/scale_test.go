@@ -16,9 +16,9 @@ var quantising = embeddingport.EmbeddingModel{
 	From: "local:library/model.onnx",
 }
 
-// atScale is the recipe this model had while its bytes sat on another grid. It
-// reads the scale out of the recipe in force, so a recipe that stopped carrying
-// the scale is a failure here and not a test that quietly passes.
+// atScale returns the recipe of m with its quantization scale replaced by
+// scale. It reads the scale suffix from the current recipe, so a recipe that no
+// longer carries the scale fails the test instead of passing silently.
 func atScale(t *testing.T, m embeddingport.EmbeddingModel, scale float64) string {
 	t.Helper()
 

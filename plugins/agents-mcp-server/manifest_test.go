@@ -30,8 +30,8 @@ func TestManifestValid(t *testing.T) {
 		t.Errorf("got ID %q, want %q", manifest.ID, "md.numen.agents.mcp.server")
 	}
 
-	// The plugin serves no PluginToolService: the core asks every plugin with the tools capability
-	// for its tools when an agent run starts.
+	// The plugin serves no PluginToolService: the core requests the tools of every plugin with the tools capability
+	// when an agent run starts.
 	if slices.Contains(manifest.Capabilities, "tools") {
 		t.Errorf("manifest declares the tools capability: %v", manifest.Capabilities)
 	}

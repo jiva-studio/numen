@@ -2,8 +2,8 @@ package name
 
 import "time"
 
-// SourceKind says whether a file is a note. It is the word the index files the
-// row under, and it is decided from the file's name alone.
+// SourceKind classifies a file as a note or another file. The index stores it
+// with each row, and it is derived from the file's name alone.
 type SourceKind string
 
 const (
@@ -17,11 +17,11 @@ const (
 // FileStat is what a walk of a vault reports before anything is read: enough to
 // decide whether the file has to be read at all, and what would read it.
 type FileStat struct {
-	// Path is relative to the vault root, always with forward slashes, so that
-	// an index built on one platform describes the same source on another.
+	// Path is relative to the vault root, always with forward slashes, so an index
+	// built on one platform describes the same source on another.
 	Path string
-	// Kind is what the file is. A walk and a stat both say it; a file stat the
-	// index returns leaves it empty, because the kind is what was asked for.
+	// Kind is the file classification. A walk and a stat both report it; a file
+	// stat returned by the index leaves it empty, because the kind is the query.
 	Kind SourceKind
 	Size int64
 	// ModTime is when the file last changed. Each adapter converts at its own
@@ -31,17 +31,17 @@ type FileStat struct {
 }
 
 // IsUnchanged reports whether the file can be skipped. Size and modification
-// time are the invalidation key; content is not hashed during a walk, because
-// that would mean reading every file to discover that nothing changed.
+// time are the invalidation key; content is not hashed during a walk, since
+// that requires reading every file to detect that nothing changed.
 //
-// The time is compared with Equal, because a time.Time also carries a zone and
-// a monotonic reading, and neither of those says which instant it is.
+// The time is compared with Equal, since a time.Time also carries a zone and a
+// monotonic reading, neither of which identifies the instant.
 func (f FileStat) IsUnchanged(other FileStat) bool {
 	return f.Size == other.Size && f.ModTime.Equal(other.ModTime)
 }
 
-// IsZero reports whether this is no file stat at all, which is what a caller
-// presents when it says nothing about the file it expected to write over.
+// IsZero reports whether this is the zero file stat, which a caller passes when
+// it has no expectation about the file it is about to overwrite.
 func (f FileStat) IsZero() bool {
 	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero()
 }

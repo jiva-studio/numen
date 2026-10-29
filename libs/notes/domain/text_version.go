@@ -26,8 +26,8 @@ func NewTextVersionID(pluginID, key string) TextVersionID {
 // from what, of which kind, and the file in the maker's plugin folder that
 // holds its segments.
 //
-// Source is empty for a version made from the file itself, and names another
-// version of the same file otherwise. SourceHash is HashContent of the file for
+// Source is empty for a version made from the file itself; otherwise it names
+// another version of the same file. SourceHash is HashContent of the file for
 // the first, and the Hash of the source version for the second, as both were
 // when the version was made. File is the name of the version's file in the
 // folder of PluginID; Hash is HashContent of that file's bytes when the version

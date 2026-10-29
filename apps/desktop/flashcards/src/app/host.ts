@@ -1,9 +1,9 @@
 /**
  * The host the shell's plugins are activated in: a context for each plugin, the tab kinds they
  * register, the views they declare for each other and the notices they show. The shell draws one
- * tab, of the main-pane kind of the lowest order, opened on the vault a person chose; one list of
- * notices; and the views declared for the list of vaults. Every other registration has nothing in
- * this window to land in.
+ * tab, of the main-pane kind with the lowest order, opened on the vault the user chose; one list of
+ * notices; and the views declared for the list of vaults. Every other registration has no slot in
+ * this window.
  */
 import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
 import type {

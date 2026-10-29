@@ -2,10 +2,10 @@ package machineport
 
 import "errors"
 
-// Trash is where a folder goes when a person is done with it.
+// Trash is where a folder goes when the user is done with it.
 type Trash interface {
-	// Trash moves a folder to the place this machine keeps what a person
-	// deleted. It answers ErrNoTrash where this machine has nowhere to put it.
+	// Trash moves a folder to the location where this machine keeps deleted
+	// items. It returns ErrNoTrash where this machine has no such location.
 	Trash(path string) error
 }
 

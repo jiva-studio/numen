@@ -14,7 +14,7 @@ func init() {
 	})
 }
 
-// IsPrepared says whether this process made the runtime.
+// IsPrepared reports whether this process created the runtime.
 func IsPrepared() bool { return onnx.IsAvailable("") }
 
 // Prepare makes the runtime a page is read through.

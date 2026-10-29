@@ -8,15 +8,15 @@ export const PALETTE_KEYS: readonly PaletteKeys[] = [
   { icons: ['shift', 'return'], letter: '' },
 ]
 
-/** One action, and the key that reaches it straight from the list. */
+/** One action and the key that triggers it directly from the list. */
 export interface PaletteShortcut {
   readonly action: PaletteAction
   readonly key: PaletteKeys | null
 }
 
 /**
- * The actions of this item a key reaches, in the order they are offered. This
- * is what the foot of the palette says, and where the keys are decided.
+ * The actions of this item that have a key, in display order. The palette
+ * footer lists them, and the key assignment is decided here.
  */
 export const getShortcuts = (item: PaletteItem | undefined): readonly PaletteShortcut[] => {
   const actions = item && canChoose(item) ? (item.actions ?? []) : []
@@ -25,13 +25,13 @@ export const getShortcuts = (item: PaletteItem | undefined): readonly PaletteSho
     .map((action, index) => ({ action, key: PALETTE_KEYS[index] ?? null }))
 }
 
-/** What the action Enter reaches is, and Shift and Enter the second. */
+/** The id of the action triggered by Enter, or by Shift+Enter when `second` is set. */
 export const getActionId = (item: PaletteItem | undefined, second: boolean): string => {
   const actions = item && canChoose(item) ? item.actions : undefined
   return actions?.[second ? 1 : 0]?.id ?? ''
 }
 
-/** Whether this keystroke asks for the action panel. */
+/** Whether this keystroke opens the action panel. */
 export const isActionsChord = (event: {
   readonly key: string
   readonly ctrlKey: boolean

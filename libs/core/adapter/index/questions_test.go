@@ -14,14 +14,14 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ran is how many questions have been put to a database opened through the
-// tallying driver. A question is one statement executed, so a statement
-// prepared once and asked a hundred times is a hundred.
+// ran is how many queries have been issued to a database opened through the
+// tallying driver. A query is one statement executed, so a statement prepared
+// once and executed a hundred times counts a hundred.
 var ran atomic.Int64
 
-// tallyingDriver registers the driver the index opens, wrapped so that every
-// statement executed through it is counted. It is registered once, because a
-// driver name is registered for the life of the process.
+// tallyingDriver registers the driver the index opens, wrapped to count every
+// statement executed through it. It is registered once, because a driver name
+// is registered for the life of the process.
 var tallyingDriver = sync.OnceValue(func() error {
 	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
@@ -42,9 +42,9 @@ func (d tallying) Open(name string) (driver.Conn, error) {
 	return tallyingConn{c}, nil
 }
 
-// tallyingConn hands out statements that count themselves. It offers no query
-// of its own, so everything asked of this connection is prepared first and
-// counted where it runs.
+// tallyingConn returns statements that count themselves. It offers no query of
+// its own, so every statement on this connection is prepared first and counted
+// where it runs.
 type tallyingConn struct{ driver.Conn }
 
 func (c tallyingConn) Prepare(query string) (driver.Stmt, error) {
@@ -126,9 +126,9 @@ func questions(t *testing.T, ask func() error) int64 {
 	return ran.Load()
 }
 
-// A folder is drawn from what the index says each of its notes is, and a
-// question per entry is a folder of five hundred notes asking five hundred
-// times. What it costs to open a folder does not grow with the folder.
+// A folder is rendered from what the index reports for each of its notes, and
+// a query per entry makes a folder of five hundred notes issue five hundred
+// queries. The cost of opening a folder does not grow with the folder.
 func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 	db, queries := openCountedDB(t)
 	ctx := t.Context()
@@ -158,8 +158,8 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 	}
 }
 
-// A rename reads every note of one type in the vault, and the index says which notes those
-// are. Asking for them by type is one question whatever the vault holds.
+// A rename reads every note of one type in the vault, and the index reports which notes those
+// are. Querying them by type is one query regardless of the vault's size.
 func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	db, queries := openCountedDB(t)
 	ctx := t.Context()
@@ -184,7 +184,7 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// By path, so that two runs over one vault answer in one order.
+	// By path, so two runs over one vault return one order.
 	if len(found) != 2 || found[0] != "samples/birds.md" || found[1] != "samples/mammals.md" {
 		t.Errorf("the samples of the vault came back as %v", found)
 	}

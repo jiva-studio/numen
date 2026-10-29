@@ -1,4 +1,4 @@
-/** What the list of vaults reports as error for a command, in words a person reads. */
+/** Error messages the vault list reports for a command, in user-readable text. */
 // Stryker disable StringLiteral: interface copy
 import type { VaultErrorCode } from './types'
 

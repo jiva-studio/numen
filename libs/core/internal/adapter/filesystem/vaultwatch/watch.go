@@ -99,9 +99,8 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 }
 
 // relayFileEvents reports each event under the file's name until the context
-// ends, then stops the watch and closes the report. One waiting message is as
-// much as this says: a listener that has not read the last one is a listener
-// about to ask anyway.
+// ends, then stops the watch and closes the report. At most one message is
+// pending: a listener that has not read the last one will query anyway.
 func relayFileEvents(ctx context.Context, raw chan notify.EventInfo, stop func(), name string, moved chan<- struct{}) {
 	defer close(moved)
 	defer stop()

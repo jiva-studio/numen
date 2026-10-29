@@ -35,10 +35,9 @@ export default defineConfig({
       ),
     },
   },
-  // Built into the Go package that serves it: what is embedded has to sit
-  // beside the code that embeds it.
-  // `assets` is where the vault's own files are asked for, so the window's
-  // built pieces are filed apart from them.
+  // Output goes into the Go package that serves it: embedded files must be
+  // located next to the embedding code. `assets` is where the vault's own files
+  // are requested, so the built files of the window go in a separate directory.
   build: {
     outDir: '../../../libs/core/adapter/window/editor/pages/app',
     emptyOutDir: true,

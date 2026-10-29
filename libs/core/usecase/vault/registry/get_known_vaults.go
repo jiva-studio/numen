@@ -13,8 +13,8 @@ import (
 type KnownVault struct {
 	Vault domain.Vault
 
-	// IsMissing is a folder that is not there to be read. The vault stays on the
-	// list until somebody forgets it.
+	// IsMissing is a folder that is absent. The vault stays on the list until the user
+	// removes it.
 	IsMissing bool
 
 	// IsCurrent is the one vault the rest of a screen is about: the one a window
@@ -22,14 +22,13 @@ type KnownVault struct {
 	IsCurrent bool
 }
 
-// GetKnownVaults is every vault this installation holds, each with what is true of
-// it now. The current vault comes first and the rest follow as the list holds
-// them.
+// GetKnownVaults returns every vault in this installation, each with its current
+// state. The current vault comes first and the rest follow in list order.
 //
-// The list remembers where a vault was last seen and which one was opened last;
-// whether the folder is still there is a question for the machine. Every screen
-// showing the vaults asks both, and asking them together is what keeps one
-// screen from marking a vault another leaves unmarked.
+// The list records where a vault was last seen and which one was opened last;
+// whether the folder still exists is determined by the machine. Every screen
+// showing vaults checks both, and checking them together keeps one screen from
+// marking a vault that another leaves unmarked.
 type GetKnownVaults struct {
 	registry vaultport.VaultRegistry
 	folders  check.FolderCheck
@@ -41,9 +40,9 @@ func NewGetKnownVaults(registry vaultport.VaultRegistry, readers vaultport.Vault
 	return GetKnownVaults{registry: registry, folders: check.NewFolderCheck(readers)}
 }
 
-// Execute is the list. showing is the vault being worked; the empty identity
-// asks the list which vault the next window opens, which is the answer where
-// nobody is sitting in front of one.
+// Execute returns the list. showing is the vault in use; the empty identity
+// requests the vault the next window opens, which is the answer where no vault is
+// open.
 func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 	target, err := u.registry.List()
 	if err != nil {

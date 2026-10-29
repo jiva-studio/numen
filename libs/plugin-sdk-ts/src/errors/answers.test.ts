@@ -43,8 +43,8 @@ describe('the file an answer came out of', () => {
 })
 
 describe('what an error is called', () => {
-  // The table is keyed by the schema, so the compiler asks for every error code.
-  // What it cannot ask is which of them the silence belongs to.
+  // The table is keyed by the schema, so the compiler requires an entry for every error code.
+  // It does not check which of them is the one with no word.
   it('leaves a file that moved past the caller the one error with no word', () => {
     expect(ERROR_CODE[ProtoErrorCode.STALE]).toBeNull()
     expect(Object.values(ERROR_CODE).filter((word) => word === null)).toHaveLength(1)

@@ -13,7 +13,7 @@ const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const FILE: RecordingSource = { mediaUrl: TALK, mediaType: 'audio/mpeg' }
 
-/** The one player of the window, with what is asked of it recorded. */
+/** The window's single player, with the calls made on it recorded. */
 const createPlayer = () => {
   const url = ref('')
   const position = ref(0)

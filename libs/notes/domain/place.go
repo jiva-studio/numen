@@ -1,10 +1,10 @@
 package domain
 
-// Place is somewhere in the vault: a source, by the path the vault files it
-// under, and the runs of its text meant.
+// Place is a location in the vault: a source, by the path the vault files it
+// under, and the spans of its text that are meant.
 //
-// The person is taken to the first span and the rest are shown where they fall.
-// A note is a place with no spans, and so is a document asked for at its
+// The first span is the navigation target and the rest are shown where they
+// fall. A note is a place with no spans, and so is a document requested at its
 // beginning.
 type Place struct {
 	Path string
@@ -40,6 +40,6 @@ func (s UnitRange) Len() int { return s.End - s.Start }
 
 // MaxHighlights is how many spans of one source are highlighted at once.
 //
-// A page with everything on it highlighted says nothing about where to look,
-// and whoever is choosing the places chooses which of them matter.
+// Highlighting every span of a page conveys nothing about where to look, and the
+// code choosing the places decides which of them matter.
 const MaxHighlights = 8

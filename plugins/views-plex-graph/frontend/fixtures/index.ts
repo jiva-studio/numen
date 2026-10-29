@@ -1,15 +1,15 @@
 /**
- * A plex standing on a note, and the vault behind it, made up for a test.
+ * A plex centred on a note, and the vault behind it, made up for a test.
  *
- * The vault is not here: what the view answers is written down when it is made,
- * and everything the editor was asked to do is kept in the order it was asked.
+ * The vault is not here: what the view returns is recorded when it is created, and
+ * every request the editor made is kept in order.
  */
 import { ref } from 'vue'
 import { NOTE_TYPE } from '@numen/plugin-sdk'
 import type { PlexRelation } from '../plex'
 import type { PlexEditor, PlexView, Neighbourhood, NoteType, PathRename } from '../types'
 
-/** A moment for whatever a gesture asked the vault for to come back. */
+/** A tick that lets whatever a gesture requested from the vault resolve. */
 export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 export type Types = Record<string, NoteType>
@@ -81,7 +81,7 @@ export const viewOn = (
   return { view, went }
 }
 
-/** A vault that takes every note it is asked to make, and records the asking. */
+/** A vault that accepts every note it is asked to create, and records the requests. */
 export const createVault = (takes = true) => {
   const createdItem: [string, string][] = []
   const joined: [string, string, string, string?][] = []

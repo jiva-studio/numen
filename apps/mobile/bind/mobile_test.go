@@ -135,15 +135,16 @@ func TestStartAnswers(t *testing.T) {
 	}
 }
 
-// The three services this mounts read and write the person's notes, and the
-// socket they stand on is one every process on the phone reaches. So the one
-// origin it answers is the page the platform serves: a page in the person's own
-// leaves it.
-// page is the one origin, spelled out here and read from nothing under test.
+// The three services this mounts read and write the user's notes, and the
+// socket they listen on is reachable by every process on the phone. The only
+// allowed origin is the page the platform serves; a request from any other
+// origin receives no CORS grant.
+// page is the one allowed origin, spelled out here and not read from the code
+// under test.
 const page = "http://localhost"
 
-// The origin is settled in the platform's own configuration and named here in
-// said. The two are read against each other.
+// The origin is set in the platform's own configuration and named here in
+// `page`. The test compares the two.
 func TestThePageIsServedFromTheOriginTheCoreAnswers(t *testing.T) {
 	target, err := os.ReadFile(filepath.Join("..", "capacitor.config.ts"))
 	if err != nil {
@@ -193,9 +194,9 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 	}
 }
 
-// The files of the vault and what is made from them are not served here. Every
-// process on the phone reaches this socket and a program speaking for itself is
-// off the disk or set a model running over one.
+// The files of the vault and the data derived from them are not served. Every
+// process on the phone can reach this socket, so a program acting for itself
+// must not be able to read files off the disk or run a model through it.
 func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	port, err := bind.Start(t.TempDir())
 	if err != nil {
@@ -228,9 +229,9 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	}
 }
 
-// The vault, the index built from it and the settings file all sit under the
-// directory Start is handed, so the platform's own backup is a way off the
-// phone for the file the socket above refuses to serve. It is turned off, and
+// The vault, the index built from it and the settings file all reside in the
+// directory passed to Start, so the platform's own backup is a path off the
+// phone for the file the socket above does not serve. Backup is disabled, and
 // nothing else in this repository reads the manifest.
 func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 	pos := filepath.Join("..", "android", "app", "src", "main")
@@ -261,9 +262,9 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 	}
 }
 
-// The file a person configures the installation in holds the keys it reaches
-// models with. This build mounts no service about it, so nothing here reads that
-// file out to a caller or writes another one in its place.
+// The installation's configuration file holds the keys used to reach models.
+// This build mounts no service for it, so nothing here reads that file out to a
+// caller or overwrites it.
 func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	dir := t.TempDir()
 	secret := "sk-the-persons-own"

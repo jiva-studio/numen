@@ -51,7 +51,7 @@ func (f *fakeVault) Read(_ context.Context, path string) ([]byte, error) {
 	return []byte(raw), nil
 }
 
-// fakeVaultReaders opens the one fakeVault given, for whichever vault is asked.
+// fakeVaultReaders opens the single fakeVault it holds, for any requested vault.
 type fakeVaultReaders struct{ reader *fakeVault }
 
 func (f fakeVaultReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return f.reader, nil }
@@ -70,10 +70,10 @@ func proseOf(source string, lines int) string {
 }
 
 func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
-	// A ranking scatters one source's passages wherever each chunk placed, so a
-	// source that stood first can stand again after several others have been
-	// read. Every passage still has to come back with the text and the line its
-	// own offsets name, whichever source stood near it in `found`.
+	// A ranking scatters one source's passages across the result list, so a
+	// source that appeared first can appear again after several others have been
+	// read. Every passage must still return the text and line named by its
+	// own offsets, whichever sources are adjacent to it in `found`.
 	ctx := t.Context()
 	vault := &fakeVault{content: map[string]string{}, calls: map[string]int{}}
 	sources := []string{"a.md", "b.md", "c.md", "d.md", "e.md"}
@@ -83,9 +83,9 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 
 	u := Search{readers: fakeVaultReaders{reader: vault}}
 
-	// "a.md" stands first and last; the four others stand between its two
-	// passages, so it is read once and asked for again only from what that one
-	// reading produced.
+	// "a.md" is first and last; the four other sources lie between its two
+	// passages, so it is read once and requested again only from the result of
+	// that one read.
 	found := []domain.Passage{
 		{ChunkID: "1", Source: "a.md", Start: 0, Length: len("a.md")},
 		{ChunkID: "2", Source: "b.md", Start: 0, Length: len("b.md")},
@@ -131,9 +131,8 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 		t.Errorf("a.md was read %d times despite two scattered passages, want 1", vault.calls["a.md"])
 	}
 
-	// Every source's two reads would have to stand apart for one to be held
-	// while another is read; they stand together, which is what one decode per
-	// source, read once and used before the next begins, looks like.
+	// The reads of one source are consecutive, which shows one decode per source:
+	// the text is read once and used before the next source is read.
 	if got := vault.order; len(got) != len(sources) {
 		t.Errorf("the vault was opened %d times for %d distinct sources: %v", len(got), len(sources), got)
 	}

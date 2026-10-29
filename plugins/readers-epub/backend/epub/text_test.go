@@ -259,7 +259,7 @@ func TestPreLeftOpenEndsWithItsDocument(t *testing.T) {
 	}
 }
 
-// A line break holds no text, and what follows it stands beside it.
+// A line break contains no text, and the content after it is a sibling node.
 func TestLineBreakContainsNoText(t *testing.T) {
 	_, markup := readOne(t, `<p>a<br/>b</p>`)
 	if len(markup.Nodes) != 1 || markup.Nodes[0].Name != "p" {

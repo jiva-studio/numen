@@ -90,8 +90,8 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-// cut reads the vault's notes, so that its chunks are in the index owing their
-// vectors.
+// cut reads the vault's notes so that their chunks are in the index with
+// vectors pending.
 func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v domain.Vault) {
 	t.Helper()
 
@@ -115,8 +115,8 @@ func fit(t *testing.T, db *container.Index, model embeddingport.Embedder) {
 	}
 }
 
-// fakeEmbedder is a model that answers a direction belonging to the text it was
-// given. It reaches nothing outside this process.
+// fakeEmbedder is a model that returns a direction derived from the input text.
+// It makes no calls outside this process.
 type fakeEmbedder struct {
 	dims int
 }
@@ -182,8 +182,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	}
 }
 
-// What ended is not what is being done, and a list a finished pass stays in is a
-// list nobody reads.
+// A completed pass does not leave its entry in the task list.
 func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
@@ -200,8 +199,8 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	}
 }
 
-// peeking is a model that says what was being done when it was asked for a
-// vector, which is what a person watching the corner reads.
+// peeking is a model that records the task list as it was when the first
+// vector was requested; the status corner displays that list.
 type peeking struct {
 	*fakeEmbedder
 	tasks *run.Tasks
@@ -221,7 +220,7 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 
 func (*peeking) Concurrency() int { return 1 }
 
-// opening is one piece of work as it stood when the first vector was asked for.
+// opening returns the task as it was when the first vector was requested.
 func (p *peeking) opening(id string) (run.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -261,8 +260,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	made, db := reading(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	events := newRecorder()
-	// The index the pass asks what owes its text is gone, which is what it looks
-	// like from here when the answer cannot be had.
+	// The index queried for pending vectors is closed, so the query fails.
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -278,9 +276,8 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	}
 }
 
-// overheard is a model that keeps the list of what is being done as it stood
-// every time it was asked anything, which is what a person watching the corner
-// reads.
+// overheard is a model that records the task list at every call, as the
+// status corner displays it.
 type overheard struct {
 	*fakeEmbedder
 	tasks *run.Tasks
@@ -289,7 +286,7 @@ type overheard struct {
 	visited [][]run.Task
 }
 
-// GetModel is asked at the head of every pass, before a source has been opened.
+// GetModel is called at the start of every pass, before a source is opened.
 func (o *overheard) GetModel() embeddingport.EmbeddingModel {
 	o.keep()
 	return o.fakeEmbedder.GetModel()
@@ -314,10 +311,9 @@ func (o *overheard) lists() [][]run.Task {
 	return o.visited
 }
 
-// The row a person watches for minutes must say what it is on. A pass that
-// enters the list before it has opened a source stands there as the word
-// "Indexing" over an empty line, at a share of nothing, for as long as the first
-// vectors take to come back.
+// The status row must name its current work. A pass that enters the task list
+// before opening a source must not show the bare word "Indexing" over an empty
+// line at zero progress while the first vectors are computed.
 func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
 	model := &fakeEmbedder{dims: 64}
@@ -370,9 +366,9 @@ func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error
 
 func (*nudging) Concurrency() int { return 1 }
 
-// A recognition writes a batch of pages every few minutes, and the pages it
-// wrote are cut on the goroutine the vector pass runs on. A vault owing a
-// hundred thousand vectors owes them for hours.
+// A recognition writes a batch of pages every few minutes, and those pages
+// are cut on the goroutine of the vector pass. A vault with a hundred thousand
+// pending vectors needs hours to embed them.
 func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
@@ -409,7 +405,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 		t.Errorf("standing aside is shown as a failure: %q", pos.Error)
 	}
 
-	// Taken up again, the pass asks the index what still owes a vector.
+	// After resuming, the pass queries the index for the vectors still pending.
 	again := newPass(made, db, events, model.fakeEmbedder, model.GetModel().Recipe(), v)
 	again.embed(t.Context())
 
@@ -454,8 +450,8 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 	}
 }
 
-// The versions of a file changed are a pass that cuts it again and gives the
-// vault the vectors it owes.
+// A change to a file's versions starts a pass that cuts the file again and
+// embeds the vault's pending vectors.
 func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)

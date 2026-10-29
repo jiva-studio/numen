@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// The ports' words for a command, which a driving adapter reaches here.
+// The ports' terms for a command, used by a driving adapter.
 type (
 	// Entry is one command an enabled plugin declares, and the plugin that does.
 	Entry = pluginport.PluginCommandEntry

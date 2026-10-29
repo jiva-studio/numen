@@ -10,9 +10,9 @@ import (
 // PluginSettingOption is one value an enum setting can hold.
 type PluginSettingOption struct {
 	Value string
-	// Title is what a person reads for the value. Empty shows the value itself.
+	// Title is the display text for the value. Empty shows the value itself.
 	Title string
-	// Detail is what a person reads under the setting while the value is in force.
+	// Detail is the text shown under the setting while the value is in force.
 	Detail string
 	// Dependencies are the ids of the manifest's dependencies the host provisions only while the
 	// option is in force.
@@ -54,7 +54,7 @@ type PluginSettingCondition struct {
 	Is      []string
 }
 
-// PluginSecret is one secret, such as an API key, a plugin asks the host to keep.
+// PluginSecret is one secret, such as an API key, that a plugin asks the host to store.
 type PluginSecret struct {
 	// Name is what the plugin reads the key under.
 	Name        string

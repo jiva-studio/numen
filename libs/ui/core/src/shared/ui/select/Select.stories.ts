@@ -16,7 +16,7 @@ import Select from './Select.vue'
 const UNBROKEN = 'supercalifragilisticexpialidocious'
 
 interface Knobs {
-  /** What each row says, one to a line. A line after a tab names its group. */
+  /** The option labels, one per line. A line after a tab names its group. */
   words: string
   chosen: string
   isDisabled: boolean
@@ -84,7 +84,7 @@ const groups = (): readonly string[] =>
     (one) => one.textContent?.trim() ?? '',
   )
 
-/** The choices opened, which is what a person does before choosing one. */
+/** Opens the option list, as a user does before choosing. */
 const openSelect = async (canvas: HTMLElement) => {
   await userEvent.click(control(canvas))
 }
@@ -123,7 +123,7 @@ export const Unbroken: Story = {
   args: { words: `${UNBROKEN}\nShort`, chosen: 'short', width: '10rem' },
 }
 
-/** No choices at all: the list says so and offers nothing. */
+/** No options: the list shows an empty message and offers nothing. */
 export const NoChoicesAtAll: Story = {
   args: { words: '', chosen: '' },
   play: async ({ canvasElement }) => {
@@ -145,7 +145,7 @@ export const FarTooMany: Story = {
   },
 }
 
-/** A value in force that is none of the choices: the line says the value. */
+/** A current value that is none of the options: the control shows the value. */
 export const AValueNotAmongThem: Story = {
   args: { chosen: 'enormous' },
   play: async ({ canvasElement }) => {
@@ -153,10 +153,10 @@ export const AValueNotAmongThem: Story = {
   },
 }
 
-/** A control nobody may turn. */
+/** A disabled control. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
-/** The keyboard lands on it, opens it, and walks the choices. */
+/** The keyboard focuses the control, opens it, and moves through the options. */
 export const OneStopOnTheWayRound: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()

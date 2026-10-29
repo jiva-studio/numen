@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newMediaClient is the media of a window as a client reaches them, over a window whose
+// newMediaClient returns the media services of a window as a client accesses them, over a window whose
 // loopback socket is open.
 func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	t.Helper()

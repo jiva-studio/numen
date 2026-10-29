@@ -11,20 +11,22 @@ import (
 // recorded because a blob does not say what it holds.
 const QuantisedInt8 = "int8"
 
-// Int8Scale is what a stored byte of 127 stands for. Bytes on two scales are
-// numbers on two grids, and the recipe carries the scale they were made at.
+// Int8Scale is the value that a stored byte of 127 represents. Bytes on two
+// scales lie on two different grids, so the recipe records the scale they were
+// created at.
 //
-// One number serves every width. A wider vector spends fewer of the 127 levels,
-// and what that costs a cosine does not grow with the width. What 0.4 buys is
-// headroom: a component of a unit-length vector beyond it is clamped.
+// One value serves every vector width. A wider vector uses fewer of the 127
+// levels, and the resulting cosine error does not grow with the width. The
+// value 0.4 sets the headroom: a component of a unit-length vector beyond it is
+// clamped.
 const Int8Scale = 0.4
 
 // Vector is one chunk's embedding, in both representations that are stored.
 //
-// Value is the rerank's copy, quantised as Kind says. Coarse is one bit per
-// dimension, which is the coarse pass's whole question. Hash is the digest of
-// the text the model read, which is what the vector is kept under once the
-// chunk that pointed at it is gone.
+// Value is the copy used for reranking, quantised as Kind specifies. Coarse is
+// one bit per dimension, used by the coarse pass. Hash is the digest of the
+// text the model read; the vector is stored under it after the chunk that
+// referenced it is gone.
 type Vector struct {
 	ChunkID domain.ChunkID
 	Hash    []byte
@@ -40,12 +42,12 @@ type VectorRepository interface {
 	// same write. A chunk holding one and not the other is absent from the coarse
 	// pass and invisible to the question of what has no vector.
 	//
-	// Each is also written where a vector is kept by the address of the text it
-	// was made from, so that renumbering the chunks does not buy it again.
+	// Each vector is also stored under the hash of the text it was created from,
+	// so renumbering the chunks does not require re-embedding it.
 	SaveVectors(ctx context.Context, vectors []Vector) error
 
-	// GetKeptVectors is the vectors already made under the recipe given for the
-	// texts the hashes address, by hash. What comes back was paid for once and
-	// is not asked of a model again.
+	// GetKeptVectors returns, by hash, the vectors already created under the given
+	// recipe for the texts the hashes identify. These vectors are not requested
+	// from the model again.
 	GetKeptVectors(ctx context.Context, recipe string, hashes [][]byte) (map[string][]byte, error)
 }

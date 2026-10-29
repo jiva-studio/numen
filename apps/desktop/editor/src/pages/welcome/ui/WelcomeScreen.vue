@@ -51,7 +51,7 @@ const ways = computed(() => {
 
 const onList = computed(() => createVaultRows(props.vaultList, words))
 
-/** Whether the welcome screen is what the person is looking at and typing into. */
+/** Whether the welcome screen is the one the user is viewing and typing into. */
 const welcoming = computed(
   () => props.tabs.length === 0 && !props.search.open.value && !props.commands.open.value,
 )

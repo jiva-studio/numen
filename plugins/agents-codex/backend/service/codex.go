@@ -25,7 +25,7 @@ type AgentModel struct {
 	Name      string `json:"name"`
 	Title     string `json:"title"`
 	IsDefault bool   `json:"isDefault,omitempty"`
-	// Reasoning are the depths the model can be asked to work at, from the least to the most.
+	// Reasoning are the depths the model supports, from least to most.
 	Reasoning        []reasoning.Level `json:"-"`
 	DefaultReasoning string            `json:"-"`
 }
@@ -76,8 +76,8 @@ const codexListLimit = 15 * time.Second
 // codexFailureBackoff is how long a command line that failed to list is left alone.
 const codexFailureBackoff = 30 * time.Second
 
-// codexModelCache caches what Codex listed, for as long as the command line asked stays the same. A
-// failure caches nothing, and the command line that failed is not asked again for a while.
+// codexModelCache caches what Codex listed, for as long as the command line stays the same. A
+// failure caches nothing, and the command line that failed is not retried for a while.
 type codexModelCache struct {
 	mu       sync.Mutex
 	key      string

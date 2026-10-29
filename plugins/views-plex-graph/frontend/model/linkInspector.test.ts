@@ -13,7 +13,7 @@ import {
   toggleLinkDirection,
 } from './linkInspector'
 
-/** A row as the inspector holds one, running A.md to B.md unless told otherwise. */
+/** A row as the inspector holds it, running A.md to B.md unless overridden. */
 const row = (more: Partial<DirectionalLinkItem> = {}): DirectionalLinkItem => ({
   id: 'A.md->B.md',
   from: 'A.md',

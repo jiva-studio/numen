@@ -49,9 +49,9 @@ func TestAVaultReturnsWhatToIgnore(t *testing.T) {
 }
 
 // TestAVaultsRulesNarrowAndNeverWiden. A vault's configuration is written by
-// whoever synced the folder. It may ask for more to be left alone; it may not
-// take back what no vault has to ask for, or a line in a file would hand over
-// every dotfile folder in the vault to read from and write into.
+// the party that synced the folder. It may add paths to leave alone; it may not
+// remove the defaults no vault has to request, or a line in a file would expose
+// every dotfile folder in the vault to reads and writes.
 func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":               "# Note\n",
@@ -77,8 +77,8 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 	}
 }
 
-// A vault's own negation reaches what the same vault asked to leave out, which
-// is what a negation is for.
+// A vault's own negation applies to what the same vault excluded, which is what
+// a negation is for.
 func TestAVaultConsumesBackItsOwnRule(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":      "# Note\n",

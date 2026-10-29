@@ -96,7 +96,7 @@ func getVaultContents(t *testing.T, db *DB, vault domain.Vault) contents {
 }
 
 // virtual is how many rows the five virtual tables hold for what a vault held,
-// keyed by the table's name so a failure says which one kept them.
+// keyed by table name so a failure identifies the table that kept them.
 func virtual(t *testing.T, db *DB, c contents) map[string]int {
 	t.Helper()
 
@@ -147,8 +147,8 @@ func numbers(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	return out
 }
 
-// list writes row numbers as an SQL list, for a question asked of rows that the
-// answer is allowed to have taken away.
+// list writes row numbers as an SQL list, for a query over rows that the
+// result is allowed to have removed.
 func list(rows []int64) string {
 	content := make([]string, len(rows))
 	for i, row := range rows {
@@ -160,7 +160,7 @@ func list(rows []int64) string {
 func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	// Nothing cascades into a virtual table. A row left in one of them answers a
 	// search with a passage of a vault the index no longer holds, and the row it
-	// names is gone, so nothing else says so either.
+	// references is gone, so nothing else reports it either.
 	ctx := t.Context()
 	db := openDB(t)
 	fillVault(t, db, first, "first", 0x0f)

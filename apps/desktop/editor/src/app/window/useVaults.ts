@@ -25,15 +25,15 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
   const items = ref<VaultList>({ vaults: [], showing: '' })
 
   /**
-   * The vault in front, which is the one the list says it is showing. It is read
-   * off the list so that the two cannot disagree about which vault is open.
+   * The vault being shown, which is the one the list reports as showing. It is
+   * derived from the list so the two cannot disagree about which vault is open.
    */
   const displayedItems = computed<VaultRef>(() => {
     const one = items.value.vaults.find((v) => v.id === items.value.showing)
     return one ? { id: one.id, name: one.name } : { id: '', name: '' }
   })
 
-  /** One vault of the list under the name it was just given. */
+  /** One vault of the list, updated to the name it was just given. */
   const setVaultName = (vault: VaultRef) => {
     items.value = {
       ...items.value,

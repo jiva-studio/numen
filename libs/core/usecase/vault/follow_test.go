@@ -19,8 +19,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// hand is a watcher whose events a test writes itself, so that what happens
-// when a vault changes can be asked without a filesystem, a timer or a server.
+// hand is a watcher whose events a test writes itself, so that vault change
+// handling can be tested without a filesystem, a timer or a server.
 type hand struct {
 	changes  chan []string
 	lostChan chan struct{}
@@ -34,17 +34,17 @@ func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-cha
 	return h.changes, h.lostChan, nil
 }
 
-// refuses is a watcher that will not start, which is what an operating system
-// out of watches looks like.
+// refuses is a watcher that fails to start, which models an operating system
+// that has run out of watches.
 type refuses struct{}
 
 func (refuses) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return nil, nil, errors.New("no watches left")
 }
 
-// sometimes is a set of readers that can be told to refuse, which is what a
-// permission or a device that went away looks like from here. Told from one
-// goroutine and read in another, so the flag is an atomic one.
+// sometimes is a set of readers that can be made to fail, which models a
+// permission error or a removed device. The flag is written from one goroutine
+// and read from another, so it is atomic.
 type sometimes struct {
 	vaultport.VaultReaders
 	refuse atomic.Bool
@@ -125,7 +125,7 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 }
 
 // TestABookThatChangedIsNotANoteThatMoved. The watcher reports every kind of
-// source it sees; what a listener is told to look at again is notes.
+// source change; the listener is notified only about notes.
 func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
@@ -140,8 +140,8 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 	if !slices.Equal(got.Paths, []string{"Note.md"}) {
 		t.Errorf("reported %+v", got)
 	}
-	// A book is not a note that moved, and it is not nothing either: reading one
-	// is its own work, and whoever listens is told which book owes it.
+	// A book change is not a note move, and it is not ignored: reading a book is
+	// separate work, so the listener is told which book needs it.
 	if !slices.Equal(got.Assets, []string{"library/A Book.epub"}) {
 		t.Errorf("the book was reported as %v", got.Assets)
 	}
@@ -163,9 +163,9 @@ func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 	}
 }
 
-// TestWhatCannotBeFollowedIsRead. The one answer to not knowing what changed is
-// to look at everything, and whoever is listening is told to ask again rather
-// than told which notes moved.
+// TestWhatCannotBeFollowedIsRead. When the changed paths are unknown, the only
+// correct response is to rescan everything, and the listener is told to read
+// again instead of receiving a list of moved notes.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
@@ -191,8 +191,8 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	}
 }
 
-// TestATroubleThatIsOverStopsBeingReported. A message left in place says the
-// application is failing when it is working.
+// TestATroubleThatIsOverStopsBeingReported. A message that persists after the
+// trouble ends reports a failure while the application is working.
 func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
@@ -231,14 +231,13 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	}
 }
 
-// TestAVaultThatCannotBeWatchedSaysSo. It is still a vault: what fails is
-// following it, and the failure has to reach whoever would otherwise see a
-// window that looks up to date.
+// TestAVaultThatCannotBeWatchedSaysSo. It is still a vault: only following it
+// fails, and the failure must reach the listener so the window does not appear
+// up to date.
 func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
-	// Nothing to refresh with and nothing to walk with: a watch that never
-	// starts reaches neither.
+	// No refresh or scan is available: a watch that never starts uses neither.
 	_, err := vaults.NewFollow(refuses{}, vaults.Refresh{}, vaults.Scan{}).Begin(t.Context(), v)
 	if err == nil {
 		t.Fatal("a watcher that could not start was taken for one that did")

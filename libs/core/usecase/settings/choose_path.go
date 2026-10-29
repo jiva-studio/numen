@@ -13,14 +13,14 @@ import (
 // ErrNoPathSetting is a plugin or a setting of it that holds no path.
 var ErrNoPathSetting = errors.New("the plugin declares no setting of type file or folder under that key")
 
-// ChosenPath is the path a person chose for a setting.
+// ChosenPath is the path the user chose for a setting.
 type ChosenPath struct {
 	Path     string
 	IsChosen bool
 }
 
-// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a
-// setting of type file or folder, and writes the path they chose.
+// ChoosePluginPath opens the machine's native file or folder picker for a
+// setting of type file or folder, and writes the chosen path.
 type ChoosePluginPath struct {
 	dialog  machineport.PathDialog
 	plugins func() []PluginInfo
@@ -35,8 +35,8 @@ func NewChoosePluginPath(
 	return &ChoosePluginPath{dialog: dialog, plugins: plugins, write: write}
 }
 
-// Execute asks the person for the path and writes it. A path the setting does not take answers an
-// error wrapping ErrNotASetting, and nothing is written.
+// Execute prompts for the path and writes it. A path the setting does not accept
+// returns an error wrapping ErrNotASetting, and nothing is written.
 func (u *ChoosePluginPath) Execute(ctx context.Context, pluginID, key string) (ChosenPath, error) {
 	declared, err := u.findSetting(pluginID, key)
 	if err != nil {

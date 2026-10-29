@@ -142,11 +142,12 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 }
 
-// An index a later build wrote is emptied and built again from the first file.
+// An index written by a later build is emptied and rebuilt from the first
+// migration file.
 //
-// Its schema holds what this build cannot read. The index is a cache — what it
-// holds is a reading of the vault, and the next scan reads the vault again — so
-// it costs the person that reading and stops nothing.
+// Its schema holds data this build cannot read. The index is a cache: its
+// content is derived from the vault, and the next scan reads the vault again,
+// so the reset costs only that re-read.
 func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
@@ -198,10 +199,11 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	}
 }
 
-// An index whose number does not describe the schema it holds is reported.
+// An index whose version number does not match the schema it holds is reported
+// as an error.
 //
-// A migration written to expect what came before it fails on a schema that does
-// not have it. The failure is what this build says; the index is not touched.
+// A migration written for the preceding schema fails on a schema that lacks it.
+// The failure is reported by this build, and the index is not modified.
 func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
@@ -325,9 +327,9 @@ func TestPragmaUserVersionRollsBackWithItsTransaction(t *testing.T) {
 	}
 }
 
-// breaksOn says which statements the breaking driver fails. A test that uses
-// the breaking driver sets it through breakWhere, since the driver is registered
-// once for the life of the process.
+// breaksOn lists the statements that the breaking driver fails. A test that
+// uses the breaking driver sets it through breakWhere, since the driver is
+// registered once per process.
 var breaksOn atomic.Pointer[func(query string) bool]
 
 // errBroken is what every statement the breaking driver fails answers with.
@@ -465,9 +467,9 @@ func (s breakingStmt) QueryContext(ctx context.Context, args []driver.NamedValue
 	return rows, nil
 }
 
-// rowFault fails the reading of the rows a statement containing text answers
-// with: the first row holds a value no destination takes when unreadable is set,
-// and the iteration ends in an error otherwise.
+// rowFault fails the reading of the rows returned by a statement containing
+// text: when unreadable is set, the first row holds a value that no destination
+// accepts; otherwise the iteration ends in an error.
 type rowFault struct {
 	text       string
 	unreadable bool

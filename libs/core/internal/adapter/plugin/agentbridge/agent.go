@@ -344,8 +344,8 @@ var stepKindWords = map[domain.StepKind]string{
 	domain.StepSearch: "search",
 }
 
-// getKindWord is the word a plugin is told what a call does by. A kind that says nothing about the
-// vault is told as no word.
+// getKindWord returns the word that tells a plugin what a call does. A kind that
+// does not act on the vault maps to the empty word.
 func getKindWord(kind domain.StepKind) string { return stepKindWords[kind] }
 
 // getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the

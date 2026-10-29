@@ -92,7 +92,7 @@ func TestAWidthOfNoDimensionsIsRefused(t *testing.T) {
 	}
 }
 
-// An index holding no vector index is given one of the width asked for.
+// An index without a vector index receives one of the requested width.
 func TestAnIndexWithoutAVectorIndexIsGivenOne(t *testing.T) {
 	db := openDB(t)
 	if _, err := db.write.ExecContext(t.Context(), `DROP TABLE chunks_vec`); err != nil {
@@ -156,7 +156,7 @@ func TestAnIndexWithoutAVectorIndexContainsNoWidth(t *testing.T) {
 	}
 }
 
-// A width that cannot be read is nothing, and the report says why.
+// A width that cannot be read is absent, and the report states why.
 func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
 	t.Run("the catalogue cannot be read", func(t *testing.T) {
 		db := openBreakingDB(t)

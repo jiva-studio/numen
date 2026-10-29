@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// looking is a window that records what is put in front of the person.
+// looking is a window that records the places it is asked to show.
 type looking struct {
 	requested []domain.Place
 	fails     error

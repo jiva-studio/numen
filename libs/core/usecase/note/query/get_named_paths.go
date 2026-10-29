@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 )
 
-// GetNamedPaths finds the notes a link's name reaches.
+// GetNamedPaths returns the notes that a link's name resolves to.
 type GetNamedPaths struct {
 	queries noteport.NoteQueries
 }

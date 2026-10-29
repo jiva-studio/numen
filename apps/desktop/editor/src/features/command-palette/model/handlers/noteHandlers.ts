@@ -7,7 +7,7 @@ import type { CommandInvocation } from '../../types'
 import type { AnswerWords } from '../../words'
 import { NOTE } from '@/entities/tab'
 
-/** A tab asked to flush its pending write: which one it was, and whether it is still waiting. */
+/** The result of a flush request on a tab: which tab it was, and whether it is still waiting. */
 export interface FlushResult {
   readonly tabId: string | null
   readonly isWaiting: boolean
@@ -23,8 +23,8 @@ export const withCurrentNotePath = (
   invocation.note ? { ...invocation, path: on.notes.getPath(invocation.note) } : invocation
 
 /**
- * The tab holding a note, once nothing of the note is on its way to its file.
- * A tab waiting on the person to answer for it flushes nothing and says so.
+ * The tab holding a note, once no write of the note is pending. A tab waiting on
+ * the user flushes nothing and reports so.
  */
 export const flushTab = async (path: string, on: TabContext): Promise<FlushResult> => {
   const tabId = on.notes.getTabAt(path)
@@ -34,7 +34,7 @@ export const flushTab = async (path: string, on: TabContext): Promise<FlushResul
   return { tabId, isWaiting: false }
 }
 
-/** A note travelled to, and a vault with none to travel to said. */
+/** Navigates to a note, and reports when the vault has none. */
 export const navigateToPath = async (
   path: string,
   on: TabContext & Voice,
@@ -73,7 +73,7 @@ export const createNoteCommand = async (
 
 /**
  * A note given a different name, and its file renamed with it where the two are
- * one name. Prose on disk that nobody here has seen leaves the note as it is.
+ * one name. Edits on disk not yet loaded here leave the note as it is.
  */
 export const renameNoteCommand = async (
   invocation: CommandInvocation,

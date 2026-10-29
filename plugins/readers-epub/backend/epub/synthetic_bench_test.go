@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
-// A book of many mid-size chapters, built in memory, so that opening a book is
-// measurable without the corpus.
+// A book of many mid-size chapters, built in memory, so opening a book can be
+// measured without the corpus.
 
 const (
 	syntheticChapterCount = 200

@@ -54,8 +54,8 @@ export const mockVaultState: MockVaultState = {
   /** The open tabs the core kept from before the window started. */
   savedTabs: { tabs: [], activeId: '' },
   /**
-   * Which of three the note at each path is, as the vault answers it. A path
-   * it says nothing about is the ordinary note the window reads it as.
+   * The note type at each path, as the vault reports it. A path without an
+   * entry is an ordinary note.
    */
   types: {},
   /** How many of the spans the index holds carry a vector. */
@@ -108,8 +108,8 @@ export async function* pendingStream(): AsyncGenerator<never> {
 }
 
 /**
- * The places something outside the window asks to be put in front of the
- * person, and the stream the window hears them on.
+ * Place focus requests that originate outside the window, and the stream the
+ * window receives them on.
  */
 export const outside = (() => {
   const queue: { path: string; ranges: { start: number; end: number }[] }[] = []
@@ -136,20 +136,20 @@ export const outside = (() => {
 })()
 
 /**
- * The vault as it makes a note of a plugin type: the file is named after the title,
- * and the extension is the vault's own and no caller's. It is not markdown
- * here, so a window building the path for itself reaches nothing.
+ * The vault's creation of a note of a plugin type: the file is named after the
+ * title, and the vault chooses the extension, not the caller. The extension is
+ * not markdown, so a window that builds the path itself does not match it.
  */
 export const maker = (() => {
   const filed = new Set<string>()
-  /** Whether the vault answers what it is asked at all. */
+  /** Whether the vault is reachable. */
   let reached = true
   return {
     forget: () => {
       filed.clear()
       reached = true
     },
-    /** The vault is out of reach, so asking it for one reaches nothing. */
+    /** Makes the vault unreachable, so file creation fails. */
     fail: () => {
       reached = false
     },

@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 )
 
-// A recipe that moved leaves its vectors where they are, so a person who sets
-// the model back finds them. What they cost is a store carrying both, and this
-// is the one thing that takes the old ones out.
+// A changed recipe leaves its vectors in place, so a user who restores the model
+// finds them. The cost is a store carrying both, and this is the only operation
+// that removes the old ones.
 func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()

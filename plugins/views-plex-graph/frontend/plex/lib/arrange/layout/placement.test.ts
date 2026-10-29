@@ -241,7 +241,7 @@ describe('how far a column reaches before it clears the rows', () => {
   /** Children from the fourth on are drawn twice as wide as the rest. */
   const widths: Widths = (node) => (['child-3', 'child-4', 'child-5'].includes(node.id) ? 200 : 100)
 
-  /** The x of the first sibling, which stands clear of the rows within reach. */
+  /** The x of the first sibling, which is clear of the rows within range. */
   const siblingX = (focusGapSetting: number): number => {
     const options: PlexOptions = {
       ...DEFAULT_OPTIONS,

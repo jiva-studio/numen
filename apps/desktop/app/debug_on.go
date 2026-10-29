@@ -35,9 +35,9 @@ type dependencySetter interface {
 	SetDependencies(pluginport.DependencyCatalog)
 }
 
-// apply has the plugins this run starts answer with mock models where the flag
-// asks for them. The plugin host was made before the flag was read, so it is
-// handed the dependencies a run on mock models provisions: placeholders, and
+// apply makes the plugins started by this run use mock models when the flag
+// requests them. The plugin host is created before the flag is read, so it
+// receives the dependencies a mock-model run provisions: placeholders, with
 // nothing fetched.
 func (d *DebugOptions) apply(cfg container.Config) error {
 	if !d.IsMockML {

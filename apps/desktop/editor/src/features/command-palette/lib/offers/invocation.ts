@@ -1,6 +1,6 @@
 import type { CommandInvocation, CommandTarget } from '../../types'
 
-/** One command as it is carried out, over what it was asked over. */
+/** One command as executed, with the target it was invoked on. */
 export const createInvocation = (
   id: string,
   target: CommandTarget,

@@ -1,12 +1,12 @@
 /**
- * The wikilinks of a text, answered from the wire.
+ * The wikilinks of a text, resolved over the wire.
  *
- * Every window asks the core the same way, so what `ResolveAddresses` answers
- * means in the port is written down once.
+ * Every window queries the core the same way, so the meaning of
+ * `ResolveAddresses` in the port is written down once.
  */
 import type { TextLink } from '../agent'
 
-/** What the core is asked about one text. Empty fields are the window's own. */
+/** What the core is asked about one text. Empty fields refer to the window's own. */
 export interface LinkRequest {
   readonly text: string
   /** The note the text is written in; a name resolves by a path relative to it. */
@@ -15,7 +15,7 @@ export interface LinkRequest {
   readonly vault?: string | undefined
 }
 
-/** As much of the note service as resolving links asks of it. */
+/** As much of the note service as link resolution requires. */
 export interface LinkClient {
   resolveAddresses(request: { from: string; text: string; vault: string }): Promise<{
     readonly found: readonly {
@@ -32,8 +32,8 @@ export interface LinkClient {
 }
 
 /**
- * The wikilinks of a text, each with the path it reaches: empty where it reaches
- * none, or one in another vault.
+ * The wikilinks of a text, each with the path it resolves to: empty where it
+ * resolves to none, or to one in another vault.
  */
 export const resolveTextLinks = async (
   client: LinkClient,

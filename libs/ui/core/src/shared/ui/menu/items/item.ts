@@ -6,8 +6,8 @@ import { stepTo } from '@/shared/lib/dom/roving'
 import type { Position, Size } from '@/shared/lib/math/geometry'
 
 /**
- * One thing that can be chosen. The identifier is opaque: the menu has no way
- * to ask what it addresses, and hands it back as given.
+ * One selectable entry. The identifier is opaque: the menu cannot inspect what
+ * it addresses, and returns it unchanged.
  */
 export interface MenuItem {
   readonly id: string
@@ -27,14 +27,14 @@ export interface MenuItem {
   readonly children?: readonly MenuItem[]
 }
 
-/** One item as it is drawn: what it says, and the rule standing above it. */
+/** One item as rendered: its label, and the separator above it. */
 export interface GroupedItem extends MenuItem {
   readonly isRule: boolean
 }
 
 /**
- * The items in the order they were given, each saying whether a rule stands
- * above it. The first item begins the menu, and nothing is drawn above it.
+ * The items in their given order, each flagged with whether a separator precedes
+ * it. The first item begins the menu and has no separator above it.
  */
 export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] => {
   let above: MenuItem | undefined
@@ -47,22 +47,22 @@ export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] =
 
 /** What placing a menu needs to know. */
 export interface MenuPlacement {
-  /** Where it was asked for. */
+  /** The point where the menu was requested. */
   readonly at: Position
   /** How big it turned out to be. */
   readonly size: Size
   /** The area it is placed in. */
   readonly viewport: Size
-  /** Kept clear of that area's edges, so nothing sits flush against them. */
+  /** Clearance from that area's edges. */
   readonly margin: number
 }
 
 /**
- * Where a menu of this size, asked for at this point, is drawn, in the
- * coordinates the point arrived in.
+ * Position of a menu of this size, requested at this point, in the coordinates
+ * of the point.
  *
- * The point is a span of no width, touching the menu: the menu runs on from it
- * sits at the near edge and scrolls.
+ * The point is a span of zero width touching the menu: the menu extends from
+ * it, sits at the near edge and scrolls.
  */
 export const placeMenu = ({ at: point, size, viewport, margin }: MenuPlacement): Position => ({
   x: getAdjacentPlace({
@@ -97,16 +97,15 @@ export const MENU_TRIGGERS = {
   keyboard: { hasInitialFocus: true },
 } as const satisfies Record<string, MenuTriggerDescriptor>
 
-/** What opened a menu: a hand, or the keyboard. */
+/** What opened a menu: a pointer, or the keyboard. */
 export type MenuTrigger = keyof typeof MENU_TRIGGERS
 
 export const MENU_TRIGGERS_ALL = Object.keys(MENU_TRIGGERS) as readonly MenuTrigger[]
 
 /**
- * Where the keyboard is as a menu opens. Opened by hand it is on no item, and
- * the first step down from there lands on the first one. Opened by the
- * keyboard it lands on the item in force, and on the first where the menu
- * holds none.
+ * Initial keyboard focus when a menu opens. Opened by pointer, no item is
+ * focused and the first step down lands on the first item. Opened by keyboard,
+ * focus lands on the current item, or on the first item when the menu has none.
  */
 export const getInitialIndex = (
   trigger: MenuTrigger,

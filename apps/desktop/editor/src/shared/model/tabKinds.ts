@@ -1,13 +1,13 @@
-/** A kind of tab: what one of its tabs holds, and what a kind may ask of the window. */
+/** A kind of tab: the state its tabs hold, and the operations a kind may request from the window. */
 import type { Component } from 'vue'
 import type { Result, Selector, TabPlacement } from '@numen/plugin-sdk'
 
-/** A file put in front of the person in its reader, at the place the selector names. */
+/** Opens a file in its reader, at the location the selector names. */
 export type SourceReader = (path: string, selector: Selector | null) => void
 
 /**
- * What a command asked over one tab is over: the note the tab means, and the
- * file a run is asked over. A kind that means neither answers with neither.
+ * The target of a command issued against one tab: the note the tab represents,
+ * and the file a run is issued against. A kind with neither returns an empty target.
  */
 export interface TabTarget {
   readonly path?: string
@@ -15,12 +15,12 @@ export interface TabTarget {
   readonly file?: string
 }
 
-/** The file one tab holds, as whoever answers on the person's behalf is told it. */
+/** The file one tab holds, as reported to an agent acting on the user's behalf. */
 export interface OpenTab {
   readonly path: string
 }
 
-/** A kind of tab: what it holds, what it is called, and what it lets go of. */
+/** A kind of tab: what it holds, its title, and how it releases its state. */
 export interface TabKind<TabState, K extends string = string> {
   /** The word the identities of its tabs are filed under. */
   readonly kind: K
@@ -37,7 +37,7 @@ export interface TabKind<TabState, K extends string = string> {
    * as `saved`. A kind that declares none opens its tabs again on their path.
    */
   getState?(state: TabState): unknown
-  /** What the tab is called, as what it holds now stands. */
+  /** The title of the tab, derived from its current state. */
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
   getMark?(state: TabState): string | undefined
@@ -49,18 +49,17 @@ export interface TabKind<TabState, K extends string = string> {
    * tab it already has.
    */
   identity?(targetPath: string): string
-  /** The tab came on screen, where what it holds has room to measure. */
+  /** The tab became visible, so its content can be measured. */
   onShow?(state: TabState, id: string): void
   /** The tab is handed text meant for it, such as a question the window puts to it. */
   receiveText?(state: TabState, text: string): void
   /**
-   * A key struck while one of its tabs is the one the person is in, answered
-   * with whether the tab took it. Several panes are drawn at once, so the tab
-   * offered it is the one showing in the pane the layout is focused on, and
-   * then whatever else is on screen.
+   * A key press while one of its tabs is focused. Returns whether the tab
+   * handled it. Several panes are visible at once, so the tab offered the key
+   * is the one in the focused pane, followed by the other visible tabs.
    */
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
-  /** What a command asked over one of its tabs is over. */
+  /** The target of a command issued against one of its tabs. */
   getTarget?(state: TabState): TabTarget
   getOpenTab?(state: TabState): OpenTab
   /**
@@ -69,8 +68,8 @@ export interface TabKind<TabState, K extends string = string> {
    */
   onClose?(state: TabState, id: string): boolean
   /**
-   * The window is going, and nothing this tab holds outlives it. A kind that
-   * says nothing here lets go the way a tab of it closes.
+   * The window is closing, and nothing this tab holds outlives it. A kind that
+   * omits this hook releases its state the same way as a tab close.
    */
   onDestroy?(state: TabState, id: string): void
   /**
@@ -92,8 +91,8 @@ export interface TabKind<TabState, K extends string = string> {
 }
 
 /**
- * A kind as the window keeps it. What its tabs hold is the kind's own affair,
- * and the window hands it back to the kind untouched.
+ * A kind as the window stores it. The state of its tabs is private to the kind,
+ * and the window passes it back to the kind unchanged.
  */
 export type AnyTabKind = TabKind<unknown>
 
@@ -109,7 +108,7 @@ export interface KindTab<TabState> {
   readonly state: TabState
 }
 
-/** The tab the person is looking at, whichever kind it turns out to be. */
+/** The focused tab, of whichever kind. */
 export interface ActiveTab {
   readonly id: string
   /** The word its kind is filed under, and nothing where the window holds no such tab. */
@@ -122,22 +121,22 @@ export interface ActiveTab {
 export interface WindowHandle {
   /** A tab of a kind, opened on something and put in front. */
   openTab(kind: string, at?: string): Promise<string>
-  /** The same, drawn beside the pane the person is in. */
+  /** The same, opened in a pane adjacent to the focused pane. */
   openTabAdjacent(kind: string, at?: string): Promise<string>
   /** A tab the window already holds, put in front. */
   show(id: string): void
   /** A tab that took its own close, going now. */
   closeTab(id: string): void
   /**
-   * Every tab of a kind, in the order the person was last in them. The last of
-   * them is the one in front.
+   * Every tab of a kind, ordered by last focus. The last entry is the most
+   * recently focused tab.
    */
   each<TabState>(kind: string): readonly KindTab<TabState>[]
-  /** The tab of a kind the person was last in, and nothing where it holds none. */
+  /** The most recently focused tab of a kind, or null when there is none. */
   last<TabState>(kind: string): KindTab<TabState> | null
   /**
-   * The tab showing in the pane the person is in, of whatever kind. A pane
-   * holding nothing answers with nothing.
+   * The tab visible in the focused pane, of any kind. Null when the pane is
+   * empty.
    */
   front(): ActiveTab | null
   /** What one tab of a kind holds, and nothing where the tab is another kind. */

@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Queries answers questions about notes in shapes that are not notes: what the
-// index believes about each file, what a name reaches, how much is there.
+// Queries answers queries about notes in shapes other than notes: what the
+// index records about each file, what a name resolves to, and how many there are.
 type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
@@ -69,10 +69,9 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	return s, err
 }
 
-// Statements exposes the SQL this package runs, so that a test can ask the
-// database how it intends to answer each one. A plan is not something a package
-// can check about itself: it needs a migrated database, and that lives one level
-// up.
+// Statements exposes the SQL this package runs, so a test can ask the database
+// how it plans to execute each statement. A package cannot check a plan about
+// itself: it needs a migrated database, which lives one level up.
 func Statements() map[string]string { return stmt }
 
 // GetNamedPaths is every note filed under one name. A name that answers for
@@ -115,9 +114,8 @@ const mostPerNote = 2
 // note may contribute is settled before the limit is applied.
 func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error) {
 	if limit <= 0 {
-		// How many results a person wants is not something a database adapter
-		// knows. The caller decides, and arriving here without one is a
-		// mistake in the caller.
+		// The result count is the caller's decision, not a database adapter's; a
+		// missing limit is a caller error.
 		return nil, fmt.Errorf("titles limit must be positive, got %d", limit)
 	}
 

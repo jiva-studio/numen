@@ -1,5 +1,5 @@
 /**
- * Which notes a node hangs headings for, asked without a screen.
+ * Which notes a node shows headings for, tested without a screen.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
@@ -115,7 +115,7 @@ describe('the headings of a node', () => {
       }),
       map,
     )
-    // The first read is the one the watcher asks for on creation, and stays held.
+    // The first read is the one the watcher requests on creation, and is retained.
     await plex.readHeadings()
     fail()
     await new Promise((resolve) => setTimeout(resolve, 0))

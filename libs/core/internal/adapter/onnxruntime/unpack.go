@@ -72,8 +72,8 @@ func unpackZip(archive, name, pos string) error {
 	return fmt.Errorf("%s holds no %s", archive, name)
 }
 
-// write puts one file down through a name beside it, so that an unpacking
-// interrupted leaves nothing that looks finished.
+// write writes one file through a temporary name in the same directory, so an
+// interrupted unpacking leaves nothing that looks finished.
 func write(pos string, from io.Reader) error {
 	part := pos + ".part"
 	file, err := os.OpenFile(part, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
@@ -92,12 +92,12 @@ func write(pos string, from io.Reader) error {
 	return os.Rename(part, pos)
 }
 
-// isLibrary says whether one name in an archive is the library.
+// isLibrary reports whether one name in an archive is the library.
 //
-// It is the plain name, that name with a version after it, or the name carrying
+// It is the exact name, that name with a version after it, or the name carrying
 // a version before its extension, which is where a mac library keeps one. It is
-// not one of the libraries published beside it: those are named for what they
-// add, so they carry the same prefix and a different word.
+// not one of the libraries published in the same archive: those are named for
+// what they add, so they carry the same prefix and a different word.
 func isLibrary(found, name string) bool {
 	if found == name || strings.HasPrefix(found, name+".") {
 		return true

@@ -1,5 +1,5 @@
 /**
- * A stream taken up again, asked without a core to talk to.
+ * A resumed stream, tested without a core to talk to.
  *
  * The failure here looks like nothing at all: a window that stopped following
  * shows what the vault held a moment ago, with no error and no way back.
@@ -23,7 +23,7 @@ const window = (streams = 3) => {
   return { follows, waits, lost: missing, took: () => acquiredCount }
 }
 
-/** A stream that says what it was given and ends. */
+/** A stream that emits what it was given and ends. */
 const createStream = <T>(...response: readonly T[]) =>
   async function* () {
     for (const one of response) yield one

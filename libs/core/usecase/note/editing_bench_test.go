@@ -17,9 +17,9 @@ import (
 // replaced; what the index then costs is a refresh, and is measured as one.
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 
-// What these measure: what a person waits for between stopping typing and their
-// note being on disk, and what a window pays per open tab every time the vault
-// changes. The numbers live in docs/performance.md.
+// These benchmarks measure the delay between the end of typing and the note
+// being written to disk, and the cost per open tab each time the vault changes.
+// The numbers live in docs/performance.md.
 //
 //	go test ./usecase/note/ -run XXX -bench . -benchtime 100x
 
@@ -64,8 +64,8 @@ func BenchmarkSave(b *testing.B) {
 
 			b.ResetTimer()
 			for i := range b.N {
-				// Every save writes something different, which is what a person
-				// typing does and what the index has to notice.
+				// Every save writes different content, as typing does, so the index
+				// detects a change.
 				if _, err := write.Save(b.Context(), v, path, fmt.Sprintf("%s\n\n%d\n", body, i), nil); err != nil {
 					b.Fatal(err)
 				}

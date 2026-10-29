@@ -136,7 +136,7 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 	}
 }
 
-// Each model the manifest offers is one the engine runs, fetched from the address the engine knows.
+// Each model the manifest offers is one the engine runs, fetched from the engine's own address.
 func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 	var manifest struct {
 		Dependencies []struct {

@@ -78,8 +78,8 @@ func TestOneSaveIsOneReport(t *testing.T) {
 	}
 }
 
-// TestWatchVault_RequestsReloadWhenFolderRemoved. What it held is known to the
-// index, so the watcher asks for the vault to be read again.
+// TestWatchVault_RequestsReloadWhenFolderRemoved. The index knows the contents
+// of the removed folder, so the watcher requests a full vault reload.
 func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":            "# Note\n",
@@ -104,17 +104,19 @@ func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 	}
 }
 
-// TestAFolderAlreadyThereIsNotItsWholeContents. A folder is named in its own
-// right when something inside it changes, and that something is named too. The
-// folder is known, so it adds nothing to what its own contents already said.
+// TestAFolderAlreadyThereIsNotItsWholeContents. A folder is reported on its own
+// when something inside it changes, and the changed item is reported too. The
+// folder is already known, so it adds nothing to what its contents already
+// reported.
 func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":      "# Note\n",
 		"Untouched.md": "# Untouched\n",
 		"Aside.md":     "# Aside\n",
 	}, nil)
-	// A watch opened on a folder written a moment ago is told what was already
-	// in it, and one of those cannot be told from a file that has just arrived.
+	// A watch opened on a folder created moments earlier reports the files
+	// already in it, and these cannot be distinguished from newly arrived
+	// files.
 	time.Sleep(500 * time.Millisecond)
 	next := watchVault(t, root)
 
@@ -129,9 +131,9 @@ func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
 	}
 }
 
-// TestAFolderWithADotInItsNameIsStillAFolder. A name says nothing about what a
-// path was: `2026.archive` is a folder and `Note.md.tmp` is not, and only one of
-// them takes notes with it.
+// TestAFolderWithADotInItsNameIsStillAFolder. A name does not determine the
+// kind of a path: `2026.archive` is a folder and `Note.md.tmp` is not, and only
+// the folder is scanned for notes.
 func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":              "# Note\n",
@@ -165,9 +167,10 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 	}
 }
 
-// TestDebouncingGoesOnWhileNobodyIsListening. Whoever listens takes as long as
-// a reindex takes; the operating system does not wait for it, and a debounce that
-// waited would stop emptying the backlog and lose what came after.
+// TestDebouncingGoesOnWhileNobodyIsListening. The consumer takes as long as a
+// reindex to receive events and the operating system does not wait for it. A
+// debounce that blocked on the consumer would stop draining the backlog and
+// lose later events.
 func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	changes, _, err := vaultwatch.Watcher{Options: vaultconfig.Options{DebounceDelay: 50 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
@@ -183,9 +186,9 @@ func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 
 	select {
 	case paths := <-changes:
-		// A batch may name more than was changed: a watch just opened on a vault
-		// is told about files that were already there, and one of those cannot
-		// be told from a file that has just arrived.
+		// A batch may report more than changed: a watch opened on a vault
+		// reports files that were already present, and these cannot be
+		// distinguished from newly arrived files.
 		for _, want := range []string{"First.md", "Second.md"} {
 			if !slices.Contains(paths, want) {
 				t.Fatalf("the first batch was %v — %s was not debounced into it", paths, want)
@@ -310,9 +313,9 @@ func TestWhatTheVaultIgnoresIsNotReported(t *testing.T) {
 	}
 }
 
-// A file is followed by its folder, so it is still followed after it is
-// replaced: a database written beside itself and renamed over is the same file
-// to whoever reads it.
+// A file is watched through its folder, so it is still watched after
+// replacement: a database written to a temporary file and renamed over the
+// original is the same file to its reader.
 func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	dir := t.TempDir()
 	pos := filepath.Join(dir, "index.db")
@@ -348,9 +351,9 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	}
 	waits("the file was replaced and nothing was reported")
 
-	// A file of another name in the same folder is not this file. What the
-	// replacing left waiting is taken first: one message stands for whatever
-	// happened before it was read.
+	// A file with another name in the same folder is not this file. The event
+	// left pending by the replacement is consumed first: one message represents
+	// everything that happened before it was read.
 	for draining := true; draining; {
 		select {
 		case <-moved:

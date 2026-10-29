@@ -1,8 +1,8 @@
 /**
- * Neighbourhoods to build against, written by hand and awkward on purpose.
+ * Neighbourhoods to build against, handwritten and deliberately awkward.
  *
- * None of this comes from a vault: a fixture taken from the domain is how the
- * dependency gets back in through the door marked "tests".
+ * None of this comes from a vault: a fixture taken from the domain would pull
+ * the dependency in through tests.
  */
 import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
@@ -122,8 +122,8 @@ export const awkwardLabels: PlexNeighbourhood = neighbourhood(
 
 /**
  * Every line named, and more children than one row holds. The lines to the far
- * row cross the near one, so their titles are looking for room in a band the
- * near row's titles are already standing in.
+ * row cross the near one, so their titles compete for space in a band the
+ * near row's titles already occupy.
  */
 export const labelledRows: PlexNeighbourhood = {
   nodes: [

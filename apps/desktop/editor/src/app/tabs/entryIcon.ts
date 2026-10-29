@@ -1,7 +1,7 @@
 /**
- * The icon one entry of the files tree is drawn as. A folder says whether what
- * it holds is drawn; a note is drawn by which kind of note it is, and every
- * other file by the icon of the reader that opens it.
+ * The icon for one entry of the files tree. A folder's icon reflects whether
+ * its contents are shown; a note's icon depends on its note type, and every
+ * other file's icon is that of the reader that opens it.
  */
 import type { Component } from 'vue'
 import { File, Folder, FolderOpen } from '@lucide/vue'

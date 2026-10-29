@@ -1,4 +1,4 @@
-/** The clock, driven by hand: no waiting, no flakiness. */
+/** A manually driven clock: no waiting, no flakiness. */
 import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'

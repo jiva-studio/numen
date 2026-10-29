@@ -6,8 +6,8 @@ import { READER_WORDS } from '../lib/strip'
 const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
 
 /**
- * A reader in a room of a given size. Nothing in a test has a layout, so the
- * room says how big it is and the reader is told to take it again.
+ * A reader in a container of a given size. Tests have no layout, so the
+ * container size is set explicitly and the reader is told to measure again.
  */
 const reader = async (width: number, high: number) => {
   const wrapper = mount(Reader, {
@@ -28,7 +28,7 @@ const room = async (wrapper: ReturnType<typeof mount>, width: number, height: nu
   await wrapper.vm.$nextTick()
 }
 
-/** The widths the reader has asked for, in the order it asked. */
+/** The widths the reader has emitted in `measure` events, in emission order. */
 const getWidths = (wrapper: ReturnType<typeof mount>) =>
   (wrapper.emitted('measure') ?? []).map((one) => (one as [number])[0])
 
@@ -50,10 +50,10 @@ describe('the room a document is read in', () => {
   })
 
   it('keeps the room it had when it is put out of sight', async () => {
-    // Every tab of a pane is mounted while it is hidden, and one out of sight
-    // has no room. Laying the row out on nothing asks for every page again at a
-    // width nothing will draw at, and asks for them all a second time when the
-    // tab comes back.
+    // Every tab of a pane is mounted while hidden, and a hidden tab has size
+    // zero. Laying the row out at zero size requests every page again at a
+    // width that is never drawn, and requests them a second time when the tab
+    // becomes visible.
     const target = await reader(1000, 800)
     const before = target.find('.reader__row').attributes('style')
 
@@ -64,9 +64,9 @@ describe('the room a document is read in', () => {
   })
 
   it('asks again when the room really changes', async () => {
-    // The first width is asked for at once — a document opening has nothing
-    // drawn and nothing to wait for. Every width after it waits for the edge of
-    // the pane to stop moving.
+    // The first width is requested immediately: an opening document has nothing
+    // drawn yet. Every later width is requested after the pane edge stops
+    // moving.
     vi.useFakeTimers()
     try {
       const target = await reader(1000, 800)
@@ -99,21 +99,21 @@ describe('the pages drawn', () => {
 })
 
 describe('the page it says it relies on', () => {
-  /** The row scrolled by hand, and the reader told about it. */
+  /** Scrolls the row directly and dispatches the scroll event to the reader. */
   const scrollTo = async (wrapper: ReturnType<typeof mount>, to: number) => {
     const area = wrapper.find('.reader__viewport').element as HTMLElement
     area.scrollLeft = to
     await wrapper.find('.reader__viewport').trigger('scroll')
   }
 
-  /** Which pages the reader has asked to be turned to, in the order it asked. */
+  /** The pages the reader has requested through `go` events, in emission order. */
   const getTurns = (wrapper: ReturnType<typeof mount>) =>
     (wrapper.emitted('go') ?? []).map((one) => (one as [number])[0])
 
   it('says nothing while the row travels to the page it was turned to', async () => {
-    // A turn is a scroll the browser animates, and the pages the row passes
-    // over on the way are pages nobody turned to. Reporting one of them is
-    // answered with a scroll back to it, and the turn is undone.
+    // A turn is a scroll the browser animates, and the pages the row passes on
+    // the way were not requested. Reporting one of them would scroll the row
+    // back to it and undo the turn.
     const target = await reader(1000, 800)
     await target.setProps({ at: 4 })
 
@@ -133,8 +133,8 @@ describe('the page it says it relies on', () => {
   })
 
   it('turns again when the page changes before the row has returned it arrived', async () => {
-    // The room moves when it is told to and the event saying so comes after.
-    // A turn asked for in between is a turn to a page the row is not on.
+    // The container size changes first and the resize event follows. A turn
+    // requested in between targets a page the row is not on.
     const target = await reader(1000, 800)
     const area = target.find('.reader__viewport').element as HTMLElement
     const dispatched: number[] = []
@@ -152,11 +152,11 @@ describe('the page it says it relies on', () => {
   })
 })
 
-/** What the reader exposes to whoever holds the page it relies on. */
+/** The handle the reader exposes to the host of the page it depends on. */
 const getReaderHandle = (wrapper: ReturnType<typeof mount>) =>
   wrapper.vm as unknown as { handleKey: (event: KeyboardEvent) => boolean }
 
-/** The pages the reader has asked to be turned to, in the order it asked. */
+/** The pages the reader has requested through `go` events, in emission order. */
 const getTurns = (wrapper: ReturnType<typeof mount>) =>
   (wrapper.emitted('go') ?? []).map((one) => (one as [number])[0])
 

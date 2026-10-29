@@ -145,9 +145,9 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 	}
 }
 
-// The file is asked about only when something is held against what it is: a
-// tab that presents what it last saw, or a caller that said nothing and is held
-// to what is read just now.
+// The file is read only when the edit carries a precondition: a tab that
+// presents the fingerprint it last saw, or a caller that sent none and is held
+// to the content read at that moment.
 func TestEdit_ReadsFileOnlyWhenFingerprintRequired(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {

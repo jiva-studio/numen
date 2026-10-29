@@ -1,29 +1,29 @@
-/** How long a notice stands, and which of the ones handed in are drawn. */
+/** How long a notice is displayed, and which of the supplied notices are rendered. */
 
 import { getReadable, type Notice } from './notice'
 
 /**
  * How long work runs before it is worth a card, in milliseconds.
  *
- * Most passes are over before a person could read what they were called. A
- * notice somebody asked for does not wait: they are waiting for it.
+ * Most passes finish before a user could read their names. A notice the user
+ * requested does not wait, since the user is waiting for it.
  */
 export const CARD_DELAY = 10_000
 
-/** How long the shortest thing worth saying stands, in milliseconds. */
+/** The minimum display time of a notice, in milliseconds. */
 export const MIN_DURATION = 4_000
 
-/** How much longer it stands for each word it carries, in milliseconds. */
+/** The additional display time per word, in milliseconds. */
 export const PER_WORD = 400
 
 /** The length past which a notice is not read in passing. */
 export const TOO_MUCH = 20
 
 /**
- * How long a notice stands to be read, in milliseconds.
+ * How long a notice is displayed to be read, in milliseconds.
  *
- * Longer words are read for longer. Past twenty of them the time never runs
- * out: a list of names is something a person acts on, and it waits for them.
+ * Display time grows with word count. Above twenty words the notice never
+ * expires: a list of names needs a user action and stays until handled.
  */
 export const getNoticeDuration = (text: string, about = ''): number => {
   const words = `${text} ${about}`.split(/\s/).filter((word) => word !== '')
@@ -42,7 +42,7 @@ export const getArrivalTimes = (
 ): ReadonlyMap<string, number> =>
   new Map(getReadable(notices).map((notice) => [notice.id, was.get(notice.id) ?? pos]))
 
-/** Whether a notice has stood long enough to have been read. */
+/** Whether a notice has been displayed long enough to have been read. */
 const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, pos: number): boolean =>
   pos - (firstSeen.get(notice.id) ?? pos) >= getNoticeDuration(notice.text, notice.about)
 

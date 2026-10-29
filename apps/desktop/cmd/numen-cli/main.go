@@ -23,10 +23,10 @@ func main() {
 }
 
 func run() (code int) {
-	// The settings are read here and nowhere below: an entry point says what it
-	// found, and nothing further down can reach the machine's own file.
+	// The settings are read here only: nothing further down can access the
+	// machine's own settings file.
 	cfg := platform.GetConfig()
-	// A run whose plugins did not stop says so, and fails if nothing else did.
+	// A run whose plugins did not stop reports it, and fails if nothing else did.
 	defer func() {
 		if err := cfg.StopPlugins(context.Background()); err != nil {
 			fmt.Fprintln(os.Stderr, "numen-cli: stop plugins:", err)

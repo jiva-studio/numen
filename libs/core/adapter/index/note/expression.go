@@ -6,15 +6,15 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The two characters the index is asked to wrap a run that matched in. They are
-// control characters, which no name written by a person holds.
+// The two characters the index wraps around a matched run. They are control
+// characters, which no user-written name contains.
 const (
 	opening = "\x02"
 	closing = "\x03"
 )
 
-// parseMarkedName is a marked name as it actually reads, and the runs the index marked in
-// it, counted the way a client counts text: in UTF-16 code units.
+// parseMarkedName returns a marked name without its markers, and the runs the
+// index marked in it, counted as a client counts text: in UTF-16 code units.
 func parseMarkedName(marked string) (string, []domain.UnitRange) {
 	var name strings.Builder
 	name.Grow(len(marked))

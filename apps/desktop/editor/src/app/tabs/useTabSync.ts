@@ -7,7 +7,7 @@ import type { TabId, TabLinksState } from '@/features/tab-linking'
 export interface TabSyncDeps {
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab'>
   tabLinks: Pick<TabLinksState, 'getLinkedTargets'>
-  /** A linked tab that failed to move, told to the window. */
+  /** A linked tab that failed to move, reported to the window. */
   onError: (error: unknown) => void
 }
 

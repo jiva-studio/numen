@@ -1,10 +1,10 @@
 /**
- * The words as they now read, back against the milliseconds they were said in.
+ * Maps the edited transcript text back to the millisecond spans of its cues.
  *
- * One cue is one line, so an edit to the words is an edit to the lines and the
- * times follow it. A line that only changed keeps its own times; lines joined
- * take the first one's start and the last one's end; a line split shares its
- * span out where the split fell in its characters.
+ * One cue is one line, so an edit to the text is an edit to the lines and the
+ * times follow it. An edited line keeps its times; joined lines take the first
+ * line's start and the last line's end; a split line divides its span in
+ * proportion to the characters on each side of the split.
  */
 
 /** One cue: its text and the milliseconds it covers. */
@@ -15,8 +15,8 @@ export interface Cue {
 }
 
 /**
- * The cue being said at a millisecond, and the last one said where a silence
- * stands there. Nothing until the first cue begins.
+ * The index of the cue active at a millisecond, or the last cue before it when
+ * a gap contains the millisecond. Returns -1 before the first cue begins.
  */
 export const findCueAt = (cues: readonly Cue[], ms: number): number => {
   for (let index = cues.length - 1; index >= 0; index--) {
@@ -42,8 +42,8 @@ export const isSame = (a: readonly Cue[], b: readonly Cue[]): boolean =>
  * span it now covers.
  */
 /**
- * How many lines at either end read as they did. What is left between them is
- * what the person changed.
+ * How many lines at the start and at the end of the text are unchanged. The
+ * lines between them are the edited ones.
  */
 const countSame = (
   lines: readonly string[],
@@ -72,8 +72,8 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   const old = was.slice(head, was.length - tail)
   const newLines = lines.slice(head, lines.length - tail)
 
-  // Lines typed where no cue stood take an empty span at the boundary they
-  // were typed on.
+  // Lines inserted where no cue existed take an empty span at the boundary where
+  // they were inserted.
   const start = old.length
     ? old[0]!.from
     : (headCues[headCues.length - 1]?.to ?? rest[0]?.from ?? 0)
@@ -88,7 +88,7 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
 }
 
 /**
- * The transcript as it now reads, for the application to keep. A line emptied
+ * The transcript as it reads after the edit, ready to be saved. A line emptied
  * entirely is dropped.
  */
 export const applyCues = (was: readonly Cue[], text: string): readonly Cue[] =>

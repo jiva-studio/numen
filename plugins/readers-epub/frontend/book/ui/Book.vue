@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { measureRect } from '../../dom'
 /**
- * A book made for a screen, read: its text set in columns and turned a page at
- * a time.
+ * A book rendered for a screen: its text set in columns and turned a page at a
+ * time.
  *
- * spread of two turns as one. Where a person is reading is a byte offset into
- * the book's text: setting the text larger sets the columns again, and the
- * offset stays where it was.
+ * A spread of two columns turns as one. The reading position is a byte offset
+ * into the book's text: enlarging the text lays out the columns again and the
+ * offset is unchanged.
  */
 import { useTemplateRef } from 'vue'
 
@@ -90,8 +90,8 @@ const onKey = (event: KeyboardEvent): boolean => {
 /* -------------------------------- Helpers --------------------------------- */
 defineExpose({
   /**
-   * Set the text again. A reader drawn out of sight has no reading area, and
-   * the caller says when it is on screen.
+   * Lays out the text again. A reader rendered off screen has no reading area, and
+   * the caller signals when it is on screen.
    */
   measure: () => layout.settle(layout.getKeptOffset()),
   /** A key the tab caught: true where it turned the page. */

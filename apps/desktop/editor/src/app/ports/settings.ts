@@ -1,4 +1,4 @@
-/** What the window asks of the vault about its settings. */
+/** The vault settings operations the window uses. */
 import type { Configuration, SettingEdit } from '@/entities/settings'
 
 export interface SettingsPort {
@@ -16,8 +16,8 @@ export interface SettingsPort {
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
   /**
-   * The key of a secret a plugin declares, stored in the system keychain and
-   * never in the settings file. A machine without a keychain refuses it.
+   * The key of a secret declared by a plugin, stored in the system keychain and
+   * never in the settings file. A machine without a keychain rejects it.
    */
   writePluginSecret(pluginId: string, name: string, key: string): Promise<void>
   /** The key of a secret a plugin declares, removed. */
@@ -28,9 +28,9 @@ export interface SettingsPort {
    */
   retryPlugin(pluginId: string): Promise<string>
   /**
-   * The machine's own picker put in front of the person for a plugin's setting of type file or
-   * folder, and the path chosen written. The problem is why the setting does not take the path,
-   * and empty where it was written.
+   * Opens the system picker for a plugin setting of type file or folder, and
+   * writes the selected path. The returned problem states why the setting does not
+   * accept the path, and is empty when the path was written.
    */
   choosePluginPath(
     pluginId: string,

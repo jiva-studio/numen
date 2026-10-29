@@ -1,5 +1,5 @@
 /**
- * What is asked while a person types, and which answer is drawn.
+ * The search requests made while the user types, and which response is drawn.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'

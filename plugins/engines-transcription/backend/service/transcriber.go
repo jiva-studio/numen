@@ -18,20 +18,20 @@ const (
 	taskLoading      = "Loading the models"
 )
 
-// batchSize is how many stretches of speech are heard before what was heard is written down and
-// put as the version so far.
+// batchSize is how many speech segments are transcribed before the transcript is
+// persisted and published as the current version.
 const batchSize = 16
 
-// Files reads the files of the vaults the host knows.
+// Files reads files from the vaults known to the host.
 type Files interface {
 	ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error)
 }
 
-// Engines opens the model a recording is heard with. It is opened once and kept.
+// Engines opens the model used to transcribe a recording. The model is opened once and reused.
 type Engines func(ctx context.Context) (engine.TranscriberPort, error)
 
-// Transcriber hears the recordings a person asks for, one at a time through the core's queue, and
-// reports each as a task and as a timed text version that grows as the words are written down.
+// Transcriber transcribes the recordings requested by the user, one at a time through the core's queue,
+// and reports each as a task and as a timed text version that grows as the transcript is written.
 type Transcriber struct {
 	files   Files
 	stores  host.Store
@@ -102,7 +102,7 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 // errAlreadyTranscribing is a recording another run is transcribing.
 var errAlreadyTranscribing = errors.New("the recording is already being transcribed")
 
-// Transcribe hears a recording and returns once its transcript is written down, with the error the
+// Transcribe transcribes a recording and returns once its transcript is written, with the error the
 // transcription stopped on. It ends when ctx ends or the plugin stops.
 func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
 	key, isClaimed := t.claim(vault, path)
@@ -248,9 +248,9 @@ func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	return nil
 }
 
-// hearSegments hears the recording from where a run before this one stopped until it reaches no
-// further, writing and putting each batch as it is heard. Work waiting for the queue takes its turn
-// between two batches.
+// hearSegments transcribes the recording from where a previous run stopped until no segments
+// remain, writing and publishing each batch. Work waiting for the queue takes its turn between two
+// batches.
 func (t *Transcriber) hearSegments(ctx context.Context, j *job, model engine.TranscriberPort, recording engine.Recording) error {
 	from, err := j.store.readReached(ctx, j.key)
 	if err != nil {
@@ -290,8 +290,8 @@ func (t *Transcriber) yieldTurn(ctx context.Context, j *job) error {
 	return t.takeTurn(ctx, j)
 }
 
-// hearBatch hears the next stretches of speech after from, and returns their cues with the furthest
-// moment they reach. A recording with nothing after from returns no cues and from itself.
+// hearBatch transcribes the next speech segments after from, and returns their cues with the
+// furthest end time they reach. A recording with nothing after from returns no cues and from itself.
 func hearBatch(
 	ctx context.Context, model engine.TranscriberPort, recording engine.Recording, path string, from int,
 ) ([]transcript.Cue, int, error) {
@@ -319,13 +319,13 @@ func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, le
 	})
 }
 
-// reportTask shows the task. A task the host could not be told of is shown by the next report.
+// reportTask publishes the task. A task the host could not be notified of is published by the next report.
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 	_ = t.queue.ReportTask(context.WithoutCancel(ctx), task)
 }
 
-// finishTask takes the recording's task out of the list. One the host could not be told to take out
-// goes when the plugin stops.
+// finishTask removes the recording's task from the list. If the host could not be notified, the
+// task is removed when the plugin stops.
 func (t *Transcriber) finishTask(ctx context.Context, path string) {
 	_ = t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path))
 }

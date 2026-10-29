@@ -35,8 +35,8 @@ func NewHandler() *Handler { return &Handler{} }
 // errNoSettings is what a build that serves no settings answers.
 var errNoSettings = errors.New("this build serves no settings")
 
-// GetSettings is every setting of the file a person configures this
-// installation in, and the models the settings that name one can be set to.
+// GetSettings returns every setting of the file this installation is configured in,
+// and the models that settings naming a model can be set to.
 func (h *Handler) GetSettings(
 	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
@@ -165,7 +165,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	return infos
 }
 
-// Consents is whether the person lets a plugin ask a model, as the wire carries it.
+// Consents maps whether the user lets a plugin query a model to its wire value.
 var Consents = map[setting.Consent]v1.CompletionConsent{
 	setting.ConsentNone:      v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
 	setting.ConsentPending:   v1.CompletionConsent_COMPLETION_CONSENT_PENDING,
@@ -175,8 +175,8 @@ var Consents = map[setting.Consent]v1.CompletionConsent{
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the
-// plugin does not declare, and a machine without a key store, are the client's
-// to be told of.
+// plugin does not declare, and a machine without a key store, are reported to
+// the client.
 func (h *Handler) WritePluginSecret(
 	ctx context.Context, r *connect.Request[v1.WritePluginSecretRequest],
 ) (*connect.Response[v1.WritePluginSecretResponse], error) {
@@ -298,8 +298,8 @@ func newWireSecrets(target []setting.PluginSecret) []*v1.PluginSecret {
 	return secrets
 }
 
-// ChoosePluginPath puts the machine's own picker in front of the person for a plugin's path setting
-// and writes the path chosen. A path the setting does not take is answered with the reason.
+// ChoosePluginPath shows the machine's native picker for a plugin's path setting
+// and writes the chosen path. A path the setting does not accept returns the reason.
 func (h *Handler) ChoosePluginPath(
 	ctx context.Context, r *connect.Request[v1.ChoosePluginPathRequest],
 ) (*connect.Response[v1.ChoosePluginPathResponse], error) {

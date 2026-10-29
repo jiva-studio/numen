@@ -21,17 +21,18 @@ func NewOpenProxy(readers vaultport.VaultReaders, copies playbackport.Copies) *O
 	return &OpenProxy{readers: readers, copies: copies}
 }
 
-// CopyFile is a copy open to read a part of, and the media type it is played as. Whoever opens it
-// closes it.
+// CopyFile is a copy opened for partial reads, and the media type it is played
+// as. The caller closes it.
 type CopyFile struct {
 	Body      io.ReadSeekCloser
 	Size      int64
 	MediaType string
 }
 
-// Execute opens the copy kept of the file at the path as it now reads, and answers false where no
-// copy of it is kept. A note is matched by the type its frontmatter carries, so a plugin that keeps
-// copies of notes of its own type keeps none of an ordinary note.
+// Execute opens the stored copy of the file at the path as it currently reads,
+// and returns false when no copy is stored. A note is matched by the type in its
+// frontmatter, so a plugin that stores copies of notes of its own type stores
+// none of an ordinary note.
 func (u *OpenProxy) Execute(ctx context.Context, v domain.Vault, path string) (CopyFile, bool, error) {
 	var raw []byte
 	var noteType domain.NoteType

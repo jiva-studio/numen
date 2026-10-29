@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// What stopped the application is said where a person is: in a window, with
-// what this build knows about the state it found.
+// What stopped the application is reported in a window, with what this build
+// knows about the state it found.
 func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: pos}
@@ -39,7 +39,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 	}
 }
 
-// An error this build has nothing further to say about is still said.
+// An error this build has no further information about is still reported.
 func TestError_AdditionalDetails(t *testing.T) {
 	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 		errors.New("the settings could not be read"))
@@ -51,7 +51,7 @@ func TestError_AdditionalDetails(t *testing.T) {
 	}
 }
 
-// A message a person reads is not a place to put markup they did not write.
+// A message shown to the user must not render markup the user did not write.
 func TestError_StripsMarkup(t *testing.T) {
 	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
 		errors.New(`<script>alert("x")</script>`))
@@ -64,8 +64,8 @@ func TestError_StripsMarkup(t *testing.T) {
 }
 
 // stopping is one state the application can stop in, and the error it stops
-// with. The error is the one the state itself produces: what a person reads is
-// only as good as what this window can tell apart.
+// with. The error is the one the state itself produces: the report is only as
+// precise as what this window can distinguish.
 type stopping struct {
 	name string
 	cfg  container.Config
@@ -152,8 +152,8 @@ func read(t *testing.T, path string) error {
 	return err
 }
 
-// Every state this window draws says all three things: what could not be
-// opened, what was found, and what a person can do about it.
+// Every state this window renders reports all three: what could not be opened,
+// what was found, and what the user can do about it.
 func TestError_RemediationGuidance(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
@@ -182,9 +182,8 @@ func TestError_RemediationGuidance(t *testing.T) {
 	}
 }
 
-// The heading names what could not be opened. The index and a person's own
-// settings file are two different things to have to put right, and neither of
-// them is a vault.
+// The heading names what could not be opened. The index and the user's own
+// settings file are different things to repair, and neither is a vault.
 func TestError_NamesUnopenedTarget(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
@@ -208,8 +207,8 @@ func TestError_NamesUnopenedTarget(t *testing.T) {
 	}
 }
 
-// The two faults sqlite answers for with one sentence are two states here: a
-// path that is a folder is not a folder nobody may write in.
+// The two faults sqlite reports with one sentence are two states here: a
+// path that is a folder is distinct from a folder nobody may write in.
 func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")

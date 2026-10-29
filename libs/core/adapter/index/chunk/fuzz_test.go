@@ -8,9 +8,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// typedSeeds are the things a person types into a search box: words, the
-// punctuation FTS5 reads as syntax, its own operators, a quote left open, a
-// column reference, a phrase, other scripts, and nothing at all.
+// typedSeeds are inputs a user types into a search box: words, punctuation
+// FTS5 treats as syntax, its own operators, an unclosed quote, a column
+// reference, a phrase, other scripts, and the empty string.
 var typedSeeds = []string{
 	"entropy",
 	"entropy shannon",
@@ -37,12 +37,12 @@ var typedSeeds = []string{
 // maxQueryLength is how much of what was typed is put to a database.
 const maxQueryLength = 256
 
-// Nothing a person can type reaches FTS5 as syntax. Whatever is typed, the
-// expression it is turned into is a query FTS5 accepts, and the words it asks
-// for are the words that were typed and no others.
+// No typed input reaches FTS5 as syntax. For any input, the generated
+// expression is a query FTS5 accepts, and the words it searches for are exactly
+// the words typed.
 //
-// What is typed is a stranger's: it comes off a search box and, through the
-// wire, off anything that can address the application.
+// The input is untrusted: it comes from a search box and, through the wire, from
+// anything that can address the application.
 func FuzzExpression(f *testing.F) {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
@@ -62,13 +62,14 @@ func FuzzExpression(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, typed string, growing bool) {
-		// A NUL ends a string on its way into SQLite, so what the driver would
-		// ask is not what was written. Nothing types one; the escaping is still
+		// A NUL terminates a string on its way into SQLite, so the query the driver
+		// sends differs from the typed text. Nothing types one, so such expressions skip
+		// the database round trip.
 		//
-		// FTS5 costs more than linearly in the number of words asked for — ten
-		// thousand of them take a third of a second — so what is put to the
-		// database is what a search box could hold. The round trip below is
-		// asked of every length.
+		// FTS5 cost grows more than linearly with the number of words: ten thousand
+		// words take a third of a second. The database round trip is therefore limited
+		// to what a search box could hold; the checks on the expression below run for
+		// every length.
 		expression := Expression(typed, growing)
 		if len(typed) <= maxQueryLength && !strings.ContainsRune(expression, 0) {
 			var count int

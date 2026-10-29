@@ -1,8 +1,8 @@
 /**
- * What a drag over the tree makes of the pointer: where a drop would land, which
- * rows are lifted, and what is told once the rows are let go.
+ * How a drag over the tree maps the pointer: where a drop would land, which
+ * rows are lifted, and what is reported once the rows are released.
  *
- * The tree stands 200 across and 120 down, 100 from the top of the window, one
+ * The tree is 200 wide and 120 high, 100 from the top of the window, with one
  * row every 24: work, plans, notes, empty, loose.
  */
 import { effectScope, type EffectScope } from 'vue'

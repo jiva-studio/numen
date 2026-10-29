@@ -46,8 +46,9 @@ func TestClosingWindowReadsNothing(t *testing.T) {
 	}
 }
 
-// begins writing to the index after it has been waited for. The prose is on
-// disk either way, and the window says the note is written and unlevelled.
+// TestClosingWindowUpdatesNothing checks that a closing window does not begin
+// writing to the index after it has been waited for. The text is on disk either
+// way, and the window reports the note as written and not yet indexed.
 func TestClosingWindowUpdatesNothing(t *testing.T) {
 	vaults, target := makeOpenVaults(t)
 

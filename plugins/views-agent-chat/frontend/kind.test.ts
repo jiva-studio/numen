@@ -1,7 +1,7 @@
 /**
- * The agent tabs of a window: what each is called, what a command asked over
- * one is over, what closing one tells the agent, and what a question put to
- * the window does to one.
+ * The agent tabs of a window: their names, what a command targeting one applies
+ * to, what closing one tells the agent, and how a request to the window
+ * affects one.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
@@ -10,7 +10,7 @@ import { AGENT, createAgentKind } from './kind'
 import { createHost, type HostOptions } from './fixtures'
 import { useAgentConversation, type AgentTabState } from './model/useAgentConversation'
 
-/** The conversations an agent tab was made over, and what each was told. */
+/** The conversations an agent tab was created over, and what each received. */
 const window = (options: HostOptions = {}) => {
   const fixture = createHost(options)
   const conversations: { said: ReturnType<typeof ref<Turn[]>>; stopped: string[] }[] = []

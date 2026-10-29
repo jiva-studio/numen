@@ -3,9 +3,9 @@
  * One child of a branch in the panel it is given, with the handle that divides
  * it from the child before it.
  *
- * A child that is a pane is drawn as a pane. A child that is itself a branch is
- * drawn with what the branch above handed down, which is the branch itself: a
- * panel knows a node has children and nothing else about a branch.
+ * A child that is a pane is rendered as a pane. A child that is itself a branch
+ * is rendered from what the parent branch passes down, which is the branch
+ * itself: a panel knows only that a node has children.
  */
 import { computed, inject, useSlots, type Ref } from 'vue'
 import { SplitterPanel } from 'reka-ui'
@@ -32,7 +32,7 @@ defineSlots<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-/** What every branch and pane of one workspace is told once, at the top. */
+/** Context provided once at the top and shared by every branch and pane of one workspace. */
 const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 type BranchSlotName = 'tab' | 'icon' | 'mark' | 'silence'

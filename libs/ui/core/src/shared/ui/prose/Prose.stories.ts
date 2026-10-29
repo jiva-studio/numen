@@ -87,7 +87,10 @@ export const HalfWritten: Story = {
   args: { text: 'The style is clear: a `# Title` line, one evocative sen' },
 }
 
-/** What is written by somebody else stays what they wrote. */
+/**
+ * Text written by another user is rendered verbatim, not interpreted as
+ * markup.
+ */
 export const NotMarkup: Story = {
   args: { text: 'A note can say <script>alert(1)</script> and it is prose, not a program.' },
 }

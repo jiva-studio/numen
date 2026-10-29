@@ -12,7 +12,7 @@ export interface ActionPanelState {
   readonly chooseAction: (action: string) => void
   /** A press anywhere but on the panel puts the panel away. */
   readonly onPress: () => void
-  /** A press on the ground: the panel goes, and the palette under it. */
+  /** A press on the backdrop closes the panel and the palette beneath it. */
   readonly onBackdrop: () => void
 }
 
@@ -20,9 +20,9 @@ export interface ActionPanelOptions {
   readonly getActions: () => readonly PaletteAction[]
   /** The item the panel is about, by its identity. */
   readonly getLit: () => string | undefined
-  /** An item was chosen, and what was asked of it. */
+  /** An item was chosen with an action. */
   readonly choose: (item: string, action: string) => void
-  /** The palette asks to be put away. */
+  /** Requests that the palette close. */
   readonly dismiss: () => void
 }
 

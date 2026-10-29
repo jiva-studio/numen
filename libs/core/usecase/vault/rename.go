@@ -13,17 +13,16 @@ import (
 // ErrNameTaken is a name another vault on the list already has.
 var ErrNameTaken = errors.New("another vault is called this")
 
-// Rename gives a vault another name. The name is what a person calls the
-// collection and lives in the list this installation keeps; the folder keeps
-// the name the filesystem gives it.
+// Rename changes a vault's name. The name is the collection's display name and
+// lives in the list this installation keeps; the folder keeps the name assigned
+// by the filesystem.
 type Rename struct {
 	registry vaultport.VaultRegistry
 	index    vaultport.VaultRepository
 }
 
-// NewRename is what a vault is called through: the list this installation
-// keeps, which is where the name stands, and the index, which holds the row the
-// vault's other rows point at.
+// NewRename creates a Rename from the list this installation keeps, which stores
+// the name, and the index, which holds the row the vault's other rows point at.
 func NewRename(registry vaultport.VaultRegistry, index vaultport.VaultRepository) Rename {
 	return Rename{registry: registry, index: index}
 }

@@ -9,8 +9,8 @@ import type { PaletteAction } from '../types'
 export type { PaletteAction }
 
 /**
- * One thing that can be chosen. The identifier is opaque: the palette has no
- * way to ask what it addresses, and hands it back as given.
+ * One selectable entry. The identifier is opaque: the palette cannot resolve
+ * what it addresses, and returns it unchanged.
  */
 export interface PaletteItem {
   readonly id: string
@@ -18,14 +18,14 @@ export interface PaletteItem {
   readonly title: string
   /** Where in the title the words stand. */
   readonly at?: readonly TextRange[]
-  /** A second line: where the item stands, or the words it was found among. */
+  /** A second line: the location of the item, or the text the item was found in. */
   readonly detail?: string
   /** Where the words stand in that line. */
   readonly detailAt?: readonly TextRange[]
   readonly actions?: readonly PaletteAction[]
   /**
-   * The keystroke that reaches this item away from the palette, as the caller
-   * holds it. Drawn at the end of the row.
+   * The shortcut that triggers this item outside the palette, as the caller
+   * defines it. Displayed at the end of the row.
    */
   readonly keys?: PaletteKeys
   /** Drawn and announced, and not choosable. */
@@ -38,11 +38,11 @@ export interface PaletteGroup {
   /** What the group is called. */
   readonly title: string
   readonly items: readonly PaletteItem[]
-  /** More is on its way, so what stands here is not all of it. */
+  /** More items are loading, so the list shown is incomplete. */
   readonly isWorking?: boolean
   /**
-   * What is said in place of items when the group holds none. A group with
-   * nothing to say here and nothing on its way is drawn nowhere.
+   * The text shown in place of items when the group has none. A group with no
+   * such text and no pending items is not drawn.
    */
   readonly silence?: string
 }
@@ -73,7 +73,7 @@ export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGr
 ]
 
 /**
- * Every item in the order it is drawn, so that one number says which item.
+ * Every item in display order, so that a single index identifies an item.
  */
 export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[] =>
   groups.flatMap((group) => group.items.map((item) => ({ group, item })))
@@ -96,9 +96,9 @@ export const getSteppedIndex = (total: number, from: number, delta: number): num
 }
 
 /**
- * Where the keyboard appears once the list has changed under it: on the item it
- * was on, wherever that item has moved to. An item that is gone hands it to the
- * first item there is; a list with nothing to land on takes it nowhere.
+ * Where the keyboard focus goes after the list changed: on the same item,
+ * wherever it moved to. If the item is gone, focus goes to the first available
+ * item; if the list has no selectable item, it goes to none.
  */
 export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
   const pos = places.findIndex((place) => place.item.id === was && canChoose(place.item))

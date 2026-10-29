@@ -1,4 +1,4 @@
-/** What the drawing asks of an edge: the name of its line and where its title stands. */
+/** What the drawing requires of an edge: the name of its line and the position of its title. */
 import { describe, expect, it } from 'vitest'
 import { getLines } from './lines'
 import { arrangePlex } from '../../lib/arrange'

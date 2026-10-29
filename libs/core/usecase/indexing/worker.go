@@ -26,17 +26,17 @@ const taskIndexingTexts = "Indexing file texts"
 // written into it are embedded.
 const QuietPeriod = 8 * time.Second
 
-// Events is what the worker tells whoever is showing the vault.
+// Events receives the progress and results of indexing a vault.
 type Events interface {
 	// ReportTask puts one piece of work in the list of what is being done, and
 	// FinishTask takes it out.
 	ReportTask(offset vaultreading.Task)
 	FinishTask(id string)
-	// ReportError says why a pass could not run.
+	// ReportError reports why a pass could not run.
 	ReportError(err error)
-	// ReportNotes says the notes of a vault were read.
+	// ReportNotes reports that the notes of a vault were read.
 	ReportNotes(v domain.Vault, notes int)
-	// ReportTexts says how many file texts were cut.
+	// ReportTexts reports how many file texts were cut.
 	ReportTexts(v domain.Vault, res vaultreading.IndexResult)
 }
 
@@ -56,8 +56,8 @@ type GetOwed func(ctx context.Context, v domain.Vault) (held, embedded int64, er
 type Config struct {
 	Reading  OpenReading
 	Embedder embeddingport.Embedder
-	// Owed is nil where nothing says how many vectors a vault owes, and then
-	// every pass assumes it owes some.
+	// Owed is nil when the number of owed vectors is unknown; every pass then
+	// assumes some vectors are owed.
 	Owed   GetOwed
 	Events Events
 	// Quiet is how long the vault has to have been still before a note that was
@@ -66,12 +66,12 @@ type Config struct {
 	After func(time.Duration) <-chan time.Time
 }
 
-// Worker brings the index of the vault a window shows level with it, one pass
-// at a time, and never while another is running.
+// Worker keeps the index of a vault in sync with its content, one pass at a
+// time, and never while another pass is running.
 //
-// Work reaches it in three ways once the first pass is over: a file with text,
-// which is found and cut before anything is embedded, a note, which arrives
-// already cut and owes only its vectors, and a file a plugin wrote more text of.
+// After the first pass, work arrives in three forms: a file with text, which is
+// found and cut before anything is embedded; a note, which arrives already cut
+// and needs only its vectors; and a file a plugin extended with more text.
 type Worker struct {
 	reading  OpenReading
 	embedder embeddingport.Embedder
@@ -127,8 +127,8 @@ func (w *Worker) NewSession() *Session {
 	return &Session{worker: w}
 }
 
-// RequestCut asks for the source at a path to be cut again from its text. A
-// source appears once however many batches it wrote.
+// RequestCut requests that the source at a path be cut again from its text. A
+// source is cut once however many batches wrote it.
 func (s *Session) RequestCut(v domain.Vault, path string) {
 	s.mu.Lock()
 	if s.pending == nil {
@@ -139,8 +139,8 @@ func (s *Session) RequestCut(v domain.Vault, path string) {
 	signal(s.worker.read)
 }
 
-// ReportVersionsChanged asks for the file to be cut again from its live text
-// version, which is what the index does whenever the versions of a file change.
+// ReportVersionsChanged requests that the file be cut again from its live text
+// version. The index issues it whenever the versions of a file change.
 func (s *Session) ReportVersionsChanged(v domain.Vault, path string) {
 	s.RequestCut(v, path)
 }
@@ -167,7 +167,7 @@ type pass struct {
 	worker  *Worker
 	session *Session
 	v       domain.Vault
-	// owes is whether the next pass over the file texts indexes every file again.
+	// owes reports whether the next pass over the file texts indexes every file again.
 	owes bool
 }
 
@@ -179,8 +179,8 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 		p.indexSources(ctx)
 	}
 
-	// A vault whose first indexing failed is one somebody goes on writing in, so
-	// the waiting stands whatever that indexing did.
+	// A vault whose first indexing failed still receives writes, so the wait
+	// proceeds regardless of the indexing outcome.
 	var debounceTimer <-chan time.Time
 	for {
 		select {
@@ -212,7 +212,7 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	switch {
 	case err == nil:
 	case errors.Is(err, context.Canceled):
-		// Asked to stop. What it stored is correct as far as it got.
+		// Stopped on request. The stored data is correct up to that point.
 		return false
 	default:
 		events.ReportError(err)
@@ -223,7 +223,7 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
-// indexSources indexes the file texts, again in full where the first launch asked for it.
+// indexSources indexes the file texts, in full when the first launch requested it.
 func (p *pass) indexSources(ctx context.Context) {
 	request := p.owes
 	p.owes = false
@@ -272,18 +272,18 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		}
 		events.FinishTask(IndexingTexts)
 	case errors.Is(read, context.Canceled):
-		// Asked to stop. What it cut is correct as far as it got.
+		// Stopped on request. The cut data is correct up to that point.
 		events.FinishTask(IndexingTexts)
 	default:
-		// A failed pass stays in the list until whoever is shown it takes it out.
+		// A failed pass stays in the task list until the user dismisses it.
 		events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: read.Error()})
 	}
 
 	p.embed(ctx)
 }
 
-// cutSource cuts one source again from whatever its text now says. Failing is
-// one source: the next batch asks again.
+// cutSource cuts one source again from its current text. A failure affects
+// only that source; the next batch retries it.
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	events := p.worker.events
 	failed := func(err error) {
@@ -304,11 +304,12 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	}
 }
 
-// embed gives the chunks of the vault the vectors they owe, and reads no file
-// the index does not already hold a chunk of.
+// embed creates the vectors for the chunks of the vault that lack one, and
+// reads no file the index does not already hold a chunk of.
 //
-// A recognition's batch of pages stops the pass at its current position. The vectors it
-// made are kept, and taken up again it asks the index what still owes one.
+// A recognition batch of pages stops the pass at its current position. The
+// vectors already created are kept, and the resumed pass queries the index for
+// the chunks that still lack a vector.
 func (p *pass) embed(ctx context.Context) {
 	w := p.worker
 	if w.embedder == nil {
@@ -326,9 +327,9 @@ func (p *pass) embed(ctx context.Context) {
 	p.makeVectors(ctx, limit, owing)
 }
 
-// getOwedVectors is what a pass owes, asked once before it starts. The pass
-// finds the chunks a few hundred at a time, and a total that grows as it goes
-// is a count that never settles.
+// getOwedVectors returns the number of vectors a pass must create, computed once
+// before the pass starts. Chunks are discovered a few hundred at a time, so a
+// total derived during the pass would keep growing.
 func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int64, owes bool) {
 	if w.owed == nil {
 		return 0, true
@@ -341,11 +342,12 @@ func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int6
 	return owing, owing > 0
 }
 
-// stopOnWake is the context a pass runs under, which ends when somebody is
-// waiting for the loop that called it, and the function that ends the pass.
+// stopOnWake returns the context a pass runs under, which is cancelled when a
+// wake signal is pending for the calling loop, and the function that ends the
+// pass.
 //
-// The wake is put back where it was found, and the loop that reads it next
-// still has it.
+// The wake signal is restored after it is consumed, so the calling loop still
+// receives it.
 func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func()) {
 	underCtx, end := context.WithCancel(ctx)
 	awakened := make(chan struct{})
@@ -364,8 +366,8 @@ func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func(
 	}
 }
 
-// makeVectors makes the vectors a vault owes, reporting the source it is
-// embedding as it goes.
+// makeVectors creates the vectors a vault owes, reporting the source being
+// embedded.
 func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 	events := p.worker.events
 	failed := func(err error) {
@@ -377,9 +379,9 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 		failed(err)
 		return
 	}
-	// Indexing is always of something, and the source open now is what it is of.
-	// The pass enters the list when it opens the first of them, and a share is
-	// drawn once a vector has been made, counted over the work in hand.
+	// Progress is reported for the source currently open. The task enters the
+	// list when the first source opens, and a progress share is reported once a
+	// vector has been created, counted against the total owed.
 	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
 		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
@@ -392,7 +394,7 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 	case err == nil, errors.Is(err, context.Canceled):
 		events.FinishTask(MakingVectors)
 	default:
-		// A vault short of the vectors it owes is searched by its words alone, and
+		// A vault missing vectors is searched by its text alone.
 		failed(err)
 	}
 }

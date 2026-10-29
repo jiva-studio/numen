@@ -95,7 +95,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     const panel = page.locator('[data-palette="panel"]').first()
     await expect(panel).toBeVisible({ timeout: 5_000 })
 
-    // Click on the scrim (ground) outside the palette panel
+    // Click on the scrim outside the palette panel (data-palette="ground")
     const ground = page.locator('[data-palette="ground"]').first()
     await ground.click({ position: { x: 10, y: 10 } })
 

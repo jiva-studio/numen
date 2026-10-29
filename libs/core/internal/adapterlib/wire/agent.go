@@ -14,15 +14,15 @@ import (
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 )
 
-// StreamAgentTask hands one task to the agent and writes what it does to the stream, for as
-// long as the client listens.
+// StreamAgentTask passes one task to the agent and writes its output to the
+// stream for as long as the client is connected.
 //
-// The work is stopped on the way out, whether it finished, failed or the client
-// went away. Nothing outlives the panel it was asked from.
+// The work is stopped on return, whether it finished, failed or the client
+// disconnected. No work outlives the panel that requested it.
 //
-// A model thinking for a minute writes nothing, and a stream that writes
-// nothing never learns its client has gone. A step naming nothing is one a
-// client ignores and a write that fails ends the work.
+// A model that thinks for a minute writes nothing, and a stream that writes
+// nothing never detects a disconnected client. A step with no content is ignored
+// by the client, and a failed write ends the work.
 func StreamAgentTask(
 	ctx context.Context,
 	taking agentport.Agent,
@@ -57,8 +57,8 @@ func StreamAgentTask(
 	}
 }
 
-// sendStep writes a step to the stream in the schema's words, and says whether
-// the step was the last of the work.
+// sendStep writes a step to the stream in the schema's representation and
+// reports whether it was the last step of the work.
 func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentport.Step) (bool, error) {
 	if step.Kind == domain.StepStop {
 		return true, finishStream(stream, step.Detail)
@@ -83,10 +83,11 @@ func finishStream(stream *connect.ServerStream[v1.AskAgentResponse], detail stri
 	return stream.Send(&v1.AskAgentResponse{})
 }
 
-// convertSteps says a step of an agent's work in the schema's words.
+// convertSteps converts a step of an agent's work to the schema's
+// representation.
 //
-// Every kind that names a tool is drawn as one, whatever that tool does to the
-// vault, and carries where in the vault it is working.
+// Every kind that names a tool is sent as a tool step, whatever that tool does
+// to the vault, and carries the vault location it works on.
 func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case domain.StepToolCall, domain.StepRead, domain.StepEdit,

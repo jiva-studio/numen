@@ -1,6 +1,6 @@
-// Package layers holds nothing. What is here is the rule the applications are
-// read against: the core's own guard walks the core's tree, and an application
-// is located one folder outside it.
+// Package layers contains no production code. It holds the layering rules the
+// applications are checked against: the core's own guard walks the core's tree,
+// and an application is located one folder outside it.
 package layers
 
 import (
@@ -37,19 +37,19 @@ type standing struct {
 	file    *ast.File
 }
 
-// named are files every walk below has to have reached: the desktop's entry
-// point, a file of its internal packages, and the phone. A count says how much was
-// read and never what, and a walk that stopped at the desktop's border would
-// clear any floor the desktop's own files fill.
+// named are files every walk below must reach: the desktop's entry point, a
+// file of its internal packages, and the mobile binding. A count measures how
+// much was read, not what, and a walk that stopped at the desktop's border would
+// still satisfy any floor the desktop's own files fill.
 var named = []string{
 	"desktop/cmd/numen/main.go",
 	"desktop/internal/platform/platform.go",
 	"mobile/bind/mobile.go",
 }
 
-// readSources is every hand-written Go file of the applications, parsed.
+// readSources returns every hand-written Go file of the applications, parsed.
 //
-// A test file is left out: a test stands outside the package it exercises and
+// Test files are excluded: they live outside the package they exercise.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 
@@ -95,7 +95,7 @@ func readSources(t *testing.T) []standing {
 }
 
 // An application is served by the core and does none of its work, and no
-// application reaches another: what two of them share is a library.
+// application imports another: what two of them share is a library.
 func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	var wrong []string
 	var read int
@@ -148,10 +148,9 @@ var logging = map[string]bool{
 // logs answers whether an import is a logger.
 func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 
-// Nothing here logs. An entry point is where the process's own streams are
-// named, and the one line it writes to standard error is for a terminal
-// somebody is standing at; everything a person has to act on is said in the
-// window they are looking at. A logger would write to neither.
+// Nothing here logs. An entry point names the process's own streams, and the
+// one line it writes to standard error is for a terminal; everything the user
+// has to act on is shown in the window. A logger would write to neither.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {
@@ -188,11 +187,11 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	}
 }
 
-// A port is named after the need and what answers it after the technology, and
-// the binding between them is the composition root's. A file that writes
-// `var _ port.X = …` has named the need it answers, which puts the binding in
-// two places: the day the port grows a method, this fails to compile where
-// nothing yet asks it for that method.
+// A port is named after the need and its implementation after the technology,
+// and the binding between them belongs to the composition root. A file that
+// writes `var _ port.X = …` names the need it satisfies, which puts the binding
+// in two places: when the port grows a method, this fails to compile where
+// nothing yet requires that method.
 func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {

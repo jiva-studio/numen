@@ -11,8 +11,8 @@ import (
 // ErrInvalidName is a title no note can be given. Nothing is written.
 var ErrInvalidName = errors.New("a note cannot be given this title")
 
-// Filename refuses a title no note can be given, and answers for every other
-// with the name it is filed under and whether it survived the trip.
+// Filename rejects a title no note can be given, and for every other returns the name
+// it is filed under and whether it survived the conversion unchanged.
 //
 // one carrying a line break. The title comes in trimmed.
 func Filename(title string) (name string, exact bool, err error) {
@@ -29,15 +29,15 @@ func Filename(title string) (name string, exact bool, err error) {
 // 255 bytes for one component, and a title is not the place to find that out.
 const maxFilename = 120
 
-// GetReducedFilename is the filename a title reduces to, refusing nothing: a
-// title that reduces to no name at all comes back empty.
+// GetReducedFilename returns the filename a title reduces to, rejecting nothing: a
+// title that reduces to no name at all returns empty.
 //
-// A note is shown by its `title`, else by its filename. So a file named after
-// the title needs no `title` key at all. When the title cannot be a filename,
-// `exact` is false and the caller writes the title into that key instead.
+// A note is shown by its `title`, else by its filename, so a file named after the
+// title needs no `title` key. When the title cannot be a filename, `exact` is false
+// and the caller writes the title into that key instead.
 //
-// Every name that comes back is one IsNameable accepts, so a link written by it
-// reaches the note back.
+// Every returned name is one IsNameable accepts, so a link written with it resolves
+// back to the note.
 func GetReducedFilename(title string) (name string, exact bool) {
 	name = trimEnds(sanitizeRunes(title))
 	if len(name) > maxFilename {

@@ -132,9 +132,9 @@ func owingTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingp
 	return len(owing)
 }
 
-// owingAfterAModelSwitch is how many chunks the first model owes a vector for
-// once its vault has been made searchable by a second model and then by the
-// first again.
+// owingAfterAModelSwitch returns the number of chunks that still need a vector
+// from the first model after the vault was indexed by a second model and then
+// by the first model again.
 func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
@@ -167,9 +167,9 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	return owingTo(t, db, v, first)
 }
 
-// Building the index again is where the vectors of a model nobody asks for any
-// more go; every other run keeps them, so a model set back is a model whose
-// vectors are all still here.
+// Only an index rebuild deletes the vectors of a model that is no longer
+// selected; every other run keeps them, so switching back to a model finds all
+// of its vectors present.
 func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 	if got := owingAfterAModelSwitch(t, false); got != 0 {
 		t.Errorf("a run that was not a rebuild forgot the vectors of the first model: %d chunks owe one", got)
@@ -195,8 +195,8 @@ func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	return db, v
 }
 
-// A rebuild that cannot forget the vectors of the other model has not rebuilt,
-// and says so.
+// A rebuild that cannot delete the vectors of the other model fails and
+// reports the error.
 func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	raw, err := sql.Open("sqlite", db.Path())

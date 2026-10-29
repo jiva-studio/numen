@@ -1,8 +1,9 @@
 /**
- * Where each run of the drawn document stands, and which of them are marked.
+ * Where each run of the rendered document is located, and which runs are
+ * marked.
  *
- * The browser's highlight registry is stood in for, so a test reads which
- * ranges were put into which entry for which book.
+ * The browser's highlight registry is replaced by a stub, so a test reads which
+ * ranges were added to which entry for which book.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'

@@ -8,14 +8,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// getFlightKey names the work a requirement asks for: two requirements with the
-// same key are one run.
+// getFlightKey returns the key of the work a requirement requests: two
+// requirements with the same key are one run.
 func getFlightKey(req pluginport.DependencyRequirement) string {
 	return strings.Join([]string{string(req.Kind), req.ID, req.Version, req.SourceURL, req.ChecksumSHA256, req.PluginDir}, "\x00")
 }
 
 // flightGroup runs one call per key at a time. A caller that arrives while a
-// call runs joins it, is told the status it last reported and every one after.
+// call runs joins it and receives the last reported status and every later
+// one.
 type flightGroup struct {
 	mu      sync.Mutex
 	flights map[string]*flight

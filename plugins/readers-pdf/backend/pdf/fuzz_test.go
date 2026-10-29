@@ -9,20 +9,20 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
-// A document read without complaint is one the rest of the application can
-// was read, in the order they are paginated, and each part carries a name on
-// one line. A document whose outline named nothing says so.
+// FuzzRead checks that reading arbitrary bytes never fails the invariants the
+// rest of the application relies on. A document that reads successfully lists
+// its parts in pagination order, and each part has a one-line name; a document
+// whose outline has no names reports that.
 //
-// Locating an offset lands on a page that begins at or before it and on the
-// part that begins at or before it, so a passage found in the text is said to
-// be on a page and under a heading.
+// Locating an offset yields the page that begins at or before it and the part
+// that begins at or before it, so a passage found in the text belongs to a page
+// and a heading.
 //
-// A file that could not be read fails as one that is no PDF or as one
-// nobody here has the password to. A scan carries no text, and is a document
-// read.
+// A file that cannot be read fails as not a PDF or as password-protected. A scan
+// has no text and is a successfully read document.
 //
-// The bytes are a file in a person's vault, put there by a scanner, a browser
-// or a sync, and half-written by any of them.
+// The input bytes are a file in a user's vault, written by a scanner, a browser
+// or a sync tool, and possibly incomplete.
 func FuzzRead(f *testing.F) {
 	for _, name := range []string{tiny, outline, labels, turned, scan, vast, prose} {
 		raw, err := os.ReadFile("testdata/" + name)
@@ -97,9 +97,8 @@ func FuzzRead(f *testing.F) {
 				len(book.Parts), book.Structure)
 		}
 
-		// Every offset a chunk of this text could carry is one the document can
-		// be asked about, and the page and the part it answers with are the
-		// ones a reader is shown.
+		// Every offset a chunk of this text can carry is a valid query for the
+		// document, and the page and part returned are the ones shown to the reader.
 		for _, offset := range []int{0, len(book.Text) / 2, len(book.Text)} {
 			where := book.Locate(offset)
 			if len(book.Pages) > 0 {

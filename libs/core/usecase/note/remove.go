@@ -21,14 +21,14 @@ const TrashDir = ".trash"
 
 // Remove takes a file or a folder out of the vault.
 //
-// It moves it into the vault's trash. Everything the index knows is rebuilt
+// It moves it into the vault's trash. Everything the index holds is rebuilt
 // from the file, so losing the index costs a scan; the file is the one thing
 // nothing rebuilds.
 type Remove struct {
 	writers vaultport.VaultWriters
 	links   noteport.LinkQueries
-	// queries is what the index holds about each file, and is what says which
-	// sources sit under the path being removed.
+	// queries is what the index holds about each file, and identifies which
+	// sources lie under the path being removed.
 	queries sourceport.SourceQueries
 	index   Levels
 }
@@ -50,11 +50,11 @@ func (u Remove) WithIndex(index Levels) Remove {
 
 type RemoveResult struct {
 	Path string
-	// Trashed is where it now sits, empty when it was destroyed.
+	// Trashed is the file's location in the trash, empty when it was destroyed.
 	Trashed string
-	// Dangling is the notes whose links pointed at what went and now reach
-	// nothing. They are reported and not repaired: the link is not wrong, its
-	// target is gone, and only the person knows what they meant.
+	// Dangling is the notes whose links pointed at what was removed and now resolve
+	// to nothing. They are reported and not repaired: the link is not wrong, its
+	// target is gone, and only the user knows the intent.
 	Dangling []string
 }
 
@@ -67,8 +67,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	if err != nil {
 		return res, err
 	}
-	// Asked before the move, because afterwards nothing points at the old paths
-	// and there is nothing left to ask about.
+	// Queried before the move, because afterwards nothing points at the old paths.
 	pointing, err := u.getBacklinksOfNotes(ctx, v, went)
 	if err != nil {
 		return res, err
@@ -95,8 +94,8 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	if len(level) == 0 {
 		level = append(level, path)
 	}
-	// The file is in the trash from here on, so what the levelling came to
-	// stands beside the links that now reach nothing.
+	// The file is in the trash from here on, so the levelling result is reported
+	// alongside the links that now resolve to nothing.
 	levelled := u.level(ctx, v, level...)
 	for _, was := range pointing {
 		// A note that wrote a link and went to the trash beside its target has
@@ -161,8 +160,8 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 	if err := writer.Remove(ctx, path); err != nil {
 		return res, mapMissingNote(err)
 	}
-	// The file is off the disk from here on, so what the levelling came to
-	// stands beside the links that now reach nothing.
+	// The file is off the disk from here on, so the levelling result is reported
+	// alongside the links that now resolve to nothing.
 	levelled := u.level(ctx, v, path)
 	for _, was := range pointing {
 		res.Dangling = append(res.Dangling, was.From)

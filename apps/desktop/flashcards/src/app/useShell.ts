@@ -1,6 +1,7 @@
 /**
- * The shell put together: the plugins of the window's target, loaded over HTTP and activated; the
- * vaults a person chooses from; and the tab the window opens on the vault chosen.
+ * The assembled shell: the plugins of the window's target, loaded over HTTP and
+ * activated; the vaults the user chooses from; and the tab the window opens on
+ * the chosen vault.
  */
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'

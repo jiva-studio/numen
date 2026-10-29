@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 )
 
-// TestAShapeShortOfAFolderComesBackAsAnError. The shape is what tells a folder
+// TestAShapeShortOfAFolderComesBackAsAnError. The shape distinguishes a folder
 // that has gone from a file that has, so a folder the walk could not enter is a
-// question the watch can no longer answer, and says so.
+// condition the watch can no longer resolve, and it reports an error.
 func TestAShapeShortOfAFolderReachesBackAsAnError(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Windows folders have no permission bits to remove")

@@ -1,9 +1,8 @@
 /**
- * The tree of a vault, drawn.
+ * The tree of a vault, rendered.
  *
- * What is asked here is what only a browser can answer: how far a row inside a
- * folder is set in from the folder itself, and where the menu asked for on a
- * row is drawn.
+ * These stories check what only a browser can measure: the indentation of a
+ * row inside a folder relative to the folder, and the position of the row menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
@@ -92,7 +91,7 @@ export const TheVault: Story = {
       'Cover.png',
     ])
 
-    // Each row says what the vault holds there, drawn beside the name.
+    // Each row shows an icon for its entry type next to the name.
     for (const row of rows(canvasElement)) {
       const icon = row.querySelector('svg')
       await expect(icon).not.toBeNull()
@@ -116,7 +115,7 @@ export const AFolderOpened: Story = {
   },
 }
 
-/** The menu asked for on a row, which offers what can be done to that row. */
+/** The context menu of a row, which lists the actions available for that row. */
 export const TheMenuOnARow: Story = {
   render: room(),
   play: async ({ canvasElement }) => {

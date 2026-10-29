@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * What the tabs of a pane hold, and what stands there while it holds none.
+ * What the tabs of a pane hold, and what is shown there while it holds none.
  *
- * Every tab is drawn; the ones not shown are held out of sight, so what a tab
- * holds is alive for as long as the tab is.
+ * Every tab is rendered; the ones not shown are hidden, so what a tab
+ * holds stays alive for as long as the tab does.
  */
 import { getPanelName, getTabName } from '../names'
 import type { Pane, TabId } from '../../../lib/node'
@@ -99,7 +99,7 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 }
 
 .pane__nothing {
-  /* How plainly what is said in place of a tab is drawn. */
+  /* How prominently the text shown in place of a tab is rendered. */
   --fade: 0.6;
 
   display: grid;

@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// A line opening with `#` inside a block scalar is what the person wrote there.
+// A line starting with `#` inside a block scalar is content written by the user.
 func TestAHashLineInsideABlockScalarIsTheValue(t *testing.T) {
 	for name, raw := range map[string]string{
 		"entry last in the block": "---\n" +

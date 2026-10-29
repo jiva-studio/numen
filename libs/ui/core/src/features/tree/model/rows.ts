@@ -1,8 +1,8 @@
 /**
- * The rows as they are drawn, and which one of them the keyboard reaches.
+ * The rows as rendered, and the row that keyboard focus reaches.
  *
- * A row is held under the identity it stands for, so the keyboard can be put on
- * a row that has only just arrived.
+ * A row element is stored under the identity of the row it represents, so
+ * keyboard focus can be set on a row that was just added.
  */
 import { computed, nextTick, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'
@@ -11,11 +11,11 @@ export interface DrawnRowsState {
   /** The row the keyboard was last on. */
   readonly here: Ref<RowId | null>
   /**
-   * The one row the tab key reaches: where the keyboard was left, else the
-   * first row of the selection, else the first row of all.
+   * The single row that the tab key reaches: the last keyboard row, else the
+   * first selected row, else the first row.
    */
   readonly tabbed: ComputedRef<RowId | null>
-  /** A row as it is drawn, held under the row it stands for. */
+  /** Registers the element rendered for a row. */
   readonly setRowElement: (row: RowId, element: unknown) => void
   readonly getRowElement: (row: RowId) => HTMLElement | null
   /** The keyboard onto a row, once the rows it moved among are drawn. */
@@ -27,7 +27,7 @@ export function useDrawnRows(
   getSelection: () => readonly RowId[],
   onScrollToRow?: (index: number) => void,
 ): DrawnRowsState {
-  /** The rows as they are drawn, each under the row it stands for. */
+  /** The rendered elements, keyed by row identity. */
   const viewElement = new Map<RowId, HTMLElement>()
 
   const here = shallowRef<RowId | null>(null)

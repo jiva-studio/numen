@@ -36,7 +36,7 @@ type unwritable struct {
 
 func (u unwritable) Open(domain.Vault) (vaultport.VaultWriter, error) { return nil, u.err }
 
-// flawed is a machine handing files over, with the failures it is told to have.
+// flawed is a machine supplying files, with the failures it is configured to produce.
 type flawed struct {
 	handedOver
 	statFails map[string]error
@@ -106,7 +106,7 @@ func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 	}
 }
 
-// A vault that cannot be written takes nothing, and the caller is told why.
+// A vault that cannot be written takes nothing, and the caller receives the reason.
 func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
@@ -272,8 +272,8 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	}
 }
 
-// ignoringContext is a set of writers that finish a copy whatever the context
-// says.
+// ignoringContext is a set of writers that complete a copy regardless of the
+// context state.
 type ignoringContext struct{ vaultport.VaultWriters }
 
 func (i ignoringContext) Open(v domain.Vault) (vaultport.VaultWriter, error) {
@@ -321,7 +321,7 @@ func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
 	}
 }
 
-// Something that is neither a file nor a folder stays outside, and says so.
+// Something that is neither a file nor a folder is excluded and reported.
 func TestSomethingNeitherFileNorFolderStaysOutside(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)

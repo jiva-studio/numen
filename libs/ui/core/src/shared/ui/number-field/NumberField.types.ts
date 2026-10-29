@@ -9,7 +9,7 @@ export interface NumberFieldProps {
   /** What an arrow key moves it by. */
   step?: number
   isDisabled?: boolean
-  /** The words standing in for a number nobody has typed. */
+  /** Text shown in place of a number when no value has been entered. */
   placeholder?: string
   class?: HTMLAttributes['class']
 }

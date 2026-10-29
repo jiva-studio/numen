@@ -52,7 +52,7 @@ export interface PluginPaletteCommand {
   readonly scope?: 'note'
   /** The icon it is drawn with. */
   readonly icon?: unknown
-  /** Whether it puts a note in front of the person. */
+  /** Whether it presents a note. */
   readonly isNoteDestination?: boolean
 }
 
@@ -96,7 +96,7 @@ export interface PluginHostDeps {
   readonly getNotes?: () => VaultNotes | undefined
   /** The files of the vault, once the window has made them. */
   readonly getFiles?: () => VaultFiles | undefined
-  /** The agent the window asks, once the window has made it. */
+  /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined

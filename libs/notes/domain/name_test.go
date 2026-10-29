@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The scan stores what this returns and resolution asks for it, so the two
-// spellings of the rule are one function.
+// The scan stores what this returns and resolution looks it up, so both use
+// one implementation of the rule.
 func TestANoteIsFoundByTheLastSegmentWithoutItsExtension(t *testing.T) {
 	for path, want := range map[string]string{
 		"Entropy.md":               "Entropy",
@@ -70,7 +70,7 @@ func TestTheExtensionReachesOffALinkHoweverItIsSpelled(t *testing.T) {
 	}
 }
 
-// A path from the root of a vault has a separator at its very start.
+// A path from the vault root has a separator at its start.
 func TestAPathFromTheRootIsFoundByItsLastSegment(t *testing.T) {
 	for path, want := range map[string]string{
 		"/Entropy.md":       "Entropy",

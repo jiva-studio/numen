@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/cfi"
 )
 
-// placedBook is the book a place was last asked of, kept while its file is the same bytes: the tab
-// asks for the CFI of each page it turns to.
+// placedBook is the book a place was last requested of, retained while its file is the same bytes: the tab
+// requests the CFI of each page it turns to.
 type placedBook struct {
 	key   string
 	size  int64

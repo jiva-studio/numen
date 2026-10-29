@@ -79,25 +79,28 @@ func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recogniti
 	return &Recognition{host: h, open: open}, nil
 }
 
-// Request is one file to recognise. Vault is the vault it is in, and empty for the one the host
-// shows. IsUserStarted is set where a person asked for it.
+// Request is one file to recognise. Vault is the vault that contains it, and is
+// empty for the vault the host currently shows. IsUserStarted is set when the
+// user requested it.
 type Request struct {
 	Vault         domain.VaultID
 	Path          string
 	IsUserStarted bool
 }
 
-// Result is what one recognition did. IsSkipped is a file nobody asked for that carries text of its
-// own or was recognised already, and IsEmpty is a file the recogniser read nothing on.
+// Result is the outcome of one recognition. IsSkipped is set for a file that
+// the user did not request and that has embedded text or was already
+// recognised. IsEmpty is set for a file from which the recogniser extracted no text.
 type Result struct {
 	Pages     int
 	IsSkipped bool
 	IsEmpty   bool
 }
 
-// Recognise reads the file and puts its text version. A run nobody asked for skips a file whose
-// pages carry text of their own, and one already recognised as it is now. A failure is shown as a
-// task until the file is recognised again.
+// Recognise reads the file and stores its text version. A run that the user
+// did not request skips a file whose pages have embedded text, and a file
+// already recognised in its current state. A failure is shown as a task until
+// the file is recognised again.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
 	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
@@ -213,8 +216,9 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 	return nil
 }
 
-// putVersion writes the text of a complete record as the file's version, reports it, and deletes
-// the record. A record that says no text is deleted and reported as no version.
+// putVersion stores the text of a complete record as the file's version,
+// reports it, and deletes the record. A record with no text is deleted and
+// reported as no version.
 func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	store := on.store
 	text := rec.getText()

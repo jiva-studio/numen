@@ -13,7 +13,10 @@ export interface PlacedReader {
   goToCfi(cfi: string): Promise<boolean>
 }
 
-/** The tab as the window hands it: the selector it opens at and where it saves its place. */
+/**
+ * The tab as the window provides it: the selector it opens at and where it
+ * saves its position.
+ */
 export interface PlacedTab {
   readonly selector?: Selector | null
   savePlace?(selector: Selector): void

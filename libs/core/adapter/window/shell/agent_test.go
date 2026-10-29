@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// answering is an agent that says one thing to each task and keeps the tasks and the conversations
-// ended.
+// answering is an agent that returns one fixed response to each task and
+// records the tasks and the ended conversations.
 type answering struct {
 	tasks chan agentport.Task
 	ended chan string
@@ -93,7 +93,8 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 	}
 }
 
-// A window with no agent refuses a question as a precondition the installation does not meet.
+// A window with no agent rejects a question as a precondition the installation
+// does not meet.
 func TestAskAgent_FailsPreconditionWithoutAgent(t *testing.T) {
 	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)

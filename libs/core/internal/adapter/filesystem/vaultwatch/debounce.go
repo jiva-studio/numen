@@ -119,9 +119,9 @@ func (s *debounceState) popQueued() {
 
 // debounce collects events for a hold and reports each path once.
 //
-// Reading the events and delivering them are kept apart. Whoever listens takes
-// as long as it takes to refresh what it was told about, and the operating
-// system goes on producing events meanwhile.
+// Reading the events and delivering them are separate. The consumer takes as
+// long as it needs to refresh what it was notified about, and the operating
+// system continues producing events meanwhile.
 func debounce(
 	ctx context.Context,
 	shape *vaultreader.Folders,
@@ -179,9 +179,9 @@ type walkResult struct {
 	isWholeVault bool
 }
 
-// walkFolders walkFolders the folders handed to it, one after another, and answers with
-// what each holds. It stands beside the debounce, so a folder that arrives with
-// a thousand files in it is walked while the backlog goes on emptying.
+// walkFolders walks the folders passed to it, one after another, and returns
+// what each holds. It runs alongside the debounce, so a folder that arrives with
+// a thousand files in it is walked while the backlog continues to drain.
 func walkFolders(
 	ctx context.Context,
 	shape *vaultreader.Folders,

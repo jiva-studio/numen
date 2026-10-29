@@ -3,7 +3,7 @@ import type { PlexRelation } from '../../relation'
 import type { Limits, RoleLimits } from './limits'
 import { isVertical, type Direction, type PlexOptions } from '../options'
 
-/** The nodes admitted to the picture, grouped by the relation they take. */
+/** The nodes included in the graph, grouped by relation. */
 export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly PlexNode[]>>>
 
 /** How wide a node's box is drawn, clamped before a strategy is called. */
@@ -155,8 +155,9 @@ function inRows(
 }
 
 /**
- * Every box of a column turns the same edge towards the focus, whatever it
- * measures. A line stands clear of the widest box of the line before it.
+ * Every box of a column has the same edge facing the focus, regardless of its
+ * measured size. A line is placed clear of the widest box of the preceding
+ * line.
  */
 function inColumns(
   nodes: readonly PlexNode[],
@@ -212,7 +213,7 @@ function lines(
   })
 }
 
-/** How far above and below the focus a column of `count` nodes reaches. */
+/** How far above and below the focus a column of `count` nodes extends. */
 function getReach(count: number, options: PlexOptions, limits: RoleLimits): number {
   const perColumn = Math.min(limits.perLine, count)
   const step = options.nodeSize.height + options.gap

@@ -1,11 +1,11 @@
 /**
- * Where along its line each title sits, and how much of it stands there, in the
- * plex's own coordinates.
+ * The position of each title along its line, and how much of the title is shown
+ * there, in plex coordinates.
  *
  * A title stays on its own line, clear of every box and of every other title:
- * at the middle while that is clear, slid along the curve to the nearest clear
- * place while it is not, cut to the longest clear stretch where the whole of the
- * words stand nowhere, and dropped where that stretch holds less than half.
+ * at the middle while that is clear, otherwise moved along the curve to the
+ * nearest clear position, truncated to the longest clear stretch when the whole
+ * text fits nowhere, and dropped when that stretch is shorter than half.
  */
 import { getHeading, getLength, type PlacedEdge } from '../../edge'
 import type { PlacedNode } from '../../node'
@@ -30,7 +30,7 @@ const STEP = 3
 /** The least of a title worth setting on a line, as a part of the whole. */
 const LEAST = 0.5
 
-/** How much of a line's depth a title keeps clear of whatever it stands near. */
+/** The fraction of a line's depth that a title keeps clear of adjacent shapes. */
 const APART = 0.25
 
 const getSpanLength = (span: Span): number => span.to - span.from
@@ -90,9 +90,9 @@ export function separateTitles(
 }
 
 /**
- * The edges carrying measurable words, the least room first, each with the
- * place it holds in the picture. A line as long as its words comes before one
- * with room to spare, and edges alike in that keep the order they arrived in.
+ * The edges with measurable text, least free room first, each with its position
+ * in the graph. A line as long as its text comes before one with room to spare,
+ * and edges equal in that keep their input order.
  */
 function sortTightestFirst(
   edges: readonly PlacedEdge[],
@@ -190,9 +190,9 @@ function clearSpans(
 }
 
 /**
- * Where a title of this half-length stands: the place nearest the middle of
- * the line that leaves the whole of the words inside one clear span.
- * Nothing where no span is long enough to hold them.
+ * The position of a title of this half-length nearest the middle of the line
+ * that keeps the whole text inside one clear span. Null when no span is long
+ * enough.
  */
 function findNearestPlace(clear: readonly Span[], half: number): number | null {
   let nearest: number | null = null

@@ -1,4 +1,4 @@
-// Package vault stores the vaults the index knows about.
+// Package vault stores the vaults that the index tracks.
 package vault
 
 import (
@@ -24,8 +24,8 @@ type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// Register gives the vault a row for other rows to point at. A vault the index
-// already knows keeps the row it has.
+// Register creates a row for the vault that other rows reference. A vault the
+// index already tracks keeps its existing row.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
 	_, err := sqlwrite.Exec(ctx, r.db, stmt.Get("register"), string(vaultID))
 	return err

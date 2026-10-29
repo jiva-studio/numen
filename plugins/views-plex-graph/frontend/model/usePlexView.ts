@@ -1,8 +1,8 @@
 /**
- * What one plex is showing, and how it travels.
+ * The state of one plex: the neighbourhood it shows and how it navigates.
  *
- * A plex tab holds one of these, and holds nothing else: the vault is read once
- * for the whole window, and tells every plex when to ask again.
+ * A plex tab holds one of these and nothing else: the vault is read once for
+ * the whole window, and notifies every plex when to query again.
  */
 import { ref } from 'vue'
 import { formatErrorMessage, getRenamedPath } from '@numen/plugin-sdk'
@@ -10,7 +10,7 @@ import { createRequestGuard } from '../lib/requestGuard'
 import { areNeighbourhoodsEqual } from '../lib/picture'
 import type { Neighbourhood, PathRename } from '../types'
 
-/** The one question a plex asks of the vault: what is around a note. */
+/** The one query a plex makes of the vault: the neighbours of a note. */
 export interface Neighbours {
   neighbourhood(path: string): Promise<Neighbourhood>
 }
@@ -19,15 +19,14 @@ export type PlexView = ReturnType<typeof usePlexView>
 
 export function usePlexView(core: Neighbours) {
   const neighbourhood = ref<Neighbourhood | null>(null)
-  /**
-   * The note this plex is showing, as it asked for it.
-   */
+  /** The note this plex shows, as requested. */
   const here = ref('')
   /** What this plex could not show, in words the window sets up for it. */
   const error = ref('')
   /**
-   * The note a change of the vault asks for again: one asked for whose answer has not landed, or one
-   * the vault did not hold yet. Empty where there is none, and the plex is asked for `here`.
+   * The note a vault change requests again: one whose response has not arrived,
+   * or one the vault did not hold yet. Empty when there is none, and the plex
+   * then requests `here`.
    */
   const nextPath = ref('')
 

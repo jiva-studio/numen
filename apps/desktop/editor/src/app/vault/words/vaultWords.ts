@@ -42,7 +42,7 @@ export const counted: Record<TaskUnitCode, TallyUnit> = {
 }
 
 /**
- * How a search is asked, in the words the window uses.
+ * Search modes, named as the window uses them.
  */
 const query: Record<SearchModeCode, SearchMode | null> = {
   [SEARCH_MODE.UNSPECIFIED]: null,
@@ -52,7 +52,7 @@ const query: Record<SearchModeCode, SearchMode | null> = {
   [SEARCH_MODE.NAMES]: 'names',
 }
 
-/** How a search is asked, as the schema names it. */
+/** Search modes, as the schema names them. */
 export const modes = getNames<SearchMode, SearchModeCode>(query)
 
 /** What a model's files are on this machine, in the words the window uses. */
@@ -112,7 +112,7 @@ export const mapVaultResult = (from: {
   return error ? asFailure(error) : asValue(from.vault ? mapVault(from.vault) : null)
 }
 
-/** Whether the person lets a plugin ask a model, in the words the window uses. */
+/** Whether the user allows a plugin to query a model, in the words the window uses. */
 export const consented: Record<CompletionConsentCode, Consent> = {
   [COMPLETION_CONSENT.UNSPECIFIED]: 'none',
   [COMPLETION_CONSENT.PENDING]: 'pending',

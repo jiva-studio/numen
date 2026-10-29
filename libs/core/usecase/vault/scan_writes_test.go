@@ -41,8 +41,8 @@ type countedMeasurements struct{ n int }
 
 func (c *countedMeasurements) ReportChanges(context.Context) error { c.n++; return nil }
 
-// TestNotesAreWrittenInGroups. Nothing about a scan's result says how many
-// writes it took, so that is what is asserted.
+// TestNotesAreWrittenInGroups. A scan's result does not report the number of
+// writes, so the test asserts it directly.
 func TestNotesAreSavedInGroups(t *testing.T) {
 	t.Parallel()
 	const notes = 600
@@ -81,8 +81,8 @@ func TestNotesAreSavedInGroups(t *testing.T) {
 	}
 }
 
-// TestScanWrites_LongNoteClosesBatchEarly covers the size bound. No other test or
-// benchmark has a vault of long files, so nothing else reaches it.
+// TestScanWrites_LongNoteClosesBatchEarly covers the size bound. No other test
+// or benchmark uses a vault of long files.
 func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

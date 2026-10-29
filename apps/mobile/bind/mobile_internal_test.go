@@ -259,7 +259,7 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 	if err := Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
-	// A server closed by Stop is not one that ended on its own, and says nothing.
+	// A server closed by Stop did not fail, so no failure is reported.
 	time.Sleep(300 * time.Millisecond)
 	if response := read(); strings.Contains(response, "numen:") {
 		t.Errorf("stopping was reported as a failure: %q", response)
@@ -440,9 +440,9 @@ func checkNoIndexOpened(t *testing.T, dir string) {
 	}
 }
 
-// feedVaultList stands a pipe in place of the vault list. Every read of it is
-// answered with the list as it was while the index is not yet there, and with
-// text that is no JSON once it is.
+// feedVaultList replaces the vault list file with a named pipe. Each read
+// returns the original list while the index does not exist, and invalid JSON
+// once it exists.
 func feedVaultList(t *testing.T, dir string, list []byte) {
 	t.Helper()
 	path := filepath.Join(dir, "vaults.json")
@@ -687,8 +687,8 @@ func getListenersOf(server *http.Server) []net.Listener {
 	return found
 }
 
-// closeListenersOf closes the listeners a server is accepting on, without the
-// server being told to stop.
+// closeListenersOf closes the listeners of a server without stopping the
+// server.
 func closeListenersOf(t *testing.T, server *http.Server) {
 	t.Helper()
 	var found []net.Listener

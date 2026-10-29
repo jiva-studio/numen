@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/signal"
 )
 
-// The names the segmenter's graph gives what it is asked and what it answers.
+// The input and output tensor names of the segmenter graph.
 const (
 	speechInput = "input"
 	speechState = "state"
@@ -54,16 +54,16 @@ type Segmenter struct {
 	lock    sync.Locker
 }
 
-// New is a Segmenter running session, cutting as model says.
+// New returns a Segmenter that runs session with the parameters of model.
 func New(session *ort.Session, model Model, lock sync.Locker) *Segmenter {
 	return &Segmenter{session: session, model: model, lock: lock}
 }
 
 // Split cuts one recording into the segments that carry speech.
 //
-// The model answers for one window at a time, carrying what it made of the
-// windows before. A run of windows it is sure enough about is a segment, closed
-// by the quiet after it and widened a little at each end.
+// The model scores one window at a time and carries its state across windows.
+// A run of windows scoring above the threshold is a segment, closed by the
+// silence after it and padded at each end.
 func (s *Segmenter) Split(ctx context.Context, sound []float32) ([]Segment, error) {
 	scores, err := s.scoreSpeech(ctx, sound)
 	if err != nil {
@@ -91,12 +91,12 @@ func (s *Segmenter) Split(ctx context.Context, sound []float32) ([]Segment, erro
 	return out, nil
 }
 
-// joinShortSpans puts a span too short to stand on its own together with the one
-// after it, up to the longest a span may run to.
+// joinShortSpans merges a span shorter than the minimum pause with the span
+// after it, up to the maximum span length.
 //
-// A person pausing in the middle of a sentence closes a span, and what comes
-// back is a line holding one word. A line is a thing somebody reads, and the
-// model hears a sentence better than it hears a word out of one.
+// A pause in the middle of a sentence closes a span and yields a line with a
+// single word. The transcription model recognises a sentence better than an
+// isolated word.
 func joinShortSpans(found []span, least, longest int) []span {
 	out := make([]span, 0, len(found))
 	for _, one := range found {
@@ -341,12 +341,12 @@ type span struct {
 	From, To int
 }
 
-// getSpans are the spans of speech a run of scores holds.
+// getSpans returns the spans of speech in a sequence of scores.
 //
-// A span is opened by a window the model is sure enough about and closed by
-// quiet windows enough after it, so that the pause between two words does not
-// cut a sentence in half. Each is then widened by pad at both ends, and two
-// that now meet are one.
+// A span opens at a window scoring above the threshold and closes after enough
+// consecutive silent windows, so a pause between two words does not split a
+// sentence. Each span is then widened by pad at both ends, and spans that
+// touch are merged.
 func getSpans(scores []float32, threshold float32, silenceWindows, pad, longest, shortest int) []span {
 	out := findSpeechSpans(scores, threshold, silenceWindows)
 	wider := widenSpans(out, pad, len(scores))
@@ -406,9 +406,9 @@ func widenSpans(found []span, pad, count int) []span {
 	return wider
 }
 
-// splitLongSpan cuts a span that runs on too long into pieces the model is given
-// one at a time. Each cut falls on the quietest window of the second half of
-// what is left, so that a sentence is broken where the speaker paused.
+// splitLongSpan cuts a span longer than the maximum into pieces that the model
+// processes one at a time. Each cut is at the quietest window in the second
+// half of the remaining span, which places the cut at a pause.
 func splitLongSpan(one span, scores []float32, longest int) []span {
 	if longest <= 1 {
 		return []span{one}
@@ -422,7 +422,7 @@ func splitLongSpan(one span, scores []float32, longest int) []span {
 	return append(out, one)
 }
 
-// findQuietest is where the lowest score between two windows stands.
+// findQuietest returns the index of the lowest score in [from, to).
 func findQuietest(scores []float32, from, to int) int {
 	from, to = max(from, 0), min(to, len(scores))
 	pos := from

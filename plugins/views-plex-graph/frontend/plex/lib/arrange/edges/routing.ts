@@ -21,9 +21,9 @@ export interface Routing extends RoutingOptions {
    */
   readonly labelWidth?: ((label: string) => number) | undefined
   /**
-   * How deep one line of a title stands, across the line it is set on. It is
-   * measured in the type a title is set in, which is a type of its own, and is
-   * nothing where nothing measured it.
+   * The height of one line of a title, perpendicular to the line it is set on.
+   * It is measured in the title's own type, and is zero when nothing measured
+   * it.
    */
   readonly labelDepth: number
 }
@@ -56,9 +56,9 @@ const ELLIPSIS = '…'
 export const MIDDLE = 0.5
 
 /**
- * The words a curve has room for: the longest start of the label that fits it,
- * the ellipsis included. The prefix is found by halving, and a curve with room
- * for nothing carries the ellipsis alone.
+ * The longest prefix of the label that fits the curve, including the ellipsis.
+ * The prefix is found by bisection, and a curve with no room for any text
+ * returns the ellipsis alone.
  */
 export function cutToFit(label: string, room: number, width: (label: string) => number): string {
   if (width(label) <= room) return label
@@ -97,14 +97,14 @@ function isSeparated(a: PlacedNode, b: PlacedNode, isVertical: boolean): boolean
     : Math.abs(b.x - a.x) > (a.width + b.width) / 2
 }
 
-/** Which way an edge runs: down the picture, or across it. */
+/** Whether an edge runs vertically or horizontally. */
 function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): boolean {
   const declared = [routing.getAxis(from), routing.getAxis(to)].find((axis) => axis !== 'auto')
   const wanted =
     declared === 'vertical' ||
     (declared === undefined && Math.abs(to.y - from.y) >= Math.abs(to.x - from.x))
 
-  // Two nodes in the same row have no vertical room between their gates.
+  // Two nodes in the same row have no vertical space between their gates.
   // Joining them bottom-to-top there loops down out of one box and back up.
   return isSeparated(from, to, wanted) || !isSeparated(from, to, !wanted) ? wanted : !wanted
 }

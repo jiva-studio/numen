@@ -41,7 +41,7 @@ type IndexPorts struct {
 	TextVersions  textport.VersionRepositories
 }
 
-// Index is the cache, seen as the ports the core asks for.
+// Index exposes the cache as the ports the core requires.
 type Index struct {
 	ports  IndexPorts
 	walks  Walks
@@ -71,7 +71,7 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 	return i.ports.Backend.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
-// Compact returns the space the index no longer holds.
+// Compact reclaims the space the index no longer uses.
 func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Compact(ctx) }
 
 func (i *Index) Vaults() vaultport.VaultRepository           { return i.ports.Vaults }

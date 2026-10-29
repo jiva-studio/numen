@@ -1,8 +1,8 @@
 /**
  * What the corner emits, and what it does not.
  *
- * A card that has been read tells whoever handed it in that they may dismiss it.
- * Nobody outside can see that happen, so it is asserted here.
+ * A card that has been read tells its originator that it may be dismissed. This is not
+ * observable outside the component, so it is asserted here.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -11,7 +11,7 @@ import Notices from './Notices.vue'
 import { MIN_DURATION } from '../lib/duration'
 import type { Notice } from '../lib/notice'
 
-/** A clock a test winds by hand, so nothing waits on the real one. */
+/** A clock a test advances manually, so nothing waits on the real one. */
 function wound(timeMs = 0) {
   const clock = { at: timeMs }
   return { clock: () => clock.at, wind: (delta: number) => (clock.at += delta) }
@@ -81,8 +81,8 @@ describe('a card the person is finished with', () => {
 
 describe('a corner nothing is holding any more', () => {
   it('goes on reading once what the pointer was on has gone', async () => {
-    // A card is taken out from under the pointer, and a browser owes nothing
-    // about the boundary event for one that has gone.
+    // A card is removed from under the pointer, and a browser does not guarantee the
+    // boundary event for one that has gone.
     const { clock, wind } = wound()
     const corner = draw([work, report], clock)
 

@@ -14,18 +14,18 @@ import (
 // still recognises it.
 var ErrOutside = vaultport.ErrOutside
 
-// ErrNotANote is what a path inside the vault gets when the vault does not hold
-// it as a note: an attachment, a folder some tool keeps its state in, whatever
-// the vault's own rules say to leave alone. It is the core's sentinel: the same
-// answer reaches a use case whichever vault it came from.
+// ErrNotANote is returned for a path inside the vault that the vault does not hold
+// as a note: an attachment, a folder where a tool keeps its state, or anything the
+// vault's own rules exclude. It is the core's sentinel, so a use case sees the same
+// error from any vault.
 var ErrNotANote = vaultport.ErrNotANote
 
-// GetContainedPath turns a path from a vault root into a path on this machine,
-// and refuses one that leaves.
+// GetContainedPath converts a path relative to a vault root into a path on this
+// machine and rejects one that leaves the root.
 //
-// The check is on the cleaned path. `notes/../../etc` begins with neither a
-// slash nor a dot-dot and reaches outside all the same. Everything that
-// reaches a vault from outside the application arrives here first.
+// The check runs on the cleaned path: `notes/../../etc` starts with neither a slash
+// nor a dot-dot yet escapes the root. Every access to a vault from outside the
+// application passes through here first.
 func GetContainedPath(root, path, serviceDir string) (string, error) {
 	target, _, err := resolveVaultPath(root, path, serviceDir)
 	return target, err
@@ -39,13 +39,13 @@ func ResolveLinks(root, path, serviceDir string) (string, error) {
 	return resolved, err
 }
 
-// resolveVaultPath is the vault as the person's: a path that stays inside it,
-// and that is not in the folder belonging to the application — neither as it is
-// spelled nor where it lands.
+// resolveVaultPath returns the user's vault path: one that stays inside the vault
+// and is not in the application's own folder, either as spelled or after resolving
+// links.
 //
-// A link is a second spelling for a place, so the folder is asked about both.
-// `link/ocr/abc.txt`, where `link` is a link to the service folder, reads as the
-// vault's and is the application's, and it is the second that decides.
+// A link is an alternate spelling of a location, so the folder check applies to
+// both. `link/ocr/abc.txt`, where `link` links to the service folder, looks like
+// vault content but belongs to the application; the resolved path decides.
 func resolveVaultPath(root, path, serviceDir string) (target, resolved string, err error) {
 	clean, err := CleanPath(path)
 	if err != nil {
@@ -89,10 +89,10 @@ func resolveServicePath(root, path, serviceDir string) (target, resolved string,
 	return target, resolved, nil
 }
 
-// isOurs says whether a path is in the folder the application keeps for itself.
+// isOurs reports whether a path is in the folder the application reserves for
+// itself.
 //
-// The name is compared without regard to case, which is how macOS and Windows
-// open it.
+// The name is compared case-insensitively, matching how macOS and Windows open it.
 func isOurs(clean, serviceDir string) bool {
 	if len(clean) < len(serviceDir) || !strings.EqualFold(clean[:len(serviceDir)], serviceDir) {
 		return false
@@ -100,15 +100,14 @@ func isOurs(clean, serviceDir string) bool {
 	return len(clean) == len(serviceDir) || clean[len(serviceDir)] == '/'
 }
 
-// CleanPath is a path a vault could hold, in the one form the rules are written
-// and never reaches the filesystem.
+// CleanPath returns a path a vault could hold, in the canonical form the rules use.
+// It never accesses the filesystem.
 func CleanPath(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("%w: it is empty", ErrOutside)
 	}
-	// filepath.IsLocal refuses a path that is absolute or that climbs out, and
-	// on Windows one that is rooted, drive-relative, or names a reserved
-	// device.
+	// filepath.IsLocal rejects a path that is absolute or that climbs out, and on
+	// Windows one that is rooted, drive-relative, or names a reserved device.
 	if !filepath.IsLocal(path) || strings.ContainsRune(path, 0) {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
@@ -145,10 +144,10 @@ func hasReservedDeviceName(clean string) bool {
 func resolveContained(root, clean string) (target, resolved, landed string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
-	// A folder inside the vault may be a link to somewhere else — a synced
-	// folder, a shared one — and a rename or a write through it lands outside.
-	// The text says nothing about that; only the filesystem knows, so it is
-	// asked about the deepest part of the path that exists.
+	// A folder inside the vault may be a link to another location, such as a synced or
+	// shared folder, and a rename or write through it lands outside the vault. The
+	// path text cannot show this; only the filesystem can, so the deepest existing
+	// part of the path is resolved.
 	resolved, err = GetDeepestExisting(target)
 	if err != nil {
 		return "", "", "", err
@@ -172,13 +171,13 @@ func getRootRelativeName(resolved, root string) string {
 	return filepath.ToSlash(resolved[len(root)+1:])
 }
 
-// IsUnderRoot says whether a resolved path is a root or lies inside it.
+// IsUnderRoot reports whether a resolved path is the root or lies inside it.
 func IsUnderRoot(resolved, root string) bool {
 	return resolved == root || strings.HasPrefix(resolved, root+string(filepath.Separator))
 }
 
-// GetDeepestExisting resolves as much of a path as exists, so that a file about to be
-// created is judged by the folder it would land in.
+// GetDeepestExisting resolves as much of a path as exists, so a file about to be
+// created is judged by the folder it will land in.
 func GetDeepestExisting(target string) (string, error) {
 	pos := target
 	var missing []string

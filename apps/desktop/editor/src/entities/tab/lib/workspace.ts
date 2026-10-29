@@ -1,8 +1,8 @@
 /**
- * What the window opens with, and what its tabs are called.
+ * What the window opens with, and the names of its tabs.
  *
- * The workspace takes identities and gives them back; which component each one
- * stands for is settled in `App.vue`.
+ * The workspace takes identities and returns them; which component each one maps to
+ * is decided in `App.vue`.
  */
 import { branch, pane, type Workspace } from '@numen/shell'
 
@@ -12,18 +12,17 @@ export const NOTE = 'note'
 export const SETTINGS = 'settings'
 
 /**
- * The identity a tab or a conversation is given when nothing it can be found
- * under exists: the word its kind is filed under, and what nothing else
- * answers to, in this window or in one the person opens after it. The agent
- * keeps a conversation under each name it hears, and a name stands for one of
- * them.
+ * The identity given to a tab or conversation when none can be found for it: the
+ * kind's name plus a value unique to this window and to any window opened after it.
+ * The agent keeps a conversation under each name it receives, and a name maps to one
+ * of them.
  */
 export const generateId = (kind: string): string => `${kind}:${crypto.randomUUID()}`
 
 /**
- * The main tabs with the room, and one pane along the trailing edge holding the
- * aside tabs, the first of each in front. The person begins in the main pane.
- * Where one side holds nothing, the other is the whole window.
+ * The main tabs, and one pane along the trailing edge holding the aside tabs, the first
+ * of each in front. The user starts in the main pane. Where one side is empty, the
+ * other fills the window.
  */
 export const createWorkspace = (main: readonly string[], aside: readonly string[]): Workspace => {
   const only = aside.length === 0 ? main : aside

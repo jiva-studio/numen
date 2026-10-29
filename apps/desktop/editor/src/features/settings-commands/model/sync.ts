@@ -19,7 +19,7 @@ export const SYNCING = 'syncing'
 export const ON = 'on'
 export const OFF = 'off'
 
-/** What this asks of the vault. */
+/** The vault operations this needs. */
 export interface SyncDeps {
   /** Whether the two are one name, as the settings hold it. */
   getSyncEnabled(): Promise<boolean>
@@ -29,19 +29,20 @@ export interface SyncDeps {
 
 export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWriter) {
   /**
-   * Whether the two are one name. It opens on what an installation nobody has
-   * configured does, and is asked of the vault as the window opens.
+   * Whether the title and filename are one name. It starts with the default of
+   * an installation without configuration, and is read from the vault when the
+   * window opens.
    */
   const isEnabled = ref(true)
   const guard = createWriteGuard()
 
-  /** What the settings hold, asked once the window is up. */
+  /** Reads the setting from the vault once the window is up. */
   const start = async (): Promise<void> => {
     try {
       const target = await core.getSyncEnabled()
       if (guard.isIdle()) isEnabled.value = target
     } catch {
-      // A vault that cannot be asked leaves the setting at its current position.
+      // If the vault cannot be read, the setting keeps its current value.
     }
   }
 
@@ -62,8 +63,8 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
   }
 
   /**
-   * The row chosen, written into the settings. A setting that could not be
-   * written is said, and the window goes back to what the settings hold.
+   * Writes the chosen row to the settings. If the setting cannot be written,
+   * the error is reported and the window reverts to the stored value.
    */
   const choose = async (item: string): Promise<void> => {
     if (item !== ON && item !== OFF) return

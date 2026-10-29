@@ -16,7 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
-// suffix names the note that says where a trashed folder came from.
+// suffix is the extension of the info file that records where a trashed folder
+// came from.
 const suffix = ".trashinfo"
 
 // deletedAt is the form the note writes the time in, in local time.
@@ -92,9 +93,9 @@ func getVolumeRoot(path string) (string, error) {
 	}
 }
 
-// getVolumeTrashDir is the trash at the root of a mounted getVolumeTrashDir: the one the getVolumeTrashDir
-// carries for everybody where it is a sticky directory of its own, and this
-// login's otherwise.
+// getVolumeTrashDir returns the trash directory at the root of a mounted
+// volume: the per-user directory inside the shared `.Trash` when that is a
+// sticky directory, and the user's own `.Trash-<uid>` otherwise.
 func getVolumeTrashDir(top string, uid int) (string, error) {
 	shared := filepath.Join(top, ".Trash")
 	if info, err := os.Lstat(shared); err == nil && info.IsDir() && info.Mode()&os.ModeSticky != 0 {
@@ -164,9 +165,9 @@ func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 	}
 }
 
-// formatTrashInfo is the note beside a trashed folder: where it was and when it was
-// deleted. The path is URL-encoded, and is relative to the root of the volume
-// for a trash that sits at that root.
+// formatTrashInfo returns the info file content for a trashed folder: its
+// original path and deletion time. The path is URL-encoded, and is relative to
+// the volume root for a trash at that root.
 func formatTrashInfo(from string) string {
 	return "[Trash Info]\n" +
 		"Path=" + (&url.URL{Path: from}).EscapedPath() + "\n" +

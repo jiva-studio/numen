@@ -1,11 +1,10 @@
 /**
  * The decisions a palette makes, as plain values.
  *
- * Two of them are the reason this file exists. Where the keyboard lands is
- * counted over a list that is drawn in groups, so a number has to mean the same
- * thing to the arrow keys and to the drawing. And a group arrives while a person
- * is reading, so what the keyboard is on has to survive the list changing under
- * it.
+ * Two of them are the reason this file exists. The keyboard position is counted
+ * over a list drawn in groups, so a number has to mean the same thing to the
+ * arrow keys and to the drawing. And a group arrives while the user is reading,
+ * so the active item has to survive the list changing.
  */
 import { describe, expect, it } from 'vitest'
 import { stepTo } from '@numen/ui'

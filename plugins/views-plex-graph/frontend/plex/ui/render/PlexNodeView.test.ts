@@ -1,9 +1,9 @@
 /**
- * What a node decides on its own: whether it can be chosen, what it tells a
+ * What a node decides on its own: whether it can be selected, what it announces to a
  * screen reader, and what the handle does that the box must not.
  *
- * jsdom has no `:focus-visible`, so here the keyboard is never visibly on a
- * node and the handle it offers the keyboard is left to `Plex.stories.ts`.
+ * jsdom has no `:focus-visible`, so keyboard focus is never visible on a node here, and
+ * the handle it offers the keyboard is covered by `Plex.stories.ts`.
  */
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -68,8 +68,8 @@ describe('the node in focus', () => {
   })
 
   it('is stopped at by tab, and is announced', () => {
-    // A menu is asked for from wherever the keyboard is, and the note being
-    // read is the likeliest one to ask about.
+    // A menu is requested from wherever keyboard focus is, and the note being read is
+    // the most likely one to request it.
     const node = mountNode({ relation: 'focus' })
     expect(node.attributes('tabindex')).toBe('0')
     expect(node.attributes('aria-hidden')).toBeUndefined()
@@ -333,7 +333,7 @@ describe('a box with more of its title to show', () => {
     return { node, world }
   }
 
-  /** How wide the box is drawn, and where its leading edge stands. */
+  /** The box width as drawn, and the position of its leading edge. */
   const getBox = (node: VueWrapper) => {
     const rect = node.get('rect')
     return {
@@ -342,7 +342,7 @@ describe('a box with more of its title to show', () => {
     }
   }
 
-  /** The hand arrives, stays, and the opening is drawn to its end. */
+  /** The pointer enters, rests, and the opening is drawn to its end. */
   const rest = async (view: ReturnType<typeof mountWide>) => {
     await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
@@ -511,7 +511,7 @@ describe('the headings a node hangs', () => {
     return { node, world }
   }
 
-  /** The hand arrives, stays, and the opening is drawn to its end. */
+  /** The pointer enters, rests, and the opening is drawn to its end. */
   const rest = async (view: ReturnType<typeof mountInside>) => {
     await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)

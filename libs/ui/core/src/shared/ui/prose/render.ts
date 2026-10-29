@@ -1,7 +1,7 @@
 /**
- * Markdown as Vue's own nodes, read by markdown-it. Vue patches the tree it
- * drew before, so prose arriving a piece at a time keeps what is on the screen,
- * and a word that has just arrived can be shown arriving.
+ * Renders Markdown as Vue nodes, parsed by markdown-it. Vue patches the tree it
+ * rendered before, so prose arriving incrementally keeps the existing DOM, and a
+ * newly arrived word can be animated.
  *
  * HTML in the text is text.
  */
@@ -14,7 +14,7 @@ const marks = new MarkdownIt({ html: false, linkify: true }).use(linkPieces)
 /** The class every word is drawn in. */
 export const WORD = 'prose__word'
 
-/** The attribute a link that reaches nothing is drawn with. */
+/** The attribute marking a link with no target. */
 const REACHES = 'data-reaches'
 
 /** The addresses a text points at that reach nothing. */
@@ -34,8 +34,8 @@ export const render = (
 }
 
 /**
- * Tokens arrive flat, with the nesting written on them. A frame is one element
- * being filled; the tokens that close it hand it to the frame beneath.
+ * Tokens arrive flat, with the nesting recorded on them. A frame is one element
+ * being filled; the token that closes it passes it to the parent frame.
  */
 interface Frame {
   tag: string
@@ -70,7 +70,7 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
   return root
 }
 
-/** What a block token stands for, once it has opened and closed nothing. */
+/** The node a block token produces when it is neither an opening nor a closing token. */
 const block = (
   token: Token,
   deadAddresses: BrokenAddresses,
@@ -118,7 +118,7 @@ const inline = (
   return root
 }
 
-/** What an inline token stands for, once it has opened and closed nothing. */
+/** The node an inline token produces when it is neither an opening nor a closing token. */
 const mark = (token: Token, next: () => number): (VNode | string)[] => {
   switch (token.type) {
     case 'text':

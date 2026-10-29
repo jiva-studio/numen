@@ -1,15 +1,14 @@
 <script setup lang="ts">
 /**
- * The palette: a field, and everything the words in it turned up, in groups.
+ * The command palette: a search field and the grouped results for its text.
  *
- * It takes groups of items and says which item was chosen and what was asked of
- * it. The keyboard stays in the field the whole time, what is lit is named to a
- * screen reader, and the window behind is out of reach for as long as the
- * palette stands.
+ * It takes groups of items and emits the chosen item and the requested action.
+ * Keyboard focus stays in the field, the highlighted item is announced to
+ * screen readers, and the content behind the palette is inert while it is open.
  *
- * `data-palette` names each part of the panel: `ground`, `panel`, `crumb`,
- * `field`, `said`, `nothing`, `key` and `more`. The list under the field names
- * its own.
+ * `data-palette` marks each part of the panel: `ground`, `panel`, `crumb`,
+ * `field`, `said`, `nothing`, `key` and `more`. The list below the field marks
+ * its own parts.
  */
 import { computed, useId, useTemplateRef } from 'vue'
 import { getUserAgent } from '@/shared/lib/dom'
@@ -46,13 +45,13 @@ const searchQuery = defineModel<string>({ default: '' })
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /**
-   * An item was chosen, and what was asked of it. Both identifiers are the
-   * caller's, handed back as given.
+   * An item was chosen with the requested action. Both identifiers belong to
+   * the caller and are returned unchanged.
    */
   (event: 'choose', item: string, action: string): void
   /**
-   * The item the keyboard is standing on, said whenever it moves. A list that
-   * changes under the keyboard says this once, when it has settled.
+   * The item highlighted by the keyboard, emitted whenever it changes. When the
+   * list changes under the keyboard, it is emitted once after the list settles.
    */
   (event: 'light', item: PaletteItemId): void
   /**
@@ -60,18 +59,18 @@ const emit = defineEmits<{
    * decides what going back means.
    */
   (event: 'back'): void
-  /** It asks to be put away. */
+  /** Requests that the palette close. */
   (event: 'dismiss'): void
 }>()
 
 defineSlots<{
   /**
-   * What is drawn before a row's words. The room for it is kept on every row
-   * once the slot is filled, so the words line up down the list whether or not
-   * each of them draws anything.
+   * Rendered before a row's text. Space for it is reserved on every row once
+   * the slot is filled, so the text aligns down the list whether or not a row
+   * renders anything.
    */
   icon(props: { id: string }): unknown
-  /** What is said while there is no group to draw. */
+  /** Rendered when there is no group to show. */
   silence(): unknown
 }>()
 
@@ -91,7 +90,7 @@ const places = usePalettePlaces({
 })
 const { placed, announcement, here, activeItem, actions, selectedId, chooseAt } = places
 
-/** The actions a key reaches, which is what the foot of the palette says. */
+/** The actions available through keys, shown in the palette footer. */
 const hinted = computed(() => getShortcuts(activeItem.value))
 
 const {
@@ -205,7 +204,7 @@ function reveal(): void {
 </template>
 
 <style scoped>
-/* The line under the field belongs to what stands beneath it. */
+/* The border below the field belongs to the element that follows it. */
 .palette__nothing {
   margin: 0;
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);

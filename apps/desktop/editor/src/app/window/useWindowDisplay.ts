@@ -9,29 +9,29 @@ import { formatErrorMessage } from '@numen/plugin-sdk'
 import { createWindowStreams } from './useWindowStreams'
 
 /**
- * The vault as the whole window reads it, and what it says when the vault
+ * The vault as the whole window reads it, and the notifications when the vault
  * changes.
  *
  * One window reads the vault once: one stream of changes, one stream of edits,
- * one stream of notes asked for, one stream of what is being done, and one set
- * of counts. What is drawn from any of it, and by how many tabs, is the
- * window's; nothing here knows what a tab holds.
+ * one stream of requested notes, one stream of running tasks, and one set of
+ * counts. What is rendered from any of it, and by how many tabs, is the
+ * window's concern; nothing here knows what a tab holds.
  */
-/** What the window hands the reading of a vault, beside the vault itself. */
+/** What the window passes for reading a vault, alongside the vault itself. */
 export interface DisplayOptions {
   wait?(ms: number): Promise<unknown>
   /**
-   * What hears that the vault changed, and is waited for. A change carrying no
+   * Receives vault change notifications, and is awaited. A change carrying no
    * paths is empty: everything showing the vault reads again.
    */
   onVaultChanged?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
-  /** What hears about a change to a note while it is being made. */
+  /** Receives notifications of a change to a note while it is being created. */
   reportChange?(response: NoteEdit): void
-  /** What puts a note in front of the person, asked for from outside the window. */
+  /** Shows a note to the user, requested from outside the window. */
   travelTo?(path: string): void | Promise<void>
   /**
-   * What opens a document at spans of its own text, in the tab it is read
-   * in. The person is taken to the first of them.
+   * Opens a document at spans of its own text, in the tab it is read in. The
+   * first span is brought into view.
    */
   openFileAt?(path: string, spans: readonly TextRange[]): void
   /** What draws the page again, once another vault is under this window. */
@@ -45,7 +45,7 @@ function useDisplayState() {
     isIndexing: ref(true),
     /** The core could not be reached: nothing else in the window is true. */
     failure: ref(''),
-    /** What the window itself lost touch with, said until it has it back. */
+    /** What the window itself lost its connection to, reported until restored. */
     lost: ref(''),
     error: ref(''),
     unwatched: ref(''),

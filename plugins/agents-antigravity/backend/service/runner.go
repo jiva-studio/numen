@@ -193,7 +193,7 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 	}
 }
 
-// newSpec is the run of the Antigravity CLI the request asks for.
+// newSpec builds the Antigravity CLI invocation for the request.
 func newSpec(req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {

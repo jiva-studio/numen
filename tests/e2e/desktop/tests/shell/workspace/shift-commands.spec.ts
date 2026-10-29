@@ -1,7 +1,7 @@
 import { test, expect } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace'
 
-/** The commands a keystroke holding Shift reaches, pressed with the palette nowhere in sight. */
+/** The commands triggered by a keystroke holding Shift, pressed with the palette closed. */
 test.describe('a command reached by a keystroke holding Shift', () => {
   test('opens an agent in a tab of its own', async ({ page }) => {
     await openWorkspace(page)

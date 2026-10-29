@@ -124,8 +124,8 @@ func TestAgentServiceRPC(t *testing.T) {
 	}
 }
 
-// The state says the program is out of reach where it is nowhere to be found, and the program list
-// says it is not installed.
+// The state reports the program as unreachable when it cannot be found, and the program list
+// reports it as not installed.
 func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	client := startAgent(t, &agentServer{})
@@ -322,7 +322,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	}
 }
 
-// A task asked again in the conversation resumes the session the first one reported.
+// A second task in the same conversation resumes the session reported by the first.
 func TestAConversationResumesItsSession(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "argv")
 	script := writeScript(t, "mock-claude.sh",
@@ -387,7 +387,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 	})
 }
 
-// A program nowhere to be found is told to the person, and the run ends.
+// A program that cannot be found is reported to the user, and the run ends.
 func TestAskAgent_NotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	client := startAgent(t, &agentServer{})

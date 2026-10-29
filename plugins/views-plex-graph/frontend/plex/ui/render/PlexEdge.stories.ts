@@ -1,12 +1,12 @@
 /**
  * One edge and the title along it, at rest and lifted over the boxes.
  *
- * Inside a plex an edge is a hairline under everything else, which is no way to
- * judge whether the lifted pair really stands out from the resting one. Both
- * are drawn here side by side, in a window with the origin in the middle.
+ * Inside a plex an edge is a hairline below all other elements, which makes it
+ * hard to judge whether the lifted edge stands out from the resting one. Both
+ * are drawn side by side here, in a viewport with the origin in the middle.
  *
- * A title is set along a path the drawing has to name, so every story lays that
- * path down itself, as the plex does.
+ * A title is set along a path that the drawing must define, so every story
+ * creates that path itself, as the plex does.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
@@ -21,7 +21,7 @@ import { DARK, expectDark } from '../../../fixtures/theme'
 interface Knobs {
   /** The words set along the line. Nothing draws no title at all. */
   words: string
-  /** How far along the line the middle of those words stands. */
+  /** The position along the line of the middle of the words. */
   wordsAt: number
   /** Below one, the edge is on its way in or out. */
   opacity: number
@@ -45,7 +45,7 @@ const createEdge = (args: Knobs): PlacedEdge => ({
   ...(args.isArrow ? { arrowhead: { at: { x: 200, y: 40 }, angle: 12 } } : {}),
 })
 
-/** The edge with what the drawing asks of it, as the plex works it out. */
+/** The edge with the properties that the drawing requires, as the plex computes them. */
 const createLine = (edge: PlacedEdge): EdgeLine => ({
   edge,
   key: `${edge.from}->${edge.to}`,
@@ -162,15 +162,15 @@ export const Dark: Story = {
     const restParts = getParts(canvasElement, 'resting')
     const lifted = getParts(canvasElement, 'lifted')
 
-    // A line lying quietly on the surface still stands above it on the dark
-    // set, where a line is drawn lighter than what it is drawn on.
+    // A resting line is still lighter than the surface in the dark set, where
+    // lines are drawn lighter than the background.
     await expect(lightness(getComputedStyle(restParts.curve).stroke, ground)).toBeGreaterThan(
       surface + 2,
     )
 
-    // The line and its head are one drawing, and lifting moves both further
-    // from the ground they are read on. The curve is stroked and the head is
-    // filled, so each is read off the property it is painted with.
+    // The line and its head form one drawing, and lifting increases the contrast
+    // of both against the background. The curve is stroked and the head is
+    // filled, so each is read from the property it is painted with.
     await expect(getDistanceFrom(getComputedStyle(lifted.curve).stroke)).toBeGreaterThan(
       getDistanceFrom(getComputedStyle(restParts.curve).stroke) + 2,
     )

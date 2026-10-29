@@ -67,8 +67,8 @@ func TestAStampCarryingAMonotonicReadingIsTheSameFileWithoutIt(t *testing.T) {
 	}
 }
 
-// A field named for a moment holds a moment. An integer here is a unit nobody
-// stated, and anything counting anything assigns to it.
+// A field named for a moment holds a moment. An integer here is a unit that is not
+// stated, and any code counting anything would assign to it.
 func TestTheStampIsAnInstant(t *testing.T) {
 	target, found := reflect.TypeOf(domain.FileStat{}).FieldByName("ModTime")
 	if !found {

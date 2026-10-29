@@ -17,8 +17,8 @@ var pages embed.FS
 // policy is what this window may load. A plugin draws pictures it carries as `data:` URIs.
 var policy = csp.Sources{Images: []string{"data:"}}.Policy()
 
-// Pages is the interface itself, built by `make interface` and carried inside the binary. A binary
-// built without it says so.
+// Pages is the interface itself, built by `make interface` and embedded in the
+// binary. A binary built without it reports that.
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // NewHandler is everything this window answers: the window itself, its themes, the agent, the list of

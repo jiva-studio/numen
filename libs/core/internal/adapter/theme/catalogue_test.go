@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
 )
 
-// createThemeFolder is a themes createThemeFolder of a person's, made the way the first run makes it.
+// createThemeFolder creates a user's themes folder the way the first run does.
 func createThemeFolder(t *testing.T) theme.Catalogue {
 	t.Helper()
 	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"))
@@ -44,8 +44,8 @@ func hasTheme(themes []theme.Theme, name string) bool {
 	return false
 }
 
-// The theme an installation nobody has dressed is set to, and the theme a name
-// matching nothing falls back to, are one palette.
+// The theme an unconfigured installation is set to, and the theme a name matching
+// nothing falls back to, are one palette.
 func TestTheSettingAnInstallationStartsOnIsThisProductsOwnPalette(t *testing.T) {
 	if settings.DefaultTheme != theme.Default {
 		t.Errorf("the settings start on %q and a name matching nothing wears %q",
@@ -83,7 +83,7 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 	}
 }
 
-// The mode chooses for this product's own palette, so that palette says nothing
+// The mode selects this product's own palette, so that palette declares nothing
 // about `color-scheme`.
 func TestThisProductsOwnPalettePreservesTheModeSomethingToChoose(t *testing.T) {
 	catalogue := createThemeFolder(t)

@@ -157,8 +157,8 @@ func TestGetFixedLines_RejectsNumberFusedToText(t *testing.T) {
 	}
 }
 
-// A separator the reply invented stands where the line begins, and the letters
-// either side of it are the same, so the third gate cannot see it.
+// A separator that the reply adds at the start of the line leaves the letters
+// on either side unchanged, so the third gate cannot detect it.
 func TestGetFixedLines_SeparatorPrefixIgnored(t *testing.T) {
 	for _, lineText := range []string{
 		"10 - the Sodërby gardin hcdge.",

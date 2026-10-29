@@ -11,10 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// acquireFileLock takes an advisory lock on the file and returns what lets it go.
+// acquireFileLock takes an advisory lock on the file and returns the function
+// that releases it.
 //
-// The kernel holds the lock and drops it when the process ends, however it
-// ends. The file is somewhere for the lock to live and says nothing on its own.
+// The kernel holds the lock and releases it when the process ends, however it
+// ends. The file only anchors the lock and its content is not used.
 func acquireFileLock(path string) (func() error, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {

@@ -29,46 +29,38 @@ const defaultExtractors = 4
 // the search returns, so the answer is among what it ranks.
 const lexicalCandidates = 5
 
-// DefaultFloor is how near the query a passage stands to be an answer, in
-// cosine similarity.
+// DefaultFloor is the minimum cosine similarity at which a passage counts as
+// an answer.
 //
-// The number belongs to the model the vectors were made by: it is where that
-// model puts two pieces of text about different things, and another model puts
-// them somewhere else.
+// The value is specific to the embedding model that produced the vectors: it is
+// the similarity that model assigns to texts about different subjects.
 const DefaultFloor = 0.50
 
-// Parameters says which ways a search is asked, how many candidates each keeps,
-// and what a candidate has to reach. A half that keeps none does not run; with
-// neither named, both run.
+// Parameters selects the search modes, the number of candidates each mode keeps
+// and the minimum score a candidate must reach. A mode with no candidates does
+// not run; when no mode is configured, all modes run.
 type Parameters struct {
 	// Limit is how many results come back.
 	Limit int
-	// Each is how many passages one document may answer with. Zero is one, and
-	// a document names itself once.
-	//
-	// about a thing, and a list a person runs their eye down needs one line per
-	// book.
+	// Each is the maximum number of passages returned per document. Zero means
+	// one. A result list shows one line per book.
 	Each int
 	// Lexical is how many candidates the words keep, and Dense how many passages
 	// the meaning returns. The coarse pass under it keeps several
 	// times as many, and the full-precision vectors order those.
 	Lexical int
 	Dense   int
-	// Named is how many sections the names keep. A document has far fewer
-	// sections than chunks, and one name matching is a strong thing to have
-	// said, so a few of them are enough.
+	// Named is how many sections the name search keeps. A document has far fewer
+	// sections than chunks and a name match is a strong signal, so a small number
+	// suffices.
 	Named int
-	// Floor is how near the query a passage stands to be an answer at all. It
-	// is read only by the meaning half; the words half has no distance.
+	// Floor is the minimum similarity for a passage to count as an answer. Only
+	// the meaning search reads it; the word search has no distance.
 	Floor float64
-	// IsGrowing says the last word typed may still be being typed, so the index
-	// matches it by its opening. A question that is finished is asked exactly.
+	// IsGrowing marks the last word of the query as possibly incomplete, so the
+	// index matches it as a prefix. A complete query is matched exactly.
 	IsGrowing bool
-	// Kinds are the kinds of source the question is about. None is every kind,
-	// which is what a question that says nothing about the sort of file it
-	// wants asks for.
-	//
-	// A person asking a book about something is asking about the book.
+	// Kinds are the source kinds the query targets. Empty means every kind.
 	Kinds []domain.SourceKind
 }
 
@@ -94,8 +86,8 @@ func (p Parameters) fill() Parameters {
 // Search answers a query within one vault, over everything the vault holds.
 //
 // One database holds every vault, so the vault is an argument of the search.
-// Every field is asked for by New. An embedder that is left out answers: the
-// words half runs alone, with none of what the vectors hold.
+// New sets every field. Without an embedder only the word search runs, and
+// vector-based results are absent.
 type Search struct {
 	passages     sourceport.PassageQueries
 	readers      vaultport.VaultReaders
@@ -109,21 +101,21 @@ type Search struct {
 	extractors int
 }
 
-// New is a search over one vault's index.
+// New returns a search over one vault's index.
 //
-// The embedder turns a query into a vector. Nil is an installation with no
-// model, and then the meaning half does not run and the words half answers alone,
-// which is a whole search: the vector index is optional and may never finish
-// filling.
+// The embedder converts a query into a vector. Nil means the installation has
+// no model: the meaning search does not run and the word search answers alone,
+// which is a complete search, since the vector index is optional and may never
+// finish filling.
 //
-// `floor` is how near the query a passage stands to be an answer, in the units
-// the model in use measures in. Zero takes DefaultFloor.
+// `floor` is the minimum similarity for a passage to count as an answer, in the
+// units of the model in use. Zero selects DefaultFloor.
 //
-// `texts` is the text versions sources are cut from. Nil is an installation with
-// none, and only notes answer with their text.
+// `texts` is the text versions that sources are cut from. Nil means the
+// installation has none, and only notes return their text.
 //
-// `errorHandler` hears about a half that could not answer. Nothing is said by
-// passing nothing.
+// `errorHandler` receives the error of a search mode that could not answer.
+// Nil ignores such errors.
 func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, floor float64, errorHandler windowport.ErrorHandler) Search {
 	if floor == 0 {
 		floor = DefaultFloor
@@ -245,9 +237,8 @@ func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p
 	return nil
 }
 
-// searchDense stores the passages nearest the meaning of the query. A model out of
-// reach leaves the words to answer, because a vault is searched on a machine
-// with no network and by a person whose key has run out.
+// searchDense stores the passages nearest the meaning of the query. When the
+// model is unreachable (no network, expired key) the word search answers alone.
 func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -268,11 +259,11 @@ func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p
 	}
 }
 
-// errNoVector marks the query having no vector, which is the half that asks by
-// meaning having nothing to ask with.
+// errNoVector reports that the query produced no vector, so the meaning search
+// has nothing to search with.
 var errNoVector = errors.New("the query was not turned into a vector")
 
-// findNearest is the search asked by meaning, over a vector of the query itself.
+// findNearest searches by meaning, using the vector of the query.
 func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -300,23 +291,23 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	// A vector is kept under the recipe it was made by, which is everything
-	// about the model that decides what a vector is. Asked under anything else,
-	// no vector is found and this half answers nothing at all.
+	// A vector is stored under the recipe that produced it, which covers every
+	// property of the model that determines what a vector is. A lookup under any
+	// other recipe finds no vector and this mode returns nothing.
 	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, p.Floor)
 }
 
-// read fills in the text of each passage from the vault. A chunk is a place in a
-// file, and the file is what holds the words.
+// read fills in the text of each passage from the vault. A chunk is a position
+// in a file; the file holds the text.
 //
-// A passage naming a file the vault no longer holds is dropped: the file is what
-// is true, and the index follows it.
+// A passage whose file is no longer in the vault is dropped: the file is
+// authoritative and the index follows it.
 //
-// A ranking scatters one source's passages wherever each chunk placed, so they
-// are grouped by source before this reads any of them. Up to defaultExtractors
-// sources are extracted at once, and each one's decoded text is released as soon
-// as its own passages are filled in. The first error, or the end of ctx, stops
-// the sources not yet started.
+// Passages are grouped by source before reading, because a ranking scatters the
+// passages of one source. Up to defaultExtractors sources are extracted
+// concurrently, and each source's decoded text is released once its passages
+// are filled in. The first error, or cancellation of ctx, stops the sources not
+// yet started.
 func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
 	return u.readForQuery(ctx, v, "", found)
 }
@@ -450,8 +441,8 @@ func groupBySource(found []domain.Passage) (map[string][]int, []string) {
 	return groups, order
 }
 
-// errUnreadable is a source that is there and says nothing this can use. It is
-// not a failure of the search: the passage is dropped and the rest answer.
+// errUnreadable marks a source that exists but yields no usable text. It is not
+// a search failure: the passage is dropped and the others are returned.
 var errUnreadable = errors.New("nothing could be read from the source")
 
 // sourceTexts is where a passage's text is read from: a note's own file, and
@@ -461,10 +452,10 @@ type sourceTexts struct {
 	texts textport.Texts
 }
 
-// getText is the text a source's chunks are places in, and the version it is
-// when it is one. A source cut from no version is a note, and its text is its
-// file. A source cut from a version is that version, and a version no longer
-// there is errUnreadable.
+// getText returns the text a source's chunks address and the version it comes
+// from, if any. A source without a version is a note, and its text is its file.
+// A source with a version reads that version; a missing version is
+// errUnreadable.
 func (s sourceTexts) getText(ctx context.Context, path, version string) (string, *domain.VersionText, error) {
 	if version == "" {
 		raw, err := s.files.Read(ctx, path)
@@ -486,12 +477,12 @@ func (s sourceTexts) getText(ctx context.Context, path, version string) (string,
 	return doc.Text, &doc, nil
 }
 
-// span is the text a chunk addresses, bounded by what the source holds now. A
-// source edited since it was indexed is shorter than the chunk says.
+// span is the text a chunk addresses, bounded by the current length of the
+// source. A source edited after indexing is shorter than the chunk offsets
+// indicate.
 //
-// The result is copied out of the source's decoded text and not sliced from
-// it, so a passage kept after this returns holds the span alone, not the whole
-// document the span was cut from.
+// The result is copied from the source's decoded text instead of sliced from it,
+// so a retained passage holds only the span and not the whole document.
 func span(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {
 		return ""
@@ -515,9 +506,8 @@ func lineOf(raw string, opens, start int) int {
 	return strings.Count(raw[opens:start], "\n")
 }
 
-// proseOpens is the byte a source's prose begins at. A note's frontmatter
-// stands before its prose; a text that opens with none is prose from its first
-// byte.
+// proseOpens is the byte offset at which a source's prose begins. A note's
+// frontmatter precedes its prose; a text without frontmatter starts at byte 0.
 func proseOpens(raw string) int {
 	rest := strings.TrimPrefix(raw, "\ufeff")
 	first, after, found := strings.Cut(rest, "\n")
@@ -543,8 +533,8 @@ func proseOpens(raw string) int {
 	return 0
 }
 
-// Mode is how a search is asked. Each mode is an order of its own, and a
-// hybrid search fuses them into one.
+// Mode selects one ranking of a search. A hybrid search fuses the rankings of
+// all modes into one.
 type Mode int
 
 const (
@@ -558,12 +548,10 @@ const (
 	ByName
 )
 
-// GetTypingParameters is the parameters for a search asked in the mode named,
-// while a person is still typing it: the last word is matched by its opening.
+// GetTypingParameters returns the parameters for a search in the given mode
+// while the query is being typed: the last word is matched as a prefix.
 //
-// A mode that is not wanted keeps no candidates, which is how one is told not
-// to run. Every mode but the one named is silenced, so a caller drawing them
-// apart is shown one of them and not one and a half.
+// Every mode other than the given one gets no candidates and does not run.
 func GetTypingParameters(mode Mode, limit int) Parameters {
 	p := Parameters{Limit: limit, IsGrowing: true}.fill()
 	switch mode {

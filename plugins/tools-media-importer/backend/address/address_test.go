@@ -56,8 +56,8 @@ func TestOnlyWhatCanBeFetchedIsAnAddress(t *testing.T) {
 	}
 }
 
-// Reading an address twice reaches what reading it once did, so a note rewritten
-// from what it holds keeps the artifacts it names.
+// Reading an address twice returns the same result as reading it once, so a note rewritten
+// from its own content keeps the artifacts it names.
 func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
 	for _, content := range []string{
 		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -78,8 +78,9 @@ func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
 	}
 }
 
-// A note points somewhere a browser would go, and this machine is not that.
-// What listens here — an index, the window's own socket — answers nobody's
+// A note points to addresses a browser can reach, and this machine is not one.
+// Services listening here, such as an index or the window's own socket, are
+// not valid link targets.
 func TestAnAddressOnThisMachineIsNoAddressToPointAt(t *testing.T) {
 	for _, raw := range []string{
 		"http://localhost:9200/_all/_search",

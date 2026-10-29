@@ -1,8 +1,8 @@
 /**
- * The notes whose file moved past what was read, told to the flush.
+ * The notes whose file changed after it was read, reported to the flush.
  *
- * A conflict is raised while the tab stands stale and dropped when it
- * stops, so the window waits on exactly what is still to be settled.
+ * A conflict is raised while the tab is out of date and dropped when the tab
+ * stops, so the window waits only for conflicts still unresolved.
  */
 import { watch } from 'vue'
 import { parseFileConflict } from '@numen/plugin-sdk'
@@ -11,7 +11,7 @@ import type { Conflict } from './flush'
 /** The notes of a window, each under the identity its tab opened under. */
 export interface Notes {
   getOpenIds(): readonly string[]
-  /** The word the screen holding that note tells its state by. */
+  /** The state of the screen that shows that note. */
   getOpenNote(id: string): { state: string }
   keep(id: string): void
   take(id: string): void

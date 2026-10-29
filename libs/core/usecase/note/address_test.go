@@ -10,7 +10,7 @@ import (
 )
 
 // named answers what a vault holds under each name, and nothing else a query
-// can be asked.
+// can ask.
 type named map[string][]string
 
 func (n named) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
@@ -88,12 +88,12 @@ func TestAddress_UnqueryableVaultWritesNoLink(t *testing.T) {
 	}
 }
 
-// A note whose name a link is read up to is reached by no link.
+// A note whose name is truncated at a link delimiter is reached by no link.
 //
-// A link runs to the first `#` or `|`, and what stands after it names a heading
-// or the words to show. So a link written to such a name reads back as the name
-// in front of it, which is another note or none, and rewriting the entry from
-// what was read moves the link there for good.
+// A link runs to the first `#` or `|`, and what follows it names a heading or the
+// display text. A link written to such a name therefore reads back as the name
+// before the delimiter, which is another note or none, and rewriting the entry from
+// what was read moves the link there permanently.
 func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{
@@ -111,8 +111,8 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 	}
 }
 
-// A link is written as a path the way a person writes it by hand: the extension
-// comes off the file, and a leading dot is part of a name, not the start of an
+// A link is written as a path the way a user writes it by hand: the extension is
+// removed from the file, and a leading dot is part of a name, not the start of an
 // extension.
 func TestAPathIsSavedWithoutItsExtension(t *testing.T) {
 	t.Parallel()

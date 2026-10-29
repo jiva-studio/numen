@@ -1,9 +1,9 @@
 /**
- * What a command does to the vaults this installation holds: showing another
- * one, adding one, calling one something else, taking one off the list.
+ * What a command does to the vaults of this installation: switching to
+ * another vault, adding one, renaming one, removing one from the list.
  *
- * A vault is not a note. What it holds is the person's folder, and every one
- * of these leaves the window standing somewhere else than it stood.
+ * A vault is not a note. It holds the user's folder, and each of these commands
+ * moves the window to a different location than it was at.
  */
 import type { VaultContext, Voice } from './deps'
 import type { CommandInvocation } from '../../types'
@@ -25,8 +25,8 @@ export const showVault = async (
 }
 
 /**
- * A folder chosen on this machine, added as a vault and opened. A person who
- * chose no folder has asked for nothing.
+ * Adds a folder chosen on this machine as a vault and opens it. When the user
+ * chooses no folder, nothing happens.
  */
 export const addVault = async (on: VaultContext & Voice, words: AnswerWords): Promise<void> => {
   const path = await on.vaults.choose(words.folder)

@@ -26,7 +26,7 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-/** What the vault was last asked to write. */
+/** The last write the vault received. */
 const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 
 beforeEach(() => {

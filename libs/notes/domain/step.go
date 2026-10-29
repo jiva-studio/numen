@@ -16,11 +16,11 @@ const (
 	StepMove
 	// StepSearch names a call that looks for notes.
 	StepSearch
-	// StepSay carries a piece of what the agent is telling the person.
+	// StepSay carries a piece of the agent's message to the user.
 	StepSay
-	// StepToolDone says the tool is finished.
+	// StepToolDone marks the tool as finished.
 	StepToolDone
-	// StepModelStart says a request to the model has begun.
+	// StepModelStart marks the start of a request to the model.
 	StepModelStart
 	// StepDraft carries a change to a note while the call writing it is still arriving: the note, the
 	// text the change replaces and the text that takes its place so far. It is drawn and never shown as a
@@ -30,10 +30,10 @@ const (
 	StepStop
 )
 
-// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+// ReasoningLevel is one reasoning depth that can be requested from a model.
 type ReasoningLevel struct {
-	// Name is what a task asks for the level by.
+	// Name is the identifier a task uses to request the level.
 	Name string
-	// Title is what the level is called when shown to a person.
+	// Title is the display name of the level.
 	Title string
 }

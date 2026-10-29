@@ -33,13 +33,12 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
 }
 
 /**
- * How closely this neighbourhood has to be packed for the window to hold all
- * of it: the loosest packing that fits every node, and the closest one when
- * no packing does.
+ * How tightly this neighbourhood must be packed for the window to hold all of it: the
+ * loosest packing that fits every node, and the tightest one when no packing does.
  *
- * A box narrows and a gap closes before a relation is given up. What a reader can
- * act on is a node drawn small; a node that is not drawn says only that there
- * were more.
+ * A box narrows and a gap closes before a relation is dropped. What a reader can act
+ * on is a node drawn small; a node that is not drawn only indicates that there were
+ * more.
  */
 export function measureCrowding(options: PlexOptions, counts: RelationCounts): PlexOptions {
   if (!options.viewport || options.squeeze >= 1) return options

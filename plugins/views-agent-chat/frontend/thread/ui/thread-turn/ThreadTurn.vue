@@ -11,7 +11,7 @@ const props = defineProps<{
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** The turn pressed, which is one that says it opens something. */
+  /** The turn was clicked and is one that opens something. */
   (event: 'open', turn: Turn): void
   /** A link inside the turn was pressed. */
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
@@ -21,10 +21,13 @@ const emit = defineEmits<{
 /** Whether the turn is a line about work. */
 const isDoing = computed(() => props.entry.turn.voice === 'doing')
 
-/** A line about work the person can press, which opens what it was working on. */
+/**
+ * A line about work the user can click, which opens the item it was working
+ * on.
+ */
 const opens = computed(() => isDoing.value && props.entry.turn.canOpen === true)
 
-/** What the line about a tool in hand is drawn from. */
+/** The data a tool-call line is rendered from. */
 const call = computed(() => ({
   tool: props.entry.turn.text,
   subject: props.entry.turn.subject ?? '',

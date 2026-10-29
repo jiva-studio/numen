@@ -25,7 +25,7 @@ var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
 const maxQueryLength = 200
 
-// eachOnce is the paths a client asked about, each named once.
+// eachOnce returns the paths a client requested, each listed once.
 func eachOnce(paths []string) ([]string, error) {
 	observed := make(map[string]bool, len(paths))
 	out := make([]string, 0, len(paths))
@@ -42,8 +42,8 @@ func eachOnce(paths []string) ([]string, error) {
 	return out, nil
 }
 
-// fileHandler answers what the vault holds and what a person does to it: its tree,
-// and its folders.
+// fileHandler serves what the vault holds and the operations on it: its tree and
+// its folders.
 type fileHandler struct {
 	state            *State
 	getFolderEntries *file.GetFolderEntries
@@ -83,14 +83,13 @@ func (h *fileHandler) ListFiles(
 	return connect.NewResponse(out), nil
 }
 
-// ListFileKinds hands the client what the vault holds at each of those paths,
-// so that a client holding a path opens what stands there in the editor made
-// for it.
+// ListFileKinds returns what the vault holds at each of the given paths, so the
+// client opens each path in the editor made for it.
 //
-// Whether a note is there is read off the vault and the type off the index, or off the note
-// where nothing has scanned it yet, so a file a plugin has just written opens
-// in the editor made for it. A window standing
-// on nothing holds no source, and a path with nothing at it is left out.
+// Whether a note exists is read from the vault and its type from the index, or
+// from the note itself when nothing has scanned it yet, so a file a plugin has
+// just written opens in the editor made for it. A window with no vault has no
+// source, and a path with nothing at it is omitted.
 func (h *fileHandler) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {
@@ -209,8 +208,8 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 	return string(noteType)
 }
 
-// RemoveFile takes a file or a folder out of the vault. It goes to the trash,
-// and a request that says so destroys a note.
+// RemoveFile removes a file or a folder from the vault. It goes to the trash,
+// and a request that asks for it destroys a note permanently.
 func (h *fileHandler) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {
@@ -232,8 +231,8 @@ func (h *fileHandler) RemoveFile(
 		}
 		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
 	}
-	// The watcher reports only the paths the vault holds a source for. What
-	// went is said here, so the tree drops the row whatever stood on it.
+	// The watcher reports only the paths the vault holds a source for. The removal is
+	// published here, so the tree drops the row whatever it held.
 	h.state.ChangeEvents.publish(change{paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveFileResponse{
 		Trashed:      removed.Trashed,

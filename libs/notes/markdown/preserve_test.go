@@ -13,10 +13,9 @@ import (
 // byteOrderMark is what another editor may put in front of a note's first line.
 var byteOrderMark = string(rune(0xFEFF))
 
-// theirs are frontmatter blocks this application owns no key of: a person's own
-// keys, a comment they wrote to themselves, a list, a flow sequence, a key with
-// nothing under it, and one whose value would be read as a mapping if it were
-// not quoted.
+// theirs are frontmatter blocks whose keys this application does not own: the
+// user's own keys, a comment, a list, a flow sequence, a key with no value, and
+// a key whose value would parse as a mapping if it were not quoted.
 var theirs = []string{
 	"mine: keep me verbatim\n",
 	"# a note to myself\n",
@@ -84,11 +83,11 @@ func contains(all []string, one string) bool {
 	return false
 }
 
-// A note read and not written comes out as the bytes it went in as. Reading is
-// not rewriting: a note nobody changed is untouched down to its line endings.
+// A note that is read and not written is returned as the bytes it was read as.
+// Reading does not rewrite: an unchanged note keeps even its line endings.
 //
-// The frontmatter is shared with the person, and the application does not own
-// the whole of it.
+// The frontmatter is shared with the user, and the application does not own all
+// of it.
 func TestANoteNobodySavedToReachesOutAsItWentIn(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -144,8 +143,8 @@ func TestWhatTheApplicationDoesNotOwnIsCachedVerbatim(t *testing.T) {
 	})
 }
 
-// checkForeignKeysKept fails unless every line of every key the application
-// order it stood in.
+// checkForeignKeysKept fails unless every line of every key the application does
+// not own is present in the output, in the order it had in the input.
 func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote string) {
 	t.Helper()
 	if len(foreign) == 0 {

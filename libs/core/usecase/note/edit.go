@@ -15,37 +15,35 @@ import (
 // it was given. A vault that cannot be reached at all comes back as it arrived.
 var ErrNoNote = edit.ErrNoNote
 
-// ErrUnlevelled is a file that was written and an index that could not be
-// brought up to date with it. The vault holds what the write put there, and the
-// path is levelled again at the next scan.
+// ErrUnlevelled is returned when a file was written but the index could not be
+// updated. The vault holds the written content, and the next scan updates the
+// index for the path.
 var ErrUnlevelled = edit.ErrUnlevelled
 
-// WrapUnlevelled is what bringing the index up to date came to, said so that a
-// caller can tell it from a write that never landed. The paths are the ones the
-// index was asked about.
+// WrapUnlevelled wraps an index update failure in ErrUnlevelled, which
+// distinguishes it from a write that failed. The paths are the ones the index
+// update covered.
 func WrapUnlevelled(err error, paths ...string) error {
 	return edit.WrapUnlevelled(err, paths...)
 }
 
-// mapMissingNote is ErrNoNote where the vault holds no note at the path, and
-// the error as it arrived otherwise.
+// mapMissingNote returns ErrNoNote when the vault holds no note at the path,
+// and err unchanged otherwise.
 func mapMissingNote(err error) error {
 	return edit.MapMissingNote(err)
 }
 
-// Baseline is what a caller last saw of the note it is saving.
+// Baseline is the state of the note that the caller last read before saving.
 type Baseline = edit.Baseline
 
-// Levels brings the named notes up to date in the index, so that what a write
-// changed is findable before the write is reported done.
+// Levels updates the index for the named notes, so a write's changes are
+// searchable before the write is reported complete.
 type Levels = edit.Levels
 
-// Edit is what every change to the contents of an existing note needs.
+// Edit applies a change to the contents of an existing note.
 //
-// It is one function because the shape is always the same and the rules in it
-// are easy to forget one at a time: read, refuse what cannot be read, write the
-// identifier because this is an edit, change the one thing, put it back, and
-// bring the index level.
+// The sequence is: read the note, reject content that cannot be read, write the
+// identifier, apply the change, store the note, and update the index.
 type Edit struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
@@ -53,8 +51,8 @@ type Edit struct {
 	now     machineport.Clock
 
 	FileStat domain.FileStat
-	// ShouldOverwrite is a caller writing what is in front of the person: the note
-	// not there is made, and no identifier is stamped.
+	// ShouldOverwrite writes the caller's text as the whole note: a missing note
+	// is created, and no identifier is stamped.
 	ShouldOverwrite bool
 	// Bound is the most the file may be. Zero holds it to nothing.
 	Bound int

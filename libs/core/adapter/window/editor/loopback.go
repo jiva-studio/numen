@@ -28,37 +28,35 @@ type fileServer struct {
 	mediaTypes *file.GetMediaType
 }
 
-// A Loopback is a socket on the loopback address that answers with the vault's
-// own files.
+// A Loopback is a socket on the loopback address that serves the vault's files.
 //
-// The window is drawn from a scheme the toolkit registers, and a page fetched
-// through it reaches this application. A player does not: a browser loads sound
-// not the scheme of one application, and answers that it does not know the
-// format. A loopback address is a place it does reach.
+// The window loads pages from a scheme registered with the toolkit. Media
+// players do not support that scheme: the browser media stack loads only
+// standard schemes and rejects the format. A loopback address is reachable by
+// the media stack.
 //
-// Nothing about a recording is here. What the vault holds is what is served,
-// and what may be played is decided where a player is drawn.
+// The Loopback holds no recording logic. It serves the files the vault holds,
+// and the decision of what may be played is made where the player is drawn.
 type Loopback struct {
 	server  *http.Server
 	files   *fileServer
 	address string
-	// machine can reach a loopback socket, and a vault is the person's own
-	// writing; the address is what tells this window's own asking from anybody
-	// else's. It is made afresh for each run and outlives none of them.
+	// token authenticates requests. Any process on the machine can reach a loopback
+	// socket, and a vault holds user content; the token distinguishes this
+	// window's requests from others. It is generated for each run.
 	token string
-	// stopped is set where the socket stopped answering for any reason but this
-	// window closing. An address on a socket that answers nothing is a recording
-	// that will not play and nothing said about why.
+	// stopped is set when the socket stops serving for any reason other than the
+	// window closing. An address on a socket that no longer serves is a recording
+	// that cannot play, with no reported cause.
 	stopped atomic.Bool
 	// plugins forwards the plugin route, once the window has its plugins.
 	plugins atomic.Pointer[PluginServices]
 }
 
-// Listen opens the socket. A machine that refuses one leaves whatever cannot
-// reach the window's own scheme with nothing.
+// Listen opens the socket. When the machine refuses a listener, content that
+// cannot use the window's own scheme is unavailable.
 //
-// stopped is told where the socket stops answering under the window, which is
-// nobody's doing and nothing anybody asked for.
+// stopped is called when the socket stops serving while the window is open.
 func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
 	target, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -101,14 +99,14 @@ func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*
 	return back, nil
 }
 
-// getHandler answers for one file of one vault.
+// getHandler serves one file of one vault.
 //
-// The vault is named in the address and not taken from the window: a tab plays
-// on while the person moves the window to another vault, and what it plays is
-// the file it opened.
+// The vault is named in the address and not taken from the window: a tab keeps
+// playing while the window switches to another vault, and it plays the file it
+// opened.
 //
-// the vault's own reader. That is the boundary, and it is the same one every
-// other question crosses.
+// Reads go through the vault's own reader. That is the boundary every other
+// request crosses.
 func (l *Loopback) getHandler() http.Handler {
 	target := "/" + l.token + "/"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -203,10 +201,10 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
 }
 
-// serveCopy answers with the copy a plugin keeps of the file, and says whether it answered at all.
-// A file with no copy is served as the file it is.
+// serveCopy serves the copy a plugin keeps of the file, and reports whether it
+// served one. A file with no copy is served as the file itself.
 //
-// The size the address carries is the copy's own: a copy made again is a different address.
+// The size in the address is the copy's own: a regenerated copy has a different address.
 func (h *fileServer) serveCopy(
 	w http.ResponseWriter, r *http.Request, target domain.Vault, path string, named domain.FileStat,
 ) bool {

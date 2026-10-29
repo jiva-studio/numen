@@ -27,7 +27,7 @@ func saveNoteWithHeadings(t *testing.T, db *DB, vault domain.Vault, path string,
 	}
 }
 
-// divisions is what the index says the notes asked about are divided into.
+// divisions returns the sections the index reports for the queried notes.
 func divisions(
 	t *testing.T,
 	db *DB,

@@ -17,7 +17,7 @@ type Notes = note.Scenarios
 // installation's vault readers and writers.
 //
 // index brings what a write touched up to date before it answers, so a caller
-// that writes a note and searches for it in the next breath finds it.
+// that writes a note and immediately searches for it finds it.
 func (c Config) Notes(
 	queries noteport.NoteQueries,
 	links noteport.LinkQueries,
@@ -61,7 +61,7 @@ func (c Config) Notes(
 	}
 }
 
-// FocusNote builds what puts a note in front of the person, through their window.
+// FocusNote builds the use case that shows a note in the window.
 func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *note.FocusNote {
 	return note.NewFocusNote(queries, view)
 }

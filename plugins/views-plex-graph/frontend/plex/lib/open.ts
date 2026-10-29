@@ -22,7 +22,7 @@ const SPREAD = 0.6
 /** How far below its place a heading sets off, as a fraction of its own height. */
 const RISE = 0.7
 
-/** How wide an arrow at an edge of the ground is drawn, and how deep. */
+/** Width and depth of an arrow at an edge of the panel. */
 const ARROW = { wide: 4, deep: 2.5 }
 
 /** Which way an arrow points down the page: towards what is below, away from what is above. */
@@ -37,9 +37,9 @@ export interface DrawnHeading extends HungHeading {
 
 /** What a node hangs, partway open. */
 export interface OpenHeadings {
-  /** How deep the ground under them stands. */
+  /** Height of the panel behind the headings. */
   readonly height: number
-  /** How far that ground has come up. */
+  /** Opacity of that panel. */
   readonly opacity: number
   /** The headings standing in the window, in the order they stand. */
   readonly headings: readonly DrawnHeading[]
@@ -52,7 +52,7 @@ export interface OpenHeadings {
   readonly arrows: readonly Arrow[]
 }
 
-/** An arrow at an edge of the ground, saying which way there is more. */
+/** An arrow at an edge of the panel, indicating the direction with more headings. */
 export interface Arrow {
   readonly at: 'above' | 'below'
   /** The three corners it is drawn through, from the middle of the node. */
@@ -60,12 +60,12 @@ export interface Arrow {
 }
 
 /**
- * How far a wheel scrolls the window, in whole headings, and what is left over.
+ * How far a wheel scrolls the window, in whole headings, and the remainder.
  *
- * A hand carries the leftover back into the next wheel, so a trackpad giving a
- * few pixels at a time scrolls as far as those pixels come to. A wheel says how
- * far it moved in lines or in windows as readily as in pixels, and only pixels
- * can be measured against a heading.
+ * The caller carries the remainder into the next wheel event, so a trackpad
+ * reporting a few pixels at a time accumulates to whole headings. Wheel deltas
+ * may be in lines or pages as well as pixels, and only pixels can be compared
+ * with a heading height.
  */
 export function scrollBy(
   suspended: NodeHeadings,
@@ -84,7 +84,7 @@ function getStride(suspended: NodeHeadings, mode: number): number {
   return 1
 }
 
-/** The units a wheel says how far it moved in, as a browser numbers them. */
+/** The wheel delta units, numbered as the browser's `deltaMode` numbers them. */
 const LINES = 1
 const WINDOWS = 2
 
@@ -95,12 +95,12 @@ export const getFurthest = (suspended: NodeHeadings): number =>
 /**
  * What a node hangs at a moment of the opening.
  *
- * The ground comes up at the depth it will keep, and each heading rises onto its
- * place from a little below it, a lead behind the one above. A heading rises from
- * inside the ground and never from beyond it, so none of them is ever drawn
- * where there is nothing under it.
+ * The panel opens to the depth it keeps, and each heading rises into place from
+ * slightly below it, staggered by a lead behind the heading above. Headings
+ * rise from inside the panel and never from outside it, so none is drawn where
+ * the panel is absent.
  *
- * Nothing while it is shut, which is what a node draws nothing at all under.
+ * Returns null while the node is closed, since a closed node draws nothing.
  */
 export function getOpenHeadings(
   suspended: NodeHeadings,
@@ -110,7 +110,7 @@ export function getOpenHeadings(
   const openProgress = clamp01(open)
   if (openProgress <= 0) return null
 
-  // The window stands whole on the headings, scrolled by one at a time.
+  // The window covers whole headings and scrolls one heading at a time.
   const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(suspended))
   const visibleHeadings = suspended.headings.slice(first, first + suspended.visibleCount)
 
@@ -121,7 +121,7 @@ export function getOpenHeadings(
   const lead = Math.min(LEAD, SPREAD / (many - 1))
   const runs = 1 - lead * (many - 1)
 
-  /** The deepest a heading may set off from and still stand on the ground. */
+  /** The lowest start position of a heading that still lies within the panel. */
   const floor = suspended.height - 2 * suspended.pad - suspended.headingHeight
 
   const headings = visibleHeadings.map((heading, index) => {
@@ -148,8 +148,8 @@ export function getOpenHeadings(
 }
 
 /**
- * An arrow at one edge of the ground, pointing the way there is more to scroll
- * to. It is drawn about the middle of what is hung, which is where the eye is.
+ * An arrow at one edge of the panel, pointing in the direction with more to
+ * scroll to. It is drawn near the middle of the node's headings.
  */
 function createArrow(suspended: NodeHeadings, down: number, edge: Arrow['at']): Arrow {
   const direction = ARROW_DIRECTION[edge]

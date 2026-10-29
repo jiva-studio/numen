@@ -1,4 +1,4 @@
-/** The services the shell asks of the window it is the page of. */
+/** The services the shell requests from the window that hosts it. */
 import {
   agentService,
   notes,

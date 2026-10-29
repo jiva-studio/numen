@@ -19,8 +19,8 @@ type Template struct {
 	err   error
 }
 
-// NewTemplate takes the way the database is built. The build runs when the
-// first copy is asked for.
+// NewTemplate takes the function that builds the database. The build runs when
+// the first copy is requested.
 func NewTemplate(build func(ctx context.Context, path string) error) *Template {
 	return &Template{build: build}
 }

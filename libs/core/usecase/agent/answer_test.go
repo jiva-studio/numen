@@ -49,8 +49,8 @@ func (s *starter) StartRun(_ context.Context, task agentport.Task) (agentport.Ru
 func say(text string) agentport.Step { return agentport.Step{Kind: domain.StepSay, Text: text} }
 func stop(why string) agentport.Step { return agentport.Step{Kind: domain.StepStop, Detail: why} }
 
-// The pieces the agent says are the answer, in the order they arrive, and the run is stopped once
-// it has been read.
+// The pieces the agent emits are the answer, in arrival order, and the run is
+// stopped once it has been read.
 func TestAnswer_EqualsAgentOutput(t *testing.T) {
 	target := &starter{run: newRun(
 		agentport.Step{Kind: domain.StepModelStart}, say("The "), say("answer."), stop(""),
@@ -105,7 +105,7 @@ func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 	}
 }
 
-// What the agent says about a tool is not part of the answer.
+// What the agent emits about a tool is not part of the answer.
 func TestOnlyWhatTheAgentReturnsIsTheAnswer(t *testing.T) {
 	target := &starter{run: newRun(
 		agentport.Step{Kind: domain.StepToolCall, Tool: "note_read", Text: "no"}, say("yes"), stop(""),

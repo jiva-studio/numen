@@ -303,8 +303,8 @@ func TestALimitOnStepsIsCachedWithinWhatTheRequestCarries(t *testing.T) {
 	}
 }
 
-// Everything the task gives the agent reaches the request, and the effect of each tool goes in the
-// word the plugins read it in.
+// Everything the task provides to the agent reaches the request, and the effect
+// of each tool is encoded in the word the plugins read.
 func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 	got := newAskRequest(agentport.Task{
 		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Reasoning: "high", Instructions: "i",
@@ -341,7 +341,7 @@ func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 	}
 }
 
-// The word a tool's effect is told in is the word it is read back from.
+// The word that encodes a tool's effect is the word it is decoded from.
 func TestAnEffectIsReportedAndReadInTheSameWord(t *testing.T) {
 	for _, effect := range []domain.StepKind{
 		domain.StepRead, domain.StepEdit, domain.StepRemove, domain.StepMove, domain.StepSearch, domain.StepToolCall,
@@ -352,8 +352,8 @@ func TestAnEffectIsReportedAndReadInTheSameWord(t *testing.T) {
 	}
 }
 
-// A change being written reaches the core as a draft of the note, with the text it replaces and
-// the text that takes its place so far.
+// A change being written reaches the core as a draft of the note, with the text
+// it replaces and the replacement text written so far.
 func TestAChangeBeingSavedIsADraft(t *testing.T) {
 	got := convertResponseStep(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_EditProgress{
 		EditProgress: &v1.EditProgress{Call: "toolu_01", Path: "a/b.md", Match: "old", Text: "new"},

@@ -1,6 +1,6 @@
 /**
- * A press followed by hand. jsdom has no pointer, so the events are made here
- * and the frame is a function the test calls itself.
+ * A press followed manually. jsdom has no pointer, so the events are created
+ * here and the frame is a function the test calls itself.
  */
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ function createPress(threshold = 4, withBegin = true) {
   let next: ((now: number) => void) | null = null
   let scheduled = 0
 
-  /** A clock whose next frame comes when the test says so. */
+  /** A clock whose next frame runs when the test advances it. */
   const clock: Clock = {
     now: () => 0,
     schedule: (run) => {

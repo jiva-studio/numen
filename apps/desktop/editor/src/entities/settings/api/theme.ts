@@ -1,10 +1,10 @@
 /**
- * Asking the application how the window is drawn, and telling it what a person
- * chose: which theme, which half of a colour pair, and how large.
+ * Queries the application for the window's appearance and sends it the user's
+ * choices: the theme, the mode of a colour pair, and the sizes.
  *
- * A theme is one stylesheet and nothing here reads inside one: what travels is
- * its name, the text of its file, and which of them is chosen. A size is one
- * multiplier, and how far it goes is the application's to say.
+ * A theme is one stylesheet, and nothing here reads inside one: the transferred
+ * data is its name, the text of its file, and which theme is selected. A size is
+ * one multiplier, and its permitted range is defined by the application.
  */
 import {
   getNames,
@@ -24,7 +24,7 @@ export type Sizes = Scales<number>
 /** How far each of the two goes. */
 export type Ranges = Scales<Bounds>
 
-/** Every theme there is, and what the settings say the window wears. */
+/** Every available theme, and the theme and sizes the settings apply to the window. */
 export interface Appearance {
   readonly themes: readonly Theme[]
   readonly applied: string
@@ -33,19 +33,19 @@ export interface Appearance {
   readonly bounds: Ranges
 }
 
-/** What the window asks about how it is drawn. */
+/** The queries the window makes about its appearance. */
 export interface Themes {
   getAppearance(): Promise<Appearance>
   readTheme(name: string): Promise<string>
   writeAppearance(name: string, mode: Mode, sizes: Sizes): Promise<string>
   /**
-   * The themes the person's folder changed, by name, for as long as the window
-   * listens. A theme whose file is gone is named here too.
+   * The names of themes changed in the user's folder, until the signal aborts.
+   * A theme whose file was deleted is included.
    */
   watchThemes(signal: AbortSignal): AsyncIterable<readonly string[]>
 }
 
-/** The same questions, in the shape the window asks them. */
+/** The implementation of these queries used by the window. */
 export const themes: Themes = {
   getAppearance: async () => {
     const answer = await theme.listThemes({})

@@ -1,8 +1,8 @@
 /**
- * A press that becomes a drag once the pointer has travelled far enough.
+ * A press that becomes a drag once the pointer has moved far enough.
  *
- * Everything that knows about events is here; where a landing is and what
- * letting go evaluates to are the caller's.
+ * All event handling is here; the landing position and the meaning of a release are
+ * the caller's.
  */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -21,7 +21,7 @@ export interface Drag<Item> {
  * both are handed back untouched.
  */
 export interface Press<Item, At> {
-  /** How far the pointer travels before a press becomes a drag. */
+  /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   /** The clock the release is held against. */
   readonly getClock: () => Clock
@@ -29,7 +29,7 @@ export interface Press<Item, At> {
   readonly getDropTargetAt: (item: Item, point: Position) => At | null
   /** What letting go after a drag evaluates to. The landing is nothing off any target. */
   readonly commit: (item: Item, target: At | null) => void
-  /** Said once, when the press turns into a drag. */
+  /** Called once, when the press becomes a drag. */
   readonly begin?: (item: Item) => void
 }
 
@@ -79,8 +79,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     dropTarget.value = null
     position.value = null
     if (target.hasMoved) press.commit(target.item, found)
-    // Held one frame longer: the click that follows the release reads it and
-    // stands down.
+    // Kept for one more frame: the click that follows the release reads it and is
+    // suppressed.
     press.getClock().schedule(() => {
       dragging.value = null
     })

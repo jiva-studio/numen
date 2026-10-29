@@ -1,7 +1,7 @@
 /**
- * The keyboard while the palette stands: what each key does and what it leaves
- * alone, where the keyboard goes as the palette opens or a step begins, and
- * where it goes back to.
+ * The keyboard while the palette is open: what each key does and what it
+ * ignores, where focus goes as the palette opens or a step begins, and where it
+ * returns to.
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'

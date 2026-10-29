@@ -1,7 +1,7 @@
 /**
- * What a branch tells the workspace of the shares a splitter reports. The
- * negatives matter most: a share that did not move is not news, and neither is
- * where a handle was while it was still held.
+ * What a branch reports to the workspace about the shares a splitter reports. The
+ * negatives matter most: a share that did not change is not reported, and neither
+ * is the handle position while it was still being dragged.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'

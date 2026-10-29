@@ -1,9 +1,9 @@
 /**
- * What the appearance commands are named by, and the two kinds of value a row
- * of theirs stands for.
+ * The names the appearance commands use, and the two kinds of value a row
+ * represents.
  *
- * A row is reached by the name it is offered under, so the name has to say
- * which command it belongs to and what it names in it.
+ * A row is identified by the name it is offered under, so the name must
+ * identify the command it belongs to and the value it selects within it.
  */
 import { MODES } from '@/entities/settings'
 import type { Mode, Scales } from '@/entities/settings'
@@ -34,9 +34,9 @@ export interface ScaleChoice {
 }
 
 /**
- * How long the keyboard has to have stood on a size before the window is drawn
- * at it. A held arrow key crosses a row every 40 milliseconds, and each row
- * applied is every open document laid out again and its pages emptied.
+ * How long the keyboard must rest on a size before the window is rendered at
+ * it. A held arrow key crosses a row every 40 milliseconds, and applying a row
+ * re-lays out every open document and empties its pages.
  */
 export const HELD = 150
 
@@ -66,10 +66,10 @@ export const parseSize = (item: string): ScaleChoice | null => {
   return size > 0 ? { which, size } : null
 }
 
-/** What is said of one of the two sizes. */
+/** Returns the value of one of the two sizes. */
 export const its = <T>(both: Scales<T>, which: ScaleKind): T => both[which]
 
-/** The pair with what is said of one of the two put in its place. */
+/** Returns the pair with the value of one of the two sizes replaced. */
 export const onto = <T>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({
   ...both,
   [which]: one,

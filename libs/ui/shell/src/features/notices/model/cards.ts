@@ -1,11 +1,11 @@
 /**
- * Which cards stand in the corner, what each of them has left to say, and when
- * each of them goes.
+ * Which cards are shown in the corner, what each card displays, and when each
+ * card is removed.
  *
- * Work appears once it has lasted and goes when the work does; something that
- * is so stands while it is so; something that happened stands to be read and
- * then goes, unless it is trouble, which stands until it is put away. Nothing
- * here draws anything.
+ * Work appears once it has lasted and is removed when the work ends; a
+ * persistent condition is shown while it holds; an event is shown until read and
+ * then removed, unless it is an error, which is shown until dismissed. This
+ * module renders nothing.
  */
 import {
   computed,
@@ -46,7 +46,7 @@ export interface NoticeCardsOptions {
   readonly getFreeSpace: () => number
   /** What the moment is. */
   readonly getNow: () => number
-  /** Whether nobody is looking. */
+  /** Whether the page is hidden from the user. */
   readonly isHidden: () => boolean
   /** A card is finished with: read long enough, or dismissed. */
   readonly dismiss: (id: string) => void
@@ -57,13 +57,13 @@ export interface NoticeCardsState {
   readonly notices: ComputedRef<readonly Notice[]>
   /** What is drawn, and how many stand behind it. */
   readonly folds: ComputedRef<{ visible: readonly Notice[]; overflowCount: number }>
-  /** Whether a person has asked to see what is folded away behind the rest. */
+  /** Whether the user has expanded the cards folded behind the rest. */
   readonly isOpened: Ref<boolean>
   /** What a counting notice has left to run, in words. */
   readonly leftOn: (one: Notice) => string
-  /** A card as it is drawn, held under the notice it stands for. */
+  /** A rendered card, stored under the notice it belongs to. */
   readonly holdCard: (id: string, card: unknown) => void
-  /** A card put away by hand. */
+  /** A card dismissed by the user. */
   readonly dismissManually: (id: string) => Promise<void>
   readonly onPointerOver: (event: PointerEvent) => void
   readonly onPointerOut: (event: PointerEvent) => void

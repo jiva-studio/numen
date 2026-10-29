@@ -1,6 +1,4 @@
-/**
- * The window's commands over a row of the vault, asked without a screen.
- */
+/** The window's commands on a vault row, run without a screen. */
 import { describe, expect, it } from 'vitest'
 import { groupItems } from '@numen/ui'
 import { createPathCommands } from './pathMenu'

@@ -15,8 +15,8 @@ func theme(name string) settings.Setting {
 	return settings.Setting{At: []string{"appearance", "theme"}, Written: name}
 }
 
-// arranged is a file as somebody wrote it by hand: their order, their
-// indentation, their sections spaced out, and a number written to two places.
+// arranged is a hand-edited file: custom key order, indentation, spaced
+// sections, and a number that appears in two places.
 const arranged = `{
     "v": 1,
 
@@ -43,9 +43,8 @@ const arranged = `{
 }
 `
 
-// The one test that would have caught a file being rewritten from a map: what
-// comes back is the file, with the bytes of one value replaced and nothing else
-// touched.
+// Guards against rewriting the file from a map: the output is the original file
+// with the bytes of one value replaced and nothing else changed.
 func TestAHandArrangedFileReachesBackWithOneValueChanged(t *testing.T) {
 	path := write(t, arranged)
 	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
@@ -62,7 +61,7 @@ func TestAHandArrangedFileReachesBackWithOneValueChanged(t *testing.T) {
 	}
 }
 
-// Two settings at once, and the file is still the person's arrangement.
+// Two settings are saved at once, and the file layout is preserved.
 func TestTheThemeAndTheModeAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	path := write(t, arranged)
 	if err := settings.Save(path, newDocument(), theme("preset:nord"),
@@ -81,8 +80,8 @@ func TestTheThemeAndTheModeAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	}
 }
 
-// The two sizes are written where they sit, and a number a person wrote to two
-// places beside them comes back written to two places.
+// The two sizes are written in place, and a number that appears in two other
+// places keeps both occurrences.
 func TestTheTwoSizesAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	const sized = `{
     "appearance": {
@@ -110,8 +109,8 @@ func TestTheTwoSizesAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	}
 }
 
-// The size a file names under the name it had is left where the person wrote
-// it, and the setting that replaced it is written beside it.
+// The size stored under the old name stays where it is, and the setting that
+// replaced it is written next to it.
 func TestASizeIsSavedAdjacentTheZoomAFileStillNames(t *testing.T) {
 	path := write(t, `{
   "appearance": {
@@ -149,8 +148,8 @@ func TestASizeIsSavedAdjacentTheZoomAFileStillNames(t *testing.T) {
 	}
 }
 
-// A name nobody has written yet goes at the end of the section it belongs to.
-// The order of the rest of it is the person's.
+// A key missing from the file is appended at the end of its section. The order
+// of the existing keys is preserved.
 func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
 	path := write(t, `{
   "appearance": {
@@ -180,8 +179,8 @@ func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
 	}
 }
 
-// A section nobody has written yet is made where it belongs, laid out against
-// the name it hangs from.
+// A section missing from the file is created at the end, indented like the
+// key it belongs to.
 func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
 	path := write(t, `{
   "v": 1,
@@ -258,8 +257,7 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 	}
 }
 
-// Half a person's file is worth more than a saved theme, and what is wrong with
-// it is theirs to see.
+// A file with a syntax error is not patched, so the user's content stays as written.
 func TestAFileThatDoesNotParseIsNotPatched(t *testing.T) {
 	body := `{"appearance": {"zoom": 1.5,,}}`
 	path := write(t, body)
@@ -403,8 +401,8 @@ func TestAnUntouchedInstallationIsSavedThroughTheLink(t *testing.T) {
 	}
 }
 
-// file already held is the person's to put right, and every other setting stays
-// reachable while they do.
+// A size already present in the file is left for the user to correct, and every
+// other setting remains saveable.
 func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 	const target = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
 	path := write(t, target)

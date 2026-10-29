@@ -2,10 +2,10 @@
 /**
  * Markdown, written and read in the same place.
  *
- * The text in the editor is the text of the file, mark for mark; nothing here
- * rewrites what was typed. What changes is how a construct is drawn: away
- * from the caret it is drawn as it reads, and where the caret stands the
- * marks come back.
+ * The text in the editor is the text of the file, character for character;
+ * nothing here rewrites typed content. Only the rendering of a construct
+ * changes: away from the caret it is rendered formatted, and at the caret its
+ * markup characters are shown.
  */
 import { useId, useTemplateRef } from 'vue'
 import { useEditor } from '../model/editor'
@@ -30,9 +30,9 @@ const text = defineModel<string>({ default: '' })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** A drawn link was followed. */
+  /** A rendered link was followed. */
   (event: 'open', address: string): void
-  /** The person asked, with `Ctrl+S`, for the text to be kept now. */
+  /** The user pressed `Ctrl+S` to save the text now. */
   (event: 'save'): void
 }>()
 
@@ -58,8 +58,8 @@ defineExpose({
   /** Take the keyboard. False while there is no editor yet to take it. */
   focus,
   /**
-   * Take the editor's measurements again. An editor drawn while it is hidden
-   * has none to take. The caller says when it is on screen.
+   * Remeasure the editor. An editor rendered while hidden has no measurements;
+   * the caller signals when it is visible.
    */
   measure,
   /**
@@ -80,8 +80,8 @@ defineExpose({
 </template>
 
 <style scoped>
-/* The prose a person is writing takes a selection, and the caret and the
-   clipboard work over it. */
+/* The prose being edited is selectable; the caret and the clipboard operate
+   on it. */
 .editor {
   user-select: text;
   -webkit-user-select: text;

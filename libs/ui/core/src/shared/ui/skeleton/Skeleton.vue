@@ -1,19 +1,19 @@
 <script setup lang="ts">
 /**
- * The shape a figure will take, standing in the room it will take, while it is
- * still being worked out.
+ * Placeholder with the shape of a figure, occupying the space it will take while its
+ * value is still being computed.
  *
- * It says that something is on its way and never that there is nothing:
- * whoever draws it draws the value itself the moment there is one. The fill is
- * taken from the text of whatever holds it.
+ * It indicates that a value is pending and never that there is none: the consumer
+ * renders the value itself as soon as it is available. The fill is taken from the
+ * text colour of the parent.
  */
 import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    /** How wide it stands, as a length. */
+    /** Width, as a length. */
     wide?: string
-    /** How tall it stands, as a length. */
+    /** Height, as a length. */
     high?: string
     /** Rounded to its own ends, where what is awaited is drawn as a pill. */
     isPill?: boolean

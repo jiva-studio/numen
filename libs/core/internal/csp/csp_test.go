@@ -19,8 +19,8 @@ func TestPolicy_WindowUsesSingleCSP(t *testing.T) {
 	}
 }
 
-// A window drawing text that carries its own pictures says where a picture may
-// come from, and changes nothing else.
+// A window rendering text that carries its own images states where an image may
+// be loaded from, and changes nothing else.
 func TestAWindowDrawingItsOwnPicturesReturnsSoAndNoMore(t *testing.T) {
 	own := csp.Sources{}.Policy()
 	with := csp.Sources{Images: []string{"data:"}}.Policy()
@@ -42,16 +42,16 @@ func TestAWindowDrawingItsOwnPicturesReturnsSoAndNoMore(t *testing.T) {
 	}
 }
 
-// A form is submitted nowhere. A page that carries text from another person can
-// carry a form with it, and `form-action` is what a policy says about one:
-// nothing else in the policy answers for where a form posts to.
+// A form is submitted nowhere. A page that carries text from another author can
+// carry a form with it, and `form-action` is what a policy states about one:
+// nothing else in the policy controls where a form posts to.
 func TestAFormIsSubmittedNowhere(t *testing.T) {
 	if !strings.Contains(csp.Sources{}.Policy(), "form-action 'none'") {
 		t.Error("a form on the page could be submitted somewhere")
 	}
 }
 
-// A window connecting to external services names where it reaches.
+// A window connecting to external services declares which hosts it connects to.
 func TestAWindowConnectingOutsideReturnsSoAndNoMore(t *testing.T) {
 	own := csp.Sources{}.Policy()
 	with := csp.Sources{Connect: []string{"https://dl.numen.md"}}.Policy()

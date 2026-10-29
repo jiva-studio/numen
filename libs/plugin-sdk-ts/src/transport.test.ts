@@ -1,8 +1,8 @@
 /**
- * The origin a client is asked at, with and without a window to read it from.
+ * The origin a client uses, with and without a window to read it from.
  *
  * This suite runs in Node, where there is no window, so the plain import below
- * already stands for every caller that has none.
+ * already represents every caller without one.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

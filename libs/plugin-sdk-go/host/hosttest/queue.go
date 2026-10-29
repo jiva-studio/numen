@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-// Queue is a queue that runs one piece of work at a time, as the host's does, and keeps the tasks
-// reported to it in memory. Work a person started runs before work nobody asked for, and work of
-// one kind runs in the order it arrived.
+// Queue is a queue that runs one piece of work at a time, as the host's does,
+// and keeps the reported tasks in memory. Work that the user started runs
+// before other work, and work of one kind runs in arrival order.
 type Queue struct {
 	mu         sync.Mutex
 	isIndexed  bool
@@ -89,7 +89,8 @@ func (q *Queue) ListTasks() []host.Task {
 	return out
 }
 
-// release hands the queue to the work that waited longest, a person's first.
+// release passes the queue to the work that has waited longest, user-started
+// work first.
 func (q *Queue) release() {
 	q.mu.Lock()
 	defer q.mu.Unlock()

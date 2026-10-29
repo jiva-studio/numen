@@ -16,8 +16,8 @@ import (
 // Rename gives a note a different name.
 //
 // A note is shown by its `title`, else by its filename, and whichever of the
-// two names it is brought into line first. The file follows where a title and a
-// leaves a note that says what it is called under a filename that does not.
+// two names it is updated first. The file follows when title and filename are
+// kept as one name, so the rename does not leave a title different from the filename.
 type Rename struct{ Move }
 
 // NewRename is the rename over one move. A note that travelled because it was
@@ -46,7 +46,7 @@ func (u Rename) Writers() vaultport.VaultWriters { return u.Move.Writers() }
 // Readers returns the vault readers.
 func (u Rename) Readers() vaultport.VaultReaders { return u.Move.Readers() }
 
-// RenameResult says what the note is called now and what the file did.
+// RenameResult reports the note's current name and what happened to the file.
 type RenameResult struct {
 	Path  string // where the note is filed now
 	Title string

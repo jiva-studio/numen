@@ -11,7 +11,8 @@ export interface MockTabWindow {
   getTabState<State>(id: string): State | null
   // The tabs of a kind, in the order they were opened.
   each<State>(kind: string): readonly { id: string; state: State }[]
-  // The person closes a tab; true where the kind let it go at once.
+  // The user closes a tab; returns true when the tab kind closed it
+  // immediately.
   requestClose(id: string): boolean
   // A tab that took its own close goes now. This is `closeTab` of the plugin's context.
   finishClose(id: string): void

@@ -82,7 +82,7 @@ interface FrontTab {
   state?: unknown
 }
 
-/** The tab in front, as the window's tabs hand it out. */
+/** The front tab, as the window's tabs provide it. */
 const front = ref<FrontTab | null>(null)
 
 const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) })

@@ -2,16 +2,16 @@
 /**
  * The title an edge carries, set along the line it belongs to.
  *
- * It is painted twice over, the halo finished before a letter is drawn. Each
- * glyph set along a path is a run of its own, and a halo painted with the
- * letters lies over the one beside it.
+ * It is painted twice, with the halo finished before any letter is drawn. Each
+ * glyph set along a path is a separate run, and a halo painted together with the
+ * letters would overlap the adjacent letter.
  */
 import type { EdgeLine } from './lines'
 
 withDefaults(
   defineProps<{
     line: EdgeLine
-    /** Drawn over the boxes, on a halo as heavy as that asks for. */
+    /** Drawn over the boxes, with a halo heavy enough for that. */
     isRaised?: boolean
   }>(),
   { isRaised: false },

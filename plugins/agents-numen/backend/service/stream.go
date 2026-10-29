@@ -58,10 +58,10 @@ func readWholeStreamReply(reader io.Reader, emit func(string) error) (message, s
 	return reply, finished, nil
 }
 
-// stream asks the model for the next message as send does, with the reply streamed as server-sent
+// stream requests the next message as send does, with the reply streamed as server-sent
 // events. Each piece of its text goes to emit as it arrives, and an error from emit ends the stream
-// and is returned as it is. A chat API that answers the stream with one whole JSON reply has its
-// text go to emit at once. A 400 or 422 answer is errStreamRejected.
+// and is returned unchanged. A chat API that replies to the stream with one complete JSON body has its
+// text sent to emit at once. A 400 or 422 response is errStreamRejected.
 func (c chat) stream(
 	ctx context.Context, model string, effort effort, messages []message, tools []functionTool, emit func(string) error,
 ) (message, string, error) {
@@ -247,7 +247,7 @@ func (r *streamedReply) getMessage() message {
 	return reply
 }
 
-// readStreamError is what an error event says: its message, else the event as it came.
+// readStreamError returns an error event's message, else the raw event.
 func readStreamError(raw json.RawMessage) string {
 	var described struct {
 		Message string `json:"message"`

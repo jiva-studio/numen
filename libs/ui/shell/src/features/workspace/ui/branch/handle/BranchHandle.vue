@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * The line between two panels, and the reach around it a pointer is caught by.
+ * The line between two panels, and the hit area around it that captures the
+ * pointer.
  *
  * The splitter moves the panels itself while the handle is held; the handle
- * says when it is taken up and when it is put down.
+ * reports when dragging starts and ends.
  */
 import { SplitterResizeHandle } from 'reka-ui'
 import type { Orientation } from '../../../lib/node'
@@ -21,8 +22,9 @@ defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 /**
- * How far from the line a pointer is caught, in pixels, by a mouse and by a
- * finger. The splitter is told this reach and the handle draws it.
+ * The distance in pixels from the line within which a pointer is captured, for
+ * a mouse and for touch. The splitter receives this distance and the handle
+ * renders it.
  */
 const reach = { fine: 7, coarse: 15 }
 </script>
@@ -38,8 +40,8 @@ const reach = { fine: 7, coarse: 15 }
 </template>
 
 <style scoped>
-/* The reach hangs over both panels and stands above them, so a press on either
-   side of the line is a press on the handle. */
+/* The hit area extends over both panels and is stacked above them. */
+/* A press on either side of the line is a press on the handle. */
 .branch__handle {
   --line: var(--numen-stroke);
   --reach: 7px;
@@ -62,9 +64,8 @@ const reach = { fine: 7, coarse: 15 }
   cursor: ns-resize;
 }
 
-/* A line one pixel thick has no room for a ring around it, so it becomes the
-   ring: the line itself is drawn in the keyboard's colour, and a pixel either
-   side of it carries the same. */
+/* A one-pixel line has no space for a focus ring around it, so the line itself becomes the ring. */
+/* It is drawn in the focus color, and one pixel on each side carries the same color. */
 .branch__handle:focus-visible {
   outline: none;
   background: var(--numen-ring);

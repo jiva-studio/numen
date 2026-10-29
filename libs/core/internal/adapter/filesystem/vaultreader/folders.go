@@ -14,15 +14,15 @@ import (
 // walk.
 const Entries = 4096
 
-// Folders remembers which paths in the vault are folders, so that a path which
-// has gone can still be told apart from a file that has.
+// Folders records which paths in the vault are folders, so that a deleted path
+// can still be classified as a folder or a file.
 //
-// A name cannot answer it — `2026.archive` is a folder and `notes.txt` is not —
-// and neither can a path that is gone, so it is remembered while it is there.
+// A name does not determine the type — `2026.archive` is a folder and
+// `notes.txt` is not — and a deleted path cannot be inspected, so the type is
+// recorded while the path exists.
 //
-// The shape is read by the goroutine that drains the events and written by the
-// one that walks a folder new to the watch, so what is remembered is held under
-// a lock.
+// The goroutine that drains the events reads the shape and the goroutine that
+// walks a folder new to the watch writes it, so access is guarded by a lock.
 type Folders struct {
 	reader *VaultReader
 
@@ -45,11 +45,12 @@ func (f *Folders) addFolder(path string) {
 	f.Indexed[path] = true
 }
 
-// ReadShape walks the vault once for its shape, stopping where the vault's own
-// walk stops. A folder made later is learnt from the event that makes it.
+// ReadShape walks the vault once to record its shape, stopping where the
+// vault's own walk stops. A folder created later is recorded from the event that
+// creates it.
 //
-// A folder the walk could not enter is missing from the shape, and comes back
-// as the first error it met.
+// A folder the walk cannot enter is missing from the shape, and the first such
+// error is returned.
 func ReadShape(reader *VaultReader) (*Folders, error) {
 	f := &Folders{reader: reader, Indexed: map[string]bool{".": true}}
 	var why error
@@ -101,23 +102,24 @@ func (f *Folders) removeFolder(path string) {
 	}
 }
 
-// GetConcernedPaths turns an absolute path from the operating system into the sources of
-// this vault that it names. What the vault holds is asked of the reader, so the
-// watcher and the walk answer alike.
+// GetConcernedPaths converts an absolute operating-system path into the sources
+// of this vault that it names. The reader decides what the vault holds, so the
+// watcher and the walk give the same answer.
 //
-// A file is itself, when the vault holds it. A folder new to the watch is
-// everything under it, since such a folder arrives with its contents already in
-// place. A folder already known is empty, and so does one the walk stops
-// at and everything under it.
+// A file maps to itself when the vault holds it. A folder new to the watch maps
+// to everything under it, because such a folder arrives with its contents in
+// place. A folder already known maps to nothing, and so does a folder the walk
+// skips together with everything under it.
 //
-// A path that no longer exists and that the vault skips as a folder yields no source.
+// A path that no longer exists and that the vault skips as a folder yields no
+// source.
 //
-// `whole` is set where the answer cannot be worked out from the disk: a folder
-// that has gone took sources with it, and their paths are known only to the
-// index. A path outside the vault is that case too.
+// `whole` is set when the answer cannot be derived from the disk: a deleted
+// folder took sources with it, and only the index knows their paths. A path
+// outside the vault is the same case.
 //
-// `walk` is a folder new to the watch, handed back as a name. This runs where
-// nothing may take time.
+// `walk` is a folder new to the watch, returned by name. This function runs
+// where nothing may block.
 func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool, walk string) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {
@@ -189,8 +191,8 @@ func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err erro
 		return fs.SkipAll
 	}
 	if err != nil {
-		// The rest of the walk still stands: as much of the shape as can be
-		// learnt is learnt, and the vault is read again for what cannot.
+		// The walk continues: as much of the shape as possible is recorded, and the
+		// vault is read again for the rest.
 		w.short = true
 		return fs.SkipDir
 	}

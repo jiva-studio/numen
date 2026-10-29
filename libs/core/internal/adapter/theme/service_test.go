@@ -141,7 +141,7 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	}
 }
 
-// A client says how far a size goes before a person types a number into it.
+// A client reports the range of each size before the user types a number into it.
 func TestTheListReturnsTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{
 		ThemeName:      theme.Default,
@@ -173,7 +173,7 @@ func TestASettingsFileNamingNoSizeIsGeneratedAsDesigned(t *testing.T) {
 	}
 }
 
-// One size is one command, and choosing it says nothing about the other.
+// One size is one command, and choosing it leaves the other unchanged.
 func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{
 		ThemeName:      theme.Default,
@@ -199,8 +199,8 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	}
 }
 
-// The settings are left as they are, and the person is standing in front of the
-// list that was chosen from.
+// The settings are unchanged, and the user is left with the list that was
+// chosen from.
 func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	for _, selected := range []struct {

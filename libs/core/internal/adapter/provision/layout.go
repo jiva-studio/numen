@@ -16,7 +16,7 @@ import (
 // EnvDir names the folder dependencies are kept in.
 const EnvDir = "NUMEN_DEPENDENCIES_DIR"
 
-// readyName is the file whose presence says the folder beside it holds a whole dependency.
+// readyName is the marker file whose presence means the folder next to it contains a complete dependency.
 const readyName = ".ready"
 
 var unsafeNameChars = regexp.MustCompile(`[^A-Za-z0-9._-]`)
@@ -110,7 +110,7 @@ func sleepContext(ctx context.Context, wait time.Duration) error {
 }
 
 // retry runs the operation until it succeeds, fails with an error that isRetryable
-// refuses, or the attempts run out. The wait doubles after each failure.
+// rejects, or the attempts run out. The wait doubles after each failure.
 func retry(ctx context.Context, policy backoff, isRetryable func(error) bool, operation func() error) error {
 	wait := policy.first
 	var err error

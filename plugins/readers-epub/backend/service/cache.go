@@ -127,7 +127,7 @@ func (c *bookCache) release(book *cachedBook) {
 	}
 }
 
-// Close evicts every book and refuses later requests. Requests still reading finish
+// Close evicts every book and rejects later requests. Requests still reading finish
 // first.
 func (c *bookCache) Close() {
 	c.mu.Lock()

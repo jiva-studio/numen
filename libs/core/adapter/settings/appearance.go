@@ -10,14 +10,14 @@ import (
 
 // Appearance is how the window is drawn.
 type Appearance struct {
-	// InterfaceScale is how large the window is drawn: its chrome, its controls,
-	// the spacing between them and the type in them. A number outside
-	// InterfaceScaleBounds is refused, and a file naming no size at all is drawn
-	// at what the desktop asks for.
+	// InterfaceScale is the scale of the window: its chrome, its controls, the
+	// spacing between them and the type in them. A number outside
+	// InterfaceScaleBounds is rejected, and a file without a scale uses the
+	// desktop's scale.
 	InterfaceScale float64 `json:"interface_scale"`
 
-	// TextScale is how large the text a person reads is set: a note, a book, an
-	// answer, the editor. A number outside TextScaleBounds is refused.
+	// TextScale is the scale of reading text: a note, a book, an answer, the
+	// editor. A number outside TextScaleBounds is rejected.
 	TextScale float64 `json:"text_scale"`
 
 	// Mode is which half of a colour pair the window takes: ModeSystem,
@@ -64,12 +64,11 @@ func GetModeName(mode appearance.ColorScheme) string {
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
 
-// How far each of the two sizes goes.
+// The allowed range of each of the two scales.
 //
-// The interface holds while the smallest control it draws is a target a
-// pointer finds, and while a window 1280 across still stands its panes side by
-// side. Text holds while the smallest of it is still read, and while a line of
-// typing still fits the row it is typed in.
+// The interface range keeps the smallest control a usable pointer target and a
+// 1280-pixel-wide window able to lay out its panes side by side. The text range
+// keeps the smallest text legible and a line of typing within its input row.
 var (
 	InterfaceScaleBounds = Bounds{Min: 0.8, Max: 2}
 	TextScaleBounds      = Bounds{Min: 0.8, Max: 1.75}
@@ -100,16 +99,16 @@ func (a Appearance) Check() error {
 	return nil
 }
 
-// DefaultTheme is this product's own palette, which is what an installation
-// nobody has dressed wears.
+// DefaultTheme is this product's own palette, used by an installation with no
+// theme chosen.
 const DefaultTheme = "preset:numen"
 
-// getDesktopScale is how large the interface is drawn where the file names no size.
+// getDesktopScale returns the interface scale used when the file names no size.
 //
-// A screen says how many pixels it has and not how large they are, so the
-// desktop is asked: GDK_DPI_SCALE is what a person told their session text
-// should be scaled by, and the interface is drawn to match. A number outside
-// InterfaceScaleBounds is not one the setting is seeded with.
+// A screen reports its pixel count, not its physical size, so the desktop is
+// queried: GDK_DPI_SCALE is the text scale configured for the session, and the
+// interface scale is set to match. A number outside InterfaceScaleBounds is not
+// used as the default.
 func getDesktopScale() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
 	if err != nil || !InterfaceScaleBounds.Contains(scale) {

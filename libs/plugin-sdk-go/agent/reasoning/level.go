@@ -9,9 +9,9 @@ import (
 
 // Level is one depth of reasoning.
 type Level struct {
-	// Name is what a task asks for the level by.
+	// Name is the identifier by which a task requests the level.
 	Name string
-	// Title is what the level is called when shown to a person.
+	// Title is the display name of the level.
 	Title string
 }
 
@@ -24,7 +24,7 @@ var order = []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"
 
 var titles = map[string]string{"xhigh": "Extra high"}
 
-// NewLevel is the level of a name, titled in the words a person reads.
+// NewLevel returns the level for a name, with a display title.
 func NewLevel(name string) Level {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if title, found := titles[name]; found {
@@ -101,7 +101,7 @@ func NewModel(name, title string, levels []Level, byDefault string) *AgentModel 
 	}
 }
 
-// Normalize is the level a task asks for if the levels hold it, else the default of the levels.
+// Normalize returns the requested level if levels contain it, else the default level.
 func Normalize(levels []Level, requested string) string {
 	if Contains(levels, requested) {
 		return requested
@@ -109,7 +109,7 @@ func Normalize(levels []Level, requested string) string {
 	return GetDefault(levels)
 }
 
-// Pick is the level a task asks for if the levels hold it, else empty.
+// Pick returns the requested level if levels contain it, else empty.
 func Pick(levels []Level, requested string) string {
 	if Contains(levels, requested) {
 		return requested

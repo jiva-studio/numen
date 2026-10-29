@@ -39,7 +39,7 @@ func (u *FileMenu) GetMenu(ctx context.Context, v domain.Vault, path string) ([]
 	return u.versions.GetMenu(ctx, v, path, domain.HashContent(raw))
 }
 
-// RunMenuEntry does what an entry of the file's menu offers, for a person.
+// RunMenuEntry runs an entry of the file's menu on behalf of the user.
 func (u *FileMenu) RunMenuEntry(ctx context.Context, v domain.Vault, path string, entry MenuEntry) error {
 	return u.versions.RunMenuEntry(ctx, v, path, entry)
 }

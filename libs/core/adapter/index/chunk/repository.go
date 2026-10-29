@@ -28,13 +28,13 @@ var files embed.FS
 
 var stmt = sqlfile.Load(files, "sql")
 
-// Statements exposes the SQL this package runs, for a test that asks the
-// database how it intends to answer each one.
+// Statements exposes the SQL this package runs, for tests that inspect the
+// query plan of each statement.
 func Statements() map[string]string { return stmt }
 
-// errNoVault is returned when the index has never been told about the vault
-// being asked about. Every question about a vault it does not know has the same
-// answer — nothing — so callers turn this into an empty result.
+// errNoVault is returned when the index has no record of the requested vault.
+// Every query for an unknown vault has the same result, an empty one, so
+// callers convert this error into an empty result.
 var errNoVault = errors.New("vault not in the index")
 
 // Source is a file the index has read, and what reading it produced. `Hash`,
@@ -71,15 +71,15 @@ func ConvertTimeToNanos(t time.Time) int64 {
 	return t.UnixNano()
 }
 
-// Chunk is one cut of a source's text. `Location` is where it is located in the terms
-// the source's own numbering uses, and is empty when the format offered none.
+// Chunk is one segment of a source's text. `Location` is the position in the
+// source's own numbering and is empty when the format provides none.
 //
-// `Text` is what the chunk holds, and is indexed and hashed, not kept: it is
-// the text at `Start` for `Length` in the file, so a chunk whose text says
-// something the file does not is a chunk that cannot be read back.
+// `Text` is the chunk content. It is indexed and hashed but not stored: it is
+// the text at `Start` for `Length` in the file, so a chunk whose text differs
+// from the file cannot be read back.
 //
-// `Small` are the chunks inside this one. A Chunk with none of its own is a
-// large chunk all the same: what makes it large is that nothing encloses it.
+// `Small` are the chunks inside this one. A Chunk with none of its own is
+// still a large chunk: it is large because nothing encloses it.
 type Chunk struct {
 	Start    int
 	Length   int
@@ -272,15 +272,15 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	return nil
 }
 
-// deleteMoveTarget takes out what the vault holds where a move is about to land.
+// deleteMoveTarget deletes the rows the vault holds at the path a move lands on.
 //
-// A file is moved on disk and then moved here, and a scan reading the vault
-// between the two files it afresh under its new path. The row that travels
-// carries the chunks, the vectors and the links of the note, so it is the one
-// that keeps the path, and the row standing there comes out.
+// A file is moved on disk and then in the index. A scan between the two steps
+// indexes the file again under its new path. The moved row owns the note's
+// chunks, vectors and links, so it keeps the path and the row already at that
+// path is deleted.
 //
-// The rows that are moving stand still: a folder moved inside itself holds
-// them, and they are the ones about to be filed.
+// Rows that are being moved are kept: a folder moved inside itself contains
+// them, and they are the rows to be renamed.
 func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
 	first, past := getRangeUnder(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
@@ -318,15 +318,14 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 	return nil
 }
 
-// updateNoteName says what the note at a path is called once its file is at another.
+// updateNoteName updates the name of the note at a path after its file moved.
 //
-// A note is called by its `title` key, else by its filename. It takes the name
-// of the file it lands under where the file carries no key, and where that
-// filename is the one its own title is filed under; otherwise it carries the
-// name it has.
+// A note is named by its `title` key, else by its filename. The name follows the
+// new filename when the file has no `title` key and the old filename matches the
+// note's name; otherwise the name is unchanged.
 //
-// The name goes into the title index with it: that is what a search by name
-// ranks and highlights against.
+// The name is also written to the title index, which a search by name ranks and
+// highlights against.
 func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {
@@ -387,15 +386,15 @@ func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 // were kept are then pointed at the large chunk they now sit in, and the rows
 // that are gone come out last.
 //
-// Only leaf chunks are indexed for the words they hold, so that a search asked
-// by words finds the smallest enclosing passage.
+// Only leaf chunks are indexed for their words, so a word search finds the
+// smallest enclosing passage.
 func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64, chunks []Chunk) error {
 	target, err := chunksOf(ctx, tx, source)
 	if err != nil {
 		return err
 	}
-	// A chunk that says the same thing keeps its row through a cut, so the
-	// names of the sections are dropped by the source and not with the chunks.
+	// A chunk with unchanged text keeps its row, so section names are cleared per
+	// source and not with the chunks.
 	if _, err := tx.ExecContext(ctx, stmt.Get("clear_sections"), source); err != nil {
 		return fmt.Errorf("take the names of this source's sections out of the index: %w", err)
 	}
@@ -473,12 +472,12 @@ type textID struct {
 	isSmall bool
 }
 
-// rows is what a source's rows hold, in the shape a fresh cut asks about them.
+// rows holds the existing rows of a source, indexed for matching against new chunks.
 type rows struct {
 	candidates    map[textID][]int64
 	remainingErrs map[int64]bool
-	// hash is the file stat each row holds, so a row that goes says which
-	// text went with it.
+	// hash maps each row to its text hash, which identifies the text of a
+	// removed row.
 	hash map[int64]string
 }
 
@@ -516,8 +515,8 @@ func (h *rows) takeUnusedRow(key textID) (int64, bool) {
 	return row, true
 }
 
-// getUnusedRows is the rows of the source no chunk holds, in order, so that
-// a cut writes the same thing twice running.
+// getUnusedRows returns the rows of the source that no chunk matched, in order,
+// so repeated runs write the same result.
 func (h *rows) getUnusedRows() []int64 {
 	out := make([]int64, 0, len(h.remainingErrs))
 	for row := range h.remainingErrs {
@@ -527,12 +526,12 @@ func (h *rows) getUnusedRows() []int64 {
 	return out
 }
 
-// deleteRows takes out the rows given, and everything indexed over them.
+// deleteRows deletes the given rows and everything indexed over them.
 //
-// The rows in the two virtual tables go first, by the chunk's own number.
-// Nothing cascades into a virtual table, and a row left in either answers a
-// search with a chunk that no longer exists. A large chunk takes the chunks
-// inside it, so a row here may already be gone from `chunks` by the time it is
+// The rows in the two virtual tables are deleted first, by chunk number.
+// Nothing cascades into a virtual table, and a remaining row would return a
+// search hit for a chunk that no longer exists. A large chunk deletes the chunks
+// inside it, so a row here may already be gone from `chunks` when it is
 // reached.
 func deleteRows(ctx context.Context, tx *sqlwrite.Transaction, rows []int64) error {
 	for _, row := range rows {
@@ -552,7 +551,7 @@ func computeHash(s string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// exec runs a named statement and says which one failed.
+// exec runs a named statement and wraps an error with the statement name.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
@@ -560,8 +559,7 @@ func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...an
 	return nil
 }
 
-// querier is anything that can answer a single-row question, so that this works
-// inside a transaction as well as outside one.
+// querier runs a single-row query, on a transaction or on a plain connection.
 type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
@@ -584,8 +582,8 @@ func getSourceRow(ctx context.Context, db querier, vault int64, kind, path strin
 	return row, err
 }
 
-// newNullable keeps an empty string out of the database, so that "nothing was
-// written" and "an empty value was written" stay different questions.
+// newNullable maps an empty string to NULL, so an unset value and an empty
+// value stay distinguishable.
 func newNullable(s string) any {
 	if s == "" {
 		return nil
@@ -593,8 +591,8 @@ func newNullable(s string) any {
 	return s
 }
 
-// getRemovedHashes is the text of the rows no chunk holds: what this source
-// used to hold and does not any more.
+// getRemovedHashes returns the text hashes of the rows no chunk matched: the
+// text the source held before and no longer holds.
 func (h *rows) getRemovedHashes() []string {
 	out := make([]string, 0, len(h.remainingErrs))
 	for row := range h.remainingErrs {

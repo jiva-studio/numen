@@ -1,6 +1,6 @@
 /**
- * The vault the window reaches, answering out of `said` and writing down what
- * it was asked in `requests`.
+ * The vault mock the window uses, responding from `said` and recording requests
+ * in `requests`.
  */
 import { vi } from 'vitest'
 import { asValue } from '@numen/plugin-sdk'

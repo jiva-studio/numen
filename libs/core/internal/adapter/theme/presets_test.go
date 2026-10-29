@@ -29,8 +29,8 @@ type declaration struct {
 	value    string
 }
 
-// A preset sets tokens, and says which half the palette is published in. There
-// is nothing else in one.
+// A preset sets tokens and states which half the palette is published in. It
+// contains nothing else.
 func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
@@ -51,7 +51,7 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 }
 
 // A token takes a colour, a length, or a shadow, which is lengths and a colour
-// in one value. A preset that sets a token writes the shape that token takes.
+// in one value. A preset that sets a token uses the shape that token takes.
 func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
@@ -67,7 +67,7 @@ func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	}
 }
 
-// readPresets is every preset's text, under the name it is asked for.
+// readPresets returns every preset's text, keyed by name.
 func readPresets(t *testing.T) map[string]string {
 	t.Helper()
 	catalogue := createThemeFolder(t)
@@ -136,8 +136,8 @@ func resolveToken(value string, tokens map[string]string) string {
 	return value
 }
 
-// getValueKind reads a value as the shape it is. A colour and a length say what they
-// are, and a shadow is what is left.
+// getValueKind classifies a value by its shape. A colour and a length are
+// identified directly, and a shadow is the remainder.
 func getValueKind(value string) valueKind {
 	switch {
 	case isColour(value):
@@ -176,8 +176,8 @@ var measure = regexp.MustCompile(`^-?(\d+\.?\d*|\.\d+)(px|rem|em|%)$`)
 
 func isLength(value string) bool { return value == "0" || measure.MatchString(value) }
 
-// isElevationValue is one layer or several, each of them the offsets and the spread a
-// shadow is cast at, with the colour it is cast in after them.
+// isElevationValue is one layer or several, each consisting of the offsets and
+// the spread of the shadow, followed by its colour.
 func isElevationValue(value string) bool {
 	for _, layer := range splitOn(value, ',') {
 		parts := splitWords(layer)

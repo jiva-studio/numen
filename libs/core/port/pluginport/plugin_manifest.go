@@ -92,13 +92,13 @@ var (
 // never a key, and neither a setting nor a secret of a manifest takes the name.
 const SettingStoredSecrets = "storedSecrets"
 
-// SettingAIConsent is the setting under which the host records whether the
-// absent not asked yet. The window writes it, and no manifest takes the name.
+// SettingAIConsent is the setting under which the host records AI consent;
+// absent means not asked yet. The window writes it, and no manifest takes the name.
 const SettingAIConsent = "aiConsent"
 
 // SettingTypeAgent is the type of the setting that holds the agent and the model
 // answering the completions of a plugin. Its value is a CompletionChoice, and
-// the person sets it: the setting declares no default.
+// the user sets it: the setting declares no default.
 const SettingTypeAgent = "agent"
 
 // reservedSettingKeys are the settings of a plugin the host keeps for itself.
@@ -162,9 +162,9 @@ type PluginManifestSetting struct {
 	// ModelsOf is the agent program whose models a string setting is offered, as the program names
 	// itself. The models are those the plugins list for it.
 	ModelsOf string
-	// Replaces are the places in the settings file a person kept this setting before the plugin took
-	// it over, each written as the keys that lead to it joined by dots, the newest first. The first of
-	// them the file holds gives the value to a person whose file has none for the plugin yet.
+	// Replaces are the places in the settings file where the user stored this setting before the plugin took
+	// it over, each written as the dot-joined keys leading to it, the newest first. The first of
+	// them the file contains supplies the value for a user whose file has none for the plugin yet.
 	Replaces []string
 	// OptionsBy gives an enum setting its options from the value of another setting. The first option
 	// of each list is the default under that value.
@@ -195,7 +195,7 @@ type PluginManifest struct {
 	Frontend         PluginFrontend
 	Settings         []PluginManifestSetting
 	// Secrets are the names of the secrets, such as an API key, the plugin asks the
-	// host to keep. The host hands them over as Configure values, empty while a
+	// host to store. The host passes them as Configure values, empty while a
 	// secret has no key, and never puts one in the environment or on the command line.
 	Secrets []PluginSecret
 	// Services are the services the plugin serves to the windows, by their full names. A window that
@@ -225,7 +225,7 @@ type PluginManifest struct {
 type PluginNoteType struct {
 	// Type is the word the `type` key of a note's frontmatter holds.
 	Type string
-	// Chunks says whether the prose of the note is cut into chunks and searched by meaning. Left out,
+	// Chunks says whether the prose of the note is split into chunks and searched by meaning. When omitted,
 	// it is.
 	Chunks *bool
 	// Headings are the levels of heading the index keeps. Left out, every heading is kept; an empty

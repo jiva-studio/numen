@@ -15,8 +15,9 @@ export interface Tab {
   readonly id: TabId
   readonly title: string
   /**
-   * A word for what the tab is holding: unsaved work, or why it is stuck. The
-   * strip draws it beside the title and says it aloud.
+   * A short label for the tab's state: unsaved work, or the reason it is stuck.
+   * The strip shows it next to the title and announces it to assistive
+   * technology.
    */
   readonly mark?: string
 }

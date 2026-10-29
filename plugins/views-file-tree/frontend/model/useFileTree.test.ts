@@ -26,8 +26,8 @@ const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
 const folder = (path: string): Entry => file(path, { isFolder: true, isNote: false })
 
 /**
- * A vault of two folders and a picture nothing holds a source for, and a count
- * of what every folder was asked.
+ * A vault of two folders and an image that no source exists for, and a count of
+ * the requests made for each folder.
  */
 const vault = (
   folders: Record<string, readonly Entry[]> = {

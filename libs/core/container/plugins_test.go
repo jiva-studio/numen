@@ -21,7 +21,7 @@ var pluginContract = []string{
 	numenModules + "libs/notes",
 }
 
-// getPluginRefusal says why a plugin module may not name dep, or "" when it may.
+// getPluginRefusal returns why a plugin module may not name dep, or "" when it may.
 // A plugin names its own module, the plugin contract and third-party code.
 func getPluginRefusal(plugin, dep string) string {
 	if !strings.HasPrefix(dep, numenModules) {
@@ -42,7 +42,7 @@ func getPluginRefusal(plugin, dep string) string {
 	return "a plugin names the plugin contract and no other module of the repository"
 }
 
-// What getPluginRefusal says is the whole of the rule, so it is asked directly.
+// What getPluginRefusal returns is the whole of the rule, so it is tested directly.
 func TestWhatThePluginRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		plugin, dep string
@@ -133,7 +133,7 @@ func TestNoPluginNamesAnotherModuleOfTheRepository(t *testing.T) {
 	}
 }
 
-// goMod is what a go.mod says about the modules it names: the ones it
+// goMod is what a go.mod declares about the modules it names: the ones it
 // requires, and the local directories it substitutes for a module.
 type goMod struct {
 	requires []string
@@ -191,7 +191,7 @@ func (mod *goMod) read(kind string, fields []string) {
 	}
 }
 
-// getGoModRefusals says why a plugin's go.mod may not stand: it requires a
+// getGoModRefusals returns why a plugin's go.mod is not allowed: it requires a
 // module of the repository the plugin may not name, or builds any module from
 // a local directory other than the one the repository's own module is at.
 func getGoModRefusals(plugin string, mod goMod) []string {

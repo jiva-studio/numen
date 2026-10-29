@@ -14,12 +14,12 @@ import (
 // The fixtures are six documents, and each is one thing a reader has to get
 // right.
 //
-// Five of them are written out by hand, uncompressed and without a cross
-// reference table, which is what a great many files in the world look like
-// after a tool has half-written them: the library rebuilds what it needs, and a
-// person can read the fixture. `outline.pdf` is the exception. An outline's
-// destinations resolve only in a file whose cross reference table is real, so
-// that one is produced and not typed, and it is still plain text.
+// Five of them are written by hand, uncompressed and without a cross reference
+// table, which resembles many real files after a tool has partly written them:
+// the library rebuilds what it needs, and the fixture stays readable.
+// `outline.pdf` is the exception. An outline's destinations resolve only in a
+// file whose cross reference table is real, so that one is generated and not
+// typed, and it is still plain text.
 const (
 	tiny    = "tiny.pdf"    // two pages of text, naming nothing
 	outline = "outline.pdf" // four pages, three of them named, one name inside another
@@ -155,9 +155,9 @@ func TestAPartBeginsWhereItsPageBegins(t *testing.T) {
 }
 
 func TestAScanIsReadAndReturnsNothing(t *testing.T) {
-	// A document with no text layer is not a failure. It is read, its pages are
-	// counted, and what it says is nothing — which is what makes it a scan and
-	// what a reader has to be able to tell.
+	// A document with no text layer is not a failure. It is read and its pages are
+	// counted, and its text is empty, which identifies it as a scan; a reader must
+	// be able to detect that.
 	book := read(t, scan)
 
 	if book.Text != "" {
@@ -171,8 +171,8 @@ func TestAScanIsReadAndReturnsNothing(t *testing.T) {
 func TestLocate(t *testing.T) {
 	book := read(t, outline)
 
-	// Keyed by a word in the text, so that the case says where it is asking
-	// about and not what the offset happens to be.
+	// Keyed by a word in the text, so the case identifies what it queries and not
+	// an incidental offset.
 	pos := func(word string) int {
 		t.Helper()
 		i := strings.Index(book.Text, word)
@@ -256,8 +256,8 @@ func TestWhatIsNotADocument(t *testing.T) {
 }
 
 func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
-	// A vault is walked by one goroutine today and by more as soon as anything
-	// asks it to be, and the library holds a document per worker.
+	// A vault is walked by one goroutine today and by more later, and the library
+	// holds a document per worker.
 	raw := fixture(t, tiny)
 
 	isDone := make(chan string, 8)
@@ -300,9 +300,9 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 	}
 }
 
-// A page says how big it is, and what it says is the size it is drawn at one of
-// its own units to the pixel. A page drawn a quarter turn from the way its text
-// is written is as wide as its text is high, and it says so.
+// A page reports its size: the size at which it is drawn, at one of its own
+// units to the pixel. A page rotated a quarter turn from its text direction is
+// as wide as its text is high, and it reports that.
 func TestAPageReturnsHowBigItIs(t *testing.T) {
 	for _, name := range []string{tiny, turned, labels} {
 		t.Run(name, func(t *testing.T) {

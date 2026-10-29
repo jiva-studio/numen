@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
 
-// webSeeds are the shapes an address is written in: the two schemes that are
-// fetched and several that are not, a video written every way it is shared, a
-// page carrying what says where a visitor came from, an address with credentials
-// in it, and bytes no address is written in.
+// webSeeds are seed address shapes: the two fetched schemes and several
+// unfetched ones, a video address in each sharing format, a page address with a
+// tracking parameter, an address with credentials, and bytes that are not an
+// address.
 var webSeeds = []string{
 	"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 	"https://youtu.be/dQw4w9WgXcQ?si=Ab1Cd2Ef3&t=90",
@@ -36,8 +36,8 @@ func hasUserInfo(raw string) bool {
 
 // back is fetchable and stays itself when it is read again.
 //
-// A link note is written by hand in a file somebody else's editor wrote, so what
-// is put through here is a stranger's bytes.
+// A link note is written by hand in a file edited by other tools, so the input
+// is untrusted bytes.
 func FuzzParseWebAddress(f *testing.F) {
 	for _, seed := range webSeeds {
 		f.Add(seed)
@@ -48,8 +48,8 @@ func FuzzParseWebAddress(f *testing.F) {
 			return
 		}
 
-		// Nothing here reaches this machine, and nothing carries a name and a
-		// password into a run's arguments.
+		// The parsed address must not refer to a local resource, and must not carry
+		// a username and password into a run's arguments.
 		switch {
 		case !strings.HasPrefix(string(parsed), "http://") &&
 			!strings.HasPrefix(string(parsed), "https://"):
@@ -70,7 +70,7 @@ func FuzzParseWebAddress(f *testing.F) {
 			t.Fatalf("%q was read as %+v, and that as %+v", raw, parsed, again)
 		}
 
-		// The space around an address is whoever wrote it down's.
+		// Surrounding whitespace is not part of the address.
 		if spaced, err := address.Parse(" \t" + raw + "\n "); err != nil || spaced != parsed {
 			t.Fatalf("%q is %+v, and the same with space around it is %+v (%v)",
 				raw, parsed, spaced, err)

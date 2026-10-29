@@ -15,14 +15,14 @@ export interface Installation {
   readonly themes: Readonly<Ref<readonly Theme[]>>
   readonly applied: Readonly<Ref<string>>
   readonly mode: Readonly<Ref<Mode>>
-  /** Whether the theme worn declares light and dark itself. */
+  /** Whether the active theme declares light and dark itself. */
   readonly isPinned: Readonly<Ref<boolean>>
   readonly sizes: Readonly<Ref<Sizes>>
   readonly bounds: Readonly<Ref<Ranges>>
   /**
-   * A value of one of the four appearance settings chosen, by the identity the
-   * palette offers it under. The theme, the half of the pair and the two sizes
-   * are each named a different way, so none of the four is written by hand.
+   * Selects a value for one of the four appearance settings, by the identity the palette
+   * offers it under. The theme, the light/dark half of the pair and the two sizes are each
+   * named differently, so none of the four is typed manually.
    */
   choose(item: string): void
   /** Whether a note's title and the name of its file are kept as one name. */
@@ -34,17 +34,17 @@ export interface Installation {
   getModels(at: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
   /**
-   * The key of a secret a plugin declares, stored or removed. The window is
-   * told only which secrets have a key, under each plugin's `storedSecrets`.
+   * The key of a secret a plugin declares, stored or removed. The window is informed only
+   * which secrets have a key, under each plugin's `storedSecrets`.
    */
   writeSecret(pluginId: string, name: string, key: string): void
   deleteSecret(pluginId: string, name: string): void
   /** A plugin the host suspends, started once more. */
   retryPlugin(pluginId: string): void
   /**
-   * The machine's own picker put in front of the person for a plugin's setting of type file or
-   * folder, and the path chosen written. The answer is why the setting does not take the path,
-   * and empty where it was written or none was chosen.
+   * Opens the machine's native picker for a plugin's setting of type file or folder, and
+   * writes the chosen path. Resolves to an empty string where the path was written or none
+   * was chosen.
    */
   choosePath(pluginId: string, key: string): Promise<string>
   /**

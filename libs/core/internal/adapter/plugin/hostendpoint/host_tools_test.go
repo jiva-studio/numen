@@ -101,7 +101,7 @@ func TestAPluginCallsTheToolsInTheVaultItNames(t *testing.T) {
 	}
 }
 
-// A plugin without vault:read is refused, and a caller nobody knows is not answered.
+// A plugin without vault:read is rejected, and an unknown caller is not served.
 func TestTheToolsRefuseACallerWithoutVaultRead(t *testing.T) {
 	tools := &recordedTools{}
 	fakeCallers := newCallers(nil)

@@ -42,7 +42,7 @@ func newTwoVaults(t *testing.T) twoVaults {
 	return twoVaults{current: current, other: other, texts: texts, server: server}
 }
 
-// postAPI asks a method of the document API of a server over HTTP, naming the vault where it is not
+// postAPI calls a method of a server's document API over HTTP, naming the vault when it is not
 // empty, and decodes the response.
 func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string, response any) int {
 	t.Helper()

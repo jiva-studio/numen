@@ -7,8 +7,8 @@ import (
 
 // Normalise is text with every line break written as one \n.
 //
-// It is what a person is handed and what they hand back. An offset into a chunk
-// is an offset into the file, so what Parse is given is the file currently.
+// It is the form clients receive and send back. An offset into a chunk is an
+// offset into the file, so the text passed to Parse is the current file.
 func Normalise(text string) string {
 	if !strings.ContainsRune(text, '\r') {
 		return text
@@ -45,8 +45,8 @@ func lineEnding(raw []byte) string {
 	return "\n"
 }
 
-// breakWidth is the bytes the line break standing at one offset takes, and zero
-// where no break stands there. YAML breaks a line on a carriage return, a line
+// breakWidth returns the width in bytes of the line break at an offset, and
+// zero when no break is there. YAML breaks a line on a carriage return, a line
 // feed, the two together, and the Unicode NEL, LS and PS.
 func breakWidth(block []byte, offset int) int {
 	switch block[offset] {
@@ -79,8 +79,8 @@ func endsWithBreak(block []byte) bool {
 	return false
 }
 
-// lineOffsets is where each line of a block begins, with the end of the block
-// as a final entry, so that line n runs from offsets[n-1] to offsets[n].
+// lineOffsets returns the start offset of each line of a block, with the end of
+// the block as a final entry, so line n runs from offsets[n-1] to offsets[n].
 func lineOffsets(block []byte) []int {
 	offsets := []int{0}
 	for pos := 0; pos < len(block); {
@@ -112,8 +112,8 @@ func getIndent(line string) string {
 	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 
-// offsetLine is the 1-based line that begins at or after a byte offset, or
-// len(lines) when nothing in lines reaches that far.
+// offsetLine returns the 1-based line that begins at or after a byte offset, or
+// len(lines) when no line starts that far into the block.
 func offsetLine(lines []int, offset int) int {
 	for i, lineStart := range lines {
 		if lineStart >= offset {

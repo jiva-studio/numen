@@ -1,10 +1,10 @@
 /**
- * The four commands over how the window is drawn: its theme, which half of a
- * colour pair its tokens are read as, and how large it is drawn and set.
+ * The four commands for how the window is rendered: its theme, which half of a
+ * color pair its tokens are read as, and its interface and text sizes.
  *
- * A theme and a size are worn where the keyboard stands, so what is asked here
- * is what the window is wearing while a person walks the list, and what it is
- * wearing once they leave it.
+ * A theme and a size are applied as the keyboard moves over the list, so the
+ * tests check what the window shows while the list is navigated and what it
+ * shows after the list is left.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { requests, cards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
@@ -55,11 +55,11 @@ describe('the four commands over how the window is drawn', () => {
     )
   })
 
-  /** The keyboard still walking, and the keyboard stood still on a row. */
+  /** The keyboard still moving, and the keyboard settled on a row. */
   const waitUnderHold = () => new Promise((isDone) => setTimeout(isDone, 60))
   const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
-  /** Every tenth the interface goes between, as a person reads them. */
+  /** Every tenth of the interface scale, as displayed to the user. */
   const TENTHS = [
     '80%',
     '90%',

@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-// A link a move could not repair is a link that now reaches nothing. The note
-// holding it is never written, so nothing comes back to it: a move that names
-// only what it repaired hands the person a vault it quietly broke.
+// A link that a move could not repair now points at nothing. The note holding
+// it is never written, so nothing updates it: a move that reports only the
+// links it repaired silently leaves the vault broken.
 
 // TestAMoveNamesTheLinksItCouldNotRepair. The note pointing at what moved was
 // written in another editor since the vault read it, and its frontmatter no
@@ -22,8 +22,8 @@ func TestAMoveNamesTheLinksItCouldNotRepair(t *testing.T) {
 		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",
 	})
 
-	// Somebody has been in the file since the vault read it, and left a tab
-	// where YAML admits none.
+	// The file was modified by another process since the vault read it, and
+	// now contains a tab where YAML admits none.
 	broken := "---\nlinks:\n\t- to: physics/Entropy.md\n    role: parent\n---\n# Cold\n"
 	if err := os.WriteFile(
 		filepath.Join(c.vault.Path, filepath.FromSlash("physics/Cold.md")), []byte(broken), 0o644,

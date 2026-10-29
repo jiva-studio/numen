@@ -10,17 +10,16 @@ export interface TreeProps {
   open?: readonly RowId[]
   /** The rows the selection relies on. */
   selected?: readonly RowId[]
-  /** How far the pointer travels before a press becomes a drag. */
+  /** The distance the pointer moves before a press becomes a drag. */
   threshold?: number
   /** What the tree is announced as. */
   name?: string
-  /** How many rows are being dragged, said at the pointer. */
+  /** Returns the label announced at the pointer for the number of rows being dragged. */
   counted?: (rows: number) => string
   /**
-   * An attribute written onto the rows and onto the tree, for something
-   * outside to find them by. Both the name and the values are the caller's,
-   * and a row answered with nothing is left unmarked; the tree itself is
-   * asked about as no row at all.
+   * An attribute written onto the rows and onto the tree, for external code to
+   * locate them. Both the name and the values are chosen by the caller. A row
+   * mapped to nothing is left unmarked; the tree itself is queried as a null row.
    */
   marking?: RowMarker | undefined
   /** The clock. Browser by default; a test hands in its own. */
@@ -45,15 +44,15 @@ export interface TreeEvents {
   (event: 'drag', rows: readonly RowId[]): void
   /** The rows release, wherever the pointer had got to. */
   (event: 'drop'): void
-  /** The selection asked to go. */
+  /** The selection was removed. */
   (event: 'remove', rows: readonly RowId[]): void
-  /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
+  /** A menu was requested at a position. The row is null for a press outside every row. */
   (event: 'menu', row: RowId | null, pos: Position): void
 }
 
 export interface TreeSlots {
   /** What is drawn between a row's disclosure and its name. */
   icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): unknown
-  /** What is said when there is nothing to draw. */
+  /** The content shown when there is nothing to draw. */
   silence(): unknown
 }

@@ -6,8 +6,8 @@ import type { MediaTypeProbe, Player } from './player'
 import type { RecordingSource } from '../types'
 
 /**
- * One recording's playback through the shared player. A moment gone to before the recording knows
- * its address is played from once it does.
+ * One recording's playback through the shared player. A seek issued before the recording's address
+ * is known is applied once the address is available.
  */
 export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: () => boolean) {
   const url = ref('')

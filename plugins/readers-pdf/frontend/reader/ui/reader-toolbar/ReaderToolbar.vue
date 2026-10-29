@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * What a person turns and zooms a document with.
+ * Page navigation and zoom controls for a document.
  *
- * It floats over the page, and all the room there is belongs to the page. The
- * page in front and how close it is drawn are the reader's, held here.
+ * The toolbar floats over the page and does not take layout space from it. The
+ * current page and the zoom level are state of the reader, kept here.
  */
 import { PageControls } from './page-controls'
 import { ZoomControls } from './zoom-controls'

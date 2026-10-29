@@ -8,7 +8,7 @@ const props = withDefaults(
   defineProps<{
     /** Markdown, whole or as far as it has arrived. */
     text: string
-    /** Still being written: a word that has just arrived is shown arriving. */
+    /** Content is still streaming in: a word that has just arrived is rendered as arriving. */
     isArriving?: boolean
     /**
      * The addresses this text points at that reach nothing. A link carrying

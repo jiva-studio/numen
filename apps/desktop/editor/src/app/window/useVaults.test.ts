@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 /**
- * The list and the vault in front cannot disagree about which vault is open.
+ * The list and the displayed vault cannot disagree about which vault is open.
  *
- * They were two refs kept in step by hand, and the command that renames a vault
- * wrote one of them. From that moment the welcome screen and the command target
- * named different vaults.
+ * The displayed vault is derived from the list, so renaming a vault through the
+ * command updates both the welcome screen and the command target.
  */
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'

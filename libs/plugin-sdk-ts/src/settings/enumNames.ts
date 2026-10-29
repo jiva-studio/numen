@@ -2,8 +2,8 @@
  * What a window calls each value of a schema enum, and what it sends back.
  *
  * The table of words is keyed by the enum the schema generates, so the compiler
- * asks for a word the moment the schema carries a value more, and the sending
- * side is read off that table.
+ * requires a word as soon as the schema gains a value, and the sending side is
+ * derived from that table.
  */
 
 /** What each word a window uses is, as the schema names it. */

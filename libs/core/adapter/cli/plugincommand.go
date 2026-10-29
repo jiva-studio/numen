@@ -64,8 +64,8 @@ func getPluginCommandSynopsis(command plugincommand.Command) string {
 	return strings.Join(words, " ")
 }
 
-// runPluginCommand runs a command a plugin declares over a vault, with the arguments given as flags,
-// and writes what the plugin said.
+// runPluginCommand runs a command that a plugin declares over a vault, with the
+// arguments given as flags, and writes the plugin's output.
 func runPluginCommand(
 	ctx context.Context, out io.Writer, deps Deps, entry plugincommand.Entry, args []string,
 ) error {

@@ -5,8 +5,9 @@ import { getPaletteField, openWorkspace, runCommand, waitForPassage } from '../s
 const ARTICLE_ADDRESS = 'http://tidal-mills.numen.test/history/rance'
 
 /**
- * A video site's address. Under `NUMEN_MOCK_ML` the media importer reaches video sites through its
- * stand-in downloader, which publishes captions and copies a clip of three seconds, offline.
+ * A video site's address. Under `NUMEN_MOCK_ML` the media importer reaches
+ * video sites through its stand-in downloader, which publishes captions and
+ * copies a three-second clip, offline.
  */
 const VIDEO_ADDRESS = 'https://www.youtube.com/watch?v=tidalmill01'
 

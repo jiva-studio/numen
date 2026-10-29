@@ -1,6 +1,6 @@
 /**
- * What making a file of a kind asks of the vault, and what it says when the vault
- * refuses or cannot be asked at all.
+ * What creating a file of a kind requests from the vault, and what it reports
+ * when the vault rejects the request or cannot be reached.
  */
 import { describe, expect, it } from 'vitest'
 import type { ErrorCode } from '@/shared/errors'
@@ -11,7 +11,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { fileOpeners } from './openers'
 import { createFileCreators, type VaultCreator } from './makers'
 
-/** The vault answering what it was told, and writing down what it was asked to make. */
+/** A vault stub that returns the configured result and records the creation requests. */
 const maker = (
   error: ErrorCode | null = null,
   throws = false,
@@ -30,7 +30,7 @@ const maker = (
   }
 }
 
-/** Everything making a file says. */
+/** Messages used when creating a file. */
 const MAKING = { errors: ERRORS }
 
 const createCreators = (

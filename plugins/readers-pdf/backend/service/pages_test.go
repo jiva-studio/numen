@@ -41,7 +41,7 @@ type page struct {
 	body   []byte
 }
 
-// getPage asks web for a page at path with the plugin's token.
+// getPage requests a page at path from web with the plugin's token.
 func getPage(t *testing.T, web *httptest.Server, path string) page {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, web.URL+path, nil)

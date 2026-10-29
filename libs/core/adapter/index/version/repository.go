@@ -81,8 +81,8 @@ func (r *Repository) RemovePluginVersions(ctx context.Context, vaultID domain.Va
 	return removed, nil
 }
 
-// MoveVersions files the versions of what was at one path, and of everything
-// under it, at the path it now has. The versions of whatever stood at the
+// MoveVersions re-files the versions of what was at one path, and of everything
+// under it, at the path it now has. The versions of whatever was at the
 // destination are removed.
 func (r *Repository) MoveVersions(ctx context.Context, vaultID domain.VaultID, from, to string) error {
 	if from == to {

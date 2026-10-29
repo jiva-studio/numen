@@ -17,9 +17,9 @@ const fetchRoute = "/numen-debug/fetch.js"
 //go:embed fetch.js
 var fetchScript []byte
 
-// newHandler is handler as a browser reaches it over HTTP. The page it opens at loads the script
-// that sends the page's calls as PUT, and a PUT is answered as the POST the page sent: nothing the
-// window serves answers PUT.
+// newHandler wraps handler for access by a browser over HTTP. The page it serves loads the script
+// that sends the page's calls as PUT, and a PUT is handled as the POST the page sent: nothing the
+// window serves handles PUT.
 //
 // A browser that is not the window's own webview opens a connection for every POST, and WebKit
 // opens at most six to one host. The window holds more server streams open than that, so in WebKit

@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The keys around the one being written are what the person owns, and they are
-// the whole reason this is a splice and not a re-encode.
+// The keys around the one being written belong to the user, which is why the
+// write is a splice and not a re-encode.
 func TestSetPreservesEveryOtherKeyAlone(t *testing.T) {
 	raw := "---\n" +
 		"# a note to myself\n" +
@@ -98,8 +98,8 @@ func TestRemovingEveryLinkConsumesTheKeyOut(t *testing.T) {
 	}
 }
 
-// A note nobody can read is a note nobody may write: the alternative is
-// guessing at the block that failed to parse.
+// A note that cannot be read is not written, since the block that failed to
+// parse cannot be located.
 func TestFrontmatterThatDoesNotParseIsRefused(t *testing.T) {
 	_, err := Open([]byte("---\nid: [unterminated\n---\nbody\n"))
 	if !errors.Is(err, ErrUnreadable) {
@@ -158,10 +158,9 @@ func reopen(t *testing.T, raw string) *Document {
 	return d
 }
 
-// The finding that sent this back: writing one link must not touch the entries
-// around it. An entry the parser could not act on is still somebody's writing,
-// a key the application has never heard of is theirs, and a comment inside the
-// block is a note to themselves.
+// Writing one link must not touch the surrounding entries. An entry the parser
+// could not act on is user content, a key the application does not recognize
+// belongs to the user, and a comment inside the block is the user's note.
 func TestWritingOneLinkPreservesTheOthersAsBytes(t *testing.T) {
 	raw := "---\n" +
 		"links:\n" +
@@ -199,8 +198,8 @@ func TestWritingOneLinkPreservesTheOthersAsBytes(t *testing.T) {
 	}
 }
 
-// A key the application does not own is the person's, and an entry carrying one
-// fails and not rewritten without it.
+// A key the application does not own belongs to the user, and an entry
+// carrying one fails and is not rewritten without it.
 func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	d, err := Open([]byte("---\nlinks:\n  - to: Entropy\n    role: parent\n    mine: keep me\n---\nbody\n"))
 	if err != nil {
@@ -286,8 +285,8 @@ func TestPointingALinkSomewhereElseChangesOnlyTheAddress(t *testing.T) {
 	}
 }
 
-// A name is somebody's filename, and a filename may hold anything. Writing it
-// into YAML raw is how renaming one note makes another unparseable.
+// A name is a filename, and a filename may hold any character. Writing it raw
+// into YAML makes renaming one note render another unparseable.
 func TestARenameCannotBreakTheNoteThatPointedAtIt(t *testing.T) {
 	for _, name := range []string{
 		"[Draft] Physics", "{x", "- dash", "%pct", "@at", "*ref", "&anchor",
@@ -406,9 +405,9 @@ func TestAValueOnOneLinePreservesTheKeysAroundItWritable(t *testing.T) {
 	}
 }
 
-// A file may be called almost anything; an address may not. A note whose name
-// no link could spell is left unreached and not reached by a link that now
-// says something else.
+// A file may have almost any name; a link address may not. A note whose name
+// no link can express stays unreached by links, and no link is rewritten to
+// point at it.
 func TestANameNoAddressCanSpellIsNotSavedIn(t *testing.T) {
 	for _, name := range []string{"#tag", "multi\nline", "a|b", "note://x", "ends]]"} {
 		t.Run(name, func(t *testing.T) {
@@ -436,9 +435,9 @@ func TestANameNoAddressCanSpellIsNotSavedIn(t *testing.T) {
 	}
 }
 
-// A file that opens the block and never closes it is somebody's frontmatter
-// with a line missing. Writing a key would put a second block above theirs and
-// turn their keys into prose.
+// A file that opens the block and never closes it is frontmatter with a
+// missing line. Writing a key would add a second block above it and turn its
+// keys into prose.
 func TestANoteWithAnUnclosedBlockRejectsAFrontmatterWrite(t *testing.T) {
 	raw := "---\ntitle: theirs\n"
 	d, err := Open([]byte(raw))
@@ -453,8 +452,8 @@ func TestANoteWithAnUnclosedBlockRejectsAFrontmatterWrite(t *testing.T) {
 	}
 }
 
-// the half-written block, and pointing the prose's links at a new name reaches
-// the links inside it.
+// the half-written block, and rewriting the prose's links to a new name
+// changes the links inside it.
 func TestANoteWithAnUnclosedBlockRejectsABodyWrite(t *testing.T) {
 	raw := "---\ntitle: theirs\nlinks:\n  - to: notes/Old\n"
 	d, err := Open([]byte(raw))
@@ -476,7 +475,7 @@ func TestANoteWithAnUnclosedBlockRejectsABodyWrite(t *testing.T) {
 	}
 }
 
-// A rename reaches a link whether it is quoted or written plainly.
+// A rename rewrites a link whether it is quoted or unquoted.
 func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 	for _, one := range []struct {
 		name   string
@@ -593,8 +592,8 @@ func TestARenamePreservesABlockScalarAlone(t *testing.T) {
 	}
 }
 
-// How somebody writes their own links is theirs: the quotes around the name and
-// the brackets inside them are how they wrote it, and a rename changes the name.
+// How the user writes their own links is preserved: the quotes around the name
+// and the brackets inside them stay as written, and a rename changes the name.
 func TestARenamePreservesTheNotationItFound(t *testing.T) {
 	for _, one := range []struct {
 		name  string
@@ -656,9 +655,9 @@ func TestALinkSavedAgainInAnotherRoleIsRelatedAgain(t *testing.T) {
 	}
 }
 
-// A frontmatter written in from the margin is spliced where its own keys stand.
+// A frontmatter indented from the margin is spliced where its own keys are.
 // A line written flush ends the mapping, and every key below it becomes text
-// the YAML decoder drops without saying so — the person's own keys among them.
+// the YAML decoder drops silently, the user's own keys among them.
 func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 	raw := "---\n" +
 		"  type: preset\n" +
@@ -735,8 +734,8 @@ func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
 	}
 }
 
-// A comment beside a key is the person's, on a key the application owns as much
-// as on any other. Every writer here keeps it.
+// A comment beside a key belongs to the user, on a key the application owns as
+// much as on any other. Every writer preserves it.
 func TestAWritePreservesTheCommentAdjacentTheKey(t *testing.T) {
 	raw := "---\n" +
 		"id: 01J8 # the one it was made with\n" +
@@ -874,7 +873,7 @@ func TestNamingNoPlaceBelowATypeConsumesTheEntryOut(t *testing.T) {
 	}
 }
 
-// An entry carrying a key the application does not own is left as the person
+// An entry carrying a key the application does not own is left as the user
 // wrote it, and nothing is written.
 func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	raw := "---\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n    mine: keep me\n---\nbody\n"

@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// Scan brings the index up to date with one vault. The vault is
-// authoritative: whatever the scan finds is what the index says afterwards.
+// Scan updates the index to match one vault. The vault is authoritative: after
+// a scan the index holds exactly what the scan found.
 type Scan struct {
 	readers     vaultport.VaultReaders
 	vaults      vaultport.VaultRepository
@@ -28,8 +28,8 @@ type Scan struct {
 	// Cut is how the notes found are cut into the chunks the index keeps.
 	Cut chunking.CutNotes
 
-	// Walks is the turns the vaults being walked take. A scan given none takes
-	// its turn from nobody and waits for nobody.
+	// Walks serializes the walks of the vaults being scanned. A scan without it
+	// runs without waiting for any other scan.
 	Walks *Walks
 
 	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
@@ -47,12 +47,11 @@ type Scan struct {
 	OnProgress func(ScanResult)
 }
 
-// NewScan is what a walk of a vault reads and writes through: the vault it is
-// read out of, the row every note of it points at, where a note is filed, what
-// the index already believes about each file, and the upkeep a changed index
-// owes.
+// NewScan returns a Scan that reads and writes through: the vault reader, the
+// vault repository, the note repository, the file stat queries of the index,
+// and the maintenance run after the index changed.
 //
-// The upkeep is reached only where the walk found something.
+// Maintenance runs only when the walk found a change.
 func NewScan(
 	readers vaultport.VaultReaders,
 	vaults vaultport.VaultRepository,
@@ -77,9 +76,8 @@ func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress f
 	return u.Execute(ctx, v)
 }
 
-// FileStatQueries is the one question a scan asks of the index, so that a
-// scan is handed what says which files have changed and nothing that answers
-// about a note.
+// FileStatQueries is the single query a scan makes of the index. It exposes
+// which files have changed and nothing about notes.
 type FileStatQueries interface {
 	// GetFileStats is what the index believes about each file, keyed by path,
 	// so a scan can decide what to reparse without reading anything.
@@ -148,8 +146,8 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 }
 
 // walkVault is every file of the vault, the most recently modified first. The walk
-// is collected before anything is read so that the order can be chosen: notes
-// touched recently are what the person is looking for while the scan runs.
+// is collected before any file is read so the order can be applied: recently
+// modified notes are scanned first.
 func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.FileStat, error) {
 	var found []domain.FileStat
 	if err := reader.WalkFiles(ctx, func(ref domain.FileStat) error {

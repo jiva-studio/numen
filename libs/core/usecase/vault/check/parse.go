@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
-// parseCheck is what reading one file turned up, and the scan already knows it:
-// a link with no role, a role nobody decided on, an identifier that is not one.
+// parseCheck is what reading one file found, which the scan already has: a link
+// with no role, an unassigned role, an identifier that is invalid.
 //
-// Nothing is worked out here. The rule that decided these ran when the note was
-// parsed, which is the only place that can see what the file says without
+// Nothing is computed here. The rule that decided these ran when the note was
+// parsed, which is the only place that can see what the file contains without
 // reading it again.
 type parseCheck struct {
 	queries problemport.ProblemQueries

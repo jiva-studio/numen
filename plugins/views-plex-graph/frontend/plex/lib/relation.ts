@@ -18,7 +18,7 @@ export const RELATIONS = {
 /** Every relation except the one that may appear only once. */
 export type PlexRelation = keyof typeof RELATIONS
 
-/** Where a node sits relative to the one in focus. */
+/** Where a node is positioned relative to the one in focus. */
 export type PlexNodeRelation = 'focus' | PlexRelation
 
 export const RELATION_NAMES = Object.keys(RELATIONS) as readonly PlexRelation[]

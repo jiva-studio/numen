@@ -161,7 +161,7 @@ func newCallReply(id, tool, args string) message {
 	return message{Role: "assistant", ToolCalls: []toolCall{call}}
 }
 
-// newTextReply is a reply of the model that says the text.
+// newTextReply is a model reply containing the text.
 func newTextReply(text string) message {
 	return message{Role: "assistant", Content: newText(text)}
 }
@@ -854,7 +854,8 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	}
 }
 
-// The context of the task reaches every tool the model calls as the `_meta` of the call.
+// The context of the task reaches every tool the model calls as the `_meta` of
+// the call.
 func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("ok")}}
 	vault := &fakeVault{}

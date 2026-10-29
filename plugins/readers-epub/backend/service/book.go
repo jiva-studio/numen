@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
-// errChanged is what reading an entry fails with where the file is no longer the bytes the caller
-// read.
+// errChanged is the error of reading an entry when the file no longer has the
+// bytes the caller read.
 var errChanged = errors.New("the file changed")
 
 const mostListed = 1000

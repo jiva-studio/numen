@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-// vault is a root the rules can be asked about: a folder of notes, the
+// vault builds a root the rules can be queried about: a folder of notes, the
 // application's own folder, a link that stays inside, a link that leaves, and a
-// link into the application's own folder. The links are what makes the question
-// more than a question about text — a path that reads as the vault's still
-// lands wherever the filesystem takes it.
+// link into the application's own folder. The links make the check more than a
+// text check: a path that reads as the vault's can still resolve elsewhere in
+// the filesystem.
 func vault(tb testing.TB) string {
 	tb.Helper()
 	root := tb.TempDir()
@@ -46,14 +46,13 @@ func vault(tb testing.TB) string {
 	return resolved
 }
 
-// Everything that reaches a vault from outside the application comes through
-// the two rules, so what they answer is the whole of the containment: a path is
-// the vault's or the application's and never both, and whichever of them
-// answers, what it returns is under the root once every link on the way to
-// it is resolved.
+// Every external access to a vault goes through the two rules, so their results
+// are the whole of the containment: a path belongs to the vault or the
+// application and never both, and whichever rule accepts it, the result is under
+// the root once every link on the way is resolved.
 //
-// A path arrives from a person's editor, from another machine's sync, and from
-// a browser's address bar, so the bytes are a stranger's.
+// Paths arrive from the user's editor, another machine's sync and a browser's
+// address bar, so the bytes are untrusted.
 func FuzzInside(f *testing.F) {
 	root := vault(f)
 	for _, path := range paths {
@@ -86,8 +85,8 @@ func FuzzInside(f *testing.F) {
 		checkRule(t, root, path, "resolveVaultPath", false, asVault, vaultReal, vaultErr)
 		checkRule(t, root, path, "service", true, asOurs, oursReal, oursErr)
 
-		// A path that could not name anything inside a vault fails before
-		// the filesystem is asked anything at all.
+		// A path that cannot name anything inside a vault fails before any
+		// filesystem access.
 		if strings.ContainsRune(path, 0) || !filepath.IsLocal(path) {
 			if vaultErr == nil || oursErr == nil {
 				t.Fatalf("%q names nothing a vault holds and was answered for", path)
@@ -107,15 +106,15 @@ func FuzzInside(f *testing.F) {
 	})
 }
 
-// checkRule fails unless a rule that answered handed back a path under the root,
-// both where it lands and where it lands with every link resolved, and unless a
-// rule that rejected handed back nothing at all.
+// checkRule fails unless an accepting rule returned a path under the root, both
+// as spelled and with every link resolved, and unless a rejecting rule returned
+// nothing.
 //
-// Where the path resolves to is what says which of the two rules was entitled
-// to answer. A link is a second spelling for a place, and it is the place the
-// two divide between them, so a path spelled as the vault's that lands in the
-// application's folder is the application's and resolveVaultPath may not take
-// it.
+// Where the path resolves determines which of the two rules may accept it. A
+// link is a second spelling of a location, and locations are divided between the
+// two rules, so a path spelled as the vault's that resolves into the
+// application's folder belongs to the application and resolveVaultPath may not
+// accept it.
 func checkRule(t *testing.T, root, path, rule string, application bool, target, resolved string, err error) {
 	t.Helper()
 	if err != nil {
@@ -159,11 +158,10 @@ var configSeeds = []string{
 	"",
 }
 
-// A folder carries an identity or it does not, and ReadConfig says which. An
-// identity it returns is one that could have been made here.
+// A folder carries an identity or it does not, and ReadConfig reports which. An
+// identity it returns is one that could have been created here.
 //
-// Bytes nobody can read out are rejected as unreadable, and Initialize leaves
-// sync, so the bytes are a stranger's.
+// Bytes that cannot be parsed are rejected as unreadable.
 func FuzzReadConfig(f *testing.F) {
 	for _, seed := range configSeeds {
 		f.Add(seed)

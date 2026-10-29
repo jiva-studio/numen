@@ -1,9 +1,9 @@
 /**
  * What a workspace evaluates to after a gesture.
  *
- * Every function takes a workspace and gives back another; nothing is changed
- * in place. A gesture that asks for something the tree does not hold gives the
- * workspace back untouched.
+ * Every function takes a workspace and returns another; nothing is changed in
+ * place. A gesture that requests something the tree does not hold returns the
+ * workspace unchanged.
  */
 import type { NodeId, Side, TabId, Workspace } from './node'
 import {
@@ -65,11 +65,11 @@ export function openTab(
 }
 
 /**
- * A tab opened in a pane of its own, alongside another one. A tab already
- * open is taken from wherever it was, and one that is alone in the pane it
- * would be put beside is only shown.
+ * A tab opened in a pane of its own, beside another one. A tab already open is
+ * moved from its current position, and one that is alone in the pane it would
+ * be placed beside is only shown.
  *
- * The middle is not a side, and a tab asked for there stays where it is.
+ * The middle is not a side, and a tab requested there stays where it is.
  */
 export interface OpenAdjacentPlacement {
   readonly side: Side
@@ -78,11 +78,11 @@ export interface OpenAdjacentPlacement {
 }
 
 /**
- * A tab opened in a pane of its own, alongside another one. A tab already
- * open is taken from wherever it was, and one that is alone in the pane it
- * would be put beside is only shown.
+ * A tab opened in a pane of its own, beside another one. A tab already open is
+ * moved from its current position, and one that is alone in the pane it would
+ * be placed beside is only shown.
  *
- * The middle is not a side, and a tab asked for there stays where it is.
+ * The middle is not a side, and a tab requested there stays where it is.
  */
 export function openTabAdjacent(
   workspace: Workspace,
@@ -130,10 +130,10 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
 }
 
 /**
- * A tab let go on a pane: it joins the stack, or it takes half the pane and
- * the two share the room.
+ * A tab dropped on a pane: it joins the stack, or it takes half the pane and
+ * the two share the space.
  *
- * A tab let go where it started, with nowhere else to go, is only shown.
+ * A tab dropped where it started, with nowhere else to go, is only shown.
  */
 export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFactory): Workspace {
   const target = paneById(workspace.root, drop.onto)

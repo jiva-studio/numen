@@ -1,7 +1,7 @@
 /**
- * How much room the plex has, and everything measured against it: the options
- * the whole picture is drawn to, how wide a box opens, and the headings a node
- * hangs under it.
+ * The space available to the plex, and everything measured against it: the
+ * options the whole drawing uses, the width a box opens to, and the headings
+ * of a node.
  *
  * Text is measured where the plex is drawn, so what the drawing is handed is
  * already worked out.
@@ -14,7 +14,7 @@ import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arra
 import type { PlacedNode } from '../../lib/node'
 import type { Viewport } from '@numen/ui'
 
-/** What the room is taken to be until it has been measured. */
+/** The assumed size of the plex until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }
 
 /** What the measuring reads off the plex it belongs to. */
@@ -24,13 +24,13 @@ export interface PlexSizingProps {
   readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
 }
 
-/** `hasIcon` says whether a caller draws anything beside a title. */
+/** `hasIcon` reports whether a caller draws an icon beside a title. */
 export function useFreeSpace(
   element: Readonly<ShallowRef<HTMLElement | null>>,
   props: PlexSizingProps,
   hasIcon: () => boolean,
 ) {
-  /** How much room the plex has, as it was last measured. */
+  /** The available size of the plex, as last measured. */
   const room = ref<Size>(FALLBACK)
 
   onMounted(() => {
@@ -48,8 +48,8 @@ export function useFreeSpace(
   const options = computed(() => resolveOptions({ ...props.options, viewport: room.value }))
 
   /**
-   * Room for the icon a caller draws beside a title, and none where the slot is
-   * not filled.
+   * Space reserved for the icon a caller draws beside a title; zero when the
+   * slot is not filled.
    */
   const iconWidthReserve = computed(() => (hasIcon() ? options.value.iconWidth : 0))
 
@@ -62,11 +62,11 @@ export function useFreeSpace(
   const measures = useTitleWidths(() => iconWidthReserve.value)
 
   /**
-   * How wide a box is drawn while the attention rests on it: the room its whole
-   * title asks for, held inside the window.
+   * The width of a box drawn while it has attention: the width its whole title
+   * needs, limited to the window.
    *
-   * A title measured at no more than the box it is already in widens nothing,
-   * and where there was nothing to measure the text with, nothing widens at all.
+   * A title measured at no more than the current box width does not widen it,
+   * and when text cannot be measured, nothing widens.
    */
   const expandWidth = computed(() => {
     const measure = measures.value?.node

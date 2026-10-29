@@ -1,8 +1,8 @@
 /**
- * The window drawn in a document, with every port it reaches mocked away.
+ * The mounted window with every port it uses mocked.
  *
- * A test declares what the application answers in `said`, reads what it was
- * asked in `asked`, and puts the window on the screen with `mountWindow`.
+ * A test declares the application's responses in `said`, reads the requests it
+ * received in `asked`, and mounts the window with `mountWindow`.
  */
 import './vaultMock'
 import './moduleMocks'
@@ -25,15 +25,15 @@ import { book, editor, reader } from './stubs'
 
 const App = (await import('@/app/shell/App.vue')).default
 
-/** A moment for whatever the window asked the vault for to come back. */
+/** Waits for the vault requests issued by the window to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** Longer than the palette debounces a keystroke before it asks the vault. */
+/** Longer than the palette's keystroke debounce before it queries the vault. */
 const DEBOUNCE = 200
 
 /**
- * Every window a test drew. A window listens for the keystrokes that open the
- * palette for as long as it is mounted, and the next test draws its own.
+ * Every window mounted by a test. A mounted window listens for the keystrokes
+ * that open the palette, so each is unmounted after the test.
  */
 const windows: { unmount(): void }[] = []
 
@@ -44,8 +44,8 @@ afterEach(() => {
 })
 
 /**
- * The window drawn, with what each kind draws inside it stubbed. The tabs
- * themselves are the window's own, and they are what is asked about here.
+ * The window mounted with stubs for the content of each tab kind. The tabs
+ * themselves are the window's own, and they are under test.
  */
 async function mountWindow() {
   const window = mount(App, {
@@ -74,8 +74,8 @@ async function mountWindow() {
 }
 
 /**
- * The window with a palette a person can type into. The palette draws itself at
- * the end of the document, and is read off the document.
+ * The window with a palette the test can type into. The palette renders at the
+ * end of the document and is queried from the document.
  */
 async function mountWindowWithPalette() {
   const window = mount(App, {
@@ -96,8 +96,8 @@ const cards = (window: VueWrapper): readonly string[] =>
   window.findAll('article.notice').map((card) => card.text())
 
 /**
- * What the plex calls the note it is standing on, which is what every gesture
- * it reports carries. The vault is asked about a path, and this is not one.
+ * The id the plex gives the note it is focused on, carried by every gesture it
+ * reports. The vault is queried by path, and this is not a path.
  *
  * The tab is found by the name the window addresses it by, so this harness
  * holds no screen's file.

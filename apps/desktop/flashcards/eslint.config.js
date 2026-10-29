@@ -1,10 +1,9 @@
-// Correctness and boundaries for the flashcards window, on the rules
-// `@numen/ui` already states. Nothing here is about how the code looks: the
-// formatting is done by hand and a rule with an opinion about it would start
-// rewriting files nobody asked it to.
+// Correctness and boundary rules for the flashcards window, based on the rules
+// `@numen/ui` already defines. No formatting rules are enabled: formatting is
+// done by hand, and a formatting rule would rewrite files.
 //
-// The library's ban on importing the protocol stops at this package: the shell
-// asks the window for the plugins of its target.
+// The library's ban on importing the protocol does not apply to this package:
+// the shell requests the plugins of its target from the window.
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'

@@ -46,8 +46,8 @@ describe('what a notice counts against', () => {
   })
 
   it('counts nothing where either half is missing', () => {
-    // A pass that has not said what it found has no total to draw against, and
-    // a bar drawn against a total nobody gave means nothing.
+    // A pass that has not reported what it found has no total to render
+    // against, and a bar rendered against an unsupplied total is meaningless.
     expect(findTally(createNotice({ done: 3 }))).toBeUndefined()
     expect(findTally(createNotice({ total: 8 }))).toBeUndefined()
     expect(findTally(createNotice())).toBeUndefined()
@@ -119,9 +119,9 @@ describe('a notice somebody requested for', () => {
   const backgroundNotice: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
-    // The wait is for work nobody asked for. Somebody who asked is waiting to
-    // be told it began, and ten seconds of nothing is an application that did
-    // not hear them.
+    // The wait applies to work the user did not request. A user who requested
+    // work is waiting for confirmation that it began, and ten seconds without
+    // feedback reads as an application that ignored the request.
     const arrivalTimes = getArrivalTimes(new Map(), [request, backgroundNotice], 0)
 
     expect(
@@ -264,8 +264,8 @@ describe('how many cards stand at once', () => {
   })
 
   it('folds nothing that stopped badly, wherever it remains', () => {
-    // Trouble is what a person has to see, and it arrives before the reports
-    // that pile up behind it.
+    // Trouble is what the user has to see, and it arrives before the reports
+    // that accumulate behind it.
     const failed: Notice = { id: 'failed', text: 'Reading', severity: 'error', stay: 'kept' }
     const renderedNotices = [failed, word('a'), word('b'), word('c')]
 

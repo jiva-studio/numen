@@ -31,7 +31,7 @@ type pluginWorkAssembly interface {
 	SetPluginWork(tasks *run.Tasks, models *run.Lock)
 }
 
-// PluginAssembly is what this window asks to manage, reach, and report plugins.
+// PluginAssembly is what this window requires to manage, access, and report on plugins.
 type PluginAssembly interface {
 	GetPluginDir(id string) (string, bool)
 	GetPluginServices() PluginServices

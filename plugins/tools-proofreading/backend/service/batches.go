@@ -35,7 +35,7 @@ func speechBatches(all []Line, size, overlap int) []Batch {
 // makes. The batch over that cut holds it whole.
 //
 // A transcript of one batch has no cut, and a batch of one line has no room for
-// a line on either side of one. The last batch is followed by no cut.
+// a line on either side of a cut. The last batch is followed by no cut.
 func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 	batches := speechBatches(all, size, overlap)
 	if size < 2 || len(batches) < 2 {
@@ -50,8 +50,8 @@ func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 		if cutIndex < 0 || cutIndex >= len(batches)-1 {
 			continue
 		}
-		// One window covers two cuts near the end of the transcript, and each
-		// batch over a cut batch reaches further than the one before it.
+		// Cuts near the end of the transcript can map to the same window. A batch
+		// is added only when it reaches further than the previous one.
 		end := min(max((cutIndex+1)*step-size/2, 0)+size, len(lines))
 		if end <= reach {
 			continue
@@ -79,9 +79,9 @@ func getSpokenLines(all []Line) []Line {
 	return out
 }
 
-// getSharedLines is how many lines a batch keeps from the one before it: never
-// as many as size, so each batch reaches further into the transcript than its
-// neighbour.
+// getSharedLines returns the number of lines a batch shares with the previous
+// batch: always fewer than size, so each batch reaches further into the
+// transcript than its predecessor.
 func getSharedLines(size, overlap int) int {
 	if overlap < 0 {
 		return 0

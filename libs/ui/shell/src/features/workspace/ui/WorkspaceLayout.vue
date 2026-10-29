@@ -26,9 +26,9 @@ const props = withDefaults(
     createId?: NodeIdFactory | undefined
     /** How close to the outer edge divides the whole workspace. */
     edge?: number
-    /** How far the pointer travels before a press becomes a drag. */
+    /** Distance the pointer moves before a press becomes a drag. */
     threshold?: number
-    /** The least room a pane is worth drawing in. */
+    /** The minimum size at which a pane is rendered. */
     minimum?: number
     /** The clock. Browser by default; a test hands in its own. */
     clock?: Clock
@@ -41,18 +41,18 @@ const workspace = defineModel<Workspace>({ required: true })
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /**
-   * A close asked for, before anything is applied. A caller that calls `hold`
-   * while it is being told takes the close, and the tab stays until the
-   * caller closes it itself.
+   * A close request, emitted before anything is applied. A caller that calls
+   * `hold` while handling the event takes over the close, and the tab stays
+   * until the caller closes it.
    */
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
-  /** A menu asked for on a tab, and where on the screen. */
+  /** A context menu requested on a tab, with its screen position. */
   (event: 'tab-context-menu', tab: TabId, pos: { x: number; y: number }): void
   /**
-   * The tab a pane is now showing, once it is on screen. Every tab of a pane is
-   * drawn and the ones not shown are held out of sight, so what a tab holds is
-   * told here that it can measure itself.
+   * The tab a pane now shows, once it is visible. Every tab of a pane is
+   * rendered and the inactive ones are hidden, so this event signals the tab's
+   * content that it can measure itself.
    */
   (event: 'show', tab: TabId): void
   /** A tab dragged out of the workspace into empty space or a new window. */
@@ -61,7 +61,7 @@ const emit = defineEmits<{
 
 const slots = defineSlots<{
   tab(props: { id: TabId }): unknown
-  /** What is drawn before a tab's name, which says what kind of tab it is. */
+  /** Rendered before a tab's name; identifies the kind of tab. */
   icon(props: { id: TabId }): unknown
   /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
   mark(props: { id: TabId; mark: string }): unknown
@@ -77,7 +77,7 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
 
-/** The identities this layout makes where a caller hands over no factory. */
+/** The ids this layout creates when the caller supplies no factory. */
 const createNodeId = createNodeIdFactory()
 
 const frame = useTemplateRef<HTMLElement>('frame')

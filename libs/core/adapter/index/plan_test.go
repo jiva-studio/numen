@@ -16,8 +16,7 @@ import (
 // over 1024 dimensions.
 var coarse = make([]byte, 128)
 
-// The questions the index is asked, and the index each one has to be answered
-// through.
+// The queries the index runs, and the index each must be answered through.
 var expectedPlans = []struct {
 	statements map[string]string
 	name       string
@@ -76,12 +75,12 @@ var expectedPlans = []struct {
 // reading one of them whole is a question that gets slower as the user writes.
 var growing = []string{"sources", "notes", "links", "chunks", "vectors"}
 
-// readsEverything says a plan step reads a table whole.
+// readsEverything reports whether a plan step reads a whole table.
 //
-// A plan names the alias a statement gave the table, so `SCAN c` is how reading
-// every chunk appears. Every scan is a failure except a full-text or
-// nearest-neighbour match, which report themselves as a scan of their virtual
-// table, and `vaults`, of which there are never many.
+// A plan uses the alias the statement gave the table, so `SCAN c` is how a read
+// of every chunk appears. Every scan is a failure except a full-text or
+// nearest-neighbour match, which appear as a scan of their virtual table, and
+// `vaults`, which is always small.
 func readsEverything(step string) bool {
 	return strings.HasPrefix(step, "SCAN ") &&
 		!strings.Contains(step, "VIRTUAL TABLE") &&
@@ -89,12 +88,11 @@ func readsEverything(step string) bool {
 		!strings.HasPrefix(step, "SCAN h")
 }
 
-// TestQueryPlans_UseIndexes asks the database how it intends to
-// answer.
+// TestQueryPlans_UseIndexes asks the database for its query plan.
 //
-// The schema comes from the migrations, the database is populated because an
-// empty one is answered from rules of thumb, and it is measured through the
-// call a scan makes.
+// The schema comes from the migrations. The database is populated because the
+// planner uses rules of thumb for an empty one, and the plans are obtained
+// through the call a scan makes.
 func TestQueryPlans_UseIndexes(t *testing.T) {
 	ctx := t.Context()
 	db := openPopulatedDB(t)
@@ -122,10 +120,10 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 	}
 }
 
-// openPopulatedDB fills two vaults. One vault cannot show which index a question
-// is answered through: a filter on a column that only ever holds one value is
-// free whichever way the planner applies it, and it chooses on what it is told
-// is there.
+// openPopulatedDB fills two vaults. A single vault cannot show which index a
+// query uses: a filter on a column that holds only one value costs nothing
+// whichever way the planner applies it, and the planner decides from the
+// statistics it has.
 func openPopulatedDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
@@ -164,8 +162,8 @@ func openPopulatedDB(t *testing.T) *DB {
 			source := insert(
 				`INSERT INTO sources (vault_id, path, kind, size, modified_at)
 				 VALUES (?, ?, 'note', 1, 1) RETURNING id`, vault, "folder/"+name+".md")
-			// A few of them are forms, so that a question about the forms of a vault
-			// is answered against a table where both answers occur.
+			// A few notes are forms, so queries on the form type run against a
+			// table that contains both values.
 			targetVal := "note"
 			if i%250 == 0 {
 				targetVal = "form"
@@ -178,8 +176,8 @@ func openPopulatedDB(t *testing.T) *DB {
 				exec(`INSERT INTO links (note_id, position, scheme, target, folded_name, role)
 				      VALUES (?, ?, 'name', ?, ?, 'ref')`, source, j, target, target)
 			}
-			// Every second note is cut, so that a question about what is not cut
-			// yet is answered against a table where both answers occur.
+			// Every second note is chunked, so queries for unchunked notes run
+			// against a table that contains both chunked and unchunked notes.
 			if i%2 == 0 {
 				cut(t, tx, source, int64(vault))
 			}

@@ -6,7 +6,7 @@ export interface SourceLocation {
   readonly range: TextRange
 }
 
-// AgentStep is one thing the agent said, did, or stopped for.
+// AgentStep is one step of an agent run: a message, an action, or a stop.
 export type AgentStep =
   | { readonly kind: 'said'; readonly text: string }
   | {
@@ -39,7 +39,7 @@ export interface AgentQuery {
   readonly vault?: string | undefined
 }
 
-// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+// ReasoningLevel is one reasoning depth that can be requested from a model.
 export interface ReasoningLevel {
   readonly name: string
   readonly title: string
@@ -51,7 +51,8 @@ export interface AgentModel {
   readonly title: string
   readonly isDefault: boolean
   readonly presence: 'present' | 'not fetched' | 'nothing to fetch'
-  // The depths of reasoning the model can be asked to work at, from the least to the most. None where it offers no choice.
+  // The reasoning levels the model supports, from lowest to highest. Absent
+  // when the model offers no choice.
   readonly reasoningLevels?: readonly ReasoningLevel[] | undefined
   // The level the model works at unasked, empty where it names none.
   readonly defaultReasoning?: string | undefined
@@ -65,23 +66,25 @@ export interface TextLink {
   readonly address: string
   // The text it reads as: the alias where one is written.
   readonly text: string
-  // The vault path it reaches, empty where it reaches none.
+  // The vault path it resolves to, empty when it resolves to none.
   readonly path: string
 }
 
 // AgentPort answers the questions of a conversation: the agent of the window, or one a plugin
 // makes for questions about something of its own.
 export interface AgentPort {
-  // Asks about what is in focus, and reads what happens as it happens.
+  // Runs a query against the current focus and streams the resulting steps.
   ask(query: AgentQuery): AsyncIterable<AgentStep>
   // Ends a conversation; whatever is still being answered in it stops.
   finish(conversation: string): Promise<void>
 }
 
-// AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.
+// AgentHost is the agent a window queries, the agents and models it offers, and
+// the user's selection.
 export interface AgentHost extends AgentPort {
-  // The wikilinks of a text, each raw form once. The core reads them out of the text. vault is the
-  // id of the vault the text is written in; a window that shows one vault may be asked without it.
+  // The wikilinks of a text, each raw form once, extracted by the core. vault
+  // is the id of the vault the text belongs to; a window that shows one vault
+  // may omit it.
   resolveLinks(text: string, vault?: string): Promise<readonly TextLink[]>
   // Why the agent cannot be reached, and empty where it can.
   getUnreachable(): string

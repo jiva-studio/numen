@@ -2,9 +2,9 @@ package chunking
 
 import "testing"
 
-// A large chunk holding only part of a small one shows a hit near its end with
-// nothing after it. Where another large chunk holds the whole of it, that is
-// the one a person is shown.
+// A large chunk containing only part of a small one yields a hit near its end
+// with nothing after it. Where another large chunk contains the whole small
+// chunk, that is the one shown to the user.
 func TestASmallChunkGoesBelowTheLargeOneContainingItWhole(t *testing.T) {
 	large := []Chunk{
 		{Start: 0, Length: 2372},

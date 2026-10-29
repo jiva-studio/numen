@@ -1,5 +1,5 @@
 /**
- * The depth of reasoning an agent tab offers for the selected model, and which of its levels it asks for.
+ * The reasoning depth that an agent tab offers for the selected model, and the level it requests.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
@@ -41,7 +41,7 @@ const LISTED = [
   model(['agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
 ]
 
-/** An agent tab over the models listed, the settings kept, and the questions it asks. */
+/** An agent tab with the listed models, the stored settings, and the recorded requests. */
 function open(settings: Record<string, string> = {}) {
   const request: AskOptions[] = []
   const content: [string, unknown][] = []

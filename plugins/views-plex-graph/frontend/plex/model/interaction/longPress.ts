@@ -1,9 +1,9 @@
 /**
- * A finger left still on a box. A touch has no hover, so resting on the node is
- * what asks for the handle, and the finger is already down, so the gesture
- * carries on from where it rested.
+ * A finger held still on a box. A touch has no hover, so resting on the node
+ * requests the handle, and since the finger is already down, the gesture
+ * continues from the resting position.
  *
- * A mouse is left alone: it has the handle.
+ * A mouse is ignored: it has the handle.
  */
 import { win } from '../../../dom'
 import { onScopeDispose, ref } from 'vue'
@@ -15,7 +15,7 @@ export const LONG_PRESS_DELAY = 400
 export const LONG_PRESS_TOLERANCE = 12
 
 export interface LongPressState {
-  /** True while a rest has been asked for and has neither come nor been given up on. */
+  /** True while a rest has been requested and has neither completed nor been cancelled. */
   readonly isResting: () => boolean
   readonly onPointerDown: (event: PointerEvent) => void
   readonly onPointerMove: (event: PointerEvent) => void
@@ -25,8 +25,8 @@ export interface LongPressState {
 /**
  * Watch for a rest on a node.
  *
- * `ready` says whether the node will take one now; `onReach` is called with the
- * press that started it, which is the press the gesture then follows.
+ * `ready` reports whether the node accepts a rest now; `onReach` is called with
+ * the press that started it, which is the press the gesture then follows.
  */
 export function useLongPress(
   ready: () => boolean,

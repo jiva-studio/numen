@@ -8,7 +8,7 @@ import (
 	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
-// WorkerAssembly is what this window asks for its background workers and embedding.
+// WorkerAssembly is what this window requires for its background workers and embedding.
 type WorkerAssembly interface {
 	// OpenEmbedders opens the model this installation turns text into vectors
 	// with, and the one a query is turned into a vector by. The two are one

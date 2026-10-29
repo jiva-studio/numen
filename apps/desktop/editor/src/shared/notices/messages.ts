@@ -1,9 +1,9 @@
 /**
- * What the window has to say, and for how long it holds on to it.
+ * The messages the window displays, and how long it keeps them.
  *
- * Every part of the window that answers a person writes here under a name of
- * its own, and the corner draws what stands. Nothing here knows how any of it
- * is drawn.
+ * Each part of the window that reports to the user writes under its own name,
+ * and the corner renders the current messages. Nothing here depends on how they
+ * are rendered.
  */
 import { shallowRef, type Ref } from 'vue'
 import type { Severity, MessageWriter } from '@numen/plugin-sdk'
@@ -25,16 +25,15 @@ export interface MessageLog {
   readonly messages: Ref<readonly WindowMessage[]>
   /** A writer under a name of its own. */
   getWriter(name: string): MessageWriter
-  /** A message the person is finished with, by the identity it was given. */
+  /** Dismisses a message by its identity. */
   dismiss(id: string): void
 }
 
 /**
- * Every message gets an identity of its own.
+ * Every message gets its own identity.
  *
- * What draws these remembers by identity when each arrived and which the person
- * put away, so a replacement under one name is a new message and is read as
- * one.
+ * The renderer tracks by identity when each message arrived and which ones the
+ * user dismissed, so a replacement under the same name is a new message.
  */
 export function createMessageLog(): MessageLog {
   const messages = shallowRef<readonly WindowMessage[]>([])
@@ -43,8 +42,8 @@ export function createMessageLog(): MessageLog {
   const getWriter =
     (name: string): MessageWriter =>
     (text, severity = 'info') => {
-      // The same text written again is nothing new, and what stands keeps its
-      // identity and its place.
+      // The same text written again changes nothing: the existing message keeps
+      // its identity and position.
       const status = messages.value.find((one) => one.name === name)
       if (status === undefined && text === '') return
       if (status?.text === text && status.severity === severity) return

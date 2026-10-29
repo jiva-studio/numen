@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * What a person turns the document with: a step either way, and the page in
- * front in a field they can type over.
+ * The controls that change the page: a step in either direction, and an
+ * editable field holding the current page.
  */
 import { computed, ref } from 'vue'
 import { Button } from '@numen/ui'
@@ -24,9 +24,8 @@ withDefaults(
 const currentPage = defineModel<number>('at', { default: 0 })
 
 /**
- * What is being typed over the page in front, and nothing while nothing is. A
- * number field hands over a number for what parses as one and the text itself
- * for what does not.
+ * The text being edited in the page field, empty when idle. A number field
+ * yields a number for input that parses as one and the text itself otherwise.
  */
 const typing = ref<string | number | null>(null)
 
@@ -39,8 +38,8 @@ const inputValue = computed({
 })
 
 /**
- * A page asked for by its place in the document. The field shows the page in
- * front, and an empty field asks for nothing.
+ * Goes to a page by its position in the document. The field shows the current
+ * page, and an empty field requests nothing.
  */
 const turn = () => {
   const rawInput = typing.value

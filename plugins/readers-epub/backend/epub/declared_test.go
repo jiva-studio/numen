@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-// A header that disagrees with the entry is the answer the reader is built for:
-// the entry beside it is read, and the one that lies is left unread.
+// A header that disagrees with the entry is the case the reader is built for:
+// the entry it names is read, and the inconsistent one is left unread.
 func TestAnEntryThatMisdeclaresItsSizeIsLeftUnread(t *testing.T) {
 	const centralSignature = 0x02014b50
 	const uncompressedSizeOffset = 24

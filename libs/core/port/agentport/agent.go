@@ -9,31 +9,29 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Agent takes tasks. It works a vault on a person's behalf, through tools: the
-// window asks, and something outside this application answers.
+// Agent takes tasks. It works a vault on behalf of the user through tools. The
+// agent is an external program reached over its own protocol.
 //
-// What answers is a program of somebody else's making, reached over a protocol
-// of its own. Everything above this interface sees one agent and never which.
+// Callers see one agent and never which program serves it.
 type Agent interface {
 	// StartRun gives the agent a task and returns the run it has begun.
 	StartRun(ctx context.Context, task Task) (Run, error)
-	// EndConversation says a conversation is over. What the agent kept of it is let go
-	// of, and whatever is still being worked in it is stopped and waited for.
-	// Empty is no conversation, and there is nothing to finish.
+	// EndConversation ends a conversation. The agent releases its state for the
+	// conversation and stops and waits for any work still running in it.
+	// An empty conversation is a no-op.
 	EndConversation(ctx context.Context, conversation string) error
 }
 
-// Task is what the person asked, where they were looking when they asked it,
-// and which conversation they asked it in.
+// Task is the user's question, the focus it was asked from, and the
+// conversation it belongs to.
 type Task struct {
 	Question string
 	Focus    string
-	// Conversation is which conversation thread this question belongs to, named by
-	// the caller. Questions carrying one name are answered in one conversation
-	// with the agent, so the name has to be the caller's alone: unique among
-	// the conversations it has open, and never given to a second one for as
-	// long as this process runs. Empty is no conversation, and a question
-	// asked under it is answered on its own.
+	// Conversation names the conversation thread this question belongs to,
+	// chosen by the caller. Questions with the same name are answered in one
+	// conversation with the agent, so the name is unique among the caller's
+	// open conversations and is never reused during the lifetime of the process.
+	// Empty means no conversation: the question is answered on its own.
 	Conversation string
 	// Agent is which agent answers for this task (e.g. "antigravity", "codex", "claude").
 	// Empty falls back to the configured default agent.
@@ -43,7 +41,7 @@ type Task struct {
 	// Reasoning is the depth of reasoning the model works at, by the name of one of the levels it offers.
 	// Empty leaves the depth to the program.
 	Reasoning string
-	// Instructions is what the agent is told about the person it answers.
+	// Instructions is the text the agent is given about the user it answers.
 	Instructions string
 	// Tools are the vault tools the agent may call, by the name the vault serves them under.
 	// Nothing outside them is allowed.
@@ -56,9 +54,9 @@ type Task struct {
 	// Command is the command line that starts the program the task names, as the installation set it.
 	// Empty starts the program where the provider finds it.
 	Command []string
-	// Options are the settings only the program knows, by key, each as the JSON the installation holds.
+	// Options are program-specific settings by key, each a JSON value from the installation.
 	Options map[string]string
-	// Endpoint is where the agent reaches the vault's tools. Empty gives it none.
+	// Endpoint is the address of the vault's tools. Empty gives the agent no tools endpoint.
 	Endpoint ToolEndpoint
 	// Context is what the asking view shows, which every tool the agent calls is given. Each key
 	// starts with the id of the plugin that wrote it and a slash.
@@ -69,7 +67,7 @@ type Task struct {
 	ToolDeclarations []ToolDeclaration
 }
 
-// ToolEndpoint is where an agent reaches the vault's tools, and what it presents there.
+// ToolEndpoint is the address of the vault's tools and the credential presented there.
 type ToolEndpoint struct {
 	URL   string
 	Token string
@@ -79,14 +77,14 @@ type ToolEndpoint struct {
 type ToolDeclaration struct {
 	// Name is the tool, by the name the vault serves it under.
 	Name string
-	// Title is what the tool is called when shown to a person.
+	// Title is the display name of the tool.
 	Title string
 	// Kind is what a call of the tool does to the vault. A tool that declares nothing about it is
 	// domain.StepToolCall.
 	Kind domain.StepKind
-	// About names the argument that says what a call is about.
+	// About names the argument that describes the subject of a call.
 	About string
-	// Element names the field of one element that says which element it is, for a call that takes a
+	// Element names the field that identifies one element, for a call that takes a
 	// collection.
 	Element string
 	// Match and Text name the arguments carrying the text a call replaces and the text that takes its
@@ -104,18 +102,18 @@ type Run interface {
 	Stop() error
 }
 
-// Step is one thing the agent said, did, or stopped for.
+// Step is one event of a run: agent text, a tool call, or a stop.
 type Step struct {
 	Kind domain.StepKind
 	// Call is what the agent named this call. Every step of one call carries the
 	// same name, and a step that is not a call carries none.
 	Call string
-	// Text is what the agent is saying, for a step that says something.
+	// Text is the agent's output, for a step that carries text.
 	Text string
 	// Tool is what it is using, by the name it is served under.
 	Tool string
-	// About is what that call is about — a note, a query — empty when the
-	// call says nothing worth showing.
+	// About is the subject of that call, such as a note or a query. Empty when the
+	// call has nothing to display.
 	About string
 	// Place is where in the vault the call is working, empty when what the
 	// call is about is not a source the vault holds.
@@ -130,7 +128,7 @@ type Step struct {
 	Detail string
 }
 
-// ReasoningLevel is one depth of reasoning a model can be asked to work at.
+// ReasoningLevel is one reasoning depth a model supports.
 type ReasoningLevel = domain.ReasoningLevel
 
 // AgentModel is one model a program offers.
@@ -139,8 +137,8 @@ type AgentModel struct {
 	Title string
 	// IsDefault is set where the program names the model it answers with unasked.
 	IsDefault bool
-	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
-	// the most. None where it offers no choice.
+	// ReasoningLevels are the reasoning depths the model supports, from least to
+	// most. Empty when the model offers no choice.
 	ReasoningLevels []ReasoningLevel
 	// DefaultReasoning is the level the model works at unasked, empty where it names none.
 	DefaultReasoning string
@@ -150,15 +148,15 @@ type AgentModel struct {
 type AgentProgram struct {
 	// Provider is the plugin that runs it, by its identifier.
 	Provider string
-	// Name is what a task asks for the program by, and what the settings keep its section under.
+	// Name is the key a task uses to select the program, and the key of its settings section.
 	Name string
-	// Title is what the program is called when shown to a person.
+	// Title is the display name of the program.
 	Title string
 	// IsInstalled is set where the program is on this machine.
 	IsInstalled bool
-	// IsDefault is set on the program an installation nobody has configured answers with.
+	// IsDefault is set on the program an unconfigured installation uses.
 	IsDefault bool
-	// Models are the models the program says it offers, none where it says none.
+	// Models are the models the program reports, empty when it reports none.
 	Models []AgentModel
 	// LimitsTools is set where the program runs only the vault tools a task names.
 	LimitsTools bool
@@ -182,12 +180,12 @@ func GetDefaultProgram(programs []AgentProgram) (AgentProgram, bool) {
 	return AgentProgram{}, false
 }
 
-// AgentProvider runs tasks on the programs that plugins provide, and says which programs those are.
+// AgentProvider runs tasks on the programs that plugins provide and lists those programs.
 type AgentProvider interface {
 	Agent
 	// GetPrograms lists the programs the providers run, with the models each offers. Commands are the
 	// command lines the installation set, by program. A provider that cannot be reached lists none,
-	// and the error says so beside the programs of the others.
+	// and the error reports it alongside the programs of the other providers.
 	GetPrograms(ctx context.Context, commands map[string][]string) ([]AgentProgram, error)
 }
 
@@ -214,10 +212,10 @@ type Starter interface {
 	StartRun(ctx context.Context, task Task) (Run, error)
 }
 
-// Answer gives the agent one question and returns what it said. The task is sent with no tool, no
-// tool endpoint and no conversation, so the agent answers on its own and is given nothing of the
-// vault. An agent that cannot be started, stops for a reason of its own or says nothing fails with
-// domain.ErrUnavailable. The end of the context stops the run and fails with the context's error.
+// Answer gives the agent one question and returns its reply. The task is sent with no tools, no
+// tool endpoint and no conversation, so the agent has no access to the vault. An agent that
+// cannot be started, stops with an error or returns no text fails with
+// domain.ErrUnavailable. Cancellation of the context stops the run and fails with the context's error.
 func Answer(ctx context.Context, agent Starter, task Task) (string, error) {
 	task.Tools = nil
 	task.ToolDeclarations = nil
@@ -235,7 +233,7 @@ func Answer(ctx context.Context, agent Starter, task Task) (string, error) {
 	return readAnswer(ctx, run.GetSteps())
 }
 
-// readAnswer is what the agent said in the steps it takes, until they are over or the context ends.
+// readAnswer returns the text of the agent's steps until the steps end or the context is done.
 func readAnswer(ctx context.Context, steps <-chan Step) (string, error) {
 	var response strings.Builder
 	for {
@@ -256,8 +254,8 @@ func readAnswer(ctx context.Context, steps <-chan Step) (string, error) {
 	}
 }
 
-// finishAnswer is the text the agent said, once its steps are over. The end of the context makes it
-// no answer of the agent's.
+// finishAnswer returns the collected text once the steps have ended. A done context
+// fails with the context's error.
 func finishAnswer(ctx context.Context, response string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err

@@ -59,7 +59,7 @@ function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>):
   return null
 }
 
-/** The plugin is asked for on every call, so a plugin that changes is followed. */
+/** The plugin is requested on every call, so a changed plugin is picked up. */
 export function createEnumFields(
   getPlugin: () => PluginInfo,
   read: ReadPluginSetting,

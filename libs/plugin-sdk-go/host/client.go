@@ -39,8 +39,8 @@ func request[T any](c *Client, msg *T) *connect.Request[T] {
 
 var _ Vault = (*Client)(nil)
 
-// NewClientFromEnv reaches the host the process was started for: its endpoint and the token it knows
-// the plugin by come from the environment. It returns hostcall.ErrNoHost where the host named none.
+// NewClientFromEnv connects to the host the process was started for: its endpoint and the token identifying
+// the plugin come from the environment. It returns hostcall.ErrNoHost where the environment names no host.
 func NewClientFromEnv() (*Client, error) {
 	addr, err := hostcall.FromEnv()
 	if err != nil {
@@ -58,18 +58,17 @@ func NewClientFromVars(vars map[string]string) (*Client, error) {
 	return NewClient(addr), nil
 }
 
-// NewClient reaches the host at the endpoint.
+// NewClient connects to the host at the endpoint.
 func NewClient(endpoint hostcall.Endpoint) *Client {
 	return NewClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewClientOver reaches the host at the endpoint through the HTTP client given.
+// NewClientOver connects to the host at the endpoint through the given HTTP client.
 func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{rpc: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-// fail turns the code of an answer into the error it stands for.
-// readError is the failure of a call: a vault the host does not know is ErrUnknownVault.
+// readError converts the failure of a call into its error: a vault the host does not know is ErrUnknownVault.
 func readError(err error) error {
 	if connect.CodeOf(err) == connect.CodeNotFound {
 		return ErrUnknownVault
@@ -108,7 +107,7 @@ func readFileStat(f *v1.HostFileStat) FileStat {
 	}
 }
 
-// readKind is the kind of the file a file stat names, and none for a file stat naming no file.
+// readKind is the kind of the file a file stat describes, and none for a file stat describing no file.
 func readKind(f *v1.HostFileStat) SourceKind {
 	switch {
 	case f.GetIsNote():

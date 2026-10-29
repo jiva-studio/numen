@@ -57,7 +57,7 @@ export const AdjacentToAName: Story = {
   }),
 }
 
-/** On a filled ground, where it has to read against the colour under it. */
+/** On a filled background, where it must be legible against the color beneath it. */
 export const OnAFilledBackground: Story = {
   render: () => ({
     components: { Spinner },

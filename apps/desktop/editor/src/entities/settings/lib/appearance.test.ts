@@ -1,6 +1,6 @@
 /**
- * The sizes a range reaches, the rungs between its ends, and the number a
- * person typed.
+ * The sizes in a range, the steps between its ends, and the number the user
+ * typed.
  */
 import { describe, expect, it } from 'vitest'
 import { isInBounds, ladder, parseSize } from './appearance'

@@ -1,5 +1,5 @@
 /**
- * What one agent tab asks of the window, answered by the host's workspace and agent.
+ * What one agent tab requires of the window, supplied by the host's workspace and agent.
  */
 import type { AgentHost, WorkspaceHost } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
@@ -10,7 +10,7 @@ export interface AgentChatHost {
   readonly agent: AgentHost
 }
 
-/** What an agent tab asks of the window. */
+/** What an agent tab requires of the window. */
 export function createAgentTabDeps({ workspace, agent }: AgentChatHost): AgentTabDeps {
   return {
     openFileAt: (path, ...spans) => workspace.openFileAt(path, spans),

@@ -62,8 +62,8 @@ func TestAScalarSpanIsTheValueAndNothingBeforeIt(t *testing.T) {
 	}
 }
 
-// A link is pointed somewhere else in a note written in another script, and
-// every byte the entry does not own stands where it stood.
+// A link is retargeted in a note written in another script, and every byte
+// outside the entry is unchanged.
 func TestALinkMovesInANoteSavedInAnotherScript(t *testing.T) {
 	for name, one := range map[string]struct{ raw, from, to, want string }{
 		"cyrillic": {

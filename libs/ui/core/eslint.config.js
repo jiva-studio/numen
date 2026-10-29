@@ -1,10 +1,9 @@
-// Correctness and boundaries. Nothing here is about how the code looks: the
-// formatting is done by hand and a rule with an opinion about it would start
-// rewriting files nobody asked it to.
+// Correctness and boundaries. Nothing here concerns code style: formatting is
+// manual, and a style rule would rewrite files.
 //
 // Three of the four groups below are the module's boundary made executable. A
-// component knows nothing about the domain, anything with a lifetime is a port,
-// and a component finding its own children takes a template ref.
+// component has no knowledge of the domain, anything with a lifetime is a port,
+// and a component that locates its own children uses a template ref.
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'

@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/appearance"
 )
 
-// Appearance is what the window wears: which theme, which half of a colour pair its
-// tokens are read as, and how large it is drawn and its reading text set.
+// Appearance is the window's appearance: the theme, the color scheme its
+// tokens are read as, and the interface and text scales.
 type Appearance struct {
 	ThemeName string
 	Mode      appearance.ColorScheme
@@ -25,18 +25,17 @@ type Appearance struct {
 	InterfaceScale, TextScale float64
 }
 
-// Bounds is how far a size goes, at each end. A client asking a person for a
-// number says these.
+// Bounds is the allowed range of a scale setting, reported to clients that
+// prompt for a number.
 type Bounds struct{ Min, Max float64 }
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
 
-// Appearances is where what the window wears is kept. Where a choice is
-// written down is not this adapter's to know, so the settings arrive as what it
-// does with them.
+// Appearances is the store of the window's appearance. The persistence location
+// is outside this adapter, so settings are exposed as read and write operations.
 type Appearances interface {
-	// Read is what the settings say the window wears.
+	// Read returns the appearance stored in the settings.
 	Read() (Appearance, error)
 
 	// Write persists the appearance settings. Out-of-bounds scale values are
@@ -150,8 +149,8 @@ func (s *Service) WriteAppearance(
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-// WatchThemes reports the themes folder having changed for as long as the
-// caller listens.
+// WatchThemes notifies the client when the themes folder changes, until the
+// client disconnects.
 func (s *Service) WatchThemes(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchThemesRequest],
@@ -166,9 +165,9 @@ func (s *Service) WatchThemes(
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
 
-	// Naming nothing changed, so that a client that has gone fails the write.
-	// The request context belongs to the process and says nothing about the page
-	// a stream was opened from.
+	// Empty keepalive responses make a write to a disconnected client fail. The
+	// request context belongs to the process and does not reflect whether the page
+	// that opened the stream is still open.
 	repeat := time.NewTicker(keepaliveInterval)
 	defer repeat.Stop()
 
@@ -191,8 +190,8 @@ func (s *Service) WatchThemes(
 	}
 }
 
-// keepaliveInterval is how often the stream says nothing changed. It is the one thing that
-// tells a handler its client has gone.
+// keepaliveInterval is the interval between keepalive responses. A failed write
+// is how a handler detects that its client has disconnected.
 const keepaliveInterval = time.Second
 
 // getAppearance is what the settings say, and this product's own palette at the size it

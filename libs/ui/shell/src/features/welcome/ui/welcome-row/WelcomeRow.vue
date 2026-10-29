@@ -1,31 +1,31 @@
 <script setup lang="ts">
 /**
- * One row of the screen a window opens on: what draws it, what it is called,
- * what is said under that, and the keystroke that reaches it.
+ * One row of the welcome screen: an icon, a name, a secondary line and a
+ * keyboard shortcut.
  *
- * What pressing it does is the caller's.
+ * The caller handles activation.
  */
 import type { Component } from 'vue'
 import { KeyCap } from '@numen/ui'
 import type { PaletteKeys } from '@numen/ui'
 
 defineProps<{
-  /** What is drawn in front of it. A row with none is drawn without one. */
+  /** The icon before the name. A row without one has no icon. */
   icon?: Component | undefined
-  /** What it is called. */
+  /** The name of the row. */
   text: string
-  /** What is said under the name. */
+  /** The secondary line under the name. */
   aside?: string | undefined
-  /** The whole of what that second line says, for one too long to be drawn. */
+  /** The full text of the secondary line, for when it is truncated. */
   whole?: string | undefined
-  /** The keystroke that reaches it, where one does. */
+  /** The keyboard shortcut of the row, if it has one. */
   keys?: PaletteKeys | undefined
-  /** A row whose answer is still on its way, which does not answer to a hand. */
+  /** A pending row, which does not respond to interaction. */
   isDisabled?: boolean | undefined
 }>()
 
 defineSlots<{
-  /** What the window has to say about this row, at the far end of it. */
+  /** Content shown at the far end of the row. */
   default?(): unknown
 }>()
 </script>
@@ -68,7 +68,7 @@ defineSlots<{
   opacity: 0.75;
 }
 
-/* A row is its name over what is said about it, beside the one icon. */
+/* The name above the secondary line, next to the icon. */
 .welcome-page__named {
   display: flex;
   flex: 1;
@@ -81,7 +81,7 @@ defineSlots<{
   background: var(--numen-bubble-bg);
 }
 
-/* A row whose answer is still on its way stands as it will stand, and does not
+/* A pending row is inert and does not
    answer to a hand. */
 .welcome-page__row:disabled {
   cursor: default;
@@ -92,7 +92,7 @@ defineSlots<{
   outline-offset: 1px;
 }
 
-/* A name is as long as a person makes it, and a long one ends in an ellipsis.
+/* A long name ends in an ellipsis.
    It takes the room a row leaves it; inside a name over its second line the
    column above holds the room, and the name takes the height of its own line. */
 .welcome-page__what {
@@ -106,7 +106,7 @@ defineSlots<{
   flex: 1;
 }
 
-/* One line, then an ellipsis: a path is as long as the machine makes it. */
+/* One line, truncated with an ellipsis, since a path can be arbitrarily long. */
 .welcome-page__aside {
   overflow: hidden;
   color: var(--numen-edge-label);

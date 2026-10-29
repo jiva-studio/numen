@@ -130,8 +130,7 @@ func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
 	}
 }
 
-// Several files landing at once are one report: a folder copied in is one
-// thing a person did.
+// Several files landing at once are one report: a folder copied in is one user action.
 func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	changed := startWatch(t, catalogue, 300*time.Millisecond)

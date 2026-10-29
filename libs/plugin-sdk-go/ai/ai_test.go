@@ -169,8 +169,8 @@ func TestReadErrorWalksEveryCode(t *testing.T) {
 	}
 }
 
-// A client made from the variables of a linked plugin asks the host they name, and reads nothing
-// from the environment.
+// A client created from the variables of a linked plugin queries the host they
+// name, and reads nothing from the environment.
 func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
 	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "fixed"}}
 	srv := startHost(t, host)
@@ -199,7 +199,8 @@ func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
 	}
 }
 
-// The detail the host gives stands after the rejection, and the error is still the one the code names.
+// The detail the host provides is preserved after the rejection, and the error
+// is still the one the code names.
 func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	srv := startHost(t, &fakeHost{
 		code:   numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,

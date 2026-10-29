@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * What a book divides into, as a list to reach any of it by.
+ * The sections of a book as a list for navigating to any of them.
  *
- * asks for that offset. The line the person is reading is marked, and the list
- * is brought to it as the reading moves.
+ * Choosing an entry emits its offset. The entry containing the reading position
+ * is marked, and the list scrolls to it as the reading position changes.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import {
@@ -19,7 +19,7 @@ const props = withDefaults(
   defineProps<{
     /** What the book divides into, ascending by offset. */
     entries?: readonly ContentsEntry[]
-    /** Where the person is reading, in bytes of the book's text. */
+    /** The reading position, in bytes of the book's text. */
     at?: number
     /** The words it is read with. */
     words?: ContentsWords
@@ -33,7 +33,7 @@ const props = withDefaults(
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** The offset the person chose, in bytes of the book's text. */
+  /** The offset of the chosen entry, in bytes of the book's text. */
   (event: 'go', pos: number): void
 }>()
 
@@ -46,7 +46,7 @@ const lines = useTemplateRef<HTMLElement[]>('lines')
 
 const visibleEntries = computed(() => findEntries(props.entries, searchQuery.value))
 
-/** The line the person is reading, and none where they stand before the first. */
+/** The entry containing the reading position, or none before the first entry. */
 const activeEntry = computed(() => props.entries[findLineAt(props.entries, props.at)])
 
 /**
@@ -56,8 +56,7 @@ const activeEntry = computed(() => props.entries[findLineAt(props.entries, props
 const DEEPEST = 4
 
 /* --------------------------------- Hooks ---------------------------------- */
-// The list follows the reading, so a person turning pages finds where they are
-// without looking for it.
+// The list follows the reading position, so the current entry stays visible.
 watch(activeEntry, (one) => {
   if (!one || searchQuery.value !== '') return
   const line = lines.value?.find((lineEl) => lineEl.dataset['at'] === String(one.at))
@@ -105,7 +104,7 @@ const lineStyle = (level: number) => ({ '--level': depth(level) })
 
 <style scoped>
 .contents {
-  /* How far one level is set in, and the room at the edges of a line. */
+  /* The indentation of one level, and the padding at the edges of a line. */
   --indent: 0.875rem;
   --pad: 0.5rem;
 

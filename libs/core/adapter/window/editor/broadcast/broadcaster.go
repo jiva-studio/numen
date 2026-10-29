@@ -5,24 +5,26 @@ import "sync"
 
 // Broadcaster delivers one kind of message to its subscribers.
 //
-// A subscriber that is not keeping up is not waited for: one slow subscriber does
-// not hold up the vault. What it is given when it falls behind is Fallback's
-// answer, and how much it may be owed before it is behind is Capacity.
+// A subscriber that does not keep up is not waited for, so one slow subscriber
+// does not block the vault. A lagging subscriber receives the message produced
+// by Fallback, and Capacity sets how many messages may be pending before a
+// subscriber counts as lagging.
 type Broadcaster[T any] struct {
 	// Fallback makes the message for a subscriber that has not read the last one.
 	Fallback func(latest T) T
-	// IsLatest hands a subscriber what has just happened in place of what it has
-	// not read yet about the same thing.
+	// IsLatest replaces a pending message with the newest message on the same
+	// topic.
 	IsLatest bool
-	// GetTopic says what a message is about. Two messages about one thing are that
-	// thing said twice, and only the newer is worth reading; messages about
-	// different things each wait their turn. Nil makes every message about the
-	// same thing.
+	// GetTopic returns the topic a message is about. A message supersedes
+	// pending messages on the same topic; messages on different topics are
+	// queued independently. Nil puts every message on the same topic.
 	GetTopic func(T) string
-	// IsRequired says a message is one a subscriber has to be given. A message waiting
-	// under it stays where it is, and what replaces it waits.
+	// IsRequired reports whether a message must be delivered. A pending
+	// required message is not superseded, and the message that would replace it
+	// is queued after it.
 	IsRequired func(T) bool
-	// Capacity is how many messages a subscriber may be owed before it is behind.
+	// Capacity is the number of pending messages after which a subscriber
+	// counts as lagging.
 	Capacity int
 
 	mu          sync.Mutex
@@ -30,8 +32,8 @@ type Broadcaster[T any] struct {
 	subscribers map[int]*subscriber[T]
 }
 
-// subscriber is one of the broadcaster's subscribers, and whether it is owed a message it never
-// received.
+// subscriber is one subscriber of the broadcaster, and whether it missed a
+// message.
 type subscriber[T any] struct {
 	out       chan T
 	isLagging bool
@@ -85,8 +87,8 @@ func (a *Broadcaster[T]) Publish(what T) {
 	}
 }
 
-// queue puts a message where a subscriber will read it, and says whether there
-// was anywhere for it to go.
+// queue appends a message to the pending messages of a subscriber and reports
+// whether there was room for it.
 func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 
@@ -115,8 +117,8 @@ func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	return fitted
 }
 
-// findSupersededIndex is where in the line a message stands that this one says again, or
-// -1 when this message replaces nothing.
+// findSupersededIndex returns the index of the pending message that this
+// message supersedes, or -1 when it supersedes none.
 func (a *Broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	if !a.IsLatest {
 		return -1

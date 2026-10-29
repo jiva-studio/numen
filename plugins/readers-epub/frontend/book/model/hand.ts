@@ -1,7 +1,7 @@
 /**
- * The hand on a book: a swipe across the reading area turns the page, and so
- * does a press near either edge. Words taken up in the text are being read, and
- * letting go of them turns nothing.
+ * Pointer gestures on a book: a swipe across the reading area turns the page,
+ * and so does a press near either edge. A text selection is a reading action,
+ * and releasing it turns nothing.
  */
 import { win } from '../../dom'
 import type { ShallowRef } from 'vue'
@@ -17,11 +17,11 @@ export interface BookPointerOptions {
 }
 
 /**
- * `turn` is what the reader does with the way the hand asked for, and `getEdge`
- * is the near edge of the reading area, which a press is measured from.
+ * `turn` performs the page turn in the requested direction, and `getEdge`
+ * returns the near edge of the reading area, from which a press is measured.
  */
 export function createBookPointer(options: BookPointerOptions) {
-  /** Where the hand went down, while it is down. */
+  /** The position where the pointer went down, while it is down. */
   let hand: number | undefined
 
   /** Whether words of the text stand taken up. */
@@ -41,7 +41,7 @@ export function createBookPointer(options: BookPointerOptions) {
     hand = event.button === 0 ? event.clientX : undefined
   }
 
-  /** The hand lifted. A link is followed and turns nothing. */
+  /** The pointer is released. A link is followed and turns nothing. */
   const letGo = (event: PointerEvent) => {
     const from = hand
     hand = undefined

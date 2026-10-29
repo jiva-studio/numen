@@ -24,8 +24,8 @@ type Agent struct {
 	server  Server
 }
 
-// NewAgent wraps the agent so that its runs reach the tools the plugins of the host offer on the
-// server.
+// NewAgent wraps the agent so that its runs can call the tools that the host's
+// plugins provide on the server.
 func NewAgent(agent agentport.Agent, host Host, server Server) *Agent {
 	return &Agent{agent: agent, plugins: plugins{host: host}, server: server}
 }
@@ -78,7 +78,7 @@ func (r *endpointRun) Stop() error {
 	return errors.Join(r.Run.Stop(), r.endpoint.close(context.Background()))
 }
 
-// getStepKind is how a call of the tool is shown to a person.
+// getStepKind returns the step kind under which a tool call is displayed.
 func getStepKind(spec *v1.PluginTool) domain.StepKind {
 	switch spec.GetStep() {
 	case v1.ToolStep_TOOL_STEP_SEARCH:

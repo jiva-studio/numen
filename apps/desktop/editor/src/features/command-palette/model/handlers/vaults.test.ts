@@ -1,6 +1,6 @@
 /**
  * What a command does to the vaults an installation holds, without a window:
- * which calls it makes, and what it says when the list refuses.
+ * which calls it makes, and what it reports when the list rejects the request.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
@@ -22,7 +22,7 @@ const unused = async (): Promise<never> => {
   throw new Error('empty selection')
 }
 
-/** The vaults of an installation, answering as the test says and remembering the calls. */
+/** The installation's vaults, answering as the test specifies and recording the calls. */
 const createWindow = (
   answers: {
     opened?: VaultErrorCode | null

@@ -1,6 +1,6 @@
 import type { Disposable, PluginContext, PluginManifest } from '@numen/plugin-sdk'
 
-/** What the loader asks of the window that hosts the plugins it activates. */
+/** What the loader requires of the window that hosts the plugins it activates. */
 export interface LoaderHost {
   createContext(pluginId: string, manifest?: PluginManifest): PluginContext
   disposePlugin(pluginId: string): void

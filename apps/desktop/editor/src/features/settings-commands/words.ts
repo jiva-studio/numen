@@ -4,9 +4,9 @@
  */
 // Stryker disable StringLiteral: interface copy
 
-/** Everything the appearance says in the window's voice. */
+/** Interface text of the appearance settings. */
 export interface AppearanceWords {
-  /** The two origins the themes are drawn in, and where a person's own go. */
+  /** The two origins of themes: built-in, and the user's own. */
   readonly shipping: string
   readonly owned: string
   readonly noneOwned: string
@@ -18,7 +18,7 @@ export interface AppearanceWords {
   readonly system: string
   readonly light: string
   readonly dark: string
-  /** Why a mode cannot be chosen: the theme worn declares light and dark itself. */
+  /** Why a mode cannot be chosen: the active theme declares light and dark itself. */
   readonly pinned: string
   /** The group each of the two sizes is drawn in. */
   readonly drawing: string
@@ -28,7 +28,7 @@ export interface AppearanceWords {
   readonly unworn: string
 }
 
-/** Everything the syncing says in the window's voice. */
+/** Interface text of the sync settings. */
 export interface SyncWords {
   /** The group the setting is drawn in, and the two it is. */
   readonly syncingGroup: string

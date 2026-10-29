@@ -27,8 +27,8 @@ func fifo(t *testing.T, root, name string) {
 	}
 }
 
-// TestSpecialFileIsNotANote. A FIFO named like a note is not one: a walk passes
-// over it, and reading it says so.
+// TestSpecialFileIsNotANote. A FIFO named like a note is not one: a walk skips it,
+// and reading it reports that.
 func TestSpecialFileIsNotANote(t *testing.T) {
 	root := t.TempDir()
 	fifo(t, root, "pipe.md")

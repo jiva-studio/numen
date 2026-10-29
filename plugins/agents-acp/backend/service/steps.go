@@ -28,8 +28,8 @@ type acpToolCall struct {
 	RawInput      json.RawMessage `json:"rawInput"`
 }
 
-// readToolStep keeps what a tool_call or tool_call_update of this session says of the call, and
-// returns the step it is: the call, as far as it is known, or its end once it completed or failed.
+// readToolStep records what a tool_call or tool_call_update of this session reports about the call, and
+// returns the resulting step: the call, as far as it is known, or its end once it completed or failed.
 // Any other update is no step. A call is reported finished once.
 func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.AskAgentResponse {
 	var update struct {

@@ -36,8 +36,8 @@ func store(t *testing.T) (*derivedfile.DerivedStore, string) {
 }
 
 func TestOpeningTheStoreWritesNothing(t *testing.T) {
-	// The application looks at every vault it holds. One that puts a folder in
-	// each of them has changed a vault by being asked about it.
+	// The application opens every vault it holds. Opening a store must not
+	// create a folder in any of them.
 	derived, root := store(t)
 	_ = derived
 
@@ -85,8 +85,8 @@ func TestAppend_RejectsMissingVaultFolder(t *testing.T) {
 	}
 }
 
-// A store opened on a folder carrying no identity has none to lose, so the
-// folder itself is what says it is still there.
+// A store opened on a folder without an identity has none to lose, so the
+// folder itself is the evidence that it still exists.
 func TestAppend_RejectsMissingFolderWithoutIdentity(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "vault")
 	if err := os.MkdirAll(root, 0o755); err != nil {
@@ -182,8 +182,8 @@ func TestAppendingToNothingBeginsIt(t *testing.T) {
 }
 
 func TestANameWithNothingBelowItIsAnAnswer(t *testing.T) {
-	// The folder is on the person's disk and they may empty it. That is a thing
-	// that happened, not a failure of the application.
+	// The folder is on the user's disk and can be emptied. A missing name is an
+	// expected state, not an application failure.
 	derived, _ := store(t)
 
 	if _, err := derived.Read(t.Context(), "area/gone.txt"); !errors.Is(err, fs.ErrNotExist) {
@@ -222,8 +222,8 @@ func TestTheStoreCannotNameTheVaultsIdentity(t *testing.T) {
 }
 
 func TestTheStoreDoesNotWriteThroughALinkOutOfItself(t *testing.T) {
-	// A name in the store may be a link that a person, a sync client or another
-	// tool put there. Following it would read a note back as a recognition, or
+	// A name in the store may be a link created by the user, a sync client or
+	// another tool. Following it would read a note back as a recognition, or
 	// write a recognition over a note.
 	derived, root := store(t)
 	note := filepath.Join(root, "Note.md")
@@ -251,8 +251,8 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItself(t *testing.T) {
 
 func TestTheStoreDoesNotWriteThroughALinkOutOfItsArea(t *testing.T) {
 	// The vault's identity is in the service folder and in no area, so no name
-	// says it. A link put in an area says it all the same, and a transcript
-	// appended down that link is the identity gone.
+	// addresses it. A link inside an area can still point to it, and appending a
+	// transcript through that link would overwrite the identity.
 	derived, root := store(t)
 	identity := filepath.Join(root, vaultconfig.DefaultServiceDir, "config.json")
 	before, err := os.ReadFile(identity)
@@ -350,8 +350,8 @@ func TestAClaimCannotLeaveTheStore(t *testing.T) {
 	}
 }
 
-// claimLocked is what the child process prints once it holds the claim, and
-// holdingEnv is the vault it is asked to hold it in.
+// claimLocked is the line the child process prints once it holds the claim, and
+// holdingEnv is the environment variable naming the vault it claims.
 const (
 	claimLocked = "the claim is held"
 	holdingEnv  = "NUMEN_TEST_CLAIM_ROOT"
@@ -382,7 +382,7 @@ func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 		child.Wait()
 	}()
 
-	// The child says other things first, and the claim is the line waited for.
+	// The child may print other lines first; the loop waits for the claim line.
 	response := bufio.NewScanner(stdout)
 	for response.Scan() {
 		if response.Text() == claimLocked {
@@ -398,8 +398,9 @@ func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 	}
 }
 
-// TestContainingAClaimForAnotherProcess is the child of the test above. It takes
-// the claim, says so, and holds it until its parent closes its input.
+// TestContainingAClaimForAnotherProcess is the child of the test above. It
+// takes the claim, prints the claim line, and holds the claim until its parent
+// closes its input.
 func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	root := os.Getenv(holdingEnv)
 	if root == "" {
@@ -419,8 +420,8 @@ func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	io.ReadAll(os.Stdin)
 }
 
-// A store says what names it holds, because work whose whole record is a folder
-// of files nobody names in advance has no other way to find them.
+// A store lists the names it holds, because a record that is a folder of files
+// with unpredictable names can only be discovered by listing.
 func TestTheStoreReturnsWhatNamesItContains(t *testing.T) {
 	derived, _ := store(t)
 	ctx := t.Context()
@@ -451,8 +452,8 @@ func TestTheStoreReturnsWhatNamesItContains(t *testing.T) {
 	}
 }
 
-// What a listing says about a file is how long it now is, so a reader that has
-// read it once is told when it has grown.
+// A listing reports the current length of each file, so a reader that has
+// already read a file can detect that it has grown.
 func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 	derived, _ := store(t)
 	ctx := t.Context()
@@ -506,10 +507,10 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	}
 }
 
-// The store's own folder is a place on this machine, and where it is is asked
-// once. A folder put there afterwards — a sync client keeping the application's
-// files on another disk, a person moving them — is where the store writes from
-// then on, so the answer is the folder as it is and not as it was.
+// The store's own folder is resolved once. A folder that replaces it afterwards
+// (a sync client keeping the application's files on another disk, or the user
+// moving them) becomes the location the store writes to, so the resolved
+// folder is the current one.
 func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 	target := t.TempDir()
 	root := filepath.Join(t.TempDir(), "vault")
@@ -578,12 +579,12 @@ func TestAnAreaThatIsALinkContainsNothing(t *testing.T) {
 	}
 }
 
-// Where the store's folder is was asked once, and the answer holds only while
-// the folder is still there. The folder is repointed from a subfolder to the
-// folder holding it, its identity moved with it as the same file, and a link
-// inside the new one leads back into the old: a name down that link lands in
-// the old area, which is no area of the store now, and the store opened before
-// the move refuses it as one opened after would.
+// The store's folder is resolved once, and the result holds only while the
+// folder is unchanged. Here the folder is repointed from a subfolder to its
+// parent, its identity moves with it as the same file, and a link inside the new
+// folder leads back into the old one: a name through that link lands in the old
+// area, which is no longer an area of the store, and the store opened before the
+// move rejects it exactly as one opened after the move would.
 func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	target := t.TempDir()
 	old := filepath.Join(target, "old")

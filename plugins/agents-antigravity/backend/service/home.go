@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
-// Endpoint is where the agent reaches the tools of this vault over MCP.
+// Endpoint is the address at which the agent calls the tools of this vault over MCP.
 type Endpoint struct {
 	URL   string
 	Token string

@@ -5,12 +5,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
-// SettingsAssembly is what this window asks to read and write settings.
+// SettingsAssembly provides what this window needs to read and write settings.
 type SettingsAssembly interface {
 	// The use cases that read and write the settings.
 	OpenGetSettings() *settings.Get
 	OpenWriteSettings() *settings.Write
-	// OpenChoosePluginPath makes the use case that puts the picker for a plugin's path setting in
-	// front of the person.
+	// OpenChoosePluginPath creates the use case that shows the picker for a plugin's path setting.
 	OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath
 }

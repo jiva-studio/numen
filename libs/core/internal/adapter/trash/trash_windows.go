@@ -9,8 +9,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// What the shell is asked for: a delete the recycle bin can undo, with no
-// window, no question and no error of its own to show.
+// The shell operation flags: a delete that the recycle bin can undo, with no
+// window, no confirmation and no error dialog.
 const (
 	deletion       = 0x0003
 	allowUndo      = 0x0040

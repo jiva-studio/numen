@@ -1,6 +1,6 @@
 /**
- * The menu a file's text versions make, as the window reads it, and an entry
- * as the window hands it back to be run.
+ * The menu built from a file's text versions, as the window reads it, and an
+ * entry as the window passes it back to be run.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { FileMenuAction } from '@numen/protocol'

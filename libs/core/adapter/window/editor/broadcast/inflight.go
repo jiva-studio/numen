@@ -5,8 +5,8 @@ import (
 	"sync"
 )
 
-// ErrClosing is what a write asked for after the door is shut gets. Nothing is
-// written.
+// ErrClosing is returned for a write requested after the vault is sealed for
+// closing. Nothing is written.
 var ErrClosing = errors.New("this vault is closing")
 
 // Inflight is the writes taken and not yet finished.
@@ -21,7 +21,7 @@ type Inflight struct {
 	isOver   bool
 }
 
-// Begin takes a write, and refuses one that arrives after the door is shut.
+// Begin registers a write, and rejects one that arrives after the vault is sealed.
 func (w *Inflight) Begin() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -56,8 +56,8 @@ func (w *Inflight) Seal() <-chan struct{} {
 	return w.idle
 }
 
-// Open takes writes again. The vault the door was shut on is gone and another
-// is in front of the person.
+// Open accepts writes again. The sealed vault is gone and another is now
+// current.
 func (w *Inflight) Open() {
 	w.mu.Lock()
 	defer w.mu.Unlock()

@@ -29,8 +29,8 @@ var (
 	agentUseAt   = []string{"agent", "use"}
 )
 
-// A model is nothing to the window unless it says where it is read from and
-// what choosing it writes.
+// A model is usable by the window only if it provides the path it is read from
+// and the value that selecting it writes.
 func TestEveryModelReturnsWhereItIsReadAndWhatItWrites(t *testing.T) {
 	for _, one := range settings.AgentModels("agent", settings.Agent{}, listedPrograms()) {
 		if len(one.Path) == 0 {
@@ -50,7 +50,7 @@ func TestEveryModelReturnsWhereItIsReadAndWhatItWrites(t *testing.T) {
 	}
 }
 
-// One setting, one model an installation nobody has configured runs on.
+// One setting has one model that an unconfigured installation runs on.
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	for name, programs := range map[string][]agentport.AgentProgram{
 		"programs that mark one": listedPrograms(),
@@ -175,7 +175,7 @@ func TestTheModelTheSettingsNameIsCached(t *testing.T) {
 	}
 }
 
-// A program that lists no models offers the model that answers by default, alone, until a person
+// A program that lists no models offers only the default model until the user
 // names one.
 func TestAgentModels_NoListedModelsYieldsDefaultOnly(t *testing.T) {
 	target := modelsAt(t, settings.Agent{}, listedPrograms(), []string{"agent", "beta", "model"})

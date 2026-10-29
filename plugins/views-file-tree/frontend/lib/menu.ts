@@ -14,13 +14,13 @@ export const NEW_NOTE = 'newNote'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
 
-/** The group the window opens a row in, which stands before what the tab does. */
+/** The group the window opens a row in, which precedes what the tab does. */
 const OPEN_GROUP = 'open'
 
 /** The group the files the tab makes stand in. */
 const FILE_GROUP = 'file'
 
-/** What the tab makes, offered wherever the menu was asked for. */
+/** What the tab creates, offered wherever the menu was requested. */
 export const MADE: readonly MenuEntry[] = [
   { id: NEW_NOTE, text: own.newNote, group: FILE_GROUP },
   { id: NEW_FOLDER, text: own.newFolder, group: FILE_GROUP },
@@ -44,8 +44,8 @@ export const createNewSubmenu = (contributed: readonly MenuEntry[] = []): MenuEn
 })
 
 /**
- * What the menu offers, in the order it is drawn: what the tab makes where it
- * was asked off every row, the window's commands alone over a selection of
+ * What the menu offers, in render order: what the tab creates where it was
+ * requested outside any row, the window's commands alone over a selection of
  * several, and on one row what opens it, what the tab does, and the rest.
  */
 export const createMenuItems = (

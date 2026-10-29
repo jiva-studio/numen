@@ -132,7 +132,7 @@ func (s *store) GetFileStats(_ context.Context, vaultID domain.VaultID, kind dom
 		if src.FileStat.Kind != kind {
 			continue
 		}
-		// The kind is what was asked for, so the answer leaves it empty.
+		// The kind matches the requested kind, so the result leaves it empty.
 		out[path] = domain.FileStat{Path: path, Size: src.FileStat.Size, ModTime: src.FileStat.ModTime}
 	}
 	return out, nil
@@ -171,9 +171,9 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 		if mtime > afterMTime || (mtime == afterMTime && c.id <= afterChunk) {
 			continue
 		}
-		// The source says which text its chunks are places in, as the query
-		// does: a chunk of a source standing on a recognition is read from that
-		// reading and not from the file.
+		// The source determines which text its chunks locate, as the query does: a
+		// chunk of a source backed by a recognition is read from that recognition,
+		// not from the file.
 		out = append(out, domain.Passage{
 			ChunkID: chunkID(c.id), Source: c.path, Start: c.start, Length: c.length, Location: c.location,
 			Producer: src.Producer, SourceHash: src.Hash, ChunkHash: hashOf(c.text),
@@ -227,8 +227,8 @@ func hashOf(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// put records a source as it arrived, the recipe included: a source recorded
-// without one owes its text.
+// put records a source as given, including its recipe. A source recorded
+// without a recipe has no text.
 func (s *store) put(vaultID domain.VaultID, src domain.Source) {
 	if s.sources[vaultID] == nil {
 		s.sources[vaultID] = map[string]domain.Source{}
@@ -323,8 +323,7 @@ func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int,
 	return out, nil
 }
 
-// cut says whether a source has a small chunk, which is what having been cut
-// means.
+// cut reports whether a source has a child chunk, i.e. whether it was split.
 func (s *store) cut(vaultID domain.VaultID, path string) bool {
 	for _, c := range s.chunks {
 		if c.vault == vaultID && c.path == path && c.parent != 0 {
@@ -334,7 +333,7 @@ func (s *store) cut(vaultID domain.VaultID, path string) bool {
 	return false
 }
 
-// hasChunk says whether the index hasChunk the chunk named.
+// hasChunk reports whether the index contains the given chunk.
 func (s *store) hasChunk(chunk domain.ChunkID) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -353,9 +352,9 @@ func (s *store) getVectors(c storedChunk) []embeddingport.Vector {
 	return slices.Clone(s.vectors[chunkID(c.id)])
 }
 
-// hasVector says whether a chunk has a coarse row under the model, which is
-// what the store writes once a vector is saved for it. A chunk without one owes,
-// whatever other chunks hold the same text.
+// hasVector reports whether a chunk has a coarse row under the model, as the
+// store writes once a vector is saved for it. A chunk without one still needs a
+// vector, even when other chunks hold the same text.
 func (s *store) hasVector(chunk int64, model embeddingport.EmbeddingModel) bool {
 	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
@@ -397,8 +396,7 @@ func (s *store) small(vaultID domain.VaultID) []storedChunk {
 // library is one vault as a set of files. It counts what was read, so a test can
 // say that an unchanged file was not opened.
 type library struct {
-	// The interface is embedded for the listing, which no source scenario asks
-	// for.
+	// The interface is embedded for listing, which no source scenario uses.
 	vaultport.VaultReader
 	files map[string]*shelved
 	reads map[string]int
@@ -407,8 +405,8 @@ type library struct {
 type shelved struct {
 	kind domain.SourceKind
 	raw  []byte
-	// mtime is nanoseconds since the epoch, which is what a test writing one
-	// out by hand can compare against.
+	// mtime is nanoseconds since the epoch, so a test can compare against a
+	// hand-written value.
 	mtime int64
 }
 
@@ -478,8 +476,8 @@ func (v vaults) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 	return reader, nil
 }
 
-// embedder is a model that answers the same vector for the same text, so that
-// what it was asked is visible in what it returned.
+// embedder returns the same vector for the same text, so a returned vector
+// identifies its input.
 type embedder struct {
 	dims int
 
@@ -494,8 +492,8 @@ func (e *embedder) GetModel() embeddingport.EmbeddingModel {
 
 func (*embedder) Close() error { return nil }
 
-// interruptedStore cancels the run after its Nth write and refuses every write
-// after that, so exactly N groups of vectors are stored.
+// interruptedStore cancels the run after its Nth write and rejects every later
+// write, so exactly N groups of vectors are stored.
 type interruptedStore struct {
 	*store
 	cancel context.CancelFunc
@@ -544,8 +542,8 @@ func vectorOf(text string, dims int) []float32 {
 	return out
 }
 
-// words is n words of one vocabulary. A vault's books are written in its own, so
-// a chunk says which vault it came from.
+// words returns n words of one vocabulary. Each vault's books use their own
+// vocabulary, so a chunk identifies its vault.
 func words(vocabulary []string, n int) string {
 	out := make([]string, 0, n)
 	for i := range n {
@@ -559,7 +557,7 @@ func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path st
 	if !target {
 		return sourceport.SourceText{}, false, nil
 	}
-	// The row says what the file was when it was read, as the query does.
+	// The row reflects the file as it was when read, as the query does.
 	return sourceport.SourceText{
 		FileStat: domain.FileStat{
 			Path: path, Size: src.FileStat.Size, ModTime: src.FileStat.ModTime,
@@ -584,8 +582,8 @@ func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, 
 	return out, nil
 }
 
-// bookOf is the bytes of a book whose spine is the parts given, each under a
-// heading of its own, so that the book names its places.
+// bookOf returns the bytes of a book whose spine is the given parts, each under
+// its own heading, so each part has a location.
 func bookOf(t testing.TB, title string, parts ...string) []byte {
 	t.Helper()
 	return []byte(bookMark + title + bookSeparator + strings.Join(parts, bookSeparator))

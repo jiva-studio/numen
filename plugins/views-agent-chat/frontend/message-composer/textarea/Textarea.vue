@@ -2,8 +2,8 @@
 /**
  * A field for several lines of text.
  *
- * It is sized by whatever lays it out. Growing with what is typed is the
- * business of the thing around it, which knows how tall it is allowed to get.
+ * It is sized by its parent layout. Growing with the typed text is the
+ * responsibility of the surrounding component, which knows the maximum height.
  */
 import { useId, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@numen/ui'

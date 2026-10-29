@@ -10,16 +10,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
-// ambiguousCheck is a link that reaches more than one note.
+// ambiguousCheck finds links that match more than one note.
 //
-// It is not broken: it reaches the nearest of them, and that is a defined
-// answer. What makes it worth showing is that "the nearest" is a fact about
-// where the notes currently sit, so the link changes meaning when either of
-// them is moved — silently, and without the link itself changing at all.
+// Such a link is not broken: it resolves to the nearest match, which is a defined
+// result. It is worth reporting because "the nearest" depends on where the
+// notes currently are, so the link changes meaning when either note is
+// moved, with no change to the link itself.
 //
-// The problem belongs to the note that wrote the link. That is the file
-// somebody opens to settle it, by naming which note they meant. Neither of the
-// notes it could mean has anything to answer for.
+// The problem belongs to the note that contains the link. That is the file
+// the user opens to resolve it, by naming which note was meant. Neither of the
+// candidate notes is responsible.
 type ambiguousCheck struct {
 	queries problemport.ProblemQueries
 }

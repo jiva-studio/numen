@@ -12,7 +12,7 @@ import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 
-/** The settings over a vault holding `{}`, and every writer they asked the log for. */
+/** The settings over a vault containing `{}`, and every writer they requested from the log. */
 const createSettings = () => {
   const writers: string[] = []
   const core = {

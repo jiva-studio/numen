@@ -16,9 +16,9 @@ import (
 // signed byte has on either side of zero.
 const step = embeddingport.Int8Scale / 127
 
-// widths are the vector widths this application admits: the model it embeds
-// with by default is 384 wide, and the settings take any model a person names,
-// which reaches 3072 among the ones a service serves.
+// widths are the vector widths this application admits: the default embedding
+// model produces 384 dimensions, and the settings accept any model the user
+// names, with widths up to 3072 among the models a service offers.
 var widths = []int{384, 768, 1024, 1536, 3072}
 
 // unit is an invented vector of the width given, pointing nowhere in
@@ -92,7 +92,7 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 //
 // The width is drawn from 256 upwards: below that a unit-length vector starts
 // to carry a component beyond the scale, which is clamped, and the scale is
-// chosen to leave room for clamping.
+// chosen with headroom for clamping.
 func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		d := rapid.IntRange(256, 4096).Draw(t, "dimensions")

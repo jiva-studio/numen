@@ -310,7 +310,7 @@ func (s *Supervisor) Acquire(now time.Time) bool {
 	return true
 }
 
-// Release decrements active consumers and marks a running plugin idle when the count reaches zero.
+// Release decrements active consumers and marks a running plugin idle when the count is zero.
 func (s *Supervisor) Release(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

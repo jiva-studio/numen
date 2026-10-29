@@ -21,9 +21,9 @@ var (
 	ErrSourceNotAccepted = errors.New("the plugin does not take this source")
 )
 
-// TextCreation asks a plugin for text of a file. Source is the version it is
-// made from, and empty for the file itself. IsUserStarted is set for text a
-// person asked for, which runs before text nobody asked for.
+// TextCreation requests text of a file from a plugin. Source is the version it is
+// created from, and empty for the file itself. IsUserStarted is set for text a user
+// requested, which runs before background text.
 type TextCreation struct {
 	Vault         domain.VaultID
 	Path          string
@@ -38,18 +38,17 @@ type TextProvider interface {
 	CreateText(ctx context.Context, req TextCreation) error
 }
 
-// TextProviders reaches the provider of an enabled plugin.
+// TextProviders returns the provider of an enabled plugin.
 type TextProviders interface {
 	OpenProvider(ctx context.Context, pluginID string) (TextProvider, error)
 }
 
-// TextPlugin is an enabled plugin that makes text, and what it makes text
-// from: files of the types Files names, versions of the kinds Kinds names, and
-// notes of the plugin's own types NoteTypes names. IsAutoRun asks for the
-// plugin to be run on a file of its types that has no live version. Name is
-// the plugin's name as a person reads it. Menu is the plugin's entry in the
-// menu of a file its input takes, and has no title for a plugin not offered
-// there.
+// TextPlugin is an enabled plugin that creates text, and its inputs: files of the
+// types Files lists, versions of the kinds Kinds lists, and notes of the plugin's own
+// types NoteTypes lists. IsAutoRun requests the plugin to run on a file of its types
+// that has no live version. Name is the plugin's display name. Menu is the plugin's
+// entry in the menu of a file its input accepts, and has no title for a plugin not
+// offered there.
 type TextPlugin struct {
 	ID        string
 	Name      string

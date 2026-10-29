@@ -9,7 +9,7 @@ import (
 )
 
 // entriesPattern is where the entries of a book's archive are served below the plugin route. The
-// window asks for /plugin/md.numen.readers.epub/entries/<entry>?path=<vault path>&size=<bytes>&mtime=<ns>.
+// window requests /plugin/md.numen.readers.epub/entries/<entry>?path=<vault path>&size=<bytes>&mtime=<ns>.
 const entriesPattern = "entries/{entry...}"
 
 // EntryServer serves the entries of the books of a vault, such as the pictures a book carries.

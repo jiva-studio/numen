@@ -1,10 +1,9 @@
 // Correctness and boundaries for the phone, on the rules `@numen/ui` already
-// states. Nothing here is about how the code looks: the formatting is done by
-// hand and a rule with an opinion about it would start rewriting files nobody
-// asked it to.
+// defines. Nothing here concerns code style: formatting is manual, and a style
+// rule would rewrite files.
 //
-// The library's ban on importing the domain is the one rule that stops at this
-// package: an application is the thing that knows what a vault is.
+// The library's ban on importing the domain is the one rule that does not apply
+// to this package: an application is where the vault concept belongs.
 
 import tseslint from 'typescript-eslint'
 import { createBaseConfig, lifetimes } from '../../tools/lint-layers/base-eslint.mjs'

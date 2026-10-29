@@ -1,8 +1,8 @@
 /**
- * What the palette does, not where it puts things. The negatives matter most:
- * a key that reaches an action nobody offered, a group's name the keyboard stops
- * on, and a list that quietly moves what is lit while a person is aiming at it
- * all look right in a picture.
+ * What the palette does, not how it lays things out. The negative cases matter most:
+ * a key that triggers an action nobody offered, a group name the keyboard stops
+ * on, and a list that moves the highlighted item while the user is aiming at it
+ * all look correct in a screenshot.
  *
  * It is drawn at the end of the document, so everything here is read off the
  * document and not off the wrapper.
@@ -15,7 +15,7 @@ import type { PaletteGroup } from '../lib/item'
 import type { PaletteKeys } from '@numen/ui'
 import { MANY } from '../fixtures/actions'
 
-/** A keystroke that reaches an item away from the palette. */
+/** A keystroke that triggers an item without the palette focused. */
 const OPTION_1: PaletteKeys = { icons: ['option'], letter: '1' }
 
 const OPEN = [{ id: 'open', text: 'Open note' }]
@@ -80,11 +80,11 @@ const options = () =>
 const activeItem = () => document.body.querySelector<HTMLElement>('[data-here]')
 const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="key"]'))
 
-/** What a line says, with the runs it is written in run together. */
+/** The text of a line, with whitespace runs collapsed. */
 const getText = (of: Element | null | undefined): string =>
   (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
-/** The keystroke a cap is announced as, which is all of it a reader hears. */
+/** The keystroke a key cap is announced as, which is all a screen reader reads. */
 const getSpokenKey = (cap: Element | null | undefined): string =>
   getText(cap?.querySelector('.sr-only'))
 
@@ -411,8 +411,8 @@ describe('a group arriving while it is being read', () => {
     await settle()
     await press('ArrowDown')
 
-    // What a person typed, and then the answers to it. The list holds what the
-    // question before turned up until each group lands.
+    // The user types a query, then the answers to it arrive. The list keeps the
+    // results of the previous query until each group lands.
     await palette.setProps({ modelValue: 'heat' })
     await settle()
     await palette.setProps({ groups: [SECTIONS[1]!] })
@@ -814,8 +814,8 @@ describe('the action panel', () => {
     await pressOn(searchInput(), 'ArrowDown')
     expect(litAction()?.textContent).toContain('Open beside')
 
-    // The same groups in arrays of their own, as a caller building them from
-    // what the window holds hands over.
+    // The same groups as arrays of their own, as a caller builds them from
+    // window state.
     await palette.setProps({
       groups: [
         {

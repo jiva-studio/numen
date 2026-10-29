@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// The environment variables a person sets to move the models home, switch
-// fetching off or choose the execution provider. The models home and the offline
-// switch are the ones every plugin reads, so they name one folder and one rule.
+// The environment variables a user sets to relocate the models home, disable
+// fetching or choose the execution provider. The models home and the offline
+// switch are read by every plugin, so they name one folder and one rule.
 const (
 	// EnvDir names the folder the models are kept in.
 	EnvDir = "NUMEN_MODELS_DIR"

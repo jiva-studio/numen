@@ -2,8 +2,8 @@
  * The layout of a book: when the columns are set again, which offset is kept in
  * front, and where a link that led here lands.
  *
- * The columns and the turns are stood in for by recorders, so what is read is
- * the order and the arguments the layout joins them with.
+ * The columns and the turns are replaced by recorders, so the assertions cover
+ * the order and the arguments the layout calls them with.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

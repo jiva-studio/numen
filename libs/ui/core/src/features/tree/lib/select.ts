@@ -22,9 +22,9 @@ export interface RowSelection {
 }
 
 /**
- * The rows from one to another in the order they are drawn, both ends among
- * them, whichever way round the two stand. A range measured from a row that is
- * not drawn is the row it reaches, alone.
+ * The rows between two rows in display order, both ends included, in either
+ * direction. A range anchored at a row that is not displayed is that row
+ * alone.
  */
 export function getRowsBetween(
   visibleRows: readonly ShownRow[],

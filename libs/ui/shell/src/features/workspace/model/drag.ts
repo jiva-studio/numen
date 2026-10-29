@@ -1,9 +1,9 @@
 /**
- * A tab lifted off its strip, where letting go of it would land it, and what
- * the workspace becomes once it is let go.
+ * Dragging a tab off its strip: the drop target under the pointer, and the
+ * resulting workspace layout after the drop.
  *
- * Where the pointer is over is asked of the document, in the coordinates of the
- * frame the workspace is drawn in.
+ * The element under the pointer is looked up in the document, in the
+ * coordinates of the frame the workspace is drawn in.
  */
 import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Clock } from '@numen/ui'
@@ -39,7 +39,7 @@ export interface TabDragOptions {
   readonly getIdFactory: () => NodeIdFactory
   /** How close to the outer edge divides the whole workspace. */
   readonly getEdge: () => number
-  /** How far the pointer travels before a press becomes a drag. */
+  /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
   /** Called when a tab is dragged and released outside of any workspace drop target. */
@@ -188,11 +188,11 @@ function landTab(workspace: Workspace, action: LandAction): Workspace {
 }
 
 /**
- * What the pointer is over, asked of the document.
+ * The drop target under the pointer, looked up in the document.
  *
- * A strip is read first, so that a tab can be put in order among its
- * neighbours; then the outer edge, which divides the whole workspace; then the
- * pane, which divides itself.
+ * A strip is checked first, to allow reordering a tab among its neighbours;
+ * then the outer edge, which splits the whole workspace; then the pane, which
+ * splits itself.
  */
 function resolveDropTarget(
   point: Position,

@@ -119,8 +119,8 @@ func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 	}
 }
 
-// TestASecondRoundAsksEveryPageAgain. What a page said about the request before
-// is not an answer to this one.
+// TestASecondRoundAsksEveryPageAgain. A page's earlier response to the request
+// is not a response to this one.
 func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 	var pages flushCoordinator
 
@@ -196,8 +196,8 @@ func TestAPageThatGoesWithNothingActiveStopsBeingOwed(t *testing.T) {
 }
 
 // TestAPageThatGoesWithAQuestionStandingIsStillOwed. The text is in that
-// webview's buffer and nowhere else, and the stream ending says nothing about
-// where it should end up.
+// webview's buffer and nowhere else, and the stream ending gives no information
+// about where it should end up.
 func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	var pages flushCoordinator
 
@@ -212,7 +212,7 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 		t.Fatal("the window went with the buffer of a page that had a question standing")
 	}
 
-	// The client comes back under a token of its own, and is asked afresh.
+	// The client reconnects under a token of its own, and is queried anew.
 	second := pages.startRequest()
 	if isClosed(second.allWritten) {
 		t.Fatal("a request with the question still standing was owed nothing")
@@ -260,8 +260,8 @@ func TestFlushCoordinator_DepartedPageWithQuestionIsNotPending(t *testing.T) {
 		t.Error("a page that is no longer there was counted as raising a question")
 	}
 
-	// A page that says nothing is what the bound is for, and nothing here ends
-	// the request before it.
+	// A page that returns nothing is what the bound exists for, and nothing here
+	// ends the request before it.
 	select {
 	case <-request.allWritten:
 		t.Error("the request ended without the page saying anything")

@@ -20,8 +20,8 @@ func TestNothingIsStoredAgainstAPath(t *testing.T) {
 	}
 }
 
-// withoutComments leaves only what the database will execute, so that a test
-// about a statement is not answered by the prose above it.
+// withoutComments leaves only what the database executes, so a test about a
+// statement does not match against its comments.
 func withoutComments(sql string) string {
 	var b strings.Builder
 	for line := range strings.SplitSeq(sql, "\n") {

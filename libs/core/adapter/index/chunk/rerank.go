@@ -27,11 +27,11 @@ type candidate struct {
 }
 
 // rerank orders candidates by their full-precision similarity to the query,
-// nearest first, and keeps only what reaches the floor.
+// nearest first, and keeps only those at or above the floor.
 //
-// A candidate the index holds no comparable vector for cannot be compared and
-// is not an answer. A vector that is read and does not compare is a corrupt
-// row, and says so.
+// A candidate with no comparable vector in the index cannot be compared and is
+// not a result. A vector that is read and does not compare is a corrupt row,
+// and is reported as an error.
 func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
 	if len(candidates) == 0 {
 		return nil, nil

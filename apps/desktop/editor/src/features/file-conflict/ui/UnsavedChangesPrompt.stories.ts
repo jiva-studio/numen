@@ -1,9 +1,9 @@
 /**
  * The window going with notes still unwritten.
  *
- * It sits over the work because nothing else the person does can end it, and
- * what a name too long for the row does to the three ways out of it is the
- * browser's answer.
+ * It overlays the work because nothing else the user does can dismiss it, and
+ * how a name too long for the row affects the three actions is browser
+ * behaviour.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -11,7 +11,7 @@ import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
 import type { ConflictPrompt } from '../model/flush'
 import type { UnsavedChangesWords } from './UnsavedChangesPrompt.vue'
 
-/** The words a window hands the prompt. The component knows none of its own. */
+/** The strings the window passes to the prompt. The component defines none of its own. */
 const WORDS: UnsavedChangesWords = {
   going: 'Saving paused: the files of these notes changed on disk.',
   keep: 'Keep my version',
@@ -60,7 +60,7 @@ export const TwoNotes: Story = {
     await expect(answer.textDecorationLine).toBe('underline')
     await expect(answer.backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
-    // It sits over the work, at the foot of the window and inside it.
+    // It overlays the work, at the bottom of the window and inside it.
     const box = response!.getBoundingClientRect()
     await expect(getComputedStyle(response!).position).toBe('fixed')
     await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
@@ -74,8 +74,8 @@ export const ResolvedForOneNote: Story = {
   play: async ({ args, canvasElement }) => {
     const [first, second] = args.conflicts
 
-    // The answer given is the answer for the note it stands beside, and the
-    // other note is left standing.
+    // The response applies to the note it is shown beside, and the other note is
+    // left unchanged.
     const keep = getAnswers(canvasElement).find((one) => one.textContent?.trim() === WORDS.keep)
     await userEvent.click(keep as HTMLElement)
     await waitFor(() => expect(first?.keep).toHaveBeenCalledTimes(1))

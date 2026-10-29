@@ -189,7 +189,7 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 	}
 }
 
-// newSpec is the run of the Codex CLI the request asks for.
+// newSpec builds the Codex CLI invocation for the request.
 func newSpec(req *agentrun.AskAgentRequest, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
@@ -268,7 +268,7 @@ func makeAnswerCommand(runCtx context.Context, req *agentrun.AskAgentRequest, cu
 	return cmd, cleanDir, nil
 }
 
-// appendModelArguments adds the model the request names and the level of reasoning it asks for.
+// appendModelArguments adds the model the request names and the reasoning level it requests.
 func appendModelArguments(args []string, req *agentrun.AskAgentRequest) []string {
 	if model := req.GetModel(); model != "" && model != "default" {
 		args = append(args, "--model", model)

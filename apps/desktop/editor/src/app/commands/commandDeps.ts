@@ -24,7 +24,7 @@ export interface CommandDepsOptions {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
   }
-  /** A note put in front of the person, where the plugin that shows notes puts it. */
+  /** Shows a note, in the place the note-viewing plugin uses. */
   travel: (path: string) => Promise<void> | void
   /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void
@@ -101,8 +101,8 @@ function findActiveTabAt(
 }
 
 /**
- * The open files a command reaches: those the note editors hold, and those a
- * kind of tab answers for.
+ * The open files a command can access: those held by the note editors, and those
+ * a kind of tab serves.
  */
 export function createCommandNotes(
   reached: Notes,

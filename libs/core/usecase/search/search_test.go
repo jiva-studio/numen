@@ -242,7 +242,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 		}
 	}
 
-	// And the merge of the two, which is what a caller asks for.
+	// The merged result of both halves.
 	found, err := c.search(oneWay{direction: newVector(+1)}).Execute(ctx, c.first, "shared", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -255,8 +255,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 			t.Errorf("the merge answered with %+v, which belongs to the second vault", p)
 		}
 	}
-	// Asked from the other side, with the vector the first vault's own chunks
-	// carry.
+	// Searched from the other side, using the vector the first vault's chunks carry.
 	for _, p := range c.searchIn(t, c.second, "disorder", oneWay{direction: newNearVector()}) {
 		if !strings.Contains(p.Source, "Quasar") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", p.Source)
@@ -320,8 +319,8 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 }
 
 func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
-	// A question nobody is waiting for any more is not a question the words
-	// answer on their own.
+	// A search whose caller cancelled returns the cancellation error, not a
+	// words-only result.
 	ctx := t.Context()
 	c := newCorpus(t)
 
@@ -375,10 +374,10 @@ func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 }
 
 // sectioned replaces one note's chunks with three, of which the first opens a
-// section whose name the section after it says over and over.
+// section whose name the following section repeats.
 //
-// This is the shape a chapter of a book has: the chapter names its subject once,
-// in its heading, and a paragraph further on says it four times.
+// This is the shape of a book chapter: the heading names the subject once, and a
+// later paragraph repeats it four times.
 func (c corpus) writeSections(t *testing.T, v domain.Vault, path string) {
 	t.Helper()
 	chunks := []chunk.Chunk{
@@ -401,7 +400,7 @@ func (c corpus) writeSections(t *testing.T, v domain.Vault, path string) {
 
 func TestSearch_ReturnsRequestedSection(t *testing.T) {
 	// A search by words ranks by how often the words appear, so a paragraph in the
-	// middle of a chapter outranks the chapter's own opening. Asked where a book
+	// middle of a chapter outranks the chapter's own opening.
 	ctx := t.Context()
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
@@ -430,8 +429,8 @@ func TestSearch_ReturnsRequestedSection(t *testing.T) {
 }
 
 func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
-	// The window puts the caret where the words were found. A note's
-	// frontmatter stands before its prose and is no line of it.
+	// The caret is placed where the words were found. A note's frontmatter precedes
+	// its prose and is not counted as a line of it.
 	ctx := t.Context()
 	c := newCorpus(t)
 
@@ -485,18 +484,18 @@ func TestANameThatMatchesNoSectionChangesNothing(t *testing.T) {
 }
 
 func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
-	// A vector is kept under the recipe it was made by, which is everything
-	// about the model that decides what a vector is. Asked under anything else
-	// — a name, a name and a width — no vector is found and this half answers
-	// nothing at all, silently, for ever.
+	// A vector is stored under the recipe that produced it, which covers everything
+	// about the model that determines what a vector is. A query under any other recipe
+	// (a name, or a name and a width) finds no vector, and this half returns nothing,
+	// silently and permanently.
 	//
-	// Every other test here has a query a search by words can answer, so a meaning
-	// half that answered nothing was a search that still looked right.
+	// Every other test here has a query a search by words can answer, so an empty
+	// meaning half would still look like a working search.
 	ctx := t.Context()
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	// A word no note in the vault says, so nothing lexical can match it.
+	// A word that appears in no note in the vault, so no lexical match is possible.
 	const unsaid = "zzqqxx"
 	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, unsaid, nil, 20, false)
 	if err != nil {
@@ -543,9 +542,9 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 }
 
 func TestSearch_BookQueryUsesBookSources(t *testing.T) {
-	// A vault holds far more notes than books. Asked about a book and told to
-	// look everywhere, a search answers with whatever the vault holds most of,
-	// and the person who said "in the book" is handed a note.
+	// A vault holds far more notes than books. A book query that searches everywhere
+	// returns whatever the vault holds most of, so a query scoped to a book returns
+	// a note.
 	ctx := t.Context()
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")

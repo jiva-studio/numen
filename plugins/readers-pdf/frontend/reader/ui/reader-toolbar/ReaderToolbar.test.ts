@@ -1,9 +1,9 @@
 /**
- * The page a person asks the controls for.
+ * The page number entered in the toolbar controls.
  *
- * The field holds the page in front until somebody types over it, and a browser
- * says a field was committed twice for one keystroke: once for the key and once
- * for the change it made.
+ * The field holds the current page until the user types over it, and a browser
+ * reports a field as committed twice for one keystroke: once for the key and
+ * once for the change it made.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
@@ -49,8 +49,8 @@ describe('the page requested for', () => {
     expect(controls.emitted('update:at')?.at(-1)).toEqual([11])
   })
 
-  // A key and the change it made are two events on one field, and the page
-  // stands for the second of them.
+  // A key and the change it made are two events on one field, and the page is
+  // taken from the second.
   it('is requested for once when one page is typed', async () => {
     const controls = mountToolbar()
     const field = controls.get('input[type="number"]')

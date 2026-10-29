@@ -8,7 +8,7 @@ import (
 )
 
 // TestANoteWithNoFrontmatterIsWrittenTo. Three dashes below the first line are
-// a rule in the prose. The whole file is body, and a write reaches it.
+// a rule in the prose. The whole file is body, and a write applies to it.
 func TestANoteWithNoFrontmatterIsSavedTo(t *testing.T) {
 	raw := "# Title\n\n---\n\nnot frontmatter\n"
 
@@ -49,8 +49,8 @@ func TestASpliceOutsideTheBodyIsRefused(t *testing.T) {
 	}
 }
 
-// TestANoteMadeHereEndsWithALineEnding. What a person starts a note with is
-// theirs, and the file it lands in ends the way a text file ends.
+// TestANoteMadeHereEndsWithALineEnding. What the user starts a note with is
+// theirs, and the file it is saved in ends the way a text file ends.
 func TestANoteMadeHereEndsWithALineEnding(t *testing.T) {
 	for _, body := range []string{"# Note", "# Note\n", ""} {
 		if got := string(markdown.Create("01J", body)); !strings.HasSuffix(got, "\n") {

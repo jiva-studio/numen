@@ -1,6 +1,6 @@
 /**
- * What a files tab asks of the window, as the host's workspace and the files of
- * the vault answer it.
+ * What a files tab requires of the window, as satisfied by the host's workspace
+ * and the vault's files.
  */
 import { describe, expect, it } from 'vitest'
 import { createHost } from '../fixtures/host'

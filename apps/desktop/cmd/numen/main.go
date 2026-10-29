@@ -1,10 +1,11 @@
 // Command numen is the window: one vault, one note, and the plex around it.
 //
-// It is a separate binary from the command line one because a webview links
-// against the system's own browser, and a binary carrying one can no longer be
-// built for another machine from this one. Both are entry points onto the same
-// core.
-// It also carries the tools an agent works the vault through.
+// It is a separate binary from the command-line one because a webview links
+// against the system browser, and a binary that links one cannot be
+// cross-compiled for another machine from this one. Both are entry points onto
+// the same core.
+//
+// It also carries the tools an agent uses to work on the vault.
 package main
 
 import (

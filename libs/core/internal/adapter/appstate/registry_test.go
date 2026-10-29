@@ -50,8 +50,8 @@ func TestSavingTheSameIdentityMovesTheVault(t *testing.T) {
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/old"}); err != nil {
 		t.Fatal(err)
 	}
-	// The identity travels with the folder; the registry only remembers where it
-	// was last seen, so re-adding must move the entry and not duplicate it.
+	// The identity moves with the folder; the registry records only where it was
+	// last seen, so re-adding moves the entry and does not duplicate it.
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/new"}); err != nil {
 		t.Fatal(err)
 	}
@@ -208,8 +208,8 @@ func TestRemovingTheVaultOpenedLastForgetsThatItWas(t *testing.T) {
 	if got, found, err := r.GetLastVault(); err != nil || found {
 		t.Errorf("last = %v %v %v, want nothing", got, found, err)
 	}
-	// The file no longer names it either: an identity nothing on the list
-	// carries is not what a person reading this file should find.
+	// The file no longer contains it either: an identity that no list entry
+	// carries must not appear in the file.
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -233,8 +233,8 @@ func TestOpeningAVaultThatIsNotOnTheListIsRefused(t *testing.T) {
 }
 
 func TestFileIsReadableByAHuman(t *testing.T) {
-	// The registry is JSON precisely so that it can be opened and fixed when the
-	// application will not start, so its shape is part of the contract.
+	// The registry is JSON, so it can be opened and edited when the application
+	// does not start; its shape is part of the contract.
 	path := filepath.Join(t.TempDir(), "vaults.json")
 	r := appstate.OpenAt(path)
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
@@ -260,8 +260,8 @@ func TestFileIsReadableByAHuman(t *testing.T) {
 }
 
 func TestTheFileNamesTheVaultOpenedLast(t *testing.T) {
-	// Part of the same contract: a person reading the file sees which vault the
-	// application will open, and the key is absent until one has been opened.
+	// Part of the same contract: the file shows which vault the application opens,
+	// and the key is absent until one has been opened.
 	path := filepath.Join(t.TempDir(), "vaults.json")
 	r := appstate.OpenAt(path)
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {

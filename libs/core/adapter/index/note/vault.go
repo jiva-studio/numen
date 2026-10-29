@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// errNoVault is returned when the index has never been told about the vault
-// being asked about. Every question about a vault it does not know has the same
-// answer — nothing — so callers turn this into an empty result.
+// errNoVault is returned when the index has no record of the vault being
+// queried. Every query about an unknown vault has the same result — nothing —
+// so callers convert this into an empty result.
 var errNoVault = errors.New("vault not in the index")
 
-// querier is anything that can answer a single-row question, so that this works
-// inside a transaction as well as outside one.
+// querier is anything that can answer a single-row query, so this works inside
+// a transaction as well as outside one.
 type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }

@@ -1,6 +1,6 @@
 /**
- * The headings of a node: which of them are drawn, how far each is set in, and
- * where each stands partway through the opening.
+ * The headings of a node: which of them are drawn, how far each is indented, and
+ * where each is positioned partway through the opening.
  */
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
@@ -29,7 +29,7 @@ const MOST = 6
 
 const SIZES = { headingHeight: 20, headingIndent: 10, maxHeadings: MOST }
 
-/** A window with room to spare, and a measurer of ten pixels the letter. */
+/** A viewport with ample space, and a measurer of ten pixels per character. */
 const DEPS: HeadingsDeps = {
   measure: (text: string) => 10 * text.length,
   viewport: { width: 1000, height: 600 },
@@ -214,8 +214,8 @@ describe('the opening', () => {
   })
 
   it('keeps every heading on the ground, at every moment of the opening', () => {
-    // A heading drawn past either edge is a heading standing on nothing, which is
-    // what the ground is there to stop.
+    // A heading drawn past either edge is outside the drawable area, which the
+    // bounds exist to prevent.
     const resolved = suspended(headings(5))!
     for (const open of [0.05, 0.2, 0.4, 0.6, 0.8, 1]) {
       for (const heading of getOpenHeadings(resolved, open)!.headings) {
@@ -364,7 +364,7 @@ describe('a node with little room under it', () => {
 
 describe('what a wheel scrolls', () => {
   const hangMany = () => suspended(headings(20))!
-  /** A wheel said in pixels, which is what a hand on a trackpad gives. */
+  /** A wheel delta in pixels, as a trackpad reports. */
   const pixels = (delta: number) => ({ delta, mode: 0 })
 
   it('is nothing at all until the pixels come to a whole heading', () => {
@@ -415,8 +415,8 @@ describe('however many headings stand at once', () => {
     getNodeHeadings(NODE, headings(most + 4), { ...SIZES, maxHeadings: most }, DEPS)!
 
   it('every one of them is up by the time it is all the way open', () => {
-    // A lead that outran the opening left the last of them at nothing at all,
-    // on a ground drawn deep enough to hold them.
+    // A lead that outran the opening left the last heading at zero opacity, even
+    // when the surface was deep enough to hold it.
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
       const resolved = hangWithCeiling(ceiling)
       const renderedHeadings = getOpenHeadings(resolved, 1)!.headings

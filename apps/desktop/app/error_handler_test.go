@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// TestCoreErrorHandler_ReportError. The core reports what went wrong in work
-// it does not stop for, and a configuration naming nowhere to say it is a
-// failure nobody is ever told about.
+// TestCoreErrorHandler_ReportError. The core reports errors from work it does
+// not abort, and a configuration without a handler leaves such errors
+// unreported.
 func TestCoreErrorHandler_ReportError(t *testing.T) {
 	var response strings.Builder
 	cfg := makeConfig(&response)

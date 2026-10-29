@@ -1,5 +1,5 @@
 /**
- * The plex tabs of a window: where each one stands, which one a new plex opens
+ * The plex tabs of a window: the state of each tab, and which tab a new plex opens in.
  */
 import { describe, expect, it } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
@@ -38,7 +38,7 @@ const window = (options: HostOptions = {}) => {
     await settle()
     return { id, state }
   }
-  /** The person is in this tab now. */
+  /** The user switches to this tab. */
   const showTab = (id: string) => kind.onShow!(open.get(id)!.state, id)
   /** The tab closes, and the window drops what it held. */
   const closeTab = (id: string) => {

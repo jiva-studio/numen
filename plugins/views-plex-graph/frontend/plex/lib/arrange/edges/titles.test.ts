@@ -15,7 +15,7 @@ const perLetter = (width: number) => (label: string) => width * [...label].lengt
 
 const measureLabel = perLetter(6)
 
-/** How deep a line of label type stands, as the window would have measured it. */
+/** The height of a line of label text, as measured in the window. */
 const labelDepth = 12
 
 /** What every arrangement here measures its titles with. */
@@ -24,16 +24,15 @@ const measured = { measureLabel, labelDepth }
 const VIEWPORT = { width: 1200, height: 800 }
 
 /**
- * A window narrow enough that a row runs its titles short of room. What a
- * title does when the line it is set on cannot hold it is only visible where
- * some of them cannot.
+ * A narrow layout in which a row of titles has too little space. Title
+ * behaviour on a line too short to hold it is only observable where some titles
+ * do not fit.
  */
 const CROWDED = { width: 900, height: 800 }
 
 /**
- * How far along its line a title has moved when all it did was step clear of
- * the boxes its own line joins: a nudge, and not the slide of a title that had
- * to go looking for room.
+ * The offset along its line of a title that only moved clear of the boxes its
+ * own line joins: a nudge, not the slide of a title that had to find space.
  */
 const A_NUDGE = 0.1
 
@@ -48,8 +47,8 @@ const isOverlapping = (one: Box, other: Box): boolean =>
   one.minX < other.maxX && other.minX < one.maxX && one.minY < other.maxY && other.minY < one.maxY
 
 /**
- * Where a title's words lie in the picture: the run of them along the line,
- * with half a line of type standing either side of the line.
+ * The area a title's text covers: the run along the line, with half a line of
+ * text height on either side.
  */
 function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = getLength(edge)
@@ -83,7 +82,7 @@ const boxAround = (node: PlacedNode): Box => ({
   maxY: node.y + node.height / 2,
 })
 
-/** One line, with room along it for whatever words it is given. */
+/** One line with enough length for any label it is given. */
 const createOneLine = (label: string): PlexNeighbourhood => ({
   nodes: [
     { id: 'focus', title: 'Here', relation: 'focus' },
@@ -277,7 +276,7 @@ describe('a title finds room on its line', () => {
     expect(tightest.words!.startsWith('the minutes of the me')).toBe(true)
     expect(Math.abs(tightest.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
 
-    // The line to the row beyond has room to spare, and gives way.
+    // The line to the farther row has spare length and yields.
     const roomier = crossing.edges.find((edge) => edge.to === 'child-4')!
     expect(roomier.words === undefined || roomier.wordsAt !== MIDDLE).toBe(true)
   })
@@ -291,9 +290,9 @@ describe('a title finds room on its line', () => {
 })
 
 /**
- * Lines drawn straight across a plain page, so where a title stands is a
- * matter of counting along them. A letter is ten wide, a line of type twelve
- * deep, and a title keeps a quarter of that clear of whatever it stands near.
+ * Straight lines across a plain canvas, so title positions follow from
+ * counting along them. A letter is 10 wide, a line of text 12 high, and a title
+ * keeps a quarter of that clear of nearby boxes.
  */
 describe('a title set on a straight line', () => {
   const TEN = perLetter(10)
@@ -341,7 +340,7 @@ describe('a title set on a straight line', () => {
     opacity: 1,
   })
 
-  /** Where the middle of a title is, in the picture. */
+  /** The centre of a title. */
   const getCentre = (edge: PlacedEdge): Position =>
     createPointOnCurve(edge)(edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt)
 
@@ -349,8 +348,8 @@ describe('a title set on a straight line', () => {
   const acrossLine = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
 
   it('keeps clear of a box that remains over only the depth of the type', () => {
-    // The box starts 6 below the line. The type reaches 9 either side of it, and
-    // 3 of that is the room a title keeps from whatever it stands near.
+    // The box starts 6 below the line. The text extends 9 on either side of it,
+    // and 3 of that is the clearance a title keeps from nearby boxes.
     const lower = createBlocker('lower', -32.5, 13.5, 19)
     const [resolved] = separateTitles([acrossLine('abcde')], [lower], edgeRouting)
 

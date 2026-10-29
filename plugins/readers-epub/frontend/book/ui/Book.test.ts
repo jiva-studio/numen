@@ -12,9 +12,8 @@ const CHAPTER = createChapter([{ tag: 'p', text: 'Один абзац, и гла
 const BOOK = { start: 0, end: CHAPTER.span.end + 500 }
 
 /**
- * A book reader in a room nothing has laid out. jsdom measures nothing, so the
- * text evaluates to no countSpreads at all and what is asked here is what the reader
- * does when it has none.
+ * A book reader in a document with no layout. jsdom measures nothing, so the
+ * text has no spread count and the tests cover the reader's behavior without one.
  */
 const reader = async (book = BOOK) => {
   const wrapper = mount(Book, {
@@ -27,13 +26,13 @@ const reader = async (book = BOOK) => {
   return wrapper
 }
 
-/** The offsets the reader has asked to be sent to, in the order it asked. */
+/** The offsets the reader requested to move to, in request order. */
 const getMoves = (wrapper: Awaited<ReturnType<typeof reader>>) =>
   (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 
 /**
- * A key the tab caught and handed down, answered with whether it turned the
- * page. The tab listens; the reader is asked.
+ * A key handled by the tab and passed down, returning whether it turned the
+ * page. The tab listens; the reader is queried.
  */
 const pressKey = (wrapper: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
   (wrapper.vm as unknown as { handleKey(event: KeyboardEvent): boolean }).handleKey(
@@ -48,8 +47,8 @@ describe('a document nothing has laid out', () => {
   })
 
   it('says nothing about what is in front', async () => {
-    // Where a run of the text stands is what the browser laid out, and a
-    // reading area nothing has measured has no run in front of anybody.
+    // The position of a text run comes from the browser layout, and an
+    // unmeasured reading area has no run at the current position.
     const target = await reader()
 
     expect(getMoves(target)).toHaveLength(0)
@@ -203,7 +202,7 @@ const LAID = createChapter(
   400,
 )
 
-/** What the browser is told about the reading area, which jsdom never says. */
+/** Sets the reading area size that a browser would report and jsdom does not. */
 const setSize = (area: HTMLElement, width: number, high: number): void => {
   Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
@@ -246,7 +245,7 @@ const mountBook = async () => {
 
   ;(wrapper.vm as unknown as { measure(): void }).measure()
   // The columns are measured after the browser has laid them out, which is the
-  // frame after the one that asked, and a frame jsdom draws on its own clock.
+  // frame after the requesting one, on a frame clock that jsdom drives itself.
   await new Promise((resolve) => setTimeout(resolve, 50))
   await new Promise((resolve) => setTimeout(resolve, 50))
   await wrapper.vm.$nextTick()
@@ -335,8 +334,8 @@ describe('a document replaced while a later spread of the one before is in front
 
     await target.setProps({ markup: NEXT.markup, span: NEXT.span, at: NEXT.span.start })
 
-    // The frame that stands the new document has not come yet, and the text
-    // carried to the old spread is not shown in the meantime.
+    // The frame that applies the new document has not run yet, and the text
+    // positioned for the old spread is hidden in the meantime.
     expect(target.find('.book__paper').classes()).toContain('book__paper--unset')
 
     await new Promise((resolve) => setTimeout(resolve, 50))

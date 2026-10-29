@@ -22,7 +22,7 @@ type antigravityModel struct {
 	Title string
 }
 
-// listAntigravityModels asks the program for its models: the output of "models", one model to a
+// listAntigravityModels queries the program for its models: the output of "models", one model per
 // line as its name, a tab and its title.
 func listAntigravityModels(ctx context.Context, command []string) ([]antigravityModel, error) {
 	name, args := resolveCommand(command)

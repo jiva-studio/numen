@@ -179,7 +179,7 @@ function onDismissLinkInspector() {
 </template>
 
 <style scoped>
-/* The picture takes what the band above it leaves. */
+/* The graph takes the space the band above it leaves free. */
 .plex {
   position: relative;
   display: flex;

@@ -1,10 +1,10 @@
 /**
- * The two multipliers, and the three kinds of length they reach.
+ * The two multipliers, and the three kinds of length they affect.
  *
- * The toolbar sets both, and every specimen here is drawn from a token, so
+ * The toolbar sets both, and every specimen here is rendered from a token, so
  * turning a knob shows which kind moved. It is also where the sizing contract
- * is asserted: the play measures each kind with nothing asked for, at 1, and at
- * either end of what a person can ask for.
+ * is asserted: the play measures each kind with no multiplier set, at 1, and at
+ * either end of the range a user can select.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
@@ -32,7 +32,7 @@ const CHROME = [
   '--numen-turn-gap',
 ] as const
 
-/** What the text multiplier reaches, over whatever the interface is drawing. */
+/** What the text multiplier affects, over whatever the interface renders. */
 const READING = ['--numen-reading-size', '--numen-prose-size'] as const
 
 /** What follows neither: one line, whatever it separates. */
@@ -40,7 +40,7 @@ const NEITHER = ['--numen-stroke', '--numen-ring-width', '--numen-edge-width'] a
 
 type Token = (typeof CHROME)[number] | (typeof READING)[number] | (typeof NEITHER)[number]
 
-/** The pixel each is drawn at with nothing asked for, and the root with them. */
+/** The pixel size each is rendered at with no multiplier set, and the root with them. */
 const AS_DESIGNED: Record<Token, number> = {
   '--numen-font-size': 13,
   '--numen-edge-label-size': 10,
@@ -67,7 +67,7 @@ const AS_DESIGNED: Record<Token, number> = {
 
 const ROOT_AS_DESIGNED = 16
 
-/** The three kinds, in the words the specimen sheet says them in. */
+/** The three kinds, labelled as the specimen sheet labels them. */
 const KINDS = [
   {
     name: 'The interface',
@@ -174,16 +174,16 @@ const showEach = async (tokens: readonly Token[], times: number) => {
 }
 
 /**
- * What each of the three kinds is drawn at, as the two multipliers move.
+ * What each of the three kinds renders at, as the two multipliers move.
  *
- * The play sets them itself and puts back what the toolbar had, so what is
- * looked at is still whatever the toolbar says.
+ * The play sets them itself and restores the toolbar values, so the displayed
+ * state remains whatever the toolbar sets.
  */
 export const Playground: Story = {
   play: async () => {
     const target = getScales()
     try {
-      // Nothing asked for, and 1: the pixel every length resolves to today.
+      // No multiplier set, and 1: the pixel every length currently resolves to.
       const asDesigned: readonly (readonly [string, string])[] = [
         ['', ''],
         ['1', '1'],

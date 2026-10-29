@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// waitForIndex waits until the vault holds the note at this path, which is what
-// says the walk that reads a file it has just been given is over.
+// waitForIndex waits until the vault holds the note at this path, which signals
+// that the walk reading a file it has just been given is over.
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
@@ -30,8 +30,8 @@ func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, pat
 	t.Fatalf("%s was never read into the index", path)
 }
 
-// TestTheAgentRenamesTheWayTheSettingsSay. `note_rename` reaches the same use
-// case the window does, and the tools carry the one setting to it.
+// TestTheAgentRenamesTheWayTheSettingsSay. `note_rename` calls the same use
+// case the window does, and the tools pass the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
 		sync     note.SyncTitleAndFilename

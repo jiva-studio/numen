@@ -1,10 +1,10 @@
 package domain
 
-// Relation is where a note sits relative to the one being looked at.
+// Relation is the position of a note relative to the focus note.
 //
-// It is not a link role. A role is written in a file and says what one link is
-// for; a relation is worked out from both ends of every link at once, and one of
-// them — the sibling — is written nowhere at all.
+// It is not a link role. A role is written in a file and states what one link is
+// for; a relation is derived from both ends of every link at once, and one of
+// them, the sibling, is written nowhere.
 type Relation string
 
 const (
@@ -42,12 +42,13 @@ type NoteRef struct {
 	ID string
 }
 
-// Neighbour is a note, where it is located, and what the link that relates it says.
+// Neighbour is a note, its location, and the label of the link that relates
+// it.
 type Neighbour struct {
 	NoteRef
 	Relation Relation
 
-	// Label is what the person wrote on the link.
+	// Label is the text written on the link.
 	Label string
 
 	// ReverseLabel is what the other note wrote on its link back, when IsMutual is true.

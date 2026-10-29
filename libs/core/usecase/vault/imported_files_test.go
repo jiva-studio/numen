@@ -55,9 +55,9 @@ func (h handedOver) Open(_ context.Context, handle string) (io.ReadCloser, error
 
 func (handedOver) HasHandle(string, string) bool { return false }
 
-// What a person hands over is read through the port, so a machine that names
-// its files anything but paths can bring them in. A use case reaching the
-// filesystem itself cannot be bound on a phone at all.
+// User-supplied files are read through the port, so a machine that identifies
+// its files by anything but paths can still import them. A use case that
+// accesses the filesystem directly cannot be bound on a phone at all.
 func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)

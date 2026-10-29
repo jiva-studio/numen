@@ -205,7 +205,7 @@ const NO_TEXT_LINKS: readonly TextLink[] = []
 function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps) {
   const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
   const linksByTurn = shallowRef<ReadonlyMap<string, TurnLinks>>(new Map())
-  // A turn has at most one request in flight; a text that changes meanwhile is asked about after it.
+  // A turn has at most one request in flight; a text that changes meanwhile is queried after it.
   const pendingTurns = new Set<string>()
   const enrichedByTurn = new WeakMap<
     Turn,
@@ -214,7 +214,7 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
 
   const resolveTurn = (turn: Turn) => {
     if (pendingTurns.has(turn.id) || linksByTurn.value.get(turn.id)?.text === turn.text) return
-    // A text without `[[` holds no wikilink, and the core is not asked about it.
+    // A text without `[[` holds no wikilink, and the core is not queried about it.
     if (!turn.text.includes('[[')) {
       linksByTurn.value = new Map(linksByTurn.value).set(turn.id, {
         text: turn.text,
@@ -252,8 +252,8 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
     { immediate: true },
   )
 
-  // A turn keeps the links of the text last read while a longer text is asked about,
-  // so a link already drawn stays drawn as the answer arrives.
+  // A turn keeps the links of the text last read while a longer text is queried,
+  // so a link already rendered stays rendered as the response arrives.
   const enrichTurn = (turn: Turn): Turn => {
     const links = linksByTurn.value.get(turn.id)?.links ?? NO_TEXT_LINKS
     if (!links.length) return turn

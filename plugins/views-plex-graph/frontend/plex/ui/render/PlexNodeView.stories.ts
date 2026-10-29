@@ -169,11 +169,11 @@ type Story = StoryObj<Knobs>
 export const Playground: Story = {}
 
 /**
- * All five relations at once, each where it would sit around a focus.
+ * All five relations at once, each placed around a focus node.
  *
- * Not a knob turned five times: what is being judged is whether the hues tell
- * one relation from another and whether the focus reads as somewhere the reader
- * already is, and neither question can be asked of one node at a time.
+ * The check is whether the hues distinguish one relation from another and
+ * whether the focus node is distinguishable as the current node. Neither can be
+ * judged on a single node.
  */
 export const EveryRelation: Story = {
   render: renderScene(
@@ -203,8 +203,8 @@ export const EveryRelation: Story = {
       return [getComputedStyle(icon).color, getComputedStyle(title).color]
     }
 
-    // A node carries its relation's hue before its title. The focused one is
-    // painted from that hue, so there the icon takes the title's own ink.
+    // A node carries its relation's hue before its title. The focused node is
+    // painted from that hue, so its icon takes the title's own color.
     const [child, childTitle] = ink('Below it')
     expect(child).not.toBe(childTitle)
     const [focus, focusTitle] = ink('Where you are')
@@ -213,13 +213,13 @@ export const EveryRelation: Story = {
 }
 
 /**
- * The handle: absent until the node has a hand or the keyboard on it.
+ * The handle: absent until the node is hovered or focused by keyboard.
  *
- * which navigates when pressed, so pressing the handle must start a gesture
- * and must not also choose the node underneath.
+ * Pressing the handle navigates, so it must start a gesture and must not also
+ * select the node underneath.
  *
- * Only a browser can answer any of it: what tab actually stops on inside an
- * SVG, and whether preventing a pointer's default really keeps focus off.
+ * Only a browser can verify this: where tab stops inside an SVG, and whether
+ * preventing the pointer default keeps focus off the node.
  */
 export const Reaching: Story = {
   play: async ({ args, canvasElement }) => {
@@ -227,7 +227,7 @@ export const Reaching: Story = {
     const node = canvas.getByLabelText('A node, child')
     const handle = () => canvasElement.querySelector('.plex__handle')
 
-    // Under the hand, and gone again when it leaves.
+    // Present under the pointer, absent again when the pointer leaves.
     await expect(handle()).toBeNull()
     await userEvent.hover(node)
     await expect(handle()).not.toBeNull()
@@ -240,8 +240,8 @@ export const Reaching: Story = {
       canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect().width,
     ).toBeGreaterThan(0)
 
-    // Pressing it: a gesture begins, and the node is neither chosen nor left
-    // holding the focus a press would otherwise give it.
+    // Pressing it starts a gesture; the node is not selected and does not take
+    // the focus a press would otherwise give it.
     await userEvent.pointer([{ keys: '[MouseLeft]', target: handle()! }])
     await expect(args.onReach).toHaveBeenCalledTimes(1)
     await expect(args.onActivate).not.toHaveBeenCalled()
@@ -302,8 +302,8 @@ export const AwkwardLabels: Story = {
       await expect(text.width).toBeLessThanOrEqual(box.width)
     }
 
-    // One line and an ellipsis, never two. The first of these has room to
-    // break and the second has none, and neither is any taller for it.
+    // One line with an ellipsis, never two. The first title has room to wrap
+    // and the second has none, and neither node grows taller.
     for (const tooLong of [/^Заметка/, /^Supercalifragilistic/]) {
       const title = canvas.getByLabelText(tooLong).querySelector('.plex__title-text')!
       await expect(title.scrollWidth).toBeGreaterThan(title.clientWidth)
@@ -313,11 +313,11 @@ export const AwkwardLabels: Story = {
 }
 
 /**
- * The two corners a node is drawn with: its own, and the wider one the node in
- * front wears.
+ * The two corner radii of a node: its own, and the larger radius of the node in
+ * front.
  *
- * Both are lengths in rem inside the node itself, and what a rem evaluates to is
- * the browser's answer and no test's.
+ * Both are lengths in rem inside the node, and the computed value of a rem is a
+ * browser result, so it is checked in a browser.
  */
 export const TheCornersAreAsDesigned: Story = {
   render: renderScene(
@@ -359,12 +359,12 @@ export const PartWayThere: Story = {
 }
 
 /**
- * On the dark set of tokens, with the pointer put on a plain node and on the
- * focused one.
+ * The dark token set, with the pointer over a plain node and over the focused
+ * node.
  *
- * Hover mixes a little of a node's own title into the ground under it, and the
- * focused node is painted from a different pair. Both have to move towards
- * their own title on a dark ground as they do on a light one.
+ * Hover mixes part of a node's title color into its background, and the focused
+ * node uses a different color pair. Both must move toward their own title color
+ * on a dark background as they do on a light one.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -393,9 +393,9 @@ export const Dark: Story = {
       const restingLightness = lightness(getComputedStyle(box).fill)
       fills.push(restingLightness)
 
-      // The title is read off the ground the box is painted, which is what the
-      // hover then moves a little way towards. On the dark set a plain node is
-      // light on dark and the focused one is dark on light.
+      // The title color is compared with the box background, which hover then
+      // moves part of the way toward the title color. On the dark token set a
+      // plain node is light on dark and the focused node is dark on light.
       await expect(Math.abs(ink - restingLightness)).toBeGreaterThan(40)
       await expect(Math.sign(ink - restingLightness)).toBe(title === 'Where you are' ? -1 : 1)
 
@@ -407,8 +407,8 @@ export const Dark: Story = {
       })
     }
 
-    // The focused node is painted from its own pair, so it is not the same
-    // ground as the node beside it.
+    // The focused node uses its own color pair, so its background differs from
+    // the adjacent node's.
     await expect(Math.abs(fills[0]! - fills[1]!)).toBeGreaterThan(2)
   },
 }

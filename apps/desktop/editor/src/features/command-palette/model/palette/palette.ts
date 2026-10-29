@@ -1,11 +1,11 @@
 /**
- * The palette a person types into: which step it relies on, what it draws
- * there, and the invocation an answer makes.
+ * The palette the user types into: which step it depends on, what it renders
+ * there, and the invocation a response makes.
  *
- * A command that needs nothing is carried out the moment it is chosen. One that
- * needs a name, a note, a vault or an answer opens a step of its own, and the
- * step it relies on is what the field means. What a step draws is read again
- * on every keystroke, so a vault moving under an open step is drawn as it is.
+ * A command that needs nothing runs as soon as it is chosen. One that needs a
+ * name, a note, a vault or an answer opens a step of its own, and the step it
+ * depends on is what the field means. What a step renders is recomputed on
+ * every keystroke, so a vault changing under an open step is rendered as it is.
  */
 import {
   computed,
@@ -35,10 +35,10 @@ import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 import { createPaletteSteps } from './navigation'
 
-/** How many notes the step that picks one asks for. */
+/** How many notes the step that picks one requests. */
 const GROUP_RESULT_LIMIT = 8
 
-/** What the palette holds before anything is asked of the vault. */
+/** What the palette holds before the vault is queried. */
 const BLANK = {
   found: [] as readonly NameMatch[],
   known: [] as readonly Vault[],

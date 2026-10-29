@@ -17,7 +17,7 @@ type URL string
 // file nor a host that is this machine is an address a link may carry.
 var ErrNotAURL = errors.New("not a web address")
 
-// Parse reads what a person pasted.
+// Parse reads a pasted address.
 //
 // The scheme and the host are lowercased, a default port and a fragment are
 // dropped, and the parameters a site adds to say where a visitor came from are
@@ -45,9 +45,10 @@ func Parse(raw string) (URL, error) {
 	return URL(address.String()), nil
 }
 
-// isLocalHost says whether a host is this machine. A file points somewhere a
-// browser would go, and what listens on this machine is not that: an index, a
-// window's own socket and whatever else is running answer nobody's paste.
+// isLocalHost reports whether a host is this machine. A file points at a
+// location a browser would visit, and services listening on this machine are
+// not that: an index, a window's own socket and other local processes are not
+// valid pasted addresses.
 func isLocalHost(host string) bool {
 	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
 		return true

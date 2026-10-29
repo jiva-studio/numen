@@ -32,12 +32,12 @@ var ErrExist = edit.ErrExist
 // hearing about, and "no such note" would hide it.
 var ErrOutside = errors.New("not a path inside the vault")
 
-// IsNoNote reports whether an error says there is no note at the path: nothing is
-// there, or something is there that the vault leaves alone.
+// IsNoNote reports whether an error means there is no note at the path: nothing
+// exists there, or the file there is one the vault ignores.
 //
-// A caller with work to do on a note asks this. Which of the two it is matters
-// to a caller acting on the difference, and it is the difference the two
-// sentinels carry.
+// A caller that needs to act on a note checks this. The two cases are
+// distinguished by the two sentinel errors, for callers that handle them
+// differently.
 func IsNoNote(err error) bool {
 	return edit.IsNoNote(err)
 }
@@ -62,18 +62,18 @@ type VaultReader interface {
 	List(ctx context.Context, folder string) ([]domain.Entry, error)
 	// Read returns the bytes of one file, addressed by a path a walk reported.
 	Read(ctx context.Context, path string) ([]byte, error)
-	// Open is one file to read a part of. A recording is played from the middle
-	// and is hours long, and holding all of it to answer for a second of it is
-	// the whole file in memory for every listener.
+	// Open returns a file for partial reads. A recording is hours long and is
+	// played from the middle, so reading the whole file into memory for every
+	// listener is not acceptable.
 	//
-	// The same errors as Read. Whoever opens it closes it.
+	// The errors are the same as Read. The caller closes the file.
 	Open(ctx context.Context, path string) (io.ReadSeekCloser, error)
-	// StatFile answers what a walk reports about one path: its kind, its size and
-	// when it changed. It reads no bytes, so it is what a caller asks about a
-	// file it does not want to open.
+	// StatFile returns what a walk reports about one path: its kind, size and
+	// modification time. It reads no bytes, so it is the call for a file the
+	// caller does not want to open.
 	//
-	// fs.ErrNotExist when there is nothing at the path. ErrNotANote when a
-	// file is there that the vault leaves alone.
+	// It returns fs.ErrNotExist when there is nothing at the path, and
+	// ErrNotANote when the file there is one the vault ignores.
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 }
 
@@ -88,9 +88,9 @@ func IsNote(path string) bool {
 	return strings.EqualFold(pathpkg.Ext(path), domain.NoteExtension)
 }
 
-// ReadNoteType is the type the note at the path carries in its frontmatter as the file now reads,
-// so a note just written has its type before the index holds it. A file that is no note has no
-// type and is not read.
+// ReadNoteType returns the type declared in the frontmatter of the note at the
+// path, read from the current file, so a note just written has its type before
+// the index holds it. A file that is not a note has no type and is not read.
 func ReadNoteType(ctx context.Context, readers VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
 	if !IsNote(path) {
 		return "", nil

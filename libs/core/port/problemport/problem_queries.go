@@ -6,22 +6,23 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ProblemQueries answers the questions a check cannot answer from one file.
+// ProblemQueries answers the questions that a check cannot answer from a single
+// file.
 //
-// Two of these are read back from what a scan stored while parsing; two are
-// worked out across the whole vault at the moment they are asked, because what
-// they answer depends on every other note and stops being true when one moves.
+// Two of these are read from the results stored by the scan during parsing; two
+// are computed across the whole vault when queried, because their results
+// depend on every other note and become invalid when any note moves.
 type ProblemQueries interface {
-	// GetParseProblems is what parsing each file turned up, as the parser said
-	// it.
+	// GetParseProblems returns the problems found while parsing each file, as
+	// reported by the parser.
 	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
-	// GetUnreadable is the notes whose frontmatter is not YAML, with what the
-	// parser said about it.
+	// GetUnreadable returns the notes whose frontmatter is not YAML, with the
+	// parser's error message.
 	GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 
-	// GetAmbiguousLinks is every link that more than one note answers to, resolved the
-	// same way a link is resolved anywhere else.
+	// GetAmbiguousLinks returns every link that more than one note matches,
+	// resolved the same way as links everywhere else.
 	GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error)
-	// GetDanglingLinks is every link that reaches nothing at all.
+	// GetDanglingLinks returns every link that resolves to no note.
 	GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error)
 }

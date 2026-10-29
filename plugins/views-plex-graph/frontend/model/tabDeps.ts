@@ -1,5 +1,5 @@
 /**
- * What one plex tab asks of the window, answered by the host's workspace and the
+ * What one plex tab requests of the window, served by the host's workspace and the
  * notes of the vault.
  */
 import type { VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
@@ -13,7 +13,7 @@ export interface PlexHost {
   readonly nesting: Nesting
 }
 
-/** What the plex tab `id` asks of the window. A note it opens goes to its linked tabs first. */
+/** What the plex tab `id` requests of the window. A note it opens goes to its linked tabs first. */
 export function createPlexTabDeps(
   { workspace, notes, nesting }: PlexHost,
   id: string,

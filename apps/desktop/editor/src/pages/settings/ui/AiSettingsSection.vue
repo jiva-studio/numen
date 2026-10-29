@@ -163,7 +163,7 @@ function onSecretDelete(pluginId: string, name: string) {
   text-transform: uppercase;
 }
 
-/* A plugin waiting for an answer stands above the rows, with the two answers. */
+/* A plugin awaiting a response is shown above the rows, with the two response actions. */
 .settings__asking {
   display: flex;
   flex-wrap: wrap;

@@ -48,7 +48,7 @@ export interface Tab {
   readonly filePath: string | null
   /** The body on screen. */
   readonly editorText: string
-  /** The body on its way to the file, and nothing where no write is in the air. */
+  /** The body being written to the file, or null when no write is pending. */
   readonly pendingWrite: string | null
   /** Whether the pending write has to be followed by another write. */
   readonly hasPendingWrite: boolean
@@ -109,7 +109,7 @@ export type WriteResult =
   | { readonly kind: 'changed' }
   | { readonly kind: 'error'; readonly error: NoteErrorCode }
 
-/** What a tab is told about. */
+/** An event that a tab handles. */
 export type Event =
   | { readonly kind: 'read'; readonly generation: number; readonly answer: ReadResult }
   | { readonly kind: 'edited'; readonly body: string; readonly at: number }

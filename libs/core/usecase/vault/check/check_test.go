@@ -56,8 +56,8 @@ func filterByCheck(found []domain.VaultProblem, check domain.Check) []domain.Vau
 	return out
 }
 
-// The point of the whole arrangement: the problem is against the note somebody
-// opens to settle it, which for an ambiguous link is the note that wrote it.
+// The point of the whole design: the problem is reported against the note to
+// open to resolve it, which for an ambiguous link is the note that wrote it.
 func TestAnAmbiguousLinkIsTheProblemOfTheNoteThatWroteIt(t *testing.T) {
 	l, v := scanVault(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
@@ -114,8 +114,8 @@ func TestCheck_DanglingLinkReportedOnlyWhenRequested(t *testing.T) {
 	}
 }
 
-// Writing the missing note mends it, and nobody touches the link: what a name
-// reaches is worked out when it is asked.
+// Writing the missing note repairs the link, and the link is not edited: what a
+// name resolves to is computed at query time.
 func TestWritingTheMissingNoteMendsADanglingLink(t *testing.T) {
 	l, v := scanVault(t, map[string]string{
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -174,7 +174,7 @@ func TestTheSetOfChecksIsWhatRuns(t *testing.T) {
 
 // An identifier no vault here holds is not a broken link: it names one note in
 // the world, and the vault holding it may not be open on this machine. The
-// resolver says so deliberately, and the check must not disagree with it.
+// resolver treats it that way deliberately, and the check must agree.
 func TestAnIdentifierFromAnotherVaultIsNotDangling(t *testing.T) {
 	l, v := scanVault(t, map[string]string{
 		"Heat.md": "---\nlinks:\n  - to: note://01J8F3K2M9QRSTVWXYZ012\n    role: parent\n---\n# Heat\n",

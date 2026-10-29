@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// One key says what a note is, and any word will do: a plugin gives a note the type it works
-// with.
+// One key declares what a note is, and any word is valid: a plugin gives a note
+// the type it works with.
 func TestOneKeyReturnsWhatANoteIs(t *testing.T) {
 	for content, want := range map[string]domain.NoteType{
 		"---\ntype: note\n---\n":     domain.TypeNote,
@@ -49,8 +49,8 @@ func TestATypeThatIsNotText(t *testing.T) {
 	}
 }
 
-// A note's type and a link's type are two keys of one word, told apart by an
-// indent and by nothing else.
+// A note's type and a link's type are two keys of the same word, distinguished
+// only by indentation.
 func TestALinksTypeIsNotTheNotesType(t *testing.T) {
 	n := markdown.Parse(domain.FileStat{Path: "Entropy.md"}, []byte(
 		"---\ntype: sample\nlinks:\n  - to: Thermodynamics\n    role: parent\n    type: source\n---\n"))

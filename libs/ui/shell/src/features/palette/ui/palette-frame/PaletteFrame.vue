@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * The ground the palette relies on, and the panel it is drawn in.
+ * The backdrop of the palette, and the panel it is rendered in.
  *
- * The ground catches every press the panel does not, and the window behind is
- * out of reach for as long as the panel stands.
+ * The backdrop catches every press the panel does not, and the window behind
+ * is not interactive while the panel is open.
  *
  * `data-palette` names each part: `ground` and `panel`.
  */
@@ -17,7 +17,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  /** A press on the ground itself. */
+  /** A press on the backdrop itself. */
   (event: 'ground'): void
   /** A press anywhere in the panel. */
   (event: 'press'): void

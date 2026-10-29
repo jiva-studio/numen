@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * One page of a document, in the row: the picture, what is highlighted over it,
- * and a ring turning while it is on its way.
+ * One page of a document in the reader row: the page image, the highlights over
+ * it, and a spinner while it loads.
  *
- * Nothing is painted until the page has arrived, and a highlight is placed in
- * fractions of it, so the zoom carries it along. A page that did not come is
- * asked for again a few times, each ask carrying a number the last one did not.
+ * Nothing is painted until the page image has loaded, and highlights are placed
+ * in fractions of the page, so zoom scales them. A page that fails to load is
+ * requested again a few times, each request carrying a distinct `again` number.
  */
 import { computed, ref, watch } from 'vue'
 import { Spinner } from '@numen/ui'
@@ -17,16 +17,15 @@ const props = withDefaults(
     /** Which page of the document this is, counted from the first. */
     at: number
     /**
-     * Where it is drawn, as an address to point a picture at. A page asked for
-     * again carries an `again` parameter, joined on with `&` where the address
-     * already asks something and with `?` where it does not.
+     * Image URL of the page. A retry appends an `again` parameter, joined with `&`
+     * when the URL already has a query string and with `?` otherwise.
      */
     picture?: string
     /** What is highlighted on it, in fractions of it. */
     highlights?: readonly Rect[]
     /** The other places named on it, apart from the one opened at. */
     otherHighlights?: readonly Rect[]
-    /** What the page is called, for whoever cannot see it. */
+    /** Accessible name of the page. */
     page?: string
     /** Error message displayed when a page fails to load. */
     undrawn?: string
@@ -41,17 +40,17 @@ const props = withDefaults(
 )
 
 /* ---------------------------------- State --------------------------------- */
-/** How many times a page that did not come is asked for again. */
+/** Maximum number of retries after a page fails to load. */
 const ATTEMPTS = 3
 
-/** How many times this page has been asked for again, and whether it arrived. */
+/** Number of retries so far, and whether the image loaded. */
 const tries = ref(0)
 const isLoaded = ref(false)
 
-/** Whether it has been asked for as many times as it is going to be. */
+/** Whether the retries are exhausted. */
 const givenUp = computed(() => tries.value > ATTEMPTS)
 
-/** The address it is asked for at, this attempt. */
+/** The image URL for the current attempt. */
 const imageUrl = computed(() => {
   if (!props.picture || givenUp.value) return ''
   const separator = props.picture.includes('?') ? '&' : '?'
@@ -59,7 +58,7 @@ const imageUrl = computed(() => {
 })
 
 /* ---------------------------------- Hooks --------------------------------- */
-// Reset retry state when the picture URL changes.
+// Reset retry state when the page image URL changes.
 watch(
   () => props.picture,
   () => {
@@ -114,7 +113,7 @@ const getBoxStyle = (one: Rect) => ({
 </template>
 
 <style scoped>
-/* The page relies on the surface, and its own edge is what tells it from it.
+/* The page border separates the page from the surface.
    The edge is the page's, so a highlight is placed inside it. */
 .reader__page {
   border: var(--numen-stroke) solid var(--numen-rule);

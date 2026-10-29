@@ -1,10 +1,10 @@
 /**
- * How the window is drawn, without a window.
+ * Appearance handling without a window.
  *
- * Three things are asked here: that the theme's element is the one written
- * over, since the mode's has to stand before it; that leaving a list puts back
- * what the settings name without reading a file for it; and that a size is
- * drawn only once the keyboard has stood on its row.
+ * Three behaviors are verified: that the theme's element is written after the
+ * mode's, so the theme takes precedence; that leaving a list restores the value
+ * from the settings without reading a file; and that a size is applied only
+ * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { StepGroup } from '@/shared/steps'
@@ -65,16 +65,16 @@ const APPEARANCE: Appearance = {
   bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
 }
 
-/** A moment for whatever was asked of the application to come back. */
+/** A short delay for pending application requests to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** The keyboard stood on a row for longer than the window holds a size. */
+/** A delay longer than the interval after which the window applies a size. */
 const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
 /** A range narrower than the one the application answers with. */
 const NARROW = { min: 1, max: 1.5 }
 
-/** Every tenth the interface goes between, as a person reads them. */
+/** Every tenth the interface scales between, as displayed to the user. */
 const TENTHS = [
   '80%',
   '90%',
@@ -91,7 +91,7 @@ const TENTHS = [
   '200%',
 ]
 
-/** The person's folder, which a test writes to. */
+/** The user's folder, which a test writes to. */
 const folder = () => {
   let wake: ((names: readonly string[]) => void) | null = null
   return {
@@ -133,7 +133,7 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
     },
     watchThemes: response.watchThemes,
   }
-  /** What the window was told, in the order it was told. */
+  /** The notifications sent to the window, in order. */
   const notifiedCalls: { text: string; kind: string }[] = []
   return {
     worn: createWindowAppearance({
@@ -188,8 +188,8 @@ describe('the page as it was served', () => {
   })
 
   it('notifies the three apart by the mark each carries', async () => {
-    // A theme's file is a person's own CSS: it may pin the scheme the mode's
-    // element holds and name a multiplier the sizes' element holds.
+    // A theme's file is user-supplied CSS: it may set the color scheme of the
+    // mode's element and a multiplier on the sizes' element.
     const one = await startWindow({}, ':root { color-scheme: dark; --numen-text-scale: 1.3 }')
 
     one.worn.previewItem('mine:sea')

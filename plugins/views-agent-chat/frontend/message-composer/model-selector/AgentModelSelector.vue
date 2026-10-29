@@ -13,7 +13,7 @@ export interface AgentModelOption {
   readonly modelTitle: string
   readonly isAvailable: boolean
   readonly isDefault?: boolean
-  /** The depths of reasoning the model can be asked to work at. None where it offers no choice. */
+  /** The reasoning depths the model supports. None when it offers no choice. */
   readonly reasoningLevels?: readonly ReasoningLevelOption[]
   /** The level the model works at unasked, empty where it names none. */
   readonly defaultReasoning?: string

@@ -181,8 +181,9 @@ func TestAWatchOverAnInnerWatchServesItsFollower(t *testing.T) {
 	}
 }
 
-// A folder followed inside one followed alone turns the watch on the outer folder into one over its
-// tree, and each follower hears only what it follows.
+// A folder watched inside a folder that is watched alone widens the watch on
+// the outer folder to its whole tree, and each watcher receives only the events
+// for what it watches.
 func TestAFolderInsideAFolderFollowedAloneWidensItsWatch(t *testing.T) {
 	dirs := makeTree(t, "settings")
 	system := newFakeSystem(t)

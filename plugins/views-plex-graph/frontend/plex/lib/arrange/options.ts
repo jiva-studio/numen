@@ -16,9 +16,9 @@ export interface BoxOptions {
   /** The narrowest a box is drawn, however little its title needs. */
   readonly minWidth: number
   /**
-   * Room kept beside a title for the icon a caller draws there, a gap from it
-   * and inside the same padding. A box is drawn this much wider wherever an
-   * icon is drawn, the plex having no way to measure one.
+   * Space reserved beside a title for the icon the caller renders there, as a
+   * gap from the title within the same padding. A box is this much wider wherever
+   * an icon is rendered, since the plex cannot measure one.
    */
   readonly iconWidth: number
   /** One place inside a node, as it is drawn under the box. */
@@ -31,17 +31,17 @@ export interface BoxOptions {
   readonly lineGap: number
   /** Between the focus box and the first line of any relation. */
   readonly focusGap: number
-  /** Kept clear of the window edge, so nothing sits flush against it. */
+  /** Distance kept from the viewport edge, so nothing touches it. */
   readonly margin: number
   /**
-   * How far a gap may open beyond its setting when the window has room. This
-   * multiple of a gap is the most it is given. At one, a gap never opens.
+   * How far a gap may exceed its setting when the viewport has spare space. This
+   * multiple of a gap is the maximum. At one, a gap never grows.
    */
   readonly spread: number
   /**
-   * How far a gap closes below its setting when the window is short of room.
-   * This fraction of a gap is the least it is given, and a box narrows towards
-   * `minWidth` alongside it. At one, nothing closes.
+   * How far a gap may shrink below its setting when the viewport is short of
+   * space. This fraction of a gap is the minimum, and a box narrows towards
+   * `minWidth` with it. At one, nothing shrinks.
    */
   readonly squeeze: number
 }
@@ -67,16 +67,17 @@ export interface RoutingOptions {
   /** And never less than this, or a short edge sets off crooked. */
   readonly minReach: number
   /**
-   * How much of a line an arrowhead takes. A title is set about the middle of
-   * its line, so a line carrying one has this much less room at either end.
+   * How much of a line an arrowhead occupies. A title is placed near the middle
+   * of its line, so a line with an arrowhead has this much less space at either
+   * end.
    */
   readonly arrowClearance: number
 }
 
 /**
- * The shape of a movement, as fractions of it. Deliberately not mirror
- * images: what is leaving goes early, so the picture is never at its most
- * crowded halfway through.
+ * The shape of a movement, as fractions of it. The two directions are
+ * deliberately asymmetric: the departing element moves early, so the layout is
+ * never at its most crowded halfway through.
  */
 export interface MotionOptions {
   /** When a node only in the new picture starts to appear. */
@@ -100,9 +101,9 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly gesture: GestureOptions
   readonly direction: Readonly<Record<PlexRelation, Direction>>
   /**
-   * The window the plex is drawn in. Given one, a line runs as long as the
-   * window holds and the gaps open into whatever room is left over. Without
-   * one, the limits above are taken literally.
+   * The viewport the plex is rendered in. With a viewport, a line extends as far
+   * as the viewport allows and the gaps grow into the remaining space. Without
+   * one, the limits above apply literally.
    */
   readonly viewport?: Size | undefined
 }

@@ -103,8 +103,8 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 }
 
 // TestAScanSeesBooksBesideNotes. A book found in a vault is reported without
-// anybody asking, and it is not counted as a note: what `Seen` means did not
-// change when a second kind of source became visible.
+// being requested, and it is not counted as a note: the meaning of `Seen` is
+// unchanged by a second source kind.
 func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
@@ -161,9 +161,9 @@ func TestEveryFileThatIsNotANoteIsAnAsset(t *testing.T) {
 	}
 }
 
-// TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly. Two vaults sharing no
-// words, and both directions asked: one index holds every vault, so a query
-// that forgets which one returns a plausible number.
+// TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly. Two vaults share no words
+// and are queried in both directions: one index holds every vault, so a query
+// that ignores the vault returns a plausible but wrong count.
 func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
@@ -300,11 +300,12 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	}
 }
 
-// cancellingReaders stops the scan the moment the walk is over.
+// cancellingReaders cancels the scan once the walk is complete.
 //
-// Not during it: the reader refuses a cancelled context itself, so a scan that
-// never looked at one would still stop there. What is left unguarded by anyone
-// else is the pass over what the walk found, which is the whole of a warm scan.
+// The cancellation happens after the walk, not during it: the reader rejects a
+// cancelled context itself, so a scan that never checked the context would
+// still stop during the walk. The pass over the walk results, which is the
+// entire work of a warm scan, is otherwise unguarded.
 type cancellingReaders struct {
 	vaultport.VaultReaders
 	cancel context.CancelFunc
@@ -329,7 +330,7 @@ func (c *cancellingReader) WalkFiles(ctx context.Context, fn func(domain.FileSta
 	return err
 }
 
-// countingReaders records how many files a scan actually opened.
+// countingReaders records the number of files a scan opens.
 type countingReaders struct {
 	vaultport.VaultReaders
 	reads int
@@ -593,9 +594,8 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 
 func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	t.Parallel()
-	// A vault has a working set and an archive. While a scan runs, what the
-	// person is looking for is what they touched recently, so that is what the
-	// index gets first.
+	// A vault has a working set and an archive. While a scan runs, recently
+	// modified notes are the ones in demand, so they are indexed first.
 	ctx := t.Context()
 	root := testsupport.CopyVault(t)
 	v, readers := vaultAt(t, root)
@@ -607,8 +607,8 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Asked of the order the notes reach the index in: what the index holds
-	// part-way through is whole groups, which says nothing about order.
+	// Checks the order in which notes reach the index: the index contents
+	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
 	scan := vaults.NewScan(readers, db.Vaults(), content, db.Queries(), db.Maintenance())
 	scan.Walks = db.Walks()
@@ -622,10 +622,10 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 }
 
 // TestScanStopsWhenCancelled. A cancelled scan keeps what it committed and
-// loses the group it was filling, whose files are read again next time.
+// discards the group being filled, whose files are read again on the next scan.
 //
-// Asserted on how far the walk got, not on the error: the next read refuses a
-// cancelled context by itself, so the error arrives either way.
+// Asserted on how far the walk got, not on the error: the next read rejects a
+// cancelled context itself, so the error occurs either way.
 func TestScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -653,13 +653,13 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	}
 }
 
-// TestAWarmScanStopsWhenCancelled is the case the check in the loop exists for.
-// A warm scan opens no file, so nothing refuses the cancelled context on the
-// scan's behalf and it has to notice by itself.
+// TestAWarmScanStopsWhenCancelled covers the check in the loop. A warm scan
+// opens no file, so no reader rejects the cancelled context and the scan must
+// check it itself.
 //
-// Cancelled part-way and not before it starts: cancelled up front, the
-// first query refuses and the loop is never reached, so the check it is written
-// for is never the thing that stopped it.
+// The context is cancelled part-way through, not before the start: with an
+// up-front cancellation the first query fails and the loop check is never
+// reached.
 func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 600)

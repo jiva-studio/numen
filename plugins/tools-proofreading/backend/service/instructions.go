@@ -1,6 +1,6 @@
 package service
 
-// scanInstruction is what the model is told it is doing over a scan.
+// scanInstruction is the model prompt for proofreading a scan.
 const scanInstruction = `You are proofreading text a machine read off the pages of a printed book.
 
 The text is one page as prose, with every printed line numbered: ` + Opens + `12` + Closes + ` opens the
@@ -21,7 +21,7 @@ Answer with the lines you would put right, one to a line:
 - A line you would leave alone is a line you do not answer with. A page you
   would leave alone is an empty answer.`
 
-// speechInstruction is what the model is told it is doing over a transcript.
+// speechInstruction is the model prompt for proofreading a transcript.
 const speechInstruction = `You are proofreading text a machine heard in a recording.
 
 The text is speech as prose, with every stretch of it numbered: ` + Opens + `12` + Closes + ` opens the

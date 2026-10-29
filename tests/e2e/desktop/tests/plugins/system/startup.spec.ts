@@ -4,7 +4,7 @@ import { openWorkspace } from '../../support/workspace'
 /** The words a plugin that did not start is reported in, as a notice or as a task. */
 const PLUGIN_FAILURE = /stopped:|Plugin stopped|failed to start|failed to load/i
 
-/** The stock plugins, started with the window and asked for what they serve. */
+/** The stock plugins, started with the window and queried for what they provide. */
 test.describe('the stock plugins after the window starts', () => {
   test('start without a failure, a markdown note open', async ({ page }) => {
     const failedFetches: string[] = []

@@ -49,9 +49,9 @@ export function createAnswer(actions: AnswerActions, paint: Paint): Answer {
       if (!id) {
         id = nextId()
         text = words
-        // The turn goes up with its first words in the same step the wait comes
-        // down. A window nobody is looking at draws no frames, and the frames
-        // are what grow the turn.
+        // The turn is published with its first words in the same step the wait
+        // is removed. A hidden window renders no frames, and the frames are what
+        // grow the turn.
         put({ id, voice: 'response', text, state: 'arriving' })
         return
       }

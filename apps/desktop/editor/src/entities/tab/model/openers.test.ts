@@ -1,5 +1,5 @@
 /**
- * The one place a file of the vault is opened from, asked without a window.
+ * The single entry point that opens a vault file, tested without a window.
  *
  * A note opens in the editor of its type; any other file in the reader
  * registered for its extension, at the selector given.
@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
-/** A vault that answers what it was told, and counts the questions. */
+/** A vault that returns the configured kinds and records the queries. */
 const vault = (stands: Record<string, FileKind> = {}) => {
   const request: (readonly string[])[] = []
   const core: FileOpenerDeps = {

@@ -6,8 +6,8 @@ import type { Result } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
 
 /**
- * What a note is, as the `type` key of its frontmatter says: `note`, or a type a plugin declares.
- * It says nothing about a file that is not a note.
+ * The note type from the `type` key of its frontmatter: `note`, or a type a plugin declares.
+ * It does not apply to a file that is not a note.
  */
 export type NoteType = string
 
@@ -42,7 +42,7 @@ export interface MoveResult {
 }
 
 /**
- * What moving a file or a folder did, or why nothing was moved. A value of
- * null is a move that was asked for and changed nothing.
+ * The result of moving a file or a folder, or the reason nothing was moved. A
+ * value of null is a requested move that changed nothing.
  */
 export type Movement = Result<MoveResult | null, ErrorCode>

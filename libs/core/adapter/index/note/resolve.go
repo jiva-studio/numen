@@ -57,20 +57,20 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 	return dedupe(out), nil
 }
 
-// dedupe folds links that turn out to point at the same note, which the same
-// note written two ways does: [[notes/Entropy]] in the links block and
-// [[Entropy]] in prose are one link, and the described one wins.
+// dedupe merges links that resolve to the same note, which happens when one
+// note is written two ways: [[notes/Entropy]] in the links block and [[Entropy]]
+// in prose are one link, and the described one wins.
 //
-// It happens here because only resolution knows that two different strings
-// mean one note.
+// Deduplication happens here because only resolution knows that two different
+// strings denote one note.
 func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	observed := map[string]int{}
 	var out []domain.ResolvedLink
 	for _, l := range links {
 		key := l.To
 		if key == "" {
-			// Unresolved links are only the same when written the same:
-			// nothing here knows what they meant.
+			// Unresolved links are equal only when written identically; their target is
+			// unknown here.
 			key = "\x00" + l.Target.String()
 		}
 		pos, recognized := observed[key]
@@ -87,9 +87,9 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	return out
 }
 
-// ResolveLinks answers where addresses written in one note land, keyed by what was
-// written. The priority is the one every name resolves by, so a wikilink
-// nobody recorded as a link is answered as a link is.
+// ResolveLinks returns the note each address written in one note resolves to,
+// keyed by the written text. Resolution priority is the one every name uses, so
+// a wikilink that was not recorded as a link resolves as a link does.
 func (q *Queries) ResolveLinks(
 	ctx context.Context, vaultID domain.VaultID, from string, content []string,
 ) (map[string]domain.ResolvedLink, error) {
@@ -122,16 +122,16 @@ func (q *Queries) ResolveLinks(
 func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.VaultID, from string, r *domain.ResolvedLink) error {
 	switch r.Target.Scheme {
 	case domain.SchemeNote:
-		// An identifier names one note in the world, so this lookup is not
-		// scoped to a vault — the one deliberate exception to the rule that a
-		// query without a vault reads someone else's notes.
+		// An identifier names one note globally, so this lookup is not scoped to a
+		// vault. It is the one deliberate exception to the rule that a query without a
+		// vault must not read another vault's notes.
 		err := q.db.QueryRowContext(ctx, stmt.Get("note_by_identifier"), r.Target.Value).
 			Scan(&r.ToVault, &r.To)
 		if errors.Is(err, sql.ErrNoRows) {
-			// Not dangling and not resolved: no connected vault holds this note.
-			// Whether it was deleted or simply lives in a vault the user has not
-			// added, nothing here can tell, and guessing would report a link as
-			// broken that is fine on the machine where both vaults are open.
+			// Neither dangling nor resolved: no connected vault holds this note. The
+			// index cannot distinguish a deleted note from one in a vault that is not
+			// connected, and reporting it as broken would be wrong on a machine where both
+			// vaults are open.
 			return nil
 		}
 		return err

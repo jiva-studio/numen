@@ -174,7 +174,7 @@ func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 }
 
 // TestSiblingsAreTheOtherChildrenOfAParent. Nothing stores a sibling; it is
-// what the shared parent knows.
+// derived from the shared parent.
 func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
 	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
@@ -280,10 +280,9 @@ func TestADanglingLinkHasNoRelation(t *testing.T) {
 
 // TestTheSameVaultDrawsTheSameWayTwice.
 //
-// Every note is called the same thing, on purpose. A picture ordered by what a
-// note is called is ordered by nothing at all when they share a name, and the
-// vault where that is true is the one a person notices it in: twelve daily
-// notes, twelve chapters, twelve "Notes".
+// Every note has the same name, on purpose. An ordering by note name is
+// undefined when notes share a name, and a vault where that is true shows the
+// problem: twelve daily notes, twelve chapters, twelve "Notes".
 func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{"Area.md": "---\ntitle: Area\n---\n\n# Area\n"}

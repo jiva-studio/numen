@@ -45,14 +45,14 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
   readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt' | 'findFileIcon'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
   readonly ask: (text: string) => void
-  /** The note the tool tab the person was last in relies on. */
+  /** The note focused in the tool tab the user was last in. */
   readonly getNoteInFocus: () => NoteRef
   /** The commands the plugins declare over one note. */
   readonly getNoteCommands: () => readonly MenuEntry[]
   readonly writeMessage: MessageWriter
   /** A writer of messages under a name of its own. */
   readonly getMessageWriter: (name: string) => MessageWriter
-  /** The day it is for the person now. */
+  /** Today's date as a string. */
   readonly today: () => string
 }
 

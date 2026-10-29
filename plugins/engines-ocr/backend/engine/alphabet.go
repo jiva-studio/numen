@@ -15,9 +15,10 @@ const (
 	valueField    = 2
 )
 
-// alphabet writes the characters the model reads, from the dictionary the settings name or else from
-// the model's metadata, as the recogniser takes them: one per line and the space last. The model knows
-// them, the space, and the blank of CTC.
+// alphabet returns the characters the model reads, from the dictionary named in
+// the settings or else from the model's metadata, in the format the recogniser
+// takes: one per line, with the space last. The model supplies the characters,
+// the space, and the CTC blank.
 func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	characters, err := readAlphabet(model, cfg.Dict)
 	if err != nil {

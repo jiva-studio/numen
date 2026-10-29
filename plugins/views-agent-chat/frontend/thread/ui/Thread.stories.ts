@@ -57,7 +57,7 @@ const renderThread =
   `,
   })
 
-/** Nothing said yet. */
+/** No content yet. */
 export const Silent: Story = { render: renderThread([]) }
 
 /**
@@ -97,8 +97,8 @@ export const AwkwardText: Story = {
 }
 
 /**
- * An agent at work: what it reached for sits between what it said, and the
- * prose is read as it was marked up and not shown with its marks.
+ * An agent at work: the tools it used appear between its messages, and the prose is
+ * rendered from its markup and shown without the markup characters.
  */
 export const Working: Story = {
   render: renderThread([
@@ -172,7 +172,7 @@ const getWordPosition = (root: Element, word: string): Position => {
   throw new Error(`“${word}” is nowhere in the thread`)
 }
 
-/** The same place told to the window the story is framed in. */
+/** The same position in the coordinates of the window the story is framed in. */
 const mapToFrame = (point: Position): Position => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) return point
@@ -185,9 +185,9 @@ const mapToFrame = (point: Position): Position => {
 }
 
 /**
- * A drag the browser makes itself, so the selection it leaves is the browser's
- * own. The places are told to the window the story is framed in, which is where
- * the pointer is driven.
+ * A drag performed by the browser itself, so the selection it leaves is the browser's
+ * own. The positions are in the coordinates of the window the story is framed in,
+ * where the pointer is driven.
  */
 const dragAcross = async (from: Position, to: Position): Promise<string | null> => {
   const context = await import('vitest/browser').catch(() => null)

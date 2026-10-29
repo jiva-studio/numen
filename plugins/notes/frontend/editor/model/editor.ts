@@ -44,8 +44,8 @@ export interface EditorProps {
   /** What it is announced as. What has been typed here is no name for it. */
   name?: string | undefined
   /**
-   * How to leave, read out on arrival. Tab is the editor's while a person is
-   * writing, so the way back out has to be said or nobody finds it.
+   * How to leave the editor, announced on arrival. The editor captures Tab while
+   * the user types, so the way out must be announced.
    */
   keys?: string | undefined
   /** A change being made to this text by something other than the reader. */

@@ -1,5 +1,5 @@
 /**
- * The corner says what the window lost touch with, whichever part lost it.
+ * The corner reports what the window lost its connection to, whichever part lost it.
  */
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'

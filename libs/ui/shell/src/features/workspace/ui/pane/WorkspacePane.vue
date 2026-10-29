@@ -2,8 +2,8 @@
 /**
  * A stack of tabs and the one of them that is showing.
  *
- * The strip and the pane carry their identities on the element, so that a
- * drag can find out what the pointer is over by asking the document.
+ * The strip and the pane carry their ids on the element, so a drag can find
+ * what is under the pointer by querying the document.
  */
 import { onMounted, useTemplateRef, watch } from 'vue'
 import { PaneBody } from './body'
@@ -25,9 +25,9 @@ const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
   (event: 'lift', tab: TabId, pointer: PointerEvent): void
-  /** A menu asked for on a tab, and where on the screen. */
+  /** A context menu requested on a tab, with its screen position. */
   (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
-  /** This pane asks to be the one a tab opens into. */
+  /** This pane requests to become the target for newly opened tabs. */
   (event: 'claim'): void
   /** The tab that is now the one showing, once it is on screen. */
   (event: 'show', tab: TabId): void
@@ -45,9 +45,9 @@ const strip = useTemplateRef<InstanceType<typeof PaneStrip>>('strip')
 
 /* ---------------------------------- Hooks --------------------------------- */
 /**
- * A tab held out of sight is drawn with no size, so what is showing is said
- * once it is on screen and can be measured. It is said for the tab this pane
- * opens with as well.
+ * A hidden tab is rendered with no size, so `show` is emitted once it is
+ * visible and can be measured. It is also emitted for the tab this pane opens
+ * with.
  */
 onMounted(() => {
   if (props.pane.active !== null) emit('show', props.pane.active)

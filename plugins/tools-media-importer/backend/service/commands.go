@@ -100,7 +100,7 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-// describeSize is how large something is, in the unit a person reads it in.
+// describeSize returns a size in the unit a user reads it in.
 func describeSize(bytes int64) string {
 	if bytes < 1<<20 {
 		return fmt.Sprintf("%d bytes", bytes)

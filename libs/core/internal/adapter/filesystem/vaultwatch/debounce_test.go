@@ -14,7 +14,7 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// event is one change, as the operating system hands it over.
+// event is one change, as delivered by the operating system.
 type event struct{ path string }
 
 func (e event) Event() notify.Event { return notify.Write }
@@ -58,8 +58,8 @@ func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int)
 	}
 }
 
-// waitForQueue waits for the queue to be what the burst made it, so that what the
-// debouncing is started on is decided by the burst and not by when it started.
+// waitForQueue waits until the queue holds what the burst produced, so the input to
+// debouncing is determined by the burst and not by timing.
 func waitForQueue(t *testing.T, q *queue, is func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
@@ -105,8 +105,8 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 	}
 }
 
-// TestABurstInsideTheBacklogIsNotALoss. Nothing was dropped, so nothing became
-// unknowable, and a walk of the whole vault is work nobody asked for.
+// TestABurstInsideTheBacklogIsNotALoss. Nothing was dropped, so no state is unknown,
+// and a walk of the whole vault would be unnecessary work.
 func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 	root, reader := makeVaultOfNotes(t, 4)
 	ctx, stop := context.WithCancel(t.Context())
@@ -136,10 +136,9 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 	}
 }
 
-// TestAListenerThatDoesNotTakeDoesNotStopTheReading. Whoever listens takes as
-// long as a reindex takes, and the operating system does not wait for it. What
-// arrives while a batch stands undelivered is read, debounced and reported
-// after it.
+// TestAListenerThatDoesNotTakeDoesNotStopTheReading. A listener takes as long as a
+// reindex takes, and the operating system does not wait. Events that arrive while a
+// batch is undelivered are read, debounced and reported after it.
 func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 	root, reader := makeVaultOfNotes(t, 9)
 	ctx, stop := context.WithCancel(t.Context())
@@ -153,13 +152,13 @@ func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 	missing := make(chan struct{}, 1)
 	go debounce(ctx, shapeOf(t, reader), vaultconfig.Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
-	// One note, debounced and held, leaves the goroutine with a batch nobody is
-	// taking.
+	// One note, debounced and held, leaves the goroutine with a batch that no listener
+	// takes.
 	feed(t, raw, root, 0, 1)
 	time.Sleep(200 * time.Millisecond)
 
-	// Eight more, through a channel that holds four, while that batch still
-	// stands.
+	// Eight more, through a channel with capacity four, while that batch is still
+	// undelivered.
 	feed(t, raw, root, 1, 8)
 
 	deadline := time.After(5 * time.Second)

@@ -11,7 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// A rename that could not be made says nothing of a name the note never took.
+// A rename that cannot be applied reports nothing for a name the note never
+// took.
 func TestARenameOfANoteThatIsNotThereAnswersWithNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
@@ -25,8 +26,8 @@ func TestARenameOfANoteThatIsNotThereAnswersWithNothing(t *testing.T) {
 	}
 }
 
-// A file the person renamed is brought into line when the two names are kept as
-// one.
+// A file renamed by the user is synchronized to the title when the two names
+// are kept as one.
 func TestAFilenameIsSavedIntoTheTitleWhereTheTwoAreCachedAsOne(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
@@ -39,7 +40,7 @@ func TestAFilenameIsSavedIntoTheTitleWhereTheTwoAreCachedAsOne(t *testing.T) {
 	}
 }
 
-// Where the two names are told apart the note is not opened at all.
+// When the two names are reported separately, the note is not opened at all.
 func TestAFilenameIsLeftOutOfTheNoteWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	raw := "---\ntitle: Old\n---\nA measure.\n"

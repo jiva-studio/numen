@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
 
-// An UnavailableError is ErrUnavailable whatever its reason, keeps its cause,
-// and says which plugin and why.
+// An UnavailableError is ErrUnavailable regardless of its reason, keeps its
+// cause, and reports which plugin and why.
 func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 	cause := errors.New("exit status 1")
 	for _, tc := range []struct {

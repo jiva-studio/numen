@@ -87,8 +87,8 @@ describe('the bounds', () => {
     expect(stepBy(null, -1, BOUNDS)).toBe(0)
   })
 
-  // A step is written to so many places, and the number it leaves is written
-  // to the same, so what a person reads is what the file gets.
+  // A step has a number of decimal places, and the result is written to the same
+  // number of places, so what the user reads is what the file receives.
   it('leaves a number written to the places its step is written to', () => {
     expect(stepBy(0.81, 1, FINE)).toBe(0.82)
     expect(stepBy(0.83, -1, FINE)).toBe(0.82)
@@ -165,8 +165,7 @@ describe('whether what is typed remains for the number in force', () => {
     expect(isTextForValue('21', 20)).toBe(false)
   })
 
-  // A line that is no number stands for no number, and not for the absence of
-  // one either.
+  // Text that is not a number does not represent a number, nor the absence of one.
   it('is an empty field alone that remains for no number at all', () => {
     expect(isTextForValue('', null)).toBe(true)
     expect(isTextForValue('  ', null)).toBe(true)

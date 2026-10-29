@@ -28,7 +28,7 @@ export interface PalettePlacesState {
   readonly announcement: ComputedRef<string>
   /** The number of the row the keyboard is on, and -1 for none. */
   readonly here: ComputedRef<number>
-  /** The item the keyboard is on, and what it can be asked. */
+  /** The item with keyboard focus, and the actions available on it. */
   readonly activeItem: ComputedRef<PaletteItem | undefined>
   readonly actions: ComputedRef<readonly PaletteAction[]>
   /** The keyboard onto the row at that number. */
@@ -37,7 +37,7 @@ export interface PalettePlacesState {
   readonly selectedId: Ref<string>
   /** A pointer crossing the list lights the row it passes over. */
   readonly lightAt: (pos: number, event: PointerEvent) => void
-  /** The row at that number chosen, and whether the second action was asked for. */
+  /** The row at that index, and whether the second action was requested. */
   readonly chooseAt: (pos: number, second: boolean) => void
 }
 
@@ -46,9 +46,9 @@ export interface PalettePlacesOptions {
   readonly groups: () => readonly PaletteGroup[]
   /** What is typed, which a fresh question is a fresh list of. */
   readonly typed: Ref<string>
-  /** Where the keyboard is standing, said whenever it moves. */
+  /** The keyboard position, emitted whenever it moves. */
   readonly onItemActive: (item: string) => void
-  /** An item chosen, and what was asked of it. */
+  /** An item chosen, and the action requested on it. */
   readonly tellChoice: (item: string, action: string) => void
 }
 
@@ -60,10 +60,10 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
   const placedPalette = computed(() => placePalette(visibleGroups.value))
 
   /**
-   * What is read out of a search. A group that answered with rows is read out by
-   * the row the keyboard lands on; a group that answered with none has no row to
-   * land on, so what it says in place of one is read out instead. A group still
-   * working has answered nothing yet and is left alone.
+   * What is announced from a search. A group with rows is announced by the row the
+   * keyboard lands on; a group with none has no row to land on, so its empty-state
+   * message is announced instead. A group still loading has no result yet and is
+   * skipped.
    */
   const response = computed(() =>
     visibleGroups.value
@@ -104,16 +104,15 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
   })
 
   /**
-   * Where the keyboard is standing, for a caller that shows what it is standing
-   * on. A pointer that has moved lights an item, so this is said for a pointer
-   * crossing the list too.
+   * The keyboard position, for a caller that displays the focused item. A moved
+   * pointer highlights an item, so this is also emitted for a pointer crossing
+   * the list.
    */
   watch(target, (now) => options.onItemActive(now), { flush: 'post' })
 
   /**
-   * Where the pointer was. Only a pointer that has actually moved lights what
-   * it is over: a list scrolling under a pointer standing still reports a move
-   * too.
+   * The previous pointer position. Only a pointer that has moved highlights an
+   * item: a list scrolling under a stationary pointer reports a move too.
    */
   let status = { x: -1, y: -1 }
 

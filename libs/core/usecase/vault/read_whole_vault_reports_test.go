@@ -26,8 +26,8 @@ type notRemoving struct {
 
 func (n notRemoving) Remove(context.Context, domain.VaultID, []string) error { return n.err }
 
-// uncuttable is an index of sources that cannot say which are still to be cut,
-// and runs a function when asked what was cut by another recipe.
+// uncuttable is an index of sources that cannot report which are still to be
+// cut, and runs a function when queried for what was cut by another recipe.
 type uncuttable struct {
 	sourceport.SourceQueries
 	err         error
@@ -65,8 +65,8 @@ type failing struct {
 
 func (f failing) Embed(context.Context, []string) ([][]float32, error) { return nil, f.err }
 
-// Each pass tells the caller how far it has got, and the vectors that were made
-// are in the answer.
+// Each pass reports its progress to the caller, and the vectors that were
+// created are in the result.
 func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
@@ -181,8 +181,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	}
 }
 
-// A run that ended while the books were being cut is told what the books had
-// done.
+// A run that ended while the books were being cut reports what had completed.
 func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
@@ -212,8 +211,8 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	}
 }
 
-// Books read whole are followed by the vectors, whatever the context says
-// afterwards.
+// Books read whole are followed by the vectors, regardless of the context
+// state afterwards.
 func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))

@@ -29,9 +29,8 @@ func (d *Document) SetIdentifier(identifier string) error {
 	return d.put("id", &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: identifier})
 }
 
-// Title is what the frontmatter says the note is called, and whether it says.
-// A key with nothing in it is empty, and the note is named by what comes
-// after it.
+// Title returns the title declared in the frontmatter and whether it is declared.
+// A key with no value is empty, and the note is named by what follows it.
 func (d *Document) Title() (string, bool) {
 	node, err := d.readMapping()
 	if err != nil || node == nil {
@@ -190,9 +189,8 @@ func (d *Document) SetScalar(key, value string) error {
 	return d.SetValue(key, value)
 }
 
-// SetValue writes what one top-level frontmatter key holds from now on, in the
-// spelling its own type is written in: a number stands as a number, and true
-// and false stand as themselves.
+// SetValue writes the value of one top-level frontmatter key, in the spelling of its
+// own type: a number is written as a number, and true and false as themselves.
 func (d *Document) SetValue(key string, value any) error {
 	var node yaml.Node
 	if err := node.Encode(value); err != nil {
@@ -201,16 +199,15 @@ func (d *Document) SetValue(key string, value any) error {
 	return d.put(key, &node)
 }
 
-// SetDay writes the day one top-level frontmatter key stands for from now on,
-// as a day with no hour on it.
+// SetDay writes the day for one top-level frontmatter key, as a date without a time.
 func (d *Document) SetDay(key string, day time.Time) error {
 	return d.put(key, &yaml.Node{
 		Kind: yaml.ScalarNode, Tag: "!!timestamp", Value: day.Format("2006-01-02"),
 	})
 }
 
-// getSpelling is how each name of one key's list is quoted, so that a name
-// coming through a write untouched comes through spelled as it was.
+// getSpelling returns the quoting style of each name in one key's list, so a name
+// passed through a write unchanged keeps its original spelling.
 func (d *Document) getSpelling(key string) map[string]yaml.Style {
 	out := map[string]yaml.Style{}
 	node, err := d.readMapping()

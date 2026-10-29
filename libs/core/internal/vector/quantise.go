@@ -38,7 +38,7 @@ func Coarse(q []int8) []byte {
 }
 
 // Bytes keeps one byte per dimension, for the rerank, on the grid
-// port.Int8Scale sets. Values beyond what that scale reaches are clamped, and a
+// port.Int8Scale sets. Values beyond what that scale covers are clamped, and a
 // clamped dimension is the one loss quantisation here can do that rounding
 // cannot undo.
 func Bytes(v []float32) []int8 {

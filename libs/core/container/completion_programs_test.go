@@ -38,8 +38,8 @@ func ask(text string) completionport.Question {
 	return completionport.Question{Messages: []completionport.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: text}}}
 }
 
-// A question goes to the program the default names as a task with no tool and no conversation, under
-// the program's section of the settings, and the answer is what the program said.
+// A query goes to the program the default names, as a task with no tool and no conversation, under
+// the program's section of the settings, and the response is what the program returned.
 func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, _ := serveCompletions(t, host, `{
@@ -157,7 +157,7 @@ func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	}
 }
 
-// A model the program no longer lists is replaced by the one it answers with unasked.
+// A model the program no longer lists is replaced by the model the program responds with, without being requested.
 func TestAModelTheProgramNoLongerListsIsReplacedByItsDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, _ := serveCompletions(t, host, `{"ai": {"default": {"agent": "alpha", "model": "retired"}}}`)

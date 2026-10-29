@@ -15,6 +15,6 @@ export interface NoticesProps {
   room?: number
   /** What the moment is. The window's clock by default. */
   clock?: () => number
-  /** Whether nobody is looking. The window's own answer by default. */
+  /** Whether the window is hidden. Defaults to the window's own state. */
   hidden?: () => boolean
 }

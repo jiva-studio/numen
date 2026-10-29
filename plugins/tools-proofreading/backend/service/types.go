@@ -8,7 +8,8 @@ type Line struct {
 	Text   string
 }
 
-// IsJoined says whether the line is a correction putting more than one line together.
+// IsJoined reports whether the line is a correction that joins more than one
+// line.
 func (l Line) IsJoined() bool { return l.Last > l.Number }
 
 type Batch struct {
@@ -18,8 +19,8 @@ type Batch struct {
 	// IsJoinable is whether a reply may answer for a run of lines as one.
 	IsJoinable bool
 
-	// Context is what the whole text holds, said in its own words. It stands
-	// before the lines in the prompt and is answered for by nothing.
+	// Context is the whole text. It is placed before the lines in the prompt
+	// and receives no reply.
 	Context string
 }
 

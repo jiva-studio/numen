@@ -1,6 +1,6 @@
 /**
- * What the corner has read out, and when. The regions are emptied and filled a
- * tick apart, so a screen reader hears each change.
+ * What the corner announces, and when. The regions are emptied and filled one tick
+ * apart, so a screen reader announces each change.
  */
 import { describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'

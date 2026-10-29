@@ -1,9 +1,9 @@
 /**
- * The one thing this module decides on its own: how the application's account
- * of the way the window is drawn reads in the window's own words.
+ * The one thing this module decides on its own: how the application's description of
+ * the window's appearance is expressed in the window's own terms.
  *
- * Everything else hands a message across unchanged, and the schema says what
- * those look like.
+ * Everything else passes a message through unchanged, and the schema defines their
+ * shape.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Mode as Modes, Origin } from '@numen/protocol'
@@ -64,8 +64,8 @@ describe('which half of a colour pair is read', () => {
     }
   })
 
-  // A mode the window has no word for is one the machine decides, which is what
-  // a window that was never told anything is drawn as.
+  // A mode the window has no term for is decided by the machine, which is how a
+  // window that was never configured is drawn.
   it('is the system’s where the window has no word for the transcript', async () => {
     request.listThemes.mockResolvedValue(createAnswer({ mode: 99 }))
     expect((await themes.getAppearance()).mode).toBe('system')

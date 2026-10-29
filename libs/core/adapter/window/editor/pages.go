@@ -22,12 +22,12 @@ import (
 //go:embed all:pages
 var pages embed.FS
 
-// errShut is a question asked of a window that has been shut, which answers no
-// more of them.
+// errShut is returned for a request to a window that has been shut; the window
+// answers no further requests.
 var errShut = errors.New("this window is shut")
 
-// Pages is the interface itself, built by `make interface` and carried inside
-// the binary. A binary built without it says so.
+// Pages is the interface itself, built by `make interface` and embedded in the
+// binary. A binary built without it reports an error.
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // PluginServices is where the calls for the services plugins serve are forwarded.
@@ -53,20 +53,20 @@ type served struct {
 // mount takes a generated handler and the path it answers under as one.
 func mount(pos string, to http.Handler) served { return served{posVal: pos, to: to} }
 
-// NewHandler puts the questions in front of the pages, so that a window and a
-// browser are answered by one handler.
+// NewHandler puts the services in front of the pages, so a window and a browser
+// are served by one handler.
 //
-// named is the services this build answers, by the names the schema gives them.
-// A service left out is not mounted, and a call of one is unanswered because
-// nothing serves it — not because a handler standing there has nothing behind
-// it. Naming none is a build that answers the whole schema.
+// named lists the services this build serves, by the names the schema gives them.
+// A service left out is not mounted, and a call to it is unanswered because
+// nothing serves it, not because a handler with nothing behind it is mounted.
+// Naming none builds the whole schema.
 func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
 	routes := s.newRoutes(named)
 	// Only a build that answers the whole schema serves the bytes of vault files and the plugin route.
 	isWhole := len(named) == 0
 
-	// Where a recording is played from is known once the socket it is served
-	// over is open, which is before a page is ever asked for.
+	// The origin recordings play from is known once the socket it is served over is
+	// open, which precedes any page request.
 	played := s.Playing.getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
@@ -104,8 +104,7 @@ type service struct {
 	handle func(counted connect.HandlerOption) (string, http.Handler)
 }
 
-// newRoutes mounts each service this build answers, behind the count of the
-// questions asked.
+// newRoutes mounts each service this build serves, behind the request counter.
 func (s *Services) newRoutes(named []string) []served {
 	counted := s.newQuestionCounter()
 	var routes []served
@@ -174,10 +173,10 @@ func (s *Services) newServices() []service {
 	}
 }
 
-// updateRoute is the endpoint the window asks for release updates.
+// updateRoute is the endpoint the window requests release updates from.
 const updateRoute = "/api/app-update/latest.json"
 
-// updateEndpoint is where the published release manifest sits.
+// updateEndpoint is the URL of the published release manifest.
 const updateEndpoint = "https://dl.numen.md/latest/latest.json"
 
 // serveAdjacent answers what no service does: the bytes of a file, the page the
@@ -238,11 +237,11 @@ func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.Copy(w, resp.Body)
 }
 
-// newQuestionCounter takes every question a client asks and gives it back when it is
-// answered, so the index closes with nothing reading it.
+// newQuestionCounter tracks every request a client makes until it completes, so
+// the index closes with nothing reading it.
 //
-// A stream is left out: it lives as long as the page that opened it, and the
-// window closes while its pages are still drawn.
+// A stream is excluded: it lives as long as the page that opened it, and the
+// window closes while its pages are still rendered.
 func (s *Services) newQuestionCounter() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {

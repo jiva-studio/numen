@@ -38,7 +38,7 @@ func TestTheSpineIsTheReadingOrder(t *testing.T) {
 		t.Errorf("documents = %v, want %v", got, want)
 	}
 
-	// the zip says nothing about where it is read.
+	// The spine, not the archive order, defines the reading order.
 	if archived := archiveOrder(t, raw); slices.Equal(intersect(archived, want), want) {
 		t.Fatalf("the fixture archives the documents in reading order (%v), so this test cannot fail", archived)
 	}
@@ -165,8 +165,8 @@ func TestStructureFallsThroughTheTiers(t *testing.T) {
 func TestHeadingsAreReadAtAnyLevel(t *testing.T) {
 	book := read(t, tinyBook(t, nil))
 
-	// The fixture heads its sections with h4. The level a book chose is kept and
-	// says nothing about whether the heading counts.
+	// The fixture heads its sections with h4. The heading level is preserved as
+	// authored and does not decide whether the heading counts.
 	for _, part := range book.Parts {
 		if part.Level != 4 {
 			t.Errorf("part %q is at level %d, want the level the markup wrote", part.Title, part.Level)
@@ -380,9 +380,9 @@ func partsIn(tb testing.TB, root string) map[string][]byte {
 
 // buildReversedArchive writes the files into one archive.
 //
-// The mimetype comes first because the specification asks for it. The rest are
-// written in reverse, so that the order of the archive is not the order of the
-// book.
+// The mimetype entry comes first because the specification requires it. The
+// remaining files are written in reverse, so the archive order differs from the
+// book order.
 func buildReversedArchive(tb testing.TB, parts map[string][]byte) []byte {
 	tb.Helper()
 	names := slices.Sorted(maps.Keys(parts))
@@ -437,9 +437,9 @@ func intersect(names, wanted []string) []string {
 	return out
 }
 
-// An archive says how large its entries are and is believed about nothing. A few
-// hundred kilobytes of zeros expand to as much as the format allows, and reading
-// that is how opening a book ends the process.
+// An archive declares the sizes of its entries, and the declarations are not
+// trusted. A few hundred kilobytes of zeros expand to the maximum the format
+// allows, and reading that without a bound terminates the process.
 func TestADocumentLargerThanAChapterIsLeftUnread(t *testing.T) {
 	book := read(t, buildArchive(t, map[string][]byte{
 		"mimetype": []byte("application/epub+zip"),
@@ -527,8 +527,8 @@ func TestHowABookIsLaidOut(t *testing.T) {
 		if got := book.Documents[0]; !got.IsLinear || got.Layout != epub.PrePaginated {
 			t.Errorf("the first document is linear=%v layout=%q", got.IsLinear, got.Layout)
 		}
-		// The itemref overrides the book, and says this document is not read in
-		// its turn.
+		// The itemref overrides the book: this document is not part of the linear
+		// reading order.
 		if got := book.Documents[1]; got.IsLinear || got.Layout != epub.Reflowable {
 			t.Errorf("the second document is linear=%v layout=%q", got.IsLinear, got.Layout)
 		}

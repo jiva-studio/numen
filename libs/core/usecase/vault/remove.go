@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Remove takes the vault an identity names off the list, and its folder to the
-// trash when it is asked to. The vault in front of the person stays.
+// Remove takes the vault named by an identity off the list, and moves its
+// folder to the trash when requested. The current vault is kept.
 type Remove struct {
 	find       Find
 	unregister Unregister

@@ -14,7 +14,7 @@ export const DEFAULT_HEADING_LIMIT = 6
 export const HEADING_LIMIT_MIN = 1
 export const HEADING_LIMIT_MAX = 12
 
-/** The two settings, kept current as the person changes them. */
+/** The two settings, kept in sync as the user changes them. */
 export interface Nesting {
   readonly isNesting: Readonly<Ref<boolean>>
   readonly headings: Readonly<Ref<number>>

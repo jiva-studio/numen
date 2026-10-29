@@ -39,8 +39,9 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	return opened, cfg
 }
 
-// TestTheWindowIsNamedAfterTheFileInFrontOfThePerson. The page says which tab
-// it is showing, and the window is named after the file that tab holds.
+// TestTheWindowIsNamedAfterTheFileInFrontOfThePerson checks that the page
+// reports which tab it is showing, and the window is named after the file of
+// that tab.
 func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 	vault := domain.Vault{ID: "one", Name: "Notes"}
 	for name, c := range map[string]struct {

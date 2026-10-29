@@ -16,9 +16,8 @@ import (
 
 // What these measure against: a scan of an unchanged vault fast enough to run
 // at startup, an update to a handful of notes inside 100 ms, and a full rebuild
-// of 100k notes in single-digit minutes. The numbers live beside the
-// measurements, in docs/performance.md, so that one place says what fast enough
-// means.
+// of 100k notes in single-digit minutes. The numbers are recorded with the
+// measurements in docs/performance.md, which defines what fast enough means.
 //
 //	go test ./usecase/vault/ -run XXX -bench . -benchtime 1x
 
@@ -94,11 +93,11 @@ func BenchmarkWarmScan(b *testing.B) {
 	}
 }
 
-// BenchmarkIncrementalScan is one edited note in a vault that is otherwise
-// untouched: a whole walk, and a file stat of every note, for one file. It is
-// the cost of finding a change without being told about one, which is what a
-// scan at startup pays; a change the watcher names goes through Refresh and
-// touches only that path.
+// BenchmarkIncrementalScan is one edited note in an otherwise unchanged vault:
+// a whole walk, and a file stat of every note, for one file. It is the cost of
+// detecting a change without notification, which is what a scan at startup
+// pays; a change the watcher reports goes through Refresh and touches only that
+// path.
 func BenchmarkIncrementalScan(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
@@ -225,10 +224,9 @@ func touchAll(root string) error {
 	})
 }
 
-// BenchmarkLinks measures resolution, which is where the cost of links actually
-// lands: storing them is a handful of rows per note, but every link is resolved
-// again each time it is asked for, because resolution is a query and not a
-// stored fact.
+// BenchmarkLinks measures resolution, which is where the cost of links lies:
+// storing them is a handful of rows per note, but every link is resolved again
+// on each request, because resolution is a query and not a stored fact.
 func BenchmarkLinks(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {

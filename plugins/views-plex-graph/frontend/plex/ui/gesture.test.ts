@@ -1,9 +1,9 @@
 /**
- * Reaching out from a node, driven by hand.
+ * Creating a relation from a node, driven programmatically.
  *
  * jsdom lays nothing out and has no pointer, so the element's matrix is stubbed
- * and the events are made here. What is being checked is the plumbing — that a
- * gesture starts, follows, commits and can be given up on — not the arithmetic,
+ * and the events are created here. What is checked is the plumbing — that a
+ * gesture starts, follows, commits and can be abandoned — not the arithmetic,
  * which is `arrange/drop.test.ts` and needs none of this.
  */
 import { mount } from '@vue/test-utils'
@@ -17,7 +17,7 @@ const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
 
 /**
  * One plex unit to the pixel, origin in the middle, as the browser draws it.
- * Written out by hand because jsdom lays nothing out and has no matrices.
+ * Written out explicitly because jsdom lays nothing out and has no matrices.
  */
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
@@ -127,8 +127,8 @@ describe('letting go', () => {
   })
 
   it('asks for a child when the handle is only clicked', async () => {
-    // The commonest thing anyone wants is one more child, and demanding a drag
-    // would put it out of reach of a trackpad.
+    // The most common intent is one more child, and requiring a drag would put
+    // it out of reach of a trackpad.
     const { plex, svg } = mountPlex()
     await takeHold(plex, 'A node')
 
@@ -219,8 +219,8 @@ describe('while a gesture is under way', () => {
   })
 
   it('says it in the words it was given, not in its own', async () => {
-    // The one relation the plex has to write into the picture, and the words for
-    // it are the caller's, as they are for the overflow line.
+    // The one relation the plex has to write into the graph, and the label for
+    // it is the caller's, as it is for the overflow line.
     const { plex, svg } = mountPlex({
       relationName: (relation: PlexRelation) => `→ ${relation.toUpperCase()}`,
     })

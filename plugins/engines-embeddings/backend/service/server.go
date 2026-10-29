@@ -69,9 +69,9 @@ func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEm
 	return engine.MockEmbedder{}, nil
 }
 
-// updateConfig takes the settings of the provider the settings name: the host hands over the URL of a
-// custom service, and the model and the key of a remote one, only while that provider is chosen. A
-// key the host leaves out is kept.
+// updateConfig applies the settings of the selected provider: the host passes
+// the URL of a custom service, and the model and key of a remote one, only
+// while that provider is selected. A key that the host omits is kept.
 func (s *embeddingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -283,9 +283,9 @@ func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, 
 	}, nil
 }
 
-// getIndexShare returns how many calls the index may have in flight on a model
-// that runs passes at once: one fewer, and never fewer than one, so a question
-// asked of the same model finds a pass free.
+// getIndexShare returns the number of concurrent index calls allowed on a model
+// that runs several passes at once: one fewer than the passes, and at least
+// one, so a query on the same model always has a free pass.
 func getIndexShare(passes int) int {
 	return max(passes-1, 1)
 }
@@ -380,7 +380,7 @@ func (s *embeddingServer) getService() (key, baseURL string) {
 	return s.apiKey, baseURL
 }
 
-// getModelName returns the name of the model the vectors are asked for.
+// getModelName returns the name of the model that creates the vectors.
 func (s *embeddingServer) getModelName() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// VaultOpener is how this installation opens a vault: the walk that brings the
-// index level with it, the watch that keeps it level while it is open, and the
-// levelling a write asks for.
+// VaultOpener opens a vault for this installation: the walk that brings the
+// index up to date with it, the watch that keeps it up to date while open, and
+// the reconciliation a write requests.
 type VaultOpener struct {
 	Told          func(VaultChanges)
 	ErrorHandler  windowport.ErrorHandler
@@ -37,7 +37,7 @@ func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Scan, buffered *B
 // GetRefresh brings named notes up to date, through whatever is following the vault they are in.
 func (o *VaultOpener) GetRefresh() Refresh { return o.Refresh }
 
-// GetScan is the walk this opener makes, for a caller asked to read the vault again.
+// GetScan returns the walk this opener makes, for a caller that re-reads the vault.
 func (o *VaultOpener) GetScan() Scan {
 	scan := o.scan
 	scan.ShouldRebuildIndex = o.ShouldRebuild
@@ -84,7 +84,7 @@ type OpenVault struct {
 // GetUnwatchedReason is why the vault is not being followed, and nothing while it is.
 func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
-// Read walks the vault into the index and answers how many notes it holds.
+// Read walks the vault into the index and returns the number of notes it holds.
 func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
 	o.opening.Buffered.StartRecording()
 

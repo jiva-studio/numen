@@ -1,7 +1,6 @@
 /**
- * The book tabs of a window: what one is called, what it does when it comes on
- * screen, where a search sends the person, and what a command over one is asked
- * over.
+ * The book tabs of a window: a tab's title, its behaviour when it becomes visible, where
+ * a search sends the user, and what a command over a tab operates on.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'

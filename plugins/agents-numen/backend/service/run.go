@@ -42,8 +42,8 @@ type run struct {
 	isPlain bool
 }
 
-// answer asks the model until it answers without calling a tool or runs out of turns, calling
-// every tool it asks for and telling it what the tool returned. It returns the conversation as it
+// answer queries the model until it responds without calling a tool or runs out of turns, calling
+// every tool it requests and returning the tool results to it. It returns the conversation as it
 // ends and why the run stopped. The error is the context's, a chatFailure, or a step that could
 // not be sent.
 func (r *run) answer(ctx context.Context, messages []message) ([]message, string, error) {
@@ -122,8 +122,8 @@ func (r *run) runToolCalls(ctx context.Context, messages []message, calls []tool
 	return messages, nil
 }
 
-// callTool tells of the call, runs it and tells that it has finished. It returns what the model is
-// told the tool returned.
+// callTool reports the call, runs it and reports that it finished. It returns what the model
+// receives as the tool result.
 func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 	name, args := call.Function.Name, call.Function.Arguments
 	described := toolcall.Describe(r.words, name, call.ID, args)
@@ -142,9 +142,9 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 	return result, nil
 }
 
-// ask asks the model for the next message with its text streamed to emit. A chat API that refuses
-// to stream and answers the same request unstreamed is logged as such, and the run asks it
-// unstreamed from then on, with the whole text going to emit at once.
+// ask requests the next message from the model with its text streamed to emit. When a chat API
+// refuses to stream, the same request is made unstreamed and logged as such, and later requests are
+// made unstreamed, with the whole text going to emit at once.
 func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
 	var reqErr error
 	if !r.isPlain {

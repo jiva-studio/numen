@@ -34,8 +34,8 @@ func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length 
 	return contents
 }
 
-// The tools that read a note read a note. A lecture somebody transcribed into a
-// file of another kind is reached by its path and by nothing else.
+// The tools that read a note read a note. A lecture transcribed into a file of
+// another kind is reachable only by its path.
 func TestAFileTheVaultDoesNotHoldAsANoteIsRead(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{
 		"lectures/kinetics.txt": "The first law, as stated.\n",
@@ -53,8 +53,8 @@ func TestAFileTheVaultDoesNotHoldAsANoteIsRead(t *testing.T) {
 	}
 }
 
-// A note is a file, and its bytes are what a read of a file hands over: the
-// frontmatter is there, because that is what the file holds.
+// A note is a file, and a read of it returns its bytes: the frontmatter is
+// included, because the file contains it.
 func TestANoteIsReadAsTheFileItIs(t *testing.T) {
 	raw := "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n"
 	u, v := openFileRead(t, map[string]string{"Entropy.md": raw})
@@ -64,8 +64,8 @@ func TestANoteIsReadAsTheFileItIs(t *testing.T) {
 	}
 }
 
-// A transcript is long, and an agent reads it a range at a time: what the answer
-// says about the range is what the next call is asked with.
+// A transcript is long, and an agent reads it a range at a time: the range in
+// the response is what the next call is requested with.
 func TestRead_LongFileReadsByRange(t *testing.T) {
 	whole := strings.Repeat("one line of what was said\n", 400)
 	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
@@ -84,8 +84,8 @@ func TestRead_LongFileReadsByRange(t *testing.T) {
 	}
 }
 
-// A file asked for whole comes back cut to what one call carries, and says how
-// much more there is.
+// A file requested whole is truncated to what one call carries, and the
+// response reports how much more remains.
 func TestAFileLongerThanOneCallCarriesReachesBackSplit(t *testing.T) {
 	whole := strings.Repeat("a", file.MostRead+500)
 	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
@@ -113,8 +113,8 @@ func TestARangePastTheEndOfTheFileIsEmpty(t *testing.T) {
 	}
 }
 
-// A range is asked for in bytes and comes back as text, so a character the cut
-// falls inside belongs to neither range.
+// A range is requested in bytes and returned as text, so a character that
+// straddles the cut belongs to neither range.
 func TestARangeIsSplitAtWholeCharacters(t *testing.T) {
 	// "śāstra" is two two-byte characters and four one-byte ones, and the
 	// emoji that follows is four bytes.
@@ -203,8 +203,8 @@ func TestAPathThatDoesNotStayInTheVaultIsRefused(t *testing.T) {
 	}
 }
 
-// A folder inside the vault may be a link to somewhere else. The text of the
-// path says nothing about that; the filesystem does.
+// A folder inside the vault may be a link to another location. The path text
+// does not indicate that; the filesystem does.
 func TestAReadDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	outside := t.TempDir()
 	if err := os.WriteFile(filepath.Join(outside, "secret.txt"), []byte("not yours"), 0o600); err != nil {
@@ -259,8 +259,8 @@ func TestRead_FolderPathReportsFolder(t *testing.T) {
 	}
 }
 
-// The application's own folder inside the vault is not the person's, and a read
-// of a file does not reach into it.
+// The application's own folder inside the vault is not user content, and a file
+// read does not reach into it.
 func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
 	keptFile := filepath.Join(v.Path, vaultconfig.DefaultServiceDir, "kept.txt")
@@ -295,8 +295,8 @@ func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
 
 var errOutOfReach = errors.New("the disk did not answer")
 
-// faulty is a vault on disk whose reader can refuse to open or to list, and can
-// hand over a file other than the one on disk.
+// faulty is a vault on disk whose reader can fail to open or list, and can
+// return a file other than the one on disk.
 type faulty struct {
 	open error
 	list error
@@ -333,8 +333,8 @@ func (r faultyReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	return r.VaultReader.Open(ctx, path)
 }
 
-// shifting is a file changing while it is read: it says it is size bytes long
-// and holds what data holds. A seek or a read can be made to fail.
+// shifting is a file that changes while it is read: it reports size bytes and
+// holds data. A seek or a read can be made to fail.
 type shifting struct {
 	data []byte
 	size int64
@@ -373,8 +373,8 @@ func (f *shifting) Read(p []byte) (int, error) {
 
 func (f *shifting) Close() error { return nil }
 
-// One call carries sixteen thousand bytes, whether it asks for that much or
-// asks for nothing in particular.
+// One call carries sixteen thousand bytes, whether the request specifies that
+// size or none.
 func TestOneCallCarriesSixteenThousandBytes(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lecture.txt": strings.Repeat("a", 20000)})
 

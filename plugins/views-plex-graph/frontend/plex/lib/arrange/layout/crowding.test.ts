@@ -1,4 +1,4 @@
-/** Packing the picture closer, before anything is given up. */
+/** Packing the layout more tightly before any relation is dropped. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { measureCrowding, packOptions } from './crowding'
@@ -10,7 +10,7 @@ import { RELATION_NAMES } from '../../relation'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 
-/** The neighbourhood a narrow window used to give relations up on. */
+/** The neighbourhood on which a narrow window dropped relations. */
 const COUNTS = { parent: 1, child: 6, jump: 1, sibling: 2 }
 
 const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number }) =>

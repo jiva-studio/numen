@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * A view a plugin declares, drawn into an element of the window. The context is
- * read as the view is mounted: a row of a list is keyed by what it stands for.
+ * A view declared by a plugin, rendered into an element of the window. The context is
+ * read when the view mounts: a list row is keyed by the item it represents.
  */
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import type { MountedView } from '@numen/plugin-sdk'

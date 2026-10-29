@@ -16,7 +16,7 @@ import (
 // GenerateVault writes a vault of n notes and gives it an identity.
 //
 // The content is synthetic but not uniform: notes differ in length, sit at
-// several depths, and share a vocabulary so that a search has something to rank.
+// several depths, and share a vocabulary so a search has something to rank.
 // A vault of identical notes would measure the parser against one shape and the
 // full-text index against one term.
 func GenerateVault(tb testing.TB, n int) domain.Vault {
@@ -55,10 +55,9 @@ var vocabulary = strings.Fields(`entropy thermodynamics shannon information meas
 func note(r *rand.Rand, i, total int) string {
 	var b strings.Builder
 
-	// A note that links to nothing exercises none of the link path, and a vault
-	// of them would report a parser and an index that are faster than the real
-	// ones. Every note names a parent and points at a few others, which is what
-	// a vault actually looks like.
+	// Notes without links skip the link path and would make the parser and index
+	// appear faster than they are. Every note names a parent and links to a few
+	// others, as in a real vault.
 	fmt.Fprintf(&b, "---\ntitle: Note %d\nstatus: generated\n", i)
 	if i > 0 {
 		fmt.Fprintf(&b, "links:\n  - to: \"[[%s]]\"\n    role: parent\n", name(i/10))
@@ -66,9 +65,9 @@ func note(r *rand.Rand, i, total int) string {
 	b.WriteString("---\n\n")
 	fmt.Fprintf(&b, "# Note %d\n\n", i)
 
-	// One note in a thousand carries a word no other note has. The rest draw on
+	// One note in a thousand contains a word no other note has. The rest draw on
 	// one small vocabulary, where a query matches the whole corpus and measures
-	// ranking; a real vault has a long tail, and RareTerm asks for it.
+	// ranking; a real vault has a long tail of rare terms, which RareTerm queries.
 	if i%1000 == 0 {
 		b.WriteString(RareTerm + "\n\n")
 	}

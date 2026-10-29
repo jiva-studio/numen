@@ -2,8 +2,8 @@
  * Shares of a branch's length: one per child, summing to one, and none at all
  * where there are no children.
  *
- * Every list here comes back in that form, so a caller may hand in whatever it
- * has and use what comes back directly.
+ * Every list here is returned in that form, so a caller may pass in any list
+ * and use the result directly.
  */
 
 /** Equal shares for a branch of this many children. */
@@ -14,7 +14,7 @@ export const even = (count: number): readonly number[] =>
  * The same shares, one per child and summing to one.
  *
  * A share that is missing or not a positive number takes the average of the
- * ones that are, so a child brought in without a size is given room.
+ * ones that are, so a child added without a size is given space.
  */
 export function fit(sizes: readonly number[], count: number): readonly number[] {
   const provided: number[] = []
@@ -35,7 +35,7 @@ export function fit(sizes: readonly number[], count: number): readonly number[] 
   return filled.map((size) => size / whole)
 }
 
-/** Room made beside the share at `index`, taking half of it. */
+/** Space made next to the share at `index`, taking half of it. */
 export function insert(
   sizes: readonly number[],
   index: number,

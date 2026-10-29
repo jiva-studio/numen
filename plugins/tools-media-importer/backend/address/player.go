@@ -9,7 +9,8 @@ import (
 // of its own.
 const PlayerOrigin = "https://www.youtube-nocookie.com"
 
-// playerSites are the hosts whose videos GetPlayerURL knows a player for, written without `www.`.
+// playerSites lists the hosts for which GetPlayerURL has a player, written
+// without `www.`.
 var playerSites = map[string]bool{
 	"youtube.com":          true,
 	"m.youtube.com":        true,
@@ -48,8 +49,8 @@ func getVideoID(parsed *url.URL) string {
 	return ""
 }
 
-// readVideoID is the first segment where it is a video id, eleven characters of letters, digits,
-// `-` and `_`, and empty otherwise.
+// readVideoID returns the first segment when it is a video id (eleven
+// characters of letters, digits, `-` and `_`), and empty otherwise.
 func readVideoID(segment string) string {
 	segment, _, _ = strings.Cut(segment, "/")
 	if len(segment) != 11 {

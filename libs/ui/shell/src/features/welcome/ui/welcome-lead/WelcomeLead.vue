@@ -11,7 +11,7 @@ import type { WelcomeAction } from '../../lib/welcome'
 
 withDefaults(
   defineProps<{
-    /** What is placed under the mark, telling a person which window they opened. */
+    /** The name shown under the mark, identifying the window. */
     name?: string
     /** The ways in, above the list. */
     ways?: readonly WelcomeAction[]
@@ -71,8 +71,8 @@ defineEmits<{
    Nothing else in the window is, so the family is this screen's own. */
 .welcome-page__name {
   margin: 0;
-  /* The glyph above is an italic and leans right, so the name sits a little
-     left of the middle to read as under it. */
+  /* The glyph above is italic and leans right, so the name is offset slightly
+     left of center to align under it. */
   margin-inline-end: 0.22em;
   font-family: ui-serif, Georgia, 'Times New Roman', serif;
   font-size: var(--numen-display-size);
@@ -89,8 +89,8 @@ defineEmits<{
   list-style: none;
 }
 
-/* Where the screen stands as two columns, the ways in stand at their own
-   height, whole, from the top of the screen down. */
+/* In the two-column layout, the actions use their natural height, unclipped,
+   from the top of the screen. */
 @container (max-height: 27.55rem) and (min-width: 45.4rem) {
   .welcome-page__lead {
     flex: 1;

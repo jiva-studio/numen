@@ -211,7 +211,7 @@ type fakeProvider struct {
 
 	mu      sync.Mutex
 	created int
-	// isUserStarted is whether each creation was asked for by a person, in order.
+	// isUserStarted is whether each creation was requested by the user, in order.
 	isUserStarted []bool
 }
 

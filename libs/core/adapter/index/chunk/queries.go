@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Queries answers questions about chunks in shapes that are not chunks: where a
-// passage is read from, what matched a search, what still owes work.
+// Queries answers questions about chunks in shapes other than chunks: where a
+// passage is read from, what matched a search, and which chunks lack a vector.
 type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
@@ -121,11 +121,11 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 	return out, rows.Err()
 }
 
-// FindLexical is a search asked by words: the chunks of one vault whose text
-// matches what was typed, best first.
+// FindLexical is a word search: the chunks of one vault whose text matches the
+// query, best first.
 //
-// What comes back is the large chunk enclosing each hit, which is what a
-// result shows.
+// The result is the large chunk enclosing each hit, which is what a result
+// displays.
 func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
@@ -169,12 +169,11 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 	return out, rows.Err()
 }
 
-// GetNamedPassages is the sections of one vault whose names match what was
-// typed, best first.
+// GetNamedPassages returns the sections of one vault whose names match the
+// query, best first.
 //
-// A section answers with the chunk it opens, so what comes back stands where the
-// answers with the chapter about it and not with the paragraph that says its
-// name most often.
+// A section is represented by the chunk it opens, so a result is the chapter
+// about the query and not the paragraph that repeats the name most often.
 func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
@@ -216,13 +215,12 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 	return out, rows.Err()
 }
 
-// FindNearest is a search asked by meaning: the chunks of one vault nearest a
-// query vector, nearest first, at most `limit` of them.
+// FindNearest is a semantic search: the chunks of one vault nearest a query
+// vector, nearest first, at most `limit` of them.
 //
-// The coarse pass over the bit vectors keeps several times that many, and the
-// full-precision vectors order what it kept. A chunk that does not reach the
-// similarity floor is not an answer, so a vault with nothing to say answers
-// with nothing.
+// The coarse pass over the bit vectors keeps several times `limit` candidates,
+// and the full-precision vectors order them. A chunk below the similarity floor
+// is not a result, so a vault without matching content returns no results.
 func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
@@ -284,11 +282,11 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 	return val, rows.Err()
 }
 
-// given.
+// getEnclosingPassages returns the enclosing passage of each chunk.
 //
-// The nearest-neighbour question is asked of the vector index alone: it takes
-// its own ordering and does not join. Where each answer is read from is a
-// second question, asked once per answer.
+// The nearest-neighbour query runs against the vector index alone, which
+// applies its own ordering and does not join. Resolving where each result is
+// read from is a separate query, run once per result.
 func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) ([]domain.Passage, error) {
 	if len(chunks) == 0 {
 		return nil, nil
@@ -426,11 +424,11 @@ func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement s
 	return out, rows.Err()
 }
 
-// GetProgress is how many of a vault's chunks can carry a vector and how many of
-// those carry one for the model named. Cutting finishes long before embedding
-// does, so the pair is what says how far there is to go.
+// GetProgress returns how many of a vault's chunks can carry a vector and how
+// many of those carry one for the named model. Cutting finishes long before
+// embedding, so the pair measures the remaining work.
 //
-// A vault the index has never heard of has nothing and owes nothing.
+// An unknown vault has no chunks and no remaining work.
 func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (target, embedded int64, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -517,12 +515,12 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 	return found, true, nil
 }
 
-// GetRecognisedSources is the sources of one kind whose text a producer made
-// and not their own bytes, by path.
+// GetRecognisedSources returns, by path, the sources of one kind whose text a
+// producer created rather than read from the file's own bytes.
 //
-// A scan asks it in order to find the ones whose files are gone: the store is a
-// folder on the person's disk and they may empty it, and a source standing on
-// files that are not there answers a search with nothing.
+// A scan uses it to find sources whose files are gone: the store is a folder on
+// disk that the user may empty, and a source whose files are missing returns no
+// search results.
 func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {

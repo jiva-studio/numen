@@ -6,8 +6,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// isFileInUse says whether a rename failed because another program holds the file
-// open. Windows refuses the move for as long as the handle stands.
+// isFileInUse reports whether a rename failed because another program has the
+// file open. Windows rejects the move while the handle is open.
 func isFileInUse(err error) bool {
 	return errors.Is(err, windows.ERROR_SHARING_VIOLATION) ||
 		errors.Is(err, windows.ERROR_ACCESS_DENIED)

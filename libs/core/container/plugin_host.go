@@ -21,7 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// pluginGracePeriod is how long a plugin has to exit once it is told to stop.
+// pluginGracePeriod is how long a plugin has to exit after a stop request.
 const pluginGracePeriod = 2 * time.Second
 
 // errSafeMode is an installation started in safe mode, which starts no plugin.
@@ -147,7 +147,7 @@ func (c Config) GetPluginServices() PluginServices {
 	return servicebridge.Open(c.PluginHost)
 }
 
-// GetPluginRetrier starts, as the window asks, a plugin the host suspends once more.
+// GetPluginRetrier restarts, on request from the window, a plugin the host has suspended.
 func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 	return func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 		if c.PluginHost == nil {
@@ -185,7 +185,7 @@ func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	}
 }
 
-// getPluginName is the name the plugin's manifest gives, or its id where the host knows no such plugin.
+// getPluginName is the name given by the plugin's manifest, or its id when the host has no such plugin.
 func (c Config) getPluginName(pluginID string) string {
 	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
@@ -193,8 +193,8 @@ func (c Config) getPluginName(pluginID string) string {
 	return pluginID
 }
 
-// SetPluginVault is the vault the plugins work through the host. Without one a plugin that calls for
-// the vault is told the host shows none.
+// SetPluginVault is the vault the plugins use through the host. Without one, a plugin that requires
+// the vault receives an error stating that the host provides none.
 func (c Config) SetPluginVault(vault pluginport.PluginVault) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVault(vault)
@@ -216,12 +216,12 @@ func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
 
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.
 type PluginVaultHooks struct {
-	// Written is told after a plugin changed the vault.
+	// Written is called after a plugin changes the vault.
 	Written func()
-	// IndexState starts reading a vault into the index when it is not there and says where that
-	// stands. Left nil, a vault the index carries is indexed and any other is being indexed.
+	// IndexState starts reading a vault into the index when it is not indexed and reports its state. When
+	// nil, a vault the index holds is treated as indexed and any other as being indexed.
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
-	// Moved tells that something moved in some vault. Left nil, it is the index file changing.
+	// Moved signals that something moved in some vault. When nil, the signal is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
 }
 
@@ -285,8 +285,8 @@ func (c Config) OpenPluginVault(
 
 var errNoPluginHost = errors.New("this installation has no plugin host to keep a secret for")
 
-// GetPluginSecretWriter stores, as the window asks, the key of a secret a plugin
-// declares in its manifest, and hands the plugin the secrets it holds now.
+// GetPluginSecretWriter stores, on request from the window, the key of a secret a plugin
+// declares in its manifest, and passes the plugin the secrets it currently holds.
 func (c Config) GetPluginSecretWriter() func(ctx context.Context, pluginID, name, key string) error {
 	return func(ctx context.Context, pluginID, name, key string) error {
 		if c.PluginHost == nil {
@@ -296,8 +296,8 @@ func (c Config) GetPluginSecretWriter() func(ctx context.Context, pluginID, name
 	}
 }
 
-// GetPluginSecretDeleter removes, as the window asks, the key of a secret a
-// plugin declares in its manifest, and hands the plugin the secrets it holds now.
+// GetPluginSecretDeleter removes, on request from the window, the key of a secret a
+// plugin declares in its manifest, and passes the plugin the secrets it currently holds.
 func (c Config) GetPluginSecretDeleter() func(ctx context.Context, pluginID, name string) error {
 	return func(ctx context.Context, pluginID, name string) error {
 		if c.PluginHost == nil {

@@ -1,8 +1,8 @@
 /**
  * Prose that carries links.
  *
- * What a link means is the caller's: this says only that a link was pressed
- * and hands over what it points at, so nothing here has to know a scheme.
+ * The meaning of a link belongs to the caller: the component only reports that a link was pressed
+ * and passes its target, so it needs no knowledge of a scheme.
  */
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -64,7 +64,7 @@ export interface Settings {
   readonly describedBy?: string | undefined
   /** A change being made to the text by something other than the reader. */
   readonly change?: EditorChange | null | undefined
-  /** What whoever put the editor on the screen draws into it. */
+  /** Extensions supplied by the code that hosts the editor. */
   readonly extensions?: Extension | undefined
   readonly softWrap?: boolean | undefined
   readonly lineNumbers?: boolean | undefined
@@ -160,9 +160,9 @@ export const getTabSizeExtension = (tabSize: number): Extension => {
 }
 
 /**
- * The chord that asks for the text to be kept now, answered by whoever put the
- * editor on the screen. It is handled here, so the letter is not inserted and
- * the page's own answer to the chord does not run.
+ * The chord that requests an immediate save, handled by the code that hosts the
+ * editor. It is handled here, so the letter is not inserted and
+ * the page's own handling of the chord does not run.
  */
 export const saveKeyBinding: KeyBinding = {
   key: 'Mod-s',
@@ -173,9 +173,9 @@ export const saveKeyBinding: KeyBinding = {
 }
 
 /**
- * Whether Tab belongs to the editor or to the page. It begins with the editor,
- * Escape hands it to the page, and the keyboard arriving takes it back, so
- * every visit begins the same way.
+ * Whether Tab belongs to the editor or to the page. It starts with the editor,
+ * Escape releases it to the page, and keyboard input into the editor restores it, so
+ * every visit starts the same way.
  */
 const setTabCapture = StateEffect.define<boolean>()
 

@@ -14,9 +14,9 @@ type Scan struct {
 	doc *document
 }
 
-// OpenReader holds a PDF open for its pages to be drawn, read from the file as
-// the library asks for it. The scan owns the file and closes it with the scan,
-// or at once if the document does not open.
+// OpenReader opens a PDF for page rendering, reading from the file as the
+// library requests. The scan owns the file and closes it with the scan, or
+// immediately if the document does not open.
 func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
 	doc, err := openReader(file)
 	if err != nil {
@@ -39,17 +39,17 @@ func (s *Scan) Close() { s.doc.close() }
 // GetPageCount is how many pages the document has.
 func (s *Scan) GetPageCount() int { return s.doc.pages }
 
-// GetPageSize is how wide and how high one page is drawn, in the page's own units. A
-// drawing at a width works its resolution back from it, and the document
-// answers without anything being drawn.
+// GetPageSize returns the width and height at which one page is rendered, in
+// the page's own units. Rendering at a given width derives its resolution from
+// this size, and the document returns it without rendering.
 //
-// The page is drawn turned by however much it asks to be, so a page whose text
-// is written a quarter turn from the way it is drawn is drawn as wide as its
-// text is high, and it is answered so.
+// The page is rendered rotated by its own rotation, so a page whose text is
+// written a quarter turn from the rendered orientation is as wide as its text
+// is high, and the size reflects that.
 //
-// The page is not loaded to be measured. A window laying out a book asks for
-// every page's size before it has drawn any of them, and loading five hundred
-// pages to measure them is seconds before anything is on the screen.
+// The page is not loaded to measure it: a window laying out a book requests the
+// size of every page before rendering any of them, and loading hundreds of
+// pages takes seconds.
 func (s *Scan) GetPageSize(index int) (width, height float64, err error) {
 	if index < 0 || index >= s.doc.pages {
 		return 0, 0, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
@@ -94,10 +94,10 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	if err != nil {
 		return nil, err
 	}
-	// The library returns an image over memory it owns and a way to give that
-	// memory back. The pixels are copied out, because what is drawn outlives the
-	// call that drew it. A page is drawn in colour unless a format was asked
-	// for, and none is.
+	// The library returns an image over memory it owns and a function that
+	// releases that memory. The pixels are copied out because the rendered
+	// image outlives the call that rendered it. A page is rendered in color
+	// unless a format was requested, and none is.
 	page, isColour := rendered.Result.RenderedImage.(*image.RGBA)
 	// gomutants:disable-next-line BRANCH_IF reason="non-RGBA render output is rejected"
 	if !isColour {

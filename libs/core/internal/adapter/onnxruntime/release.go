@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// version is the release the binding asks the library for: it requests API 23,
-// and a release older than 1.23 answers that it does not have it.
+// version is the release the binding requests from the library: it requests API 23,
+// and a release older than 1.23 reports that it does not have it.
 const version = "1.23.0"
 
 // from is where the archives are published.

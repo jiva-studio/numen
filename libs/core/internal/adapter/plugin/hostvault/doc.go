@@ -1,2 +1,2 @@
-// Package hostvault answers what a plugin asks of the vault shown by the host.
+// Package hostvault serves a plugin's requests for the vault shown by the host.
 package hostvault

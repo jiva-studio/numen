@@ -1502,7 +1502,7 @@ func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
 // TestHelperProcessIdles is the body of the child process the launcher starts; it does nothing in a normal run.
 func TestHelperProcessIdles(t *testing.T) { plugintest.IdleChild(t) }
 
-// runningPlugin is a plugin the test host is told is running.
+// runningPlugin is a plugin that the test host treats as running.
 type runningPlugin struct {
 	token string
 	perms []string
@@ -1572,8 +1572,8 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 	}
 }
 
-// The port reaches a plugin process in its environment, only while the
-// endpoint serves, and the token it holds is the one the launch gave.
+// The port is passed to a plugin process in its environment only while the
+// endpoint serves, and the token is the one issued at launch.
 func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 	with := process.GetPluginVars("md.numen.a", process.LaunchEnvironment{Port: 5, HostPort: 7777, Token: "t"})
 	if !slices.Contains(with, "NUMEN_HOST_PORT=7777") || !slices.Contains(with, "NUMEN_PLUGIN_TOKEN=t") {
@@ -1587,7 +1587,7 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 	}
 }
 
-// A plugin process launched while the host endpoint serves is told its port.
+// A plugin process launched while the host endpoint serves receives its port.
 func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
@@ -1626,7 +1626,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 	}
 }
 
-// The host endpoint binds the loopback interface and refuses any address that
+// The host endpoint binds the loopback interface and rejects any address that
 // would bind more.
 func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 	host := NewHost("desktop.editor")

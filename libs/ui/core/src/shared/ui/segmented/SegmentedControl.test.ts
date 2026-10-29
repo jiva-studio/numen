@@ -86,8 +86,8 @@ describe('choosing', () => {
   })
 })
 
-// One press is one turn. The row already walks to its ends on these keys, and
-// a choice made twice is written twice by whoever is listening.
+// One press is one change. The row already moves to its ends on these keys,
+// and a choice made twice would be emitted twice to the listener.
 it('passes a choice on once for one press of Home or End', async () => {
   const control = mountSegmentedControl({ modelValue: 'medium' })
   const segments = control.findAll('[role="radio"]')

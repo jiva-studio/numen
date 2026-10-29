@@ -1,9 +1,9 @@
 /**
- * What a tab does with what it is told, asked without a browser.
+ * Tab state-transition tests, run without a browser.
  *
- * Every one of these has a failure a person sees as their own work going
- * wrong: a caret that jumps mid-sentence, a buffer emptied by a rename, an
- * answer from before the last keystroke put on the screen over it.
+ * Each case guards a failure the user sees as lost work: a caret that jumps
+ * mid-sentence, a buffer emptied by a rename, or a response to an earlier state
+ * rendered over the latest edit.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -35,7 +35,7 @@ const tab = (overrides: Partial<Tab> = {}): Tab => ({
 
 const kinds = (effects: readonly Effect[]) => effects.map((effect) => effect.kind)
 
-/** A tab whose write was told the file carries another file stat. */
+/** A tab whose pending write was reported against a different file stat. */
 const createStaleTab = (overrides: Partial<Tab> = {}): Tab =>
   transitionTab(tab({ editorText: 'mine', pendingWrite: 'mine', since: 10, ...overrides }), {
     kind: 'written',
@@ -155,8 +155,8 @@ describe('a read answers missing', () => {
   })
 
   it('leaves the buffer alone out of a re-read, and says the note is not there', () => {
-    // The note was removed or renamed under an open tab. What the person is
-    // reading stays on the screen, and the tab stops writing it anywhere.
+    // The note was removed or renamed while its tab was open. The tab keeps
+    // displaying its buffer and stops writing it.
     const initialTab = tab({ reading: 2 })
     const next = transitionTab(initialTab, {
       kind: 'read',
@@ -209,8 +209,8 @@ describe('a read answers an error', () => {
   })
 
   it('strands nothing: a tab that never read its note is not mended by typing', () => {
-    // Clearing the error here would take the tab back to loading, where the
-    // interval does nothing, and what the person typed would never be written.
+    // Clearing the error here would return the tab to loading, where the interval
+    // does nothing, and the typed text would never be written.
     const stuck = transitionTab(tab({ savedText: null, editorText: '' }), {
       kind: 'read',
       generation: 1,
@@ -922,7 +922,7 @@ describe('a note that moved', () => {
       renamed: [{ from: 'Note.md', to: 'Renamed.md' }],
     })
     expect(next.tab.path).toBe('Renamed.md')
-    // What the person typed is theirs, and a move is not a reason to read over it.
+    // The typed text is the user's, and a move does not justify overwriting it.
     expect(next.tab.editorText).toBe('mine')
     expect(kinds(next.effects)).toEqual([])
   })

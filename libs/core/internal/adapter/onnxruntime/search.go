@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// libraryEnvs name the library a person points the host at. The first set one
-// is used as given.
+// libraryEnvs lists the environment variables that name the ONNX runtime
+// library. The first one that is set is used as given.
 var libraryEnvs = []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME"}
 
 // getLibraryName returns what the library is called on an operating system.
@@ -25,7 +25,7 @@ func getLibraryName(goos string) string {
 	return "libonnxruntime.so"
 }
 
-// getEnvLibrary returns the library a person named in the environment, or empty.
+// getEnvLibrary returns the library path named in the environment, or empty.
 func getEnvLibrary() string {
 	for _, name := range libraryEnvs {
 		if pos := os.Getenv(name); pos != "" {
@@ -182,8 +182,9 @@ func readLoaderConfig(pos string, visited map[string]bool) []string {
 	return out
 }
 
-// readIncludedConfig returns the folders the files one include pattern names
-// hold. A relative pattern stands beside the file that includes it.
+// readIncludedConfig returns the folders listed in the files that one include
+// pattern matches. A relative pattern is resolved against the directory of the
+// including file.
 func readIncludedConfig(from, pattern string, seenCount map[string]bool) []string {
 	if !filepath.IsAbs(pattern) {
 		pattern = filepath.Join(filepath.Dir(from), pattern)

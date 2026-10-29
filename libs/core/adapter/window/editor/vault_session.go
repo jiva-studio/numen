@@ -10,10 +10,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// vaultSession is the half of the window that belongs to one vault: what runs behind
-// it, what a request reaches them through, and what ends them.
+// vaultSession is the part of the window that belongs to one vault: the passes
+// running for it, the path requests reach them through, and what ends them.
 //
-// It is published as one, through API.showing, and every request reads it there.
+// It is published as one unit through API.showing, and every request reads it there.
 type vaultSession struct {
 	// refresh brings a note of this vault up to date through the opening it is
 	// being followed by.
@@ -24,20 +24,19 @@ type vaultSession struct {
 	wait   func()
 }
 
-// errAnswerPending is a vault asked for while a page holds work a person is being
-// asked about.
+// errAnswerPending is returned when a vault is requested while a page holds work
+// awaiting the user's confirmation.
 var errAnswerPending = errors.New("pending review confirmation")
 
-// Show puts a vault in the window: another in place of the one it has, or the
-// first where it is standing on nothing. The index and the embedder belong to
-// the installation and stay; what belongs to the vault is taken down and built
-// again.
+// Show puts a vault in the window: another in place of the current one, or the
+// first when none is shown. The index and the embedder belong to the installation
+// and stay; everything belonging to the vault is torn down and rebuilt.
 //
-// Nothing is taken away until the vault asked for reads as a vault and every
-// page has written what only it holds. A page holding text a person has to
-// answer for calls the swap off, and so does a vault that will not come up: the
-// window stays on the one it had, and a window neither comes up in relies on
-// nothing and says so.
+// Nothing is torn down until the requested vault validates as a vault and every
+// page has written its pending state. A page holding text awaiting user
+// confirmation aborts the swap, as does a vault that fails to start: the window
+// stays on its current vault, and a window with no vault to fall back on reports
+// the error.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.State.GetCurrentVault().ID {
 		return nil
@@ -50,7 +49,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	}
 	defer o.shutdown.endKeepOpen()
 
-	// A page that says nothing is waited for HandedOverIn and no longer.
+	// A page that reports nothing is waited for at most FlushTimeout.
 	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
 	defer elapsed()
 
@@ -65,8 +64,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	err := o.startVault(ctx, v, false)
 	if err != nil {
 		if back := o.startVault(ctx, was, false); back != nil {
-			// The window is standing on nothing: it says so, and the door on
-			// writes stays shut.
+			// The window shows no vault and writes stay disabled.
 			o.State.setVault(domain.Vault{})
 			o.State.Error.Store(back.Error())
 			return errors.Join(err, back)
@@ -77,8 +75,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
 	o.State.Window.CancelFlush()
-	// Everything a page is holding was read in a vault that is no longer in
-	// front of it.
+	// Every page's held content was read from the previous vault.
 	o.State.ChangeEvents.publish(change{shouldReload: true})
 	return err
 }
@@ -94,8 +91,8 @@ func (o *Installation) startVault(ctx context.Context, v domain.Vault, rebuild b
 		o.State.Ready.Store(true)
 		return nil
 	}
-	// Recorded before the vault is built, so the next window opens on it. A
-	// list that could not be written is said and nothing more.
+	// Recorded before the vault is built, so the next window opens on it. A failure
+	// to write the list is reported and otherwise ignored.
 	if err := o.vaults.RecordOpen.Execute(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
@@ -148,11 +145,10 @@ func (o *Installation) stopVault() {
 	on.wait()
 }
 
-// about indexing it, and the entries its passes left in the list of what is
-// being done.
+// about indexing it, and the entries its passes left in the list of running work.
 //
-// What stopped this installation from embedding at all is put back. It stands
-// for as long as the window is open.
+// An error that prevented embedding for the whole installation is restored, and
+// persists while the window is open.
 func (o *Installation) resetStatus() {
 	o.State.Ready.Store(false)
 	o.State.Error.Store("")

@@ -64,7 +64,7 @@ func TestKeysBelowTwoNamesStayApart(t *testing.T) {
 }
 
 // A machine whose keychain cannot be reached fails every call with
-// port.ErrNoKeyStore and says why; the key is kept nowhere else.
+// port.ErrNoKeyStore and reports why; the key is stored nowhere else.
 func TestAMachineWithoutAKeychainFailsWithANamedError(t *testing.T) {
 	reason := errors.New("the secret service is not running")
 	keyring.MockInitWithError(reason)

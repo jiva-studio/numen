@@ -59,7 +59,7 @@ export interface CommandsDepsOptions {
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
   }
-  /** A note put in front of the person, where the plugin that shows notes puts it. */
+  /** Shows a note in the plugin that displays notes. */
   travel: (path: string) => Promise<void> | void
   /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void

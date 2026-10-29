@@ -1,25 +1,24 @@
 /**
- * The values the window's appearance is made of: the modes a theme's tokens are
- * read as, the sizes a range reaches, and the number a person typed.
+ * The values that make up the window appearance: the modes in which a theme's
+ * tokens are read, the size ranges, and the percentage typed by the user.
  */
 /** Which half of a `light-dark()` pair every token is read as. */
 export type Mode = 'system' | 'light' | 'dark'
 
 /** One theme as the list refers to it. */
 export interface Theme {
-  /** The origin and the filename, which is how the theme is asked for again. */
+  /** The origin and the filename, which together identify the theme when it is requested again. */
   readonly name: string
   /** What the file is called, without the origin. */
   readonly title: string
-  /** Whether it ships inside the application. Every other theme is a file of the person's. */
+  /** Whether it ships inside the application. Every other theme is a user file. */
   readonly isBuiltIn: boolean
   /** It declares light and dark itself, so the mode has nothing left to choose. */
   readonly isPinned: boolean
 }
 
 /**
- * One thing said of each of the two sizes: how large the interface is drawn,
- * and how large the text a person reads is set.
+ * One value for each of the two sizes: the interface scale and the text scale.
  */
 export interface Scales<T> {
   readonly interfaceScale: T
@@ -38,9 +37,9 @@ export const DESIGNED = 1
 const STEPS = 10
 
 /**
- * A number a person typed, which is a whole number of percent. The row it makes
- * is titled in the digits that were typed, so the words typed always leave it
- * standing.
+ * A number typed by the user, as a whole percentage. The row it produces is
+ * titled with the typed digits, so it matches any typed text and is never
+ * filtered out.
  */
 const TYPED = /^(\d+)\s*%?$/
 
@@ -54,10 +53,10 @@ export const SCHEMES: Record<Mode, string> = {
   dark: 'dark',
 }
 
-/** A range until the application has said what one is. */
+/** An empty range, used until the application provides the real one. */
 export const EMPTY_RANGE: Bounds = { min: 0, max: 0 }
 
-/** Whether a range reaches a size. A range holding nothing reaches none. */
+/** Whether a range contains a size. An empty range contains none. */
 export const isInBounds = (range: Bounds, size: number): boolean =>
   range.max > range.min && range.min > 0 && size >= range.min && size <= range.max
 

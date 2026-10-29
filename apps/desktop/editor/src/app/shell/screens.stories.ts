@@ -1,8 +1,8 @@
 /**
- * The window drawn around the settings, the tab the window adds to what the library draws.
+ * The window around the settings, the tab the window adds to what the library draws.
  *
- * Nothing here reaches a vault. The tab is handed what it would hold, so it is drawn in the state it
- * settles in and a picture can be taken of it.
+ * Nothing here reaches a vault. The tab receives the state it would hold, so it
+ * renders in its settled state and can be captured as a screenshot.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { WorkspaceLayout, pane } from '@numen/shell'
@@ -16,7 +16,7 @@ import { findTabKindIcon, SETTINGS } from '@/entities/tab'
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [{ id: SETTINGS, title: 'Settings' }]
 
-/** A tab is drawn as its kind, which is what stands before the identity. */
+/** A tab is drawn as its kind, which is the prefix of the identity. */
 const getTabIcon = (id: string) => findTabKindIcon(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
@@ -65,7 +65,7 @@ type Story = StoryObj
 
 /* The settings. ------------------------------------------------------------ */
 
-/** The program an installation nobody configured answers with. */
+/** The program an unconfigured installation uses. */
 const AGENT_USE: Model = {
   namedAt: ['agent', 'use'],
   name: 'claude',
@@ -126,7 +126,7 @@ const PLUGINS: readonly PluginInfo[] = [
   plugin('md.numen.views.plex.graph', 'Plex Graph', 'Knowledge graph visualizer and plex explorer'),
 ]
 
-/** What the settings were asked to do; a picture asks nothing. */
+/** The actions the settings requested; a screenshot requests none. */
 const DONE: string[] = []
 
 const INSTALLATION: Installation = {

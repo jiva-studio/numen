@@ -30,14 +30,14 @@ type NoteMover interface {
 type Move struct {
 	writers vaultport.VaultWriters
 	links   noteport.LinkQueries
-	// queries is what the index holds about each file, and is what says which
-	// sources sit under the path being moved.
+	// queries is what the index holds about each file, and determines which sources
+	// are under the path being moved.
 	queries sourceport.SourceQueries
 	// sources is where the index files each file. A folder and everything under
 	// it are filed at their new paths in one write.
 	sources sourceport.SourceRepository
-	// notes is what settles each note that travelled: whoever is drawing it, and
-	// the links written by its old name.
+	// notes reconciles each moved note: its open views, and the links written with
+	// its old name.
 	notes NoteMover
 }
 
@@ -82,8 +82,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 		return res, err
 	}
 
-	// Asked before the move, because afterwards nothing points at the old paths
-	// and there is nothing left to ask about.
+	// Queried before the move, because afterwards nothing points at the old paths.
 	pointing, err := u.getBacklinksByPath(ctx, v, travelling)
 	if err != nil {
 		return res, err
@@ -93,8 +92,8 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	if err != nil {
 		return res, err
 	}
-	// Only the core says a path holds nothing: the writer answers the same way
-	// for a vault it cannot reach at all.
+	// Only the core reports a path as holding nothing: the writer returns the same
+	// error for a vault it cannot reach at all.
 	if err := writer.Move(ctx, from, to); errors.Is(err, vaultport.ErrNotExist) {
 		return res, edit.ErrNoNote
 	} else if err != nil {
@@ -102,14 +101,14 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	}
 	res.IsLanded = true
 
-	// Notes and books alike are filed under their new paths in one write, and
-	// what was derived from each of them travels with it.
+	// Notes and books are filed under their new paths in one write, and what was
+	// derived from each of them moves with it.
 	if err := u.sources.MoveSources(ctx, v.ID, from, to); err != nil {
 		return res, err
 	}
 
-	// sent, and whoever is drawing the note has to be told wherever the note's
-	// own name ended up.
+	// sent, and every view of the note must be notified wherever the note's own name
+	// ended up.
 	var called error
 	if isRename(travelling, from, to) {
 		called = u.notes.WriteFilenameAsTitle(ctx, v, to)

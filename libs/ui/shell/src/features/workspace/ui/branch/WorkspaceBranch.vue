@@ -2,9 +2,9 @@
 /**
  * A branch, drawn as a row or a column of panels with handles between them.
  *
- * Which one it is comes from the depth. The panels are told the shares the
- * model holds, and a handle that moves reports shares back; the model is the
- * only place they are kept.
+ * The orientation comes from the depth. The panels receive the shares the model
+ * holds, and a handle that moves reports shares back; the model is the only
+ * place they are stored.
  */
 import { computed, inject, resolveComponent, useTemplateRef, type Component, type Ref } from 'vue'
 import { SplitterGroup } from 'reka-ui'
@@ -35,7 +35,7 @@ const slots = defineSlots<{
 /** A branch inside a branch is drawn by this same component, under its own name. */
 const branchView = resolveComponent('WorkspaceBranch') as Component
 
-/** What every branch and pane of one workspace is told once, at the top. */
+/** What every branch and pane of one workspace receives once, at the top. */
 const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 /** Every slot handed down, under the name it arrived under. */
@@ -45,7 +45,7 @@ const direction = computed(() => getOrientation(props.axis, props.depth))
 
 const sizes = computed(() => fit(props.node.sizes, props.node.children.length))
 
-/** What each child is told, in percent. */
+/** What each child receives, in percent. */
 const percents = computed(() => sizes.value.map((share) => share * 100))
 
 /**
@@ -65,7 +65,7 @@ const floor = computed(
   () => atLeast(workspace.value.minimum, length.value, props.node.children.length) * 100,
 )
 
-/** Which children there are, so that a change of shape starts the pane afresh. */
+/** Which children exist, so a change of shape resets the pane. */
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
 
 /* -------------------------------- Handlers -------------------------------- */

@@ -1,10 +1,10 @@
-// Package shell serves a window that is a frame for the plugins of its target and holds no domain of
+// Package shell serves a window that is a frame for the plugins of its target and has no domain of
 // its own.
 //
-// It serves the window's pages, the tasks it draws, the themes it is dressed in, the plugins of its
-// target with the files of their frontends, and the calls for the services they serve. It lends the
-// plugins what the installation has: every vault it knows, the reading of one into the index, and the
-// word that something moved.
+// It serves the window's pages, the tasks it displays, the themes it applies, the plugins of its
+// target with the files of their frontends, and the calls for the services they serve. It provides the
+// plugins with what the installation has: every vault it knows, the reading of one into the index, and
+// the notification that something moved.
 package shell
 
 import (

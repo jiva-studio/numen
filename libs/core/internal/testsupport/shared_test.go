@@ -13,14 +13,14 @@ import (
 // else stays in the file of the service that answers with it.
 const shared = "numen/v1/shared.proto"
 
-// A service is a file, and the shared file is not a service's: it declares none
-// and it imports nothing, so it is the base of the import graph and everything
-// else is above it. Both are what the rule for entering it rests on — a file
-// that answered with something, or reached for something, would own a subject
-// and would be a service's file after all.
+// A service is a file, and the shared file is not a service file: it declares
+// no service and imports nothing, so it is the base of the import graph and
+// every other file depends on it. Both properties underlie the rule for adding
+// a type to it: a file that declared a service or imported another file would
+// own a subject and would be a service file.
 //
-// buf's STANDARD set has no rule for either, and neither has any other category
-// it carries, so the assertion stands here beside the other walk of the schema.
+// buf's STANDARD rule set and its other categories do not check either
+// property, so the assertion is here, next to the other walk of the schema.
 func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 	var target protoreflect.FileDescriptor
 	files := 0
@@ -50,8 +50,9 @@ func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 	}
 }
 
-// Put over the schema's own files, the rule has to refuse the two halves apart:
-// a file that answers with something, and a file that reaches for something.
+// Applied to the schema's own files, the rule must report the two violations
+// separately: a file that declares a service, and a file that imports another
+// file.
 func TestSharedFileRule_ReportsViolations(t *testing.T) {
 	for _, one := range []struct {
 		path string
@@ -77,9 +78,9 @@ func TestSharedFileRule_ReportsViolations(t *testing.T) {
 	}
 }
 
-// describeOwnership is every way a file of the schema owns a subject of its
-// own: the services it answers with, and the files it reaches for. A file
-// owning none is one every other may stand on.
+// describeOwnership lists every way a schema file owns a subject: the services
+// it declares, and the files it imports. A file with none can be imported by
+// every other file.
 func describeOwnership(file protoreflect.FileDescriptor) []string {
 	var out []string
 	for i := range file.Services().Len() {

@@ -1,9 +1,8 @@
 /**
- * What the corner of the window draws, asked without a screen.
+ * What the corner of the window draws, tested without a screen.
  *
- * The failure this is here for is one a person sees and no test did: one
- * document being read, and two cards about it carrying two counts that have
- * nothing to do with each other.
+ * The failure this guards against was visible to users and missed by tests: one
+ * document being read, and two cards about it showing two unrelated counts.
  */
 import { describe, expect, it } from 'vitest'
 import { getCornerNotices, type State, type Words } from './corner'

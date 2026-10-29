@@ -73,14 +73,14 @@ func (s *providerServer) getRequested() []*v1.AskAgentRequest {
 	return slices.Clone(s.requested)
 }
 
-// getFinished are the conversations the plugin was told are over.
+// getFinished returns the conversations reported to the plugin as ended.
 func (s *providerServer) getFinished() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.finished)
 }
 
-// getCommands are the command lines the plugin was told about.
+// getCommands returns the command lines reported to the plugin.
 func (s *providerServer) getCommands() []*v1.AgentProgramCommand {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -212,8 +212,8 @@ func TestAHostWithoutProvidersListsNoPrograms(t *testing.T) {
 	}
 }
 
-// Every plugin with the agent provider capability is asked for its programs, in the order of the
-// plugins, and a plugin without it is not asked.
+// Every plugin with the agent provider capability is queried for its programs,
+// in plugin order, and a plugin without it is not queried.
 func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
@@ -239,7 +239,8 @@ func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 	}
 }
 
-// A provider that cannot be started is told beside the programs of the others.
+// A provider that cannot be started is reported alongside the programs of the
+// others.
 func TestAProviderThatFailsIsReportedAdjacentTheOthers(t *testing.T) {
 	served := &providerServer{programs: []*v1.AgentProgram{{Name: "alpha", Title: "Alpha"}}}
 	host := hostWith(t,
@@ -301,8 +302,8 @@ func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 	}
 }
 
-// Ending a conversation goes to the plugin it was asked in, and ending one that was asked nowhere
-// goes nowhere.
+// Ending a conversation is sent to the plugin that started it, and ending a
+// conversation that was never started sends nothing.
 func TestEndConversation_RoutesToStartingPlugin(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
@@ -356,7 +357,7 @@ func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 	}
 }
 
-// A conversation asked on two plugins is ended on both.
+// A conversation started on two plugins is ended on both.
 func TestEndConversation_EndsOnEveryPluginUsed(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
@@ -378,8 +379,8 @@ func TestEndConversation_EndsOnEveryPluginUsed(t *testing.T) {
 	}
 }
 
-// A plugin that cannot be asked for its programs is told to whoever handles what went wrong, and
-// the programs of the others are offered.
+// A plugin that cannot be queried for its programs is reported to the error
+// handler, and the programs of the others are returned.
 func TestModels_ReportsProviderListFailureToErrorHandler(t *testing.T) {
 	served := &providerServer{programs: []*v1.AgentProgram{{Name: "alpha", Title: "Alpha", IsInstalled: true}}}
 	host := hostWith(t,

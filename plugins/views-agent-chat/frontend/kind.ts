@@ -1,9 +1,10 @@
 /**
  * The agent tab kind: a conversation with the agent, a tab of it per conversation.
  *
- * A question put to the window goes to the tab the person was last in, and a
- * window with none opens one. A command asked from a talk is asked over the
- * note the window relies on, since a talk is about no note of its own.
+ * A question sent to the window goes to the most recently focused tab, and the
+ * window opens a tab when there is none. A command issued from a conversation
+ * applies to the note the window currently tracks, since a conversation has no
+ * note of its own.
  */
 import { Bot } from '@lucide/vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
@@ -18,7 +19,7 @@ import { WORDS as words } from './words'
 /** The word agent tabs are filed under. */
 export const AGENT = 'agent'
 
-/** What an agent tab is called: the first thing asked of it, shortened. */
+/** The title of an agent tab: the first prompt, shortened. */
 const getAgentTitle = (state: AgentTabState): string =>
   createTabTitle(state.turns.value.find((turn) => turn.voice === 'prompt')?.text ?? '') ||
   words.agent

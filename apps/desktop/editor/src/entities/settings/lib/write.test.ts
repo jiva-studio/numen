@@ -1,5 +1,5 @@
 /**
- * A setting written back into the file the person types.
+ * A setting written back into the file the user edits.
  */
 import { describe, expect, it } from 'vitest'
 import { write } from './write'

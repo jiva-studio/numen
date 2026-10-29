@@ -80,9 +80,9 @@ func Basename(path string) string {
 // NoteExtension is the extension a note's file carries.
 const NoteExtension = ".md"
 
-// LinkName is the name a link is written by: the last segment of what stands
-// between the brackets, without a note's extension. The extension comes off
-// however it is spelled, because a name is compared without regard to case.
+// LinkName is the name a link is written by: the last segment of the text
+// between the brackets, without a note's extension. The extension is stripped
+// however it is spelled, because names are compared case-insensitively.
 //
 // Every other dot belongs to the name: `[[Lecture 1.2]]` names a note filed
 // under all of it.

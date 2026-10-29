@@ -48,7 +48,7 @@ type TextPage struct {
 // them through HostTextService; tests work them through hosttest.Texts.
 type Texts interface {
 	// With is the text versions of the vault of the identity. A call on it returns ErrUnknownVault
-	// when the installation knows no such vault.
+	// when the installation has no such vault.
 	With(id VaultID) Texts
 
 	// PutVersion records a version of the plugin from the file it wrote, or replaces the one it has
@@ -63,7 +63,7 @@ type Texts interface {
 	ReadText(ctx context.Context, path string, id TextVersionID, cursor string) (TextPage, error)
 }
 
-// errRepeatedCursor is a text that returned a page with the cursor it was asked with.
+// errRepeatedCursor is a text that returned a page with the cursor it was requested with.
 var errRepeatedCursor = errors.New("host: the same page was returned twice")
 
 // ReadWholeText is every page of a version's segments, joined.

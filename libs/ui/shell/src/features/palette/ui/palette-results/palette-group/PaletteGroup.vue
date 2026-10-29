@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * One named group of the list: its name, the rows standing under it, and what
- * it says instead where it came back with nothing.
+ * One named group of the list: its name, its rows, and the empty-state message
+ * shown when it returned nothing.
  *
- * A group still filling says so beside its name. `data-palette` names each
+ * A group still loading shows that beside its name. `data-palette` names each
  * part: `title` and `silence`.
  */
 import { computed, type ComponentPublicInstance } from 'vue'
@@ -23,7 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** The pointer crossed a row: its number, and the move that took it there. */
   (event: 'point-at', pos: number, hasMoved: PointerEvent): void
-  /** A row was pressed: its number, and whether the second action was asked for. */
+  /** A row was activated: its index, and whether the second action was requested. */
   (event: 'choose', pos: number, second: boolean): void
 }>()
 
@@ -32,7 +32,7 @@ defineSlots<{
   icon(props: { id: string }): unknown
 }>()
 
-/** The rows as they are drawn, each under the item it stands for. */
+/** The rows as rendered, each paired with its item. */
 const itemElements = new Map<string, HTMLElement>()
 
 const hold = (item: string, row: Element | ComponentPublicInstance | null): void => {
