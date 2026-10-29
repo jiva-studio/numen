@@ -58,13 +58,16 @@ func (*GetEmbeddingModelRequest) Descriptor() ([]byte, []int) {
 }
 
 type GetEmbeddingModelResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Dimensions    int32                  `protobuf:"varint,2,opt,name=dimensions,proto3" json:"dimensions,omitempty"`
-	MaxTokens     int32                  `protobuf:"varint,3,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
-	Pooling       string                 `protobuf:"bytes,4,opt,name=pooling,proto3" json:"pooling,omitempty"`
-	From          string                 `protobuf:"bytes,5,opt,name=from,proto3" json:"from,omitempty"`
-	Concurrency   int32                  `protobuf:"varint,6,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Dimensions  int32                  `protobuf:"varint,2,opt,name=dimensions,proto3" json:"dimensions,omitempty"`
+	MaxTokens   int32                  `protobuf:"varint,3,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Pooling     string                 `protobuf:"bytes,4,opt,name=pooling,proto3" json:"pooling,omitempty"`
+	From        string                 `protobuf:"bytes,5,opt,name=from,proto3" json:"from,omitempty"`
+	Concurrency int32                  `protobuf:"varint,6,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
+	// The similarity a passage starts out having to reach to answer a query under
+	// this model, zero when the plugin knows none.
+	FloorHint     float64 `protobuf:"fixed64,7,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -137,6 +140,13 @@ func (x *GetEmbeddingModelResponse) GetFrom() string {
 func (x *GetEmbeddingModelResponse) GetConcurrency() int32 {
 	if x != nil {
 		return x.Concurrency
+	}
+	return 0
+}
+
+func (x *GetEmbeddingModelResponse) GetFloorHint() float64 {
+	if x != nil {
+		return x.FloorHint
 	}
 	return 0
 }
@@ -278,7 +288,7 @@ var File_numen_v1_embedding_proto protoreflect.FileDescriptor
 const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\n" +
 	"\x18numen/v1/embedding.proto\x12\bnumen.v1\"\x1a\n" +
-	"\x18GetEmbeddingModelRequest\"\xbe\x01\n" +
+	"\x18GetEmbeddingModelRequest\"\xdd\x01\n" +
 	"\x19GetEmbeddingModelResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1e\n" +
 	"\n" +
@@ -288,7 +298,9 @@ const file_numen_v1_embedding_proto_rawDesc = "" +
 	"max_tokens\x18\x03 \x01(\x05R\tmaxTokens\x12\x18\n" +
 	"\apooling\x18\x04 \x01(\tR\apooling\x12\x12\n" +
 	"\x04from\x18\x05 \x01(\tR\x04from\x12 \n" +
-	"\vconcurrency\x18\x06 \x01(\x05R\vconcurrency\"%\n" +
+	"\vconcurrency\x18\x06 \x01(\x05R\vconcurrency\x12\x1d\n" +
+	"\n" +
+	"floor_hint\x18\a \x01(\x01R\tfloorHint\"%\n" +
 	"\vFloatVector\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\x02R\x06values\")\n" +
 	"\x11EmbedBatchRequest\x12\x14\n" +

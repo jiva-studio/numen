@@ -23,6 +23,10 @@ message GetEmbeddingModelResponse {
   string pooling = 4;
   string from = 5;
   int32 concurrency = 6;
+
+  // The similarity a passage starts out having to reach to answer a query under
+  // this model, zero when the plugin knows none.
+  double floor_hint = 7;
 }
 
 

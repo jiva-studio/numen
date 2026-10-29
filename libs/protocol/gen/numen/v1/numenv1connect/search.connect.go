@@ -43,6 +43,16 @@ const (
 	// SearchServiceSearchPassagesProcedure is the fully-qualified name of the SearchService's
 	// SearchPassages RPC.
 	SearchServiceSearchPassagesProcedure = "/numen.v1.SearchService/SearchPassages"
+	// SearchServiceGetFloorProcedure is the fully-qualified name of the SearchService's GetFloor RPC.
+	SearchServiceGetFloorProcedure = "/numen.v1.SearchService/GetFloor"
+	// SearchServiceCalibrateFloorProcedure is the fully-qualified name of the SearchService's
+	// CalibrateFloor RPC.
+	SearchServiceCalibrateFloorProcedure = "/numen.v1.SearchService/CalibrateFloor"
+	// SearchServiceSetFloorProcedure is the fully-qualified name of the SearchService's SetFloor RPC.
+	SearchServiceSetFloorProcedure = "/numen.v1.SearchService/SetFloor"
+	// SearchServiceProbeFloorProcedure is the fully-qualified name of the SearchService's ProbeFloor
+	// RPC.
+	SearchServiceProbeFloorProcedure = "/numen.v1.SearchService/ProbeFloor"
 )
 
 // SearchServiceClient is a client for the numen.v1.SearchService service.
@@ -59,6 +69,19 @@ type SearchServiceClient interface {
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
 	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
+	// GetFloor is the similarity a passage has to reach to answer a search by
+	// meaning in the active vault, where it comes from, and what the last
+	// calibration measured.
+	GetFloor(context.Context, *connect.Request[v1.GetFloorRequest]) (*connect.Response[v1.GetFloorResponse], error)
+	// CalibrateFloor measures where the model in use puts text about different
+	// things in the active vault, and keeps the floor that follows from it.
+	CalibrateFloor(context.Context, *connect.Request[v1.CalibrateFloorRequest]) (*connect.Response[v1.CalibrateFloorResponse], error)
+	// SetFloor chooses between the calibrated floor and one the person sets, for
+	// the model in use.
+	SetFloor(context.Context, *connect.Request[v1.SetFloorRequest]) (*connect.Response[v1.SetFloorResponse], error)
+	// ProbeFloor is how near the best passage of the active vault stands to a
+	// query, to be compared with the floor.
+	ProbeFloor(context.Context, *connect.Request[v1.ProbeFloorRequest]) (*connect.Response[v1.ProbeFloorResponse], error)
 }
 
 // NewSearchServiceClient constructs a client for the numen.v1.SearchService service. By default, it
@@ -84,6 +107,30 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
 			connect.WithClientOptions(opts...),
 		),
+		getFloor: connect.NewClient[v1.GetFloorRequest, v1.GetFloorResponse](
+			httpClient,
+			baseURL+SearchServiceGetFloorProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("GetFloor")),
+			connect.WithClientOptions(opts...),
+		),
+		calibrateFloor: connect.NewClient[v1.CalibrateFloorRequest, v1.CalibrateFloorResponse](
+			httpClient,
+			baseURL+SearchServiceCalibrateFloorProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("CalibrateFloor")),
+			connect.WithClientOptions(opts...),
+		),
+		setFloor: connect.NewClient[v1.SetFloorRequest, v1.SetFloorResponse](
+			httpClient,
+			baseURL+SearchServiceSetFloorProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("SetFloor")),
+			connect.WithClientOptions(opts...),
+		),
+		probeFloor: connect.NewClient[v1.ProbeFloorRequest, v1.ProbeFloorResponse](
+			httpClient,
+			baseURL+SearchServiceProbeFloorProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("ProbeFloor")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -91,6 +138,10 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 type searchServiceClient struct {
 	searchNames    *connect.Client[v1.SearchNamesRequest, v1.SearchNamesResponse]
 	searchPassages *connect.Client[v1.SearchPassagesRequest, v1.SearchPassagesResponse]
+	getFloor       *connect.Client[v1.GetFloorRequest, v1.GetFloorResponse]
+	calibrateFloor *connect.Client[v1.CalibrateFloorRequest, v1.CalibrateFloorResponse]
+	setFloor       *connect.Client[v1.SetFloorRequest, v1.SetFloorResponse]
+	probeFloor     *connect.Client[v1.ProbeFloorRequest, v1.ProbeFloorResponse]
 }
 
 // SearchNames calls numen.v1.SearchService.SearchNames.
@@ -101,6 +152,26 @@ func (c *searchServiceClient) SearchNames(ctx context.Context, req *connect.Requ
 // SearchPassages calls numen.v1.SearchService.SearchPassages.
 func (c *searchServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
 	return c.searchPassages.CallUnary(ctx, req)
+}
+
+// GetFloor calls numen.v1.SearchService.GetFloor.
+func (c *searchServiceClient) GetFloor(ctx context.Context, req *connect.Request[v1.GetFloorRequest]) (*connect.Response[v1.GetFloorResponse], error) {
+	return c.getFloor.CallUnary(ctx, req)
+}
+
+// CalibrateFloor calls numen.v1.SearchService.CalibrateFloor.
+func (c *searchServiceClient) CalibrateFloor(ctx context.Context, req *connect.Request[v1.CalibrateFloorRequest]) (*connect.Response[v1.CalibrateFloorResponse], error) {
+	return c.calibrateFloor.CallUnary(ctx, req)
+}
+
+// SetFloor calls numen.v1.SearchService.SetFloor.
+func (c *searchServiceClient) SetFloor(ctx context.Context, req *connect.Request[v1.SetFloorRequest]) (*connect.Response[v1.SetFloorResponse], error) {
+	return c.setFloor.CallUnary(ctx, req)
+}
+
+// ProbeFloor calls numen.v1.SearchService.ProbeFloor.
+func (c *searchServiceClient) ProbeFloor(ctx context.Context, req *connect.Request[v1.ProbeFloorRequest]) (*connect.Response[v1.ProbeFloorResponse], error) {
+	return c.probeFloor.CallUnary(ctx, req)
 }
 
 // SearchServiceHandler is an implementation of the numen.v1.SearchService service.
@@ -117,6 +188,19 @@ type SearchServiceHandler interface {
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
 	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
+	// GetFloor is the similarity a passage has to reach to answer a search by
+	// meaning in the active vault, where it comes from, and what the last
+	// calibration measured.
+	GetFloor(context.Context, *connect.Request[v1.GetFloorRequest]) (*connect.Response[v1.GetFloorResponse], error)
+	// CalibrateFloor measures where the model in use puts text about different
+	// things in the active vault, and keeps the floor that follows from it.
+	CalibrateFloor(context.Context, *connect.Request[v1.CalibrateFloorRequest]) (*connect.Response[v1.CalibrateFloorResponse], error)
+	// SetFloor chooses between the calibrated floor and one the person sets, for
+	// the model in use.
+	SetFloor(context.Context, *connect.Request[v1.SetFloorRequest]) (*connect.Response[v1.SetFloorResponse], error)
+	// ProbeFloor is how near the best passage of the active vault stands to a
+	// query, to be compared with the floor.
+	ProbeFloor(context.Context, *connect.Request[v1.ProbeFloorRequest]) (*connect.Response[v1.ProbeFloorResponse], error)
 }
 
 // NewSearchServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -138,12 +222,44 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
 		connect.WithHandlerOptions(opts...),
 	)
+	searchServiceGetFloorHandler := connect.NewUnaryHandler(
+		SearchServiceGetFloorProcedure,
+		svc.GetFloor,
+		connect.WithSchema(searchServiceMethods.ByName("GetFloor")),
+		connect.WithHandlerOptions(opts...),
+	)
+	searchServiceCalibrateFloorHandler := connect.NewUnaryHandler(
+		SearchServiceCalibrateFloorProcedure,
+		svc.CalibrateFloor,
+		connect.WithSchema(searchServiceMethods.ByName("CalibrateFloor")),
+		connect.WithHandlerOptions(opts...),
+	)
+	searchServiceSetFloorHandler := connect.NewUnaryHandler(
+		SearchServiceSetFloorProcedure,
+		svc.SetFloor,
+		connect.WithSchema(searchServiceMethods.ByName("SetFloor")),
+		connect.WithHandlerOptions(opts...),
+	)
+	searchServiceProbeFloorHandler := connect.NewUnaryHandler(
+		SearchServiceProbeFloorProcedure,
+		svc.ProbeFloor,
+		connect.WithSchema(searchServiceMethods.ByName("ProbeFloor")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SearchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SearchServiceSearchNamesProcedure:
 			searchServiceSearchNamesHandler.ServeHTTP(w, r)
 		case SearchServiceSearchPassagesProcedure:
 			searchServiceSearchPassagesHandler.ServeHTTP(w, r)
+		case SearchServiceGetFloorProcedure:
+			searchServiceGetFloorHandler.ServeHTTP(w, r)
+		case SearchServiceCalibrateFloorProcedure:
+			searchServiceCalibrateFloorHandler.ServeHTTP(w, r)
+		case SearchServiceSetFloorProcedure:
+			searchServiceSetFloorHandler.ServeHTTP(w, r)
+		case SearchServiceProbeFloorProcedure:
+			searchServiceProbeFloorHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -159,4 +275,20 @@ func (UnimplementedSearchServiceHandler) SearchNames(context.Context, *connect.R
 
 func (UnimplementedSearchServiceHandler) SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchPassages is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) GetFloor(context.Context, *connect.Request[v1.GetFloorRequest]) (*connect.Response[v1.GetFloorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.GetFloor is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) CalibrateFloor(context.Context, *connect.Request[v1.CalibrateFloorRequest]) (*connect.Response[v1.CalibrateFloorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.CalibrateFloor is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) SetFloor(context.Context, *connect.Request[v1.SetFloorRequest]) (*connect.Response[v1.SetFloorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SetFloor is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) ProbeFloor(context.Context, *connect.Request[v1.ProbeFloorRequest]) (*connect.Response[v1.ProbeFloorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.ProbeFloor is not implemented"))
 }
