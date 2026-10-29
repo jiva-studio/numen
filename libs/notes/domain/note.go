@@ -72,10 +72,10 @@ type VaultProblem struct {
 	Candidates []string
 }
 
-// Check is one kind of vault problem and the name of the rule that detected it.
+// Check is the name of the rule that detected a vault problem.
 //
-// It is stored on the problem so that one kind can be handled at a time. A new
-// rule adds a new name here.
+// It is stored on the problem, so problems can be handled by rule. A new rule
+// adds a new name here.
 type Check string
 
 const (

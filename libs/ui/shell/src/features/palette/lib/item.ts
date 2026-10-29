@@ -73,7 +73,7 @@ export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGr
 ]
 
 /**
- * Every item in display order, so that a single index identifies an item.
+ * Every item in display order. A single index identifies an item.
  */
 export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[] =>
   groups.flatMap((group) => group.items.map((item) => ({ group, item })))

@@ -25,15 +25,15 @@ type VaultSummary struct {
 	Headings int
 }
 
-// ErrOverlaps reports a folder that lies inside a vault on the list, or contains one.
+// ErrOverlaps reports a folder that is inside a vault on the list, or contains one.
 var ErrOverlaps = errors.New("a vault does not lie inside another")
 
-// Vaults is the list of vaults this installation knows about, and the rules
+// Vaults is the list of vaults of this installation, and the rules
 // that apply to the list as a whole.
 type Vaults []Vault
 
 // CheckOverlap reports whether a folder can be a vault of its own. The error
-// names the overlapping vault so the user knows which one conflicts.
+// names the overlapping vault.
 func (vs Vaults) CheckOverlap(path string) error {
 	for _, other := range vs {
 		if other.Path == path {
@@ -79,7 +79,7 @@ func (vs Vaults) FreeName(name string, self VaultID) string {
 	}
 }
 
-// isBelow reports whether path lies below root.
+// isBelow reports whether path is below root.
 func isBelow(path, root string) bool {
 	rel, err := filepath.Rel(root, path)
 	if err != nil || rel == "." {

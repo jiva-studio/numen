@@ -1,7 +1,7 @@
 /**
  * The measured size of a menu and the position derived from it.
  *
- * Only the rendering knows the size, so it is passed in as a value and the
+ * Only the rendering measures the size, so it is passed in as a value and the
  * placement is computed from it.
  */
 import { computed, ref, type ComputedRef } from 'vue'

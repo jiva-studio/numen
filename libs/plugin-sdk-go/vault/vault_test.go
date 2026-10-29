@@ -108,7 +108,7 @@ func TestValidatePathRejectsSymlinkEscapes(t *testing.T) {
 	}
 }
 
-// A vault root passed to ValidatePathIn contains the path, whatever the environment says.
+// A vault root passed to ValidatePathIn contains the path, whatever the environment holds.
 func TestValidatePathInContainsThePathToTheRootItIsGiven(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("NUMEN_VAULT_PATH", "")

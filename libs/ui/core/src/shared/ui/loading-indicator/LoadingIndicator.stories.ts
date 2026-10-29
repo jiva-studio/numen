@@ -1,5 +1,5 @@
 /**
- * What a pane says while what fills it is still coming.
+ * The indicator a pane displays while its content is loading.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
@@ -25,7 +25,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** In the room a pane gives it. */
+/** In the space of a pane. */
 export const Playground: Story = {
   render: () => ({
     components: { LoadingIndicator },
@@ -64,8 +64,8 @@ export const OneSizeInEveryContainer: Story = {
 }
 
 /**
- * A pane whose content comes within the delay never shows the ring: the room stays empty until the
- * delay has passed.
+ * A pane whose content arrives within the delay never displays the ring: the pane stays empty until
+ * the delay has passed.
  */
 export const EmptyWithinItsDelay: Story = {
   render: () => ({

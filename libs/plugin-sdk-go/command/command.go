@@ -1,7 +1,7 @@
 // Package command lets a plugin run the commands its manifest declares. A Handler runs them; Mount
 // serves one to the host as PluginCommandService.
 //
-// The host checks every call against the manifest before it reaches a Handler: the command is
+// The host checks every call against the manifest before it is passed to a Handler: the command is
 // declared, every required argument is given, every argument is declared and holds a value of its
 // type, and a command over files is given a file of a declared extension.
 package command

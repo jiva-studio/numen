@@ -1,8 +1,8 @@
 /**
- * The rows as rendered, and the row that keyboard focus reaches.
+ * The rows as rendered, and the row that receives keyboard focus.
  *
  * A row element is stored under the identity of the row it represents, so
- * keyboard focus can be set on a row that was just added.
+ * keyboard focus can be set on a row added in the same update.
  */
 import { computed, nextTick, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'
@@ -11,7 +11,7 @@ export interface DrawnRowsState {
   /** The row the keyboard was last on. */
   readonly here: Ref<RowId | null>
   /**
-   * The single row that the tab key reaches: the last keyboard row, else the
+   * The single row that receives focus from the tab key: the last keyboard row, else the
    * first selected row, else the first row.
    */
   readonly tabbed: ComputedRef<RowId | null>

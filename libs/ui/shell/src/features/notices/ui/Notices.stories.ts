@@ -357,7 +357,7 @@ export const TooMuchToSay: Story = {
 }
 
 /**
- * Work that has just started.
+ * Work at its start.
  *
  * Most passes finish before they could be read, so no card is rendered until
  * the work has lasted past the delay.
@@ -440,7 +440,7 @@ export const Dark: Story = {
       // token set defines.
       await expect(ink).toBeGreaterThan(ground + 40)
 
-      // The frame is the text color thinned: its lightness lies between text and
+      // The frame is the text color thinned: its lightness is between text and
       // background and differs from the background by more than 2.
       const frame = lightness(cardStyle.borderTopColor, cardStyle.backgroundColor)
       await expect(frame).toBeGreaterThan(Math.min(ink, ground))

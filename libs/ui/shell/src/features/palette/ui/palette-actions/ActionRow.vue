@@ -52,8 +52,8 @@ defineExpose({ element })
   white-space: nowrap;
 }
 
-/* Highlights the matched part of the name. It sits under text being read, so
-   it is a tint, not a solid colour. */
+/* Highlights the matched part of the name. It is drawn under text, so it
+   is a tint with the text legible over it. */
 .actions__name [data-hit] {
   border-radius: 2px;
   background: var(--numen-highlight);

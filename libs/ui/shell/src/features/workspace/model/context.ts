@@ -6,7 +6,7 @@ import type { InjectionKey, Ref } from 'vue'
 import type { NodeId, Tab, TabId } from '../lib/node'
 
 export interface WorkspaceContext {
-  /** The tab an identity refers to, or nothing for an identity the workspace no longer has. */
+  /** The tab an identity refers to, or undefined for an identity absent from the workspace. */
   readonly findTab: (id: TabId) => Tab | undefined
   /** The pane a tab opens into. */
   readonly focus: NodeId

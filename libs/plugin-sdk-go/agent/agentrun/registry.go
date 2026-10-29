@@ -18,8 +18,8 @@ type Registry struct {
 	sessions map[string]string
 }
 
-// Add registers the work so that Close can reach it, and counts its reader, which calls End on the work
-// when it is done. It returns false once the registry is closed.
+// Add registers the work for Close, and counts its reader, which calls End on the work
+// when it finishes. It returns false once the registry is closed.
 func (r *Registry) Add(w *Work) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -1,5 +1,5 @@
 /**
- * Everything an open menu listens to on the window: a press, a scroll, a resize,
+ * The window events that dismiss an open menu: a press, a scroll, a resize,
  * and Escape.
  *
  * Each of them closes the menu, and the caller decides what closing does. A

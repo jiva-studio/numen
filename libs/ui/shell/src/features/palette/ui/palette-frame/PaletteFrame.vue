@@ -5,7 +5,7 @@
  * The backdrop catches every press the panel does not, and the window behind
  * is not interactive while the panel is open.
  *
- * `data-palette` names each part: `ground` and `panel`.
+ * `data-palette` names the backdrop part and the panel part.
  */
 defineOptions({ inheritAttrs: false })
 

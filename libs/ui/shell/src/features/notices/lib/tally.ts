@@ -2,7 +2,7 @@
  * The state of a line of activity, as plain values. No DOM, no clock, no measurement.
  *
  * Activity is work that runs without a request: a climbing count and a label for
- * what is being counted. The renderer decides the wording, so nothing here knows
+ * what is being counted. The renderer decides the wording, so nothing here depends on
  * what is counted.
  */
 
@@ -79,8 +79,8 @@ export const activity = (input: {
   if (!input.text) return { state: 'quiet', hasCounts: false }
   if (input.hasFailed) return { state: 'failed', hasCounts: false }
 
-  // Work is stated explicitly, not inferred. Words alone do not mean work is in
-  // progress; a caller that means "this is happening now" says so.
+  // Work is explicit input, not inferred from the words: isWorking is set by the
+  // caller when work is in progress.
   const share = input.tally ? findShare(input.tally) : undefined
   if (!input.isWorking && share === undefined) return { state: 'resting', hasCounts: false }
 

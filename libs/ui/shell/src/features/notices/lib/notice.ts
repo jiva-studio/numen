@@ -65,7 +65,7 @@ export interface Task {
  * One piece of work as a notice.
  *
  * What stopped the work is the card title: it is the sentence the user acts on,
- * and a card has room only for its first words.
+ * and a card displays only its first words.
  */
 export const createNotice = (task: Task): Notice => {
   const error = task.error

@@ -32,9 +32,9 @@ export interface RowDragOptions {
   /** What is drawn, nested, and the rows of it that are drawn now. */
   readonly getRows: () => readonly Row[]
   readonly getShownRows: () => readonly ShownRow[]
-  /** The tree as it relies on screen, and nothing until it is drawn. */
+  /** The tree as laid out on screen, and null until it is drawn. */
   readonly measure: () => TreeMetrics | null
-  /** The distance the pointer travels before a press becomes a drag. */
+  /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
   /** The number of rows being dragged, shown at the pointer. */

@@ -1,7 +1,7 @@
 /**
  * What the corner emits, and what it does not.
  *
- * A card that has been read tells its originator that it may be dismissed. This is not
+ * A card that has been read reports to its originator that it may be dismissed. This is not
  * observable outside the component, so it is asserted here.
  */
 import { describe, expect, it } from 'vitest'

@@ -1,5 +1,5 @@
 /**
- * Number formatting for display. A count of text reaches six figures in an
+ * Number formatting for display. A count of text can have six figures in an
  * ordinary vault, and the grouping is identical wherever it is rendered.
  */
 

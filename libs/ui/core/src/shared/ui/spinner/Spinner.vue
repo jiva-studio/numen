@@ -33,8 +33,8 @@
   }
 }
 
-/* Static, the mark sits beside the name: the band is
-   filling, and nothing moves to say so. */
+/* The mark is static and is displayed beside the name; the band is
+   filling, and no motion indicates it. */
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     opacity: 0.4;

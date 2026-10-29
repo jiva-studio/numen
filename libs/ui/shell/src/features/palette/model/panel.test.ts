@@ -1,6 +1,6 @@
 /**
  * The panel of actions over the palette: closed until requested, closed again
- * when its item offers nothing, and a choice made in it never reaches an item
+ * when its item offers nothing, and a choice made in it never applies to an item
  * that is not highlighted.
  */
 import { describe, expect, it, vi } from 'vitest'

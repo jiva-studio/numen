@@ -118,7 +118,7 @@ export const UnderTheFloor: Story = {
 }
 
 /**
- * A maximum that is not a multiple of the step. The handle reaches it, and a
+ * A maximum that is not a multiple of the step. The handle moves to it, and a
  * step back returns to the value the step up started from.
  */
 export const AStepAtTheCeiling: Story = {
@@ -133,7 +133,7 @@ export const AStepAtTheCeiling: Story = {
   },
 }
 
-/** A track in a very narrow box. */
+/** A track in a narrow box. */
 export const ANarrowBox: Story = { args: { width: '4rem' } }
 
 /** A name in another script. */

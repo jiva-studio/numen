@@ -4,7 +4,7 @@
  * assertive that interrupts other announcements. Neither is visible.
  */
 defineProps<{
-  /** The text announced when the screen reader reaches the region. */
+  /** The text announced when the screen reader enters the region. */
   told: string
   /** The text announced immediately. */
   cried: string

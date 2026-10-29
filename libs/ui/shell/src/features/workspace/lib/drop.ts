@@ -9,8 +9,8 @@ import type { NodeId, Side } from './node'
 import { getPlaceInBox, type Position, type Rect } from './rect'
 
 /**
- * Where a tab would go if it were let go now, and the part of the screen that
- * stands for it.
+ * The place a tab is dropped at if released now, and the part of the screen that
+ * marks it.
  */
 export type TabDropTarget = { readonly box: Rect } & (
   | { readonly kind: 'edge'; readonly side: Side }
@@ -28,7 +28,7 @@ export interface DropOptions {
 export const DEFAULT_DROP: DropOptions = { share: 0.2, limit: 96 }
 
 /**
- * The side a place asks for.
+ * The side that a place requests.
  *
  * An edge wins by how far into its own zone the place has come, so a corner
  * goes to whichever edge it is deeper inside. A place in no zone lands in the
@@ -77,7 +77,7 @@ export function getOverlay(side: Side, box: Rect): Rect {
 }
 
 /**
- * The place in a strip of tabs a point asks for, counted in gaps: zero is
+ * The place in a strip of tabs that a point requests, counted in gaps: zero is
  * before the first tab, and the length of the strip is after the last. A tab
  * is passed once the point is beyond its middle.
  */

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// LinkRole says what a link is for. The list is closed: navigation and rendering
+// LinkRole is the purpose of a link. The list is closed: navigation and rendering
 // read it, so an undefined role has no behaviour.
 type LinkRole string
 
@@ -29,7 +29,7 @@ func IsKnownRole(r LinkRole) bool {
 
 // Address is what a link points at. Every address has a scheme, so reading one
 // is a split at the first colon: a title like "Lecture 3: entropy" carries one
-// of its own, and only an explicit scheme tells the two apart.
+// of its own, and only an explicit scheme distinguishes the two.
 type Address struct {
 	Scheme string
 	Value  string

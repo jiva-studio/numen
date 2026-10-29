@@ -107,7 +107,7 @@ export interface TabPlacement {
   readonly order: number
 }
 
-// TabKindRegistration registers a kind of workspace tab. A registration that
+// TabKindRegistration registers a workspace tab kind. A registration that
 // declares open owns the content of its tabs; one that does not displays the
 // note at the path its tab opens on. A kind that declares getState has its
 // tabs reopened after a restart with the saved state.
@@ -255,7 +255,7 @@ export interface PluginContext {
   emitVaultChange(event: VaultChangeEvent): void
   emitFileSelect(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string> | void
-  // Brings the tab of the kind last used to the front and navigates it to `path`; opens a tab of that kind at `path` when none is open.
+  // Brings the most recently active tab of the kind to the front and navigates it to `path`; opens a tab of that kind at `path` when none is open.
   navigateTab?(kind: string, path: string): Promise<string> | void
   closeTab?(id: string): void
   hasPermission?(permission: string): boolean
@@ -294,7 +294,7 @@ export interface PluginManifest {
   activationEvents?: string[]
   permissions?: string[]
   runtimes?: string[]
-  /** The secrets the plugin asks the host to store and pass to it in Configure. */
+  /** The secrets the plugin requests the host to store and pass to it in Configure. */
   secrets?: { name: string; title: string; description?: string; when?: SettingCondition }[]
   lifecycle?: {
     idleTimeoutSeconds?: number

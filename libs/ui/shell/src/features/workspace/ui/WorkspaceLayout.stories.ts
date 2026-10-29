@@ -119,7 +119,7 @@ type Story = StoryObj<Knobs>
 /** What the desktop opens with. */
 export const SideBySide: Story = {}
 
-/** Both panes in one stack, so that only one is visible at a time. */
+/** Both panes in one stack, of which one is visible at a time. */
 export const OneStack: Story = { args: { arrangement: 'one stack' } }
 
 /** Four levels, each turning a quarter from the one above. */

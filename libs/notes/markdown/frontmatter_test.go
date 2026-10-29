@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The keys around the one being written belong to the user, which is why the
-// write is a splice and not a re-encode.
+// The keys around the one being written belong to the user: the write is a
+// splice of that key's span.
 func TestSetPreservesEveryOtherKeyAlone(t *testing.T) {
 	raw := "---\n" +
 		"# a note to myself\n" +

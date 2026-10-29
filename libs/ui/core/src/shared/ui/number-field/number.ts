@@ -94,7 +94,7 @@ export interface NumberEntry {
  * The typed text is kept as typed, and the number is formatted only once the
  * field is left. A number outside the current bounds is clamped and shown
  * formatted. `onCommit` fires when the field settles on a number different from
- * the previously settled one.
+ * the last settled one.
  */
 const checkInvalid = (raw: string, getBounds: () => Bounds): boolean => {
   const text = raw.trim()

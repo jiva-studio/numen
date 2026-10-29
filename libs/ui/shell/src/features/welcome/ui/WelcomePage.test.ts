@@ -174,7 +174,7 @@ describe('the screen drawn narrow', () => {
 /**
  * Below the height of the single column, the actions and the vaults are shown
  * side by side and the emblem shrinks in steps, both done by the stylesheet.
- * These tests check that they are two separate regions so that each can be a
+ * These tests check that they are two separate regions, each of which can be a
  * column; that what the short layout hides is marked as hidden; and that every
  * row of both is rendered and activatable at every height.
  */

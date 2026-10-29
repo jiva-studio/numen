@@ -5,7 +5,7 @@
  *
  * A child that is a pane is rendered as a pane. A child that is itself a branch
  * is rendered from what the parent branch passes down, which is the branch
- * itself: a panel knows only that a node has children.
+ * itself: a panel depends only on a node having children.
  */
 import { computed, inject, useSlots, type Ref } from 'vue'
 import { SplitterPanel } from 'reka-ui'

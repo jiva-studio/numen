@@ -3,7 +3,7 @@
  * the trailing edge, both as tabs that can be moved, split or closed.
  *
  * The pieces are judged together: whether a strip of tabs reads as one line of
- * chrome above two very different contents. Both panes are placeholders: the
+ * chrome above two different contents. Both panes are placeholders: the
  * views and the agent chat are rendered by the plugins' Storybook.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'

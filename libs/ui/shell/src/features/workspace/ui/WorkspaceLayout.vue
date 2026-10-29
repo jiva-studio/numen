@@ -61,7 +61,7 @@ const emit = defineEmits<{
 
 const slots = defineSlots<{
   tab(props: { id: TabId }): unknown
-  /** Rendered before a tab's name; identifies the kind of tab. */
+  /** Rendered before a tab's name; identifies the type of tab. */
   icon(props: { id: TabId }): unknown
   /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
   mark(props: { id: TabId; mark: string }): unknown

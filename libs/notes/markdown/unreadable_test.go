@@ -6,7 +6,7 @@ import (
 )
 
 // A splice inserts bytes into a block with an existing layout. When the result
-// is no longer YAML, the write fails and the note is unchanged.
+// is not valid YAML, the write fails and the note is unchanged.
 func TestAWritePreservingUnreadableFrontmatterIsRefused(t *testing.T) {
 	for name, raw := range map[string]string{
 		"a document end below the key": "---\n0: \n... 0\n---\nbody\n",

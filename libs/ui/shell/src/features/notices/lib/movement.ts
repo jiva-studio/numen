@@ -16,7 +16,7 @@ export interface Movement {
  * A reading with no change leaves the mark unchanged, so the period during which
  * a count was constant is counted as work time.
  *
- * A count that disappeared is dropped, and a count that has just appeared is read
+ * A count that disappeared is dropped, and a count that appears is read
  * once before it has a rate.
  */
 export const measureMovement = (

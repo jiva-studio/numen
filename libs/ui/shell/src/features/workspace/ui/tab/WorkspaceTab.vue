@@ -34,7 +34,7 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  /** Rendered before the name; shows the kind of tab. */
+  /** Rendered before the name; shows the type of tab. */
   icon(): unknown
   /** What a mark is drawn as. Given one, the caller draws its own. */
   mark(props: { mark: string }): unknown

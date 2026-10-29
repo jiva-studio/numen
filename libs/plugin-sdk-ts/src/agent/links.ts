@@ -6,7 +6,7 @@
  */
 import type { TextLink } from '../agent'
 
-/** What the core is asked about one text. Empty fields refer to the window's own. */
+/** What the core resolves for one text. Empty fields refer to the window's own. */
 export interface LinkRequest {
   readonly text: string
   /** The note the text is written in; a name resolves by a path relative to it. */

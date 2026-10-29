@@ -11,7 +11,7 @@ export type RowId = string
 
 /**
  * One row: what it is called, and whether it can hold other rows. What is
- * rendered beside the name belongs to whoever renders the tree.
+ * rendered beside the name belongs to the component that renders the tree.
  */
 export interface Row {
   readonly id: RowId

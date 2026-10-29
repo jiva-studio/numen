@@ -33,7 +33,7 @@ export interface AxisPlacement {
  * The element starts at the far end of the anchor span. When the space past the
  * far edge is smaller than its size, it starts before the near end instead, and
  * either way it is clamped inside the container margins. When it is larger than
- * the container, it sits at the near edge.
+ * the container, it is placed at the near edge.
  */
 export const getAdjacentPlace = ({ from, to, size, room, margin, gap }: AxisPlacement): number => {
   const on = to + gap

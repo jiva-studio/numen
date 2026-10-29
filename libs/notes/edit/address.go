@@ -49,7 +49,7 @@ func GetAddress(ctx context.Context, names NameQueries, vaultID domain.VaultID, 
 }
 
 // withoutExtension returns a path in the form a link carries it: the form a
-// user writes by hand, and the form the same resolution reads back.
+// user types manually, and the form the same resolution accepts.
 func withoutExtension(path string) string {
 	if i := strings.LastIndexByte(path, '.'); i > strings.LastIndexByte(path, '/')+1 {
 		return path[:i]
