@@ -361,7 +361,7 @@ func TestARefreshFailsWhenTheIndexCannotRemoveANote(t *testing.T) {
 	}
 }
 
-func TestARefreshFailsWhenTheSourcesBelowARemovedPathCannotBeListed(t *testing.T) {
+func TestRefresh_ErrorsWhenSourceListingFailsForRemovedPath(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.queriesErr = errMemory
@@ -389,7 +389,7 @@ func TestARefreshFailsWhenASourceCannotBeRemoved(t *testing.T) {
 	}
 }
 
-func TestAFolderThatWentConsumesItsBooksAndRecordingsOutOfTheIndexByKind(t *testing.T) {
+func TestRefresh_RemovedFolderRemovesSourcesByKind(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.files["Gone"] = &memFile{statErr: fs.ErrNotExist}
@@ -465,7 +465,7 @@ func TestANoteIsRecentWhileItIsYoungerThanTheGranularity(t *testing.T) {
 	}
 }
 
-func TestTheLedgerContainsARecentNoteUntilItsFilePreservesTheWindow(t *testing.T) {
+func TestLedger_RetainsRecentNoteWithinWindow(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("Note.md", "entropy", memBase.Add(-time.Second))
@@ -538,7 +538,7 @@ func TestANoteThatCannotBeReadAgainIsNotTakenForCurrent(t *testing.T) {
 	}
 }
 
-func TestTheLedgerForgetsAnEntryWhoseFileLeftTheWindowWhenAnotherNoteIsSaved(t *testing.T) {
+func TestLedger_EvictsOutOfWindowEntryOnSave(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("A.md", "entropy", memBase)
@@ -555,7 +555,7 @@ func TestTheLedgerForgetsAnEntryWhoseFileLeftTheWindowWhenAnotherNoteIsSaved(t *
 	}
 }
 
-func TestTheLedgerForgetsAnEntryWhoseFileLeftTheWindowWhenAnotherNoteIsLookedUp(t *testing.T) {
+func TestLedger_EvictsOutOfWindowEntryOnLookup(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("A.md", "entropy", memBase)

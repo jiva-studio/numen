@@ -254,7 +254,7 @@ linters:
 
 // Every plugin module and the golden template have a depguard rule that denies
 // the core, the notes, the raw protocol and the applications.
-func TestEveryPluginModuleHasADepguardRuleDenyingTheCoreAndThePlugins(t *testing.T) {
+func TestPluginModules_HaveDepguardRulesDenyingCoreAndPlugins(t *testing.T) {
 	dirs := append([]string{filepath.Join(numenModulesDir, "plugins", ".example")}, listPluginModules(t)...)
 	for _, dir := range dirs {
 		path := filepath.Join(dir, ".golangci.yml")

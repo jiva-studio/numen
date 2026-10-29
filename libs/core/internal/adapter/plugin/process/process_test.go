@@ -308,7 +308,7 @@ func readEnvironment(env []string) map[string]string {
 	return observed
 }
 
-func TestAnONNXRuntimePluginIsLaunchedWithTheLoaderAndAcceleratorVariables(t *testing.T) {
+func TestSanitizeEnvironment_ONNXPluginKeepsLoaderVariables(t *testing.T) {
 	pluginVars := []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=auto"}
 	observed := readEnvironment(SanitizeEnvironment(gpuEnvironment, pluginVars, []string{"onnxruntime"}))
 
@@ -330,7 +330,7 @@ func TestAnONNXRuntimePluginIsLaunchedWithTheLoaderAndAcceleratorVariables(t *te
 	}
 }
 
-func TestAPluginWithoutTheRuntimeIsNotLaunchedWithTheAcceleratorVariables(t *testing.T) {
+func TestSanitizeEnvironment_NonRuntimePluginDropsAcceleratorVars(t *testing.T) {
 	for _, runtimes := range [][]string{nil, {}} {
 		observed := readEnvironment(SanitizeEnvironment(gpuEnvironment, nil, runtimes))
 		for _, name := range append(runtimeVarNames, "NUMEN_ONNX_PROVIDER", "NUMEN_ONNX_RUNTIME_LIB", "OPENAI_API_KEY") {

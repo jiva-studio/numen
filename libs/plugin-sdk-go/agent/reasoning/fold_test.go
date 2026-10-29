@@ -111,7 +111,7 @@ func TestLevelHelpers(t *testing.T) {
 	}
 }
 
-func TestAFamilyNameWithoutALevelResolvesToTheModelOfItsDefaultLevel(t *testing.T) {
+func TestResolveModel_FamilyWithoutLevelUsesDefaultLevel(t *testing.T) {
 	families := Fold([]Listed{
 		{"gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"},
 		{"gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)"},

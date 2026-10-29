@@ -40,7 +40,7 @@ export function createDeclaredPaletteCommands(
             })),
           }
         : {}),
-      isOffered: (target) => target.isReady && (!hasFiles || canRunOn(one, target.file)),
+      isAvailable: (target) => target.isReady && (!hasFiles || canRunOn(one, target.file)),
     }
   })
 }

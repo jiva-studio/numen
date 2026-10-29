@@ -74,7 +74,7 @@ func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	}
 }
 
-func TestTheSettingsStandInTheUsersConfigFolderUnlessPointedElsewhere(t *testing.T) {
+func TestSettingsFile_DefaultsToUserConfigDir(t *testing.T) {
 	isolate(t)
 	want, err := os.UserConfigDir()
 	if err != nil {
@@ -91,7 +91,7 @@ func TestTheSettingsStandInTheUsersConfigFolderUnlessPointedElsewhere(t *testing
 	}
 }
 
-func TestTheSettingsStandAdjacentTheRegistryWhenItIsPointedElsewhere(t *testing.T) {
+func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
@@ -191,7 +191,7 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	}
 }
 
-func TestTheRegistryIsWhereTheInstallationPointedItAndOtherwiseInTheConfigFolder(t *testing.T) {
+func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }

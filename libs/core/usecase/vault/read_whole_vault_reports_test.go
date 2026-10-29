@@ -183,7 +183,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 
 // A run that ended while the books were being cut is told what the books had
 // done.
-func TestARunThatEndedInTheBooksIsReportedWhatTheBooksHadCompleted(t *testing.T) {
+func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)

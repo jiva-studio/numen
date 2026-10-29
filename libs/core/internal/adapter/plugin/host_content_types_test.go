@@ -34,7 +34,7 @@ func getReaders(host *Host) map[string][]pluginport.PluginReaderInfo {
 	return out
 }
 
-func TestPluginInfosAssignTwoDefaultReadersOfOneTypeToTheLowerPluginID(t *testing.T) {
+func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 	host := newReaderHost(
 		newReader("org.example.b", "pdf", domain.RankDefault, "application/pdf"),
 		newReader("org.example.a", "pdf", domain.RankDefault, "application/pdf"),

@@ -232,11 +232,11 @@ describe('a plugin command over a note', () => {
     return { executeCommand, ...useCommands(options) }
   }
 
-  const findOffer = () => {
+  const findCommand = () => {
     const offers = (h.getExtraCommands?.() ?? []) as {
       id: string
       group: string
-      isOffered: (target: CommandTarget) => boolean
+      isAvailable: (target: CommandTarget) => boolean
     }[]
     const offer = offers.find((one) => one.id === SUMMARY.id)
     if (!offer) throw new Error('the palette has no plugin command')
@@ -245,11 +245,13 @@ describe('a plugin command over a note', () => {
 
   it('is offered among the note commands only while a note is in front', () => {
     setupPlugin()
-    const offer = findOffer()
+    const offer = findCommand()
 
     expect(offer.group).toBe('note')
-    expect(offer.isOffered({ isReady: true, path: 'a.md' } as unknown as CommandTarget)).toBe(true)
-    expect(offer.isOffered({ isReady: true, path: '' } as unknown as CommandTarget)).toBe(false)
+    expect(offer.isAvailable({ isReady: true, path: 'a.md' } as unknown as CommandTarget)).toBe(
+      true,
+    )
+    expect(offer.isAvailable({ isReady: true, path: '' } as unknown as CommandTarget)).toBe(false)
   })
 
   it('runs from the palette with the note and the type the vault files it as', async () => {

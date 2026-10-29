@@ -677,7 +677,7 @@ func TestEveryRelationIsSavedFromOne(t *testing.T) {
 	}, convertRelationToWire)
 }
 
-func TestANoteTypeIsSavedAsTheWordItContainsAndAnOrdinaryNoteAsNone(t *testing.T) {
+func TestConvertNoteTypeToWire_MapsPlainNoteToEmpty(t *testing.T) {
 	for typed, want := range map[domain.NoteType]string{
 		domain.TypeNote: "",
 		"sample":        "sample",

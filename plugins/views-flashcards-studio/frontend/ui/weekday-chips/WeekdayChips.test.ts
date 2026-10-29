@@ -31,7 +31,7 @@ const getChosen = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
   (row.emitted('choose') ?? []) as unknown[][]
 
 /** The levels on offer, once a chip has been pressed. */
-const getOfferedLabels = (): readonly string[] =>
+const getMenuLabels = (): readonly string[] =>
   [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 
 afterEach(() => {
@@ -110,7 +110,7 @@ describe('a day standing at a level the offer does not name', () => {
   it('offers that level too, in its place among them and as the one in force', async () => {
     const row = mountChips({ days: week({ sat: 0.37 }) })
     await row.findAll('button')[5]?.trigger('click')
-    expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%'])
+    expect(getMenuLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%'])
 
     const marked = [...document.body.querySelectorAll('.menu__item')]
       .filter((one) => one.getAttribute('aria-checked') === 'true')
@@ -171,13 +171,13 @@ describe('giving a day a level', () => {
   it('offers the levels it was given, in the order it was given them', async () => {
     const row = mountChips()
     await row.findAll('button')[5]?.trigger('click')
-    expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%'])
+    expect(getMenuLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%'])
   })
 
   it('offers three where three is what it was given', async () => {
     const row = mountChips({ levels: [0, 0.5, 1] })
     await row.findAll('button')[0]?.trigger('click')
-    expect(getOfferedLabels()).toEqual(['0%', '50%', '100%'])
+    expect(getMenuLabels()).toEqual(['0%', '50%', '100%'])
   })
 
   // The day is handed back as it was given, and the level with it; what a level
@@ -205,7 +205,7 @@ describe('giving a day a level', () => {
     expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(Array(7).fill(undefined))
 
     await chips[1]?.trigger('click')
-    expect(getOfferedLabels()).toEqual([])
+    expect(getMenuLabels()).toEqual([])
     expect(getChosen(row)).toEqual([])
     expect(chips[1]?.attributes('aria-expanded')).toBe('false')
   })

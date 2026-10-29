@@ -13,4 +13,4 @@ export const isNoteOpen = (target: CommandTarget): boolean => target.isReady && 
 /** A command over the vault in front, which there has to be one of. */
 export const isVaultOpen = (target: CommandTarget): boolean => target.vault.id !== ''
 
-export const isAlwaysOffered = (): boolean => true
+export const isAlwaysAvailable = (): boolean => true

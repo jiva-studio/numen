@@ -81,7 +81,7 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 // Where a title and a filename are told apart, a renamed file leaves the note
 // as it was written. A note its filename names still changes its name, because
 // it carries it nowhere else.
-func TestARenamedFilePreservesTheNoteAloneWhereTheTwoAreReportedApart(t *testing.T) {
+func TestMoveFile_PreservesNoteContentWhenNameAndTitleDiffer(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
 		raw      string
@@ -203,7 +203,7 @@ func TestAMoveThatLandedIsSettled(t *testing.T) {
 
 // A note whose frontmatter cannot be read is never written, and renaming its
 // file is not the moment to repair it.
-func TestARenamedFilePreservesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) {
+func TestMoveFile_PreservesNoteWithUnreadableFrontmatter(t *testing.T) {
 	t.Parallel()
 	raw := "---\nid: [unterminated\n---\n# Entropy\n"
 	f := openFiling(t, map[string]string{"Entropy.md": raw})

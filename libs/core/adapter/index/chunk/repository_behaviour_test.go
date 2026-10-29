@@ -96,7 +96,7 @@ func TestASourceSavedAgainKeepsItsRowAndConsumesTheNewValues(t *testing.T) {
 	}
 }
 
-func TestAVaultTheIndexDoesNotKnowContainsNothingAndIsSavedNothing(t *testing.T) {
+func TestUnknownVault_RejectsWritesAndReturnsEmpty(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	const stranger domain.VaultID = "01STRANGER"
@@ -202,7 +202,7 @@ func TestAnExtractionIsASourceAndItsChunksTogether(t *testing.T) {
 	}
 }
 
-func TestAnExtractionThatFailsPreservesNeitherTheSourceNorTheChunks(t *testing.T) {
+func TestSaveExtraction_RollsBackSourceOnChunkFailure(t *testing.T) {
 	s := newStore(t)
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON chunks BEGIN SELECT RAISE(ABORT, 'boom'); END`)
 
@@ -233,7 +233,7 @@ func TestChunksReplacedForASourceTheIndexDoesNotHoldSayWhich(t *testing.T) {
 	}
 }
 
-func TestTheSplitOfASourceContainsALargeChunkAndTheSmallOnesInsideIt(t *testing.T) {
+func TestReplaceChunks_StoresLargeAndNestedSmallRows(t *testing.T) {
 	s := newStore(t)
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{
 		{Start: 0, Length: 20, Location: "chapter 1", Text: "whole one", Small: []chunk.Chunk{
@@ -275,7 +275,7 @@ func TestTheSplitOfASourceContainsALargeChunkAndTheSmallOnesInsideIt(t *testing.
 	}
 }
 
-func TestASplitAgainKeepsTheRowOfEveryChunkWhoseTextSurvivesAndDropsTheRest(t *testing.T) {
+func TestReplaceChunks_RetainsRowsOfSurvivingText(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{
@@ -340,7 +340,7 @@ func TestASplitAgainKeepsTheRowOfEveryChunkWhoseTextSurvivesAndDropsTheRest(t *t
 	}
 }
 
-func TestAVectorForTextAnotherChunkStillContainsOutlivesTheChunkItWasBoughtFor(t *testing.T) {
+func TestReplaceChunks_RetainsVectorUsedByOtherSource(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "shared words"}})
@@ -474,7 +474,7 @@ func TestASplitKeepsAnotherSourceOfTheSameTextApart(t *testing.T) {
 	}
 }
 
-func TestVectorsAreSavedForEveryChunkTheyNameAndReplacedWhenSavedAgain(t *testing.T) {
+func TestSaveVectors_InsertsPerChunkAndReplacesOnResave(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{Start: 0, Length: 5, Text: "one"}, {Start: 5, Length: 5, Text: "two"}})
@@ -576,7 +576,7 @@ func TestAVectorThatFailsPreservesTheBatchesBeforeItSaved(t *testing.T) {
 	}
 }
 
-func TestAThousandVectorsAreOneBatchAndTheThousandAndFirstIsAnother(t *testing.T) {
+func TestSaveVectors_BatchesAtOneThousand(t *testing.T) {
 	s := newStore(t)
 	var trimmed []chunk.Chunk
 	for i := range 1001 {

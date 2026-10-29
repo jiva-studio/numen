@@ -94,7 +94,7 @@ func manySources(count int) (map[string]string, []domain.Passage) {
 	return content, found
 }
 
-func TestReadAnswersAsManySourcesAsItIsGivenInTheOrderOfTheRanking(t *testing.T) {
+func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 	content, found := manySources(40)
 
 	run := func(extractors int) []domain.Passage {
@@ -199,7 +199,7 @@ func TestReadStopsAtTheFirstErrorAndPreservesNoGoroutineRunning(t *testing.T) {
 	waitForGoroutines(t, before)
 }
 
-func TestReadStopsWhenTheContextEndsAndPreservesNoGoroutineRunning(t *testing.T) {
+func TestRead_StopsOnContextCancelWithoutLeakedGoroutines(t *testing.T) {
 	content, found := manySources(30)
 	vault := newConcurrentVault(content)
 	vault.hold = time.Minute

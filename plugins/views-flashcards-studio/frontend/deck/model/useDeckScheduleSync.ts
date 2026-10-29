@@ -6,7 +6,7 @@ import type { PathRename } from '@numen/plugin-sdk'
 import type { openNotes } from '../../buffer'
 import type { Cards, CardModelSummary, Presets } from '../../cards'
 import { useDeckSchedule } from './useDeckSchedule'
-import { areOffersEqual, createCardModelChoices } from '../lib/deck'
+import { areCardModelChoicesEqual, createCardModelChoices } from '../lib/deck'
 
 export function useDeckScheduleSync(
   cards: Cards,
@@ -22,7 +22,7 @@ export function useDeckScheduleSync(
     try {
       const items = (await cards.cardModels()).cardModels
       listedOk = true
-      if (!areOffersEqual(offers.value, items)) offers.value = items
+      if (!areCardModelChoicesEqual(offers.value, items)) offers.value = items
     } catch {
       // Listing card models failed.
       listedOk = false

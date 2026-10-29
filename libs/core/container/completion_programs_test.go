@@ -68,7 +68,7 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 }
 
 // is the program the plugins mark as the default.
-func TestTheRouteModelExistsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(t *testing.T) {
+func TestCompleter_EmptyRouteModelUsesProgramDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, _ := serveCompletions(t, host, `{
 		"agent": {"alpha": {"model": "section-model"}},

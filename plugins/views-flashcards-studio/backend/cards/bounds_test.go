@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 )
 
-func TestRenamingAFieldIsRefusedWhereTheVaultContainsMoreDecksThanTheBound(t *testing.T) {
+func TestRenameField_ErrorsWhenDeckCountExceedsBound(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "Animal.md")
 

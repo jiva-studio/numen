@@ -6,7 +6,7 @@ import (
 	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
-func TestTheProgramWhoseModelsASettingIsOfferedReachesTheWire(t *testing.T) {
+func TestNewWirePluginInfos_KeepsModelsOfProgram(t *testing.T) {
 	wire := NewWirePluginInfos([]setting.PluginInfo{{
 		ID: "a.b",
 		Settings: []setting.PluginSetting{

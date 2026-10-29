@@ -61,7 +61,7 @@ func TestChooseHandlerPrefersTheNarrowerOfTwoDefaults(t *testing.T) {
 	}
 }
 
-func TestChooseHandlerPrefersTheLowerPluginIDOfTwoDefaultsOfOneType(t *testing.T) {
+func TestChooseHandler_PrefersLowerPluginIDForDefaultRank(t *testing.T) {
 	candidates := []domain.ContentHandler{
 		{PluginID: "org.b.reader", ID: "pdf", Type: "application/pdf", Rank: domain.RankDefault},
 		{PluginID: "org.a.reader", ID: "pdf", Type: "application/pdf", Rank: domain.RankDefault},

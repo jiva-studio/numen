@@ -80,7 +80,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 
 // A card model already declaring exactly these fields, in this order, is not
 // written a second time, so what the person wrote around them stands.
-func TestACardModelAlreadyDeclaringTheseFieldsKeepsWhatExistsAroundThem(t *testing.T) {
+func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Kept.md", "---\ntype: card-model\nfields:\n"+
 		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+

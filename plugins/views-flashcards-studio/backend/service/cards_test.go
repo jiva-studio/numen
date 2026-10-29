@@ -369,7 +369,7 @@ func TestACardWithNoCardModelKeepsTheHeadingItExistsBelow(t *testing.T) {
 
 // TestAListOfCardModelsCutShortSaysHowManyTheVaultHolds. A list that stops at a
 // ceiling and says nothing about it reads as all there is.
-func TestAListOfCardModelsSplitShortReturnsHowManyTheVaultContains(t *testing.T) {
+func TestListCardModels_LimitedListReturnsTotal(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
 		"Term.md":   "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n\n## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
@@ -536,7 +536,7 @@ func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 // TestRenamingAFieldLeavesAloneACardModelThatChangedSinceItWasRead. Somebody
 // editing their own card model outranks a client that read it, thought about it
 // and arrived late.
-func TestRenamingAFieldPreservesAloneACardModelThatChangedSinceItWasRead(t *testing.T) {
+func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
@@ -822,10 +822,10 @@ func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	}
 }
 
-// TestARenameOntoANameTheCardModelDeclaresIsTheClientsToCorrect. A field a
+// TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument. A field a
 // card model already declares is a name the client is holding wrongly, and it is
 // told so.
-func TestARenameOntoANameTheCardModelDeclaresIsTheClientsToCorrect(t *testing.T) {
+func TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	_, err := f.client.RenameCardModelField(t.Context(),

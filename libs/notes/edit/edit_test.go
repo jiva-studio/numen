@@ -119,7 +119,7 @@ func TestAReadReturnsWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 	}
 }
 
-func TestAnEditStampsTheIdentifierAndContainsTheWriteToWhatWasRead(t *testing.T) {
+func TestApply_StampsIDAndLocksWrite(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	read, _ := f.StatFile(t.Context(), "A.md")
 
@@ -178,7 +178,7 @@ func TestABaselineOfOtherProseIsStale(t *testing.T) {
 	}
 }
 
-func TestANoteThatIsNotThereIsMadeByAnOverwriteAndRefusedOtherwise(t *testing.T) {
+func TestApply_OverwriteCreatesMissingNoteElseErrors(t *testing.T) {
 	f := newFiles(nil)
 	e := editing(f)
 	e.ShouldOverwrite = true

@@ -560,7 +560,7 @@ func TestProvisionPassesAnyProviderOnToALibraryTheMachineContains(t *testing.T) 
 	}
 }
 
-func TestProvisionPassesAGPUProviderOnToALibraryNamedInTheEnvironment(t *testing.T) {
+func TestProvision_GPUProviderPassesThroughEnvLibrary(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_RUNTIME_LIB", "/opt/onnx/libonnxruntime.so")
 	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "cuda", Machine: []string{}}
 	if _, provider, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err != nil || provider != "cuda" {
@@ -674,7 +674,7 @@ func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
 	}
 }
 
-func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineContainsOpens(t *testing.T) {
+func TestProvision_FetchesPinnedLibraryWhenMachineLibsFailToOpen(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -692,7 +692,7 @@ func TestProvisionFetchesThePinnedLibraryWhenNoneTheMachineContainsOpens(t *test
 	}
 }
 
-func TestProvisionNamesTheLibrariesThatDoNotOpenWhenAGPUProviderMeetsThePinnedBuild(t *testing.T) {
+func TestProvision_GPUProviderErrorNamesUnopenableLibraries(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -709,7 +709,7 @@ func TestProvisionNamesTheLibrariesThatDoNotOpenWhenAGPUProviderMeetsThePinnedBu
 	}
 }
 
-func TestProvisionUsesALibraryNamedInTheEnvironmentWithoutOpeningIt(t *testing.T) {
+func TestProvision_EnvLibrarySkipsOpenCheck(t *testing.T) {
 	named := filepath.Join(t.TempDir(), "libonnxruntime-gpu.so")
 	t.Setenv("NUMEN_ONNX_RUNTIME_LIB", named)
 	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "cuda", Machine: []string{}, Check: refuse(named)}

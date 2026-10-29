@@ -11,7 +11,7 @@ import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@numen/ui'
 import { Menu } from '@numen/ui'
 import type { Position } from '@numen/ui'
-import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
+import { getFill, getFillPercent, getMenuLevels, type Day } from './week'
 
 defineOptions({ inheritAttrs: false })
 
@@ -39,7 +39,7 @@ const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTML
 )
 
 const availableLevels = computed(() =>
-  getOfferedLevels(props.levels, popoverAnchor.value?.level ?? null).map((level) => ({
+  getMenuLevels(props.levels, popoverAnchor.value?.level ?? null).map((level) => ({
     id: `${level}`,
     text: getFillPercent(level),
   })),

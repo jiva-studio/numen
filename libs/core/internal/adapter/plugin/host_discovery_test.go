@@ -78,7 +78,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	}
 }
 
-func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing.T) {
+func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost("desktop.editor", tmp)

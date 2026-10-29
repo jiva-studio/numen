@@ -867,7 +867,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 // TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing, and makes
 // nothing to stand on. A folder appearing in a person's documents is a folder
 // they did not ask for.
-func TestAnInstallationContainingNoVaultOpensAWindowActiveOnNothing(t *testing.T) {
+func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
 	if got := f.installation.GetCurrentVault(); got != (domain.Vault{}) {

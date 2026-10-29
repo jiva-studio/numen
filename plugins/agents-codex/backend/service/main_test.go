@@ -225,7 +225,7 @@ func TestAskAgentReportsAFailedRun(t *testing.T) {
 // A request naming no tool is one answer: the program is given no MCP server, no sandbox bypass,
 // none of its own tools that can be turned off, an empty folder, and the instructions before the
 // prompt.
-func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
+func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 

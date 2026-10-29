@@ -119,7 +119,7 @@ type listed struct {
 // it too, on every platform.
 //
 // A test file is left out: a test stands outside the package it exercises.
-func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T) {
+func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	builds := []struct {
 		module    string
 		dir       string

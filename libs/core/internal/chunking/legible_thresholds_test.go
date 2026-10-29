@@ -41,7 +41,7 @@ func TestAChunkWithNoCharactersIsNeverLegible(t *testing.T) {
 	}
 }
 
-func TestAChunkIsLegibleWhileItsDirtyWordFractionStaysWithinTheLimit(t *testing.T) {
+func TestIsLegible_DirtyWordFractionThreshold(t *testing.T) {
 	cases := []struct {
 		name  string
 		chunk string

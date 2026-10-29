@@ -303,7 +303,7 @@ func TestRequestTextAsksOncePerContentAndNotForALiveFile(t *testing.T) {
 	}
 }
 
-func TestGetMenuOffersThePluginsThatTakeTheFile(t *testing.T) {
+func TestGetMenu_ListsPluginsForFile(t *testing.T) {
 	s := newScene(t)
 	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
 	if err != nil {
@@ -318,7 +318,7 @@ func TestGetMenuOffersThePluginsThatTakeTheFile(t *testing.T) {
 	}
 }
 
-func TestGetMenuOffersThePluginsThatTakeTheLiveKind(t *testing.T) {
+func TestGetMenu_ListsPluginsForLiveKind(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
 	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
@@ -348,7 +348,7 @@ func TestGetMenuExcludesADisabledPlugin(t *testing.T) {
 	}
 }
 
-func TestGetMenuOffersToDeleteEachVersionByItsOwner(t *testing.T) {
+func TestGetMenu_ListsDeleteEntryPerVersionOwner(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
 	s.runEntry(t, proofreader)

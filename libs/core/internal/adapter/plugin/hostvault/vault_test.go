@@ -169,7 +169,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 	}
 }
 
-func TestAHostShowingNoVaultAnswersEveryCallThatWorksOneWithErrNoVault(t *testing.T) {
+func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := Vault{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }}
 
 	_, _, readErr := access.Read(t.Context(), "a.md")

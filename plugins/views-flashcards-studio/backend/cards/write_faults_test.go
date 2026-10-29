@@ -142,7 +142,7 @@ func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 }
 
 // written are the ones it declares.
-func TestACardModelWhoseFrontmatterIsNeverClosedIsRefusedWithItsOwnFields(t *testing.T) {
+func TestWriteCardModel_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
 	before := read(t, vs.first, "Open.md")

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CardModelSummary } from '../../cards'
 import type { BufferCard, BufferDeck, BufferSection } from '../types'
-import { applyReadHeadings, applyScreenIds, areDecksEqual, areOffersEqual } from './view'
+import { applyReadHeadings, applyScreenIds, areDecksEqual, areCardModelChoicesEqual } from './view'
 
 const card = (overrides: Partial<BufferCard> = {}): BufferCard => ({
   id: 'screen-card',
@@ -213,7 +213,10 @@ describe('whether two card model listings are the same', () => {
 
   it('is so for the same card models in the same order', () => {
     expect(
-      areOffersEqual([offer(), offer({ path: 'b.md' })], [offer(), offer({ path: 'b.md' })]),
+      areCardModelChoicesEqual(
+        [offer(), offer({ path: 'b.md' })],
+        [offer(), offer({ path: 'b.md' })],
+      ),
     ).toBe(true)
   })
 
@@ -223,10 +226,10 @@ describe('whether two card model listings are the same', () => {
     ['with a field more', { fields: ['Name', 'Height', 'Weight'] }],
     ['with a field renamed', { fields: ['Name', 'Weight'] }],
   ])('is not so where the second card model is %s', (_what, override) => {
-    expect(areOffersEqual([offer(), offer()], [offer(), offer(override)])).toBe(false)
+    expect(areCardModelChoicesEqual([offer(), offer()], [offer(), offer(override)])).toBe(false)
   })
 
   it('is not so where one listing has a card model more', () => {
-    expect(areOffersEqual([offer()], [offer(), offer()])).toBe(false)
+    expect(areCardModelChoicesEqual([offer()], [offer(), offer()])).toBe(false)
   })
 })

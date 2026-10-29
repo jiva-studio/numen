@@ -365,7 +365,7 @@ func TestTheMarkupIsSavedIntoOneAllocation(t *testing.T) {
 	}
 }
 
-func TestALineEndAfterATableContainingOnlyAnElementBelongsToThatTable(t *testing.T) {
+func TestTable_LineEndAfterTemplateOnlyTableBelongsToTable(t *testing.T) {
 	_, markup := readOne(t, `<table><template><b>X</b></template></table><table><tr><td>Y</td></tr></table>`)
 
 	if got := getNodeText(element(t, markup.Nodes, "td").Children); got != "Y\n" {

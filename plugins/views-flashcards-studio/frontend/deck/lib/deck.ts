@@ -16,7 +16,7 @@ export {
   createDeckCards,
   findCardModelPath,
   areDecksEqual,
-  areOffersEqual,
+  areCardModelChoicesEqual,
   createDeckSections,
   createCardModelChoices,
 } from './view'

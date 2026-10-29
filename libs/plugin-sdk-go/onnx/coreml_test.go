@@ -30,7 +30,7 @@ func TestGetCoreMLCacheDirIsMadeForThisUserAlone(t *testing.T) {
 	}
 }
 
-func TestDeleteCoreMLCacheEmptiesTheFolderAndReturnsWhetherItContainedAnything(t *testing.T) {
+func TestDeleteCoreMLCache_EmptiesDirAndReportsContent(t *testing.T) {
 	setCacheHome(t)
 	if DeleteCoreMLCache() {
 		t.Error("an empty cache held something")

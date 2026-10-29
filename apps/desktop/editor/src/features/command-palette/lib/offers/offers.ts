@@ -33,15 +33,15 @@ const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
  * The groups of a search, and the offer to make a note where every one of them
  * answered with nothing. A group still waiting has not answered.
  */
-export interface AppendCreateOfferOptions {
+export interface AppendCreateNoteItemOptions {
   readonly text: string
   readonly words: Words
   readonly target: CommandTarget
 }
 
-export const appendCreateOffer = (
+export const appendCreateNoteItem = (
   groups: readonly PaletteGroup[],
-  options: AppendCreateOfferOptions,
+  options: AppendCreateNoteItemOptions,
 ): readonly PaletteGroup[] => {
   const { text, words, target } = options
   const name = text.trim()

@@ -8,7 +8,7 @@ import (
 )
 
 // The model setting is offered the models of the program the plugin runs.
-func TestTheModelSettingIsOfferedTheModelsOfTheProgramThePluginRuns(t *testing.T) {
+func TestManifest_ModelSettingReferencesProgramModels(t *testing.T) {
 	var manifest struct {
 		Settings []struct {
 			Key      string `json:"key"`

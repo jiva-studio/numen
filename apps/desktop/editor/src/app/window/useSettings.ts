@@ -145,7 +145,7 @@ export function createPluginSettingCommands(plugins: readonly PluginInfo[]): rea
         group: 'settings',
         needs: 'choosing',
         ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
-        isOffered: () => true,
+        isAvailable: () => true,
       })
     }
   }

@@ -77,7 +77,7 @@ func TestASettingWhoseOptionsFollowAnotherFallsBackToTheirFirst(t *testing.T) {
 	}
 }
 
-func TestAStringSettingWithOptionsByFollowsProviderWhenStoredValueBelongsToAnotherProvider(t *testing.T) {
+func TestResolveSettings_OptionsByFollowsProvider(t *testing.T) {
 	m, err := ReadManifest(strings.NewReader(`{
 		"id": "md.numen.engines.embeddings", "name": "Embeddings", "version": "1.0.0",
 		"settings": [

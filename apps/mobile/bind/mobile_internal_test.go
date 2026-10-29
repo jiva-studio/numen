@@ -481,7 +481,7 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 	})
 }
 
-func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *testing.T) {
+func TestStart_ErrorsOnUnreadableVaultList(t *testing.T) {
 	dir := t.TempDir()
 	startIn(t, dir)
 	if err := Stop(); err != nil {
@@ -646,7 +646,7 @@ func TestRegisterVault_SymlinkAndTargetShareOneEntry(t *testing.T) {
 	}
 }
 
-func TestRegisterVaultAnswersTheErrorOfAListItCannotReadBeforeItLooksAtTheFolder(t *testing.T) {
+func TestRegisterVault_ErrorsOnUnreadableListBeforeFolderCheck(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
@@ -658,7 +658,7 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotReadBeforeItLooksAtTheFolder
 	}
 }
 
-func TestRegisterVaultAnswersTheErrorOfAMachineWithNoPlaceForTheList(t *testing.T) {
+func TestRegisterVault_ErrorsWithoutConfigFolder(t *testing.T) {
 	t.Setenv("HOME", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_DATA_HOME", t.TempDir())

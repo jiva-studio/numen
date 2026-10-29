@@ -275,7 +275,7 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 // all, so frontmatter one key cannot be changed in leaves the title unwritten
 // and reports nothing. An anchor is that case as much as one line is: neither
 // is written, and the two come out of the same guard.
-func TestAFileRenamedBelowFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T) {
+func TestWriteFilenameAsTitle_SkipsUneditableFrontmatter(t *testing.T) {
 	t.Parallel()
 	for name, raw := range map[string]string{
 		"a block written on one line": "---\n{title: Old, id: b}\n---\nA measure.\n",
@@ -522,7 +522,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 
 // Where a title and a filename are told apart, a new title is written into the
 // note and the file stays where it is.
-func TestRenamingPreservesTheFileWhereItIsWhereTheTwoAreReportedApart(t *testing.T) {
+func TestRename_RetitlesInFrontmatterWithoutMovingFile(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string

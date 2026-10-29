@@ -12,7 +12,7 @@ import { build } from '../../fixtures/build'
 import type { PlexRelation } from '../../lib/relation'
 
 const frame = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 }))
-const RELATIONS_OFFERED: readonly PlexRelation[] = ['parent', 'child', 'jump']
+const AVAILABLE_RELATIONS: readonly PlexRelation[] = ['parent', 'child', 'jump']
 const THRESHOLD = 10
 
 interface Matrix {
@@ -64,7 +64,7 @@ const send = (type: string, x = 0, y = 0, pointerId = 1) =>
 
 const scopes: EffectScope[] = []
 
-function setUp(relations: readonly PlexRelation[] = RELATIONS_OFFERED) {
+function setUp(relations: readonly PlexRelation[] = AVAILABLE_RELATIONS) {
   const gestureDrawing = createDrawing()
   const commits: Drop[] = []
   const scope = effectScope()

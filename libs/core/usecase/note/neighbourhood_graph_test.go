@@ -168,7 +168,7 @@ func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 
 // A link that is no place in the hierarchy relates nobody, whichever end finds it,
 // and a note that both ends name does not hide the notes after it.
-func TestOnlyPlacesInTheHierarchyAreRelatedFromTheNotesPointingAtANote(t *testing.T) {
+func TestShowGraph_RelatesOnlyHierarchyRolesFromIncoming(t *testing.T) {
 	t.Parallel()
 	g := graph{
 		out: map[string][]domain.ResolvedLink{

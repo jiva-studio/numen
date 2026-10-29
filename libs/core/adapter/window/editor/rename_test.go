@@ -329,7 +329,7 @@ func TestRenamingReturnsWhatItCouldNotName(t *testing.T) {
 
 // TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing. A link is not
 // wrong because the note it names is gone, so it is reported and not repaired.
-func TestARemovedNoteGoesToTheTrashAndReturnsWhatNowReachesNothing(t *testing.T) {
+func TestRemoveFile_TrashesNoteAndReturnsDanglingLinks(t *testing.T) {
 	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "# Entropy\n",
@@ -679,7 +679,7 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	}
 }
 
-func TestARenameThatCameApartAfterTheFileLandedReturnsWhatTheNoteIsCalled(t *testing.T) {
+func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})

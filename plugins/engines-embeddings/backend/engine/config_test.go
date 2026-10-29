@@ -193,7 +193,7 @@ func TestWithRepositoryDropsThePins(t *testing.T) {
 	}
 }
 
-func TestLocalModelGetProviderFollowsTheHostUnlessTheModelNamesOne(t *testing.T) {
+func TestLocalModel_GetProviderFallsBackToHostEnv(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_PROVIDER", "cpu")
 	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderCPU {
 		t.Errorf("expected the host's ProviderCPU, got %v", p)

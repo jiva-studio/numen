@@ -25,7 +25,7 @@ const command = (overrides: Partial<Command> = {}): Command => ({
   id: 'rename',
   text: 'Rename',
   group: 'note',
-  isOffered: () => true,
+  isAvailable: () => true,
   ...overrides,
 })
 

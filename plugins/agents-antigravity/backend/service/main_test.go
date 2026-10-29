@@ -115,7 +115,7 @@ func TestAskAgentReportsAHomeThatCannotBeSetUp(t *testing.T) {
 
 // A request naming no tool is one answer: the program is given no permission beforehand, no MCP
 // server, an empty folder, and the instructions before the prompt.
-func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
+func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	root := t.TempDir()
 	out := filepath.Join(t.TempDir(), "run")
 	home := t.TempDir()

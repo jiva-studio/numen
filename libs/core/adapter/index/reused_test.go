@@ -64,7 +64,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	return len(vectors)
 }
 
-func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *testing.T) {
+func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 	// A vector is kept by the text it was made from, so a second chunk holding
 	// that text costs no model call. It still needs a coarse row of its own:
 	// the coarse pass is the only way a dense search reaches a chunk.

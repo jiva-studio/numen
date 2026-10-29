@@ -517,7 +517,7 @@ func TestACharacterSplitShortInsideTheRangeIsNotText(t *testing.T) {
 
 // The size a file was measured at bounds what is read, whatever the file holds
 // by the time its bytes come.
-func TestAFileThatGrewWhileItWasReadIsReadOnlyToWhereItWasMeasured(t *testing.T) {
+func TestRead_FileGrowthTruncatesToMeasuredSize(t *testing.T) {
 	_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
 	expanded := faulty{file: &shifting{data: []byte("said and said"), size: 4}}
 

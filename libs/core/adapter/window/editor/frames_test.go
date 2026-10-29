@@ -22,7 +22,7 @@ func TestTheWindowFramesTheOriginsOfTheEnabledPlugins(t *testing.T) {
 	}
 }
 
-func TestAPluginPageOnTheLoopbackSocketSendsItsOriginAndFramesThePluginsOrigins(t *testing.T) {
+func TestPluginPage_ServesOriginHeadersAndFramePolicy(t *testing.T) {
 	plugins := &routedPlugins{frames: map[string][]string{"org.example.player": {"https://player.example"}}}
 	back, err := Listen(newBareServices().server, nil)
 	if err != nil {

@@ -38,7 +38,7 @@ func runTask(t *testing.T, agent agentport.Agent, task agentport.Task) {
 
 // A task naming no program goes to the one agent.use names, with the command line and the model of
 // that program's section.
-func TestASettingsAgentTaskNamingNoProgramGoesToTheProgramTheSettingsUse(t *testing.T) {
+func TestSettingsAgent_UnnamedProgramUsesSettingsProgram(t *testing.T) {
 	host, one, two := twoProviders(t)
 	agent := openSettingsAgent(t, host,
 		`{"agent": {"use": "alpha", "alpha": {"command": ["/bin/alpha"], "model": "section-model"}}}`)
@@ -63,7 +63,7 @@ func TestASettingsAgentTaskNamingNoProgramGoesToTheProgramTheSettingsUse(t *test
 }
 
 // Settings that leave the choice open send a task naming no program to the default of the plugins.
-func TestASettingsAgentTaskGoesToTheDefaultWhereTheSettingsNameNone(t *testing.T) {
+func TestSettingsAgent_UnsetProgramUsesDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	agent := openSettingsAgent(t, host, `{}`)
 

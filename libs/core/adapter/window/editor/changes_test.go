@@ -755,8 +755,8 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	}
 }
 
-// TestFlushPending_ClosesAfterQuestionsAnswered.
-func TestFlushPending_ClosesAfterQuestionsAnswered(t *testing.T) {
+// TestFlushPending_ClosesAfterPromptsResolved.
+func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 
@@ -843,7 +843,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 // TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind. A stream
 // ending is not an answer, so what the page held is waited for; and it is
 // waited for as silence is, which is the bound and no longer.
-func TestAPageThatGoesWithAQuestionActiveIsWaitedForAndThenLeftPrior(t *testing.T) {
+func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 

@@ -18,7 +18,7 @@ const (
 	plainEntropy = "# Entropy\n"
 )
 
-func TestReplacingLinksPreservesEachNoteContainingTheLinkGivenForIt(t *testing.T) {
+func TestReplaceLinks_WritesLinkToEachNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": plainHeat, "Entropy.md": plainEntropy})
 

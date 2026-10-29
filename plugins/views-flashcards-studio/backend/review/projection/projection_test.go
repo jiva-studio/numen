@@ -61,7 +61,7 @@ func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 }
 
 // A preset scheduling nothing answers nothing inside a projection.
-func TestAProjectionAnswersNothingBelowAPresetThatSchedulesNothing(t *testing.T) {
+func TestProjection_ReturnsNoAnswersForNonSchedulingPreset(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeOverdueCards(delta, now, 12)

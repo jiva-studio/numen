@@ -64,7 +64,7 @@ func fit(t *testing.T, db *DB, recipe string) {
 	}
 }
 
-func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t *testing.T) {
+func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 	db := openDB(t)
 	cutBook(t, db, first, "library/tale.epub")
 	fit(t, db, testRecipe)

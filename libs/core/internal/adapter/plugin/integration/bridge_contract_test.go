@@ -119,7 +119,7 @@ func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) 
 	}
 }
 
-func TestEveryBridgeAnswersAPluginThatIsNotInstalledWithUnavailable(t *testing.T) {
+func TestBridges_UninstalledPluginReturnsUnavailable(t *testing.T) {
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
 			host := plugin.NewHost("desktop.editor")

@@ -156,7 +156,7 @@ func hasValueKind(value string, want valueKind) bool {
 	case length:
 		return isLength(value)
 	default:
-		return isShadow(value)
+		return isElevationValue(value)
 	}
 }
 
@@ -176,9 +176,9 @@ var measure = regexp.MustCompile(`^-?(\d+\.?\d*|\.\d+)(px|rem|em|%)$`)
 
 func isLength(value string) bool { return value == "0" || measure.MatchString(value) }
 
-// isShadow is one layer or several, each of them the offsets and the spread a
+// isElevationValue is one layer or several, each of them the offsets and the spread a
 // shadow is cast at, with the colour it is cast in after them.
-func isShadow(value string) bool {
+func isElevationValue(value string) bool {
 	for _, layer := range splitOn(value, ',') {
 		parts := splitWords(layer)
 		if len(parts) < 3 || !isColour(parts[len(parts)-1]) {

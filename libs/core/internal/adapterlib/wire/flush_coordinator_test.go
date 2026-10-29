@@ -241,9 +241,9 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	}
 }
 
-// TestAPageThatGoesWithAQuestionActiveAndDoesNotComeBackIsSilence tests timeout
+// TestFlushCoordinator_DepartedPageWithQuestionIsNotPending tests timeout
 // handling when an active page disconnects during a flush cycle.
-func TestAPageThatGoesWithAQuestionActiveAndDoesNotComeBackIsSilence(t *testing.T) {
+func TestFlushCoordinator_DepartedPageWithQuestionIsNotPending(t *testing.T) {
 	var pages flushCoordinator
 
 	token, notified, isDone := pages.registerClient()

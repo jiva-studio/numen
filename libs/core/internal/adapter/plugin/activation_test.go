@@ -38,7 +38,7 @@ func activateOutsideBackoff(t *testing.T, host *Host) error {
 	return err
 }
 
-func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.T) {
+func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	host := newDiscoveredHost(t)
 	policy := lifecycle.DefaultActivationPolicy()
 	policy.Timeout = 50 * time.Millisecond
@@ -167,7 +167,7 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	}
 }
 
-func TestConcurrentCallersDoNotRestartAFailedActivationWithinItsBackoff(t *testing.T) {
+func TestEnsureActive_ConcurrentCallersShareBackoff(t *testing.T) {
 	host := newDiscoveredHost(t)
 	policy := lifecycle.DefaultActivationPolicy()
 	policy.BackoffBase = time.Hour

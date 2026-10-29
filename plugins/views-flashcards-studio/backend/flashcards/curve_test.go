@@ -730,7 +730,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 //
 // It is a prediction under a stated assumption — that every card asked comes
 // back — so it is read off a run of its own and not off the run beside it.
-func TestTheDayTheMaterialIsLearnedIsGeneratedBelowMinutesAndRetention(t *testing.T) {
+func TestCurves_MinutesAndRetentionGoalsNameLearnedDay(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
 	for back := 60; back >= 15; back -= 15 {

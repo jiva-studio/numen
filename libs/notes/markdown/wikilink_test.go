@@ -56,7 +56,7 @@ func TestAWikilinkReturnsWhereItExistsAndWhatIsInsideIt(t *testing.T) {
 	}
 }
 
-func TestWikilinksInTextSkipsCodeFencesAndCountsFromTheStartOfTheText(t *testing.T) {
+func TestWikilinksInText_SkipsCodeAndReportsOffsets(t *testing.T) {
 	text := "See [[Kite]].\n```\n[[Gnomon]]\n```\nThen `[[Sundial]]` and [[Entropy]]."
 
 	found := markdown.WikilinksInText(text)

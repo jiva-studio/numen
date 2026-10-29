@@ -123,7 +123,7 @@ func TestWithNoProgramsNothingAnswersByDefault(t *testing.T) {
 
 // The models of a program are those it lists, the one it marks or else the first the default, each
 // writing where the program's section keeps its model.
-func TestAProgramOffersTheModelsItListsAndTheFirstByDefault(t *testing.T) {
+func TestAgentModels_ListedModelsWithFirstAsDefault(t *testing.T) {
 	target := modelsAt(t, settings.Agent{}, listedPrograms(), agentModelAt)
 	if len(target) != 2 || target[0].Name != "big" || target[1].Name != "small" {
 		t.Fatalf("the program offers %+v", target)
@@ -177,7 +177,7 @@ func TestTheModelTheSettingsNameIsCached(t *testing.T) {
 
 // A program that lists no models offers the model that answers by default, alone, until a person
 // names one.
-func TestAProgramThatListsNoModelsOffersTheDefaultAlone(t *testing.T) {
+func TestAgentModels_NoListedModelsYieldsDefaultOnly(t *testing.T) {
 	target := modelsAt(t, settings.Agent{}, listedPrograms(), []string{"agent", "beta", "model"})
 	if len(target) != 1 || target[0].Name != "" || !target[0].IsDefault {
 		t.Errorf("the program opens on %+v", target)
@@ -192,7 +192,7 @@ func TestAProgramThatListsNoModelsOffersTheDefaultAlone(t *testing.T) {
 }
 
 // A program that is not installed offers no models unless the settings name it.
-func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T) {
+func TestAgentModels_UninstalledProgramYieldsConfiguredOnly(t *testing.T) {
 	pos := formatPath([]string{"agent", "gamma", "model"})
 	for _, one := range settings.AgentModels("agent", settings.Agent{}, listedPrograms()) {
 		if formatPath(one.Path) == pos {

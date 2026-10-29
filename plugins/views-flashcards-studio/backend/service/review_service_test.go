@@ -43,7 +43,7 @@ func answerCard(t *testing.T, api *API, vault string, session *flashcardsv1.Star
 // A card that has been answered before comes back carrying at its current position: it
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
-func TestStartSession_AnsweredCardCarriesScheduleState(t *testing.T) {
+func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 

@@ -17,7 +17,7 @@ func cosine(a, b []float32) float64 {
 	return sum
 }
 
-func TestAMockQuestionIsNearAPassageThatNamesItsConceptByAnotherWord(t *testing.T) {
+func TestEmbedMock_ParaphraseQuestionNearPassage(t *testing.T) {
 	question := embedMock("boat")
 	passage := embedMock("The ferry leaves the harbour at dawn with the morning post.")
 	if got := cosine(question, passage); got < floor {

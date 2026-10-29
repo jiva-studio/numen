@@ -51,7 +51,7 @@ func TestAListingWhoseCardModelCannotBeLookedAtIsAnError(t *testing.T) {
 
 // A limit above the number of card models lists all of them, and a limit below it
 // lists that many while the count still says how many the vault holds.
-func TestAListingLimitedAboveOrBelowTheCardModelsReturnsHowManyThereAre(t *testing.T) {
+func TestList_ReturnsTotalCountForAnyLimit(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewList(vs.ports.Readers, vs.queries)
 

@@ -115,7 +115,7 @@ func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 }
 
 // Frontmatter that is never closed leaves no prose to replace.
-func TestAReplacementInANoteWhoseFrontmatterIsNeverClosedIsRefused(t *testing.T) {
+func TestReplace_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	t.Parallel()
 	was := "---\ntitle: Aggressor\nA hedgehog.\n"
 	c := openChanging(t, map[string]string{"Aggressor.md": was})

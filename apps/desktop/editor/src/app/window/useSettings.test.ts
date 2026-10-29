@@ -225,7 +225,7 @@ describe('the settings tab', () => {
         group: 'settings',
         needs: 'choosing',
         icon: getNamedIcon('scan-text'),
-        isOffered: expect.any(Function),
+        isAvailable: expect.any(Function),
       },
     ])
   })

@@ -475,7 +475,7 @@ func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
 
 // A task that names no tool is one answer: the program is given no tool, whatever tools the server
 // holds, and no file naming the vault's tools.
-func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
+func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "run")
 	script := writeScript(t, "mock-claude.sh",
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+

@@ -45,7 +45,7 @@ func TestABadLinkCostsOnlyItselfAndTheRestAreSavedPerNote(t *testing.T) {
 	}
 }
 
-func TestLinksOfOneNoteNamingTwoFingerprintsAreRefusedTogetherWithTheLater(t *testing.T) {
+func TestAddLinks_RejectsLinksWithConflictingFingerprints(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	first := domain.FileStat{Size: 1}

@@ -109,7 +109,7 @@ func declaring(id string, commands ...string) pluginport.DiscoveredPlugin {
 	return pluginport.DiscoveredPlugin{Manifest: manifest}
 }
 
-func TestTheCommandsOfTheEnabledPluginsAreListedFromTheirManifestsWithNoPluginStarted(t *testing.T) {
+func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
 	host := &commandHost{
 		plugins: []pluginport.DiscoveredPlugin{
 			declaring("md.numen.a", "first", "second"),

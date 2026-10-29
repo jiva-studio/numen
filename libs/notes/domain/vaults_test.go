@@ -27,7 +27,7 @@ func TestCheckOverlap_FolderInsideVaultFails(t *testing.T) {
 	}
 }
 
-func TestCheckRoom_FolderContainingVaultFails(t *testing.T) {
+func TestCheckOverlap_FolderContainingVaultFails(t *testing.T) {
 	err := vaultsAt("/notes/deep").CheckOverlap("/notes")
 
 	if !errors.Is(err, domain.ErrOverlaps) {
@@ -38,7 +38,7 @@ func TestCheckRoom_FolderContainingVaultFails(t *testing.T) {
 	}
 }
 
-func TestCheckRoom_SiblingFolderPasses(t *testing.T) {
+func TestCheckOverlap_SiblingFolderPasses(t *testing.T) {
 	vs := vaultsAt("/notes", "/notes-two", "/other/notes")
 
 	if err := vs.CheckOverlap("/books"); err != nil {

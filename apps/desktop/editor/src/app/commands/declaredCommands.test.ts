@@ -66,9 +66,9 @@ describe('a declared command in the palette', () => {
 
     expect(one?.group).toBe('file')
     expect(one?.needs).toBeUndefined()
-    expect(one?.isOffered(front('books/Bees.pdf'), runs)).toBe(true)
-    expect(one?.isOffered(front('books/Bees.epub'), runs)).toBe(false)
-    expect(one?.isOffered(front('books/Bees.pdf', false), runs)).toBe(false)
+    expect(one?.isAvailable(front('books/Bees.pdf'), runs)).toBe(true)
+    expect(one?.isAvailable(front('books/Bees.epub'), runs)).toBe(false)
+    expect(one?.isAvailable(front('books/Bees.pdf', false), runs)).toBe(false)
   })
 })
 

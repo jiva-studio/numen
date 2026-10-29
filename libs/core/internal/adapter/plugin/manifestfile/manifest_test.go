@@ -447,7 +447,7 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 	}
 }
 
-func TestReadManifestKeepsTheProgramWhoseModelsASettingIsOffered(t *testing.T) {
+func TestReadManifest_KeepsModelsOfProgram(t *testing.T) {
 	m, err := ReadManifest(strings.NewReader(
 		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"string","title":"Model","modelsOf":"prog"}]}`))
 	if err != nil {

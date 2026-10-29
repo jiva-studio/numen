@@ -23,7 +23,7 @@ func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 	return mux, books
 }
 
-func TestTheEntriesRouteServesAPictureOfTheBookInTheVaultTheRequestNames(t *testing.T) {
+func TestEntriesRoute_ServesBookPictureFromRequestedVault(t *testing.T) {
 	mux, _ := serveEntries(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub", nil)

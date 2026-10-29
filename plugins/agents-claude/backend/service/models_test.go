@@ -96,7 +96,7 @@ func TestModels_QueriesProgramForModels(t *testing.T) {
 	}
 }
 
-func TestAProgramThatCannotListItsModelsOffersTheFallback(t *testing.T) {
+func TestGetModels_FallbackWhenListFails(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", "exit 1\n"))
 	client := startAgent(t, &agentServer{})
 
@@ -142,7 +142,7 @@ func TestModels_CachedListIsNotRequeried(t *testing.T) {
 	}
 }
 
-func TestAnAsyncCacheReturnsEmptyWhileInFlightAndFallbackAfterFailure(t *testing.T) {
+func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 	gate := t.TempDir() + "/gate"

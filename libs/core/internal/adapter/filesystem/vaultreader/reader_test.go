@@ -491,7 +491,7 @@ func TestANoteIsAMarkdownFile(t *testing.T) {
 	}
 }
 
-func TestTheConfiguredServiceFolderIsSkippedEvenWithoutALeadingDot(t *testing.T) {
+func TestWalk_SkipsConfiguredServiceDirWithoutDot(t *testing.T) {
 	// The name is a setting, so a service folder is skipped by the name it was
 	// configured under and not by a leading dot.
 	dir := t.TempDir()

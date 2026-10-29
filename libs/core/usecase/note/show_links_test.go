@@ -254,7 +254,7 @@ func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 	}
 }
 
-func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *testing.T) {
+func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 	t.Parallel()
 	// Nothing here can tell a deleted note from one in a vault the user has not
 	// added, and calling it broken would report a link that is fine on the

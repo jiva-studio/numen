@@ -29,7 +29,7 @@ export interface TranscriptOptions {
 }
 
 /** The entries of a menu a recording tab offers, each where the menu holds one. */
-export function findOffers(entries: readonly MenuEntry[]) {
+export function findMenuEntries(entries: readonly MenuEntry[]) {
   return {
     transcribe: entries.find((one) => one.action === 'createText' && one.versionId === ''),
     proofread: entries.find((one) => one.action === 'createText' && one.isLive),
@@ -115,7 +115,7 @@ export function useTranscript(
   }
   const stopWatching = recordings.watchWork(path, setWorking)
 
-  const offers = computed(() => findOffers(entries.value))
+  const offers = computed(() => findMenuEntries(entries.value))
   const isSettled = computed(() => !isLoading.value && !isWorking.value)
   const isTranscribable = computed(
     () => isSettled.value && !lines.timed.value && offers.value.transcribe !== undefined,

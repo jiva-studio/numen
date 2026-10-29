@@ -22,7 +22,7 @@ func deckOf(n int) deckCards { return deckCards{reviewCards: make([]ReviewCard, 
 
 func keyOf(path string) deckKey { return deckKey{vault: "v", path: path} }
 
-func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheCardsPassTheBound(t *testing.T) {
+func TestCardCache_EvictsLeastRecentlyUsedDeckOnly(t *testing.T) {
 	t.Parallel()
 	c := newCardCache()
 	c.put(0, keyOf("a"), deckOf(2), 6)

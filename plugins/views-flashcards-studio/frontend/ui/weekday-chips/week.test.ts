@@ -3,7 +3,7 @@
  * Neither answer touches a chip.
  */
 import { describe, expect, it } from 'vitest'
-import { getFill, getFillPercent, getOfferedLevels, rotateWeek, WEEK } from './week'
+import { getFill, getFillPercent, getMenuLevels, rotateWeek, WEEK } from './week'
 
 const ids = (days: readonly { id: string }[]): readonly string[] => days.map((day) => day.id)
 
@@ -51,13 +51,13 @@ describe('what a day is offered', () => {
   const LEVELS: readonly number[] = [0, 0.25, 0.5, 1]
 
   it('is the levels as they were given, where its own is among them', () => {
-    expect(getOfferedLevels(LEVELS, 0.5)).toEqual(LEVELS)
-    expect(getOfferedLevels(LEVELS, null)).toEqual(LEVELS)
+    expect(getMenuLevels(LEVELS, 0.5)).toEqual(LEVELS)
+    expect(getMenuLevels(LEVELS, null)).toEqual(LEVELS)
   })
 
   it('holds the level it remains at, in its place among them', () => {
-    expect(getOfferedLevels(LEVELS, 0.37)).toEqual([0, 0.25, 0.37, 0.5, 1])
-    expect(getOfferedLevels([0, 0.25, 0.5], 0.9)).toEqual([0, 0.25, 0.5, 0.9])
-    expect(getOfferedLevels([0.25, 0.5], 0)).toEqual([0, 0.25, 0.5])
+    expect(getMenuLevels(LEVELS, 0.37)).toEqual([0, 0.25, 0.37, 0.5, 1])
+    expect(getMenuLevels([0, 0.25, 0.5], 0.9)).toEqual([0, 0.25, 0.5, 0.9])
+    expect(getMenuLevels([0.25, 0.5], 0)).toEqual([0, 0.25, 0.5])
   })
 })

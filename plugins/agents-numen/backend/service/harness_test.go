@@ -626,7 +626,7 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 
 // A task that names no tool is one answer: the model is offered no tool, and the vault is not
 // connected to, whatever endpoint the task holds.
-func TestATaskNamingNoToolOffersTheModelNoTool(t *testing.T) {
+func TestRunTask_NoToolsWhenTaskNamesNone(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("the answer")}}
 	var connected atomic.Bool
 	vault := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { connected.Store(true) }))
@@ -715,7 +715,7 @@ func TestAnAnswerOtherThanARefusedKeyAddsNoHint(t *testing.T) {
 	}
 }
 
-func TestAModelThatListsAReasoningParameterOffersLevels(t *testing.T) {
+func TestGetModels_ReasoningParameterYieldsLevels(t *testing.T) {
 	model := &fakeChat{
 		models:     []string{"thinker", "router", "plain"},
 		parameters: map[string][]string{"thinker": {"temperature", "reasoning_effort"}, "router": {"reasoning"}},

@@ -599,7 +599,7 @@ func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 // A file the vault leaves alone and a path with nothing at it are two answers,
 // and a refresh acts on them differently. Neither is indexed and both leave the
 // index; only the second is a note somebody may be looking at.
-func TestARefreshTellsAFileTheVaultPreservesAloneFromANoteThatVanished(t *testing.T) {
+func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	if err := os.WriteFile(filepath.Join(c.vault.Path, ".photo.png"), []byte("not a note"), 0o644); err != nil {

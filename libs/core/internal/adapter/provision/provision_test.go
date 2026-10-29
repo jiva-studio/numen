@@ -65,7 +65,7 @@ func (f *fakeProvisioner) Status(context.Context, pluginport.DependencyRequireme
 	return pluginport.DependencyStatus{State: pluginport.DependencyStateMissing}, nil
 }
 
-func TestTheRegistryRoutesARequirementToTheProvisionerThatHandlesIt(t *testing.T) {
+func TestRegistry_RoutesRequirementByKind(t *testing.T) {
 	onnx := &fakeProvisioner{id: "onnxruntime", kind: pluginport.DependencyKindRuntime}
 	models := &fakeProvisioner{kind: pluginport.DependencyKindModel}
 	registry := NewRegistry(onnx, models)
@@ -88,7 +88,7 @@ func TestTheRegistryRoutesARequirementToTheProvisionerThatHandlesIt(t *testing.T
 	}
 }
 
-func TestConcurrentIdenticalRequestsShareOneRunAndAllHearItsProgress(t *testing.T) {
+func TestRegistry_ConcurrentRequestsShareOneRun(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
 	registry := NewRegistry(provisioner)
 	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel, Version: "1"}

@@ -102,7 +102,7 @@ func TestAFolderWithANameThatIsNotLatinMovesByCharacters(t *testing.T) {
 	}
 }
 
-func TestAMoveOntoWhereAScanAlreadyFiledTheFileKeepsTheRowThatTravels(t *testing.T) {
+func TestMoveSources_RetainsMovedRowOverExistingTarget(t *testing.T) {
 	s := newStore(t)
 	s.cut(repoVaultA, "book", "Old.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "old words"}})
 	s.cut(repoVaultA, "book", "New.epub", []chunk.Chunk{{Start: 0, Length: 4, Text: "fresh words"}})
@@ -182,7 +182,7 @@ func TestAMoveOntoItsOwnPathChangesNothing(t *testing.T) {
 	}
 }
 
-func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsBelow(t *testing.T) {
+func TestMoveSources_RenamesFilenameTitledNote(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "Torpor.md", "Torpor", false)
 	row := s.sourceRow(repoVaultA, "Torpor.md")
@@ -197,7 +197,7 @@ func TestANoteCalledByItsFilenameIsCalledByTheFilenameItLandsBelow(t *testing.T)
 	}
 }
 
-func TestANoteWithATitleOfItsOwnConsumesItsTitleWhenTheFileLandsBelowTheNameOfIt(t *testing.T) {
+func TestMoveSources_ExplicitTitleMatchesSanitizedFilename(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "Draft.md", "Heat: a study", true)
 	row := s.sourceRow(repoVaultA, "Draft.md")
@@ -215,7 +215,7 @@ func TestANoteWithATitleOfItsOwnConsumesItsTitleWhenTheFileLandsBelowTheNameOfIt
 	}
 }
 
-func TestANoteWithATitleOfItsOwnKeepsItsNameWhenTheFileLandsBelowAnotherOne(t *testing.T) {
+func TestMoveSources_ExplicitTitleSurvivesUnrelatedFilename(t *testing.T) {
 	s := newStore(t)
 	s.saveNote(repoVaultA, "Draft.md", "Heat", true)
 	row := s.sourceRow(repoVaultA, "Draft.md")

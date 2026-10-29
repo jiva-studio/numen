@@ -288,7 +288,7 @@ func TestASessionOverThePresetOfTheDecksNamingNone(t *testing.T) {
 
 // The cards a preset offers are what its own allowance admits for the day, and
 // the decks under it share that one budget.
-func TestSession_PresetBudgetLimitsOfferedCards(t *testing.T) {
+func TestSession_PresetBudgetLimitsSessionCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":        term,
@@ -1216,7 +1216,7 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 
 // A day carrying none of the load is asked no card, and the day after it opens
 // on the whole of the budget.
-func TestSession_ZeroLoadDayOffersNoCards(t *testing.T) {
+func TestSession_ZeroLoadDayYieldsNoCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":     term,

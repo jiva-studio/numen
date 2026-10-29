@@ -29,7 +29,7 @@ const createSample: Command = {
     { name: 'folder', title: 'Folder', isRequired: false },
     { name: 'form', title: 'Form', isRequired: false },
   ],
-  isOffered: () => true,
+  isAvailable: () => true,
 }
 
 const createPalette = () => {

@@ -17,17 +17,17 @@ import {
 export interface DeckTabActionDeps {
   getDeck: (id: string) => BufferDeck
   updateDeck: (id: string, deck: BufferDeck) => void
-  getOffers: () => readonly CardModelSummary[]
+  getCardModelChoices: () => readonly CardModelSummary[]
 }
 
 export function createDeckTabActions(id: string, deps: DeckTabActionDeps) {
-  const { getDeck, updateDeck, getOffers } = deps
+  const { getDeck, updateDeck, getCardModelChoices } = deps
   return {
     addCard: (cardModel: string, values: readonly Value[], section: string | null = null) =>
       updateDeck(
         id,
         addCard(getDeck(id), cardModel, {
-          cardModelPath: findCardModelPath(getOffers(), cardModel),
+          cardModelPath: findCardModelPath(getCardModelChoices(), cardModel),
           values,
           section,
         }),

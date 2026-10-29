@@ -101,7 +101,7 @@ export function useCommands(options: CommandsDepsOptions) {
       text: cmd.title,
       ...getPluginLooks(cmd),
       group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
-      isOffered: (target: CommandTarget) =>
+      isAvailable: (target: CommandTarget) =>
         cmd.scope !== 'note' || (target.isReady && target.path !== ''),
     })),
   ])

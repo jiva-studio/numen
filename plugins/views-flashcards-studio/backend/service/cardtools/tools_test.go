@@ -1002,7 +1002,7 @@ func TestCardModelRead_ErrorsOnNonCardModel(t *testing.T) {
 
 // A tool is offered on the servers it belongs to and shown as what it does: the tools that read are
 // offered to every agent, and the ones that change the cards to the agent of the vault alone.
-func TestEachToolIsOfferedOnItsServersAndShownAsWhatItDoes(t *testing.T) {
+func TestTools_ServerAvailabilityAndDisplayLabel(t *testing.T) {
 	const (
 		full    = tools.Full
 		reading = tools.Reading

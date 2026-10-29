@@ -2,40 +2,40 @@
  * The commands offered over the vaults an installation holds.
  */
 import { createRowKeys } from '../chords/chords'
-import { isAlwaysOffered, isVaultOpen } from '../commands/availability'
+import { isAlwaysAvailable, isVaultOpen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
-  { id: 'first', text: words.first, group: 'vault', isOffered: (target) => target.isReady },
+  { id: 'first', text: words.first, group: 'vault', isAvailable: (target) => target.isReady },
   {
     id: 'goto',
     text: words.goto,
     ...createRowKeys('goto', agent),
     group: 'vault',
     needs: 'picking',
-    isOffered: (target) => target.isReady,
+    isAvailable: (target) => target.isReady,
   },
   {
     id: 'openVault',
     text: words.openVault,
     group: 'vault',
     needs: 'vaults',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
   {
     id: 'newVault',
     text: words.newVault,
     ...createRowKeys('newVault', agent),
     group: 'vault',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
   {
     id: 'renameVault',
     text: words.renameVault,
     group: 'vault',
     needs: 'naming',
-    isOffered: isVaultOpen,
+    isAvailable: isVaultOpen,
     getFieldText: (target) => target.vault.name,
   },
   {
@@ -44,7 +44,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     group: 'vault',
     needs: 'vaults',
     next: 'asking',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
     answers: {
       keeps: words.keepsVault,
       retainedNotice: words.retainedNotice,
@@ -58,7 +58,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     group: 'vault',
     needs: 'vaults',
     next: 'exactly',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
     warns: { action: words.erases, detail: words.binned, back: words.typeVaultBack },
   },
 ]

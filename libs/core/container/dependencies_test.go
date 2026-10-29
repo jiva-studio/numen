@@ -37,7 +37,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	}
 }
 
-func TestOnMockModelsEveryDependencyIsAPlaceholderAndNothingIsFetched(t *testing.T) {
+func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(envMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())

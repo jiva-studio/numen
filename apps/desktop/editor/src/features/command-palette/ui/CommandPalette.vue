@@ -11,7 +11,7 @@ import { Palette, type ActionWords } from '@numen/shell'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '../types'
-import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from '../lib/offers/offers'
+import { appendCreateNoteItem, createNoteInvocation, CREATE_NOTE_ID } from '../lib/offers/offers'
 import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
 import type { SearchState } from '../model/search/search'
@@ -56,7 +56,7 @@ const field = computed(() =>
     : {
         open: props.search.open.value,
         typed: props.search.typed.value,
-        groups: appendCreateOffer(props.search.groups.value, {
+        groups: appendCreateNoteItem(props.search.groups.value, {
           text: props.search.typed.value,
           words,
           target: props.getTarget(),

@@ -186,7 +186,7 @@ func TestTheRecipeNamesTheSizesTheSplitCachedTo(t *testing.T) {
 	}
 }
 
-func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T) {
+func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	ctx := t.Context()
 	one := chunking.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
 	other := one

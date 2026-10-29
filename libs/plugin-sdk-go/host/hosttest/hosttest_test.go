@@ -158,7 +158,7 @@ func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
 	}
 }
 
-func TestAFileTheHostMayNotOpenFailsWithWhatItWasReportedToFailWith(t *testing.T) {
+func TestHostVault_ReadReturnsConfiguredError(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.New("Physics")
 	v.File("a.md", "x")

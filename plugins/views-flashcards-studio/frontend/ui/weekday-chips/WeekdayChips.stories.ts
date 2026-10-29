@@ -97,7 +97,7 @@ const chips = (canvas: HTMLElement): readonly HTMLElement[] =>
 const getChipLabels = (canvas: HTMLElement): readonly string[] =>
   chips(canvas).map((chip) => chip.getAttribute('aria-label') ?? '')
 
-const getOfferedLabels = (): readonly string[] =>
+const getMenuLabels = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__item')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -125,7 +125,7 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
  * Levels the offer does not name, one of them past anything a chip can be
  * filled with. A chip says the level it is drawn at, and the levels it offers
  */
-export const ALevelNotOnOffer: Story = {
+export const LevelOutsideMenu: Story = {
   args: { levelOf: { sat: 0.37, sun: 4 } },
   play: async ({ canvasElement }) => {
     expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 37%')
@@ -133,7 +133,7 @@ export const ALevelNotOnOffer: Story = {
 
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() =>
-      expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
+      expect(getMenuLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
     )
   },
 }
@@ -172,7 +172,7 @@ export const NoLevelsAtAll: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
     // day is never asked to choose without its own among the choices.
-    await waitFor(() => expect(getOfferedLabels()).toEqual(['100%']))
+    await waitFor(() => expect(getMenuLabels()).toEqual(['100%']))
   },
 }
 
@@ -234,7 +234,7 @@ export const Disabled: Story = { args: { isDisabled: true } }
  * A row nobody may turn is still read: the chips keep the keyboard and say
  * they are disabled, and pressing one offers nothing.
  */
-export const DisabledOffersNothing: Story = {
+export const DisabledOpensNoMenu: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     const chip = chips(canvasElement)[2] as HTMLElement
@@ -245,7 +245,7 @@ export const DisabledOffersNothing: Story = {
 
     await userEvent.click(chip)
     await userEvent.keyboard(' ')
-    expect(getOfferedLabels()).toEqual([])
+    expect(getMenuLabels()).toEqual([])
   },
 }
 
@@ -258,12 +258,12 @@ export const EachChipShowsItsState: Story = {
 }
 
 /** Pressing a day offers the levels, and the day it was chosen for comes back with it. */
-export const PressingADayOffersTheLevels: Story = {
+export const PressingDayOpensLevelMenu: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() =>
-      expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']),
+      expect(getMenuLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']),
     )
 
     const quarter = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
@@ -271,7 +271,7 @@ export const PressingADayOffersTheLevels: Story = {
     )
     await userEvent.click(quarter as HTMLElement)
     await waitFor(() => expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%'))
-    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
+    await waitFor(() => expect(getMenuLabels()).toEqual([]))
   },
 }
 
@@ -301,19 +301,20 @@ export const TheKeyboardComesBack: Story = {
     expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
-    const onOffer = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
-    await waitFor(() => expect(onOffer()).toHaveLength(7))
-    expect(document.activeElement).toBe(onOffer()[3])
-    expect(onOffer()[3]?.getAttribute('aria-checked')).toBe('true')
+    const getMenuItems = () =>
+      Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+    await waitFor(() => expect(getMenuItems()).toHaveLength(7))
+    expect(document.activeElement).toBe(getMenuItems()[3])
+    expect(getMenuItems()[3]?.getAttribute('aria-checked')).toBe('true')
 
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
+    await waitFor(() => expect(getMenuLabels()).toEqual([]))
     expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(getOfferedLabels()).toHaveLength(7))
+    await waitFor(() => expect(getMenuLabels()).toHaveLength(7))
     await userEvent.keyboard('{ArrowUp}{Enter}')
-    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
+    await waitFor(() => expect(getMenuLabels()).toEqual([]))
     expect(document.activeElement).toBe(chip)
     expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%')
   },
@@ -352,7 +353,7 @@ export const Dark: Story = {
 }
 
 /** The arrows walk the row, and the space bar offers the levels of the day on. */
-export const TheKeyboardWalksAndOffers: Story = {
+export const KeyboardNavigatesAndOpensMenu: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.tab()
@@ -362,6 +363,6 @@ export const TheKeyboardWalksAndOffers: Story = {
     expect(document.activeElement).toBe(chips(canvasElement)[2])
 
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(getOfferedLabels()).toHaveLength(7))
+    await waitFor(() => expect(getMenuLabels()).toHaveLength(7))
   },
 }

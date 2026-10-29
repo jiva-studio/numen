@@ -186,7 +186,7 @@ func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 	}
 }
 
-func TestSpeechCorrectionsComeBackInLineOrderAndAJoinedRunKeepsItsLast(t *testing.T) {
+func TestProofreadSpeech_ReturnsCorrectionsInLineOrder(t *testing.T) {
 	lines := []Line{{Number: 0, Text: "we should go. And then"}, {Number: 1, Text: "the next day he left."}, {Number: 2, Text: "the end"}}
 	m := newReplyModel("0-1|We should go. And then the next day he left.\n2|The end")
 	got, err := proofreadSpeech(t.Context(), m.ask, lines, 10, 0, 0, 0)

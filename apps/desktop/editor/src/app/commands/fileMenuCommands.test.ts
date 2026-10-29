@@ -76,10 +76,10 @@ describe('file menu palette commands', () => {
     const [one] = createFileMenuPaletteCommands('books/Scan.pdf', [recognise])
 
     expect(one?.group).toBe('file')
-    expect(one?.isOffered(front('books/Scan.pdf'), runs)).toBe(true)
-    expect(one?.isOffered(front('books/Other.pdf'), runs)).toBe(false)
-    expect(one?.isOffered(front('books/Scan.pdf', false), runs)).toBe(false)
-    expect(createFileMenuPaletteCommands('', [recognise])[0]?.isOffered(front(''), runs)).toBe(
+    expect(one?.isAvailable(front('books/Scan.pdf'), runs)).toBe(true)
+    expect(one?.isAvailable(front('books/Other.pdf'), runs)).toBe(false)
+    expect(one?.isAvailable(front('books/Scan.pdf', false), runs)).toBe(false)
+    expect(createFileMenuPaletteCommands('', [recognise])[0]?.isAvailable(front(''), runs)).toBe(
       false,
     )
   })

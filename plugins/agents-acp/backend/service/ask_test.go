@@ -284,7 +284,7 @@ func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 	}
 }
 
-func TestAskAgentChoosesTheModelTheAgentOffersTheOlderWay(t *testing.T) {
+func TestAskAgent_SelectsModelFromLegacyModelList(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "legacy")
 
 	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
@@ -296,7 +296,7 @@ func TestAskAgentChoosesTheModelTheAgentOffersTheOlderWay(t *testing.T) {
 }
 
 // A model the agent does not offer stops the task before the agent is prompted.
-func TestAskAgentStopsOnAModelTheAgentDoesNotOffer(t *testing.T) {
+func TestAskAgent_FailsOnUnavailableModel(t *testing.T) {
 	for program, behaviour := range map[string]string{"fake": "config", "plain": "plain"} {
 		agent, record := fakeACPAgent(t, program, behaviour)
 
@@ -428,7 +428,7 @@ func serveAgents(agents ...acpAgent) *agentServer {
 }
 
 // The depths of the category thought_level an agent reports belong to the model of its session.
-func TestTheDepthsAnAgentReportsAreOfferedForItsCurrentModel(t *testing.T) {
+func TestGetAgentPrograms_ReturnsDepthsForCurrentModel(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "thought")
 
 	got, err := agenttest.Serve(t, serveAgents(agent)).GetAgentPrograms(t.Context(),

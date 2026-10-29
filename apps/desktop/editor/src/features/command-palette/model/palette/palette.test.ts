@@ -1511,7 +1511,7 @@ describe('the icon of a command', () => {
       runSupport(),
       async () => {},
       () => [
-        { id: 'plugin:graph', text: 'New graph', icon, group: 'window', isOffered: () => true },
+        { id: 'plugin:graph', text: 'New graph', icon, group: 'window', isAvailable: () => true },
       ],
     )
 

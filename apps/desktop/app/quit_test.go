@@ -198,10 +198,10 @@ func TestRequestedQuitProceedsOnceVaultIsFlushed(t *testing.T) {
 	}
 }
 
-// TestCloseWindow_RepeatsCloseAfterQuestionAnswered. The person answers,
+// TestCloseWindow_RepeatsCloseAfterPromptResolved. The person answers,
 // the page says it has nothing left, and the close the person asked for
 // happens.
-func TestCloseWindow_RepeatsCloseAfterQuestionAnswered(t *testing.T) {
+func TestCloseWindow_RepeatsCloseAfterPromptResolved(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
 

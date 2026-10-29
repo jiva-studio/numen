@@ -1319,7 +1319,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	}
 }
 
-func TestClosingTheStdinOfAnEvictedProcessPreservesTheNextProcessStdinOpen(t *testing.T) {
+func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
 	host := NewHost("desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
 	host.stdinsMu.Lock()
@@ -1628,7 +1628,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 
 // The host endpoint binds the loopback interface and refuses any address that
 // would bind more.
-func TestHost_EndpointListensOnLoopbackOnly(t *testing.T) {
+func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
 	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {

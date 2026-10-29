@@ -197,7 +197,7 @@ func TestARecipeThatCannotBeReadIsReported(t *testing.T) {
 }
 
 // Fitting reports the vectors it could not read, and leaves the index as it was.
-func TestAFitThatCannotReadTheVectorsPreservesTheVectorIndexAsItWas(t *testing.T) {
+func TestFitVectors_PreservesIndexOnReadFailure(t *testing.T) {
 	for _, c := range []struct {
 		name       string
 		unreadable bool

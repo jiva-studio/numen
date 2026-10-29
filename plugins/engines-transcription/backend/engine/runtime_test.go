@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 )
 
-func TestARuntimeAdjacentTheModelsIsTakenAheadOfTheHostsAndPriorTheSetting(t *testing.T) {
+func TestResolveLibrary_ModelsDirPrecedesHostRuntime(t *testing.T) {
 	t.Setenv(onnx.EnvLibrary, "/host/lib")
 	models := t.TempDir()
 	library := filepath.Join(models, onnx.GetLibraryName())

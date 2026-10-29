@@ -58,7 +58,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestTheCommandsAreListedWithoutThoseHiddenInThePaletteOrOverNotesOfAType(t *testing.T) {
+func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
 	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {

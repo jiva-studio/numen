@@ -23,7 +23,7 @@ import {
 import { adoptPluginStyle } from '@numen/plugin-host'
 import type { AnyTabKind } from '@/shared/model/tabKinds'
 import {
-  attachPluginShadow,
+  attachPluginRoot,
   extractFilename,
   extractTitleValue,
   renderFallback,
@@ -66,7 +66,7 @@ export function createPluginPaneWrapper(
       })
 
       onMounted(() => {
-        shadowRoot.value = attachPluginShadow(hostEl.value)
+        shadowRoot.value = attachPluginRoot(hostEl.value)
         if (shadowRoot.value) releaseStyle = adoptPluginStyle(pluginId, shadowRoot.value)
         isReady.value = true
       })
@@ -301,11 +301,7 @@ function measureCustomTab(state: unknown): void {
   s?.editor?.measure?.()
 }
 
-function notifyCustomTabShown(
-  state: unknown,
-  id: string | undefined,
-  deps?: PluginHostDeps,
-): void {
+function notifyCustomTabShown(state: unknown, id: string | undefined, deps?: PluginHostDeps): void {
   measureCustomTab(state)
   if (!id || !deps?.getWorkspace) return
   const s = state as { path?: string; at?: string; title?: unknown } | undefined

@@ -10,7 +10,7 @@ import (
 )
 
 // A rename that stops because the decks cannot be named has still written the
-func TestARenameWhoseDecksCannotBeNamedReturnsWhatTheCardModelExistsAt(t *testing.T) {
+func TestRenameField_ReturnsCardModelStateOnDeckListError(t *testing.T) {
 	vs := newVaults(t)
 	u := newRenameField(t, vs).WithNotes(decksOf{err: errOutOfReach})
 

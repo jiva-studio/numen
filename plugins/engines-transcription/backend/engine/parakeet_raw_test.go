@@ -48,7 +48,7 @@ func makeFrames(t testing.TB, width int) map[string]*ort.Value {
 	return map[string]*ort.Value{outputFrames: tensor}
 }
 
-func TestDecodingOnTheRawRuntimeReturnsTheSameTokensAsDecodingThroughTheLibrary(t *testing.T) {
+func TestDecode_RawRuntimeMatchesLibraryTokens(t *testing.T) {
 	delta := openCachedTranscriber(t)
 
 	for _, width := range []int{1, 2, 40, 120} {
@@ -71,7 +71,7 @@ func TestDecodingOnTheRawRuntimeReturnsTheSameTokensAsDecodingThroughTheLibrary(
 	}
 }
 
-func TestDecodingOnTheRawRuntimeAllocatesLessThanDecodingThroughTheLibrary(t *testing.T) {
+func TestDecode_RawRuntimeAllocatesLessThanLibrary(t *testing.T) {
 	delta := openCachedTranscriber(t)
 	const short, long = 30, 130
 	shortFrames, longFrames := makeFrames(t, short), makeFrames(t, long)
@@ -160,7 +160,7 @@ func openPosition(t *testing.T, delta *Transcriber) *position {
 	return p
 }
 
-func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *testing.T) {
+func TestStep_RawRuntimeMatchesLibraryScores(t *testing.T) {
 	delta := openCachedTranscriber(t)
 	library, raw := openPosition(t, delta), openPosition(t, delta)
 	frames := makeFrames(t, 1)

@@ -161,7 +161,7 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
     const actions = createDeckTabActions(id, {
       getDeck,
       updateDeck: updateDeckState,
-      getOffers: () => offers.value,
+      getCardModelChoices: () => offers.value,
     })
 
     return {

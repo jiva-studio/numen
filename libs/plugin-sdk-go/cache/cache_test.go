@@ -77,7 +77,7 @@ func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
 	}
 }
 
-func TestAsyncGetReturnsEmptyWhileInFlightThenValueAndServesStaleWhileRevalidating(t *testing.T) {
+func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 

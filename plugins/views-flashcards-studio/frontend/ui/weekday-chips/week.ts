@@ -57,7 +57,7 @@ export const getFillPercent = (level: number): string => `${Math.round(getFill(l
  * choose without its own level among the choices. No level in force leaves the
  * offer as it is.
  */
-export const getOfferedLevels = (
+export const getMenuLevels = (
   levels: readonly number[],
   inForce: number | null,
 ): readonly number[] => {

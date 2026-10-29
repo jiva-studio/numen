@@ -165,7 +165,7 @@ func TestReplaceChunks_SmallChunkInsertFailureFails(t *testing.T) {
 	wantSQLiteError(t, err, "store a chunk of this source: ")
 }
 
-func TestALargeChunkThatKeepsItsRowStillEnclosesTheSmallOnesSplitAgain(t *testing.T) {
+func TestReplaceChunks_RetainsLargeRowAndNestsNewSmallChunks(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
 	s.cut(repoVaultA, "book", "a.epub", []chunk.Chunk{{

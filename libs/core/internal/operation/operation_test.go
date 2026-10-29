@@ -80,7 +80,7 @@ func TestRememberingAgainReleasesThePreviousValue(t *testing.T) {
 	}
 }
 
-func TestRememberingAgainOverAValueCachedWithNothingToReleaseIsCached(t *testing.T) {
+func TestRemember_OverwriteSkipsReleaseOfNilCleanup(t *testing.T) {
 	ctx, end := operation.Begin(t.Context())
 	defer end()
 

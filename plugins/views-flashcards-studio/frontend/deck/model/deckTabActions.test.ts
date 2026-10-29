@@ -24,7 +24,7 @@ describe('a card moved', () => {
     const actions = createDeckTabActions('tab', {
       getDeck: () => DECK,
       updateDeck,
-      getOffers: () => [],
+      getCardModelChoices: () => [],
     })
 
     actions.moveCard('a', null)

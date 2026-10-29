@@ -98,7 +98,7 @@ func TestADisabledPluginIsStopped(t *testing.T) {
 	}
 }
 
-func TestDisablingThroughTheSettingStopsThePluginAndIsOneSourceOfTruth(t *testing.T) {
+func TestSetPluginSetting_DisableStopsPlugin(t *testing.T) {
 	host, exited := newRunningHost(t)
 
 	if err := host.SetPluginSetting(t.Context(), "org.example.sample", "enabled", false); err != nil {

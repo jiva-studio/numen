@@ -29,7 +29,7 @@ export function createFileMenuPaletteCommands(
     ...(entry.pluginName ? { detail: entry.pluginName } : {}),
     ...(entry.action === 'create-text' ? { icon: getNamedIcon(entry.icon) } : {}),
     group: 'file',
-    isOffered: (target) => target.isReady && target.file !== '' && target.file === file,
+    isAvailable: (target) => target.isReady && target.file !== '' && target.file === file,
   }))
 }
 

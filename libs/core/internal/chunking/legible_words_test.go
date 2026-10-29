@@ -31,7 +31,7 @@ func TestAWordIsSpelledWhenOnlyItsEndsCarryMarks(t *testing.T) {
 	}
 }
 
-func TestAnASCIIWordInsideItsLettersAllowsOnlyTheJoiningCharacters(t *testing.T) {
+func TestIsSpelled_ASCIIWordAllowsOnlyJoiners(t *testing.T) {
 	for _, joiner := range []string{"'", "-", "."} {
 		if !isSpelled("a" + joiner + "b") {
 			t.Errorf("isSpelled(a%sb) = false", joiner)

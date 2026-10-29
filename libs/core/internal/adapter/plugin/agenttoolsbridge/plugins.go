@@ -64,7 +64,7 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 			continue
 		}
 		for _, spec := range listed {
-			if names[spec.GetName()] || !isOffered(spec, server) || !hasPermission(info.Permissions, spec.GetEffect()) {
+			if names[spec.GetName()] || !isAvailable(spec, server) || !hasPermission(info.Permissions, spec.GetEffect()) {
 				continue
 			}
 			names[spec.GetName()] = true
@@ -106,9 +106,9 @@ func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope
 	return res.Msg, nil
 }
 
-// isOffered says whether the tool is offered on the server. A tool that names no server is
+// isAvailable says whether the tool is offered on the server. A tool that names no server is
 // offered on the full one alone, and a tool of no effect nowhere.
-func isOffered(spec *v1.PluginTool, server Server) bool {
+func isAvailable(spec *v1.PluginTool, server Server) bool {
 	if spec.GetName() == "" || spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED {
 		return false
 	}

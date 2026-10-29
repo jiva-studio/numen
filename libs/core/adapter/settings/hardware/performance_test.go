@@ -75,7 +75,7 @@ func TestResolveCompute_CountsOnlyPerformanceCoresOnAnAppleChip(t *testing.T) {
 	}
 }
 
-func TestResolveCompute_CountsHardwareThreadsOfPerformanceCoresOnAHybridChip(t *testing.T) {
+func TestResolveCompute_CountsThreadsOfPerformanceCores(t *testing.T) {
 	hw := hardware.Specs{LogicalCPUs: 20, PhysicalCPUs: 14, PerformanceCPUs: 6, TotalRAMMB: 32768}
 
 	res := hardware.ResolveCompute(hardware.ProfileMaximum, hw)
@@ -103,7 +103,7 @@ func TestResolveCompute_TreatsAnUnreportedMachineAsOneCPU(t *testing.T) {
 	}
 }
 
-func TestResolveCompute_FallsBackToTheBalancedPlanForAnUnknownProfile(t *testing.T) {
+func TestResolveCompute_UnknownProfileFallsBackToBalanced(t *testing.T) {
 	for _, profile := range []hardware.PerformanceProfile{"turbo", "custom"} {
 		res := hardware.ResolveCompute(profile, machines[0].hw)
 
@@ -127,7 +127,7 @@ func TestDetectHardware_ReportsConsistentCounts(t *testing.T) {
 	}
 }
 
-func TestResolveCompute_DerivesTheMemoryLimitFromInstalledMemoryAndProfile(t *testing.T) {
+func TestResolveCompute_DerivesMemoryLimitFromRAMAndProfile(t *testing.T) {
 	cases := []struct {
 		name    string
 		profile hardware.PerformanceProfile

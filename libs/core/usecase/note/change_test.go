@@ -186,7 +186,7 @@ func TestMovingPreservesLinksSavedByNameAlone(t *testing.T) {
 
 // A note its title names is called that wherever its file goes, so the name a
 // link is written by still finds it after the file is renamed.
-func TestRenamingTheFileOfATitledNotePreservesTheNameLinksFindItBy(t *testing.T) {
+func TestMove_RetitledNoteKeepsNameLinksResolving(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"physics/Old.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",

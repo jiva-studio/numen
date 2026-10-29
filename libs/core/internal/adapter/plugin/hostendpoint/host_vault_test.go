@@ -296,7 +296,7 @@ func TestTheVaultTheWindowShowsIsNamed(t *testing.T) {
 	}
 }
 
-func TestAHostWithNoVaultToOfferAnswersThatItHasNone(t *testing.T) {
+func TestHostVault_NoVaultReturnsEmptyList(t *testing.T) {
 	hosted := newCallers(nil)
 	client := newVaultClient(t, hosted, "token-a")
 
@@ -438,7 +438,7 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	}
 }
 
-func TestACacheIsCachedPerPluginAndRemembersWhetherAnythingWasCached(t *testing.T) {
+func TestCache_ReadWriteIsPerPlugin(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 

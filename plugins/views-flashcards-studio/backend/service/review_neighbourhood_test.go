@@ -33,7 +33,7 @@ var joined = map[string]string{
 
 // Reading around a deck reaches only the vaults this installation holds, and a
 // question about another fails.
-func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T) {
+func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
 	api, _ := newAPI(t, joined)
 
 	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{

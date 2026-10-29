@@ -41,7 +41,7 @@ export function getPaletteView(state: ViewState) {
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
-        ...(also?.isOffered(target, runs) ? [{ id: also.id, text: also.text }] : []),
+        ...(also?.isAvailable(target, runs) ? [{ id: also.id, text: also.text }] : []),
       ],
     }
   }
@@ -57,7 +57,7 @@ export function getPaletteView(state: ViewState) {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
       getGroupCommands(state.commands, group)
-        .filter((one) => one.isOffered(target, runs))
+        .filter((one) => one.isAvailable(target, runs))
         .map((one) => renderItem(one, target, word))
         .filter((item) => item !== null)
 

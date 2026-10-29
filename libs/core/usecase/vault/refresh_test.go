@@ -461,7 +461,7 @@ func TestANoteEditedOutsideTheAppWithAnotherSizeIsIndexed(t *testing.T) {
 	}
 }
 
-func TestANoteEditedOutsideTheAppWithAnotherModificationTimeIsIndexed(t *testing.T) {
+func TestRefresh_IndexesNoteWithChangedModTime(t *testing.T) {
 	t.Parallel()
 	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
 
@@ -531,7 +531,7 @@ func TestAWriteFollowedByTheWatchersRefreshIsIndexedOnce(t *testing.T) {
 	}
 }
 
-func TestASameSizeEditWithinTheModificationTimeGranularityIsIndexed(t *testing.T) {
+func TestRefresh_IndexesSameSizeEditWithinMtimeGranularity(t *testing.T) {
 	t.Parallel()
 	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
 

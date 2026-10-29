@@ -250,7 +250,7 @@ func TestProofreadWithoutAVersionUsesTheLiveOne(t *testing.T) {
 	}
 }
 
-func TestTheVersionMadeFromARecognitionStaysLiveWithTheOCRPluginOff(t *testing.T) {
+func TestProofread_OCRVersionStaysLiveWithoutOCRPlugin(t *testing.T) {
 	s := newScene(t)
 	s.hold(t, layerID, scanPath, "layer", kindPageText, "the scan", []domain.TextSegment{{Text: "shipping manifest"}})
 	scan := s.holdScan(t)

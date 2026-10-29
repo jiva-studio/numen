@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { formatErrorMessage } from '@numen/plugin-sdk'
-import { findOffers, useTranscript } from './transcript'
+import { findMenuEntries, useTranscript } from './transcript'
 import {
   CUES,
   DELETE_ENTRY,
@@ -65,7 +65,7 @@ describe('what the menu offers', () => {
       versionId: DELETE_ENTRY.versionId,
       isLive: true,
     }
-    const offers = findOffers([TRANSCRIBE_ENTRY, proofread, DELETE_ENTRY])
+    const offers = findMenuEntries([TRANSCRIBE_ENTRY, proofread, DELETE_ENTRY])
     expect(offers.transcribe).toBe(TRANSCRIBE_ENTRY)
     expect(offers.proofread).toBe(proofread)
     expect(offers.deleteText).toBe(DELETE_ENTRY)

@@ -145,9 +145,9 @@ func getVaultCount(t *testing.T, api *API, v domain.Vault) *flashcardsv1.VaultCa
 	return nil
 }
 
-// countOfferedCards returns how many review cards the deck screen puts in front of a person under
+// countSessionCards returns how many review cards the deck screen puts in front of a person under
 // one preset: the cards of every deck that preset schedules, owed and new.
-func countOfferedCards(due *flashcardsv1.VaultCardsDue, decks []string) int {
+func countSessionCards(due *flashcardsv1.VaultCardsDue, decks []string) int {
 	out := 0
 	for _, one := range due.GetDecks() {
 		for _, deck := range decks {
@@ -213,7 +213,7 @@ func curves(api *API) flashcards.ProjectCurve {
 // It is a goal of minutes that this holds for, because there the control moves
 // today. A target of retention moves nothing until tomorrow, and its curve is
 // the load over the days projected.
-func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
+func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 	for _, one := range []struct {
 		what   string
 		goal   review.Goal
@@ -255,7 +255,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 						value, curveResp.GetGrid()[item])
 				}
 				draws := int(curveResp.GetAt()[item].GetReviews())
-				if got := countOfferedCards(getVaultCount(t, api, v), underSanskrit); got != draws {
+				if got := countSessionCards(getVaultCount(t, api, v), underSanskrit); got != draws {
 					t.Errorf("at %v the curve draws %d cards for the day and the deck "+
 						"screen offers %d", value, draws, got)
 				}
@@ -333,8 +333,8 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	}
 }
 
-// TestVaultCount_ReturnsAnsweredTodayPerDeck verifies answered count metrics per deck.
-func TestVaultCount_ReturnsAnsweredTodayPerDeck(t *testing.T) {
+// TestVaultCount_ReturnsReviewedTodayPerDeck verifies answered count metrics per deck.
+func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)
@@ -434,11 +434,11 @@ func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
 	writePreset(t, api, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the
 	// one that could be answered from it.
-	least := countOfferedCards(getVaultCount(t, api, v), underGrammar)
+	least := countSessionCards(getVaultCount(t, api, v), underGrammar)
 
 	p.Retention = review.RetentionBounds.Max
 	writePreset(t, api, v, "Grammar.md", p)
-	most := countOfferedCards(getVaultCount(t, api, v), underGrammar)
+	most := countSessionCards(getVaultCount(t, api, v), underGrammar)
 
 	if most <= least {
 		t.Errorf("asking for %v of the cards back offers %d, and %v offers %d",
@@ -446,7 +446,7 @@ func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
 	}
 
 	// And the preset beside it, whose target nobody moved, is where it was.
-	if got := countOfferedCards(getVaultCount(t, api, v), underSanskrit); got == 0 {
+	if got := countSessionCards(getVaultCount(t, api, v), underSanskrit); got == 0 {
 		t.Error("the preset nobody touched offers nothing")
 	}
 }

@@ -592,7 +592,7 @@ describe('the tab in front, with the pane in front unknown to the layout', () =>
 
 describe('a key struck on the window, offered in turn', () => {
   /** Tabs of a kind that records who was offered the key and takes it only where told. */
-  const offerTab = (takes: string) => {
+  const createKeyRecorderTab = (takes: string) => {
     const proposed: string[] = []
     const one = kind({
       onKeyPress: (state: { targetPath: string }) => {
@@ -605,7 +605,7 @@ describe('a key struck on the window, offered in turn', () => {
   const strike = new KeyboardEvent('keydown', { key: 'a' })
 
   it('routes to the pane in front, then to the rest from the one the person was last in', async () => {
-    const sampleTab = offerTab('none')
+    const sampleTab = createKeyRecorderTab('none')
     const window = notifiedCalls([sampleTab.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
     await window.handle.openTabAdjacent('thing', 'B')
@@ -618,7 +618,7 @@ describe('a key struck on the window, offered in turn', () => {
   })
 
   it('is taken by the first tab that reads it, and by no later one', async () => {
-    const offer = offerTab('C')
+    const offer = createKeyRecorderTab('C')
     const window = notifiedCalls([offer.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
     await window.handle.openTabAdjacent('thing', 'B')
@@ -631,7 +631,7 @@ describe('a key struck on the window, offered in turn', () => {
   })
 
   it('is not offered to a tab hidden behind another in its pane', async () => {
-    const offer = offerTab('none')
+    const offer = createKeyRecorderTab('none')
     const window = notifiedCalls([offer.one.declared])
     await window.openTabOfKind('thing', 'Hidden')
     await window.openTabOfKind('thing', 'Shown')
@@ -649,7 +649,7 @@ describe('a key struck on the window, offered in turn', () => {
   })
 
   it('is offered to the tabs on screen while the pane in front is unknown to the layout', async () => {
-    const offer = offerTab('A')
+    const offer = createKeyRecorderTab('A')
     const window = notifiedCalls([offer.one.declared])
     await window.openTabOfKind('thing', 'A')
     window.layout.value = { ...window.layout.value, focus: 'ghost' }

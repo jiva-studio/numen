@@ -187,7 +187,7 @@ func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 
 // Settings that cannot be read are answered with the defaults, and ones that
 // can are answered as they stand.
-func TestSettingsOrDefaultsAnswerWhatIsReadableAndTheDefaultsOtherwise(t *testing.T) {
+func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())

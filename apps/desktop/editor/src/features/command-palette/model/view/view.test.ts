@@ -47,7 +47,7 @@ const createView = (commands: readonly Command[]) =>
 
 const createCommand = (overrides: Partial<Command> & Pick<Command, 'id' | 'text'>): Command => ({
   group: 'note',
-  isOffered: () => true,
+  isAvailable: () => true,
   ...overrides,
 })
 
@@ -109,7 +109,7 @@ describe('the command reached on the same row', () => {
   it('is drawn nowhere where it is not offered', () => {
     const view = createView([
       createCommand({ id: 'first', text: 'First', also: 'second' }),
-      createCommand({ id: 'second', text: 'Second', isOffered: () => false }),
+      createCommand({ id: 'second', text: 'Second', isAvailable: () => false }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([

@@ -3,7 +3,7 @@
  * the note it offers is made as.
  */
 import { describe, expect, it } from 'vitest'
-import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from './offers'
+import { appendCreateNoteItem, createNoteInvocation, CREATE_NOTE_ID } from './offers'
 import type { CommandTarget } from '../../types'
 import { WORDS as words } from '@/shared/words'
 
@@ -30,7 +30,11 @@ describe('a search that turned up nothing', () => {
   ]
 
   it('offers to make the note that was looked for', () => {
-    const proposed = appendCreateOffer(createGroups(0), { text: 'Entropy', words, target: front() })
+    const proposed = appendCreateNoteItem(createGroups(0), {
+      text: 'Entropy',
+      words,
+      target: front(),
+    })
 
     expect(proposed.at(-1)?.id).toBe(CREATE_NOTE_ID)
     expect(proposed.at(-1)?.items[0]?.title).toBe('Create note “Entropy”')
@@ -38,23 +42,23 @@ describe('a search that turned up nothing', () => {
 
   it('offers nothing while a group is still waiting on the vault', () => {
     expect(
-      appendCreateOffer(createGroups(0, true), { text: 'Entropy', words, target: front() }),
+      appendCreateNoteItem(createGroups(0, true), { text: 'Entropy', words, target: front() }),
     ).toHaveLength(1)
   })
 
   it('offers nothing where a group turned something up', () => {
     expect(
-      appendCreateOffer(createGroups(1), { text: 'Entropy', words, target: front() }),
+      appendCreateNoteItem(createGroups(1), { text: 'Entropy', words, target: front() }),
     ).toHaveLength(1)
   })
 
   it('offers nothing where there are no groups to have answered', () => {
-    expect(appendCreateOffer([], { text: 'Entropy', words, target: front() })).toHaveLength(0)
+    expect(appendCreateNoteItem([], { text: 'Entropy', words, target: front() })).toHaveLength(0)
   })
 
   it('offers nothing where nothing was looked for', () => {
     expect(
-      appendCreateOffer(createGroups(0), { text: '   ', words, target: front() }),
+      appendCreateNoteItem(createGroups(0), { text: '   ', words, target: front() }),
     ).toHaveLength(1)
   })
 
@@ -74,9 +78,11 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers the relations of the note in front, and says which note that is', () => {
-    const item = appendCreateOffer(createGroups(0), { text: 'Entropy', words, target: front() }).at(
-      -1,
-    )?.items[0]
+    const item = appendCreateNoteItem(createGroups(0), {
+      text: 'Entropy',
+      words,
+      target: front(),
+    }).at(-1)?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([
       CREATE_NOTE_ID,
@@ -88,7 +94,7 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers no relation where nothing in front is a note', () => {
-    const item = appendCreateOffer(createGroups(0), {
+    const item = appendCreateNoteItem(createGroups(0), {
       text: 'Entropy',
       words,
       target: front({ path: '', title: '' }),

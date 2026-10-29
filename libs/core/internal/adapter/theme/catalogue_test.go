@@ -236,7 +236,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 }
 
 // A machine with no configuration folder is a window wearing what ships.
-func TestACatalogueWithNoFolderOffersWhatShips(t *testing.T) {
+func TestCatalogue_NoFolderYieldsBundledThemes(t *testing.T) {
 	var catalogue theme.Catalogue
 	themes := catalogue.Themes()
 	if !hasTheme(themes, theme.Default) {
@@ -251,7 +251,7 @@ func TestACatalogueWithNoFolderOffersWhatShips(t *testing.T) {
 }
 
 // A `.css` that is a link to nothing is a file in the folder and not a theme.
-func TestAThemeThatCannotBeReadIsNotOffered(t *testing.T) {
+func TestCatalogue_UnreadableThemeIsExcluded(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	if err := os.Symlink(filepath.Join(catalogue.Dir(), "gone.css"),
 		filepath.Join(catalogue.Dir(), "dangling.css")); err != nil {

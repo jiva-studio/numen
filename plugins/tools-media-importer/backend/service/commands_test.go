@@ -58,7 +58,7 @@ func TestImportWithWaitKeepsTheCopyBeforeItAnswers(t *testing.T) {
 	}
 }
 
-func TestTheCommandsOverALinkNoteDeleteAndMakeTheCopyAndFetchTheText(t *testing.T) {
+func TestImportCommands_DeleteAndDownloadCopyAndText(t *testing.T) {
 	commands, store := newMockCommands(t)
 	made, err := commands.RunCommand(t.Context(), command.Request{
 		Command: "import", Arguments: command.Arguments{"address": videoAddress, "wait": "true"},

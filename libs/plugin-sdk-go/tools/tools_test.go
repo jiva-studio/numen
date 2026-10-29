@@ -48,7 +48,7 @@ func call(t *testing.T, registry *tools.Registry, name, arguments string) *numen
 	return res.Msg
 }
 
-func TestAToolIsListedWithTheSchemasOfItsStructsAndWhereItIsOffered(t *testing.T) {
+func TestListTools_ReturnsSchemasAndServers(t *testing.T) {
 	res, err := newRegistry(t).ListTools(t.Context(), connect.NewRequest(&numenv1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)

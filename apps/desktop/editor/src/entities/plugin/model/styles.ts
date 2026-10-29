@@ -130,7 +130,7 @@ export function adoptHostStyles(shadowRoot: ShadowRoot): void {
   }
 }
 
-export function attachPluginShadow(el: HTMLElement | null): ShadowRoot | null {
+export function attachPluginRoot(el: HTMLElement | null): ShadowRoot | null {
   if (!el) return null
   if (el.shadowRoot) return el.shadowRoot
   if (typeof el.attachShadow === 'function') {

@@ -536,7 +536,7 @@ func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 }
 
 // TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn.
-func TestAPageContainingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T) {
+func TestOpenVault_ErrorsWhilePageHasPendingQuestion(t *testing.T) {
 	f := onAList(t)
 	f.opening(errAnswerPending)
 

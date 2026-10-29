@@ -180,7 +180,7 @@ func coveredOnce(t *testing.T, lines map[int]Line) {
 	}
 }
 
-func TestARunObservedFromFurtherBackConsumesTheLineOfASingleCorrection(t *testing.T) {
+func TestGatherReplies_LongerRunReplacesSingleCorrection(t *testing.T) {
 	replies := map[int]string{
 		0: "4|until the fog came in.",
 		1: "3-4|We spoke of the harbour lights until the fog came in.",

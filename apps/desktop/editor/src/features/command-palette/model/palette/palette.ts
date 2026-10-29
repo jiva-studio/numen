@@ -137,7 +137,7 @@ interface PaletteCommandsDeps {
 function createPaletteCommands(deps: PaletteCommandsDeps) {
   const startCommand = (id: string, target: CommandTarget): CommandInvocation | null => {
     const command = deps.byId.get(id)
-    if (!command || !command.isOffered(target, deps.runs)) return null
+    if (!command || !command.isAvailable(target, deps.runs)) return null
     if (!command.needs) return deps.invocation(command.id, target)
     if (!deps.open.value) {
       deps.steps.reset()
@@ -149,7 +149,7 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
 
   const getObjection = (id: string, target: CommandTarget): string => {
     const command = deps.byId.get(id)
-    if (!command || command.isOffered(target, deps.runs)) return ''
+    if (!command || command.isAvailable(target, deps.runs)) return ''
     return target.isReady ? deps.words.noNote : deps.words.noVault
   }
 

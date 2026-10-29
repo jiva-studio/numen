@@ -84,7 +84,7 @@ func listLifecycleGaps(raw []byte) []string {
 	return gaps
 }
 
-func TestEveryPluginWithABackendDeclaresAMemoryLimitAndAnIdlePolicy(t *testing.T) {
+func TestPluginManifests_BackendDeclaresMemoryLimitAndIdlePolicy(t *testing.T) {
 	for _, one := range getPluginManifests(t) {
 		for _, gap := range listLifecycleGaps(one.Raw) {
 			t.Errorf("%s: %s", one.Dir, gap)

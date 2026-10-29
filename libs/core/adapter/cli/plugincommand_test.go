@@ -58,7 +58,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	return deps, declared, &vaults
 }
 
-func TestACommandAPluginDeclaresIsASubcommandWithItsArgumentsAsFlags(t *testing.T) {
+func TestPluginCommand_DeclaredCommandRunsWithArgumentFlags(t *testing.T) {
 	deps, declared, vaults := createPluginCommandDeps()
 
 	out, err := runWithDeps(deps, "create-sample", "notebook", "--title", "Verbs", "--open", "--folder=samples")
@@ -76,7 +76,7 @@ func TestACommandAPluginDeclaresIsASubcommandWithItsArgumentsAsFlags(t *testing.
 	}
 }
 
-func TestPluginCommandOnFileAcceptsPathAfterVaultAndPrintsOpenedPath(t *testing.T) {
+func TestPluginCommand_FileArgumentFollowsVault(t *testing.T) {
 	deps, declared, _ := createPluginCommandDeps()
 
 	out, err := runWithDeps(deps, "count-pages", "notebook", "books/Bees.pdf")
@@ -90,7 +90,7 @@ func TestPluginCommandOnFileAcceptsPathAfterVaultAndPrintsOpenedPath(t *testing.
 	}
 }
 
-func TestPluginCommandWithInvalidArgumentsPrintsUsageAndRunsNothing(t *testing.T) {
+func TestPluginCommand_InvalidArgumentsPrintUsage(t *testing.T) {
 	cases := map[string][]string{
 		"no vault":                      {"create-sample"},
 		"a file to a command over none": {"create-sample", "notebook", "a.md", "--title", "T"},

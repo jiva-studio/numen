@@ -35,7 +35,7 @@ func TestReadManifestReadsPlaybackNoteTypes(t *testing.T) {
 	}
 }
 
-func TestReadManifestRejectsPlaybackByExtensionOrOfAnUndeclaredNoteType(t *testing.T) {
+func TestReadManifest_RejectsInvalidPlayback(t *testing.T) {
 	for _, playback := range []string{
 		`{"contentTypes": []}`, `{"contentTypes": [".url"]}`, `{"files": [".url"]}`, `{"noteTypes": ["deck"]}`,
 	} {

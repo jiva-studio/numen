@@ -1030,7 +1030,7 @@ func TestOwedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestProgressCountsTheSmallChunksAndWhatIsEmbeddedBelowTheRecipe(t *testing.T) {
+func TestGetProgress_CountsSmallChunksAndEmbeddedByRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", large: "l", smalls: []string{"b1", "b2"}}.save(t, db)

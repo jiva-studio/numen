@@ -64,7 +64,7 @@ func TestACallerJoiningARunEveryCallerLeftStartsAFreshRun(t *testing.T) {
 	}
 }
 
-func TestAFileNameCannotCollideWithTheFilesTheFolderKeepsForItself(t *testing.T) {
+func TestProvision_RejectsReservedFileNames(t *testing.T) {
 	data := []byte("model-bytes")
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(data)
@@ -110,7 +110,7 @@ func TestADiscoveredNameCannotLeaveTheSearchedFolders(t *testing.T) {
 	}
 }
 
-func TestACachedDependencyIsServedOnlyForTheChecksumItWasFetchedWith(t *testing.T) {
+func TestProvision_CachedDependencyRequiresMatchingChecksum(t *testing.T) {
 	data := []byte("model-bytes")
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(data)

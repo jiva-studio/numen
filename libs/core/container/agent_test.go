@@ -329,7 +329,7 @@ func TestEndConversation_RoutesToStartingPlugin(t *testing.T) {
 }
 
 // The window is offered the programs the plugins run, and the models of the installed ones.
-func TestTheWindowIsOfferedWhatThePluginsList(t *testing.T) {
+func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 	host, _, _ := twoProviders(t)
 	settings := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(settings, []byte(`{"agent":{"alpha":{"model":"mine"}}}`), 0o600); err != nil {
@@ -380,7 +380,7 @@ func TestEndConversation_EndsOnEveryPluginUsed(t *testing.T) {
 
 // A plugin that cannot be asked for its programs is told to whoever handles what went wrong, and
 // the programs of the others are offered.
-func TestAPluginThatCannotListItsProgramsIsReportedToTheErrorHandler(t *testing.T) {
+func TestModels_ReportsProviderListFailureToErrorHandler(t *testing.T) {
 	served := &providerServer{programs: []*v1.AgentProgram{{Name: "alpha", Title: "Alpha", IsInstalled: true}}}
 	host := hostWith(t,
 		map[string][]string{providerOne: {"ai.agent.provider"}, providerTwo: {"ai.agent.provider"}},

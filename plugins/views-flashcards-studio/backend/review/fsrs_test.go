@@ -57,7 +57,7 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 
 // An answer leaves a card seen, which is what tells it from one nobody has
 // reached yet.
-func TestFSRSNext_AnsweredCardIsNotNew(t *testing.T) {
+func TestFSRSNext_ReviewedCardIsNotNew(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 

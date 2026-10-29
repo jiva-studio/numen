@@ -113,7 +113,7 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
  * Whether two listings name the same card models, in the same order and with the
  * same fields.
  */
-export const areOffersEqual = (
+export const areCardModelChoicesEqual = (
   one: readonly CardModelSummary[],
   other: readonly CardModelSummary[],
 ): boolean =>

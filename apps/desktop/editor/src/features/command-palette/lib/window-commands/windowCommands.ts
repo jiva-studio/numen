@@ -2,7 +2,7 @@
  * The commands offered over the window: what it opens, and how it is drawn.
  */
 import { createRowKeys } from '../chords/chords'
-import { isAlwaysOffered } from '../commands/availability'
+import { isAlwaysAvailable } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
@@ -13,7 +13,7 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     ...createRowKeys('note', agent),
     group: 'window',
     needs: 'naming',
-    isOffered: (target) => target.isReady,
+    isAvailable: (target) => target.isReady,
   },
 ]
 
@@ -23,14 +23,14 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
     text: words.close,
     ...createRowKeys('close', agent),
     group: 'window',
-    isOffered: (target) => target.tab !== '',
+    isAvailable: (target) => target.tab !== '',
   },
   {
     id: 'find',
     text: words.find,
     keys: words.findKeys,
     group: 'window',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
 ]
 
@@ -40,28 +40,28 @@ export const createWindowDisplayCommands = (words: Words): readonly Command[] =>
     text: words.appearance,
     group: 'settings',
     needs: 'choosing',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
   {
     id: 'mode',
     text: words.mode,
     group: 'settings',
     needs: 'choosing',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
   {
     id: 'interfaceScale',
     text: words.interfaceScale,
     group: 'settings',
     needs: 'choosing',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
   {
     id: 'textScale',
     text: words.textScale,
     group: 'settings',
     needs: 'choosing',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
 ]
 
@@ -71,16 +71,16 @@ export const createWindowFeatureCommands = (words: Words): readonly Command[] =>
     text: words.syncing,
     group: 'settings',
     needs: 'choosing',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
   {
     id: 'performanceProfile',
     text: words.performanceProfile,
     group: 'settings',
     needs: 'choosing',
-    isOffered: isAlwaysOffered,
+    isAvailable: isAlwaysAvailable,
   },
-  { id: 'settings', text: words.settings, group: 'settings', isOffered: isAlwaysOffered },
+  { id: 'settings', text: words.settings, group: 'settings', isAvailable: isAlwaysAvailable },
 ]
 
 export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
