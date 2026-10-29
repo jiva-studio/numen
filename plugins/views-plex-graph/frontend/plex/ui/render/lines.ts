@@ -16,7 +16,7 @@ export interface EdgeLine {
   /** The path the title is set along, named, and nothing for a line with no title. */
   readonly titlePath: string | null
   readonly titleLine: string
-  /** How far along that path the middle of the title lies. */
+  /** How far along that path the middle of the title is. */
   readonly titleAt: string
 }
 

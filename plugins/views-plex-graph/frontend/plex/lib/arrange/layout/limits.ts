@@ -10,7 +10,7 @@ export interface RoleLimits {
 
 export type Limits = Readonly<Record<PlexRelation, RoleLimits>>
 
-/** How many boxes of `size` fit end to end in `room`. */
+/** How many boxes of `size` fit end to end in the available length. */
 const countAxis = (room: number, size: number, gap: number) =>
   Math.floor((room + gap) / (size + gap))
 

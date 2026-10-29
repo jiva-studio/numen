@@ -11,7 +11,7 @@ import Reader from './Reader.vue'
 /**
  * The document a search navigates into, as the lines on each of its pages. It is
  * defined here and not fetched, so the book story shows a real book and not a
- * placeholder, and it is broken into lines by hand because the page renderer
+ * placeholder, and it is broken into lines manually because the page renderer
  * below cannot break lines.
  */
 const BOOK_PAGES: readonly (readonly string[])[] = [

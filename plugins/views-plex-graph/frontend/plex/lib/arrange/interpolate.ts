@@ -2,7 +2,7 @@
  * One frame between two arrangements. Pure, so a moment partway through a
  * movement is a value with a test.
  *
- * Nodes are matched by identifier alone, and nothing here knows what a node
+ * Nodes are matched by identifier alone; nothing here depends on what a node
  * represents.
  */
 import { edgeKey, type PlacedEdge, type PlexEdge } from '../edge'

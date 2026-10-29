@@ -65,7 +65,7 @@ const canOpen = computed(() => !!props.wide || !!props.hung)
 
 /**
  * The position of the node while it is hovered or focused and can open; null
- * otherwise.
+ * in every other state.
  */
 const openPosition = computed(() =>
   canOpen.value && props.node.opacity >= 1 && props.gestureRole === 'open' && hoverFocus.isOn.value

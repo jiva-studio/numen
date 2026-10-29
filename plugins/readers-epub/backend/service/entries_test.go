@@ -10,7 +10,7 @@ import (
 )
 
 // serveEntries is the entries route over a book server whose current vault is
-// empty, plus the vault Chemistry that contains the picture book.
+// empty, plus the vault Chemistry that contains the image book.
 func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 	t.Helper()
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})

@@ -626,7 +626,7 @@ export const OneHandleAtATime: Story = {
  * The plex reports which node was targeted, the position, and the input
  * source. The menu content and the item actions are outside the plex.
  *
- * Only a browser can verify it: whether a `contextmenu` event reaches an SVG
+ * Only a browser can verify it: whether a `contextmenu` event is dispatched to an SVG
  * group, whether preventing it suppresses the webview's own menu, and whether
  * the right button over the handle targets the node under it and not the
  * handle.
@@ -670,7 +670,7 @@ export const AskingForAMenu: Story = {
  *
  * Triggered on the focus, the one node where a click does not move the focus.
  *
- * Only a browser can verify it: whether a double click reaches an SVG group,
+ * Only a browser can verify it: whether a double click is dispatched to an SVG group,
  * and whether a held modifier arrives with it.
  */
 export const AskingForANode: Story = {
@@ -689,8 +689,8 @@ export const AskingForANode: Story = {
     await expect(args.onActivate).not.toHaveBeenCalled()
 
     // The same gesture with the modifier held requests the node next to the
-    // reader's position. Its meaning belongs to the application and never
-    // reaches the plex.
+    // reader's position. Its meaning belongs to the application; the plex does
+    // not receive it.
     await hand.keyboard('{Alt>}')
     await hand.dblClick(focus)
     await hand.keyboard('{/Alt}')
@@ -834,8 +834,8 @@ interface Edges {
 }
 
 /**
- * No drawn title overlaps a box or another title: none of its letters lies over
- * a box, and none lies over another title's letters.
+ * No drawn title overlaps a box or another title: none of its letters overlaps
+ * a box, and none overlaps another title's letters.
  *
  * Two counts are asserted directly, so a regression reports its magnitude.
  */
@@ -1057,7 +1057,7 @@ export const ArrowedLines: Story = {
     await expect(getHead(getEnd('Cora Hale, jump'))).toBe(false)
     await expect(getHead(getEnd('The question of the rota, sibling'))).toBe(false)
 
-    // The head lies outside the box it points into: it is rotated along the
+    // The head is outside the box it points into: it is rotated along the
     // line, and its tip touches the border.
     const jump = getLine('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
@@ -1165,7 +1165,7 @@ export const Walk: Story = {
     const middle = canvasElement.getBoundingClientRect()
 
     /**
-     * Measured on the box, not on the surrounding group: a node that was just
+     * Measured on the box, not on the surrounding group: a node that has been
      * clicked holds the focus and shows a handle at its trailing edge, which
      * would add to the group's width.
      */

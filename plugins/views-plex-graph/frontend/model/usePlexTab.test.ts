@@ -32,7 +32,7 @@ const tab = (
   const request: string[] = []
   const ran: [string, string, string][] = []
   const messages: string[] = []
-  /** Every note the vault was asked to create standalone. */
+  /** Every note the vault received a standalone create request for. */
   const wrote: string[] = []
   /** The notes the window is dragging over this picture, which a test sets. */
   const dragging = ref<readonly string[]>([])

@@ -85,8 +85,8 @@ const rowStyle = computed(() => ({
 
 defineExpose({
   /**
-    * Re-measures the viewport. A reader rendered while hidden has none, so the
-    * caller invokes this when the reader becomes visible.
+   * Re-measures the viewport. A reader rendered while hidden has none, so the
+   * caller invokes this when the reader becomes visible.
    */
   measure,
   handleKey: (event: KeyboardEvent) => onKey(event),
@@ -139,7 +139,7 @@ const onKey = (event: KeyboardEvent): boolean => {
 /** Where one page is drawn, once a width has been settled on. */
 const getImageUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
-/** Scrolls the row so the page sits at the left edge. */
+/** Scrolls the row so the page is at the left edge. */
 const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {
   const to = getScrollTarget(pageLayout.value, viewport.value, page)
   if (to !== undefined) send(to, how)
@@ -207,8 +207,7 @@ const getBoxStyle = (page: number) => ({
   box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
-/* The row is taken hold of and pulled, so the hand says so before it is put
-   down and while it is holding. */
+/* The row is draggable: the grab cursor shows before and while it is dragged. */
 .reader__viewport--takeable {
   cursor: grab;
 }

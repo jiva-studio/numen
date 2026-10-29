@@ -1,9 +1,9 @@
 /**
  * A neighbourhood of a vault, as something the plex can draw.
  *
- * This is the only file that knows both sides. The plex receives nodes with a
- * relation and edges between them; it does not know what a note is, and the
- * schema does not know about drawing.
+ * This is the only file that depends on both sides. The plex receives nodes with
+ * a relation and edges between them and has no concept of a note; the schema
+ * has no concept of drawing.
  */
 import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../types'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'

@@ -48,7 +48,7 @@ const createPages = (pageCount: number) =>
   Array.from({ length: pageCount }, () => ({ width: 612, height: 792 }))
 
 /**
- * A page drawn to the requested width. Stands in for the document renderer and
+ * A page drawn to the requested width. Substitutes for the document renderer and
  * draws only its own page number.
  */
 const renderPage = (label: string, width: number): string => {

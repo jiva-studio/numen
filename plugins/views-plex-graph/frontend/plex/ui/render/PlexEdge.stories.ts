@@ -2,7 +2,7 @@
  * One edge and the title along it, at rest and lifted over the boxes.
  *
  * Inside a plex an edge is a hairline below all other elements, which makes it
- * hard to judge whether the lifted edge stands out from the resting one. Both
+ * hard to judge whether the lifted edge differs from the resting one. Both
  * are drawn side by side here, in a viewport with the origin in the middle.
  *
  * A title is set along a path that the drawing must define, so every story

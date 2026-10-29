@@ -24,7 +24,7 @@ const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood
 })
 
 /**
- * The graph, and the note each node ID in it stands for. Every note here has no
+ * The graph, and the note each node ID in it identifies. Every note here has no
  * identifier, which is the case the graph has to render.
  */
 const renderImage = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {

@@ -114,7 +114,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const isStood = ref(false)
 
   /**
-   * The columns as the browser has just laid them out: the maximum column height,
+   * The columns as the browser has laid them out: the maximum column height,
    * the total length, and where each text range is.
    *
    * An area that clips its own overflow cannot report the extent of the clipped

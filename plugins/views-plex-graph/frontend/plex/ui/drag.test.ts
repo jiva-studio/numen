@@ -160,7 +160,7 @@ describe('letting go of something dragged in', () => {
   })
 
   it('joins them before whoever is dragging them hears the same release', async () => {
-    // The drag source also listens for the release and ends the drag as soon as it
+    // The drag source also handles the release and ends the drag as soon as it
     // receives one. The plex must have responded by then.
     const plex = mountPlex({ dragged: [] })
 

@@ -185,8 +185,9 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 	}
 }
 
-// to where the next one begins, so that text within a node is attributed to
-// that node and not drawn at the wrong position.
+// checkSpans checks that the text of each node equals the text from its offset
+// to the offset of the next sibling, or to limit for the last sibling, and
+// recurses into the children.
 func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node, limit int) {
 	t.Helper()
 	for i, node := range nodes {

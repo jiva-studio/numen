@@ -18,7 +18,7 @@ const props = withDefaults(
     at: number
     /**
      * Image URL of the page. A retry appends an `again` parameter, joined with `&`
-     * when the URL already has a query string and with `?` otherwise.
+     * when the URL already has a query string, and with `?` when it has none.
      */
     picture?: string
     /** What is highlighted on it, in fractions of it. */
@@ -120,8 +120,8 @@ const getBoxStyle = (one: Rect) => ({
   background: var(--numen-raised);
 }
 
-/* A place the person was not sent to is drawn faintly: it says there is
-   something here, and the place they were sent to is the one drawn full. */
+/* A highlight that is not the navigation target is drawn faintly; the
+   navigation target is drawn at full opacity. */
 .reader__other-highlight {
   opacity: 0.35;
 }

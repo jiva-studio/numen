@@ -19,7 +19,7 @@ const textKey = "layer"
 // pagesPerBatch is how many pages of a document are cut into segments at once.
 const pagesPerBatch = 16
 
-// textKind is the kind of the text versions the plugin creates.
+// textKind is the TextKind of the text versions the plugin creates.
 const textKind domain.TextKind = "page-text"
 
 // TextServer writes the text layer of the vault's PDF files into the plugin's folder as text

@@ -32,7 +32,7 @@ const getMoves = (wrapper: Awaited<ReturnType<typeof reader>>) =>
 
 /**
  * A key handled by the tab and passed down, returning whether it turned the
- * page. The tab listens; the reader is queried.
+ * page. The tab dispatches the key; the reader is queried.
  */
 const pressKey = (wrapper: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
   (wrapper.vm as unknown as { handleKey(event: KeyboardEvent): boolean }).handleKey(

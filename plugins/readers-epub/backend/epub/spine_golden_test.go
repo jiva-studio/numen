@@ -17,8 +17,8 @@ import (
 var update = flag.Bool("update", false, "write the goldens of the corpus again")
 
 // spineCorpus is one spine document as this package emits it, which the window
-// that renders it is tested against. It sits with the corpora the two sides
-// share, because it is the one thing about a book that crosses as neither the
+// that renders it is tested against. It is stored with the corpora both sides
+// share: it is the one thing about a book that crosses as neither the
 // schema nor bytes: an attribute name, a set of elements, an escaping and a set
 // of offsets, agreed on by a producer here and a reader there.
 const spineCorpus = "../../frontend/testdata/spine.html"

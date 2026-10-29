@@ -14,12 +14,12 @@ import (
 // The fixtures are six documents, and each is one thing a reader has to get
 // right.
 //
-// Five of them are written by hand, uncompressed and without a cross reference
-// table, which resembles many real files after a tool has partly written them:
+// Five of them are uncompressed, typed as text and without a cross reference
+// table, which resembles many real files after a tool has partly rewritten them:
 // the library rebuilds what it needs, and the fixture stays readable.
 // `outline.pdf` is the exception. An outline's destinations resolve only in a
-// file whose cross reference table is real, so that one is generated and not
-// typed, and it is still plain text.
+// file whose cross reference table is valid, which requires generating it; it
+// is still a text file.
 const (
 	tiny    = "tiny.pdf"    // two pages of text, naming nothing
 	outline = "outline.pdf" // four pages, three of them named, one name inside another
