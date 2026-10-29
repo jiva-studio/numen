@@ -171,7 +171,7 @@ func TestRead_NonTextFileReportsNotText(t *testing.T) {
 }
 
 func TestAPathWithNoFileIsMissing(t *testing.T) {
-	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "text"})
 
 	got := read(t, u, v, "gone.txt", 0, 0)
 	if got.Outcome != file.Missing {
@@ -187,7 +187,7 @@ func TestAPathThatDoesNotStayInTheVaultIsRefused(t *testing.T) {
 	if err := os.WriteFile(secret, []byte("not yours"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "text"})
 
 	for _, path := range []string{
 		"",
@@ -210,7 +210,7 @@ func TestAReadDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(outside, "secret.txt"), []byte("not yours"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "text"})
 	if err := os.Symlink(outside, filepath.Join(v.Path, "linked")); err != nil {
 		t.Skipf("this filesystem does not do symlinks: %v", err)
 	}
@@ -232,7 +232,7 @@ func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
 		".env":              "SECRET=1\n",
 		".git/config":       "[core]\n",
 		"notes/.hidden.md":  "# hidden\n",
-		"notes/lecture.txt": "said",
+		"notes/lecture.txt": "text",
 	})
 
 	for _, path := range []string{".env", ".git/config", "notes/.hidden.md"} {
@@ -252,7 +252,7 @@ func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
 // A folder is not a file, and a path holding one is answered and not being
 // opened and read.
 func TestRead_FolderPathReportsFolder(t *testing.T) {
-	u, v := openFileRead(t, map[string]string{"lectures/kinetics.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lectures/kinetics.txt": "text"})
 
 	if got := read(t, u, v, "lectures", 0, 0); got.Outcome != file.AFolder {
 		t.Errorf("want a folder, got %+v", got)
@@ -262,7 +262,7 @@ func TestRead_FolderPathReportsFolder(t *testing.T) {
 // The application's own folder inside the vault is not user content, and a file
 // read does not reach into it.
 func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
-	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "text"})
 	keptFile := filepath.Join(v.Path, vaultconfig.DefaultServiceDir, "kept.txt")
 	if err := os.MkdirAll(filepath.Dir(keptFile), 0o755); err != nil {
 		t.Fatal(err)
@@ -280,7 +280,7 @@ func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 // A range beginning before the file, or longer than one call carries, is a
 // mistake in the asking.
 func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
-	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "text"})
 
 	for _, request := range []struct{ start, length int }{
 		{-1, 10},
@@ -389,7 +389,7 @@ func TestOneCallCarriesSixteenThousandBytes(t *testing.T) {
 // A range beginning before the file fails before anything is looked at,
 // where there is no file as much as where there is one.
 func TestARangeBeginningBeforeTheFileIsRefusedWhereNoFileIs(t *testing.T) {
-	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "text"})
 
 	if _, err := u.Execute(t.Context(), v, "gone.txt", -1, 0); err == nil {
 		t.Error("a range beginning at -1 was not rejected")
@@ -405,12 +405,12 @@ func TestAReadThatDoesNotAnswerIsAnError(t *testing.T) {
 	}{
 		{"vault will not open", faulty{open: errOutOfReach}},
 		{"folder will not list", faulty{list: errOutOfReach}},
-		{"end not found", faulty{file: &shifting{data: []byte("said"), size: 4, end: errOutOfReach}}},
-		{"start not found", faulty{file: &shifting{data: []byte("said"), size: 4, seek: errOutOfReach}}},
-		{"bytes not read", faulty{file: &shifting{data: []byte("said"), size: 4, read: errOutOfReach}}},
+		{"end not found", faulty{file: &shifting{data: []byte("text"), size: 4, end: errOutOfReach}}},
+		{"start not found", faulty{file: &shifting{data: []byte("text"), size: 4, seek: errOutOfReach}}},
+		{"bytes not read", faulty{file: &shifting{data: []byte("text"), size: 4, read: errOutOfReach}}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+			_, v := openFileRead(t, map[string]string{"lecture.txt": "text"})
 
 			got, err := file.Read{Readers: c.readers}.Execute(t.Context(), v, "lecture.txt", 0, 0)
 			if !errors.Is(err, errOutOfReach) {
@@ -422,7 +422,7 @@ func TestAReadThatDoesNotAnswerIsAnError(t *testing.T) {
 
 // A path whose folder the vault does not list is a path it passes over.
 func TestAFileInAFolderTheVaultDoesNotListIsLeftAlone(t *testing.T) {
-	_, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
+	_, v := openFileRead(t, map[string]string{"notes/lecture.txt": "text"})
 
 	got, err := file.Read{Readers: faulty{list: fs.ErrNotExist}}.Execute(t.Context(), v, "notes/lecture.txt", 0, 0)
 	if err != nil {
@@ -518,7 +518,7 @@ func TestACharacterSplitShortInsideTheRangeIsNotText(t *testing.T) {
 // The size a file was measured at bounds what is read, whatever the file holds
 // by the time its bytes come.
 func TestRead_FileGrowthTruncatesToMeasuredSize(t *testing.T) {
-	_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+	_, v := openFileRead(t, map[string]string{"lecture.txt": "text"})
 	expanded := faulty{file: &shifting{data: []byte("said and said"), size: 4}}
 
 	got, err := file.Read{Readers: expanded}.Execute(t.Context(), v, "lecture.txt", 2, 0)

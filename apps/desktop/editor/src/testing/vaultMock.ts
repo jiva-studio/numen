@@ -1,5 +1,5 @@
 /**
- * The vault mock the window uses, responding from `said` and recording requests
+ * The vault mock the window uses, responding from `vaultState` and recording requests
  * in `requests`.
  */
 import { vi } from 'vitest'

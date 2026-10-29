@@ -229,11 +229,11 @@ const renderWithSource =
   (text: string): Render =>
   () => ({
     components: { Editor },
-    setup: () => ({ held: ref(text) }),
+    setup: () => ({ source: ref(text) }),
     template: `
       <div class="h-screen bg-surface">
-        <Editor v-model="held" class="h-2/3" />
-        <pre data-source class="h-1/3 overflow-auto text-ink">{{ held }}</pre>
+        <Editor v-model="source" class="h-2/3" />
+        <pre data-source class="h-1/3 overflow-auto text-ink">{{ source }}</pre>
       </div>
     `,
   })
@@ -550,12 +550,12 @@ export const Kept: Story = {
       const reply = ref('')
       return {
         text: MARKED_UP,
-        asked: request,
-        answered: reply,
-        kept: () => (request.value += 1),
+        saveCount: request,
+        outcome: reply,
+        onSave: () => (request.value += 1),
         watch: (key: KeyboardEvent) => {
           if (key.key === 's' && (key.ctrlKey || key.metaKey)) {
-            reply.value = key.defaultPrevented ? 'answered' : 'left for the page'
+            reply.value = key.defaultPrevented ? 'prevented' : 'passed'
           }
         },
       }
@@ -563,10 +563,10 @@ export const Kept: Story = {
     template: `
       <div class="numen flex h-screen flex-col bg-surface" @keydown="watch">
         <p class="shrink-0 border-b border-rule px-3 py-2 font-sans text-small text-ink">
-          asked <span data-asked>{{ asked }}</span> times, and
-          <span data-answered>{{ answered }}</span>
+          saved <span data-save-count>{{ saveCount }}</span> times, and
+          <span data-outcome>{{ outcome }}</span>
         </p>
-        <Editor :model-value="text" class="min-h-0 flex-1" @save="kept" />
+        <Editor :model-value="text" class="min-h-0 flex-1" @save="onSave" />
       </div>`,
   }),
   play: async ({ canvasElement }) => {
@@ -581,8 +581,8 @@ export const Kept: Story = {
     await userEvent.keyboard(`{${MOD}>}s{/${MOD}}`)
     await nextFrame()
 
-    await expect(getText('data-asked')).toBe('1')
-    await expect(getText('data-answered')).toBe('answered')
+    await expect(getText('data-save-count')).toBe('1')
+    await expect(getText('data-outcome')).toBe('prevented')
     await expect(view.state.doc.toString()).toBe(MARKED_UP)
   },
 }
@@ -674,7 +674,7 @@ const renderWithChange =
     components: { Editor },
     setup: () => {
       const target = ref(text)
-      return { held: target, change, make: () => (target.value = applyChange(text, change)) }
+      return { source: target, change, make: () => (target.value = applyChange(text, change)) }
     },
     template: `
       <div class="numen flex h-screen flex-col bg-surface">
@@ -684,7 +684,7 @@ const renderWithChange =
         >
           Make the change
         </button>
-        <Editor v-model="held" :change="change" class="min-h-0 flex-1" />
+        <Editor v-model="source" :change="change" class="min-h-0 flex-1" />
       </div>`,
   })
 

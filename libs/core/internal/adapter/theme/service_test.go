@@ -20,14 +20,14 @@ type fakeAppearances struct {
 	appearance theme.Appearance
 	content    []theme.Appearance
 	reply      []string
-	refuses    error
+	failure    error
 }
 
 func (d *fakeAppearances) Read() (theme.Appearance, error) { return d.appearance, nil }
 
 func (d *fakeAppearances) Write(one theme.Appearance) error {
-	if d.refuses != nil {
-		return d.refuses
+	if d.failure != nil {
+		return d.failure
 	}
 	d.content = append(d.content, one)
 	d.appearance = one
@@ -226,7 +226,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 
 func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	aged.refuses = errNotWritten
+	aged.failure = errNotWritten
 	if failed := aged.choose(t, "preset:nord", v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
 		t.Errorf("failed with %q", failed)
 	}

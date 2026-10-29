@@ -158,12 +158,12 @@ func (u unreadable) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return refuses{VaultReader: reader}, nil
+	return failingWalkReader{VaultReader: reader}, nil
 }
 
-type refuses struct{ vaultport.VaultReader }
+type failingWalkReader struct{ vaultport.VaultReader }
 
-func (refuses) WalkFiles(context.Context, func(domain.FileStat) error) error {
+func (failingWalkReader) WalkFiles(context.Context, func(domain.FileStat) error) error {
 	return errors.New("the vault cannot be read")
 }
 

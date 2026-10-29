@@ -107,7 +107,7 @@ func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (
 	return menu, recorder
 }
 
-func TestFileMenuOffersACommandOverTheLiveVersionOfTheDeclaredKind(t *testing.T) {
+func TestFileMenuOffersCommandForDeclaredKind(t *testing.T) {
 	s := newScene(t)
 	menu, _ := newMenu(t, s, proofreadCommand)
 	s.requestText(t)
@@ -128,7 +128,7 @@ func TestFileMenuOffersACommandOverTheLiveVersionOfTheDeclaredKind(t *testing.T)
 	}
 }
 
-func TestFileMenuDoesNotOfferACommandOverAKindItDoesNotDeclare(t *testing.T) {
+func TestFileMenuOmitsCommandForUndeclaredKind(t *testing.T) {
 	s := newScene(t)
 	command := proofreadCommand
 	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindRecognition}}
@@ -152,7 +152,7 @@ func TestFileMenuAcceptsAnyKindWhereTheCommandNamesAll(t *testing.T) {
 	}
 }
 
-func TestFileMenuOffersADeletionOverEachVersionTheCommandsPluginMade(t *testing.T) {
+func TestFileMenuOffersDeletionForEachPluginVersion(t *testing.T) {
 	s := newScene(t)
 	menu, _ := newMenu(t, s, deleteProofreadingCommand)
 	s.requestText(t)
@@ -169,7 +169,7 @@ func TestFileMenuOffersADeletionOverEachVersionTheCommandsPluginMade(t *testing.
 	}
 }
 
-func TestFileMenuRequiresTheLiveVersionToBeTheCommandsOwnWhereBothAreNamed(t *testing.T) {
+func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
 	s := newScene(t)
 	command := deleteProofreadingCommand
 	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindPage, kindRecognition}, HasOwnText: true}
@@ -185,7 +185,7 @@ func TestFileMenuRequiresTheLiveVersionToBeTheCommandsOwnWhereBothAreNamed(t *te
 	}
 }
 
-func TestFileMenuOfAFileWithNoVersionOffersTheCommandsOfItsTypeAndTheFileIsNotRead(t *testing.T) {
+func TestFileMenuWithoutVersionOffersTypeCommandsUnread(t *testing.T) {
 	s := newScene(t)
 	reads := 0
 	recorder := &commands{all: []pluginport.PluginCommandEntry{recogniseCommand, proofreadCommand, deleteProofreadingCommand}}
@@ -205,7 +205,7 @@ func TestFileMenuOfAFileWithNoVersionOffersTheCommandsOfItsTypeAndTheFileIsNotRe
 	}
 }
 
-func TestFileMenuOffersNoCommandOverAFileOfAnotherTypeOrThatNeedsAnArgument(t *testing.T) {
+func TestFileMenuOmitsCommandForOtherTypeOrArgument(t *testing.T) {
 	s := newScene(t)
 	needsArgument := recogniseCommand
 	needsArgument.Command.Arguments = []pluginport.PluginCommandArgument{{Name: "address", Title: "Address", Type: pluginport.CommandArgumentString, IsRequired: true}}
@@ -231,7 +231,7 @@ func TestFileMenuOfAMissingFileIsNotFound(t *testing.T) {
 	}
 }
 
-func TestFileMenuRunsTheCommandOfAnEntryItOffers(t *testing.T) {
+func TestFileMenuRunsOfferedEntryCommand(t *testing.T) {
 	s := newScene(t)
 	menu, recorder := newMenu(t, s, proofreadCommand)
 	s.requestText(t)
@@ -262,7 +262,7 @@ func TestFileMenuRunsACommandOverTheFileWithNoVersionArgument(t *testing.T) {
 	}
 }
 
-func TestFileMenuRefusesToRunAnEntryItDoesNotOffer(t *testing.T) {
+func TestFileMenuRejectsRunningUnofferedEntry(t *testing.T) {
 	s := newScene(t)
 	menu, recorder := newMenu(t, s, proofreadCommand)
 	s.requestText(t)

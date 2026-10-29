@@ -91,7 +91,7 @@ const createAgentRequest = (query: AgentQuery): AgentRequest => {
 const getAgentStep = (step: WireAgentResponse): AgentStep | undefined => {
   switch (step.step.case) {
     case 'text':
-      return { kind: 'said', text: step.step.value }
+      return { kind: 'text', text: step.step.value }
     case 'toolCall': {
       const toolCall = step.step.value
       return {

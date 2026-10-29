@@ -35,7 +35,7 @@ func TestReserveQuota_RejectsOverCommit(t *testing.T) {
 func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(EnvQuota, "100")
-	if err := os.WriteFile(filepath.Join(root, "held"), make([]byte, 40), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "member"), make([]byte, 40), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	claim, err := Reserve(t.Context(), root, -1, "")

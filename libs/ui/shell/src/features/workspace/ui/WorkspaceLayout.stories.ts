@@ -95,12 +95,12 @@ const meta: Meta<Knobs> = {
       )
       const tabs = () => createTabs(target.value, args.marks)
 
-      return { held: target, args, tabs }
+      return { layout: target, args, tabs }
     },
     template: `
       <div style="height: 100vh; padding: 0">
         <WorkspaceLayout
-          v-model="held"
+          v-model="layout"
           :tabs="tabs()"
           :edge="args.edge"
           :threshold="args.threshold"

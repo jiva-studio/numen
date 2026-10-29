@@ -3,16 +3,16 @@ import { createSecretStore, type SecretDeps } from './secrets'
 
 const words = { secretFailed: 'The key was not stored.' }
 
-const createStore = (refuses: string | null = null) => {
+const createStore = (failure: string | null = null) => {
   const calls: string[] = []
   const core: SecretDeps = {
     writePluginSecret: (pluginId, name, key) => {
       calls.push(`write ${pluginId} ${name} ${key}`)
-      return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
+      return failure ? Promise.reject(new Error(failure)) : Promise.resolve()
     },
     deletePluginSecret: (pluginId, name) => {
       calls.push(`delete ${pluginId} ${name}`)
-      return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
+      return failure ? Promise.reject(new Error(failure)) : Promise.resolve()
     },
   }
   const notifiedCalls = vi.fn()

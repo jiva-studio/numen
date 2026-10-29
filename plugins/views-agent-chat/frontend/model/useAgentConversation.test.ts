@@ -92,7 +92,7 @@ describe('a line about work pressed', () => {
   it('opens nothing for a line that names no place', () => {
     const one = tab()
 
-    one.state.openTurnSource(turn('said', 'a sentence'))
+    one.state.openTurnSource(turn('turn-1', 'a sentence'))
 
     expect(one.opened).toEqual([])
   })
@@ -111,7 +111,7 @@ describe('a link inside an answer', () => {
       'see [here](numen:Source.pdf?start=10&length=4) and [there](numen:Source.pdf?start=90&length=2)'
     const press = createPress()
 
-    one.state.followLink(turn('said', text), 'numen:Source.pdf?start=10&length=4', press.press)
+    one.state.followLink(turn('turn-1', text), 'numen:Source.pdf?start=10&length=4', press.press)
 
     expect(press.was()).toBe(true)
     expect(one.opened).toEqual([
@@ -130,7 +130,7 @@ describe('a link inside an answer', () => {
     const press = createPress()
 
     one.state.followLink(
-      turn('said', 'read https://example.com'),
+      turn('turn-1', 'read https://example.com'),
       'https://example.com',
       press.press,
     )
@@ -141,7 +141,7 @@ describe('a link inside an answer', () => {
 
   it('opens the note it names along with what the person is looking at', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
-    one.turns.value = [turn('said', 'It sits under [[Thermodynamics]].')]
+    one.turns.value = [turn('turn-1', 'It sits under [[Thermodynamics]].')]
     await nextTick()
     const press = createPress()
 
@@ -152,7 +152,7 @@ describe('a link inside an answer', () => {
 
   it('opens nothing, and goes nowhere else, where no note answers to it', async () => {
     const one = tab()
-    one.turns.value = [turn('said', 'It sits under [[Nowhere]].')]
+    one.turns.value = [turn('turn-1', 'It sits under [[Nowhere]].')]
     await nextTick()
     const press = createPress()
 
@@ -165,7 +165,7 @@ describe('a link inside an answer', () => {
 describe('a turn of an answer', () => {
   it('says which of the notes it names reach nothing', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
-    one.turns.value = [turn('said', 'Under [[Thermodynamics]], beside [[Nowhere]].')]
+    one.turns.value = [turn('turn-1', 'Under [[Thermodynamics]], beside [[Nowhere]].')]
 
     await nextTick()
     await nextTick()

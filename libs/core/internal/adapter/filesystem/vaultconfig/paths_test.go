@@ -74,8 +74,8 @@ func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
 		isOurs  bool
 	}{
 		{name: "a link to notes", path: "inward/Entropy.md", isVault: true},
-		{name: "into the application's folder", path: "held/ocr/abc.txt"},
-		{name: "the link to it", path: "held"},
+		{name: "into the application's folder", path: "member/ocr/abc.txt"},
+		{name: "the link to it", path: "member"},
 		{name: "the application's folder itself", path: ".numen/ocr/abc.txt", isOurs: true},
 		{name: "out of the vault", path: "outward/Entropy.md"},
 	}

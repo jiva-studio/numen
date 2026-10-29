@@ -725,7 +725,7 @@ const description =
         }
       </div>
 
-      <p class="said" hidden />
+      <p class="version-note" hidden />
 
     </section>
 
@@ -782,8 +782,8 @@ const description =
           if (weight && file.size) weight.textContent = `${Math.round(file.size / 1e6)} MB`
         }
 
-        const said = document.querySelector('.said')
-        if (said && shelf.version) {
+        const note = document.querySelector('.version-note')
+        if (note && shelf.version) {
           const day = new Date(shelf.released ?? '')
           const when = Number.isNaN(day.valueOf())
             ? ''
@@ -791,8 +791,8 @@ const description =
           // Two builds of one version are told apart by the build number and
           // the commit, and both stand in the file names the links now reach.
           const which = shelf.build ? ` (build ${shelf.build}${shelf.commit ? ` · ${shelf.commit}` : ''})` : ''
-          said.textContent = `Version ${shelf.version}${which}${when}`
-          said.removeAttribute('hidden')
+          note.textContent = `Version ${shelf.version}${which}${when}`
+          note.removeAttribute('hidden')
         }
       } catch {
         // The page stands as it was written.

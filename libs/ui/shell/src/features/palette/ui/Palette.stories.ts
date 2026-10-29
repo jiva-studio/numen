@@ -507,7 +507,7 @@ export const NothingHeard: Story = {
     `,
   }),
   play: async () => {
-    const region = () => document.body.querySelector('[data-palette="said"]')
+    const region = () => document.body.querySelector('[data-palette="announcement"]')
 
     await waitFor(() => expect(region()).not.toBeNull())
     await expect(region()).toHaveAttribute('aria-live', 'polite')
@@ -640,7 +640,7 @@ export const Icons: Story = {
         title: 'Text',
         items: [
           passage('book', 'The Mahabharata', 'the war of the two houses', 'war'),
-          passage('recording', '730709BG.LON.mp3', 'what was said that morning', 'said'),
+          passage('recording', '730709BG.LON.mp3', 'what was said that morning', 'speech'),
           createItem('nothing', 'A file of no kind', ''),
         ],
       },

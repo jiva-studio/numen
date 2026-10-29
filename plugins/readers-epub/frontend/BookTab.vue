@@ -31,9 +31,7 @@ const targetPath =
     : '')
 
 const isExistingState = isBookTabState(props.state)
-const internalState = isExistingState
-  ? null
-  : useBookTab(useBookReader(targetPath, { words }))
+const internalState = isExistingState ? null : useBookTab(useBookReader(targetPath, { words }))
 const tabState = isExistingState ? props.state! : internalState!
 
 /* --------------------------------- State ---------------------------------- */
@@ -81,7 +79,7 @@ function onFollow(destPath: string) {
 
 <template>
   <div
-    :ref="(held: unknown) => tabState.setTabElement(held as HTMLElement | null)"
+    :ref="(element: unknown) => tabState.setTabElement(element as HTMLElement | null)"
     class="book-tab"
     tabindex="-1"
     @keydown="onPageTurnKey"

@@ -24,12 +24,12 @@ const Pane = defineComponent({
   props: {
     state: { type: Object as PropType<Held>, required: true },
   },
-  setup: (props) => () => h('p', { class: 'held' }, props.state.at),
+  setup: (props) => () => h('p', { class: 'member' }, props.state.at),
 })
 
 const declare = (overrides: Partial<TabKindRegistration<Held>> = {}): DeclaredTabKindRegistration =>
   ({
-    kind: 'held',
+    kind: 'member',
     component: Pane,
     title: 'Held',
     open: (folderPath: string, id: string): Held => ({ at: folderPath, id, title: '' }),
@@ -50,7 +50,7 @@ describe('a registration that says what its tabs hold', () => {
       id: 'target: 1',
       title: '',
     })
-    expect(kind.kind).toBe('held')
+    expect(kind.kind).toBe('member')
     expect(kind.pluginId).toBe('md.numen.sample')
   })
 
@@ -63,7 +63,7 @@ describe('a registration that says what its tabs hold', () => {
 
     expect(named.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Focus')
     expect(plainKind.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
-    expect(bareKind.getTitle?.({})).toBe('held')
+    expect(bareKind.getTitle?.({})).toBe('member')
   })
 
   it('passes the window every hook it declares, and no other', () => {
@@ -115,9 +115,9 @@ describe('the pane of a declared kind', () => {
       props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },
     })
 
-    expect(view.find('.held').text()).toBe('Graph.md')
+    expect(view.find('.member').text()).toBe('Graph.md')
     expect(view.element.shadowRoot).toBeNull()
-    expect(view.find('.held').attributes()).toStrictEqual({ class: 'held' })
+    expect(view.find('.member').attributes()).toStrictEqual({ class: 'member' })
   })
 
   it('renders the plugin stylesheet next to the component', () => {
@@ -130,7 +130,7 @@ describe('the pane of a declared kind', () => {
     const link = view.find('link[rel="stylesheet"]')
     expect(link.attributes('href')).toBe('/plugin/md.numen.sample/dist/styles.css')
     expect(link.attributes('data-plugin-id')).toBe('md.numen.sample')
-    expect(view.find('.held').text()).toBe('Graph.md')
+    expect(view.find('.member').text()).toBe('Graph.md')
     expect(document.head.querySelector('link[data-plugin-id="md.numen.sample"]')).toBeNull()
   })
 
@@ -168,7 +168,7 @@ describe('a declared kind registered through a plugin context', () => {
     const context = createPluginHost(deps).createContext('md.numen.sample')
 
     const sub = context.registerTabKind<Held>({
-      kind: 'held',
+      kind: 'member',
       component: Pane,
       open: (folderPath, id) => ({ at: folderPath, id, title: 'T' }),
       isTool: true,

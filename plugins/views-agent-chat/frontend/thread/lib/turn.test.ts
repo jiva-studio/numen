@@ -5,7 +5,7 @@ import { placeTurns, VOICES, writeCharCount, type Turn } from './turn'
 
 setFlagsFromString('--expose-gc')
 
-const createPrompt = (id: string, text = 'said', state?: Turn['state']): Turn =>
+const createPrompt = (id: string, text = 'text', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
 const createResponse = (id: string, text = 'back', state?: Turn['state']): Turn =>

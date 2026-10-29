@@ -495,7 +495,7 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	ctx := t.Context()
 
 	for _, name := range []string{"area/abc.txt", "other/abc.vtt"} {
-		if err := derived.Write(ctx, name, []byte("said")); err != nil {
+		if err := derived.Write(ctx, name, []byte("text")); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
 	}

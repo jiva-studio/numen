@@ -361,7 +361,7 @@ func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Co
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "asked"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

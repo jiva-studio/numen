@@ -93,5 +93,5 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const host: PlexHost = { workspace, notes, nesting: { isNesting, headings: ref(6) } }
-  return { host, openingPath, isNesting, requested: request, asked: request, recorded }
+  return { host, openingPath, isNesting, requested: request, requestLog: request, recorded }
 }

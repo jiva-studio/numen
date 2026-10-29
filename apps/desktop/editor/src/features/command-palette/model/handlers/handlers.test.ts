@@ -109,7 +109,7 @@ const window = (
     },
     notes: {
       getTabAt: (path) => (path === targetPath ? 'active' : null),
-      getPath: (id) => (id === 'active' || id === 'held' ? targetPath : id),
+      getPath: (id) => (id === 'active' || id === 'member' ? targetPath : id),
       asking: () => answers.isAsking === true,
       flushPending: async (id) => void isDone.push(`flushPending ${id}`),
       close: (id) => void isDone.push(`close ${id}`),
@@ -631,7 +631,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is renamed at its current position now, not at the name the invocation was made over', async () => {
     const one = window({ targetPath: 'physics/Being.md' })
 
-    await carry(createInvocation('title', front(), 'Substance', 'held'), one.on)
+    await carry(createInvocation('title', front(), 'Substance', 'member'), one.on)
 
     expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Being.md Substance'])
   })

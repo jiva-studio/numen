@@ -338,7 +338,7 @@ describe('a number set from outside', () => {
  * caller holds after it.
  */
 describe('a field the caller holds the value of', () => {
-  const mountControlledField = (refuses: (val: number | null) => boolean) => {
+  const mountControlledField = (isRejected: (val: number | null) => boolean) => {
     let inForce: number | null = 20
     const field = mount(NumberField, {
       props: {
@@ -347,7 +347,7 @@ describe('a field the caller holds the value of', () => {
         max: 240,
         step: 5,
         'onUpdate:modelValue': async (val: number | null) => {
-          if (refuses(val)) return
+          if (isRejected(val)) return
           inForce = val
           await field.setProps({ modelValue: inForce })
         },

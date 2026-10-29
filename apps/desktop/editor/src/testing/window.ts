@@ -1,7 +1,7 @@
 /**
  * The mounted window with every port it uses mocked.
  *
- * A test declares the application's responses in `said`, reads the requests it
+ * A test declares the application's responses in `vaultState`, reads the requests it
  * received in `asked`, and mounts the window with `mountWindow`.
  */
 import './vaultMock'
@@ -142,7 +142,7 @@ export {
   passageAnswer,
   reader,
   mockVaultState,
-  mockVaultState as said,
+  mockVaultState as vaultState,
   mockVaultList as listed,
   settle,
   sourceAnswer,

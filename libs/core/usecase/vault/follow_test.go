@@ -34,11 +34,11 @@ func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-cha
 	return h.changes, h.lostChan, nil
 }
 
-// refuses is a watcher that fails to start, which models an operating system
+// failingWatcher is a watcher that fails to start, which models an operating system
 // that has run out of watches.
-type refuses struct{}
+type failingWatcher struct{}
 
-func (refuses) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (failingWatcher) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return nil, nil, errors.New("no watches left")
 }
 
@@ -238,7 +238,7 @@ func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	// No refresh or scan is available: a watch that never starts uses neither.
-	_, err := vaults.NewFollow(refuses{}, vaults.Refresh{}, vaults.Scan{}).Begin(t.Context(), v)
+	_, err := vaults.NewFollow(failingWatcher{}, vaults.Refresh{}, vaults.Scan{}).Begin(t.Context(), v)
 	if err == nil {
 		t.Fatal("a watcher that could not start was taken for one that did")
 	}

@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { WelcomePage } from '@numen/shell'
 import { WorkspaceLayout } from '@numen/shell'
-import { requests, cards, listed, mountWindow, said, settle, getTabs } from '@/testing/window'
+import { requests, cards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
 
 describe('the window holding no tab', () => {
   /** Every tab closed, by the keystroke that closes the one in front. */
@@ -51,7 +51,7 @@ describe('the window holding no tab', () => {
   })
 
   it('says in the corner that the vaults could not be listed, and draws none', async () => {
-    said.listable = false
+    vaultState.listable = false
 
     const window = await mountWindow()
 

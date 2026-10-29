@@ -125,7 +125,7 @@ func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
 	}
 }
 
-func TestAManifestDeclaresACommandWithAConditionOnTheTextVersionsOfAFile(t *testing.T) {
+func TestManifestDeclaresCommandWithVersionCondition(t *testing.T) {
 	manifest, err := pluginport.ReadManifest(strings.NewReader(commandManifestHead + `[
 		{"id": "proofread", "title": "Proofread", "when": {"liveTextKinds": ["transcript", "recognition"]}},
 		{"id": "delete-proofreading", "title": "Delete proofreading", "when": {"hasOwnText": true}}
