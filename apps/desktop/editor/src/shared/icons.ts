@@ -5,27 +5,22 @@
  * A command is named here by the identity it carries in `commands.ts` and in
  * what each tab does itself.
  */
+import type { Component } from 'vue'
+import { createNamedIcon } from '@numen/ui'
 import {
   ALargeSmall,
   ArrowRightLeft,
-  AudioLines,
-  Captions,
   Command,
   Compass,
   Contrast,
   Copy,
   CornerDownRight,
   CornerLeftUp,
-  Download,
   FilePlus,
   FileText,
   FolderPlus,
   FolderRoot,
   Gauge,
-  Languages,
-  Layers,
-  LayoutTemplate,
-  Link,
   Navigation,
   Palette,
   PenLine,
@@ -33,18 +28,13 @@ import {
   Puzzle,
   RefreshCw,
   Ruler,
-  ScanText,
   Search,
   Settings,
   SlidersHorizontal,
-  SpellCheck,
-  Sparkles,
   SquareX,
-  TextSearch,
   Trash2,
   Type,
   Waypoints,
-  WandSparkles,
   X,
   type LucideIcon,
 } from '@lucide/vue'
@@ -86,38 +76,14 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
 ])
 
 /**
- * The icons a plugin's manifest can name, by their Lucide names. The window draws only the icons it
- * bundles, so a name not listed here is drawn as a puzzle piece.
+ * The icon a plugin's manifest names, by its Lucide name. The same name gives the same component,
+ * which draws the icon once the set is loaded and nothing for a name that is none.
  */
-const NAMED_ICONS: ReadonlyMap<string, LucideIcon> = new Map([
-  ['audio-lines', AudioLines],
-  ['captions', Captions],
-  ['download', Download],
-  ['file-text', FileText],
-  ['gauge', Gauge],
-  ['languages', Languages],
-  ['layers', Layers],
-  ['layout-template', LayoutTemplate],
-  ['link', Link],
-  ['refresh-cw', RefreshCw],
-  ['scan-text', ScanText],
-  ['settings', Settings],
-  ['sliders-horizontal', SlidersHorizontal],
-  ['sparkles', Sparkles],
-  ['spell-check', SpellCheck],
-  ['text-search', TextSearch],
-  ['trash-2', Trash2],
-  ['wand-sparkles', WandSparkles],
-  ['waypoints', Waypoints],
-])
-
-/** The icon a plugin's manifest names. */
-export const getNamedIcon = (name: string): LucideIcon => NAMED_ICONS.get(name) ?? Puzzle
+export const getNamedIcon = (name: string): Component => createNamedIcon(name)
 
 /** The icon for a command, and nothing where it has none. */
 export const findIcon = (id: string): LucideIcon | null => {
   if (id.startsWith('plugin-setting:')) return SlidersHorizontal
   if (id.startsWith('plugin-command:')) return Puzzle
-  if (id.startsWith('file-menu:delete-version:')) return Trash2
   return ICONS.get(id) ?? null
 }

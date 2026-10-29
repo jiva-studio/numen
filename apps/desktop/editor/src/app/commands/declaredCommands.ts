@@ -12,9 +12,13 @@ import {
   type DeclaredCommand,
 } from '@/entities/plugin'
 
-/** What the palette files a declared command under: the plugin and the command's own id. */
+/** What the palette files a command a plugin declares under: the plugin and the command's own id. */
+export const getPluginCommandId = (pluginId: string, commandId: string): string =>
+  `plugin-command:${pluginId}:${commandId}`
+
+/** What the palette files a declared command under. */
 export const getPaletteId = (command: DeclaredCommand): string =>
-  `plugin-command:${command.pluginId}:${command.id}`
+  getPluginCommandId(command.pluginId, command.id)
 
 /**
  * The palette's commands for the declared ones. A command over files is offered

@@ -49,12 +49,8 @@ export const WORDS = {
   remove: 'Remove note',
   destroy: 'Destroy note',
   copy: 'Copy path',
-  /** The menu the text versions of the file in front make, each entry by the plugin that does it. */
-  deleteVersion: 'Delete text',
-  runWith: (title: string, plugin: string) => `${title} with ${plugin}`,
-  deleteVersionOf: (plugin: string) => `Delete text from ${plugin}`,
-  /** What the corner says once a plugin was asked to make or delete a text. */
-  textAsked: (plugin: string) => `${plugin}: working`,
+  /** What the corner says once a command of the menu of a file has run. */
+  commandRan: (title: string) => `${title}: done`,
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
   newNote: 'New note',
