@@ -77,7 +77,7 @@ func NewScenarios(cfg Config) Scenarios {
 	if cfg.DayStart != nil {
 		starts = cfg.DayStart()
 	}
-	day := review.Day{Starts: starts}
+	day := review.Day{Starts: starts, In: nil}
 
 	presets := NewPresets(
 		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, leveled, day, cfg.Now,

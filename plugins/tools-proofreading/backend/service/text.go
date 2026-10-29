@@ -59,7 +59,7 @@ func proofreadSpeech(
 	cues := getSpokenLines(lines)
 	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
 	if pos >= len(cues) {
-		return textResult{next: from, isDone: true}, nil
+		return textResult{corrections: nil, uncorrected: 0, next: from, isDone: true}, nil
 	}
 	end := len(cues)
 	if limit > 0 {
@@ -83,7 +83,7 @@ func proofreadSpeech(
 	answers = append(answers, more...)
 
 	placed, _ := gatherAnswers(answers)
-	out := textResult{corrections: sortLines(placed)}
+	out := textResult{corrections: sortLines(placed), uncorrected: 0, next: 0, isDone: false}
 	for _, one := range answers {
 		if !one.isAnswer {
 			out.uncorrected++

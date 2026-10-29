@@ -86,7 +86,7 @@ func NewSchedules(
 	reviewCards ListReviewCards,
 	presets Presets,
 ) Schedules {
-	return Schedules{logs: logs, scheduler: scheduler, day: day, reviewCards: reviewCards, presets: presets}
+	return Schedules{logs: logs, Cache: nil, scheduler: scheduler, day: day, reviewCards: reviewCards, presets: presets, At: nil}
 }
 
 // ReviewCards returns the ListReviewCards Schedules reads through.
@@ -161,7 +161,7 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	delta := make(map[string]review.SchedulingPolicy)
-	underMap := make(map[review.ReviewCardID]review.SchedulingPolicy, len(reviewCards))
+	underMap := make(map[review.CardID]review.SchedulingPolicy, len(reviewCards))
 	request := make(map[string]string, len(reviewCards))
 	for _, one := range reviewCards {
 		path, recognized := request[one.Deck]
@@ -185,7 +185,7 @@ func (u Schedules) getAssignmentFrom(
 		marks = append(marks, reviewCard.Card+"\t"+reviewCard.Template+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
 	out.mark = getMark(marks)
-	out.policy = func(reviewCard review.ReviewCardID) review.SchedulingPolicy {
+	out.policy = func(reviewCard review.CardID) review.SchedulingPolicy {
 		if one, targetVal := underMap[reviewCard]; targetVal {
 			return one
 		}
@@ -218,7 +218,7 @@ func (u Schedules) getScheduler(retention float64) review.Scheduler {
 // Execute is every review card the vault's answers name, and where they leave it.
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
-) (map[review.ReviewCardID]review.Schedule, error) {
+) (map[review.CardID]review.Schedule, error) {
 	log := Log{Stores: u.logs}
 
 	// The listing comes first, and the files are read only when the cache does
@@ -247,7 +247,7 @@ func (u Schedules) Execute(
 // already been read. A caller that holds the answers does not read them again.
 func (u Schedules) GetFromLog(
 	ctx context.Context, v domain.Vault, log ReviewLog,
-) (map[review.ReviewCardID]review.Schedule, error) {
+) (map[review.CardID]review.Schedule, error) {
 	asks, err := u.getAssignment(ctx, v)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (u Schedules) GetFromLog(
 // Callers hold the review cards of one preset. A cache is discarded when the
 // assignment it was computed under changes, so the two results are never the same
 // answer and the cache is neither read nor written.
-func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.ReviewCardID]review.Schedule {
+func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.CardID]review.Schedule {
 	return replaySchedules(u.day, target, asks)
 }
 
@@ -272,7 +272,7 @@ func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.Re
 // call receives what the first computed.
 func (u Schedules) getSchedulesCached(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
-) map[review.ReviewCardID]review.Schedule {
+) map[review.CardID]review.Schedule {
 	if out, ok := u.readRemembered(ctx, v, target.Files, asks.mark); ok {
 		return out
 	}
@@ -283,7 +283,7 @@ func (u Schedules) getSchedulesCached(
 // result. Callers use it after finding the cache out of date.
 func (u Schedules) replayAndRemember(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
-) map[review.ReviewCardID]review.Schedule {
+) map[review.CardID]review.Schedule {
 	out := replaySchedules(u.day, target, asks)
 	u.remember(ctx, v, target.Files, asks.mark, out)
 	return out
@@ -293,7 +293,7 @@ func (u Schedules) replayAndRemember(
 // callers that only read them.
 func replaySchedules(
 	d review.Day, target ReviewLog, asks assignment,
-) map[review.ReviewCardID]review.Schedule {
+) map[review.CardID]review.Schedule {
 	return target.GetHistory().Replay(d, asks.policy)
 }
 
@@ -301,7 +301,7 @@ func replaySchedules(
 // the runs the vault now holds and under the targets now in force.
 func (u Schedules) readRemembered(
 	ctx context.Context, v domain.Vault, files []ports.Entry, mark string,
-) (map[review.ReviewCardID]review.Schedule, bool) {
+) (map[review.CardID]review.Schedule, bool) {
 	if u.Cache == nil {
 		return nil, false
 	}
@@ -317,7 +317,7 @@ func (u Schedules) readRemembered(
 		return nil, false
 	}
 
-	out := make(map[review.ReviewCardID]review.Schedule, len(was.ReviewCards))
+	out := make(map[review.CardID]review.Schedule, len(was.ReviewCards))
 	for _, s := range was.ReviewCards {
 		due, err := review.ParseTimestamp(s.Due)
 		if err != nil {
@@ -327,7 +327,7 @@ func (u Schedules) readRemembered(
 		if err != nil {
 			return nil, false
 		}
-		out[review.ReviewCardID{Card: s.Card, Template: s.Template}] = review.Schedule{
+		out[review.CardID{Card: s.Card, Template: s.Template}] = review.Schedule{
 			Due: due, Last: last, Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		}
@@ -354,12 +354,12 @@ func read(was []cachedFile, files []ports.Entry) bool {
 // here is reported.
 func (u Schedules) remember(
 	ctx context.Context, v domain.Vault, files []ports.Entry, mark string,
-	out map[review.ReviewCardID]review.Schedule,
+	out map[review.CardID]review.Schedule,
 ) {
 	if u.Cache == nil {
 		return
 	}
-	now := scheduleCache{V: keptVersion, By: mark}
+	now := scheduleCache{V: keptVersion, By: mark, Files: nil, ReviewCards: nil}
 	for _, one := range files {
 		now.Files = append(now.Files, cachedFile{Name: one.Run, Size: one.Size})
 	}

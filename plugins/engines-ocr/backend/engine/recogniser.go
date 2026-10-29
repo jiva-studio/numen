@@ -39,6 +39,8 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: onnx.GetSessionProvider(),
 		Threads:  cfg.threads(),
+
+		ComputeUnits: onnx.ComputeUnitsDefault,
 	})
 	if err != nil {
 		return nil, err
@@ -68,6 +70,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		RecHeight:           cfg.Recognise.height(),
 		NumThreads:          cfg.threads(),
 		ThreadCount:         cfg.jobs(),
+		UseCuda:             false,
 	})
 	if err != nil {
 		layout.Close()
@@ -191,7 +194,7 @@ func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (Block
 	}
 	text, boxes := Assemble(lines)
 	if text == "" {
-		return Block{}, false
+		return Block{Label: "", Text: "", IsHeading: false, Depth: 0, Boxes: nil}, false
 	}
 	depth, head := r.head[t.region.Label]
 	return Block{
@@ -209,7 +212,7 @@ func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (Block
 func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
-		return nil, image.Point{}
+		return nil, image.Point{X: 0, Y: 0}
 	}
 	out := image.NewRGBA(image.Rect(0, 0, wider.Dx(), wider.Dy()))
 	draw.Draw(out, out.Bounds(), page, wider.Min, draw.Src)
@@ -243,10 +246,12 @@ func NewTestRecogniser(
 	model Model,
 ) *Recogniser {
 	return &Recogniser{
+		shape:  nil,
+		lines:  nil,
 		layout: layout,
 		read:   read,
-		body:   map[string]bool{"text": true, "paragraph": true, "paragraph_title": true},
-		head:   map[string]int{"paragraph_title": 1},
+		body:   map[string]bool{labelText: true, "paragraph": true, labelParagraphTitle: true},
+		head:   map[string]int{labelParagraphTitle: 1},
 		margin: 10,
 		jobs:   1,
 		model:  model,

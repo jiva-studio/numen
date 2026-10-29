@@ -1,3 +1,4 @@
+// Package resample converts audio samples between sampling rates.
 package resample
 
 import (

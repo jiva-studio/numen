@@ -17,7 +17,7 @@ type seekFailCloser struct {
 
 func (s *seekFailCloser) Read([]byte) (int, error) { return 0, io.EOF }
 
-func (s *seekFailCloser) Seek(offset int64, whence int) (int64, error) {
+func (s *seekFailCloser) Seek(_ int64, whence int) (int64, error) {
 	if whence == io.SeekEnd && s.failOnSeekEnd {
 		return 0, s.err
 	}

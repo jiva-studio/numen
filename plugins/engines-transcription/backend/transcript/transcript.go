@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // Cue is one stretch of speech: the words, and the milliseconds of the recording it spans.
@@ -33,8 +33,11 @@ func GetSegments(cues []Cue) []domain.TextSegment {
 			continue
 		}
 		out = append(out, domain.TextSegment{
-			Text:     text + "\n",
-			Selector: host.Selector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}}.Encode(),
+			Text:    text + "\n",
+			Heading: "",
+			Selector: host.Selector{
+				T: []float64{toSeconds(cue.From), toSeconds(cue.To)}, Page: 0, CFI: "", Boxes: nil,
+			}.Encode(),
 		})
 	}
 	return out
@@ -45,7 +48,7 @@ func GetSegments(cues []Cue) []domain.TextSegment {
 func GetCues(segments []domain.TextSegment) []Cue {
 	out := make([]Cue, 0, len(segments))
 	for _, segment := range segments {
-		cue := Cue{Text: strings.TrimRight(segment.Text, "\n")}
+		cue := Cue{Text: strings.TrimRight(segment.Text, "\n"), From: 0, To: 0}
 		if selector, err := host.ParseSelector(segment.Selector); err == nil && len(selector.T) == 2 {
 			cue.From, cue.To = toMS(selector.T[0]), toMS(selector.T[1])
 		}

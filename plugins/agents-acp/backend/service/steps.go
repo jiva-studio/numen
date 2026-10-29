@@ -45,7 +45,7 @@ func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.AskAgentResp
 	}
 	call := s.calls[reported.ToolCallID]
 	if call == nil {
-		call = &acpCall{}
+		call = &acpCall{name: "", title: "", arguments: "", isFinished: false}
 		s.calls[reported.ToolCallID] = call
 	}
 	call.update(reported)

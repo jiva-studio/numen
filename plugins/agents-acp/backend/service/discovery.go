@@ -1,8 +1,6 @@
 package service
 
 import (
-	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -11,6 +9,12 @@ import (
 // acpProgramPrefix marks the programs of the settings that serve ACP. The rest of the name is the
 // program a completion model names.
 const acpProgramPrefix = "acp:"
+
+// acpSubcommand is the argument that starts the ACP server of an agent.
+const acpSubcommand = "acp"
+
+// defaultACPProgram is the program name of an agent whose executable gives no name.
+const defaultACPProgram = "acp"
 
 // acpAgent is an agent that serves the Agent Client Protocol over its standard streams.
 type acpAgent struct {
@@ -29,19 +33,14 @@ type knownACPAgent struct {
 }
 
 var knownACPAgents = []knownACPAgent{
-	{program: "claude-code", title: "Claude Code (ACP)", binary: "claude-code-acp"},
-	{program: "codex", title: "Codex (ACP)", binary: "codex-acp"},
-	{program: "cursor-agent", title: "Cursor Agent", binary: "cursor-agent", args: []string{"acp"}},
+	{program: "claude-code", title: "Claude Code (ACP)", binary: "claude-code-acp", args: nil},
+	{program: "codex", title: "Codex (ACP)", binary: "codex-acp", args: nil},
+	{program: "cursor-agent", title: "Cursor Agent", binary: "cursor-agent", args: []string{acpSubcommand}},
 	{program: "gemini", title: "Gemini CLI", binary: "gemini", args: []string{"--acp"}},
-	{program: "goose", title: "Goose", binary: "goose", args: []string{"acp"}},
-	{program: "kimi", title: "Kimi CLI", binary: "kimi", args: []string{"acp"}},
-	{program: "opencode", title: "OpenCode", binary: "opencode", args: []string{"acp"}},
+	{program: "goose", title: "Goose", binary: "goose", args: []string{acpSubcommand}},
+	{program: "kimi", title: "Kimi CLI", binary: "kimi", args: []string{acpSubcommand}},
+	{program: "opencode", title: "OpenCode", binary: "opencode", args: []string{acpSubcommand}},
 	{program: "qwen", title: "Qwen Code", binary: "qwen", args: []string{"--acp"}},
-}
-
-// discoverInstalledACPAgents finds known ACP-compatible agents installed on the machine.
-func discoverInstalledACPAgents() []acpAgent {
-	return discoverACPAgentsWithLookup(findACPExecutable)
 }
 
 func discoverACPAgentsWithLookup(lookup func(binary string) (string, bool)) []acpAgent {
@@ -63,36 +62,12 @@ func discoverACPAgentsWithLookup(lookup func(binary string) (string, bool)) []ac
 	return agents
 }
 
-func findACPExecutable(binary string) (string, bool) {
-	if binaryPath, err := exec.LookPath(binary); err == nil && binaryPath != "" {
-		return binaryPath, true
-	}
-	home, _ := os.UserHomeDir()
-	var dirs []string
-	if home != "" {
-		dirs = append(dirs,
-			filepath.Join(home, ".local", "bin"),
-			filepath.Join(home, ".npm-global", "bin"),
-			filepath.Join(home, ".bun", "bin"),
-			filepath.Join(home, ".cargo", "bin"),
-		)
-	}
-	dirs = append(dirs, "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin")
-	for _, dir := range dirs {
-		candidate := filepath.Join(dir, binary)
-		if binaryPath, err := exec.LookPath(candidate); err == nil && binaryPath != "" {
-			return binaryPath, true
-		}
-	}
-	return "", false
-}
-
 func getExecutableProgramName(path string) string {
 	base := filepath.Base(path)
 	ext := filepath.Ext(base)
 	name := strings.TrimSuffix(base, ext)
 	if name == "" {
-		return "acp"
+		return defaultACPProgram
 	}
 	return name
 }

@@ -194,7 +194,7 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 // of that card id yields ErrNoSuchCard, and a deck with two yields
 // ErrTwoCards.
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
-	_, spans := readDeck(domain.FileStat{}, body)
+	_, spans := readDeck(createEmptyStat(), body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
 	pos := -1
 	for i, span := range spans {
@@ -349,6 +349,7 @@ func (w *deckBodyWriter) writeCard(card Card) error {
 	return w.scratch.AddCard(card)
 }
 
+// DeckBody renders the cards and sections of d as the body of a deck note.
 func DeckBody(d Deck) (string, error) {
 	scratch, err := OpenDeck(markdown.Create("", d.Preamble))
 	if err != nil {
@@ -385,7 +386,7 @@ func DeckBody(d Deck) (string, error) {
 // it resolves to.
 func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
-	deck, spans := readDeck(domain.FileStat{}, body)
+	deck, spans := readDeck(createEmptyStat(), body)
 
 	var heads []valueSpan
 	for i, span := range spans {

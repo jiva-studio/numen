@@ -27,6 +27,7 @@ func newSessionPool[S any](sessions []S, lanes int, destroy func(S)) *sessionPoo
 		lanes:    lanes,
 		destroy:  destroy,
 		stop:     make(chan struct{}),
+		once:     sync.Once{},
 	}
 	for lane := range lanes {
 		p.idle <- sessions[lane%len(sessions)]

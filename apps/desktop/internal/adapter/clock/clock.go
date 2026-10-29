@@ -1,3 +1,4 @@
+// Package clock provides the application time source.
 package clock
 
 import "time"

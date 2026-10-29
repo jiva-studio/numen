@@ -1,3 +1,4 @@
+// Package href resolves and splits the hrefs of a book against archive paths.
 package href
 
 import (

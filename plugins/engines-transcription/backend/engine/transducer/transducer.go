@@ -1,3 +1,4 @@
+// Package transducer decodes the token sequence of a transducer model from its encoder frames.
 package transducer
 
 import (

@@ -1,3 +1,4 @@
+// Package service implements the methods of the numen.epub plugin service.
 package service
 
 import (
@@ -41,7 +42,12 @@ type BookServer struct {
 
 // NewBookServer returns a BookServer that reads the vault of a request through files.
 func NewBookServer(files host.Vault) *BookServer {
-	return &BookServer{files: files, books: newBookCache()}
+	return &BookServer{
+		files:  files,
+		books:  newBookCache(),
+		mu:     sync.Mutex{},
+		placed: placedBook{key: "", size: 0, mtime: 0, book: nil},
+	}
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
@@ -67,6 +73,7 @@ func (s *BookServer) GetBook(ctx context.Context, req api.GetBookRequest) (api.G
 		Documents:    []api.SpineDocument{},
 		Parts:        []api.BookPart{},
 		PrintedPages: []api.PrintedPage{},
+		Stat:         nil,
 	}
 
 	docCount := min(len(book.Documents), mostListed)

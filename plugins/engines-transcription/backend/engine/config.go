@@ -77,10 +77,23 @@ const (
 // silero-vad.
 func Defaults() Config {
 	return Config{
-		Model: models[0],
+		Runtime:  "",
+		Dir:      "",
+		Threads:  0,
+		Workers:  0,
+		Language: "",
+		Progress: nil,
+		Model:    models[0],
 		Segmenter: segmenter.Model{
-			Name: "silero-vad",
-			Repo: segmenterDefault,
+			Name:      "silero-vad",
+			Repo:      segmenterDefault,
+			Path:      "",
+			Threshold: 0,
+			Silence:   0,
+			Pad:       0,
+			Longest:   0,
+			Shortest:  0,
+			Least:     0,
 		},
 
 		// What a transcription needs is fetched when it is wanted.

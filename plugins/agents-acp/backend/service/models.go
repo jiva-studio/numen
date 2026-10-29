@@ -59,7 +59,7 @@ func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
 			command := make([]string, 0, 1+len(candidate.args))
 			command = append(command, execPath)
 			command = append(command, candidate.args...)
-			program := "acp"
+			program := defaultACPProgram
 			if isMulti {
 				program = candidate.program
 			}
@@ -70,7 +70,7 @@ func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
 			}
 		}
 	}
-	program := "acp"
+	program := defaultACPProgram
 	title := "ACP Agent"
 	if isMulti {
 		program = baseName
@@ -124,7 +124,7 @@ func (s *agentServer) getACPListing(ctx context.Context, agent acpAgent) acpList
 func readACPListing(ctx context.Context, agent acpAgent) (acpListing, error) {
 	asking, stop := context.WithTimeout(ctx, acpListLimit)
 	defer stop()
-	session, err := openACPSession(asking, agent, toolEndpoint{})
+	session, err := openACPSession(asking, agent, toolEndpoint{url: "", token: "", tools: nil})
 	if err != nil {
 		return acpListing{}, err
 	}

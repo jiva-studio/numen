@@ -60,6 +60,8 @@ func getStatus(code server.ErrorCode) int {
 		return http.StatusConflict
 	case server.CodeUnavailable:
 		return http.StatusServiceUnavailable
+	case server.CodeInternal:
+		return http.StatusInternalServerError
 	default:
 		return http.StatusInternalServerError
 	}

@@ -68,6 +68,7 @@ type cardModelQueries interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 
+// NoteQueries answers queries about the notes of a vault from the index.
 type NoteQueries interface {
 	cardModelQueries
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)

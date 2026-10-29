@@ -47,23 +47,33 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox, error) {
 	url, named := task.GetToolsUrl(), task.GetTools()
 	if url == "" || len(named) == 0 {
-		return &toolbox{}, nil
+		return &toolbox{session: nil, tools: nil, meta: nil}, nil
 	}
 	if address, err := neturl.Parse(url); err != nil || !isPrivate(address) {
 		return nil, errPlainToken
 	}
 	transport := &mcp.StreamableClientTransport{
-		Endpoint:             url,
-		HTTPClient:           &http.Client{Transport: bearer{token: task.GetToolsToken(), base: http.DefaultTransport}, CheckRedirect: refuseDowngrade},
+		Endpoint: url,
+		HTTPClient: &http.Client{
+			Transport:     bearer{token: task.GetToolsToken(), base: http.DefaultTransport},
+			CheckRedirect: refuseDowngrade,
+			Jar:           nil,
+			Timeout:       0,
+		},
+		MaxRetries:           0,
 		DisableStandaloneSSE: true,
+		OAuthHandler:         nil,
+		MaxEventSize:         0,
 	}
-	client := mcp.NewClient(&mcp.Implementation{Name: "numen-agent", Version: "1.0.0"}, nil)
+	client := mcp.NewClient(&mcp.Implementation{
+		Name: "numen-agent", Title: "", Description: "", Version: "1.0.0", WebsiteURL: "", Icons: nil,
+	}, nil)
 	session, err := client.Connect(ctx, transport, nil)
 	if err != nil {
 		return nil, fmt.Errorf("connect to the vault's tools: %w", err)
 	}
 
-	box := &toolbox{session: session, meta: readMeta(task.GetContext())}
+	box := &toolbox{session: session, tools: nil, meta: readMeta(task.GetContext())}
 	for tool, err := range session.Tools(ctx, nil) {
 		if err != nil {
 			_ = session.Close()
@@ -104,7 +114,9 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if !json.Valid(args) {
 		return "error: the arguments are not JSON"
 	}
-	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{Meta: b.meta, Name: name, Arguments: args})
+	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{
+		Meta: b.meta, Name: name, Arguments: args, InputResponses: nil, RequestState: "",
+	})
 	if err != nil {
 		return fmt.Sprintf("error: %v", err)
 	}

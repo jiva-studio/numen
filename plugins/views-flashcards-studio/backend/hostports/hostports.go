@@ -46,6 +46,7 @@ func New(vault host.Vault, store host.Store) Ports {
 // Readers opens the files of a vault for reading.
 type Readers struct{ Vault host.Vault }
 
+// Open returns the reader of the vault v.
 func (r Readers) Open(v domain.Vault) (ports.VaultReader, error) {
 	return reader{vault: r.Vault.With(v.ID)}, nil
 }
@@ -65,10 +66,12 @@ func (r reader) Read(ctx context.Context, path string) ([]byte, error) {
 // Writers opens the files of a vault for writing.
 type Writers struct{ Vault host.Vault }
 
+// Open returns the writer of the vault v.
 func (w Writers) Open(v domain.Vault) (ports.VaultWriter, error) {
 	return writer{vault: w.Vault.With(v.ID)}, nil
 }
 
+// Lock takes the write lock of the vault v and returns the function that releases it.
 func (w Writers) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	return w.Vault.With(v.ID).Lock(ctx)
 }
@@ -97,14 +100,17 @@ func readError(err error) error {
 // Notes answers queries about a vault's notes from the index.
 type Notes struct{ Vault host.Vault }
 
+// GetNotes returns the notes at paths.
 func (n Notes) GetNotes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	return n.Vault.With(id).GetNotes(ctx, paths)
 }
 
+// GetTypes returns the note types of the notes at paths.
 func (n Notes) GetTypes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
 	return n.Vault.With(id).GetTypes(ctx, paths)
 }
 
+// GetPathsOfType returns the paths of the notes of a type.
 func (n Notes) GetPathsOfType(ctx context.Context, id domain.VaultID, noteType domain.NoteType) ([]string, error) {
 	return n.Vault.With(id).GetPathsOfType(ctx, noteType)
 }
@@ -127,6 +133,7 @@ func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.Ca
 	return out, nil
 }
 
+// GetNamedPaths returns the paths of the notes that a name resolves to.
 func (n Notes) GetNamedPaths(ctx context.Context, id domain.VaultID, name string) ([]string, error) {
 	return n.Vault.With(id).GetNamedPaths(ctx, name)
 }
@@ -146,14 +153,17 @@ func (n Notes) Has(ctx context.Context, id domain.VaultID) (bool, error) {
 // Links answers queries about a vault's links from the index.
 type Links struct{ Vault host.Vault }
 
+// GetLinks returns the links that the note at from contains.
 func (l Links) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	return l.Vault.With(id).GetLinks(ctx, from)
 }
 
+// GetBacklinks returns the links that point at the note at to.
 func (l Links) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	return l.Vault.With(id).GetBacklinks(ctx, to)
 }
 
+// ResolveLinks resolves rawLinks as written in the note at from.
 func (l Links) ResolveLinks(ctx context.Context, id domain.VaultID, from string, rawLinks []string) (map[string]domain.ResolvedLink, error) {
 	return l.Vault.With(id).ResolveLinks(ctx, from, rawLinks)
 }
@@ -161,6 +171,7 @@ func (l Links) ResolveLinks(ctx context.Context, id domain.VaultID, from string,
 // Problems answers what parsing a vault's files turned up.
 type Problems struct{ Vault host.Vault }
 
+// GetParseProblems returns the parse problems of the vault.
 func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.Vault.With(id).GetParseProblems(ctx)
 }
@@ -168,6 +179,7 @@ func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]do
 // Logs opens the plugin's folder of a vault's store, which the answers are kept in.
 type Logs struct{ Store host.Store }
 
+// Open returns the log store of the vault v.
 func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
 	return store{folder: l.Store.With(v.ID)}, nil
 }

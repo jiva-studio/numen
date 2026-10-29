@@ -22,7 +22,7 @@ import (
 func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -55,7 +55,7 @@ func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	for _, item := range []time.Time{
 		time.Now().AddDate(0, 0, -2),
 		time.Now().AddDate(0, 0, -1),
@@ -94,8 +94,8 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	// Both review cards of one card, so the order turns on the review card and not the card.
-	recognise := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	name := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Name it"}
+	recognise := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	name := review.CardID{Card: "k7m2xq9fzp", Template: "Name it"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), name, review.Good, 0); err != nil {
@@ -130,7 +130,7 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -172,8 +172,8 @@ func newTargetedNotes(high, low float64) map[string]string {
 
 // The two review cards of the targeted vault, answered alike.
 var (
-	underHigh = review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Say it"}
-	underLow  = review.ReviewCardID{Card: "zpqrstvwxy", Template: "Say it"}
+	underHigh = review.CardID{Card: "k7m2xq9fzp", Template: "Say it"}
+	underLow  = review.CardID{Card: "zpqrstvwxy", Template: "Say it"}
 )
 
 // answerBothAlike takes both cards through the same answers at the same
@@ -314,7 +314,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, saturday).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +363,7 @@ func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 			review.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := review.ReviewCardID{Card: cardID(0), Template: "Say it"}
+	on := review.CardID{Card: cardID(0), Template: "Say it"}
 	read, err := s.presets.Read(t.Context(), s.vault, "Even.md")
 	if err != nil {
 		t.Fatal(err)
@@ -439,7 +439,7 @@ func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 			review.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := review.ReviewCardID{Card: cardID(0), Template: "Say it"}
+	on := review.CardID{Card: cardID(0), Template: "Say it"}
 
 	for range 2 {
 		if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -469,7 +469,7 @@ type mockScheduler struct {
 }
 
 func (m mockScheduler) GetName() string { return m.name }
-func (m mockScheduler) Next(s review.Schedule, pos time.Time, r review.Rating) review.Schedule {
+func (m mockScheduler) Next(s review.Schedule, pos time.Time, _ review.Rating) review.Schedule {
 	s.Last = pos
 	s.Due = pos.Add(24 * time.Hour)
 	s.Reps++
@@ -815,7 +815,7 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 		for one := range perDay {
 			raw, err := review.Write(review.Answer{
 				ID:         fmt.Sprintf("%06d%010d", day, one),
-				ReviewCard: review.ReviewCardID{Card: createCardID(card % cards), Template: "Say it"},
+				ReviewCard: review.CardID{Card: createCardID(card % cards), Template: "Say it"},
 				At:         when.Add(time.Duration(one) * time.Minute),
 				Rating:     review.Rating(one%4 + 1),
 				Took:       4 * time.Second,

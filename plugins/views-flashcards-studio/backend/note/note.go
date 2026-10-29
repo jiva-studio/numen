@@ -6,6 +6,7 @@ package note
 
 import (
 	"context"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
@@ -28,7 +29,10 @@ type (
 const (
 	// MaxBytes is the most a note may be and still be read here.
 	MaxBytes = edit.MaxBytes
+)
 
+// The outcomes of reading a note.
+const (
 	Ok         = edit.Ok
 	Missing    = edit.Missing
 	NotANote   = edit.NotANote
@@ -37,6 +41,7 @@ const (
 	Unreadable = edit.Unreadable
 )
 
+// The errors of reading and writing a note.
 var (
 	ErrNoNote         = edit.ErrNoNote
 	ErrUnlevelled     = edit.ErrUnlevelled
@@ -71,8 +76,13 @@ func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Level
 			}
 			return files{reader: reader, writer: writer, writers: writers, vault: v}, nil
 		},
-		Index: index,
-		Now:   now,
+		Index:           index,
+		Now:             now,
+		Entropy:         nil,
+		FileStat:        domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+		ShouldOverwrite: false,
+		Bound:           0,
+		Baseline:        nil,
 	}
 }
 
@@ -103,6 +113,7 @@ type Read struct {
 	readers ports.VaultReaders
 }
 
+// NewRead is the reader of the prose of a note.
 func NewRead(readers ports.VaultReaders) Read { return Read{readers: readers} }
 
 // Execute reads the note at path. An error is the vault being out of reach; what is wrong with the
@@ -127,7 +138,7 @@ type Write struct {
 
 // NewWrite is the writer a note goes to disk through.
 func NewWrite(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) Write {
-	return Write{readers: readers, writers: writers, index: index, now: now}
+	return Write{readers: readers, writers: writers, index: index, now: now, Bound: 0}
 }
 
 // Execute puts body in the note at path over the file stat the caller read, and returns the
@@ -170,8 +181,8 @@ func (u EditLinks) PointAt(
 	return e.PointAt(ctx, v, from, of, to, role)
 }
 
-// NoteLinks is what one note is joined to: what it points at, and what points at it.
-type NoteLinks struct {
+// Links is what one note is joined to: what it points at, and what points at it.
+type Links struct {
 	Links     []domain.ResolvedLink
 	Backlinks []domain.ResolvedLink
 }
@@ -185,14 +196,14 @@ type ShowLinks struct {
 func NewShowLinks(links ports.LinkQueries) ShowLinks { return ShowLinks{links: links} }
 
 // Execute returns both halves of what the note is joined to.
-func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (NoteLinks, error) {
+func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (Links, error) {
 	links, err := u.links.GetLinks(ctx, v.ID, path)
 	if err != nil {
-		return NoteLinks{}, err
+		return Links{}, err
 	}
 	backlinks, err := u.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
-		return NoteLinks{}, err
+		return Links{}, err
 	}
-	return NoteLinks{Links: links, Backlinks: backlinks}, nil
+	return Links{Links: links, Backlinks: backlinks}, nil
 }

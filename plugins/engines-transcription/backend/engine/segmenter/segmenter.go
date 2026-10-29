@@ -163,6 +163,10 @@ func newSpeechPass(sound []float32) (*speechPass, error) {
 		state:  make([]float32, speechMemory),
 		rate:   []int64{signal.SampleRate},
 		count:  (len(sound) + speechWindow - 1) / speechWindow,
+
+		input:    nil,
+		memory:   nil,
+		sampling: nil,
 	}
 	var err error
 	if p.input, err = newTensor([]int64{1, speechWindow}, p.window); err != nil {
@@ -222,6 +226,7 @@ func (s *Segmenter) scoreNative(ctx context.Context, pass *speechPass, calls ort
 			ortraw.GetValueHandle(pass.memory),
 			ortraw.GetValueHandle(pass.sampling),
 		},
+		outputs: [2]uintptr{},
 	}
 	out := make([]float32, 0, pass.count)
 	for i := range pass.count {

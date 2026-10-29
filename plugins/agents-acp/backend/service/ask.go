@@ -1,3 +1,4 @@
+// Package service implements the ACP agent plugin backend.
 package service
 
 import (
@@ -132,7 +133,7 @@ func (s *agentServer) GetAgentPrograms(
 	}
 	group.Wait()
 
-	res := &agentrun.GetAgentProgramsResponse{}
+	res := &agentrun.GetAgentProgramsResponse{Programs: nil}
 	for idx, agent := range agents {
 		listing := listings[idx]
 		program := &agentrun.AgentProgram{
@@ -140,13 +141,15 @@ func (s *agentServer) GetAgentPrograms(
 			Title:       agent.Title,
 			IsInstalled: true,
 			LimitsTools: true,
+			IsDefault:   false,
+			Models:      nil,
 		}
 		for _, one := range listing.Models {
 			title := one.Name
 			if title == "" {
 				title = one.ID
 			}
-			model := &agentrun.AgentModel{Name: one.ID, Title: title, IsDefault: one.ID == listing.Current}
+			model := &agentrun.AgentModel{Name: one.ID, Title: title, IsDefault: one.ID == listing.Current, ReasoningLevels: nil, DefaultReasoning: ""}
 			if one.ID == listing.Current {
 				model.ReasoningLevels = reasoning.ToProto(listing.Levels)
 				model.DefaultReasoning = listing.Level

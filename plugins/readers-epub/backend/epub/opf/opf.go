@@ -19,7 +19,7 @@ const (
 	MediaSVG = "image/svg+xml"
 )
 
-// ErrNoPackage: the package document is missing or cannot be read.
+// ErrNoPackage is returned when the package document is missing or cannot be read.
 var ErrNoPackage = errors.New("epub: no package document")
 
 // A prefix is the writer's choice, so a name that carries one is matched by its
@@ -210,7 +210,12 @@ func Read(files map[string]*zip.File, opfPath string) (Package, error) {
 	}
 
 	read := Package{
+		Title:     "",
 		base:      path.Dir(opfPath),
+		Spine:     nil,
+		SpineStep: 0,
+		NCX:       "",
+		Nav:       "",
 		Layout:    Reflowable,
 		Direction: parseDirection(document.Spine.Direction),
 	}

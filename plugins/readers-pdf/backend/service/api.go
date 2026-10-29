@@ -1,3 +1,4 @@
+// Package service serves the PDF reader plugin's text layer and JSON methods.
 package service
 
 // APIService is the service name the plugin's JSON methods are mounted under. The manifest

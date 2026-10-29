@@ -1,3 +1,4 @@
+// Package engine reads scanned pages with ONNX layout, detection and recognition models.
 package engine
 
 import (
@@ -16,6 +17,13 @@ type Config struct {
 	Compute        Compute                              `json:"-"`
 	Progress       func(what string, done, total int64) `json:"-"`
 }
+
+// Region labels the layout model assigns.
+const (
+	labelDocTitle       = "doc_title"
+	labelParagraphTitle = "paragraph_title"
+	labelText           = "text"
+)
 
 // LayoutModel divides a page into its parts and puts them in reading order.
 type LayoutModel struct {
@@ -57,17 +65,21 @@ type RegionKinds struct {
 // Defaults returns default recognition configuration using remote models.
 func Defaults() Config {
 	return Config{
+		Runtime:        "",
+		Dir:            "",
+		ShouldDownload: true,
 		Layout: LayoutModel{
-			Name: layoutDefault,
+			Name: layoutDefault, Path: "", Labels: nil, Minimum: 0, Overlap: 0, Margin: 0,
 		},
 		Detect: DetectModel{
-			Name: detectDefault,
+			Name: detectDefault, Path: "", MaxSide: 0, Expand: 0, Minimum: 0,
 		},
 		Recognise: RecogniserModel{
-			Name: recogDefault,
-			DPI:  300,
+			Name: recogDefault, Path: "", Dict: "", Classes: 0, DPI: 300, Height: 0, Jobs: 0, Threads: 0,
 		},
-		ShouldDownload: true,
+		Regions:  RegionKinds{Body: nil, Head: nil},
+		Compute:  Compute{Threads: 0, Jobs: 0},
+		Progress: nil,
 	}
 }
 
@@ -98,11 +110,11 @@ func (l LayoutModel) labels() []string {
 	}
 	return []string{
 		"abstract", "algorithm", "aside_text", "chart", "content",
-		"display_formula", "doc_title", "figure_title", "footer",
+		"display_formula", labelDocTitle, "figure_title", "footer",
 		"footer_image", "footnote", "formula_number", "header",
 		"header_image", "image", "inline_formula", "number",
-		"paragraph_title", "reference", "reference_content", "seal",
-		"table", "text", "vertical_text", "vision_footnote",
+		labelParagraphTitle, "reference", "reference_content", "seal",
+		"table", labelText, "vertical_text", "vision_footnote",
 	}
 }
 
@@ -146,7 +158,7 @@ func (r RegionKinds) body() []string {
 		return r.Body
 	}
 	return []string{
-		"text", "paragraph_title", "doc_title", "abstract", "content",
+		labelText, labelParagraphTitle, labelDocTitle, "abstract", "content",
 		"reference", "reference_content", "footnote", "figure_title",
 	}
 }
@@ -155,7 +167,7 @@ func (r RegionKinds) head() []string {
 	if len(r.Head) > 0 {
 		return r.Head
 	}
-	return []string{"doc_title", "paragraph_title"}
+	return []string{labelDocTitle, labelParagraphTitle}
 }
 
 // Compute configures thread counts and session concurrency.

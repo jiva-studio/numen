@@ -1,3 +1,4 @@
+// Package clock is the plugin's source of the current time.
 package clock
 
 import "time"

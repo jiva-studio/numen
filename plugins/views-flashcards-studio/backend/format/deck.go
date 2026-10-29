@@ -3,6 +3,7 @@ package format
 import (
 	"bytes"
 	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
@@ -120,10 +121,13 @@ func (b *deckBuilder) readCardFields(body []byte, secs []section, pos int, card 
 func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end int) {
 	pos := len(b.deck.Cards)
 	heading, carried := ReadHeading(s.name)
-	card := Card{Heading: heading, CardID: carried, Section: b.currentSection}
+	card := Card{
+		Heading: heading, CardID: carried, CardModelLink: "", Preamble: "",
+		Section: b.currentSection, Values: nil,
+	}
 	span := cardSpan{
 		name: s.name, cardID: carried, head: s.head, from: s.from, end: end,
-		linkFrom: s.from, linkTo: s.from,
+		linkFrom: s.from, linkTo: s.from, values: nil,
 	}
 
 	target, leadFrom := readCardModelLink(body, s.from, s.to)
@@ -149,10 +153,19 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 	b.spans = append(b.spans, span)
 }
 
+// createEmptyStat is the file stat of a deck that was not read from a file.
+func createEmptyStat() domain.FileStat {
+	return domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
+}
+
 func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 	secs := sections(body, SectionLevel, FieldLevel)
 	b := deckBuilder{
-		deck:           Deck{Ref: ref},
+		deck: Deck{
+			Ref: ref, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil,
+		},
+		spans:          nil,
+		read:           0,
 		currentSection: NoSection,
 	}
 

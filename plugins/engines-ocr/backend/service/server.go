@@ -46,7 +46,7 @@ type engines struct {
 }
 
 func newEngines(cfg engine.Config, factory engineFactory) *engines {
-	return &engines{cfg: cfg, factory: factory}
+	return &engines{mu: sync.Mutex{}, cfg: cfg, factory: factory, engine: nil}
 }
 
 // updateConfig applies the settings received from the host. A resolution that is
@@ -172,13 +172,19 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 // newRecogniseCommand recognises the file named by the user and waits for completion.
 func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		res, err := recognitions.Recognise(ctx, recognition.Request{Path: req.Path, IsUserStarted: true})
+		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path, IsUserStarted: true})
 		if err != nil {
 			return command.Result{}, err
 		}
 		if res.IsEmpty {
-			return command.Result{Message: fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path)}, nil
+			return command.Result{
+				Message:    fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path),
+				OpenedPath: "",
+			}, nil
 		}
-		return command.Result{Message: fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path)}, nil
+		return command.Result{
+			Message:    fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path),
+			OpenedPath: "",
+		}, nil
 	}
 }

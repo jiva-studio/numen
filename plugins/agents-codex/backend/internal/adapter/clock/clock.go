@@ -1,3 +1,4 @@
+// Package clock provides the wall-clock time source of the plugin.
 package clock
 
 import "time"

@@ -76,6 +76,7 @@ func ConvertStopReasonToWire(s review.StopReason) api.StopReason {
 func ConvertSettingsToWire(p review.Preset) *api.Settings {
 	out := &api.Settings{
 		Goal:        ConvertGoalToWire(p.Goal),
+		ByDate:      "",
 		Counts:      ConvertBudgetUnitToWire(p.Counts),
 		MinutesADay: int32(p.MinutesADay),
 		NewADay:     int32(p.NewADay),
@@ -101,10 +102,16 @@ func ConvertSettingsToWire(p review.Preset) *api.Settings {
 // that is not a day of the week are the client's to correct.
 func ConvertSettingsFromWire(s *api.Settings) (review.Preset, error) {
 	if s == nil {
-		s = &api.Settings{}
+		s = &api.Settings{
+			Goal: api.GoalUnspecified, ByDate: "", MinutesADay: 0, NewADay: 0, ReviewsADay: 0, Retention: 0,
+			HasEvenLoad: false, Counts: api.BudgetUnitUnspecified, Backlog: 0, Load: nil,
+			Learned: api.RuleUnspecified, Interval: 0,
+		}
 	}
 	out := review.Preset{
 		Goal:        ConvertGoalFromWire(s.Goal),
+		By:          time.Time{},
+		Load:        nil,
 		Counts:      ConvertBudgetUnitFromWire(s.Counts),
 		MinutesADay: int(s.MinutesADay),
 		NewADay:     int(s.NewADay),
@@ -217,6 +224,7 @@ func ConvertGoalToWire(g review.Goal) api.Goal {
 	}
 }
 
+// ConvertGoalFromWire converts the goal a client sent into the domain goal.
 func ConvertGoalFromWire(g api.Goal) review.Goal {
 	switch g {
 	case api.GoalMinutesADay:
@@ -225,6 +233,8 @@ func ConvertGoalFromWire(g api.Goal) review.Goal {
 		return review.GoalRetention
 	case api.GoalByDate:
 		return review.GoalDate
+	case api.GoalUnspecified:
+		return ""
 	default:
 		return ""
 	}
@@ -242,12 +252,15 @@ func ConvertRuleToWire(r review.LearnedRule) api.Rule {
 	}
 }
 
+// ConvertRuleFromWire converts the learned rule a client sent into the domain rule.
 func ConvertRuleFromWire(r api.Rule) review.LearnedRule {
 	switch r {
 	case api.RuleInterval:
 		return review.RuleInterval
 	case api.RuleRetention:
 		return review.RuleRetention
+	case api.RuleUnspecified:
+		return ""
 	default:
 		return ""
 	}
@@ -273,6 +286,8 @@ func ConvertBudgetUnitFromWire(u api.BudgetUnit) review.BudgetUnit {
 		return review.BudgetUnitCards
 	case api.BudgetUnitShows:
 		return review.BudgetUnitShows
+	case api.BudgetUnitUnspecified:
+		return ""
 	default:
 		return ""
 	}

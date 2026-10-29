@@ -118,7 +118,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return RenameResult{}, err
 	}
 	if in.From == in.To {
-		return RenameResult{CardModel: in.FileStat}, nil
+		return RenameResult{CardModel: in.FileStat, Decks: nil, Cards: 0, NotWritten: nil}, nil
 	}
 
 	out, err := u.rename(ctx, v, in)

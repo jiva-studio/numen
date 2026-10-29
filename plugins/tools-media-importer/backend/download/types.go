@@ -14,8 +14,11 @@ var (
 	ErrNothingDownloaded = errors.New("nothing of the sort is published there")
 )
 
-// DownloadModel names what downloaded, and is kept along with what it brought back.
-type DownloadModel struct {
+// producerCaptions names the text a video site publishes as captions.
+const producerCaptions = "captions"
+
+// Model names what downloaded, and is kept along with what it brought back.
+type Model struct {
 	Tool     string
 	Version  string
 	Producer string
@@ -62,7 +65,7 @@ type Copy struct {
 // Provider is one source of what is published at an address.
 type Provider interface {
 	CanHandle(address string) bool
-	GetDownloadModel(address string) DownloadModel
+	GetDownloadModel(address string) Model
 	GetMetadata(ctx context.Context, address string) (Metadata, error)
 	GetText(ctx context.Context, address string, want PreferredCaptions) (Text, error)
 }

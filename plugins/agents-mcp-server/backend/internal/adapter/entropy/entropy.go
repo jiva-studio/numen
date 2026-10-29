@@ -1,3 +1,4 @@
+// Package entropy provides cryptographically secure random bytes.
 package entropy
 
 import "crypto/rand"

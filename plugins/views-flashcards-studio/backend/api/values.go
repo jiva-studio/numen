@@ -4,7 +4,7 @@ package api
 var ErrorCodeValues = []ErrorCode{ErrorCodeMissing, ErrorCodeNotANote, ErrorCodeNotText, ErrorCodeTooLarge, ErrorCodeBodyUnwritable, ErrorCodeUnreadable, ErrorCodeAlreadyExists, ErrorCodeInvalidName, ErrorCodeNotACardModel, ErrorCodeNotADeck, ErrorCodeDeckTooLarge, ErrorCodeNotAPreset, ErrorCodeStale}
 
 // ProblemKindValues lists every ProblemKind except the unspecified value.
-var ProblemKindValues = []ProblemKind{ProblemKindFieldDeclaredTwice, ProblemKindCardModelWithoutFields, ProblemKindTemplateMissingASide, ProblemKindPlaceholderUndeclared, ProblemKindCardWithoutACardModel, ProblemKindCardModelIsNotOne, ProblemKindFieldWrittenTwice, ProblemKindFieldNotRenamed, ProblemKindCardIdCarriedTwice}
+var ProblemKindValues = []ProblemKind{ProblemKindFieldDeclaredTwice, ProblemKindCardModelWithoutFields, ProblemKindTemplateMissingASide, ProblemKindPlaceholderUndeclared, ProblemKindCardWithoutACardModel, ProblemKindCardModelIsNotOne, ProblemKindFieldWrittenTwice, ProblemKindFieldNotRenamed, ProblemKindCardIDCarriedTwice}
 
 // GoalValues lists every Goal except the unspecified value.
 var GoalValues = []Goal{GoalMinutesADay, GoalRetention, GoalByDate}

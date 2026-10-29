@@ -75,7 +75,10 @@ func parseListing(listing *reasoningListing, currentField string) ([]reasoning.L
 
 // newModel is the model a chat API lists, with the depths of reasoning it names for the model.
 func newModel(name, title string, supported []string, listing *reasoningListing) model {
-	one := model{Name: name, Title: title, ReasoningField: getReasoningField(supported)}
+	one := model{
+		Name: name, Title: title, ReasoningField: getReasoningField(supported),
+		ReasoningLevels: nil, DefaultReasoning: "",
+	}
 	if levels, def, field, ok := parseListing(listing, one.ReasoningField); ok {
 		one.ReasoningLevels = levels
 		one.DefaultReasoning = def
@@ -92,14 +95,17 @@ func newModel(name, title string, supported []string, listing *reasoningListing)
 // receive it and offers the level, else none.
 func newEffort(m model, level string) effort {
 	if m.ReasoningField == "" || reasoning.Pick(m.ReasoningLevels, level) == "" {
-		return effort{}
+		return effort{field: "", level: ""}
 	}
 	return effort{field: m.ReasoningField, level: level}
 }
 
 // newChatRequest is the request for the next message of a conversation.
 func newChatRequest(model string, reqEffort effort, messages []message, tools []functionTool, isStreamed bool) chatRequest {
-	request := chatRequest{Model: model, Messages: messages, Tools: tools, Stream: isStreamed}
+	request := chatRequest{
+		Model: model, Messages: messages, Tools: tools, Stream: isStreamed,
+		Temperature: nil, MaxTokens: nil, ReasoningEffort: "", Reasoning: nil,
+	}
 	switch reqEffort.field {
 	case fieldReasoningEffort:
 		request.ReasoningEffort = reqEffort.level

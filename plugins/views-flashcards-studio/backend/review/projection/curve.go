@@ -102,7 +102,15 @@ type CurvePoint struct {
 }
 
 // OutsideGrid indicates a point falling outside the grid.
-var OutsideGrid = CurvePoint{Index: -1}
+var OutsideGrid = CurvePoint{Index: -1, Value: 0, Day: ""}
+
+// createCurve is the curve of a goal before any place is computed.
+func createCurve(goal Goal) Curve {
+	return Curve{
+		Goal: goal, Grid: nil, Days: nil, Points: nil, Now: OutsideGrid, Suggested: OutsideGrid,
+		Stops: "", Decks: 0, Cards: 0, Overdue: 0, Unbegun: 0,
+	}
+}
 
 // curveBuilder holds simulation state for computing a curve.
 type curveBuilder struct {
@@ -140,6 +148,8 @@ func (s Simulation) Curve(
 		return d.retention(ctx)
 	case GoalDate:
 		return d.date(ctx)
+	case GoalMinutes:
+		return d.minutes(ctx)
 	default:
 		return d.minutes(ctx)
 	}
@@ -156,7 +166,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out := Curve{Goal: GoalMinutes, Now: OutsideGrid, Suggested: OutsideGrid}
+	out := createCurve(GoalMinutes)
 	top := getMinutesUpperBound(getSessionMinutes(load), float64(p.MinutesADay))
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
@@ -184,14 +194,14 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out.Now = CurvePoint{Index: findNearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
+	out.Now = CurvePoint{Index: findNearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay), Day: ""}
 	// The suggested value is the shortest day that covers everything the day holds:
 	// the minutes stop closing it, and the material runs out. A load that no grid
 	// value carries is suggested at the longest day on the grid.
-	out.Suggested = CurvePoint{Index: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
+	out.Suggested = CurvePoint{Index: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1], Day: ""}
 	for i, one := range out.Points {
 		if len(one.Closed) == 0 {
-			out.Suggested = CurvePoint{Index: i, Value: out.Grid[i]}
+			out.Suggested = CurvePoint{Index: i, Value: out.Grid[i], Day: ""}
 			break
 		}
 	}
@@ -209,7 +219,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
-	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
+	out := createCurve(GoalRetention)
 	least, most := RetentionBounds.Min, RetentionBounds.Max
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
@@ -240,7 +250,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out.Now = CurvePoint{Index: findNearest(out.Grid, p.Retention), Value: p.Retention}
+	out.Now = CurvePoint{Index: findNearest(out.Grid, p.Retention), Value: p.Retention, Day: ""}
 	return out, nil
 }
 
@@ -261,6 +271,7 @@ func createDatePoint(ran Projection, day int) Point {
 	back, _ := ran.Retained.GetShare(day)
 	opening, session := ran.Session()
 	one := Point{
+		Reviews:  0,
 		Minutes:  ran.minutesADay(day),
 		Owed:     ran.Backlog[day],
 		Retained: back,
@@ -298,7 +309,7 @@ func findSuggestedDate(points []Point, grid []float64, days []string, minutesADa
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
-	out := Curve{Goal: GoalDate, Now: OutsideGrid, Suggested: OutsideGrid}
+	out := createCurve(GoalDate)
 	open := run.Day.GetStart(now)
 	delta := p.By.Format(DayLayout)
 	if p.By.IsZero() || delta < run.Day.GetName(open) {

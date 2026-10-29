@@ -153,7 +153,7 @@ func TestSpeechPastTheEndIsCompleted(t *testing.T) {
 
 func TestProofreadSpeech_RetriesSplitBatchForSpanningRun(t *testing.T) {
 	request := 0
-	m := &model{script: func(prompt string) string {
+	m := &model{script: func(_ string) string {
 		request++
 		if request == 1 {
 			return "2-9|a run reaching past the first batch"

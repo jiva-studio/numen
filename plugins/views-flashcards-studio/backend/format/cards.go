@@ -134,7 +134,9 @@ func (c Card) Value(field string) (string, bool) {
 // reported, and choosing automatically between them would guess which one the
 // author meant.
 func (d Deck) Card(carried cardid.ID) (Card, error) {
-	found := Card{}
+	found := Card{
+		Heading: "", CardID: "", CardModelLink: "", Preamble: "", Section: 0, Values: nil,
+	}
 	target := false
 	for _, c := range d.Cards {
 		if c.CardID != carried {

@@ -32,7 +32,9 @@ func (h *presetsHandler) GetDeckPreset(
 		return nil, newError(getCode(err), err)
 	}
 
-	out := &api.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
+	out := &api.GetDeckPresetResponse{
+		Preset: nil, Error: api.ErrorCodeUnspecified, At: nil, Bounds: presetwire.GetSettingsBounds(),
+	}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = reason
 		return out, nil
@@ -99,18 +101,18 @@ func (h *presetsHandler) ScheduleDeck(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.ScheduleDeckResponse{
-			At: writeFileStat(pos), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsUnlevelled: unlevelled,
 		}, nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := api.ErrorCodeNotAPreset
-		return &api.ScheduleDeckResponse{Error: reason}, nil
+		return &api.ScheduleDeckResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.ScheduleDeckResponse{Error: reason}, nil
+	return &api.ScheduleDeckResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
 }
 
 // ReadPreset is the settings of one preset.
@@ -126,7 +128,9 @@ func (h *presetsHandler) ReadPreset(
 		return nil, newError(getCode(err), err)
 	}
 
-	out := &api.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
+	out := &api.ReadPresetResponse{
+		Preset: nil, Error: api.ErrorCodeUnspecified, At: nil, Bounds: presetwire.GetSettingsBounds(),
+	}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = reason
 		return out, nil
@@ -157,7 +161,7 @@ func (h *presetsHandler) WritePreset(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.WritePresetResponse{
-			At: writeFileStat(pos), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsUnlevelled: unlevelled,
 		}, nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
@@ -166,13 +170,13 @@ func (h *presetsHandler) WritePreset(
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := api.ErrorCodeNotAPreset
-		return &api.WritePresetResponse{Error: reason}, nil
+		return &api.WritePresetResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.WritePresetResponse{Error: reason}, nil
+	return &api.WritePresetResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
 }
 
 // ComputeCurve computes what these settings amount to over the whole range of

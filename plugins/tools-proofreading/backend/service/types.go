@@ -12,6 +12,7 @@ type Line struct {
 // line.
 func (l Line) IsJoined() bool { return l.Last > l.Number }
 
+// Batch is a group of lines sent to the model in one request.
 type Batch struct {
 	Number int
 	Lines  []Line

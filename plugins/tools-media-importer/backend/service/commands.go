@@ -9,6 +9,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
+// trueValue is the text of a true boolean argument or setting.
+const trueValue = "true"
+
 // newCommands is the commands the manifest declares.
 func newCommands(links *link.Links) (*command.Registry, error) {
 	commands := command.New()
@@ -35,19 +38,19 @@ func newImportCommand(links *link.Links) command.Run {
 			return command.Result{}, err
 		}
 		if err := links.FetchText(ctx, made, true); err != nil {
-			return command.Result{OpenedPath: made.Path}, fmt.Errorf("%s is made, and its text was not fetched: %w", made.Path, err)
+			return command.Result{Message: "", OpenedPath: made.Path}, fmt.Errorf("%s is made, and its text was not fetched: %w", made.Path, err)
 		}
 		message := fmt.Sprintf("%s is made and its text fetched", made.Path)
 		if !links.IsCopyable(made.Address) {
 			return command.Result{Message: message, OpenedPath: made.Path}, nil
 		}
-		if req.Arguments.GetString("wait") != "true" {
-			links.StartCopy(made)
+		if req.Arguments.GetString("wait") != trueValue {
+			links.StartCopy(ctx, made)
 			return command.Result{Message: message + "; the video is being copied", OpenedPath: made.Path}, nil
 		}
 		size, err := links.Copy(ctx, made)
 		if err != nil {
-			return command.Result{OpenedPath: made.Path}, fmt.Errorf("%s: %w", message, err)
+			return command.Result{Message: "", OpenedPath: made.Path}, fmt.Errorf("%s: %w", message, err)
 		}
 		message += fmt.Sprintf(", and a copy of %s kept", describeSize(size))
 		return command.Result{Message: message, OpenedPath: made.Path}, nil
@@ -64,7 +67,7 @@ func newDownloadTextCommand(links *link.Links) command.Run {
 		if err := links.FetchText(ctx, found, true); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("the text of %s is fetched", req.Path)}, nil
+		return command.Result{Message: fmt.Sprintf("the text of %s is fetched", req.Path), OpenedPath: ""}, nil
 	}
 }
 
@@ -77,12 +80,12 @@ func newDownloadCopyCommand(links *link.Links) command.Run {
 		}
 		size, err := links.Copy(ctx, found)
 		if errors.Is(err, link.ErrBeingFetched) {
-			return command.Result{Message: fmt.Sprintf("a copy of %s is already being made", req.Path)}, nil
+			return command.Result{Message: fmt.Sprintf("a copy of %s is already being made", req.Path), OpenedPath: ""}, nil
 		}
 		if err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("a copy of %s is kept", describeSize(size))}, nil
+		return command.Result{Message: fmt.Sprintf("a copy of %s is kept", describeSize(size)), OpenedPath: ""}, nil
 	}
 }
 
@@ -96,7 +99,7 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 		if err := links.DeleteCopy(ctx, found); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("the copy of %s is deleted", req.Path)}, nil
+		return command.Result{Message: fmt.Sprintf("the copy of %s is deleted", req.Path), OpenedPath: ""}, nil
 	}
 }
 

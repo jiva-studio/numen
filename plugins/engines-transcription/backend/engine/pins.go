@@ -15,8 +15,16 @@ const LanguageDetected = "auto"
 // are FastConformer-TDT transducers over 128 mel features and differ in their vocabulary: v3 recognises
 // 25 European languages and detects which, v2 recognises English.
 var models = []ParakeetModel{
-	{Name: "parakeet-tdt-0.6b-v3-int8", Repo: parakeetV3, Languages: []string{LanguageDetected}},
-	{Name: "parakeet-tdt-0.6b-v2-int8", Repo: parakeetV2, Languages: []string{"en"}},
+	{
+		Name: "parakeet-tdt-0.6b-v3-int8", Repo: parakeetV3,
+		Encoder: "", Decoder: "", Joiner: "", Tokens: "",
+		Languages: []string{LanguageDetected},
+	},
+	{
+		Name: "parakeet-tdt-0.6b-v2-int8", Repo: parakeetV2,
+		Encoder: "", Decoder: "", Joiner: "", Tokens: "",
+		Languages: []string{"en"},
+	},
 }
 
 // FindModel returns the model the settings name.
@@ -26,5 +34,7 @@ func FindModel(name string) (ParakeetModel, bool) {
 			return one, true
 		}
 	}
-	return ParakeetModel{}, false
+	return ParakeetModel{
+		Name: "", Repo: "", Encoder: "", Decoder: "", Joiner: "", Tokens: "", Languages: nil,
+	}, false
 }

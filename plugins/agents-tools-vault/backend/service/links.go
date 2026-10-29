@@ -9,10 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// LinkListInput is the input of the link_list tool.
 type LinkListInput struct {
 	Path string `json:"path" jsonschema:"path of the note to inspect for links and backlinks"`
 }
 
+// ResolvedLinkItem is a link of a note with the path it resolves to.
 type ResolvedLinkItem struct {
 	From        string `json:"from" jsonschema:"source note path"`
 	To          string `json:"to,omitempty" jsonschema:"resolved target note path"`
@@ -22,6 +24,7 @@ type ResolvedLinkItem struct {
 	IsAmbiguous bool   `json:"is_ambiguous,omitempty" jsonschema:"true if link target matches multiple notes"`
 }
 
+// LinkListOutput is the output of the link_list tool.
 type LinkListOutput struct {
 	Path      string             `json:"path"`
 	Links     []ResolvedLinkItem `json:"links" jsonschema:"outgoing links from this note"`
@@ -30,6 +33,7 @@ type LinkListOutput struct {
 
 func (t *Tools) addNoteNeighbourhood(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "note_neighbourhood",
 		Title:       "Note Neighbourhood",
 		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",
@@ -40,6 +44,7 @@ func (t *Tools) addNoteNeighbourhood(registry *tools.Registry) error {
 
 func (t *Tools) addLinkList(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "link_list",
 		Title:       "List Links",
 		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",

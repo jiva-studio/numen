@@ -1,4 +1,4 @@
-// Package transcription converts a recording into text with models running on
+// Package engine converts a recording into text with models running on
 // this machine.
 //
 // A recording passes through two models: one detects the segments that contain
@@ -110,9 +110,15 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	}
 
 	out := &Transcriber{
-		pieces:  pieces,
-		blank:   blank,
-		workers: cfg.Workers,
+		encoder:   nil,
+		decoder:   nil,
+		joiner:    nil,
+		pieces:    pieces,
+		blank:     blank,
+		segmenter: nil,
+		cutter:    nil,
+		workers:   cfg.Workers,
+		mu:        sync.Mutex{},
 	}
 	threads := cfg.sessionThreads()
 	for _, one := range []struct {
@@ -140,8 +146,9 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 // openSession compiles the model at path with the given intra-op thread count.
 func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, error) {
 	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: onnx.GetSessionProvider(),
-		Threads:  threads,
+		Provider:     onnx.GetSessionProvider(),
+		Threads:      threads,
+		ComputeUnits: onnx.ComputeUnitsDefault,
 	})
 	if err != nil {
 		return nil, err
@@ -339,6 +346,13 @@ func newDecodeBuffers() (*decodeBuffers, error) {
 		cell:       make([]float32, layers*hidden),
 		prediction: make([]float32, hidden),
 		frame:      make([]float32, encoded),
+
+		targetTensor:     nil,
+		countTensor:      nil,
+		stateTensor:      nil,
+		cellTensor:       nil,
+		frameTensor:      nil,
+		predictionTensor: nil,
 	}
 	for _, one := range []struct {
 		into   **ort.Value

@@ -150,20 +150,21 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 	history := s.getConversation(conversation)
 	messages := make([]message, 0, len(history)+2)
 	if instructions := task.GetInstructions(); instructions != "" {
-		messages = append(messages, message{Role: "system", Content: newText(instructions)})
+		messages = append(messages, message{Role: "system", Content: newText(instructions), ToolCalls: nil, ToolCallID: ""})
 	}
 	messages = append(messages, history...)
-	messages = append(messages, message{Role: "user", Content: newText(task.GetPrompt())})
+	messages = append(messages, message{Role: "user", Content: newText(task.GetPrompt()), ToolCalls: nil, ToolCallID: ""})
 
 	modelName := s.getModel(task.GetModel())
 	taskRun := &run{
-		chat:   s.getChat(),
-		model:  modelName,
-		effort: s.getEffort(taskCtx, modelName, task.GetReasoning()),
-		tools:  tools,
-		words:  toolcall.IndexDeclarations(task.GetToolDeclarations()),
-		turns:  int(task.GetMaxSteps()),
-		send:   send,
+		chat:    s.getChat(),
+		model:   modelName,
+		effort:  s.getEffort(taskCtx, modelName, task.GetReasoning()),
+		tools:   tools,
+		words:   toolcall.IndexDeclarations(task.GetToolDeclarations()),
+		turns:   int(task.GetMaxSteps()),
+		send:    send,
+		isPlain: false,
 	}
 	transcript, reason, err := taskRun.answer(taskCtx, messages)
 	if taskCtx.Err() != nil {
@@ -225,7 +226,7 @@ func (s *Server) GetAgentState(
 	ctx context.Context,
 	_ *connect.Request[agentrun.GetAgentStateRequest],
 ) (*connect.Response[agentrun.GetAgentStateResponse], error) {
-	res := &agentrun.GetAgentStateResponse{}
+	res := &agentrun.GetAgentStateResponse{Unreachable: ""}
 	if _, err := s.listModels(ctx); err != nil {
 		res.Unreachable = fmt.Sprintf("the chat API cannot be reached: %v", err)
 	}
@@ -246,6 +247,8 @@ func (s *Server) GetAgentPrograms(
 		Title:       programTitle,
 		IsInstalled: err == nil,
 		LimitsTools: true,
+		IsDefault:   false,
+		Models:      nil,
 	}
 	hasConfigured := false
 	for _, one := range models {
@@ -260,6 +263,7 @@ func (s *Server) GetAgentPrograms(
 	if !hasConfigured && configured != "" && len(models) > 0 {
 		program.Models = append(program.Models, &agentrun.AgentModel{
 			Name: configured, Title: configured, IsDefault: true,
+			ReasoningLevels: nil, DefaultReasoning: "",
 		})
 	}
 	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{Programs: []*agentrun.AgentProgram{program}}), nil
@@ -273,7 +277,7 @@ func (s *Server) listModels(ctx context.Context) ([]model, error) {
 		defer s.mu.Unlock()
 		return s.models, nil
 	}
-	request := chat{baseURL: s.baseURL, key: s.key, client: s.Client}
+	request := chat{baseURL: s.baseURL, key: s.key, client: s.Client, temperature: nil, maxTokens: nil}
 	s.mu.Unlock()
 
 	listing, stop := context.WithTimeout(ctx, modelsLimit)
@@ -301,7 +305,7 @@ func (s *Server) Close() error {
 // none, the API does not list the model, or the model takes no depth.
 func (s *Server) getEffort(ctx context.Context, name, level string) effort {
 	if level == "" {
-		return effort{}
+		return effort{field: "", level: ""}
 	}
 	models, _ := s.listModels(ctx)
 	for _, one := range models {
@@ -309,5 +313,5 @@ func (s *Server) getEffort(ctx context.Context, name, level string) effort {
 			return newEffort(one, level)
 		}
 	}
-	return effort{}
+	return effort{field: "", level: ""}
 }

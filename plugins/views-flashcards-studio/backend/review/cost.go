@@ -33,7 +33,7 @@ type AnswerCost struct {
 }
 
 // DefaultCost is what a vault holding no answer times is projected at.
-var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
+var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second, ShouldReadNew: false, ShouldReadReview: false}
 
 // GetCostUnder returns how long an answer takes under each preset, keyed by the
 // path the review cards are grouped under.
@@ -42,7 +42,7 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 // cards and a preset of short cards convert the same minutes into different
 // counts. A review card that no preset groups is left out, and a kind of answer
 // that a preset has too few answers for keeps the default cost.
-func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[ReviewCardID]string) map[string]AnswerCost {
+func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
 	walkAnswers(scheduler, answers, func(before Schedule, a Answer) {
 		path, groups := presetMap[a.ReviewCard]
@@ -51,7 +51,7 @@ func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[ReviewCar
 		}
 		one := target[path]
 		if one == nil {
-			one = &answerTimes{}
+			one = &answerTimes{begun: nil, spaced: nil}
 			target[path] = one
 		}
 		one.addAnswer(scheduler.IsSpaced(before), a.GetCountedTime())

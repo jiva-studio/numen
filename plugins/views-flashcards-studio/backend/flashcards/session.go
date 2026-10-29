@@ -121,7 +121,7 @@ func (u Session) Execute(
 		dueTable.Add(s.Due)
 	}
 
-	out := SessionResult{Unwritten: assigned.Unwritten, Skipped: target.Skipped}
+	out := SessionResult{Queue: nil, Unwritten: assigned.Unwritten, Skipped: target.Skipped}
 	out.Queue = make([]QueuedReviewCard, 0, len(holds.owed)+len(holds.newCards))
 	for _, one := range holds.owed {
 		s := schedules[one.ID]
@@ -132,7 +132,8 @@ func (u Session) Execute(
 	for _, one := range holds.newCards {
 		out.Queue = append(out.Queue, QueuedReviewCard{
 			ReviewCard: one,
-			Ahead:      getIntervals(asks.policy, dueTable, one.ID, review.Schedule{}, now),
+			Schedule:   review.Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0},
+			Ahead:      getIntervals(asks.policy, dueTable, one.ID, review.Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}, now),
 		})
 	}
 	return out, nil
@@ -140,7 +141,7 @@ func (u Session) Execute(
 
 // getIntervals returns the duration until the next review for each rating.
 func getIntervals(
-	assign review.Assignment, dueTable *review.DueByDay, reviewCard review.ReviewCardID,
+	assign review.Assignment, dueTable *review.DueByDay, reviewCard review.CardID,
 	s review.Schedule, now time.Time,
 ) map[review.Rating]time.Duration {
 	if assign == nil {

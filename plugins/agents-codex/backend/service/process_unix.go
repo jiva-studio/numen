@@ -9,7 +9,7 @@ import (
 
 func detach(cmd *exec.Cmd) {
 	if cmd.SysProcAttr == nil {
-		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		cmd.SysProcAttr = new(syscall.SysProcAttr)
 	}
 	cmd.SysProcAttr.Setpgid = true
 }

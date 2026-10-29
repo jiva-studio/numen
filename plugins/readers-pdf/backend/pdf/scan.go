@@ -34,6 +34,7 @@ func OpenBytes(raw []byte) (*Scan, error) {
 	return &Scan{doc: doc}, nil
 }
 
+// Close releases the document and its worker.
 func (s *Scan) Close() { s.doc.close() }
 
 // GetPageCount is how many pages the document has.
@@ -87,8 +88,13 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 			index, dpi, pixels, mostPixels)
 	}
 	rendered, err := s.doc.worker.RenderPageInDPI(&requests.RenderPageInDPI{
-		DPI:  dpi,
-		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}},
+		DPI:         dpi,
+		Page:        requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}, ByReference: nil},
+		RenderFlags: 0,
+		RenderForm:  false,
+		Document:    nil,
+		Crop:        nil,
+		ImageFormat: "",
 	})
 	// gomutants:disable-next-line BRANCH_IF reason="rendering failure stops page rasterization"
 	if err != nil {

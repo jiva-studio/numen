@@ -27,7 +27,7 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	// answered with the text it carries and nothing else.
 	if b.mediaTypes[docPath] == opf.MediaSVG {
 		if pos, ok := text.FindSVGImage(path.Dir(docPath), raw, func(name string) bool { return b.files[name] != nil }); ok {
-			nodes = append([]markup.Node{{Name: "img", Attributes: []markup.Attribute{{Name: "src", Value: pos}}}}, nodes...)
+			nodes = append([]markup.Node{{Name: "img", Text: "", Offset: 0, Attributes: []markup.Attribute{{Name: "src", Value: pos}}, Children: nil}}, nodes...)
 		}
 	}
 	markup.Shift(nodes, doc.Offset)

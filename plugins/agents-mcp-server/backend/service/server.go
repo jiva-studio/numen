@@ -42,10 +42,10 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 			Title:       "Numen MCP Server",
 			Description: "Exposes Numén tools to external MCP clients",
 			Version:     "1.0.0",
+			WebsiteURL:  "",
+			Icons:       nil,
 		},
-		&sdk.ServerOptions{
-			Instructions: "Numén notes and plugins tools server.",
-		},
+		newServerOptions(),
 	)
 
 	aggregator := NewToolAggregator(client, mcpServer)
@@ -64,16 +64,34 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	srv := &Server{
 		config:     cfg,
 		mcpServer:  mcpServer,
+		httpServer: nil,
+		handler:    nil,
 		aggregator: aggregator,
+		listener:   nil,
+		actualAddr: "",
+		isClosed:   false,
+		mu:         sync.Mutex{},
 	}
 	authHandler := srv.createHTTPHandler(mcpServer)
 	srv.handler = authHandler
-	srv.httpServer = &http.Server{
-		Handler:           authHandler,
-		ReadHeaderTimeout: 10 * time.Second,
-	}
+	srv.httpServer = newHTTPServer(authHandler)
 
 	return srv, nil
+}
+
+// newServerOptions creates the options of the MCP server.
+func newServerOptions() *sdk.ServerOptions {
+	opts := new(sdk.ServerOptions)
+	opts.Instructions = "Numén notes and plugins tools server."
+	return opts
+}
+
+// newHTTPServer creates an HTTP server that serves handler.
+func newHTTPServer(handler http.Handler) *http.Server {
+	httpSrv := new(http.Server)
+	httpSrv.Handler = handler
+	httpSrv.ReadHeaderTimeout = 10 * time.Second
+	return httpSrv
 }
 
 // createHTTPHandler sets up HTTP routes and token authentication.
@@ -84,14 +102,13 @@ func (s *Server) createHTTPHandler(mcpServer *sdk.Server) http.Handler {
 		func(*http.Request) *sdk.Server { return mcpServer },
 		&sdk.SSEOptions{
 			DisableLocalhostProtection: true,
+			MaxRequestBodyBytes:        0,
 		},
 	)
 
 	streamHandler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return mcpServer },
-		&sdk.StreamableHTTPOptions{
-			SessionTimeout: 30 * time.Minute,
-		},
+		newStreamableOptions(),
 	)
 
 	mux.Handle("/sse", sseHandler)
@@ -118,8 +135,15 @@ func (s *Server) createHTTPHandler(mcpServer *sdk.Server) http.Handler {
 	})
 }
 
+// newStreamableOptions creates the options of the streamable HTTP handler.
+func newStreamableOptions() *sdk.StreamableHTTPOptions {
+	opts := new(sdk.StreamableHTTPOptions)
+	opts.SessionTimeout = 30 * time.Minute
+	return opts
+}
+
 // Rebind updates the server address and token, restarting the listener when the address changes.
-func (s *Server) Rebind(cfg Config) error {
+func (s *Server) Rebind(ctx context.Context, cfg Config) error {
 	s.mu.Lock()
 	s.config.Token = cfg.Token
 	if cfg.Addr == "" || cfg.Addr == s.config.Addr || s.isClosed {
@@ -133,7 +157,7 @@ func (s *Server) Rebind(cfg Config) error {
 	if oldListener != nil {
 		_ = oldListener.Close()
 	}
-	ln, err := net.Listen("tcp", cfg.Addr)
+	ln, err := new(net.ListenConfig).Listen(context.WithoutCancel(ctx), "tcp", cfg.Addr)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", cfg.Addr, err)
 	}
@@ -145,10 +169,7 @@ func (s *Server) Rebind(cfg Config) error {
 	}
 	s.listener = ln
 	s.actualAddr = ln.Addr().String()
-	s.httpServer = &http.Server{
-		Handler:           s.handler,
-		ReadHeaderTimeout: 10 * time.Second,
-	}
+	s.httpServer = newHTTPServer(s.handler)
 	httpSrv := s.httpServer
 	s.mu.Unlock()
 
@@ -165,7 +186,7 @@ func (s *Server) Start() error {
 		addr = "127.0.0.1:0"
 	}
 
-	ln, err := net.Listen("tcp", addr)
+	ln, err := new(net.ListenConfig).Listen(context.Background(), "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", addr, err)
 	}
@@ -259,5 +280,5 @@ func (s *Server) GetMCPServer() *sdk.Server {
 
 // RunStdio runs the server over standard input and output streams.
 func (s *Server) RunStdio(ctx context.Context) error {
-	return s.mcpServer.Run(ctx, &sdk.StdioTransport{})
+	return s.mcpServer.Run(ctx, &sdk.StdioTransport{MaxLineLength: 0})
 }

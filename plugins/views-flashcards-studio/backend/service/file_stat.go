@@ -36,7 +36,7 @@ func writeFileStat(ref domain.FileStat) *api.FileStat {
 // A missing stat is not compared.
 func readFileStat(pos *api.FileStat) domain.FileStat {
 	if pos == nil {
-		return domain.FileStat{}
+		return domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
 	}
-	return domain.FileStat{Path: pos.Path, Size: pos.Size, ModTime: instant(pos.Mtime)}
+	return domain.FileStat{Path: pos.Path, Kind: "", Size: pos.Size, ModTime: instant(pos.Mtime)}
 }

@@ -3,6 +3,9 @@
 package cardwire
 
 import (
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
@@ -42,9 +45,12 @@ func NewWireSummary(s cards.CardModelSummary) *api.CardModelSummary {
 // heading, and the problem names the deck and the reason.
 func NewRenameResponse(r cards.RenameResult, stat *api.FileStat) *api.RenameCardModelFieldResponse {
 	out := &api.RenameCardModelFieldResponse{
-		Decks: r.Decks,
-		Cards: int32(r.Cards),
-		At:    stat,
+		Decks:        r.Decks,
+		Cards:        int32(r.Cards),
+		NotWritten:   nil,
+		Error:        api.ErrorCodeUnspecified,
+		At:           stat,
+		IsUnlevelled: false,
 	}
 	for _, deck := range r.NotWritten {
 		out.NotWritten = append(out.NotWritten, &api.UnwrittenDeck{
@@ -169,11 +175,13 @@ func newWireProblemKind(fault format.Fault) (api.ProblemKind, bool) {
 	case format.FaultNotACardModel:
 		return api.ProblemKindCardModelIsNotOne, true
 	case format.FaultDuplicateCardID:
-		return api.ProblemKindCardIdCarriedTwice, true
+		return api.ProblemKindCardIDCarriedTwice, true
 	case format.FaultTwoValues:
 		return api.ProblemKindFieldWrittenTwice, true
 	case format.FaultNotWritten:
 		return api.ProblemKindFieldNotRenamed, true
+	case format.FaultTooLarge:
+		return api.ProblemKindUnspecified, false
 	default:
 		return api.ProblemKindUnspecified, false
 	}
@@ -183,9 +191,12 @@ func newWireProblemKind(fault format.Fault) (api.ProblemKind, bool) {
 // core holds one in.
 func NewDeck(w *api.WriteDeckRequest) format.Deck {
 	out := format.Deck{
+		Ref:      domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
 		Preamble: w.Preamble,
-		Cards:    newCards(w.Cards),
 		Tail:     w.Tail,
+		Sections: nil,
+		Cards:    newCards(w.Cards),
+		Problems: nil,
 	}
 	for _, s := range w.Sections {
 		out.Sections = append(out.Sections,
@@ -208,6 +219,7 @@ func newCards(cs []*api.Card) []format.Card {
 			Section:       sectionOf(c.SectionIndex),
 			CardModelLink: c.CardModelLink,
 			Preamble:      c.Preamble,
+			Values:        nil,
 		}
 		for _, v := range c.Values {
 			card.Values = append(card.Values, format.Value{Field: v.Field, Text: v.Text})

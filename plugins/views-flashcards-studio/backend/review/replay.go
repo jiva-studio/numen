@@ -15,12 +15,12 @@ type SchedulingPolicy struct {
 // Assignment is how one review card is scheduled. A review card is scheduled by the
 // preset its deck points at, and two presets asking for different shares of the
 // cards send the same card away for different lengths of time.
-type Assignment func(ReviewCardID) SchedulingPolicy
+type Assignment func(CardID) SchedulingPolicy
 
 // ScheduleBy is one scheduler for every review card, on the preset a deck naming
 // none is scheduled by.
 func ScheduleBy(s Scheduler) Assignment {
-	return func(ReviewCardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
+	return func(CardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 
 // History is a vault's answers in the order they were given: no revoked lines,
@@ -39,8 +39,8 @@ func OrderAnswers(answers []Answer) History { return getActiveAnswers(answers) }
 //
 // The days already filled by earlier answers are what the next card is placed
 // against.
-func (h History) Replay(d Day, assignment Assignment) map[ReviewCardID]Schedule {
-	out := make(map[ReviewCardID]Schedule)
+func (h History) Replay(d Day, assignment Assignment) map[CardID]Schedule {
+	out := make(map[CardID]Schedule)
 	on := NewDueByDay(d)
 	for _, a := range h {
 		one := assignment(a.ReviewCard)
@@ -90,14 +90,14 @@ func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally 
 // one to the caller with the schedule the review card had before it.
 func walkAnswers(
 	delta Scheduler, answers []Answer, each func(before Schedule, a Answer),
-) map[ReviewCardID]Schedule {
+) map[CardID]Schedule {
 	return OrderAnswers(answers).walkAnswers(delta, each)
 }
 
 func (h History) walkAnswers(
 	delta Scheduler, each func(before Schedule, a Answer),
-) map[ReviewCardID]Schedule {
-	out := make(map[ReviewCardID]Schedule)
+) map[CardID]Schedule {
+	out := make(map[CardID]Schedule)
 	for _, a := range h {
 		before := out[a.ReviewCard]
 		if each != nil {

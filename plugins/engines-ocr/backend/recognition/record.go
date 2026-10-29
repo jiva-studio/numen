@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"image"
 	"sort"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -85,7 +86,7 @@ func (r *record) isFor(inputHash, recipe string) bool {
 func (r *record) getTextSegments(index int) []domain.TextSegment {
 	out := make([]domain.TextSegment, 0, len(r.Pages[index]))
 	for _, one := range r.Pages[index] {
-		selector := host.Selector{Page: index + 1, Boxes: one.Rects}
+		selector := host.Selector{T: nil, Page: index + 1, CFI: "", Boxes: one.Rects}
 		out = append(out, domain.TextSegment{Text: one.Text, Heading: one.Section, Selector: selector.Encode()})
 	}
 	return out
@@ -97,7 +98,10 @@ func (r *record) getText() domain.VersionText {
 	for index := range r.Pages {
 		segments = append(segments, r.getTextSegments(index)...)
 	}
-	return domain.NewVersionText(domain.TextVersion{Kind: textKind}, segments)
+	return domain.NewVersionText(domain.TextVersion{
+		Path: "", PluginID: "", Key: "", Source: "", Kind: textKind, File: "",
+		SourceHash: "", Hash: "", CreateTime: time.Time{},
+	}, segments)
 }
 
 // blockGap ends every block of a page.
@@ -136,11 +140,11 @@ func newBlockParts(bounds image.Rectangle, block Block) []part {
 			to = clampSpan(boxes[i+1].Range.Start, len(block.Text))
 		}
 		if to > from {
-			out = append(out, part{Text: block.Text[from:to], Rects: [][4]float32{getFractions(bounds, box.Rect)}})
+			out = append(out, part{Text: block.Text[from:to], Rects: [][4]float32{getFractions(bounds, box.Rect)}, Section: ""})
 		}
 	}
 	if len(out) == 0 {
-		return []part{{Text: block.Text}}
+		return []part{{Text: block.Text, Rects: nil, Section: ""}}
 	}
 	return out
 }

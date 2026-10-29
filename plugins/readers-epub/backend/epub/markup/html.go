@@ -1,3 +1,4 @@
+// Package markup represents a document as nodes and writes them as HTML.
 package markup
 
 import (
@@ -6,7 +7,8 @@ import (
 	"strings"
 )
 
-// book's Text. A window reads an offset off the markup and counts none itself.
+// OffsetAttribute is the attribute that carries the offset in the book's Text of each run of text.
+// A window reads an offset off the markup and counts none itself.
 const OffsetAttribute = "data-offset"
 
 // alone are the elements that hold nothing, and are written without a closing

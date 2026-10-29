@@ -3,6 +3,7 @@ package deckedit
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
@@ -33,7 +34,7 @@ func changeDeck(
 		return deckChange{}, err
 	}
 	return deckChange{
-		result:  EditResult{FileStat: wrote.FileStat, Cards: len(file.Deck(domain.FileStat{}).Cards)},
+		result:  EditResult{FileStat: wrote.FileStat, Cards: len(file.Deck(domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}).Cards)},
 		cardIDs: wrote.Given,
 	}, nil
 }

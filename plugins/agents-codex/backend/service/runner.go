@@ -138,7 +138,10 @@ func runReader(
 	}()
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(nil, maxLine)
-	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps}
+	r := &reader{
+		work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
+		completed: 0, sentCount: 0,
+	}
 	isLimited := scanOutput(scanner, s.NewHandler(r), r, w, stop)
 	scanErr := scanner.Err()
 	isCancelled := runCtx.Err() != nil
@@ -199,6 +202,9 @@ func newSpec(req *agentrun.AskAgentRequest, customPath ...string) spec {
 		Conversation: req.GetConversation(),
 		MaxSteps:     int(req.GetMaxSteps()),
 		NewHandler:   newEventHandler,
+		Root:         "",
+		Token:        "",
+		Build:        nil,
 	}
 	if agentrun.HasTools(req) {
 		s.Root = req.GetRoot()

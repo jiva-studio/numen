@@ -20,6 +20,7 @@ import { runDuplicationCheck } from "./checks/duplication.mjs";
 import { runComplexityCheck } from "./checks/complexity.mjs";
 import { runDeadcodeCheck } from "./checks/deadcode.mjs";
 import { runInterfacesCheck } from "./checks/interfaces.mjs";
+import { runGolintCheck } from "./checks/golint.mjs";
 import { runFrontendCheck } from "./checks/frontend.mjs";
 import { runStructureCheck } from "./checks/structure.mjs";
 
@@ -48,6 +49,11 @@ const ALL_CHECKS = [
     run: (opts) => runInterfacesCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
   {
+    id: "golint",
+    name: "Go Lint (golangci-lint, each module's own configuration)",
+    run: (opts) => runGolintCheck({ repoRoot: REPO_ROOT, ...opts }),
+  },
+  {
     id: "frontend",
     name: "Frontend Conventions & Quality (ESLint)",
     run: (opts) => runFrontendCheck({ repoRoot: REPO_ROOT, ...opts }),
@@ -64,7 +70,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces,frontend,structure)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces,golint,frontend,structure)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -133,6 +139,7 @@ function resolveChecks(args, changedOnly) {
       if (id === "complexity") return hasGo;
       if (id === "deadcode") return hasUi || hasGoCore;
       if (id === "interfaces") return hasGo;
+      if (id === "golint") return hasGo;
       if (id === "frontend") return hasTsOrVue;
       if (id === "structure") return hasGo || hasTsOrVue;
       return true;

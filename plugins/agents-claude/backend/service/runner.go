@@ -52,6 +52,13 @@ type claudeArguments struct {
 // defaultTurns is how many times the program may go round on one task where the task names no limit.
 const defaultTurns = 100
 
+// Command-line flags the program is started with.
+const (
+	flagOutputFormat = "--output-format"
+	flagVerbose      = "--verbose"
+	streamJSON       = "stream-json"
+)
+
 // buildClaudeArguments returns what the program is started with. A run that names no tool is one
 // answer: the program is given no tool, no MCP server and one turn.
 func buildClaudeArguments(in claudeArguments) []string {
@@ -65,8 +72,8 @@ func buildClaudeArguments(in claudeArguments) []string {
 
 	args := []string{
 		"-p",
-		"--output-format", "stream-json",
-		"--verbose",
+		flagOutputFormat, streamJSON,
+		flagVerbose,
 		"--include-partial-messages",
 		"--strict-mcp-config",
 		"--permission-mode", "dontAsk",
@@ -119,8 +126,8 @@ func buildClaudeArguments(in claudeArguments) []string {
 func buildAnswerArguments(in claudeArguments) []string {
 	args := []string{
 		"-p",
-		"--output-format", "stream-json",
-		"--verbose",
+		flagOutputFormat, streamJSON,
+		flagVerbose,
 		"--include-partial-messages",
 		"--strict-mcp-config",
 		"--permission-mode", "dontAsk",

@@ -44,7 +44,7 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 	}
 }
 
-func timeAfter(t *testing.T) <-chan struct{} {
+func timeAfter(_ *testing.T) <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*testingTimeout())

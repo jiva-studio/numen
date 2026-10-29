@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
+
+import { listGoModules } from "./modules.mjs";
 
 /**
  * Runs golangci-lint on a single directory.
@@ -64,26 +65,7 @@ function lintPlugin(dir, configFile, pluginName) {
 export async function runComplexityCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
   const configFile = path.join(repoRoot, ".golangci.yml");
-  const pluginsDir = path.join(repoRoot, "plugins");
-
-  const targets = [
-    { name: "libs/core", dir: path.join(repoRoot, "libs/core") },
-    { name: "libs/notes", dir: path.join(repoRoot, "libs/notes") },
-    { name: "apps/desktop", dir: path.join(repoRoot, "apps/desktop") },
-    { name: "libs/plugin-sdk-go", dir: path.join(repoRoot, "libs/plugin-sdk-go") },
-  ].filter((t) => fs.existsSync(path.join(t.dir, "go.mod")));
-
-  if (fs.existsSync(pluginsDir)) {
-    const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
-    for (const e of entries) {
-      if (e.isDirectory() && fs.existsSync(path.join(pluginsDir, e.name, "go.mod"))) {
-        targets.push({
-          name: `plugin/${e.name}`,
-          dir: path.join(pluginsDir, e.name),
-        });
-      }
-    }
-  }
+  const targets = listGoModules(repoRoot);
 
   const results = await Promise.all(
     targets.map(({ dir, name }) => lintPlugin(dir, configFile, name))

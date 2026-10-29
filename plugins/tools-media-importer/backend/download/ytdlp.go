@@ -32,7 +32,9 @@ func newYtDLP(c Config) *ytDLP {
 	v := &ytDLP{
 		command:      command,
 		sound:        resolveProgram(c.Sound, "ffmpeg"),
+		getVersion:   nil,
 		probeTimeout: defaultProbeTimeout,
+		infoMu:       sync.Mutex{},
 		infoCache:    make(map[string]string),
 	}
 	v.getVersion = sync.OnceValue(v.readVersion)
@@ -41,8 +43,8 @@ func newYtDLP(c Config) *ytDLP {
 
 func (v *ytDLP) CanHandle(target string) bool { return isVideoSite(target) && v.command.isPresent() }
 
-func (v *ytDLP) GetDownloadModel(string) DownloadModel {
-	return DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: "captions"}
+func (v *ytDLP) GetDownloadModel(string) Model {
+	return Model{Tool: "yt-dlp", Version: v.getVersion(), Producer: producerCaptions}
 }
 
 func (v *ytDLP) readVersion() string {
@@ -149,8 +151,9 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptio
 		return Text{}, err
 	}
 	return Text{
-		Producer: "captions",
+		Producer: producerCaptions,
 		Cues:     cues,
+		Prose:    "",
 		Title:    meta.Title,
 		Length:   meta.Length,
 	}, nil
@@ -241,15 +244,18 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Co
 	return Copy{MediaType: getMediaType(name), Extension: extension}, nil
 }
 
+// mediaTypeMP4Audio is the media type of the audio containers of MPEG-4.
+const mediaTypeMP4Audio = "audio/mp4"
+
 var mediaTypes = map[string]string{
 	".aac":  "audio/aac",
 	".aif":  "audio/aiff",
 	".aiff": "audio/aiff",
 	".alac": "audio/alac",
 	".flac": "audio/flac",
-	".m4a":  "audio/mp4",
-	".m4b":  "audio/mp4",
-	".m4p":  "audio/mp4",
+	".m4a":  mediaTypeMP4Audio,
+	".m4b":  mediaTypeMP4Audio,
+	".m4p":  mediaTypeMP4Audio,
 	".mp3":  "audio/mpeg",
 	".mp4":  "video/mp4",
 	".oga":  "audio/ogg",

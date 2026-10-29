@@ -1,3 +1,4 @@
+// Package main tests the plugin process.
 package main
 
 import (

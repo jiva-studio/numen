@@ -21,9 +21,20 @@ type Store interface {
 	// With returns the folder in the vault with the given identity. A call on it
 	// returns ErrUnknownVault when the installation has no such vault.
 	With(id VaultID) Store
+	StoreReader
+	StoreWriter
+}
 
+// StoreReader reads the files of a store folder.
+type StoreReader interface {
 	// Read returns the whole file.
 	Read(ctx context.Context, name string) ([]byte, error)
+	// List returns the files of the folder, sorted by name. A folder that is not there holds none.
+	List(ctx context.Context) ([]StoreFile, error)
+}
+
+// StoreWriter changes the files of a store folder.
+type StoreWriter interface {
 	// Append adds to the end of the file, making it when it is not there. The content lands whole or
 	// not at all.
 	Append(ctx context.Context, name string, content []byte) error
@@ -35,6 +46,4 @@ type Store interface {
 	// Rename moves the file to another name of the folder, replacing what the other held. The file
 	// lands under the new name whole.
 	Rename(ctx context.Context, from, to string) error
-	// List returns the files of the folder, sorted by name. A folder that is not there holds none.
-	List(ctx context.Context) ([]StoreFile, error)
 }

@@ -33,9 +33,14 @@ type bookCache struct {
 }
 
 func newBookCache() *bookCache {
-	return &bookCache{readFile: func(ctx context.Context, files host.Vault, path string) ([]byte, host.FileStat, error) {
-		return files.Read(ctx, path)
-	}}
+	return &bookCache{
+		readFile: func(ctx context.Context, files host.Vault, path string) ([]byte, host.FileStat, error) {
+			return files.Read(ctx, path)
+		},
+		mu:       sync.Mutex{},
+		books:    nil,
+		isClosed: false,
+	}
 }
 
 // A cachedBook is a book kept in the cache until it is evicted and has no readers.
@@ -106,6 +111,8 @@ func (c *bookCache) openBook(ctx context.Context, files host.Vault, key, path st
 		size:    info.Size,
 		mtime:   info.ModTime.UnixNano(),
 		archive: archive,
+		readers: 0,
+		evicted: false,
 	}, nil
 }
 

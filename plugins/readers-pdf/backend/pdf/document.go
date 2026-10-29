@@ -24,6 +24,7 @@ import (
 // reader borrows one. A returned worker stays alive while the pool is within
 // its idle count, and the pool is released once no document has been open for
 // idleRelease.
+
 // Timer stops a scheduled callback.
 type Timer interface {
 	Stop() bool
@@ -126,8 +127,16 @@ func acquirePool() (pdfium.Pool, error) {
 	if workers.pool == nil {
 		total := getPoolSize()
 		made, err := webassembly.Init(webassembly.Config{
-			MaxTotal: total,
-			MaxIdle:  min(workers.idle, total),
+			Context:       nil,
+			MinIdle:       0,
+			MaxTotal:      total,
+			MaxIdle:       min(workers.idle, total),
+			WASM:          nil,
+			FSConfig:      nil,
+			RuntimeConfig: nil,
+			Stdout:        nil,
+			Stderr:        nil,
+			RandomSource:  nil,
 			// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="workers are only reused when idle allowance is positive"
 			ReuseWorkers: workers.idle > 0,
 		})
@@ -222,7 +231,7 @@ type source struct {
 }
 
 func openBytes(raw []byte) (*document, error) {
-	return open(source{reader: bytes.NewReader(raw), size: int64(len(raw))})
+	return open(source{reader: bytes.NewReader(raw), size: int64(len(raw)), file: nil})
 }
 
 // openReader opens a document from a file the caller has open. It takes
@@ -259,7 +268,7 @@ func open(src source) (*document, error) {
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
 
-	opened, err := worker.OpenDocument(&requests.OpenDocument{FileReader: src.reader, FileReaderSize: src.size})
+	opened, err := worker.OpenDocument(&requests.OpenDocument{File: nil, FilePath: nil, FileReader: src.reader, FileReaderSize: src.size, Password: nil})
 	if err != nil {
 		putWorker(worker)
 		closeFile()
@@ -273,7 +282,7 @@ func open(src source) (*document, error) {
 		return nil, fmt.Errorf("%w: %w", ErrNotPDF, err)
 	}
 
-	doc := &document{worker: worker, ref: opened.Document, file: src.file}
+	doc := &document{worker: worker, ref: opened.Document, pages: 0, file: src.file}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.ref})
 	// gomutants:disable-next-line BRANCH_IF reason="aborts when page count cannot be retrieved"
 	if err != nil {
@@ -309,7 +318,7 @@ func (d *document) title() string {
 // justify rejecting the document.
 func (d *document) text(index int) string {
 	page, err := d.worker.GetPageText(&requests.GetPageText{
-		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}},
+		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil},
 	})
 	if err != nil {
 		return ""

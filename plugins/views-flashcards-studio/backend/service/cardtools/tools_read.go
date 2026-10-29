@@ -17,6 +17,7 @@ import (
 // addCardCurrent adds the tool that returns the card currently open.
 func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:  tools.ByEffect,
 		Name:  "card_current",
 		Title: "Show the card in front",
 		Description: "The card in front of the person: the deck it stands in, the card id " +
@@ -43,6 +44,7 @@ type cardModelListOutput struct {
 
 func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:  tools.ByEffect,
 		Name:  "card_model_list",
 		Title: "List card models",
 		Description: "The card models of the vault: where each is filed, the name a card's " +
@@ -71,7 +73,7 @@ func (t *Tools) listCardCardModels(ctx context.Context, in cardModelListInput) (
 	if err != nil {
 		return cardModelListOutput{}, err
 	}
-	res := cardModelListOutput{Total: count}
+	res := cardModelListOutput{CardModels: nil, Total: count}
 	for _, s := range cardModels {
 		res.CardModels = append(res.CardModels, CardModel{
 			Path: s.Path, Name: domain.Basename(s.Path), Title: s.Title, Fields: s.Fields,
@@ -94,6 +96,7 @@ type cardModelReadOutput struct {
 
 func (t *Tools) addCardCardModelRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:  tools.ByEffect,
 		Name:  "card_model_read",
 		Title: "Read a card model",
 		Description: "The fields and templates of one card model: what it is called, the " +
@@ -156,6 +159,7 @@ type cardReadOutput struct {
 
 func (t *Tools) addCardRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:  tools.ByEffect,
 		Name:  "card_read",
 		Title: "Read cards",
 		Description: "The cards of one deck, in the order they stand in the file, each " +
@@ -191,6 +195,7 @@ func (t *Tools) readCards(ctx context.Context, in cardReadInput) (cardReadOutput
 		return cardReadOutput{}, err
 	}
 	res := cardReadOutput{
+		Cards:       nil,
 		Sections:    read.Sections,
 		Total:       read.Total,
 		Faults:      faults(read.Problems),

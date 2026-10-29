@@ -95,7 +95,7 @@ func (r *cardModelReader) validateTemplate(pos int, has map[string]bool, templat
 
 func (r *cardModelReader) addTemplate(sec section, secsAfter []section) {
 	pos := len(r.cardModel.Templates)
-	template := CardTemplate{Name: sec.name}
+	template := CardTemplate{Name: sec.name, Preamble: "", Front: "", Back: ""}
 
 	sides := findTemplateSides(secsAfter)
 	end := sec.to

@@ -7,8 +7,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 var (
@@ -54,7 +54,7 @@ func newProofreading(h Host, kinds map[domain.TextKind]bool, ask askModel, getCo
 func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, error) {
 	task := host.Task{
 		ID: "proofread:" + req.Path, Title: "Proofreading " + path.Base(req.Path), About: req.Path,
-		Unit: host.UnitThings, IsUserStarted: req.IsUserStarted,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := p.proofread(ctx, req, &task)
 	if err != nil && ctx.Err() == nil {
@@ -84,7 +84,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 		return Result{}, fmt.Errorf("read %s of %s: %w", source.GetID(), req.Path, err)
 	}
 
-	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to proofread %s: %w", req.Path, err)
 	}
@@ -229,7 +229,7 @@ func getLastLine(line Line) int {
 func readLines(parts []domain.TextSegment) []Line {
 	lines := make([]Line, len(parts))
 	for i, part := range parts {
-		lines[i] = Line{Number: i + 1, Text: strings.TrimSpace(part.Text)}
+		lines[i] = Line{Number: i + 1, Last: 0, Text: strings.TrimSpace(part.Text)}
 	}
 	return lines
 }
@@ -242,7 +242,7 @@ func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 		selector, _ := host.ParseSelector(parts[line.Number-1].Selector)
 		page := selector.Page
 		if len(out) == 0 || out[len(out)-1].Number != page {
-			out = append(out, Batch{Number: page})
+			out = append(out, Batch{Number: page, Lines: nil, IsJoinable: false, Context: ""})
 		}
 		out[len(out)-1].Lines = append(out[len(out)-1].Lines, line)
 	}

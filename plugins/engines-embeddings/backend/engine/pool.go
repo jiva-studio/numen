@@ -90,7 +90,7 @@ type padding struct {
 	ids, mask, types []int64
 }
 
-var paddings = sync.Pool{New: func() any { return &padding{} }}
+var paddings = sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil} }}
 
 // releasePadding hands a padding back for the next batch.
 func releasePadding(p *padding) {
@@ -104,7 +104,7 @@ func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 
 	in, _ = paddings.Get().(*padding)
 	if in == nil {
-		in = &padding{}
+		in = &padding{ids: nil, mask: nil, types: nil}
 	}
 	size := rows * seq
 	in.ids = resize(in.ids, size)

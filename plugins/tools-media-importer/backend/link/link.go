@@ -49,7 +49,7 @@ var (
 // Fetcher retrieves the content published at an address.
 type Fetcher interface {
 	CanCopy(address string) bool
-	GetDownloadModel(address string) download.DownloadModel
+	GetDownloadModel(address string) download.Model
 	GetMetadata(ctx context.Context, address string) (download.Metadata, error)
 	GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error)
 	Download(ctx context.Context, address string, into io.Writer) (download.Copy, error)
@@ -96,7 +96,8 @@ func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
 	}
 	return &Links{
 		host: h, fetcher: fetcher, settings: settings, now: now,
-		closing: make(chan struct{}), running: map[string]bool{},
+		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
+		mu: sync.Mutex{}, running: map[string]bool{},
 	}
 }
 
@@ -147,7 +148,7 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 	if err != nil {
 		return Link{}, err
 	}
-	note := markdown.Parse(domain.FileStat{Path: path}, raw)
+	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
 	value, _ := note.Frontmatter[urlKey].(string)
 	if note.Type != NoteType || value == "" {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
@@ -160,7 +161,7 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 }
 
 func newLink(path string, parsed address.URL, raw []byte) Link {
-	return Link{Path: path, Address: parsed, Key: getKey(parsed), Hash: domain.HashContent(raw)}
+	return Link{Vault: "", Path: path, Address: parsed, Key: getKey(parsed), Hash: domain.HashContent(raw)}
 }
 
 // getKey names what is stored for the text of an address.
@@ -269,9 +270,9 @@ func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
 
 // StartFetch fetches the text of a link in the background, and a copy of the video where one is
 // published. A failure is shown as the task of the work that failed.
-func (l *Links) StartFetch(link Link) {
+func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.Background())
+		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
 		_ = l.FetchText(runCtx, link, true)
 		if l.IsCopyable(link.Address) {
@@ -281,18 +282,18 @@ func (l *Links) StartFetch(link Link) {
 }
 
 // StartFetchText fetches the text of a link in the background. A failure is shown as its task.
-func (l *Links) StartFetchText(link Link, isUserStarted bool) {
+func (l *Links) StartFetchText(ctx context.Context, link Link, isUserStarted bool) {
 	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.Background())
+		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
 		_ = l.FetchText(runCtx, link, isUserStarted)
 	})
 }
 
 // StartCopy copies the video of a link in the background. A failure is shown as its task.
-func (l *Links) StartCopy(link Link) {
+func (l *Links) StartCopy(ctx context.Context, link Link) {
 	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.Background())
+		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
 		_, _ = l.Copy(runCtx, link)
 	})
@@ -323,7 +324,10 @@ func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) er
 			return err
 		}
 	}
-	task := host.Task{ID: getTaskID("text", link.Path), Title: fetchingText, About: link.Path, IsUserStarted: isUserStarted}
+	task := host.Task{
+		ID: getTaskID("text", link.Path), Title: fetchingText, About: link.Path,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: isUserStarted,
+	}
 	l.reportTask(ctx, task)
 	err := l.fetchText(ctx, folder, link)
 	l.endTask(ctx, task, err)
@@ -392,7 +396,7 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 // putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
-		Path: link.Path, Key: link.Key, Kind: kind, SourceHash: link.Hash, File: link.Key + textExt,
+		Path: link.Path, Key: link.Key, Source: "", Kind: kind, SourceHash: link.Hash, File: link.Key + textExt,
 	})
 	return err
 }
@@ -424,7 +428,10 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 	if !fetcher.CanCopy(string(link.Address)) {
 		return 0, ErrNotCopyable
 	}
-	task := host.Task{ID: getTaskID("copy", link.Path), Title: copyingVideo, About: link.Path, Unit: host.UnitBytes, IsUserStarted: true}
+	task := host.Task{
+		ID: getTaskID("copy", link.Path), Title: copyingVideo, About: link.Path,
+		Done: 0, Total: 0, Unit: host.UnitBytes, Error: "", IsUserStarted: true,
+	}
 	l.reportTask(ctx, task)
 	size, err := l.copy(ctx, fetcher, settings, link, task)
 	l.endTask(ctx, task, err)
@@ -439,7 +446,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if settings.CopyMaxSize > 0 && meta.Bytes > settings.CopyMaxSize {
 		return meta.Bytes, fmt.Errorf("%w: %d bytes", ErrTooLarge, meta.Bytes)
 	}
-	turn, err := l.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true})
+	turn, err := l.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {
 		return 0, err
 	}
@@ -459,6 +466,8 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 			task.Done, task.Total = byteCount, meta.Bytes
 			l.reportTask(ctx, task)
 		},
+		pending:   nil,
+		byteCount: 0,
 	}
 	copied, err := fetcher.Download(ctx, string(link.Address), into)
 	if err == nil {

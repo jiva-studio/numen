@@ -125,6 +125,13 @@ func parseStreamWithClock(
 		now:          now,
 		record:       record,
 		expectsVault: hasVault,
+		last:         time.Time{},
+		isStreaming:  false,
+		callID:       "",
+		tool:         "",
+		arguments:    strings.Builder{},
+		offset:       0,
+		reason:       "",
 	}
 	scanner := bufio.NewReader(r)
 	for {

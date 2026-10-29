@@ -1,3 +1,4 @@
+// Package deckedit holds the scenarios that edit the cards and sections of a deck.
 package deckedit
 
 import (
@@ -13,14 +14,16 @@ type AddCard struct {
 	write Write
 }
 
+// NewAddCard creates the AddCard scenario.
 func NewAddCard(read Read, write Write) AddCard { return AddCard{read: read, write: write} }
 
+// Execute adds a card to a deck or one of its sections.
 func (u AddCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardModel string, values []format.Value, section *int,
 ) (AddedCard, error) {
 	position := 0
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
-		card := format.Card{CardModelLink: cardModel, Values: values}
+		card := format.Card{Heading: "", CardID: "", CardModelLink: cardModel, Preamble: "", Section: 0, Values: values}
 		if section == nil {
 			position = len(contents.Body.Cards)
 			return file.AddCard(card)

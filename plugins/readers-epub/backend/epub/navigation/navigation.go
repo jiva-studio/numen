@@ -1,3 +1,4 @@
+// Package navigation reads the parts of a book from its NCX or navigation document.
 package navigation
 
 import (
@@ -14,8 +15,8 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// A book that names one part names its cover or its own title. Structure begins
-// at two.
+// MinimumParts is the fewest parts a book names for them to count as its structure. A book that
+// names one part names its cover or its own title.
 const MinimumParts = 2
 
 // ReadParts reads the parts a book names, from whichever navigation

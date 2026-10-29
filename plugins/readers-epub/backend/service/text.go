@@ -9,8 +9,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
@@ -48,7 +48,11 @@ var _ host.TextProvider = (*TextServer)(nil)
 func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
 	return &TextServer{
 		files: files, texts: texts, store: store, queue: queue,
-		running: map[string]context.CancelFunc{},
+		wg:       sync.WaitGroup{},
+		mu:       sync.Mutex{},
+		isClosed: false,
+		last:     bookText{hash: "", text: "", segments: nil},
+		running:  map[string]context.CancelFunc{},
 	}
 }
 
@@ -139,6 +143,7 @@ func (s *TextServer) finish(key string) {
 func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
+		Done: 0, Total: 0, Unit: 0, Error: "",
 		IsUserStarted: req.IsUserStarted,
 	}
 	err := s.putText(ctx, req, task)
@@ -153,7 +158,7 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 // putText reports the text of a book as a version made from the file. A file that is no book, a
 // locked book and a book with no text get no version.
 func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task host.Task) error {
-	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
@@ -180,7 +185,7 @@ func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task ho
 		return err
 	}
 	_, err = texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: textKey, Kind: textKind, SourceHash: read.hash, File: file,
+		Path: req.Path, Key: textKey, Source: "", Kind: textKind, SourceHash: read.hash, File: file,
 	})
 	return err
 }
@@ -196,13 +201,13 @@ func getSegments(text string, sections []epub.Part, places epub.Places) []domain
 	for {
 		selector := getSelector(places, from)
 		for _, title := range cutter.openAt(from) {
-			segments = append(segments, domain.TextSegment{Heading: title, Selector: selector})
+			segments = append(segments, domain.TextSegment{Text: "", Heading: title, Selector: selector})
 		}
 		if from >= len(text) {
 			return segments
 		}
 		to := cutter.getEnd(from)
-		segments = append(segments, domain.TextSegment{Text: text[from:to], Selector: selector})
+		segments = append(segments, domain.TextSegment{Text: text[from:to], Heading: "", Selector: selector})
 		from = to
 	}
 }
@@ -214,7 +219,7 @@ func getSelector(places epub.Places, offset int) domain.Selector {
 	if !ok {
 		return ""
 	}
-	return host.Selector{CFI: place.String()}.Encode()
+	return host.Selector{T: nil, Page: 0, CFI: place.String(), Boxes: nil}.Encode()
 }
 
 // segmentCut is the text of a book, and the sections and block starts still ahead of the cut.

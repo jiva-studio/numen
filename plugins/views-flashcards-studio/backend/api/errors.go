@@ -3,6 +3,7 @@ package api
 // ErrorCode names why a read or a write of a note failed. It is carried in the `error` field of a response; an empty value is no error.
 type ErrorCode string
 
+// ErrorCode values.
 const (
 	ErrorCodeUnspecified    ErrorCode = ""
 	ErrorCodeMissing        ErrorCode = "missing"

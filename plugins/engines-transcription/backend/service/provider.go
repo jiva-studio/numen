@@ -12,7 +12,7 @@ type provider struct {
 	transcriber *Transcriber
 }
 
-var _ host.TextProvider = provider{}
+var _ host.TextProvider = provider{transcriber: nil}
 
 // CreateText transcribes the recording. The plugin reads recordings and no version, so a request
 // naming a source is not one it takes.

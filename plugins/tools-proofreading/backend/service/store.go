@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // keyPrefix starts the key of every version the plugin makes.
@@ -71,7 +71,7 @@ func joinSelectors(run []domain.TextSegment) domain.Selector {
 	if err != nil {
 		return run[0].Selector
 	}
-	joined := host.Selector{Page: first.Page, CFI: first.CFI}
+	joined := host.Selector{T: nil, Page: first.Page, CFI: first.CFI, Boxes: nil}
 	for _, one := range run {
 		selector, err := host.ParseSelector(one.Selector)
 		if err != nil {

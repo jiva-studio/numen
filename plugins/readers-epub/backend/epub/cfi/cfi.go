@@ -6,6 +6,7 @@ package cfi
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -56,7 +57,7 @@ func Parse(s string) (CFI, error) {
 		return CFI{}, fmt.Errorf("%w: %q has no epubcfi( )", ErrSyntax, s)
 	}
 	inner = inner[:len(inner)-1]
-	p := parser{in: inner}
+	p := parser{in: inner, pos: 0}
 	parent, err := p.readPath()
 	if err != nil {
 		return CFI{}, fmt.Errorf("%w in %q", err, s)
@@ -92,7 +93,7 @@ type path struct {
 // mergeRange appends the local path of a range's start to its parent path.
 func mergeRange(parent, start path) path {
 	if start.hasBang {
-		parent.indirected = append(parent.steps, start.indirected...)
+		parent.indirected = slices.Concat(parent.steps, start.indirected)
 		parent.steps = start.steps
 		parent.hasBang = true
 	} else {
@@ -117,7 +118,7 @@ func (p *parser) peek() byte {
 // readPath reads steps, at most one indirection, and an optional terminal offset, up to a comma
 // or the end.
 func (p *parser) readPath() (path, error) {
-	read := path{offset: -1}
+	read := path{indirected: nil, steps: nil, hasBang: false, offset: -1}
 	for {
 		switch p.peek() {
 		case '/':

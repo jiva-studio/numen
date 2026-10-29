@@ -51,6 +51,7 @@ type cardAddInput struct {
 
 func (t *Tools) addCardAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:   tools.ByEffect,
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_add",
 		Title: "Add a card",
@@ -93,6 +94,7 @@ type cardEditInput struct {
 
 func (t *Tools) addCardEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:   tools.ByEffect,
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_edit",
 		Title: "Edit a card",
@@ -180,6 +182,7 @@ type cardSectionAddInput struct {
 
 func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:   tools.ByEffect,
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_section_add",
 		Title: "Add a section",
@@ -257,6 +260,7 @@ type cardModelEditInput struct {
 
 func (t *Tools) addCardCardModelEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:   tools.ByEffect,
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_model_edit",
 		Title: "Edit a card model",
@@ -299,5 +303,7 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 	return WriteOutcome{
 		Path:        in.Path,
 		Fingerprint: fingerprintOf(newFp),
+		Cards:       0,
+		CardID:      "",
 	}, nil
 }

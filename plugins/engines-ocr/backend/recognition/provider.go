@@ -24,7 +24,13 @@ var _ host.TextProvider = (*Provider)(nil)
 
 // NewProvider is the provider over the recognition.
 func NewProvider(recognition *Recognition) *Provider {
-	return &Provider{recognition: recognition, running: map[string]context.CancelFunc{}}
+	return &Provider{
+		recognition: recognition,
+		wg:          sync.WaitGroup{},
+		mu:          sync.Mutex{},
+		isClosed:    false,
+		running:     map[string]context.CancelFunc{},
+	}
 }
 
 // Wait waits for the recognitions it started to end.

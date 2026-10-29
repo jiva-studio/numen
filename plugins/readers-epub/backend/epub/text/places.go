@@ -155,7 +155,7 @@ func getTextSteps(n *html.Node) ([]int, int) {
 	base := 0
 	for before := n.PrevSibling; before != nil && before.Type != html.ElementNode; before = before.PrevSibling {
 		if before.Type == html.TextNode {
-			base += Run{data: before.Data, isPre: true}.Length()
+			base += Run{Start: 0, End: 0, Steps: nil, Base: 0, data: before.Data, isPre: true, last: 0, hasLast: false}.Length()
 		}
 	}
 	return append(steps, 1+2*countElementsBefore(n)), base

@@ -25,12 +25,19 @@ type recording struct {
 }
 
 // Open is a recording, ready to be listened to.
-func (t *Transcriber) Open(ctx context.Context, raw []byte) (Recording, error) {
+func (t *Transcriber) Open(_ context.Context, raw []byte) (Recording, error) {
 	length, err := sound.GetDuration(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &recording{owner: t, raw: raw, length: length}, nil
+	return &recording{
+		owner:    t,
+		raw:      raw,
+		length:   length,
+		segments: nil,
+		isCut:    false,
+		mu:       sync.Mutex{},
+	}, nil
 }
 
 // GetDuration is how long the recording is, in milliseconds.

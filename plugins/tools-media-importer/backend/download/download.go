@@ -53,10 +53,10 @@ func (f *Downloader) playerFor(pos string) (Player, error) {
 }
 
 // GetDownloadModel returns tool identity for the address.
-func (f *Downloader) GetDownloadModel(address string) DownloadModel {
+func (f *Downloader) GetDownloadModel(address string) Model {
 	delta, err := f.providerFor(address)
 	if err != nil {
-		return DownloadModel{}
+		return Model{Tool: "", Version: "", Producer: ""}
 	}
 	return delta.GetDownloadModel(address)
 }
@@ -122,7 +122,7 @@ func resolveProgram(named Tool, tool string) program {
 	}
 	found, err := exec.LookPath(tool)
 	if err != nil {
-		return program{}
+		return program{command: nil, env: nil}
 	}
 	return program{command: append([]string{found}, named.Arguments...), env: named.getEnvironment()}
 }

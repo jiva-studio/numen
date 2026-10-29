@@ -9,7 +9,7 @@ import (
 
 func TestSessionPool(t *testing.T) {
 	var destroyed atomic.Int32
-	destroy := func(s int) {
+	destroy := func(_ int) {
 		destroyed.Add(1)
 	}
 

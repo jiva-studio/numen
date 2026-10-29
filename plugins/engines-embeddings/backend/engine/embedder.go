@@ -65,6 +65,8 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 	options, provider, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: cfg.GetProvider(),
 		Threads:  cfg.GetThreads(),
+
+		ComputeUnits: onnx.ComputeUnitsDefault,
 	})
 	if err != nil {
 		return nil, err
@@ -98,6 +100,9 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		batchTexts:   max(cfg.BatchTexts, 1),
 		passes:       passes,
 		tokenizer:    tokenizer,
+		pad:          0,
+		output:       "",
+		isTyped:      false,
 		sessions:     newSessionPool(sessions, passes, (*ort.Session).Destroy),
 		isHeadPooled: identity.Pooling == PoolHead,
 	}

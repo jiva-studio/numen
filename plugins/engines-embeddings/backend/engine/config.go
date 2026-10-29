@@ -1,3 +1,4 @@
+// Package engine runs embedding models locally on ONNX Runtime.
 package engine
 
 import (
@@ -138,9 +139,15 @@ func DefaultBGEM3Config() (ModelInfo, LocalModel) {
 	}
 	local := LocalModel{
 		Name:           "Xenova/bge-m3",
+		Dir:            "",
 		File:           "model_int8.onnx",
 		BatchTexts:     bgeM3BatchTexts,
+		Runtime:        "",
+		Threads:        0,
+		Sessions:       0,
 		PassBudget:     bgeM3Passes,
+		PassMemory:     0,
+		Provider:       "",
 		ShouldDownload: true,
 		Revision:       bgeM3Revision,
 		Sums: map[string]string{

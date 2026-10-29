@@ -284,7 +284,7 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 }
 
 func TestStreamParserInitSessionRecord(t *testing.T) {
-	send := func(r *agentrun.AskAgentResponse) error {
+	send := func(_ *agentrun.AskAgentResponse) error {
 		return nil
 	}
 	var recorded []string

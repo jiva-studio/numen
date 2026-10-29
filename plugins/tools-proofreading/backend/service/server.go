@@ -76,13 +76,18 @@ type proofreadingConfig struct {
 func defaultProofreadingConfig() proofreadingConfig {
 	return proofreadingConfig{
 		provider:        "agent",
+		baseURL:         "",
 		model:           "openai/gpt-4o-mini",
+		apiKey:          "",
 		batchSize:       DefaultBatchSize,
 		overlap:         DefaultOverlap,
 		inFlight:        DefaultInFlight,
 		maxEditDistance: MaxEditDistance,
 	}
 }
+
+// mockEnabled is the value of EnvMockML that selects the mock model.
+const mockEnabled = "true"
 
 // settings is the configuration the host last handed over.
 type settings struct {
@@ -91,7 +96,7 @@ type settings struct {
 }
 
 func newSettings() *settings {
-	return &settings{cfg: defaultProofreadingConfig()}
+	return &settings{mu: sync.RWMutex{}, cfg: defaultProofreadingConfig()}
 }
 
 func (s *settings) updateConfig(values map[string]string) {
@@ -136,7 +141,7 @@ func (s *settings) getConfig() proofreadingConfig {
 // newAskModel returns the model as a system instruction and a prompt are put to it.
 func newAskModel(complete completer, getConfig ...func() proofreadingConfig) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != "true" {
+		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != mockEnabled {
 			cfg := getConfig[0]()
 			if cfg.provider == "openrouter" || cfg.provider == "openai" || cfg.provider == "custom" {
 				return askDirectAPI(ctx, cfg, instruction, prompt)
@@ -212,7 +217,9 @@ func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prom
 	if cfg.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+cfg.apiKey)
 	}
-	client := &http.Client{Timeout: 2 * time.Minute}
+	client := &http.Client{
+		Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 2 * time.Minute,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("send chat request: %w", err)
@@ -244,7 +251,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	complete := completer(ai.Complete)
-	if os.Getenv(EnvMockML) == "true" {
+	if os.Getenv(EnvMockML) == mockEnabled {
 		complete = completeMock
 	}
 	return mount(s, openHostAt(endpoint), complete, nil)
@@ -265,7 +272,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		}
 		return client.Complete(ctx, question)
 	}
-	if vars[EnvMockML] == "true" {
+	if vars[EnvMockML] == mockEnabled {
 		complete = completeMock
 	}
 	hosted := openHostAt(endpoint)

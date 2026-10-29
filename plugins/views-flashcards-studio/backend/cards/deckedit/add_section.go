@@ -13,11 +13,13 @@ type AddSection struct {
 	write Write
 }
 
+// NewAddSection creates the AddSection scenario.
 func NewAddSection(read Read, write Write) AddSection { return AddSection{read: read, write: write} }
 
+// Execute adds a section to a deck.
 func (u AddSection) Execute(ctx context.Context, v domain.Vault, version DeckVersion, name string) (EditResult, error) {
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(_ DeckContents, file *format.DeckFile) error {
-		return file.AddSection(format.Section{Name: name})
+		return file.AddSection(format.Section{Name: name, Preamble: ""})
 	})
 	return changed.result, err
 }

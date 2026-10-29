@@ -42,10 +42,19 @@ type Extractor struct {
 	places    Places
 }
 
+// NewExtractor returns an Extractor with no document read.
 func NewExtractor() *Extractor {
 	return &Extractor{
-		starts:  map[string]int{},
-		anchors: map[string]int{},
+		out:               nil,
+		path:              "",
+		starts:            map[string]int{},
+		anchors:           map[string]int{},
+		headings:          nil,
+		pagebreaks:        nil,
+		markup:            nil,
+		preformattedDepth: 0,
+		isPlacing:         false,
+		places:            Places{Blocks: nil, Runs: nil},
 	}
 }
 
@@ -66,7 +75,7 @@ func (x *Extractor) ReadDocument(docPath string, raw []byte) Document {
 		x.tokenize(raw)
 	}
 	x.breakLine()
-	return Document{Path: docPath, Offset: start, Length: len(x.out) - start}
+	return Document{Path: docPath, Offset: start, Length: len(x.out) - start, IsLinear: false, Layout: "", Spine: 0}
 }
 
 func (x *Extractor) writeNode(n *html.Node) {
@@ -75,16 +84,16 @@ func (x *Extractor) writeNode(n *html.Node) {
 		x.writeTextNode(n)
 		return
 	case html.ElementNode:
-	default:
+	case html.ErrorNode, html.DocumentNode, html.CommentNode, html.DoctypeNode, html.RawNode:
 		// gomutants:disable-next-line BRANCH_CASE reason="non-element nodes from html.Parse have no children and are not drawn"
 		return
 	}
 
-	switch n.DataAtom {
-	case atom.Head, atom.Script, atom.Style, atom.Title:
+	if skippedElements[n.DataAtom] {
 		// Not text of the book.
 		return
-	case atom.Br:
+	}
+	if n.DataAtom == atom.Br {
 		x.breakLine()
 		// begins.
 		if x.markup.openElement(n, len(x.out)) {
@@ -306,7 +315,7 @@ func (t *tokenizer) handleStartTag(tt html.TokenType) {
 
 	level := parseHeadingLevel(a)
 	if isVoidTag(a) {
-		t.x.closeFrame(frame{start: start, isPagebreak: attrs.isPagebreak, pageLabel: attrs.pageLabel})
+		t.x.closeFrame(frame{atom: 0, start: start, block: false, heading: 0, isPagebreak: attrs.isPagebreak, pageLabel: attrs.pageLabel})
 		// gomutants:disable-next-line BRANCH_IF reason="the preceding line break leaves the buffer ending in a newline"
 		if block {
 			t.x.breakLine()
@@ -421,13 +430,19 @@ func (x *Extractor) closeFrame(f frame) {
 
 // isVoidTag reports whether an HTML element has no closing tag.
 func isVoidTag(a atom.Atom) bool {
-	switch a {
-	case atom.Area, atom.Base, atom.Br, atom.Col, atom.Embed, atom.Hr,
-		atom.Img, atom.Input, atom.Keygen, atom.Link, atom.Meta,
-		atom.Param, atom.Source, atom.Track, atom.Wbr:
-		return true
-	}
-	return false
+	return voidTags[a]
+}
+
+// voidTags are the HTML elements that have no closing tag.
+var voidTags = map[atom.Atom]bool{
+	atom.Area: true, atom.Base: true, atom.Br: true, atom.Col: true, atom.Embed: true,
+	atom.Hr: true, atom.Img: true, atom.Input: true, atom.Keygen: true, atom.Link: true,
+	atom.Meta: true, atom.Param: true, atom.Source: true, atom.Track: true, atom.Wbr: true,
+}
+
+// skippedElements are the elements whose content is not text of the book.
+var skippedElements = map[atom.Atom]bool{
+	atom.Head: true, atom.Script: true, atom.Style: true, atom.Title: true,
 }
 
 func (x *Extractor) breakLine() {
@@ -462,7 +477,7 @@ func (x *Extractor) GetParts(entries []Entry) []Part {
 		if !ok {
 			continue
 		}
-		out = append(out, Part{Title: title, Offset: offset})
+		out = append(out, Part{Title: title, Offset: offset, Level: 0})
 	}
 	return out
 }
@@ -515,22 +530,12 @@ func GetAttribute(n *html.Node, name string) string {
 
 // parseHeadingLevel returns the level of a heading element, and 0 for anything else.
 func parseHeadingLevel(a atom.Atom) int {
-	switch a {
-	case atom.H1:
-		return 1
-	case atom.H2:
-		return 2
-	case atom.H3:
-		return 3
-	case atom.H4:
-		return 4
-	case atom.H5:
-		return 5
-	case atom.H6:
-		return 6
-	}
-	// gomutants:disable-next-line INTEGER_DECREMENT reason="every caller tests the level for greater than zero"
-	return 0
+	return headingLevels[a]
+}
+
+// headingLevels maps each heading element to its level.
+var headingLevels = map[atom.Atom]int{
+	atom.H1: 1, atom.H2: 2, atom.H3: 3, atom.H4: 4, atom.H5: 5, atom.H6: 6,
 }
 
 // blocks are the elements whose text relies on a line of its own.

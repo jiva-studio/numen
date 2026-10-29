@@ -61,7 +61,7 @@ func (u List) Execute(
 	read := NewRead(u.readers, nil)
 	out := make([]CardModelSummary, 0, len(target))
 	for _, s := range target {
-		items := CardModelSummary{Path: s.Path, Title: s.Title}
+		items := CardModelSummary{Path: s.Path, Title: s.Title, Fields: nil}
 		cardModel, err := read.CardModel(ctx, v, s.Path)
 		if err != nil {
 			return nil, 0, err

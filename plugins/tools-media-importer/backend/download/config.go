@@ -1,3 +1,5 @@
+// Package download retrieves what an address publishes: the captions of a video site through
+// yt-dlp, or the article of any other page, and copies the audio of a video.
 package download
 
 import (
@@ -31,4 +33,9 @@ func (t Tool) getEnvironment() []string {
 }
 
 // Defaults is the programs PATH and the host name.
-func Defaults() Config { return Config{} }
+func Defaults() Config {
+	return Config{
+		Video: Tool{Command: nil, Arguments: nil, Environment: nil},
+		Sound: Tool{Command: nil, Arguments: nil, Environment: nil},
+	}
+}

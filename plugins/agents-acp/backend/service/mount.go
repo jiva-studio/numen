@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -10,7 +11,13 @@ import (
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
 	return mount(s, &agentServer{
-		acpModels: newACPModelCache(true),
+		UnimplementedAgentServiceHandler: agentrun.UnimplementedAgentServiceHandler{},
+		acpAgents:                        nil,
+		discover:                         nil,
+		acpModels:                        newACPModelCache(true),
+		mu:                               sync.RWMutex{},
+		executablePaths:                  nil,
+		commands:                         nil,
 	})
 }
 

@@ -33,8 +33,8 @@ type sites struct {
 
 func (s *sites) CanCopy(address string) bool { return address == videoAddress }
 
-func (s *sites) GetDownloadModel(string) download.DownloadModel {
-	return download.DownloadModel{Tool: "sites", Version: "1"}
+func (s *sites) GetDownloadModel(string) download.Model {
+	return download.Model{Tool: "sites", Version: "1"}
 }
 
 func (s *sites) GetMetadata(context.Context, string) (download.Metadata, error) {

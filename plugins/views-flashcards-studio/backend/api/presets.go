@@ -3,6 +3,7 @@ package api
 // Goal is what a preset schedules toward.
 type Goal string
 
+// Goal values.
 const (
 	GoalUnspecified Goal = ""
 	GoalMinutesADay Goal = "minutes_a_day"
@@ -13,6 +14,7 @@ const (
 // Rule is how the interval of a learned card is set.
 type Rule string
 
+// Rule values.
 const (
 	RuleUnspecified Rule = ""
 	RuleInterval    Rule = "interval"
@@ -22,6 +24,7 @@ const (
 // BudgetUnit is what the daily budget counts.
 type BudgetUnit string
 
+// BudgetUnit values.
 const (
 	BudgetUnitUnspecified BudgetUnit = ""
 	BudgetUnitCards       BudgetUnit = "cards"
@@ -31,6 +34,7 @@ const (
 // StopReason is why a preset schedules no card for the day.
 type StopReason string
 
+// StopReason values.
 const (
 	StopReasonUnspecified StopReason = ""
 	StopReasonNothing     StopReason = "nothing"
@@ -45,6 +49,7 @@ const (
 // BudgetName is a limit that closes a day of review.
 type BudgetName string
 
+// BudgetName values.
 const (
 	BudgetNameUnspecified BudgetName = ""
 	BudgetNameMinutesADay BudgetName = "minutes_a_day"

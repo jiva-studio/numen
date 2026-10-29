@@ -1,3 +1,4 @@
+// Package main runs the Antigravity agent plugin backend.
 package main
 
 import (

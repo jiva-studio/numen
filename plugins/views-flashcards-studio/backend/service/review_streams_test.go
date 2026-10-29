@@ -17,12 +17,18 @@ import (
 
 var errPageGone = errors.New("the page is gone")
 
+// fixedContext returns a function that always returns ctx.
+func fixedContext(ctx context.Context) func() context.Context {
+	return func() context.Context { return ctx }
+}
+
 // breaking serves a stream whose writes fail where `fails` returns true, and
-// reports what the handler returned. The handler runs under ctx.
+// reports what the handler returned. The handler runs under the context that
+// getContext returns.
 type breaking struct {
-	fails    func(n int, msg any) bool
-	ctx      context.Context
-	returned chan error
+	fails      func(n int, msg any) bool
+	getContext func() context.Context
+	returned   chan error
 }
 
 // breakingClient is the client of the review window over streams broken as b
@@ -43,9 +49,9 @@ func newBreakingClient(_ *testing.T, handler *API, b breaking) breakingClient {
 func breakStream[Req, Res any](
 	c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
 ) (*messageStream[Res], error) {
-	return openStream(context.WithoutCancel(c.b.ctx), req, func(_ context.Context, req *Req, send func(*Res) error) error {
+	return openStream(context.WithoutCancel(c.b.getContext()), req, func(_ context.Context, req *Req, send func(*Res) error) error {
 		count := 0
-		err := method(c.b.ctx, req, func(res *Res) error {
+		err := method(c.b.getContext(), req, func(res *Res) error {
 			count++
 			if c.b.fails(count, res) {
 				return errPageGone
@@ -90,23 +96,23 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancel()
 
 	for name, one := range map[string]struct {
-		ctx   context.Context
-		fails func(n int, msg any) bool
-		moved bool
+		getContext func() context.Context
+		fails      func(n int, msg any) bool
+		moved      bool
 	}{
-		"opening": {cancelled, func(n int, _ any) bool { return n == 1 }, false},
+		"opening": {fixedContext(cancelled), func(n int, _ any) bool { return n == 1 }, false},
 		// 		// Nothing changed, and the stream repeats the message until the page is
 		// 		// found gone.
-		"repeating": {t.Context(), func(n int, _ any) bool { return n > 1 }, false},
+		"repeating": {fixedContext(t.Context()), func(n int, _ any) bool { return n > 1 }, false},
 		// 		// Something changed, and the page is gone by the time it is sent.
-		"reloading": {t.Context(), func(_ int, msg any) bool {
+		"reloading": {fixedContext(t.Context()), func(_ int, msg any) bool {
 			return msg.(*api.WatchReloadsResponse).Reload
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			handler, _, installation := newAPIOn(t)
 			returned := make(chan error, 1)
-			client := newBreakingClient(t, handler, breaking{fails: one.fails, ctx: one.ctx, returned: returned})
+			client := newBreakingClient(t, handler, breaking{fails: one.fails, getContext: one.getContext, returned: returned})
 
 			stream, err := client.WatchReloads(t.Context(), &api.WatchReloadsRequest{})
 			if err != nil {
@@ -142,7 +148,7 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 			front(t, handler)
 
 			returned := make(chan error, 1)
-			client := newBreakingClient(t, handler, breaking{fails: fails, ctx: t.Context(), returned: returned})
+			client := newBreakingClient(t, handler, breaking{fails: fails, getContext: fixedContext(t.Context()), returned: returned})
 			stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 			if err != nil {
 				t.Fatal(err)
@@ -168,9 +174,9 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
-		fails:    func(n int, _ any) bool { return n > 1 },
-		ctx:      t.Context(),
-		returned: returned,
+		fails:      func(n int, _ any) bool { return n > 1 },
+		getContext: fixedContext(t.Context()),
+		returned:   returned,
 	})
 	stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {
@@ -318,7 +324,7 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	defer cancel()
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
-		fails: func(int, any) bool { return false }, ctx: ctx, returned: returned,
+		fails: func(int, any) bool { return false }, getContext: fixedContext(ctx), returned: returned,
 	})
 	stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {

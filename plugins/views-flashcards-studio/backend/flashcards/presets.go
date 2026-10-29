@@ -88,7 +88,8 @@ func NewPresets(
 ) Presets {
 	return Presets{
 		readers: readers, writers: writers, links: links, notes: notes,
-		index: index, day: day, now: now,
+		Problems: nil,
+		index:    index, day: day, now: now,
 	}
 }
 
@@ -137,7 +138,7 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, err
 
 // CreateDefaultPreset returns the preset of a deck scheduled by no preset.
 func CreateDefaultPreset() PresetContents {
-	return PresetContents{Outcome: note.Ok, Settings: review.Defaults()}
+	return PresetContents{Path: "", Outcome: note.Ok, Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.
@@ -172,6 +173,7 @@ func (u Presets) OpenReads() *PresetReads {
 		Presets:       u,
 		cachedPresets: make(map[string]PresetContents),
 		scheduling:    make(map[string]PresetContents),
+		parseProblems: nil,
 	}
 }
 
@@ -294,7 +296,7 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetC
 // readPreset reads the note at path as a preset, before determining what it
 // schedules.
 func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	out := PresetContents{Path: path, Settings: review.Defaults()}
+	out := PresetContents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -578,7 +580,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 		weekday, isDay := review.Weekday(name)
 		_, could := read[weekday]
 		if !isDay || !could {
-			out = append(out, markdown.Entry{Key: name, IsVerbatim: true})
+			out = append(out, markdown.Entry{Key: name, Value: nil, IsVerbatim: true})
 			continue
 		}
 		share, named := load[weekday]
@@ -586,11 +588,11 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 			continue
 		}
 		content[weekday] = true
-		out = append(out, markdown.Entry{Key: name, Value: share})
+		out = append(out, markdown.Entry{Key: name, Value: share, IsVerbatim: false})
 	}
 	for _, weekday := range week {
 		if share, named := load[weekday]; named && !content[weekday] {
-			out = append(out, markdown.Entry{Key: review.DayName(weekday), Value: share})
+			out = append(out, markdown.Entry{Key: review.DayName(weekday), Value: share, IsVerbatim: false})
 		}
 	}
 	return out

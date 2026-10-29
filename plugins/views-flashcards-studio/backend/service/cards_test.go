@@ -186,7 +186,7 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 		t.Fatalf("two cards of one card id came back as %d problems: %+v", len(problems), problems)
 	}
 	for item, problem := range problems {
-		if fault := problem.Kind; fault != api.ProblemKindCardIdCarriedTwice {
+		if fault := problem.Kind; fault != api.ProblemKindCardIDCarriedTwice {
 			t.Errorf("the problem against card %d is %v", item, fault)
 		}
 		if problem.Card == nil || *problem.Card != int32(item) {

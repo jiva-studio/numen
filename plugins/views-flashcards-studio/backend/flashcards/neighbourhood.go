@@ -119,7 +119,7 @@ func (u ShowNeighbourhood) Execute(
 
 // getNeighbours is what the links of a deck lead to: what it points at first,
 // then what points at it. A deck naming itself, and a card naming the deck it
-func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbour {
+func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbour {
 	observed := map[string]bool{deck: true}
 	var found []Neighbour
 	for _, l := range linked.Links {
@@ -135,7 +135,7 @@ func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbo
 		observed[l.From] = true
 		// Nothing is ambiguous on this side: the note shown is the one that
 		// wrote the link, whatever its own name resolved through.
-		found = append(found, Neighbour{Path: l.From, Label: l.Label, IsBacklink: true})
+		found = append(found, Neighbour{Written: "", Path: l.From, Title: "", Body: "", Label: l.Label, IsBacklink: true, IsAmbiguous: false, Outcome: ""})
 	}
 	return found
 }
@@ -147,13 +147,17 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	// addresses are neither read here nor missing, and drawing them as notes with
 	// unresolved names would report a vault problem that does not exist.
 	if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
-		return Neighbour{}, false
+		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	one := Neighbour{
 		Written:     l.Target.GetWritten(),
 		Path:        l.To,
+		Title:       "",
+		Body:        "",
 		Label:       l.Label,
+		IsBacklink:  false,
 		IsAmbiguous: l.IsAmbiguous,
+		Outcome:     "",
 	}
 	if l.To == "" {
 		// Dangling: named by how it is written, and there is nothing to read.
@@ -161,7 +165,7 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	}
 	if l.ToVault != v.ID || visited[l.To] {
 		// A link into another vault has nothing here to read it with.
-		return Neighbour{}, false
+		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	visited[l.To] = true
 	return one, true
@@ -180,7 +184,7 @@ func getNeighbourTitle(
 	if !isNote {
 		// The index reported where the link lands but holds no note there: the entry
 		// changed during this read.
-		return Neighbour{}, false
+		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	// An ordinary note is what the cards were written from, and is
 	// taken below.
@@ -190,15 +194,15 @@ func getNeighbourTitle(
 		// Every card names the card model it is cut by, so a deck points at
 		// its card models. A card model is how a card is laid out and not what
 		// it was written from.
-		return Neighbour{}, false
+		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	case format.TypePreset:
 		// A deck points at the preset it is scheduled by. A preset is how
 		// the cards come round and not what they were written from.
-		return Neighbour{}, false
+		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	case format.TypeDeck:
 		// Another deck holds more cards to answer and is not a source of the cards under
 		// review.
-		return Neighbour{}, false
+		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	one.Title = ref.Title
 	return one, true
@@ -285,7 +289,7 @@ type AssignCardIDsResult struct {
 // cards are left out of this session and marked at the next, and it is named in
 func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardIDsResult, error) {
 	if u.notes == nil {
-		return AssignCardIDsResult{}, nil
+		return AssignCardIDsResult{Unwritten: nil}, nil
 	}
 	paths, err := u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 	if err != nil {

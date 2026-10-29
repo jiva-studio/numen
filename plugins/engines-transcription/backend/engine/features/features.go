@@ -1,3 +1,4 @@
+// Package features computes the log-mel spectrogram the transcription model reads.
 package features
 
 import (

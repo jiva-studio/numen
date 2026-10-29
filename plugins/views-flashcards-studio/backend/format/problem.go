@@ -57,7 +57,7 @@ const (
 // OnFile files a problem about a whole file, of no card of it and no template of
 // it.
 func OnFile(fault Fault, detail string) Problem {
-	return Problem{Fault: fault, Card: NoPosition, Template: NoPosition, Detail: detail}
+	return Problem{Fault: fault, Card: NoPosition, Template: NoPosition, Field: "", Detail: detail}
 }
 
 // OnCard files a problem about one card, counted from the deck's first card.
@@ -67,12 +67,12 @@ func OnCard(card int, fault Fault, detail string) Problem {
 
 // newCardProblem files a problem about one card.
 func newCardProblem(card int, fault Fault, detail string) Problem {
-	return Problem{Fault: fault, Card: card, Template: NoPosition, Detail: detail}
+	return Problem{Fault: fault, Card: card, Template: NoPosition, Field: "", Detail: detail}
 }
 
 // onTemplate files a problem about one template.
 func onTemplate(template int, fault Fault, detail string) Problem {
-	return Problem{Fault: fault, Card: NoPosition, Template: template, Detail: detail}
+	return Problem{Fault: fault, Card: NoPosition, Template: template, Field: "", Detail: detail}
 }
 
 // onField files a problem about one field of a card model's frontmatter.

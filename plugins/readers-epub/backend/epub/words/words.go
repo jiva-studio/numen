@@ -1,3 +1,4 @@
+// Package words normalises and matches the words of markup attributes and names.
 package words
 
 import "strings"

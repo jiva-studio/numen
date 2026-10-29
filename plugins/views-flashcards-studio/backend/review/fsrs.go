@@ -51,6 +51,7 @@ func NewFSRSAt(retention float64) FSRS {
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
 
+// GetName is the name of the scheduler, which includes a hash of its parameters.
 func (f FSRS) GetName() string { return f.name }
 
 // hashParameters is the parameters as a short name. Every number the
@@ -99,6 +100,8 @@ func (f FSRS) Next(s Schedule, now time.Time, r Rating) Schedule {
 		return f.getNextFromNew(one, now, fsrs.Rating(r))
 	case fsrs.Review:
 		return f.getNextFromReview(one, now, f.getRecall(one), fsrs.Rating(r))
+	case fsrs.Learning, fsrs.Relearning:
+		return f.getNextFromLearning(one, now, fsrs.Rating(r))
 	default:
 		return f.getNextFromLearning(one, now, fsrs.Rating(r))
 	}
@@ -118,6 +121,9 @@ func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
 		back := f.getRecall(one)
 		return f.getNextFromReview(one, now, back, fsrs.Good),
 			f.getNextFromReview(one, now, back, fsrs.Again)
+	case fsrs.Learning, fsrs.Relearning:
+		return f.getNextFromLearning(one, now, fsrs.Good),
+			f.getNextFromLearning(one, now, fsrs.Again)
 	default:
 		return f.getNextFromLearning(one, now, fsrs.Good),
 			f.getNextFromLearning(one, now, fsrs.Again)
@@ -142,7 +148,7 @@ type atAnswer struct {
 // answered. An unanswered card starts in the phase the scheduler begins cards in,
 // with zero stability and zero difficulty.
 func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
-	one := atAnswer{phase: fsrs.New}
+	one := atAnswer{phase: fsrs.New, away: 0, last: noSchedule, out: noSchedule}
 	if !s.IsNew() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
@@ -240,6 +246,8 @@ func (f FSRS) getNextFromReview(one atAnswer, pos time.Time, back float64, r fsr
 		out.Due = pos.Add(daysToDuration(hard))
 	case fsrs.Easy:
 		out.Due = pos.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
+	case fsrs.Again, fsrs.Good:
+		out.Due = pos.Add(daysToDuration(good))
 	default:
 		out.Due = pos.Add(daysToDuration(good))
 	}

@@ -49,5 +49,5 @@ func parseBytesQuery(query url.Values) *api.FileStat {
 		return nil
 	}
 	stamp, _ := strconv.ParseInt(query.Get("mtime"), 10, 64)
-	return &api.FileStat{Size: size, Mtime: stamp}
+	return &api.FileStat{Path: "", Size: size, Mtime: stamp}
 }

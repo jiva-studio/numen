@@ -1,3 +1,4 @@
+// Package service implements the Antigravity agent plugin backend.
 package service
 
 import (
@@ -35,5 +36,5 @@ func ReadAntigravityConfig() (*AntigravityConfig, error) {
 			return &cfg, nil
 		}
 	}
-	return &AntigravityConfig{}, nil
+	return &AntigravityConfig{Model: "", MCPServers: nil}, nil
 }

@@ -1,3 +1,4 @@
+// Package container reads the META-INF/container.xml that names the package document.
 package container
 
 import (
@@ -14,7 +15,7 @@ const (
 	mediaPackage  = "application/oebps-package+xml"
 )
 
-// ErrNoContainer: the archive holds no container naming a package document.
+// ErrNoContainer is returned when the archive holds no container naming a package document.
 var ErrNoContainer = errors.New("epub: no META-INF/container.xml")
 
 // ReadPackagePath reads the container for the name of the package document.

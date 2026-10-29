@@ -658,7 +658,7 @@ func answerWith(
 ) string {
 	t.Helper()
 	provided, err := record.Answer(
-		t.Context(), review.ReviewCardID{Card: card, Template: "Say it"}, rating, took)
+		t.Context(), review.CardID{Card: card, Template: "Say it"}, rating, took)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -876,8 +876,8 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 func TestCountAnswers_GroupsByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
 	yesterday := time.Now().AddDate(0, 0, -1)
 	past := s.run(t, yesterday)
@@ -930,7 +930,7 @@ func TestCountAnswers_EmptyVaultHasNoDays(t *testing.T) {
 func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	first := s.run(t, time.Now().AddDate(0, 0, -1))
 	if _, err := first.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -966,8 +966,8 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -999,7 +999,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1064,7 +1064,7 @@ func spaces(n int) []byte {
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	// Answered easily, so it is days away and not minutes.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
@@ -1151,7 +1151,7 @@ func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tal
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1175,7 +1175,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1196,7 +1196,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1218,7 +1218,7 @@ func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1242,7 +1242,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	// Answered again, so it is due again within minutes and is due today.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Again, 0); err != nil {
@@ -1264,7 +1264,7 @@ func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	now := time.Now()
 	yesterday, twoDaysAgo := now.AddDate(0, 0, -1), now.AddDate(0, 0, -2)
 	for _, item := range []time.Time{twoDaysAgo, yesterday, now} {

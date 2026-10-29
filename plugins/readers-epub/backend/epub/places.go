@@ -61,7 +61,7 @@ func (b *Book) getPackageSteps(doc Document) []int {
 // node.
 func (p Places) GetCFI(offset int) (cfi.CFI, bool) {
 	if len(p.runs) == 0 {
-		return cfi.CFI{}, false
+		return cfi.CFI{Package: nil, Document: nil, Offset: 0}, false
 	}
 	i := sort.Search(len(p.runs), func(i int) bool { return p.runs[i].end() > offset })
 	if i == len(p.runs) {

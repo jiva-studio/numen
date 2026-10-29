@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	// The container package is linked for the initialization of its dependencies.
 	_ "github.com/jiva-studio/numen/libs/core/container"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )

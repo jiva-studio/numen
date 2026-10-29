@@ -24,7 +24,7 @@ func makeAnswers(
 ) []review.Answer {
 	var out []review.Answer
 	for reviewCard := range reviewCards {
-		on := review.ReviewCardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognise"}
+		on := review.CardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognise"}
 		for step := range each {
 			out = append(out, review.Answer{
 				ID: fmt.Sprintf("%06d", len(out)), ReviewCard: on,
@@ -169,7 +169,7 @@ func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 // getCost is the cost of the answers taken as one group.
 func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost {
 	const group = "all"
-	underMap := make(map[review.ReviewCardID]string)
+	underMap := make(map[review.CardID]string)
 	for _, a := range answers {
 		underMap[a.ReviewCard] = group
 	}

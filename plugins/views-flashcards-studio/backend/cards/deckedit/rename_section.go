@@ -13,10 +13,12 @@ type RenameSection struct {
 	write Write
 }
 
+// NewRenameSection creates the RenameSection scenario.
 func NewRenameSection(read Read, write Write) RenameSection {
 	return RenameSection{read: read, write: write}
 }
 
+// Execute renames a section of a deck.
 func (u RenameSection) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, section int, name string,
 ) (EditResult, error) {

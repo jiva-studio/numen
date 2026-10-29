@@ -311,7 +311,7 @@ func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDa
 		for one := range perDay {
 			if err := run.Append(ctx, review.Answer{
 				ID:         fmt.Sprintf("%s%06d%010d", v.ID, day, one),
-				ReviewCard: review.ReviewCardID{Card: benchMark(card % cards), Template: "Say it"},
+				ReviewCard: review.CardID{Card: benchMark(card % cards), Template: "Say it"},
 				At:         when.Add(time.Duration(one) * time.Minute),
 				Rating:     review.Rating(one%4 + 1),
 				Took:       4 * time.Second,

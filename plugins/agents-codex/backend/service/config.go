@@ -33,11 +33,12 @@ func ReadCodexConfig() (*CodexConfig, error) {
 			return &cfg, nil
 		}
 	}
-	return &CodexConfig{}, nil
+	return &CodexConfig{Model: "", MCPServers: nil}, nil
 }
 
 func parseSimpleToml(content string) *CodexConfig {
 	cfg := &CodexConfig{
+		Model:      "",
 		MCPServers: make(map[string]any),
 	}
 	lines := strings.Split(content, "\n")

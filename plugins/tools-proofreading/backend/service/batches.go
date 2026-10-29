@@ -17,7 +17,7 @@ func speechBatches(all []Line, size, overlap int) []Batch {
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
-		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], IsJoinable: true})
+		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], IsJoinable: true, Context: ""})
 		if end == len(lines) {
 			break
 		}
@@ -62,6 +62,7 @@ func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 			Number:     len(batches) + len(out),
 			Lines:      lines[start:end:end],
 			IsJoinable: true,
+			Context:    "",
 		})
 	}
 	return out

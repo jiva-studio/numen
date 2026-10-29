@@ -14,10 +14,12 @@ type RemoveCardValue struct {
 	write Write
 }
 
+// NewRemoveCardValue creates the RemoveCardValue scenario.
 func NewRemoveCardValue(read Read, write Write) RemoveCardValue {
 	return RemoveCardValue{read: read, write: write}
 }
 
+// Execute removes one value from a card.
 func (u RemoveCardValue) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardID, field string,
 ) (EditResult, error) {

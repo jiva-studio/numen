@@ -27,7 +27,7 @@ func runStdio() {
 	if endpoint, err := hostcall.FromEnv(); err == nil {
 		client = tools.NewClient(endpoint)
 	}
-	srv, err := service.NewServer(service.Config{}, client)
+	srv, err := service.NewServer(service.Config{Addr: "", Token: ""}, client)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "create mcp server: %v\n", err)
 		os.Exit(1)

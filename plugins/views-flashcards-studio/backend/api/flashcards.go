@@ -3,6 +3,7 @@ package api
 // Rating is how well a card was recalled.
 type Rating string
 
+// Rating values.
 const (
 	RatingUnspecified Rating = ""
 	RatingAgain       Rating = "again"

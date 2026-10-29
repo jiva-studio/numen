@@ -34,12 +34,11 @@ func (h *cardsHandler) ListCardModels(
 		return nil, newError(server.CodeInternal, err)
 	}
 
-	out := &api.ListCardModelsResponse{Total: int32(count)}
-	out.CardModels = make([]*api.CardModelSummary, 0, len(target))
+	summaries := make([]*api.CardModelSummary, 0, len(target))
 	for _, cardModel := range target {
-		out.CardModels = append(out.CardModels, cardwire.NewWireSummary(cardModel))
+		summaries = append(summaries, cardwire.NewWireSummary(cardModel))
 	}
-	return out, nil
+	return &api.ListCardModelsResponse{CardModels: summaries, Total: int32(count)}, nil
 }
 
 // getCardModelLimit returns how many card models one response contains. A limit
@@ -93,7 +92,7 @@ func (b *Backend) createCardNote(
 	if err != nil {
 		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, err
 	}
-	made, err := create(showing, cards.New{Title: title, Path: folder})
+	made, err := create(showing, cards.New{Title: title, Body: "", Path: folder, Fields: nil, Templates: nil})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
@@ -106,7 +105,7 @@ func (b *Backend) createCardNote(
 	if !ok {
 		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, newError(getCode(err), err)
 	}
-	return cards.CreateNoteResult{}, reason, false, nil
+	return cards.CreateNoteResult{Path: "", ID: "", Title: ""}, reason, false, nil
 }
 
 // RenameCardModelField renames one field of a card model, in the card model and
@@ -138,7 +137,9 @@ func (h *cardsHandler) RenameCardModelField(
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.RenameCardModelFieldResponse{Error: reason}, nil
+	return &api.RenameCardModelFieldResponse{
+		Decks: nil, Cards: 0, NotWritten: nil, Error: reason, At: nil, IsUnlevelled: false,
+	}, nil
 }
 
 // ReadCardModel is the fields and the templates of one card model.
@@ -154,7 +155,7 @@ func (h *cardsHandler) ReadCardModel(
 		return nil, newError(getCode(err), err)
 	}
 
-	out := &api.ReadCardModelResponse{}
+	out := &api.ReadCardModelResponse{CardModel: nil, Error: api.ErrorCodeUnspecified, At: nil}
 	if code, ok := errorCodeOfCardModel(found.Outcome, found.Type); ok {
 		out.Error = code
 		return out, nil
@@ -180,7 +181,7 @@ func (h *cardsHandler) ReadDeck(
 		return nil, newError(getCode(err), err)
 	}
 
-	out := &api.ReadDeckResponse{}
+	out := &api.ReadDeckResponse{Deck: nil, Error: api.ErrorCodeUnspecified, At: nil, Bound: 0}
 	if code, ok := errorCodeOfDeck(found.Outcome, found.Type); ok {
 		out.Error = code
 		// 		// The bound is sent with the error code, so the interface names it
@@ -217,20 +218,20 @@ func (h *cardsHandler) WriteDeck(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.WriteDeckResponse{
-			At: writeFileStat(wrote.FileStat), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(wrote.FileStat), Bound: 0, IsUnlevelled: unlevelled,
 		}, nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
 		code := api.ErrorCodeDeckTooLarge
 		return &api.WriteDeckResponse{
-			Error: code, Bound: cards.MaxBytes,
+			Error: code, At: nil, Bound: cards.MaxBytes, IsUnlevelled: false,
 		}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.WriteDeckResponse{Error: reason}, nil
+	return &api.WriteDeckResponse{Error: reason, At: nil, Bound: 0, IsUnlevelled: false}, nil
 }
 
 // WriteCardModel writes fields and templates into a card model. A card model that
@@ -256,14 +257,14 @@ func (h *cardsHandler) WriteCardModel(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.WriteCardModelResponse{
-			At: writeFileStat(pos), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsUnlevelled: unlevelled,
 		}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.WriteCardModelResponse{Error: reason}, nil
+	return &api.WriteCardModelResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
 }
 
 // errorCodeOfDeck is why a deck was not read. What holds for a note holds here,

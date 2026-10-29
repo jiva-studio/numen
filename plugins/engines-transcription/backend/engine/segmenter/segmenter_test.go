@@ -208,7 +208,7 @@ func TestSplitLongSpanWhenLongestIsTwo(t *testing.T) {
 // A recording's window count covers every sample, rounding up to the next full window.
 func TestNewSpeechPassCount(t *testing.T) {
 	orig := newTensor
-	newTensor = func(shape []int64, data any) (*ort.Value, error) {
+	newTensor = func(_ []int64, _ any) (*ort.Value, error) {
 		return &ort.Value{}, nil
 	}
 	t.Cleanup(func() { newTensor = orig })
@@ -246,7 +246,7 @@ func TestNewSpeechPassCount(t *testing.T) {
 func TestNewSpeechPassTensorShapes(t *testing.T) {
 	orig := newTensor
 	var shapes [][]int64
-	newTensor = func(shape []int64, data any) (*ort.Value, error) {
+	newTensor = func(shape []int64, _ any) (*ort.Value, error) {
 		shapes = append(shapes, shape)
 		return &ort.Value{}, nil
 	}
@@ -292,7 +292,7 @@ func TestNewSpeechPassConstructorErrors(t *testing.T) {
 	errBoom := errors.New("boom")
 	for _, failStep := range []int{0, 1, 2} {
 		step := 0
-		newTensor = func(shape []int64, data any) (*ort.Value, error) {
+		newTensor = func(_ []int64, _ any) (*ort.Value, error) {
 			if step == failStep {
 				step++
 				return nil, errBoom

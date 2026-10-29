@@ -178,7 +178,10 @@ func (r *streamedReply) mergeToolCalls(pieces []streamedToolPiece) error {
 			return fmt.Errorf("the chat API streamed a tool call at index %d", piece.Index)
 		}
 		for len(r.calls) <= piece.Index {
-			r.calls = append(r.calls, toolCall{Type: "function"})
+			r.calls = append(r.calls, toolCall{ID: "", Type: "function", Function: struct {
+				Name      string `json:"name"`
+				Arguments string `json:"arguments"`
+			}{Name: "", Arguments: ""}})
 		}
 		call := &r.calls[piece.Index]
 		if call.ID == "" {
@@ -235,7 +238,7 @@ func (r *streamedReply) add(data []byte, emit func(string) error) (bool, error) 
 
 // getMessage is the message the pieces make: its text, and every call that has a name or an id.
 func (r *streamedReply) getMessage() message {
-	reply := message{Role: "assistant"}
+	reply := message{Role: "assistant", Content: nil, ToolCalls: nil, ToolCallID: ""}
 	if r.text.Len() > 0 {
 		reply.Content = newText(r.text.String())
 	}

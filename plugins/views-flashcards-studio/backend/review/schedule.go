@@ -33,6 +33,11 @@ type Schedule struct {
 	Phase uint8
 }
 
+// noSchedule is the schedule of a review card that has not been answered.
+var noSchedule = Schedule{
+	Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0,
+}
+
 // IsNew reports whether this review card has never been answered, which defines
 // a new card.
 func (s Schedule) IsNew() bool { return s.Last.IsZero() }

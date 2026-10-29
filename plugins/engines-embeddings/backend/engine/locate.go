@@ -184,7 +184,7 @@ func fetchTokenizer(ctx context.Context, repo *hub.Repo, name string, sums map[s
 }
 
 func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string, sums map[string]string) (Paths, error) {
-	p := Paths{}
+	p := Paths{Model: "", Tokenizer: ""}
 	for _, name := range files {
 		pos, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
 		if err != nil {
@@ -319,7 +319,7 @@ func checkPinned(sums map[string]string, name, path string) error {
 // found here.
 func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, error) {
 	if cfg.Revision == "" {
-		return Paths{}, false, nil
+		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
 	cache, err := repo.CacheDir()
 	if err != nil {
@@ -331,7 +331,7 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 		Tokenizer: filepath.Join(snapshot, TokenizerFile),
 	}
 	if !hasFile(p.Model) || !hasFile(p.Tokenizer) {
-		return Paths{}, false, nil
+		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
 	if err := checkPinned(cfg.Sums, ModelFolder+"/"+file, p.Model); err != nil {
 		return Paths{}, false, err

@@ -82,22 +82,30 @@ func getOrderedPages(pages []int, most int) []int {
 //
 // A page that cannot be measured, or cannot be read, yields no word locations.
 func (d *document) words(index, offset int) []HighlightBox {
-	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
+	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil}
 	sheet, ok := d.getSheet(page)
 	// gomutants:disable-next-line BRANCH_IF reason="words aborts when page sheet cannot be retrieved"
 	if !ok {
 		return nil
 	}
 	read, err := d.worker.GetPageTextStructured(&requests.GetPageTextStructured{
-		Page: page,
-		Mode: requests.GetPageTextStructuredModeChars,
+		Page:                   page,
+		Mode:                   requests.GetPageTextStructuredModeChars,
+		CollectFontInformation: false,
+		PixelPositions: requests.GetPageTextStructuredPixelPositions{
+			Document:  "",
+			Calculate: false,
+			DPI:       0,
+			Width:     0,
+			Height:    0,
+		},
 	})
 	// gomutants:disable-next-line BRANCH_IF reason="words aborts when text characters cannot be retrieved"
 	if err != nil {
 		return nil
 	}
 
-	collector := &wordReading{sheet: sheet, index: index}
+	collector := &wordReading{sheet: sheet, index: index, boxes: nil, word: responses.CharPosition{Left: 0, Right: 0, Top: 0, Bottom: 0}, start: 0, length: 0}
 	pos := offset
 	for _, char := range read.Chars {
 		text := char.Text
@@ -185,12 +193,12 @@ type pageGeometry struct {
 func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
 	size, err := d.worker.GetPageSize(&requests.GetPageSize{Page: page})
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
-		return pageGeometry{}, false
+		return pageGeometry{width: 0, height: 0, rotation: 0}, false
 	}
 	turned, err := d.worker.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{Page: page})
 	// gomutants:disable-next-line BRANCH_IF reason="getSheet returns false when rotation cannot be retrieved"
 	if err != nil {
-		return pageGeometry{}, false
+		return pageGeometry{width: 0, height: 0, rotation: 0}, false
 	}
 	sheet := pageGeometry{width: size.Width, height: size.Height, rotation: int(turned.PageRotation)}
 	if sheet.rotation%2 == 1 {

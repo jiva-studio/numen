@@ -1,3 +1,4 @@
+// Package main runs the ACP agent plugin backend.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Package service implements the OpenAI Codex agent backend of the plugin.
 package service
 
 import (
@@ -70,6 +71,12 @@ func readCodexCache() []AgentModel {
 	return models
 }
 
+// codexMethodKey is the member of a JSON-RPC request that names the method.
+const codexMethodKey = "method"
+
+// codexParamsKey is the member of a JSON-RPC request that holds the parameters.
+const codexParamsKey = "params"
+
 // codexListLimit is how long Codex has to list its models.
 const codexListLimit = 15 * time.Second
 
@@ -120,7 +127,7 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 			}
 			c.inFlight[key] = true
 			cmdCopy := slices.Clone(command)
-			go c.fetchInBackground(key, cmdCopy)
+			go c.fetchInBackground(context.WithoutCancel(ctx), key, cmdCopy)
 		}
 		c.mu.Unlock()
 		return readCodexCache()
@@ -129,13 +136,13 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 	return c.fetchAndStore(ctx, key, command)
 }
 
-func (c *codexModelCache) fetchInBackground(key string, command []string) {
+func (c *codexModelCache) fetchInBackground(ctx context.Context, key string, command []string) {
 	defer func() {
 		c.mu.Lock()
 		delete(c.inFlight, key)
 		c.mu.Unlock()
 	}()
-	c.fetchAndStore(context.Background(), key, command)
+	c.fetchAndStore(ctx, key, command)
 }
 
 func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command []string) []AgentModel {
@@ -200,7 +207,7 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 	lines := bufio.NewScanner(out)
 	lines.Buffer(nil, 4<<20)
-	hello := map[string]any{"id": 1, "method": "initialize", "params": map[string]any{
+	hello := map[string]any{"id": 1, codexMethodKey: "initialize", codexParamsKey: map[string]any{
 		"clientInfo": map[string]any{"name": "numen", "title": "Numen", "version": "1.0.0"},
 	}}
 	if err := writeCodexLine(in, hello); err != nil {
@@ -209,10 +216,10 @@ func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 	if _, err := readCodexAnswer(lines, 1); err != nil {
 		return nil, err
 	}
-	if err := writeCodexLine(in, map[string]any{"method": "initialized", "params": map[string]any{}}); err != nil {
+	if err := writeCodexLine(in, map[string]any{codexMethodKey: "initialized", codexParamsKey: map[string]any{}}); err != nil {
 		return nil, err
 	}
-	if err := writeCodexLine(in, map[string]any{"id": 2, "method": "model/list", "params": map[string]any{}}); err != nil {
+	if err := writeCodexLine(in, map[string]any{"id": 2, codexMethodKey: "model/list", codexParamsKey: map[string]any{}}); err != nil {
 		return nil, err
 	}
 	result, err := readCodexAnswer(lines, 2)

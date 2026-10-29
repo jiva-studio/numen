@@ -218,7 +218,7 @@ func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 // twice is counted once, and the result does not depend on the order in which the
 // answers were read.
 func TestGetDayTallies_CountsAnswersPerDay(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	one := review.Answer{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"), Rating: review.Good}
 	two := review.Answer{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Again}
 	night := review.Answer{ID: "01C", ReviewCard: on, At: moment(t, "2026-08-30T02:00:00"), Rating: review.Good}
@@ -241,7 +241,7 @@ func TestGetDayTallies_CountsAnswersPerDay(t *testing.T) {
 // A day records how each of the four ratings was given, because fifty cards that
 // were not recalled are a different day from fifty that were.
 func TestGetDayTallies_CountsPerRating(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	response := func(id string, r review.Rating) review.Answer {
 		return review.Answer{
 			ID: id, ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"), Rating: r,
@@ -275,12 +275,12 @@ func makeTallies(days map[string]int) map[string]review.Tally {
 // What a day came to is counted under the preset each review card is grouped
 // under: the answers given, and the time they took.
 func TestWhatADayCameToBelowEachPreset(t *testing.T) {
-	root := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	mantra := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
-	ungrouped := review.ReviewCardID{Card: "3f4g5h6j7k", Template: "Say it"}
-	underMap := map[review.ReviewCardID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
+	root := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	mantra := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	ungrouped := review.CardID{Card: "3f4g5h6j7k", Template: "Say it"}
+	underMap := map[review.CardID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
 
-	response := func(id string, reviewCard review.ReviewCardID, pos string, took time.Duration) review.Answer {
+	response := func(id string, reviewCard review.CardID, pos string, took time.Duration) review.Answer {
 		return review.Answer{
 			ID: id, ReviewCard: reviewCard, At: moment(t, pos), Rating: review.Good, Took: took,
 		}
@@ -314,8 +314,8 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 // counting in showings counts each showing. The time spent is the same in both
 // cases.
 func TestGetSpentTime_CountsCardsAndShows(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	underMap := map[review.ReviewCardID]string{on: "Steady.md"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	underMap := map[review.CardID]string{on: "Steady.md"}
 
 	answers := make([]review.Answer, 0, 9)
 	for i := range 9 {
@@ -348,8 +348,8 @@ func TestGetSpentTime_CountsCardsAndShows(t *testing.T) {
 // The files arrive in whatever order they were synchronised, and a run from
 // another machine sorting last by name can carry the answer that came first.
 func TestTheFirstAnswerOfAReviewCardIsTheEarliestOne(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	underMap := map[review.ReviewCardID]string{on: "Steady.md"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	underMap := map[review.CardID]string{on: "Steady.md"}
 
 	answers := []review.Answer{
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-31T09:00:00"),
@@ -368,8 +368,8 @@ func TestTheFirstAnswerOfAReviewCardIsTheEarliestOne(t *testing.T) {
 
 // One answer counts at most one hour, however long the card was displayed.
 func TestGetSpentTime_CapsLongAnswer(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	underMap := map[review.ReviewCardID]string{on: ""}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	underMap := map[review.CardID]string{on: ""}
 
 	got := review.GetSpentUnder(counting, "2026-08-29", []review.Answer{
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"),
@@ -386,10 +386,10 @@ func TestGetSpentTime_CapsLongAnswer(t *testing.T) {
 // answered at one in the morning was answered that evening, and a budget
 // counting in cards has already charged it.
 func TestGetReviewed_GroupsByDayOfAnswer(t *testing.T) {
-	evening := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	night := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
-	morning := review.ReviewCardID{Card: "3f4g5h6j7k", Template: "Recognise"}
-	back := review.ReviewCardID{Card: "m9n8b7v6c5", Template: "Recognise"}
+	evening := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	night := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	morning := review.CardID{Card: "3f4g5h6j7k", Template: "Recognise"}
+	back := review.CardID{Card: "m9n8b7v6c5", Template: "Recognise"}
 
 	got := review.GetReviewed(counting, "2026-08-29", []review.Answer{
 		{ID: "01A", ReviewCard: evening, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Good},
@@ -474,12 +474,12 @@ func TestStreak_ZeroWithoutAnswers(t *testing.T) {
 // still being learned is asked again after ten minutes, which says nothing about
 // how well anything is remembered.
 func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 	delta := review.NewFSRS()
 
 	var history []review.Answer
-	response := func(id string, reviewCard review.ReviewCardID, pos string, r review.Rating) {
+	response := func(id string, reviewCard review.CardID, pos string, r review.Rating) {
 		history = append(history, review.Answer{
 			ID: id, ReviewCard: reviewCard, At: moment(t, pos), Rating: r,
 		})
@@ -507,7 +507,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 // A card that was learned and then not recalled counts as asked and not
 // recalled, which is what the retention number measures.
 func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	delta := review.NewFSRS()
 
 	got := review.OrderAnswers([]review.Answer{
@@ -522,7 +522,7 @@ func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 
 // An answer taken back is not in it, as it is in nothing else.
 func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	delta := review.NewFSRS()
 
 	got := review.OrderAnswers([]review.Answer{

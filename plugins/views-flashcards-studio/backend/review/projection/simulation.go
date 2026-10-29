@@ -5,6 +5,8 @@ import (
 	"math"
 	"slices"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
 // Ahead is how many days a projection runs when no count is set.
@@ -67,6 +69,13 @@ const LongestLearning = 10 * 365
 // giving it up.
 const mostAnswers = 1000
 
+// noCost, noSpent and noSchedule are the zero values of their types.
+var (
+	noCost     = AnswerCost{New: 0, Review: 0, ShouldReadNew: false, ShouldReadReview: false}
+	noSpent    = Spent{Answered: 0, New: 0, Reviews: 0, Took: 0}
+	noSchedule = Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}
+)
+
 // GetDaysToLearn returns how many days of review a review card begun now needs
 // before this preset counts it as learned, when every day on which the card falls
 // due answers it.
@@ -80,7 +89,9 @@ const mostAnswers = 1000
 // week with such a day needs as many days of review as its slowest day of the
 // week, so the pace holds for a review card begun on any of them.
 func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
-	s := Simulation{By: scheduler, Day: d}
+	s := Simulation{
+		By: scheduler, Day: d, Cost: noCost, Days: 0, Retains: nil, Recalls: nil, Spent: noSpent,
+	}
 	from := d.GetStart(now)
 	out := 0
 	for range 7 {
@@ -180,7 +191,7 @@ func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.
 			out++
 		}
 	}
-	if unreviewed > 0 && !s.canReachGoal(p, Schedule{}, open, delta) {
+	if unreviewed > 0 && !s.canReachGoal(p, noSchedule, open, delta) {
 		out += unreviewed
 	}
 	return out
@@ -300,10 +311,24 @@ func (s Simulation) createProjection(
 
 	out := Projection{
 		Days:        days,
+		ReviewsADay: 0,
+		MinutesADay: 0,
+		Retained:    RetentionByDay{on: nil},
+		Answered:    0,
 		ReviewCards: len(schedules) + unreviewed,
 		Seen:        len(schedules),
+		Owed:        0,
 		Clears:      NeverClears,
+		Learned:     0,
 		Learns:      learns,
+		Short:       0,
+		Load:        nil,
+		Reviewed:    nil,
+		Spent:       nil,
+		Admitted:    nil,
+		Closed:      nil,
+		Backlog:     nil,
+		Through:     nil,
 	}
 	if CountOverdue(s.Day, schedules, now) == 0 {
 		out.Clears = 0
@@ -319,6 +344,19 @@ func (s Simulation) getDaysToLearnGoal(p Preset, now time.Time) int {
 	return 0
 }
 
+// createEmptyAllowance is the allowance of a day that has not started.
+func createEmptyAllowance() Allowance {
+	return Allowance{
+		Keeps:   review.Budget{New: 0, Reviews: 0, Minutes: 0},
+		New:     0,
+		Reviews: 0,
+		Minutes: 0,
+		Limits:  review.Limits{New: ClosedNothing, Reviews: ClosedNothing, Minutes: ClosedNothing, Backlog: ClosedNothing},
+		Backlog: 0,
+		Stops:   "",
+	}
+}
+
 // createSimulationDay initializes simulation day state across the projected days.
 func (s Simulation) createSimulationDay(
 	days, base int,
@@ -332,18 +370,36 @@ func (s Simulation) createSimulationDay(
 	unreviewed int,
 ) *simulationDay {
 	return &simulationDay{
-		sim:         s,
-		preset:      p,
-		days:        days,
-		daysToLearn: daysToLearn,
-		base:        base,
-		open:        open,
-		cards:       cards,
-		showings:    make([]int, len(cards)),
-		falls:       falls,
-		on:          on,
-		reckoned:    reckoned,
-		remaining:   unreviewed,
+		sim:          s,
+		preset:       p,
+		days:         days,
+		daysToLearn:  daysToLearn,
+		base:         base,
+		today:        0,
+		open:         open,
+		ends:         time.Time{},
+		admits:       createEmptyAllowance(),
+		closed:       nil,
+		used:         0,
+		reply:        0,
+		observed:     0,
+		begun:        0,
+		charged:      0,
+		reviewed:     0,
+		take:         0,
+		next:         0,
+		isDebtDone:   false,
+		isRepeatDone: false,
+		isNewDone:    false,
+		remaining:    unreviewed,
+		cards:        cards,
+		showings:     make([]int, len(cards)),
+		due:          nil,
+		spare:        nil,
+		again:        nil,
+		falls:        falls,
+		reckoned:     reckoned,
+		on:           on,
 	}
 }
 
@@ -369,7 +425,7 @@ func (d *simulationDay) startDay(today int) {
 	d.reviewed = 0
 	d.closed = BudgetNames{}
 
-	removed := Spent{}
+	removed := noSpent
 	if today == 0 {
 		removed = d.sim.Spent
 	}
@@ -505,7 +561,7 @@ func (d *simulationDay) stepNew() {
 	d.reply++
 	d.reviewed++
 	d.remaining--
-	one := d.sim.getScheduleAfterShowing(Schedule{}, d.open, d.ends, d.preset, d.on)
+	one := d.sim.getScheduleAfterShowing(noSchedule, d.open, d.ends, d.preset, d.on)
 	d.cards = append(d.cards, one)
 	d.showings = append(d.showings, 1)
 	d.reckoned.countBegun(one, d.ends)

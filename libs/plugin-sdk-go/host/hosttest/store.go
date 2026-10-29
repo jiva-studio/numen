@@ -15,16 +15,26 @@ import (
 
 // store is where the files of a vault are kept.
 type store interface {
+	fileReader
+	fileWriter
+}
+
+// fileReader reads the files of a vault.
+type fileReader interface {
 	// stat returns what the file is, or fs.ErrNotExist.
 	stat(filePath string) (host.FileStat, error)
 	read(filePath string) ([]byte, error)
+	// paths lists every file, with forward slashes.
+	paths() []string
+}
+
+// fileWriter changes the files of a vault.
+type fileWriter interface {
 	// write makes the file or replaces it, and returns what it is now.
 	write(filePath string, content []byte) (host.FileStat, error)
 	// create makes a file that is not there, else it returns host.ErrAlreadyExists.
 	create(filePath string, content []byte) (host.FileStat, error)
 	remove(filePath string) error
-	// paths lists every file, with forward slashes.
-	paths() []string
 }
 
 // memory keeps the files in memory. Every write moves the modification time on by a second.

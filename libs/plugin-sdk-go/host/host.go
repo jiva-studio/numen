@@ -61,6 +61,15 @@ type Change struct {
 // Vault is the vault the host is showing. A plugin works it through Client; tests work it through
 // hosttest.Vault.
 type Vault interface {
+	VaultSelector
+	VaultIndex
+	FileAccess
+	VaultNotes
+	CacheStore
+}
+
+// VaultSelector chooses which vault the other calls work on.
+type VaultSelector interface {
 	// GetVault names the vault, or returns ErrNoVault.
 	GetVault(ctx context.Context) (VaultInfo, error)
 	// GetVaults lists every vault in the installation.
@@ -68,13 +77,26 @@ type Vault interface {
 	// With returns the vault with the given identity, used as the shown vault is. A call on it returns
 	// ErrUnknownVault when the installation has no such vault.
 	With(id VaultID) Vault
+}
+
+// VaultIndex controls the index of a vault and reports changes to it.
+type VaultIndex interface {
 	// EnsureIndexed starts reading the vault into the index when it is not there, and returns the index
 	// state. The work continues after it returns.
 	EnsureIndexed(ctx context.Context) (IndexState, error)
 	// WatchMoves signals that something moved in some vault, until ctx is done. It returns once the
 	// watch is active, and the channel closes when the watch ends.
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
+	// Scan brings the index level with the files named.
+	Scan(ctx context.Context, paths []string) error
+	GetParseProblems(ctx context.Context) ([]VaultProblem, error)
+	// Watch reports the files that changed until ctx is done. It returns once the watch is active, and
+	// the channel closes when the watch ends.
+	Watch(ctx context.Context) (<-chan Change, error)
+}
 
+// FileAccess reads and writes the files of a vault.
+type FileAccess interface {
 	StatFile(ctx context.Context, path string) (FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, FileStat, error)
@@ -84,23 +106,32 @@ type Vault interface {
 	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers to this plugin until the release is called.
 	Lock(ctx context.Context) (release func(), err error)
-	// Scan brings the index level with the files named.
-	Scan(ctx context.Context, paths []string) error
+}
 
+// VaultNotes reads the notes of a vault and the links between them.
+type VaultNotes interface {
+	NoteLookup
+	LinkLookup
+}
+
+// NoteLookup finds notes by path, name and type.
+type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]NoteType, error)
 	GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	GetPathsOfType(ctx context.Context, noteType NoteType) ([]string, error)
+}
+
+// LinkLookup finds the links of notes.
+type LinkLookup interface {
 	GetLinks(ctx context.Context, from string) ([]ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, targets []string) (map[string]ResolvedLink, error)
-	GetParseProblems(ctx context.Context) ([]VaultProblem, error)
+}
 
+// CacheStore reads and writes the plugin's cache of a vault.
+type CacheStore interface {
 	// ReadCache returns what the plugin kept for this vault under the name, and false where nothing is.
 	ReadCache(ctx context.Context, name string) ([]byte, bool, error)
 	WriteCache(ctx context.Context, name string, content []byte) error
-
-	// Watch reports the files that changed until ctx is done. It returns once the watch is active, and
-	// the channel closes when the watch ends.
-	Watch(ctx context.Context) (<-chan Change, error)
 }

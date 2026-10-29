@@ -160,23 +160,13 @@ func readCallDetails(args string) (string, string, *numenv1.Range) {
 
 // readWholeCallDetails is readCallDetails for arguments that parse whole.
 func readWholeCallDetails(parsed map[string]any, args string) (string, string, *numenv1.Range) {
-	var about, path string
-	if p, ok := parsed["path"].(string); ok {
-		path = p
-	} else if f, ok := parsed["file"].(string); ok {
-		path = f
-	}
-
-	if q, ok := parsed["query"].(string); ok {
-		about = q
-	} else if a, ok := parsed["about"].(string); ok {
-		about = a
-	} else if t, ok := parsed["title"].(string); ok {
-		about = t
-	} else if path != "" {
-		about = path
-	} else {
+	path, _ := readFirstString(parsed, "path", "file")
+	about, hasAbout := readFirstString(parsed, "query", "about", "title")
+	if !hasAbout {
 		about = args
+		if path != "" {
+			about = path
+		}
 	}
 
 	startVal, hasStart := parsed["start"]
@@ -190,4 +180,14 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 		return about, path, nil
 	}
 	return about, path, &numenv1.Range{Start: int32(from), End: int32(from + length)}
+}
+
+// readFirstString returns the first of keys whose value in parsed is a string.
+func readFirstString(parsed map[string]any, keys ...string) (string, bool) {
+	for _, key := range keys {
+		if value, ok := parsed[key].(string); ok {
+			return value, true
+		}
+	}
+	return "", false
 }

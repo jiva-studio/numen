@@ -19,7 +19,7 @@ func TestEveryFaultIsSavedFromOne(t *testing.T) {
 		api.ProblemKindCardModelIsNotOne:      format.FaultNotACardModel,
 		api.ProblemKindFieldWrittenTwice:      format.FaultTwoValues,
 		api.ProblemKindFieldNotRenamed:        format.FaultNotWritten,
-		api.ProblemKindCardIdCarriedTwice:     format.FaultDuplicateCardID,
+		api.ProblemKindCardIDCarriedTwice:     format.FaultDuplicateCardID,
 	}, func(fault format.Fault) api.ProblemKind {
 		named, isNamed := newWireProblemKind(fault)
 		if !isNamed {

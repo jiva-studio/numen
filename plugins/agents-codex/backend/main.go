@@ -1,3 +1,4 @@
+// Command agents-codex serves the OpenAI Codex agent plugin backend.
 package main
 
 import (

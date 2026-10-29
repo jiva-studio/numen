@@ -24,7 +24,10 @@ type provider struct {
 var _ host.TextProvider = (*provider)(nil)
 
 func newProvider(proofreading *Proofreading) *provider {
-	return &provider{proofreading: proofreading, running: map[string]context.CancelFunc{}}
+	return &provider{
+		proofreading: proofreading, wg: sync.WaitGroup{},
+		mu: sync.Mutex{}, isClosed: false, running: map[string]context.CancelFunc{},
+	}
 }
 
 // Wait waits for the proofreadings it started to end.
@@ -76,7 +79,7 @@ func (p *provider) finish(key string) {
 // newProofreadCommand proofreads the live text of the file the user named and waits for the result.
 func newProofreadCommand(proofreading *Proofreading) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		res, err := proofreading.Proofread(ctx, Request{Path: req.Path, IsUserStarted: true})
+		res, err := proofreading.Proofread(ctx, Request{Vault: "", Path: req.Path, Source: "", IsUserStarted: true})
 		if err != nil {
 			return command.Result{}, err
 		}
@@ -84,6 +87,6 @@ func newProofreadCommand(proofreading *Proofreading) command.Run {
 		if res.Uncorrected > 0 {
 			message += fmt.Sprintf("; the model gave no answer for %d batches", res.Uncorrected)
 		}
-		return command.Result{Message: message}, nil
+		return command.Result{Message: message, OpenedPath: ""}, nil
 	}
 }

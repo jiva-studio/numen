@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
@@ -51,7 +51,8 @@ type Transcriber struct {
 func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host.Queue, engines Engines) *Transcriber {
 	return &Transcriber{
 		files: files, stores: stores, texts: texts, queue: queue, engines: engines,
-		closing: make(chan struct{}), running: map[string]bool{},
+		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
+		mu: sync.Mutex{}, running: map[string]bool{},
 	}
 }
 
@@ -86,7 +87,10 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	if !isClaimed {
 		return nil
 	}
-	if err := t.queue.ReportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true}); err != nil {
+	if err := t.queue.ReportTask(ctx, host.Task{
+		ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "",
+	}); err != nil {
 		t.clearRunning(key)
 		return err
 	}
@@ -115,7 +119,10 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
 
-	if err := t.queue.ReportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true}); err != nil {
+	if err := t.queue.ReportTask(ctx, host.Task{
+		ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "",
+	}); err != nil {
 		return err
 	}
 	return t.transcribe(ctx, vault, path)
@@ -147,7 +154,10 @@ func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path
 	case err == nil, errors.Is(err, context.Canceled):
 		t.finishTask(ctx, path)
 	default:
-		t.reportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, Error: err.Error(), IsUserStarted: true})
+		t.reportTask(ctx, host.Task{
+			ID: getTaskID(path), Title: taskTranscribing, About: path, Error: err.Error(), IsUserStarted: true,
+			Done: 0, Total: 0, Unit: host.UnitThings,
+		})
 	}
 	return err
 }
@@ -175,7 +185,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	}
 	j := &job{
 		vault: vault, path: path, key: getTranscriptionKey(fileHash), fileHash: fileHash,
-		store: transcripts{store: stores}, texts: texts,
+		store: transcripts{store: stores}, texts: texts, turn: nil,
 	}
 	if isWhole, err := j.store.hasWhole(ctx, j.key); err != nil || isWhole {
 		if err != nil {
@@ -189,7 +199,10 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	}
 	defer func() { j.turn.Release() }()
 
-	t.reportTask(ctx, host.Task{ID: getTaskID(path), Title: taskLoading, About: path, IsUserStarted: true})
+	t.reportTask(ctx, host.Task{
+		ID: getTaskID(path), Title: taskLoading, About: path, IsUserStarted: true,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "",
+	})
 	model, err := t.engines(ctx)
 	if err != nil {
 		return fmt.Errorf("open the model: %w", err)
@@ -231,7 +244,7 @@ func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 // putVersion records the transcript in the file of the plugin's folder named.
 func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error {
 	_, err := j.texts.PutVersion(ctx, host.TextPut{
-		Path: j.path, Key: j.key, Kind: textKind, SourceHash: j.fileHash, File: file,
+		Path: j.path, Key: j.key, Source: "", Kind: textKind, SourceHash: j.fileHash, File: file,
 	})
 	return err
 }
@@ -239,7 +252,10 @@ func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error
 // takeTurn waits for the recording's turn in the queue.
 func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	turn, err := t.queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
-		t.reportTask(ctx, host.Task{ID: getTaskID(j.path), Title: taskWaiting, About: j.path, IsUserStarted: true})
+		t.reportTask(ctx, host.Task{
+			ID: getTaskID(j.path), Title: taskWaiting, About: j.path, IsUserStarted: true,
+			Done: 0, Total: 0, Unit: host.UnitThings, Error: "",
+		})
 	}})
 	if err != nil {
 		return err
@@ -315,7 +331,7 @@ func hearBatch(
 func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, length int) {
 	t.reportTask(ctx, host.Task{
 		ID: getTaskID(path), Title: taskTranscribing, About: path,
-		Done: int64(heard / 1000), Total: int64(length / 1000), Unit: host.UnitSeconds, IsUserStarted: true,
+		Done: int64(heard / 1000), Total: int64(length / 1000), Unit: host.UnitSeconds, IsUserStarted: true, Error: "",
 	})
 }
 

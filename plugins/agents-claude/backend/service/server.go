@@ -296,6 +296,7 @@ func (s *agentServer) GetAgentPrograms(
 		IsInstalled: command != "",
 		IsDefault:   true,
 		LimitsTools: true,
+		Models:      nil,
 	}
 	program.Models = s.listModels(ctx, command, extra)
 	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{
@@ -349,7 +350,9 @@ func (s *agentServer) GetAgentTools(
 // Mount registers the agent's services on s and hands Configure's settings to the agent.
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
-	return mount(s, &agentServer{models: newModelCache(true)})
+	agent := new(agentServer)
+	agent.models = newModelCache(true)
+	return mount(s, agent)
 }
 
 func mount(s *server.Server, agentSvc *agentServer) error {
@@ -363,7 +366,10 @@ func mount(s *server.Server, agentSvc *agentServer) error {
 // from the variables a launched process of the plugin is given.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, &agentServer{environ: getVariables(vars), models: newModelCache(true)})
+		agent := new(agentServer)
+		agent.environ = getVariables(vars)
+		agent.models = newModelCache(true)
+		return mount(s, agent)
 	})
 }
 

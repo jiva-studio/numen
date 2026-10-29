@@ -85,11 +85,11 @@ type WriteOutcome struct {
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
-	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Cards: edited.Cards}
+	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Cards: edited.Cards, CardID: ""}
 }
 
 func newCard(card format.Card) Card {
-	out := Card{CardID: string(card.CardID), Section: card.Section, CardModel: card.CardModelLink}
+	out := Card{CardID: string(card.CardID), Section: card.Section, CardModel: card.CardModelLink, Values: nil}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}
@@ -107,7 +107,7 @@ func values(vs []FieldValue) []format.Value {
 func newCardTemplates(fs []CardTemplate) []format.CardTemplate {
 	out := make([]format.CardTemplate, 0, len(fs))
 	for _, f := range fs {
-		out = append(out, format.CardTemplate{Name: f.Name, Front: f.Front, Back: f.Back})
+		out = append(out, format.CardTemplate{Name: f.Name, Preamble: "", Front: f.Front, Back: f.Back})
 	}
 	return out
 }
@@ -157,7 +157,7 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 	if !found {
 		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
 	}
-	ref := domain.FileStat{}
+	ref := domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
 	var err error
 	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
@@ -189,34 +189,23 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 }
 
 func describeCode(reason api.ErrorCode) string {
-	switch reason {
-	case api.ErrorCodeMissing:
-		return "the vault holds no note at this path"
-	case api.ErrorCodeNotANote:
-		return "this is not a note the vault holds"
-	case api.ErrorCodeNotText:
-		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
-	case api.ErrorCodeTooLarge:
-		return fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes)
-	case api.ErrorCodeBodyUnwritable:
-		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
-	case api.ErrorCodeUnreadable:
-		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	case api.ErrorCodeAlreadyExists:
-		return "a file is already where this note would go"
-	case api.ErrorCodeInvalidName:
-		return "a note cannot be called this"
-	case api.ErrorCodeNotACardModel:
-		return "this note is not a card model"
-	case api.ErrorCodeNotADeck:
-		return "this note is not a deck"
-	case api.ErrorCodeDeckTooLarge:
-		return "this deck is larger than a deck is read at"
-	case api.ErrorCodeNotAPreset:
-		return "this note is not a preset"
-	case api.ErrorCodeStale:
-		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
-	default:
-		return string(reason)
+	descriptions := map[api.ErrorCode]string{
+		api.ErrorCodeMissing:        "the vault holds no note at this path",
+		api.ErrorCodeNotANote:       "this is not a note the vault holds",
+		api.ErrorCodeNotText:        "this file is not text: some of it is not valid UTF-8, so open it as a file",
+		api.ErrorCodeTooLarge:       fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes),
+		api.ErrorCodeBodyUnwritable: "this text opens with a frontmatter delimiter, so it cannot be written into a note",
+		api.ErrorCodeUnreadable:     "the frontmatter of this note cannot be read, so it can be neither read nor written from here",
+		api.ErrorCodeAlreadyExists:  "a file is already where this note would go",
+		api.ErrorCodeInvalidName:    "a note cannot be called this",
+		api.ErrorCodeNotACardModel:  "this note is not a card model",
+		api.ErrorCodeNotADeck:       "this note is not a deck",
+		api.ErrorCodeDeckTooLarge:   "this deck is larger than a deck is read at",
+		api.ErrorCodeNotAPreset:     "this note is not a preset",
+		api.ErrorCodeStale:          "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now",
 	}
+	if text, ok := descriptions[reason]; ok {
+		return text
+	}
+	return string(reason)
 }

@@ -196,7 +196,7 @@ func formatShares(one []float64) string {
 // goldenMaterial is one vault a projection is drawn over.
 type goldenMaterial struct {
 	name       string
-	schedules  map[review.ReviewCardID]review.Schedule
+	schedules  map[review.CardID]review.Schedule
 	unreviewed int
 }
 
@@ -222,8 +222,8 @@ func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 // which a real vault never holds: a due day is computed forward from the time
 // of an answer. It is a stress case, and the figures recorded for "a large
 // debt" do not represent a real vault.
-func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.ReviewCardID]review.Schedule {
-	out := make(map[review.ReviewCardID]review.Schedule, reviewCards)
+func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.CardID]review.Schedule {
+	out := make(map[review.CardID]review.Schedule, reviewCards)
 	for i := range reviewCards {
 		c := review.Schedule{}
 		when := goldenNow.AddDate(0, 0, -90+i%17)
@@ -243,7 +243,7 @@ func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.Revie
 			// in the material.
 			c.Due = goldenNow.AddDate(0, 0, -1-i%30)
 		}
-		out[review.ReviewCardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c
+		out[review.CardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c
 	}
 	return out
 }

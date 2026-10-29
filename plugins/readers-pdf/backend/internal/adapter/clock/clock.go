@@ -1,3 +1,4 @@
+// Package clock provides the time source of the PDF reader plugin.
 package clock
 
 import (

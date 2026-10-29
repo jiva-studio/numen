@@ -80,11 +80,11 @@ type Book struct {
 type Structure string
 
 const (
-	// FromNavigation: the book's own navigation document named its places.
+	// FromNavigation means the book's own navigation document named its places.
 	FromNavigation Structure = "navigation"
-	// FromHeadings: the markup carried headings.
+	// FromHeadings means the markup carried headings.
 	FromHeadings Structure = "headings"
-	// FromNothing: the book names no parts. This is an ordinary result.
+	// FromNothing means the book names no parts. This is an ordinary result.
 	FromNothing Structure = "none"
 )
 
@@ -113,12 +113,19 @@ func Read(raw []byte) (*Book, error) {
 	extractor := text.NewExtractor()
 	book := &Book{
 		Title:      pkg.Title,
+		Text:       "",
+		Documents:  nil,
+		Parts:      nil,
+		Pages:      nil,
+		Tier:       "",
 		Layout:     pkg.Layout,
 		Direction:  pkg.Direction,
 		files:      files,
 		documents:  map[string]Document{},
 		mediaTypes: map[string]string{},
 		spineStep:  pkg.SpineStep,
+		itemSteps:  nil,
+		pageBytes:  0,
 	}
 	remaining := int64(archive.MostPerBook)
 	for _, item := range pkg.Spine {

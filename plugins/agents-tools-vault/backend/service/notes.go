@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -12,10 +13,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// NoteReadInput is the input of the note_read tool.
 type NoteReadInput struct {
 	Path string `json:"path" jsonschema:"relative path to the note file (e.g. Notes/Topic.md)"`
 }
 
+// NoteReadOutput is the output of the note_read tool.
 type NoteReadOutput struct {
 	Path        string         `json:"path" jsonschema:"path of the note"`
 	Title       string         `json:"title" jsonschema:"title of the note"`
@@ -27,6 +30,7 @@ type NoteReadOutput struct {
 
 func (t *Tools) addNoteRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "note_read",
 		Title:       "Read Note",
 		Description: "Read the content, body prose, title, and metadata of a note in the vault.",
@@ -74,6 +78,7 @@ func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput,
 	}, nil
 }
 
+// NoteWriteInput is the input of the note_write tool.
 type NoteWriteInput struct {
 	Path        string `json:"path" jsonschema:"relative path to the note file"`
 	Content     string `json:"content,omitempty" jsonschema:"markdown content to write"`
@@ -81,6 +86,7 @@ type NoteWriteInput struct {
 	Fingerprint string `json:"fingerprint,omitempty" jsonschema:"optional baseline fingerprint from note_read for optimistic concurrency"`
 }
 
+// NoteWriteOutput is the output of the note_write tool.
 type NoteWriteOutput struct {
 	Path        string `json:"path" jsonschema:"path written"`
 	Fingerprint string `json:"fingerprint" jsonschema:"new concurrency fingerprint after write"`
@@ -89,6 +95,7 @@ type NoteWriteOutput struct {
 
 func (t *Tools) addNoteWrite(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "note_write",
 		Title:       "Write Note",
 		Description: "Atomically write or create a note in the vault. If fingerprint is provided, verifies optimistic concurrency.",
@@ -103,7 +110,7 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 	}
 	path := in.Path
 	if !strings.HasSuffix(path, ".md") {
-		path = path + ".md"
+		path += ".md"
 	}
 
 	content := in.Content
@@ -145,7 +152,7 @@ func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr stri
 }
 
 func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain.FileStat, error) {
-	writtenFp, err := t.vault.Write(ctx, path, []byte(content), domain.FileStat{})
+	writtenFp, err := t.vault.Write(ctx, path, []byte(content), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}})
 	if err == nil {
 		return writtenFp, nil
 	}
@@ -159,6 +166,7 @@ func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain
 	return newFp, nil
 }
 
+// HeadingItem is a heading of a note.
 type HeadingItem struct {
 	Level  int    `json:"level" jsonschema:"heading level (1 to 6)"`
 	Text   string `json:"text" jsonschema:"heading text"`
@@ -166,10 +174,12 @@ type HeadingItem struct {
 	Offset int    `json:"offset" jsonschema:"byte offset in the body"`
 }
 
+// NoteHeadingsInput is the input of the note_headings tool.
 type NoteHeadingsInput struct {
 	Path string `json:"path" jsonschema:"relative path to the note file"`
 }
 
+// NoteHeadingsOutput is the output of the note_headings tool.
 type NoteHeadingsOutput struct {
 	Path     string        `json:"path"`
 	Headings []HeadingItem `json:"headings"`
@@ -177,6 +187,7 @@ type NoteHeadingsOutput struct {
 
 func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "note_headings",
 		Title:       "Extract Note Headings",
 		Description: "Extract the outline and headings from a note in the vault.",

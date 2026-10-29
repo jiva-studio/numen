@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -74,7 +75,7 @@ func NewRead(readers ports.VaultReaders, links ports.LinkQueries) Read {
 // An error means the vault is unavailable. A problem with the file itself is
 // reported in the outcome.
 func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckContents, error) {
-	out := DeckContents{Path: path}
+	out := DeckContents{Path: path, Outcome: "", Type: "", Body: format.Deck{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil}, Raw: "", CardModels: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 	n, ref, outcome, err := u.readNote(ctx, v, path, MaxBytes)
 	if err != nil {
 		return DeckContents{}, err
@@ -98,10 +99,14 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 		}
 		out.Body.Problems = append(out.Body.Problems, getNonCardModelProblems(out.Body, ordinary)...)
 	case note.TooLarge:
-		out.Body = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
-			format.FaultTooLarge,
-			fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, MaxBytes),
-		)}}
+		out.Body = format.Deck{Ref: ref,
+			Preamble: "",
+			Tail:     "",
+			Sections: nil,
+			Cards:    nil, Problems: []format.Problem{format.OnFile(
+				format.FaultTooLarge,
+				fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, MaxBytes),
+			)}}
 	}
 	return out, nil
 }
@@ -204,7 +209,7 @@ func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.P
 
 // CardModel reads the card model at path. A card model is a note and is bounded as one.
 func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardModelContents, error) {
-	out := CardModelContents{Path: path}
+	out := CardModelContents{Path: path, Title: "", Outcome: "", Type: "", Body: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil}, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 	n, ref, outcome, err := u.readNote(ctx, v, path, note.MaxBytes)
 	if err != nil {
 		return CardModelContents{}, err
@@ -235,13 +240,13 @@ func (u Read) readNote(
 	switch {
 	case target:
 		if ref.Kind != domain.KindNote {
-			return domain.Note{}, ref, note.NotANote, nil
+			return emptyNote(), ref, note.NotANote, nil
 		}
 		if ref.Size > maxSize {
-			return domain.Note{}, ref, note.TooLarge, nil
+			return emptyNote(), ref, note.TooLarge, nil
 		}
 	case errors.Is(err, ports.ErrNotANote):
-		return domain.Note{}, domain.FileStat{}, note.NotANote, nil
+		return emptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, note.NotANote, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("look at %s: %w", path, err)
 	}
@@ -249,9 +254,9 @@ func (u Read) readNote(
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return domain.Note{}, ref, note.Missing, nil
+		return emptyNote(), ref, note.Missing, nil
 	case !target && err == nil:
-		return domain.Note{}, domain.FileStat{}, note.NotANote, nil
+		return emptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, note.NotANote, nil
 	case err != nil:
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
@@ -260,12 +265,28 @@ func (u Read) readNote(
 	// ill-formed UTF-8 sequence with U+FFFD, and the next save would write those
 	// characters over the original bytes.
 	if !utf8.Valid(raw) {
-		return domain.Note{}, ref, note.NotText, nil
+		return emptyNote(), ref, note.NotText, nil
 	}
 	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
-		return domain.Note{}, ref, note.Unreadable, nil
+		return emptyNote(), ref, note.Unreadable, nil
 	} else if err != nil {
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 	return markdown.Parse(ref, raw), ref, note.Ok, nil
+}
+
+// emptyNote returns a note that holds no field.
+func emptyNote() domain.Note {
+	return domain.Note{
+		FileStat:       domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+		Title:          "",
+		Type:           "",
+		ID:             "",
+		Frontmatter:    nil,
+		Headings:       nil,
+		Links:          nil,
+		Body:           "",
+		Problems:       nil,
+		FrontmatterErr: "",
+	}
 }

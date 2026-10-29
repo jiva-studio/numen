@@ -622,7 +622,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	// by twenty-one.
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
-	pos := map[review.ReviewCardID]review.Schedule{
+	pos := map[review.CardID]review.Schedule{
 		{Card: "near", Template: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
@@ -630,7 +630,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.IsLearned(pos[review.ReviewCardID{Card: "near", Template: "Recognise"}], now) {
+	if p.IsLearned(pos[review.CardID{Card: "near", Template: "Recognise"}], now) {
 		t.Error("a review card sixteen days off is learned at an interval of twenty-one")
 	}
 

@@ -79,7 +79,7 @@ type CountReviews struct {
 func NewCountReviews(
 	logs ports.LogStores, schedules Schedules, day review.Day, now ports.Clock,
 ) CountReviews {
-	return CountReviews{logs: logs, schedules: schedules, day: day, now: now}
+	return CountReviews{logs: logs, Cache: nil, schedules: schedules, day: day, now: now}
 }
 
 // WithDay returns a copy of CountReviews with the given Day.
@@ -108,10 +108,11 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	run := reviewCounter{
 		was:        u.readRemembered(ctx, v),
-		now:        countCache{V: countedVersion},
-		out:        ReviewCounts{Days: make(map[string]review.Tally)},
+		now:        countCache{V: countedVersion, Runs: nil},
+		out:        ReviewCounts{Days: make(map[string]review.Tally), Due: nil, Retained: nil, Streak: 0, Answered: 0},
 		countedIDs: make(map[string]bool),
 		coming:     u.schedules.scheduler != nil,
+		log:        ReviewLog{Answers: nil, order: nil, Files: nil, Skipped: 0},
 	}
 	for _, file := range files {
 		if err := u.countFile(ctx, log, store, file, &run); err != nil {
@@ -323,6 +324,7 @@ type GetReviewDays struct {
 	counted CountReviews
 }
 
+// NewGetReviewDays creates the GetReviewDays scenario.
 func NewGetReviewDays(counted CountReviews) GetReviewDays {
 	return GetReviewDays{counted: counted}
 }

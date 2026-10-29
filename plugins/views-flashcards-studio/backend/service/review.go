@@ -95,22 +95,22 @@ const atOnce = 4
 // The vaults are sent first, with name and location, and each count follows as
 // it is computed. A vault that cannot be counted is sent with no count and the
 // error. A single unreadable vault does not block the counts of the others.
-func (a *reviewHandler) WatchCardsDue(
+func (h *reviewHandler) WatchCardsDue(
 	ctx context.Context, _ *api.WatchCardsDueRequest,
 	send func(*api.WatchCardsDueResponse) error,
 ) error {
-	recognized, err := a.vault.GetVaults(ctx)
+	recognized, err := h.vault.GetVaults(ctx)
 	if err != nil {
 		return newError(server.CodeInternal, err)
 	}
 
 	items := make([]*api.VaultCardsDue, 0, len(recognized))
 	for _, one := range recognized {
-		items = append(items, &api.VaultCardsDue{ID: string(one.ID), Name: one.Name, Path: one.Path})
+		items = append(items, newVaultCardsDue(one))
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	createResponse := func() *api.WatchCardsDueResponse {
-		return &api.WatchCardsDueResponse{Day: a.scenarios().day.GetName(a.now()), Vaults: items}
+		return &api.WatchCardsDueResponse{Vaults: items, Day: h.scenarios().day.GetName(h.now()), Counted: nil}
 	}
 	if err := send(createResponse()); err != nil {
 		return err
@@ -130,7 +130,7 @@ func (a *reviewHandler) WatchCardsDue(
 	repeat := clock.NewTicker(again)
 	defer repeat.Stop()
 
-	counted := a.countVaults(ctx, recognized)
+	counted := h.countVaults(ctx, recognized)
 	for counted != nil {
 		select {
 		case one, open := <-counted:
@@ -138,7 +138,7 @@ func (a *reviewHandler) WatchCardsDue(
 				counted = nil
 				continue
 			}
-			if err := send(&api.WatchCardsDueResponse{Counted: one}); err != nil {
+			if err := send(&api.WatchCardsDueResponse{Vaults: nil, Day: "", Counted: one}); err != nil {
 				return err
 			}
 			repeat.Reset(again)
@@ -154,7 +154,7 @@ func (a *reviewHandler) WatchCardsDue(
 // countVaults works the vaults out, a few at a time, and hands each over as it
 // comes. A vault that takes a minute holds up nothing but the ones behind it in
 // the queue.
-func (a *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-chan *api.VaultCardsDue {
+func (h *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-chan *api.VaultCardsDue {
 	counted := make(chan *api.VaultCardsDue)
 	go func() {
 		defer close(counted)
@@ -173,7 +173,7 @@ func (a *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-c
 				defer running.Done()
 				defer func() { <-room }()
 				select {
-				case counted <- a.countVault(ctx, v):
+				case counted <- h.countVault(ctx, v):
 				case <-ctx.Done():
 				}
 			}()
@@ -183,12 +183,20 @@ func (a *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-c
 	return counted
 }
 
-func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.VaultCardsDue {
-	one := &api.VaultCardsDue{ID: string(v.ID), Name: v.Name, Path: v.Path}
+// newVaultCardsDue returns a vault entry that carries no count.
+func newVaultCardsDue(v domain.Vault) *api.VaultCardsDue {
+	return &api.VaultCardsDue{
+		ID: string(v.ID), Name: v.Name, Path: v.Path,
+		ReviewCards: 0, Due: 0, New: 0, Decks: nil, Presets: nil, Unread: "", IsIndexing: false,
+	}
+}
+
+func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.VaultCardsDue {
+	one := newVaultCardsDue(v)
 
 	// The vault is brought up to date before it is counted. Nothing is counted from a walk half done,
 	// and the numbers arrive with the count that the finished walk wakes.
-	state, err := a.vault.With(v.ID).EnsureIndexed(ctx)
+	state, err := h.vault.With(v.ID).EnsureIndexed(ctx)
 	if err != nil {
 		one.Unread = err.Error()
 		return one
@@ -203,7 +211,7 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 	case host.Indexed:
 	}
 
-	owing, err := a.scenarios().flash.CardsDue.Execute(ctx, v)
+	owing, err := h.scenarios().flash.CardsDue.Execute(ctx, v)
 	if err != nil {
 		one.Unread = err.Error()
 		return one
@@ -225,7 +233,7 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 	for _, preset := range owing.Presets {
 		one.Presets = append(one.Presets, &api.PresetCardsDue{
 			Preset:          preset.Preset,
-			Title:           a.getTitle(ctx, v, preset.Preset),
+			Title:           h.getTitle(ctx, v, preset.Preset),
 			Decks:           int32(preset.Decks),
 			Cards:           int32(preset.Cards),
 			OwedDue:         int32(preset.Due),
@@ -251,18 +259,18 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 //
 // A session is opened over one deck, over one preset, or over the whole vault.
 // The cards are returned only when there is something to answer.
-func (a *reviewHandler) StartSession(
+func (h *reviewHandler) StartSession(
 	ctx context.Context, req *api.StartSessionRequest,
 ) (*api.StartSessionResponse, error) {
-	v, err := a.getVault(ctx, req.Vault)
+	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
 	}
-	cardScope := flashcards.Scope{Deck: req.Deck, IsNamed: req.Preset != nil}
+	cardScope := flashcards.Scope{Deck: req.Deck, Preset: "", IsNamed: req.Preset != nil}
 	if req.Preset != nil {
 		cardScope.Preset = *req.Preset
 	}
-	session, err := a.scenarios().flash.Session.Execute(ctx, v, cardScope)
+	session, err := h.scenarios().flash.Session.Execute(ctx, v, cardScope)
 	if err != nil {
 		switch {
 		case errors.Is(err, flashcards.ErrBothNamed):
@@ -273,7 +281,7 @@ func (a *reviewHandler) StartSession(
 		}
 		return nil, newError(server.CodeInternal, err)
 	}
-	run, err := a.openRun(ctx, v)
+	run, err := h.openRun(ctx, v)
 	if err != nil {
 		return nil, newError(server.CodeInternal, err)
 	}
@@ -320,20 +328,20 @@ func newWireIntervals(ahead map[review.Rating]time.Duration) *api.Intervals {
 }
 
 // AnswerCard writes down how a card came back.
-func (a *reviewHandler) AnswerCard(
+func (h *reviewHandler) AnswerCard(
 	ctx context.Context, req *api.AnswerCardRequest,
 ) (*api.AnswerCardResponse, error) {
-	v, err := a.getVault(ctx, req.Vault)
+	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
 	}
-	run, err := a.runs.getRun(v.ID, req.Run)
+	run, err := h.runs.getRun(v.ID, req.Run)
 	if err != nil {
 		return nil, newError(server.CodeNotFound, err)
 	}
 
-	on := review.ReviewCardID{Card: req.CardID, Template: req.Template}
-	provided, err := a.scenarios().flash.Record.Answer(ctx, run, on, parseRating(req.Rating),
+	on := review.CardID{Card: req.CardID, Template: req.Template}
+	provided, err := h.scenarios().flash.Record.Answer(ctx, run, on, parseRating(req.Rating),
 		time.Duration(req.DurationMs)*time.Millisecond)
 	if err != nil {
 		if errors.Is(err, flashcards.ErrNoRating) {
@@ -356,24 +364,26 @@ func parseRating(r api.Rating) review.Rating {
 		return review.Good
 	case api.RatingEasy:
 		return review.Easy
+	case api.RatingUnspecified:
+		return 0
 	default:
 		return 0
 	}
 }
 
 // TakeBackAnswer writes down that an answer was taken back.
-func (a *reviewHandler) TakeBackAnswer(
+func (h *reviewHandler) TakeBackAnswer(
 	ctx context.Context, req *api.TakeBackAnswerRequest,
 ) (*api.TakeBackAnswerResponse, error) {
-	v, err := a.getVault(ctx, req.Vault)
+	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
 	}
-	run, err := a.runs.getRun(v.ID, req.Run)
+	run, err := h.runs.getRun(v.ID, req.Run)
 	if err != nil {
 		return nil, newError(server.CodeNotFound, err)
 	}
-	if _, err := a.scenarios().flash.Record.TakeBack(ctx, run, req.Answer); err != nil {
+	if _, err := h.scenarios().flash.Record.TakeBack(ctx, run, req.Answer); err != nil {
 		if errors.Is(err, flashcards.ErrNoAnswer) {
 			return nil, newError(server.CodeInvalidArgument, err)
 		}
@@ -384,24 +394,24 @@ func (a *reviewHandler) TakeBackAnswer(
 
 // GetVaultDeckPreset is the preset a deck of the named vault is scheduled by. A
 // deck naming none is answered with the defaults under no path.
-func (a *reviewHandler) GetVaultDeckPreset(
+func (h *reviewHandler) GetVaultDeckPreset(
 	ctx context.Context, req *api.GetVaultDeckPresetRequest,
 ) (*api.GetVaultDeckPresetResponse, error) {
-	v, err := a.getVault(ctx, req.Vault)
+	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.scenarios().flash.Presets.GetForDeck(ctx, v, req.Deck)
+	found, err := h.scenarios().flash.Presets.GetForDeck(ctx, v, req.Deck)
 	if err != nil {
 		return nil, newError(getCode(err), err)
 	}
 
-	out := &api.GetVaultDeckPresetResponse{}
+	out := &api.GetVaultDeckPresetResponse{Preset: nil, Error: api.ErrorCodeUnspecified}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = reason
 		return out, nil
 	}
-	out.Preset = presetwire.ConvertPresetToWire(found, a.getTitle(ctx, v, found.Path))
+	out.Preset = presetwire.ConvertPresetToWire(found, h.getTitle(ctx, v, found.Path))
 	return out, nil
 }
 
@@ -411,14 +421,14 @@ func (a *reviewHandler) GetVaultDeckPreset(
 // The days come back in order, oldest first, because what draws them draws them
 // along a line of time. A caller naming a stretch is answered that stretch; the
 // streak and the count are over the whole of the vault either way.
-func (a *reviewHandler) ListReviewDays(
+func (h *reviewHandler) ListReviewDays(
 	ctx context.Context, req *api.ListReviewDaysRequest,
 ) (*api.ListReviewDaysResponse, error) {
-	v, err := a.getVault(ctx, req.Vault)
+	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
 	}
-	response, err := a.scenarios().flash.GetReviewDays.Execute(ctx, v, req.From, req.To)
+	response, err := h.scenarios().flash.GetReviewDays.Execute(ctx, v, req.From, req.To)
 	if err != nil {
 		return nil, newError(server.CodeInternal, err)
 	}
@@ -439,7 +449,9 @@ func (a *reviewHandler) ListReviewDays(
 	}
 	due := make([]*api.ReviewDay, 0, len(response.Due))
 	for day, falls := range response.Due {
-		due = append(due, &api.ReviewDay{Day: day, Reviewed: int32(falls)})
+		due = append(due, &api.ReviewDay{
+			Day: day, Reviewed: int32(falls), Again: 0, Hard: 0, Good: 0, Easy: 0, Tested: 0, Recalled: 0,
+		})
 	}
 
 	return &api.ListReviewDaysResponse{
@@ -462,14 +474,14 @@ func sortReviewDays(days []*api.ReviewDay) []*api.ReviewDay {
 //
 // Nothing here writes and no run is named: a deck can be browsed before a
 // session starts, and reading is not part of a session.
-func (a *reviewHandler) GetDeckNeighbourhood(
+func (h *reviewHandler) GetDeckNeighbourhood(
 	ctx context.Context, req *api.GetDeckNeighbourhoodRequest,
 ) (*api.GetDeckNeighbourhoodResponse, error) {
-	v, err := a.getVault(ctx, req.Vault)
+	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
 	}
-	joined, err := a.scenarios().neighbourhood.Execute(ctx, v, req.Deck)
+	joined, err := h.scenarios().neighbourhood.Execute(ctx, v, req.Deck)
 	if err != nil {
 		return nil, newError(server.CodeInternal, err)
 	}
@@ -487,6 +499,7 @@ func (a *reviewHandler) GetDeckNeighbourhood(
 			Label:       one.Label,
 			IsPointedAt: !one.IsBacklink,
 			IsAmbiguous: one.IsAmbiguous,
+			Error:       api.ErrorCodeUnspecified,
 		}
 		if reason, ok := convertOutcomeToErrorCode(one.Outcome); ok {
 			next.Error = reason
@@ -504,21 +517,21 @@ const again = time.Second
 //
 // The change itself is not carried: the window shows counts and the cards behind them, and they are
 // requested again after any change.
-func (a *reviewHandler) WatchReloads(
+func (h *reviewHandler) WatchReloads(
 	ctx context.Context,
 	_ *api.WatchReloadsRequest,
 	send func(*api.WatchReloadsResponse) error,
 ) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
-	moved, err := a.vault.WatchMoves(ctx)
+	moved, err := h.vault.WatchMoves(ctx)
 	if err != nil {
 		return newError(server.CodeUnavailable, err)
 	}
 
 	// The stream sends an initial message before any change. A stream silent until a file changes
 	// is indistinguishable from one that never opened.
-	if err := send(&api.WatchReloadsResponse{}); err != nil {
+	if err := send(&api.WatchReloadsResponse{Reload: false}); err != nil {
 		return err
 	}
 
@@ -532,14 +545,14 @@ func (a *reviewHandler) WatchReloads(
 		case <-repeat.C:
 			// No change, which the opening message also signals. A closed page fails the
 			// write.
-			if err := send(&api.WatchReloadsResponse{}); err != nil {
+			if err := send(&api.WatchReloadsResponse{Reload: false}); err != nil {
 				return err
 			}
 		case _, open := <-moved:
 			if !open {
 				return nil
 			}
-			a.scenarios().flash.ReviewCards.InvalidateAll()
+			h.scenarios().flash.ReviewCards.InvalidateAll()
 			if err := send(&api.WatchReloadsResponse{Reload: true}); err != nil {
 				return err
 			}

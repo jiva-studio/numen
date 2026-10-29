@@ -13,7 +13,11 @@ import (
 
 // Curve is the simulated progression of a preset across its target range.
 type Curve = projection.Curve
+
+// CurvePoint is one point of a simulated curve.
 type CurvePoint = projection.CurvePoint
+
+// Point is one place of a simulated curve.
 type Point = projection.Point
 
 // Points is how many places a curve is worked out at.
@@ -57,6 +61,8 @@ func NewProjectCurve(
 ) ProjectCurve {
 	return ProjectCurve{
 		reviewCards: reviewCards, schedules: schedules, presets: presets, day: day, now: now,
+		By:    nil,
+		Cores: 0,
 	}
 }
 
@@ -71,6 +77,8 @@ func checkGoal(p review.Preset) error {
 		value, bounds, key = float64(p.MinutesADay), review.MinutesADayBounds, minutesADayKey
 	case review.GoalRetention:
 		value, bounds, key = p.Retention, review.RetentionBounds, retentionKey
+	case review.GoalDate:
+		return nil
 	default:
 		return nil
 	}
@@ -135,6 +143,9 @@ func (u ProjectCurve) Execute(
 	// already given.
 	run := projection.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
+		Days:    0,
+		Retains: nil,
+		Recalls: nil,
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
@@ -155,9 +166,9 @@ type scheduledCards struct {
 	// decks records for each requested deck whether the preset schedules it.
 	decks map[string]bool
 	// schedules is the schedule of each review card that has been answered.
-	schedules map[review.ReviewCardID]review.Schedule
+	schedules map[review.CardID]review.Schedule
 	// presetMap is the review cards the preset is costed from.
-	presetMap map[review.ReviewCardID]string
+	presetMap map[review.CardID]string
 	// unseen is how many of the review cards have not been answered.
 	unreviewed int
 }
@@ -165,12 +176,13 @@ type scheduledCards struct {
 // readScheduledCards picks out of review cards the ones the preset at path schedules.
 func (u ProjectCurve) readScheduledCards(
 	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
-	reviewCards []ReviewCard, schedules map[review.ReviewCardID]review.Schedule,
+	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 ) (scheduledCards, error) {
 	out := scheduledCards{
-		decks:     make(map[string]bool),
-		schedules: make(map[review.ReviewCardID]review.Schedule),
-		presetMap: make(map[review.ReviewCardID]string),
+		decks:      make(map[string]bool),
+		schedules:  make(map[review.CardID]review.Schedule),
+		presetMap:  make(map[review.CardID]string),
+		unreviewed: 0,
 	}
 	for _, one := range reviewCards {
 		mine, request := out.decks[one.Deck]

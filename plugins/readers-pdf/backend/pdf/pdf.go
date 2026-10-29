@@ -66,9 +66,9 @@ type Page struct {
 type Structure string
 
 const (
-	// FromOutline: the document's own outline named its places.
+	// FromOutline is the structure when the document's own outline named its places.
 	FromOutline Structure = "outline"
-	// FromNothing: the document names no parts. This is an ordinary result,
+	// FromNothing is the structure when the document names no parts. This is an ordinary result,
 	// and the usual one: a text layer carries the size of its type and not the
 	// meaning of it, so there is no second tier to fall to.
 	FromNothing Structure = "none"
@@ -121,7 +121,7 @@ func Read(raw []byte) (*Book, error) {
 func readBook(doc *document) *Book {
 	defer doc.close()
 
-	book := &Book{Title: doc.title()}
+	book := &Book{Title: doc.title(), Text: "", Pages: nil, Parts: nil, Structure: ""}
 
 	var text strings.Builder
 	pages := min(doc.pages, mostPages)

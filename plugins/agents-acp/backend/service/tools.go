@@ -30,9 +30,9 @@ func (s *acpSession) listServers() ([]any, error) {
 	}
 	return []any{map[string]any{
 		"type":    "http",
-		"name":    serverName,
+		keyName:   serverName,
 		"url":     s.tools.url,
-		"headers": []map[string]string{{"name": "Authorization", "value": "Bearer " + s.tools.token}},
+		"headers": []map[string]string{{keyName: "Authorization", keyValue: "Bearer " + s.tools.token}},
 	}}, nil
 }
 
@@ -41,7 +41,7 @@ func (s *acpSession) listServers() ([]any, error) {
 // by the programmatic name ACP gives a tool call, never by its title, which the
 // agent writes for display.
 func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
-	denial := map[string]any{"outcome": map[string]any{"outcome": "cancelled"}}
+	denial := map[string]any{keyOutcome: map[string]any{keyOutcome: "cancelled"}}
 	var request struct {
 		SessionID string `json:"sessionId"`
 		ToolCall  struct {
@@ -58,7 +58,7 @@ func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
 	}
 	for _, option := range request.Options {
 		if option.Kind == "allow_once" {
-			return map[string]any{"outcome": map[string]any{"outcome": "selected", "optionId": option.OptionID}}
+			return map[string]any{keyOutcome: map[string]any{keyOutcome: "selected", "optionId": option.OptionID}}
 		}
 	}
 	return denial
@@ -81,7 +81,7 @@ func (s *acpSession) isRunTool(callID, name string) bool {
 // has none.
 func readToolEndpoint(task *agentrun.AskAgentRequest) toolEndpoint {
 	if !agentrun.HasTools(task) || task.GetToolsUrl() == "" {
-		return toolEndpoint{}
+		return toolEndpoint{url: "", token: "", tools: nil}
 	}
 	return toolEndpoint{url: task.GetToolsUrl(), token: task.GetToolsToken(), tools: task.GetTools()}
 }

@@ -79,7 +79,10 @@ func getWorker() (pdfium.Pdfium, error) {
 	pool.Lock()
 	defer pool.Unlock()
 	if pool.workers == nil {
-		started, err := webassembly.Init(webassembly.Config{MaxTotal: 1})
+		started, err := webassembly.Init(webassembly.Config{
+			Context: nil, MinIdle: 0, MaxIdle: 0, MaxTotal: 1, WASM: nil, FSConfig: nil,
+			RuntimeConfig: nil, Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -103,7 +106,9 @@ func openPDF(raw []byte) (*pdf, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
-	opened, err := worker.OpenDocument(&requests.OpenDocument{File: &raw})
+	opened, err := worker.OpenDocument(&requests.OpenDocument{
+		File: &raw, FilePath: nil, FileReader: nil, FileReaderSize: 0, Password: nil,
+	})
 	if err != nil {
 		worker.Close()
 		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
@@ -126,7 +131,7 @@ func (d *pdf) Close() { d.worker.Close() }
 func (d *pdf) HasTextLayer() bool {
 	for index := range d.pages {
 		page, err := d.worker.GetPageText(&requests.GetPageText{
-			Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}},
+			Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil},
 		})
 		if err == nil && strings.TrimSpace(page.Text) != "" {
 			return true
@@ -140,8 +145,13 @@ func (d *pdf) RenderPage(index, dpi int) (image.Image, error) {
 		return nil, fmt.Errorf("pdf: page %d of %d", index, d.pages)
 	}
 	rendered, err := d.worker.RenderPageInDPI(&requests.RenderPageInDPI{
-		DPI:  dpi,
-		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}},
+		DPI:         dpi,
+		Page:        requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil},
+		RenderFlags: 0,
+		RenderForm:  false,
+		Document:    nil,
+		Crop:        nil,
+		ImageFormat: "",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("pdf: draw page %d: %w", index, err)

@@ -235,21 +235,21 @@ type Spent struct {
 // under either unit.
 func GetSpentUnder(
 	d Day, day string, answers []Answer,
-	presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
+	presetMap map[CardID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	return OrderAnswers(answers).GetSpentUnder(d, day, presetMap, counts)
 }
 
 // GetSpentUnder is the same over a history already in order.
 func (h History) GetSpentUnder(
-	d Day, day string, presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
+	d Day, day string, presetMap map[CardID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	// The review cards answered before the current answer, over the whole history
 	// and not only this day.
-	before := make(map[ReviewCardID]bool, len(h))
+	before := make(map[CardID]bool, len(h))
 	// Which review cards the day has already counted, so a card that comes round
 	// again in it is still the one card.
-	counted := make(map[ReviewCardID]bool)
+	counted := make(map[CardID]bool)
 	out := make(map[string]Spent)
 	for _, a := range h {
 		first := !before[a.ReviewCard]
@@ -281,13 +281,13 @@ func (h History) GetSpentUnder(
 
 // GetReviewed is the review cards answered in the day named. An answer taken back is
 // not one, and a review card answered again in the day is the one review card.
-func GetReviewed(d Day, day string, answers []Answer) map[ReviewCardID]bool {
+func GetReviewed(d Day, day string, answers []Answer) map[CardID]bool {
 	return OrderAnswers(answers).GetReviewed(d, day)
 }
 
 // GetReviewed is the same over a history already in order.
-func (h History) GetReviewed(d Day, day string) map[ReviewCardID]bool {
-	out := make(map[ReviewCardID]bool)
+func (h History) GetReviewed(d Day, day string) map[CardID]bool {
+	out := make(map[CardID]bool)
 	for _, a := range h {
 		if d.GetName(a.At) == day {
 			out[a.ReviewCard] = true

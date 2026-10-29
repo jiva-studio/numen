@@ -15,14 +15,14 @@ import (
 
 // budgets tracks daily allowances, review card assignments, and deck review progress per preset.
 type budgets struct {
-	reviewCardPresets map[review.ReviewCardID]string
+	reviewCardPresets map[review.CardID]string
 	allowances        map[string]*allowance
 	// decks maps each deck path to its scheduling preset path.
 	decks map[string]string
 	// cards stores the count of review cards per preset.
 	cards map[string]int
 	// reviewedCards records review cards reviewed during the current day.
-	reviewedCards map[review.ReviewCardID]bool
+	reviewedCards map[review.CardID]bool
 	// spentByDeck records review statistics per deck for the current day.
 	spentByDeck map[string]review.Spent
 }
@@ -38,14 +38,17 @@ type allowance struct {
 // getBudgets calculates daily budgets and allowances for all active presets.
 func getBudgets(
 	ctx context.Context, v domain.Vault, reads *PresetReads, day review.Day,
-	reviewCards []ReviewCard, schedules map[review.ReviewCardID]review.Schedule,
+	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 	log ReviewLog, delta review.Scheduler, pos func(retention float64) review.Scheduler,
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
-		reviewCardPresets: make(map[review.ReviewCardID]string, len(reviewCards)),
+		reviewCardPresets: make(map[review.CardID]string, len(reviewCards)),
 		allowances:        make(map[string]*allowance),
+		decks:             nil,
 		cards:             make(map[string]int),
+		reviewedCards:     nil,
+		spentByDeck:       nil,
 	}
 	survey, err := readPresetSurvey(ctx, v, reads, reviewCards, schedules, out)
 	if err != nil {
@@ -89,7 +92,7 @@ type presetSurvey struct {
 	// presetByDeck maps deck paths to their scheduling preset paths.
 	presetByDeck map[string]string
 	// in maps review card IDs to their deck paths.
-	in map[review.ReviewCardID]string
+	in map[review.CardID]string
 	// settings maps preset paths to their review configurations.
 	settings map[string]review.Preset
 	// unstarted counts unreviewed review cards per preset.
@@ -99,11 +102,11 @@ type presetSurvey struct {
 // readPresetSurvey collects preset mappings, review card counts, and settings for each deck.
 func readPresetSurvey(
 	ctx context.Context, v domain.Vault, reads *PresetReads, reviewCards []ReviewCard,
-	schedules map[review.ReviewCardID]review.Schedule, out *budgets,
+	schedules map[review.CardID]review.Schedule, out *budgets,
 ) (presetSurvey, error) {
 	sv := presetSurvey{
 		presetByDeck: make(map[string]string, len(reviewCards)),
-		in:           make(map[review.ReviewCardID]string, len(reviewCards)),
+		in:           make(map[review.CardID]string, len(reviewCards)),
 		settings:     make(map[string]review.Preset),
 		unstarted:    make(map[string]int),
 	}
@@ -147,7 +150,7 @@ func sumSpentByPreset(
 }
 
 // charge attempts to deduct budget allowance for reviewing a review card in its deck.
-func (b *budgets) charge(share *allowance, reviewCard review.ReviewCardID, isNew bool) bool {
+func (b *budgets) charge(share *allowance, reviewCard review.CardID, isNew bool) bool {
 	one, target := b.allowances[b.reviewCardPresets[reviewCard]]
 	if !target || one.admits.IsPaused() {
 		return false
@@ -220,7 +223,7 @@ func (b *budgets) getStopError(preset string) error {
 
 // getAsking filters and orders due and new cards within budget constraints for the scope.
 func (b *budgets) getAsking(
-	reviewCards []ReviewCard, schedules map[review.ReviewCardID]review.Schedule,
+	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 	day review.Day, now time.Time, scope Scope,
 ) asking {
 	var owed, newCards []ReviewCard
@@ -316,7 +319,7 @@ func (k *shareRegistry) getShare(path, deck string) *deckShare {
 	}
 	one, target := decks[deck]
 	if !target {
-		one = &deckShare{deck: deck}
+		one = &deckShare{deck: deck, owed: nil, newCards: nil, owedIndex: 0, newIndex: 0, debt: 0, begun: 0}
 		decks[deck] = one
 	}
 	return one
@@ -336,7 +339,7 @@ func (k *shareRegistry) getSorted(path string) []*deckShare {
 
 // collectShares groups due and unreviewed cards into deck shares per preset.
 func (b *budgets) collectShares(owed, newCards []ReviewCard) *shareRegistry {
-	shares := &shareRegistry{shares: make(map[string]map[string]*deckShare)}
+	shares := &shareRegistry{shares: make(map[string]map[string]*deckShare), order: nil}
 	for i, one := range owed {
 		q := shares.getShare(b.reviewCardPresets[one.ID], one.Deck)
 		q.owed = append(q.owed, i)

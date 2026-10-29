@@ -29,7 +29,11 @@ type WindowManager struct {
 // NewManager creates a window manager instance.
 func NewManager() *WindowManager {
 	return &WindowManager{
-		previews: make(map[string]EditPreview),
+		mu:         sync.RWMutex{},
+		tabs:       nil,
+		activeID:   "",
+		previews:   make(map[string]EditPreview),
+		previewSeq: atomic.Uint64{},
 	}
 }
 
@@ -116,8 +120,10 @@ func createTabFromPath(path, tabID, title string, nextIndex int) TabInfo {
 	}
 	return TabInfo{
 		ID:       tabID,
+		Kind:     "",
 		Path:     path,
 		Title:    title,
+		Where:    "",
 		IsActive: true,
 	}
 }

@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 )
 
@@ -65,13 +65,16 @@ func getKind(fetched download.Text) domain.TextKind {
 // its span in seconds as its selector, or the prose whole.
 func getSegments(fetched download.Text) []domain.TextSegment {
 	if len(fetched.Cues) == 0 {
-		return []domain.TextSegment{{Text: fetched.Prose}}
+		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}
 	}
 	segments := make([]domain.TextSegment, len(fetched.Cues))
 	for i, cue := range fetched.Cues {
 		segments[i] = domain.TextSegment{
-			Text:     cue.Text + "\n",
-			Selector: host.Selector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.Encode(),
+			Text:    cue.Text + "\n",
+			Heading: "",
+			Selector: host.Selector{
+				T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}, Page: 0, CFI: "", Boxes: nil,
+			}.Encode(),
 		}
 	}
 	return segments
@@ -103,12 +106,12 @@ func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 func (f folder) findRecord(ctx context.Context, key string) (record, bool, error) {
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
-		return record{}, false, nil
+		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}, false, nil
 	}
 	if err != nil {
 		return record{}, false, err
 	}
-	var rec record
+	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}
 	return rec, true, json.Unmarshal(raw, &rec)
 }
 
@@ -147,7 +150,7 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 			return one, true, nil
 		}
 	}
-	return host.StoreFile{}, false, nil
+	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 
 // isCopyOf reports whether a file of the folder is the whole copy kept under the hash.

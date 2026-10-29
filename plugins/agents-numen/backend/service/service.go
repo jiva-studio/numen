@@ -4,6 +4,7 @@ package service
 import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -11,7 +12,20 @@ import (
 // Mount registers the agent's services on s and hands the settings and secrets Configure receives to
 // the agent. The agent's tasks end when s closes.
 func Mount(s *server.Server) error {
-	agent := &Server{}
+	agent := &Server{
+		UnimplementedAgentServiceHandler: agentrun.UnimplementedAgentServiceHandler{},
+		Client:                           nil,
+		mu:                               sync.Mutex{},
+		baseURL:                          "",
+		key:                              "",
+		model:                            "",
+		temperature:                      nil,
+		maxTokens:                        nil,
+		conversations:                    nil,
+		models:                           nil,
+		isListed:                         false,
+		registry:                         agentrun.Registry{},
+	}
 	s.SetUpdateConfig(agent.Configure)
 	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	s.OnClose(func() { _ = agent.Close() })

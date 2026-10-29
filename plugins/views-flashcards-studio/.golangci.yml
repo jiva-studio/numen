@@ -110,3 +110,13 @@ linters:
         linters: [staticcheck]
       - path: _test\.go$
         linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive, exhaustruct, depguard, cyclop, gocognit, nestif, funlen, nakedret]
+
+      # A test double of a third-party interface keeps the method names that interface declares.
+      - path: _test\.go$
+        text: "var-naming"
+        linters: [revive]
+
+      # The clock adapter is the place of a plugin that is allowed to know what time it is.
+      - path: (^|/)adapter/
+        text: does not know what time it is
+        linters: [forbidigo]

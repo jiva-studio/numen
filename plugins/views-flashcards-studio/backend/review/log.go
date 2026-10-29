@@ -39,7 +39,7 @@ func (r Rating) String() string {
 	return "unknown"
 }
 
-// ReviewCardID is the key a schedule is filed under: one card, and one review card of
+// CardID is the key a schedule is filed under: one card, and one review card of
 // the card model that cuts it. The card is identified by its card id, and the review card is
 // identified by its name in the card model.
 //
@@ -47,7 +47,7 @@ func (r Rating) String() string {
 // template presents a different prompt, so each has its own schedule. The card id
 // moves with the card between decks and between vaults; the template name does
 // not, and renaming a review card restarts its schedule.
-type ReviewCardID struct {
+type CardID struct {
 	Card     string
 	Template string
 }
@@ -60,7 +60,7 @@ type Answer struct {
 	ID string
 	// ReviewCard is which card was shown, through which review card. It is empty on an
 	// answer that takes another back.
-	ReviewCard ReviewCardID
+	ReviewCard CardID
 	At         time.Time
 	// Rating is how well the card came back. It is zero on an answer that takes
 	// another back.
@@ -110,7 +110,10 @@ type line struct {
 // complete: any content after the last newline in a file is a run that stopped
 // partway.
 func Write(a Answer) ([]byte, error) {
-	l := line{V: Version, ID: a.ID, At: a.At.UTC().Format(TimestampLayout)}
+	l := line{
+		V: Version, ID: a.ID, Card: "", Template: "", At: a.At.UTC().Format(TimestampLayout),
+		Rating: 0, Ms: 0, Undo: "",
+	}
 	if a.IsUndo() {
 		l.Undo = a.Undoes
 	} else {
@@ -162,29 +165,39 @@ func whole(raw []byte) int {
 	return 1
 }
 
+// noAnswer is the answer returned where a line holds none.
+var noAnswer = Answer{
+	ID: "", ReviewCard: CardID{Card: "", Template: ""}, At: time.Time{},
+	Rating: 0, Took: 0, Undoes: "",
+}
+
 func answer(raw []byte) (Answer, bool) {
 	var l line
 	if err := json.Unmarshal(raw, &l); err != nil {
-		return Answer{}, false
+		return noAnswer, false
 	}
 	if l.V != Version || l.ID == "" {
-		return Answer{}, false
+		return noAnswer, false
 	}
 	pos, err := ParseTimestamp(l.At)
 	if err != nil {
-		return Answer{}, false
+		return noAnswer, false
 	}
 	if l.Undo != "" {
-		return Answer{ID: l.ID, At: pos, Undoes: l.Undo}, true
+		return Answer{
+			ID: l.ID, ReviewCard: CardID{Card: "", Template: ""}, At: pos,
+			Rating: 0, Took: 0, Undoes: l.Undo,
+		}, true
 	}
 	if l.Card == "" || l.Template == "" || !Rating(l.Rating).Valid() {
-		return Answer{}, false
+		return noAnswer, false
 	}
 	return Answer{
 		ID:         l.ID,
-		ReviewCard: ReviewCardID{Card: l.Card, Template: l.Template},
+		ReviewCard: CardID{Card: l.Card, Template: l.Template},
 		At:         pos,
 		Rating:     Rating(l.Rating),
 		Took:       time.Duration(l.Ms) * time.Millisecond,
+		Undoes:     "",
 	}, true
 }

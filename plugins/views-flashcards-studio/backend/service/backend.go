@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -81,7 +82,10 @@ func New(cfg Config) *Backend {
 	if now == nil {
 		now = clock.Now
 	}
-	b := &Backend{vault: cfg.Vault, ports: wired, titles: wired.Notes, now: now, cfg: cfg}
+	b := &Backend{
+		vault: cfg.Vault, ports: wired, titles: wired.Notes, now: now, cfg: cfg,
+		runs: sessions{mu: sync.Mutex{}, run: nil}, scenariosStore: atomic.Pointer[Scenarios]{},
+	}
 	b.scenariosStore.Store(b.build(cfg.DayStart))
 	return b
 }

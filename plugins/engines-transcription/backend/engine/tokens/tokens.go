@@ -1,3 +1,4 @@
+// Package tokens reads the vocabulary of a model and converts token indices into text.
 package tokens
 
 import (

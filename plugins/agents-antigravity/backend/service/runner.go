@@ -138,7 +138,8 @@ func runReader(
 	}()
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(nil, maxLine)
-	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps}
+	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
+		completed: 0, sentCount: 0, isFinished: false}
 	isEnded := scanOutput(scanner, s.NewHandler(r), r, w, stop)
 	scanErr := scanner.Err()
 	isCancelled := runCtx.Err() != nil
@@ -203,6 +204,9 @@ func newSpec(req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath .
 		Conversation: req.GetConversation(),
 		MaxSteps:     int(req.GetMaxSteps()),
 		NewHandler:   newEventHandler,
+		Root:         "",
+		Token:        "",
+		Build:        nil,
 	}
 	if agentrun.HasTools(req) {
 		s.Root = req.GetRoot()
@@ -234,7 +238,7 @@ func makeAntigravityCommand(
 		"--output-format", "stream-json",
 		"--dangerously-skip-permissions",
 	)
-	if model := req.GetModel(); model != "" && model != "default" {
+	if model := req.GetModel(); model != "" && model != defaultModelName {
 		args = append(args, "--model", model)
 	}
 	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {
@@ -274,7 +278,7 @@ func makeAnswerCommand(
 		"-p", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()),
 		"--output-format", "stream-json",
 	)
-	if model := req.GetModel(); model != "" && model != "default" {
+	if model := req.GetModel(); model != "" && model != defaultModelName {
 		args = append(args, "--model", model)
 	}
 	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {

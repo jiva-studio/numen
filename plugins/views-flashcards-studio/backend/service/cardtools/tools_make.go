@@ -3,6 +3,9 @@ package cardtools
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
@@ -15,6 +18,7 @@ type deckCreateInput struct {
 
 func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:  tools.ByEffect,
 		Name:  "card_deck_create",
 		Title: "Create a deck",
 		Description: "Make a deck of no cards, and fill it with `card_add`. A deck is a " +
@@ -28,7 +32,7 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 		if err != nil {
 			return cards.CreateNoteResult{}, err
 		}
-		return t.cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Path: in.Folder})
+		return t.cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Body: "", Path: in.Folder, Fields: nil, Templates: nil})
 	})
 }
 
@@ -41,6 +45,7 @@ type cardModelCreateInput struct {
 
 func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:  tools.ByEffect,
 		Name:  "card_model_create",
 		Title: "Create a card model",
 		Description: "Make a card model: the fields a card is asked for, in the order to ask " +
@@ -58,7 +63,7 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 			return cards.CreateNoteResult{}, err
 		}
 		return t.cards.Create.CardModel(ctx, v, cards.New{
-			Title: in.Title, Path: in.Folder, Fields: in.Fields, Templates: newCardTemplates(in.Templates),
+			Title: in.Title, Body: "", Path: in.Folder, Fields: in.Fields, Templates: newCardTemplates(in.Templates),
 		})
 	})
 }
@@ -99,11 +104,13 @@ func (t *Tools) renameCardField(ctx context.Context, in fieldRenameInput) (field
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}
-	renamed, err := t.cards.BoundedRenameField.Execute(ctx, v, cards.Rename{CardModel: in.Path, From: in.From, To: in.To})
+	renamed, err := t.cards.BoundedRenameField.Execute(ctx, v, cards.Rename{
+		CardModel: in.Path, From: in.From, To: in.To, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+	})
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}
-	res := fieldRenameOutput{Decks: renamed.Decks, Cards: renamed.Cards}
+	res := fieldRenameOutput{Decks: renamed.Decks, Cards: renamed.Cards, NotWritten: nil}
 	for _, deck := range renamed.NotWritten {
 		res.NotWritten = append(res.NotWritten, deck.Path)
 	}

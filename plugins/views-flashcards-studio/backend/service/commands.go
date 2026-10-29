@@ -59,7 +59,7 @@ func (b *Backend) newCreateRun(
 		if code != api.ErrorCodeUnspecified {
 			return command.Result{}, errors.New(describeCreateError(code))
 		}
-		return command.Result{OpenedPath: made.Path}, nil
+		return command.Result{Message: "", OpenedPath: made.Path}, nil
 	}
 }
 
@@ -70,7 +70,11 @@ func describeCreateError(code api.ErrorCode) string {
 		return "something of that name is filed there already, so nothing was written"
 	case api.ErrorCodeInvalidName:
 		return "a note cannot be called that"
-	default:
+	case api.ErrorCodeUnspecified, api.ErrorCodeMissing, api.ErrorCodeNotANote, api.ErrorCodeNotText,
+		api.ErrorCodeTooLarge, api.ErrorCodeBodyUnwritable, api.ErrorCodeUnreadable,
+		api.ErrorCodeNotACardModel, api.ErrorCodeNotADeck, api.ErrorCodeDeckTooLarge,
+		api.ErrorCodeNotAPreset, api.ErrorCodeStale:
 		return "the file could not be made: " + string(code)
 	}
+	return "the file could not be made: " + string(code)
 }

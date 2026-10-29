@@ -1,3 +1,4 @@
+// Package service exposes the host tools through an MCP server.
 package service
 
 import (
@@ -32,6 +33,7 @@ func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator
 	return &ToolAggregator{
 		client:     client,
 		mcpServer:  mcpServer,
+		mu:         sync.RWMutex{},
 		registered: make(map[string]bool),
 	}
 }
@@ -71,12 +73,19 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 		current[name] = true
 
 		declared := &sdk.Tool{
-			Name:        name,
-			Title:       wireTool.GetTitle(),
-			Description: wireTool.GetDescription(),
-			InputSchema: sanitizeInputSchema(wireTool.GetInputSchema()),
+			Meta:         nil,
+			Name:         name,
+			Title:        wireTool.GetTitle(),
+			Description:  wireTool.GetDescription(),
+			InputSchema:  sanitizeInputSchema(wireTool.GetInputSchema()),
+			OutputSchema: nil,
+			Icons:        nil,
 			Annotations: &sdk.ToolAnnotations{
-				ReadOnlyHint: wireTool.GetEffect() == tools.ReadOnly,
+				DestructiveHint: nil,
+				IdempotentHint:  false,
+				OpenWorldHint:   nil,
+				ReadOnlyHint:    wireTool.GetEffect() == tools.ReadOnly,
+				Title:           "",
 			},
 		}
 		if len(wireTool.GetOutputSchema()) > 0 {
@@ -111,15 +120,14 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 // vault it has open, without request context: the call does not originate from a Numen request.
 func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json.RawMessage) (*sdk.CallToolResult, error) {
 	if a.client == nil {
-		return &sdk.CallToolResult{
-			IsError: true,
-			Content: []sdk.Content{&sdk.TextContent{Text: "no host client configured"}},
-		}, nil
+		return newErrorResult("no host client configured"), nil
 	}
 
 	res, err := a.client.InvokeTool(ctx, tools.Call{
 		Name:      name,
 		Arguments: []byte(args),
+		Context:   nil,
+		VaultID:   "",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("call host tool %s: %w", name, err)
@@ -132,21 +140,34 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 			errMsg = "unknown tool: " + name
 		case tools.ErrorCodeBadArguments:
 			errMsg = "invalid tool arguments"
+		case tools.ErrorCodeUnspecified:
+			errMsg = fmt.Sprintf("tool error: %v", res.GetError())
 		default:
 			errMsg = fmt.Sprintf("tool error: %v", res.GetError())
 		}
-		return &sdk.CallToolResult{
-			IsError: true,
-			Content: []sdk.Content{&sdk.TextContent{Text: errMsg}},
-		}, nil
+		return newErrorResult(errMsg), nil
 	}
 
 	wireResult := res.GetResult()
 	if wireResult == nil {
-		return &sdk.CallToolResult{}, nil
+		return &sdk.CallToolResult{
+			Meta:              nil,
+			Content:           nil,
+			StructuredContent: nil,
+			IsError:           false,
+			InputRequests:     nil,
+			RequestState:      "",
+		}, nil
 	}
 
-	result := &sdk.CallToolResult{IsError: wireResult.GetIsRefusal()}
+	result := &sdk.CallToolResult{
+		Meta:              nil,
+		Content:           nil,
+		StructuredContent: nil,
+		IsError:           wireResult.GetIsRefusal(),
+		InputRequests:     nil,
+		RequestState:      "",
+	}
 	if len(wireResult.GetStructured()) > 0 {
 		result.StructuredContent = json.RawMessage(wireResult.GetStructured())
 	}
@@ -156,10 +177,27 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 		text = string(wireResult.GetStructured())
 	}
 	if text != "" {
-		result.Content = []sdk.Content{&sdk.TextContent{Text: text}}
+		result.Content = []sdk.Content{newTextContent(text)}
 	}
 
 	return result, nil
+}
+
+// newTextContent creates a text content block.
+func newTextContent(text string) *sdk.TextContent {
+	return &sdk.TextContent{Text: text, Meta: nil, Annotations: nil}
+}
+
+// newErrorResult creates a tool result that reports message as an error.
+func newErrorResult(message string) *sdk.CallToolResult {
+	return &sdk.CallToolResult{
+		Meta:              nil,
+		Content:           []sdk.Content{newTextContent(message)},
+		StructuredContent: nil,
+		IsError:           true,
+		InputRequests:     nil,
+		RequestState:      "",
+	}
 }
 
 // sanitizeInputSchema ensures the schema is non-nil and specifies an object type.

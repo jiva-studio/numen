@@ -64,9 +64,9 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	session := connectSSEClient(t, sseURL, "test-token-123", ctx)
-	callNoteGetTool(t, session, ctx)
-	assertDynamicDiscovery(t, session, ctx, hostClient)
+	session := connectSSEClient(ctx, t, sseURL, "test-token-123")
+	callNoteGetTool(ctx, t, session)
+	assertDynamicDiscovery(ctx, t, session, hostClient)
 
 	_ = session.Close()
 
@@ -87,7 +87,7 @@ func assertUnauthorized(t *testing.T, url string) {
 	}
 }
 
-func callNoteGetTool(t *testing.T, session *sdk.ClientSession, ctx context.Context) {
+func callNoteGetTool(ctx context.Context, t *testing.T, session *sdk.ClientSession) {
 	t.Helper()
 
 	listResult, err := session.ListTools(ctx, nil)
@@ -116,7 +116,7 @@ func callNoteGetTool(t *testing.T, session *sdk.ClientSession, ctx context.Conte
 	}
 }
 
-func assertDynamicDiscovery(t *testing.T, session *sdk.ClientSession, ctx context.Context, hostClient *fakeToolClient) {
+func assertDynamicDiscovery(ctx context.Context, t *testing.T, session *sdk.ClientSession, hostClient *fakeToolClient) {
 	t.Helper()
 
 	hostClient.mu.Lock()
@@ -137,7 +137,7 @@ func assertDynamicDiscovery(t *testing.T, session *sdk.ClientSession, ctx contex
 	}
 }
 
-func connectSSEClient(t *testing.T, sseURL, token string, ctx context.Context) *sdk.ClientSession {
+func connectSSEClient(ctx context.Context, t *testing.T, sseURL, token string) *sdk.ClientSession {
 	t.Helper()
 	authClient := &http.Client{
 		Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {

@@ -1,3 +1,4 @@
+// Package cardtools provides the MCP tools that read and edit card models, decks and cards.
 package cardtools
 
 import (

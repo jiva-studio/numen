@@ -50,8 +50,8 @@ func (u Write) WithIndex(index note.Levels) Write {
 	return u
 }
 
-// which is what the caller presents at its next write, and the card id every card
-// that carried none was given.
+// WriteResult is the file stat of a written deck, which is what the caller presents at its next write,
+// and the card id every card that carried none was given.
 type WriteResult struct {
 	FileStat domain.FileStat
 	Given    []format.CardID
@@ -87,7 +87,7 @@ func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardID, error) {
 	read := NewRead(u.readers, u.links)
-	delta, err := read.GetCardCardModels(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	delta, err := read.GetCardCardModels(ctx, v, path, format.ReadDeck(newBodyNote(body)))
 	if err != nil {
 		return "", nil, err
 	}
@@ -134,4 +134,11 @@ func (u Write) createNoteWriter() note.Write {
 	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)
 	writing.Bound = MaxBytes
 	return writing
+}
+
+// newBodyNote returns a note that holds body and no other field.
+func newBodyNote(body string) domain.Note {
+	n := emptyNote()
+	n.Body = body
+	return n
 }

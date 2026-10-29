@@ -9,11 +9,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// NoteSearchInput is the input of the note_search tool.
 type NoteSearchInput struct {
 	Query string `json:"query" jsonschema:"words or phrase to search for across note titles and content"`
 	Limit int    `json:"limit,omitempty" jsonschema:"maximum number of matches to return (default: 20, max: 100)"`
 }
 
+// SearchMatch is a note matching a search.
 type SearchMatch struct {
 	Path    string `json:"path" jsonschema:"relative path to the note"`
 	Source  string `json:"source" jsonschema:"alias for path"`
@@ -24,6 +26,7 @@ type SearchMatch struct {
 	Score   int    `json:"score" jsonschema:"relevance score"`
 }
 
+// NoteSearchOutput is the output of the note_search tool.
 type NoteSearchOutput struct {
 	Query   string        `json:"query"`
 	Matches []SearchMatch `json:"matches"`
@@ -134,7 +137,7 @@ func (t *Tools) scoreNoteMatch(
 	score += contentScore
 
 	if score <= 0 {
-		return SearchMatch{}, false
+		return SearchMatch{Path: "", Source: "", Title: "", Snippet: "", Text: "", Line: 0, Score: 0}, false
 	}
 
 	return SearchMatch{

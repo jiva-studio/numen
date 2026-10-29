@@ -1,3 +1,4 @@
+// Package text extracts the text, parts, pages, places and markup of EPUB documents.
 package text
 
 import (
@@ -10,6 +11,9 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
+
+// hrefAttribute is the name of the attribute that holds a link address.
+const hrefAttribute = "href"
 
 // A builder gathers the elements of one document as its text is read.
 //
@@ -28,7 +32,7 @@ type builder struct {
 }
 
 func newBuilder(base string) *builder {
-	return &builder{base: base, stack: []markup.Node{{}}}
+	return &builder{base: base, stack: []markup.Node{{Name: "", Text: "", Offset: 0, Attributes: nil, Children: nil}}, waiting: nil}
 }
 
 // openElement starts an element and reports whether one was started. An element that
@@ -37,7 +41,7 @@ func (b *builder) openElement(n *html.Node, offset int) bool {
 	if !drawn[n.DataAtom] {
 		return false
 	}
-	opening := markup.Node{Name: n.Data, Offset: offset, Attributes: b.convertAttributes(n)}
+	opening := markup.Node{Name: n.Data, Text: "", Offset: offset, Attributes: b.convertAttributes(n), Children: nil}
 	if cells[opening.Name] && len(b.waiting) > 0 {
 		opening.Children, opening.Offset = b.waiting, b.waiting[0].Offset
 		b.waiting = nil
@@ -70,11 +74,11 @@ func (b *builder) run(offset int) {
 	top := &b.stack[len(b.stack)-1]
 	switch cell := findLastCell(top); {
 	case cell != nil:
-		cell.Children = append(cell.Children, markup.Node{Offset: offset})
+		cell.Children = append(cell.Children, markup.Node{Name: "", Text: "", Offset: offset, Attributes: nil, Children: nil})
 	case tabular[top.Name]:
-		b.waiting = append(b.waiting, markup.Node{Offset: offset})
+		b.waiting = append(b.waiting, markup.Node{Name: "", Text: "", Offset: offset, Attributes: nil, Children: nil})
 	default:
-		b.appendChild(markup.Node{Offset: offset})
+		b.appendChild(markup.Node{Name: "", Text: "", Offset: offset, Attributes: nil, Children: nil})
 	}
 }
 
@@ -157,7 +161,7 @@ func (b *builder) convertAttributes(n *html.Node) []markup.Attribute {
 		}
 		value := a.Val
 		switch name {
-		case "href":
+		case hrefAttribute:
 			if value = resolveLinkAddress(b.base, value); value == "" {
 				continue
 			}
@@ -258,7 +262,7 @@ var anyElement = map[string]bool{
 
 // ownAttributes are what an element may carry beyond those.
 var ownAttributes = map[atom.Atom][]string{
-	atom.A:        {"href"},
+	atom.A:        {hrefAttribute},
 	atom.Img:      {"src", "alt", "width", "height"},
 	atom.Td:       {"colspan", "rowspan"},
 	atom.Th:       {"colspan", "rowspan", "scope"},

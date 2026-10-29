@@ -54,26 +54,26 @@ func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[in
 func processRow(row string, batch Batch, read map[int]string, claimedLines map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
 	startLine, endLine, text, barred, numbers := readRow(row)
 	if !numbers {
-		return Line{}, false, false, false
+		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if endLine > startLine && !batch.IsJoinable {
-		return Line{}, false, false, false
+		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	was, reaches, matchOk := matchLines(read, startLine, endLine, batch.Last())
 	if !matchOk {
-		return Line{}, false, false, false
+		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if reaches {
-		return Line{}, false, true, true
+		return Line{Number: 0, Last: 0, Text: ""}, false, true, true
 	}
 	if !claimLines(claimedLines, startLine, endLine) {
-		return Line{}, false, false, false
+		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if !isValidRow(row, was, text, barred) {
-		return Line{}, false, false, false
+		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if !canKeepCorrection(was, text, startLine, endLine, maxDistance) {
-		return Line{}, false, false, true
+		return Line{Number: 0, Last: 0, Text: ""}, false, false, true
 	}
 	return Line{Number: startLine, Last: endLine, Text: text}, true, false, true
 }

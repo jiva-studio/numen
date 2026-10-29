@@ -14,8 +14,10 @@ type EditCard struct {
 	write Write
 }
 
+// NewEditCard creates the EditCard scenario.
 func NewEditCard(read Read, write Write) EditCard { return EditCard{read: read, write: write} }
 
+// Execute replaces the values of a card.
 func (u EditCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardID, cardModel string, values []format.Value,
 ) (EditResult, error) {

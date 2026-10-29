@@ -356,11 +356,11 @@ type mockPageWorker struct {
 	height float64
 }
 
-func (m *mockPageWorker) GetPageSize(req *requests.GetPageSize) (*responses.GetPageSize, error) {
+func (m *mockPageWorker) GetPageSize(_ *requests.GetPageSize) (*responses.GetPageSize, error) {
 	return &responses.GetPageSize{Width: m.width, Height: m.height}, nil
 }
 
-func (m *mockPageWorker) FPDFPage_GetRotation(req *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
+func (m *mockPageWorker) FPDFPage_GetRotation(_ *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
 	return &responses.FPDFPage_GetRotation{}, nil
 }
 

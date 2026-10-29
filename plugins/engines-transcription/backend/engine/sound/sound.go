@@ -1,3 +1,4 @@
+// Package sound decodes WAV and MP3 recordings into samples.
 package sound
 
 import (

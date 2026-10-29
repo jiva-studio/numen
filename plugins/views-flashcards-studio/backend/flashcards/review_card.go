@@ -6,6 +6,7 @@ import (
 	"errors"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
@@ -23,7 +24,7 @@ type ReviewCard struct {
 	Deck    string
 	Section string
 	// ID is what a schedule belongs to: the card's id and the template's name.
-	ID review.ReviewCardID
+	ID review.CardID
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
 	Heading string
@@ -70,7 +71,7 @@ type ListReviewCards struct {
 func NewListReviewCards(
 	readers ports.VaultReaders, notes ports.NoteQueries, links ports.LinkQueries,
 ) ListReviewCards {
-	return ListReviewCards{readers: readers, notes: notes, links: links, cache: newCardCache()}
+	return ListReviewCards{readers: readers, notes: notes, links: links, cache: newCardCache(), Cores: 0, MaxCards: 0}
 }
 
 // WithReaders returns a copy of ListReviewCards with the given VaultReaders.
@@ -84,7 +85,7 @@ func (u ListReviewCards) WithReaders(readers ports.VaultReaders) ListReviewCards
 // to read that vault, and a window holding one reads it.
 var ErrNotCarried = errors.New("the index does not carry this vault yet")
 
-// the index does not carry gets ErrNotCarried.
+// Execute lists the review cards of a vault. A vault the index does not carry gets ErrNotCarried.
 func (u ListReviewCards) Execute(ctx context.Context, v domain.Vault) ([]ReviewCard, error) {
 	paths, err := u.GetDeckPaths(ctx, v)
 	if err != nil {
@@ -138,7 +139,7 @@ func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, pat
 		misses = append(misses, item)
 	}
 
-	cardModels := &cardModelMemo{read: cards.NewRead(u.readers, u.links), cardModels: make(map[string]cardModelRead)}
+	cardModels := &cardModelMemo{read: cards.NewRead(u.readers, u.links), mu: sync.Mutex{}, cardModels: make(map[string]cardModelRead)}
 	places := min(max(1, u.Cores), len(misses))
 	var running sync.WaitGroup
 	queue := make(chan int)
@@ -246,7 +247,7 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 	}
 	// A card whose card model is not one is a card no review card shows. It is a problem
 	// against the deck, and it is settled in a window.
-	out := cardModelRead{}
+	out := cardModelRead{cardModel: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil}, stat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, isWhole: false}
 	one, err := m.read.CardModel(ctx, v, path)
 	if err == nil && one.Outcome == note.Ok && one.Type == format.TypeCardModel {
 		out = cardModelRead{cardModel: one.Body, stat: one.FileStat, isWhole: true}
@@ -287,7 +288,7 @@ func (u ListReviewCards) getDeckCards(
 			out = append(out, ReviewCard{
 				Deck:       deck.Path,
 				Section:    getSectionName(deck.Body, card),
-				ID:         review.ReviewCardID{Card: string(card.CardID), Template: reviewCard.Name},
+				ID:         review.CardID{Card: string(card.CardID), Template: reviewCard.Name},
 				Heading:    card.Heading,
 				cardModel:  one.cardModel,
 				reviewCard: reviewCard,
@@ -367,7 +368,7 @@ type reviewCardCache struct {
 }
 
 func newCardCache() *reviewCardCache {
-	return &reviewCardCache{decks: make(map[deckKey]*list.Element), order: list.New()}
+	return &reviewCardCache{mu: sync.Mutex{}, decks: make(map[deckKey]*list.Element), order: list.New(), total: 0, epoch: 0}
 }
 
 // begin returns the epoch a parse starts in.
@@ -382,13 +383,13 @@ func (c *reviewCardCache) begin() uint64 {
 
 func (c *reviewCardCache) get(key deckKey) (deckCards, bool) {
 	if c == nil {
-		return deckCards{}, false
+		return deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}, false
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	pos, target := c.decks[key]
 	if !target {
-		return deckCards{}, false
+		return deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}, false
 	}
 	c.order.MoveToFront(pos)
 	return getEntry(pos).deckCards, true
@@ -511,7 +512,7 @@ func (c *reviewCardCache) hasDeck(key deckKey) bool {
 func getEntry(pos *list.Element) *cached {
 	one, _ := pos.Value.(*cached)
 	if one == nil {
-		return &cached{}
+		return &cached{key: deckKey{vault: "", path: ""}, deckCards: deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}}
 	}
 	return one
 }

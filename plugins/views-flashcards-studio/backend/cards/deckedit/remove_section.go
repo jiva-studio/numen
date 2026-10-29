@@ -13,10 +13,12 @@ type RemoveSection struct {
 	write Write
 }
 
+// NewRemoveSection creates the RemoveSection scenario.
 func NewRemoveSection(read Read, write Write) RemoveSection {
 	return RemoveSection{read: read, write: write}
 }
 
+// Execute removes a section from a deck.
 func (u RemoveSection) Execute(ctx context.Context, v domain.Vault, version DeckVersion, section int) (EditResult, error) {
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(_ DeckContents, file *format.DeckFile) error {
 		return file.RemoveSection(section)

@@ -14,8 +14,10 @@ type RemoveCard struct {
 	write Write
 }
 
+// NewRemoveCard creates the RemoveCard scenario.
 func NewRemoveCard(read Read, write Write) RemoveCard { return RemoveCard{read: read, write: write} }
 
+// Execute removes a card from a deck.
 func (u RemoveCard) Execute(ctx context.Context, v domain.Vault, version DeckVersion, cardID string) (EditResult, error) {
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(_ DeckContents, file *format.DeckFile) error {
 		return file.RemoveCard(cardid.ID(cardID))

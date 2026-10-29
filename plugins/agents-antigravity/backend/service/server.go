@@ -12,6 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
+// defaultModelName is the model name that selects the program's own default model.
+const defaultModelName = "default"
+
 type agentServer struct {
 	agentrun.Service
 	mu             sync.RWMutex
@@ -84,7 +87,7 @@ func (s *agentServer) GetAgentState(
 			Unreachable: "Antigravity was not found on this machine",
 		}), nil
 	}
-	return connect.NewResponse(&agentrun.GetAgentStateResponse{}), nil
+	return connect.NewResponse(&agentrun.GetAgentStateResponse{Unreachable: ""}), nil
 }
 
 // GetAgentPrograms lists Antigravity, whether it is installed, and the models it lists.
@@ -99,6 +102,7 @@ func (s *agentServer) GetAgentPrograms(
 	}
 	antigravity := &agentrun.AgentProgram{
 		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled(customPath) || len(command) > 0,
+		IsDefault: false, Models: nil, LimitsTools: false,
 	}
 	if antigravity.GetIsInstalled() {
 		for _, one := range s.getFamilies(ctx, command) {
@@ -124,7 +128,7 @@ func (s *agentServer) getFamilies(ctx context.Context, command []string) []reaso
 // resolveModel sets the model of the request to the one the program lists for the model and the level
 // the request names.
 func (s *agentServer) resolveModel(ctx context.Context, req *agentrun.AskAgentRequest) {
-	if req.GetModel() == "" || req.GetModel() == "default" {
+	if req.GetModel() == "" || req.GetModel() == defaultModelName {
 		return
 	}
 	req.Model = reasoning.ResolveModel(s.getFamilies(ctx, req.GetCommand()), req.GetModel(), req.GetReasoning())

@@ -27,7 +27,7 @@ const (
 // starts is where each page's text begins, so an entry pointing past the pages
 // that were read is empty and is dropped.
 func (d *document) outline(starts []int) []Part {
-	w := &outlineWalk{doc: d, starts: starts, bookmarks: map[references.FPDF_BOOKMARK]bool{}}
+	w := &outlineWalk{doc: d, starts: starts, parts: nil, bookmarks: map[references.FPDF_BOOKMARK]bool{}}
 	w.walk(nil, 1)
 	return w.parts
 }
@@ -95,17 +95,17 @@ func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts
 	named, err := d.worker.FPDFBookmark_GetTitle(&requests.FPDFBookmark_GetTitle{Bookmark: bookmark})
 	// gomutants:disable-next-line BRANCH_IF reason="unreadable outline bookmark title drops the entry"
 	if err != nil {
-		return Part{}, false
+		return Part{Title: "", Offset: 0, Level: 0}, false
 	}
 	title := normalizeSpaces(named.Title)
 	// gomutants:disable-next-line BRANCH_IF reason="empty bookmark title drops the entry"
 	if title == "" {
-		return Part{}, false
+		return Part{Title: "", Offset: 0, Level: 0}, false
 	}
 	page, ok := d.getDestinationPage(bookmark)
 	// gomutants:disable-next-line INVERT_LOGICAL reason="missing or out-of-range destinations drop the entry"
 	if !ok || page < 0 || page >= len(starts) {
-		return Part{}, false
+		return Part{Title: "", Offset: 0, Level: 0}, false
 	}
 	return Part{Title: title, Offset: starts[page], Level: level}, true
 }

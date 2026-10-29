@@ -87,7 +87,7 @@ func (s linkServer) fetchText(ctx context.Context, req api.FetchTextRequest) (ap
 	if err != nil {
 		return api.FetchTextResponse{}, err
 	}
-	s.links.StartFetchText(found, req.IsUserStarted)
+	s.links.StartFetchText(ctx, found, req.IsUserStarted)
 	return api.FetchTextResponse{}, nil
 }
 
@@ -96,7 +96,7 @@ func (s linkServer) copyVideo(ctx context.Context, req api.CopyVideoRequest) (ap
 	if err != nil {
 		return api.CopyVideoResponse{}, err
 	}
-	s.links.StartCopy(found)
+	s.links.StartCopy(ctx, found)
 	return api.CopyVideoResponse{}, nil
 }
 
@@ -123,7 +123,7 @@ func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest)
 		if err != nil {
 			return api.CreateLinksResponse{}, toAPIError(err)
 		}
-		s.links.StartFetch(made)
+		s.links.StartFetch(ctx, made)
 		out.Paths = append(out.Paths, made.Path)
 	}
 	return out, nil

@@ -25,7 +25,7 @@ type Tools struct {
 
 // New creates a Tools instance.
 func New(vault host.Vault) *Tools {
-	return &Tools{host: vault}
+	return &Tools{host: vault, vault: nil}
 }
 
 // inVault runs the tool on the vault the call names. A call that names none is refused.
@@ -91,5 +91,5 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 	if nanos != 0 {
 		modTime = time.Unix(0, nanos)
 	}
-	return domain.FileStat{Size: size, ModTime: modTime}, nil
+	return domain.FileStat{Path: "", Kind: "", Size: size, ModTime: modTime}, nil
 }

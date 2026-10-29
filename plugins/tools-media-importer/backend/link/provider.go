@@ -15,7 +15,7 @@ type Provider struct {
 // NewProvider is the texts of the links.
 func NewProvider(links *Links) Provider { return Provider{links: links} }
 
-var _ host.TextProvider = Provider{}
+var _ host.TextProvider = Provider{links: nil}
 
 // CreateText fetches the text of the link in the background. The plugin reads links and no
 // version, so a request naming a source is not one it takes.
@@ -31,6 +31,6 @@ func (p Provider) CreateText(ctx context.Context, req host.TextCreation) error {
 	if err != nil {
 		return err
 	}
-	p.links.StartFetchText(link, req.IsUserStarted)
+	p.links.StartFetchText(ctx, link, req.IsUserStarted)
 	return nil
 }

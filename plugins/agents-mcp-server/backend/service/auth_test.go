@@ -94,7 +94,7 @@ func TestRequireToken(t *testing.T) {
 
 	token := "secret"
 	innerCalled := false
-	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	inner := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		innerCalled = true
 		w.WriteHeader(http.StatusOK)
 	})

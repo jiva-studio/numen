@@ -3,7 +3,6 @@ package format
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 )
 
@@ -33,7 +32,7 @@ func Whole(
 	body string, cardModels map[string]CardModel, createID func() cardid.ID,
 ) (string, []CardID) {
 	raw := []byte(body)
-	deck, spans := readDeck(domain.FileStat{}, raw)
+	deck, spans := readDeck(createEmptyStat(), raw)
 
 	var provided []CardID
 	// Backwards, because a splice moves every byte after it.

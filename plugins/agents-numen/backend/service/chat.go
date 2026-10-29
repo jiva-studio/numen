@@ -203,7 +203,7 @@ func (c chat) open(ctx context.Context, method, path string, body []byte) (*http
 	}
 	client := c.client
 	if client == nil {
-		client = &http.Client{Timeout: requestLimit}
+		client = &http.Client{Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: requestLimit}
 	}
 	if c.key != "" {
 		if !isPrivate(req.URL) {

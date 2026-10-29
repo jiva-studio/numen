@@ -43,7 +43,10 @@ type fetchers struct {
 }
 
 func newFetchers(isMock bool) *fetchers {
-	f := &fetchers{isMock: isMock, cfg: download.Defaults(), settings: link.Settings{IsAutomatic: true, CopyMaxSize: 500 << 20}}
+	f := &fetchers{
+		mu: sync.RWMutex{}, isMock: isMock, cfg: download.Defaults(), current: nil,
+		settings: link.Settings{Captions: nil, IsAutomatic: true, CopyMaxSize: 500 << 20},
+	}
 	f.current = f.open()
 	return f
 }
@@ -91,9 +94,9 @@ func (f *fetchers) updateConfig(values map[string]string) {
 
 func getTool(path string) download.Tool {
 	if path == "" {
-		return download.Tool{}
+		return download.Tool{Command: nil, Arguments: nil, Environment: nil}
 	}
-	return download.Tool{Command: []string{path}}
+	return download.Tool{Command: []string{path}, Arguments: nil, Environment: nil}
 }
 
 // getLanguages is the languages a setting names, separated by commas, best first.
@@ -131,7 +134,7 @@ func MountFromEnv(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return Mount(s, openHostAt(endpoint), os.Getenv(EnvMockML) == "true")
+	return Mount(s, openHostAt(endpoint), os.Getenv(EnvMockML) == trueValue)
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -143,6 +146,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return Mount(s, hosted, vars[EnvMockML] == "true")
+		return Mount(s, hosted, vars[EnvMockML] == trueValue)
 	})
 }

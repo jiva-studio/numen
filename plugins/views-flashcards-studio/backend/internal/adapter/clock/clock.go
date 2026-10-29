@@ -1,3 +1,4 @@
+// Package clock reads the system time and entropy for the use cases.
 package clock
 
 import (

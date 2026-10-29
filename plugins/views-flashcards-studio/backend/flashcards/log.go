@@ -119,16 +119,16 @@ func (u Log) ReadFile(
 ) (LogFile, error) {
 	raw, err := store.ReadLog(ctx, file.Run)
 	if errors.Is(err, fs.ErrNotExist) {
-		return LogFile{IsGone: true}, nil
+		return LogFile{Answers: nil, Size: 0, Skipped: 0, IsGone: true, IsUnreadable: false}, nil
 	}
 	if errors.Is(err, fs.ErrPermission) || errors.Is(err, ports.ErrLockedByAnother) {
-		return LogFile{IsUnreadable: true, Skipped: 1}, nil
+		return LogFile{Answers: nil, Size: 0, IsUnreadable: true, Skipped: 1, IsGone: false}, nil
 	}
 	if err != nil {
 		return LogFile{}, err
 	}
 	answers, skipped := review.Read(raw)
-	return LogFile{Answers: answers, Size: len(raw), Skipped: skipped}, nil
+	return LogFile{Answers: answers, Size: len(raw), Skipped: skipped, IsGone: false, IsUnreadable: false}, nil
 }
 
 // readLogFiles returns the files of the log, sorted by name.
@@ -149,13 +149,13 @@ func readLogFiles(ctx context.Context, store ports.LogStore) ([]ports.Entry, err
 // A run writes one file of its own and nothing else ever appends to it, which
 // is what makes two machines' histories merge by being put together: no file is
 // ever written by two of them.
-func (u Log) Open(ctx context.Context, v domain.Vault, now time.Time) (*LogWriter, error) {
+func (u Log) Open(_ context.Context, v domain.Vault, now time.Time) (*LogWriter, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
 	}
 	id := ulid.New(now)
-	return &LogWriter{store: store, run: id}, nil
+	return &LogWriter{store: store, run: id, stopped: nil}, nil
 }
 
 // LogWriter is one session of review, and the file it appends to.
@@ -211,7 +211,7 @@ func NewRecord(now ports.Clock) Record { return Record{now: now} }
 // Answer writes down one card answered once, and returns the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
-	ctx context.Context, run *LogWriter, on review.ReviewCardID, r review.Rating, took time.Duration,
+	ctx context.Context, run *LogWriter, on review.CardID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
 	if !r.Valid() {
 		return review.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
@@ -225,7 +225,7 @@ func (u Record) Answer(
 	}
 	pos := u.now()
 	id := ulid.New(pos)
-	a := review.Answer{ID: id, ReviewCard: on, At: pos, Rating: r, Took: took}
+	a := review.Answer{ID: id, ReviewCard: on, At: pos, Rating: r, Took: took, Undoes: ""}
 	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}
@@ -243,7 +243,7 @@ func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review
 	}
 	pos := u.now()
 	own := ulid.New(pos)
-	a := review.Answer{ID: own, At: pos, Undoes: id}
+	a := review.Answer{ID: own, ReviewCard: review.CardID{Card: "", Template: ""}, At: pos, Rating: review.Rating(0), Took: time.Duration(0), Undoes: id}
 	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}

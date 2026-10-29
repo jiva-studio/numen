@@ -62,7 +62,7 @@ func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest
 		}
 		pages = append(pages, Page{Width: w, Height: h})
 	}
-	return GetDocumentResponse{Pages: pages}, nil
+	return GetDocumentResponse{Pages: pages, Stat: nil}, nil
 }
 
 // mostSpans is the most ranges one GetHighlights request may hold.
@@ -111,14 +111,14 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (domain.VersionText, error) {
 	listing, err := texts.ListVersions(ctx, path)
 	if errors.Is(err, host.ErrNotExist) {
-		return domain.VersionText{}, nil
+		return domain.VersionText{Text: ""}, nil
 	}
 	if err != nil {
 		return domain.VersionText{}, err
 	}
 	i := slices.IndexFunc(listing.Versions, func(v domain.TextVersion) bool { return v.GetID() == listing.Live })
 	if listing.Live == "" || i < 0 {
-		return domain.VersionText{}, nil
+		return domain.VersionText{Text: ""}, nil
 	}
 	live := listing.Versions[i]
 	var parts []domain.TextSegment

@@ -39,9 +39,13 @@ func (p Preset) getBudget(day time.Weekday) Budget {
 type BudgetName string
 
 const (
+	// ClosedNothing is the absence of a budget that closes the day.
 	ClosedNothing BudgetName = ""
+	// ClosedMinutes is a day paced by minutes of review.
 	ClosedMinutes BudgetName = "minutes_a_day"
-	ClosedNew     BudgetName = "new_a_day"
+	// ClosedNew is a day closed by its count of new cards.
+	ClosedNew BudgetName = "new_a_day"
+	// ClosedReviews is a day closed by its count of reviews.
 	ClosedReviews BudgetName = "reviews_a_day"
 	// ClosedDate is a day paced by the day the preset aims at.
 	ClosedDate BudgetName = "by_date"
@@ -66,7 +70,7 @@ var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews
 // Has reports whether this budget is one of those that closed the day.
 func (c BudgetNames) Has(one BudgetName) bool { return slices.Contains(c, one) }
 
-// add is this closing and one budget more, named once and in the order closers
+// Add is this closing and one budget more, named once and in the order closers
 func (c BudgetNames) Add(one BudgetName) BudgetNames {
 	if !slices.Contains(closers, one) || c.Has(one) {
 		return c
@@ -145,9 +149,13 @@ func (p Preset) GetAllowance(
 ) Allowance {
 	date := d.GetDate(now)
 	out := Allowance{
-		Keeps:  p.getBudget(date.Weekday()),
-		Limits: p.getLimits(),
-		Stops:  p.GetStopReason(d, now),
+		Keeps:   p.getBudget(date.Weekday()),
+		New:     0,
+		Reviews: 0,
+		Minutes: 0,
+		Limits:  p.getLimits(),
+		Backlog: 0,
+		Stops:   p.GetStopReason(d, now),
 	}
 	if p.Goal == GoalDate {
 		// The pace is a whole day's share of the material, and this day carries
@@ -198,10 +206,12 @@ func (a Allowance) IsNextCardDebt(debt, begun int, owed, isNew bool) bool {
 func (p Preset) getLimits() Limits {
 	switch p.Goal {
 	case GoalRetention:
-		return Limits{New: ClosedNew, Reviews: ClosedReviews}
+		return Limits{New: ClosedNew, Reviews: ClosedReviews, Minutes: ClosedNothing, Backlog: ClosedNothing}
 	case GoalDate:
-		return Limits{New: ClosedDate}
+		return Limits{New: ClosedDate, Reviews: ClosedNothing, Minutes: ClosedNothing, Backlog: ClosedNothing}
+	case GoalMinutes:
+		return Limits{New: ClosedNothing, Reviews: ClosedNothing, Minutes: ClosedMinutes, Backlog: ClosedBacklog}
 	default:
-		return Limits{Minutes: ClosedMinutes, Backlog: ClosedBacklog}
+		return Limits{New: ClosedNothing, Reviews: ClosedNothing, Minutes: ClosedMinutes, Backlog: ClosedBacklog}
 	}
 }

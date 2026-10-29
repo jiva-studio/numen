@@ -26,8 +26,13 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 		r.Send(&agentrun.AskAgentResponse{
 			Step: &agentrun.AskAgentResponse_ToolCall{
 				ToolCall: &agentrun.ToolCall{
-					Tool:  getToolName(item),
-					About: getToolArguments(item),
+					Tool:   getToolName(item),
+					About:  getToolArguments(item),
+					Length: 0,
+					Path:   "",
+					Range:  nil,
+					Call:   "",
+					Kind:   "",
 				},
 			},
 		})

@@ -212,13 +212,13 @@ func newDeckLoads(t *rapid.T) []deckLoad {
 // The order represents the order the vault was walked in. Each deck's own cards
 // keep the deck's order, not the walk's. A budget of no minutes is a day that
 // does not close on them.
-func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review.ReviewCardID]bool {
+func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review.CardID]bool {
 	limits := review.Limits{New: review.ClosedNew, Reviews: review.ClosedReviews}
 	if keeps.Minutes > 0 {
 		limits.Minutes = review.ClosedMinutes
 	}
 	day := &budgets{
-		reviewCardPresets: make(map[review.ReviewCardID]string),
+		reviewCardPresets: make(map[review.CardID]string),
 		allowances: map[string]*allowance{"Preset.md": {
 			admits: review.Allowance{
 				Keeps: keeps, New: keeps.New, Reviews: keeps.Reviews,
@@ -230,7 +230,7 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 			counts: review.BudgetUnitCards,
 		}},
 		decks:         make(map[string]string),
-		reviewedCards: make(map[review.ReviewCardID]bool),
+		reviewedCards: make(map[review.CardID]bool),
 		spentByDeck:   make(map[string]review.Spent),
 	}
 
@@ -239,14 +239,14 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 		one := load[item]
 		day.decks[one.path] = "Preset.md"
 		for card := range one.owed {
-			reviewCard := ReviewCard{Deck: one.path, ID: review.ReviewCardID{
+			reviewCard := ReviewCard{Deck: one.path, ID: review.CardID{
 				Card: fmt.Sprintf("%s/owed/%d", one.path, card),
 			}}
 			day.reviewCardPresets[reviewCard.ID] = "Preset.md"
 			owed = append(owed, reviewCard)
 		}
 		for card := range one.unbegun {
-			reviewCard := ReviewCard{Deck: one.path, ID: review.ReviewCardID{
+			reviewCard := ReviewCard{Deck: one.path, ID: review.CardID{
 				Card: fmt.Sprintf("%s/fresh/%d", one.path, card),
 			}}
 			day.reviewCardPresets[reviewCard.ID] = "Preset.md"
@@ -255,7 +255,7 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 	}
 
 	took := day.spend(owed, newCards)
-	out := make(map[review.ReviewCardID]bool)
+	out := make(map[review.CardID]bool)
 	for entry, one := range owed {
 		if took.owed[entry] {
 			out[one.ID] = true

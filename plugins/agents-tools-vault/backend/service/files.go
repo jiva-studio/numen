@@ -1,3 +1,5 @@
+// Package service implements the vault tools served to agents: reading and writing notes and files,
+// listing links and headings, searching and describing the vault.
 package service
 
 import (
@@ -9,12 +11,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// FileReadInput is the input of the file_read tool.
 type FileReadInput struct {
 	Path   string `json:"path" jsonschema:"the file's path relative to the vault root"`
 	Start  int    `json:"start,omitempty" jsonschema:"byte offset to start reading from"`
 	Length int    `json:"length,omitempty" jsonschema:"how many bytes to read; 0 or omitted reads to end of file"`
 }
 
+// FileReadOutput is the output of the file_read tool.
 type FileReadOutput struct {
 	Path        string `json:"path"`
 	Content     string `json:"content" jsonschema:"the bytes read as text"`
@@ -26,6 +30,7 @@ type FileReadOutput struct {
 
 func (t *Tools) addFileRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "file_read",
 		Title:       "Read File",
 		Description: "Read raw content or a byte range of any file in the vault.",
@@ -70,11 +75,13 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 	}, nil
 }
 
+// FileCreateInput is the input of the file_create tool.
 type FileCreateInput struct {
 	Path    string `json:"path" jsonschema:"the file's path relative to the vault root"`
 	Content string `json:"content" jsonschema:"raw content to write to the new file"`
 }
 
+// FileCreateOutput is the output of the file_create tool.
 type FileCreateOutput struct {
 	Path    string `json:"path"`
 	Size    int    `json:"size"`
@@ -83,6 +90,7 @@ type FileCreateOutput struct {
 
 func (t *Tools) addFileCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
+		Step:        tools.ByEffect,
 		Name:        "file_create",
 		Title:       "Create File",
 		Description: "Create a new raw file in the vault with the specified content.",

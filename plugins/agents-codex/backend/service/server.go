@@ -63,7 +63,7 @@ func (s *agentServer) GetAgentState(
 			Unreachable: "OpenAI Codex was not found on this machine",
 		}), nil
 	}
-	return connect.NewResponse(&agentrun.GetAgentStateResponse{}), nil
+	return connect.NewResponse(&agentrun.GetAgentStateResponse{Unreachable: ""}), nil
 }
 
 // GetAgentPrograms lists OpenAI Codex, whether it is installed, and the models it lists.
@@ -77,7 +77,10 @@ func (s *agentServer) GetAgentPrograms(
 		command = []string{customPath}
 	}
 
-	codex := &agentrun.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled(customPath) || len(command) > 0}
+	codex := &agentrun.AgentProgram{
+		Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled(customPath) || len(command) > 0,
+		IsDefault: false, Models: nil, LimitsTools: false,
+	}
 	if codex.GetIsInstalled() {
 		for _, one := range s.codexModels.get(ctx, command) {
 			codex.Models = append(codex.Models, &agentrun.AgentModel{

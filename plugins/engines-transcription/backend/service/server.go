@@ -135,7 +135,7 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 // Mount registers the text provider on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
-	model := &models{cfg: cfg, isMock: isMock, open: openParakeet}
+	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: openParakeet, current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider{transcriber: transcriber}, s.HandlerOptions()...))
@@ -157,7 +157,7 @@ func newTranscribeCommand(transcriber *Transcriber) command.Run {
 		if err := transcriber.Transcribe(ctx, "", req.Path); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: "transcribed " + req.Path}, nil
+		return command.Result{Message: "transcribed " + req.Path, OpenedPath: ""}, nil
 	}
 }
 

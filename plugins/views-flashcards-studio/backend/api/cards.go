@@ -3,6 +3,7 @@ package api
 // ProblemKind names a defect found in a card model or a deck.
 type ProblemKind string
 
+// ProblemKind values.
 const (
 	ProblemKindUnspecified            ProblemKind = ""
 	ProblemKindFieldDeclaredTwice     ProblemKind = "field_declared_twice"
@@ -13,7 +14,7 @@ const (
 	ProblemKindCardModelIsNotOne      ProblemKind = "card_model_is_not_one"
 	ProblemKindFieldWrittenTwice      ProblemKind = "field_written_twice"
 	ProblemKindFieldNotRenamed        ProblemKind = "field_not_renamed"
-	ProblemKindCardIdCarriedTwice     ProblemKind = "card_id_carried_twice"
+	ProblemKindCardIDCarriedTwice     ProblemKind = "card_id_carried_twice"
 )
 
 // CardModel is a card model note: the fields its cards declare and the templates that lay them out.

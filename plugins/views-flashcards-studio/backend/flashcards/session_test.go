@@ -33,7 +33,7 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	pos := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
 	record := s.run(t, pos.AddDate(0, 0, -200))
 	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
-		on := review.ReviewCardID{Card: card, Template: "Say it"}
+		on := review.CardID{Card: card, Template: "Say it"}
 		if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
@@ -141,8 +141,8 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 }
 
 // review cards is the list of review cards a session returns, in session order.
-func reviewCards(sat flashcards.SessionResult) []review.ReviewCardID {
-	out := make([]review.ReviewCardID, 0, len(sat.Queue))
+func reviewCards(sat flashcards.SessionResult) []review.CardID {
+	out := make([]review.CardID, 0, len(sat.Queue))
 	for _, one := range sat.Queue {
 		out = append(out, one.ID)
 	}
@@ -150,8 +150,8 @@ func reviewCards(sat flashcards.SessionResult) []review.ReviewCardID {
 }
 
 // getReviewCard is a review card of the one card model these vaults are cut by.
-func getReviewCard(pos int) review.ReviewCardID {
-	return review.ReviewCardID{Card: cardID(pos), Template: "Say it"}
+func getReviewCard(pos int) review.CardID {
+	return review.CardID{Card: cardID(pos), Template: "Say it"}
 }
 
 // The debt is paid oldest first, whatever order the cards stand in their deck.
@@ -172,7 +172,7 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	}
 
 	got := reviewCards(s.openSessionByPreset(t, today, saturday, "Two.md"))
-	want := []review.ReviewCardID{getReviewCard(4), getReviewCard(3)}
+	want := []review.CardID{getReviewCard(4), getReviewCard(3)}
 	if !slices.Equal(got, want) {
 		t.Errorf("a day of two reviews asked %v, want %v", got, want)
 	}
@@ -1299,7 +1299,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	on := review.ReviewCardID{Card: cardID(0), Template: "Say it"}
+	on := review.CardID{Card: cardID(0), Template: "Say it"}
 	if now[on].Due.Equal(was[on].Due) {
 		t.Errorf("the target moved and the card still comes round at %v", now[on].Due)
 	}
@@ -1700,7 +1700,7 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 // own computation.
 func (s vaulted) countDayCards(t *testing.T, day review.Day, now time.Time) int {
 	t.Helper()
-	reviewCards := make(map[review.ReviewCardID]bool)
+	reviewCards := make(map[review.CardID]bool)
 	for range 100 {
 		sat := s.sessionAt(t, day, now)
 		if len(sat.Queue) == 0 {
@@ -1928,7 +1928,7 @@ func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 // answered. A card that returns later in the day is one card.
 func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
-	reviewCards := make(map[review.ReviewCardID]bool)
+	reviewCards := make(map[review.CardID]bool)
 	for range 100 {
 		sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
 		if err != nil {

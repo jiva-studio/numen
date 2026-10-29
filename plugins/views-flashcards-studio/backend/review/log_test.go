@@ -22,7 +22,7 @@ func parseTime(s string) time.Time {
 func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 	provided := review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
-		ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"},
+		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
 		At:         parseTime("2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 		Took:       4210 * time.Millisecond,
@@ -70,7 +70,7 @@ func TestAnAnswerTakenBackNamesTheOneItConsumesBack(t *testing.T) {
 func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := review.Write(review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
-		ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"},
+		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
 		At:         parseTime("2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 	})
@@ -186,15 +186,15 @@ func TestOnlyTheFourAreRatings(t *testing.T) {
 func makeJumbledHistory() []review.Answer {
 	pos := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
 	one := review.Answer{
-		ID: "b", ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Say it"},
+		ID: "b", ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Say it"},
 		At: pos.Add(time.Minute), Rating: review.Good, Took: 4 * time.Second,
 	}
 	two := review.Answer{
-		ID: "a", ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Say it"},
+		ID: "a", ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Say it"},
 		At: pos, Rating: review.Again, Took: 9 * time.Second,
 	}
 	three := review.Answer{
-		ID: "c", ReviewCard: review.ReviewCardID{Card: "zpqrstvwxy", Template: "Say it"},
+		ID: "c", ReviewCard: review.CardID{Card: "zpqrstvwxy", Template: "Say it"},
 		At: pos.Add(2 * time.Minute), Rating: review.Hard, Took: 6 * time.Second,
 	}
 	back := review.Answer{
@@ -209,7 +209,7 @@ func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 	answers := makeJumbledHistory()
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	named := day.GetName(answers[0].At)
-	underMap := map[review.ReviewCardID]string{
+	underMap := map[review.CardID]string{
 		{Card: "k7m2xq9fzp", Template: "Say it"}: "Sanskrit.md",
 		{Card: "zpqrstvwxy", Template: "Say it"}: "Sanskrit.md",
 	}
@@ -331,7 +331,7 @@ func FuzzWriteAnswer(f *testing.F) {
 
 		want := review.Answer{ID: id, At: pos, Undoes: undoes}
 		if undoes == "" {
-			want.ReviewCard = review.ReviewCardID{Card: card, Template: reviewCard}
+			want.ReviewCard = review.CardID{Card: card, Template: reviewCard}
 			want.Rating = review.Rating(rating)
 			want.Took = time.Duration(took) * time.Millisecond
 		}

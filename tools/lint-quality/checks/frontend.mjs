@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+import { listFrontendPackages } from "./modules.mjs";
+
 /**
  * Runs ESLint on a single frontend target directory using JSON output.
  *
@@ -68,34 +70,7 @@ function lintPackage(repoRoot, relDir, pkgName) {
 export async function runFrontendCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
 
-  const targets = [
-    { relDir: "libs/ui/core", name: "libs/ui/core" },
-    { relDir: "libs/ui/shell", name: "libs/ui/shell" },
-    { relDir: "libs/plugin-sdk-ts", name: "libs/plugin-sdk-ts" },
-    { relDir: "libs/plugin-host-ts", name: "libs/plugin-host-ts" },
-    { relDir: "apps/desktop/editor", name: "desktop/editor" },
-    { relDir: "apps/desktop/flashcards", name: "desktop/flashcards" },
-    { relDir: "apps/mobile", name: "mobile" },
-  ];
-
-  const pluginsDir = path.join(repoRoot, "plugins");
-  if (fs.existsSync(pluginsDir)) {
-    const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
-    for (const e of entries) {
-      if (
-        e.isDirectory() &&
-        !e.name.startsWith(".") &&
-        e.name !== "node_modules" &&
-        (fs.existsSync(path.join(pluginsDir, e.name, "eslint.config.js")) ||
-          fs.existsSync(path.join(pluginsDir, e.name, "frontend")))
-      ) {
-        targets.push({
-          relDir: `plugins/${e.name}`,
-          name: `plugin/${e.name}`,
-        });
-      }
-    }
-  }
+  const targets = listFrontendPackages(repoRoot);
 
   const results = await Promise.all(
     targets.map((t) => lintPackage(repoRoot, t.relDir, t.name))

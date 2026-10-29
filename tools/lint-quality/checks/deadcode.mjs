@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+import { listFrontendPackages, listGoModules } from "./modules.mjs";
+
 /**
  * Runs unparam on a single Go module.
  *
@@ -109,30 +111,8 @@ export async function runDeadcodeCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
   const configFile = path.join(repoRoot, ".golangci.yml");
 
-  const goModules = [
-    { dir: path.join(repoRoot, "libs/core"), name: "libs/core" },
-    { dir: path.join(repoRoot, "libs/notes"), name: "libs/notes" },
-    { dir: path.join(repoRoot, "libs/plugin-sdk-go"), name: "libs/plugin-sdk-go" },
-    { dir: path.join(repoRoot, "apps/desktop"), name: "apps/desktop" },
-  ];
-  const pluginsDir = path.join(repoRoot, "plugins");
-  if (fs.existsSync(pluginsDir)) {
-    for (const e of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
-      if (e.isDirectory() && fs.existsSync(path.join(pluginsDir, e.name, "go.mod"))) {
-        goModules.push({ dir: path.join(pluginsDir, e.name), name: `plugins/${e.name}` });
-      }
-    }
-  }
-
-  const tsPackages = [
-    { relDir: "libs/ui/core", name: "libs/ui/core" },
-    { relDir: "libs/ui/shell", name: "libs/ui/shell" },
-    { relDir: "libs/plugin-sdk-ts", name: "libs/plugin-sdk-ts" },
-    { relDir: "libs/plugin-host-ts", name: "libs/plugin-host-ts" },
-    { relDir: "apps/desktop/editor", name: "desktop/editor" },
-    { relDir: "apps/desktop/flashcards", name: "desktop/flashcards" },
-    { relDir: "apps/mobile", name: "apps/mobile" },
-  ];
+  const goModules = listGoModules(repoRoot);
+  const tsPackages = listFrontendPackages(repoRoot);
 
   const [unparamResults, knipResults] = await Promise.all([
     Promise.all(goModules.map((m) => checkUnparam(m.dir, configFile, m.name))),

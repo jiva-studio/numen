@@ -213,7 +213,7 @@ type learnedCount struct {
 // instant it opens on.
 func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
 	rule, _, retention := p.GetLearnedRule()
-	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention}
+	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention, learned: nil, count: 0}
 	if out.isCarried {
 		out.learned = make([]bool, len(cards))
 	}

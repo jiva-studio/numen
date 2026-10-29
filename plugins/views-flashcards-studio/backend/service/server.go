@@ -46,7 +46,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mount(s *server.Server, vault host.Vault, store host.Store) error {
-	backend := New(Config{Vault: vault, Store: store})
+	backend := New(Config{Vault: vault, Store: store, DayStart: nil, Now: nil, Cores: 0, Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string) error {
 		backend.Configure(values)
 		return nil

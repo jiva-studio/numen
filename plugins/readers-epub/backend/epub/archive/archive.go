@@ -1,3 +1,4 @@
+// Package archive reads the entries of an EPUB zip archive within fixed size bounds.
 package archive
 
 import (

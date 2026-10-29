@@ -42,7 +42,7 @@ func (s *DueByDay) CountOn(target time.Time) int {
 	return s.on[s.GetDayNumber(target)]
 }
 
-// number is the day of review holding an instant, as a whole number counted
+// GetDayNumber is the day of review holding an instant, as a whole number counted
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
 func (s *DueByDay) GetDayNumber(pos time.Time) int {

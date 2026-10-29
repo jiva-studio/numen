@@ -119,10 +119,10 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 	}
 	defer session.Close()
 
-	verifyStreamableToolCall(t, session, ctx)
+	verifyStreamableToolCall(ctx, t, session)
 }
 
-func verifyStreamableToolCall(t *testing.T, session *sdk.ClientSession, ctx context.Context) {
+func verifyStreamableToolCall(ctx context.Context, t *testing.T, session *sdk.ClientSession) {
 	t.Helper()
 
 	listResult, err := session.ListTools(ctx, nil)

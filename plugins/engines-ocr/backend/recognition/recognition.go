@@ -108,7 +108,7 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 	}
 	task := host.Task{
 		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), About: req.Path,
-		Unit: host.UnitThings, IsUserStarted: req.IsUserStarted,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil {
@@ -140,7 +140,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if !req.IsUserStarted {
 		isRecognised, err := hasRecognition(ctx, on.texts, req.Path, inputHash)
 		if err != nil || isRecognised {
-			return Result{IsSkipped: isRecognised}, err
+			return Result{Pages: 0, IsSkipped: isRecognised, IsEmpty: false}, err
 		}
 	}
 	rec, err := readRecord(ctx, on.store, req.Path)
@@ -153,10 +153,10 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	}
 	defer doc.Close()
 	if !req.IsUserStarted && doc.HasTextLayer() {
-		return Result{Pages: doc.GetPageCount(), IsSkipped: true}, nil
+		return Result{Pages: doc.GetPageCount(), IsSkipped: true, IsEmpty: false}, nil
 	}
 
-	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to recognise %s: %w", req.Path, err)
 	}
@@ -168,7 +168,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	model := recogniser.GetRecognitionModel()
 	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
 	if !rec.isFor(inputHash, recipe) {
-		rec = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount()}
+		rec = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount(), Pages: nil}
 	}
 
 	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
@@ -226,14 +226,14 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 			return Result{}, err
 		}
-		return Result{Pages: rec.PageCount, IsEmpty: true}, nil
+		return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: true}, nil
 	}
 	file := getVersionName(rec.Path)
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
 		return Result{}, err
 	}
 	_, err := on.texts.PutVersion(ctx, host.TextPut{
-		Path: rec.Path, Key: VersionKey, Kind: textKind, SourceHash: rec.InputHash, File: file,
+		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, SourceHash: rec.InputHash, File: file,
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)
@@ -241,7 +241,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 		return Result{}, err
 	}
-	return Result{Pages: rec.PageCount}, nil
+	return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: false}, nil
 }
 
 // hasRecognition reports whether the file has a version of the plugin made from the content hash.

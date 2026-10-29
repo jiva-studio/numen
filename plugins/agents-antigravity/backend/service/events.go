@@ -19,7 +19,7 @@ type eventReader struct {
 
 // newEventHandler is what the run calls with each event of the Antigravity output.
 func newEventHandler(r *reader) func(map[string]any) {
-	return (&eventReader{reader: r}).handle
+	return (&eventReader{reader: r, isTextStreamed: false, currentTool: "", currentArgs: strings.Builder{}}).handle
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
@@ -74,8 +74,9 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 			r.reader.Send(&agentrun.AskAgentResponse{
 				Step: &agentrun.AskAgentResponse_ToolCall{
 					ToolCall: &agentrun.ToolCall{
-						Tool:  r.currentTool,
-						About: r.currentArgs.String(),
+						Tool:   r.currentTool,
+						About:  r.currentArgs.String(),
+						Length: 0, Path: "", Range: nil, Call: "", Kind: "",
 					},
 				},
 			})
@@ -133,8 +134,9 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		r.reader.Send(&agentrun.AskAgentResponse{
 			Step: &agentrun.AskAgentResponse_ToolCall{
 				ToolCall: &agentrun.ToolCall{
-					Tool:  name,
-					About: string(args),
+					Tool:   name,
+					About:  string(args),
+					Length: 0, Path: "", Range: nil, Call: "", Kind: "",
 				},
 			},
 		})

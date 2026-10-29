@@ -13,7 +13,8 @@ import (
 // setProcessGroup puts the run in a process group of its own and makes cancelling it
 // ask the whole group to stop, then force the group to stop after stopGrace.
 func setProcessGroup(running *exec.Cmd) {
-	running.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	running.SysProcAttr = new(syscall.SysProcAttr)
+	running.SysProcAttr.Setpgid = true
 	running.Cancel = func() error {
 		group := -running.Process.Pid
 		if err := syscall.Kill(group, syscall.SIGTERM); err != nil {

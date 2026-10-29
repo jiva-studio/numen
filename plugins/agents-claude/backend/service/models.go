@@ -53,9 +53,9 @@ func (m claudeModel) toProto() *agentrun.AgentModel {
 // fallbackModels are the aliases the program accepts for --model, offered with no depth of reasoning
 // when the program does not answer the request for its models.
 var fallbackModels = []claudeModel{
-	{Value: "sonnet", DisplayName: "Sonnet"},
-	{Value: "opus", DisplayName: "Opus"},
-	{Value: "haiku", DisplayName: "Haiku"},
+	{Value: "sonnet", DisplayName: "Sonnet", SupportsEffort: false, EffortLevels: nil},
+	{Value: "opus", DisplayName: "Opus", SupportsEffort: false, EffortLevels: nil},
+	{Value: "haiku", DisplayName: "Haiku", SupportsEffort: false, EffortLevels: nil},
 }
 
 // parseModels reads the models out of the lines the program writes: the answer to the request
@@ -98,7 +98,7 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 	ctx, cancel := context.WithTimeout(ctx, modelsTimeout)
 	defer cancel()
 	args := slices.Concat(command[1:], []string{
-		"-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
+		"-p", "--input-format", streamJSON, flagOutputFormat, streamJSON, flagVerbose,
 		"--setting-sources", "",
 	})
 	cmd := exec.CommandContext(ctx, command[0], args...)

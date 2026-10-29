@@ -20,9 +20,9 @@ type answer struct {
 func readAnswer(batch Batch, reply string, maxDistance float64) answer {
 	fixed, past, ok := GetFixedLines(batch, reply, maxDistance)
 	if !ok {
-		return answer{batch: batch}
+		return answer{batch: batch, lines: nil, reaching: nil, isAnswer: false}
 	}
-	out := answer{batch: batch, lines: fixed, isAnswer: true}
+	out := answer{batch: batch, lines: fixed, reaching: nil, isAnswer: true}
 	if past {
 		out.reaching = getReachingRuns(batch, reply)
 	}

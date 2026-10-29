@@ -49,6 +49,9 @@ func OpenLayout(engine *ort.Engine, path string, options *ort.SessionOptions, la
 		labels:  labels,
 		minimum: minimum,
 		overlap: overlap,
+		mu:      sync.Mutex{},
+		small:   nil,
+		flat:    nil,
 	}, nil
 }
 

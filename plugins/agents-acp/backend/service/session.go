@@ -26,6 +26,13 @@ const (
 	stderrTailBytes = 8 << 10
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
+
+	// JSON object keys and values of the protocol that more than one message uses.
+	keyName      = "name"
+	keySessionID = "sessionId"
+	keyText      = "text"
+	keyValue     = "value"
+	keyOutcome   = "outcome"
 )
 
 var (
@@ -91,8 +98,15 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	}
 	running, stop := context.WithCancel(ctx)
 	s := &acpSession{
-		stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program, stderr: &tailBuffer{}, tools: tools,
-		calls: map[string]*acpCall{},
+		cmd: nil, stdin: nil, lines: nil, stderr: &tailBuffer{mu: sync.Mutex{}, buf: nil},
+		stop: stop, cleanDir: cleanDir, dir: dir, program: agent.Program,
+		nextID: 0, id: "", canClose: false, hasHTTPServers: false,
+		tools:  tools,
+		models: nil, current: "", modelOption: "",
+		thoughtOption: "", thoughtLevels: nil, thoughtCurrent: "",
+		answer: strings.Builder{},
+		calls:  map[string]*acpCall{},
+		words:  nil, report: nil,
 	}
 	s.cmd = exec.CommandContext(running, agent.Command[0], agent.Command[1:]...)
 	s.cmd.Dir = dir
@@ -139,7 +153,7 @@ func (s *acpSession) initialize() error {
 			"fs":       map[string]any{"readTextFile": false, "writeTextFile": false},
 			"terminal": false,
 		},
-		"clientInfo": map[string]any{"name": "numen", "title": "Numen", "version": "1.0.0"},
+		"clientInfo": map[string]any{keyName: "numen", "title": "Numen", "version": "1.0.0"},
 	})
 	if err != nil {
 		return err
@@ -222,10 +236,10 @@ func (s *acpSession) setModel(model string) error {
 	var err error
 	if s.modelOption != "" {
 		_, err = s.call("session/set_config_option", map[string]any{
-			"sessionId": s.id, "configId": s.modelOption, "value": model,
+			keySessionID: s.id, "configId": s.modelOption, keyValue: model,
 		})
 	} else {
-		_, err = s.call("session/set_model", map[string]any{"sessionId": s.id, "modelId": model})
+		_, err = s.call("session/set_model", map[string]any{keySessionID: s.id, "modelId": model})
 	}
 	if err != nil {
 		return err
@@ -241,7 +255,7 @@ func (s *acpSession) setReasoning(level string) error {
 		return nil
 	}
 	if _, err := s.call("session/set_config_option", map[string]any{
-		"sessionId": s.id, "configId": s.thoughtOption, "value": level,
+		keySessionID: s.id, "configId": s.thoughtOption, keyValue: level,
 	}); err != nil {
 		return err
 	}
@@ -264,11 +278,11 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	var blocks []map[string]any
 	for _, text := range []string{system, prompt} {
 		if text != "" {
-			blocks = append(blocks, map[string]any{"type": "text", "text": text})
+			blocks = append(blocks, map[string]any{"type": keyText, keyText: text})
 		}
 	}
 	s.answer.Reset()
-	result, err := s.call("session/prompt", map[string]any{"sessionId": s.id, "prompt": blocks})
+	result, err := s.call("session/prompt", map[string]any{keySessionID: s.id, "prompt": blocks})
 	if err != nil {
 		return "", err
 	}
@@ -290,7 +304,7 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 // close ends the session where the agent can, then the agent, and removes the session folder.
 func (s *acpSession) close() {
 	if s.canClose && s.id != "" {
-		_, _ = s.call("session/close", map[string]any{"sessionId": s.id})
+		_, _ = s.call("session/close", map[string]any{keySessionID: s.id})
 	}
 	if s.stdin != nil {
 		_ = s.stdin.Close()
@@ -350,7 +364,7 @@ func (s *acpSession) handleMessage(msg rpcMessage, targetID, method string) (boo
 func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 	s.nextID++
 	id := strconv.Itoa(s.nextID)
-	if err := s.write(rpcRequest{ID: json.RawMessage(id), Method: method, Params: params}); err != nil {
+	if err := s.write(rpcRequest{JSONRPC: "", ID: json.RawMessage(id), Method: method, Params: params, Result: nil, Error: nil}); err != nil {
 		return nil, fmt.Errorf("send %s to %s: %w", method, s.program, err)
 	}
 	for s.lines.Scan() {
@@ -376,7 +390,7 @@ func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 // answerRequest grants the permission to call one of the run's tools, rejects every other, and
 // serves none of the agent's other methods.
 func (s *acpSession) answerRequest(request rpcMessage) error {
-	reply := rpcRequest{ID: request.ID}
+	reply := rpcRequest{JSONRPC: "", ID: request.ID, Method: "", Params: nil, Result: nil, Error: nil}
 	if request.Method == "session/request_permission" {
 		reply.Result = s.answerPermission(request.Params)
 	} else {
@@ -420,7 +434,7 @@ func (s *acpSession) readChunk(params json.RawMessage) (string, bool) {
 	if json.Unmarshal(params, &update) != nil || update.SessionID != s.id {
 		return "", false
 	}
-	if update.Update.SessionUpdate != "agent_message_chunk" || update.Update.Content.Type != "text" {
+	if update.Update.SessionUpdate != "agent_message_chunk" || update.Update.Content.Type != keyText {
 		return "", false
 	}
 	return update.Update.Content.Text, true

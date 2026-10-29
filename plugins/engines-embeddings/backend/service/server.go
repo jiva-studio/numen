@@ -23,6 +23,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
+const (
+	modelBGEM3                     = "bge-m3"
+	modelBGEM3Int8                 = "bge-m3-int8"
+	modelEmbedding3Small           = "text-embedding-3-small"
+	modelOpenRouterEmbedding3Small = "openai/text-embedding-3-small"
+)
+
 type embeddingServer struct {
 	modelInfo  engine.ModelInfo
 	localModel engine.LocalModel
@@ -104,7 +111,7 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 
 func isLocalPresetModel(model string) bool {
 	switch model {
-	case "Xenova/bge-m3", "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "bge-m3", "bge-m3-int8":
+	case "Xenova/bge-m3", "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", modelBGEM3, modelBGEM3Int8:
 		return true
 	default:
 		return false
@@ -113,16 +120,16 @@ func isLocalPresetModel(model string) bool {
 
 func getDefaultRemoteModel(provider string) string {
 	if provider == "openrouter" {
-		return "openai/text-embedding-3-small"
+		return modelOpenRouterEmbedding3Small
 	}
-	return "text-embedding-3-small"
+	return modelEmbedding3Small
 }
 
 func resolveModelDimensions(model string) int {
 	switch model {
 	case "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "Xenova/all-MiniLM-L6-v2", "Xenova/all-MiniLM-L12-v2":
 		return 384
-	case "openai/text-embedding-3-small", "text-embedding-3-small", "openai/text-embedding-ada-002", "text-embedding-ada-002":
+	case modelOpenRouterEmbedding3Small, modelEmbedding3Small, "openai/text-embedding-ada-002", "text-embedding-ada-002":
 		return 1536
 	case "openai/text-embedding-3-large", "text-embedding-3-large":
 		return 3072
@@ -140,8 +147,8 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 	prevRepo := s.localModel.Name
 	prevName := s.localName
 	switch model {
-	case "", "Xenova/bge-m3", "bge-m3", "bge-m3-int8",
-		"openai/text-embedding-3-small", "text-embedding-3-small",
+	case "", "Xenova/bge-m3", modelBGEM3, modelBGEM3Int8,
+		modelOpenRouterEmbedding3Small, modelEmbedding3Small,
 		"openai/text-embedding-3-large", "text-embedding-3-large",
 		"openai/text-embedding-ada-002", "text-embedding-ada-002",
 		"baai/bge-m3", "qwen/qwen3-embedding-8b":
@@ -164,7 +171,22 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 func newEmbeddingServer() *embeddingServer {
 	if os.Getenv(envMockML) == "true" {
 		info := engine.GetMockModel()
-		return &embeddingServer{modelInfo: info, localName: info.Name, open: openMockModel, isMock: true}
+		return &embeddingServer{
+			modelInfo: info,
+			localModel: engine.LocalModel{
+				Name: "", Dir: "", File: "", BatchTexts: 0, Runtime: "", Threads: 0, Sessions: 0,
+				PassBudget: 0, PassMemory: 0, Provider: "", ShouldDownload: false, Revision: "", Sums: nil,
+			},
+			open:        openMockModel,
+			isMock:      true,
+			mu:          sync.Mutex{},
+			embedder:    nil,
+			apiKey:      "",
+			baseURL:     "",
+			provider:    "",
+			localName:   info.Name,
+			remoteModel: "",
+		}
 	}
 	info, local := engine.DefaultBGEM3Config()
 	applyModelOverrides(&info, &local)
@@ -172,17 +194,24 @@ func newEmbeddingServer() *embeddingServer {
 	applyRuntimeEnv(&local)
 
 	return &embeddingServer{
-		modelInfo:  info,
-		localName:  info.Name,
-		localModel: local,
-		open:       openLocalModel,
+		modelInfo:   info,
+		localModel:  local,
+		open:        openLocalModel,
+		isMock:      false,
+		mu:          sync.Mutex{},
+		embedder:    nil,
+		apiKey:      "",
+		baseURL:     "",
+		provider:    "",
+		localName:   info.Name,
+		remoteModel: "",
 	}
 }
 
 func applyModelOverrides(info *engine.ModelInfo, local *engine.LocalModel) {
 	if name := os.Getenv("NUMEN_EMBEDDING_MODEL"); name != "" {
 		info.Name = name
-		if name != "bge-m3" && name != "bge-m3-int8" {
+		if name != modelBGEM3 && name != modelBGEM3Int8 {
 			*local = local.WithRepository(name)
 		}
 	}
@@ -388,7 +417,7 @@ func (s *embeddingServer) getModelName() string {
 }
 
 func computeServiceVector(ctx context.Context, key, baseURL, model, text string) ([]float32, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 30 * time.Second}
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
 	reqBody, err := json.Marshal(openAIEmbeddingRequest{
 		Input: []string{text},

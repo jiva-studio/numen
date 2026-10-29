@@ -110,9 +110,9 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err != nil {
 		return CardsDue{}, err
 	}
-	holds := in.day.getAsking(in.reviewCards, in.schedules, u.day, in.now, Scope{})
+	holds := in.day.getAsking(in.reviewCards, in.schedules, u.day, in.now, Scope{Deck: "", Preset: "", IsNamed: false})
 
-	out := CardsDue{ReviewCards: len(in.reviewCards)}
+	out := CardsDue{ReviewCards: len(in.reviewCards), Due: 0, New: 0, Decks: nil, Presets: nil}
 	rows := make(deckRows)
 	rows.countCards(in)
 	for deck, one := range in.day.spentByDeck {
@@ -130,7 +130,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 // dueInputs is what one vault's count is worked out from.
 type dueInputs struct {
 	reviewCards []ReviewCard
-	schedules   map[review.ReviewCardID]review.Schedule
+	schedules   map[review.CardID]review.Schedule
 	asks        assignment
 	reads       *PresetReads
 	day         *budgets
@@ -184,7 +184,7 @@ type deckRows map[string]*DeckCardsDue
 func (r deckRows) get(deck string) *DeckCardsDue {
 	one, target := r[deck]
 	if !target {
-		one = &DeckCardsDue{Deck: deck}
+		one = &DeckCardsDue{Deck: deck, ReviewCards: 0, Due: 0, New: 0, Unbegun: 0, Answered: 0, Learned: 0}
 		r[deck] = one
 	}
 	return one
@@ -277,7 +277,16 @@ func (u CountCardsDue) getPresets(
 			return nil, err
 		}
 		out = append(out, PresetCardsDue{
-			Preset: path, Decks: naming[path], Stops: one.StopsToday,
+			Preset: path, Decks: naming[path],
+			Cards:           0,
+			Due:             0,
+			New:             0,
+			Answered:        0,
+			ReviewedNew:     0,
+			ReviewedReviews: 0,
+			Took:            time.Duration(0),
+			Budget:          review.Budget{New: 0, Reviews: 0, Minutes: 0},
+			Limits:          review.Limits{New: "", Reviews: "", Minutes: "", Backlog: ""}, Stops: one.StopsToday,
 		})
 	}
 	slices.SortFunc(out, func(a, b PresetCardsDue) int {
@@ -291,7 +300,8 @@ func (b *budgets) getCardsDue(due, newCards map[string]int) []PresetCardsDue {
 	out := make([]PresetCardsDue, 0, len(b.allowances))
 	for path, one := range b.allowances {
 		out = append(out, PresetCardsDue{
-			Preset: path, Cards: b.cards[path],
+			Preset: path,
+			Decks:  0, Cards: b.cards[path],
 			Due: due[path], New: newCards[path],
 			Answered:        one.spentStats.Answered,
 			ReviewedNew:     one.spentStats.New,

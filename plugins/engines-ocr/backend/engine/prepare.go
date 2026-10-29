@@ -10,7 +10,12 @@ import (
 
 func init() {
 	onnx.Register(func(pos string) {
-		_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: pos})
+		_, _ = paddle.NewEngine(paddle.Config{
+			OnnxRuntimeLibPath: pos,
+			DetModelPath:       "", RecModelPath: "", DictPath: "",
+			UseCuda: false, NumThreads: 0, ThreadCount: 0, DetMaxSideLen: 0, DetOutsideExpandPix: 0,
+			RecHeight: 0, RecModelNumClasses: 0, HeatmapThreshold: 0,
+		})
 	})
 }
 

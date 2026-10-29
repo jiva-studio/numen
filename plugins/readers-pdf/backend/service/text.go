@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
@@ -46,6 +46,7 @@ var _ host.TextProvider = (*TextServer)(nil)
 func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
 	return &TextServer{
 		files: files, texts: texts, store: store, queue: queue,
+		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, last: layer{hash: "", raw: nil, book: nil},
 		running: map[string]context.CancelFunc{},
 	}
 }
@@ -133,6 +134,7 @@ func (s *TextServer) finish(key string) {
 func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
+		Done: 0, Total: 0, Unit: host.UnitThings, Error: "",
 		IsUserStarted: req.IsUserStarted,
 	}
 	err := s.putLayer(ctx, req, task)
@@ -147,7 +149,7 @@ func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
 // a locked one and a scan have no text layer, and get no version.
 func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) error {
-	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
@@ -178,7 +180,7 @@ func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task h
 		return err
 	}
 	_, err = texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: textKey, Kind: textKind, SourceHash: read.hash, File: file,
+		Path: req.Path, Key: textKey, Source: "", Kind: textKind, SourceHash: read.hash, File: file,
 	})
 	return err
 }
@@ -210,7 +212,7 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []
 	if last < len(book.Pages) {
 		end = book.Pages[last].Offset
 	}
-	layers := layerCut{text: book.Text}
+	layers := layerCut{text: book.Text, sections: nil, parts: nil}
 	for _, part := range book.Parts {
 		if part.Offset >= book.Pages[first].Offset && part.Offset < end {
 			layers.sections = append(layers.sections, part)
@@ -256,14 +258,14 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 func (c *layerCut) add(from, to, page int, boxes [][4]float32) {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
-			c.parts = append(c.parts, domain.TextSegment{Heading: c.sections[0].Title, Selector: host.Selector{Page: page + 1}.Encode()})
+			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: host.Selector{T: nil, Page: page + 1, CFI: "", Boxes: nil}.Encode()})
 			c.sections = c.sections[1:]
 		}
 		end := to
 		if len(c.sections) > 0 && c.sections[0].Offset < to {
 			end = c.sections[0].Offset
 		}
-		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Selector: host.Selector{Page: page + 1, Boxes: boxes}.Encode()})
+		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Heading: "", Selector: host.Selector{T: nil, Page: page + 1, CFI: "", Boxes: boxes}.Encode()})
 		from = end
 	}
 }

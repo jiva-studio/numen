@@ -1,3 +1,4 @@
+// Package ortraw runs ONNX Runtime graphs through direct calls to the runtime library.
 package ortraw
 
 import (
@@ -70,6 +71,7 @@ func newGraphOf(calls Calls, session uintptr, inNames, outNames [][]byte, inputs
 		outNames: make([]unsafe.Pointer, len(outNames)),
 		inputs:   inputs,
 		outputs:  make([]uintptr, len(outNames)),
+		data:     nil,
 	}
 	for i, name := range inNames {
 		r.inNames[i] = unsafe.Pointer(&name[0])

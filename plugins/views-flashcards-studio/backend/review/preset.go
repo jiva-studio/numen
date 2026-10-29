@@ -96,9 +96,12 @@ func (p Preset) GetPlacing() string {
 type Goal string
 
 const (
-	GoalMinutes   Goal = "minutes_a_day"
+	// GoalMinutes steers the day by minutes of review.
+	GoalMinutes Goal = "minutes_a_day"
+	// GoalRetention steers the day by the target retention.
 	GoalRetention Goal = "retention"
-	GoalDate      Goal = "by_date"
+	// GoalDate steers the day by the date the material is to be learned by.
+	GoalDate Goal = "by_date"
 )
 
 // IsKnownGoal reports whether a goal is one of the three.
@@ -147,7 +150,7 @@ func (p Preset) IsLearned(s Schedule, target time.Time) bool {
 	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
 }
 
-// getLearnedRule is the rule a review card is counted learned by here, and the
+// GetLearnedRule is the rule a review card is counted learned by here, and the
 // two values a rule reads.
 //
 // A preset naming no rule counts by the default rule, and a value the rule
@@ -175,7 +178,9 @@ func (p Preset) GetLearnedRule() (LearnedRule, int, float64) {
 type BudgetUnit string
 
 const (
+	// BudgetUnitCards counts each review card once a day.
 	BudgetUnitCards BudgetUnit = "cards"
+	// BudgetUnitShows counts every showing of a review card.
 	BudgetUnitShows BudgetUnit = "shows"
 )
 
@@ -228,6 +233,8 @@ func Defaults() Preset {
 		Counts:      BudgetUnitCards,
 		Backlog:     AllBacklog,
 		IsEvenLoad:  true,
+		By:          time.Time{},
+		Load:        nil,
 	}
 }
 
@@ -276,6 +283,10 @@ func (p Preset) GetOverallStopReason(d Day, now time.Time) StopReason {
 		if p.IsPast(d, now) {
 			return StoppedPastDay
 		}
+	case GoalMinutes:
+		if p.MinutesADay == 0 {
+			return StoppedNoMinutes
+		}
 	default:
 		if p.MinutesADay == 0 {
 			return StoppedNoMinutes
@@ -316,13 +327,6 @@ func (p Preset) IsPaused(d Day, now time.Time) bool {
 	return p.GetOverallStopReason(d, now) != StoppedNothing
 }
 
-// getPace is how much of the material a day holds when a date sets the pace: what
-// is left to begin, over the days on which beginning a card still leaves it time
-// to be learned by the day the preset aims at. A day past the one it aims at
-// holds none of it.
-//
-// Where no day leaves that much time, the pace is everything left. It is the
-// pace that gets there every review card that can, and how many cannot is
 // NeverClears is a pace that leaves something overdue on every day projected.
 const NeverClears = -1
 
@@ -334,6 +338,12 @@ const NeverLearns = -1
 // learned.
 const LearnsUnasked = -2
 
+// getPace is how much of the material a day holds when a date sets the pace: what
+// is left to begin, over the days on which beginning a card still leaves it time
+// to be learned by the day the preset aims at. A day past the one it aims at
+// holds none of it.
+//
+// pace that gets there every review card that can.
 func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	reviewDays := p.getReviewDays(d, now)
 	if reviewDays <= 0 {
@@ -596,6 +606,7 @@ func readWeights(front map[string]any, p *Preset, problems *[]string) {
 	readLoad(front, p, problems)
 }
 
+// ReadPreset reads a preset from frontmatter and reports the problems found.
 func ReadPreset(front map[string]any) (Preset, []string) {
 	p := Defaults()
 	var problems []string

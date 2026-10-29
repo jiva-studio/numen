@@ -132,7 +132,7 @@ func newSitting(run *flashcards.LogWriter, now func() time.Time) sitting {
 }
 
 func (s sitting) Answer(
-	ctx context.Context, on review.ReviewCardID, r review.Rating, took time.Duration,
+	ctx context.Context, on review.CardID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
 	return s.record.Answer(ctx, s.run, on, r, took)
 }
@@ -474,7 +474,7 @@ func TestCountCardsDue_UnansweredVaultIsAllNew(t *testing.T) {
 func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -508,7 +508,7 @@ func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -549,7 +549,7 @@ func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	when := time.Now()
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 4*time.Second); err != nil {
 		t.Fatal(err)
@@ -576,7 +576,7 @@ func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	when := time.Now()
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	record := s.run(t, when)
 	provided, err := record.Answer(t.Context(), on, review.Good, time.Second)
@@ -603,7 +603,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	record := s.run(t, time.Now())
 
 	if _, err := record.Answer(
-		t.Context(), review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}, review.Rating(9), 0,
+		t.Context(), review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}, review.Rating(9), 0,
 	); err == nil {
 		t.Error("a rating of nine was written down")
 	}
@@ -617,8 +617,8 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	long := time.Now().Add(-30 * 24 * time.Hour)
 	recent := time.Now().Add(-3 * 24 * time.Hour)
 
-	waited := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	lately := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	waited := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	lately := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 	if _, err := s.run(t, long).Answer(t.Context(), waited, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -671,7 +671,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	when := time.Now().Add(-72 * time.Hour)
 
 	record := s.run(t, when)
@@ -711,8 +711,8 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	invented := review.ReviewCardID{Card: "nobodyhasit", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	invented := review.CardID{Card: "nobodyhasit", Template: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -745,7 +745,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	when := time.Now().Add(-24 * time.Hour)
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -779,7 +779,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	record := s.run(t, time.Now())
 
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -812,7 +812,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	record := s.run(t, time.Now())
 
 	provided, err := record.Answer(t.Context(), on, review.Good, 0)
@@ -840,8 +840,8 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	invented := review.ReviewCardID{Card: "nobodyhasit", Template: "Recognise"}
+	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	invented := review.CardID{Card: "nobodyhasit", Template: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
