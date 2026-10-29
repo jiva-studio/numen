@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -10,31 +11,30 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
-const pluginID = "md.numen.tools.media.importer"
-
 // videoAddress is an address the mock downloader takes for a video site.
 const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
 // newMockLinks is the links of an empty vault, reaching video sites through the mock downloader.
-func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store) {
+func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	t.Helper()
 	vault := hosttest.New("Mills")
 	store := vault.Store()
-	texts := hosttest.NewTexts(vault.Vault().ID, pluginID)
-	texts.SetStore(pluginID, store)
-	links := link.New(link.Host{Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue()},
+	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
+	texts.SetStore(PluginID, store)
+	hosted := link.Host{Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue()}
+	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock() },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	return links, store
+	return links, store, hosted
 }
 
 // newMockCommands is the plugin's commands over an empty vault, reaching video sites through the
 // mock downloader.
 func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 	t.Helper()
-	links, store := newMockLinks(t)
-	commands, err := newCommands(links)
+	links, store, hosted := newMockLinks(t)
+	commands, err := newCommands(links, hosted)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,4 +94,14 @@ func hasCopy(t *testing.T, store *hosttest.Store) bool {
 		}
 	}
 	return false
+}
+
+func TestDeleteTextNeedsTheVersionTheHostNames(t *testing.T) {
+	commands, _ := newMockCommands(t)
+
+	_, err := commands.RunCommand(t.Context(), command.Request{Command: "delete-text", Path: "Mills.md"})
+
+	if !errors.Is(err, command.ErrBadArguments) {
+		t.Fatalf("a deletion with no version: got %v, want ErrBadArguments", err)
+	}
 }

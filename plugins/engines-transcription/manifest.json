@@ -20,6 +20,7 @@
     {
       "id": "delete-transcript",
       "title": "Delete transcript",
+      "icon": "trash-2",
       "when": { "hasOwnText": true }
     }
   ],

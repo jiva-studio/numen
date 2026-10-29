@@ -23,6 +23,9 @@ import (
 // EnvMockML names the variable that has the plugin reach video sites through the mock downloader.
 const EnvMockML = "NUMEN_MOCK_ML"
 
+// PluginID is the identity the manifest gives the plugin.
+const PluginID = "md.numen.tools.media.importer"
+
 // openHostAt reaches the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	return link.Host{
@@ -113,7 +116,7 @@ func getLanguages(value string) []string {
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
 	links := link.New(hosted, f.getFetcher, f.getSettings)
-	commands, err := newCommands(links)
+	commands, err := newCommands(links, hosted)
 	if err != nil {
 		return err
 	}

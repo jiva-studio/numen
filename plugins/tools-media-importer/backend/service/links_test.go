@@ -10,7 +10,7 @@ import (
 )
 
 func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
-	links, _ := newMockLinks(t)
+	links, _, _ := newMockLinks(t)
 	server := linkServer{links: links}
 
 	answer, err := server.CreateLinks(t.Context(), connect.NewRequest(&linksv1.CreateLinksRequest{

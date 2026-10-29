@@ -22,6 +22,7 @@
     {
       "id": "delete-recognition",
       "title": "Delete recognition",
+      "icon": "trash-2",
       "when": { "hasOwnText": true }
     }
   ],

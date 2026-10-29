@@ -52,6 +52,12 @@
       "noteTypes": ["link"]
     },
     {
+      "id": "delete-text",
+      "title": "Delete text",
+      "icon": "trash-2",
+      "when": { "hasOwnText": true }
+    },
+    {
       "id": "delete-copy",
       "title": "Delete downloaded video",
       "icon": "trash-2",
