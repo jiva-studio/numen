@@ -10,8 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// scalarSpan returns the byte range one scalar occupies, so that changing a value
-// leaves the rest of its line unchanged: a trailing comment, the spacing, and the
+// scalarSpan returns the byte range one scalar occupies. Changing a value in that
+// range leaves the rest of its line unchanged: a trailing comment, the spacing, and the
 // other keys of the entry.
 //
 // The span covers the whole token, including quotes.
@@ -109,7 +109,7 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	return 0, false
 }
 
-// scalar returns a value spelled as YAML requires, so that a name containing `[`, `#`,
+// scalar returns a value spelled as YAML requires. A name containing `[`, `#`,
 // `&` or a word YAML parses as a number is written to the file as text.
 func scalar(value string) (string, error) {
 	var out bytes.Buffer

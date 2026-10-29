@@ -23,15 +23,15 @@ type Files interface {
 	Lock(ctx context.Context) (release func(), err error)
 }
 
-// Levels updates the named notes in the index, so that what a write changed is searchable
-// before the write is reported complete.
+// Levels updates the named notes in the index. A write is reported complete
+// after its changes are searchable.
 type Levels func(ctx context.Context, v domain.Vault, paths []string) error
 
 // Baseline is what a caller last saw of the note it is saving.
 //
 // Prose is compared first: text equal to the text the caller read is unchanged,
 // regardless of file size and time. A synchroniser, a checkout and a touch all change those
-// without changing the text, and comparing them alone would report a conflict for a file nobody edited.
+// without changing the text, and comparing them alone would report a conflict for an unedited file.
 //
 // FileStat answers for text that did move, and is what makes a save that follows a save land: the
 // note is at the file stat the last write produced, so it is the note this caller put there.

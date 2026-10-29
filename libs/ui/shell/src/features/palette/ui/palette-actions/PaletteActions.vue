@@ -3,7 +3,7 @@
  * The action panel: every action the highlighted item offers, by name, in its
  * own list with its own field.
  *
- * Keyboard input stays in the panel while it is open; no key reaches the palette
+ * Keyboard input stays in the panel while it is open; no key event propagates to the palette
  * below it.
  *
  * `data-actions` names each part: `panel`, `list`, `name`, `hint`, `silence`

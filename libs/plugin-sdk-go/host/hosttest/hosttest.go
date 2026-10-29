@@ -80,7 +80,7 @@ func newVault(v host.VaultInfo, files store) *Vault {
 	return made
 }
 
-// world is the set of vaults a host knows. One lock guards them.
+// world is the set of vaults of a host. One lock guards them.
 type world struct {
 	mu      sync.Mutex
 	members []*Vault
@@ -201,7 +201,7 @@ func (v *Vault) Content(filePath string) (string, bool) {
 	return string(content), err == nil
 }
 
-// Scans returns the lists of paths the plugin asked the index to scan, in order.
+// Scans returns the lists of paths the plugin requested the index to scan, in order.
 func (v *Vault) Scans() [][]string {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
@@ -546,7 +546,7 @@ func (v *Vault) With(id host.VaultID) host.Vault {
 	return v.find(id)
 }
 
-// find returns the vault with the identity among those the host knows. The caller holds the world's lock.
+// find returns the vault with the identity among those of the host. The caller holds the world's lock.
 func (v *Vault) find(id host.VaultID) *Vault {
 	if v.vault.ID == id {
 		return v

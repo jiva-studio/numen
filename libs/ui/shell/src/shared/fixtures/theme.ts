@@ -2,9 +2,9 @@
  * What a story rendered dark depends on. Storybook scaffolding; it is not
  * shipped.
  *
- * A theme is chosen by `color-scheme` on the root, which is what `light-dark()`
- * in the tokens reads, so that is where a story queries which set of colours it
- * was rendered in.
+ * A theme is chosen by `color-scheme` on the root, which `light-dark()`
+ * in the tokens reads. A story queries it for the set of colours it is
+ * rendered in.
  */
 import { expect } from 'storybook/test'
 

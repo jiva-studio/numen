@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// TextCreation asks for text of a file.
+// TextCreation is a request for text of a file.
 type TextCreation struct {
 	Vault VaultID
 	Path  string

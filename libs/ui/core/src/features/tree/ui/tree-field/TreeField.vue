@@ -2,7 +2,7 @@
 /**
  * A name being typed, over the row it belongs to.
  *
- * It captures the keyboard and the pointer, so nothing done in it reaches the
+ * It captures the keyboard and the pointer, so no input in it propagates to the
  * row underneath. The tree decides which row is being renamed and where
  * keyboard focus goes after the typing ends.
  */

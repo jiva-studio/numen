@@ -1,6 +1,6 @@
 /**
  * What the palette does, not how it lays things out. The negative cases matter most:
- * a key that triggers an action nobody offered, a group name the keyboard stops
+ * a key that triggers an action no item offers, a group name the keyboard stops
  * on, and a list that moves the highlighted item while the user is aiming at it
  * all look correct in a screenshot.
  *

@@ -121,8 +121,8 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   }
 
   /**
-   * Moves focus to where the step requires: the current value, otherwise the
-   * previously focused item. Opening a step this way changes no selection, so a
+   * Moves focus to where the step requires: the current value if there is one,
+   * else the last focused item. Opening a step this way changes no selection, so a
    * caller that acts on the highlighted item acts on the item already
    * highlighted.
    */

@@ -34,7 +34,7 @@ func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 
 // CheckProduced fails for every value of the enum that nothing on this side
 // produces. From names what each value is written from, and writing does the
-// writing, so a value no one names and a value named for the wrong thing both
+// writing, so a value absent from `from` and a value mapped to the wrong thing both
 // fail.
 func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func(C) E) {
 	t.Helper()

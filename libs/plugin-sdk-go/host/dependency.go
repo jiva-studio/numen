@@ -125,7 +125,7 @@ func (c *DependencyClient) Provision(ctx context.Context, requirement *Dependenc
 	}
 }
 
-// List returns the state of every dependency the host knows.
+// List returns the state of every dependency of the host.
 func (c *DependencyClient) List(ctx context.Context) ([]*DependencyStatus, error) {
 	res, err := c.rpc.ListDependencies(ctx, connect.NewRequest(&v1.ListDependenciesRequest{}))
 	if err != nil {

@@ -6,7 +6,7 @@
  * Keyboard focus stays in the field, the highlighted item is announced to
  * screen readers, and the content behind the palette is inert while it is open.
  *
- * `data-palette` marks each part of the panel: `ground`, `panel`, `crumb`,
+ * `data-palette` marks each part of the panel by name: the backdrop, `panel`, `crumb`,
  * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
  * its own parts.
  */

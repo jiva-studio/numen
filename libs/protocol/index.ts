@@ -1,7 +1,7 @@
 /**
  * What a client may ask, in one place.
  *
- * Everything below is generated from `proto/`, not written by hand. This file
+ * Everything below is generated from `proto/`, not edited manually. This file
  * selects which of it a client may use.
  */
 export * from './src/numen/v1/shared_pb.js'

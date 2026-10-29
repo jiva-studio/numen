@@ -21,7 +21,7 @@ const loadCatalog = (): Promise<Catalog> => {
 const isIconKey = (key: string): boolean =>
   /^[A-Z]/.test(key) && key !== 'Icon' && !key.startsWith('Lucide')
 
-/** The icon a Lucide name stands for, an alias of it included, and null where there is none. */
+/** The icon for a Lucide name or one of its aliases, and null when there is none. */
 export async function findNamedIcon(name: string): Promise<Component | null> {
   const key = getIconKey(name)
   if (name === '' || !isIconKey(key)) return null

@@ -97,8 +97,8 @@ func (m *memory) paths() []string {
 	return out
 }
 
-// disk stores the files in a folder, so that a test can modify and read them as another program
-// would, and make writes fail through the permissions of the folder.
+// disk stores the files in a folder. A test can modify and read them as another program
+// does, and make writes fail through the permissions of the folder.
 type disk struct {
 	root string
 }

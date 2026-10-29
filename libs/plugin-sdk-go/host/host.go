@@ -1,5 +1,5 @@
 // Package host is the plugin's view of the vault through the host: its files, its notes and links
-// as the index knows them, the cache the installation keeps for it, and the plugin's own folder in the
+// as the index records them, the installation's cache for it, and the plugin's own folder in the
 // vault's store.
 // It is also the core's shared queue of heavy work and its list of tasks.
 //
@@ -100,7 +100,7 @@ type FileAccess interface {
 	StatFile(ctx context.Context, path string) (FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, FileStat, error)
-	// Write replaces the file if it still matches the baseline, otherwise it returns ErrStale.
+	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not.
 	Write(ctx context.Context, path string, content []byte, baseline FileStat) (FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error

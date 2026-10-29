@@ -27,8 +27,8 @@ const previewStyle = computed(() => ({
 
 <style scoped>
 .drag-preview {
-  /* How far it stands clear of the pointer, and how far it reaches before what
-     it says is cut. */
+  /* The offset of the preview from the pointer, and the maximum width before its
+     text is truncated. */
   --gap: 0.75rem;
   --widest: 15rem;
 

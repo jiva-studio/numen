@@ -134,9 +134,8 @@ The being has to know which molecule is which, and it has to hold that knowledge
 
 /**
  * The document a search opens, as lines on each of its pages. It is defined here
- * and not fetched, so the book rendering shows real book text and not a
- * placeholder, and it is broken into lines by hand because the page renderer
- * cannot break lines.
+ * and not fetched, so the book rendering uses real book text. It is broken into
+ * lines in the source because the page renderer cannot break lines.
  */
 const BOOK_PAGES: readonly (readonly string[])[] = [
   [
@@ -490,7 +489,7 @@ const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
   return element
 }
 
-/** Whether one pane lies entirely beyond another's trailing edge. */
+/** Whether one pane is entirely beyond another's trailing edge. */
 const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 

@@ -27,7 +27,7 @@ type config struct {
 	now            func() time.Time
 }
 
-// WithPluginID sets the plugin identifier used to locate the disk cache directory.
+// WithPluginID sets the plugin identifier that locates the disk cache directory.
 func WithPluginID(id string) Option {
 	return func(c *config) { c.pluginID = id }
 }

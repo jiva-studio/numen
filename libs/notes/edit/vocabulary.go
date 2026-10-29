@@ -71,7 +71,7 @@ func WrapUnlevelled(err error, paths ...string) error {
 }
 
 // MapMissingNote returns ErrNoNote when the vault holds no note at the path,
-// and err unchanged otherwise.
+// and any other err unchanged.
 func MapMissingNote(err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
 		return ErrNoNote

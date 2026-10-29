@@ -34,8 +34,8 @@ describe('where a menu goes', () => {
   })
 
   it('is brought in where folding back would take it off the near edge', () => {
-    // The menu fits on neither side of the point, so it is shifted instead of
-    // flipped, and it lies entirely on screen.
+    // The menu fits on neither side of the point, so it is shifted, not
+    // flipped, and it is entirely on screen.
     const menuPlacement = placeMenu({
       at: { x: 120, y: 120 },
       size: SIZE,

@@ -47,7 +47,7 @@ function reduce(node: WorkspaceNode): readonly Piece[] {
   ]
 }
 
-/** An empty pane, kept so that a workspace always has a root. */
+/** An empty pane that gives a workspace a root. */
 const emptyPane = (root: WorkspaceNode): WorkspaceNode => {
   const first = getPanes(root)[0]
   return { kind: 'pane', id: first?.id ?? root.id, tabs: [], active: null }

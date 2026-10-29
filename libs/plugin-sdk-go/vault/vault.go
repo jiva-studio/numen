@@ -1,4 +1,4 @@
-// Package vault checks that a path supplied by a caller lies inside the vault.
+// Package vault checks that a path supplied by a caller is inside the vault.
 package vault
 
 import (

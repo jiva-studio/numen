@@ -22,7 +22,7 @@ type Edit struct {
 	IsDone bool
 }
 
-// Move is a note that is no longer at its previous path, with its new path.
+// Move is a note that has changed path, with its new path.
 //
 // The content does not change, so this carries no information about the note's
 // content; it records only that the path changed.

@@ -32,7 +32,7 @@ var addressSeeds = []string{
 // Every string is an address of something: addressing is total, so no input
 // string yields an undefined result or none.
 //
-// A note's links are written by hand in a file that another editor wrote, so
+// A link in a note file can be typed manually or produced by another editor, so
 // the input here is arbitrary bytes.
 func FuzzParseAddress(f *testing.F) {
 	for _, seed := range addressSeeds {

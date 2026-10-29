@@ -333,7 +333,7 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 // Writes replace the lines a key occupies, which is the key's own span only
 // while one line holds one key. `{title: T, id: b}` puts all keys on one line,
 // so the span of any key is the span of all of them. A value written on one
-// line, such as `load: {sat: 50}`, still occupies its key's own lines and is
+// line, such as `load: {cpu: 50}`, still occupies its key's own lines and is
 // replaced as usual.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 

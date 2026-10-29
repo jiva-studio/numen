@@ -6,7 +6,7 @@
  */
 import { onBeforeUnmount } from 'vue'
 
-/** What marks a dragged handle, on the branch so that it reaches the panels the drag divides. */
+/** Attribute that marks a dragged handle. It is set on the branch, which contains the panels the drag divides. */
 export const RESIZING = 'data-resizing'
 
 /** How close two shares are before they are the same share. */

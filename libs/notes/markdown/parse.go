@@ -93,7 +93,7 @@ func parseNoteType(fm map[string]any) (domain.NoteType, string) {
 }
 
 // splitFrontmatter returns the YAML block and the body. The opening delimiter
-// must be the very first line: a `---` further down is a horizontal rule, and
+// must be the first line: a `---` further down is a horizontal rule, and
 // parsing it as frontmatter would consume the note.
 func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	// A byte order mark is stripped for the comparison and kept in the body,

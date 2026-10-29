@@ -58,9 +58,9 @@ const remainingText = computed(() => (activityView.value.hasCounts ? props.left 
 /**
  * How the words give way.
  *
- * The text truncates to one line when a count or a detail line is shown, and
- * clamps to three lines otherwise. The detail truncates to one line when a
- * count is shown, and clamps to two lines otherwise.
+ * The text truncates to one line when a count or a detail line is present, and
+ * clamps to three lines when neither is. The detail truncates to one line when a
+ * count is present, and clamps to two lines when it is not.
  */
 const givesSays = computed(() =>
   activityView.value.hasCounts || props.about ? 'truncate' : 'line-clamp-3',
