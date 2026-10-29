@@ -291,6 +291,9 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {
 		return err
 	}
+	if err := commands.Add("delete-proofreading", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+		return err
+	}
 	s.SetUpdateConfig(config.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
 	command.Mount(s, commands)

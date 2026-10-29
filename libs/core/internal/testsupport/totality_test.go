@@ -23,7 +23,6 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.CompletionErrorCode":  "plugin-sdk-go/ai: read by readRefusal",
 	"numen.v1.ErrorCode":            "adapter/window/editor: worded by note errors",
 	"numen.v1.FlushResult":          "internal/adapterlib/wire: read by left",
-	"numen.v1.FileMenuAction":       "adapter/window/editor/textmenu: written by the actions table",
 	"numen.v1.HostIndexState":       "plugin-sdk-go/host: read by EnsureIndexed",
 	"numen.v1.HostStoreErrorCode":   "plugin-sdk-go/host: read by readStoreError",
 	"numen.v1.HostVaultErrorCode":   "plugin-sdk-go/host: read by fail",

@@ -9,9 +9,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
@@ -142,6 +142,7 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
 	commands := command.New()
 	// The registry is new, so the one id cannot be added twice.
 	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))
+	_ = commands.Add("delete-transcript", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID))
 	command.Mount(s, commands)
 	s.OnClose(func() {
 		transcriber.Close()

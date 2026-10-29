@@ -146,6 +146,9 @@ func getConfig() engine.Config {
 	return cfg
 }
 
+// PluginID is the identity the manifest gives the plugin.
+const PluginID = "md.numen.engines.ocr"
+
 func mount(s *server.Server, h recognition.Host, models *engines) error {
 	recognitions, err := recognition.New(h, models.getEngine)
 	if err != nil {
@@ -154,6 +157,9 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	provider := recognition.NewProvider(recognitions)
 	commands := command.New()
 	if err := commands.Add("recognise", newRecogniseCommand(recognitions)); err != nil {
+		return err
+	}
+	if err := commands.Add("delete-recognition", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
 		return err
 	}
 	s.SetUpdateConfig(models.updateConfig)

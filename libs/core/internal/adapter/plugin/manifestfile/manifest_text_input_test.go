@@ -31,16 +31,6 @@ func TestAManifestDeclaresWhatItMakesTextFrom(t *testing.T) {
 	}
 }
 
-func TestAManifestDeclaresItsFileMenuEntry(t *testing.T) {
-	m, err := readTextManifest(t, `{"kinds": ["recognition"], "menuEntry": {"title": "Proofread", "icon": "spell-check"}}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := m.TextInput.MenuEntry; got == nil || *got != (pluginport.PluginMenuEntry{Title: "Proofread", Icon: "spell-check"}) {
-		t.Fatalf("read the menu entry %+v", got)
-	}
-}
-
 func TestATextInputThatNamesNothingOrNamesItWronglyIsRefused(t *testing.T) {
 	for name, input := range map[string]string{
 		"nothing":                         `{}`,
@@ -48,7 +38,6 @@ func TestATextInputThatNamesNothingOrNamesItWronglyIsRefused(t *testing.T) {
 		"a type of no subtype":            `{"contentTypes": ["audio"]}`,
 		"a kind with no name":             `{"kinds": [" "]}`,
 		"a run on its own with no types":  `{"kinds": ["article"], "autoRun": true}`,
-		"a menu entry with no title":      `{"kinds": ["article"], "menuEntry": {"title": " ", "icon": "spell-check"}}`,
 		"a note type it does not declare": `{"noteTypes": ["link"]}`,
 	} {
 		if _, err := readTextManifest(t, input); !errors.Is(err, pluginport.ErrInvalidTextInput) {

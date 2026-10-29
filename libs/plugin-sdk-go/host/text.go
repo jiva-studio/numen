@@ -86,6 +86,28 @@ func ReadWholeText(ctx context.Context, texts Texts, version TextVersion) (Versi
 	}
 }
 
+// DeleteText removes a text version the plugin of the id made: its record, then its file in the
+// plugin's folder. A version that is not there is ErrNotExist, and one of another plugin is ErrNotOwner.
+func DeleteText(ctx context.Context, texts Texts, store Store, pluginID, path string, id TextVersionID) error {
+	listing, err := texts.ListVersions(ctx, path)
+	if err != nil {
+		return err
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() != id {
+			continue
+		}
+		if version.PluginID != pluginID {
+			return fmt.Errorf("delete %s of %s: %w", id, path, ErrNotOwner)
+		}
+		if err := texts.RemoveVersion(ctx, path, version.Key); err != nil {
+			return err
+		}
+		return store.Delete(ctx, version.File)
+	}
+	return fmt.Errorf("delete %s of %s: %w", id, path, ErrNotExist)
+}
+
 // WriteText writes segments as a version file of the plugin's folder, replacing the file
 // atomically. The plugin puts the version after the write.
 func WriteText(ctx context.Context, store Store, name string, segments []TextSegment) error {

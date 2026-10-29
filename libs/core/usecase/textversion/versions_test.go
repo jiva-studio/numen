@@ -23,11 +23,6 @@ const (
 	kindRecognition domain.TextKind = "recognition"
 )
 
-var (
-	recogniseItem = textport.MenuItem{Title: "Recognise text", Icon: "scan-text"}
-	proofreadItem = textport.MenuItem{Title: "Proofread", Icon: "spell-check"}
-)
-
 // scene is one vault holding one PDF, and the three plugins of the worked example:
 // a reader of the PDF's own text layer that runs on its own and declares no menu
 // entry, a recogniser, and a proofreader of both kinds of text.
@@ -42,6 +37,7 @@ type scene struct {
 	files    map[string][]byte
 	folders  *memoryFiles
 	repo     *memoryVersions
+	made     providers
 }
 
 func newScene(t *testing.T) *scene {
@@ -53,9 +49,9 @@ func newScene(t *testing.T) *scene {
 		folders:  &memoryFiles{},
 		repo:     &memoryVersions{},
 		plugins: &plugins{all: []textport.TextPlugin{
-			{ID: ocr, Name: "OCR", Files: domain.FileInput{".pdf"}, Menu: recogniseItem},
+			{ID: ocr, Name: "OCR", Files: domain.FileInput{".pdf"}},
 			{ID: pdfReader, Name: "PDF", Files: domain.FileInput{".pdf"}, IsAutoRun: true},
-			{ID: proofreader, Name: "Proofreading", Kinds: []domain.TextKind{kindPage, kindRecognition}, Menu: proofreadItem},
+			{ID: proofreader, Name: "Proofreading", Kinds: []domain.TextKind{kindPage, kindRecognition}},
 		}},
 	}
 	page := func(word string, n int) domain.TextSegment {
@@ -73,8 +69,8 @@ func newScene(t *testing.T) *scene {
 		make: func(_ string, source domain.VersionText, _ bool) []domain.TextSegment {
 			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "teh", "the")}}
 		}}
-	providers := providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, providers, fileReaders(s.files), steppingClock())
+	s.made = providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
+	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, s.made, fileReaders(s.files), steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,21 +110,16 @@ func (s *scene) requireLive(t *testing.T, step string, wantID domain.TextVersion
 	}
 }
 
-// runEntry runs the plugin's entry of the scan's menu, and fails where the menu offers none.
+// runEntry runs the plugin as a person starts it: over the live version where it reads versions,
+// and over the file otherwise.
 func (s *scene) runEntry(t *testing.T, pluginID string) {
 	t.Helper()
-	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
-	if err != nil {
-		t.Fatal(err)
+	req := textport.TextCreation{Vault: s.vault.ID, Path: scanPath, IsUserStarted: true}
+	if pluginID == proofreader {
+		req.Source, _ = s.getLive(t)
 	}
-	i := slices.IndexFunc(menu, func(e textversion.MenuEntry) bool {
-		return e.Action == textversion.ActionCreateText && e.PluginID == pluginID
-	})
-	if i < 0 {
-		t.Fatalf("the menu offers no entry by %s: %+v", pluginID, menu)
-	}
-	if err := s.versions.RunMenuEntry(t.Context(), s.vault, scanPath, menu[i]); err != nil {
-		t.Fatalf("the entry by %s: %v", pluginID, err)
+	if err := s.made[pluginID].CreateText(t.Context(), req); err != nil {
+		t.Fatalf("the plugin %s: %v", pluginID, err)
 	}
 }
 
@@ -192,13 +183,6 @@ func TestADisabledPluginsVersionStaysLiveAndReadable(t *testing.T) {
 	s.requestText(t)
 	if got := s.reader.getCreated(); got != 0 {
 		t.Fatalf("RequestText asked the reader %d times for a file that has a live version", got)
-	}
-	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Contains(menu, textversion.MenuEntry{Action: textversion.ActionDeleteVersion, PluginID: ocr, PluginName: ocr, Version: c, IsLive: true}) {
-		t.Fatalf("the menu does not offer to delete the disabled plugin's version: %+v", menu)
 	}
 }
 
@@ -269,11 +253,6 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.fileHash()); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("the live text of a replaced file: got %v, want ErrNoText", err)
 	}
-	if menu, _ := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash()); slices.ContainsFunc(menu, func(e textversion.MenuEntry) bool {
-		return e.Action == textversion.ActionCreateText && e.PluginID == proofreader
-	}) {
-		t.Fatalf("the menu offers to proofread a file with no live version: %+v", menu)
-	}
 
 	s.requestText(t)
 	if got := s.reader.getCreated(); got != 2 {
@@ -300,98 +279,6 @@ func TestRequestTextAsksOncePerContentAndNotForALiveFile(t *testing.T) {
 	}
 	if got := s.ocr.getCreated(); got != 0 {
 		t.Fatalf("the recogniser, which does not run on its own, was asked %d times", got)
-	}
-}
-
-func TestGetMenuOffersThePluginsThatTakeTheFile(t *testing.T) {
-	s := newScene(t)
-	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []textversion.MenuEntry{{Action: textversion.ActionCreateText, PluginID: ocr, PluginName: "OCR", Item: recogniseItem}}
-	if !slices.Equal(menu, want) {
-		t.Fatalf("a file with no version: menu %+v, want %+v", menu, want)
-	}
-	if menu, _ := s.versions.GetMenu(t.Context(), s.vault, "notes/a.md", ""); len(menu) != 0 {
-		t.Fatalf("a note is offered %+v", menu)
-	}
-}
-
-func TestGetMenuOffersThePluginsThatTakeTheLiveKind(t *testing.T) {
-	s := newScene(t)
-	s.requestText(t)
-	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := textversion.MenuEntry{
-		Action: textversion.ActionCreateText, PluginID: proofreader, PluginName: "Proofreading", Item: proofreadItem,
-		Version: s.getReaderVersion(), IsLive: true,
-	}
-	if !slices.Contains(menu, want) {
-		t.Fatalf("a file with a live %s version: menu %+v, want %+v", kindPage, menu, want)
-	}
-}
-
-func TestGetMenuExcludesADisabledPlugin(t *testing.T) {
-	s := newScene(t)
-	s.requestText(t)
-	s.plugins.setEnabled(ocr, false)
-	s.plugins.setEnabled(proofreader, false)
-	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if slices.ContainsFunc(menu, func(e textversion.MenuEntry) bool { return e.Action == textversion.ActionCreateText }) {
-		t.Fatalf("with the recogniser and the proofreader disabled the menu is %+v", menu)
-	}
-}
-
-func TestGetMenuOffersToDeleteEachVersionByItsOwner(t *testing.T) {
-	s := newScene(t)
-	s.requestText(t)
-	s.runEntry(t, proofreader)
-	a := s.getReaderVersion()
-	b := getProofreadingOf(a)
-	menu, err := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
-	if err != nil {
-		t.Fatal(err)
-	}
-	var deletions []textversion.MenuEntry
-	for _, entry := range menu {
-		if entry.Action == textversion.ActionDeleteVersion {
-			deletions = append(deletions, entry)
-		}
-	}
-	want := []textversion.MenuEntry{
-		{Action: textversion.ActionDeleteVersion, PluginID: pdfReader, PluginName: "PDF", Version: a},
-		{Action: textversion.ActionDeleteVersion, PluginID: proofreader, PluginName: "Proofreading", Version: b, IsLive: true},
-	}
-	slices.SortFunc(deletions, func(x, y textversion.MenuEntry) int { return strings.Compare(x.PluginID, y.PluginID) })
-	if !slices.Equal(deletions, want) {
-		t.Fatalf("the deletions offered are %+v, want %+v", deletions, want)
-	}
-}
-
-func TestDeleteVersionRemovesItsFileAndRecord(t *testing.T) {
-	s := newScene(t)
-	s.requestText(t)
-	s.runEntry(t, proofreader)
-	s.listener.take()
-
-	b := getProofreadingOf(s.getReaderVersion())
-	if err := s.versions.RunMenuEntry(t.Context(), s.vault, scanPath, textversion.MenuEntry{
-		Action: textversion.ActionDeleteVersion, PluginID: proofreader, Version: b,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if s.folders.has(proofreader + "/" + strings.TrimPrefix(string(b), proofreader+"/") + ".jsonl") {
-		t.Fatal("the deleted version's file is still there")
-	}
-	s.requireLive(t, "after deleting B", s.getReaderVersion(), "layer teh ")
-	if got := s.listener.take(); len(got) == 0 {
-		t.Fatal("deleting a version reported no change")
 	}
 }
 
@@ -477,16 +364,6 @@ func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 	}
 }
 
-func TestCreateTextRefusesASourceThePluginDoesNotTake(t *testing.T) {
-	s := newScene(t)
-	if err := s.versions.CreateText(t.Context(), s.vault, proofreader, scanPath, ""); !errors.Is(err, textport.ErrSourceNotAccepted) {
-		t.Fatalf("a proofreader asked to read a file: got %v", err)
-	}
-	if err := s.versions.CreateText(t.Context(), s.vault, ocr, "notes/a.md", ""); !errors.Is(err, textport.ErrSourceNotAccepted) {
-		t.Fatalf("a recogniser asked to read a note: got %v", err)
-	}
-}
-
 func TestGetTextPageReadsTheVersionFileInPages(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
@@ -499,33 +376,5 @@ func TestGetTextPageReadsTheVersionFileInPages(t *testing.T) {
 	}
 	if _, err := s.versions.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "x"); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("a cursor that is no number: got %v, want ErrNoText", err)
-	}
-}
-
-func TestCreateTextMarksMenuRunsUserStarted(t *testing.T) {
-	s := newScene(t)
-	s.requestText(t)
-	s.runEntry(t, ocr)
-
-	if !slices.Equal(s.reader.isUserStarted, []bool{false}) {
-		t.Errorf("the reader run on its own was asked as %v, want not user-started", s.reader.isUserStarted)
-	}
-	if !slices.Equal(s.ocr.isUserStarted, []bool{true}) {
-		t.Errorf("the recogniser run from the menu was asked as %v, want user-started", s.ocr.isUserStarted)
-	}
-}
-
-func TestCreateTextAcceptsANoteOfADeclaredNoteType(t *testing.T) {
-	s := newScene(t)
-	const linker = "org.numen.tools-links"
-	s.plugins.all = append(s.plugins.all, textport.TextPlugin{ID: linker, Name: "Links", NoteTypes: []domain.NoteType{"link"}})
-	s.files["links/talk.md"] = []byte("---\ntype: link\nurl: https://video.example/talk\n---\n")
-	s.files["notes/plain.md"] = []byte("# A plain note\n")
-
-	if err := s.versions.CreateText(t.Context(), s.vault, linker, "links/talk.md", ""); errors.Is(err, textport.ErrSourceNotAccepted) {
-		t.Fatalf("a link note was refused to the plugin of links: %v", err)
-	}
-	if err := s.versions.CreateText(t.Context(), s.vault, linker, "notes/plain.md", ""); !errors.Is(err, textport.ErrSourceNotAccepted) {
-		t.Fatalf("a plain note was taken by the plugin of links: got %v", err)
 	}
 }

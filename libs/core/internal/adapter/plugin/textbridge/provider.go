@@ -49,9 +49,6 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 		for _, one := range in.NoteTypes {
 			plugin.NoteTypes = append(plugin.NoteTypes, domain.NoteType(one))
 		}
-		if in.MenuEntry != nil {
-			plugin.Menu = textport.MenuItem{Title: in.MenuEntry.Title, Icon: in.MenuEntry.Icon}
-		}
 		out = append(out, plugin)
 	}
 	return out

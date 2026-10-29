@@ -54,7 +54,6 @@ func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	case "org.example.ocr":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", TextInput: &pluginport.PluginTextInput{
 			ContentTypes: []domain.ContentType{"application/pdf"}, Kinds: []domain.TextKind{"article"}, IsAutoRun: true,
-			MenuEntry: &pluginport.PluginMenuEntry{Title: "Recognise text", Icon: "scan-text"},
 		}}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
@@ -96,8 +95,7 @@ func newHost(t *testing.T) (*host, *texts) {
 func TestTheTextPluginsAreTheEnabledOnesThatDeclareAnInput(t *testing.T) {
 	h, _ := newHost(t)
 	got := textbridge.NewPlugins(h).GetTextPlugins()
-	if len(got) != 1 || got[0].ID != "org.example.ocr" || got[0].Name != "Example OCR" || !got[0].IsAutoRun || !got[0].Files.IsFileAccepted("a.pdf") ||
-		got[0].Menu != (textport.MenuItem{Title: "Recognise text", Icon: "scan-text"}) {
+	if len(got) != 1 || got[0].ID != "org.example.ocr" || got[0].Name != "Example OCR" || !got[0].IsAutoRun || !got[0].Files.IsFileAccepted("a.pdf") {
 		t.Fatalf("got %+v, want the OCR plugin alone", got)
 	}
 }

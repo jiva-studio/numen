@@ -64,11 +64,3 @@ func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segment
 	}
 	return domain.HashContent(raw), nil
 }
-
-func (f files) DeleteTextFile(ctx context.Context, pluginID, name string) error {
-	store, err := f.stores.Open(f.vault, pluginID)
-	if err != nil {
-		return err
-	}
-	return store.Delete(ctx, name)
-}

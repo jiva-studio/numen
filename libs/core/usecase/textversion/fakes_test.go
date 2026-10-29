@@ -114,13 +114,6 @@ func (m *memoryFiles) WriteTextFile(_ context.Context, pluginID, name string, se
 	return domain.HashContent(raw), nil
 }
 
-func (m *memoryFiles) DeleteTextFile(_ context.Context, pluginID, name string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.files, pluginID+"/"+name)
-	return nil
-}
-
 func (m *memoryFiles) write(key string, raw []byte) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

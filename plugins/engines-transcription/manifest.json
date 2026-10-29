@@ -8,16 +8,19 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "textInput": {
-    "contentTypes": ["audio/*", "video/*"],
-    "menuEntry": { "title": "Transcribe", "icon": "audio-lines" }
+    "contentTypes": ["audio/*", "video/*"]
   },
   "commands": [
     {
       "id": "transcribe",
-      "title": "Transcribe a recording",
+      "title": "Transcribe",
       "icon": "audio-lines",
-      "contentTypes": ["audio/*", "video/*"],
-      "hiddenInPalette": true
+      "contentTypes": ["audio/*", "video/*"]
+    },
+    {
+      "id": "delete-transcript",
+      "title": "Delete transcript",
+      "when": { "hasOwnText": true }
     }
   ],
   "dependencies": [

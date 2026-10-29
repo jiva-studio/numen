@@ -2,61 +2,61 @@
 // @generated from file numen/v1/textversion.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/textversion.proto.
  */
 export const file_numen_v1_textversion: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS90ZXh0dmVyc2lvbi5wcm90bxIIbnVtZW4udjEiowEKDUZpbGVNZW51RW50cnkSKAoGYWN0aW9uGAEgASgOMhgubnVtZW4udjEuRmlsZU1lbnVBY3Rpb24SEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEhIKCnZlcnNpb25faWQYBCABKAkSDwoHaXNfbGl2ZRgFIAEoCBINCgV0aXRsZRgGIAEoCRIMCgRpY29uGAcgASgJIiIKEkdldEZpbGVNZW51UmVxdWVzdBIMCgRwYXRoGAEgASgJIj8KE0dldEZpbGVNZW51UmVzcG9uc2USKAoHZW50cmllcxgBIAMoCzIXLm51bWVuLnYxLkZpbGVNZW51RW50cnkieAoXUnVuRmlsZU1lbnVFbnRyeVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIoCgZhY3Rpb24YAiABKA4yGC5udW1lbi52MS5GaWxlTWVudUFjdGlvbhIRCglwbHVnaW5faWQYAyABKAkSEgoKdmVyc2lvbl9pZBgEIAEoCSIaChhSdW5GaWxlTWVudUVudHJ5UmVzcG9uc2UqeQoORmlsZU1lbnVBY3Rpb24SIAocRklMRV9NRU5VX0FDVElPTl9VTlNQRUNJRklFRBAAEiAKHEZJTEVfTUVOVV9BQ1RJT05fQ1JFQVRFX1RFWFQQARIjCh9GSUxFX01FTlVfQUNUSU9OX0RFTEVURV9WRVJTSU9OEAIyuwEKElRleHRWZXJzaW9uU2VydmljZRJKCgtHZXRGaWxlTWVudRIcLm51bWVuLnYxLkdldEZpbGVNZW51UmVxdWVzdBodLm51bWVuLnYxLkdldEZpbGVNZW51UmVzcG9uc2USWQoQUnVuRmlsZU1lbnVFbnRyeRIhLm51bWVuLnYxLlJ1bkZpbGVNZW51RW50cnlSZXF1ZXN0GiIubnVtZW4udjEuUnVuRmlsZU1lbnVFbnRyeVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChpudW1lbi92MS90ZXh0dmVyc2lvbi5wcm90bxIIbnVtZW4udjEiigEKDUZpbGVNZW51RW50cnkSEQoJcGx1Z2luX2lkGAEgASgJEhMKC3BsdWdpbl9uYW1lGAIgASgJEg8KB2NvbW1hbmQYAyABKAkSDQoFdGl0bGUYBCABKAkSDAoEaWNvbhgFIAEoCRISCgp2ZXJzaW9uX2lkGAYgASgJEg8KB2lzX2xpdmUYByABKAgiIgoSR2V0RmlsZU1lbnVSZXF1ZXN0EgwKBHBhdGgYASABKAkiPwoTR2V0RmlsZU1lbnVSZXNwb25zZRIoCgdlbnRyaWVzGAEgAygLMhcubnVtZW4udjEuRmlsZU1lbnVFbnRyeSJfChdSdW5GaWxlTWVudUVudHJ5UmVxdWVzdBIMCgRwYXRoGAEgASgJEhEKCXBsdWdpbl9pZBgCIAEoCRIPCgdjb21tYW5kGAMgASgJEhIKCnZlcnNpb25faWQYBCABKAkiGgoYUnVuRmlsZU1lbnVFbnRyeVJlc3BvbnNlMrsBChJUZXh0VmVyc2lvblNlcnZpY2USSgoLR2V0RmlsZU1lbnUSHC5udW1lbi52MS5HZXRGaWxlTWVudVJlcXVlc3QaHS5udW1lbi52MS5HZXRGaWxlTWVudVJlc3BvbnNlElkKEFJ1bkZpbGVNZW51RW50cnkSIS5udW1lbi52MS5SdW5GaWxlTWVudUVudHJ5UmVxdWVzdBoiLm51bWVuLnYxLlJ1bkZpbGVNZW51RW50cnlSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
- * FileMenuEntry is one entry of a file's menu. version_id is the input of a
- * text made from a version and the target of a deletion, and empty for a text
- * made from the file. plugin_name is the plugin's name as its manifest gives
- * it. title and icon are what the plugin's manifest declares for its entry,
- * and empty for a deletion; icon is a Lucide icon name. is_live is set when
+ * FileMenuEntry is one entry of a file's menu: a command a plugin declares in
+ * its manifest, offered over a version of the file. command is the id the
+ * manifest declares it under, and title and icon are its declaration; icon is a
+ * Lucide icon name. plugin_name is the plugin's name as its manifest gives it.
+ * version_id is the text version the command runs over. is_live is set when
  * version_id is the version shown and indexed now.
  *
  * @generated from message numen.v1.FileMenuEntry
  */
 export type FileMenuEntry = Message<"numen.v1.FileMenuEntry"> & {
   /**
-   * @generated from field: numen.v1.FileMenuAction action = 1;
-   */
-  action: FileMenuAction;
-
-  /**
-   * @generated from field: string plugin_id = 2;
+   * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
 
   /**
-   * @generated from field: string plugin_name = 3;
+   * @generated from field: string plugin_name = 2;
    */
   pluginName: string;
 
   /**
-   * @generated from field: string version_id = 4;
+   * @generated from field: string command = 3;
    */
-  versionId: string;
+  command: string;
 
   /**
-   * @generated from field: bool is_live = 5;
-   */
-  isLive: boolean;
-
-  /**
-   * @generated from field: string title = 6;
+   * @generated from field: string title = 4;
    */
   title: string;
 
   /**
-   * @generated from field: string icon = 7;
+   * @generated from field: string icon = 5;
    */
   icon: string;
+
+  /**
+   * @generated from field: string version_id = 6;
+   */
+  versionId: string;
+
+  /**
+   * @generated from field: bool is_live = 7;
+   */
+  isLive: boolean;
 };
 
 /**
@@ -110,14 +110,14 @@ export type RunFileMenuEntryRequest = Message<"numen.v1.RunFileMenuEntryRequest"
   path: string;
 
   /**
-   * @generated from field: numen.v1.FileMenuAction action = 2;
-   */
-  action: FileMenuAction;
-
-  /**
-   * @generated from field: string plugin_id = 3;
+   * @generated from field: string plugin_id = 2;
    */
   pluginId: string;
+
+  /**
+   * @generated from field: string command = 3;
+   */
+  command: string;
 
   /**
    * @generated from field: string version_id = 4;
@@ -146,43 +146,10 @@ export const RunFileMenuEntryResponseSchema: GenMessage<RunFileMenuEntryResponse
   messageDesc(file_numen_v1_textversion, 4);
 
 /**
- * FileMenuAction is what an entry of a file's menu does. UNSPECIFIED means
- * nothing.
- *
- * @generated from enum numen.v1.FileMenuAction
- */
-export enum FileMenuAction {
-  /**
-   * @generated from enum value: FILE_MENU_ACTION_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The plugin makes text of the file, or of version_id where it is set.
-   *
-   * @generated from enum value: FILE_MENU_ACTION_CREATE_TEXT = 1;
-   */
-  CREATE_TEXT = 1,
-
-  /**
-   * The plugin that made a version deletes it.
-   *
-   * @generated from enum value: FILE_MENU_ACTION_DELETE_VERSION = 2;
-   */
-  DELETE_VERSION = 2,
-}
-
-/**
- * Describes the enum numen.v1.FileMenuAction.
- */
-export const FileMenuActionSchema: GenEnum<FileMenuAction> = /*@__PURE__*/
-  enumDesc(file_numen_v1_textversion, 0);
-
-/**
  * TextVersionService is what a window asks about the text versions of a file of
  * the vault it shows: what the file's menu offers, and running one of its
- * entries. The entries follow from the enabled plugins and the versions the
- * file has.
+ * entries. The entries are the commands the enabled plugins declare with a
+ * condition, for the versions the file has that meet it.
  *
  * @generated from service numen.v1.TextVersionService
  */
@@ -198,8 +165,8 @@ export const TextVersionService: GenService<{
     output: typeof GetFileMenuResponseSchema;
   },
   /**
-   * RunFileMenuEntry does what an entry offers, as work a person started. The
-   * plugin goes on with the work after the call returns.
+   * RunFileMenuEntry runs the command of an entry the file's menu offers now,
+   * over the entry's version.
    *
    * @generated from rpc numen.v1.TextVersionService.RunFileMenuEntry
    */

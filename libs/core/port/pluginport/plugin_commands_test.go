@@ -2,6 +2,7 @@ package pluginport_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -121,5 +122,40 @@ func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
 	}
 	if wait, _ := m.Commands[0].GetArgument("wait"); !wait.IsHiddenInPalette {
 		t.Errorf("the argument came out as %+v", wait)
+	}
+}
+
+func TestAManifestDeclaresACommandWithAConditionOnTheTextVersionsOfAFile(t *testing.T) {
+	manifest, err := pluginport.ReadManifest(strings.NewReader(commandManifestHead + `[
+		{"id": "proofread", "title": "Proofread", "when": {"liveTextKinds": ["transcript", "recognition"]}},
+		{"id": "delete-proofreading", "title": "Delete proofreading", "when": {"hasOwnText": true}}
+	]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	proofread, deletion := manifest.Commands[0], manifest.Commands[1]
+	if proofread.When == nil || !slices.Equal(proofread.When.LiveTextKinds, []domain.TextKind{"transcript", "recognition"}) || proofread.When.HasOwnText {
+		t.Errorf("the condition on the live kind came out as %+v", proofread.When)
+	}
+	if deletion.When == nil || !deletion.When.HasOwnText || len(deletion.When.LiveTextKinds) != 0 {
+		t.Errorf("the condition on the own text came out as %+v", deletion.When)
+	}
+	if !proofread.HasFiles() || !proofread.CanRunOn(domain.UnknownContentType, "") {
+		t.Error("a command with a condition does not run over any file")
+	}
+}
+
+func TestACommandWithAnInvalidConditionIsRefused(t *testing.T) {
+	for name, command := range map[string]string{
+		"a condition that names nothing": `{"id":"a","title":"A","when":{}}`,
+		"a condition and a content type": `{"id":"a","title":"A","contentTypes":["audio/*"],"when":{"hasOwnText":true}}`,
+		"a kind with no name":            `{"id":"a","title":"A","when":{"liveTextKinds":[" "]}}`,
+		"the argument the host gives":    `{"id":"a","title":"A","when":{"hasOwnText":true},"arguments":[{"name":"version-id","title":"V","type":"string"}]}`,
+	} {
+		_, err := pluginport.ReadManifest(strings.NewReader(commandManifestHead + `[` + command + `]}`))
+		if !errors.Is(err, pluginport.ErrInvalidCommand) && !errors.Is(err, pluginport.ErrInvalidCommandArgument) {
+			t.Errorf("%s: got %v", name, err)
+		}
 	}
 }

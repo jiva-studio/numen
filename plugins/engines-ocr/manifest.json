@@ -10,16 +10,19 @@
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "textInput": {
     "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
-    "autoRun": true,
-    "menuEntry": { "title": "Recognise text", "icon": "scan-text" }
+    "autoRun": true
   },
   "commands": [
     {
       "id": "recognise",
       "title": "Recognise text",
       "icon": "scan-text",
-      "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
-      "hiddenInPalette": true
+      "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
+    },
+    {
+      "id": "delete-recognition",
+      "title": "Delete recognition",
+      "when": { "hasOwnText": true }
     }
   ],
   "dependencies": [

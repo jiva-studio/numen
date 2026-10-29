@@ -37,8 +37,6 @@ type TextFiles interface {
 	// WriteTextFile writes the segments as a file of a plugin's folder and
 	// returns the hash of its bytes. The file is replaced atomically.
 	WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error)
-	// DeleteTextFile removes a file of a plugin's folder. A file that is not there is removed.
-	DeleteTextFile(ctx context.Context, pluginID, name string) error
 }
 
 // TextFileStores opens the version files of one vault.

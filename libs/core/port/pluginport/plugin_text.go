@@ -16,9 +16,7 @@ var ErrInvalidTextInput = errors.New("invalid text input")
 // ContentTypes names, text versions of the kinds Kinds names, and notes of the
 // plugin's own types NoteTypes names. IsAutoRun asks the host to run the plugin
 // on a file of its content types that has no live text version. The plugin
-// starts the text of a note of its types itself. MenuEntry is the plugin's entry
-// in the menu of a file its input takes; a plugin without one is not offered
-// there.
+// starts the text of a note of its types itself.
 //
 // A plugin that declares one serves numen.v1.TextProviderService.
 type PluginTextInput struct {
@@ -26,14 +24,6 @@ type PluginTextInput struct {
 	Kinds        []domain.TextKind
 	NoteTypes    []string
 	IsAutoRun    bool
-	MenuEntry    *PluginMenuEntry
-}
-
-// PluginMenuEntry is what a plugin's entry in a file's menu reads and is drawn
-// with. Icon is a Lucide icon name, such as "scan-text".
-type PluginMenuEntry struct {
-	Title string
-	Icon  string
 }
 
 // listTextInputIssues checks that a text input names something to read, every
@@ -54,9 +44,6 @@ func (m PluginManifest) listTextInputIssues() []error {
 		if strings.TrimSpace(string(kind)) == "" {
 			issues = append(issues, fmt.Errorf("%w: a kind has no name", ErrInvalidTextInput))
 		}
-	}
-	if in.MenuEntry != nil && strings.TrimSpace(in.MenuEntry.Title) == "" {
-		issues = append(issues, fmt.Errorf("%w: a menu entry has no title", ErrInvalidTextInput))
 	}
 	if in.IsAutoRun && len(in.ContentTypes) == 0 {
 		issues = append(issues, fmt.Errorf("%w: a plugin that runs on its own reads files", ErrInvalidTextInput))

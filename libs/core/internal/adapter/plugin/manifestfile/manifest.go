@@ -53,12 +53,12 @@ func ReadManifest(r io.Reader) (Manifest, error) {
 }
 
 type rawDependencyRequirement struct {
-	ID             string                     `json:"id"`
-	Kind           pluginport.DependencyKind  `json:"kind"`
-	Version        string                     `json:"version,omitempty"`
-	SourceURL      string                     `json:"sourceUrl,omitempty"`
-	ChecksumSHA256 string                     `json:"checksumSha256,omitempty"`
-	Metadata       map[string]string          `json:"metadata,omitempty"`
+	ID             string                    `json:"id"`
+	Kind           pluginport.DependencyKind `json:"kind"`
+	Version        string                    `json:"version,omitempty"`
+	SourceURL      string                    `json:"sourceUrl,omitempty"`
+	ChecksumSHA256 string                    `json:"checksumSha256,omitempty"`
+	Metadata       map[string]string         `json:"metadata,omitempty"`
 }
 
 type rawLifecycle struct {
@@ -201,19 +201,20 @@ type rawCommandArgument struct {
 	IsHiddenInPalette bool   `json:"hiddenInPalette,omitempty"`
 }
 
+type rawCommandWhen struct {
+	LiveTextKinds []domain.TextKind `json:"liveTextKinds,omitempty"`
+	HasOwnText    bool              `json:"hasOwnText,omitempty"`
+}
+
 type rawCommand struct {
 	ID                string               `json:"id"`
 	Title             string               `json:"title"`
 	Icon              string               `json:"icon,omitempty"`
 	ContentTypes      []domain.ContentType `json:"contentTypes,omitempty"`
 	NoteTypes         []string             `json:"noteTypes,omitempty"`
+	When              *rawCommandWhen      `json:"when,omitempty"`
 	Arguments         []rawCommandArgument `json:"arguments,omitempty"`
 	IsHiddenInPalette bool                 `json:"hiddenInPalette,omitempty"`
-}
-
-type rawMenuEntry struct {
-	Title string `json:"title"`
-	Icon  string `json:"icon,omitempty"`
 }
 
 type rawTextInput struct {
@@ -221,24 +222,17 @@ type rawTextInput struct {
 	Kinds        []domain.TextKind    `json:"kinds,omitempty"`
 	NoteTypes    []string             `json:"noteTypes,omitempty"`
 	IsAutoRun    bool                 `json:"autoRun,omitempty"`
-	MenuEntry    *rawMenuEntry        `json:"menuEntry,omitempty"`
 }
 
 func (t *rawTextInput) toPort() *pluginport.PluginTextInput {
 	if t == nil {
 		return nil
 	}
-	var entry *pluginport.PluginMenuEntry
-	if t.MenuEntry != nil {
-		e := pluginport.PluginMenuEntry(*t.MenuEntry)
-		entry = &e
-	}
 	return &pluginport.PluginTextInput{
 		ContentTypes: t.ContentTypes,
 		Kinds:        t.Kinds,
 		NoteTypes:    t.NoteTypes,
 		IsAutoRun:    t.IsAutoRun,
-		MenuEntry:    entry,
 	}
 }
 
@@ -417,12 +411,17 @@ func convertCommands(in []rawCommand) []pluginport.PluginCommand {
 				args = append(args, pluginport.PluginCommandArgument(a))
 			}
 		}
+		var when *pluginport.PluginCommandWhen
+		if c.When != nil {
+			when = &pluginport.PluginCommandWhen{LiveTextKinds: c.When.LiveTextKinds, HasOwnText: c.When.HasOwnText}
+		}
 		out = append(out, pluginport.PluginCommand{
 			ID:                c.ID,
 			Title:             c.Title,
 			Icon:              c.Icon,
 			ContentTypes:      c.ContentTypes,
 			NoteTypes:         c.NoteTypes,
+			When:              when,
 			Arguments:         args,
 			IsHiddenInPalette: c.IsHiddenInPalette,
 		})

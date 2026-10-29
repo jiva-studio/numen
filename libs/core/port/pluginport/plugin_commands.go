@@ -29,6 +29,22 @@ var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
 var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber, CommandArgumentBoolean}
 
+// CommandArgumentVersion names the argument the host gives a command that has a When condition: the
+// id of the text version that met the condition.
+const CommandArgumentVersion = "version-id"
+
+// PluginCommandWhen is the state of a file's text versions in which a command is offered over the
+// file. Every condition a command names has to hold. A command with a condition is offered by the
+// menu of the file, and not by the palette, which knows no file's versions.
+type PluginCommandWhen struct {
+	// LiveTextKinds are the kinds of text, as the plugin that made it names them, one of which the
+	// file's live version has; `*` is any kind. The command is offered over that version.
+	LiveTextKinds []domain.TextKind
+	// HasOwnText is set when the file has a version the plugin of the command made. The command is
+	// offered over each of them.
+	HasOwnText bool
+}
+
 // PluginCommand is one command a manifest declares, which the plugin's backend runs.
 type PluginCommand struct {
 	ID    string
@@ -39,6 +55,9 @@ type PluginCommand struct {
 	ContentTypes []domain.ContentType
 	// NoteTypes are the plugin's own note types of the notes the command runs over.
 	NoteTypes []string
+	// When is the condition under which the menu of a file offers the command. A command with one
+	// runs over any file, and names no content type and no note type.
+	When      *PluginCommandWhen
 	Arguments []PluginCommandArgument
 	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
 	// same thing another way. The command line still offers it.
@@ -58,13 +77,13 @@ type PluginCommandArgument struct {
 
 // HasFiles reports whether the command runs over a file.
 func (c PluginCommand) HasFiles() bool {
-	return len(c.ContentTypes) > 0 || len(c.NoteTypes) > 0
+	return len(c.ContentTypes) > 0 || len(c.NoteTypes) > 0 || c.When != nil
 }
 
 // CanRunOn reports whether the command runs over a file of the content type, or a note of the note
 // type.
 func (c PluginCommand) CanRunOn(contentType domain.ContentType, noteType domain.NoteType) bool {
-	return isAnyMatching(c.ContentTypes, contentType) || slices.Contains(c.NoteTypes, string(noteType))
+	return c.When != nil || isAnyMatching(c.ContentTypes, contentType) || slices.Contains(c.NoteTypes, string(noteType))
 }
 
 // GetArgument returns the declaration of the argument of the name, and false where none is declared.
@@ -97,7 +116,31 @@ func (m PluginManifest) listCommandIssues() []error {
 		}
 		issues = append(issues, listContentTypesIssues(ErrInvalidCommand, command.ContentTypes)...)
 		issues = append(issues, m.listUndeclaredNoteTypes(ErrInvalidCommand, command.NoteTypes)...)
+		issues = append(issues, listCommandWhenIssues(command)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
+	}
+	return issues
+}
+
+func listCommandWhenIssues(command PluginCommand) []error {
+	when := command.When
+	if when == nil {
+		return nil
+	}
+	var issues []error
+	if len(when.LiveTextKinds) == 0 && !when.HasOwnText {
+		issues = append(issues, fmt.Errorf("%w: %q has a condition that names nothing", ErrInvalidCommand, command.ID))
+	}
+	if len(command.ContentTypes) > 0 || len(command.NoteTypes) > 0 {
+		issues = append(issues, fmt.Errorf("%w: %q has a condition and names a content type or a note type", ErrInvalidCommand, command.ID))
+	}
+	for _, kind := range when.LiveTextKinds {
+		if strings.TrimSpace(string(kind)) == "" {
+			issues = append(issues, fmt.Errorf("%w: %q names a kind with no name", ErrInvalidCommand, command.ID))
+		}
+	}
+	if _, isDeclared := command.GetArgument(CommandArgumentVersion); isDeclared {
+		issues = append(issues, fmt.Errorf("%w: %q declares %q, which the host gives", ErrInvalidCommandArgument, command.ID, CommandArgumentVersion))
 	}
 	return issues
 }
@@ -126,10 +169,12 @@ func listCommandArgumentIssues(command PluginCommand) []error {
 	return issues
 }
 
-// PluginCommandEntry is one command an enabled plugin declares, and the plugin that does.
+// PluginCommandEntry is one command an enabled plugin declares, and the plugin that does, by its id
+// and by its name as a person reads it.
 type PluginCommandEntry struct {
-	PluginID string
-	Command  PluginCommand
+	PluginID   string
+	PluginName string
+	Command    PluginCommand
 }
 
 // PluginCommandCall is one run of a command, checked against its declaration.
