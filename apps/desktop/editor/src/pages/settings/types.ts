@@ -57,6 +57,11 @@ export interface Installation {
    * deleted, and empty where it was.
    */
   deletePluginData?(pluginId: string): Promise<string>
+  /**
+   * The components a plugin's frontend registered for its settings views, by view id. A view the
+   * plugin declares and has not registered is absent.
+   */
+  getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>

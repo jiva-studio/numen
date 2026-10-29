@@ -13,6 +13,7 @@ import type {
   PluginManifest,
   FileSelectEvent,
   ReaderRegistration,
+  SettingsViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
@@ -55,6 +56,11 @@ interface RegisteredAgentProvider {
   reg: AgentProviderRegistration
 }
 
+interface RegisteredSettingsView {
+  pluginId: string
+  reg: SettingsViewRegistration
+}
+
 interface HostRegistry {
   readonly vaultListeners: Set<PluginListener<VaultChangeEvent>>
   readonly fileListeners: Set<PluginListener<FileSelectEvent>>
@@ -62,6 +68,7 @@ interface HostRegistry {
   readonly tabKinds: Map<string, RegisteredTabKind>
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly contextMenus: { value: ReadonlyMap<string, RegisteredContextMenu> }
+  readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, PluginManifest>
@@ -117,6 +124,12 @@ function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: Plu
     if (item.pluginId === pluginId) nextContextMenus.delete(id)
   }
   registry.contextMenus.value = nextContextMenus
+
+  const nextSettingsViews = new Map(registry.settingsViews.value)
+  for (const [key, item] of nextSettingsViews) {
+    if (item.pluginId === pluginId) nextSettingsViews.delete(key)
+  }
+  registry.settingsViews.value = nextSettingsViews
 }
 
 function resolveCommand(
@@ -226,6 +239,10 @@ type EventBridge = Pick<
   'onVaultChange' | 'onFileSelect' | 'emitVaultChange' | 'emitFileSelect'
 >
 
+function getSettingsViewKey(pluginId: string, viewId: string): string {
+  return `${pluginId}:${viewId}`
+}
+
 function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventBridge {
   return {
     onVaultChange: (pluginId, handler) =>
@@ -276,6 +293,19 @@ function createHostContextBridge(
           const updated = new Map(registry.contextMenus.value)
           updated.delete(registration.id)
           registry.contextMenus.value = updated
+        },
+      }
+    },
+    registerSettingsView: (pluginId, registration) => {
+      const key = getSettingsViewKey(pluginId, registration.id)
+      const entry = { pluginId, reg: registration }
+      registry.settingsViews.value = new Map(registry.settingsViews.value).set(key, entry)
+      return {
+        dispose: () => {
+          if (registry.settingsViews.value.get(key) !== entry) return
+          const updated = new Map(registry.settingsViews.value)
+          updated.delete(key)
+          registry.settingsViews.value = updated
         },
       }
     },
@@ -371,6 +401,7 @@ function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
     ...[...registry.tabKinds.values()].map((t) => t.pluginId),
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
     ...[...registry.contextMenus.value.values()].map((c) => c.pluginId),
+    ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
     ...[...registry.agentProviders.values()].map((p) => p.pluginId),
   ])
   for (const pluginId of allPluginIds) disposePluginEntry(pluginId, registry, deps)
@@ -382,6 +413,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     tabKinds: new Map(),
     commands: shallowRef(new Map()),
     contextMenus: shallowRef(new Map()),
+    settingsViews: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),
     manifests: new Map(),
@@ -439,6 +471,16 @@ export function createPluginHost(deps: PluginHostDeps) {
       if (!entry) return false
       await entry.reg.handler(target)
       return true
+    },
+    /** The settings views a plugin registered, by view id; reactive. */
+    getRegisteredSettingsViews: (
+      pluginId: string,
+    ): ReadonlyMap<string, SettingsViewRegistration> => {
+      const views = new Map<string, SettingsViewRegistration>()
+      for (const item of registry.settingsViews.value.values()) {
+        if (item.pluginId === pluginId) views.set(item.reg.id, item.reg)
+      }
+      return views
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
       for (const { pluginId, reg } of registry.commands.value.values()) {

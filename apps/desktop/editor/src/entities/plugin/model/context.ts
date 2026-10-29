@@ -13,6 +13,7 @@ import type {
   PluginContext,
   PluginManifest,
   ReaderRegistration,
+  SettingsViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
@@ -244,6 +245,8 @@ export function createPluginContext(
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
+    registerSettingsView: (reg: SettingsViewRegistration) =>
+      add(host.registerSettingsView(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
       add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),

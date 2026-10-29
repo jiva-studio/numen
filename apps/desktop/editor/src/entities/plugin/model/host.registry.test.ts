@@ -4,6 +4,7 @@
  * opened as, and a registration replaced under the same id.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { computed } from 'vue'
 import type { ContextMenuTarget } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
@@ -133,6 +134,55 @@ describe('a registration replaced under the same id', () => {
     expect(host.getRegisteredTabKinds().map((one) => one.kind)).toStrictEqual([
       'second.plugin.kind',
     ])
+  })
+})
+
+describe('the settings views of a plugin', () => {
+  it('are the registrations of that plugin, by view id', () => {
+    const host = createPluginHost(createDeps())
+    host.createContext('first.plugin').registerSettingsView({ id: 'floor', component: 'A' })
+    host.createContext('second.plugin').registerSettingsView({ id: 'floor', component: 'B' })
+
+    expect([...host.getRegisteredSettingsViews('first.plugin').keys()]).toStrictEqual(['floor'])
+    expect(host.getRegisteredSettingsViews('first.plugin').get('floor')?.component).toBe('A')
+    expect(host.getRegisteredSettingsViews('second.plugin').get('floor')?.component).toBe('B')
+    expect(host.getRegisteredSettingsViews('missing.plugin').size).toBe(0)
+  })
+
+  it('re-evaluate a computed when a view is registered or disposed', () => {
+    const host = createPluginHost(createDeps())
+    const ctx = host.createContext('sample.plugin')
+    const count = computed(() => host.getRegisteredSettingsViews('sample.plugin').size)
+
+    expect(count.value).toBe(0)
+    const disposable = ctx.registerSettingsView({ id: 'floor', component: {} })
+    expect(count.value).toBe(1)
+    disposable.dispose()
+    expect(count.value).toBe(0)
+  })
+
+  it('stay when the registration they replaced is disposed', () => {
+    const host = createPluginHost(createDeps())
+    const ctx = host.createContext('sample.plugin')
+    const first = ctx.registerSettingsView({ id: 'floor', component: 'First' })
+    ctx.registerSettingsView({ id: 'floor', component: 'Second' })
+
+    first.dispose()
+
+    expect(host.getRegisteredSettingsViews('sample.plugin').get('floor')?.component).toBe('Second')
+  })
+
+  it('are removed with the plugin and with the host', () => {
+    const host = createPluginHost(createDeps())
+    host.createContext('first.plugin').registerSettingsView({ id: 'floor', component: {} })
+    host.createContext('second.plugin').registerSettingsView({ id: 'floor', component: {} })
+
+    host.disposePlugin('first.plugin')
+    expect(host.getRegisteredSettingsViews('first.plugin').size).toBe(0)
+    expect(host.getRegisteredSettingsViews('second.plugin').size).toBe(1)
+
+    host.disposeAll()
+    expect(host.getRegisteredSettingsViews('second.plugin').size).toBe(0)
   })
 })
 

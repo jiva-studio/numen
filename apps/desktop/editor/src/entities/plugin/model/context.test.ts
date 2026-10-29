@@ -22,6 +22,7 @@ describe('PluginContext', () => {
         calls.registerReader++
         return { dispose: vi.fn() }
       }),
+      registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
       registerTabKind: vi.fn((_id, _reg) => {
         calls.registerTabKind++
         return { dispose: vi.fn() }

@@ -26,6 +26,7 @@ import {
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
+import type { Installation } from '@/pages/settings'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
 import { getNamedIcon } from '@/shared/icons'
@@ -41,6 +42,7 @@ export interface SettingsDeps {
   log: MessageLog
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
+  getSettingsViews?: Installation['getSettingsViews']
 }
 
 function getPerformanceStepGroups(words: Words) {
@@ -160,11 +162,13 @@ interface SettingsTabConfigDeps {
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
   scheduleRefresh: () => void
+  getSettingsViews?: Installation['getSettingsViews']
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, rest, secrets, retry, core, scheduleRefresh } = deps
+  const { appearance, sync, rest, secrets, retry, core, scheduleRefresh, getSettingsViews } = deps
   return {
+    ...(getSettingsViews ? { getSettingsViews } : {}),
     themes: appearance.list,
     applied: appearance.applied,
     mode: appearance.mode,
@@ -249,7 +253,14 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   }
 }
 
-export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
+export function useSettings({
+  core,
+  words,
+  log,
+  windowTabs,
+  onSizeChanged,
+  getSettingsViews,
+}: SettingsDeps) {
   const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
@@ -291,7 +302,16 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, core, scheduleRefresh }),
+    createSettingsTabConfig({
+      appearance,
+      sync,
+      rest,
+      secrets,
+      retry,
+      core,
+      scheduleRefresh,
+      ...(getSettingsViews ? { getSettingsViews } : {}),
+    }),
   )
 
   watch(appearance.sized, () => onSizeChanged())
