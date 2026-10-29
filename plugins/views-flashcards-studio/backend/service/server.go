@@ -87,39 +87,74 @@ func (b *Backend) Mount(s *server.Server) error {
 	return nil
 }
 
-// CardsAPI answers the decks and card models of a vault.
-type CardsAPI interface {
+// CardModelsAPI answers the card models of a vault.
+type CardModelsAPI interface {
 	ListCardModels(ctx context.Context, req *api.ListCardModelsRequest) (*api.ListCardModelsResponse, error)
 	CreateCardModel(ctx context.Context, req *api.CreateCardModelRequest) (*api.CreateCardModelResponse, error)
 	ReadCardModel(ctx context.Context, req *api.ReadCardModelRequest) (*api.ReadCardModelResponse, error)
 	WriteCardModel(ctx context.Context, req *api.WriteCardModelRequest) (*api.WriteCardModelResponse, error)
 	RenameCardModelField(ctx context.Context, req *api.RenameCardModelFieldRequest) (*api.RenameCardModelFieldResponse, error)
+}
+
+// DecksAPI answers the decks of a vault.
+type DecksAPI interface {
 	CreateDeck(ctx context.Context, req *api.CreateDeckRequest) (*api.CreateDeckResponse, error)
 	ReadDeck(ctx context.Context, req *api.ReadDeckRequest) (*api.ReadDeckResponse, error)
 	WriteDeck(ctx context.Context, req *api.WriteDeckRequest) (*api.WriteDeckResponse, error)
 }
 
-// PresetsAPI answers the presets that decks are scheduled by.
-type PresetsAPI interface {
+// CardsAPI answers the decks and card models of a vault.
+type CardsAPI interface {
+	CardModelsAPI
+	DecksAPI
+}
+
+// PresetReadAPI answers the reads of the presets that decks are scheduled by.
+type PresetReadAPI interface {
 	GetDeckPreset(ctx context.Context, req *api.GetDeckPresetRequest) (*api.GetDeckPresetResponse, error)
 	ListPresets(ctx context.Context, req *api.ListPresetsRequest) (*api.ListPresetsResponse, error)
-	CreatePreset(ctx context.Context, req *api.CreatePresetRequest) (*api.CreatePresetResponse, error)
-	ScheduleDeck(ctx context.Context, req *api.ScheduleDeckRequest) (*api.ScheduleDeckResponse, error)
 	ReadPreset(ctx context.Context, req *api.ReadPresetRequest) (*api.ReadPresetResponse, error)
-	WritePreset(ctx context.Context, req *api.WritePresetRequest) (*api.WritePresetResponse, error)
 	ComputeCurve(ctx context.Context, req *api.ComputeCurveRequest) (*api.ComputeCurveResponse, error)
+}
+
+// PresetWriteAPI answers the writes of the presets that decks are scheduled by.
+type PresetWriteAPI interface {
+	CreatePreset(ctx context.Context, req *api.CreatePresetRequest) (*api.CreatePresetResponse, error)
+	WritePreset(ctx context.Context, req *api.WritePresetRequest) (*api.WritePresetResponse, error)
+	ScheduleDeck(ctx context.Context, req *api.ScheduleDeckRequest) (*api.ScheduleDeckResponse, error)
+}
+
+// PresetsAPI answers the presets that decks are scheduled by.
+type PresetsAPI interface {
+	PresetReadAPI
+	PresetWriteAPI
+}
+
+// ReviewSessionAPI answers the sessions and the answers of a review.
+type ReviewSessionAPI interface {
+	StartSession(ctx context.Context, req *api.StartSessionRequest) (*api.StartSessionResponse, error)
+	AnswerCard(ctx context.Context, req *api.AnswerCardRequest) (*api.AnswerCardResponse, error)
+	TakeBackAnswer(ctx context.Context, req *api.TakeBackAnswerRequest) (*api.TakeBackAnswerResponse, error)
+}
+
+// ReviewWatchAPI answers the streams of the review window.
+type ReviewWatchAPI interface {
+	WatchCardsDue(ctx context.Context, req *api.WatchCardsDueRequest, send func(*api.WatchCardsDueResponse) error) error
+	WatchReloads(ctx context.Context, req *api.WatchReloadsRequest, send func(*api.WatchReloadsResponse) error) error
+}
+
+// ReviewStatsAPI answers the counts and the presets of the review window.
+type ReviewStatsAPI interface {
+	ListReviewDays(ctx context.Context, req *api.ListReviewDaysRequest) (*api.ListReviewDaysResponse, error)
+	GetDeckNeighbourhood(ctx context.Context, req *api.GetDeckNeighbourhoodRequest) (*api.GetDeckNeighbourhoodResponse, error)
+	GetVaultDeckPreset(ctx context.Context, req *api.GetVaultDeckPresetRequest) (*api.GetVaultDeckPresetResponse, error)
 }
 
 // ReviewAPI answers the review window: the counts, the sessions and the answers.
 type ReviewAPI interface {
-	WatchCardsDue(ctx context.Context, req *api.WatchCardsDueRequest, send func(*api.WatchCardsDueResponse) error) error
-	StartSession(ctx context.Context, req *api.StartSessionRequest) (*api.StartSessionResponse, error)
-	AnswerCard(ctx context.Context, req *api.AnswerCardRequest) (*api.AnswerCardResponse, error)
-	TakeBackAnswer(ctx context.Context, req *api.TakeBackAnswerRequest) (*api.TakeBackAnswerResponse, error)
-	WatchReloads(ctx context.Context, req *api.WatchReloadsRequest, send func(*api.WatchReloadsResponse) error) error
-	ListReviewDays(ctx context.Context, req *api.ListReviewDaysRequest) (*api.ListReviewDaysResponse, error)
-	GetDeckNeighbourhood(ctx context.Context, req *api.GetDeckNeighbourhoodRequest) (*api.GetDeckNeighbourhoodResponse, error)
-	GetVaultDeckPreset(ctx context.Context, req *api.GetVaultDeckPresetRequest) (*api.GetVaultDeckPresetResponse, error)
+	ReviewSessionAPI
+	ReviewWatchAPI
+	ReviewStatsAPI
 }
 
 // mountAPI mounts every method of the three groups on the API.

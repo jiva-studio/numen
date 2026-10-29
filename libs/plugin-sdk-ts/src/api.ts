@@ -88,6 +88,25 @@ export const parseEvents = (
   return { events, rest }
 }
 
+/** Yields the events of a Server-Sent Events body as they complete, and releases the body when the reader stops. */
+async function* readEvents(
+  body: NonNullable<Response['body']>,
+): AsyncGenerator<{ name: string; data: string }> {
+  const reader = body.pipeThrough(new TextDecoderStream()).getReader()
+  let pending = ''
+  try {
+    for (;;) {
+      const chunk = await reader.read()
+      if (chunk.done) return
+      const parsed = parseEvents(pending + chunk.value)
+      pending = parsed.rest
+      yield* parsed.events
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined)
+  }
+}
+
 /** Creates the client of the methods the service serves. */
 export const createApi = (service: string, options: ApiOptions = {}): Api => {
   const getUrl = (method: string): string => `${options.origin ?? getOrigin()}/${service}/${method}`
@@ -127,23 +146,12 @@ export const createApi = (service: string, options: ApiOptions = {}): Api => {
       }
       if (!response.ok || !response.body) return await readFailure(response)
 
-      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
-      let pending = ''
-      try {
-        for (;;) {
-          const chunk = await reader.read()
-          if (chunk.done) return null
-          const parsed = parseEvents(pending + chunk.value)
-          pending = parsed.rest
-          for (const event of parsed.events) {
-            if (event.name === 'end') return null
-            if (event.name === 'error') return JSON.parse(event.data) as ApiError
-            yield JSON.parse(event.data) as Res
-          }
-        }
-      } finally {
-        await reader.cancel().catch(() => undefined)
+      for await (const event of readEvents(response.body)) {
+        if (event.name === 'end') return null
+        if (event.name === 'error') return JSON.parse(event.data) as ApiError
+        yield JSON.parse(event.data) as Res
       }
+      return null
     },
   }
 }

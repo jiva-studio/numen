@@ -15,26 +15,34 @@ func fillValue(v reflect.Value) {
 			fillValue(v.Elem())
 		}
 	case reflect.Struct:
-		for i := range v.NumField() {
-			if v.Type().Field(i).IsExported() {
-				fillValue(v.Field(i))
-			}
-		}
+		fillStruct(v)
 	case reflect.Slice:
-		if !v.CanSet() {
-			return
-		}
-		if v.IsNil() {
-			v.Set(reflect.MakeSlice(v.Type(), 0, 0))
-			return
-		}
-		for i := range v.Len() {
-			fillValue(v.Index(i))
-		}
+		fillSlice(v)
 	case reflect.Map:
 		if v.CanSet() && v.IsNil() {
 			v.Set(reflect.MakeMap(v.Type()))
 		}
 	default:
+	}
+}
+
+func fillStruct(v reflect.Value) {
+	for i := range v.NumField() {
+		if v.Type().Field(i).IsExported() {
+			fillValue(v.Field(i))
+		}
+	}
+}
+
+func fillSlice(v reflect.Value) {
+	if !v.CanSet() {
+		return
+	}
+	if v.IsNil() {
+		v.Set(reflect.MakeSlice(v.Type(), 0, 0))
+		return
+	}
+	for i := range v.Len() {
+		fillValue(v.Index(i))
 	}
 }
