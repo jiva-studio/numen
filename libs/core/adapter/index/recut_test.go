@@ -313,7 +313,7 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 // cost is what one save of a note costs the model, and how much of what the
 // index held survived it.
 type cost struct {
-	// asked is the number of vectors the save left to create, kept the chunks that
+	// requested is the number of vectors the save left to create, preserved the chunks that
 	// had a vector and still do, and was and now the number of chunks with a
 	// vector before and after the save.
 	requested, preserved, was, now int

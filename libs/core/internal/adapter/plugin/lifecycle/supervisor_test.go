@@ -393,7 +393,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 		t.Fatal("expected plugin not yet marked permanently failed after 1 failure")
 	}
 
-	// The second eviction reaches MaxFailures.
+	// The second eviction hits MaxFailures.
 	sup.evictForMemory(nil, 10*time.Millisecond, nil)
 	failed, cause := sup.GetActivationFailure()
 	if !failed {

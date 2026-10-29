@@ -38,9 +38,9 @@ func (h *noteHandler) ReadNote(
 	return connect.NewResponse(out), nil
 }
 
-// WriteNote writes prose into a note. If the note still holds the prose the
-// client read, it is overwritten; if it holds different content, it is left
-// unchanged and the client is told the note changed.
+// WriteNote writes prose into a note. If the note still contains the prose the
+// client read, it is overwritten; if it contains different content, it is left
+// unchanged and the client is notified that the note changed.
 func (h *noteHandler) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {

@@ -61,7 +61,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 // note is written two ways: [[notes/Entropy]] in the links block and [[Entropy]]
 // in prose are one link, and the described one wins.
 //
-// Deduplication happens here because only resolution knows that two different
+// Deduplication runs after resolution, which determines that two different
 // strings denote one note.
 func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	observed := map[string]int{}

@@ -206,7 +206,7 @@ type fakeProvider struct {
 	created int
 }
 
-// CreateText makes the text of the file, as a plugin does when the host asks.
+// CreateText makes the text of the file, as a plugin does on a host request.
 func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation) error {
 	return f.create(ctx, req.Path, "")
 }

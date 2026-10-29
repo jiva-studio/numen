@@ -10,10 +10,11 @@ import (
 // ErrInvalidTexts is a `texts` declaration that names a content type wrongly.
 var ErrInvalidTexts = errors.New("invalid texts")
 
-// PluginTextMaker is what a plugin declares of the text it makes: it puts text versions of vault
-// files. ContentTypes, where it names any, are the types of the files the host asks the plugin
-// for the text of when they have no live text version; the plugin then serves
-// numen.v1.TextProviderService. A plugin that makes its text when a command runs names none.
+// PluginTextMaker is what a plugin declares of the text it makes: it puts text
+// versions of vault files. ContentTypes, where it names any, are the types of
+// the files whose text the host requests from the plugin when they have no live
+// text version; the plugin then serves numen.v1.TextProviderService. A plugin
+// that makes its text when a command runs names none.
 type PluginTextMaker struct {
 	ContentTypes []domain.ContentType
 }

@@ -7,8 +7,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// Shut makes a file that nobody may open, and restores access when the test ends.
-// On Windows that is an entry on the file denying every right to everyone.
+// Shut makes a file that no user may open, and restores access when the test
+// ends. On Windows that is an entry on the file denying every right to
+// everyone.
 func Shut(tb testing.TB, path string) {
 	tb.Helper()
 

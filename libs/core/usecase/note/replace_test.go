@@ -97,7 +97,7 @@ func TestASpanActiveTwiceIsRefused(t *testing.T) {
 }
 
 // A span that is not found returns the position where the caller's copy stops
-// matching, which tells the caller its copy differs by a character.
+// matching, which shows the caller its copy differs by a character.
 func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})

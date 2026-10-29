@@ -25,14 +25,14 @@ import (
 // changed. A scan inspects the whole vault; Refresh inspects only the named
 // files.
 //
-// The paths come from a watcher, which reports every kind of source. A path
+// The paths come from a watcher, which reports every source type. A path
 // that is not a note is reported in the result and skipped.
 type Refresh struct {
 	readers vaultport.VaultReaders
 	// vaults is where the vault gets the row every note of it points at.
 	vaults vaultport.VaultRepository
 	notes  noteport.NoteRepository
-	// queries returns which kind of source the index holds at a path, and sources
+	// queries returns which source type the index holds at a path, and sources
 	// deletes those rows.
 	queries sourceport.SourceQueries
 	sources sourceport.SourceRepository
@@ -138,7 +138,7 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 }
 
 // NewRefresh creates a Refresh from the vault readers, the vault repository,
-// the note repository, the source queries and repository used to sweep the rows
+// the note repository, the source queries, the source repository that deletes the rows
 // of other files, and the clock that identifies recently modified notes.
 func NewRefresh(
 	readers vaultport.VaultReaders,
@@ -324,8 +324,8 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 	}
 }
 
-// dropSources deletes the rows of every source at a path the vault no longer
-// holds. A note is deleted through the note repository; other files are grouped
+// dropSources deletes the rows of every source at a path the vault does not
+// hold. A note is deleted through the note repository; other files are grouped
 // by kind and deleted through their own repository, with their chunks and
 // vectors.
 func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string) error {

@@ -319,7 +319,7 @@ func TestRename_RejectsExistingTarget(t *testing.T) {
 	}
 }
 
-// sulking is an index that fails when told a file moved.
+// sulking is an index that fails when notified of a file move.
 type sulking struct {
 	sourceport.SourceRepository
 	moveError error

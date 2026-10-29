@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// FolderCheck reports whether a vault's folder is no longer where the list
+// FolderCheck reports whether a vault's folder is not where the list
 // records it.
 //
 // The list records where a vault was last seen and the vault carries the

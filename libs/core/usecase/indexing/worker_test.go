@@ -90,8 +90,7 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-// cut reads the vault's notes so that their chunks are in the index with
-// vectors pending.
+// cut reads the vault's notes into the index as chunks with pending vectors.
 func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v domain.Vault) {
 	t.Helper()
 

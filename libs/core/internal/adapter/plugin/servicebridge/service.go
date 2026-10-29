@@ -107,8 +107,8 @@ func copyHeaders(to, from http.Header) {
 	}
 }
 
-// streamBody copies the body as it arrives, flushing after each read so that a stream reaches the
-// window message by message.
+// streamBody copies the body as it arrives and flushes after each read, so a
+// stream is delivered to the window message by message.
 func streamBody(w http.ResponseWriter, body io.Reader) {
 	flusher := http.NewResponseController(w)
 	buf := make([]byte, 32*1024)

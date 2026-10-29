@@ -24,7 +24,7 @@ func (c changing) newWrite() note.Write {
 	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 }
 
-// openNote is a tab that has just read a note: the prose it received and the
+// openNote is a tab that has read a note: the prose it received and the
 // file it came from.
 func (c changing) openNote(t *testing.T, path string) *note.Baseline {
 	t.Helper()
@@ -112,8 +112,8 @@ func TestASaveRemakesANoteDeletedBelowIt(t *testing.T) {
 	}
 }
 
-// The prose the tab read is absent from the file, so the save stops and asks
-// the user. Nothing is written.
+// The prose the tab read is absent from the file, so the save stops and requests
+// a decision from the user. Nothing is saved.
 func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})

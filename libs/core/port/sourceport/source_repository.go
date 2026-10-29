@@ -21,9 +21,9 @@ type SourceRepository interface {
 	SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error
 
 	// RemoveSources deletes the sources of one kind at the given paths, and
-	// everything derived from them. A source the vault no longer holds cannot
-	// be read, so a passage naming it can never be displayed; keeping it in the
-	// index leaves a row that matches a search but cannot be opened.
+	// everything derived from them. A source the vault does not hold cannot be
+	// read, so a passage naming it can never be displayed; a row left in the
+	// index would match a search but could not be opened.
 	RemoveSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error
 
 	// MoveSources moves what the vault holds at one path to another path, with

@@ -89,7 +89,7 @@ func IsNote(path string) bool {
 }
 
 // ReadNoteType returns the type declared in the frontmatter of the note at the
-// path, read from the current file, so a note just written has its type before
+// path, read from the current file, so a newly written note has its type before
 // the index holds it. A file that is not a note has no type and is not read.
 func ReadNoteType(ctx context.Context, readers VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
 	if !IsNote(path) {

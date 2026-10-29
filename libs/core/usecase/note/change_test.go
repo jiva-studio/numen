@@ -305,8 +305,8 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 	}
 }
 
-// A link that reaches a different note of the same name is not broken, so it
-// is left unchanged: which of two notes with one name it means is the user's.
+// A link that resolves to a different note of the same name is not broken, so it
+// is left unchanged: which of two notes with one name it means is the user's choice.
 func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
@@ -333,7 +333,7 @@ func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 
 // The note lands under a name another note already uses, and a name is
 // resolved as an exact path from the root first. The repair writes the path,
-// which reaches the moved note.
+// which resolves to the moved note.
 func TestRepairingALinkWritesThePathWhereTheNameIsShared(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{

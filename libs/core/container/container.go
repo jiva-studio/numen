@@ -1,4 +1,4 @@
-// Package container is the composition root: the only place that knows which
+// Package container is the composition root: the only place that selects which
 // concrete adapter satisfies which port.
 //
 // Use cases above it work with the interfaces in core/port. To replace the index or

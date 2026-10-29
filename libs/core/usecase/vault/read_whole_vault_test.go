@@ -201,7 +201,7 @@ func (unwilling) Embed(context.Context, []string) ([][]float32, error) {
 
 func (unwilling) Close() error { return nil }
 
-// limited is a run under a time limit that reaches it where the test
+// limited is a run under a time limit that expires where the test
 // specifies. It ends with the deadline error, which differs from the error of a
 // cancelled run.
 type limited struct {

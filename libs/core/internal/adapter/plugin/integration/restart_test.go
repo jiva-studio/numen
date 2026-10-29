@@ -26,8 +26,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// restartedPlugin answers every service a bridge reaches, and counts the calls
-// it was asked.
+// restartedPlugin responds to every service a bridge calls, and counts the
+// calls it receives.
 type restartedPlugin struct {
 	numenv1connect.UnimplementedEmbeddingServiceHandler
 	requested atomic.Int32
@@ -133,8 +133,8 @@ func writeRestartedPlugin(t *testing.T) string {
 	return dir
 }
 
-// A bridge opened before its plugin stopped reaches the plugin at the port it
-// was started again on, at the next call.
+// A bridge opened before its plugin stopped connects, at the next call, to the
+// plugin at the port it was started on again.
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {

@@ -54,7 +54,7 @@ type RemoveResult struct {
 	Trashed string
 	// Dangling is the notes whose links pointed at what was removed and now resolve
 	// to nothing. They are reported and not repaired: the link is not wrong, its
-	// target is gone, and only the user knows the intent.
+	// target is gone, and only the user can decide the intent.
 	Dangling []string
 }
 

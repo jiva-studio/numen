@@ -93,7 +93,8 @@ var (
 const SettingStoredSecrets = "storedSecrets"
 
 // SettingAIConsent is the setting under which the host records AI consent;
-// absent means not asked yet. The window writes it, and no manifest takes the name.
+// absent means the user has not been prompted yet. The window writes it, and no
+// manifest uses the name.
 const SettingAIConsent = "aiConsent"
 
 // SettingTypeAgent is the type of the setting that holds the agent and the model
@@ -194,9 +195,10 @@ type PluginManifest struct {
 	Backend          PluginBackend
 	Frontend         PluginFrontend
 	Settings         []PluginManifestSetting
-	// Secrets are the names of the secrets, such as an API key, the plugin asks the
-	// host to store. The host passes them as Configure values, empty while a
-	// secret has no key, and never puts one in the environment or on the command line.
+	// Secrets are the names of the secrets, such as an API key, that the plugin
+	// requests the host to store. The host passes them as Configure values,
+	// empty while a secret has no key, and never puts one in the environment or
+	// on the command line.
 	Secrets []PluginSecret
 	// Services are the services the plugin serves to the windows, by their full names. A window that
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
@@ -228,8 +230,8 @@ type PluginManifest struct {
 type PluginNoteType struct {
 	// Type is the word the `type` key of a note's frontmatter holds.
 	Type string
-	// Chunks says whether the prose of the note is split into chunks and searched by meaning. When omitted,
-	// it is.
+	// Chunks states whether the prose of the note is split into chunks and
+	// searched by meaning. When omitted, it is.
 	Chunks *bool
 	// Headings are the levels of heading the index keeps. Left out, every heading is kept; an empty
 	// list keeps none.

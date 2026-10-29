@@ -25,7 +25,7 @@ type Vector struct {
 // committing and checkpointing the WAL, to keep its footprint bounded.
 var VectorBatchSize = 1000
 
-// A vector for a chunk that the index no longer holds is not written, and the
+// A vector for a chunk that is not in the index is not written, and the
 // rest of the group is written.
 func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	if len(vectors) == 0 {
@@ -78,7 +78,7 @@ func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
 }
 
 // deleteOrphanVectors is called when a source was cut again, which means its
-// text was replaced. A source the vault no longer offers deletes nothing: a
+// text was replaced. A source absent from the vault's listing deletes nothing: a
 // folder that could not be read looks the same from here as one whose files
 // were deleted, and a vector is expensive to recompute.
 func deleteOrphanVectors(ctx context.Context, tx *sqlwrite.Transaction, texts []string) error {

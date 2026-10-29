@@ -322,7 +322,7 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 // read fills in the text of each passage from the vault. A chunk is a position
 // in a file; the file holds the text.
 //
-// A passage whose file is no longer in the vault is dropped: the file is
+// A passage whose file is missing from the vault is dropped: the file is
 // authoritative and the index follows it.
 //
 // Passages are grouped by source before reading, because a ranking scatters the

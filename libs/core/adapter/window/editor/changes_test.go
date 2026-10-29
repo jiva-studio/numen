@@ -36,7 +36,7 @@ import (
 // openVault is a vault with the full window stack (index, first scan, watcher)
 // and a client connected to it as the window connects.
 //
-// It tests the wire: that a change reaches a client over the stream in the
+// It tests the wire: that a change arrives at a client over the stream in the
 // shape the schema describes. The meaning of a change is tested at the use
 // case, where no server is needed.
 func openVault(t *testing.T, notes map[string]string) (questions, string) {
@@ -117,7 +117,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 }
 
 // TestAnEditReachesAListener covers the whole path: a file on disk, the
-// watcher, the index, and the stream a window listens to.
+// watcher, the index, and the stream a window subscribes to.
 func TestAnEditReachesAListener(t *testing.T) {
 	client, root := openVault(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n",
@@ -642,7 +642,7 @@ func hasBody(file, body string) bool {
 	return len(file) >= len(body) && file[len(file)-len(body):] == body
 }
 
-// speaking is a page that listens for the quit as the window's page does,
+// speaking is a page that handles the quit event as the window's page does,
 // answering each request with the result a test configured.
 type speaking struct {
 	f        *going

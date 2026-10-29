@@ -84,7 +84,7 @@ type OpenVault struct {
 // GetUnwatchedReason is why the vault is not being followed, and nothing while it is.
 func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
-// Read walks the vault into the index and returns the number of notes it holds.
+// Read traverses the vault into the index and returns the number of notes it holds.
 func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
 	o.opening.Buffered.StartRecording()
 

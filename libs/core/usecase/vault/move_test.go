@@ -100,7 +100,7 @@ func (f filing) read(t *testing.T, path string) string {
 	return string(raw)
 }
 
-// A folder moves with everything under it, whatever kind of file. The notes are
+// A folder moves with everything under it, whatever the file type. The notes are
 // filed at their new paths, and links written by name follow them.
 func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 	t.Parallel()

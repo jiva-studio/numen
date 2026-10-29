@@ -47,7 +47,7 @@ func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTa
 
 // A client receives each list when the following write arrives, so a list with
 // no write after it is never delivered. The stream repeats an unchanged
-// snapshot; otherwise finished work would stay displayed as running.
+// snapshot, which clears finished work from the running display.
 func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 	tasks := run.NewTasks()
 	stream := openTaskStream(t, tasks)

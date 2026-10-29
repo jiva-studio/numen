@@ -301,7 +301,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 	}
 }
 
-// The endpoint listens on the loopback interface and answers for a token.
+// The endpoint binds the loopback interface and responds for a token.
 func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "ok", nil }))
 	endpoint, err := Open(t.Context(), Address, fakeCallers)

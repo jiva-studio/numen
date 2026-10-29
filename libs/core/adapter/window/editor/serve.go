@@ -59,7 +59,7 @@ type Installation struct {
 	made  Assembly
 	tasks *run.Tasks
 	out   io.Writer
-	// checkIdentity rejects a vault whose folder no longer carries its identity.
+	// checkIdentity rejects a vault whose folder does not carry its identity.
 	checkIdentity vaults.CheckIdentity
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.

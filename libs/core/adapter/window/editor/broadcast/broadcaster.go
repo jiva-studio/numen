@@ -3,7 +3,7 @@ package broadcast
 
 import "sync"
 
-// Broadcaster delivers one kind of message to its subscribers.
+// Broadcaster delivers messages of one type to its subscribers.
 //
 // A subscriber that does not keep up is not waited for, so one slow subscriber
 // does not block the vault. A lagging subscriber receives the message produced
@@ -88,7 +88,7 @@ func (a *Broadcaster[T]) Publish(what T) {
 }
 
 // queue appends a message to the pending messages of a subscriber and reports
-// whether there was room for it.
+// whether the pending messages had capacity for it.
 func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 

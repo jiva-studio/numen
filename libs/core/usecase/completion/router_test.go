@@ -18,7 +18,7 @@ import (
 // defaultProgram is the program the programs name for an empty name.
 const defaultProgram = "installed-default"
 
-// programs resolves a program by name and records the tasks it is asked to run.
+// programs resolves a program by name and records the tasks it is given to run.
 type programs struct {
 	mu        sync.Mutex
 	requested []string

@@ -43,8 +43,8 @@ func (m PluginManifest) listPlaybackIssues() []error {
 	return append(issues, m.listUndeclaredNoteTypes(ErrInvalidPlayback, in.NoteTypes)...)
 }
 
-// listUndeclaredNoteTypes lists, under the kind of the declaration, each note type that is not a type the
-// plugin declares.
+// listUndeclaredNoteTypes lists, grouped by declaration kind, each note type
+// that is not a type the plugin declares.
 func (m PluginManifest) listUndeclaredNoteTypes(kind error, noteTypes []string) []error {
 	var issues []error
 	for _, noteType := range noteTypes {

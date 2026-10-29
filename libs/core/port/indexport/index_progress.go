@@ -14,11 +14,11 @@ import (
 // chunked has no chunks and none to embed.
 type IndexProgress interface {
 	// GetProgress returns how many of the vault's chunks can have a vector, and
-	// how many of those have one for the named model. The population is the same
-	// one the query for chunks that need a vector draws from, so the two agree
-	// and the embedded count reaches the total.
+	// how many of those have one for the named model. The population is the
+	// same one the query for chunks that need a vector draws from, so the two
+	// agree and the embedded count equals the total once every chunk has a
+	// vector.
 	//
-	// A chunk with no vector is searchable by its words and not by its meaning,
-	// and a vault spends most of its life that way.
+	// A chunk with no vector is searchable by its words and not by its meaning.
 	GetProgress(ctx context.Context, vaultID domain.VaultID, model string) (held, embedded int64, err error)
 }

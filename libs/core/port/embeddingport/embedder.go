@@ -45,16 +45,16 @@ func (m EmbeddingModel) String() string {
 // value.
 //
 // A vector retained beyond the row that pointed at it is looked up by the text
-// it was made from and the recipe it was made under. Anything left out of the
-// recipe can change while the key does not, and a vector found under a key that
-// no longer describes it is worse than no stored vector.
+// it was made from and the recipe it was made under. A property missing from
+// the recipe can change while the key does not, and a vector found under a key
+// that does not describe it is worse than no stored vector.
 //
 // The provider of the vector comes first. Two places serving one name are two
 // sets of rows, and a query uses the recipe the index was filled with.
 //
-// How the numbers are stored is the quantisation and the scale it was applied
-// at. The scale is the grid the bytes sit on, so a scale moved makes every byte
-// already stored mean something else, and the recipe is what notices.
+// How the numbers are stored is the quantisation and the scale applied to it.
+// The scale defines the grid of byte values, so a changed scale gives every
+// stored byte a different meaning, and the recipe detects the change.
 func (m EmbeddingModel) Recipe() string {
 	return fmt.Sprintf("%s|%s|%d|%d|%s|%s@%g",
 		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8, Int8Scale)

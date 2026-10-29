@@ -209,7 +209,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	}
 }
 
-// TestARefreshedBookThatWentIsStillMissing checks that a second kind of source
+// TestARefreshedBookThatWentIsStillMissing checks that a second source type
 // does not change what a missing path means.
 func TestARefreshedBookThatWentIsStillMissing(t *testing.T) {
 	t.Parallel()

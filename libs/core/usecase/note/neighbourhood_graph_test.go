@@ -53,15 +53,15 @@ func writtenIn(from string, role domain.LinkRole) domain.ResolvedLink {
 	return domain.ResolvedLink{Link: domain.Link{Role: role}, From: from}
 }
 
-// asked is a note lookup that returns every path except those marked unknown,
+// pathLookup is a note lookup that returns every path except those marked unknown,
 // and records the paths requested.
-type asked struct {
+type pathLookup struct {
 	err     error
 	unknown string
 	paths   []string
 }
 
-func (a *asked) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
+func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	if a.err != nil {
 		return nil, a.err
 	}
@@ -75,7 +75,7 @@ func (a *asked) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (m
 	return out, nil
 }
 
-func showGraph(g graph, refs *asked, focus string) (domain.Neighbourhood, error) {
+func showGraph(g graph, refs *pathLookup, focus string) (domain.Neighbourhood, error) {
 	return note.NewShowNeighbourhood(g, refs).Execute(
 		context.Background(), domain.Vault{ID: graphVault}, focus)
 }
@@ -102,7 +102,7 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 			"P.md": {writtenIn("F.md", domain.RoleParent)},
 		},
 	}
-	refs := &asked{}
+	refs := &pathLookup{}
 
 	got, err := showGraph(g, refs, "F.md")
 	if err != nil {
@@ -124,23 +124,23 @@ func TestANeighbourhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
 	parentOfF := map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("P.md", domain.RoleParent, "")}}
 	for name, c := range map[string]struct {
 		g    graph
-		refs *asked
+		refs *pathLookup
 	}{
 		"the links of the note": {
 			g:    graph{failOut: "F.md", err: boom},
-			refs: &asked{},
+			refs: &pathLookup{},
 		},
 		"the links pointing at the note": {
 			g:    graph{failIn: "F.md", err: boom},
-			refs: &asked{},
+			refs: &pathLookup{},
 		},
 		"the links of a parent": {
 			g:    graph{out: parentOfF, failOut: "P.md", err: boom},
-			refs: &asked{},
+			refs: &pathLookup{},
 		},
 		"the notes themselves": {
 			g:    graph{out: parentOfF},
-			refs: &asked{err: boom},
+			refs: &pathLookup{err: boom},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -157,7 +157,7 @@ func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 	t.Parallel()
 	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("C.md", domain.RoleChild, "")}}}
 
-	got, err := showGraph(g, &asked{unknown: "F.md"}, "F.md")
+	got, err := showGraph(g, &pathLookup{unknown: "F.md"}, "F.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestShowGraph_RelatesOnlyHierarchyRolesFromIncoming(t *testing.T) {
 		},
 	}
 
-	got, err := showGraph(g, &asked{}, "F.md")
+	got, err := showGraph(g, &pathLookup{}, "F.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestTheFirstOfTwoEqualLinksIsTheOneGenerated(t *testing.T) {
 		createOutgoingLink("C.md", domain.RoleChild, "second"),
 	}}}
 
-	got, err := showGraph(g, &asked{}, "F.md")
+	got, err := showGraph(g, &pathLookup{}, "F.md")
 	if err != nil {
 		t.Fatal(err)
 	}

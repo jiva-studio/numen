@@ -25,10 +25,10 @@ func (d *DB) DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64
 	return res.RowsAffected()
 }
 
-// Compact returns pages that are no longer used to the filesystem.
+// Compact returns unused pages to the filesystem.
 //
-// SQLite reuses a freed page for later rows, so a file that held twice the
-// vectors keeps its size until it is rewritten. VACUUM rewrites the whole file,
+// SQLite reuses a freed page for later rows, so a file that contained twice the
+// vectors retains its size until it is rewritten. VACUUM rewrites the whole file,
 // so it runs only on an explicit full rebuild of the index.
 func (d *DB) Compact(ctx context.Context) error {
 	if _, err := sqlwrite.Exec(ctx, d.write, `VACUUM`); err != nil {

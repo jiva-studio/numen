@@ -102,7 +102,7 @@ func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (str
 	return f.pick, f.isChosen, f.fails
 }
 
-// getRequested returns what the dialog was asked to display and where to open.
+// getRequested returns what the dialog was requested to display and where to open.
 func (f *folders) getRequested() (string, string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -179,14 +179,14 @@ func onAList(t *testing.T) *onTheList {
 	return f
 }
 
-// opening is what the window returns when asked to show a vault.
+// opening is what the window returns when requested to show a vault.
 func (f *onTheList) opening(why error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.failure = why
 }
 
-// getShown returns every vault the window was asked to show.
+// getShown returns every vault the window was requested to show.
 func (f *onTheList) getShown() []domain.Vault {
 	f.mu.Lock()
 	defer f.mu.Unlock()

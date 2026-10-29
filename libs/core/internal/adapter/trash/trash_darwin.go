@@ -38,8 +38,8 @@ var foundation = sync.OnceValue(func() error {
 	return err
 })
 
-// moveToTrash moves the folder to the trash shown by the Finder, recording its
-// origin so that Put Back works.
+// moveToTrash moves the folder to the Finder trash and records its origin for
+// Put Back.
 func moveToTrash(path string) error {
 	if err := foundation(); err != nil {
 		return err

@@ -97,7 +97,7 @@ func (c Config) setCompleter() {
 
 // GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at
 // every task. A task naming no program goes to the one agent.use names, else to the default of the
-// plugins. Each run reaches the tools of the plugins on an endpoint of its own. It is nil where
+// plugins. Each run connects to the tools of the plugins on an endpoint of its own. It is nil where
 // AgentProvider is nil.
 func (c Config) GetSettingsAgent() agentport.Agent {
 	provider := c.AgentProvider()

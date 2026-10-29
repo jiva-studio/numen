@@ -6,9 +6,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Every method takes the kinds of source a question is about. The list has no
-// wildcard value: a question that does not restrict the kind of file passes
-// every kind.
+// Every method takes the source kinds a question is about. The list has no
+// wildcard value: a question that does not restrict the file kind passes every
+// kind.
 //
 // PassageQueries is the two indexes a search runs over. Both are built on the
 // chunk, so a hit from either half has the same row type and the two result

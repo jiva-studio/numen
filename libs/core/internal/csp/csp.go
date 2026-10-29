@@ -37,8 +37,8 @@ type Sources struct {
 	// of the world and not the scheme a window is drawn from.
 	Media []string
 	// Frames fills frame-src, the origins that pages pointed to by a link note
-	// are loaded from. Every host here runs its own scripts inside its own frame
-	// and reaches its own machines, and the window names them.
+	// are loaded from. Every host here runs its own scripts inside its own
+	// frame and has access to its own machines, and the window names them.
 	Frames []string
 	// Connect fills connect-src, which is where fetch, WebSocket, and
 	// EventSource may connect besides what the window serves itself.

@@ -57,7 +57,7 @@ func bindNotes(services *Services, db *container.Index) {
 	services.Search.GetTypes = services.Note.getTypes
 }
 
-// hand is a vault watcher driven by the test, so reading a vault needs no filesystem or timer.
+// Vault watcher driven manually by the test, so reading a vault needs no filesystem or timer.
 type hand struct {
 	changes  chan []string
 	lostChan chan struct{}
@@ -301,7 +301,7 @@ func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) str
 	return found[path].Title
 }
 
-// TestAChangeArrivesWhileTheVaultIsStillBeingRead. A change reaches the window
+// TestAChangeArrivesWhileTheVaultIsStillBeingRead. A change arrives at the window
 // only through the watch, and the vault is read for the first time while the
 // user is already editing.
 func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
@@ -725,7 +725,7 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	})
 }
 
-// newThemeClient returns a theme client that reaches the window through the same
+// newThemeClient returns a theme client that connects to the window through the same
 // handler that serves its other requests.
 func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
 	t.Helper()

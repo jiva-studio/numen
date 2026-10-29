@@ -42,7 +42,7 @@ var vault = domain.Vault{ID: "v1", Name: "v1"}
 
 var types = fileTypes{".pdf": "application/pdf", ".epub": "application/epub+zip", ".mp3": "audio/mpeg", ".wav": "audio/vnd.wave"}
 
-// declaredCommands lists the commands it is given and records every call it is asked to run.
+// declaredCommands lists the commands it is given and records every call it is given to run.
 type declaredCommands struct {
 	entries []plugincommand.Entry
 	calls   []plugincommand.Call

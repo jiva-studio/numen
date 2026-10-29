@@ -1,7 +1,7 @@
 // Package editor serves the vault queries and commands of the editor window.
 //
 // The request and response types are defined in libs/protocol. The client
-// reaches the handlers over HTTP in both the desktop window and a browser
+// connects to the handlers over HTTP in both the desktop window and a browser
 // during development.
 package editor
 
@@ -277,7 +277,7 @@ func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
 	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves}
 }
 
-// GetWindow returns the window handle used to request place focus.
+// GetWindow returns the window handle for requesting place focus.
 func (s *State) GetWindow() windowport.Window { return view{s} }
 
 // view forwards window requests to the subscribed clients. A place requested

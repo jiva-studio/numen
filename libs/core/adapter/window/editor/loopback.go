@@ -46,14 +46,14 @@ type Loopback struct {
 	// window's requests from others. It is generated for each run.
 	token string
 	// stopped is set when the socket stops serving for any reason other than the
-	// window closing. An address on a socket that no longer serves is a recording
+	// window closing. An address on a socket that has stopped serving is a recording
 	// that cannot play, with no reported cause.
 	stopped atomic.Bool
 	// plugins forwards the plugin route, once the window has its plugins.
 	plugins atomic.Pointer[PluginServices]
 }
 
-// Listen opens the socket. When the machine refuses a listener, content that
+// Listen opens the socket. When the machine rejects a listener, content that
 // cannot use the window's own scheme is unavailable.
 //
 // stopped is called when the socket stops serving while the window is open.

@@ -12,7 +12,7 @@ import (
 )
 
 // GetFileKinds returns the files in the requested order, with the type of each note. The type is the
-// index's, and a note the index does not hold yet, such as one a plugin has just written, is read
+// index's, and a note the index does not hold yet, such as one a plugin created in this session, is read
 // directly. A path with nothing at it is omitted, and each entry carries its path and kind.
 type GetFileKinds struct {
 	readers vaultport.VaultReaders

@@ -111,7 +111,7 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 	}
 }
 
-// A link is written as a path the way a user writes it by hand: the extension is
+// A link is written as a path the way a user types it: the extension is
 // removed from the file, and a leading dot is part of a name, not the start of an
 // extension.
 func TestAPathIsSavedWithoutItsExtension(t *testing.T) {

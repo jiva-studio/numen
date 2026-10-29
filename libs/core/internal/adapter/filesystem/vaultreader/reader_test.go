@@ -69,7 +69,7 @@ func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	}
 }
 
-// walkKinds returns what a walk found, as the kind of source for each path.
+// walkKinds returns the source kind for each path a walk found.
 func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]domain.SourceKind {
 	t.Helper()
 	src, err := vaultreader.Open(root, opts)
@@ -86,8 +86,8 @@ func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]d
 	return got
 }
 
-// TestWalkReturnsWhichKindEachSourceIs checks that a walk reports the kind of each source, so
-// a file that is not a note is never passed to the markdown parser.
+// TestWalkReturnsWhichKindEachSourceIs checks that a walk reports each source's
+// kind, so a file that is not a note is never passed to the markdown parser.
 func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
@@ -256,8 +256,8 @@ func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
 	}
 }
 
-// A listing reports the kind of each file: a note or a file. A folder has no
-// kind and is listed by a listing of its own.
+// A listing reports each file's kind: a note or a file. A folder has no kind
+// and is listed by a listing of its own.
 func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"library/Notes.md":      "# Notes\n",

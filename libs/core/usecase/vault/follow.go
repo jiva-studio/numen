@@ -95,7 +95,7 @@ func (f *Watch) Run(ctx context.Context) {
 
 		case <-f.lostChan:
 			// More changed at once than could be tracked, or the watcher lost track of the
-			// changes. The vault is scanned again and listeners are told to reload.
+			// changes. The vault is scanned again and listeners receive a reload notification.
 			if _, err := f.follow.scan.Execute(ctx, f.vault); err != nil {
 				f.handleError(err)
 				continue

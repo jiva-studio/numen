@@ -115,9 +115,9 @@ type Links struct {
 
 // Problems is what a scan could not act on, as reported by the index.
 //
-// The checks themselves are not opened here. The set of questions asked of a
-// vault is part of the core's vocabulary and not of an installation, so the
-// terminal uses the standard set and this opens what answers them.
+// The checks are not opened here. The set of checks applied to a vault is part of
+// the core's vocabulary and not of an installation, so the terminal uses the
+// standard set and this opens what evaluates them.
 type Problems struct {
 	Problems problemport.ProblemQueries
 	Close    func() error

@@ -13,10 +13,9 @@ import (
 // one. The tests themselves are in the packages that hold the mappings, because
 // a mapping is unexported and belongs to its own package.
 //
-// This list is the one thing here that is written by hand, and it is a list of
-// enums and not of values: an enum added to the schema and forgotten fails
-// below, and a value added to an enum already here fails in the test named
-// beside it.
+// This list is maintained manually, and it is a list of enums and not of
+// values: an enum added to the schema and missing here fails below, and a
+// value added to an enum already listed fails in the test named for that enum.
 var walked = map[protoreflect.FullName]string{
 	"numen.v1.CommandErrorCode":     "internal/adapter/plugin/commandbridge: read by RunCommand",
 	"numen.v1.CompletionConsent":    "adapter/window/editor: written by the consents table",

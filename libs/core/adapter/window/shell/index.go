@@ -166,7 +166,7 @@ func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
 }
 
 // EnsureIndexed brings a vault into the index when it is missing and reports its state, which
-// is what a plugin counting the vault is told. A window that reads no vault reports that the
+// is the state a plugin counting the vault receives. A window that reads no vault reports that the
 // index does not carry the vaults it does not read.
 func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error) {
 	underway, reason := a.startIndexing(ctx, v)

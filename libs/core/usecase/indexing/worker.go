@@ -63,8 +63,8 @@ type Calibrate func(ctx context.Context, v domain.Vault) error
 type Config struct {
 	Reading  OpenReading
 	Embedder embeddingport.Embedder
-	// Owed is nil when the number of owed vectors is unknown; every pass then
-	// assumes some vectors are owed.
+	// Owed is nil when the number of pending vectors is unknown; every pass then
+	// assumes some vectors are pending.
 	Owed GetOwed
 	// Calibrate is nil where no floor is calibrated.
 	Calibrate Calibrate
@@ -178,7 +178,7 @@ type pass struct {
 	worker  *Worker
 	session *Session
 	v       domain.Vault
-	// owes reports whether the next pass over the file texts indexes every file again.
+	// owes is true when the next pass over the file texts indexes every file again.
 	owes bool
 }
 
@@ -400,8 +400,8 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 	}
 }
 
-// makeVectors creates the vectors a vault owes, reporting the source being
-// embedded. It reports whether the pass ended with nothing left owed.
+// makeVectors creates the pending vectors of a vault, reporting the source being
+// embedded. It reports whether the pass ended with no vector pending.
 func (p *pass) makeVectors(ctx, items context.Context, owing int64) bool {
 	events := p.worker.events
 	failed := func(err error) {
@@ -415,7 +415,7 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) bool {
 	}
 	// Progress is reported for the source currently open. The task enters the
 	// list when the first source opens, and a progress share is reported once a
-	// vector has been created, counted against the total owed.
+	// vector has been created, counted against the total pending.
 	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
 		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {

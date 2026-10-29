@@ -83,8 +83,8 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 	}
 }
 
-// The mode selects this product's own palette, so that palette declares nothing
-// about `color-scheme`.
+// The mode selects this product's own palette, which declares nothing about
+// `color-scheme`.
 func TestThisProductsOwnPalettePreservesTheModeSomethingToChoose(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	text, err := catalogue.Text(theme.Default)

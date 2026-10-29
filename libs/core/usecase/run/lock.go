@@ -26,7 +26,7 @@ type Lock struct {
 }
 
 // Acquire waits for the lock and returns a function that releases it. waiting is
-// called when the lock is not free, so the user is told why nothing is moving. A
+// called when the lock is not free, to report to the user why nothing is progressing. A
 // context that ends while waiting acquires nothing.
 func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (func(), error) {
 	pos := priorityUnasked

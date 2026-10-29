@@ -54,7 +54,8 @@ type PluginSettingCondition struct {
 	Is      []string
 }
 
-// PluginSecret is one secret, such as an API key, that a plugin asks the host to store.
+// PluginSecret is one secret, such as an API key, that a plugin requests the
+// host to store.
 type PluginSecret struct {
 	// Name is what the plugin reads the key under.
 	Name        string

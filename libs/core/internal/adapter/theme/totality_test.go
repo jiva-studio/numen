@@ -9,7 +9,7 @@ import (
 )
 
 // TestEveryOriginIsWrittenFromOne. An origin that the schema defines and that
-// has no mapping reaches a window as the unspecified value, and the window
+// has no mapping arrives at a window as the unspecified value, and the window
 // draws the theme under neither heading.
 func TestEveryOriginIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Origin]Origin{

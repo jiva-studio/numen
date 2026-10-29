@@ -84,7 +84,7 @@ type FileStatQueries interface {
 	GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error)
 }
 
-// Execute walks the vault once.
+// Execute traverses the vault once.
 //
 // Only files whose size or modification time differ from what the index holds
 // are read and parsed; the rest are not opened at all. That is what keeps a scan

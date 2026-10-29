@@ -16,7 +16,7 @@ type ImportedFile struct {
 	// IsFolder is whether everything under it is imported with it, and File
 	// whether bytes can be read from it. A device, a socket or a link is
 	// neither, and stays where it is. A listing names what it holds and reports
-	// neither; the kind of each comes from GetImportedFile.
+	// neither; GetImportedFile supplies both for each file.
 	IsFolder bool
 	IsFile   bool
 }
@@ -36,7 +36,7 @@ type ImportedFiles interface {
 	List(ctx context.Context, handle string) ([]ImportedFile, error)
 	// Open reads one file. The caller that opens it closes it.
 	Open(ctx context.Context, handle string) (io.ReadCloser, error)
-	// HasHandle reports whether a folder supplied for import is one a vault sits under.
-	// Such a folder would be copied into itself, and it does not come in.
+	// HasHandle reports whether a folder supplied for import contains a vault.
+	// Such a folder would be copied into itself, and it is not imported.
 	HasHandle(handle, vault string) bool
 }

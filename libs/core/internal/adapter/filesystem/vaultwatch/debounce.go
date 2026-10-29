@@ -179,9 +179,9 @@ type walkResult struct {
 	isWholeVault bool
 }
 
-// walkFolders walks the folders passed to it, one after another, and returns
-// what each holds. It runs alongside the debounce, so a folder that arrives with
-// a thousand files in it is walked while the backlog continues to drain.
+// walkFolders traverses the given folders in order and returns what each holds.
+// It runs concurrently with the debounce, so a folder that arrives with a
+// thousand files is traversed while the backlog continues to drain.
 func walkFolders(
 	ctx context.Context,
 	shape *vaultreader.Folders,

@@ -38,8 +38,8 @@ type DerivedStore struct {
 	// identity already read.
 	last atomic.Pointer[fileInfo]
 	// where is the store's own folder with every link on its path resolved.
-	// Names are checked against it. It is located again when the store's
-	// folder no longer exists.
+	// Names are checked against it. It is resolved again when the store's
+	// folder is missing.
 	where atomic.Pointer[places]
 }
 
@@ -81,7 +81,8 @@ func (d *DerivedStore) locate() (*places, error) {
 	return found, nil
 }
 
-// fileInfo is the recorded state of a file, used to detect whether the file changed.
+// fileInfo is the recorded state of a file, compared to detect changes to the
+// file.
 type fileInfo struct{ stat os.FileInfo }
 
 // isSameFile reports whether a file is the one a fileInfo was taken of.
@@ -90,8 +91,8 @@ func (s *fileInfo) isSameFile(now os.FileInfo) bool {
 		s.stat.Size() == now.Size() && s.stat.ModTime().Equal(now.ModTime())
 }
 
-// ErrNotThisVault is returned for a name when the vault folder no longer has
-// the identity the store was opened with.
+// ErrNotThisVault is returned for a name when the vault folder has a different
+// identity from the one the store was opened with.
 var ErrNotThisVault = errors.New("the folder is not the vault this store was opened on")
 
 // OpenDerived opens one vault's store, and holds on to the identity that vault
@@ -433,8 +434,8 @@ func (d *DerivedStore) checkVaultIdentity() error {
 		}
 	}
 	d.last.Store(was)
-	// The identity file differs from the one previously read, so the folder
-	// locations are resolved again.
+	// The identity file differs from the last one read, so the folder locations
+	// are resolved again.
 	if found, err := d.locate(); err == nil {
 		d.where.Store(found)
 	}
@@ -537,13 +538,13 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	return target, nil
 }
 
-// isEnclosedBy reports whether the resolved path lies inside the store's
-// area. A link stays inside the area it was created in, so any name that
-// resolves outside the area is rejected.
+// isEnclosedBy reports whether the resolved path is inside the store's area. A
+// name that resolves outside the area is rejected, including a name that goes
+// through a link whose target is outside.
 //
 // The check uses the most recently resolved folder, and a positive result is
-// reused only while the store's folder is still that one. A rejected name or a
-// moved folder is checked against a fresh resolution.
+// cached for as long as the store's folder is that folder. A rejected name or a
+// moved folder is checked against a new resolution.
 func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.isCurrent(where) {
 		return true, nil

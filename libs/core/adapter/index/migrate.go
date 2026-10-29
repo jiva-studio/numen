@@ -22,7 +22,7 @@ import (
 var files embed.FS
 
 // dropping is the order in which objects are dropped from the index. Virtual
-// tables come first because they own shadow tables that are listed in the
+// tables come first because they own auxiliary tables that are listed in the
 // catalogue and dropped with them; views come before the tables they read.
 var dropping = []struct {
 	kind  string
@@ -37,7 +37,7 @@ var dropping = []struct {
 // resetIndex takes everything out of the index and puts its version back to nothing,
 // so the migrations run from the first file.
 //
-// The catalogue is queried again after every drop: a shadow table is listed in
+// The catalogue is queried again after every drop: an auxiliary table is listed in
 // it and is removed when its virtual table is dropped.
 func resetIndex(ctx context.Context, db *sql.DB) error {
 	// A reference to a table already dropped holds nothing back while every

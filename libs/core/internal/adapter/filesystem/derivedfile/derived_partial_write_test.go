@@ -22,7 +22,7 @@ const fileCap = 1 << 20
 func capFileSize(t *testing.T, to int64) func() {
 	t.Helper()
 
-	// A write that reaches the cap raises SIGXFSZ; the test checks the error the
+	// A write that hits the cap raises SIGXFSZ; the test checks the error the
 	// write itself returns.
 	signal.Ignore(syscall.SIGXFSZ)
 

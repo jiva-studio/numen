@@ -3,7 +3,7 @@
 //
 // It serves the window's pages, the tasks it displays, the themes it applies, the plugins of its
 // target with the files of their frontends, and the calls for the services they serve. It provides the
-// plugins with what the installation has: every vault it knows, the reading of one into the index, and
+// plugins with what the installation has: every vault registered, the reading of one into the index, and
 // the notification that something moved.
 package shell
 

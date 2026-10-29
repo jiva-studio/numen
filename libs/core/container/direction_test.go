@@ -112,9 +112,9 @@ var shipped = []struct{ goos, goarch string }{
 }
 
 // Imports point inward. The test reads the build's resolved imports, so a
-// package the core reaches through another package is checked as well.
+// package the core depends on through another package is checked as well.
 //
-// A test file is excluded: a test sits outside the package it exercises and
+// A test file is excluded: a test is outside the package it exercises and
 // builds the adapters that replace the real ones.
 func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 	for _, one := range shipped {

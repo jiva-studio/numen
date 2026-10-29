@@ -253,8 +253,8 @@ func TestSplitNothing(t *testing.T) {
 }
 
 // assertCutRules asserts the invariants of every cut, for any sizes: a chunk
-// contains its own words, lies within the chunk enclosing it, carries the name
-// of the part it is in, and does not cross a part boundary.
+// contains its own words, is within the chunk enclosing it, carries the name of
+// the part it is in, and does not cross a part boundary.
 func assertCutRules(t *testing.T, text string, parts []domain.PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
 	s := sizes.Resolve()

@@ -114,7 +114,7 @@ func (s *vaultsHandler) RenameVault(
 }
 
 // RemoveVault removes a vault from the list and the index, and moves its folder
-// to the trash when the request asks for it.
+// to the trash when the request sets the trash flag.
 func (s *vaultsHandler) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],

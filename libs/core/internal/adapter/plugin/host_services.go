@@ -72,8 +72,8 @@ func (h *Host) GetCompleter() completionport.Completer {
 	return h.completer
 }
 
-// openHostEndpoint returns the port the host endpoint listens on, starting it
-// on the first call after a completer or a vault is set. It returns zero while
+// openHostEndpoint returns the port the host endpoint serves on, starting it on
+// the first call after a completer or a vault is set. It returns zero while
 // neither is set.
 func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	h.mu.Lock()

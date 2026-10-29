@@ -43,8 +43,8 @@ func TestWhatIsNotRenamed(t *testing.T) {
 	}
 }
 
-// The name is replaced where it is written and the value stays where it is,
-// whatever lies between the two.
+// The name is replaced in place and the value stays in place,
+// whatever is between the two.
 func TestARenamedFieldKeepsItsValueAndItsPlace(t *testing.T) {
 	const target = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
 	back, isDone := renameMember([]byte(target), []string{"appearance", "zoom"}, "interface_scale")

@@ -67,7 +67,7 @@ func (p *ONNXProvisioner) Provision(
 }
 
 // Status returns ready for a plugin folder the library was provisioned for, and
-// missing otherwise.
+// missing for any other folder.
 func (p *ONNXProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
 	p.mu.Lock()
 	resolved, ok := p.ready[req.PluginDir]

@@ -23,7 +23,7 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 
 // The field count makes a section added to the settings fail this test until it
 // is carried. Per-section checks cannot detect a missing section, since an
-// unconfigured model is simply absent.
+// unconfigured model is absent.
 func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
 	if target := reflect.TypeOf(container.Indexing{}).NumField(); target != 1 {
 		t.Errorf("indexing holds %d sections; carry the new one in Config.SetSettings", target)

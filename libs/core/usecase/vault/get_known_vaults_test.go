@@ -45,7 +45,7 @@ func (f folders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return nil, fs.ErrNotExist
 }
 
-// two vaults, both of whose folders exist where the list says.
+// two vaults, both of whose folders exist at the path the list records.
 func twoRows() (*theList, folders) {
 	return &theList{rows: []domain.Vault{
 		{ID: "wren", Name: "Wren", Path: "/notes/wren"},
@@ -185,7 +185,7 @@ func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 }
 
 // A build with no way to open a vault marks no folder missing, since it never
-// checked, and a vault wrongly marked missing tells the user their notes have
+// checked, and a vault wrongly marked missing reports to the user that their notes have
 // vanished.
 func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 	t.Parallel()

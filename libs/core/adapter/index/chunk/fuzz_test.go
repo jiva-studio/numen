@@ -37,7 +37,7 @@ var typedSeeds = []string{
 // maxQueryLength is how much of what was typed is put to a database.
 const maxQueryLength = 256
 
-// No typed input reaches FTS5 as syntax. For any input, the generated
+// No typed input becomes FTS5 syntax. For any input, the generated
 // expression is a query FTS5 accepts, and the words it searches for are exactly
 // the words typed.
 //

@@ -322,7 +322,7 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 //
 // A note is named by its `title` key, else by its filename. The name follows the
 // new filename when the file has no `title` key and the old filename matches the
-// note's name; otherwise the name is unchanged.
+// note's name. In every other case the name is unchanged.
 //
 // The name is also written to the title index, which a search by name ranks and
 // highlights against.
@@ -529,10 +529,9 @@ func (h *rows) getUnusedRows() []int64 {
 // deleteRows deletes the given rows and everything indexed over them.
 //
 // The rows in the two virtual tables are deleted first, by chunk number.
-// Nothing cascades into a virtual table, and a remaining row would return a
-// search hit for a chunk that no longer exists. A large chunk deletes the chunks
-// inside it, so a row here may already be gone from `chunks` when it is
-// reached.
+// Nothing cascades into a virtual table, and a remaining row returns a search
+// hit for a chunk that is deleted. A large chunk deletes the chunks inside it,
+// so a row here may already be gone from `chunks` when it is processed.
 func deleteRows(ctx context.Context, tx *sqlwrite.Transaction, rows []int64) error {
 	for _, row := range rows {
 		for _, name := range []string{"delete_fts", "delete_vec", "delete_chunk"} {
@@ -592,7 +591,7 @@ func newNullable(s string) any {
 }
 
 // getRemovedHashes returns the text hashes of the rows no chunk matched: the
-// text the source held before and no longer holds.
+// text the source contained before and does not contain now.
 func (h *rows) getRemovedHashes() []string {
 	out := make([]string, 0, len(h.remainingErrs))
 	for row := range h.remainingErrs {

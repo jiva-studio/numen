@@ -267,8 +267,8 @@ func readAll(r io.Reader, size int64) ([]byte, error) {
 	}
 }
 
-// checkSize limits the size at which a note is read whole. A book and a recording
-// are read in parts by a caller that knows their size.
+// checkSize limits the size at which a note is read whole. A book and a
+// recording are read in parts by a caller that has their size.
 func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 	linked := s.opts.GetMaxNoteBytes()
 	if !s.opts.IsNote(pathpkg.Base(path)) || info.Size() <= linked {
@@ -385,9 +385,9 @@ func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 	return filepath.ToSlash(rel), true
 }
 
-// getKind reports the kind of source a path inside this vault is, and whether
-// a walk would report it at all. The walk and the watcher both use it, so the
-// two agree about what the vault contains.
+// getKind reports a path's source kind inside this vault, and whether a walk
+// would report it at all. The walk and the watcher both use it, so the two
+// agree about what the vault contains.
 func (s *VaultReader) getKind(path string) (domain.SourceKind, bool) {
 	if _, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir()); err != nil {
 		return "", false

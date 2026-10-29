@@ -15,7 +15,7 @@ func theme(name string) settings.Setting {
 	return settings.Setting{At: []string{"appearance", "theme"}, Written: name}
 }
 
-// arranged is a hand-edited file: custom key order, indentation, spaced
+// arranged is a manually edited file: custom key order, indentation, spaced
 // sections, and a number that appears in two places.
 const arranged = `{
     "v": 1,

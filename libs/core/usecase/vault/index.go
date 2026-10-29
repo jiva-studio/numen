@@ -75,7 +75,7 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 	return i.ports.Backend.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
-// Compact reclaims the space the index no longer uses.
+// Compact reclaims the space the index does not use.
 func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Compact(ctx) }
 
 func (i *Index) Vaults() vaultport.VaultRepository          { return i.ports.Vaults }

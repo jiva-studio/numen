@@ -17,8 +17,8 @@ import (
 // MenuEntry is one entry of a file's menu: a command a plugin declares, offered
 // over the file or over a version of it. Title and Icon are the command's
 // declaration; Icon is a Lucide icon name. Version is the text version the
-// command runs over, and is empty for a command over the file. IsLive says
-// Version is the version shown and indexed now.
+// command runs over, and is empty for a command over the file. IsLive marks
+// Version as the version displayed and indexed now.
 type MenuEntry struct {
 	PluginID   string
 	PluginName string
@@ -41,7 +41,7 @@ type FileMenu struct {
 }
 
 // NewFileMenu is the menu the plugin commands make of the files the readers open,
-// where the table tells the type of a file.
+// where the table gives the type of a file.
 func NewFileMenu(
 	versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
 ) (*FileMenu, error) {

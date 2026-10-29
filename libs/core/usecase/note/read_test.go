@@ -130,7 +130,7 @@ func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 	}
 }
 
-// The prose returned to the caller has one kind of line break. The file keeps
+// The prose returned to the caller has one line-break style. The file keeps
 // its own: a chunk's offsets are byte offsets into it, so the bytes the index is
 // built from are the bytes on disk.
 func TestAReadNormalisesTheProseAndPreservesTheFileAlone(t *testing.T) {
