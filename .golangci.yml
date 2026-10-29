@@ -226,7 +226,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -248,7 +248,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -270,7 +270,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -292,7 +292,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -314,7 +314,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -322,10 +322,10 @@ linters:
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-        plugin-toolsbridge:
+        plugin-agenttoolsbridge:
           list-mode: lax
           files:
-            - "**/internal/adapter/plugin/toolsbridge/**"
+            - "**/internal/adapter/plugin/agenttoolsbridge/**"
             - "!$test"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
@@ -366,7 +366,7 @@ linters:
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textbridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
 
     errcheck:

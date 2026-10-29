@@ -1,4 +1,4 @@
-package toolsbridge
+package agenttoolsbridge
 
 import (
 	"context"

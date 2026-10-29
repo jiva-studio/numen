@@ -5,11 +5,11 @@ import (
 	"crypto/subtle"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
@@ -180,5 +180,5 @@ func (h *Host) clearPluginWork(pluginID string) {
 // GetPluginTools is the tools the plugins with the tools capability offer on the full server, which
 // a plugin serves to programs outside Numen.
 func (h *Host) GetPluginTools() hostendpoint.PluginTools {
-	return toolsbridge.NewCatalog(h, toolsbridge.Full)
+	return agenttoolsbridge.NewCatalog(h, agenttoolsbridge.Full)
 }
