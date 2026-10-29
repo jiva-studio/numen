@@ -2,7 +2,7 @@
  * The strip of three panels: where it stops, what a pointer and a wheel do to it,
  * and what a key-initiated move does to both.
  *
- * jsdom performs no layout, so the strip is given the widths it would have: a
+ * jsdom performs no layout, so the strip is given fixed widths: a
  * panel on either side of a card as wide as the window, with the card at 220 and
  * the strip ending at 440.
  */

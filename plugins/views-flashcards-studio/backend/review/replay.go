@@ -59,9 +59,9 @@ func (h History) Replay(d Day, assignment Assignment) map[CardID]Schedule {
 // for such a card is whether it is recalled after ten minutes, which gives no
 // information about long-term memory.
 type RecallTally struct {
-	// Asked is the answers given to spaced review cards, and Recalled the subset
+	// Tested is the answers given to spaced review cards, and Recalled the subset
 	// of them that were not Again.
-	Asked    int
+	Tested   int
 	Recalled int
 }
 
@@ -77,7 +77,7 @@ func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally 
 		}
 		day := d.GetName(a.At)
 		one := out[day]
-		one.Asked++
+		one.Tested++
 		if a.Rating != Again {
 			one.Recalled++
 		}

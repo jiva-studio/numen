@@ -33,7 +33,7 @@ const canShow = (url: string): boolean => {
   const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address starting with two slashes names a host and inherits the window's
-  // scheme, so it has no scheme of its own and still reaches off the machine.
+  // scheme, so it has no scheme of its own and still addresses a remote resource.
   return scheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
 }
 

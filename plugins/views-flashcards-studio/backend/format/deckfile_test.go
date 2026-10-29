@@ -668,7 +668,7 @@ func TestRemovingTheLastSectionPreservesNoBlankLine(t *testing.T) {
 	}
 }
 
-// The card id is created where the deck is made whole, so that operation knows
+// The card id is created where the deck is made whole, so the operation reports
 // which card received which id.
 func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
@@ -724,7 +724,7 @@ func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 	}
 }
 
-// rough is a deck body with hand-written formatting: CRLF endings, doubled blank
+// rough is a deck body with manually authored formatting: CRLF endings, doubled blank
 // lines, and trailing whitespace on lines. The format writes none of it, and a
 // write preserves all of it.
 var rough = strings.ReplaceAll(
@@ -744,7 +744,7 @@ const (
 	vicuna = "9wq2ktr5bd"
 )
 
-// A deck is a file that is also edited by hand, so a change that targets one
+// A deck is a file that is also edited manually, so a change that targets one
 // card leaves every other card byte-identical: doubled blank lines, trailing
 // whitespace, and the file's line endings.
 func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {

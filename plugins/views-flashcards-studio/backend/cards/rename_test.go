@@ -683,7 +683,7 @@ func TestADeckAtTheBoundIsRenamed(t *testing.T) {
 }
 
 // A deck with no card of the card model is not written, byte for byte, although a
-// write would have assigned its card a card id and the deck an identifier.
+// write assigns its cards card ids and the deck an identifier.
 func TestADeckContainingNoCardOfTheCardModelIsLeftAsItWas(t *testing.T) {
 	vs := newVaults(t)
 	words := "---\ntype: deck\n---\n\n## Gloss\n\n[[Term]]\n\n### Word\n\nGloss\n\n### Height\n\nnot a length\n"

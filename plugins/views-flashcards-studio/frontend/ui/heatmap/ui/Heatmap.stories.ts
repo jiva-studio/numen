@@ -237,7 +237,7 @@ export const ADayReviewed: Story = {
 }
 
 /**
- * A day with only new material. No review card was asked, so there is no recall
+ * A day with only new material. No review card was presented, so there is no recall
  * share and the panel shows none.
  */
 export const ADayOfNewCards: Story = {

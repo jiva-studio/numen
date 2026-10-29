@@ -39,7 +39,7 @@ export function createRequestGuard() {
     }
   }
 
-  /** Cancel all existing requests so that no in-flight request is processed. */
+  /** Cancel all existing requests; no in-flight request is processed. */
   const cancel = () => {
     requestSeq += 1
     processedSeq = requestSeq

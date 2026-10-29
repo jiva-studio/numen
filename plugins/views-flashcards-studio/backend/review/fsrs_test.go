@@ -278,7 +278,7 @@ func clampLastAnswer(s review.Schedule) review.Schedule {
 }
 
 // A review card whose last answer is not before the evaluation instant has zero
-// elapsed days, however far after that instant the answer lies.
+// elapsed days, however far after that instant the answer falls.
 //
 // Elapsed days are never negative, so every such card yields the result the
 // library gives a card whose last answer falls at that instant.

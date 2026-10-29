@@ -38,13 +38,13 @@ export interface ReviewKeysDeps {
   readonly leave: () => void
   /** Out of the vault, back to the window's list of vaults. */
   readonly goToVaults: () => void
-  /** Opens or closes the panel a card is asked about in. */
+  /** Opens or closes the panel for questions about a card. */
   readonly toggleAgent: () => void
   /** The panel the deck's notes are read in, brought in or taken away. */
   readonly toggleNotes: () => void
   /** The reading moved a page, forward or back. */
   readonly scrollPage: (back: boolean) => void
-  /** Closes the panel a card is asked about in. */
+  /** Closes the panel for questions about a card. */
   readonly closeAgent: () => void
   /** The panel the deck's notes are read in, put away. */
   readonly closeNotes: () => void

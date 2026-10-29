@@ -63,7 +63,7 @@ describe('when the material is learned', () => {
     expect(getLearnedTiles(tab)[0]).toStrictEqual(['70', 'days to learn it'])
   })
 
-  // A pace that never reaches the goal has no day to name, so it displays words and not a figure.
+  // A pace that never attains the goal has no day to name, so it displays words and not a figure.
   it('says a pace that never gets there in words, and not as a figure', () => {
     const { tab } = mountPresetTab({
       cards: 79,

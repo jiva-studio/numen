@@ -64,7 +64,7 @@ func Of(host *hosttest.Vault) Env {
 // ports over it.
 type Installation struct {
 	vaults map[domain.VaultID]*hosttest.Vault
-	// 	// Host is the host as the plugin reaches it. It has no vault of its own.
+	// 	// Host is the host as the plugin addresses it. It has no vault of its own.
 	Host *hosttest.Vault
 	// Ports answers every port the use cases take.
 	Ports hostports.Ports

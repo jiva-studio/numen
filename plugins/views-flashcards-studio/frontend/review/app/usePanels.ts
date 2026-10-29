@@ -23,7 +23,7 @@ export interface PanelsDeps {
   readonly agent: AgentPort
   /** The current card, and null between cards. */
   readonly card: () => ReviewCard | null
-  /** The reason nothing can be asked here, empty while a question can be asked. */
+  /** The reason no question can be sent, empty while a question can be sent. */
   readonly unreachable: () => string
   /** The vault the session is on. */
   readonly vault: () => string

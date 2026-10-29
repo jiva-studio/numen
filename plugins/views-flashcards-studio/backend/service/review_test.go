@@ -723,12 +723,12 @@ func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 	}
 }
 
-// The day suggested under a goal of minutes is the shortest day that asks every
+// The day suggested under a goal of minutes is the shortest day that presents every
 // card the day holds, on a vault with a backlog.
 //
 // A shorter day is cut short by the clock, so the shortest day on the range is
 // never the suggestion for a vault behind on its reviews. The cards a shorter day
-// asks may already be the whole count: a card that returns within the day is the
+// presents may already be the whole count: a card that returns within the day is the
 // same card, and the repeated showings it takes exhaust the clock.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	handler, target := newAPI(t, lived)
@@ -856,7 +856,7 @@ var spread = map[string]string{
 // The tile over a preset and the session it opens are one number.
 //
 // A preset is the whole scope of its own budget, so the cards the count leaves
-// for it are the cards a session over it asks, and the count reports that figure.
+// for it are the cards a session over it presents, and the count reports that figure.
 func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	handler, target := newAPI(t, spread)
 	v := target[0]
@@ -864,7 +864,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	setNow(handler, firstMorning.AddDate(0, 0, 14))
 
 	response := getVaultCount(t, handler, v)
-	// Which decks each preset schedules, so the cards a session asks can be checked
+	// Which decks each preset schedules, so the cards a session presents can be checked
 	// against the rows they were collected from.
 	underMap := make(map[string][]string)
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
@@ -1009,7 +1009,7 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 				t.Errorf("%v stands %d behind on day %d", curveResp.Grid[i], backlog, day)
 			}
 		}
-		// The day reported as the clearing day is the first day on which the band reaches zero.
+		// The day reported as the clearing day is the first day on which the band is zero.
 		first := int32(-1)
 		for day, backlog := range band {
 			if backlog == 0 {
@@ -1046,7 +1046,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 		isClimbing       bool
 	}{
 		// A budget of one showing is a day the target cannot spend, whatever the
-		// target. Counting cards it could: the one card is asked again for no gain, and
+		// target. Counting cards it could: the one card is presented again for no gain, and
 		// how often it returns is determined by the target.
 		{"a count binding at every place", 12, 1, review.BudgetUnitShows, false},
 		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},

@@ -128,8 +128,8 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
 
 <style scoped>
 .card {
-  /* The name of a value, the box it is typed in and what is said to be wrong
-     with it all stand over one edge. */
+  /* The name of a value, the box it is typed in and its error message share
+     one inline edge. */
   --box-pad-inline: var(--numen-box-air);
 
   position: relative;

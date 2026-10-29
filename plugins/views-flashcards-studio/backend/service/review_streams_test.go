@@ -89,7 +89,7 @@ func awaitReturn(t *testing.T, returned <-chan error) error {
 	}
 }
 
-// A stream whose page can no longer be written to ends with the write's error, at
+// A stream whose page cannot be written to ends with the write's error, at
 // whichever message the failure was detected.
 func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancelled, cancel := context.WithCancel(t.Context())
@@ -204,7 +204,7 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 	return nil, errNothingRead
 }
 
-// A stream that has just sent a count does not send the list again immediately:
+// A stream that sent a count does not send the list again immediately:
 // the wait before the list restarts after every count.
 func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 	handler, target := newAPI(t, deck, other)

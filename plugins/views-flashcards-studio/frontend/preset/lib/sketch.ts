@@ -23,7 +23,7 @@ const LEAST_CEILING = 60
 /** How long one answer takes where nothing has been answered yet, in seconds. */
 const ANSWER = 8
 
-/** The value at which the saturating line of minutes reaches half of its maximum. */
+/** The value at which the saturating line of minutes attains half of its maximum. */
 const HALF = 15
 
 /** The most of the material any day of review brings back. */

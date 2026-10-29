@@ -2,7 +2,7 @@
  * Going back releases what the screens being left hold.
  *
  * The order decides: a screen after the target screen is left, and a screen
- * before it is not. Nothing here knows what any held resource is.
+ * before it is not. This test does not depend on the type of any resource a screen holds.
  */
 import { describe, expect, it } from 'vitest'
 

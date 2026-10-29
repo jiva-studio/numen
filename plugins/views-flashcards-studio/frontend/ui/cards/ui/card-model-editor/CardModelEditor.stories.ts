@@ -78,9 +78,9 @@ const CORPORA = {
     ],
   },
   'nothing at all': { fields: [], templates: [] },
-  /* Everything a hand-written file can contain that the editor did not create:
-     one name declared twice, where the first stands and one row is drawn for
-     it; a template naming slots the fields do not; marks a person wrote; and a
+  /* Everything a manually authored file can contain that the editor did not create:
+     one name declared twice, where the first applies and one row is drawn for
+     it; a template naming slots the fields do not; marks the user typed; and a
      template with nothing in it at all. */
   'what is wrong': {
     fields: ['Name', 'Height', 'Height'],

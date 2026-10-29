@@ -164,8 +164,8 @@ describe('what the tab says went wrong', () => {
   })
 })
 
-// // A file changed by someone else while the tab was open is not a failure, so it
-// // is shown as a status and not as an alert. The recovery is the same: read the
+// // A file changed externally while the tab was open is not a failure, so it
+// // is displayed as a status and not as an alert. The recovery is the same: read the
 // // file again.
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {

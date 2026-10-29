@@ -2,7 +2,7 @@
  * What survives a card's HTML and what does not.
  *
  * A deck may come from another author and the window is a webview, so every
- * attempt below must be removed before it reaches the screen.
+ * attempt below must be removed before it is rendered.
  */
 import { describe, expect, it } from 'vitest'
 import { safe } from './safe'

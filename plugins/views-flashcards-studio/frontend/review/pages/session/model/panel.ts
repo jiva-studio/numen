@@ -14,7 +14,7 @@ export interface AgentPanelDeps {
   readonly agent: (card: ReviewCard) => AgentPort
   /** The current card, and null between cards. */
   readonly card: () => ReviewCard | null
-  /** The reason nothing can be asked here, empty while a question can be asked. */
+  /** The reason no question can be sent, empty while a question can be sent. */
   readonly unreachable: () => string
   readonly open: () => boolean
   /**
@@ -27,20 +27,20 @@ export interface AgentPanelDeps {
 }
 
 /**
- * The panel a card is asked about in. It holds the card the conversation is about
+ * The panel for questions about a card. It holds the card the conversation is about
  * and the context the conversation view is mounted with; the conversation
  * itself belongs to the view and ends when the context is dropped.
  */
 export function useAgentPanel(deps: AgentPanelDeps) {
   const open = computed(() => deps.open())
 
-  /** The card asked about and the context of its conversation, created when a card is first asked about. */
+  /** The card in question and the context of its conversation, created when the first question about a card is sent. */
   const current = shallowRef<{ card: ReviewCard; context: ConversationContext } | null>(null)
 
   /** The card the open conversation is about, and nothing while none is. */
   const about = computed(() => current.value?.card ?? null)
 
-  /** The context the conversation view is mounted with, null while no card is asked about. */
+  /** The context the conversation view is mounted with, null while no card is in question. */
   const context = computed(() => current.value?.context ?? null)
 
   /**

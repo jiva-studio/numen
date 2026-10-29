@@ -14,7 +14,7 @@ export interface CardModelSummary {
 }
 
 /**
- * The kind of problem a card model or a deck has. The list is closed: a mark is
+ * The category of problem a card model or a deck has. The list is closed: a mark is
  * drawn according to the problem in the card or the template it refers to.
  */
 export type ProblemKind =

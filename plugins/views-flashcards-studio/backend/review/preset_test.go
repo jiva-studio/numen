@@ -690,7 +690,7 @@ func genSchedule(t *rapid.T) review.Schedule {
 
 // ruleNamed generates a preset's three settings for the rule, over the whole
 // range each may take and beyond both ends of it: a value that a rule cannot hold
-// is what a hand-written preset can contain.
+// is what a manually authored preset can contain.
 func ruleNamed(t *rapid.T) review.Preset {
 	return review.Preset{
 		Rule: review.LearnedRule(rapid.SampledFrom([]string{
@@ -701,7 +701,7 @@ func ruleNamed(t *rapid.T) review.Preset {
 	}
 }
 
-// A review card that was never answered is not learned, whatever the preset says
+// A review card that was never answered is not learned, whatever the preset specifies
 // and whenever it is evaluated.
 func TestIsLearned_UnansweredCardIsNeverLearned(t *testing.T) {
 	t.Parallel()
@@ -750,7 +750,7 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 // the preset's interval, so a card learned under one interval is learned under
 // every shorter interval.
 //
-// Under learned: interval a card is learned once its interval reaches the
+// Under learned: interval a card is learned once its interval is at least the
 // preset's interval.
 func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	t.Parallel()

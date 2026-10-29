@@ -21,7 +21,7 @@ export type ErrorCode =
   | 'deckTooLarge'
   | 'notAPreset'
 
-/** The code for each schema code, and null for `STALE`: the window asks the user about that one. */
+/** The code for each schema code, and null for `STALE`: the window prompts the user about that one. */
 const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
   [ProtoErrorCode.MISSING]: 'missing',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',

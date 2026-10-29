@@ -178,7 +178,7 @@ func TestADeckAnswersARunOfItsCardsAndReturnsHowManyItContains(t *testing.T) {
 }
 
 // TestADeckAnswersWithTheOneCardAMarkAddresses. A deck holds any number of cards,
-// and an agent that knows which card it needs reads only that card.
+// and an agent that identifies the card it needs reads only that card.
 func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -287,7 +287,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsCardModel(t *testing.T) {
 
 // TestACardAddedComesBackUnderTheMarkItIsAddressedBy. The write assigns the card
 // id, so the write response must include it: without it, an agent adding a card to
-// a deck of many cards cannot address the card it just wrote.
+// a deck of many cards cannot address the card it wrote.
 func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -756,8 +756,8 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 	}
 }
 
-// The current card is a tool response, so a deck name set by whoever synced the
-// vault reaches the agent as data. The host sends the current card with each call,
+// The current card is a tool response, so a deck name set by the author of the
+// vault content arrives at the agent as data. The host sends the current card with each call,
 // and the tool is offered only on the server of the review window.
 func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	session, _ := newSession(t, vault())
@@ -802,7 +802,7 @@ func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 	}
 }
 
-// roughDeck is a deck with hand-edited formatting: doubled blank lines and
+// roughDeck is a deck with manually edited formatting: doubled blank lines and
 // trailing whitespace. None of it is what the format writes, and all of it is
 // preserved.
 const roughDeck = "---\ntype: deck\n---\n\n" +
@@ -819,7 +819,7 @@ func roughVault() map[string]string {
 	return map[string]string{"Animal.md": animalCardModel, "Animals.md": roughDeck}
 }
 
-// A deck is a file that users also edit by hand, so a call that names one card
+// A deck is a file that users also edit manually, so a call that names one card
 // leaves every other card byte-for-byte unchanged.
 func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 	for name, args := range map[string]map[string]any{

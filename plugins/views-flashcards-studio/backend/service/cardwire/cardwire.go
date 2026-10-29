@@ -158,7 +158,7 @@ func position(offset int) *int32 {
 	return &pos
 }
 
-// newWireProblemKind returns the kind of a problem as the schema names it, and
+// newWireProblemKind returns the schema's problem kind for a fault, and
 // whether the schema names it at all.
 func newWireProblemKind(fault format.Fault) (api.ProblemKind, bool) {
 	switch fault {
