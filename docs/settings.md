@@ -154,7 +154,7 @@ The Vector Embeddings plugin makes the vectors: which model, where it runs, and 
 | | |
 | --- | --- |
 | `max_tokens` | the input bound, in tokens, a chunk that carries a vector is cut below. A chunk cut longer than the model reads is a chunk whose vector describes text it does not hold. Zero cuts at the chunking defaults. |
-| `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero takes what the search was built against. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
+| `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero leaves the floor to the search: the one a person set for the model in use, else the one measured on the vault, else the one the model's plugin reports, else 0.30. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
 
 A vector is kept under the model the plugin answers with: its name, width, input bound and pooling, and where it was made. A model changed in the plugin makes every stored vector again, and going back finds the old vectors where they were. A vault with the plugin disabled is searched by its words alone.
 

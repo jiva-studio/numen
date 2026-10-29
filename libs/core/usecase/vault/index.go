@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/port/floorport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
@@ -39,6 +40,9 @@ type IndexPorts struct {
 	Problems      problemport.ProblemQueries
 	OpenTabs      windowport.OpenTabsStore
 	TextVersions  textport.VersionRepositories
+	Floors        floorport.Store
+	FloorSamples  floorport.Samples
+	Nearest       floorport.Nearest
 }
 
 // Index exposes the cache as the ports the core requires.
@@ -74,18 +78,21 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 // Compact reclaims the space the index no longer uses.
 func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Compact(ctx) }
 
-func (i *Index) Vaults() vaultport.VaultRepository           { return i.ports.Vaults }
-func (i *Index) Notes() noteport.NoteRepository              { return i.ports.Notes }
-func (i *Index) Queries() noteport.NoteQueries               { return i.ports.Queries }
-func (i *Index) Passages() sourceport.PassageQueries         { return i.ports.Passages }
-func (i *Index) Progress() indexport.IndexProgress           { return i.ports.Progress }
-func (i *Index) Sources() sourceport.SourceRepository        { return i.ports.Sources }
-func (i *Index) SourcesKnown() sourceport.SourceQueries      { return i.ports.SourcesKnown }
-func (i *Index) Vectors() embeddingport.VectorRepository     { return i.ports.Vectors }
-func (i *Index) VectorQueries() embeddingport.VectorQueries  { return i.ports.VectorQueries }
-func (i *Index) Maintenance() indexport.IndexMaintenance     { return i.ports.Maintenance }
-func (i *Index) Path() string                                { return i.ports.Path }
-func (i *Index) Links() noteport.LinkQueries                 { return i.ports.Links }
-func (i *Index) Problems() problemport.ProblemQueries        { return i.ports.Problems }
-func (i *Index) OpenTabs() windowport.OpenTabsStore          { return i.ports.OpenTabs }
-func (i *Index) TextVersions() textport.VersionRepositories  { return i.ports.TextVersions }
+func (i *Index) Vaults() vaultport.VaultRepository          { return i.ports.Vaults }
+func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Notes }
+func (i *Index) Queries() noteport.NoteQueries              { return i.ports.Queries }
+func (i *Index) Passages() sourceport.PassageQueries        { return i.ports.Passages }
+func (i *Index) Progress() indexport.IndexProgress          { return i.ports.Progress }
+func (i *Index) Sources() sourceport.SourceRepository       { return i.ports.Sources }
+func (i *Index) SourcesKnown() sourceport.SourceQueries     { return i.ports.SourcesKnown }
+func (i *Index) Vectors() embeddingport.VectorRepository    { return i.ports.Vectors }
+func (i *Index) VectorQueries() embeddingport.VectorQueries { return i.ports.VectorQueries }
+func (i *Index) Maintenance() indexport.IndexMaintenance    { return i.ports.Maintenance }
+func (i *Index) Path() string                               { return i.ports.Path }
+func (i *Index) Links() noteport.LinkQueries                { return i.ports.Links }
+func (i *Index) Problems() problemport.ProblemQueries       { return i.ports.Problems }
+func (i *Index) OpenTabs() windowport.OpenTabsStore         { return i.ports.OpenTabs }
+func (i *Index) TextVersions() textport.VersionRepositories { return i.ports.TextVersions }
+func (i *Index) Floors() floorport.Store                    { return i.ports.Floors }
+func (i *Index) FloorSamples() floorport.Samples            { return i.ports.FloorSamples }
+func (i *Index) Nearest() floorport.Nearest                 { return i.ports.Nearest }

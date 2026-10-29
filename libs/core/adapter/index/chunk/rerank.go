@@ -33,6 +33,22 @@ type candidate struct {
 // not a result. A vector that is read and does not compare is a corrupt row,
 // and is reported as an error.
 func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
+	ranked, err := q.rankCandidates(ctx, recipe, query, candidates, of, floor)
+	if err != nil {
+		return nil, err
+	}
+	if ranked == nil {
+		return nil, nil
+	}
+	out := make([]int64, len(ranked))
+	for i, k := range ranked {
+		out[i] = k.chunk
+	}
+	return out, nil
+}
+
+// rankCandidates is rerank with the similarity of each candidate kept.
+func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]candidate, error) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}
@@ -77,11 +93,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 		return cmp.Compare(a.order, b.order)
 	})
 
-	out := make([]int64, len(keptCandidates))
-	for i, k := range keptCandidates {
-		out[i] = k.chunk
-	}
-	return out, nil
+	return keptCandidates, nil
 }
 
 func formatInt64s(nums []int64) string {

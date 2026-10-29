@@ -79,3 +79,12 @@ type Embedder interface {
 	// Close releases whatever the model holds.
 	Close() error
 }
+
+// FloorAdvisor is an Embedder that reports the similarity a passage starts out
+// having to reach to answer a query under its model.
+//
+// The hint is not part of the model's identity and is absent from Recipe.
+type FloorAdvisor interface {
+	// GetFloorHint returns the starting floor, and zero where the model has none.
+	GetFloorHint(ctx context.Context) float64
+}

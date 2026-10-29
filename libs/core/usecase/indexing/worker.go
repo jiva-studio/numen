@@ -18,6 +18,9 @@ const (
 	WalkingNotes  = "walking the notes"
 	IndexingTexts = "indexing the file texts"
 	MakingVectors = "making the vectors"
+	// CalibratingFloor is the measurement of the similarity floor that follows the
+	// last vector of a vault.
+	CalibratingFloor = "calibrating the floor"
 )
 
 const taskIndexingTexts = "Indexing file texts"
@@ -52,14 +55,20 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetOwed func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
+// Calibrate measures the similarity floor of a vault once all its vectors exist,
+// and does nothing where the floor is already measured or set.
+type Calibrate func(ctx context.Context, v domain.Vault) error
+
 // Config is what a worker is made from.
 type Config struct {
 	Reading  OpenReading
 	Embedder embeddingport.Embedder
 	// Owed is nil when the number of owed vectors is unknown; every pass then
 	// assumes some vectors are owed.
-	Owed   GetOwed
-	Events Events
+	Owed GetOwed
+	// Calibrate is nil where no floor is calibrated.
+	Calibrate Calibrate
+	Events    Events
 	// Quiet is how long the vault has to have been still before a note that was
 	// written is embedded, and After is the timer that counts it.
 	Quiet time.Duration
@@ -73,12 +82,13 @@ type Config struct {
 // found and cut before anything is embedded; a note, which arrives already cut
 // and needs only its vectors; and a file a plugin extended with more text.
 type Worker struct {
-	reading  OpenReading
-	embedder embeddingport.Embedder
-	owed     GetOwed
-	events   Events
-	debounce time.Duration
-	after    func(time.Duration) <-chan time.Time
+	reading   OpenReading
+	embedder  embeddingport.Embedder
+	owed      GetOwed
+	calibrate Calibrate
+	events    Events
+	debounce  time.Duration
+	after     func(time.Duration) <-chan time.Time
 
 	sources chan struct{}
 	notes   chan struct{}
@@ -87,15 +97,16 @@ type Worker struct {
 
 func NewWorker(cfg Config) *Worker {
 	return &Worker{
-		reading:  cfg.Reading,
-		embedder: cfg.Embedder,
-		owed:     cfg.Owed,
-		events:   cfg.Events,
-		debounce: cfg.Quiet,
-		after:    cfg.After,
-		sources:  make(chan struct{}, 1),
-		notes:    make(chan struct{}, 1),
-		read:     make(chan struct{}, 1),
+		reading:   cfg.Reading,
+		embedder:  cfg.Embedder,
+		owed:      cfg.Owed,
+		calibrate: cfg.Calibrate,
+		events:    cfg.Events,
+		debounce:  cfg.Quiet,
+		after:     cfg.After,
+		sources:   make(chan struct{}, 1),
+		notes:     make(chan struct{}, 1),
+		read:      make(chan struct{}, 1),
 	}
 }
 
@@ -318,13 +329,32 @@ func (p *pass) embed(ctx context.Context) {
 	owing, owes := w.getOwedVectors(ctx, p.v)
 	if !owes {
 		w.events.FinishTask(MakingVectors)
+		p.calibrateFloor(ctx)
 		return
 	}
 
 	limit, stop := stopOnWake(ctx, w.read)
 	defer stop()
 
-	p.makeVectors(ctx, limit, owing)
+	if p.makeVectors(ctx, limit, owing) {
+		p.calibrateFloor(ctx)
+	}
+}
+
+// calibrateFloor measures the similarity floor of the vault once the pass has
+// left no vector owed. A failure is reported as a task and does not fail the pass.
+func (p *pass) calibrateFloor(ctx context.Context) {
+	w := p.worker
+	if w.calibrate == nil || ctx.Err() != nil {
+		return
+	}
+	switch err := w.calibrate(ctx, p.v); {
+	case err == nil:
+		w.events.FinishTask(CalibratingFloor)
+	case errors.Is(err, context.Canceled):
+	default:
+		w.events.ReportTask(vaultreading.Task{ID: CalibratingFloor, Title: "Calibrating the search", Error: err.Error()})
+	}
 }
 
 // getOwedVectors returns the number of vectors a pass must create, computed once
@@ -367,8 +397,8 @@ func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func(
 }
 
 // makeVectors creates the vectors a vault owes, reporting the source being
-// embedded.
-func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
+// embedded. It reports whether the pass ended with nothing left owed.
+func (p *pass) makeVectors(ctx, items context.Context, owing int64) bool {
 	events := p.worker.events
 	failed := func(err error) {
 		events.ReportTask(vaultreading.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
@@ -377,7 +407,7 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, false)
 	if err != nil {
 		failed(err)
-		return
+		return false
 	}
 	// Progress is reported for the source currently open. The task enters the
 	// list when the first source opens, and a progress share is reported once a
@@ -391,10 +421,14 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 	}
 
 	switch _, err := making.MakeVectors(items, p.v); {
-	case err == nil, errors.Is(err, context.Canceled):
+	case err == nil:
+		events.FinishTask(MakingVectors)
+		return true
+	case errors.Is(err, context.Canceled):
 		events.FinishTask(MakingVectors)
 	default:
 		// A vault missing vectors is searched by its text alone.
 		failed(err)
 	}
+	return false
 }

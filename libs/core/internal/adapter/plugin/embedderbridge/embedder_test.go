@@ -28,6 +28,7 @@ type mockEmbeddingServer struct {
 	getModelCalls atomic.Int32
 	modelName     atomic.Value
 	dimensions    atomic.Int32
+	floorHint     atomic.Value
 }
 
 func (s *mockEmbeddingServer) GetEmbeddingModel(
@@ -43,6 +44,7 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	if d := s.dimensions.Load(); d > 0 {
 		dims = d
 	}
+	hint, _ := s.floorHint.Load().(float64)
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
 		Name:        name,
 		Dimensions:  dims,
@@ -50,6 +52,7 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 		Pooling:     "mean",
 		From:        "test-provider",
 		Concurrency: 4,
+		FloorHint:   hint,
 	}), nil
 }
 
@@ -84,6 +87,7 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 
 func TestEmbedderBridge(t *testing.T) {
 	mockServer := &mockEmbeddingServer{}
+	mockServer.floorHint.Store(0.35)
 	mux := http.NewServeMux()
 	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
@@ -156,6 +160,28 @@ func TestEmbedderBridge(t *testing.T) {
 	}
 	if model.From != "test-provider" {
 		t.Errorf("model From = %q, want test-provider", model.From)
+	}
+
+	if hint := bridge.GetFloorHint(ctx); hint != 0.35 {
+		t.Errorf("floor hint = %v, want 0.35", hint)
+	}
+	recipe := model.Recipe()
+	mockServer.floorHint.Store(0.42)
+	if refreshed := bridge.GetModel(); refreshed.Recipe() != recipe {
+		t.Errorf("a new floor hint changed the recipe: %q, was %q", refreshed.Recipe(), recipe)
+	}
+	if hint := bridge.GetFloorHint(ctx); hint != 0.42 {
+		t.Errorf("floor hint after a read of the model = %v, want 0.42", hint)
+	}
+	mockServer.floorHint.Store(-1.0)
+	bridge.GetModel()
+	if hint := bridge.GetFloorHint(ctx); hint != 0 {
+		t.Errorf("a negative floor hint reads as %v, want 0", hint)
+	}
+	mockServer.floorHint.Store(0.0)
+	bridge.GetModel()
+	if hint := bridge.GetFloorHint(ctx); hint != 0 {
+		t.Errorf("no floor hint reads as %v, want 0", hint)
 	}
 
 	callsBefore := mockServer.getModelCalls.Load()

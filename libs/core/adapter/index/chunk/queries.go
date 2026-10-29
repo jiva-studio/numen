@@ -254,6 +254,37 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 	return q.getEnclosingPassages(ctx, vault, ranked)
 }
 
+// GetBestSimilarity returns the cosine similarity of the chunk of one vault
+// nearest a query vector, found by the coarse pass and the full-precision
+// rerank that FindNearest runs, and zero where the vault has none.
+func (q *Queries) GetBestSimilarity(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error) {
+	if len(query) == 0 {
+		return 0, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	item, err := q.findNearestByBits(ctx, vault, query, coarseCandidates)
+	if err != nil {
+		if q.hasOtherCoarseRecipe(ctx, recipe) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	ranked, err := q.rankCandidates(ctx, recipe, query, item, nil, math.Inf(-1))
+	if err != nil {
+		return 0, err
+	}
+	if len(ranked) == 0 {
+		return 0, nil
+	}
+	return ranked[0].similarity, nil
+}
+
 // hasOtherCoarseRecipe reports whether the coarse vector table holds vectors for a different recipe.
 func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool {
 	var currentRecipe string

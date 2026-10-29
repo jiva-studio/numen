@@ -4,23 +4,24 @@ import (
 	"context"
 
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
-	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/floor"
+	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
-	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
-	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
-	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
-	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
-	"github.com/jiva-studio/numen/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -64,6 +65,7 @@ type Runtime[H, V any] struct {
 	IsRebuildingIndexVal     bool
 	OpenEmbeddersFn          func(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error)
 	NewSearchFn              func(asking embeddingport.Embedder, handleError func(error)) search.Search
+	OpenFloorsFn             func(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios
 	OpenNotesFn              func(index note.Levels) note.Scenarios
 	OpenVaultsFn             func(moves note.Move) vaults.Scenarios
 	GetRefreshFn             func() vaults.Refresh
@@ -82,39 +84,55 @@ type Runtime[H, V any] struct {
 	OpenPluginVaultFn        func(current func() (domain.Vault, bool), hooks H) (V, error)
 }
 
-func (e Runtime[H, V]) GetPluginDir(id string) (string, bool)               { return e.PluginDirFn(id) }
-func (e Runtime[H, V]) EmitEvent(event string)                              { e.EmitEventFn(event) }
-func (e Runtime[H, V]) GetRegistry() vaultport.VaultRegistry                { return e.RegistryVal }
-func (e Runtime[H, V]) GetVaultReaders() vaultport.VaultReaders             { return e.VaultReadersFn() }
-func (e Runtime[H, V]) GetVaultWriters() vaultport.VaultWriters             { return e.VaultWritersFn() }
-func (e Runtime[H, V]) GetVaultIdentity() vaultport.VaultIdentity           { return e.VaultIdentityFn() }
-func (e Runtime[H, V]) GetOpenTabsStore() windowport.OpenTabsStore          { return e.OpenTabsStoreFn() }
-func (e Runtime[H, V]) GetClock() machineport.Clock                         { return e.ClockFn() }
-func (e Runtime[H, V]) GetNoteQueries() noteport.NoteQueries                { return e.NoteQueriesFn() }
-func (e Runtime[H, V]) GetLinkQueries() noteport.LinkQueries                { return e.LinkQueriesFn() }
-func (e Runtime[H, V]) GetProblemQueries() problemport.ProblemQueries       { return e.ProblemQueriesFn() }
-func (e Runtime[H, V]) GetIndexProgress() indexport.IndexProgress           { return e.IndexProgressFn() }
-func (e Runtime[H, V]) GetSourceRepository() sourceport.SourceRepository    { return e.SourceRepositoryFn() }
-func (e Runtime[H, V]) GetSourceQueries() sourceport.SourceQueries          { return e.SourceQueriesFn() }
-func (e Runtime[H, V]) GetPassageQueries() sourceport.PassageQueries        { return e.PassageQueriesFn() }
-func (e Runtime[H, V]) CloseIndex() error                                   { return e.CloseIndexFn() }
-func (e Runtime[H, V]) OpenGetSettings() *settings.Get                      { return e.OpenGetSettingsFn() }
-func (e Runtime[H, V]) OpenWriteSettings() *settings.Write                  { return e.OpenWriteSettingsFn() }
-func (e Runtime[H, V]) OpenWritePluginSecret() *settings.WriteSecret        { return e.OpenWritePluginSecretFn() }
-func (e Runtime[H, V]) OpenDeletePluginSecret() *settings.DeleteSecret      { return e.OpenDeletePluginSecretFn() }
-func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin              { return e.OpenRetryPluginFn() }
-func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)               { e.ReportPluginFailuresFn(tasks) }
-func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock)    { e.SetPluginWorkFn(tasks, models) }
-func (e Runtime[H, V]) IsRebuildingIndex() bool                             { return e.IsRebuildingIndexVal }
+func (e Runtime[H, V]) GetPluginDir(id string) (string, bool)         { return e.PluginDirFn(id) }
+func (e Runtime[H, V]) EmitEvent(event string)                        { e.EmitEventFn(event) }
+func (e Runtime[H, V]) GetRegistry() vaultport.VaultRegistry          { return e.RegistryVal }
+func (e Runtime[H, V]) GetVaultReaders() vaultport.VaultReaders       { return e.VaultReadersFn() }
+func (e Runtime[H, V]) GetVaultWriters() vaultport.VaultWriters       { return e.VaultWritersFn() }
+func (e Runtime[H, V]) GetVaultIdentity() vaultport.VaultIdentity     { return e.VaultIdentityFn() }
+func (e Runtime[H, V]) GetOpenTabsStore() windowport.OpenTabsStore    { return e.OpenTabsStoreFn() }
+func (e Runtime[H, V]) GetClock() machineport.Clock                   { return e.ClockFn() }
+func (e Runtime[H, V]) GetNoteQueries() noteport.NoteQueries          { return e.NoteQueriesFn() }
+func (e Runtime[H, V]) GetLinkQueries() noteport.LinkQueries          { return e.LinkQueriesFn() }
+func (e Runtime[H, V]) GetProblemQueries() problemport.ProblemQueries { return e.ProblemQueriesFn() }
+func (e Runtime[H, V]) GetIndexProgress() indexport.IndexProgress     { return e.IndexProgressFn() }
+func (e Runtime[H, V]) GetSourceRepository() sourceport.SourceRepository {
+	return e.SourceRepositoryFn()
+}
+func (e Runtime[H, V]) GetSourceQueries() sourceport.SourceQueries   { return e.SourceQueriesFn() }
+func (e Runtime[H, V]) GetPassageQueries() sourceport.PassageQueries { return e.PassageQueriesFn() }
+func (e Runtime[H, V]) CloseIndex() error                            { return e.CloseIndexFn() }
+func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.OpenGetSettingsFn() }
+func (e Runtime[H, V]) OpenWriteSettings() *settings.Write           { return e.OpenWriteSettingsFn() }
+func (e Runtime[H, V]) OpenWritePluginSecret() *settings.WriteSecret {
+	return e.OpenWritePluginSecretFn()
+}
+func (e Runtime[H, V]) OpenDeletePluginSecret() *settings.DeleteSecret {
+	return e.OpenDeletePluginSecretFn()
+}
+func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin { return e.OpenRetryPluginFn() }
+func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)  { e.ReportPluginFailuresFn(tasks) }
+func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
+	e.SetPluginWorkFn(tasks, models)
+}
+func (e Runtime[H, V]) IsRebuildingIndex() bool { return e.IsRebuildingIndexVal }
 func (e Runtime[H, V]) OpenEmbedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
 	return e.OpenEmbeddersFn(ctx, tasks)
 }
 func (e Runtime[H, V]) NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search {
 	return e.NewSearchFn(asking, handleError)
 }
-func (e Runtime[H, V]) OpenNotes(index note.Levels) note.Scenarios       { return e.OpenNotesFn(index) }
-func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios      { return e.OpenVaultsFn(moves) }
-func (e Runtime[H, V]) GetRefresh() vaults.Refresh                       { return e.GetRefreshFn() }
+
+// OpenFloors is the floor use cases, and none where the assembly names no floors.
+func (e Runtime[H, V]) OpenFloors(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios {
+	if e.OpenFloorsFn == nil {
+		return floor.Scenarios{}
+	}
+	return e.OpenFloorsFn(embedder, handleError)
+}
+func (e Runtime[H, V]) OpenNotes(index note.Levels) note.Scenarios  { return e.OpenNotesFn(index) }
+func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios { return e.OpenVaultsFn(moves) }
+func (e Runtime[H, V]) GetRefresh() vaults.Refresh                  { return e.GetRefreshFn() }
 func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error) {
 	return e.ReadWholeVaultFn(ctx, embedder, v, rebuild)
 }
@@ -130,9 +148,9 @@ func (e Runtime[H, V]) StartVault(
 ) {
 	return e.StartVaultFn(ctx, v, rebuild, notified, handleError)
 }
-func (e Runtime[H, V]) GetPluginServices() PluginServices                    { return e.PluginServicesFn() }
-func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands            { return e.PluginCommandsFn() }
-func (e Runtime[H, V]) GetAgent() agentport.Agent                            { return e.AgentVal }
+func (e Runtime[H, V]) GetPluginServices() PluginServices         { return e.PluginServicesFn() }
+func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
+func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
 }

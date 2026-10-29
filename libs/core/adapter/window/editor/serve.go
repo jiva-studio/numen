@@ -25,10 +25,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
+	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
-	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 // Installation is a window put together and running: the questions a client
@@ -122,6 +122,8 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
 	services.Search.Finds = &finds
+	floors := made.OpenFloors(embedder, newFloorErrorReporter(state))
+	services.Search.Floors = &floors
 
 	pool := &Installation{
 		State:         state,
@@ -246,6 +248,8 @@ const (
 	// readingTheSettings is a name the settings file holds that this build
 	// reads under another one. Each sentence is placed under this and its place.
 	readingTheSettings = "reading the settings"
+	// readingTheFloor is a similarity floor the index holds and cannot read.
+	readingTheFloor = "reading the search floor"
 	// levellingTheIndex is a file that reached the vault and an index that did
 	// not follow it.
 	levellingTheIndex = "levelling the index"

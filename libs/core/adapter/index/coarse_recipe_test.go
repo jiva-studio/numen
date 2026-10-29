@@ -176,6 +176,7 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, statement := range []string{
+		`DROP TABLE floors`,
 		`DROP TABLE open_tabs`,
 		`DROP TABLE text_versions`,
 		`DROP TABLE coarse_recipe`,

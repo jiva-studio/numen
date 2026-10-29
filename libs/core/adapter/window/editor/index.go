@@ -47,6 +47,13 @@ func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
 	fmt.Fprintf(e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
+// newFloorErrorReporter reports a store of floors that cannot be read as a task.
+func newFloorErrorReporter(state *State) func(error) {
+	return func(err error) {
+		state.reportTask(run.Task{ID: readingTheFloor, Title: "Reading the search floor", Error: err.Error()})
+	}
+}
+
 // errNoProgress is the error of a window that cannot report vector progress.
 var errNoProgress = errors.New("index progress is unknown")
 
@@ -70,9 +77,10 @@ func newIndexWorker(
 			}
 			return indexing.GetProgress(ctx, state.Indexing.Progress, v.ID, text(&state.Indexing.Recipe))
 		},
-		Events: indexEvents{state: state, out: out},
-		Quiet:  idleDuration,
-		After:  time.After,
+		Calibrate: made.OpenFloors(embedder, newFloorErrorReporter(state)).AutoCalibrate.Execute,
+		Events:    indexEvents{state: state, out: out},
+		Quiet:     idleDuration,
+		After:     time.After,
 	})
 }
 
