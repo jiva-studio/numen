@@ -38,7 +38,8 @@ fi
 # 4. ESLint conventions and Vue thin-computed gate on staged TS/Vue files
 FRONTEND_STAGED=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue)$' || true)
 if [ -n "$FRONTEND_STAGED" ] && [ -x "$root/node_modules/.bin/eslint" ]; then
-  for pkg in "libs/ui/core" "libs/ui/shell" "apps/desktop/editor" "apps/desktop/flashcards" "apps/mobile" "plugins"; do
+  PLUGIN_PKGS=$(cd "$root" && for dir in plugins/*/; do dir=${dir%/}; ls "$dir"/eslint.config.* >/dev/null 2>&1 && echo "$dir"; done)
+  for pkg in "libs/ui/core" "libs/ui/shell" "apps/desktop/editor" "apps/desktop/flashcards" "apps/mobile" $PLUGIN_PKGS; do
     PKG_FILES=$(echo "$FRONTEND_STAGED" | grep "^${pkg}/" | sed "s|^${pkg}/||" || true)
     if [ -n "$PKG_FILES" ] && [ -d "$root/$pkg" ]; then
       (cd "$root/$pkg" && "$root/node_modules/.bin/eslint" $PKG_FILES) || {
