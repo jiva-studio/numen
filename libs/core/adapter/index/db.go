@@ -20,6 +20,7 @@ import (
 	_ "modernc.org/sqlite/vec"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/floors"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/opentabs"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/vault"
@@ -147,6 +148,13 @@ func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d
 // OpenTabs is the tabs the window has open on every vault. A rebuild of the
 // index leaves them as they are.
 func (d *DB) OpenTabs() *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
+
+// Floors is the similarity floor of every vault under every recipe. A rebuild of
+// the index leaves it as it is.
+func (d *DB) Floors() *floors.Repository { return floors.NewRepository(d.read, d.write) }
+
+// FloorSamples reads the titles and vectors a calibration measures.
+func (d *DB) FloorSamples() *floors.Samples { return floors.NewSamples(d.read) }
 
 func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(pragmas), pos.synchronous))

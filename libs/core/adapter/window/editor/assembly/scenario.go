@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -24,11 +25,17 @@ type fileScenarioAssembly interface {
 	GetRefresh() vaults.Refresh
 }
 
+type searchScenarioAssembly interface {
+	NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search
+	// OpenFloors is the floor use cases of the embedder that fills the index.
+	OpenFloors(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios
+}
+
 // ScenarioAssembly is what this window requires for scenarios, search, and refresh.
 type ScenarioAssembly interface {
 	GetClock() machineport.Clock
-	NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search
 	OpenNotes(index note.Levels) note.Scenarios
+	searchScenarioAssembly
 	textScenarioAssembly
 	fileScenarioAssembly
 }

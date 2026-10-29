@@ -12,8 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 // Host provides plugin resolution and activation for embeddings.
@@ -31,6 +31,7 @@ type Embedder struct {
 	mu          sync.Mutex
 	model       embeddingport.EmbeddingModel
 	concurrency int
+	floorHint   float64
 }
 
 // Open activates the plugin that declares the embedding capability and reads its model.
@@ -45,7 +46,7 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		return nil, err
 	}
 
-	model, concurrency, err := readClientModel(ctx, plugin.Manifest.ID, client)
+	model, concurrency, floorHint, err := readClientModel(ctx, plugin.Manifest.ID, client)
 	if err != nil {
 		_ = lease.Close()
 		return nil, err
@@ -58,6 +59,7 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		lease:       lease,
 		model:       model,
 		concurrency: concurrency,
+		floorHint:   floorHint,
 	}, nil
 }
 
@@ -65,12 +67,12 @@ func readClientModel(
 	ctx context.Context,
 	pluginID string,
 	client numenv1connect.EmbeddingServiceClient,
-) (embeddingport.EmbeddingModel, int, error) {
+) (embeddingport.EmbeddingModel, int, float64, error) {
 	modelCtx, cancel := context.WithTimeout(ctx, transport.ModelInfoTimeout)
 	defer cancel()
 	resp, err := client.GetEmbeddingModel(modelCtx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
 	if err != nil {
-		return embeddingport.EmbeddingModel{}, 0, fmt.Errorf("get embedding model %s: %w", pluginID, err)
+		return embeddingport.EmbeddingModel{}, 0, 0, fmt.Errorf("get embedding model %s: %w", pluginID, err)
 	}
 	concurrency := 1
 	if resp.Msg.GetConcurrency() > 0 {
@@ -83,18 +85,19 @@ func readClientModel(
 		Pooling:    resp.Msg.GetPooling(),
 		From:       resp.Msg.GetFrom(),
 	}
-	return model, concurrency, nil
+	return model, concurrency, max(resp.Msg.GetFloorHint(), 0), nil
 }
 
 // GetModel returns the active model of the embedding plugin.
 func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
 	if client, call, err := b.service.Open(context.Background()); err == nil {
-		model, concurrency, readErr := readClientModel(context.Background(), b.pluginID, client)
+		model, concurrency, floorHint, readErr := readClientModel(context.Background(), b.pluginID, client)
 		_ = call.Close()
 		if readErr == nil {
 			b.mu.Lock()
 			b.model = model
 			b.concurrency = concurrency
+			b.floorHint = floorHint
 			b.mu.Unlock()
 			return model
 		}
@@ -102,6 +105,14 @@ func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return b.model
+}
+
+// GetFloorHint returns the starting floor the embedding plugin reported with the
+// model on the last read, and zero where it reported none.
+func (b *Embedder) GetFloorHint(_ context.Context) float64 {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.floorHint
 }
 
 // Embed sends texts to the embedding plugin process and decodes returned vectors.

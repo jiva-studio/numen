@@ -30,11 +30,15 @@ const defaultExtractors = 4
 const lexicalCandidates = 5
 
 // DefaultFloor is the minimum cosine similarity at which a passage counts as
-// an answer.
+// an answer where neither the settings, a person, a calibration nor the model
+// names one.
 //
-// The value is specific to the embedding model that produced the vectors: it is
-// the similarity that model assigns to texts about different subjects.
-const DefaultFloor = 0.50
+// The similarity that a model assigns to texts about different subjects is
+// specific to the model, so the value is a starting point.
+const DefaultFloor = 0.30
+
+// FloorSource returns the floor for a vault under an embedding recipe.
+type FloorSource func(ctx context.Context, v domain.Vault, recipe string) float64
 
 // Parameters selects the search modes, the number of candidates each mode keeps
 // and the minimum score a candidate must reach. A mode with no candidates does
@@ -55,7 +59,8 @@ type Parameters struct {
 	// suffices.
 	Named int
 	// Floor is the minimum similarity for a passage to count as an answer. Only
-	// the meaning search reads it; the word search has no distance.
+	// the meaning search reads it; the word search has no distance. Zero selects
+	// the floor of the search.
 	Floor float64
 	// IsGrowing marks the last word of the query as possibly incomplete, so the
 	// index matches it as a prefix. A complete query is matched exactly.
@@ -77,16 +82,14 @@ func (p Parameters) fill() Parameters {
 		p.Dense = p.Limit
 		p.Named = p.Limit
 	}
-	if p.Floor == 0 {
-		p.Floor = DefaultFloor
-	}
 	return p
 }
 
 // Search answers a query within one vault, over everything the vault holds.
 //
 // One database holds every vault, so the vault is an argument of the search.
-// New sets every field. Without an embedder only the word search runs, and
+// New sets every field; `floor` is the floor the settings file names, zero where
+// it names none. Without an embedder only the word search runs, and
 // vector-based results are absent.
 type Search struct {
 	passages     sourceport.PassageQueries
@@ -94,6 +97,7 @@ type Search struct {
 	embedder     embeddingport.Embedder
 	texts        textport.TextReaders
 	floor        float64
+	floorSource  FloorSource
 	errorHandler windowport.ErrorHandler
 	cache        *QueryCache
 	// extractors is how many sources are extracted at once. Zero is
@@ -109,7 +113,8 @@ type Search struct {
 // finish filling.
 //
 // `floor` is the minimum similarity for a passage to count as an answer, in the
-// units of the model in use. Zero selects DefaultFloor.
+// units of the model in use. It outranks every other source of the floor. Zero
+// leaves the floor to the floor source, and to DefaultFloor where there is none.
 //
 // `texts` is the text versions that sources are cut from. Nil means the
 // installation has none, and only notes return their text.
@@ -117,9 +122,6 @@ type Search struct {
 // `errorHandler` receives the error of a search mode that could not answer.
 // Nil ignores such errors.
 func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, floor float64, errorHandler windowport.ErrorHandler) Search {
-	if floor == 0 {
-		floor = DefaultFloor
-	}
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
@@ -141,6 +143,14 @@ func (u Search) WithExtractors(n int) Search {
 	return u
 }
 
+// WithFloorSource returns a search whose floor for a query is the source's, under
+// the recipe of the model that embeds the query. It is consulted when neither the
+// query nor the settings file names a floor.
+func (u Search) WithFloorSource(source FloorSource) Search {
+	u.floorSource = source
+	return u
+}
+
 // WithCache returns a search that uses the query cache given.
 func (u Search) WithCache(cache *QueryCache) Search {
 	u.cache = cache
@@ -156,9 +166,6 @@ func (u Search) WithCache(cache *QueryCache) Search {
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
-	}
-	if p.Floor == 0 {
-		p.Floor = u.floor
 	}
 	p = p.fill()
 
@@ -294,7 +301,22 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, p.Floor)
+	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, u.getFloor(ctx, v, recipe, p))
+}
+
+// getFloor is the floor of one query: the query's own, the settings file's, the
+// floor source's, and DefaultFloor, in that order.
+func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p Parameters) float64 {
+	switch {
+	case p.Floor > 0:
+		return p.Floor
+	case u.floor > 0:
+		return u.floor
+	case u.floorSource != nil:
+		return u.floorSource(ctx, v, recipe)
+	default:
+		return DefaultFloor
+	}
 }
 
 // read fills in the text of each passage from the vault. A chunk is a position

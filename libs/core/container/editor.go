@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -81,6 +82,9 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenEmbeddersFn:          cfg.Embedders,
 		NewSearchFn: func(asking embeddingport.Embedder, handleError func(error)) search.Search {
 			return cfg.NewSearch(db, asking, handleError)
+		},
+		OpenFloorsFn: func(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios {
+			return cfg.NewFloors(db, embedder, handleError)
 		},
 		OpenNotesFn: func(index note.Levels) note.Scenarios {
 			return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), index)

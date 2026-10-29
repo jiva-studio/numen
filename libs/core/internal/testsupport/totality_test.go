@@ -22,6 +22,8 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.CompletionConsent":    "adapter/window/editor: written by the consents table",
 	"numen.v1.CompletionErrorCode":  "plugin-sdk-go/ai: read by readRefusal",
 	"numen.v1.ErrorCode":            "adapter/window/editor: worded by note errors",
+	"numen.v1.CalibrationOutcome":   "adapter/window/editor/search: walked by TestEveryCalibrationOutcomeHasItsOwnWireValue",
+	"numen.v1.FloorSource":          "adapter/window/editor/search: walked by TestEveryFloorSourceHasItsOwnWireValue",
 	"numen.v1.FlushResult":          "internal/adapterlib/wire: read by left",
 	"numen.v1.HostIndexState":       "plugin-sdk-go/host: read by EnsureIndexed",
 	"numen.v1.HostStoreErrorCode":   "plugin-sdk-go/host: read by readStoreError",

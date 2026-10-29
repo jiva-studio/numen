@@ -12,6 +12,6 @@
 //
 // One sub-package holds one domain's ports: agentport, completionport,
 // settingsport, pluginport, playbackport, contenttypeport, transcriptionport, embeddingport,
-// vaultport, noteport, sourceport, problemport, indexport, machineport and
+// floorport, vaultport, noteport, sourceport, problemport, indexport, machineport and
 // windowport.
 package port
