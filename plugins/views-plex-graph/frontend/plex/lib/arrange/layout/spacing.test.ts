@@ -16,7 +16,7 @@ const EXACT = { width: 11 * nodeSize.width + 10 * gap + 2 * margin, height: 1000
 
 const children = (frame: PlexFrame) => frame.nodes.filter((node) => node.relation === 'child')
 
-const stepAlong = (frame: PlexFrame) => {
+const stepAxis = (frame: PlexFrame) => {
   const [first, second] = children(frame)
   return second!.x - first!.x
 }
@@ -37,7 +37,7 @@ describe('a gap is never given less than its setting', () => {
   it('packs a crowded window to the settings and no closer', () => {
     const viewport = { width: 700, height: 600 }
     const frame = arrangePlex(build('A node', { child: 11 }), { options: { viewport } })
-    expect(stepAlong(frame)).toBeGreaterThanOrEqual(TIGHT_STEP)
+    expect(stepAxis(frame)).toBeGreaterThanOrEqual(TIGHT_STEP)
   })
 
   it('is the whole of it at a spread of one', () => {
@@ -45,7 +45,7 @@ describe('a gap is never given less than its setting', () => {
     const frame = arrangePlex(build('A node', { child: 5 }), {
       options: { viewport, spread: 1 },
     })
-    expect(stepAlong(frame)).toBe(TIGHT_STEP)
+    expect(stepAxis(frame)).toBe(TIGHT_STEP)
     expect(firstLine(frame)[0]!.y).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
   })
 })
@@ -54,19 +54,19 @@ describe('a gap opens into the room the window leaves', () => {
   it('spaces a short row out in a wide window', () => {
     const viewport = { width: 2400, height: 1400 }
     const frame = arrangePlex(build('A node', { child: 3 }), { options: { viewport } })
-    expect(stepAlong(frame)).toBeGreaterThan(TIGHT_STEP)
+    expect(stepAxis(frame)).toBeGreaterThan(TIGHT_STEP)
   })
 
   it('opens no further than the spread allows, however much room there is', () => {
     const roomy = arrangePlex(build('A node', { child: 3 }), {
       options: { viewport: { width: 4000, height: 3000 } },
     })
-    expect(stepAlong(roomy)).toBeLessThanOrEqual(nodeSize.width + gap * spread)
+    expect(stepAxis(roomy)).toBeLessThanOrEqual(nodeSize.width + gap * spread)
   })
 
   it('leaves the settings alone when there is no window to measure', () => {
     const frame = arrangePlex(build('A node', { child: 3 }))
-    expect(stepAlong(frame)).toBe(TIGHT_STEP)
+    expect(stepAxis(frame)).toBe(TIGHT_STEP)
   })
 })
 
@@ -77,7 +77,7 @@ describe('the gap an edge crosses opens first', () => {
     const frame = arrangePlex(build('A node', { child: 11 }), {
       options: { viewport: EXACT },
     })
-    expect(stepAlong(frame)).toBe(TIGHT_STEP)
+    expect(stepAxis(frame)).toBe(TIGHT_STEP)
     expect(firstLine(frame)[0]!.y).toBeGreaterThan(
       focusSize.height / 2 + focusGap + nodeSize.height / 2,
     )

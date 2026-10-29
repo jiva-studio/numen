@@ -56,14 +56,14 @@ async function writeSizeChoice(choice: ScaleChoice, deps: WriteSizeDeps, onReset
 export function useAppearanceChoice(on: ChoiceDeps) {
   const { core, write, list, applied, mode, settings, bounds, wear } = on
   const status = ref('')
-  const heldItem = ref<ScaleChoice | null>(null)
+  const pendingItem = ref<ScaleChoice | null>(null)
   let hold: ReturnType<typeof setTimeout> | undefined
 
   const isTheme = (item: string): boolean => item !== '' && !parseMode(item) && !parseSize(item)
   const aged = computed(() => (isTheme(status.value) ? status.value : applied.value))
   const half = computed<Mode>(() => parseMode(status.value) ?? mode.value)
   const sized = computed<Sizes>(() => {
-    const scaleChoice = heldItem.value
+    const scaleChoice = pendingItem.value
     return scaleChoice ? onto(settings.value, scaleChoice.which, scaleChoice.size) : settings.value
   })
   const isPinned = computed(() => {
@@ -78,17 +78,17 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     clearTimeout(hold)
     const size = parseSize(item)
     if (size && isInBounds(its(bounds.value, size.which), size.size)) {
-      hold = setTimeout(() => (heldItem.value = size), HELD)
+      hold = setTimeout(() => (pendingItem.value = size), HELD)
       return
     }
-    heldItem.value = null
+    pendingItem.value = null
     void applyAppearance()
   }
 
   const chooseSize = (choice: ScaleChoice) =>
     writeSizeChoice(choice, { core, write, applied, mode, settings, bounds }, () => {
       clearTimeout(hold)
-      heldItem.value = null
+      pendingItem.value = null
       status.value = ''
     })
 

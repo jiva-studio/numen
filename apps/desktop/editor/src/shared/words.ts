@@ -33,7 +33,7 @@ export const WORDS = {
   readAt: 'Open at this heading',
   readDocument: 'Open the document here',
   noneFound: 'No results found',
-  notAsked: 'Search failed',
+  noQuery: 'Search failed',
   notEmbedded: 'Semantic index not built yet',
   /** The commands, and the groups they are drawn in. */
   noteGroupTitle: 'Note',
@@ -54,7 +54,7 @@ export const WORDS = {
   runWith: (title: string, plugin: string) => `${title} with ${plugin}`,
   deleteVersionOf: (plugin: string) => `Delete text from ${plugin}`,
   /** What the corner says once a plugin was asked to make or delete a text. */
-  textAsked: (plugin: string) => `${plugin}: working`,
+  queriedText: (plugin: string) => `${plugin}: working`,
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
   newNote: 'New note',

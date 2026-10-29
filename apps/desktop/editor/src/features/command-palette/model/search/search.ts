@@ -37,7 +37,7 @@ export interface SearchDeps {
 /** What a group of a palette says when it holds nothing. */
 export interface EmptyWords {
   readonly noneFound: string
-  readonly notAsked: string
+  readonly noQuery: string
 }
 
 /** Everything the palette says in the window's voice. */
@@ -142,14 +142,14 @@ async function executeSearchQuery(
     core: SearchDeps
     query: string
     mine: InFlightRequest
-    notAskedWord: string
+    emptyQueryWord: string
   },
   state: SearchRefs,
 ) {
   state.isWorking.value = { names: true, text: true, meaning: true }
   state.failureMessages.value = {}
   const onFailed = (g: SearchGroup) => {
-    state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.notAskedWord }
+    state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
   }
   const onDone = (g: SearchGroup) => {
     // Stryker disable next-line ConditionalExpression: Outdated queries do not update working state.
@@ -214,7 +214,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   }
 
   const ask = (query: string, mine: InFlightRequest) =>
-    executeSearchQuery({ core, query, mine, notAskedWord: words.notAsked }, state)
+    executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
 
   const setTyped = async (text: string) => {
     inputValue.value = text

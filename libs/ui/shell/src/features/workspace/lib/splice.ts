@@ -27,14 +27,14 @@ export interface SplitResult {
   readonly focus: NodeId
 }
 
-export interface BesidePlacement {
+export interface AdjacentPlacement {
   readonly onto: NodeId
   readonly tab: TabId
   readonly side: Side
   readonly axis: Orientation
 }
 
-interface JoinBeside {
+interface JoinAdjacent {
   readonly index: number
   readonly side: Side
 }
@@ -47,9 +47,9 @@ interface JoinBeside {
  * lands one level deeper and divides the other way. A node with no parent is
  * the root, and the workspace turns its axis to suit.
  */
-export function putBeside(
+export function putAdjacent(
   root: WorkspaceNode,
-  placement: BesidePlacement,
+  placement: AdjacentPlacement,
   id: NodeIdFactory,
 ): SplitResult {
   const { onto, tab, side, axis } = placement
@@ -73,7 +73,7 @@ export function putBeside(
 
   if (getOrientation(axis, above.length) === wanted) {
     return {
-      root: replaceAt(root, above, joinBeside(parent, createdItem, { index, side })),
+      root: replaceAt(root, above, joinAdjacent(parent, createdItem, { index, side })),
       axis,
       focus: createdItem.id,
     }
@@ -94,7 +94,7 @@ function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNod
 }
 
 /** The branch with the new pane among its children, taking half the share of the child at `index`. */
-function joinBeside(parent: Branch, newPane: Pane, join: JoinBeside): WorkspaceNode {
+function joinAdjacent(parent: Branch, newPane: Pane, join: JoinAdjacent): WorkspaceNode {
   const { index, side } = join
   const targetIndex = isLeading(side) ? index : index + 1
   const children = [

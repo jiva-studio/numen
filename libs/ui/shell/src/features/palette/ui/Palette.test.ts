@@ -73,7 +73,7 @@ const settle = async () => {
   await nextTick()
 }
 
-const getDrawnGround = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
+const getDrawnBackdrop = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const options = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
@@ -128,7 +128,7 @@ describe('being open and being closed', () => {
   it('draws nothing at all until it is opened', async () => {
     mountPalette({ isOpen: false })
     await settle()
-    expect(getDrawnGround()).toBeNull()
+    expect(getDrawnBackdrop()).toBeNull()
   })
 
   it('takes the keyboard into the field, and keeps it there while walking', async () => {
@@ -160,7 +160,7 @@ describe('being open and being closed', () => {
     await press('Escape')
     expect(palette.emitted('dismiss')).toHaveLength(1)
 
-    getDrawnGround()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    getDrawnBackdrop()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     await nextTick()
     expect(palette.emitted('dismiss')).toHaveLength(2)
   })
@@ -752,7 +752,7 @@ describe('the action panel', () => {
     await settle()
 
     expect(palette.emitted('dismiss')).toBeUndefined()
-    expect(getDrawnGround()).not.toBeNull()
+    expect(getDrawnBackdrop()).not.toBeNull()
     expect(sheet()).toBeNull()
     expect(document.activeElement).toBe(field())
   })
@@ -862,11 +862,11 @@ describe('the action panel', () => {
   it('goes on a press on the ground, and the palette stays where it is', async () => {
     const palette = await open()
 
-    getDrawnGround()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    getDrawnBackdrop()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     await settle()
 
     expect(sheet()).toBeNull()
-    expect(getDrawnGround()).not.toBeNull()
+    expect(getDrawnBackdrop()).not.toBeNull()
     expect(palette.emitted('dismiss')).toBeUndefined()
   })
 

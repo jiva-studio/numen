@@ -64,7 +64,7 @@ interface Knobs {
 
   curvature: number
   minReach: number
-  arrowRoom: number
+  arrowClearance: number
 
   arriveAfter: number
   leaveBefore: number
@@ -110,7 +110,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
   maxHeadings: a.maxHeadings,
-  routing: { curvature: a.curvature, minReach: a.minReach, arrowRoom: a.arrowRoom },
+  routing: { curvature: a.curvature, minReach: a.minReach, arrowClearance: a.arrowClearance },
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'
@@ -337,7 +337,7 @@ const meta = {
 
     curvature: { ...range(0, 1, 0.05, 'Edges'), table: { category: 'Edges' } },
     minReach: { ...range(0, 120, 2, 'Edges'), table: { category: 'Edges' } },
-    arrowRoom: { ...range(0, 40, 1, 'Edges'), table: { category: 'Edges' } },
+    arrowClearance: { ...range(0, 40, 1, 'Edges'), table: { category: 'Edges' } },
     showEdgeLabels: { control: 'boolean', table: { category: 'Edges' } },
 
     duration: {
@@ -411,7 +411,7 @@ const meta = {
 
     curvature: 0.55,
     minReach: 22,
-    arrowRoom: 14,
+    arrowClearance: 14,
     arriveAfter: 0.35,
     leaveBefore: 0.45,
 
@@ -802,9 +802,9 @@ export const TitledLines: Story = {
 
     // The hand on that line lifts it, and the lifted title is painted the same
     // way on a heavier halo.
-    const alongHref = halo!.querySelector('textPath')!.getAttribute('href')!
+    const axisHref = halo!.querySelector('textPath')!.getAttribute('href')!
     const viewElement = canvasElement
-      .querySelector(`defs path[id="${alongHref.slice(1)}"]`)!
+      .querySelector(`defs path[id="${axisHref.slice(1)}"]`)!
       .getAttribute('d')
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === viewElement,
@@ -934,7 +934,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
  *
  * It relies on its own, since the playground is a plex to turn knobs on.
  */
-export const TitlesFindRoom: Story = {
+export const TitlesFindSpace: Story = {
   args: { ...invented.args, duration: 0 },
   render: invented.render,
   play: expectTitlesClear,
@@ -1127,12 +1127,12 @@ export const RestingOnATitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
-    const besideNode = canvas.getByLabelText('日本語のノート, child')
+    const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
     const getWidth = (box: Element) =>
       box.querySelector('.plex__box')!.getBoundingClientRect().width
     const nodeWidth = getWidth(node)
-    const nextDoor = besideNode.getBoundingClientRect().x
+    const adjacentX = adjacentNode.getBoundingClientRect().x
 
     // Cut short in the box the arrangement drew, and the whole of it under a
     // hand that stays.
@@ -1147,7 +1147,7 @@ export const RestingOnATitle: Story = {
       async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth),
     )
 
-    await expect(besideNode.getBoundingClientRect().x).toBe(nextDoor)
+    await expect(adjacentNode.getBoundingClientRect().x).toBe(adjacentX)
     const boxes = canvasElement.querySelectorAll('.plex__node')
     await expect(boxes[boxes.length - 1]).toBe(node)
 

@@ -546,7 +546,7 @@ describe('a command that asks for a note', () => {
 
     await commands.setTyped('en')
 
-    expect(commands.groups.value[0]?.silence).toBe(words.notAsked)
+    expect(commands.groups.value[0]?.silence).toBe(words.noQuery)
   })
 })
 
@@ -868,7 +868,7 @@ describe('a command that asks for a vault', () => {
     commands.startCommand('openVault', front())
     await settle()
 
-    expect(commands.groups.value[0]?.silence).toBe(words.notAsked)
+    expect(commands.groups.value[0]?.silence).toBe(words.noQuery)
   })
 })
 
@@ -1200,7 +1200,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     expect(describeGroup(commands.groups)).toStrictEqual({
       items: [],
       isWorking: false,
-      silence: words.notAsked,
+      silence: words.noQuery,
     })
   })
 
@@ -1326,7 +1326,7 @@ describe('a step that asks for a vault, as the list answers', () => {
     expect(describeGroup(commands.groups)).toStrictEqual({
       items: [],
       isWorking: false,
-      silence: words.notAsked,
+      silence: words.noQuery,
     })
   })
 

@@ -20,7 +20,7 @@ export function useLink(links: Links | undefined, path: string) {
   const isLoaded = ref(false)
   const error = ref('')
   let turn = 0
-  let isFetchAsked = false
+  let isFetchRequested = false
 
   const load = async (): Promise<void> => {
     const mine = ++turn
@@ -43,8 +43,8 @@ export function useLink(links: Links | undefined, path: string) {
       source.value = played
       embedSource.value = framed
       error.value = ''
-      if (!article && !facts.value.isTextDeleted && !isWorking.value && !isFetchAsked) {
-        isFetchAsked = true
+      if (!article && !facts.value.isTextDeleted && !isWorking.value && !isFetchRequested) {
+        isFetchRequested = true
         await run(() => activeLinks.fetchText(path, false))
       }
     } catch (failure) {

@@ -13,7 +13,7 @@ export interface ActionPanelState {
   /** A press anywhere but on the panel puts the panel away. */
   readonly onPress: () => void
   /** A press on the ground: the panel goes, and the palette under it. */
-  readonly onGround: () => void
+  readonly onBackdrop: () => void
 }
 
 export interface ActionPanelOptions {
@@ -42,10 +42,10 @@ export function useActionPanel(options: ActionPanelOptions): ActionPanelState {
     open.value = false
   }
 
-  const onGround = (): void => {
+  const onBackdrop = (): void => {
     if (open.value) return void (open.value = false)
     options.dismiss()
   }
 
-  return { open, chooseAction, onPress, onGround }
+  return { open, chooseAction, onPress, onBackdrop }
 }

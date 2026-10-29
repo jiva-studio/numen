@@ -85,7 +85,7 @@ export function useCurveAnnotations(
       curve: props.curve,
       place: props.place,
       position: plot.knob.value,
-      value: plot.heldValue.value,
+      value: plot.pinnedValue.value,
     }),
   )
 
@@ -105,7 +105,7 @@ export function useCurveAnnotations(
   )
 
   const knobStyle = computed(() => getKnobValueStyle(plot.knob.value))
-  const atKnob = computed(() => words.formatGoalValue(props.curve.goal, plot.heldValue.value))
+  const atKnob = computed(() => words.formatGoalValue(props.curve.goal, plot.pinnedValue.value))
   const counts = computed(() => (props.material ? words.material(props.material) : []))
   const learning = computed(() => {
     const point = props.curve.at[props.place]
@@ -120,7 +120,7 @@ export function useCurveAnnotations(
     isDated,
     isHonest,
     labels: { marks, named, heights, callout },
-    knob: { reading: knobStyle, atKnob, value: computed(() => plot.heldValue.value) },
+    knob: { reading: knobStyle, atKnob, value: computed(() => plot.pinnedValue.value) },
     tiles: { counts, learning },
     bounds,
   }

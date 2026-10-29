@@ -9,7 +9,7 @@ export const WORDS = {
   nothing: 'The agent returned no answer.',
   unsent: 'Not sent',
   stopped: 'Stopped',
-  nothingSaid: 'No messages yet',
+  noTranscript: 'No messages yet',
   agent: 'Agent',
   /** The commands the plugin declares: a conversation opened, and a note asked about. */
   newAgent: 'Open agent tab',

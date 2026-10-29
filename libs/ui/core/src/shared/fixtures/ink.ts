@@ -37,7 +37,9 @@ const createCanvas = (): CanvasRenderingContext2D => {
 }
 
 /** The lines the ink on a painting reaches, and how thick it is, in its pixels. */
-const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; run: number } => {
+const readStroke = (
+  ctx: CanvasRenderingContext2D,
+): { top: number; bottom: number; run: number } => {
   const data = ctx.getImageData(0, 0, GRAIN, GRAIN).data
   const isInked = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < GRAIN && y < GRAIN && data[(y * GRAIN + x) * 4 + 3]! > 128
@@ -79,7 +81,7 @@ const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
 import { measureElementRect } from '@/shared/lib/dom'
 
 /** The ink of a drawing, painted again large and read back into the box it fills. */
-export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
+export const getDrawingStroke = async (drawing: SVGElement): Promise<Ink> => {
   const box = measureElementRect(drawing)
   const copy = drawing.cloneNode(true) as SVGElement
   copy.setAttribute('width', String(GRAIN))
@@ -97,7 +99,7 @@ export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
   const ctx = createCanvas()
   ctx.drawImage(image, 0, 0, GRAIN, GRAIN)
 
-  const ink = readInk(ctx)
+  const ink = readStroke(ctx)
   const getPageY = (pos: number): number => box.top + (pos / GRAIN) * box.height
   return {
     top: getPageY(ink.top),

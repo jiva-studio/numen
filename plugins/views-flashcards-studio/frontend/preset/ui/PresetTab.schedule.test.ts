@@ -23,9 +23,9 @@ describe('a preset that schedules nothing', () => {
   }
 
   it('has a sentence of its own for each verdict there is', () => {
-    const saidText = STOPPING.map((one) => words.stopped(one))
-    expect(saidText.filter((one) => one !== '')).toHaveLength(STOPPING.length)
-    expect(new Set(saidText).size).toBe(STOPPING.length)
+    const transcriptText = STOPPING.map((one) => words.stopped(one))
+    expect(transcriptText.filter((one) => one !== '')).toHaveLength(STOPPING.length)
+    expect(new Set(transcriptText).size).toBe(STOPPING.length)
   })
 
   it('says why, in the words that verdict has', () => {

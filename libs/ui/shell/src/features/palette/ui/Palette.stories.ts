@@ -268,7 +268,7 @@ export const Choosing: Story = {
  * Tab is answered here and moves nowhere, and the panel over the palette says
  * the same of the palette under it.
  */
-export const NothingBehindIt: Story = {
+export const NothingBelowIt: Story = {
   play: async () => {
     await waitFor(() => expect(document.activeElement).toBe(field()))
     await expect(palette()?.querySelector('[data-palette="panel"]')).toHaveAttribute(
@@ -549,7 +549,7 @@ export const Nothing: Story = {
  * first is drawn nowhere; the second says why in its own words, which is
  * something a person needs to be told.
  */
-export const CouldNotBeAsked: Story = {
+export const CouldNotBeQueried: Story = {
   args: {
     groups: [
       { id: 'names', title: 'Names', items: [] },

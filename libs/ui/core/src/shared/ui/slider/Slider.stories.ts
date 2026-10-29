@@ -183,7 +183,7 @@ export const TheKeyboardMovesIt: Story = {
   },
 }
 
-export const TheFigureIsReadOutBesideIt: Story = {
+export const TheFigureIsReadOutAdjacentToIt: Story = {
   play: async ({ canvasElement }) => {
     expect(handle(canvasElement).textContent).toBe('')
     expect(canvasElement.textContent).toContain('40%')

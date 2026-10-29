@@ -31,7 +31,7 @@ export interface BranchResize {
   /** The shares a splitter settled on, in percent. */
   readonly onLayout: (percents: readonly number[]) => void
   /** A handle taken up, and put down where it stopped. */
-  readonly onHold: (isHeld: boolean) => void
+  readonly onHold: (isIndexed: boolean) => void
 }
 
 export function useBranchResize(options: BranchResizeOptions): BranchResize {
@@ -60,8 +60,8 @@ export function useBranchResize(options: BranchResizeOptions): BranchResize {
     else options.resize(options.getBranchId(), shares)
   }
 
-  const onHold = (isHeld: boolean): void => {
-    if (!isHeld) {
+  const onHold = (isIndexed: boolean): void => {
+    if (!isIndexed) {
       putDown()
       return
     }

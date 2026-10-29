@@ -1,15 +1,15 @@
 /** Putting a pane beside a node, taking a tab off, and restoring the canonical tree. */
 import { describe, expect, it, vi } from 'vitest'
-import { commit, detach, mapPane, putBeside } from './splice'
+import { commit, detach, mapPane, putAdjacent } from './splice'
 import { pane, type Pane, type WorkspaceNode } from './node'
 import { isBranch, isPane, findNode, paneById } from './tree'
 import { createIdFactory, split, stack, createWorkspace } from '../fixtures/build'
 
-describe('putBeside', () => {
+describe('putAdjacent', () => {
   const two = split('root', [stack('a', 'one'), stack('b', 'two')])
 
   it('leaves the tree alone for the middle, which is not a side', () => {
-    const divided = putBeside(
+    const divided = putAdjacent(
       two,
       { onto: 'a', tab: 't', side: 'center', axis: 'horizontal' },
       createIdFactory(),
@@ -18,7 +18,7 @@ describe('putBeside', () => {
   })
 
   it('leaves the tree alone for a node that is not there', () => {
-    const divided = putBeside(
+    const divided = putAdjacent(
       two,
       { onto: 'missing', tab: 't', side: 'left', axis: 'horizontal' },
       createIdFactory(),
@@ -27,7 +27,7 @@ describe('putBeside', () => {
   })
 
   it('divides a root that is one pane into two halves, turning the axis', () => {
-    const divided = putBeside(
+    const divided = putAdjacent(
       stack('a', 'one'),
       { onto: 'a', tab: 't', side: 'bottom', axis: 'horizontal' },
       createIdFactory(),
@@ -43,7 +43,7 @@ describe('putBeside', () => {
   })
 
   it('wraps a pane in two halves when the parent divides the other way', () => {
-    const divided = putBeside(
+    const divided = putAdjacent(
       two,
       { onto: 'a', tab: 't', side: 'top', axis: 'horizontal' },
       createIdFactory(),

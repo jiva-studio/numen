@@ -16,7 +16,7 @@ defineEmits<{ (event: 'leave'): void }>()
 
 <template>
   <section class="finished">
-    <h1 class="finished__said">Nothing left today.</h1>
+    <h1 class="finished__transcript">Nothing left today.</h1>
     <p class="finished__count">{{ done }} answered.</p>
     <Button variant="outline" @click="$emit('leave')">Back to the decks</Button>
   </section>
@@ -32,7 +32,7 @@ defineEmits<{ (event: 'leave'): void }>()
   gap: var(--numen-inset);
 }
 
-.finished__said {
+.finished__transcript {
   margin: 0;
   font-size: var(--numen-display-size);
   font-weight: 600;

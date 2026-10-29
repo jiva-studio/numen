@@ -57,7 +57,7 @@ function open(settings: Record<string, string> = {}) {
   }
   const state = useAgentConversation(conversation, {
     openFileAt: () => {},
-    openFileBeside: () => {},
+    openFileAdjacent: () => {},
     resolveLinks: async () => [],
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],

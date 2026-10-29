@@ -24,7 +24,7 @@ const createSettings = () => {
       return vi.fn()
     },
   } as unknown as MessageLog
-  const handle = { openTab: vi.fn(async () => ''), openTabBeside: vi.fn(async () => '') }
+  const handle = { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') }
   const windowTabs = { handle } as unknown as ReturnType<typeof useWindowTabs>
   const settings = useSettings({ core, words: WORDS, log, windowTabs, onSizeChanged: vi.fn() })
   return { settings, writers, handle }

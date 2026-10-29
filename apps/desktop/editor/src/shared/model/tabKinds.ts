@@ -123,7 +123,7 @@ export interface WindowHandle {
   /** A tab of a kind, opened on something and put in front. */
   openTab(kind: string, at?: string): Promise<string>
   /** The same, drawn beside the pane the person is in. */
-  openTabBeside(kind: string, at?: string): Promise<string>
+  openTabAdjacent(kind: string, at?: string): Promise<string>
   /** A tab the window already holds, put in front. */
   show(id: string): void
   /** A tab that took its own close, going now. */

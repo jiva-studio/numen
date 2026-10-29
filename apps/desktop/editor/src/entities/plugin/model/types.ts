@@ -72,7 +72,7 @@ export interface PluginHostDeps {
     open: (path: string, title?: string, options?: unknown) => void,
   ) => (() => void) | void
   readonly openTab: (kind: string, at?: string) => Promise<string>
-  readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
+  readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>
   readonly navigateTab?: (kind: string, path: string) => Promise<string>
   readonly closeTab?: (id: string) => void
   readonly getTabState?: (id: string) => unknown

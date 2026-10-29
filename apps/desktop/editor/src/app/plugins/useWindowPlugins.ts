@@ -90,7 +90,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
         ?.readers?.find((reader) => reader.id === readerId)?.extensions ?? [],
     registerEditor: tabOpeners.registerEditor,
     openTab: windowTabs.openTabOfKind,
-    openTabBeside: windowTabs.openTabBesideOfKind,
+    openTabAdjacent: windowTabs.openTabAdjacentOfKind,
     navigateTab: windowTabs.navigateTab,
     closeTab: windowTabs.finishClose,
     getTabState: (id: string) => windowTabs.getTab(id)?.state,

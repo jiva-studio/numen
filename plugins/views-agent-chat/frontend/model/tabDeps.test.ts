@@ -25,7 +25,7 @@ describe('what an agent tab asks of the window', () => {
   it('opens a file alongside the pane the person is in', () => {
     const { host, recorded } = createHost()
 
-    createAgentTabDeps(host).openFileBeside('Note.md')
+    createAgentTabDeps(host).openFileAdjacent('Note.md')
 
     expect(recorded.opened).toStrictEqual([['Note.md', { placement: 'split' }]])
   })

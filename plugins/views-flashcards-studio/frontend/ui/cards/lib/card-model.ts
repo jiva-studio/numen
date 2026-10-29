@@ -197,17 +197,20 @@ export interface Pane {
  * and then what that markup evaluates to. Two parts to a row stand the front above
  * the back; one to a row stands each preview under the half it is of.
  */
-export function getPanes(template: TemplateRow, words: CardModelWords = CARD_MODEL_WORDS): readonly Pane[] {
+export function getPanes(
+  template: TemplateRow,
+  words: CardModelWords = CARD_MODEL_WORDS,
+): readonly Pane[] {
   return HALVES.flatMap((half): readonly Pane[] => {
-    const saidText = half === 'front' ? words.front : words.back
+    const transcriptText = half === 'front' ? words.front : words.back
     const content = half === 'front' ? template.front : template.back
     const previewTemplate = half === 'front' ? template.frontPreview : template.backPreview
     return [
       {
         half,
         mode: 'written',
-        label: saidText,
-        named: saidText,
+        label: transcriptText,
+        named: transcriptText,
         text: content,
         isBlank: content.trim() === '',
         stray: half === 'front' ? template.frontStray : template.backStray,
@@ -216,7 +219,7 @@ export function getPanes(template: TemplateRow, words: CardModelWords = CARD_MOD
         half,
         mode: 'preview',
         label: words.preview,
-        named: `${words.preview}: ${template.name} ${saidText}`,
+        named: `${words.preview}: ${template.name} ${transcriptText}`,
         text: previewTemplate,
         isBlank: previewTemplate.trim() === '',
         stray: [],

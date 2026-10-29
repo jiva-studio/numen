@@ -16,7 +16,7 @@ import {
   type ShallowRef,
 } from 'vue'
 import type { Result } from '@numen/plugin-sdk'
-import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/shell'
+import { closeTab, openTab, openTabAdjacent, pane, paneById, getPanes } from '@numen/shell'
 import type { Tab, Workspace } from '@numen/shell'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from './kinds'
 import { createWorkspace, generateId } from '../lib/workspace'
@@ -123,7 +123,7 @@ export function useWindowTabs() {
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
     openTabOfKind: openers.openTabOfKind,
-    openTabBesideOfKind: openers.openTabBesideOfKind,
+    openTabAdjacentOfKind: openers.openTabAdjacentOfKind,
     show: openers.show,
     finishClose: openers.finishClose,
     onTabShown: openers.onTabShown,
@@ -342,9 +342,9 @@ function createTabOpeners(ctx: TabOpenerContext) {
     return id
   }
 
-  const openTabBesideOfKind = async (kind: string, target = ''): Promise<string> => {
+  const openTabAdjacentOfKind = async (kind: string, target = ''): Promise<string> => {
     const id = createTabSync(kind, target)
-    ctx.layout.value = openTabBeside(ctx.layout.value, id, {
+    ctx.layout.value = openTabAdjacent(ctx.layout.value, id, {
       side: 'right',
       createId: generatePaneId,
     })
@@ -369,7 +369,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
     openSavedTab,
     show,
     openTabOfKind,
-    openTabBesideOfKind,
+    openTabAdjacentOfKind,
     finishClose,
     onTabShown,
   }
@@ -455,7 +455,7 @@ function createTabNavigation(
 
 interface WindowHandleDeps {
   openTabOfKind: (kind: string, target?: string) => Promise<string>
-  openTabBesideOfKind: (kind: string, target?: string) => Promise<string>
+  openTabAdjacentOfKind: (kind: string, target?: string) => Promise<string>
   show: (id: string) => void
   finishClose: (id: string) => void
   each: <T>(kind: string) => readonly KindTab<T>[]
@@ -466,7 +466,7 @@ interface WindowHandleDeps {
 function createWindowHandle(deps: WindowHandleDeps): WindowHandle {
   return {
     openTab: (kind, target) => deps.openTabOfKind(kind, target),
-    openTabBeside: (kind, target) => deps.openTabBesideOfKind(kind, target),
+    openTabAdjacent: (kind, target) => deps.openTabAdjacentOfKind(kind, target),
     show: (id) => deps.show(id),
     closeTab: (id) => deps.finishClose(id),
     each: <T>(kind: string) => deps.each<T>(kind),

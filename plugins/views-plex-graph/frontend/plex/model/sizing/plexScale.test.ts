@@ -50,7 +50,7 @@ describe('a label half again as large', () => {
   it('is retained by every length inside a box, and alongside the line it hangs on', () => {
     expect(larger.minWidth).toBe(108)
     expect(larger.iconWidth).toBe(24)
-    expect(larger.routing.arrowRoom).toBe(30)
+    expect(larger.routing.arrowClearance).toBe(30)
   })
 
   // Every length is multiplied, so one added and left out of the multiplying

@@ -93,15 +93,15 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   if (height <= 0) return { height: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
-  let alongOffset = GAP
+  let axisOffset = GAP
   for (let page = 0; page < pages.length; page++) {
     const size = getSize(pages, page)
     const width = Math.max(Math.round((height * size.width) / size.height), 1)
-    starts.push(alongOffset)
+    starts.push(axisOffset)
     widths.push(width)
-    alongOffset += width + GAP
+    axisOffset += width + GAP
   }
-  return { height, starts, widths, length: alongOffset }
+  return { height, starts, widths, length: axisOffset }
 }
 
 /** The size of one page, and the nearest thing to it that is known. */

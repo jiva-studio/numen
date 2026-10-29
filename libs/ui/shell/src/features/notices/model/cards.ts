@@ -43,7 +43,7 @@ export interface NoticeCardsOptions {
   /** How long work runs before it is worth a card. */
   readonly getWait: () => number
   /** How many cards stand at once. */
-  readonly getRoom: () => number
+  readonly getFreeSpace: () => number
   /** What the moment is. */
   readonly getNow: () => number
   /** Whether nobody is looking. */
@@ -64,7 +64,7 @@ export interface NoticeCardsState {
   /** A card as it is drawn, held under the notice it stands for. */
   readonly holdCard: (id: string, card: unknown) => void
   /** A card put away by hand. */
-  readonly dismissByHand: (id: string) => Promise<void>
+  readonly dismissManually: (id: string) => Promise<void>
   readonly onPointerOver: (event: PointerEvent) => void
   readonly onPointerOut: (event: PointerEvent) => void
   readonly onFocusIn: () => void
@@ -107,7 +107,7 @@ function createNoticeDismissal(context: DismissalContext) {
     else cards.delete(id)
   }
 
-  const dismissByHand = async (id: string): Promise<void> => {
+  const dismissManually = async (id: string): Promise<void> => {
     const pos = context.folds.value.visible.findIndex((one: Notice) => one.id === id)
     const hadFocus = cards.get(id)?.way === document.activeElement
     context.forgotten.add(id)
@@ -120,7 +120,7 @@ function createNoticeDismissal(context: DismissalContext) {
     if (next) cards.get(next.id)?.way?.focus()
   }
 
-  return { holdCard, dismissByHand }
+  return { holdCard, dismissManually }
 }
 
 function watchNoticeTicker(
@@ -214,16 +214,19 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   const isOpened = ref(false)
   const folds = computed(() =>
-    foldNotices(shownNotices.value, isOpened.value ? shownNotices.value.length : options.getRoom()),
+    foldNotices(
+      shownNotices.value,
+      isOpened.value ? shownNotices.value.length : options.getFreeSpace(),
+    ),
   )
 
   watch(shownNotices, (all) => {
-    if (all.length <= options.getRoom()) isOpened.value = false
+    if (all.length <= options.getFreeSpace()) isOpened.value = false
   })
 
   watchNoticeTicker(sample, shownNotices, { getNotices: options.getNotices, away })
 
-  const { holdCard, dismissByHand } = createNoticeDismissal({
+  const { holdCard, dismissManually } = createNoticeDismissal({
     folds,
     away,
     forgotten: cleared,
@@ -236,7 +239,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     isOpened,
     leftOn,
     holdCard,
-    dismissByHand,
+    dismissManually,
     onPointerOver,
     onPointerOut,
     onFocusIn,

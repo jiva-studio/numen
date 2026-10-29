@@ -301,18 +301,19 @@ describe('the arrowhead a line carries', () => {
     }).edges.find((edge) => edge.to === 'wide')!
 
     const covered = ARROW_LENGTH / getLength(aside)
-    const behindPoint = createPointOnCurve(aside)(1 - covered)
+    const precedingPoint = createPointOnCurve(aside)(1 - covered)
     const chord =
-      (Math.atan2(aside.toPoint.y - behindPoint.y, aside.toPoint.x - behindPoint.x) * 180) / Math.PI
+      (Math.atan2(aside.toPoint.y - precedingPoint.y, aside.toPoint.x - precedingPoint.x) * 180) /
+      Math.PI
 
     expect(Math.abs(chord - 90)).toBeGreaterThan(3)
     expect(aside.arrowhead!.angle).toBeCloseTo(chord, 1)
 
     // The end a line leaves from is read the same way, backwards.
     const leaving = getArrow(aside, 'from')
-    const alongEdge = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
+    const axisEdge = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
     const back =
-      (Math.atan2(aside.fromPoint.y - alongEdge.y, aside.fromPoint.x - alongEdge.x) * 180) / Math.PI
+      (Math.atan2(aside.fromPoint.y - axisEdge.y, aside.fromPoint.x - axisEdge.x) * 180) / Math.PI
     expect(leaving.angle).toBeCloseTo(back, 1)
   })
 
@@ -348,7 +349,7 @@ describe('the arrowhead a line carries', () => {
         createRouting(DEFAULT_OPTIONS, measure),
       )[0]!.words!
 
-    const room = getLength(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
+    const room = getLength(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowClearance
     expect(measure(words('to'))).toBeLessThanOrEqual(room)
     expect(measure(words())).toBeGreaterThan(room)
   })

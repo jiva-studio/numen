@@ -13,7 +13,7 @@ import {
 const toDegrees = (radians: number) => (radians * 180) / Math.PI
 
 /** A curve with no sideways run: it goes up and down the page along x = 0. */
-const alongColumn = (from: number, control1: number, control2: number, to: number): EdgeCurve => ({
+const axisColumn = (from: number, control1: number, control2: number, to: number): EdgeCurve => ({
   fromPoint: { x: 0, y: from },
   control1: { x: 0, y: control1 },
   control2: { x: 0, y: control2 },
@@ -21,7 +21,7 @@ const alongColumn = (from: number, control1: number, control2: number, to: numbe
 })
 
 /** A curve with no vertical run: it goes across the page along y = 0. */
-const alongRow = (from: number, control1: number, control2: number, to: number): EdgeCurve => ({
+const axisRow = (from: number, control1: number, control2: number, to: number): EdgeCurve => ({
   fromPoint: { x: from, y: 0 },
   control1: { x: control1, y: 0 },
   control2: { x: control2, y: 0 },
@@ -39,21 +39,21 @@ describe('the reading direction of a curve with no sideways run', () => {
   // Every curve here has x = 0 throughout, so the tangent has no x component
   // and the heading is read off the vertical one at the middle.
   it('is along where the middle of the curve runs down the page', () => {
-    expect(getHeading(alongColumn(0, 100, 40, 140), 0.5)).toBe('along')
-    expect(getHeading(alongColumn(300, 280, 310, 290), 0.5)).toBe('along')
+    expect(getHeading(axisColumn(0, 100, 40, 140), 0.5)).toBe('along')
+    expect(getHeading(axisColumn(300, 280, 310, 290), 0.5)).toBe('along')
   })
 
   it('is against where the middle of the curve runs up the page', () => {
-    expect(getHeading(alongColumn(300, 290, 190, 180), 0.5)).toBe('against')
+    expect(getHeading(axisColumn(300, 290, 190, 180), 0.5)).toBe('against')
   })
 
   it('is along for a straight run down the page and against for one up it', () => {
-    expect(getHeading(alongColumn(0, 10, 20, 30), 0.5)).toBe('along')
-    expect(getHeading(alongColumn(30, 20, 10, 0), 0.5)).toBe('against')
+    expect(getHeading(axisColumn(0, 10, 20, 30), 0.5)).toBe('along')
+    expect(getHeading(axisColumn(30, 20, 10, 0), 0.5)).toBe('against')
   })
 
   it('is along for a curve that never leaves its point', () => {
-    expect(getHeading(alongColumn(5, 5, 5, 5), 0.5)).toBe('along')
+    expect(getHeading(axisColumn(5, 5, 5, 5), 0.5)).toBe('along')
   })
 })
 
@@ -91,7 +91,7 @@ describe('the arrowhead of a curve shorter than the head', () => {
 describe('the arrowhead of a curve whose head covers no distance', () => {
   // The head's length is a vanishing part of this curve, so the point behind
   // the head is the end itself and the tangent aims it.
-  const vast: EdgeCurve = alongColumn(0, 3e17, 6e17, 1e18)
+  const vast: EdgeCurve = axisColumn(0, 3e17, 6e17, 1e18)
 
   it('is aimed along the tangent at the end', () => {
     expect(getLength(vast)).toBeGreaterThan(1e17)
@@ -102,8 +102,8 @@ describe('the arrowhead of a curve whose head covers no distance', () => {
 describe('the arrowhead of a curve that turns back within the head', () => {
   // Rises to a peak a little past its end and comes back to it, so the piece
   // of curve the head covers runs the way the line was going before it turned.
-  const turnsBackDown = alongColumn(0, 300, 300, 295)
-  const turnsBackAcross = alongRow(0, 300, 300, 295)
+  const turnsBackDown = axisColumn(0, 300, 300, 295)
+  const turnsBackAcross = axisRow(0, 300, 300, 295)
 
   it('is aimed along the piece it covers when that piece runs down the page', () => {
     expect(getLength(turnsBackDown)).toBeGreaterThan(ARROW_LENGTH)

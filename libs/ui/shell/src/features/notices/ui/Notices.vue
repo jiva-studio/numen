@@ -45,7 +45,7 @@ const {
   isOpened,
   leftOn,
   holdCard,
-  dismissByHand,
+  dismissManually,
   onPointerOver,
   onPointerOut,
   onFocusIn,
@@ -54,7 +54,7 @@ const {
   stack,
   getNotices: () => props.notices,
   getWait: () => props.wait,
-  getRoom: () => props.room,
+  getFreeSpace: () => props.room,
   getNow: () => props.clock(),
   isHidden: () => props.hidden(),
   dismiss: (id) => emit('dismiss', id),
@@ -97,7 +97,7 @@ const { polite, assertive } = useAnnouncer(() => notices.value)
           :dismiss="dismiss"
           :left="leftOn(one)"
           @pointerover="onPointerOver"
-          @dismiss="dismissByHand(one.id)"
+          @dismiss="dismissManually(one.id)"
         />
       </TransitionGroup>
     </aside>

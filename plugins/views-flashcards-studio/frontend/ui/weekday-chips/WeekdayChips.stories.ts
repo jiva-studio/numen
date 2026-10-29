@@ -249,7 +249,7 @@ export const DisabledOffersNothing: Story = {
   },
 }
 
-export const EachChipSaysWhereItStands: Story = {
+export const EachChipShowsItsState: Story = {
   play: async ({ canvasElement }) => {
     expect(chips(canvasElement)).toHaveLength(7)
     expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')

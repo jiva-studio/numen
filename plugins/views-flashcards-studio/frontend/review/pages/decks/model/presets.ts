@@ -173,7 +173,7 @@ const getPresetFromDecks = (
     settings: one.settings,
     decks: one.decks,
     ...getDayOwed(one, day),
-    ...getDayAnswered(day),
+    ...getDayReviewed(day),
     budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
     paused: getStoppedWords(one.stopsOn, one.settings, today),
     wrong: [...one.problems].join('; '),
@@ -191,7 +191,7 @@ const getDayOwed = (one: PresetTally, day: PresetCardsDue | undefined) => ({
 })
 
 /** What has been answered under a preset since the day opened, and nothing where the count answered nothing. */
-const getDayAnswered = (day: PresetCardsDue | undefined) => ({
+const getDayReviewed = (day: PresetCardsDue | undefined) => ({
   answered: day?.answered ?? 0,
   answeredNew: day?.answeredNew ?? 0,
   answeredReviews: day?.answeredReviews ?? 0,

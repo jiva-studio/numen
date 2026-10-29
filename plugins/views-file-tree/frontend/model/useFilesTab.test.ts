@@ -395,10 +395,10 @@ describe('a name given to a row', () => {
 
 describe('an item chosen in the menu on a row', () => {
   const openRowMenu = async (path: string | null = 'Entropy.md', fails = false) => {
-    const heldState = tab(fails)
-    await heldState.list.openFolder(ROOT)
-    heldState.one.openMenu({ path, at: { x: 0, y: 0 } })
-    return heldState
+    const pendingState = tab(fails)
+    await pendingState.list.openFolder(ROOT)
+    pendingState.one.openMenu({ path, at: { x: 0, y: 0 } })
+    return pendingState
   }
 
   it('puts the name of the row in a field, and asks the window for nothing', async () => {
@@ -494,21 +494,21 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('passes the whole selection to the window, on a row standing in it', async () => {
-    const heldState = await openRowMenu()
-    heldState.list.selectPaths(['Entropy.md', 'Cover.png'])
+    const pendingState = await openRowMenu()
+    pendingState.list.selectPaths(['Entropy.md', 'Cover.png'])
 
-    heldState.one.chooseMenuItem('remove')
+    pendingState.one.chooseMenuItem('remove')
 
-    expect(heldState.recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('passes the one row to the window, on a row standing outside the selection', async () => {
-    const heldState = await openRowMenu()
-    heldState.list.selectPaths(['Cover.png'])
+    const pendingState = await openRowMenu()
+    pendingState.list.selectPaths(['Cover.png'])
 
-    heldState.one.chooseMenuItem('remove')
+    pendingState.one.chooseMenuItem('remove')
 
-    expect(heldState.recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
   })
 
   it('does nothing at all for a choice the menu does not offer', async () => {

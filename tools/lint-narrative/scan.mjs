@@ -500,7 +500,7 @@ const ADVISORY_COMMENT_RULES = [
 const ADVISORY_IDENTIFIER_WORDS = new Set([
   'held', 'said', 'told', 'asked', 'answered', 'beside', 'behind', 'along', 'stands', 'sits',
   'owes', 'wears', 'hands', 'listens', 'hears', 'knows', 'wants', 'refuses', 'picture', 'ink',
-  'shadow', 'breath', 'ground', 'hand', 'door', 'room',
+  'shadow', 'breath', 'ground', 'hand', 'door', 'room', 'offer', 'offers', 'offered', 'offering',
 ])
 const RE_IDENTIFIER = /\b[A-Za-z_$][A-Za-z0-9_$]{3,}\b/g
 const RE_ERROR_STRING = /(?:errors\.New|fmt\.Errorf|throw\s+new\s+Error|new\s+ConnectError)\s*\(\s*["`']([^"`']*)["`']/

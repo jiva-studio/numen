@@ -93,10 +93,10 @@ describe('the choices a setting offers', () => {
   })
 
   it('say nothing about a value being missing, wrong or not found', () => {
-    const saidText = createChoices([PRESET], 'somewhere/mine', WORDS)
+    const transcriptText = createChoices([PRESET], 'somewhere/mine', WORDS)
       .map((one) => `${one.text} ${one.detail ?? ''}`)
       .join(' ')
-    expect(saidText).not.toMatch(/not found|missing|unknown/i)
+    expect(transcriptText).not.toMatch(/not found|missing|unknown/i)
   })
 
   it('offer the presets alone where the file names one of them', () => {

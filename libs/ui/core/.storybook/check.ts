@@ -30,8 +30,8 @@ export const reachCheck =
   (proof: Proof): NonNullable<Preview['afterEach']> =>
   async (context) => {
     if (typeof window !== 'undefined' && !('__vitest_browser__' in window)) return
-    const saidText = context.parameters['reach'] as Reach | undefined
-    if (saidText === false) return
+    const transcriptText = context.parameters['reach'] as Reach | undefined
+    if (transcriptText === false) return
 
     const { walk } = await import('./keyboard')
     const found = await walk()
@@ -41,7 +41,7 @@ export const reachCheck =
         `the keyboard walk found ${found.stops.length} stops in ${proof.story}, where it must find ${proof.stops}`,
       )
 
-    const wrong = faults(found, Boolean(saidText?.keeps))
+    const wrong = faults(found, Boolean(transcriptText?.keeps))
     if (wrong.length)
       throw new Error(`${context.id}: ${wrong.join('; ')}${found.settled ? '' : ` — ${RESTLESS}`}`)
   }

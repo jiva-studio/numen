@@ -318,39 +318,39 @@ describe('where the headings slide to at the edges of the window', () => {
 
 describe('a node with little room under it', () => {
   /** The same node, dropped so much of the window is left beneath it. */
-  const low = (roomOffset: number): PlacedNode => ({
+  const low = (clearanceOffset: number): PlacedNode => ({
     ...NODE,
-    y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - roomOffset,
+    y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - clearanceOffset,
   })
 
-  const hangWithRoom = (roomOffset: number, items = headings(MOST + 3)) =>
-    getNodeHeadings(low(roomOffset), items, SIZES, DEPS)
+  const hangWithClearance = (clearanceOffset: number, items = headings(MOST + 3)) =>
+    getNodeHeadings(low(clearanceOffset), items, SIZES, DEPS)
 
   it('hangs nothing where there is depth for not one heading', () => {
-    expect(hangWithRoom(SIZES.headingHeight)).toBeNull()
+    expect(hangWithClearance(SIZES.headingHeight)).toBeNull()
   })
 
   it('remains in its window only what the depth left under it holds', () => {
-    const resolved = hangWithRoom(3 * SIZES.headingHeight + 10)!
+    const resolved = hangWithClearance(3 * SIZES.headingHeight + 10)!
     expect(resolved.visibleCount).toBe(3)
     expect(getFurthest(resolved)).toBe(MOST)
   })
 
   it('hangs one heading where the depth holds exactly one with its ground', () => {
-    const resolved = hangWithRoom(30)!
+    const resolved = hangWithClearance(30)!
     expect(resolved.visibleCount).toBe(1)
     expect(resolved.height).toBe(SIZES.headingHeight + 2 * resolved.pad)
   })
 
   it('hangs nothing where the depth is one short of that', () => {
-    expect(hangWithRoom(29)).toBeNull()
+    expect(hangWithClearance(29)).toBeNull()
   })
 
   it('keeps every heading it does hang inside the window', () => {
-    for (const roomOffset of [60, 90, 140, 200, 400]) {
-      const resolved = hangWithRoom(roomOffset)
+    for (const clearanceOffset of [60, 90, 140, 200, 400]) {
+      const resolved = hangWithClearance(clearanceOffset)
       if (!resolved) continue
-      const bottom = low(roomOffset).y + resolved.top + resolved.height
+      const bottom = low(clearanceOffset).y + resolved.top + resolved.height
       expect(bottom).toBeLessThanOrEqual(DEPS.viewport.height / 2 - DEPS.margin)
     }
   })

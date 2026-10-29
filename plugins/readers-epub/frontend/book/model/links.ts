@@ -10,14 +10,14 @@ import { isExternalHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
 /** What the reader says when a link is followed. */
-export interface BookLinkSaid {
+export interface BookLinkReporter {
   /** The offset now in front, in bytes of the book's text. */
   readonly reportMove: (pos: number) => void
   /** A link targetLink to another document of the book, named as the archive names it. */
   readonly reportFollow: (path: string) => void
 }
 
-export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid) {
+export function createBookLinks(props: SettledBookProps, listeners: BookLinkReporter) {
   /** Where a link targetLink, held until the document holding that place is drawn. */
   let targetLink: BookLink | undefined
 

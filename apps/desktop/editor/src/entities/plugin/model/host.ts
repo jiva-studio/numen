@@ -197,8 +197,8 @@ function registerTabKindEntry(
       registration.kind,
       (path: string, _title?: string, options?: unknown) => {
         const where = extractWhere(options)
-        if (where === 'split' && deps.openTabBeside) {
-          void deps.openTabBeside(registration.kind, path)
+        if (where === 'split' && deps.openTabAdjacent) {
+          void deps.openTabAdjacent(registration.kind, path)
         } else {
           void deps.openTab(registration.kind, path)
         }

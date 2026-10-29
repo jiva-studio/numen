@@ -40,7 +40,7 @@ export const Playground: Story = {
 /**
  * Two panes of different heights, waiting side by side. The ring and the word
  */
-export const OneSizeInEveryRoom: Story = {
+export const OneSizeInEveryContainer: Story = {
   render: () => ({
     components: { LoadingIndicator },
     template: `

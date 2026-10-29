@@ -13,7 +13,7 @@ vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
 }))
 
-const themesSaid = {
+const themesResponse = {
   themes: {
     getAppearance: async () => ({
       themes: [
@@ -38,25 +38,25 @@ const themesSaid = {
   },
 }
 
-vi.mock('@/entities/settings/api/theme', () => themesSaid)
+vi.mock('@/entities/settings/api/theme', () => themesResponse)
 
 vi.mock('@/entities/settings', async (original) => ({
   ...(await original<typeof import('@/entities/settings')>()),
-  ...themesSaid,
+  ...themesResponse,
 }))
 
 // The window is shown with no plugin declaring a command.
-const declaredCommandsSaid = {
+const declaredCommandsResponse = {
   listDeclaredCommands: async () => [],
   runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
 }
 
 vi.mock('@/entities/plugin/api/declaredCommands', async (original) => ({
   ...(await original<typeof import('@/entities/plugin/api/declaredCommands')>()),
-  ...declaredCommandsSaid,
+  ...declaredCommandsResponse,
 }))
 
 vi.mock('@/entities/plugin', async (original) => ({
   ...(await original<typeof import('@/entities/plugin')>()),
-  ...declaredCommandsSaid,
+  ...declaredCommandsResponse,
 }))

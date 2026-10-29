@@ -7,7 +7,7 @@ describe('useCrossWindowTabs', () => {
     const channelName = 'test-channel-' + crypto.randomUUID()
     const senderChannel = new BroadcastChannel(channelName)
 
-    const mockHeld = {
+    const mockWindowTabs = {
       openTabOfKind: vi.fn(async () => 'tab-new'),
       releaseTab: vi.fn(() => true),
       tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
@@ -20,7 +20,7 @@ describe('useCrossWindowTabs', () => {
 
     const scope = effectScope()
     scope.run(() => {
-      useCrossWindowTabs({ windowTabs: mockHeld, windowId: 'win-target' }, channelName)
+      useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
     })
 
     senderChannel.postMessage({
@@ -33,7 +33,7 @@ describe('useCrossWindowTabs', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    expect(mockHeld.openTabOfKind).toHaveBeenCalledWith('plex')
+    expect(mockWindowTabs.openTabOfKind).toHaveBeenCalledWith('plex')
     expect(replies).toContainEqual(
       expect.objectContaining({
         type: 'tab-docked',
@@ -52,10 +52,10 @@ describe('useCrossWindowTabs', () => {
     const peerChannel = new BroadcastChannel(channelName)
     const closeWindow = vi.fn()
 
-    const mockHeld = {
+    const mockWindowTabs = {
       openTabOfKind: vi.fn(async () => 'tab-new'),
       releaseTab: vi.fn((_id: string) => {
-        mockHeld.tabs.value = []
+        mockWindowTabs.tabs.value = []
         return true
       }),
       tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
@@ -65,7 +65,7 @@ describe('useCrossWindowTabs', () => {
     let hook!: ReturnType<typeof useCrossWindowTabs>
     scope.run(() => {
       hook = useCrossWindowTabs(
-        { windowTabs: mockHeld, windowId: 'win-source', closeWindowIfEmpty: closeWindow },
+        { windowTabs: mockWindowTabs, windowId: 'win-source', closeWindowIfEmpty: closeWindow },
         channelName,
       )
     })
@@ -78,7 +78,7 @@ describe('useCrossWindowTabs', () => {
       targetWindowId: 'win-source',
     })
     await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(mockHeld.releaseTab).not.toHaveBeenCalled()
+    expect(mockWindowTabs.releaseTab).not.toHaveBeenCalled()
 
     // Initiate dock
     hook.dockToOtherWindow('tab-1', 'plex', 'win-target')
@@ -92,7 +92,7 @@ describe('useCrossWindowTabs', () => {
       targetWindowId: 'win-source',
     })
     await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(mockHeld.releaseTab).not.toHaveBeenCalled()
+    expect(mockWindowTabs.releaseTab).not.toHaveBeenCalled()
 
     // Matching acknowledgement from target window releases tab and triggers close
     peerChannel.postMessage({
@@ -103,7 +103,7 @@ describe('useCrossWindowTabs', () => {
     })
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    expect(mockHeld.releaseTab).toHaveBeenCalledWith('tab-1')
+    expect(mockWindowTabs.releaseTab).toHaveBeenCalledWith('tab-1')
     expect(closeWindow).toHaveBeenCalled()
 
     scope.stop()
@@ -114,7 +114,7 @@ describe('useCrossWindowTabs', () => {
     const channelName = 'test-channel-' + crypto.randomUUID()
     const senderChannel = new BroadcastChannel(channelName)
 
-    const mockHeld = {
+    const mockWindowTabs = {
       openTabOfKind: vi.fn(async () => undefined),
       releaseTab: vi.fn(() => true),
       tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
@@ -127,7 +127,7 @@ describe('useCrossWindowTabs', () => {
 
     const scope = effectScope()
     scope.run(() => {
-      useCrossWindowTabs({ windowTabs: mockHeld, windowId: 'win-target' }, channelName)
+      useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
     })
 
     senderChannel.postMessage({
@@ -139,7 +139,7 @@ describe('useCrossWindowTabs', () => {
     })
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    expect(mockHeld.openTabOfKind).toHaveBeenCalledWith('unknown-kind')
+    expect(mockWindowTabs.openTabOfKind).toHaveBeenCalledWith('unknown-kind')
     expect(replies).toHaveLength(0)
 
     scope.stop()
@@ -150,7 +150,7 @@ describe('useCrossWindowTabs', () => {
     const channelName = 'test-channel-' + crypto.randomUUID()
     const senderChannel = new BroadcastChannel(channelName)
 
-    const mockHeld = {
+    const mockWindowTabs = {
       openTabOfKind: vi.fn(async () => 'tab-new'),
       releaseTab: vi.fn(() => true),
       tabs: ref([]),
@@ -158,7 +158,7 @@ describe('useCrossWindowTabs', () => {
 
     const scope = effectScope()
     scope.run(() => {
-      useCrossWindowTabs({ windowTabs: mockHeld, windowId: 'win-target' }, channelName)
+      useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
     })
 
     senderChannel.postMessage(null)
@@ -173,7 +173,7 @@ describe('useCrossWindowTabs', () => {
     })
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    expect(mockHeld.openTabOfKind).not.toHaveBeenCalled()
+    expect(mockWindowTabs.openTabOfKind).not.toHaveBeenCalled()
 
     scope.stop()
     senderChannel.close()

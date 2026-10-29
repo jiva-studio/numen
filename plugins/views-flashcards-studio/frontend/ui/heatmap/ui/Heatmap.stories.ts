@@ -172,7 +172,7 @@ const createOneDay = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tall
  */
 const ONLY_TODAY = '[data-only-today] [data-heatmap-day]:not([data-today]) { pointer-events: none }'
 
-const createRoom = (args: InstanceType<typeof Heatmap>['$props']) => ({
+const createContainer = (args: InstanceType<typeof Heatmap>['$props']) => ({
   setup: () => () =>
     h('div', { style: 'inline-size: 480px', 'data-only-today': '' }, [
       h('style', ONLY_TODAY),
@@ -211,7 +211,7 @@ export const ADayReviewed: Story = {
     now,
     words,
   },
-  render: createRoom,
+  render: createContainer,
   play: async ({ canvasElement }) => {
     const response = await pointsAtToday(canvasElement)
     await expect(response.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
@@ -245,7 +245,7 @@ export const ADayOfNewCards: Story = {
     now,
     words,
   },
-  render: createRoom,
+  render: createContainer,
   play: async ({ canvasElement }) => {
     const response = await pointsAtToday(canvasElement)
     await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
@@ -259,7 +259,7 @@ export const ADayOfNewCards: Story = {
 /** A day nobody answered on says so, and says nothing else. */
 export const ADayOfNothing: Story = {
   args: { did: new Map<string, Tally>(), now, words },
-  render: createRoom,
+  render: createContainer,
   play: async ({ canvasElement }) => {
     const response = await pointsAtToday(canvasElement)
     await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(

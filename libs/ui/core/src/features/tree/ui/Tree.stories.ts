@@ -477,7 +477,7 @@ export const DragsSeveralIntoARow: Story = {
 }
 
 /** A row cannot be dragged inside what it holds, and letting go moves nothing. */
-export const RefusesWhatItHolds: Story = {
+export const RejectsWhatItContains: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const before = getDrawnRows(canvasElement)

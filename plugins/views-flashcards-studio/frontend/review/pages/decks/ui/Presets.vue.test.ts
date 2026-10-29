@@ -70,7 +70,7 @@ describe('what the goals come to today', () => {
   // evaluates to at the far end of the line.
   it('remains the name and goal together, and the figure apart from them', () => {
     const tile = mountPresets([preset()]).find('.presets__preset')
-    const response = tile.find('.presets__said')
+    const response = tile.find('.presets__transcript')
 
     expect(response.find('.presets__name').text()).toBe('Sanskrit')
     expect(response.find('.presets__goal').text()).toBe('20 minutes a day')

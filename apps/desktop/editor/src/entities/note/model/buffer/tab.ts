@@ -19,7 +19,7 @@ import {
 export * from './tabState'
 
 /** An event that asks for something and carries nothing with it. */
-type AskedKind = Exclude<Event['kind'], 'read' | 'edited' | 'written' | 'changed'>
+type RequestedKind = Exclude<Event['kind'], 'read' | 'edited' | 'written' | 'changed'>
 
 export const transitionTab = (
   tab: Tab,
@@ -36,11 +36,11 @@ export const transitionTab = (
     case 'changed':
       return applyChange(tab, event.paths, event.renamed)
     default:
-      return applyAsked(tab, event.kind)
+      return applyRequested(tab, event.kind)
   }
 }
 
-const applyAsked = (tab: Tab, kind: AskedKind): Transition => {
+const applyRequested = (tab: Tab, kind: RequestedKind): Transition => {
   switch (kind) {
     case 'timerFired':
       // Stryker disable next-line BlockStatement: Falling through to save performs the same transition.

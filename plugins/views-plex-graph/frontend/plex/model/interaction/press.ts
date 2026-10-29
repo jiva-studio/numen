@@ -17,7 +17,7 @@ import type { PlexBehaviour } from '../behaviour'
 import { getDestination, mergeListeners, type PlexDestination } from './destination'
 
 /** What the node says when a press evaluates to something. */
-export interface NodePressSaid {
+export interface NodePressReport {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void
   readonly reach: (pointer: PointerEvent) => void
@@ -38,7 +38,7 @@ export interface NodePressProps {
 export function useNodePress(
   props: NodePressProps,
   middleOf: () => Position | null,
-  listeners: NodePressSaid,
+  listeners: NodePressReport,
 ) {
   /** Not a node yet, so nothing may be done to it and nothing is told about it. */
   const isGhost = computed(() => props.gestureRole === 'ghost')

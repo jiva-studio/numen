@@ -39,16 +39,16 @@ export const ShownAgain: Story = {
   render: () => ({
     components: { WorkspacePane },
     setup: () => {
-      const heldTab = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
+      const pendingTab = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
       const shownTabs = ref<string[]>([])
       return {
-        held: heldTab,
+        held: pendingTab,
         NOTE_TAB,
         text: TEXT,
         shownTabs,
         titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
-          heldTab.value = pane('main', [NOTE_TAB, BESIDE], tab)
+          pendingTab.value = pane('main', [NOTE_TAB, BESIDE], tab)
         },
         onShow: (tab: string) => shownTabs.value.push(tab),
       }

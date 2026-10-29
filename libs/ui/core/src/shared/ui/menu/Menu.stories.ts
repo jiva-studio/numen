@@ -174,7 +174,7 @@ export const Choosing: Story = {
  * Only a browser can answer it. Enter reaches whatever holds the keyboard, so
  * what is lit and what would be chosen are one fact.
  */
-export const OpenedByHand: Story = {
+export const OpenedManually: Story = {
   play: async ({ args }) => {
     const menu = menuElement()!
     await expect(menu).toHaveFocus()
@@ -393,7 +393,7 @@ export const FarTooLong: Story = {
  * choices. A menu is as wide as the longest thing it offers, so the words are
  * read whole and the menu is the thing that moves.
  */
-export const AskedForAtTheEdge: Story = {
+export const RequestedAtTheEdge: Story = {
   args: {
     // Counted back from the far edge: the room left is narrower than the
     // words, whatever the page is drawn at.

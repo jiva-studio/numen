@@ -70,7 +70,7 @@ export interface RoutingOptions {
    * How much of a line an arrowhead takes. A title is set about the middle of
    * its line, so a line carrying one has this much less room at either end.
    */
-  readonly arrowRoom: number
+  readonly arrowClearance: number
 }
 
 /**
@@ -127,7 +127,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   maxPerLine: 5,
   maxLines: 4,
   maxHeadings: 6,
-  routing: { curvature: 0.55, minReach: 22, arrowRoom: 20 },
+  routing: { curvature: 0.55, minReach: 22, arrowClearance: 20 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,

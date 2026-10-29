@@ -50,13 +50,13 @@ export function useSliderInteractions({ getPlace, places, emit }: SliderInteract
     emit('commit')
   }
 
-  function setPicture(element: SVGSVGElement | null): void {
+  function setChart(element: SVGSVGElement | null): void {
     picture.value = element
   }
 
   return {
     picture,
-    setPicture,
+    setChart,
     onPointerDown,
     onPointerMove,
     onPointerUp,

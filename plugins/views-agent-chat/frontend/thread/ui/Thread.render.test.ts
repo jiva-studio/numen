@@ -25,7 +25,7 @@ vi.mock('@numen/ui', async (importOriginal) => {
   return { ...original, Prose }
 })
 
-const createAnswered = (id: string, text: string, unresolved?: readonly string[]): Turn =>
+const createResponded = (id: string, text: string, unresolved?: readonly string[]): Turn =>
   unresolved === undefined
     ? { id, voice: 'response', text }
     : { id, voice: 'response', text, unresolved }
@@ -37,14 +37,14 @@ beforeEach(() => renderSpy.mockClear())
 
 describe('a reply arriving in the last turn', () => {
   it('draws only the turn it arrives in', async () => {
-    const earlier = [createAnswered('1', 'first'), createAnswered('2', 'second')]
+    const earlier = [createResponded('1', 'first'), createResponded('2', 'second')]
     const wrapper = mount(Thread, {
-      props: { turns: [...earlier, createAnswered('3', 'th')] },
+      props: { turns: [...earlier, createResponded('3', 'th')] },
     })
     renderSpy.mockClear()
 
-    await wrapper.setProps({ turns: [...earlier, createAnswered('3', 'thi')] })
-    await wrapper.setProps({ turns: [...earlier, createAnswered('3', 'thir')] })
+    await wrapper.setProps({ turns: [...earlier, createResponded('3', 'thi')] })
+    await wrapper.setProps({ turns: [...earlier, createResponded('3', 'thir')] })
 
     expect(countRenders('first')).toBe(0)
     expect(countRenders('second')).toBe(0)
@@ -54,12 +54,12 @@ describe('a reply arriving in the last turn', () => {
 
   it('draws a turn again when its unresolved addresses change', async () => {
     const wrapper = mount(Thread, {
-      props: { turns: [createAnswered('1', 'first', ['name://Nowhere'])] },
+      props: { turns: [createResponded('1', 'first', ['name://Nowhere'])] },
     })
     renderSpy.mockClear()
 
     await wrapper.setProps({
-      turns: [createAnswered('1', 'first', ['name://Nowhere', 'name://Elsewhere'])],
+      turns: [createResponded('1', 'first', ['name://Nowhere', 'name://Elsewhere'])],
     })
 
     expect(countRenders('first')).toBe(1)

@@ -42,7 +42,7 @@ export const Playground: Story = {
  * Beside the small print it belongs to, taking that print's size and colour
  * and not the size and colour of the text above it.
  */
-export const BesideAName: Story = {
+export const AdjacentToAName: Story = {
   render: () => ({
     components: { Spinner },
     template: `
@@ -58,7 +58,7 @@ export const BesideAName: Story = {
 }
 
 /** On a filled ground, where it has to read against the colour under it. */
-export const OnAFilledGround: Story = {
+export const OnAFilledBackground: Story = {
   render: () => ({
     components: { Spinner },
     template: `

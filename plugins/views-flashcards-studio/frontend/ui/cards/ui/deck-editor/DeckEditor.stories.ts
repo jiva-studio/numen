@@ -524,7 +524,7 @@ export const InSections: Story = {
     ).getBoundingClientRect()
     const rule = found(
       canvasElement,
-      '[data-section-head="roots"] .divider__held',
+      '[data-section-head="roots"] .divider__pending',
     ).getBoundingClientRect()
     expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
     expect(renderedElement.right).toBeLessThanOrEqual(Math.ceil(rule.right))

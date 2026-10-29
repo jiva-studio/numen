@@ -312,7 +312,7 @@ export const TwoColumns: Story = {
  * is cut in half by the column edge, and half of it is on a page nobody turns
  * to.
  */
-export const PictureTallerThanTheColumn: Story = {
+export const ImageTallerThanTheColumn: Story = {
   decorators: [WIDE],
   render: activeReading(
     createChapter([
@@ -519,7 +519,7 @@ export const Marked: Story = {
 }
 
 /** The pages turned by the keyboard, and by a press near either edge. */
-export const TurnedByHand: Story = {
+export const TurnedManually: Story = {
   decorators: [WIDE],
   render: activeReading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {

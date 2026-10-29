@@ -489,8 +489,8 @@ describe('which group remains where', () => {
   })
 
   it('draws a group that could not be requested, with what it has to say', () => {
-    const notAsked = group('meaning', [], { silence: 'the vault could not answer' })
-    expect(orderGroups([notAsked]).map((one) => one.id)).toEqual(['meaning'])
+    const noQuery = group('meaning', [], { silence: 'the vault could not answer' })
+    expect(orderGroups([noQuery]).map((one) => one.id)).toEqual(['meaning'])
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {

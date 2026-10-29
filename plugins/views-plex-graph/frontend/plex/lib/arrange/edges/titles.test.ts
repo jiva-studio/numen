@@ -53,12 +53,12 @@ const isOverlapping = (one: Box, other: Box): boolean =>
  */
 function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = getLength(edge)
-  const alongEdge = createPointOnCurve(edge)
+  const axisEdge = createPointOnCurve(edge)
   const offset = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
   const half = width(edge.words!) / 2 / arc
   const deep = labelDepth / 2
 
-  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => alongEdge(offset - half + 2 * half * step))
+  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => axisEdge(offset - half + 2 * half * step))
   const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
 
   for (const [sample, point] of run.entries()) {

@@ -39,10 +39,10 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const createAsked = (id: string, text: string, state?: Turn['state']): Turn =>
+const createRequested = (id: string, text: string, state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
-const createAnswered = (id: string, text: string, state?: Turn['state']): Turn =>
+const createResponded = (id: string, text: string, state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 const renderThread =
@@ -66,20 +66,20 @@ export const Silent: Story = { render: renderThread([]) }
  */
 export const Playground: Story = {
   render: renderThread([
-    createAsked('1', 'What does a plex draw?'),
-    createAnswered('2', 'One node in focus, and everything else placed by its relation.'),
-    createAsked('3', 'Two things.'),
-    createAsked('4', 'And where do the relations come from?'),
-    createAnswered('5', MULTILINE),
+    createRequested('1', 'What does a plex draw?'),
+    createResponded('2', 'One node in focus, and everything else placed by its relation.'),
+    createRequested('3', 'Two things.'),
+    createRequested('4', 'And where do the relations come from?'),
+    createResponded('5', MULTILINE),
   ]),
 }
 
 /** An answer still arriving, and a turn that did not go. */
 export const InFlight: Story = {
   render: renderThread([
-    createAsked('1', 'And the relations?', 'failed'),
-    createAsked('2', 'What does a plex draw?'),
-    createAnswered('3', 'One node in focus, and everything else', 'arriving'),
+    createRequested('1', 'And the relations?', 'failed'),
+    createRequested('2', 'What does a plex draw?'),
+    createResponded('3', 'One node in focus, and everything else', 'arriving'),
   ]),
 }
 
@@ -87,12 +87,12 @@ export const InFlight: Story = {
  *  the other way. */
 export const AwkwardText: Story = {
   render: renderThread([
-    createAsked('1', UNBREAKABLE),
-    createAnswered('2', LINK),
-    createAsked('3', DEVANAGARI),
-    createAnswered('4', RUSSIAN),
-    createAsked('5', ARABIC),
-    createAsked('6', ''),
+    createRequested('1', UNBREAKABLE),
+    createResponded('2', LINK),
+    createRequested('3', DEVANAGARI),
+    createResponded('4', RUSSIAN),
+    createRequested('5', ARABIC),
+    createRequested('6', ''),
   ]),
 }
 
@@ -102,11 +102,11 @@ export const AwkwardText: Story = {
  */
 export const Working: Story = {
   render: renderThread([
-    createAsked('1', 'Add ten children to this note.'),
-    createAnswered('2', "I'll look at **Harmonic oscillator** first."),
+    createRequested('1', 'Add ten children to this note.'),
+    createResponded('2', "I'll look at **Harmonic oscillator** first."),
     { id: '3', voice: 'doing', text: 'note_neighbourhood' },
     { id: '4', voice: 'doing', text: 'note_read' },
-    createAnswered(
+    createResponded(
       '5',
       'The style is clear:\n\n- a `# Title` line\n- one evocative sentence\n- a `part of` link to the parent\n\nCreating the ten children now.',
     ),
@@ -119,8 +119,8 @@ export const FarTooMany: Story = {
   render: renderThread(
     Array.from({ length: 200 }, (_, index) =>
       index % 2 === 0
-        ? createAsked(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
-        : createAnswered(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
+        ? createRequested(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
+        : createResponded(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),
 }
@@ -131,8 +131,8 @@ export const OwnTurn: Story = {
     components: { Thread },
     setup: () => ({
       turns: [
-        createAsked('1', 'Show me the note.'),
-        createAnswered('2', 'entropy.md'),
+        createRequested('1', 'Show me the note.'),
+        createResponded('2', 'entropy.md'),
       ] as readonly Turn[],
       STORY_BOXES,
     }),
@@ -209,13 +209,13 @@ const dragAcross = async (from: Position, to: Position): Promise<string | null> 
  */
 export const Selecting: Story = {
   render: renderThread([
-    createAsked('1', 'Which of these are worth keeping?'),
-    createAnswered(
+    createRequested('1', 'Which of these are worth keeping?'),
+    createResponded(
       '2',
       'Three of them:\n\n- the harmonic one\n- the damped one\n- the driven one\n\nThe rest repeat what those already say.',
     ),
-    createAsked('3', 'Then drop the rest.'),
-    createAnswered('4', 'Dropped. Nine notes are left in the vault.'),
+    createRequested('3', 'Then drop the rest.'),
+    createResponded('4', 'Dropped. Nine notes are left in the vault.'),
   ]),
   play: async ({ canvasElement }) => {
     const turns = canvasElement.querySelectorAll('.thread__turn')

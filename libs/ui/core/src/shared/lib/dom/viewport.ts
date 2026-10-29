@@ -16,7 +16,7 @@ export interface Viewport {
    * The room a component has when nobody hands it one, now and every time it
    * changes. Calling what comes back stops the watching.
    */
-  readonly watchRoom: (took: (size: Size) => void) => () => void
+  readonly watchFreeSpace: (took: (size: Size) => void) => () => void
   /**
    * Watch an element and be told the room it takes up with its padding and its
    * edge, which is what anything standing clear of it has to clear. Calling
@@ -53,7 +53,7 @@ export const browserViewport: Viewport = {
     return () => observer.disconnect()
   },
 
-  watchRoom: (took) => {
+  watchFreeSpace: (took) => {
     if (typeof window === 'undefined') return () => {}
 
     const onResize = () => took({ width: window.innerWidth, height: window.innerHeight })
@@ -149,7 +149,7 @@ export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
  * The room a component has when nobody hands it one, held for the component's
  * life and measured at once. `onChange` hears of each size as it is taken.
  */
-export function useRoom(
+export function useFreeSpace(
   port: Viewport = browserViewport,
   onChange?: (size: Size) => void,
 ): { room: Ref<Size> } {
@@ -157,7 +157,7 @@ export function useRoom(
   let stop: (() => void) | undefined
 
   onMounted(() => {
-    stop = port.watchRoom((size) => {
+    stop = port.watchFreeSpace((size) => {
       room.value = size
       onChange?.(size)
     })

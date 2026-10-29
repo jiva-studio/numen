@@ -157,10 +157,10 @@ function openResolvedOrDirect(deps: AgentTabDeps, vaultPath: string): void {
     .resolveLinks(`[[${linkName}]]`)
     .then((found) => {
       const resolvedPath = found[0]?.path || vaultPath
-      deps.openFileBeside(resolvedPath)
+      deps.openFileAdjacent(resolvedPath)
     })
     .catch(() => {
-      deps.openFileBeside(vaultPath)
+      deps.openFileAdjacent(vaultPath)
     })
 }
 
@@ -183,7 +183,7 @@ function createConversationLinkFollower(
     }
     const path = getResolved(href)
     if (path !== undefined) {
-      if (path) deps.openFileBeside(path)
+      if (path) deps.openFileAdjacent(path)
       return
     }
     const vaultPath = parseVaultFileLink(href)

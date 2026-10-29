@@ -45,7 +45,7 @@ const tab = (
   /** Whether a node nests the headings of its note, which a test turns. */
   const isNesting = ref(true)
   /** Every question the vault was asked about what the notes hold. */
-  const headingsAsked: (readonly string[])[] = []
+  const requestedHeadings: (readonly string[])[] = []
   const deps: PlexTabDeps = {
     editor: vault.editor,
     isReady: ref(true),
@@ -57,7 +57,7 @@ const tab = (
     },
     // The vault answers about the notes it was asked about and no others.
     readHeadings: async (paths) => {
-      headingsAsked.push(paths)
+      requestedHeadings.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
     getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note' }],
@@ -89,7 +89,7 @@ const tab = (
     entered,
     divides,
     isNesting,
-    headingsAsked,
+    requestedHeadings,
     requested: request,
     asked: request,
     ran,
@@ -553,33 +553,33 @@ describe('the headings a node nests', () => {
   it('are not requested of the vault at all while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.isNesting.value = false
-    one.headingsAsked.length = 0
+    one.requestedHeadings.length = 0
 
     await one.state.readHeadings()
 
-    expect(one.headingsAsked).toStrictEqual([])
+    expect(one.requestedHeadings).toStrictEqual([])
   })
 
   it('are none for a note of a plugin type, whose headings are its own', async () => {
     const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': 'sample' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
-    one.headingsAsked.length = 0
+    one.requestedHeadings.length = 0
 
     await one.state.readHeadings()
 
     expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
-    expect(one.headingsAsked).toStrictEqual([['Root.md']])
+    expect(one.requestedHeadings).toStrictEqual([['Root.md']])
   })
 
   it('are none for a note of another plugin type', async () => {
     const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': 'form' })
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
-    one.headingsAsked.length = 0
+    one.requestedHeadings.length = 0
 
     await one.state.readHeadings()
 
     expect(one.state.getHeadings(one.node('Animal.md'))).toStrictEqual([])
-    expect(one.headingsAsked).toStrictEqual([['Root.md']])
+    expect(one.requestedHeadings).toStrictEqual([['Root.md']])
   })
 
   it('are the headings of an ordinary note alongside them', async () => {
@@ -598,12 +598,12 @@ describe('the headings a node nests', () => {
   it('are none for a note of a plugin type in focus, which is where the plex is standing', async () => {
     const one = tab('Animals.md', [], true, { 'Animals.md': 'sample' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
-    one.headingsAsked.length = 0
+    one.requestedHeadings.length = 0
 
     await one.state.readHeadings()
 
     expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
-    expect(one.headingsAsked).toStrictEqual([])
+    expect(one.requestedHeadings).toStrictEqual([])
   })
 
   it('are hung again once the setting is turned back on', async () => {
@@ -1259,13 +1259,13 @@ describe('the notes a plex asks the vault for the headings of', () => {
     one.state.view.neighbourhood.value = null
     await settle()
 
-    expect(one.headingsAsked).toStrictEqual([['Root.md']])
+    expect(one.requestedHeadings).toStrictEqual([['Root.md']])
   })
 
   it('leave out a note around the focus that has no path', () => {
     const one = tab('Root.md', [{ path: '' }])
 
-    expect(one.headingsAsked).toStrictEqual([['Root.md']])
+    expect(one.requestedHeadings).toStrictEqual([['Root.md']])
   })
 })
 

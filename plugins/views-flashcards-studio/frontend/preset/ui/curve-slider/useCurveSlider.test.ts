@@ -173,13 +173,13 @@ describe('the picture the pointer is read against', () => {
   it('is the element the view passes over', () => {
     const { state } = slider()
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    state.interactions.setPicture(element)
+    state.interactions.setChart(element)
     expect(state.interactions.picture.value).toBe(element)
   })
 })
 
 /** A picture the pointer is read against, scaled and shifted as the test says. */
-const createPicture = (a: number, e: number, isCaptured = false) => {
+const createChart = (a: number, e: number, isCaptured = false) => {
   const isDone: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
     getScreenCTM: () => ({ a, e }),
@@ -199,8 +199,8 @@ const pointer = (clientX: number, button = 0) =>
 describe('the pointer on the picture', () => {
   it('takes the knob to the place under it, and holds the pointer', () => {
     const { state, emitted } = slider()
-    const { element, recorded } = createPicture(2, 100)
-    state.interactions.setPicture(element)
+    const { element, recorded } = createChart(2, 100)
+    state.interactions.setChart(element)
     const down = pointer(481)
     state.interactions.onPointerDown(down)
     expect(down.preventDefault).toHaveBeenCalled()
@@ -210,8 +210,8 @@ describe('the pointer on the picture', () => {
 
   it('leaves a button other than the first to the window', () => {
     const { state, emitted } = slider()
-    const { element, recorded } = createPicture(2, 100)
-    state.interactions.setPicture(element)
+    const { element, recorded } = createChart(2, 100)
+    state.interactions.setChart(element)
     const down = pointer(481, 2)
     state.interactions.onPointerDown(down)
     expect(down.preventDefault).not.toHaveBeenCalled()
@@ -221,7 +221,7 @@ describe('the pointer on the picture', () => {
 
   it('leaves the knob at its current position where the picture has no scale', () => {
     const { state, emitted } = slider()
-    state.interactions.setPicture(createPicture(0, 100).element)
+    state.interactions.setChart(createChart(0, 100).element)
     state.interactions.onPointerDown(pointer(481))
     expect(emitted).toStrictEqual([['move', 2]])
   })
@@ -230,7 +230,7 @@ describe('the pointer on the picture', () => {
     const { state, emitted } = slider()
     state.interactions.onPointerDown(pointer(481))
     const unscaled = Object.assign(document.createElement('div'), { setPointerCapture: () => {} })
-    state.interactions.setPicture(unscaled as unknown as SVGSVGElement)
+    state.interactions.setChart(unscaled as unknown as SVGSVGElement)
     state.interactions.onPointerDown(pointer(481))
     expect(emitted).toStrictEqual([
       ['move', 2],
@@ -240,8 +240,8 @@ describe('the pointer on the picture', () => {
 
   it('walks the knob while the pointer is retained, and writes once it is let go', () => {
     const { state, emitted } = slider()
-    const { element, recorded } = createPicture(2, 100, true)
-    state.interactions.setPicture(element)
+    const { element, recorded } = createChart(2, 100, true)
+    state.interactions.setChart(element)
     state.interactions.onPointerMove(pointer(481))
     state.interactions.onPointerUp(pointer(481))
     expect(emitted).toStrictEqual([['move', 1], ['commit']])
@@ -252,8 +252,8 @@ describe('the pointer on the picture', () => {
     const { state, emitted } = slider()
     state.interactions.onPointerMove(pointer(481))
     state.interactions.onPointerUp(pointer(481))
-    const { element, recorded } = createPicture(2, 100, false)
-    state.interactions.setPicture(element)
+    const { element, recorded } = createChart(2, 100, false)
+    state.interactions.setChart(element)
     state.interactions.onPointerMove(pointer(481))
     state.interactions.onPointerUp(pointer(481))
     expect(emitted).toStrictEqual([])

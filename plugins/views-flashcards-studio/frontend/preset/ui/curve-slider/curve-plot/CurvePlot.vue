@@ -8,7 +8,7 @@ import type { Goal } from '../../../types'
 import { WORDS as words } from '../../../words'
 import type { CurveSliderState } from '../useCurveSlider'
 import { CurveCallout } from './curve-callout'
-import { CurvePicture } from './curve-picture'
+import { CurveChart } from './curve-chart'
 import { CurveWaiting } from './curve-waiting'
 import '../curve-slider.css'
 
@@ -25,7 +25,7 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const { isHonest, labels } = props.state.annotations
 const { named, heights } = labels
-const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${PLOT_HEIGHT}` }
+const boxStyle = { aspectRatio: `${PLOT_WIDTH} / ${PLOT_HEIGHT}` }
 </script>
 
 <template>
@@ -37,10 +37,10 @@ const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${PLOT_HEIGHT}` }
     </div>
 
     <div class="curve-slider__over" data-control="over">
-      <div class="curve-slider__room" data-control="room" :style="roomStyle">
+      <div class="curve-slider__room" data-control="room" :style="boxStyle">
         <CurveWaiting v-if="!isHonest && props.isWaiting" />
 
-        <CurvePicture v-else-if="isHonest" :state="props.state" :value-text="props.valueText" />
+        <CurveChart v-else-if="isHonest" :state="props.state" :value-text="props.valueText" />
       </div>
 
       <span

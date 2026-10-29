@@ -60,7 +60,7 @@ function onSelectReasoning(id: string) {
     @select-model="onSelectModel"
     @select-reasoning="onSelectReasoning"
   >
-    <template #silence>{{ props.state.unreachable() || words.nothingSaid }}</template>
+    <template #silence>{{ props.state.unreachable() || words.noTranscript }}</template>
     <template #failure="{ turn }">
       {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
     </template>

@@ -11,7 +11,7 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { getAdjacentPlace, type Box } from '@numen/ui'
 import type { Size } from '@numen/ui'
-import { browserViewport, useRoom, type Viewport } from '@numen/ui'
+import { browserViewport, useFreeSpace, type Viewport } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -35,7 +35,7 @@ const root = useTemplateRef<HTMLElement>('root')
 const size = ref<Size>({ width: 0, height: 0 })
 
 /** The area to stay inside, measured again whenever it changes. */
-const { room } = useRoom(props.viewport, measure)
+const { room } = useFreeSpace(props.viewport, measure)
 
 /**
  * Across, it stands beside the thing it is about. Down, it begins where that

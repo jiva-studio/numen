@@ -334,7 +334,7 @@ describe('how much room the plex has', () => {
       took(size)
       return () => {}
     },
-    watchRoom: (took) => {
+    watchFreeSpace: (took) => {
       took(size)
       return () => {}
     },
@@ -350,7 +350,7 @@ describe('how much room the plex has', () => {
   it('lets go of the watching when it is taken down', () => {
     const stop = vi.fn()
     const plex = mountPlex({
-      viewport: { watch: () => stop, watchRoom: () => () => {}, watchWhole: () => () => {} },
+      viewport: { watch: () => stop, watchFreeSpace: () => () => {}, watchWhole: () => () => {} },
     })
     plex.unmount()
     expect(stop).toHaveBeenCalledOnce()

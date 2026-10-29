@@ -57,7 +57,7 @@ export { clamp } from './shared/lib/math/bounds'
 export { getAdjacentPlace, type Box } from './shared/lib/dom/place'
 export {
   browserViewport,
-  useRoom,
+  useFreeSpace,
   useViewport,
   useWholeViewport,
   type Viewport,

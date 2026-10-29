@@ -345,11 +345,11 @@ type Story = StoryObj
  */
 export const Arrangements: Story = {
   play: ({ canvasElement }) => {
-    const saidText = canvasElement.querySelector('[data-tally]')?.textContent ?? ''
-    expect(saidText).toContain(`${ARRANGEMENTS} arrangements`)
+    const transcriptText = canvasElement.querySelector('[data-tally]')?.textContent ?? ''
+    expect(transcriptText).toContain(`${ARRANGEMENTS} arrangements`)
 
-    const drawnCount = Number(/, (\d+) of them drawn/.exec(saidText)?.[1] ?? 0)
-    const elements = Number(/drawn as (\d+) elements/.exec(saidText)?.[1] ?? 0)
+    const drawnCount = Number(/, (\d+) of them drawn/.exec(transcriptText)?.[1] ?? 0)
+    const elements = Number(/drawn as (\d+) elements/.exec(transcriptText)?.[1] ?? 0)
     expect(drawnCount).toBeGreaterThan(ARRANGEMENTS / 4)
     expect(elements).toBeGreaterThan(ARRANGEMENTS)
   },

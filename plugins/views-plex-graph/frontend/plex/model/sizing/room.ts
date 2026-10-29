@@ -18,16 +18,16 @@ import type { Viewport } from '@numen/ui'
 const FALLBACK = { width: 1200, height: 800 }
 
 /** What the measuring reads off the plex it belongs to. */
-export interface PlexRoomProps {
+export interface PlexSizingProps {
   readonly options?: PlexOptionsInput | undefined
   readonly viewport: Viewport
   readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
 }
 
 /** `hasIcon` says whether a caller draws anything beside a title. */
-export function useRoom(
+export function useFreeSpace(
   element: Readonly<ShallowRef<HTMLElement | null>>,
-  props: PlexRoomProps,
+  props: PlexSizingProps,
   hasIcon: () => boolean,
 ) {
   /** How much room the plex has, as it was last measured. */
@@ -51,7 +51,7 @@ export function useRoom(
    * Room for the icon a caller draws beside a title, and none where the slot is
    * not filled.
    */
-  const iconRoom = computed(() => (hasIcon() ? options.value.iconWidth : 0))
+  const iconWidthReserve = computed(() => (hasIcon() ? options.value.iconWidth : 0))
 
   /**
    * How wide each title needs its box to be, and each label its line, measured
@@ -59,7 +59,7 @@ export function useRoom(
    * so a box is drawn at the size it keeps, and taken again when a theme changes
    * that type.
    */
-  const measures = useTitleWidths(() => iconRoom.value)
+  const measures = useTitleWidths(() => iconWidthReserve.value)
 
   /**
    * How wide a box is drawn while the attention rests on it: the room its whole

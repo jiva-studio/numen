@@ -7,7 +7,7 @@ import {
   dropTab,
   moveTabWithin,
   openTab,
-  openTabBeside,
+  openTabAdjacent,
   resizeBranch,
 } from './edit'
 import { arrangeWorkspace } from '../fixtures/arrange'
@@ -82,7 +82,7 @@ describe('a gesture asking for what the tree does not hold', () => {
   it('opens no tab alongside a pane when there is no pane', () => {
     const before = nowhere()
     expect(
-      openTabBeside(before, 'notes', { side: 'left', createId: createIdFactory() }),
+      openTabAdjacent(before, 'notes', { side: 'left', createId: createIdFactory() }),
     ).toStrictEqual(before)
   })
 
@@ -111,7 +111,7 @@ describe('a gesture asking for what the tree does not hold', () => {
 
 describe('opening a tab in a pane of its own', () => {
   it('opens one that was nowhere in the tree', () => {
-    const after = openTabBeside(sideBySide(), 'notes', {
+    const after = openTabAdjacent(sideBySide(), 'notes', {
       side: 'right',
       createId: createIdFactory(),
     })
@@ -123,7 +123,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('takes one that is already open away from where it was', () => {
-    const after = openTabBeside(sideBySide(), 'chat', {
+    const after = openTabAdjacent(sideBySide(), 'chat', {
       side: 'right',
       createId: createIdFactory(),
     })
@@ -138,7 +138,7 @@ describe('opening a tab in a pane of its own', () => {
     const before = createWorkspace(stack('main', 'plex'))
     const ids = createIdFactory()
 
-    const after = openTabBeside(before, 'plex', { side: 'left', createId: ids })
+    const after = openTabAdjacent(before, 'plex', { side: 'left', createId: ids })
 
     expect(after).toStrictEqual(before)
     // Nothing was made, so nothing was named.
@@ -151,7 +151,7 @@ describe('opening a tab in a pane of its own', () => {
     ['top' as Side, 'vertical', ['made-1', 'main']],
     ['bottom' as Side, 'vertical', ['main', 'made-1']],
   ])('puts it on the %s', (side, axis, order) => {
-    const after = openTabBeside(oneStack(), 'notes', { side, createId: createIdFactory() })
+    const after = openTabAdjacent(oneStack(), 'notes', { side, createId: createIdFactory() })
 
     expect(ids(after)).toStrictEqual(order)
     expect(after.axis).toBe(axis)
@@ -159,7 +159,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('joins the parent when the parent already divides that way', () => {
-    const after = openTabBeside(withSpare(), 'more', {
+    const after = openTabAdjacent(withSpare(), 'more', {
       side: 'left',
       createId: createIdFactory(),
       onto: 'aside',
@@ -170,7 +170,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('wraps the pane when the parent divides the other way', () => {
-    const after = openTabBeside(withSpare(), 'more', {
+    const after = openTabAdjacent(withSpare(), 'more', {
       side: 'bottom',
       createId: createIdFactory(),
       onto: 'main',
@@ -185,7 +185,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('takes half of what it opened alongside', () => {
-    const after = openTabBeside(sideBySide(), 'notes', {
+    const after = openTabAdjacent(sideBySide(), 'notes', {
       side: 'right',
       createId: createIdFactory(),
     })
@@ -199,7 +199,7 @@ describe('opening a tab in a pane of its own', () => {
   it('leaves the others where they were', () => {
     const before = arrangeWorkspace(withSpare(), SCREEN)
     const after = arrangeWorkspace(
-      openTabBeside(withSpare(), 'more', {
+      openTabAdjacent(withSpare(), 'more', {
         side: 'right',
         createId: createIdFactory(),
         onto: 'main',
@@ -211,14 +211,14 @@ describe('opening a tab in a pane of its own', () => {
 
   it('opens alongside the pane a tab opens into when told no other', () => {
     const focused = createWorkspace(sideBySide().root, 'horizontal', 'aside')
-    const after = openTabBeside(focused, 'notes', { side: 'right', createId: createIdFactory() })
+    const after = openTabAdjacent(focused, 'notes', { side: 'right', createId: createIdFactory() })
 
     expect(ids(after)).toStrictEqual(['main', 'aside', 'made-1'])
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('divides a workspace holding nothing, and clears the empty pane away', () => {
-    const after = openTabBeside(empty(), 'notes', { side: 'bottom', createId: createIdFactory() })
+    const after = openTabAdjacent(empty(), 'notes', { side: 'bottom', createId: createIdFactory() })
 
     expect(isPane(after.root) && after.root.id).toBe('made-1')
     expect(getTabs(after, 'made-1')).toStrictEqual(['notes'])
@@ -228,19 +228,19 @@ describe('opening a tab in a pane of its own', () => {
   it('does nothing for the middle, which divides nothing', () => {
     const before = sideBySide()
     expect(
-      openTabBeside(before, 'notes', { side: 'center', createId: createIdFactory() }),
+      openTabAdjacent(before, 'notes', { side: 'center', createId: createIdFactory() }),
     ).toStrictEqual(before)
   })
 
   it('leaves a tab that is open where it is when requested for the middle', () => {
     const before = sideBySide()
     expect(
-      openTabBeside(before, 'chat', { side: 'center', createId: createIdFactory() }),
+      openTabAdjacent(before, 'chat', { side: 'center', createId: createIdFactory() }),
     ).toStrictEqual(before)
   })
 
   it('leaves the tree canonical when the pane it opened alongside empties', () => {
-    const after = openTabBeside(oneStack(), 'plex', {
+    const after = openTabAdjacent(oneStack(), 'plex', {
       side: 'left',
       createId: createIdFactory(),
       onto: 'main',

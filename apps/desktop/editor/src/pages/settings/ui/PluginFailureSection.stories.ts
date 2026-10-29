@@ -50,7 +50,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** A plugin suspended is drawn with its reason, and only that plugin. */
-export const APluginHeldOff: Story = {
+export const APluginIsSuspended: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const group = canvas.getByRole('group', { name: 'Sample Stopped' })

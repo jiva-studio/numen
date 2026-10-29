@@ -42,14 +42,14 @@ function place(node: WorkspaceNode, box: Rect, depth: number, context: PlaceCont
   const free = Math.max(length - context.gap * Math.max(node.children.length - 1, 0), 0)
   const sizes = fit(node.sizes, node.children.length)
 
-  let alongCoord = isAcross ? box.x : box.y
+  let axisCoord = isAcross ? box.x : box.y
   node.children.forEach((child, index) => {
     const acquiredItem = free * (sizes[index] ?? 0)
     const childBox: Rect = isAcross
-      ? { x: alongCoord, y: box.y, width: acquiredItem, height: box.height }
-      : { x: box.x, y: alongCoord, width: box.width, height: acquiredItem }
+      ? { x: axisCoord, y: box.y, width: acquiredItem, height: box.height }
+      : { x: box.x, y: axisCoord, width: box.width, height: acquiredItem }
     // Stryker disable next-line ArithmeticOperator: depth - 1 has the parity of depth + 1, and only parity is read.
     place(child, childBox, depth + 1, context)
-    alongCoord += acquiredItem + context.gap
+    axisCoord += acquiredItem + context.gap
   })
 }

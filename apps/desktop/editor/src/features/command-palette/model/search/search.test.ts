@@ -25,7 +25,7 @@ const WORDS: Words = {
   readAt: 'Open at this heading',
   readDocument: 'Open the document',
   noneFound: 'Nothing',
-  notAsked: 'Search failed',
+  noQuery: 'Search failed',
   wordsOnly: 'Text search only: no embedding model set',
   notEmbedded: 'Semantic index not built yet',
 }
@@ -211,7 +211,7 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notAsked)
+    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.noQuery)
     expect(getGroup(palette.groups.value, 'meaning')?.isWorking).toBe(false)
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
   })

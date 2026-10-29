@@ -53,7 +53,7 @@ const says = computed(() => {
 </script>
 
 <template>
-  <div class="template__said">
+  <div class="template__transcript">
     <div class="template__head flex items-center">
       <NameBox
         class="template__title rounded-node"
@@ -66,7 +66,11 @@ const says = computed(() => {
       <!-- The fields are small quiet chips, as small quiet actions are
            drawn everywhere else here. What they are for is said to a
            reader by the group, and to everyone else by their look. -->
-      <div class="template__slots flex" role="group" :aria-label="`${words.insert}: ${template.name}`">
+      <div
+        class="template__slots flex"
+        role="group"
+        :aria-label="`${words.insert}: ${template.name}`"
+      >
         <Button
           v-for="field in template.fields"
           :key="field"
@@ -107,7 +111,7 @@ const says = computed(() => {
 
 <style scoped>
 /* The strip is the template's own, so its name leads it and the fields follow. */
-.template__said {
+.template__transcript {
   inline-size: 100%;
 }
 

@@ -29,7 +29,7 @@ export function useConversationView(context: ConversationContext, paint?: Paint)
   }
 
   /** What stands where the answers do while there are none. */
-  const getSilence = () => context.getUnreachable?.() || WORDS.nothingSaid
+  const getSilence = () => context.getUnreachable?.() || WORDS.noTranscript
 
   onScopeDispose(() => conversation.finish())
 

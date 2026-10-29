@@ -87,7 +87,7 @@ function createNamesSearch(deps: PaletteSearchDeps) {
         } catch {
           if (!mine.isCurrent) return
           deps.found.value = []
-          deps.failureMessage.value = deps.words.notAsked
+          deps.failureMessage.value = deps.words.noQuery
         } finally {
           if (mine.isCurrent) deps.isWorking.value = false
         }
@@ -118,7 +118,7 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
     } catch {
       if (!mine.isCurrent) return
       deps.known.value = []
-      deps.failureMessage.value = deps.words.notAsked
+      deps.failureMessage.value = deps.words.noQuery
     } finally {
       if (mine.isCurrent) deps.isWorking.value = false
     }

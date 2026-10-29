@@ -78,11 +78,11 @@ export function getDays(
   // began in: their days are read from the left, and the room past what they
   // have yet done stretches out to the right. Once they have been here longer
   // than the width holds, the oldest weeks fall off the left instead.
-  const behindDate = new Date(last)
-  behindDate.setDate(behindDate.getDate() - (columns * ROWS - 1))
+  const startDate = new Date(last)
+  startDate.setDate(startDate.getDate() - (columns * ROWS - 1))
 
   const opens = monday(getFirstDay(did, due, now))
-  const first = opens > behindDate ? opens : behindDate
+  const first = opens > startDate ? opens : startDate
 
   for (let offset = 0; offset < columns * ROWS; offset += 1) {
     const on = new Date(first)

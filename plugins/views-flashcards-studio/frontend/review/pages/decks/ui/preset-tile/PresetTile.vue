@@ -28,7 +28,7 @@ defineEmits<{
     :disabled="!tile.canOpen"
     @click="$emit('start')"
   >
-    <span class="presets__said">
+    <span class="presets__transcript">
       <span class="presets__name">{{ tile.one.name }}</span>
       <span v-if="tile.goal" class="presets__goal">{{ tile.goal }}</span>
       <!-- What is wrong with the preset, where the goal it could not
@@ -65,7 +65,7 @@ defineEmits<{
 }
 
 /* The name, with the goal under it. */
-.presets__said {
+.presets__transcript {
   display: flex;
   min-inline-size: 0;
   flex-direction: column;

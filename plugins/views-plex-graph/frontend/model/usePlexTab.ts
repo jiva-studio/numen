@@ -39,11 +39,7 @@ export type {
 
 export { getInverseRelation } from './linkInspector'
 
-function usePlexPicture(
-  view: PlexView,
-  deps: PlexTabDeps,
-  map: ReturnType<typeof createNodeIdMap>,
-) {
+function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
   const picture = computed<PlexNeighbourhood | null>(() => {
     const neighbourhood = view.neighbourhood.value
     if (!deps.isReady.value || !neighbourhood) return null
@@ -218,7 +214,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     types,
     getType,
     drawn: drawnNodes,
-  } = usePlexPicture(view, deps, map)
+  } = usePlexImage(view, deps, map)
 
   const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
   const quickLinkModel = useQuickLink(view, deps, map)

@@ -41,14 +41,14 @@ const tab = (
 ) => {
   const fake = createConversation(locations)
   const openedCalls: [string, readonly TextRange[]][] = []
-  const besideItems: string[] = []
+  const adjacentItems: string[] = []
   const state = useAgentConversation(fake.conversation, {
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
-    openFileBeside: (path) => besideItems.push(path),
+    openFileAdjacent: (path) => adjacentItems.push(path),
     resolveLinks: createLinkResolver(notes),
     unreachable: () => '',
   })
-  return { state, opened: openedCalls, besideItems, ...fake }
+  return { state, opened: openedCalls, adjacentItems, ...fake }
 }
 
 const items = (nameAt: readonly string[], name: string, presence: Model['presence']): Model => ({
@@ -147,7 +147,7 @@ describe('a link inside an answer', () => {
 
     one.state.followLink(one.turns.value[0]!, 'name://Thermodynamics', press.press)
 
-    expect(one.besideItems).toEqual(['physics/Thermodynamics.md'])
+    expect(one.adjacentItems).toEqual(['physics/Thermodynamics.md'])
   })
 
   it('opens nothing, and goes nowhere else, where no note answers to it', async () => {
@@ -158,7 +158,7 @@ describe('a link inside an answer', () => {
 
     one.state.followLink(one.turns.value[0]!, 'name://Nowhere', press.press)
 
-    expect(one.besideItems).toEqual([])
+    expect(one.adjacentItems).toEqual([])
   })
 })
 
@@ -187,7 +187,7 @@ describe('agent model selection and settings', () => {
     const content: [readonly string[], unknown][] = []
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
-      openFileBeside: () => {},
+      openFileAdjacent: () => {},
       resolveLinks: async () => [],
       unreachable: () => '',
       writeSetting: async (path, value) => {
@@ -228,7 +228,7 @@ describe('agent model selection and settings', () => {
     const models = shallowRef<readonly Model[]>([])
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
-      openFileBeside: () => {},
+      openFileAdjacent: () => {},
       resolveLinks: async () => [],
       unreachable: () => '',
       getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),

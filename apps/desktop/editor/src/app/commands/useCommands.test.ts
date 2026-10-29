@@ -48,9 +48,9 @@ vi.mock('./commandDeps', () => ({
 
 const target = { path: 'a.md' } as unknown as CommandTarget
 
-const setup = (preventHeld = false) => {
+const setup = (isPrevented = false) => {
   const content: [string, string][] = []
-  const press = vi.fn(() => preventHeld)
+  const press = vi.fn(() => isPrevented)
   const options = {
     core: {},
     words: {},

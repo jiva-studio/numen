@@ -165,8 +165,8 @@ describe('a tab that closes', () => {
   })
 
   it('stays where it is while its kind has something to finish', async () => {
-    const heldKind = kind({ isKept: true })
-    const window = notifiedCalls([heldKind.declared])
+    const pendingKind = kind({ isKept: true })
+    const window = notifiedCalls([pendingKind.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(window.releaseTab(id)).toBe(false)
@@ -175,8 +175,8 @@ describe('a tab that closes', () => {
   })
 
   it('closes when the kind that took it says it is done', async () => {
-    const heldKind = kind({ isKept: true })
-    const window = notifiedCalls([heldKind.declared])
+    const pendingKind = kind({ isKept: true })
+    const window = notifiedCalls([pendingKind.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
     window.releaseTab(id)
 
@@ -201,8 +201,8 @@ describe('a tab release from outside', () => {
   })
 
   it('stays on the screen while its kind has something to finish', async () => {
-    const heldKind = kind({ isKept: true })
-    const window = notifiedCalls([heldKind.declared])
+    const pendingKind = kind({ isKept: true })
+    const window = notifiedCalls([pendingKind.declared])
     const id = await window.openTabOfKind('thing', 'Note.md')
 
     window.requestClose(id)
@@ -251,7 +251,7 @@ describe('the tab the person is looking at', () => {
     const thing = kind()
     const window = notifiedCalls([thing.declared])
     const one = await window.openTabOfKind('thing', 'One.md')
-    const two = await window.handle.openTabBeside('thing', 'Two.md')
+    const two = await window.handle.openTabAdjacent('thing', 'Two.md')
     window.show(one)
     // Every pane says what it is showing when it is drawn.
     window.onTabShown(two)
@@ -300,7 +300,7 @@ describe('a key struck on the window', () => {
     const readItem = readTabs()
     const window = notifiedCalls([readItem.one.declared])
     const one = await window.openTabOfKind('thing', 'One.epub')
-    await window.handle.openTabBeside('thing', 'Two.epub')
+    await window.handle.openTabAdjacent('thing', 'Two.epub')
     window.show(one)
 
     expect(window.onKeyPress(createKeyEvent('ArrowRight'))).toBe(true)
@@ -312,7 +312,7 @@ describe('a key struck on the window', () => {
     const readItem = readTabs()
     const window = notifiedCalls([readItem.one.declared])
     await window.openTabOfKind('thing', 'One.epub')
-    const two = await window.handle.openTabBeside('thing', 'Two.epub')
+    const two = await window.handle.openTabAdjacent('thing', 'Two.epub')
     window.show(two)
 
     window.onKeyPress(createKeyEvent('ArrowLeft'))
@@ -563,7 +563,7 @@ describe('a tab opened alongside', () => {
     const window = notifiedCalls([kind().declared])
     const one = await window.openTabOfKind('thing', 'One.md')
 
-    const two = await window.handle.openTabBeside('thing', 'Two.md')
+    const two = await window.handle.openTabAdjacent('thing', 'Two.md')
 
     expect(getPanes(window.layout.value.root).map((pane) => pane.tabs)).toEqual([[one], [two]])
     expect(window.layout.value.axis).toBe('horizontal')
@@ -573,7 +573,7 @@ describe('a tab opened alongside', () => {
     const window = notifiedCalls([kind().declared])
     await window.openTabOfKind('thing', 'One.md')
 
-    const id = await window.handle.openTabBeside('nothing', 'Two.md')
+    const id = await window.handle.openTabAdjacent('nothing', 'Two.md')
 
     expect(id).toBe('nothing:Two.md')
     expect(onScreen(window.layout.value)).toContain(id)
@@ -608,8 +608,8 @@ describe('a key struck on the window, offered in turn', () => {
     const sampleTab = offerTab('none')
     const window = notifiedCalls([sampleTab.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
-    await window.handle.openTabBeside('thing', 'B')
-    await window.handle.openTabBeside('thing', 'C')
+    await window.handle.openTabAdjacent('thing', 'B')
+    await window.handle.openTabAdjacent('thing', 'C')
     window.show(first)
 
     expect(window.onKeyPress(strike)).toBe(false)
@@ -621,8 +621,8 @@ describe('a key struck on the window, offered in turn', () => {
     const offer = offerTab('C')
     const window = notifiedCalls([offer.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
-    await window.handle.openTabBeside('thing', 'B')
-    await window.handle.openTabBeside('thing', 'C')
+    await window.handle.openTabAdjacent('thing', 'B')
+    await window.handle.openTabAdjacent('thing', 'C')
     window.show(first)
 
     expect(window.onKeyPress(strike)).toBe(true)
@@ -731,7 +731,7 @@ describe('a tab opened on nothing', () => {
     const window = notifiedCalls([thing.declared])
 
     await window.openTabOfKind('thing')
-    await window.handle.openTabBeside('thing')
+    await window.handle.openTabAdjacent('thing')
 
     expect(thing.opened).toEqual(['', ''])
   })

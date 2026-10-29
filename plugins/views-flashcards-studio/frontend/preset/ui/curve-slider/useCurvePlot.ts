@@ -49,6 +49,6 @@ export function useCurvePlot(getCurve: () => Curve, getPlace: () => number) {
     places,
     knob,
     suggested,
-    heldValue: target,
+    pinnedValue: target,
   }
 }

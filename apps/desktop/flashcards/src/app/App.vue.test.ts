@@ -13,7 +13,7 @@ const wire = vi.hoisted(() => {
     getPlugins: vi.fn(),
     listVaults: vi.fn(),
     tasks: (): AsyncIterable<unknown> => waits(),
-    tasksAsked: [] as unknown[],
+    requestedTasks: [] as unknown[],
   }
 })
 vi.mock('@/shared/clients', () => ({
@@ -29,7 +29,7 @@ vi.mock('@/shared/clients', () => ({
   vaultsService: { listVaults: wire.listVaults },
   windowService: {
     watchTasks: (request: unknown) => {
-      wire.tasksAsked.push(request)
+      wire.requestedTasks.push(request)
       return wire.tasks()
     },
   },
@@ -94,7 +94,7 @@ const mounted: { unmount(): void }[] = []
 afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
   wire.tasks = () => wire.waits()
-  wire.tasksAsked.length = 0
+  wire.requestedTasks.length = 0
 })
 
 describe('App', () => {
@@ -228,7 +228,7 @@ describe('the work behind the window', () => {
     )
     await flushPromises()
 
-    expect(wire.tasksAsked).toStrictEqual([{ window: 'desktop.flashcards' }])
+    expect(wire.requestedTasks).toStrictEqual([{ window: 'desktop.flashcards' }])
     expect(shell?.notices.notices.value.map((one) => one.text)).toStrictEqual([
       'Indexing the vault',
     ])

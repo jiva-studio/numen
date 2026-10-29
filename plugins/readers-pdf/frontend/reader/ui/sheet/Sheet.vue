@@ -52,7 +52,7 @@ const isLoaded = ref(false)
 const givenUp = computed(() => tries.value > ATTEMPTS)
 
 /** The address it is asked for at, this attempt. */
-const pictureUrl = computed(() => {
+const imageUrl = computed(() => {
   if (!props.picture || givenUp.value) return ''
   const separator = props.picture.includes('?') ? '&' : '?'
   return tries.value === 0 ? props.picture : `${props.picture}${separator}again=${tries.value}`
@@ -81,10 +81,10 @@ const getBoxStyle = (one: Rect) => ({
 <template>
   <figure class="reader__page rounded-node absolute top-0 overflow-hidden" :data-page="at">
     <img
-      v-if="pictureUrl"
+      v-if="imageUrl"
       class="reader__picture block size-full object-contain"
       :class="{ invisible: !isLoaded }"
-      :src="pictureUrl"
+      :src="imageUrl"
       :alt="`${page} ${at + 1}`"
       draggable="false"
       @error="tries += 1"

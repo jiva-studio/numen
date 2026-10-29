@@ -90,8 +90,8 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
   state.shape = shape
   const riding = state.curve.value.grid
 
-  const standsAlready = state.isReal && state.curve.value.goal === settings.goal
-  if (standsAlready) {
+  const isCurrent = state.isReal && state.curve.value.goal === settings.goal
+  if (isCurrent) {
     state.curve.value = { ...state.curve.value, isHonest: false }
   } else {
     const meanwhile = estimateCurve(settings, today, bounds)
@@ -114,7 +114,7 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
   if (!mine.isCurrent) return
   state.answers.set(shape, answer)
   applyCurveAnswer(state, answer)
-  if (standsAlready && isSameGrid(riding, answer.grid)) return
+  if (isCurrent && isSameGrid(riding, answer.grid)) return
   state.place.value = getKnobPosition(answer, settings, today)
 }
 
@@ -123,12 +123,12 @@ export const updateCurves = async (state: CurveState, context: CurveContext): Pr
   const { getSettings, today } = context
   const settings = getSettings()
   const shape = getShapeKey(settings)
-  const heldCurve = state.answers.get(shape)
-  if (heldCurve) {
+  const cachedCurve = state.answers.get(shape)
+  if (cachedCurve) {
     state.asks.cancel()
     state.shape = shape
-    applyCurveAnswer(state, heldCurve)
-    state.place.value = getKnobPosition(heldCurve, settings, today)
+    applyCurveAnswer(state, cachedCurve)
+    state.place.value = getKnobPosition(cachedCurve, settings, today)
     return
   }
 

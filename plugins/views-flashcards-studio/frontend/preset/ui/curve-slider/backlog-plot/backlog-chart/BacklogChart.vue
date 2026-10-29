@@ -27,7 +27,7 @@ defineProps<{
 
 <template>
   <svg
-    class="curve-slider__picture backlog__picture"
+    class="curve-slider__picture backlog__chart"
     data-backlog="picture"
     aria-hidden="true"
     :viewBox="`0 0 ${PLOT_WIDTH} ${BACKLOG_PLOT_HEIGHT}`"
@@ -56,7 +56,7 @@ defineProps<{
 
 <style scoped>
 /* The backlog is read and not dragged, so no pointer is offered over it. */
-.backlog__picture {
+.backlog__chart {
   cursor: default;
 }
 

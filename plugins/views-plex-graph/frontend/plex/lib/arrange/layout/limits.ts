@@ -11,7 +11,7 @@ export interface RoleLimits {
 export type Limits = Readonly<Record<PlexRelation, RoleLimits>>
 
 /** How many boxes of `size` fit end to end in `room`. */
-const countAlong = (room: number, size: number, gap: number) =>
+const countAxis = (room: number, size: number, gap: number) =>
   Math.floor((room + gap) / (size + gap))
 
 /**
@@ -59,13 +59,13 @@ function getViewportLimits(
   const rowHalf = (perLine: number) =>
     Math.max(options.focusSize.width / 2, (perLine * width + (perLine - 1) * options.gap) / 2)
   const columnsBeyond = (clear: number) =>
-    clamp(countAlong(halfWidth - clear - options.focusGap, width, options.lineGap), {
+    clamp(countAxis(halfWidth - clear - options.focusGap, width, options.lineGap), {
       min: 0,
       max: options.maxLines,
     })
 
-  const columnsBeside = (perLine: number) => columnsBeyond(rowHalf(perLine))
-  const perColumn = Math.max(1, countAlong(2 * halfHeight, height, options.gap))
+  const adjacentColumns = (perLine: number) => columnsBeyond(rowHalf(perLine))
+  const perColumn = Math.max(1, countAxis(2 * halfHeight, height, options.gap))
 
   const columnReach =
     ((Math.min(longestColumn, perColumn) - 1) / 2) * (height + options.gap) + height / 2
@@ -75,11 +75,11 @@ function getViewportLimits(
   const getColumnClearance = (perLine: number) =>
     columnsMeetRows ? rowHalf(perLine) : options.focusSize.width / 2
 
-  const canFitColumn = columnsMeetRows && columnsBeside(1) >= 1
+  const canFitColumn = columnsMeetRows && adjacentColumns(1) >= 1
 
-  const row = getWidestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
+  const row = getWidestRow(countAxis(2 * halfWidth, width, options.gap), (perLine) => {
     if (rowHalf(perLine) > halfWidth) return false
-    return !canFitColumn || columnsBeside(perLine) >= 1
+    return !canFitColumn || adjacentColumns(perLine) >= 1
   })
 
   return getRelationLimits(
@@ -87,7 +87,7 @@ function getViewportLimits(
     () => ({
       perLine: row,
       lines: clamp(
-        countAlong(
+        countAxis(
           halfHeight - options.focusSize.height / 2 - options.focusGap,
           height,
           options.lineGap,

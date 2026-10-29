@@ -9,7 +9,7 @@ import type { ShallowRef } from 'vue'
 import type { PageNavigationAction } from '@numen/ui'
 import { dragPage } from '../lib/pageStep'
 
-export interface BookHandOptions {
+export interface BookPointerOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
   readonly turn: (way: PageNavigationAction) => void
@@ -20,7 +20,7 @@ export interface BookHandOptions {
  * `turn` is what the reader does with the way the hand asked for, and `getEdge`
  * is the near edge of the reading area, which a press is measured from.
  */
-export function createBookHand(options: BookHandOptions) {
+export function createBookPointer(options: BookPointerOptions) {
   /** Where the hand went down, while it is down. */
   let hand: number | undefined
 

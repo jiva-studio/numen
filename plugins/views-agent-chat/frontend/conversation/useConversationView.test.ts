@@ -103,7 +103,7 @@ describe('the conversation view', () => {
     expect(view.getSilence()).toBe('Agent unreachable.')
 
     unreachable = ''
-    expect(view.getSilence()).toBe(WORDS.nothingSaid)
+    expect(view.getSilence()).toBe(WORDS.noTranscript)
   })
 
   it('names the field as the caller says, and as the vault chat does where it says nothing', () => {

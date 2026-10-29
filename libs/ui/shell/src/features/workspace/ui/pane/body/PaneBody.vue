@@ -50,7 +50,7 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
       v-for="(tab, at) in pane.tabs"
       :id="panelName(at)"
       :key="tab"
-      class="pane__held"
+      class="pane__pending"
       role="tabpanel"
       tabindex="0"
       :aria-labelledby="tabName(at)"
@@ -76,7 +76,7 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 /* Every tab of the pane is drawn; the ones not shown are held out of sight. What
    a tab holds is alive for as long as the tab is: a caret, a scroll offset, an
    undo history. */
-.pane__held {
+.pane__pending {
   display: none;
   block-size: 100%;
   min-block-size: 0;
@@ -84,12 +84,12 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
   contain: strict;
 }
 
-.pane__held[data-showing] {
+.pane__pending[data-showing] {
   display: block;
 }
 
 /* Drawn inside, because what a pane holds fills it to its edges. */
-.pane__held:focus-visible {
+.pane__pending:focus-visible {
   outline: none;
 }
 

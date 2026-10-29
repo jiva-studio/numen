@@ -59,10 +59,10 @@ describe('useActionPanel', () => {
   it('takes the panel away first on the ground, and the palette on the next press', () => {
     const { dismiss, panel } = setUp('note')
     panel.open.value = true
-    panel.onGround()
+    panel.onBackdrop()
     expect(panel.open.value).toBe(false)
     expect(dismiss).not.toHaveBeenCalled()
-    panel.onGround()
+    panel.onBackdrop()
     expect(dismiss).toHaveBeenCalledOnce()
   })
 })

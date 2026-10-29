@@ -37,9 +37,9 @@ export function useNoticeStack(
   /** Whether the corner is being held. */
   const isHolding = (): boolean => pointed.value || focused.value || isHidden()
   /** How long it has been held for. */
-  const heldFor = ref(0)
+  const holdDuration = ref(0)
 
-  const readItem = computed(() => now.value - heldFor.value)
+  const readItem = computed(() => now.value - holdDuration.value)
 
   /** The card a pointer is on, for as long as that card is still there. */
   let on: Element | null = null
@@ -56,7 +56,7 @@ export function useNoticeStack(
     }
     if (focused.value && !stack.value?.contains(document.activeElement)) focused.value = false
     const current = clock()
-    if (isHolding()) heldFor.value += current - now.value
+    if (isHolding()) holdDuration.value += current - now.value
     now.value = current
   }
 

@@ -61,7 +61,7 @@ const createFeed = () => {
   let isOver = false
 
   const watchCardsDue = async function* (
-    _said: Record<string, never>,
+    _transcript: Record<string, never>,
     how?: { signal?: AbortSignal },
   ): AsyncGenerator<DueCounts> {
     isOver = false

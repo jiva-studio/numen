@@ -356,9 +356,10 @@ describe('the arrow a line carries while the picture moves', () => {
   it('keeps it aimed along the piece of curve it covers, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      const behindPoint = createPointOnCurve(edge)(1 - ARROW_LENGTH / getLength(edge))
+      const precedingPoint = createPointOnCurve(edge)(1 - ARROW_LENGTH / getLength(edge))
       const chord =
-        (Math.atan2(edge.toPoint.y - behindPoint.y, edge.toPoint.x - behindPoint.x) * 180) / Math.PI
+        (Math.atan2(edge.toPoint.y - precedingPoint.y, edge.toPoint.x - precedingPoint.x) * 180) /
+        Math.PI
       expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)
     }
   })

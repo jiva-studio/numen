@@ -12,7 +12,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 
 <template>
   <div class="divider" role="presentation" :data-at="at">
-    <span class="divider__held"><slot /></span>
+    <span class="divider__pending"><slot /></span>
   </div>
 </template>
 
@@ -43,7 +43,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 
 /* What relies on the divider is drawn at its own width while there is room for
    it, and is what the width goes to first. */
-.divider__held {
+.divider__pending {
   display: flex;
   align-items: center;
   flex: 0 1 auto;

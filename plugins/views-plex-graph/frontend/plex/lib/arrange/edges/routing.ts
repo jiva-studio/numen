@@ -136,7 +136,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
-  const alongEdge: EdgeCurve = {
+  const axisEdge: EdgeCurve = {
     fromPoint: firstGate,
     control1: getControl(firstGate, isVertical, reach),
     control2: getControl(secondGate, isVertical, -reach),
@@ -145,7 +145,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
   // The caller's from and to are kept, so the curve may run right to left or
   // bottom to top.
-  return fromFirst ? alongEdge : reverse(alongEdge)
+  return fromFirst ? axisEdge : reverse(axisEdge)
 }
 
 /**
@@ -153,7 +153,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
  */
 function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
   if (edge.label === undefined || !routing.labelWidth) return edge.label
-  const room = getLength(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
+  const room = getLength(curve) - (edge.arrow ? 2 * routing.arrowClearance : 0)
   return cutToFit(edge.label, room, routing.labelWidth)
 }
 

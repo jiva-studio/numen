@@ -216,7 +216,7 @@ export const WorkAndWords: Story = {
 }
 
 /** Something said goes once it has been read. */
-export const SaidAndGone: Story = {
+export const AnnouncedAndGone: Story = {
   args: { notices: [RENAMED], clock: createFastClock(8) },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))
@@ -236,7 +236,7 @@ export const FailureStays: Story = {
 }
 
 /** Time spent with the corner under a pointer is not time spent reading it. */
-export const HeldUnderThePointer: Story = {
+export const PausedUnderThePointer: Story = {
   args: { notices: [RENAMED], clock: createFastClock(8) },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))
@@ -264,7 +264,7 @@ export const NobodyLooking: Story = {
  * What folds is what has been said. Work and what is so are what the corner is
  * for, and they stand however many of them there are.
  */
-export const MoreThanThereIsRoomFor: Story = {
+export const MoreThanTheCapacity: Story = {
   args: {
     room: 3,
     notices: [
@@ -454,11 +454,11 @@ export const Dark: Story = {
     const away = within(cards[2]!).getByRole('button', { name: /^Dismiss/ })
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
-    const behindColor = getComputedStyle(cards[2]!).backgroundColor
+    const backdropColor = getComputedStyle(cards[2]!).backgroundColor
     await hoverOver(away)
     await waitFor(async () => {
-      const underLightness = lightness(getComputedStyle(away).backgroundColor, behindColor)
-      await expect(Math.abs(underLightness - lightness(behindColor))).toBeGreaterThan(2)
+      const underLightness = lightness(getComputedStyle(away).backgroundColor, backdropColor)
+      await expect(Math.abs(underLightness - lightness(backdropColor))).toBeGreaterThan(2)
     })
   },
 }

@@ -45,20 +45,20 @@ const wire = vi.hoisted(() => {
     createChannel,
     reloads: createChannel(),
     /** Whether a count stays on its way until the window ends it. */
-    isCountHeld: false,
+    isCountPending: false,
     /** Whether the count names the vault's own numbers, after the list. */
     isVaultCounted: true,
     counts: [] as AbortSignal[],
-    daysAsked: [] as { vault: string; from: string; to: string }[],
-    presetsAsked: [] as unknown[],
-    notesAsked: [] as unknown[],
+    requestedDays: [] as { vault: string; from: string; to: string }[],
+    requestedPresets: [] as unknown[],
+    requestedNotes: [] as unknown[],
     answered: [] as { cardId: string }[],
     responses: [] as { cardId: string }[],
     takenBack: [] as unknown[],
     scrolled: [] as boolean[],
     opened: { unwritten: [] as string[], skipped: 0 },
     isStartRefused: false,
-    sessionsAsked: [] as unknown[],
+    requestedSessions: [] as unknown[],
   }
 })
 
@@ -84,14 +84,14 @@ vi.mock('../shared/clients', async (original) => ({
       wire.counts.push(signal)
       yield { day: '2026-04-02', vaults: [VAULT] }
       if (wire.isVaultCounted) yield { day: '', vaults: [], counted: VAULT }
-      if (!wire.isCountHeld) return
+      if (!wire.isCountPending) return
       await new Promise<never>((_, fail) => {
         signal.addEventListener('abort', () => fail(new Error('the count was ended')))
       })
     },
     watchReloads: () => wire.reloads.read(),
     listReviewDays: async (request: { vault: string; from: string; to: string }) => {
-      wire.daysAsked.push(request)
+      wire.requestedDays.push(request)
       return {
         days: [
           {
@@ -111,11 +111,11 @@ vi.mock('../shared/clients', async (original) => ({
       }
     },
     getVaultDeckPreset: async (request: unknown) => {
-      wire.presetsAsked.push(request)
+      wire.requestedPresets.push(request)
       return { preset: undefined }
     },
     getDeckNeighbourhood: async (request: unknown) => {
-      wire.notesAsked.push(request)
+      wire.requestedNotes.push(request)
       return {
         notes: [
           {
@@ -132,7 +132,7 @@ vi.mock('../shared/clients', async (original) => ({
       }
     },
     startSession: async (request: unknown) => {
-      wire.sessionsAsked.push(request)
+      wire.requestedSessions.push(request)
       if (wire.isStartRefused) {
         throw new ConnectError('the vault is closing', Code.FailedPrecondition)
       }
@@ -246,19 +246,19 @@ const setWidths = (screen: number, page: number) => {
 
 beforeEach(() => {
   wire.reloads = wire.createChannel()
-  wire.isCountHeld = false
+  wire.isCountPending = false
   wire.isVaultCounted = true
   wire.counts.length = 0
-  wire.daysAsked.length = 0
-  wire.presetsAsked.length = 0
-  wire.notesAsked.length = 0
+  wire.requestedDays.length = 0
+  wire.requestedPresets.length = 0
+  wire.requestedNotes.length = 0
   wire.responses.length = 0
   wire.takenBack.length = 0
   wire.scrolled.length = 0
   agent = createMockAgentHost()
   wire.opened = { unwritten: [], skipped: 0 }
   wire.isStartRefused = false
-  wire.sessionsAsked.length = 0
+  wire.requestedSessions.length = 0
 })
 
 afterEach(() => {
@@ -302,7 +302,7 @@ describe('a person who sat down and came back to the decks', () => {
 
 describe('a review opened on a vault', () => {
   it('ends the counting of the vaults once its own is counted', async () => {
-    wire.isCountHeld = true
+    wire.isCountPending = true
     await openReview()
 
     expect(wire.counts).toHaveLength(1)
@@ -312,25 +312,25 @@ describe('a review opened on a vault', () => {
   it('asks which preset schedules each of its decks', async () => {
     await openReview()
 
-    expect(wire.presetsAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
+    expect(wire.requestedPresets).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
   })
 
   it('waits for its vault to be counted, and keeps the counting going until it is', async () => {
-    wire.isCountHeld = true
+    wire.isCountPending = true
     wire.isVaultCounted = false
     const { review } = await openReview()
 
     expect(review.vaultCount.value?.isCounted).toBe(false)
-    expect(wire.presetsAsked).toEqual([])
+    expect(wire.requestedPresets).toEqual([])
     expect(wire.counts[0]!.aborted).toBe(false)
-    expect(wire.daysAsked.map((one) => one.vault)).toEqual(['roots'])
+    expect(wire.requestedDays.map((one) => one.vault)).toEqual(['roots'])
   })
 
   it('asks for the days the wider of the screen and the page would draw', async () => {
     const askDays = async (screen: number, page: number) => {
       setWidths(screen, page)
       await openReview()
-      const { from, to } = wire.daysAsked.at(-1)!
+      const { from, to } = wire.requestedDays.at(-1)!
       return { from, to }
     }
 
@@ -359,13 +359,13 @@ describe('a deck written underneath the review', () => {
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
-    expect(wire.daysAsked.map((one) => one.vault)).toEqual(['roots', 'roots'])
+    expect(wire.requestedDays.map((one) => one.vault)).toEqual(['roots', 'roots'])
 
     close()
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
-    expect(wire.daysAsked).toHaveLength(2)
+    expect(wire.requestedDays).toHaveLength(2)
   })
 })
 
@@ -419,7 +419,9 @@ describe('a session sat down to', () => {
     await review.decks.startPreset('presets/Daily.md')
 
     expect(review.on.value).toBe('session')
-    expect(wire.sessionsAsked).toEqual([{ vault: 'roots', deck: '', preset: 'presets/Daily.md' }])
+    expect(wire.requestedSessions).toEqual([
+      { vault: 'roots', deck: '', preset: 'presets/Daily.md' },
+    ])
     expect(notices.getShown().map((one) => one.severity)).toEqual(['warning'])
   })
 
@@ -449,7 +451,7 @@ describe('a session sat down to', () => {
   it('is left alone by a deck written underneath it', async () => {
     const review = await openSession()
     const counted = wire.counts.length
-    const daysRead = wire.daysAsked.length
+    const daysRead = wire.requestedDays.length
 
     wire.reloads.send({ reload: true })
     await settle()
@@ -457,7 +459,7 @@ describe('a session sat down to', () => {
 
     expect(review.on.value).toBe('session')
     expect(wire.counts).toHaveLength(counted)
-    expect(wire.daysAsked).toHaveLength(daysRead)
+    expect(wire.requestedDays).toHaveLength(daysRead)
   })
 
   it('stays on the decks when the session cannot be opened', async () => {
@@ -473,7 +475,7 @@ describe('a session sat down to', () => {
     review.session.toggleNotes()
     await settle()
 
-    expect(wire.notesAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
+    expect(wire.requestedNotes).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
   })
 
   it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
@@ -536,12 +538,12 @@ describe('the keys of the review', () => {
   it('leave the session for the decks counted again, and the decks for the vaults of the window', async () => {
     const review = await openSession()
     const counted = wire.counts.length
-    const daysRead = wire.daysAsked.length
+    const daysRead = wire.requestedDays.length
 
     await press(review, 'Escape')
     expect(review.on.value).toBe('decks')
     expect(wire.counts).toHaveLength(counted + 1)
-    expect(wire.daysAsked).toHaveLength(daysRead + 1)
+    expect(wire.requestedDays).toHaveLength(daysRead + 1)
 
     await press(review, 'Escape')
     expect(goToVaults).toHaveBeenCalledOnce()

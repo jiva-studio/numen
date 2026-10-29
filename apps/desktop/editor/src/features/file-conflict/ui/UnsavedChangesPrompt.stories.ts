@@ -69,7 +69,7 @@ export const TwoNotes: Story = {
 }
 
 /** One note, answered. */
-export const AnsweredForOneNote: Story = {
+export const ResolvedForOneNote: Story = {
   args: { conflicts: [conflict('physics/Entropy.md'), conflict('Heat.md')] },
   play: async ({ args, canvasElement }) => {
     const [first, second] = args.conflicts

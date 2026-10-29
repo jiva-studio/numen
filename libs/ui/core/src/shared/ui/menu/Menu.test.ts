@@ -487,24 +487,24 @@ describe('searching the items', () => {
 })
 
 describe('how tall it grows', () => {
-  const getRoom = () => getDrawnMenu()?.style.getPropertyValue('--room')
+  const getFreeSpace = () => getDrawnMenu()?.style.getPropertyValue('--room')
 
   it('leaves the area its margin on both sides', async () => {
     mountMenu({ viewport: { width: 900, height: 300 }, margin: 10 })
     await settle()
-    expect(getRoom()).toBe('280px')
+    expect(getFreeSpace()).toBe('280px')
   })
 
   it('reads the room off the browser window where no area is given', async () => {
     mountMenu({ margin: 8 })
     await settle()
-    expect(getRoom()).toBe('calc(100dvh - 16px)')
+    expect(getFreeSpace()).toBe('calc(100dvh - 16px)')
   })
 
   it('never leaves a negative room', async () => {
     mountMenu({ viewport: { width: 900, height: 10 }, margin: 8 })
     await settle()
-    expect(getRoom()).toBe('0px')
+    expect(getFreeSpace()).toBe('0px')
   })
 })
 

@@ -25,18 +25,18 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
   }
   const requests: string[] = []
   const openedCalls: [string, readonly TextRange[]][] = []
-  const besideItems: string[] = []
+  const adjacentItems: string[] = []
   const resolveLinks = createLinkResolver(notes)
   const state = useAgentConversation(conversation, {
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
-    openFileBeside: (path) => besideItems.push(path),
+    openFileAdjacent: (path) => adjacentItems.push(path),
     resolveLinks: (text) => {
       requests.push(text)
       return resolveLinks(text)
     },
     unreachable: () => '',
   })
-  return { state, turns, requests, opened: openedCalls, besideItems }
+  return { state, turns, requests, opened: openedCalls, adjacentItems }
 }
 
 /** Lets the answers come back and the turns be drawn. */
@@ -187,7 +187,7 @@ describe('a link inside an answer', () => {
 
     one.state.followLink(one.turns.value[0]!, 'name://Entropy', createPress().press)
 
-    expect(one.besideItems).toEqual(['Entropy.md'])
+    expect(one.adjacentItems).toEqual(['Entropy.md'])
   })
 
   it('opens no note for an address the core reached no note for', async () => {
@@ -197,7 +197,7 @@ describe('a link inside an answer', () => {
 
     one.state.followLink(one.turns.value[0]!, 'name://Nowhere', press.press)
 
-    expect(one.besideItems).toEqual([])
+    expect(one.adjacentItems).toEqual([])
     expect(press.was()).toBe(false)
   })
 
@@ -209,12 +209,12 @@ describe('a link inside an answer', () => {
     one.state.followLink(one.turns.value[0]!, 'Amazon%20river.md', press1.press)
     expect(press1.was()).toBe(true)
     await settle()
-    expect(one.besideItems).toEqual(['notes/Amazon river.md'])
+    expect(one.adjacentItems).toEqual(['notes/Amazon river.md'])
 
     const press2 = createPress()
     one.state.followLink(one.turns.value[0]!, 'numen:notes%2FDirect.md', press2.press)
     expect(press2.was()).toBe(true)
     await settle()
-    expect(one.besideItems).toEqual(['notes/Amazon river.md', 'notes/Direct.md'])
+    expect(one.adjacentItems).toEqual(['notes/Amazon river.md', 'notes/Direct.md'])
   })
 })

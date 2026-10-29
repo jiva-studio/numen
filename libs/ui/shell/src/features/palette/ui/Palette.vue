@@ -98,7 +98,7 @@ const {
   open: isPanelOpen,
   chooseAction,
   onPress,
-  onGround,
+  onBackdrop,
 } = useActionPanel({
   getActions: () => actions.value,
   getLit: () => activeItem.value?.id,
@@ -141,7 +141,7 @@ function reveal(): void {
     :name="name"
     :to="to"
     @keydown="onKey"
-    @ground="onGround"
+    @ground="onBackdrop"
     @press="onPress"
   >
     <PaletteField

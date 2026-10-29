@@ -110,7 +110,7 @@ describe('useFileMenuCommands', () => {
     expect(get).toHaveBeenCalledWith('books/Scan.pdf')
     expect(run).toHaveBeenCalledWith('books/Scan.pdf', recognise)
     expect(onRun).toHaveBeenCalledWith('books/Scan.pdf')
-    expect(writeMessage).toHaveBeenLastCalledWith(WORDS.textAsked('Example OCR'), 'info')
+    expect(writeMessage).toHaveBeenLastCalledWith(WORDS.queriedText('Example OCR'), 'info')
     expect(menu.paletteCommands.value.map((one) => one.id)).toStrictEqual([
       getFileMenuId(recognise),
     ])

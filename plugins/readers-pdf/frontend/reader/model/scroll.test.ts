@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
-import { useHandScroll } from './scroll'
+import { usePanScroll } from './scroll'
 
 interface Stage {
   readonly element: HTMLElement
@@ -20,7 +20,7 @@ const createStage = (scrollLeft: number): Stage => {
 const createScroll = (scrollLeft = 0) => {
   const stage = createStage(scrollLeft)
   const area = shallowRef<HTMLElement | null>(stage.element)
-  return { ...stage, area, scroll: useHandScroll(area) }
+  return { ...stage, area, scroll: usePanScroll(area) }
 }
 
 describe('a row sent somewhere', () => {

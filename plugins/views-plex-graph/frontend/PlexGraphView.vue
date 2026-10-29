@@ -64,7 +64,7 @@ function onEnterHeading(node: string, heading: string) {
   props.state.openHeading(node, heading)
 }
 
-function onDismissPicture() {
+function onDismissImage() {
   props.state.dismiss()
 }
 
@@ -110,7 +110,7 @@ function onDismissLinkInspector() {
     <Plex
       v-else-if="neighbourhood"
       ref="picture"
-      class="plex__picture"
+      class="plex__image"
       :neighbourhood="neighbourhood!"
       :options="options"
       :creatable="props.state.creatable"
@@ -126,7 +126,7 @@ function onDismissLinkInspector() {
       @show="onShowNode"
       @enter="onEnterHeading"
       @edge-menu="onEdgeMenu"
-      @dismiss="onDismissPicture"
+      @dismiss="onDismissImage"
     >
       <!-- A note of a type a plugin declares is drawn as the tree draws it. An
            ordinary note is drawn its title and nothing before it. -->
@@ -188,7 +188,7 @@ function onDismissLinkInspector() {
   overflow: hidden;
 }
 
-.plex__picture {
+.plex__image {
   flex: 1;
   min-block-size: 0;
 }

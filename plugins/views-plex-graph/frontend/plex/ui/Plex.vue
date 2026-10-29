@@ -11,7 +11,7 @@ import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
-import { useRoom } from '../model/sizing/room'
+import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
 import { formatCount, getRelationName, type PlexRelation } from '../lib/relation'
@@ -47,7 +47,11 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, options, measures, widen, hung } = useRoom(frameElement, props, () => !!slots.icon)
+const { room, options, measures, widen, hung } = useFreeSpace(
+  frameElement,
+  props,
+  () => !!slots.icon,
+)
 
 /** How the nodes behave, handed down as one. */
 const behaviour = computed<PlexBehaviour>(() => ({

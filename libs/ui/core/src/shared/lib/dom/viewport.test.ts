@@ -6,7 +6,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, shallowRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Size } from '../math/geometry'
-import { browserViewport, useRoom, useViewport, useWholeViewport } from './viewport'
+import { browserViewport, useFreeSpace, useViewport, useWholeViewport } from './viewport'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -169,7 +169,7 @@ describe('an element watched for the room it takes up whole', () => {
 describe('the room of the window', () => {
   it('is told now, and again at every resize', () => {
     const took = createSizes()
-    const stop = browserViewport.watchRoom(took)
+    const stop = browserViewport.watchFreeSpace(took)
 
     expect(took).toHaveBeenCalledExactlyOnceWith({
       width: window.innerWidth,
@@ -186,7 +186,7 @@ describe('the room of the window', () => {
 
   it('is told nothing once the watching is stopped', () => {
     const took = createSizes()
-    browserViewport.watchRoom(took)()
+    browserViewport.watchFreeSpace(took)()
     took.mockClear()
 
     window.dispatchEvent(new Event('resize'))
@@ -198,7 +198,7 @@ describe('the room of the window', () => {
     vi.stubGlobal('window', undefined)
 
     const took = createSizes()
-    const stop = browserViewport.watchRoom(took)
+    const stop = browserViewport.watchFreeSpace(took)
 
     expect(took).not.toHaveBeenCalled()
     expect(() => stop()).not.toThrow()
@@ -355,12 +355,15 @@ describe('the whole room of one element of a component', () => {
 })
 
 describe('the room of the window, retained by a component', () => {
-  const mountRoom = (port: Parameters<typeof useRoom>[0], onChange?: (size: Size) => void) => {
-    const target: { room?: ReturnType<typeof useRoom> } = {}
+  const mountFreeSpace = (
+    port: Parameters<typeof useFreeSpace>[0],
+    onChange?: (size: Size) => void,
+  ) => {
+    const target: { room?: ReturnType<typeof useFreeSpace> } = {}
     const wrapper = mount(
       defineComponent({
         setup() {
-          target.room = useRoom(port, onChange)
+          target.room = useFreeSpace(port, onChange)
           return () => h('div')
         },
       }),
@@ -370,7 +373,7 @@ describe('the room of the window, retained by a component', () => {
 
   it('is measured when the component is drawn, and at every resize', () => {
     const onChange = createSizes()
-    const one = mountRoom(undefined, onChange)
+    const one = mountFreeSpace(undefined, onChange)
 
     expect(one.room.value).toStrictEqual({ width: window.innerWidth, height: window.innerHeight })
     expect(onChange).toHaveBeenCalledTimes(1)
@@ -385,11 +388,11 @@ describe('the room of the window, retained by a component', () => {
 
   it('is watched through the port it is given, and release with the component', () => {
     const stop = vi.fn()
-    const watchRoom = vi.fn<(took: (size: Size) => void) => () => void>((took) => {
+    const watchFreeSpace = vi.fn<(took: (size: Size) => void) => () => void>((took) => {
       took({ width: 5, height: 6 })
       return stop
     })
-    const one = mountRoom({ ...browserViewport, watchRoom })
+    const one = mountFreeSpace({ ...browserViewport, watchFreeSpace })
 
     expect(one.room.value).toStrictEqual({ width: 5, height: 6 })
     one.wrapper.unmount()

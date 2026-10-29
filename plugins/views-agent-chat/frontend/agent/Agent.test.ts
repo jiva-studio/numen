@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import Agent from './Agent.vue'
 import type { Turn } from '../thread'
 
-const createAsked = (id: string, text = 'said'): Turn => ({ id, voice: 'prompt', text })
-const createAnswered = (id: string, text = 'back'): Turn => ({ id, voice: 'response', text })
+const createRequested = (id: string, text = 'said'): Turn => ({ id, voice: 'prompt', text })
+const createResponded = (id: string, text = 'back'): Turn => ({ id, voice: 'response', text })
 
 /** How tall the area the conversation scrolls in is, and one turn in it. */
 const SCREEN = 100
@@ -53,7 +53,7 @@ const createAgent = (turns: readonly Turn[]) => {
 
 describe('a question sent', () => {
   it('is carried to whoever answers it', async () => {
-    const one = createAgent([createAsked('1'), createAnswered('2')])
+    const one = createAgent([createRequested('1'), createResponded('2')])
 
     await one.sends('what is a relation')
 
@@ -62,12 +62,17 @@ describe('a question sent', () => {
   })
 
   it('brings the foot of the conversation into view', async () => {
-    const one = createAgent([createAsked('1'), createAnswered('2'), createAsked('3')])
+    const one = createAgent([createRequested('1'), createResponded('2'), createRequested('3')])
     await one.reads(0)
 
     await one.sends('and one more')
     await one.wrapper.setProps({
-      turns: [createAsked('1'), createAnswered('2'), createAsked('3'), createAsked('4')],
+      turns: [
+        createRequested('1'),
+        createResponded('2'),
+        createRequested('3'),
+        createRequested('4'),
+      ],
     })
 
     expect(one.at()).toBe(3 * SCREEN)
@@ -76,11 +81,16 @@ describe('a question sent', () => {
 
 describe('a conversation read further up', () => {
   it('stays where it is read while an answer arrives', async () => {
-    const one = createAgent([createAsked('1'), createAnswered('2'), createAsked('3')])
+    const one = createAgent([createRequested('1'), createResponded('2'), createRequested('3')])
     await one.reads(0)
 
     await one.wrapper.setProps({
-      turns: [createAsked('1'), createAnswered('2'), createAsked('3'), createAnswered('4')],
+      turns: [
+        createRequested('1'),
+        createResponded('2'),
+        createRequested('3'),
+        createResponded('4'),
+      ],
     })
 
     expect(one.at()).toBe(0)

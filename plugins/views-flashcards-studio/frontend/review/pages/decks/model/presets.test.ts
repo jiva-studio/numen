@@ -180,8 +180,11 @@ describe('what a goal evaluates to in words', () => {
   })
 
   it('says the day, and how far off it is', () => {
-    const saidText = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
-    expect(saidText).toMatch(/^18 days to /)
+    const transcriptText = getGoalWords(
+      settings({ goal: 'date', byDate: '2026-09-30' }),
+      '2026-09-12',
+    )
+    expect(transcriptText).toMatch(/^18 days to /)
   })
 
   it('says no day while the goal names none', () => {
@@ -191,11 +194,11 @@ describe('what a goal evaluates to in words', () => {
   })
 
   it('says only the day once it is today or has passed', () => {
-    const saidText = (byDate: string) =>
+    const transcriptText = (byDate: string) =>
       getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
-    expect(saidText('2026-09-12')).toMatch(/^by \S/)
-    expect(saidText('2026-09-10')).toMatch(/^by \S/)
-    expect(saidText('2026-09-13')).toMatch(/^1 day to /)
+    expect(transcriptText('2026-09-12')).toMatch(/^by \S/)
+    expect(transcriptText('2026-09-10')).toMatch(/^by \S/)
+    expect(transcriptText('2026-09-13')).toMatch(/^1 day to /)
   })
 })
 
@@ -954,7 +957,7 @@ describe('what is wrong with a preset no deck answered for', () => {
 
 describe('what is known of the presets of a vault', () => {
   /** An application that answers only once it is let go, with the same preset for every deck. */
-  const createHeldPresets = () => {
+  const createBlockedPresets = () => {
     let release = () => {}
     let gate = Promise.resolve()
     const client: PresetsClient = {
@@ -985,7 +988,7 @@ describe('what is known of the presets of a vault', () => {
   })
 
   it('is known once a reading has run', async () => {
-    const one = useVaultPresets({ presets: createHeldPresets().client })
+    const one = useVaultPresets({ presets: createBlockedPresets().client })
 
     expect(one.known.value).toBe(false)
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
@@ -994,7 +997,7 @@ describe('what is known of the presets of a vault', () => {
   })
 
   it('stays known while the same vault is read again', async () => {
-    const target = createHeldPresets()
+    const target = createBlockedPresets()
     const one = useVaultPresets({ presets: target.client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
@@ -1008,7 +1011,7 @@ describe('what is known of the presets of a vault', () => {
   })
 
   it('is unknown for another vault until its own reading has run', async () => {
-    const target = createHeldPresets()
+    const target = createBlockedPresets()
     const one = useVaultPresets({ presets: target.client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
@@ -1023,7 +1026,7 @@ describe('what is known of the presets of a vault', () => {
   })
 
   it('holds nothing once it is read for no vault at all', async () => {
-    const one = useVaultPresets({ presets: createHeldPresets().client })
+    const one = useVaultPresets({ presets: createBlockedPresets().client })
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
     await one.read(null, '2026-09-05')

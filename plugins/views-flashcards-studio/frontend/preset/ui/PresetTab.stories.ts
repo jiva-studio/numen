@@ -168,7 +168,7 @@ type Story = StoryObj<Knobs>
 export const APreset: Story = {}
 
 /** The picture, which is the control the knob is walked along. */
-const getPicture = (canvas: HTMLElement): SVGSVGElement =>
+const getImage = (canvas: HTMLElement): SVGSVGElement =>
   within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement
 
 /** The first line of the bubble over the knob, which is the value being held. */
@@ -249,9 +249,9 @@ export const TheRowsShareTheirColumns: Story = {
  * picture at the ends, so it never hangs off the side. That pull is the
  * `translate` property, and only a browser says where it left the words.
  */
-export const TheReadoutStaysUnderThePicture: Story = {
+export const TheReadoutStaysBelowThePlot: Story = {
   play: async ({ canvasElement }) => {
-    const picture = getPicture(canvasElement)
+    const picture = getImage(canvasElement)
     const frame = picture.getBoundingClientRect()
     picture.focus()
     expect(picture).toHaveFocus()
@@ -283,9 +283,9 @@ export const TheReadoutStaysUnderThePicture: Story = {
  * the whole of it at the trailing end, so it stays over the picture. Its tail
  * relies on the knob whichever way it was pulled.
  */
-export const TheBubbleStandsOverTheKnob: Story = {
+export const TheBubbleIsAboveTheKnob: Story = {
   play: async ({ canvasElement }) => {
-    const picture = getPicture(canvasElement)
+    const picture = getImage(canvasElement)
     const frame = picture.getBoundingClientRect()
     picture.focus()
 
@@ -313,20 +313,20 @@ export const TheBubbleStandsOverTheKnob: Story = {
  * below it moves when the answer lands. Only a browser can say that: the room is
  * held by an aspect ratio, which is a number until something lays it out.
  */
-export const TheBacklogKeepsItsRoom: Story = {
+export const TheBacklogKeepsItsSpace: Story = {
   render: bothWays,
   play: async ({ canvasElement }) => {
     const [answered, waiting] = getTabs(canvasElement)
-    const backlogRoom = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
+    const getBacklogRect = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
 
     // The backlog's own two axes are named, and it is drawn under the picture it
     // belongs to and not beside it.
     const canvas = within(answered!)
     const backlog = canvas.getByText(words.backlogY)
-    const alongElem = canvas.getByText(words.backlogX)
-    const picture = getPicture(answered!).getBoundingClientRect()
+    const axisLabel = canvas.getByText(words.backlogX)
+    const picture = getImage(answered!).getBoundingClientRect()
     expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    expect(alongElem.getBoundingClientRect().top).toBeGreaterThan(
+    expect(axisLabel.getBoundingClientRect().top).toBeGreaterThan(
       backlog.getBoundingClientRect().top,
     )
 
@@ -342,8 +342,8 @@ export const TheBacklogKeepsItsRoom: Story = {
     expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
     // The room is the same either way, and in the backlog's own proportion.
-    const backlogBox = backlogRoom(answered!)
-    const empty = backlogRoom(waiting!)
+    const backlogBox = getBacklogRect(answered!)
+    const empty = getBacklogRect(waiting!)
     expect(backlogBox.width).toBeGreaterThan(0)
     expect(empty.width).toBeCloseTo(backlogBox.width, 0)
     expect(empty.height).toBeCloseTo(backlogBox.height, 0)
@@ -383,9 +383,9 @@ export const WaitingForAnAnswer: Story = {
  * The ring is drawn on the knob, which is the thing the arrows move, and not
  * round the picture holding it. Only a browser says which of the two wears it.
  */
-export const TheRingStandsOnTheKnob: Story = {
+export const TheRingIsOnTheKnob: Story = {
   play: async ({ canvasElement }) => {
-    const picture = getPicture(canvasElement)
+    const picture = getImage(canvasElement)
     const knob = picture.querySelector<SVGCircleElement>('[data-control="knob"]')!
     const initialStyle = getComputedStyle(knob)
     const before = { stroke: initialStyle.stroke, width: initialStyle.strokeWidth }
@@ -416,7 +416,7 @@ export const TheRingStandsOnTheKnob: Story = {
 export const TheKnobFollowsThePointer: Story = {
   args: { place: 3 },
   play: async ({ canvasElement }) => {
-    const picture = getPicture(canvasElement)
+    const picture = getImage(canvasElement)
     const was = picture.getAttribute('aria-valuenow')
     const box = picture.getBoundingClientRect()
 

@@ -43,7 +43,7 @@ const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPor
   finish: async () => {},
 })
 
-const createSaidStep = (text: string): AgentStep => ({ kind: 'said', text })
+const createTranscriptStep = (text: string): AgentStep => ({ kind: 'said', text })
 const createToolStep = (
   tool: string,
   subject = '',
@@ -56,14 +56,14 @@ const createToolStep = (
   written: count,
   ...(place ? { place } : {}),
 })
-const createAnswered = (): AgentStep => ({ kind: 'answered' })
+const createResponded = (): AgentStep => ({ kind: 'answered' })
 const createThinking = (): AgentStep => ({ kind: 'thinking' })
 const createStopped = (error = ''): AgentStep => ({ kind: 'stopped', error })
 
 describe('an answer', () => {
   it('grows as its pieces arrive and settles when they stop', async () => {
     const conversation = useConversation(
-      createPort([createSaidStep('Two '), createSaidStep('notes.'), createStopped()]),
+      createPort([createTranscriptStep('Two '), createTranscriptStep('notes.'), createStopped()]),
       words,
       called,
       now,
@@ -109,7 +109,7 @@ describe('an answer', () => {
   it('marks existing answered turn as failed without duplicating when words match error', async () => {
     const conversation = useConversation(
       createPort([
-        createSaidStep('Your credit balance is too low to use Claude Code.'),
+        createTranscriptStep('Your credit balance is too low to use Claude Code.'),
         createStopped('Your credit balance is too low to use Claude Code.'),
       ]),
       words,
@@ -133,7 +133,7 @@ describe('the line about work', () => {
         async *ask() {
           yield createToolStep('Search notes', 'entropy')
           observed = conversation.turns.value.map((turn) => `${turn.voice}:${turn.text}`)
-          yield createSaidStep('Two notes.')
+          yield createTranscriptStep('Two notes.')
           yield createStopped()
         },
         finish: async () => {},
@@ -149,7 +149,11 @@ describe('the line about work', () => {
 
   it('arrives down when the answer begins', async () => {
     const conversation = useConversation(
-      createPort([createToolStep('Search notes'), createSaidStep('Two notes.'), createStopped()]),
+      createPort([
+        createToolStep('Search notes'),
+        createTranscriptStep('Two notes.'),
+        createStopped(),
+      ]),
       words,
       called,
       now,
@@ -184,7 +188,7 @@ describe('giving up', () => {
       release = isDone
     })
     const conversation = useConversation(
-      createPort([createSaidStep('Two ')], target),
+      createPort([createTranscriptStep('Two ')], target),
       words,
       called,
       now,
@@ -257,7 +261,7 @@ describe('a wait that explains itself', () => {
     })
     const conversation = useConversation(
       createPort(
-        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createAnswered()],
+        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createResponded()],
         target,
       ),
       words,
@@ -286,7 +290,7 @@ describe('a wait that explains itself', () => {
       createPort(
         [
           createToolStep('Create a note', "Bram Doyle's warning", 4000),
-          createAnswered(),
+          createResponded(),
           createThinking(),
         ],
         target,
@@ -320,7 +324,7 @@ describe('a wait that explains itself', () => {
     })
     const conversation = useConversation(
       createPort(
-        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createAnswered()],
+        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createResponded()],
         target,
       ),
       words,
@@ -447,9 +451,9 @@ describe('where the line about work remains', () => {
       createPort(
         [
           createToolStep('Read a note'),
-          createSaidStep('Bram Doyle '),
-          createAnswered(),
-          createSaidStep('was the chair.'),
+          createTranscriptStep('Bram Doyle '),
+          createResponded(),
+          createTranscriptStep('was the chair.'),
         ],
         target,
       ),
@@ -478,7 +482,7 @@ describe('where the line about work remains', () => {
     })
     const conversation = useConversation(
       createPort(
-        [createSaidStep('One moment. '), createThinking(), createToolStep('Read a note')],
+        [createTranscriptStep('One moment. '), createThinking(), createToolStep('Read a note')],
         target,
       ),
       words,
@@ -504,7 +508,7 @@ describe('where the line about work remains', () => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createSaidStep(''), createThinking()], target),
+      createPort([createTranscriptStep(''), createThinking()], target),
       words,
       called,
       now,
@@ -566,7 +570,7 @@ describe('a conversation that is over', () => {
       release = isDone
     })
     const conversation = useConversation(
-      createPort([createSaidStep('Two ')], target),
+      createPort([createTranscriptStep('Two ')], target),
       words,
       called,
       now,
@@ -627,7 +631,7 @@ describe('a window nobody is looking at', () => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createSaidStep('Two notes.')], target),
+      createPort([createTranscriptStep('Two notes.')], target),
       words,
       called,
       never,
@@ -682,7 +686,7 @@ describe('two tools in hand at once', () => {
         [
           createToolStep('Search notes', 'entropy'),
           createToolStep('Read a note', 'Bram Doyle'),
-          createAnswered(),
+          createResponded(),
         ],
         target,
       ),
@@ -718,7 +722,10 @@ describe('an exchange that is over', () => {
 
   it('settles the answer and stops working once a stopped step arrives', async () => {
     const conversation = useConversation(
-      createPort([createSaidStep('Hey! How can I help you today?'), createStopped()], new Promise(() => {})),
+      createPort(
+        [createTranscriptStep('Hey! How can I help you today?'), createStopped()],
+        new Promise(() => {}),
+      ),
       words,
       called,
       now,
@@ -734,7 +741,7 @@ describe('an exchange that is over', () => {
 
   it('appends new prompts and responses after restored turns without colliding on turn IDs', async () => {
     const conversation = useConversation(
-      createPort([createSaidStep('Fresh reply'), createStopped()]),
+      createPort([createTranscriptStep('Fresh reply'), createStopped()]),
       words,
       called,
       now,
@@ -781,7 +788,7 @@ describe('words with none in them', () => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createSaidStep(''), createSaidStep('')], target),
+      createPort([createTranscriptStep(''), createTranscriptStep('')], target),
       words,
       called,
       now,
@@ -832,7 +839,7 @@ describe('an error the answer already carries', () => {
     'marks that answer failed and adds none beside it, %s',
     async (_how, response, error, displayed) => {
       const conversation = useConversation(
-        createPort([createSaidStep(response), createStopped(error)]),
+        createPort([createTranscriptStep(response), createStopped(error)]),
         words,
         called,
         now,
@@ -848,7 +855,7 @@ describe('an error the answer already carries', () => {
 
   it('is told apart from an answer that says something else', async () => {
     const conversation = useConversation(
-      createPort([createSaidStep('Two notes.'), createStopped('went wrong')]),
+      createPort([createTranscriptStep('Two notes.'), createStopped('went wrong')]),
       words,
       called,
       now,
@@ -876,7 +883,7 @@ describe('an error the answer already carries', () => {
 describe('an exchange that ends without saying why', () => {
   it('adds nothing along with the transcript', async () => {
     const conversation = useConversation(
-      createPort([createSaidStep('Two notes.')]),
+      createPort([createTranscriptStep('Two notes.')]),
       words,
       called,
       now,
@@ -968,10 +975,10 @@ describe('the names of the turns', () => {
   it('count up from one question to the next, and never repeat', async () => {
     const conversation = useConversation(
       createPort([
-        createSaidStep('One. '),
+        createTranscriptStep('One. '),
         createToolStep('Read a note'),
-        createAnswered(),
-        createSaidStep('Two.'),
+        createResponded(),
+        createTranscriptStep('Two.'),
         createStopped(),
       ]),
       words,
@@ -1077,7 +1084,7 @@ describe('the line about work and the answer beginning', () => {
   it('arrives down as the first words arrive', async () => {
     const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createToolStep('Read a note'), createSaidStep('Hi')], target),
+      createPort([createToolStep('Read a note'), createTranscriptStep('Hi')], target),
       words,
       called,
       now,
@@ -1097,7 +1104,7 @@ describe('the line about work and the answer beginning', () => {
   it('is not put back by the next tool being requested about while the answer grows', async () => {
     const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createSaidStep('One. '), createToolStep('Read a note')], target),
+      createPort([createTranscriptStep('One. '), createToolStep('Read a note')], target),
       words,
       called,
       now,
@@ -1118,7 +1125,7 @@ describe('the line about work and the answer beginning', () => {
   it('leaves the answer so far settled when the model is requested again', async () => {
     const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createSaidStep('One moment. '), createThinking()], target),
+      createPort([createTranscriptStep('One moment. '), createThinking()], target),
       words,
       called,
       now,
@@ -1140,11 +1147,11 @@ describe('which tool answered', () => {
     createToolStep('Read a note'),
     ...between,
     createToolStep('Write a note'),
-    createAnswered(),
+    createResponded(),
   ]
 
   it.each([
-    ['the model has completed', createSaidStep('So. ')],
+    ['the model has completed', createTranscriptStep('So. ')],
     ['the model is asked again', createThinking()],
   ])('is known again once %s, and the one in hand stops running', async (_when, between) => {
     const { target, release } = createHold()
@@ -1168,9 +1175,9 @@ describe('giving up on an answer in the middle', () => {
     const conversation = useConversation(
       {
         async *ask() {
-          yield createSaidStep('Two ')
+          yield createTranscriptStep('Two ')
           await target
-          yield createSaidStep('more')
+          yield createTranscriptStep('more')
         },
         finish: async () => {},
       },
@@ -1259,7 +1266,7 @@ describe('an agent that cannot be reached', () => {
     const conversation = useConversation(
       {
         async *ask() {
-          yield createSaidStep('Two ')
+          yield createTranscriptStep('Two ')
           throw new Error('no agent')
         },
         finish: async () => {},

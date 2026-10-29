@@ -12,7 +12,7 @@ import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
 import { useViewport } from '@numen/ui'
 import { onNextFrame } from '@numen/ui'
-import { useHandScroll, type HandScroll } from '../model/scroll'
+import { usePanScroll, type PanScroll } from '../model/scroll'
 import {
   GAP,
   READER_WORDS,
@@ -64,7 +64,7 @@ const {
   onPointerMove,
   letGo,
   onWheel,
-} = useHandScroll(area)
+} = usePanScroll(area)
 
 const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
 const visiblePages = computed(() =>
@@ -137,10 +137,10 @@ const onKey = (event: KeyboardEvent): boolean => {
 
 /* --------------------------------- Helpers -------------------------------- */
 /** Where one page is drawn, once a width has been settled on. */
-const getPictureUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
+const getImageUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
 /** The row put where a page stands, with that page against the left edge. */
-const stand = (page: number, how: Parameters<HandScroll['send']>[1]) => {
+const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {
   const to = getScrollTarget(pageLayout.value, viewport.value, page)
   if (to !== undefined) send(to, how)
 }
@@ -175,7 +175,7 @@ const getBoxStyle = (page: number) => ({
           v-for="page in visiblePages"
           :key="page"
           :at="page"
-          :picture="getPictureUrl(page)"
+          :picture="getImageUrl(page)"
           :highlights="highlights(page)"
           :other-highlights="otherHighlights(page)"
           :page="words.page"

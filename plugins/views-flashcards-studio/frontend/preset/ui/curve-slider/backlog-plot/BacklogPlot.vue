@@ -4,7 +4,7 @@
  * whether or not there is a backlog to draw.
  *
  * It carries the slider's `data-control` for the parts it shares with the plot
- * above; the run itself is drawn by `BacklogPicture`.
+ * above; the run itself is drawn by `BacklogChart`.
  */
 import { computed } from 'vue'
 import { createBacklogAxisLabels } from '../../../lib/label'
@@ -19,7 +19,7 @@ import {
 } from '../../../lib/plot'
 import type { Curve } from '../../../types'
 import { WORDS as words } from '../../../words'
-import { BacklogPicture } from './backlog-picture'
+import { BacklogChart } from './backlog-chart'
 import '../curve-slider.css'
 
 // --- Props & Emits ---
@@ -55,7 +55,9 @@ const hasBacklog = computed(() => props.isHonest && backlog.value.length > 1)
  * the floor it lies along.
  */
 const heights = computed(() =>
-  createBacklogAxisLabels(extent.value, positions.value, (value) => words.formatBacklogCards(value)),
+  createBacklogAxisLabels(extent.value, positions.value, (value) =>
+    words.formatBacklogCards(value),
+  ),
 )
 
 /** The days at either end of the extent, which the grid says nothing about. */
@@ -63,7 +65,7 @@ const ends = computed(() => [
   words.formatBacklogDays(1),
   words.formatBacklogDays(backlog.value.length),
 ])
-const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
+const boxStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
 
 // --- Handlers ---
 
@@ -79,8 +81,8 @@ const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
     </div>
 
     <div class="curve-slider__over" data-control="over">
-      <div class="curve-slider__room" data-control="room" :style="roomStyle">
-        <BacklogPicture v-if="hasBacklog" :line="line" />
+      <div class="curve-slider__room" data-control="room" :style="boxStyle">
+        <BacklogChart v-if="hasBacklog" :line="line" />
       </div>
 
       <span

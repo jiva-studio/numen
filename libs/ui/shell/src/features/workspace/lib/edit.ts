@@ -16,7 +16,7 @@ import {
   replaceAt,
   withChildren,
 } from './tree'
-import { detach, mapPane, putBeside, commit, type NodeIdFactory } from './splice'
+import { detach, mapPane, putAdjacent, commit, type NodeIdFactory } from './splice'
 
 export type { NodeIdFactory }
 
@@ -71,7 +71,7 @@ export function openTab(
  *
  * The middle is not a side, and a tab asked for there stays where it is.
  */
-export interface OpenBesidePlacement {
+export interface OpenAdjacentPlacement {
   readonly side: Side
   readonly createId: NodeIdFactory
   readonly onto?: NodeId
@@ -84,10 +84,10 @@ export interface OpenBesidePlacement {
  *
  * The middle is not a side, and a tab asked for there stays where it is.
  */
-export function openTabBeside(
+export function openTabAdjacent(
   workspace: Workspace,
   tab: TabId,
-  placement: OpenBesidePlacement,
+  placement: OpenAdjacentPlacement,
 ): Workspace {
   const { side, createId, onto = workspace.focus } = placement
   const target = paneById(workspace.root, onto) ?? getPanes(workspace.root)[0]
@@ -99,7 +99,7 @@ export function openTabBeside(
   }
 
   const root = detach(workspace.root, tab)
-  const landed = putBeside(root, { onto: target.id, tab, side, axis: workspace.axis }, createId)
+  const landed = putAdjacent(root, { onto: target.id, tab, side, axis: workspace.axis }, createId)
   return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
@@ -155,7 +155,7 @@ export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFac
     return commit({ ...workspace, root: joined }, target.id)
   }
 
-  const landed = putBeside(
+  const landed = putAdjacent(
     root,
     { onto: target.id, tab: drop.tab, side: drop.side, axis: workspace.axis },
     createId,
@@ -178,7 +178,7 @@ export function dropOnEdge(
   if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
   const root = detach(workspace.root, tab)
-  const landed = putBeside(root, { onto: root.id, tab, side, axis: workspace.axis }, createId)
+  const landed = putAdjacent(root, { onto: root.id, tab, side, axis: workspace.axis }, createId)
   return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 

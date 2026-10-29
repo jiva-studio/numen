@@ -29,14 +29,14 @@ const { line, short, knob, suggested } = plot
 const { isDated, bounds, knob: knobAnnotation } = annotations
 const { min: least, max: most } = bounds
 const { value } = knobAnnotation
-const { setPicture, onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp } = interactions
+const { setChart, onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp } = interactions
 </script>
 
 <template>
   <svg
     :ref="
       (el: unknown) => {
-        setPicture(el as SVGSVGElement | null)
+        setChart(el as SVGSVGElement | null)
       }
     "
     class="curve-slider__picture"

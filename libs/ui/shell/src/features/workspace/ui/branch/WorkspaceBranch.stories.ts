@@ -168,7 +168,7 @@ export const ThreeAcross: Story = {
  * narrow to give any of them the least room. The floor a handle leaves is then
  * an equal share, and driving the first handle as far as it goes stops there.
  */
-export const CrowdedByTheLeastRoom: Story = {
+export const CrowdedByTheLeastSpace: Story = {
   args: { arrangement: 'three across, unevenly', minimum: 400, room: '600px' },
   play: async ({ canvasElement }) => {
     const widths = () =>

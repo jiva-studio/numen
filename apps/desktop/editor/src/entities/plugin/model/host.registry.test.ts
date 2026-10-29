@@ -152,15 +152,15 @@ describe('a tab kind opened as the editor of a path', () => {
     return { open, sub }
   }
 
-  it('calls openTabBeside for the where option as a string or an object', () => {
-    const openTabBeside = vi.fn(async () => 'tab-2')
-    const deps = createDeps({ openTabBeside })
+  it('calls openTabAdjacent for the where option as a string or an object', () => {
+    const openTabAdjacent = vi.fn(async () => 'tab-2')
+    const deps = createDeps({ openTabAdjacent })
     const { open } = registerKind(deps)
 
     open('Samples/One.md', 'One', 'split')
     open('Samples/Two.md', 'Two', { where: 'split' })
 
-    expect(openTabBeside.mock.calls).toStrictEqual([
+    expect(openTabAdjacent.mock.calls).toStrictEqual([
       ['sample', 'Samples/One.md'],
       ['sample', 'Samples/Two.md'],
     ])

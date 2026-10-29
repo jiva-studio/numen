@@ -228,7 +228,7 @@ describe('a setting written twice in quick succession', () => {
   const settingPath = ['appearance', 'nest_headings_under_notes']
 
   /** A file whose text a test sets, with every write and every read held until it is let through. */
-  const createHeldVault = () => {
+  const createBlockedVault = () => {
     let file = '{"appearance":{"nest_headings_under_notes":true}}'
     const writes: ReturnType<typeof defer<void>>[] = []
     const reads: ReturnType<typeof defer<string>>[] = []
@@ -249,7 +249,7 @@ describe('a setting written twice in quick succession', () => {
   }
 
   it('remains at the last value through the answer of the first write and a read between', async () => {
-    const vault = createHeldVault()
+    const vault = createBlockedVault()
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
     const first = retainedState.writeSetting(settingPath, false)
@@ -273,7 +273,7 @@ describe('a setting written twice in quick succession', () => {
   })
 
   it('does not take a read that answers after a newer one', async () => {
-    const vault = createHeldVault()
+    const vault = createBlockedVault()
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 
     const older = retainedState.start()
@@ -286,7 +286,7 @@ describe('a setting written twice in quick succession', () => {
   })
 
   it('goes back to the file where the write failed', async () => {
-    const vault = createHeldVault()
+    const vault = createBlockedVault()
     vault.core.updateSettings = () => Promise.reject(new Error('failed'))
     const retainedState = createSettingsStore(vault.core, words, vi.fn())
 

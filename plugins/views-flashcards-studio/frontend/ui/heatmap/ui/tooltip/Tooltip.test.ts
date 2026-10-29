@@ -33,7 +33,7 @@ const ROOM = { width: 1000, height: 800 }
 const createViewport = (size: { width: number; height: number }): Viewport => ({
   watch: () => () => {},
   watchWhole: () => () => {},
-  watchRoom: (took) => {
+  watchFreeSpace: (took) => {
     took(size)
     return () => {}
   },

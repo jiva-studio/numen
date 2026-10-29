@@ -257,10 +257,9 @@ describe('the tile and the decks under it', () => {
 
     expect(one.find('.presets__done').text()).toBe('0%')
     expect(one.findAll('.decks__met')).toHaveLength(0)
-    expect(one.findAll('.decks__stopped').map((saidText) => saidText.text())).toStrictEqual([
-      'nothing due today',
-      'nothing due today',
-    ])
+    expect(
+      one.findAll('.decks__stopped').map((transcriptText) => transcriptText.text()),
+    ).toStrictEqual(['nothing due today', 'nothing due today'])
     expect(one.find('.decks__deck').find('.due-count').text()).toBe('10 to review')
   })
 })

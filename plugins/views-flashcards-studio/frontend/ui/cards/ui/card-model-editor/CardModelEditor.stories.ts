@@ -152,8 +152,14 @@ const meta: Meta<Knobs> = {
       )
 
       /** Every template, with one half of one of them rewritten. */
-      const rewriteTemplate = (id: string, half: Half, text: string): readonly CardModelTemplate[] =>
-        templates.value.map((template) => (template.id === id ? { ...template, [half]: text } : template))
+      const rewriteTemplate = (
+        id: string,
+        half: Half,
+        text: string,
+      ): readonly CardModelTemplate[] =>
+        templates.value.map((template) =>
+          template.id === id ? { ...template, [half]: text } : template,
+        )
 
       return {
         args,
@@ -183,7 +189,9 @@ const meta: Meta<Knobs> = {
           ]
         },
         onRenameTemplate: (id: string, name: string) => {
-          templates.value = templates.value.map((template) => (template.id === id ? { ...template, name } : template))
+          templates.value = templates.value.map((template) =>
+            template.id === id ? { ...template, name } : template,
+          )
         },
         onRemoveTemplate: (id: string) => {
           templates.value = templates.value.filter((template) => template.id !== id)
@@ -195,7 +203,9 @@ const meta: Meta<Knobs> = {
             id,
             target,
           )
-          templates.value = order.flatMap((each) => templates.value.filter((template) => template.id === each))
+          templates.value = order.flatMap((each) =>
+            templates.value.filter((template) => template.id === each),
+          )
         },
         onWrite: (id: string, half: Half, text: string) => {
           templates.value = rewriteTemplate(id, half, text)
@@ -227,7 +237,9 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const getBox = (canvas: HTMLElement, id: string, half: Half) => {
-  const box = canvas.querySelector<HTMLTextAreaElement>(`[data-template="${id}"] [data-half="${half}"]`)
+  const box = canvas.querySelector<HTMLTextAreaElement>(
+    `[data-template="${id}"] [data-half="${half}"]`,
+  )
   if (!box) throw new Error(`no ${half} of ${id}`)
   return box
 }
@@ -309,11 +321,11 @@ export const ACardModel: Story = {
     const divider = found(canvasElement, '.card-model__part .divider')
     const list = found(canvasElement, '.card-model__fields')
     const adding = found(canvasElement, '.card-model__part .divider button')
-    const alongRect = divider.getBoundingClientRect()
-    expect(Math.round(alongRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
+    const axisRect = divider.getBoundingClientRect()
+    expect(Math.round(axisRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
     const addingRect = adding.getBoundingClientRect()
     expect(addingRect.left + addingRect.width / 2).toBeCloseTo(
-      alongRect.left + alongRect.width / 2,
+      axisRect.left + axisRect.width / 2,
       0,
     )
     for (const side of ['::before', '::after']) {
@@ -336,7 +348,9 @@ export const WhatAPersonDoesToIt: Story = {
     front.focus()
     front.setSelectionRange(front.value.length, front.value.length)
 
-    await userEvent.click(found(canvasElement, '[data-template="recognise"] [data-insert="Weight"]'))
+    await userEvent.click(
+      found(canvasElement, '[data-template="recognise"] [data-insert="Weight"]'),
+    )
     expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
     expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
@@ -415,7 +429,10 @@ export const WhatIsWrong: Story = {
     // What the caller found wrong with one template is placed under that template's name,
     // and under no other's.
     expect(
-      found(canvasElement, '[data-template="stray"] [data-pane="front-written"]').textContent?.trim(),
+      found(
+        canvasElement,
+        '[data-template="stray"] [data-pane="front-written"]',
+      ).textContent?.trim(),
     ).toContain('Not a field: Colour')
     expect(
       canvasElement.querySelector('[data-template="tagged"] [data-pane] [role="alert"]'),

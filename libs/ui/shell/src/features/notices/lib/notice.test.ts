@@ -116,16 +116,16 @@ describe('how long work runs before it is worth a card', () => {
 
 describe('a notice somebody requested for', () => {
   const request: Notice = { id: 'reading', text: 'Recognising a scan', isUserStarted: true }
-  const behindNotice: Notice = { id: 'indexing', text: 'Indexing' }
+  const backgroundNotice: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
     // The wait is for work nobody asked for. Somebody who asked is waiting to
     // be told it began, and ten seconds of nothing is an application that did
     // not hear them.
-    const arrivalTimes = getArrivalTimes(new Map(), [request, behindNotice], 0)
+    const arrivalTimes = getArrivalTimes(new Map(), [request, backgroundNotice], 0)
 
     expect(
-      getShownNotices([request, behindNotice], 0, { firstSeen: arrivalTimes }).map(
+      getShownNotices([request, backgroundNotice], 0, { firstSeen: arrivalTimes }).map(
         (createNotice) => createNotice.id,
       ),
     ).toEqual(['reading'])
@@ -159,17 +159,21 @@ describe('how long something returned remains to be read', () => {
   })
 
   it('is drawn the moment it arrives and goes once it has been read', () => {
-    const saidText: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
-    const arrivalTimes = getArrivalTimes(new Map(), [saidText], 1000)
+    const transcriptText: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
+    const arrivalTimes = getArrivalTimes(new Map(), [transcriptText], 1000)
 
     expect(
-      getShownNotices([saidText], 1000, { firstSeen: arrivalTimes }).map((each) => each.id),
+      getShownNotices([transcriptText], 1000, { firstSeen: arrivalTimes }).map((each) => each.id),
     ).toEqual(['renamed'])
     expect(
-      getShownNotices([saidText], 1000 + MIN_DURATION + PER_WORD - 1, { firstSeen: arrivalTimes }),
+      getShownNotices([transcriptText], 1000 + MIN_DURATION + PER_WORD - 1, {
+        firstSeen: arrivalTimes,
+      }),
     ).toHaveLength(1)
     expect(
-      getShownNotices([saidText], 1000 + MIN_DURATION + PER_WORD, { firstSeen: arrivalTimes }),
+      getShownNotices([transcriptText], 1000 + MIN_DURATION + PER_WORD, {
+        firstSeen: arrivalTimes,
+      }),
     ).toEqual([])
   })
 
@@ -200,10 +204,10 @@ describe('how long something returned remains to be read', () => {
   })
 
   it('names the ones whose caller may dismiss them, and only those', () => {
-    const saidText: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
+    const transcriptText: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
     const retainedNotice: Notice = { id: 'occupied', text: 'Filed there already', stay: 'kept' }
     const work: Notice = { id: 'embedding', text: 'Indexing', isWorking: true }
-    const all = [saidText, retainedNotice, work]
+    const all = [transcriptText, retainedNotice, work]
     const arrivalTimes = getArrivalTimes(new Map(), all, 0)
 
     expect(getFinishedNotices(all, arrivalTimes, 0)).toEqual([])

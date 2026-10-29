@@ -60,7 +60,7 @@ function stand(initial: readonly Notice[], options: { room?: number; wait?: numb
           getNotices: () => notices.value,
           stack,
           getWait: () => options.wait ?? 10_000,
-          getRoom: () => options.room ?? 4,
+          getFreeSpace: () => options.room ?? 4,
           getNow: () => clock.at,
           isHidden: () => false,
           dismiss,
@@ -127,7 +127,7 @@ describe('the clock behind the corner', () => {
     const { state } = stand([{ ...work('a'), isUserStarted: true }])
     expect(vi.getTimerCount()).toBe(0)
 
-    await state.dismissByHand('a')
+    await state.dismissManually('a')
     await nextTick()
 
     expect(vi.getTimerCount()).toBe(0)
@@ -268,7 +268,7 @@ describe('the cards folded away behind the rest', () => {
     await nextTick()
     expect(state.folds.value.visible).toHaveLength(3)
 
-    await state.dismissByHand('a')
+    await state.dismissManually('a')
     await nextTick()
 
     expect(state.isOpened.value).toBe(false)
@@ -280,7 +280,7 @@ describe('the cards folded away behind the rest', () => {
     state.isOpened.value = true
     await nextTick()
 
-    await state.dismissByHand('a')
+    await state.dismissManually('a')
     await nextTick()
 
     expect(state.isOpened.value).toBe(false)
@@ -302,7 +302,7 @@ describe('putting a card away by hand', () => {
   it('names its caller and removes the card', async () => {
     const { state, dismiss, ids } = hold(undefined)
 
-    await state.dismissByHand('b')
+    await state.dismissManually('b')
 
     expect(dismiss.mock.calls).toEqual([['b']])
     expect(ids()).toEqual(['a', 'c'])
@@ -311,7 +311,7 @@ describe('putting a card away by hand', () => {
   it('does not name its caller a second time when the card is read out afterwards', async () => {
     const { state, dismiss, notices } = stand([report('a')])
 
-    await state.dismissByHand('a')
+    await state.dismissManually('a')
     notices.value = [report('a')]
     await nextTick()
 
@@ -321,7 +321,7 @@ describe('putting a card away by hand', () => {
   it('leaves the keyboard on the card that takes the place of the one that went', async () => {
     const { state, ways } = hold('b')
 
-    await state.dismissByHand('b')
+    await state.dismissManually('b')
 
     expect(document.activeElement).toBe(ways.c)
   })
@@ -329,7 +329,7 @@ describe('putting a card away by hand', () => {
   it('leaves the keyboard on the first card when the first went', async () => {
     const { state, ways } = hold('a')
 
-    await state.dismissByHand('a')
+    await state.dismissManually('a')
 
     expect(document.activeElement).toBe(ways.b)
   })
@@ -337,7 +337,7 @@ describe('putting a card away by hand', () => {
   it('leaves the keyboard on the last card when the last went', async () => {
     const { state, ways } = hold('c')
 
-    await state.dismissByHand('c')
+    await state.dismissManually('c')
 
     expect(document.activeElement).toBe(ways.b)
   })
@@ -345,7 +345,7 @@ describe('putting a card away by hand', () => {
   it('does not move the keyboard when it was not on the card', async () => {
     const { state, ways } = hold('a')
 
-    await state.dismissByHand('c')
+    await state.dismissManually('c')
 
     expect(document.activeElement).toBe(ways.a)
   })
@@ -355,7 +355,7 @@ describe('putting a card away by hand', () => {
     const elsewhere = button()
     elsewhere.focus()
 
-    await state.dismissByHand('b')
+    await state.dismissManually('b')
 
     expect(document.activeElement).toBe(elsewhere)
   })
@@ -364,7 +364,7 @@ describe('putting a card away by hand', () => {
     const { state, ways } = hold('b')
     state.holdCard('b', null)
 
-    await state.dismissByHand('b')
+    await state.dismissManually('b')
 
     expect(document.activeElement).toBe(ways.b)
   })
@@ -375,7 +375,7 @@ describe('putting a card away by hand', () => {
     status.state.holdCard('a', { way })
     way.focus()
 
-    await expect(status.state.dismissByHand('a')).resolves.toBeUndefined()
+    await expect(status.state.dismissManually('a')).resolves.toBeUndefined()
 
     expect(status.dismiss.mock.calls).toEqual([['a']])
   })
@@ -383,7 +383,7 @@ describe('putting a card away by hand', () => {
   it('puts away a card that was never retained', async () => {
     const { state, dismiss } = stand(three)
 
-    await expect(state.dismissByHand('b')).resolves.toBeUndefined()
+    await expect(state.dismissManually('b')).resolves.toBeUndefined()
 
     expect(dismiss.mock.calls).toEqual([['b']])
   })
@@ -395,7 +395,7 @@ describe('putting a card away by hand', () => {
     status.state.holdCard('c', { way: null })
     way.focus()
 
-    await expect(status.state.dismissByHand('b')).resolves.toBeUndefined()
+    await expect(status.state.dismissManually('b')).resolves.toBeUndefined()
   })
 
   it('moves on when the card that takes its place is not retained', async () => {
@@ -404,6 +404,6 @@ describe('putting a card away by hand', () => {
     status.state.holdCard('b', { way })
     way.focus()
 
-    await expect(status.state.dismissByHand('b')).resolves.toBeUndefined()
+    await expect(status.state.dismissManually('b')).resolves.toBeUndefined()
   })
 })

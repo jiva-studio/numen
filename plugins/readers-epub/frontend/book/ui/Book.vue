@@ -11,7 +11,7 @@ import { measureRect } from '../../dom'
 import { useTemplateRef } from 'vue'
 
 import { getPageNavigationAction } from '@numen/ui'
-import { createBookHand } from '../model/hand'
+import { createBookPointer } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'
 import { BOOK_WORDS } from '../lib/words'
@@ -66,7 +66,7 @@ const layout = useBookLayout({
 })
 const { isMeasured, isStood, setting, spreadCount, front, leftInChapter } = layout
 
-const hand = createBookHand({
+const hand = createBookPointer({
   area,
   paper,
   turn: layout.turn,

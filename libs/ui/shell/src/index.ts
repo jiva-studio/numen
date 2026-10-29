@@ -5,7 +5,7 @@
 import './styles.css'
 
 export { WorkspaceLayout } from './features/workspace'
-export { closeTab, openTab, openTabBeside } from './features/workspace'
+export { closeTab, openTab, openTabAdjacent } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'

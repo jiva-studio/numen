@@ -90,7 +90,7 @@ export const AsWideAsWhatHoldsIt: Story = {
 }
 
 /** On a filled ground, where the fill has to read against the colour under it. */
-export const OnAFilledGround: Story = {
+export const OnAFilledBackground: Story = {
   args: { wide: '4rem', high: '1em', isPill: true },
   render: (args) => ({
     components: { Skeleton },
@@ -140,10 +140,10 @@ export const Dark: Story = {
     // The shape is drawn from the ink of whatever it relies on. On the dark set
     // that is a light shape on the surface and a dark one on the accent.
     const measureContrast = (ground: HTMLElement) => {
-      const behindColor = getComputedStyle(ground).backgroundColor
+      const backdropColor = getComputedStyle(ground).backgroundColor
       const shape = ground.querySelector<HTMLElement>('.skeleton')!
       return (
-        lightness(getComputedStyle(shape).backgroundColor, behindColor) - lightness(behindColor)
+        lightness(getComputedStyle(shape).backgroundColor, backdropColor) - lightness(backdropColor)
       )
     }
     await expect(measureContrast(grounds[0]!)).toBeGreaterThan(2)

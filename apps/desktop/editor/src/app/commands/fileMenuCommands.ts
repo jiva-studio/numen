@@ -64,7 +64,7 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
           try {
             await run(invocation.file, entry)
             deps.onRun?.(invocation.file)
-            on.writeMessage(WORDS.textAsked(entry.pluginName), 'info')
+            on.writeMessage(WORDS.queriedText(entry.pluginName), 'info')
           } catch (error) {
             on.writeMessage(formatErrorMessage(error), 'error')
           }

@@ -98,12 +98,12 @@ describe('the one slider', () => {
 
   // calls it. Overdue keeps its own word, which is a distinction of its own.
   it('classifies unreviewed card as new', () => {
-    const saidText = words
+    const transcriptText = words
       .material({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
       .map((one) => one.name)
-    expect(saidText).toContain('new')
-    expect(saidText).not.toContain('unbegun')
-    expect(saidText).toContain('overdue')
+    expect(transcriptText).toContain('new')
+    expect(transcriptText).not.toContain('unbegun')
+    expect(transcriptText).toContain('overdue')
   })
 
   it('leaves out whichever figure remains at nothing', () => {
@@ -341,10 +341,10 @@ describe('what a day cannot reach', () => {
   it('says nothing of it where the day leaves every card time enough', async () => {
     const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    const saidText = getBoughtTexts(tab)
-    expect(saidText).toStrictEqual(['180 days off', '15 minutes a day'])
-    expect(saidText.join(' ')).not.toContain('not reachable')
-    expect(saidText.join(' ')).not.toContain('0 of')
+    const transcriptText = getBoughtTexts(tab)
+    expect(transcriptText).toStrictEqual(['180 days off', '15 minutes a day'])
+    expect(transcriptText.join(' ')).not.toContain('not reachable')
+    expect(transcriptText.join(' ')).not.toContain('0 of')
   })
 
   it('follows the day, since each day leaves its own cards short', async () => {
@@ -393,9 +393,9 @@ describe('what the control remains at', () => {
   // A point read as zero draws a screen of zeroes, which reads as a broken one.
   it('reads the cards off the place the knob remains at', () => {
     const { tab } = mountPresetTab()
-    const saidText = tab.findAll('[data-control="bought"]').map((one) => one.text())
-    expect(saidText).toContain('80 cards a session')
-    expect(saidText).not.toContain('0 cards a session')
+    const transcriptText = tab.findAll('[data-control="bought"]').map((one) => one.text())
+    expect(transcriptText).toContain('80 cards a session')
+    expect(transcriptText).not.toContain('0 cards a session')
   })
 
   // The figure is what a person would recall when a card comes round, said as

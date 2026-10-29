@@ -3,7 +3,7 @@
  * keyboard does with the keys it answers.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { useNodePress, type NodePressProps, type NodePressSaid } from './press'
+import { useNodePress, type NodePressProps, type NodePressReport } from './press'
 import { byDoubleClick } from './destination'
 import type { ReachSite, ReachStrategy } from './reachStrategy'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
@@ -23,10 +23,10 @@ const NODE: PlacedNode = {
 /** A press on a node, and the site its reaching strategy was handed. */
 function createPress(gestureRole: GestureRole = 'open', middle: Position | null = { x: 5, y: 7 }) {
   const response = {
-    activate: vi.fn<NodePressSaid['activate']>(),
-    show: vi.fn<NodePressSaid['show']>(),
-    reach: vi.fn<NodePressSaid['reach']>(),
-    menu: vi.fn<NodePressSaid['menu']>(),
+    activate: vi.fn<NodePressReport['activate']>(),
+    show: vi.fn<NodePressReport['show']>(),
+    reach: vi.fn<NodePressReport['reach']>(),
+    menu: vi.fn<NodePressReport['menu']>(),
   }
   let site!: ReachSite
   const reaching: ReachStrategy = {

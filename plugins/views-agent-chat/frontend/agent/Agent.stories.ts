@@ -23,8 +23,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
+const createRequested = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
+const createResponded = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 
 /**
  * The thread takes what height is left and scrolls inside it; the composer
@@ -73,7 +73,7 @@ const conversation =
       }
 
       const onSubmit = (message: string) => {
-        turns.value.push(createAsked(`${next++}`, message))
+        turns.value.push(createRequested(`${next++}`, message))
         text.value = ''
         isWorking.value = true
 
@@ -107,10 +107,10 @@ const conversation =
 /** Type into it and press Enter. */
 export const Playground: Story = {
   render: conversation([
-    createAsked('1', 'What does a plex draw?'),
-    createAnswered('2', 'One node in focus, and everything else placed by its relation.'),
-    createAsked('3', 'And where do the relations come from?'),
-    createAnswered('4', MULTILINE),
+    createRequested('1', 'What does a plex draw?'),
+    createResponded('2', 'One node in focus, and everything else placed by its relation.'),
+    createRequested('3', 'And where do the relations come from?'),
+    createResponded('4', MULTILINE),
   ]),
 }
 
@@ -136,8 +136,8 @@ export const LongConversation: Story = {
   render: conversation(
     Array.from({ length: 60 }, (_, index) =>
       index % 2 === 0
-        ? createAsked(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
-        : createAnswered(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
+        ? createRequested(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
+        : createResponded(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),
   play: async ({ canvasElement }) => {

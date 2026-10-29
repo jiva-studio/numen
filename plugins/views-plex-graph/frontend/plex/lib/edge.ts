@@ -100,21 +100,19 @@ const LENGTH_SAMPLES = 24
  * length last. Every step is a chord, which is shorter than the arc it spans,
  * so the answer runs a little under.
  */
-function measureAlong(edge: EdgeCurve): number[] {
-  const alongOffset = [0]
+function measureAxis(edge: EdgeCurve): number[] {
+  const axisOffset = [0]
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
     const point = getPoint(edge, step / LENGTH_SAMPLES)
-    alongOffset.push(
-      alongOffset[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y),
-    )
+    axisOffset.push(axisOffset[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
     previous = point
   }
-  return alongOffset
+  return axisOffset
 }
 
 /** How long the curve is, as an estimate. */
-export const getLength = (edge: EdgeCurve): number => measureAlong(edge)[LENGTH_SAMPLES]!
+export const getLength = (edge: EdgeCurve): number => measureAxis(edge)[LENGTH_SAMPLES]!
 
 /**
  * Which `t` stands a fraction of the way along the measured length. The steps
@@ -141,8 +139,8 @@ function getParameter(offsets: readonly number[], fraction: number): number {
  * tried at several places on the same line.
  */
 export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Position {
-  const alongEdge = measureAlong(edge)
-  return (fraction) => getPoint(edge, getParameter(alongEdge, fraction))
+  const axisEdge = measureAxis(edge)
+  return (fraction) => getPoint(edge, getParameter(axisEdge, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
@@ -173,7 +171,7 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
  * it came, and one that doubles back turns twice over a short run.
  */
 export const getHeading = (edge: EdgeCurve, pos: number): EdgeHeading => {
-  const way = getTangent(edge, getParameter(measureAlong(edge), pos))
+  const way = getTangent(edge, getParameter(measureAxis(edge), pos))
   if (way.x !== 0) return way.x < 0 ? 'against' : 'along'
   return way.y < 0 ? 'against' : 'along'
 }
@@ -188,12 +186,15 @@ export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
   const point = getPoint(edge, t)
 
-  const alongEdge = measureAlong(edge)
-  const total = alongEdge[LENGTH_SAMPLES]!
+  const axisEdge = measureAxis(edge)
+  const total = axisEdge[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
-  const behindPoint = getPoint(edge, getParameter(alongEdge, end === 'to' ? 1 - covered : covered))
+  const precedingPoint = getPoint(
+    edge,
+    getParameter(axisEdge, end === 'to' ? 1 - covered : covered),
+  )
 
-  const spanned = { x: point.x - behindPoint.x, y: point.y - behindPoint.y }
+  const spanned = { x: point.x - precedingPoint.x, y: point.y - precedingPoint.y }
   const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent

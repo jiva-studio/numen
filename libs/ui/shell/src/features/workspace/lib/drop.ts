@@ -93,11 +93,11 @@ export function getSlot(x: number, tabs: readonly Rect[]): number {
  * no tabs takes the whole of itself.
  */
 export function getCaretRect(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
-  const besideElement = tabs[slot] ?? tabs[tabs.length - 1]
-  if (!besideElement) return strip
+  const adjacentElement = tabs[slot] ?? tabs[tabs.length - 1]
+  if (!adjacentElement) return strip
 
-  const caretX = slot < tabs.length ? besideElement.x : besideElement.x + besideElement.width
-  return { x: caretX, y: besideElement.y, width: 0, height: besideElement.height }
+  const caretX = slot < tabs.length ? adjacentElement.x : adjacentElement.x + adjacentElement.width
+  return { x: caretX, y: adjacentElement.y, width: 0, height: adjacentElement.height }
 }
 
 /** The outer edge a place is within reach of, and nothing away from every edge. */

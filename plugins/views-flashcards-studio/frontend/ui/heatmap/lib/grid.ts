@@ -72,8 +72,8 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   // what is still to come, and the columns before it.
   const last = new Date(now)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
-  const behindDate = new Date(last)
-  behindDate.setDate(behindDate.getDate() - (columns * ROWS - 1))
+  const startDate = new Date(last)
+  startDate.setDate(startDate.getDate() - (columns * ROWS - 1))
 
   // The grid opening on the week a person began in, which for a vault with
   // nothing behind it is this week, and then all of it stands ahead.
@@ -81,7 +81,7 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   const ahead = new Date(opens)
   ahead.setDate(ahead.getDate() + columns * ROWS - 1)
 
-  return { from: getDayName(behindDate), to: getDayName(ahead) }
+  return { from: getDayName(startDate), to: getDayName(ahead) }
 }
 
 function monday(date: Date): Date {

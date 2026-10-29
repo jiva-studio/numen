@@ -10,7 +10,7 @@ import { Hand, getWheelOffset } from '../lib/hand'
 /** How near the row has to be to count as standing where it was sent, in CSS pixels. */
 const THERE = 1
 
-export interface HandScroll {
+export interface PanScroll {
   /** How far the row has been scrolled, in CSS pixels. */
   readonly along: Ref<number>
   /** Whether the hand is dragging, which is what the room is drawn as. */
@@ -91,28 +91,28 @@ function createPointerDrag(
   return { onPointerDown, onPointerMove, letGo }
 }
 
-export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): HandScroll {
-  const alongOffset = ref(0)
+export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): PanScroll {
+  const axisOffset = ref(0)
   const isDragging = ref(false)
 
   /** Where the row was told to stand, while it is on its way there. */
   let heading: number | undefined
 
-  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? alongOffset.value
+  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? axisOffset.value
 
   const send = (to: number, how: ScrollBehavior): void => {
     if (!area.value) return
     if (Math.abs(area.value.scrollLeft - to) <= THERE) return
     heading = to
     // A scroll that does not travel is over as soon as it is asked for.
-    if (how === 'auto') alongOffset.value = to
+    if (how === 'auto') axisOffset.value = to
     area.value.scrollTo({ left: to, behavior: how })
   }
 
   const isStill = (): boolean => {
     if (!area.value) return false
-    alongOffset.value = area.value.scrollLeft
-    if (Math.abs(alongOffset.value - (heading ?? alongOffset.value)) > THERE) return false
+    axisOffset.value = area.value.scrollLeft
+    if (Math.abs(axisOffset.value - (heading ?? axisOffset.value)) > THERE) return false
     heading = undefined
     return true
   }
@@ -126,8 +126,8 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     if (applyWheelScroll(area.value, event)) heading = undefined
   }
 
-  const state: HandScroll = {
-    along: alongOffset,
+  const state: PanScroll = {
+    along: axisOffset,
     isDragging,
     getScrollOffset,
     send,

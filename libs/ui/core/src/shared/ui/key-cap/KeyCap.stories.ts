@@ -12,7 +12,7 @@ import KeyCap from './KeyCap.vue'
 import { ICONS } from './icons'
 import type { PaletteKeys, PaletteIcon } from './keys'
 import { lightness } from '@/shared/fixtures/colour'
-import { drawingInk } from '@/shared/fixtures/ink'
+import { getDrawingStroke } from '@/shared/fixtures/ink'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 const meta = {
@@ -72,7 +72,7 @@ export const EveryIcon: Story = {
       // One line: an icon's ink is centred on that line, within a fiftieth of
       // the type the cap is set in. What is left over is the asymmetry of the
       // icon's own grid.
-      const icon = await drawingInk(cap.querySelector('svg')!)
+      const icon = await getDrawingStroke(cap.querySelector('svg')!)
       await expect(Math.abs(icon.middle - middle) / activeSet).toBeLessThanOrEqual(0.02)
       weights.push(icon.stroke / activeSet)
     }
@@ -114,13 +114,13 @@ export const Dark: Story = {
     // A cap keeps a ground of its own, told from the surface the row of them
     // relies on, and is read in ink standing above that ground — which is the
     // way round the dark set is written.
-    const behindColor = getComputedStyle(
+    const backdropColor = getComputedStyle(
       canvasElement.ownerDocument.documentElement,
     ).backgroundColor
-    const surface = lightness(behindColor)
+    const surface = lightness(backdropColor)
     for (const cap of caps) {
       const renderedStyle = getComputedStyle(cap)
-      const ground = lightness(renderedStyle.backgroundColor, behindColor)
+      const ground = lightness(renderedStyle.backgroundColor, backdropColor)
       await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
       await expect(lightness(renderedStyle.color, renderedStyle.backgroundColor)).toBeGreaterThan(
         ground + 24,
