@@ -222,7 +222,7 @@ interface StepContext {
 function applyAgentStep(step: AgentStep, context: StepContext): void {
   const { answer, work, calls } = context
   switch (step.kind) {
-    case 'said':
+    case 'text':
       if (step.text === '') break
       calls.clear()
       work.setWaiting(false)

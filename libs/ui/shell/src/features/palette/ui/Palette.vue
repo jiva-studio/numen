@@ -7,7 +7,7 @@
  * screen readers, and the content behind the palette is inert while it is open.
  *
  * `data-palette` marks each part of the panel: `ground`, `panel`, `crumb`,
- * `field`, `said`, `nothing`, `key` and `more`. The list below the field marks
+ * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
  * its own parts.
  */
 import { computed, useId, useTemplateRef } from 'vue'
@@ -157,7 +157,7 @@ function reveal(): void {
     <!-- What a search came back with, where it came back with nothing. It
          stands here for as long as the palette does, so what lands in it is
          read out. -->
-    <span class="sr-only" aria-live="polite" data-palette="said">{{ announcement }}</span>
+    <span class="sr-only" aria-live="polite" data-palette="announcement">{{ announcement }}</span>
 
     <PaletteResults
       v-if="placed.length"

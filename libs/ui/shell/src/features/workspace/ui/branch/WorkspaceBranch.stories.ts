@@ -98,11 +98,11 @@ const meta: Meta<Knobs> = {
         })),
       )
 
-      return { held: target, args }
+      return { root: target, args }
     },
     template: `
       <div :style="{ height: '100vh', inlineSize: args.room, padding: 0 }">
-        <WorkspaceBranch :node="held" axis="horizontal" :depth="0">
+        <WorkspaceBranch :node="root" axis="horizontal" :depth="0">
           <template #tab="{ id }"><TabStub :name="id" /></template>
         </WorkspaceBranch>
       </div>

@@ -146,7 +146,7 @@ describe('a page requested to write what it owes', () => {
 
     notes.open('Note.md')
     await settle()
-    notes.setBody('Note.md', 'held')
+    notes.setBody('Note.md', 'member')
     fakeCore.holdWrites()
 
     mockStream.send({ token: '1', flush: true })
@@ -157,7 +157,7 @@ describe('a page requested to write what it owes', () => {
     fakeCore.releaseWrites()
     await settle()
 
-    expect(fakeCore.writtenFiles).toEqual([{ path: 'Note.md', body: 'held' }])
+    expect(fakeCore.writtenFiles).toEqual([{ path: 'Note.md', body: 'member' }])
     expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'written' }])
   })
 

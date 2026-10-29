@@ -17,7 +17,7 @@ import {
   mountWindowWithPalette,
   nameAnswer,
   passageAnswer,
-  said,
+  vaultState,
   settle,
   sourceAnswer,
 } from '@/testing/window'
@@ -67,7 +67,7 @@ describe('the palette', () => {
 
   it('draws every kind of note a name turned up as what it is', async () => {
     drawPluginTypes()
-    said.names = [
+    vaultState.names = [
       nameAnswer('Ants.md', 'Ants'),
       nameAnswer('Animals.md', 'Animals', 'sample'),
       nameAnswer('Animal.md', 'Animal', 'form'),
@@ -81,8 +81,8 @@ describe('the palette', () => {
 
   it('draws a passage as the note it was read out of', async () => {
     drawPluginTypes()
-    said.names = []
-    said.passages = [
+    vaultState.names = []
+    vaultState.passages = [
       passageAnswer('Animals.md', 'Animals', 'sample'),
       passageAnswer('Ants.md', 'Ants'),
     ]
@@ -95,8 +95,8 @@ describe('the palette', () => {
   })
 
   it('draws a passage out of a file no reader opens as a plain file', async () => {
-    said.names = []
-    said.passages = [
+    vaultState.names = []
+    vaultState.passages = [
       sourceAnswer('Ants.bin', { page: 3 }),
       sourceAnswer('Talk.bin', { t: [12, 14] }),
     ]
@@ -116,7 +116,7 @@ describe('the palette', () => {
     )
 
   it('draws no group for a search that answered with nothing, and says so once', async () => {
-    said.embedded = 4
+    vaultState.embedded = 4
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -126,7 +126,7 @@ describe('the palette', () => {
   })
 
   it('keeps the group that could not be requested, with what it has to say', async () => {
-    said.embedded = 0
+    vaultState.embedded = 0
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -210,7 +210,7 @@ describe('a command reached by its own keystroke', () => {
   })
 
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
-    said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
+    vaultState.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
     const window = await mountWindowWithPalette()
 
     const event = pressKey('g')
@@ -305,8 +305,8 @@ describe('a command requested for while the vault is being read', () => {
   }
 
   it('carries the command out, and goes on saying the vault is being read', async () => {
-    said.isReady = false
-    said.opening = null
+    vaultState.isReady = false
+    vaultState.opening = null
     const window = await mountWindowWithPalette()
 
     await pressNewNote()

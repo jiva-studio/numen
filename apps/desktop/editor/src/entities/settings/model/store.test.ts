@@ -27,13 +27,13 @@ const MODELS: readonly Model[] = [
 ]
 
 /** A vault holding those settings, and rejecting the writes it is configured to reject. */
-const createStore = (text: string, refuses: string | null = null) => {
+const createStore = (text: string, failure: string | null = null) => {
   const request: unknown[] = []
   const core: SettingsStoreDeps = {
     getSettings: () => Promise.resolve({ written: text, path: '/numen.json', models: MODELS }),
     updateSettings: (response) => {
       request.push(response)
-      return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
+      return failure ? Promise.reject(new Error(failure)) : Promise.resolve()
     },
   }
   const response = vi.fn()

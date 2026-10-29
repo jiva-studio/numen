@@ -396,12 +396,12 @@ func TestForgettingKeepsTheFolderAndReturnsSo(t *testing.T) {
 
 func TestErasingAsksBeforeItActs(t *testing.T) {
 	s := newSession(t)
-	s.mustRun("vault", "add", s.vault, "--name", "asked")
+	s.mustRun("vault", "add", s.vault, "--name", "alpha")
 	s.addVault("other")
 	b := s.trash(nil)
 	s.types("\n")
 
-	out, err := s.run("vault", "erase", "asked")
+	out, err := s.run("vault", "erase", "alpha")
 	if err == nil {
 		t.Fatalf("an unanswered erase went ahead:\n%s", out)
 	}
@@ -417,7 +417,7 @@ func TestErasingAsksBeforeItActs(t *testing.T) {
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went: %v", err)
 	}
-	if items := s.mustRun("vault", "list"); !strings.Contains(items, "asked") {
+	if items := s.mustRun("vault", "list"); !strings.Contains(items, "alpha") {
 		t.Errorf("the vault left the list:\n%s", items)
 	}
 }

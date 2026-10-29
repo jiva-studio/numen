@@ -233,7 +233,7 @@ func TestARefreshedBookThatWentIsStillMissing(t *testing.T) {
 // permission, a broken link, a device that went away.
 type unreadableReaders struct {
 	vaultport.VaultReaders
-	refuses string
+	unreadablePath string
 }
 
 func (u unreadableReaders) Open(vault domain.Vault) (vaultport.VaultReader, error) {
@@ -241,16 +241,16 @@ func (u unreadableReaders) Open(vault domain.Vault) (vaultport.VaultReader, erro
 	if err != nil {
 		return nil, err
 	}
-	return unreadableReader{VaultReader: reader, refuses: u.refuses}, nil
+	return unreadableReader{VaultReader: reader, unreadablePath: u.unreadablePath}, nil
 }
 
 type unreadableReader struct {
 	vaultport.VaultReader
-	refuses string
+	unreadablePath string
 }
 
 func (u unreadableReader) Read(ctx context.Context, path string) ([]byte, error) {
-	if path == u.refuses {
+	if path == u.unreadablePath {
 		return nil, fs.ErrPermission
 	}
 	return u.VaultReader.Read(ctx, path)
@@ -273,7 +273,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 	}
 
 	refresh := vaults.NewRefresh(
-		unreadableReaders{VaultReaders: vaultreader.Readers{}, refuses: "Locked.md"},
+		unreadableReaders{VaultReaders: vaultreader.Readers{}, unreadablePath: "Locked.md"},
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),

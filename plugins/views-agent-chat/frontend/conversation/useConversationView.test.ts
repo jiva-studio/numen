@@ -5,7 +5,7 @@ import { WORDS } from '../words'
 import { useConversationView } from './useConversationView'
 
 /** A port that records the questions it receives and the conversations it is told have finished, and replies with the steps a test supplies. */
-const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leaves.' }]) => {
+const createAgent = (says: AgentStep[] = [{ kind: 'text', text: 'Because of the leaves.' }]) => {
   const questions: { question: string; focus: string; conversation: string }[] = []
   const finished: string[] = []
   const agent: AgentPort = {
@@ -124,7 +124,7 @@ describe('a question in flight', () => {
           answer = then
           query.signal.addEventListener('abort', () => then())
         })
-        yield { kind: 'said', text: 'Because of the leaves.' }
+        yield { kind: 'text', text: 'Because of the leaves.' }
       },
       async finish() {},
     }

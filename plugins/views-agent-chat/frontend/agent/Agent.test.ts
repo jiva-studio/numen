@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import Agent from './Agent.vue'
 import type { Turn } from '../thread'
 
-const createRequested = (id: string, text = 'said'): Turn => ({ id, voice: 'prompt', text })
+const createRequested = (id: string, text = 'text'): Turn => ({ id, voice: 'prompt', text })
 const createResponded = (id: string, text = 'back'): Turn => ({ id, voice: 'response', text })
 
 /** How tall the area the conversation scrolls in is, and one turn in it. */

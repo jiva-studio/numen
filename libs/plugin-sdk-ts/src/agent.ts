@@ -8,7 +8,7 @@ export interface SourceLocation {
 
 // AgentStep is one step of an agent run: a message, an action, or a stop.
 export type AgentStep =
-  | { readonly kind: 'said'; readonly text: string }
+  | { readonly kind: 'text'; readonly text: string }
   | {
       readonly kind: 'toolCall'
       readonly tool: string
@@ -99,14 +99,7 @@ export const AGENT_SETTING_TYPE = 'agent' as const
 
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =
-  | 'boolean'
-  | 'string'
-  | 'number'
-  | 'enum'
-  | 'range'
-  | typeof AGENT_SETTING_TYPE
-  | 'file'
-  | 'folder'
+  'boolean' | 'string' | 'number' | 'enum' | 'range' | typeof AGENT_SETTING_TYPE | 'file' | 'folder'
 
 /** Where the active agent program and default AI agent stand in the settings file. */
 export const AGENT_USE_PATH = ['agent', 'use'] as const

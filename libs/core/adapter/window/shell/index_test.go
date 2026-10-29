@@ -50,7 +50,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 // A vault the index already holds is rendered from what it holds, so re-indexing
 // it is displayed only once it has lasted. An instant walk is not reported.
 func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
-	target := domain.Vault{ID: "held", Name: "Held"}
+	target := domain.Vault{ID: "member", Name: "Member"}
 	api := newAPI(t, target)
 	blockCh := make(chan struct{})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {

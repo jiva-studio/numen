@@ -76,7 +76,7 @@ describe('createAgentPort', () => {
 
   it('reads the transcript as text', async () => {
     const response = create(AskAgentResponseSchema, { step: { case: 'text', value: 'Leaves.' } })
-    expect(await steps([response])).toEqual([{ kind: 'said', text: 'Leaves.' }])
+    expect(await steps([response])).toEqual([{ kind: 'text', text: 'Leaves.' }])
   })
 
   it('carries the place a call names', async () => {
@@ -146,7 +146,7 @@ describe('createAgentPort', () => {
       read.push(step)
     }
     expect(read).toEqual([
-      { kind: 'said', text: 'Hey!' },
+      { kind: 'text', text: 'Hey!' },
       { kind: 'stopped', error: '' },
     ])
   })

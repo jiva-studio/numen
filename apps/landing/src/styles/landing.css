@@ -732,7 +732,7 @@ svg {
 /* What a file weighs, and which build the shelf holds: both are asked of the
    shelf once the page is up, and both stand as nothing until it has answered. */
 .take__weight,
-.said {
+.version-note {
   font-family: var(--mono);
   font-size: 0.76rem;
   font-style: normal;
@@ -744,7 +744,7 @@ svg {
   display: none;
 }
 
-.said {
+.version-note {
   margin-block-start: 1.1rem;
 }
 

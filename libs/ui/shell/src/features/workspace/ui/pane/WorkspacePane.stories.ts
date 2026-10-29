@@ -42,7 +42,7 @@ export const ShownAgain: Story = {
       const pendingTab = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
       const shownTabs = ref<string[]>([])
       return {
-        held: pendingTab,
+        current: pendingTab,
         NOTE_TAB,
         text: TEXT,
         shownTabs,
@@ -55,7 +55,7 @@ export const ShownAgain: Story = {
     },
     template: `
       <div class="numen h-screen bg-surface">
-        <WorkspacePane :pane="held" :titles="titles" @choose="choose" @show="onShow">
+        <WorkspacePane :pane="current" :titles="titles" @choose="choose" @show="onShow">
           <template #tab="{ id }">
             <textarea
               v-if="id === NOTE_TAB"

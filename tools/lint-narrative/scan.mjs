@@ -206,6 +206,13 @@ const RE_TS_FAKE_CASTS = [
   { name: 'voice: "said"', re: /\bvoice:\s*['"]said['"]/g },
   { name: 'voice: "told"', re: /\bvoice:\s*['"]told['"]/g },
   { name: 'state: "done"', re: /\bstate:\s*['"]done['"]/g },
+  { name: 'kind: "said"', re: /\bkind:\s*['"]said['"]/g },
+  { name: 'case "said"', re: /\bcase\s+['"]said['"]/g },
+  { name: 'data-palette="said"', re: /\bdata-palette=["']said["']/g },
+  { name: 'data-day-summary', re: /\bdata-day-summary\b/g },
+  { name: 'key held:', re: /(?:^|[{,]\s*|\s{2,})held:\s*[A-Za-z_$(\[{'"`0-9]/g },
+  { name: 'key refuses:', re: /(?:^|[{,]\s*|\s{2,})refuses:\s*[A-Za-z_$(\[{'"`0-9]/g },
+  { name: 'key asked:', re: /(?:^|[{,]\s*|\s{2,})asked:\s*[A-Za-z_$(\[{'"`0-9]/g },
   { name: 'as unknown as Turn', re: /\bas\s+unknown\s+as\s+Turn\b/g },
   { name: 'as any as Turn', re: /\bas\s+any\s+as\s+Turn\b/g },
 ]

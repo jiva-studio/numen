@@ -2,12 +2,12 @@
  * The window over a vault it could not read, and over one that holds no note.
  */
 import { describe, expect, it } from 'vitest'
-import { cards, mountWindow, said } from '@/testing/window'
+import { cards, mountWindow, vaultState } from '@/testing/window'
 
 describe('the window with no note to show', () => {
   it('says the vault could not be read, and that nothing was read from it', async () => {
-    said.opening = null
-    said.error = 'the vault folder is not there'
+    vaultState.opening = null
+    vaultState.error = 'the vault folder is not there'
 
     const window = await mountWindow()
 
@@ -17,8 +17,8 @@ describe('the window with no note to show', () => {
   })
 
   it('says nothing when the vault was read and holds none', async () => {
-    said.opening = null
-    said.error = ''
+    vaultState.opening = null
+    vaultState.error = ''
 
     const window = await mountWindow()
 

@@ -407,7 +407,7 @@ const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }:
     const other = ref(OTHER)
     const searchQuery = ref(panel === 'search' ? 'entrop' : '')
     return {
-      held: target,
+      layout: target,
       text,
       other,
       typed: searchQuery,
@@ -430,7 +430,7 @@ const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }:
   },
   template: `
     <div style="height: 100vh">
-      <WorkspaceLayout v-model="held" :tabs="TABS">
+      <WorkspaceLayout v-model="layout" :tabs="TABS">
         <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
         <template #icon="{ id }">
           <component

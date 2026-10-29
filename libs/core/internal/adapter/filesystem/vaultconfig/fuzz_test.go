@@ -37,7 +37,7 @@ func vault(tb testing.TB) string {
 		{filepath.Join(resolved, "notes"), filepath.Join(resolved, "inward")},
 		{away, filepath.Join(resolved, "outward")},
 		{away, filepath.Join(resolved, "notes", "outward")},
-		{filepath.Join(resolved, DefaultServiceDir), filepath.Join(resolved, "held")},
+		{filepath.Join(resolved, DefaultServiceDir), filepath.Join(resolved, "member")},
 	} {
 		if err := os.Symlink(link[0], link[1]); err != nil {
 			tb.Fatal(err)
@@ -61,9 +61,9 @@ func FuzzInside(f *testing.F) {
 	for _, path := range []string{
 		"inward/Entropy.md",
 		"outward/Entropy.md",
-		"held",
-		"held/ocr/abc.txt",
-		"held/../notes/Entropy.md",
+		"member",
+		"member/ocr/abc.txt",
+		"member/../notes/Entropy.md",
 		"HELD/config.json",
 		"notes/outward/../../../etc/passwd",
 		"notes/./../.numen/ocr/a.txt",

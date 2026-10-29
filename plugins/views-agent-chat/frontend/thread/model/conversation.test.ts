@@ -43,7 +43,7 @@ const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPor
   finish: async () => {},
 })
 
-const createTranscriptStep = (text: string): AgentStep => ({ kind: 'said', text })
+const createTranscriptStep = (text: string): AgentStep => ({ kind: 'text', text })
 const createToolStep = (
   tool: string,
   subject = '',

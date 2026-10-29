@@ -54,7 +54,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     await expect(items).toHaveCount(0)
 
     // Verify polite aria announcement element
-    const response = page.locator('[data-palette="said"]')
+    const response = page.locator('[data-palette="announcement"]')
     await expect(response).toBeAttached()
   })
 

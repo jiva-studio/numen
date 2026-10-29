@@ -11,7 +11,7 @@ import { frameStory } from '../fixtures/frame'
 const agent: AgentPort = {
   async *ask(query) {
     yield {
-      kind: 'said',
+      kind: 'text',
       text: `Leaf mould is compost made of fallen leaves alone. You asked: ${query.question}`,
     }
     yield { kind: 'stopped', error: '' }

@@ -48,7 +48,7 @@ var ours = []string{
 func drawNote(t *rapid.T) (raw string, foreign []string) {
 	blocks := append(append([]string{}, theirs...), ours...)
 	order := rapid.Permutation(blocks).Draw(t, "keys")
-	keys := order[:rapid.IntRange(0, len(order)).Draw(t, "held")]
+	keys := order[:rapid.IntRange(0, len(order)).Draw(t, "member")]
 
 	var front strings.Builder
 	for _, one := range keys {

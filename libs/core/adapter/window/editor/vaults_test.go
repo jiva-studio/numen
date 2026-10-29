@@ -123,7 +123,7 @@ type onTheList struct {
 
 	mu       sync.Mutex
 	expected []domain.Vault
-	refuses  error
+	failure  error
 }
 
 // onAList puts two vaults on a list of its own and serves the questions about
@@ -165,7 +165,7 @@ func onAList(t *testing.T) *onTheList {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.expected = append(f.expected, v)
-		return f.refuses
+		return f.failure
 	}
 	f.api.state.setVault(f.first)
 
@@ -183,7 +183,7 @@ func onAList(t *testing.T) *onTheList {
 func (f *onTheList) opening(why error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.refuses = why
+	f.failure = why
 }
 
 // getShown returns every vault the window was asked to show.

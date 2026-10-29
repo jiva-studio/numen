@@ -5,7 +5,7 @@ import Thread from './Thread.vue'
 import { NO_UNRESOLVED } from '../lib/turn'
 import type { Turn } from '../lib/turn'
 
-const createRequested = (id: string, text = 'said', state?: Turn['state']): Turn =>
+const createRequested = (id: string, text = 'text', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
 const createResponded = (id: string, text = 'back', state?: Turn['state']): Turn =>

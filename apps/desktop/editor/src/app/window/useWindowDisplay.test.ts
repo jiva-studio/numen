@@ -31,10 +31,10 @@ const resolved = {
 }
 
 /** A core that answers whatever it is configured to, and records the calls it receives. */
-function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
+function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
   const request: string[] = []
   return {
-    asked: request,
+    requestLog: request,
     neighbourhood: async (path) => {
       request.push(path)
       return answer(path)

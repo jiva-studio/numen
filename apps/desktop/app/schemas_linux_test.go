@@ -32,7 +32,7 @@ func TestSettingsAreFoundInADataDirectory(t *testing.T) {
 
 func TestSettingsAreFoundWhereTheEnvironmentNamesThem(t *testing.T) {
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
-	t.Setenv("GSETTINGS_SCHEMA_DIR", schemasIn(t, filepath.Join(t.TempDir(), "held")))
+	t.Setenv("GSETTINGS_SCHEMA_DIR", schemasIn(t, filepath.Join(t.TempDir(), "member")))
 
 	if !hasSchemas() {
 		t.Error("the settings were not found where the environment names them")

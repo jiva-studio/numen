@@ -94,7 +94,7 @@ func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
 	}
 }
 
-func TestDeleteTextRemovesTheRecordAndTheFileOfAVersionOfThePlugin(t *testing.T) {
+func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
 	ctx := t.Context()
 	file := []byte("%PDF")
 	ocr := hosttest.NewTexts("v1", "org.example.ocr")

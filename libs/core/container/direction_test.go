@@ -26,7 +26,7 @@ var outward = []string{
 // binds the adapters and is built from them, so it answers for what it names,
 // and the schema is the one thing it may not name. An adapter and what only a
 // test builds answer for nothing; so does a shared adapter library.
-func getRefusedImports(path string) (refuses []string, named bool) {
+func getRefusedImports(path string) (forbidden []string, named bool) {
 	target := strings.TrimPrefix(path, module)
 	switch {
 	case target == "container":
@@ -157,8 +157,8 @@ func inward(t *testing.T, goos, goarch string) {
 		if err != nil {
 			t.Fatalf("go list: %v", err)
 		}
-		refuses, named := getRefusedImports(pkg.ImportPath)
-		if refuses == nil {
+		forbidden, named := getRefusedImports(pkg.ImportPath)
+		if forbidden == nil {
 			continue
 		}
 		packages++
@@ -168,7 +168,7 @@ func inward(t *testing.T, goos, goarch string) {
 		}
 		target := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range reaching {
-			for _, blocked := range refuses {
+			for _, blocked := range forbidden {
 				if strings.HasPrefix(dep, blocked) {
 					t.Errorf("%s reaches %s", target, strings.TrimPrefix(dep, module))
 				}

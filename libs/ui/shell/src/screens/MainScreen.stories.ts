@@ -38,11 +38,11 @@ const meta: Meta = {
     components: { WorkspaceLayout },
     setup() {
       const target = ref<State>(opening())
-      return { held: target, TABS, VIEW, AGENT }
+      return { layout: target, TABS, VIEW, AGENT }
     },
     template: `
       <div style="height: 100vh">
-        <WorkspaceLayout v-model="held" :tabs="TABS">
+        <WorkspaceLayout v-model="layout" :tabs="TABS">
           <template #tab="{ id }">
             <div
               v-if="id === VIEW"

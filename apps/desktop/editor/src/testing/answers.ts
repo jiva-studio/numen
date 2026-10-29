@@ -75,7 +75,7 @@ export const mockVaultList = {
   showing: 'physics',
 }
 
-export { mockVaultState as said, mockVaultList as listed }
+export { mockVaultState as vaultState, mockVaultList as listed }
 
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {

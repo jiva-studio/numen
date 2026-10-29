@@ -91,7 +91,7 @@ const tab = (
     isNesting,
     requestedHeadings,
     requested: request,
-    asked: request,
+    requestLog: request,
     ran,
     messages,
   }
@@ -773,7 +773,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     moveFilesAndReload,
     goToNote,
     requested: request,
-    asked: request,
+    requestLog: request,
     opened: openedCalls,
     ran,
     made: vault.made,

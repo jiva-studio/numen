@@ -356,15 +356,15 @@ describe('where a note remains', () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
-    notes.open('held', 'Heat.md')
+    notes.open('member', 'Heat.md')
     await settle()
 
-    expect(notes.has('held')).toBe(true)
+    expect(notes.has('member')).toBe(true)
     expect(notes.has('never opened')).toBe(false)
 
-    await notes.close('held')
+    await notes.close('member')
 
-    expect(notes.has('held')).toBe(false)
+    expect(notes.has('member')).toBe(false)
   })
 })
 
