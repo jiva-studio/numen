@@ -182,7 +182,9 @@ func TestAuthInterceptor(t *testing.T) {
 	}()
 	defer func() {
 		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
+		if err := <-serveErrCh; err != nil {
+			t.Logf("serve ended with: %v", err)
+		}
 	}()
 
 	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
@@ -426,7 +428,9 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 	go func() { serveErrCh <- s.ServeContext(ctx) }()
 	t.Cleanup(func() {
 		cancel()
-		<-serveErrCh
+		if err := <-serveErrCh; err != nil {
+			t.Logf("serve ended with: %v", err)
+		}
 	})
 
 	for _, want := range []int{1, 2} {
@@ -566,7 +570,9 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 	defer func() {
 		_ = stdinWriter.Close()
 		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
+		if err := <-serveErrCh; err != nil {
+			t.Logf("serve ended with: %v", err)
+		}
 	}()
 
 	client := numenv1connect.NewPluginLifecycleServiceClient(
