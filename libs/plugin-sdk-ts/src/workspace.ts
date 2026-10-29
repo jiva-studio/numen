@@ -139,6 +139,7 @@ export interface VaultEntry {
 export interface MenuEntry {
   readonly id: string
   readonly text: string
+  readonly detail?: string
   readonly group: string
   readonly isDisabled?: boolean
   readonly parentId?: string

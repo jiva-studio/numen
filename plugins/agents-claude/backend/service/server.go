@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -43,7 +44,7 @@ type agentServer struct {
 	environ []string
 
 	// models are the models the program listed.
-	models modelCache
+	models *cache.Cache[[]claudeModel]
 }
 
 // getEnvironment returns the variables a program of the agent is started with.
@@ -347,7 +348,7 @@ func (s *agentServer) GetAgentTools(
 // Mount registers the agent's services on s and hands Configure's settings to the agent.
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
-	return mount(s, &agentServer{models: modelCache{isAsync: true}})
+	return mount(s, &agentServer{models: newModelCache(true)})
 }
 
 func mount(s *server.Server, agentSvc *agentServer) error {
@@ -361,7 +362,7 @@ func mount(s *server.Server, agentSvc *agentServer) error {
 // from the variables a launched process of the plugin is given.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, &agentServer{environ: getVariables(vars), models: modelCache{isAsync: true}})
+		return mount(s, &agentServer{environ: getVariables(vars), models: newModelCache(true)})
 	})
 }
 
@@ -373,7 +374,7 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 	if command == "" {
 		err = errors.New("the program is not installed")
 	} else {
-		models, err = s.models.get(ctx, slices.Concat([]string{command}, extra), s.getEnvironment())
+		models, err = s.getModels(ctx, slices.Concat([]string{command}, extra), s.getEnvironment())
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
@@ -392,7 +393,7 @@ func (s *agentServer) getReasoning(model, requested string) string {
 	if model == "" {
 		model = defaultModelName
 	}
-	levels, items := s.models.find(model)
+	levels, items := s.findModelLevels(model)
 	if items {
 		return reasoning.Pick(levels, requested)
 	}

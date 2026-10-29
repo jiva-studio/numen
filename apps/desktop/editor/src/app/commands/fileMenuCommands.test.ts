@@ -59,9 +59,17 @@ const invoke = (entry: FileMenuEntry, file: string) => ({
 const runs = { canRun: () => true, cannotRun: () => {} }
 
 describe('file menu palette commands', () => {
-  it('shows the title the plugin declares, by the plugin', () => {
-    expect(getFileMenuText(recognise)).toBe('Read the scan with Example OCR')
-    expect(getFileMenuText(deleteVersion)).toBe(WORDS.deleteVersionOf('Example OCR'))
+  it('shows the title the plugin declares, with the plugin name in detail', () => {
+    expect(getFileMenuText(recognise)).toBe('Read the scan')
+    expect(getFileMenuText(deleteVersion)).toBe(WORDS.deleteVersion)
+    const [createCmd, deleteCmd] = createFileMenuPaletteCommands('books/Scan.pdf', [
+      recognise,
+      deleteVersion,
+    ])
+    expect(createCmd?.text).toBe('Read the scan')
+    expect(createCmd?.detail).toBe('Example OCR')
+    expect(deleteCmd?.text).toBe(WORDS.deleteVersion)
+    expect(deleteCmd?.detail).toBe('Example OCR')
   })
 
   it('is offered only over the loaded file', () => {

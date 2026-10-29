@@ -15,6 +15,14 @@ import type { ViewState } from './viewState'
 
 export type { ViewState } from './viewState'
 
+function matchCommandWord(one: Command, word: string): { matches: boolean; found: number } {
+  if (word === '') return { matches: true, found: -1 }
+  const found = one.text.toLowerCase().indexOf(word)
+  if (found >= 0) return { matches: true, found }
+  const detailMatches = Boolean(one.detail && one.detail.toLowerCase().includes(word))
+  return { matches: detailMatches, found: -1 }
+}
+
 /** The view one palette draws, over the state that palette holds. */
 export function getPaletteView(state: ViewState) {
   const { words, runs } = state
@@ -22,12 +30,13 @@ export function getPaletteView(state: ViewState) {
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
   const renderItem = (one: Command, target: CommandTarget, word: string): PaletteItem | null => {
-    const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
-    if (word !== '' && found < 0) return null
+    const { matches, found } = matchCommandWord(one, word)
+    if (!matches) return null
     const also = one.also ? state.byId.get(one.also) : undefined
     return {
       id: one.id,
       title: one.text,
+      ...(one.detail ? { detail: one.detail } : {}),
       ...(found < 0 ? {} : { at: [{ start: found, end: found + word.length }] }),
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [

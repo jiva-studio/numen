@@ -1,9 +1,11 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
 type agentServer struct {
@@ -12,7 +14,7 @@ type agentServer struct {
 	acpAgents func() []acpAgent
 	// discover returns the ACP agents discovered on the machine.
 	discover  func() []acpAgent
-	acpModels acpModelCache
+	acpModels *cache.Cache[acpListing]
 
 	mu              sync.RWMutex
 	executablePaths []string

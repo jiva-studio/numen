@@ -126,7 +126,7 @@ func (s *agentServer) GetAgentPrograms(
 		group.Add(1)
 		go func(i int, target acpAgent) {
 			defer group.Done()
-			listings[i] = s.acpModels.get(ctx, target)
+			listings[i] = s.getACPListing(ctx, target)
 		}(idx, agent)
 	}
 	group.Wait()
@@ -140,15 +140,15 @@ func (s *agentServer) GetAgentPrograms(
 			IsInstalled: true,
 			LimitsTools: true,
 		}
-		for _, one := range listing.models {
+		for _, one := range listing.Models {
 			title := one.Name
 			if title == "" {
 				title = one.ID
 			}
-			model := &agentrun.AgentModel{Name: one.ID, Title: title, IsDefault: one.ID == listing.current}
-			if one.ID == listing.current {
-				model.ReasoningLevels = reasoning.ToProto(listing.levels)
-				model.DefaultReasoning = listing.level
+			model := &agentrun.AgentModel{Name: one.ID, Title: title, IsDefault: one.ID == listing.Current}
+			if one.ID == listing.Current {
+				model.ReasoningLevels = reasoning.ToProto(listing.Levels)
+				model.DefaultReasoning = listing.Level
 			}
 			program.Models = append(program.Models, model)
 		}

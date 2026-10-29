@@ -409,7 +409,7 @@ func TestAnAgentThatFailedToListIsLeftAlone(t *testing.T) {
 	agent, record := fakeACPAgent(t, "failing", "fail")
 	now := time.Unix(1000, 0)
 	svc := serveAgents(agent)
-	svc.acpModels.now = func() time.Time { return now }
+	svc.getModelCache().SetClock(func() time.Time { return now })
 
 	listPrograms(t, svc)
 	listPrograms(t, svc)

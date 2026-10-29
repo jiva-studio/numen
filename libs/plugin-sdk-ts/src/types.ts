@@ -220,6 +220,7 @@ export interface ContextMenuTarget {
 export interface ContextMenuRegistration {
   readonly id: string
   readonly text: string
+  readonly detail?: string
   readonly group?: string
   /** Submenu parent identifier (e.g. 'new' or 'relation'). */
   readonly parentId?: string

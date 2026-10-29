@@ -6,18 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
 // defaultModelName is the model the program lists for the choice of its own.
@@ -130,158 +127,47 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 	return parseModels(out, requestID)
 }
 
-// modelList is the models of one command and when they were read.
-type modelList struct {
-	models    []claudeModel
-	fetchedAt time.Time
+func newModelCache(isAsync bool) *cache.Cache[[]claudeModel] {
+	return cache.New[[]claudeModel](
+		"models",
+		cache.WithPluginID("agents-claude"),
+		cache.WithTTL(modelsLifetime),
+		cache.WithTimeout(modelsTimeout),
+		cache.WithAsync(isAsync),
+	)
 }
 
-// modelCache keeps the lists of models by the command that listed them.
-type modelCache struct {
-	mu       sync.Mutex
-	lists    map[string]modelList
-	failed   map[string]bool
-	inFlight map[string]bool
-	isAsync  bool
+func (s *agentServer) getModelCache() *cache.Cache[[]claudeModel] {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.models == nil {
+		s.models = newModelCache(false)
+	}
+	return s.models
 }
 
-// get returns the current list of models for the command, listing them where none is current.
-func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeModel, error) {
+// getModels returns the current list of models for the command, listing them where none is current.
+func (s *agentServer) getModels(ctx context.Context, command, env []string) ([]claudeModel, error) {
 	key := strings.Join(command, "\x00")
-	c.mu.Lock()
-	one, found := c.lists[key]
-	if found && clock.Now().Sub(one.fetchedAt) < modelsLifetime {
-		c.mu.Unlock()
-		return one.models, nil
-	}
-	if c.isAsync {
-		return c.getAsyncLocked(key, command, env, one.models, found)
-	}
-	c.mu.Unlock()
-	return c.fetchAndStore(ctx, key, command, env)
-}
-
-func (c *modelCache) getAsyncLocked(key string, command, env []string, current []claudeModel, found bool) ([]claudeModel, error) {
-	hasFailed := c.failed[key]
-	c.enqueueAsyncFetchLocked(key, command, env)
-	if found {
-		c.mu.Unlock()
-		return current, nil
-	}
-	if cached := readClaudeCache(key); len(cached) > 0 {
-		if c.lists == nil {
-			c.lists = map[string]modelList{}
-		}
-		c.lists[key] = modelList{models: cached}
-		c.mu.Unlock()
-		return cached, nil
-	}
-	c.mu.Unlock()
-	if hasFailed {
-		return fallbackModels, nil
-	}
-	return nil, nil
-}
-
-func (c *modelCache) enqueueAsyncFetchLocked(key string, command, env []string) {
-	if c.inFlight[key] {
-		return
-	}
-	if c.inFlight == nil {
-		c.inFlight = make(map[string]bool)
-	}
-	c.inFlight[key] = true
+	modelCache := s.getModelCache()
 	cmdCopy := slices.Clone(command)
 	envCopy := slices.Clone(env)
-	go c.fetchInBackground(key, cmdCopy, envCopy)
-}
-
-func (c *modelCache) fetchInBackground(key string, command, env []string) {
-	defer func() {
-		c.mu.Lock()
-		delete(c.inFlight, key)
-		c.mu.Unlock()
-	}()
-	_, _ = c.fetchAndStore(context.Background(), key, command, env)
-}
-
-func (c *modelCache) fetchAndStore(ctx context.Context, key string, command, env []string) ([]claudeModel, error) {
-	models, err := fetchModels(ctx, command, env)
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	models, found, err := modelCache.Get(ctx, key, func(ctx context.Context) ([]claudeModel, error) {
+		return fetchModels(ctx, cmdCopy, envCopy)
+	})
 	if err != nil {
-		if c.failed == nil {
-			c.failed = make(map[string]bool)
-		}
-		c.failed[key] = true
 		return nil, err
 	}
-	if c.lists == nil {
-		c.lists = map[string]modelList{}
-	}
-	c.lists[key] = modelList{models: models, fetchedAt: clock.Now()}
-	delete(c.failed, key)
-	if c.isAsync {
-		writeClaudeCache(key, models)
+	if !found && modelCache.HasFailed(key) {
+		return fallbackModels, nil
 	}
 	return models, nil
 }
 
-type persistedClaudeModels struct {
-	Key    string        `json:"key"`
-	Models []claudeModel `json:"models"`
-}
-
-func claudeCachePath() (string, error) {
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		home, homeErr := os.UserHomeDir()
-		if homeErr != nil {
-			return "", err
-		}
-		dir = filepath.Join(home, ".cache")
-	}
-	return filepath.Join(dir, "numen", "models-claude.json"), nil
-}
-
-func readClaudeCache(key string) []claudeModel {
-	path, err := claudeCachePath()
-	if err != nil {
-		return nil
-	}
-	data, err := agentrun.ReadFile(path)
-	if err != nil {
-		return nil
-	}
-	var cached persistedClaudeModels
-	if json.Unmarshal(data, &cached) != nil || cached.Key != key {
-		return nil
-	}
-	return cached.Models
-}
-
-func writeClaudeCache(key string, models []claudeModel) {
-	if len(models) == 0 {
-		return
-	}
-	path, err := claudeCachePath()
-	if err != nil {
-		return
-	}
-	data, err := json.Marshal(persistedClaudeModels{Key: key, Models: models})
-	if err != nil {
-		return
-	}
-	_ = agentrun.CreateDir(filepath.Dir(path), 0o700)
-	_ = agentrun.WriteFile(path, data, 0o600)
-}
-
-// find returns the levels of the model among the current lists, and whether the model is listed.
-func (c *modelCache) find(model string) ([]reasoning.Level, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for _, one := range c.lists {
-		for _, items := range one.models {
+// findModelLevels returns the levels of the model among the current lists, and whether the model is listed.
+func (s *agentServer) findModelLevels(model string) ([]reasoning.Level, bool) {
+	for _, list := range s.getModelCache().Values() {
+		for _, items := range list {
 			if items.Value == model {
 				return items.getLevels(), true
 			}

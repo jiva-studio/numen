@@ -16,9 +16,7 @@ export const getFileMenuId = (entry: FileMenuEntry): string =>
 
 /** What an entry is called in the palette, by the plugin that does it. */
 export const getFileMenuText = (entry: FileMenuEntry): string =>
-  entry.action === 'delete-version'
-    ? WORDS.deleteVersionOf(entry.pluginName)
-    : WORDS.runWith(entry.title, entry.pluginName)
+  entry.action === 'delete-version' ? WORDS.deleteVersion : entry.title
 
 /** The palette's commands for the entries of the menu of the file at `file`, offered over that file alone. */
 export function createFileMenuPaletteCommands(
@@ -28,6 +26,7 @@ export function createFileMenuPaletteCommands(
   return entries.map((entry): Command => ({
     id: getFileMenuId(entry),
     text: getFileMenuText(entry),
+    ...(entry.pluginName ? { detail: entry.pluginName } : {}),
     ...(entry.action === 'create-text' ? { icon: getNamedIcon(entry.icon) } : {}),
     group: 'file',
     isOffered: (target) => target.isReady && target.file !== '' && target.file === file,
@@ -52,11 +51,11 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
     entries: [],
   })
   let unregisterAll: readonly (() => void)[] = []
-  let inFlightFile = ''
-  let settledFile = ''
+  let loadingFile = ''
+  let loadedFile = ''
 
   const load = async (file: string): Promise<void> => {
-    inFlightFile = file
+    loadingFile = file
     try {
       const entries = file ? await get(file) : []
       for (const unregister of unregisterAll) unregister()
@@ -71,24 +70,22 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
           }
         }),
       )
-      settledFile = file
+      loadedFile = file
       menu.value = { file, entries }
       setTimeout(() => {
-        if (settledFile === file) settledFile = ''
+        if (loadedFile === file) loadedFile = ''
       }, 0)
     } finally {
-      if (inFlightFile === file) inFlightFile = ''
+      if (loadingFile === file) loadingFile = ''
     }
   }
 
   const getForFile = (file: string): readonly Command[] => {
     const current = menu.value
-    if (file && inFlightFile !== file && settledFile !== file) {
+    if (file && loadingFile !== file && loadedFile !== file) {
       void load(file).catch(() => {})
     }
-    return current.file === file
-      ? createFileMenuPaletteCommands(current.file, current.entries)
-      : []
+    return current.file === file ? createFileMenuPaletteCommands(current.file, current.entries) : []
   }
 
   const getIcon = (id: string) =>

@@ -117,7 +117,7 @@ func TestTheDepthAskedIsHeldToTheLevelsOfTheModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.models.lists = map[string]modelList{"claude": {models: models}}
+	s.getModelCache().Put("claude", models)
 	cases := []struct{ model, requestedLevel, want string }{
 		{"claude-sonnet-4-6", "xhigh", ""},
 		{"claude-sonnet-4-6", "max", "max"},
@@ -134,9 +134,9 @@ func TestTheDepthAskedIsHeldToTheLevelsOfTheModel(t *testing.T) {
 }
 
 func TestACachedListIsNotAskedAgain(t *testing.T) {
-	var cache modelCache
-	cache.lists = map[string]modelList{"x": {models: []claudeModel{{Value: "m"}}, fetchedAt: time.Now()}}
-	got, err := cache.get(context.Background(), []string{"x"}, nil)
+	s := &agentServer{}
+	s.getModelCache().Put("x", []claudeModel{{Value: "m"}})
+	got, err := s.getModels(context.Background(), []string{"x"}, nil)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got %v, %v", got, err)
 	}
@@ -145,16 +145,21 @@ func TestACachedListIsNotAskedAgain(t *testing.T) {
 func TestAnAsyncCacheReturnsEmptyWhileInFlightAndFallbackAfterFailure(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	cache := modelCache{
-		isAsync:  true,
-		inFlight: map[string]bool{"x": true},
-	}
-	got, err := cache.get(context.Background(), []string{"x"}, nil)
+	gate := t.TempDir() + "/gate"
+	script := writeScript(t, "claude", "while [ ! -f "+gate+" ]; do sleep 0.01; done\nexit 1\n")
+	s := &agentServer{models: newModelCache(true)}
+	got, err := s.getModels(context.Background(), []string{script}, nil)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("in-flight async cache returned %v, %v", got, err)
 	}
-	cache.failed = map[string]bool{"x": true}
-	got, err = cache.get(context.Background(), []string{"x"}, nil)
+	if err := os.WriteFile(gate, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) && !s.getModelCache().HasFailed(script) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	got, err = s.getModels(context.Background(), []string{script}, nil)
 	if err != nil || len(got) != len(fallbackModels) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
 	}

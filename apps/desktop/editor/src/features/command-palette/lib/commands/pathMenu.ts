@@ -35,6 +35,7 @@ const NOTED: ReadonlyMap<string, string> = new Map(
 export type PathContribution = {
   readonly id: string
   readonly text: string
+  readonly detail?: string
   readonly group?: string
   readonly parentId?: string
   readonly isDisabled?: boolean | ((target: ContextMenuTarget) => boolean)
@@ -48,15 +49,23 @@ const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
 /** The removal of a file or of several. */
 const REMOVE: PathItem = { id: 'remove', text: own.remove, group: GROUP.remove }
 
+const toContributedItem = (
+  one: PathContribution,
+  group: string,
+  extra: Partial<Pick<PathItem, 'parentId'>> = {},
+): PathItem => ({
+  id: one.id,
+  text: one.text,
+  ...(one.detail ? { detail: one.detail } : {}),
+  group,
+  ...extra,
+  isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+})
+
 const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly PathItem[] => {
   const openContributed = contributions
     .filter((one) => one.group === GROUP.open)
-    .map((one) => ({
-      id: one.id,
-      text: one.text,
-      group: GROUP.open,
-      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-    }))
+    .map((one) => toContributedItem(one, GROUP.open))
 
   const relationContributed = contributions.filter(
     (one) => one.parentId === 'relation' || one.group === GROUP.relation,
@@ -69,25 +78,14 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
             id: 'relation',
             text: own.relation,
             group: GROUP.relation,
-            children: relationContributed.map((one) => ({
-              id: one.id,
-              text: one.text,
-              group: GROUP.relation,
-              isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-            })),
+            children: relationContributed.map((one) => toContributedItem(one, GROUP.relation)),
           },
         ]
       : []
 
   const newContributed = contributions
     .filter((one) => one.parentId === 'new')
-    .map((one) => ({
-      id: one.id,
-      text: one.text,
-      group: GROUP.file,
-      parentId: 'new',
-      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-    }))
+    .map((one) => toContributedItem(one, GROUP.file, { parentId: 'new' }))
 
   const otherContributed = contributions
     .filter(
@@ -97,12 +95,7 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
         one.group !== GROUP.relation &&
         one.parentId !== 'new',
     )
-    .map((one) => ({
-      id: one.id,
-      text: one.text,
-      group: one.group ?? GROUP.file,
-      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-    }))
+    .map((one) => toContributedItem(one, one.group ?? GROUP.file))
 
   return [
     ...getNoteCommand('read', GROUP.open),
@@ -121,27 +114,20 @@ const FILED: readonly PathItem[] = [...getNoteCommand('copy', GROUP.file), REMOV
 const getFileMenu = (contributions: readonly PathContribution[] = []): readonly PathItem[] => {
   const openContributed = contributions
     .filter((one) => one.group === GROUP.open)
-    .map((one) => ({
-      id: one.id,
-      text: one.text,
-      group: GROUP.open,
-      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-    }))
+    .map((one) => toContributedItem(one, GROUP.open))
 
   const otherContributed = contributions
     .filter(
       (one) =>
-        one.group !== GROUP.open &&
-        one.parentId !== 'relation' &&
-        one.group !== GROUP.relation,
+        one.group !== GROUP.open && one.parentId !== 'relation' && one.group !== GROUP.relation,
     )
-    .map((one) => ({
-      id: one.id,
-      text: one.text,
-      group: one.group ?? GROUP.file,
-      ...(one.parentId ? { parentId: one.parentId } : {}),
-      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-    }))
+    .map((one) =>
+      toContributedItem(
+        one,
+        one.group ?? GROUP.file,
+        one.parentId ? { parentId: one.parentId } : {},
+      ),
+    )
 
   return [...openContributed, ...otherContributed, ...FILED]
 }
@@ -165,13 +151,9 @@ export const createPathCommands = (
   if (on.isFolder) {
     const folderContributed = contributions
       .filter((one) => one.parentId === 'new' || one.group === GROUP.file)
-      .map((one) => ({
-        id: one.id,
-        text: one.text,
-        group: GROUP.file,
-        ...(one.parentId ? { parentId: one.parentId } : {}),
-        isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
-      }))
+      .map((one) =>
+        toContributedItem(one, GROUP.file, one.parentId ? { parentId: one.parentId } : {}),
+      )
     return [...folderContributed, ...FILED]
   }
   if (on.isNote) return getNoteMenu(contributions)

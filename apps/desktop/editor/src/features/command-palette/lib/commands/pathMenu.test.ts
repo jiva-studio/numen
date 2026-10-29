@@ -33,19 +33,28 @@ describe('the commands over a row standing for a file', () => {
 
   it('includes file menu contributions before copy and remove on a file that is no note', () => {
     const contributions = [
-      { id: 'file-menu:create-text:whisper:', text: 'Transcribe with Whisper', group: 'file' },
-      { id: 'file-menu:create-text:proofread:v1', text: 'Proofread with Claude', group: 'file' },
+      {
+        id: 'file-menu:create-text:whisper:',
+        text: 'Transcribe',
+        detail: 'Whisper',
+        group: 'file',
+      },
+      {
+        id: 'file-menu:create-text:proofread:v1',
+        text: 'Proofread',
+        detail: 'Claude',
+        group: 'file',
+      },
     ]
-    expect(
-      createPathCommands({ isNote: false, isFolder: false }, false, contributions).map(
-        (one) => one.id,
-      ),
-    ).toStrictEqual([
+    const items = createPathCommands({ isNote: false, isFolder: false }, false, contributions)
+    expect(items.map((one) => one.id)).toStrictEqual([
       'file-menu:create-text:whisper:',
       'file-menu:create-text:proofread:v1',
       'copy',
       'remove',
     ])
+    expect(items[0]?.detail).toBe('Whisper')
+    expect(items[1]?.detail).toBe('Claude')
   })
 })
 

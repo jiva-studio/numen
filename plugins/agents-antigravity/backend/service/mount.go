@@ -10,7 +10,7 @@ import (
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
 	agent := &agentServer{
-		models: modelCache[antigravityModel]{isAsync: true},
+		models: newModelCache(true),
 	}
 	s.OnClose(func() { _ = agent.Close() })
 	s.SetUpdateConfig(agent.applyConfig)

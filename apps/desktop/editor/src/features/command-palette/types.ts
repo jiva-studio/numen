@@ -87,6 +87,8 @@ export interface CommandTarget {
 export interface Command {
   readonly id: string
   readonly text: string
+  /** A second line under the command text, such as the plugin that carries it out. */
+  readonly detail?: string
   /** The keystroke that reaches it away from the palette. */
   readonly keys?: PaletteKeys
   /** The icon it is drawn with, where the one who declares it gives one. */

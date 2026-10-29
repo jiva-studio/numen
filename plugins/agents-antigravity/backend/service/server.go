@@ -9,13 +9,33 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
 type agentServer struct {
 	agentrun.Service
 	mu             sync.RWMutex
 	executablePath string
-	models         modelCache[antigravityModel]
+	models         *cache.Cache[[]antigravityModel]
+}
+
+func newModelCache(isAsync bool) *cache.Cache[[]antigravityModel] {
+	return cache.New[[]antigravityModel](
+		"models",
+		cache.WithPluginID("agents-antigravity"),
+		cache.WithTimeout(modelListLimit),
+		cache.WithFailureBackoff(failureBackoff),
+		cache.WithAsync(isAsync),
+	)
+}
+
+func (s *agentServer) getModelCache() *cache.Cache[[]antigravityModel] {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.models == nil {
+		s.models = newModelCache(false)
+	}
+	return s.models
 }
 
 func (s *agentServer) applyConfig(values map[string]string) {
@@ -93,7 +113,7 @@ func (s *agentServer) GetAgentPrograms(
 // getFamilies are the models the program lists, the ones that differ by level folded into one.
 func (s *agentServer) getFamilies(ctx context.Context, command []string) []reasoning.Family {
 	list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
-	items := s.models.get(ctx, strings.Join(command, " "), list)
+	items, _, _ := s.getModelCache().Get(ctx, strings.Join(command, " "), list)
 	models := make([]reasoning.Listed, 0, len(items))
 	for _, one := range items {
 		models = append(models, reasoning.Listed{Name: one.Name, Title: one.Title})
