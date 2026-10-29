@@ -37,8 +37,8 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 	if err != nil {
 		return nil, err
 	}
-	// The vault is where the links lead. A write lands at the resolved path, and
-	// the rules about what the vault holds are asked of a name relative to it.
+	// Symlinks in the vault root are resolved. A write lands at the resolved path,
+	// and the vault rules are evaluated on the path relative to it.
 	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
 		abs = resolved
 	}
@@ -49,16 +49,15 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 	if !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", abs)
 	}
-	// What the vault says not to touch is the vault's to say, and it says it to
-	// the writer for the same reason it says it to the reader.
+	// The vault's ignore rules apply to the writer as they do to the reader.
 	if cfg, err := vaultconfig.ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
 	return &VaultWriter{root: abs, opts: opts, ignored: opts.CompileIgnoring()}, nil
 }
 
-// newFileMode is what a note is created with. An existing note keeps the mode
-// it already had: the person may have made one read-only on purpose.
+// newFileMode is the mode of a created note. An existing note keeps its mode,
+// which may be read-only.
 const newFileMode fs.FileMode = 0o644
 
 func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
@@ -87,8 +86,8 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
 		}
 	case errors.Is(err, fs.ErrNotExist):
-		// A note that is not there yet cannot have changed, and a caller that
-		// believed it was there is told so.
+		// A missing note cannot have changed, so a caller holding a stat for it gets
+		// ErrStale.
 		if !stat.IsZero() {
 			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
 		}
@@ -111,9 +110,8 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	// A file of any kind moves, and so does a folder. Both ends have to be a
-	// place this vault keeps the person's files or one this application keeps
-	// for itself.
+	// A file or a folder can be moved. Both ends must be in the user's part of the
+	// vault or in a folder the application manages.
 	source, err := w.resolvePath(from)
 	if err != nil {
 		return err
@@ -142,9 +140,9 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 
 	switch there, err := root.Lstat(arrives); {
 	case err == nil:
-		// A file already at the name is the name being taken, unless it is this
-		// file: a filesystem that tells neither capitalisation nor the spelling
-		// of an accent apart answers the new name with the file being renamed.
+		// A file already at the target name is a conflict unless it is the source
+		// itself: a filesystem that ignores case or accent normalization reports the
+		// new name as the file being renamed.
 		here, err := root.Lstat(leaves)
 		if err != nil {
 			return err
@@ -200,17 +198,17 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
-	// A note that is already gone is the outcome that was asked for.
+	// A note that is already absent is a successful delete.
 	return nil
 }
 
-// resolveNotePath is where a resolveNotePath goes on this machine, and refuses a path this vault
-// does not hold as a resolveNotePath.
+// resolveNotePath returns the filesystem path of a note and rejects a path that is
+// not a writable note of this vault.
 //
-// A writer driven by an agent is why the second half is here. Containment alone
-// leaves everything else in the folder — attachments, another tool's state, the
-// repository the vault is kept in — writable and removable by whatever asks,
-// while the reader is already saying those paths do not exist.
+// The second check applies because an agent drives the writer. Containment alone
+// leaves every other file in the folder writable and removable (attachments, the
+// state of other tools, the repository containing the vault), while the reader
+// reports those paths as nonexistent.
 func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {
@@ -222,8 +220,7 @@ func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	return target, nil
 }
 
-// resolvePath is where a path is on this machine, for work that takes a file of any
-// kind and a folder alike.
+// resolvePath returns the filesystem path of a file or folder.
 func (w *VaultWriter) resolvePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {
@@ -235,9 +232,9 @@ func (w *VaultWriter) resolvePath(path string) (string, error) {
 	return target, nil
 }
 
-// resolveNoteFile is where the bytes of a note are, by the same rules note goes by. A note
-// kept as a link to another resolveNoteFile in the vault has its bytes at the other end,
-// and that is what a rename replaces.
+// resolveNoteFile returns the file holding the bytes of a note, under the same
+// rules as resolveNotePath. A note that is a link to another file in the vault
+// has its bytes at the target, and a rename replaces the target.
 func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	resolved, err := vaultconfig.ResolveLinks(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
@@ -246,9 +243,8 @@ func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	if !w.isWritableNote(path) {
 		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
 	}
-	// The rule is asked of where the bytes land as well as of the name they were
-	// asked for by. A link is a name for another place, and the place is what a
-	// rename replaces.
+	// The note rules apply to the resolved path as well as to the requested name:
+	// a link is a name for another location, and a rename replaces that location.
 	inside, err := filepath.Rel(w.root, resolved)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrOutside)
@@ -308,10 +304,9 @@ func (w *VaultWriter) isOurs(path string) bool {
 	return false
 }
 
-// isReachable answers whether a path in this vault is one the writer may put a
-// file at or take one away from, whatever the file is and whether it is a
-// folder. What the vault says to leave alone is left alone, and the folders
-// this application keeps for itself are its own.
+// isReachable reports whether the writer may create or remove the file or folder
+// at path. Paths matched by the vault ignore rules are not reachable; folders
+// the application manages are.
 func (w *VaultWriter) isReachable(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	if w.isOurs(clean) {
@@ -356,10 +351,10 @@ func (w VaultWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	return OpenForWriting(v.Path, w.Options)
 }
 
-// Create writes a note where there is none, and refuses where there is one.
+// Create writes a note and returns an error if one already exists.
 //
-// does not, in one step, so two callers racing cannot both be told the path
-// was free.
+// The existence check and the creation are one step, so two concurrent callers
+// cannot both succeed.
 func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -400,9 +395,9 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 
 // Import copies a file from this machine into the vault.
 //
-// The bytes are streamed, so a recording or an archive crosses in whatever room
-// the machine has. They land beside the destination and are renamed over it, so
-// the watcher reports the file once and reports it whole.
+// The content is streamed, so a recording or an archive of any size is imported
+// within the available memory. It is written to a temporary file next to the
+// destination and renamed over it, so the watcher reports the file once, complete.
 func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader) error {
 	if ctx.Err() != nil {
 		return ctx.Err()

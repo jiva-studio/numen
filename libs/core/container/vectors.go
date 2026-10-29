@@ -17,8 +17,9 @@ func (c Config) EmbedderReady() bool {
 	return c.hasPlugin(bridge.CapabilityEmbedding)
 }
 
-// Embedders are what makes the vectors a vault is searched by and what makes
-// the vector a question is asked with: the embedding plugin, asked for both.
+// Embedders returns the embedder that produces the vectors a vault is searched
+// by and the embedder that produces the vector for a question: the embedding
+// plugin provides both.
 //
 // An installation with no embedding plugin enabled has neither, and no error:
 // search answers on the words of the full-text index alone.
@@ -30,8 +31,8 @@ func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking e
 	return embedder, embedder, closeEmbedder, nil
 }
 
-// Embedder is the embedding plugin the vectors of a vault are asked of. It is
-// nil where no embedding plugin is enabled.
+// Embedder is the embedding plugin that produces the vectors of a vault. It is
+// nil when no embedding plugin is enabled.
 func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
 	host, err := c.resolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, completionport.ErrUnavailable) {

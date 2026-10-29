@@ -19,7 +19,7 @@ const PATH = 'Lectures/Lecture 4.mp3'
 const RUNS = 1_842_000
 const NOW = 47_200
 
-/** What the lecturer says, one paragraph to a cue. */
+/** The lecturer's speech, one paragraph per cue. */
 const SAID: readonly string[] = [
   'Last week we left the demon at the door, letting the fast molecules through one way and the slow ones the other.',
   'After a while one side is hot and the other is cold, and nothing was pushed and nothing was heated. That is the claim.',
@@ -33,7 +33,7 @@ const SAID: readonly string[] = [
   'Read Landauer for next week — the 1961 paper, it is nine pages — and have a look at Bennett as well.',
 ]
 
-/** One cue to a paragraph, at the pace a person is talked at. */
+/** One cue per paragraph, at the pace of speech. */
 const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
   const from = cues.length === 0 ? 0 : (cues.at(-1)?.to ?? 0)
   return [...cues, { text, from, to: from + 2_400 + text.length * 62 }]
@@ -106,7 +106,7 @@ export const Playing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText(SAID[0]!)).toBeVisible())
-    // The line being said at the player's moment is the one drawn as current.
+    // The line at the player's current time is drawn as current.
     const current = canvasElement.querySelector('.cm-line.cm-current')
     await expect(current?.textContent).toBe(SAID[5])
   },

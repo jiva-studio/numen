@@ -11,20 +11,19 @@ import (
 // locks is one lock per vault root, keyed by the folder on disk. Every writer
 // opened on a folder takes the same lock.
 //
-// Nothing is ever taken out of it. It holds one channel per vault root this
-// process has written to, and the key is the folder as the filesystem resolves
-// it, so no spelling of a root can add a second entry: a person's vault list is
-// the bound. Taking one out would mean counting who is waiting on it, to buy
-// back a handful of channels.
+// Entries are never removed. It holds one channel per vault root this process has
+// written to, and the key is the folder as the filesystem resolves it, so no
+// spelling of a root adds a second entry: the number of vaults bounds the map.
+// Removing an entry would require counting its waiters, to save a few channels.
 var locks = struct {
 	sync.Mutex
 	activeItem map[string]chan struct{}
 }{activeItem: map[string]chan struct{}{}}
 
-// Lock takes this vault's write lock, waiting for whoever holds it.
+// Lock takes this vault's write lock, waiting while another holder has it.
 //
-// The lock is a channel, so a context that ends while it is waited for is
-// answered with its error and nothing is held.
+// The lock is a channel, so a context that ends while waiting returns its error
+// and holds nothing.
 func (w VaultWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -50,8 +49,8 @@ func lockFor(root string) chan struct{} {
 	return lock
 }
 
-// getLockKey is the one name a folder is locked under. A path that cannot be
-// resolved is its own key: what is asked for is what is locked.
+// getLockKey returns the name a folder is locked under. A path that cannot be
+// resolved is its own key.
 func getLockKey(root string) string {
 	abs, err := filepath.Abs(root)
 	if err != nil {

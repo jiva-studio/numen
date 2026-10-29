@@ -115,8 +115,8 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 		return fmt.Errorf("the vectors the recipe holds: %w", err)
 	}
 
-	// `vec_bit` says the blob is one bit per dimension. Its length alone does
-	// not distinguish that from float32.
+	// `vec_bit` marks the blob as one bit per dimension; its length alone does not
+	// distinguish it from float32.
 	for _, one := range target {
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chunks_vec (chunk_id, vault_id, coarse) VALUES (?, ?, vec_bit(?))`,

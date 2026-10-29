@@ -10,7 +10,7 @@ var (
 	// ErrNoTool is an address no provider on this machine supports.
 	ErrNoTool = errors.New("unsupported protocol scheme for download")
 
-	// ErrNothingDownloaded is an address that answered, and carries nothing of what was asked for.
+	// ErrNothingDownloaded is returned when an address responded but contains nothing of what was requested.
 	ErrNothingDownloaded = errors.New("nothing of the sort is published there")
 )
 
@@ -21,7 +21,7 @@ type DownloadModel struct {
 	Producer string
 }
 
-// Metadata is what a site says about an address, before any of it is taken.
+// Metadata is what a site reports about an address, before anything is downloaded.
 type Metadata struct {
 	Title       string
 	Bytes       int64
@@ -67,7 +67,7 @@ type Provider interface {
 	GetText(ctx context.Context, address string, want PreferredCaptions) (Text, error)
 }
 
-// Player is a provider that also reaches the bytes a person plays.
+// Player is a provider that also fetches the bytes of the media to play.
 type Player interface {
 	Download(ctx context.Context, address string, into io.Writer) (Copy, error)
 }

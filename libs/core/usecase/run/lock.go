@@ -6,8 +6,8 @@ import (
 	"sync"
 )
 
-// The priorities a run waits at, the first of them served first. Work a person
-// is sitting in front of goes before work the vault set itself.
+// The priorities a run waits at, the first served first. Work the user requested
+// goes before work the vault started itself.
 const (
 	priorityRequested = iota
 	priorityUnasked
@@ -25,9 +25,9 @@ type Lock struct {
 	watchers []chan struct{}
 }
 
-// Acquire waits for the lock and returns what releases it. waiting is called
-// where the lock is not free, so that a person watching is told why nothing is
-// moving. A context that ends while waiting acquires nothing.
+// Acquire waits for the lock and returns a function that releases it. waiting is
+// called when the lock is not free, so the user is told why nothing is moving. A
+// context that ends while waiting acquires nothing.
 func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (func(), error) {
 	pos := priorityUnasked
 	if requested {
@@ -60,7 +60,7 @@ func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (fun
 	}
 }
 
-// release hands the lock to whoever has waited longest at the first priority
+// release passes the lock to the run that has waited longest at the highest priority.
 func (g *Lock) release() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -75,7 +75,8 @@ func (g *Lock) release() {
 	g.isIndexed = false
 }
 
-// holds it, and hands it on.
+// leave removes a run that stopped waiting. If the lock was already passed to it,
+// leave takes the lock and passes it on.
 func (g *Lock) leave(pos int, stand chan struct{}) {
 	g.mu.Lock()
 	for i, one := range g.waiting[pos] {

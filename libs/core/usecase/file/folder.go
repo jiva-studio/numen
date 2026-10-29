@@ -2,7 +2,7 @@ package file
 
 import "github.com/jiva-studio/numen/libs/notes/domain"
 
-// Folder is entries of the vault and what each note among them is, where an index says.
+// Folder is the entries of the vault with the type of each note among them, where an index provides it.
 type Folder struct {
 	Entries []domain.Entry
 	Types   map[string]domain.NoteType

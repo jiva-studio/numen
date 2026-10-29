@@ -1,8 +1,8 @@
 /**
- * What pressing something in an agent tab evaluates to, asked without a screen.
+ * The result of activating an element in an agent tab, tested without a screen.
  *
- * A question carries nothing about what is open, and a passage named in an
- * answer opens the source it is in.
+ * A question does not depend on what is open, and a passage named in an answer
+ * opens the source it is in.
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref, shallowRef } from 'vue'
@@ -13,7 +13,7 @@ import { createLinkResolver } from '../fixtures/links'
 
 type Model = AgentModel & { readonly nameAt: readonly string[] }
 
-/** A conversation that records what it was asked, and where its lines point. */
+/** A conversation that records the requests it receives and the locations its lines point to. */
 const createConversation = (locations: Record<string, { path: string; range: TextRange }> = {}) => {
   const request: [string, string][] = []
   const stopCalls: string[] = []
@@ -32,8 +32,8 @@ const createConversation = (locations: Record<string, { path: string; range: Tex
 }
 
 /**
- * An agent tab with the window it is drawn in written down. The vault answers
- * with the notes it was handed, and reaches nothing for every other address.
+ * An agent tab with the window state it is rendered in recorded. The vault
+ * returns the notes it was given, and nothing for every other address.
  */
 const tab = (
   locations: Record<string, { path: string; range: TextRange }> = {},

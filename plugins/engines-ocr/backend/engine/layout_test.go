@@ -12,8 +12,8 @@ import (
 	"testing"
 )
 
-// line is one run of words at a place on the page, written the way a detector
-// hands it over.
+// line is one run of words at a position on the page, in the form a detector
+// returns it.
 func line(x0, y0, x1, y1 int, text string) Line {
 	return Line{Box: image.Rect(x0, y0, x1, y1), Text: text, Score: 1}
 }
@@ -81,8 +81,8 @@ func TestARegionFoundTwiceIsReadOnce(t *testing.T) {
 }
 
 func TestRegionsComeBackInReadingOrder(t *testing.T) {
-	// The model answers in whatever order it found them, and says where each
-	// belongs. Sorting on that is what keeps the second column after the first.
+	// The model returns regions in the order it found them, with the position of
+	// each. Sorting on position keeps the second column after the first.
 	filtered := Distinct([]Region{
 		{Label: "text", Score: 0.9, Rect: image.Rect(200, 0, 300, 100), Order: 3},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 0, 100, 100), Order: 1},
@@ -113,8 +113,8 @@ func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 }
 
 func TestAJoinedWordPreservesTheHyphenBoxOneByteShorter(t *testing.T) {
-	// The hyphen is gone from the end of the box that carried it, so that box
-	// covers the first half of the word and no more.
+	// The hyphen is removed from the end of the box that carried it, so that box
+	// covers only the first half of the word.
 	text, spans := Assemble([]Line{
 		line(0, 0, 100, 20, "under-"),
 		line(0, 40, 200, 60, "standing follows"),

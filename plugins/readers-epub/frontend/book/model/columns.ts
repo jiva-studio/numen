@@ -1,9 +1,9 @@
 /**
- * The columns one document of a book is set in: the room measured, the type
- * sized against it, and the runs of the text marked where they came to stand.
+ * The columns one document of a book is set in: the measured width, the font size
+ * derived from it, and the text ranges marked where they are laid out.
  *
- * Apart from the component the way `lib/spread.ts` is: it is handed the two
- * elements and the one measurement of the browser it may not make itself.
+ * Separate from the component, like `lib/spread.ts`: it receives the two
+ * elements and the one browser measurement it may not make itself.
  */
 import { computed, ref } from 'vue'
 import type { ShallowRef } from 'vue'
@@ -110,15 +110,15 @@ export function useBookColumns(options: BookColumnsOptions) {
     options.getEdge,
   )
 
-  /** Whether the spread in front of the drawn document has been stood. */
+  /** Whether the spread for the rendered document has been laid out. */
   const isStood = ref(false)
 
   /**
-   * The columns as the browser has just laid them out: how tall a column may be,
-   * how far they run, and where each run of the text stands.
+   * The columns as the browser has just laid them out: the maximum column height,
+   * the total length, and where each text range is.
    *
-   * An area that clips its own overflow is not asked how far what it clipped
-   * reaches, so the length is asked of the box the columns are set in.
+   * An area that clips its own overflow cannot report the extent of the clipped
+   * content, so the length is read from the box the columns are set in.
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
     text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)

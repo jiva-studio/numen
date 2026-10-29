@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The vaults themselves, one to a row, each opened by the letter at the end of
- * its row as far down the list as the alphabet reaches.
+ * The vault list: one vault per row, each opened by the letter at the end of its
+ * row for as many rows as the alphabet covers.
  */
 import { FolderRoot } from '@lucide/vue'
 import { WelcomeRow } from '../../welcome-row'
@@ -24,9 +24,9 @@ defineSlots<{
 }>()
 
 /**
- * The letter a vault is opened by. Past the alphabet a vault is opened with the
- * hand and carries none, and a row still working is drawn without the letter it
- * will be opened by.
+ * The letter a vault is opened by. Beyond the alphabet a vault has no letter and
+ * is opened with the pointer, and a row in progress is drawn without the letter
+ * it will be opened by.
  */
 const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => {
   const letter = vaultLetter(pos)
@@ -67,7 +67,7 @@ const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => 
   list-style: none;
 }
 
-/* What is true of one row of the list and not of the ones beside it, said at
+/* The state that applies to one row and not to the other rows, shown at
    the far end of it. */
 .welcome-page__state {
   flex: none;
@@ -75,7 +75,7 @@ const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => 
   font-size: var(--numen-text-1);
 }
 
-/* Where the screen stands as two columns, the rows between the heading and the
+/* In the two-column layout, the rows between the heading and the
    offer are the one thing that scrolls. */
 @container (max-height: 27.55rem) and (min-width: 45.4rem) {
   .welcome-page__list {

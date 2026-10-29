@@ -9,56 +9,54 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// Follow keeps the index level with a vault that is being edited underneath it,
-// and says which notes moved.
+// Follow keeps the index consistent with a vault that is edited concurrently,
+// and reports which notes changed.
 //
-// The rule it carries is not about any one way of showing a vault: what
-// changed is reindexed, and when what changed cannot be worked out the vault is
-// read again. A window and a command line want the same thing to happen.
+// The rule is independent of the front end: changed files are reindexed, and
+// when the changes cannot be determined the vault is scanned again. A window
+// and a command line need the same behavior.
 type Follow struct {
 	watcher vaultport.VaultWatcher
 	refresh Refresh
 	scan    Scan
 
-	// Changed, if set, is called each time the index and the vault are level
-	// again. What is done with that is the caller's business.
+	// Changed, if set, is called each time the index and the vault are consistent
+	// again.
 	Changed func(VaultChanges)
-	// ErrorHandler, if set, is called with what went wrong, and with nil when a
-	// later attempt succeeds. Both, so what is reported is the state of things
-	// now.
+	// ErrorHandler, if set, is called with each error, and with nil when a later
+	// attempt succeeds, so it reflects the current state.
 	ErrorHandler windowport.ErrorHandler
 }
 
-// NewFollow is what keeps the index level with a vault being edited: what says
-// a file changed, what brings the named files up to date, and the walk that is
-// taken when what changed cannot be worked out.
+// NewFollow creates a Follow from the watcher that reports file changes, the
+// refresh that updates the named files, and the scan used when the changes
+// cannot be determined.
 //
-// The last two are reached from Run, which a caller starts and does not wait on.
+// Refresh and scan run from Run, which the caller starts without waiting on.
 func NewFollow(watcher vaultport.VaultWatcher, refresh Refresh, scan Scan) Follow {
 	return Follow{watcher: watcher, refresh: refresh, scan: scan}
 }
 
-// VaultChanges is what a caller is told: the notes that are different now, or that the
-// whole vault has to be looked at again.
+// VaultChanges is the notification passed to a caller: the notes that changed,
+// or that the whole vault must be scanned again.
 type VaultChanges struct {
 	Paths        []string
 	ShouldReload bool
-	// Assets is the paths of the files that changed and are not notes. Reading
-	// one is its own work and takes minutes. A reload carries none, and stands
-	// for every asset in the vault.
+	// Assets is the paths of changed files that are not notes. Reading one is
+	// separate work that takes minutes. A reload leaves Assets empty and covers
+	// every asset in the vault.
 	Assets []string
 }
 
-// ShouldReadAssets says whether an asset owes a read: one changed, or the whole vault is
-// being looked at again and every asset with it.
+// ShouldReadAssets reports whether any asset needs reading: an asset changed, or
+// the whole vault is scanned again, which includes every asset.
 func (m VaultChanges) ShouldReadAssets() bool { return m.ShouldReload || len(m.Assets) > 0 }
 
-// Begin starts watching. Acting on what it collects is Run, and the two are
-// separate because they belong at different moments.
+// Begin starts watching. Run acts on the collected changes; the two are separate
+// because they occur at different times.
 //
-// The watch belongs before the first scan: an edit made while the vault is
-// being read is then held. Reading the vault again waits its turn behind a walk
-// already running.
+// The watch starts before the first scan, so an edit made while the vault is
+// being read is buffered. A new scan waits for a walk that is already running.
 func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Watch, error) {
 	changes, missing, err := u.watcher.WatchVault(ctx, v)
 	if err != nil {
@@ -96,16 +94,15 @@ func (f *Watch) Run(ctx context.Context) {
 			f.reportChanges(VaultChanges{Paths: res.GetChangedPaths(), Assets: res.Assets})
 
 		case <-f.lostChan:
-			// More changed at once than could be followed, or something went
-			// that cannot be asked what it held. Reading the vault again is the
-			// answer, and whoever is listening is told to ask again.
+			// More changed at once than could be tracked, or the watcher lost track of the
+			// changes. The vault is scanned again and listeners are told to reload.
 			if _, err := f.follow.scan.Execute(ctx, f.vault); err != nil {
 				f.handleError(err)
 				continue
 			}
 			f.handleError(nil)
-			// Read again from the top, so whatever changed is among what the
-			// walk finds.
+			// The scan starts from the top, so every change is among the files the walk
+			// finds.
 			f.reportChanges(VaultChanges{ShouldReload: true})
 		}
 	}

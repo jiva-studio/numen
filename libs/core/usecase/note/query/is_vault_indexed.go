@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 )
 
-// IsVaultIndexed says whether the index already carries a vault.
+// IsVaultIndexed reports whether the index already contains a vault.
 type IsVaultIndexed struct {
 	queries noteport.NoteQueries
 }

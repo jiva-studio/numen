@@ -1,4 +1,4 @@
-// Package vault checks that a path a caller names lies inside the vault.
+// Package vault checks that a path supplied by a caller lies inside the vault.
 package vault
 
 import (
@@ -21,9 +21,10 @@ func ValidatePath(path string, allow ...func(cleanPath string) bool) (string, er
 	return ValidatePathIn(os.Getenv("NUMEN_VAULT_PATH"), path, allow...)
 }
 
-// ValidatePathIn returns the clean path inside the vault at vaultRoot. A relative path is joined
-// to the vault root. An empty vault root refuses every path. A clean path for which an allow
-// function returns true is returned without the vault check.
+// ValidatePathIn returns the clean path inside the vault at vaultRoot. A relative
+// path is joined to the vault root. An empty vault root rejects every path. A
+// clean path for which an allow function returns true is returned without the
+// vault check.
 func ValidatePathIn(vaultRoot, path string, allow ...func(cleanPath string) bool) (string, error) {
 	if strings.TrimSpace(path) == "" {
 		return "", ErrEmptyPath

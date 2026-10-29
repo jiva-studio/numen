@@ -78,7 +78,7 @@ test.describe('File Tree Folder Expansion and Structure', () => {
     // 2. Press Enter again on cards folder to collapse
     await cardsRow.press('Enter')
 
-    // 3. Verify cards folder is collapsed and child file is no longer visible
+    // 3. Verify the cards folder is collapsed and the child file is hidden
     await expect(cardsRow).toHaveAttribute('aria-expanded', 'false')
     await expect(animalsRow).not.toBeVisible()
   })

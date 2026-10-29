@@ -27,9 +27,10 @@ func coarseRows(t *testing.T, db *DB, vault domain.Vault, path string) (reached,
 	return reached, small
 }
 
-// embedFromKeptVectors writes every chunk a vault owes from the vectors the recipe already
-// keeps, as the embedding pass does, and says how many it wrote. A chunk whose
-// text has no kept vector would cost a model call, and fails the test.
+// embedFromKeptVectors writes every chunk of a vault that lacks a vector from the
+// vectors the recipe already stores, as the embedding pass does, and returns how
+// many it wrote. A chunk whose text has no stored vector would cost a model call,
+// and fails the test.
 func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()
@@ -65,9 +66,9 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 }
 
 func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
-	// A vector is kept by the text it was made from, so a second chunk holding
-	// that text costs no model call. It still needs a coarse row of its own:
-	// the coarse pass is the only way a dense search reaches a chunk.
+	// A vector is stored by the text it was made from, so a second chunk with that
+	// text costs no model call. It still needs its own coarse row: the coarse pass
+	// is the only way a dense search finds a chunk.
 	for _, tc := range []struct {
 		name   string
 		placed func(t *testing.T, db *DB) (domain.Vault, string)

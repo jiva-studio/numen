@@ -9,10 +9,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
-// Every value of every enum this file carries across reaches something.
+// Every value of every enum this file converts maps to a defined result.
 //
-// The values are walked from the schema, so a value added there is a test that
-// fails and not a message that quietly says nothing.
+// The values are enumerated from the schema, so a value added there fails this
+// test instead of being silently ignored.
 
 func TestEveryModeCrossesBothWays(t *testing.T) {
 	testsupport.RoundTrip(t, ConvertModeFromWire, ConvertModeToWire)
@@ -26,8 +26,8 @@ func TestEveryUnitIsSavedFromOne(t *testing.T) {
 	}, convertUnit)
 }
 
-// A page that named nothing has said nothing, and silence is what the round
-// waits its bound for. Every answer the schema offers is one of the answers.
+// A page that reported nothing is unanswered, and the round waits its bound for
+// unanswered pages. Every answer the schema defines counts as an answer.
 func TestEveryFlushResultIsAnAnswer(t *testing.T) {
 	testsupport.CheckHandled(t, func(response v1.FlushResult) bool { return parseFlushResult(response) != flushUnanswered })
 }

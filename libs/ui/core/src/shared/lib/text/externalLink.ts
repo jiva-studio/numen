@@ -1,15 +1,15 @@
 /**
  * A link that leads out of the application.
  *
- * A window has no address bar, so a page opened inside it wears the
- * application's own frame. The window is held on what it serves itself, and an
- * address a browser can be handed is handed to the person's browser instead.
+ * The window has no address bar, so a page opened inside it is shown in the
+ * application frame. The window stays on content it serves itself; an address a
+ * browser can open is passed to the system browser.
  */
 
-/** The schemes a browser is handed. Anything else is nobody's to open. */
+/** The schemes passed to the browser. Any other scheme is not opened. */
 const ALLOWED_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
-/** Hands an address to wherever the person's own browser opens it. */
+/** Passes an address to the system browser. */
 export type LinkOpener = (href: string) => void
 
 /** Whether an address names somewhere this page is not served from. */

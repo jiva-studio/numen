@@ -7,11 +7,11 @@
 export interface StepRow {
   readonly id: string
   readonly title: string
-  /** A second line: what is true of this row and not of the ones beside it. */
+  /** A second line: what applies to this row and not to the others. */
   readonly detail?: string
-  /** Drawn, said, and not chosen. */
+  /** Shown but not selectable. */
   readonly isDisabled?: boolean
-  /** The value the setting this list is of holds now, which is where it opens. */
+  /** Whether the row holds the setting's current value, which is where the list opens. */
   readonly isCurrent?: boolean
 }
 
@@ -20,6 +20,6 @@ export interface StepGroup {
   readonly id: string
   readonly title: string
   readonly items: readonly StepRow[]
-  /** What is said in its place where it holds nothing. */
+  /** The text shown in place of the items when the group is empty. */
   readonly silence?: string
 }

@@ -1,8 +1,7 @@
 /**
  * A state with the markdown parser in it, parsed to the end.
  *
- * The tests' furniture: they have no view to do the parsing for them. It
- * ships to nobody.
+ * Test fixture: the tests have no view to do the parsing. Not shipped.
  */
 import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree } from '@codemirror/language'

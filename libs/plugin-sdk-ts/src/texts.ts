@@ -55,13 +55,13 @@ export interface LiveText {
 // are not valid.
 export type TextErrorCode = 'missing' | 'invalid'
 
-// VaultTexts is what a view reads of the text versions of the vault the window shows, and how it
-// saves a person's edit.
+// VaultTexts is what a view reads of the text versions of the vault shown in the
+// window, and how it saves a user edit.
 export interface VaultTexts {
   // The live version of a file and its segments, and null where none is live.
   readLiveText(path: string): Promise<LiveText | null>
-  // Records a person's edit as a new version made from `sourceVersionId`, in the folder of the
-  // plugin whose view the person edits in. The new version becomes the live one.
+  // Records a user edit as a new version derived from `sourceVersionId`, in the
+  // folder of the plugin whose view is being edited. The new version becomes the live one.
   createEdit(
     path: string,
     sourceVersionId: TextVersionId,
@@ -69,10 +69,11 @@ export interface VaultTexts {
   ): Promise<Result<TextVersion, TextErrorCode>>
 }
 
-// TextInput is what a manifest says a plugin makes text from: files of the content types
-// `contentTypes` names, such as `audio/*`, and versions of the kinds `kinds` names. `autoRun` asks
-// to be run on a file of its types that has no live version. `menuEntry` is the plugin's entry in
-// the menu of a file its input takes; a plugin without one is not offered there.
+// TextInput is the input a manifest declares for a plugin that produces text:
+// files of the content types named by `contentTypes`, such as `audio/*`, and
+// versions of the kinds named by `kinds`. `autoRun` runs the plugin on a file of
+// those types that has no live version. `menuEntry` is the plugin's entry in the
+// menu of a file its input accepts; a plugin without one is not offered there.
 export interface TextInput {
   contentTypes?: string[]
   kinds?: TextKind[]

@@ -32,7 +32,7 @@ const renamingPath = computed({
   set: (row: string | null) => props.state.setRenamingPath(row),
 })
 
-/** What the menu offers: on the row it was asked for on, or off every row. */
+/** The menu items for the row the menu was opened on, or for no row. */
 const items = computed(() => props.state.getMenuItems(props.state.menu.value?.path ?? null))
 
 /* --------------------------------- Hooks ---------------------------------- */

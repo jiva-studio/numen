@@ -20,10 +20,10 @@ import (
 	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
-// quietPeriod is how long the vault has to have been still before the notes
-// written into it are embedded. It is longer than the bound in the editor
-// window's note/tab.ts, which writes an unfinished edit every five seconds
-// while a person goes on typing.
+// quietPeriod is how long the vault must be unchanged before the notes written
+// into it are embedded. It is longer than the bound in the editor window's
+// note/tab.ts, which writes an unfinished edit every five seconds while the user
+// is typing.
 const quietPeriod = indexing.QuietPeriod
 
 // indexEvents shows what the indexing worker reports in the window.
@@ -47,7 +47,7 @@ func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
 	fmt.Fprintf(e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
-// errNoProgress is a window with nothing that says how far the vectors have got.
+// errNoProgress is the error of a window that cannot report vector progress.
 var errNoProgress = errors.New("index progress is unknown")
 
 // newIndexWorker is the indexing of the vaults this window shows, over the
@@ -76,14 +76,13 @@ func newIndexWorker(
 	})
 }
 
-// startIndexing starts the watch and the first scan together, and answers with
-// what waits for both to stop.
+// startIndexing starts the watch and the first scan together, and returns a
+// function that waits for both to stop.
 //
-// The watch is acted on alongside the scan: a change reaches the window through
-// it and through nothing else.
+// The watch runs alongside the scan: changes reach the window only through it.
 //
-// A vault that cannot be watched is still a vault: the application keeps
-// working, and says that changes will not appear by themselves.
+// A vault that cannot be watched stays usable: the application keeps working
+// and reports that changes will not appear automatically.
 func startIndexing(
 	ctx context.Context,
 	v domain.Vault,
@@ -94,8 +93,8 @@ func startIndexing(
 	session *indexing.Session,
 	out io.Writer,
 ) (vaults.Refresh, func()) {
-	// Said before the goroutine starts, so a window that opens on a fresh vault
-	// is shown the walk from its first moment.
+	// The task is reported before the goroutine starts, so a window opened on a new
+	// vault shows the walk from the start.
 	state.reportTask(run.Task{ID: walkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
@@ -121,8 +120,8 @@ func startIndexing(
 	return refresh, running.Wait
 }
 
-// newErrorReporter tells the window what went wrong along the way, and tells it
-// that nothing does once a later attempt succeeds.
+// newErrorReporter reports errors to the window, and clears the reported error
+// when a later attempt succeeds.
 func newErrorReporter(state *State) windowport.ErrorHandler {
 	return func(err error) {
 		if err == nil {
@@ -133,20 +132,19 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 	}
 }
 
-// newChangeReporter tells the window what changed, and wakes the passes that owe
-// work for it.
+// newChangeReporter reports changes to the window and wakes the passes that
+// process them.
 func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
-		// A client draws every file the vault holds, so an asset is named to it
-		// the way a note is.
+		// A client shows every file in the vault, so an asset is reported as a note is.
 		state.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
 		if reload || len(assets) > 0 {
-			// A book dropped into an open vault is read without anybody asking.
+			// A book added to an open vault is read without a request.
 			worker.WakeSources()
 		}
 		if len(paths) > 0 {
-			// A note written is a note cut again, and its chunks owe their
-			// vectors. Which ones is in the index.
+			// A written note is chunked again, and its chunks need new vectors. The index
+			// determines which.
 			worker.WakeNotes()
 		}
 	}
@@ -155,8 +153,8 @@ func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets
 // watchVault runs the watch until it stops.
 func watchVault(ctx context.Context, state *State, run func(context.Context), unwatched error) {
 	run(ctx)
-	// Nothing reaches the window once the watch stops, so from here on the
-	// vault is one that is not being followed.
+	// No changes reach the window once the watch stops, so the vault is not
+	// followed from this point.
 	if unwatched == nil && ctx.Err() == nil {
 		state.WatchError.Store("the watch stopped")
 	}

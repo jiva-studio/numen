@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// The handler a host that links the plugin in serves embeds with the base URL and the key its own
-// Configure hands over.
+// The handler of a host that links the plugin in embeds with the base URL and
+// the key that its own Configure passes.
 func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) {
 	var authorization string
 	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

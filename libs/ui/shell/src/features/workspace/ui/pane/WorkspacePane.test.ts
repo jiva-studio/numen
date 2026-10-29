@@ -1,4 +1,4 @@
-/** What a pane does with a keyboard, and what it tells a screen reader. */
+/** Keyboard behavior of a pane, and what it announces to a screen reader. */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { describe, expect, it } from 'vitest'
@@ -156,8 +156,8 @@ describe('the way out of a panel', () => {
     expect(getFocusedTab()).toBe('chat')
   })
 
-  // A tab closed ahead of the one showing hands it a place in the strip it did
-  // not have, and the way out lands on the tab and not on the place.
+  // Closing a tab before the displayed tab shifts its position in the strip, and
+  // the exit focus lands on the tab, not on the position.
   it('lands on the tab the panel is retained under after a tab before it closed', async () => {
     const tab = mountPane({}, { tab: inside })
     await tab.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })

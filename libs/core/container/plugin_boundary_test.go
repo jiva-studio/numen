@@ -17,7 +17,7 @@ import (
 // plugin, and a module under it is one too.
 const pluginsPrefix = "github.com/jiva-studio/numen/plugins/"
 
-// isPlugin says whether a package is compiled from a plugin.
+// isPlugin reports whether a package is compiled from a plugin.
 func isPlugin(importPath string) bool {
 	return strings.HasPrefix(importPath, pluginsPrefix)
 }
@@ -38,8 +38,9 @@ func getPluginRequirements(gomod string) []string {
 	return named
 }
 
-// What isPlugin and getPluginRequirements say is the whole of the
-// rule, so it is asked directly. A walk that reads the tree and refuses nothing
+// isPlugin and getPluginRequirements are the whole rule, so they are tested
+// directly: a walk over the tree that reports no violation would also pass if the
+// rule detected nothing.
 func TestPluginBoundaryRule_DetectsPluginImports(t *testing.T) {
 	for _, one := range []struct {
 		dep      string
@@ -105,20 +106,20 @@ func listPackages(t *testing.T, dir, goos, goarch string) []listed {
 	return packages
 }
 
-// listed is a package as go list says it, with everything it is compiled from at
-// whatever remove.
+// listed is a package as `go list` reports it, with all transitive dependencies
+// it is compiled from.
 type listed struct {
 	ImportPath string
 	Imports    []string
 	Deps       []string
 }
 
-// The core and the desktop meet a plugin only through the protocol: they are
-// compiled from no plugin and no module of the plugin SDK. What the build
-// resolved is what is read, so a package reached through another answers for
-// it too, on every platform.
+// The core and the desktop reach a plugin only through the protocol: they are
+// compiled from no plugin and no module of the plugin SDK. The resolved build
+// dependencies are checked, so a plugin imported transitively through another
+// package is detected too, on every platform.
 //
-// A test file is left out: a test stands outside the package it exercises.
+// Test files are excluded: a test is outside the package it exercises.
 func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	builds := []struct {
 		module    string

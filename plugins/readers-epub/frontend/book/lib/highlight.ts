@@ -2,9 +2,9 @@
  * The runs of a book marked where they stand, drawn by the browser's own
  * highlight registry.
  *
- * The registry is keyed by a name and the name is styled once, so every book on
- * screen puts its ranges into the entry it asks for and takes them out again
- * when it goes.
+ * The registry is keyed by name and the name is styled once, so every book on
+ * screen adds its ranges to the entry for that name and removes them when it
+ * unmounts.
  */
 
 /** The entries, which `::highlight()` is written against. */
@@ -16,7 +16,7 @@ export const OTHER_HIGHLIGHT = 'numen-book-other-highlight'
 /** The ranges each book on screen has in each entry. */
 const target = new Map<string, Map<object, readonly Range[]>>()
 
-/** Whether this browser draws a range the page hands it. */
+/** Whether this browser supports the CSS Custom Highlight API. */
 const canHighlight = (): boolean =>
   typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function'
 

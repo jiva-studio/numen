@@ -5,7 +5,7 @@
 import type { MenuItem } from '@numen/ui'
 import { WORDS as words } from '../words'
 
-/** The one the tab does itself: a note made where the picture relies on none. */
+/** The command the tab handles itself: creates a note when the graph depends on none. */
 export const NEW_NOTE = 'newNote'
 
 /** The groups the items stand in, in the order they are drawn. */

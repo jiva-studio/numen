@@ -21,9 +21,9 @@ import (
 //go:embed migration/*.sql
 var files embed.FS
 
-// dropping is the order objects come out of the index in. A virtual table goes
-// first because it owns shadow tables that stand in the catalogue beside it and
-// go when it goes, and a view goes before the tables it reads.
+// dropping is the order in which objects are dropped from the index. Virtual
+// tables come first because they own shadow tables that are listed in the
+// catalogue and dropped with them; views come before the tables they read.
 var dropping = []struct {
 	kind  string
 	where string
@@ -37,8 +37,8 @@ var dropping = []struct {
 // resetIndex takes everything out of the index and puts its version back to nothing,
 // so the migrations run from the first file.
 //
-// The catalogue is read again after every drop: a shadow table is listed in it
-// and is gone once the virtual table that owns it is dropped.
+// The catalogue is queried again after every drop: a shadow table is listed in
+// it and is removed when its virtual table is dropped.
 func resetIndex(ctx context.Context, db *sql.DB) error {
 	// A reference to a table already dropped holds nothing back while every
 	// table is going. The index writes over one connection, so the setting and
@@ -105,10 +105,8 @@ type migration struct {
 // Each migration runs in its own transaction together with the version bump, so
 // a failure leaves the database at the last version that fully applied rather
 // than half-way through one.
-//
-// is touched. What it holds took hours to read, and a build that cannot read its
-// schema cannot say what emptying it would cost — so it says which schema it
-// found and which it carries, and the person decides.
+// An index whose version is newer than the newest migration is emptied and
+// migrated from the first file.
 func migrate(ctx context.Context, db *sql.DB) error {
 	available, err := loadMigrations()
 	if err != nil {
@@ -142,12 +140,11 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// createBookkeeping is where an index keeps what migrated it. It is not one of the
-// numbered migrations: it is what says whether those ran, so it cannot be one
-// of them.
+// createBookkeeping creates the table that records applied migrations. It is not
+// one of the numbered migrations because it records whether they ran.
 //
-// A table carrying a column this build does not write is brought to the shape
-// this build writes, which is the one thing the bookkeeping owes itself.
+// A table with a column this build does not write is altered to the shape this
+// build writes.
 func createBookkeeping(ctx context.Context, db *sql.DB) error {
 	if _, err := sqlwrite.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
@@ -207,8 +204,8 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
 		return err
 	}
-	// What ran is recorded beside the number, so a person can read what state
-	// this index is in.
+	// The migration name is recorded with the version, so the state of the index
+	// can be inspected.
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO schema_migrations (version, name) VALUES (?, ?)
 		 ON CONFLICT (version) DO UPDATE SET name = excluded.name`,

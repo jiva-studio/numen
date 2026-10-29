@@ -14,8 +14,8 @@ import (
 // errNoVaults is what a window built without the list of vaults answers.
 var errNoVaults = errors.New("this window serves no list of vaults")
 
-// vaultList answers which vaults the installation holds, for the person to choose one from. The rest
-// of VaultsService belongs to the editor.
+// vaultList returns the vaults the installation holds, for the user to choose
+// from. The rest of VaultsService belongs to the editor.
 type vaultList struct {
 	numenv1connect.UnimplementedVaultsServiceHandler
 	list func() ([]domain.Vault, error)

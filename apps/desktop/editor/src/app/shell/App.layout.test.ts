@@ -1,9 +1,9 @@
 /**
- * The window as it opens, and the screen it shows holding nothing.
+ * The window as it opens, and the empty screen it shows.
  *
- * What is asked here is the layout: which kinds a vault showing opens with,
- * what a window holding no tab draws instead, and what a gesture in the tree
- * puts in front of the person.
+ * These tests cover the layout: which kinds an open vault starts with, what a
+ * window with no tab draws instead, and what a gesture in the tree brings to
+ * the front.
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'

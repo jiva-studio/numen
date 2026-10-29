@@ -73,7 +73,7 @@ async function onKeep() {
 </template>
 
 <style scoped>
-/* The note covers the picture and is a column: the toolbar, then the prose. */
+/* The note covers the underlying screen and is a column: the toolbar, then the prose. */
 .note {
   position: fixed;
   inset: 0;

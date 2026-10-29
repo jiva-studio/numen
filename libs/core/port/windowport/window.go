@@ -6,23 +6,21 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Window is what a person is looking at.
+// Window is the application window that shows places to the user.
 //
-// It is how something working the vault beside them puts a place in front of
-// them. Only an application with a window can satisfy it; where there is none,
-// nothing asks.
+// A background worker uses it to bring a place into view. Only an application
+// with a window can implement it; without one, no caller requests it.
 type Window interface {
-	// FocusPlace puts this place in front of the person: a note becomes the one the
-	// neighbourhood is seen from, and a document is opened where the place
-	// says. A place already in focus is focused again, which is what asking for
-	// it means.
+	// FocusPlace shows this place: a note becomes the focus of the neighbourhood
+	// view, and a document is opened at the position the place specifies. A place
+	// already in focus is focused again.
 	FocusPlace(ctx context.Context, pos domain.Place) error
 
-	// ShowMove says a note is no longer where it was. Whoever is showing it at
-	// the name it had follows it to the name it now has.
+	// ShowMove reports that a note moved. A view showing the note under its old
+	// name follows it to the new name.
 	ShowMove(ctx context.Context, went domain.Move) error
 
-	// ShowEdit says a change to a note's prose is being made, so that a person
-	// reading that note sees it arrive where it belongs.
+	// ShowEdit reports that a change to a note's prose is in progress, so a view of
+	// that note shows the change at the right position.
 	ShowEdit(ctx context.Context, response domain.Edit) error
 }

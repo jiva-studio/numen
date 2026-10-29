@@ -22,7 +22,7 @@ export interface NoteHeading {
   readonly line: number
 }
 
-// NoteRelation is where a note joined to another sits around it.
+// NoteRelation is how a neighbouring note is linked to the focused note.
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 // NoteNeighbour is one note joined to the note in focus.
@@ -90,19 +90,19 @@ export type MessageWriter = (text: string, severity?: Severity) => void
 
 // WorkspaceHost is the window a plugin's tabs are drawn in.
 export interface WorkspaceHost {
-  // Whether the vault can be read; false while the window says it cannot.
+  // Whether the vault can be read; false while the window reports it unreadable.
   readonly isReady: Readonly<Ref<boolean>>
   // The note the vault opens with, and empty where it names none.
   readonly openingPath: Readonly<Ref<string>>
-  // The note the vault opens with, asked of the vault again.
+  // The note the vault opens with, read from the vault again.
   readOpeningPath(): Promise<string>
-  // The vault paths the person is dragging, from any tab of the window.
+  // The vault paths being dragged, from any tab of the window.
   readonly draggedPaths: Readonly<Ref<readonly string[]>>
   setDraggedPaths(paths: readonly string[]): void
   openFile(path: string, options?: OpenFileOptions): void
   // A file opened with the runs of its text marked.
   openFileAt(path: string, ranges: readonly TextRange[]): void
-  // The note the tool tab the person was last in relies on, and empty strings where none relies on one.
+  // The note the most recently active tool tab depends on; empty strings when none.
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
   syncPath(tabId: string, path: string, title?: string): boolean
@@ -110,12 +110,12 @@ export interface WorkspaceHost {
   runCommand(id: string, target: NoteRef): void
   // The commands the plugins declare over one note, in the words the palette offers them by.
   getNoteCommands(): readonly MenuEntry[]
-  // A question for the agent, put in front of the person.
+  // Sends a question to the agent and shows it to the user.
   ask(text: string): void
   showError(text: string): void
   // A writer of messages under the name given.
   getMessageWriter(name: string): MessageWriter
-  // The day it is for the person now, as the hour their day begins at puts it.
+  // The current day, with the day boundary set to the configured start hour.
   getToday(): string
   // The window's commands over one row of the vault, in the order a menu draws them.
   getPathCommands(row: PathMenuRow): readonly MenuEntry[]
@@ -146,7 +146,7 @@ export interface MenuEntry {
   readonly children?: readonly MenuEntry[]
 }
 
-// PathMenuRow is the row of the vault a menu is asked for on.
+// PathMenuRow is the vault row a menu is requested for.
 export interface PathMenuRow {
   readonly entry: VaultEntry
   // Whether the row is one of several selected, which the menu is over together.
@@ -170,30 +170,30 @@ export interface VaultFiles {
   createNote(folder: string): Promise<string>
 }
 
-// PathRename is a file that is no longer where it was, and where it now is.
+// PathRename is a file move: the previous path and the new path.
 export interface PathRename {
   readonly from: string
   readonly to: string
 }
 
-// getFileName says what a file is filed as: the last segment of its vault path.
+// getFileName returns the file name: the last segment of its vault path.
 export function getFileName(path: string): string {
   return path.split('/').pop() ?? path
 }
 
-// getFileStem says what a file is called without its ending, which is what a link writes.
+// getFileStem returns the file name without its extension, which is what a link writes.
 export function getFileStem(path: string): string {
   const file = getFileName(path)
   const dot = file.lastIndexOf('.')
   return dot > 0 ? file.slice(0, dot) : file
 }
 
-// getRenamedPath says where a file went, and empty where none of the renames moved it.
+// getRenamedPath returns the new path of a file, or empty when no rename moved it.
 export function getRenamedPath(renames: readonly PathRename[], path: string): string {
   return renames.find((one) => one.from === path)?.to ?? ''
 }
 
-// isNotePath says whether a vault path is a note: a markdown file, or a file name without an extension.
+// isNotePath reports whether a vault path is a note: a markdown file, or a file name without an extension.
 export function isNotePath(path: string): boolean {
   return path.endsWith('.md') || !getFileName(path).includes('.')
 }

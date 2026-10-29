@@ -1,4 +1,4 @@
-/** What a press on a row leaves selected, and when the owner is told. */
+/** The selection after a press on a row, and when the owner is notified. */
 import { describe, expect, it, vi } from 'vitest'
 import { useRowSelection } from './selection'
 import { PLAIN } from '../lib/select'
@@ -17,7 +17,7 @@ const createRow = (id: RowId): ShownRow => ({
 
 const ROWS = ['a', 'b', 'c', 'd'].map(createRow)
 
-/** The selection the owner holds, changed only by what it is told. */
+/** The selection held by the owner, changed only through notifications. */
 function createOwner(initial: readonly RowId[] = []) {
   let target = initial
   const select = vi.fn<(rows: readonly RowId[]) => void>((rows) => {

@@ -1,9 +1,9 @@
 /**
  * Pieces of a text that the caller draws as links.
  *
- * The caller names each piece as it is written; markdown-it turns every place
- * it stands, outside code, into the link every other mark becomes. What a piece
- * means is the caller's.
+ * The caller names each piece as it is written; markdown-it turns every
+ * occurrence outside code into the link every other mark becomes. The
+ * meaning of a piece is the caller's.
  */
 import type { MarkdownIt, StateInline } from 'markdown-it'
 

@@ -25,9 +25,9 @@ func openWithShortBusyTimeout(t *testing.T, path string) *sql.DB {
 	return db
 }
 
-// SQLite has one write lock for the whole file. A write that meets it held by
-// another process waits the busy timeout, is told the database is locked, and
-// asks again.
+// SQLite has one write lock for the whole file. A write that finds it held by
+// another process waits the busy timeout, receives a database-locked error, and
+// retries.
 func TestAWriteWaitsOutAWriterInAnotherProcess(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")

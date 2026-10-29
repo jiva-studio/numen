@@ -8,11 +8,10 @@ import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
 
 /**
- * Anything that reaches past what the window leaves it.
+ * Nodes that extend beyond the viewport minus the margin.
  *
- * The margin counts, on both axes: it is what the setting means, and comparing
- * against the bare half-window lets a row run flush to the top of the screen
- * with nothing to say so.
+ * The margin applies on both axes, as the setting specifies; comparing against
+ * the bare half-viewport would let a row touch the top of the screen.
  */
 const findEscaped = (
   frame: PlexFrame,
@@ -82,8 +81,8 @@ describe('the space above and below is used before anything is dropped', () => {
 
 describe('the two sides are read as a pair', () => {
   it('fits a short column as far out as a tall one', () => {
-    // Worked out on its own reach, two jumps would sit nearer the focus than
-    // seven siblings, and the plex would lean for a reason nobody can see.
+    // Sized by its own extent, two jumps would sit nearer the focus than seven
+    // siblings, and the layout would be visibly lopsided.
     const lopsided = build('A node', { child: 6, jump: 2, sibling: 7 })
     const frame = arrangePlex(lopsided, {
       options: { viewport: { width: 1600, height: 1000 } },
@@ -97,9 +96,9 @@ describe('the two sides are read as a pair', () => {
 
 describe('the row is measured against the window either way', () => {
   it('wraps a wide row even when nothing sits alongside it', () => {
-    // A row is measured against the window whether or not anything sits beside
-    // it: with no jumps and no siblings there is no column to make room for,
-    // and the row still has to fit.
+    // A row is measured against the viewport whether or not anything is adjacent
+    // to it: with no jumps and no siblings there is no column to reserve space
+    // for, and the row still has to fit.
     const viewport = { width: 700, height: 900 }
     const onlyChildren = build('A node', { child: 12 })
     const frame = arrangePlex(onlyChildren, {
@@ -121,8 +120,8 @@ describe('the rows keep the room when it runs out', () => {
   })
 
   it('keeps the room when no row width fits a column at all', () => {
-    // A window this narrow has nowhere to put a jump or a sibling, and the
-    // room a column cannot use is the room the children are read in.
+    // A viewport this narrow has no space for a jump or a sibling, and the space a
+    // column cannot use is kept for the children.
     const viewport = { width: 600, height: 1400 }
     const counts = { parent: 1, child: 6, jump: 1, sibling: 2 }
     const limits = getLimits({ ...DEFAULT_OPTIONS, viewport }, counts)
@@ -172,9 +171,9 @@ describe('the margin is a setting, not a number in the source', () => {
 
 describe('how many lines a column may run to', () => {
   it('is the number it was allowed, whatever the window makes room for', () => {
-    // A wide window has room for more columns than the setting permits, and the
-    // setting is what says how deep the picture is allowed to get. Without this
-    // a side wraps into as many columns as will fit and reports no overflow.
+    // A wide viewport has space for more columns than the setting permits, and the
+    // setting limits the depth. Without the limit a side wraps into as many
+    // columns as fit and reports no overflow.
     const viewport = { width: 2400, height: 1400 }
     const counts = { parent: 2, child: 2, jump: 60, sibling: 60 }
 

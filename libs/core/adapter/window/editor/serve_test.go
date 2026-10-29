@@ -42,8 +42,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// bindNotes gives the handlers the questions a window asks of the index in db
-// about the notes.
+// bindNotes binds the note and search handlers to the queries and links of the index in db.
 func bindNotes(services *Services, db *container.Index) {
 	queries, links := db.Queries(), db.Links()
 	neighbourhood := note.NewShowNeighbourhood(links, queries)
@@ -58,7 +57,7 @@ func bindNotes(services *Services, db *container.Index) {
 	services.Search.GetTypes = services.Note.getTypes
 }
 
-// is being read can be asked without a filesystem or a timer.
+// hand is a vault watcher driven by the test, so reading a vault needs no filesystem or timer.
 type hand struct {
 	changes  chan []string
 	lostChan chan struct{}
@@ -80,9 +79,8 @@ func (unwatchable) WatchVault(context.Context, domain.Vault) (<-chan []string, <
 	return nil, nil, errors.New("no watches left")
 }
 
-// waiting is a set of readers whose reads stop where a test can see them and
-// finish when it says so, which is what a vault that takes minutes to read
-// looks like from here.
+// waiting is a set of readers whose reads block until the test releases them,
+// which simulates a vault that takes minutes to read.
 type waiting struct {
 	vaultport.VaultReaders
 	// begun carries the path of a read that is under way.
@@ -110,8 +108,8 @@ func (w *waiting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return waits{VaultReader: reader, posVal: w}, nil
 }
 
-// waits holds a read open once the bytes are in hand, so a test can change the
-// file the reader is holding a copy of.
+// waits holds a read open after the bytes are read, so a test can change the
+// file while the reader holds the earlier content.
 type waits struct {
 	vaultport.VaultReader
 	posVal *waiting
@@ -150,9 +148,9 @@ func (unlisted) WalkFiles(context.Context, func(domain.FileStat) error) error {
 	return errors.New("the vault cannot be listed")
 }
 
-// unreadable is a set of readers whose walk fails, which is what a device that
-// went away looks like from here. A single file nobody can read is counted and
-// walked past, so it is the walk itself that has to go.
+// unreadable is a set of readers whose walk fails, which simulates a device that
+// disappeared. A single unreadable file is counted and skipped, so only a walk
+// failure exercises this path.
 type unreadable struct{ vaultport.VaultReaders }
 
 func (u unreadable) Open(v domain.Vault) (vaultport.VaultReader, error) {
@@ -169,9 +167,8 @@ func (refuses) WalkFiles(context.Context, func(domain.FileStat) error) error {
 	return errors.New("the vault cannot be read")
 }
 
-// behind is one vault with the work a window has running behind it: the index
-// it fills, the first scan, the watch beside it, and what a client listening
-// for changes is told.
+// behind is one vault with the background work of a window: the index it fills,
+// the first scan, the watch, and the changes sent to a subscribed client.
 type behind struct {
 	api         *Services
 	vault       domain.Vault
@@ -260,8 +257,7 @@ func save(t *testing.T, f *behind, path, body string) {
 	}
 }
 
-// sendChange hands the watch a change, which takes somebody acting on the
-// watch.
+// sendChange delivers a change to the watch.
 func sendChange(t *testing.T, watcher *hand, paths ...string) {
 	t.Helper()
 	select {
@@ -306,8 +302,8 @@ func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) str
 }
 
 // TestAChangeArrivesWhileTheVaultIsStillBeingRead. A change reaches the window
-// through the watch and through nothing else, and the vault is read for the
-// first time with the person already working in it.
+// only through the watch, and the vault is read for the first time while the
+// user is already editing.
 func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	watcher := newManualWatcher()
 	readers := newSlowWait()
@@ -440,9 +436,8 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}
 }
 
-// TestAVaultThatCannotBeWatchedSaysSo. The window draws a warning from this,
-// and a vault nobody is following looks exactly like a vault nothing happens
-// to.
+// TestAVaultThatCannotBeWatchedSaysSo. The window shows a warning from this
+// error, because an unwatched vault is indistinguishable from an idle one.
 func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
@@ -480,7 +475,7 @@ func (s *saying) Write(p []byte) (int, error) {
 	return s.outMsg.Write(p)
 }
 
-// books is what each pass said it took apart, one number to a pass.
+// getBooks returns the number of books each pass processed, one entry per pass.
 func (s *saying) getBooks(t *testing.T) []int {
 	t.Helper()
 
@@ -506,10 +501,10 @@ func (s *saying) getBooks(t *testing.T) []int {
 	return out
 }
 
-// TestReadingEveryFileAgainIsSpentOnOnePass. A launch asked to read every file
-// again is asked it once. A flag left standing records every book of the vault
-// as owing its text each time the watch nudges the reading, so a library of
-// thousands is taken apart afresh for one file dropped into it.
+// TestReadingEveryFileAgainIsSpentOnOnePass. A launch that requests a full re-read
+// applies it once. A flag left set marks every book in the vault for text
+// extraction on each watch notification, so a library of thousands is
+// reprocessed for one added file.
 func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	const (
 		target  = "library/A Book.epub"
@@ -555,8 +550,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		return len(out.getBooks(t)) == 1
 	})
 
-	// A second book is dropped into the vault and the watch says so, which is
-	// the pass running again over a library it has already read.
+	// A second book is added to the vault and the watch reports it, which runs
+	// another pass over an already-read library.
 	testsupport.WriteBook(t, v.Path, dropped)
 	sendChange(t, watcher, dropped)
 
@@ -581,9 +576,9 @@ func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
 }
 
 // TestAStreamWhoseClientWentAwayEnds. The window roots every request at the
-// process, so a handler is never told the page it was opened from is gone: the
-// editor reloads on a vault swap and leaves one of each stream behind. A write
-// that fails is the one report there is, so each stream makes one.
+// process, so a handler is not notified when its page disconnects: the editor
+// reloads on a vault swap and leaves one stream of each kind behind. A failed
+// write is the only disconnect signal, so each stream writes.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	streams := map[string]func(context.Context, connect.HTTPClient, string) error{
 		"changes": func(ctx context.Context, http connect.HTTPClient, pos string) error {
@@ -730,8 +725,8 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	})
 }
 
-// newThemeClient is a window's themes as a client reaches them: through the handler
-// that answers everything else the window asks.
+// newThemeClient returns a theme client that reaches the window through the same
+// handler that serves its other requests.
 func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
 	t.Helper()
 
@@ -776,8 +771,8 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 	}
 }
 
-// The choice lands in the settings file, and the keys a person typed into it
-// are still there afterwards.
+// The chosen theme is saved to the settings file, and the keys the user wrote
+// there remain.
 func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
@@ -803,7 +798,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
 		t.Errorf("the file says %+v", response.Appearance)
 	}
-	// through a provider. What it is still doing there is what the file says.
+	// The stored API key is preserved.
 	raw, err := os.ReadFile(file)
 	if err != nil {
 		t.Fatal(err)

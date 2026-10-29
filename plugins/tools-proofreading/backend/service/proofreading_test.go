@@ -42,7 +42,7 @@ type scene struct {
 	provider *provider
 }
 
-// modelHost is a completer that answers every prompt through its script and keeps what it was asked.
+// modelHost is a completer that answers every prompt through its script and records the prompts.
 type modelHost struct {
 	script    func(prompt string) string
 	failure   error

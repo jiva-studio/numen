@@ -59,9 +59,9 @@ const mountView = () =>
   })
 
 /**
- * What a node decides for itself is tested where it lives, next to the node.
- * What is left here is the translation: a node says only that it was chosen,
- * and the view says which node that was.
+ * Node-local behavior is tested next to the node. This suite covers the
+ * translation: a node reports only that it was chosen, and the view resolves
+ * which node it was.
  */
 describe('what a node says, and who it was', () => {
   it('names the node that was chosen', async () => {
@@ -85,8 +85,8 @@ describe('what each node is to a gesture', () => {
 
   it('offers a handle from the node it left from, and from no other', async () => {
     const view = mountDuring({ gestureFrom: 'staying' })
-    // A hand that has moved on and come to rest over some other node must not
-    // be offered a second gesture while the first is still under way.
+    // A pointer that moved to another node is not offered a second gesture while
+    // the first is in progress.
     await view.get('[aria-label^="Going"]').trigger('pointerenter')
     expect(view.findAll('.plex__handle')).toHaveLength(1)
     expect(view.get('[aria-label^="Staying"]').find('.plex__handle').exists()).toBe(true)
@@ -182,8 +182,8 @@ describe('what the drawing does with an opacity', () => {
 })
 
 /**
- * A title runs into the box beside it, and the boxes are painted after the
- * titles. What answers that is the line the hand is on, drawn again after them.
+ * A title overflows into the adjacent box, and boxes are painted after titles.
+ * The line under the pointer is drawn again after the boxes to stay visible.
  */
 describe('the line under the hand', () => {
   const titledFrame = arrangePlex(titled)
@@ -223,8 +223,8 @@ describe('the line under the hand', () => {
     await reach(view, acrossIndex).trigger('pointerenter')
     expect(view.find('.plex__lift').exists()).toBe(true)
 
-    // A move hands the view a frame a frame at a time, and the hand is left
-    // pointing at wherever the line used to be.
+    // A move delivers one frame at a time; the pointer position stays where the
+    // line was before the move.
     await view.setProps({ frame: arrangePlex(titled) })
 
     expect(view.find('.plex__lift').exists()).toBe(false)
@@ -281,9 +281,9 @@ describe('the line under the hand', () => {
     await reach(view, acrossIndex).trigger('pointerenter')
     const [halo, letters] = view.get('.plex__lift').findAll('.plex__edge-label')
 
-    // A glyph set along a path is painted as a run of its own, so a halo drawn
-    // with the letters lies over the one beside it. What each layer paints is
-    // a class, and is checked in a browser.
+    // A glyph set along a path is painted as its own run, so a halo drawn with the
+    // letters overlaps the adjacent one. The layer of each element is a class and
+    // is verified in a browser.
     expect(halo!.classes()).toContain('plex__edge-label--halo')
     expect(letters!.classes()).toContain('plex__edge-label--letters')
 
@@ -339,8 +339,8 @@ describe('the line under the hand', () => {
 })
 
 /**
- * A pair joined twice over: one relationship out and another back. The hand is
- * on the pair, and the drawing is one line for each direction.
+ * A pair connected in both directions: one relationship out and one back. The
+ * pointer is on the pair, and the drawing has one line per direction.
  */
 describe('two lines between one pair', () => {
   const paired = arrangePlex({
@@ -371,10 +371,10 @@ describe('two lines between one pair', () => {
 
 describe('a node keeps its own drawing across a change', () => {
   it('is the same element after the ones around it move', async () => {
-    // A node holds state of its own — whether a hand is over it, whether the
-    // keyboard is on it — and the browser holds focus on an element. Drawn by
-    // position and not by name, one node inherits another's element, and
-    // both follow whatever happens to be in that place.
+    // A node holds its own state (pointer hover, keyboard focus) and the browser
+    // holds focus on an element. If nodes are keyed by position instead of by name,
+    // one node inherits another's element and both follow whatever occupies that
+    // position.
     const view = mount(PlexView, {
       props: {
         frame: arrangePlex(before),
@@ -392,9 +392,8 @@ describe('a node keeps its own drawing across a change', () => {
 })
 
 /**
- * A box widens under a resting hand, and a widened box covers what stands
- * beside it. When it has settled is the box's own affair; the order they are
- * drawn in is nobody's but the picture's.
+ * A box widens under a resting pointer, and a widened box covers its neighbor.
+ * The settling time belongs to the box; the draw order belongs to the view.
  */
 describe('the box the attention has settled on', () => {
   const getDrawnOrder = (view: ReturnType<typeof mountView>) =>
@@ -459,7 +458,7 @@ describe('the box the attention has settled on', () => {
 
 /**
  * An arrow is drawn on a line whose relationship both ends named, at the end
- * the edge asks for. A line given none carries none.
+ * the edge specifies. A line with no specified end has no arrow.
  */
 describe('the arrow on a line', () => {
   const named: PlexNeighbourhood = {

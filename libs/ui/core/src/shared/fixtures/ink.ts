@@ -1,22 +1,21 @@
 /**
- * Where a browser actually put a drawing's ink, and how thick it is.
- * Storybook's furniture; it ships to nobody.
+ * Measures the painted extent and the stroke thickness of an SVG drawing as the
+ * browser renders it. Storybook fixture; not shipped.
  *
- * A story that asks whether two drawings are drawn alike cannot ask the DOM: a
- * box is not ink, and a drawing can sit anywhere inside its box. So it is
- * painted again onto a canvas, large, and read back a pixel at a time.
+ * A story that compares two drawings cannot use DOM boxes: a box is not the
+ * painted area, and a drawing can sit anywhere inside its box. The drawing is
+ * repainted onto a large canvas and read back pixel by pixel.
  *
- * Thickness is the middle, over the ink, of the shortest run through a pixel in
- * any of the four directions — which is a stroke's own width for a stroke lying
- * flat, upright, or at either diagonal. Counting along one direction alone
- * reads a diagonal half again as thick as it is.
+ * Thickness is the median, over the painted pixels, of the shortest run through
+ * a pixel in any of the four directions. It equals the stroke width for a
+ * horizontal, vertical or diagonal stroke. Counting along one direction alone
+ * measures a diagonal stroke 1.5 times thicker than it is.
  *
- * Only drawings are measured here. Where a font puts ink inside its em box is
- * that font's business and differs from machine to machine, so nothing a test
- * holds is anchored to it.
+ * Only drawings are measured. The painted position of a font inside its em box
+ * differs between machines, so no test assertion depends on it.
  */
 
-/** Where a run of ink is, down the page, and how thick it is. In CSS pixels. */
+/** The vertical extent of the painted area and its stroke thickness. In CSS pixels. */
 export interface Ink {
   readonly top: number
   readonly bottom: number
@@ -36,7 +35,7 @@ const createCanvas = (): CanvasRenderingContext2D => {
   return ctx
 }
 
-/** The lines the ink on a painting reaches, and how thick it is, in its pixels. */
+/** The first and last painted rows of a canvas and the stroke thickness, in canvas pixels. */
 const readStroke = (
   ctx: CanvasRenderingContext2D,
 ): { top: number; bottom: number; run: number } => {
@@ -80,7 +79,7 @@ const readStroke = (
 
 import { measureElementRect } from '@/shared/lib/dom'
 
-/** The ink of a drawing, painted again large and read back into the box it fills. */
+/** The painted area of a drawing, repainted large and scaled back to the box it fills. */
 export const getDrawingStroke = async (drawing: SVGElement): Promise<Ink> => {
   const box = measureElementRect(drawing)
   const copy = drawing.cloneNode(true) as SVGElement

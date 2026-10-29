@@ -1,10 +1,10 @@
-/** What a recording tab says: the player, the transcript, and what can be asked about it. */
+/** The strings of a recording tab: the player, the transcript, and the actions available on it. */
 export const WORDS = {
   /** The command that opens a tab to record in. */
   record: 'Record audio',
   player: 'Recording',
   transcript: 'Transcript',
-  /** The view keeps the line being said in sight. */
+  /** The view scrolls to keep the current line visible. */
   follow: 'Follow',
   /** The menu at the end of the strip, and what it is announced as. */
   more: 'More',
@@ -15,19 +15,19 @@ export const WORDS = {
   transcribe: 'Transcribe',
   proofread: 'Proofread transcript',
   deleteText: 'Delete transcript',
-  /** A run is going, and more words arrive as they are written down. */
+  /** A run is in progress, and more words arrive as they are transcribed. */
   transcribing: 'Transcribing…',
-  /** This window has nothing to play this kind of sound with. */
+  /** This window cannot play this kind of audio. */
   unplayable: 'Audio playback not supported here.',
-  /** The player stopped and said nothing a code names. */
+  /** The player stopped with no error code. */
   unreadable: 'Recording failed to play.',
-  /** The person, or the window, stopped the loading. */
+  /** The user or the window stopped the loading. */
   stopped: 'Loading stopped.',
   /** The bytes never arrived. */
   unreached: 'Recording unreadable.',
-  /** They arrived and are not what they claim, or nothing here decodes them. */
+  /** The bytes arrived but are not the claimed format, or no decoder is available. */
   undecoded: 'Recording format not supported.',
-  /** The player refused the type before asking for a byte of it. */
+  /** The player rejected the type before requesting any data. */
   unwanted: 'Recording type not supported.',
 }
 

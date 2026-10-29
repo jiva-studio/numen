@@ -3,7 +3,7 @@
 import { getReadable, findTally, type Notice } from './notice'
 import { getRate } from './tally'
 
-/** What one count stood at when it last moved, and when that was. */
+/** The value of one count when it last changed, and when that was. */
 export interface Movement {
   readonly completedCount: number
   readonly rate: number
@@ -13,11 +13,11 @@ export interface Movement {
 /**
  * How fast each count is moving, from where it last moved to where it is now.
  *
- * A reading that saw no movement leaves the mark where it is, so the stretch a
- * count stood still over is time the work took and is measured as such.
+ * A reading with no change leaves the mark unchanged, so the period during which
+ * a count was constant is counted as work time.
  *
- * A count that has gone is forgotten, and one that has just arrived is read once
- * before it has a rate.
+ * A count that disappeared is dropped, and a count that has just appeared is read
+ * once before it has a rate.
  */
 export const measureMovement = (
   was: ReadonlyMap<string, Movement>,

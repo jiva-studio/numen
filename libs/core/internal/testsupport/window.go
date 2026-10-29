@@ -18,8 +18,8 @@ func NewRootedHandler(handler http.Handler, entered, returned chan<- struct{}) h
 	})
 }
 
-// SilentAgent takes a task and says nothing about it, which is what an agent
-// waiting on a model looks like.
+// SilentAgent accepts a task and produces no output, as an agent waiting on a
+// model does.
 type SilentAgent struct{}
 
 func (SilentAgent) StartRun(context.Context, agentport.Task) (agentport.Run, error) {

@@ -1,5 +1,5 @@
-// Package service is the backend of the OCR plugin: the text provider the host asks for the
-// recognition of a file, and the recognise command.
+// Package service is the backend of the OCR plugin: the text provider that
+// recognises the text of a file on host request, and the recognise command.
 package service
 
 import (
@@ -49,9 +49,10 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 	return &engines{cfg: cfg, factory: factory}
 }
 
-// updateConfig takes the settings the host hands over. A resolution that is no positive number is
-// left as it was, and so is a model the plugin does not provision. The paths of a custom model are
-// handed over only while the custom model is chosen, and are empty otherwise.
+// updateConfig applies the settings received from the host. A resolution that is
+// not a positive number is ignored, as is a model the plugin does not provision.
+// The paths of a custom model are received only while the custom model is
+// selected, and are empty otherwise.
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -93,8 +94,8 @@ func (e *engines) close() error {
 	return e.closeLocked()
 }
 
-// dropLocked closes the recogniser so the next page opens it again. A recogniser that fails to close
-// is told on the standard error, the stream the host keeps of the plugin.
+// dropLocked closes the recogniser so the next page reopens it. A close failure
+// is written to standard error, the stream the host keeps for the plugin.
 func (e *engines) dropLocked() {
 	if err := e.closeLocked(); err != nil {
 		fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
@@ -168,7 +169,7 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	return nil
 }
 
-// newRecogniseCommand recognises the file a person named and waits for it.
+// newRecogniseCommand recognises the file named by the user and waits for completion.
 func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		res, err := recognitions.Recognise(ctx, recognition.Request{Path: req.Path, IsUserStarted: true})

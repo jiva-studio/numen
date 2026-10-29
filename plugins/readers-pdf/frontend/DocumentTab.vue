@@ -62,7 +62,7 @@ onMounted(() => {
   }
 })
 
-/** The tab as the window hands it, where it is a reader tab. */
+/** The tab state from the window, when it is a reader tab. */
 const readerTab = computed(() => props.state as Partial<ReaderTabState> | undefined)
 
 // The selector is a search hit or the place saved before a restart; `page` counts from 1 (RFC 8118).

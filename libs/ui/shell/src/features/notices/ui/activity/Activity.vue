@@ -2,10 +2,8 @@
 /**
  * A line of work at the foot of the window.
  *
- * Quiet by design: it says what is running and roughly how far, and it is the
- * only thing on screen that moves while nobody is asking for anything.
- *
- * It is a line, and whoever draws it announces it.
+ * Shows what is running and roughly how far. It is the only element that changes
+ * while the user is idle.
  */
 import { computed } from 'vue'
 import { Spinner } from '@numen/ui'
@@ -20,14 +18,13 @@ const props = withDefaults(
     /**
      * Where the work has got to, when that is countable.
      *
-     * Absent and undefined mean the same thing here, and both are spelled,
-     * because whoever renders this derives the tally from a count that may not
-     * exist yet.
+     * Absent and undefined are equivalent; both are declared because the parent
+     * derives the tally from a count that may not exist yet.
      */
     tally?: Tally | undefined
     /** Whether the work named is happening now. */
     isWorking?: boolean
-    /** How much longer, on a clock, from whoever is timing the count. */
+    /** Remaining time as a clock string, from the count timer. */
     left?: string
     /** How the line reads. An error is a line that stopped badly. */
     severity?: Severity
@@ -47,7 +44,7 @@ const activityView = computed(() =>
 const words = computed(() => props.text)
 
 /**
- * How far the work has got, said once.
+ * Progress of the work.
  *
  * A share is drawn as a percentage and as nothing else.
  */
@@ -61,9 +58,9 @@ const remainingText = computed(() => (activityView.value.hasCounts ? props.left 
 /**
  * How the words give way.
  *
- * What is happening keeps to one line where anything stands beside or under it.
- * A count keeps what it is about to one line too, and without one a path or a
- * reason is read over two.
+ * The text truncates to one line when a count or a detail line is shown, and
+ * clamps to three lines otherwise. The detail truncates to one line when a
+ * count is shown, and clamps to two lines otherwise.
  */
 const givesSays = computed(() =>
   activityView.value.hasCounts || props.about ? 'truncate' : 'line-clamp-3',
@@ -71,8 +68,8 @@ const givesSays = computed(() =>
 const givesAbout = computed(() => (activityView.value.hasCounts ? 'truncate' : 'line-clamp-2'))
 
 /**
- * A line about work is hushed. A line with a severity is drawn in it, and takes the
- * colour of whatever ground that severity put it on.
+ * A line about work is muted. A line with a severity uses the colour of that
+ * severity.
  */
 const strength = computed(() => (props.severity === 'info' ? 'text-hushed' : ''))
 </script>
@@ -109,13 +106,13 @@ const strength = computed(() => (props.severity === 'info' ? 'text-hushed' : '')
   overflow-wrap: anywhere;
 }
 
-/* What it is happening to is placed under what is happening, and is said more
+/* The detail line is placed below the text and is rendered more
    quietly. */
 .activity__about {
   opacity: 0.75;
 }
 
-/* Every state of the line stands the same height. */
+/* Every state has the same height. */
 .activity {
   min-block-size: calc(var(--numen-line-height) * 1em);
 }
@@ -126,7 +123,7 @@ const strength = computed(() => (props.severity === 'info' ? 'text-hushed' : '')
   flex: none;
 }
 
-/* The share holds the room for three figures, and stands to the end of it. */
+/* The percentage reserves the width of three figures and is end-aligned. */
 .activity__percent {
   min-inline-size: 3em;
   text-align: end;

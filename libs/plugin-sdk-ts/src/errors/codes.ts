@@ -1,4 +1,4 @@
-/** What the window says a command came back with, in the words each error code is given. */
+/** The message text for each error code a command can return. */
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import { formatErrorCodeMessage } from './error'
 import type { ErrorCode } from './errorCode'
@@ -15,14 +15,14 @@ const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> =
   invalidName: ProtoErrorCode.INVALID_NAME,
 }
 
-/** What is said when the vault did not answer at all. */
+/** The message shown when the vault did not respond at all. */
 const UNREACHABLE = 'vault unreachable'
 
-/** What one error code says. */
+/** The message for one error code. */
 export const getErrorWords = (code: ErrorCode): string =>
   code === 'unreachable' ? UNREACHABLE : formatErrorCodeMessage(PROTO_BY_CODE[code])
 
-/** What each error code says. */
+/** The message for each error code. */
 export const ERRORS: Record<ErrorCode, string> = {
   ...(Object.fromEntries(
     Object.entries(PROTO_BY_CODE).map(([code, proto]) => [code, formatErrorCodeMessage(proto)]),

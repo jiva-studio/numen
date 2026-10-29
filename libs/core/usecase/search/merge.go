@@ -61,9 +61,9 @@ type passageID struct {
 // collapse keeps at most `each` passages of one source, in the order it was
 // given, so the best-ranked chunks of a source are the ones that survive.
 //
-// Where a document has a section named what was asked for, that section is the
-// first passage it answers with. Which documents answer is asked of every
-// ranking; where in one to stand is what its names say.
+// Where a document has a section named after the query, that section is the
+// first passage returned for it. Which documents match is decided by every
+// ranking; the position within a document is decided by its section names.
 func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	sections := map[string]domain.Passage{}
 	for _, p := range named {

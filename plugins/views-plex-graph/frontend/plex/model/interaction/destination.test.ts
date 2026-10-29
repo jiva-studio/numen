@@ -6,7 +6,7 @@ import { APART, byDoubleTap, TAP, type ShowSite } from './destination'
 const tap = (x: number, y: number, pointerType = 'touch') =>
   new PointerEvent('pointerup', { clientX: x, clientY: y, pointerType })
 
-/** A node counting taps, and what it was asked to show. */
+/** A node that counts taps, and records what it was asked to show. */
 function createTapper(ready: () => boolean = () => true, within?: number) {
   const show = vi.fn<ShowSite['show']>()
   const scope: EffectScope = effectScope()

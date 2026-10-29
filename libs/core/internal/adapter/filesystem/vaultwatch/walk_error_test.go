@@ -7,11 +7,10 @@ import (
 	"testing"
 )
 
-// TestAFolderTheWalkCouldNotEnterIsTheWholeVault. What the shape does not hold
-// is what tells a folder that has gone from a file that has, so a subtree the
-// walk could not enter is a question the watch can no longer answer: the folder
-// would later leave and be read as a file, and the index would go on answering
-// with the notes it took with it.
+// TestAFolderTheWalkCouldNotEnterIsTheWholeVault. The shape does not distinguish a
+// removed folder from a removed file, so a subtree the walk could not enter is a
+// case the watch cannot resolve: the folder would later be removed and read as a
+// file, and the index would keep returning the notes it contained.
 func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Windows folders have no permission bits to remove")

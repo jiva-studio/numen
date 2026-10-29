@@ -13,7 +13,7 @@ type Trash struct{}
 // New is this machine's trash.
 func New() Trash { return Trash{} }
 
-// Trash moves the folder to where this machine keeps what a person deleted. The
-// path is absolute, names a directory that is there, and is what goes: nothing
-// on the way to it is resolved here.
+// Trash moves the folder to this machine's trash location. The path is absolute
+// and names an existing directory, which is moved as given: nothing on the way
+// to it is resolved here.
 func (Trash) Trash(path string) error { return moveToTrash(path) }

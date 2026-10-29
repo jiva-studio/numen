@@ -18,9 +18,9 @@ import (
 )
 
 // TestAStreamWhoseClientWentAwayEnds. The window roots every request at the
-// process, so the folder watch is never told the page it was opened from is
-// gone: the editor reloads on a vault swap and leaves one behind every time. A
-// write that fails is the one report there is, so the stream makes one.
+// process, so the folder watch is not notified when its page disconnects: the
+// editor reloads on a vault swap and leaves one watch behind each time. A failed
+// write is the only disconnect signal, so the stream writes.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	service := createFakeAppearances(t, theme.Appearance{}).service
 
@@ -60,8 +60,8 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	}
 }
 
-// isWatchingFolder says whether a folder watch goroutine is running, which is
-// the registration for the folder still held.
+// isWatchingFolder reports whether a folder watch goroutine is running, which
+// means the folder registration is still held.
 func isWatchingFolder() bool {
 	var stacks strings.Builder
 	if err := pprof.Lookup("goroutine").WriteTo(&stacks, 2); err != nil {

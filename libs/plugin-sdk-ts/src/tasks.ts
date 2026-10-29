@@ -1,7 +1,7 @@
 import type { Disposable } from './types'
 
-// PluginTaskStatus is one task a plugin reported to the host. `pluginId` is the plugin that
-// reported it, as the host knows the caller.
+// PluginTaskStatus is one task a plugin reported to the host. `pluginId` is the
+// reporting plugin, as the host identifies the caller.
 export interface PluginTaskStatus {
   readonly id: string
   readonly pluginId: string

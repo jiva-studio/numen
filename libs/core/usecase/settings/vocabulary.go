@@ -27,7 +27,7 @@ type (
 	Consent                = pluginport.CompletionConsent
 )
 
-// Whether the person lets a plugin ask for model completions.
+// Whether the user allows a plugin to request model completions.
 const (
 	ConsentNone      = pluginport.ConsentNone
 	ConsentPending   = pluginport.ConsentPending

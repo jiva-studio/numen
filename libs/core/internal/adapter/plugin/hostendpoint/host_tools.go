@@ -56,8 +56,9 @@ func (e *toolEndpoint) ListTools(
 	return connect.NewResponse(&v1.ListToolsResponse{Tools: tools.ListTools(ctx, pluginID)}), nil
 }
 
-// CallTool runs the tool in the vault the Numen-Vault header names, else the one the host shows. The
-// context the caller sends is dropped: no question was asked in Numen.
+// CallTool runs the tool in the vault named by the Numen-Vault header, else the
+// vault the host shows. The caller's context is not used: the call has no
+// associated question in Numen.
 func (e *toolEndpoint) CallTool(
 	ctx context.Context, req *connect.Request[v1.CallToolRequest],
 ) (*connect.Response[v1.CallToolResponse], error) {

@@ -18,7 +18,7 @@ export interface ApiError {
 export const UNAVAILABLE = 'unavailable'
 
 export interface ApiOptions {
-  /** The origin the methods are asked at; the origin of the page where it is empty. */
+  /** The origin the methods are called at; the page origin when empty. */
   readonly origin?: string
   /** The function that makes the requests, for a window without one or a test. */
   readonly fetch?: typeof fetch
@@ -29,15 +29,15 @@ export interface ApiCallOptions {
 }
 
 export interface Api {
-  /** Asks a method and returns its response or its failure. */
+  /** Calls a method and returns its response or its failure. */
   call<Req, Res>(
     method: string,
     request: Req,
     options?: ApiCallOptions,
   ): Promise<Result<Res, ApiError>>
   /**
-   * Asks a stream method and yields each response as it arrives. The generator ends with the
-   * stream, or returns the failure that ended it.
+   * Calls a stream method and yields each response as it arrives. The generator
+   * ends with the stream, or returns the failure that ended it.
    */
   stream<Req, Res>(
     method: string,

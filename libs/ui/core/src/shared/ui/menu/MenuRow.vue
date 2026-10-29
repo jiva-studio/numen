@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * One item of a menu: what stands above it where it begins a group, what is
- * drawn before its words, the words, and what is said about it underneath.
+ * One item of a menu: the group rule and name when it begins a group, the leading
+ * icon, the label, and the description below it.
  *
- * A menu naming an item in force offers a choice between its items, and each
- * row says whether it is the one.
+ * A menu with a current item offers a choice between its items, and each row
+ * indicates whether it is the current one.
  */
 import { useTemplateRef } from 'vue'
 import type { GroupedItem } from './items/item'
@@ -15,7 +15,7 @@ defineProps<{
   current: string | null
   /** Whether the name of the group it begins is drawn over it. */
   hasName: boolean
-  /** Whether the menu draws icons, whose room is kept on every row. */
+  /** Whether the menu draws icons, so every row reserves the icon space. */
   hasIcons: boolean
 }>()
 
@@ -35,7 +35,7 @@ defineSlots<{
 
 const row = useTemplateRef<HTMLElement>('row')
 
-/** The keyboard onto this row, which the menu asks for. */
+/** Focuses this row; called by the menu. */
 const focus = (): void => row.value?.focus()
 
 defineExpose({ focus, getElement: () => row.value })
@@ -81,7 +81,7 @@ defineExpose({ focus, getElement: () => row.value })
 /* One physical line, so it stays a hairline however large the interface is
    drawn. */
 .menu__rule {
-  /* The room a rule keeps on each side of itself. */
+  /* The space a rule keeps on each side. */
   --parting: 0.25rem;
 
   block-size: 0;
@@ -117,10 +117,10 @@ defineExpose({ focus, getElement: () => row.value })
   color: var(--numen-edge-label);
 }
 
-/* The room an icon takes, kept whether or not the item draws one, so the words
+/* The icon box keeps its size whether or not the item draws an icon, so the words
    line up down the menu. What is drawn in it is the caller's. */
 .menu__icon {
-  /* How large an icon is drawn, and the room between it and the words. */
+  /* Icon size and the gap between the icon and the label. */
   --icon: 0.875rem;
   --icon-gap: 0.5rem;
 

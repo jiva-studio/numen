@@ -1,5 +1,5 @@
 /**
- * How what a command has to say becomes the one line the window says it in.
+ * How a command's message becomes the single line the window displays.
  */
 import { describe, expect, it } from 'vitest'
 import { formatNames, joinAll } from './voice'

@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// answering is a host that answers a few calls, and records who asked.
+// answering is a host that serves a few calls and records the callers.
 type answering struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
 	code       v1.HostVaultErrorCode

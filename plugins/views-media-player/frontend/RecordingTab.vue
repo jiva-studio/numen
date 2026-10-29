@@ -3,7 +3,7 @@
  * A recording tab: the controls its sound is played by at the top of the pane, and under them the
  * transcript.
  *
- * The sound plays through the window's one player, so the controls only say what a person did.
+ * Audio plays through the window's single player, so the controls only report the user's actions.
  */
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import Player from './Player.vue'

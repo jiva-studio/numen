@@ -1,11 +1,10 @@
 /**
- * The screen the desktop opens on: a plugin's view with the room, the agent
- * along the trailing edge, and both of them tabs that can be moved, split or
- * closed.
+ * The screen the desktop opens on: a plugin view in the main area and the agent at
+ * the trailing edge, both as tabs that can be moved, split or closed.
  *
- * Where the pieces are judged together — whether a strip of tabs reads as one
- * line of chrome above two very different things. Both panes are placeholders:
- * the views and the agent chat are drawn by the plugins' Storybook.
+ * The pieces are judged together: whether a strip of tabs reads as one line of
+ * chrome above two very different contents. Both panes are placeholders: the
+ * views and the agent chat are rendered by the plugins' Storybook.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
@@ -25,7 +24,7 @@ const TABS: readonly Tab[] = [
   { id: AGENT, title: 'Agent' },
 ]
 
-/** The view with the room, and the agent along the trailing edge. */
+/** The view in the main area and the agent at the trailing edge. */
 const opening = (): State => ({
   root: branch('root', [pane('main', [VIEW]), pane('aside', [AGENT])], [0.72, 0.28]),
   axis: 'horizontal',

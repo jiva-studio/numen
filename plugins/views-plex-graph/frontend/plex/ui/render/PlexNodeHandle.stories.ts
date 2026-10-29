@@ -1,9 +1,9 @@
 /**
- * The handle a gesture leaves from, on its own and blown up.
+ * The handle a gesture starts from, on its own and enlarged.
  *
- * Inside a plex it is a disc of nine pixels' radius, and only there while a
- * hand is over the node, which is no way to judge a disc, a cross and a focus
- * ring.
+ * Inside a plex it is a disc of nine pixels' radius, visible only while the
+ * pointer is over the node, which is not enough to judge a disc, a cross and a
+ * focus ring.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'
@@ -126,8 +126,8 @@ export const EverySizeIsAsDesigned: Story = {
 }
 
 /**
- * Pressed by hand and by keyboard, which are two different things: a pointer
- * has somewhere to be dragged to and the keyboard has not.
+ * Pressed by pointer and by keyboard, which differ: a pointer can be dragged to
+ * a target and the keyboard cannot.
  *
  * Only a browser can answer it — what tab stops on inside an SVG, and whether
  * a token that never arrives leaves a disc of no size and not a default.

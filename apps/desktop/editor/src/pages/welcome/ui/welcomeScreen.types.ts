@@ -14,7 +14,7 @@ export interface WelcomeScreenProps {
   getTarget: () => CommandTarget
   /** The commands the plugins declare over the window with a keystroke, offered as ways in. */
   pluginWays: readonly WelcomeAction[]
-  /** A command asked for, which is what every way in but the commands evaluates to. */
+  /** Runs a command; every way in except the command list resolves to this. */
   runCommand: (id: string, target: CommandTarget) => void
   /** Opens the placed workspace tabs when the already-active vault is chosen. */
   openCurrentVault?: () => void

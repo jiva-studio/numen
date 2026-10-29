@@ -143,21 +143,21 @@ type PluginCommandCall struct {
 	Arguments map[string]string
 }
 
-// PluginCommandResult is what a command that ran answered.
+// PluginCommandResult is the result of a command that ran.
 type PluginCommandResult struct {
-	// Message is what a person reads about the outcome.
+	// Message is the outcome text to show to the user.
 	Message string
 	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
 	// for a command that leaves nothing to open.
 	OpenedPath string
 }
 
-// CommandFailedError is a command the plugin ran and that failed, with what the plugin said.
+// CommandFailedError is a command the plugin ran and that failed, with the plugin's message.
 type CommandFailedError struct {
 	Message string
 }
 
-// Error is what the plugin said.
+// Error returns the plugin's message.
 func (e *CommandFailedError) Error() string {
 	return e.Message
 }

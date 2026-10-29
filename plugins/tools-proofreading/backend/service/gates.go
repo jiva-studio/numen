@@ -193,12 +193,12 @@ func readLeadingDigits(row string) string {
 	return row[:digits]
 }
 
-// isPrefixedBySymbols is a correction that says what the line says with something
-// wordless put in front of it.
+// isPrefixedBySymbols reports whether text is the corrected line with only
+// symbols (no letters or digits) prepended.
 //
-// A separator this does not know — a dash, an arrow, a colon — stands where the
-// line begins, and the letters either side of it are the same, so nothing that
-// counts letters sees it.
+// A separator not otherwise recognized (a dash, an arrow, a colon) at the start
+// of the line leaves the letters on both sides identical, so letter-counting
+// checks do not detect it.
 func isPrefixedBySymbols(was, text string) bool {
 	was = strings.TrimSpace(was)
 	if was == "" || !strings.HasSuffix(text, was) {
@@ -243,8 +243,8 @@ func EditDistance(a, b string) float64 {
 	return float64(countEdits(x, y)) / float64(long)
 }
 
-// extractLetters returns what a line says with its spaces, punctuation, symbols, diacritics
-// and case taken off it.
+// extractLetters returns a line with its spaces, punctuation, symbols,
+// diacritics and case removed.
 func extractLetters(line string) []rune {
 	var out []rune
 	for _, r := range norm.NFD.String(line) {

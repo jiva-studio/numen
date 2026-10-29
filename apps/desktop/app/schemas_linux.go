@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-// The folder dialog is built on the desktop's settings, and the library that
-// puts it up ends the process where they are not installed. They ship with the
-// toolkit this binary is linked against, so where the machine does not put them
-// on the search path, the toolkit itself is asked where it keeps them.
+// The folder dialog depends on the desktop's settings schemas, and the library
+// that shows it ends the process when they are not installed. They ship with the
+// toolkit this binary is linked against, so when the machine does not put them on
+// the search path, the toolkit is queried for their location.
 
-// setSchemasDir puts the settings a dialog reads on the search path, where this
-// machine has not.
+// setSchemasDir adds the settings schemas a dialog reads to the search path when
+// the machine does not provide them.
 //
-// It is called before anything draws: the search path is read once, the first
-// time something asks for a setting.
+// It is called before anything draws: the search path is read once, when the
+// first setting is requested.
 func setSchemasDir() {
 	if hasSchemas() {
 		return

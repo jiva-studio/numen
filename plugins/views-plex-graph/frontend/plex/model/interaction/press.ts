@@ -1,7 +1,7 @@
 /**
- * What a press on a node evaluates to: the node chosen, the node asked for on its
- * own, or a menu on it. The hand and the keyboard arrive here as the same three
- * answers, and a node not there yet answers none of them.
+ * The result of a press on a node: the node is selected, opened on its own, or a
+ * menu is shown. Pointer and keyboard input produce the same three results, and
+ * a node that does not exist yet produces none.
  */
 import { computed } from 'vue'
 import { isMenuKey, isPress, isShowKey } from '../../lib/keys'
@@ -16,7 +16,7 @@ import type { MenuTrigger } from '@numen/ui'
 import type { PlexBehaviour } from '../behaviour'
 import { getDestination, mergeListeners, type PlexDestination } from './destination'
 
-/** What the node says when a press evaluates to something. */
+/** The callbacks a node invokes when a press resolves to an action. */
 export interface NodePressReport {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void
@@ -40,7 +40,7 @@ export function useNodePress(
   middleOf: () => Position | null,
   listeners: NodePressReport,
 ) {
-  /** Not a node yet, so nothing may be done to it and nothing is told about it. */
+  /** A placeholder is not a node yet, so no action applies to it and nothing is reported. */
   const isGhost = computed(() => props.gestureRole === 'ghost')
 
   /** One predicate: the same rule decides the click and the name. */
@@ -62,7 +62,7 @@ export function useNodePress(
     if (canStop.value) listeners.show(getDestination(hasModifier))
   }
 
-  /** What this node listens for beyond the handle. */
+  /** The listeners this node adds beyond the handle. */
   const combinedListeners = mergeListeners(
     props.behaviour.reaching.listeners({
       ready: () => !isGhost.value && props.gestureRole === 'open',

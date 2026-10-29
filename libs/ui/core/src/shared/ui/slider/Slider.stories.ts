@@ -2,9 +2,8 @@
  * Every situation a slider has to survive. Also the test corpus: each story is
  * run in a browser by `@storybook/addon-vitest`.
  *
- * A slider draws no number of its own, so what is awkward about it is what
- * stands beside it: the name it is given, the figure read off it, and the room
- * the track is left in.
+ * A slider draws no number of its own, so the difficult cases are its
+ * surroundings: its label, the displayed value, and the width left for the track.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
@@ -119,8 +118,8 @@ export const UnderTheFloor: Story = {
 }
 
 /**
- * A ceiling the step lays no place on. The handle reaches it, and the step back
- * evaluates to where the step up set out.
+ * A maximum that is not a multiple of the step. The handle reaches it, and a
+ * step back returns to the value the step up started from.
  */
 export const AStepAtTheCeiling: Story = {
   args: { min: 0, max: 10, step: 3, value: 9 },
@@ -134,7 +133,7 @@ export const AStepAtTheCeiling: Story = {
   },
 }
 
-/** A track with barely room to draw itself. */
+/** A track in a very narrow box. */
 export const ANarrowBox: Story = { args: { width: '4rem' } }
 
 /** A name in another script. */
@@ -145,7 +144,7 @@ export const FarTooLong: Story = {
   args: { label: 'What part of a session goes to the overdue pile before new material '.repeat(2) },
 }
 
-/** A slider nobody may move. */
+/** A slider that cannot be moved. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
 /** It is announced as a slider standing at a value, and takes its name from the words beside it. */
@@ -195,8 +194,8 @@ export const TheFigureIsReadOutAdjacentToIt: Story = {
 }
 
 /**
- * A walk with the keys commits once, said when the key is release and not
- * at each place it passed through.
+ * A key walk commits once, when the key is released, not at each position it
+ * passed.
  */
 export const CommitsWhenTheKeyIsLetGo: Story = {
   render: (args) => ({
@@ -236,7 +235,7 @@ export const CommitsWhenTheKeyIsLetGo: Story = {
   },
 }
 
-/** The keyboard goes nowhere near a slider nobody may move. */
+/** The keyboard has no effect on a disabled slider. */
 export const DisabledTakesNoKeyboard: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {

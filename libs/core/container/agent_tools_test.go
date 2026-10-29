@@ -48,8 +48,8 @@ type toolCall struct {
 	arguments string
 }
 
-// toolAgent is an agent plugin that reaches the tools of its task over MCP, lists them, makes the
-// calls it is given and says what each returned.
+// toolAgent is an agent plugin that reaches the tools of its task over MCP: it
+// lists them, makes the calls it is given and records each result.
 type toolAgent struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	calls []toolCall
@@ -308,8 +308,9 @@ func runToEnd(t *testing.T, agent agentport.Agent, task agentport.Task) []agentp
 	return steps
 }
 
-// An agent run in the editor is given an endpoint of its own: the agent lists the tools of every
-// tools plugin there, and a call reaches the plugin that listed the tool with the run's context.
+// An agent run in the editor receives its own endpoint: the agent lists the tools
+// of every tools plugin there, and a call reaches the plugin that listed the tool,
+// with the run's context.
 func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{
 		{name: "note_read", arguments: `{"path":"Garden.md"}`},
@@ -371,8 +372,9 @@ func TestASettingsAgentRunCallsTheToolsOfThePlugins(t *testing.T) {
 	}
 }
 
-// A tool is offered only where its plugin holds the permission of its effect, and only on the
-// servers it names; a plugin that does not declare the tools capability is not asked.
+// A tool is offered only when its plugin holds the permission for its effect,
+// and only on the servers it names; a plugin that does not declare the tools
+// capability is not queried.
 func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 	agent := &toolAgent{}
 	reader := &toolPlugin{tools: []*v1.PluginTool{
@@ -432,7 +434,7 @@ func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 	}
 }
 
-// While the run goes on, the endpoint answers its token and refuses any other.
+// While the run is active, the endpoint accepts its token and rejects any other.
 func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
@@ -474,7 +476,7 @@ func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 	}
 }
 
-// shownVault is a host that shows one vault and is asked nothing else of it.
+// shownVault is a host that exposes one vault and nothing else.
 type shownVault struct {
 	pluginport.PluginVault
 	vault domain.Vault

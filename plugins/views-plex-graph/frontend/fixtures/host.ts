@@ -1,6 +1,6 @@
 /**
- * The window a plex is drawn in, and the notes of a vault behind it, made up for
- * a test. Everything the plex asks of either is written down in the order asked.
+ * The window a plex is drawn in, and the notes of a vault behind it, as test
+ * fixtures. Every request the plex makes of either is recorded in order.
  */
 import { ref } from 'vue'
 import {
@@ -19,7 +19,7 @@ export interface HostOptions {
   readonly linked?: Readonly<Record<string, boolean>>
 }
 
-/** A window and a vault that answer a plex, and what the plex asked of them. */
+/** A window and a vault that serve a plex, and the requests the plex made of them. */
 export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions = {}) {
   const openingPath = ref(opening)
   const isNesting = ref(true)

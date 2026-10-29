@@ -52,8 +52,8 @@ func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	}
 }
 
-// A setting written is written at its current position, and every key a person typed
-// stays where it was.
+// A written setting is stored at its current position, and every key the user
+// added stays in place.
 func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	cfg, path := writeSettings(t, `{
   "appearance": {"theme": "mine:sea"},
@@ -87,8 +87,8 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	}
 }
 
-// Several settings are written together, which is what choosing one model that
-// decides more than its own name asks for.
+// Several settings are written together, as when choosing one model that
+// determines more than its own name.
 func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
@@ -109,7 +109,7 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	}
 }
 
-// A machine that has nowhere to keep settings is told so, and is handed none.
+// A machine with no location for settings returns an error and no settings.
 func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	t.Setenv("HOME", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
@@ -175,7 +175,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	}
 }
 
-// A line said is kept for whoever read the settings to put in front of a person.
+// A notice is stored for the settings reader to display to the user.
 func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 	var target Settings
 	target.AddNotice("first")
@@ -209,8 +209,8 @@ func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 	}
 }
 
-// The models a setting can be set to are asked for as the window asks, against
-// the settings in force.
+// The models a setting can take are listed as the window requests them, against
+// the active settings.
 func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())

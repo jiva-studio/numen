@@ -18,7 +18,7 @@ import (
 // defaultProgram is the program the programs name for an empty name.
 const defaultProgram = "installed-default"
 
-// programs finds a program per name and records the tasks it was asked to run.
+// programs resolves a program by name and records the tasks it is asked to run.
 type programs struct {
 	mu        sync.Mutex
 	requested []string
@@ -75,7 +75,7 @@ func (c choices) GetCompletionChoice(pluginID string) completionport.CompletionC
 	return c[pluginID]
 }
 
-// ask is a question with one message, the way a plugin asks it.
+// ask returns a question with one user message, as a plugin sends it.
 func ask(text string) completionport.Question {
 	return completionport.Question{Messages: []completionport.Message{{Role: "user", Text: text}}}
 }
@@ -186,7 +186,7 @@ func TestRouter_MissingAgentFailsWithoutFallback(t *testing.T) {
 	}
 }
 
-// An agent that cannot be reached or says nothing fails the question as an unavailability.
+// An agent that cannot be reached or returns nothing fails the question as unavailable.
 func TestAnAgentThatCannotAnswerIsUnavailable(t *testing.T) {
 	for name, fake := range map[string]*programs{
 		"cannot start": {startErr: errors.New("no plugin runs it")},
@@ -199,7 +199,7 @@ func TestAnAgentThatCannotAnswerIsUnavailable(t *testing.T) {
 	}
 }
 
-// What a question says about its purpose routes nothing: only the plugin's
+// The purpose stated in a question does not affect routing: only the plugin's
 // setting and the default do.
 func TestAQuestionCannotChooseItsRoute(t *testing.T) {
 	fake := &programs{}
@@ -484,7 +484,7 @@ func TestAModelTheProgramListsIsCached(t *testing.T) {
 	}
 }
 
-// A failure after a replacement states the model asked and the one asked instead.
+// A failure after a model replacement reports the requested model and the substitute.
 func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
 	fake := &programs{models: []agentport.AgentModel{{Name: "m-1"}}, startErr: errors.New("the agent stopped: boom")}
 	router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)

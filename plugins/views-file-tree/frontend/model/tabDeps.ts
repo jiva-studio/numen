@@ -1,6 +1,6 @@
 /**
- * What one files tab asks of the window, answered by the host's workspace and
- * the files of the vault.
+ * What one files tab requests from the window, served by the host's workspace
+ * and the files of the vault.
  */
 import { isNotePath, type DropHost, type VaultFiles, type WorkspaceHost } from '@numen/plugin-sdk'
 import type { FilesTabDeps } from '../types'
@@ -14,8 +14,8 @@ export interface FileTreeHost {
 }
 
 /**
- * What the files tab `id` asks of the window. A note it opens or selects goes to
- * the tabs linked to it first.
+ * What the files tab `id` requests from the window. A note it opens or selects
+ * goes to the tabs linked to it first.
  */
 export function createFilesTabDeps(
   { workspace, files, drops }: FileTreeHost,

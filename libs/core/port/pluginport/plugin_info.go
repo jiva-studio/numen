@@ -39,7 +39,7 @@ type PluginInfo struct {
 	// StoredSecrets those of them that have a key stored. A key never appears here.
 	Secrets       []PluginSecret
 	StoredSecrets []string
-	// Consent is whether the person lets the plugin ask for model completions.
+	// Consent is whether the user allows the plugin to request model completions.
 	Consent CompletionConsent
 	// Failure is set while the host suspends the plugin after it failed to start.
 	Failure *PluginFailure
@@ -58,19 +58,20 @@ type PluginReaderInfo struct {
 	Extensions []string
 }
 
-// CompletionConsent is whether the person lets a plugin ask for model
+// CompletionConsent is whether the user allows a plugin to request model
 // completions.
 type CompletionConsent int
 
 const (
 	// ConsentNone is a plugin that does not hold the ai:complete permission.
 	ConsentNone CompletionConsent = iota
-	// ConsentPending is a plugin the person has not answered for, and that
-	// has not asked since the host started.
+	// ConsentPending is a plugin without a user decision that has not requested a
+	// completion since the host started.
 	ConsentPending
-	// ConsentRequested is a plugin that has asked since the host started, was
+	// ConsentRequested is a plugin that has requested a completion since the host
+	// started and awaits the user's decision.
 	ConsentRequested
-	// ConsentAllowed is a plugin the person lets ask.
+	// ConsentAllowed is a plugin the user allows to request completions.
 	ConsentAllowed
 	ConsentDenied
 )

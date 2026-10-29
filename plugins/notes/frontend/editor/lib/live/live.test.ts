@@ -42,11 +42,11 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
   return collectDrawn(createState(text, caret ?? text.length))
 }
 
-/** The stretch is drawn as something else, wherever the selection stands. */
+/** Whether the range is replaced by another rendering, wherever the selection is. */
 const isHidden = (rendered: readonly Drawn[], from: number, to: number) =>
   rendered.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
 
-/** A state whose selection is a caret at each of `carets`, and which is read-only if asked. */
+/** A state whose selection is a caret at each of `carets`, and which is read-only if requested. */
 const createCaretState = (doc: string, carets: number[], isReadOnly = false): EditorState => {
   const extra = [EditorState.allowMultipleSelections.of(true), EditorState.readOnly.of(isReadOnly)]
   return createState(doc)
@@ -486,7 +486,7 @@ describe('the marks drawn for the lines on screen', () => {
     return plugin
   }
 
-  /** Where each strong text starts among the marks in hand. */
+  /** Where each strong text starts among the current marks. */
   const getStrongs = (view: EditorView) => {
     const found: number[] = []
     getPlugin(view).decorations.between(0, view.state.doc.length, (from, _to, deco) => {

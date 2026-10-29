@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The plugins the host suspends after they failed to start: why, when, and the
- * two things a person can do about it.
+ * The plugins the host suspended after they failed to start: the reason, the
+ * time, and the two actions available to the user.
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'

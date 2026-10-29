@@ -1,9 +1,9 @@
 /**
- * What the screen puts in front of a vault on the list.
+ * Vault rows on the welcome screen.
  *
- * The letter is the whole of how a vault is opened from the keyboard, so what
- * is drawn on the row is what the window presses, and the list is asked here
- * both inside the alphabet and past it.
+ * The key letter is the only keyboard path to open a vault, so the letter shown
+ * on a row is the key the window handles, and the list is tested both inside
+ * and beyond the alphabet.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -14,7 +14,7 @@ import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
 
 const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })
 
-/** What a window offers below the list, with the keystroke that reaches it. */
+/** An action offered below the list, with its keyboard shortcut. */
 const offer: Offer = {
   text: 'New vault',
   detail: 'Choose a folder',
@@ -133,10 +133,9 @@ describe('what the screen offers below the list', () => {
 })
 
 /**
- * The width the screen is drawn at is the column's own, so what a narrow one
- * gives up is given up in the stylesheet. What is asked here is that everything
- * it gives up is marked to be given up, and that what it says is still said
- * somewhere a person can reach.
+ * The narrow layout uses the column's own width, so the stylesheet hides what
+ * does not fit. These tests check that everything hidden is marked as hidden,
+ * and that its content remains reachable elsewhere.
  */
 describe('the screen drawn narrow', () => {
   const drawWith = (one: Offer) =>
@@ -173,12 +172,11 @@ describe('the screen drawn narrow', () => {
 })
 
 /**
- * Short of the height the one column takes, the ways in and the vaults stand
- * side by side and the emblem over them gives way a step at a time, both of
- * which the stylesheet does. What is asked here is that they are two regions to
- * begin with, so that each of them can be a column; that what a short screen
- * gives up is marked to be given up; and that every row of both is drawn and
- * pressed at every height.
+ * Below the height of the single column, the actions and the vaults are shown
+ * side by side and the emblem shrinks in steps, both done by the stylesheet.
+ * These tests check that they are two separate regions so that each can be a
+ * column; that what the short layout hides is marked as hidden; and that every
+ * row of both is rendered and activatable at every height.
  */
 describe('the screen drawn short', () => {
   const WAYS: readonly WelcomeAction[] = [

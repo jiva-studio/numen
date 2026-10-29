@@ -120,8 +120,8 @@ describe('the bounds', () => {
   })
 })
 
-// A caller narrowing what a field allows narrows it under a number already
-// standing there. Nobody typed that number here, so nothing is marked.
+// A caller that narrows the allowed bounds does so under an existing number. The
+// user did not type that number, so nothing is marked.
 describe('the bounds moving under the number', () => {
   it('brings the number in, writes it out, and marks nothing', async () => {
     const field = mountField({ modelValue: 200 })
@@ -283,7 +283,8 @@ describe('what a screen reader is told', () => {
     expect(mountField().get('input').attributes('aria-valuetext')).toBeUndefined()
   })
 
-  // eye can see what the ear is not told.
+  // The visible text is exposed through aria-valuetext, so assistive technology
+  // reads what a sighted user sees.
   it('reads out a line that is no number, where no number remains with it', async () => {
     const field = mountField({ modelValue: null })
     await field.get('input').setValue('twenty')

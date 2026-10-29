@@ -1,10 +1,10 @@
 /**
- * Everything an open menu listens to on the window: a press, a scroll, a
- * change of size, and Escape.
+ * Everything an open menu listens to on the window: a press, a scroll, a resize,
+ * and Escape.
  *
- * Each of them puts the menu away, and what putting it away evaluates to is the
- * caller's. A scroll puts it away once the person has given input since the
- * menu opened; the scroll that opening itself causes does not.
+ * Each of them closes the menu, and the caller decides what closing does. A
+ * scroll closes it only once the user has given input since the menu opened; the
+ * scroll that opening itself causes does not.
  */
 import { onBeforeUnmount } from 'vue'
 import type { ShallowRef } from 'vue'
@@ -24,8 +24,8 @@ export function useMenuDismissal(
   isIgnored?: (event: Event) => boolean,
 ): MenuDismissalState {
   /**
-   * A pointer, or a scroll, that did not happen inside the menu. A scroll of
-   * the menu's own list is not the ground moving, and everything else is.
+   * A pointer event or scroll outside the menu. A scroll of the menu's own list is
+   * not a page scroll; every other scroll is.
    */
   const dismissOutside = (event: Event): void => {
     if (isIgnored?.(event)) return

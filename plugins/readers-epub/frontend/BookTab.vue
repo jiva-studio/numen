@@ -42,7 +42,7 @@ const bookContent = useTemplateRef<InstanceType<typeof BookContent>>('bookConten
 watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 
 /* ---------------------------------- Hooks --------------------------------- */
-/** The tab as the window hands it, where it is a reader tab. */
+/** The tab state from the window, when it is a reader tab. */
 const readerTab = props.state as Partial<ReaderTabState> | undefined
 
 useBookPlace(tabState, () => readerTab)

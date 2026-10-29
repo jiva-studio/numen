@@ -1,11 +1,11 @@
 /**
- * What a book divides into, drawn: the names it holds, the line the person is
- * reading, and the field that narrows the list.
+ * The contents of a book: the entries, the line being read, and the field that
+ * filters the list.
  *
- * Where the panel is judged, because nothing without a layout can judge it:
- * whether a list of five thousand lines scrolls inside the panel, whether the
- * line being read is brought into view as the reading moves, and whether a name
- * too long for the panel is cut.
+ * The panel is judged here because only a real layout can judge it: whether a
+ * list of five thousand lines scrolls inside the panel, whether the line being
+ * read is brought into view as the reading moves, and whether a name too long
+ * for the panel is cut.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -57,8 +57,8 @@ const PAGES: readonly ContentsEntry[] = Array.from({ length: 5_000 }, (_, index)
 }))
 
 /**
- * The panel over a book being read. The button stands for the reading moving on
- * its own, which is what the panel follows.
+ * The panel over a book being read. The button simulates the reading advancing
+ * by itself, which the panel follows.
  */
 const activeReading =
   (entries: readonly ContentsEntry[], deep = 0) =>
@@ -96,8 +96,8 @@ export const Playground: Story = {
 }
 
 /**
- * A name longer than the panel is cut. One left whole widens the panel and the
- * reading area gives up the room.
+ * A name longer than the panel is cut. An uncut name widens the panel and
+ * shrinks the reading area.
  */
 export const ANameLongerThanThePanel: Story = {
   decorators: [panel],
@@ -129,8 +129,8 @@ export const AllTheWayThrough: Story = {
 }
 
 /**
- * The list follows the reading. A person a thousand pages in finds where they
- * are without looking for it.
+ * The list follows the reading. A reader a thousand pages in finds the current
+ * position without searching.
  */
 export const BroughtToWhereTheReadingIs: Story = {
   decorators: [panel],

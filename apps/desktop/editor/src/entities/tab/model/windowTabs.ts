@@ -1,10 +1,9 @@
 /**
  * The window as a set of kinds, and the tabs it keeps of each.
  *
- * A kind says how one of its tabs opens, what it is called, what is drawn in
- * it and what letting go of it evaluates to. Everything here is written once for
- * all of them: a kind is added by declaring one, and the window is not told
- * about it twice.
+ * A kind defines how its tabs open, their title, their content and how they
+ * close. This is implemented once for all kinds: a kind is added by declaring
+ * it, with no further window configuration.
  */
 import {
   computed,
@@ -30,7 +29,7 @@ const getTabPath = (tab: WindowTab): string => {
   const openTab = tab.kind.getOpenTab?.(tab.state)
   if (openTab?.path) return openTab.path
   const target = tab.kind.getTarget?.(tab.state)
-  // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the path asked for is empty, so the empty fallback is never compared
+  // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the requested path is empty, so the empty fallback is never compared
   return target?.path || target?.file || ''
 }
 
@@ -76,7 +75,7 @@ export function useWindowTabs() {
   const handle = createWindowHandle({ ...openers, ...queries })
   const navigation = createTabNavigation(open, openers)
   const request = createKindQuestions(byKind)
-  /** A kind whose tab fails to open is told to `onError` and left out of the layout. */
+  /** A kind whose tab fails to open is reported to `onError` and omitted from the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
     const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
@@ -187,9 +186,9 @@ function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
   return { closeTabsOfPlugin, reopenTabsOf }
 }
 
-/** What a window asks of the kinds it holds about a file. */
+/** Queries the window makes of its kinds about a file. */
 function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
-  /** A file made as the kind given edits it, and nothing where no kind of that name makes one. */
+  /** Creates a file with the named kind, which edits it; undefined when no kind has that name. */
   const createFileOfKind = (
     kind: string,
     folder: string,
@@ -206,7 +205,7 @@ const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
   return rank(one) - rank(other) || (one.placement?.order ?? 0) - (other.placement?.order ?? 0)
 }
 
-/** What is told of a placed kind whose tab failed to open. */
+/** The error callback for a placed kind whose tab failed to open. */
 type PlacementError = (kind: string, error: unknown) => void
 
 /** A tab of every kind that declares a placement, laid out as each declares. */
@@ -415,8 +414,8 @@ function createTabNavigation(
   openers: Pick<ReturnType<typeof createTabOpeners>, 'openTabOfKind' | 'show'>,
 ) {
   /**
-   * The tab of a kind the person was last in, put in front and moved to the
-   * path; a tab of it opened there where the window holds none.
+   * Brings the most recently active tab of a kind to the front and navigates it
+   * to the path; opens a tab of the kind at the path when none is open.
    */
   const navigateTab = async (kind: string, targetPath: string): Promise<string> => {
     const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
@@ -438,8 +437,8 @@ function createTabNavigation(
   }
 
   /**
-   * Text put in the tab of a kind the person was last in, and put in front; a
-   * tab of the kind opened to take it where the window holds none.
+   * Sends text to the most recently active tab of a kind and brings it to the
+   * front; opens a tab of the kind to receive it when none is open.
    */
   const sendText = async (kind: string, text: string): Promise<string> => {
     const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)

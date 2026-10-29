@@ -16,7 +16,7 @@ const widths = (icon = 0) => useTitleWidths(() => icon).value
 
 const PER_CHARACTER = 7
 
-/** A canvas that measures by the character, and remembers what it was asked. */
+/** A canvas that measures by character count and records the strings it measured. */
 function stubCanvas() {
   const request: string[] = []
   const context = {
@@ -84,7 +84,7 @@ function stubStyles() {
   }) as typeof window.getComputedStyle)
 }
 
-/** A window that says when a box of the plex's type has changed size. */
+/** A stub that reports when the box of the plex type changes size. */
 function stubObserver(): (() => void)[] {
   const observers: (() => void)[] = []
 
@@ -172,8 +172,8 @@ describe('what a title needs', () => {
     measures.node({ id: 'b', title: 'Adapter', relation: 'parent' })
     measures.node(node('Port'))
 
-    // The sample word comes first: how deep a line stands is taken off the
-    // type when the measurer is made.
+    // The sample word is measured first: the line depth is read from the type when
+    // the measurer is created.
     expect(request).toStrictEqual(['Hxg', 'Adapter', 'Port'])
   })
 })
@@ -332,7 +332,7 @@ describe('a page the plex cannot stand a box in', () => {
 })
 
 describe('the box a plex measures its type against', () => {
-  /** An observer that remembers what it was asked to watch, and whether it was let go. */
+  /** An observer that records the targets it observes and whether they were released. */
   function stubWatching() {
     const observe = vi.fn<(target: Element, options?: ResizeObserverOptions) => void>()
     const disconnect = vi.fn<() => void>()

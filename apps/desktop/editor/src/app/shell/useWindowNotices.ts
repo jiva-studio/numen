@@ -12,7 +12,7 @@ import { WORDS as words } from '@/shared/words'
 
 export interface WindowNoticesDeps {
   log: MessageLog
-  /** What the plugins show, after what the window says. */
+  /** Plugin notices, shown after the window's own. */
   plugins: NoticeQueue
   window: ReturnType<typeof useWindowDisplay>
   settings: ReturnType<typeof useSettings>

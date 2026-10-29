@@ -24,8 +24,8 @@ func runSearchCommand(
 		return err
 	}
 
-	// The same search the window runs. An installation with no model answers by
-	// words alone, and says nothing about it: half a search is a whole answer.
+	// The same search the window runs. An installation with no model searches by
+	// words alone, which is reported through the error handler.
 	errorHandler := func(err error) { fmt.Fprintf(errOut, "answering by words alone: %v\n", err) }
 	open, err := deps.Search(ctx, v, errorHandler)
 	if err != nil {

@@ -20,7 +20,7 @@ const textKey = "text"
 // partBytes is the most text one segment holds.
 const partBytes = 64 << 10
 
-// textKind is the kind of the text versions the plugin makes.
+// textKind is the kind of the text versions the plugin produces.
 const textKind domain.TextKind = "book-text"
 
 // TextServer writes the text of the vault's EPUB books into the plugin's folder as text versions,

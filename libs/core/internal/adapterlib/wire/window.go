@@ -15,40 +15,39 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
-// Editor is the name of the window a person writes in. A question names the window it is asked of,
-// and a window answers only questions naming it.
+// Editor is the name of the editor window. A request names its target window,
+// and a window serves only requests naming it.
 const Editor = "editor"
 
 // ErrAnotherWindow is a question naming a window other than the one it reached.
 var ErrAnotherWindow = errors.New("that is another window")
 
-// A Reason is why something a window shows is not so, currently now, said by
-// whatever found out and read by whoever draws the window.
+// A Reason is a human-readable cause for a degraded window state, written by the
+// component that detects it and read by the UI.
 //
-// The empty reason is nothing being the matter. It is a reason and not a flag:
+// The empty reason means no problem. It is a string, not a flag, so the UI can
+// display the cause.
 type Reason struct{ why atomic.Value }
 
-// Store says why, or the empty string once nothing is the matter.
+// Store records the reason, or the empty string when there is no problem.
 func (r *Reason) Store(why string) { r.why.Store(why) }
 
-// Why is what was last said, and empty while nothing is the matter.
+// Why returns the last stored reason, or the empty string when there is no problem.
 func (r *Reason) Why() string {
 	why, _ := r.why.Load().(string)
 	return why
 }
 
-// Window is one window of this application, as the schema answers about it:
-// everything being done behind it, and everyone drawing it for the moment it
-// goes.
+// Window is one window of this application, as the schema describes it: the
+// running tasks and the connected clients that take part in the flush at quit.
 //
-// Both windows answer this from here, so what is being done reaches a person in
-// one shape and the drain that holds a window back is one piece of code.
+// Both windows share this implementation, so tasks have one wire shape and the
+// quit drain is implemented once.
 type Window struct {
 	// Named is the window this answers for, which a question names to reach it.
 	Named string
 
-	// Tasking is everything being done behind the window. A window holding none
-	// says there is nothing.
+	// Tasking is the set of running tasks. A nil value reports an empty list.
 	Tasking *run.Tasks
 
 	// Vault is the identity of the vault this window has in front of the
@@ -59,22 +58,20 @@ type Window struct {
 	clients flushCoordinator
 }
 
-// Again is how often a stream says what it last said when nothing has changed.
+// Again is the interval at which a stream resends its last message while nothing
+// has changed.
 //
-// A window is handed each list by the write that follows it. Nothing else tells
-// a handler its client has gone: the request context belongs to the process and
-// is cancelled when the window closes, not when a page is reloaded away from
-// under a stream. A write that fails is the one report there is, so every
-// stream makes one whether or not it has anything to say.
+// The request context belongs to the process and is cancelled when the window
+// closes, not when a page reloads, so a handler detects a gone client only
+// through a failed write. Every stream therefore writes periodically.
 const Again = time.Second
 
-// WatchTasks reports everything being done behind the window, for as long as
-// the client listens.
+// WatchTasks streams the running tasks until the client disconnects.
 //
-// The whole list goes every time any of it changes, and the first goes at once:
-// a window that opened while work was running has to be told about it, and a
-// stream that says nothing until something changes is indistinguishable from one
-// that never opened.
+// The full list is sent on every change, and the first message is sent
+// immediately: a client that connects while work is running needs the current
+// state, and a stream silent until the next change cannot be told from one that
+// never opened.
 func (w *Window) WatchTasks(
 	ctx context.Context,
 	r *connect.Request[v1.WatchTasksRequest],
@@ -117,7 +114,7 @@ func (w *Window) WatchTasks(
 	}
 }
 
-// WatchQuit says the window is going, for as long as the client listens.
+// WatchQuit streams quit notifications until the client disconnects.
 func (w *Window) WatchQuit(
 	ctx context.Context,
 	r *connect.Request[v1.WatchQuitRequest],
@@ -129,9 +126,8 @@ func (w *Window) WatchQuit(
 	token, notified, isDone := w.clients.registerClient()
 	defer isDone()
 
-	// The token before anything is asked. A client that has not been given one
-	// cannot answer, and a stream that says nothing until the window goes is
-	// indistinguishable from one that never opened.
+	// The token is sent first: a client without one cannot answer a flush request,
+	// and a stream silent until quit cannot be told from one that never opened.
 	if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 		return err
 	}
@@ -144,9 +140,8 @@ func (w *Window) WatchQuit(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			// The same token, and nothing asked of the client. A page that has
-			// gone fails the write, and this stream is what holds the window
-			// back at the quit.
+			// The same token is resent. A disconnected page fails the write, which ends
+			// this stream and releases the quit.
 			if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 				return err
 			}
@@ -161,7 +156,7 @@ func (w *Window) WatchQuit(
 	}
 }
 
-// ReportFlush says what a client has left.
+// ReportFlush records the flush state a client reports.
 func (w *Window) ReportFlush(
 	_ context.Context,
 	r *connect.Request[v1.ReportFlushRequest],
@@ -173,7 +168,7 @@ func (w *Window) ReportFlush(
 	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
 }
 
-// GetCurrentVault is the vault this window has in front of the person.
+// GetCurrentVault returns the identity of the vault open in this window.
 func (w *Window) GetCurrentVault(
 	_ context.Context,
 	r *connect.Request[v1.GetCurrentVaultRequest],
@@ -188,7 +183,7 @@ func (w *Window) GetCurrentVault(
 	return connect.NewResponse(out), nil
 }
 
-// checkWindowName says whether a question reached the window it names.
+// checkWindowName returns an error unless the request names this window.
 func (w *Window) checkWindowName(named string) error {
 	if named == w.Named {
 		return nil
@@ -210,9 +205,9 @@ func (w *Window) RemoveTask(id string) {
 	}
 }
 
-// RequestFlush asks every page to write what it owes and waits for the request to
-// end. It answers false where a page is holding work a person is being asked
-// about, and where another request has taken this one's place.
+// RequestFlush asks every client to write its unsaved work and waits for the
+// request to end. It returns false when a client holds work awaiting a user
+// decision, or when another request superseded this one.
 func (w *Window) RequestFlush(ctx context.Context) bool {
 	request := w.clients.startRequest()
 	select {
@@ -224,8 +219,7 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 	return !request.isPending() && w.clients.getRunning() == request
 }
 
-// WaitForFlush waits for the request in progress to end with every page having
-// written what it owes.
+// WaitForFlush waits for the running request to end with every client written.
 func (w *Window) WaitForFlush(ctx context.Context) bool {
 	request := w.clients.getRunning()
 	if request == nil {
@@ -241,11 +235,10 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 	}
 }
 
-// CancelFlush ends the request that was running, and lets go of whoever was waiting
-// on it. What the pages hold from here belongs to the vault in front of them.
+// CancelFlush ends the running request and releases its waiters.
 func (w *Window) CancelFlush() { w.clients.endRequest() }
 
-// describeTasks is the work as the schema says it.
+// describeTasks converts tasks to their schema form.
 func describeTasks(list []run.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, item := range list {
@@ -265,7 +258,7 @@ func describeTasks(list []run.Task) []*v1.Task {
 	return out
 }
 
-// convertUnit is what a task counts, as the schema says it.
+// convertUnit converts a task unit to its schema form.
 func convertUnit(in run.Unit) v1.Unit {
 	switch in {
 	case run.Bytes:
@@ -282,16 +275,16 @@ func convertUnit(in run.Unit) v1.Unit {
 type flushState int
 
 const (
-	// flushUnanswered is a page that has said nothing about this request.
+	// flushUnanswered is a client that has not responded to this request.
 	flushUnanswered flushState = iota
-	// flushWritten is a page with nothing left: what it held is on disk.
+	// flushWritten is a client with no unsaved work left.
 	flushWritten
-	// flushAsking is a page holding work that could not be written, with a person
-	// being asked what happens to it.
+	// flushAsking is a client holding unwritten work while the user decides what to
+	// do with it.
 	flushAsking
 )
 
-// parseFlushResult converts a client's flush result to the internal owed state.
+// parseFlushResult converts a client's flush result to the internal flush state.
 func parseFlushResult(result v1.FlushResult) flushState {
 	switch result {
 	case v1.FlushResult_FLUSH_RESULT_NOTHING, v1.FlushResult_FLUSH_RESULT_WRITTEN:
@@ -303,13 +296,12 @@ func parseFlushResult(result v1.FlushResult) flushState {
 	}
 }
 
-// flushCoordinator is everyone drawing this window, for the moment it goes.
+// flushCoordinator tracks the connected clients and the running flush request.
 //
-// A client holds unwritten work in a buffer this process cannot see, so it is
-// asked to write what it owes and answers when it has. A client that stops
-// listening stops being owed, unless its stream ended with a question standing:
-// the work is still in that buffer, and it is silence until a page listens
-// again.
+// A client holds unwritten work in a buffer this process cannot read, so it is
+// asked to write and responds when done. A disconnected client is not awaited,
+// except when its stream ended in the flushAsking state: its work is still
+// unwritten, so it counts as unanswered until a client reconnects.
 type flushCoordinator struct {
 	mu      sync.Mutex
 	next    int
@@ -317,31 +309,31 @@ type flushCoordinator struct {
 	current *flushRequest
 }
 
-// client is one browser tab drawing the window, and what it has said.
+// client is one browser tab connected to the window, with its flush state.
 type client struct {
 	flushTokens chan string
 	state       flushState
-	// isDisconnected is a page whose stream ended with a question standing. It is told
-	// nothing and answers nothing; a page that listens takes it over.
+	// isDisconnected marks a client whose stream ended in the flushAsking state.
+	// It receives no tokens and records no state; a newly connected client replaces it.
 	isDisconnected bool
 }
 
-// flushRequest is one asking of every page, and how far it has got.
+// flushRequest is one flush request to all clients, with its progress.
 type flushRequest struct {
-	// allWritten closes once every page has allWritten what it owes.
+	// allWritten closes once every client has written its work.
 	allWritten chan struct{}
-	// questionRaised closes once a page is holding work a person has to answer for.
+	// questionRaised closes once a client holds work awaiting a user decision.
 	questionRaised chan struct{}
-	// superseded closes once another request has taken this one's place.
+	// superseded closes once another request replaces this one.
 	superseded chan struct{}
 
-	// The lock of the flush coordinator that made this request is held for these.
+	// The flush coordinator's lock guards these fields.
 	isAllWrittenSignaled bool
 	isQuestionSignaled   bool
 	isSuperseded         bool
 }
 
-// isPending reports whether a question a person has to answer is outstanding.
+// isPending reports whether a client is awaiting a user decision.
 func (r *flushRequest) isPending() bool {
 	select {
 	case <-r.questionRaised:
@@ -351,8 +343,8 @@ func (r *flushRequest) isPending() bool {
 	}
 }
 
-// registerClient registers a client, and answers with the token it will flush under,
-// what it is told on, and how it stops listening.
+// registerClient registers a client and returns its flush token, the channel on
+// which it receives flush tokens, and a function that unregisters it.
 func (l *flushCoordinator) registerClient() (string, <-chan string, func()) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -360,8 +352,8 @@ func (l *flushCoordinator) registerClient() (string, <-chan string, func()) {
 	if l.clients == nil {
 		l.clients = map[string]*client{}
 	}
-	// One window draws one vault, so a page that listens is the page that went,
-	// and it takes over what that one was holding.
+	// One window shows one vault, so a connecting client replaces the disconnected
+	// client and takes over its pending work.
 	for token, p := range l.clients {
 		if p.isDisconnected {
 			delete(l.clients, token)
@@ -384,7 +376,7 @@ func (l *flushCoordinator) isRunning() bool {
 	return l.current != nil && !l.current.isSuperseded
 }
 
-// disconnectClient removes or marks gone one client no longer listening.
+// disconnectClient unregisters a client, or marks it disconnected if it is flushAsking.
 func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -405,9 +397,9 @@ func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.updateProgress()
 }
 
-// startRequest begins a request: every page is told to write what it owes, and what it
-// said in the request before counts for nothing. A request already running is put
-// past, and whoever was waiting on it is let go.
+// startRequest begins a request: every client is told to write, and states from
+// the previous request are cleared. A running request is superseded and its
+// waiters are released.
 func (l *flushCoordinator) startRequest() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -435,8 +427,7 @@ func (l *flushCoordinator) startRequest() *flushRequest {
 	return l.current
 }
 
-// endRequest ends the request that was running, and lets go of whoever was waiting
-// on it.
+// endRequest ends the running request and releases its waiters.
 func (l *flushCoordinator) endRequest() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -471,8 +462,8 @@ func (l *flushCoordinator) recordFlush(token string, response flushState) {
 	l.updateProgress()
 }
 
-// updateProgress says how far the request has got: everything is written, or a question
-// a person has to answer is outstanding. The lock is held.
+// updateProgress signals allWritten or questionRaised on the running request
+// when the client states warrant it. The lock is held.
 func (l *flushCoordinator) updateProgress() {
 	r := l.current
 	if r == nil || r.isSuperseded {

@@ -1,9 +1,8 @@
 /**
- * A time against every line, and the line being said now.
+ * A timestamp for every transcript line, and the line currently playing.
  *
- * The times stand in the gutter and are clicked to go to one. Which line is
- * being said, and whether the view moves to keep it in sight, are the caller's
- * to say.
+ * The timestamps are in the gutter and can be clicked to seek. The caller decides
+ * which line is current and whether the view scrolls to keep it visible.
  */
 import { doc } from '../dom'
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
@@ -12,9 +11,9 @@ import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codem
 /** What the editor shows against its lines. */
 export interface TimeGutterState {
   readonly times: readonly string[]
-  /** The line being said, counted from zero. None is -1. */
+  /** The current line, counted from zero; -1 for none. */
   readonly current: number
-  /** The view moves to keep the line being said in sight. */
+  /** Whether the view scrolls to keep the current line visible. */
   readonly isFollowing: boolean
 }
 
@@ -30,7 +29,7 @@ const timeGutterField = StateField.define<TimeGutterState>({
   },
 })
 
-/** The line being said. It is drawn in the accent and carries no fill. */
+/** The current line. It is drawn in the accent colour without a fill. */
 const currentLine = Decoration.line({ class: 'cm-current' })
 
 const currentLineMarks = EditorView.decorations.compute([timeGutterField, 'doc'], (state) => {
@@ -98,7 +97,7 @@ const createTimeGutterExtension = (goToLine: (line: number) => void): Extension 
       update.startState.field(timeGutterField) !== update.state.field(timeGutterField),
   })
 
-/* The times take the room the longest of them needs, so an hour in and a
+/* The gutter takes the width of the longest time, so an hour in and a
    minute in line up. A time is set on the baseline of its line's first row:
    the gutter element keeps the line's font and line height, and only the time
    inside it is smaller. */
@@ -162,8 +161,8 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
     if (last) {
       const lastTime = last
       queueMicrotask(() => {
-        // An editor drawn again is shown what the one before it was shown and
-        // is left at its current position: nothing was said while it was drawn.
+        // A re-created editor receives the state of the previous one and stays at its
+        // current position: nothing played while it was being created.
         if (view === got) applyState(lastTime, false)
       })
     }

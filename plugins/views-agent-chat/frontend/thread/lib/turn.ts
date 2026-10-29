@@ -7,7 +7,7 @@ import { groupDigits, type LinkPiece } from '@numen/ui'
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */
   readonly isBubble: boolean
-  /** Which edge the turn sits against. */
+  /** The edge of the thread the turn is aligned to. */
   readonly against: 'start' | 'end'
 }
 
@@ -23,24 +23,24 @@ export const VOICES = {
 
 export type Voice = keyof typeof VOICES
 
-/** How far along a turn is. Settled unless it says otherwise. */
+/** How far along a turn is. Settled unless stated otherwise. */
 export type TurnState = 'settled' | 'arriving' | 'failed'
 
 export interface Turn {
-  /** Whatever the caller addresses this turn by. Never read, only handed back. */
+  /** The caller's identifier for this turn. It is stored and returned, never interpreted. */
   readonly id: string
   readonly voice: Voice
   readonly text: string
   /** What the turn is about, for a voice that has something to be about. */
   readonly subject?: string
   /**
-   * What is true of the turn along with what it says: how much of a call has been
-   * written, how long a wait has lasted, what a finished piece of work took.
-   * It is the part that moves exclusively.
+   * Secondary information about the turn: how much of a call has been written,
+   * how long a wait has lasted, what a finished piece of work took. It is the
+   * part of the turn that updates.
    */
   readonly aside?: string
   readonly state?: TurnState
-  /** Whether the turn stands for somewhere the person can be taken. */
+  /** Whether the turn refers to a location the user can open. */
   readonly canOpen?: boolean
   /**
    * The addresses this turn points at that reach nothing. A link carrying one

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The action panel: everything the lit item offers, by name, in a list of its
- * own with a field of its own.
+ * The action panel: every action the highlighted item offers, by name, in its
+ * own list with its own field.
  *
- * The keyboard stands here for as long as the panel does; nothing it is given
- * reaches the palette underneath.
+ * Keyboard input stays in the panel while it is open; no key reaches the palette
+ * below it.
  *
  * `data-actions` names each part: `panel`, `list`, `name`, `hint`, `silence`
  * and `search`. An action is an option.
@@ -49,8 +49,8 @@ const here = computed(() =>
 )
 
 /**
- * Where the pointer was. Only a pointer that has actually moved lights what it
- * is over: a list scrolling under a pointer standing still reports a move too.
+ * The last pointer position. Only a pointer that has moved highlights the row
+ * under it: a list scrolling under a stationary pointer also reports a move.
  */
 let pointerPosition = { x: -1, y: -1 }
 
@@ -59,7 +59,7 @@ interface RowHandle {
   readonly element: HTMLElement | null
 }
 
-/** The rows as they are drawn, each under the action it stands for. */
+/** The rows as rendered, keyed by the action each represents. */
 const actionRows = new Map<string, RowHandle>()
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -116,7 +116,7 @@ const onKey = (event: KeyboardEvent) => {
     event.preventDefault()
     onChooseAction(here.value)
   }
-  // The keyboard stays in this field for as long as the panel stands.
+  // Tab is blocked so keyboard focus stays in this field while the panel is open.
   else if (event.key === 'Tab') event.preventDefault()
 }
 

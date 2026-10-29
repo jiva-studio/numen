@@ -60,10 +60,10 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 	}
 }
 
-// A link is a second spelling for a place, and the rules are asked about the
-// place. One pointing at the application's folder is the application's however
-// it is spelled; one pointing at a folder of notes is still the vault's, which
-// is the arrangement a person makes on purpose and which nothing here narrows.
+// A link is a second name for a location, and the rules apply to that location.
+// A link to the application's folder belongs to the application however it is
+// spelled; a link to a folder of notes remains part of the vault, an arrangement
+// the user makes deliberately and which nothing here restricts.
 func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
 	root := vault(t)
 

@@ -15,12 +15,12 @@ type visibility struct {
 	show func()
 }
 
-// closeWindow is the window being asked to go, and answers with whether it may.
+// closeWindow reports whether the window may close.
 //
-// The window goes out of sight first and the vault settles behind it. A page
-// holding text a person has to answer for calls the close off, the window comes
-// back, and the close is asked for again once they have answered. That wait is
-// on a person and is not measured.
+// The window is hidden first and the vault is flushed in the background. A page
+// holding unsaved text that needs a user decision cancels the close, the window
+// is shown again, and the close is requested again after the user has answered.
+// That wait depends on the user and has no time bound.
 func closeWindow(
 	ctx context.Context,
 	g *vaultFlush,
@@ -93,7 +93,7 @@ func (t *windowTracker) closeSecondaryWindow() bool {
 }
 
 // handleWindowClosing handles a window close event. The last window flushes the vault
-// before quitting; secondary windows simply close.
+// before quitting; secondary windows close without flushing.
 func handleWindowClosing(
 	ctx context.Context,
 	tracker *windowTracker,
@@ -108,13 +108,13 @@ func handleWindowClosing(
 	return closeWindow(ctx, g, s, confirm, retry)
 }
 
-// requestQuit is a quit that did not come through the window, and answers with
-// whether the application may go.
+// requestQuit handles a quit that did not come through a window and reports
+// whether the application may exit.
 //
-// It is answered on the thread the page is served on, so the window is hidden
-// and the settling happens off it, and the quit is asked for again once it is
-// over. A settling that ended with a question standing puts the window back and
-// asks for nothing: the person is answering it, and that is the whole of what
+// It runs on the thread that serves the page, so the window is hidden and the
+// flush runs in a goroutine, and the quit is requested again when the flush
+// ends. A flush that ended awaiting a user decision shows the window again and
+// does not request the quit; the quit follows after the user has answered.
 func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 	if g.isFlushed() {
 		return true
@@ -130,14 +130,14 @@ func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 	return false
 }
 
-// quitBound is how long the window waits for a page that says nothing to write
-// what only it holds. A vault being changed waits under the same bound.
+// quitBound is how long the window waits for a page that does not respond to
+// write the work only it holds. A vault being changed waits for the same bound.
 const quitBound = editor.FlushTimeout
 
-// vaultFlush is the vault settling, whichever way the window is asked to go.
+// vaultFlush flushes the vault, whichever way the window is asked to close.
 //
-// A settling that ends with a question standing leaves the vault as it was, and
-// the next ask begins another one.
+// A flush that ends awaiting a user decision leaves the vault unchanged, and
+// the next request starts another flush.
 type vaultFlush struct {
 	flush func(context.Context) bool
 
@@ -172,7 +172,7 @@ func (g *vaultFlush) flushVault() bool {
 	return this.isFlushed
 }
 
-// isFlushed reports whether there is nothing left owed.
+// isFlushed reports whether the vault has no unwritten work.
 func (g *vaultFlush) isFlushed() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()

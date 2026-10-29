@@ -7,5 +7,5 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [SETTINGS, SlidersHorizontal],
 ])
 
-/** The icon for a kind of tab, and nothing for a kind that has none. */
+/** The icon for a kind of tab, or null for a kind without one. */
 export const findTabKindIcon = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null

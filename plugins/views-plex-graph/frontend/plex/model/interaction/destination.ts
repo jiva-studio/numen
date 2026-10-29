@@ -1,7 +1,7 @@
 /**
- * A node asked for on its own: how it is asked for, and where it is then
- * drawn. A hand asks with a second click, which the browser reports as one
- * event; a finger's two taps are counted here.
+ * Opening a node: how the request is made and where the node is shown. A mouse
+ * opens with a double click, which the browser reports as one event; two touch
+ * taps are counted here.
  *
  * Which of the two a plex offers is the caller's, so neither is written into
  * the node.
@@ -10,9 +10,8 @@ import { win } from '../../../dom'
 import { onScopeDispose, ref } from 'vue'
 
 /**
- * Where a node asked for is to be drawn, declared once. Everything that
- * varies with it — the modifier that asks for it, and what a caller does about
- * it — is derived from this table.
+ * Where an opened node is shown, declared once. The modifier that selects the
+ * destination and the caller's behavior are derived from this table.
  */
 export interface DestinationDescriptor {
   /** Whether the modifier is held while asking for this one. */
@@ -24,7 +23,7 @@ export const DESTINATIONS = {
   split: { hasModifier: true },
 } as const satisfies Record<string, DestinationDescriptor>
 
-/** Where a node asked for is to be drawn: in the current pane, or in a split beside it. */
+/** Where an opened node is shown: in the current pane, or in an adjacent split. */
 export type PlexDestination = keyof typeof DESTINATIONS
 
 export const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestination[]
@@ -35,8 +34,8 @@ const BY_MODIFIER = Object.fromEntries(
 ) as Readonly<Record<`${boolean}`, PlexDestination>>
 
 /**
- * Which one was asked for, given the modifier held at the time. It is read
- * once, where the gesture arrives, and what travels on is the answer.
+ * The destination selected by the modifier state. It is read once, where the
+ * gesture arrives, and the result is passed on.
  */
 export const getDestination = (hasModifier: boolean): PlexDestination =>
   BY_MODIFIER[`${hasModifier}`]
@@ -49,16 +48,16 @@ export const APART = 24
 
 /** The node a strategy is watching, in the only two terms it needs. */
 export interface ShowSite {
-  /** Whether this node answers being asked for at all. */
+  /** Whether this node can currently be opened. */
   readonly ready: () => boolean
-  /** It was asked for. The modifier says where it is to be drawn. */
+  /** Opens the node. The modifier selects the destination. */
   readonly show: (hasModifier: boolean) => void
 }
 
 export interface ShowStrategy {
   /** Whether the node answers the browser's own second click. */
   readonly isDoubleClick: boolean
-  /** What the node listens for besides. Called once, inside the node's scope. */
+  /** Additional listeners for the node. Called once, inside the node's scope. */
   readonly listeners: (site: ShowSite) => Record<string, (event: PointerEvent) => void>
 }
 

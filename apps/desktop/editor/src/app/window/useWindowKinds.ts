@@ -25,8 +25,8 @@ function formatLocalDate(date: Date): string {
 }
 
 /**
- * Something to ask, put in the tab the person was last in of the kind that takes
- * text, and put in front.
+ * Text sent to the most recently active tab of the kind that accepts text, which
+ * is brought to the front.
  */
 function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessage: MessageWriter) {
   return {
@@ -54,14 +54,14 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
-  /** A note put in front of the person where a plugin shows notes, and in its editor where none does. */
+  /** Shows a note where a plugin shows notes, and in the editor when no plugin does. */
   const travel = async (path: string): Promise<void> => {
     if (!(await deps.showNote(path))) await tabOpeners.openFile(path, '', 'current')
   }
 
   /**
-   * The note the tool tab the person was last in relies on, among the tools that
-   * follow a note: those that move to a path and say what they stand on.
+   * The note the most recently active tool tab depends on, among the tools that
+   * follow a note: those that navigate to a path and report the path they show.
    */
   const getNoteInFocus = () => {
     const last = [...windowTabs.tabs.value]

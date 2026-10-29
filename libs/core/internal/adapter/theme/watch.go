@@ -11,7 +11,7 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// ErrNoFolder is a catalogue with nowhere to read the person's themes from.
+// ErrNoFolder is returned by a catalogue with no folder to read user themes from.
 var ErrNoFolder = errors.New("there is no themes folder")
 
 // Backlog is how many events are held while they are being debounced. The folder
@@ -23,11 +23,11 @@ const Backlog = 256
 // that is several events.
 const DefaultDebounceDelay = 50 * time.Millisecond
 
-// Watch reports the person's themes changing, by name, until ctx ends.
+// Watch reports changes to the user's themes, by name, until ctx ends.
 //
-// The watch is on the folder and not on any file: the file a watch was placed
-// on stops existing at the first save. One level, which is as deep as a theme
-// is.
+// The watch is on the folder, not on a file: a watch on a file ends at the first
+// save, which replaces the file. The watch is one level deep, which is as deep as
+// a theme is.
 func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []string, error) {
 	if c.dir == "" {
 		return nil, ErrNoFolder
@@ -53,9 +53,8 @@ func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []stri
 
 // debounce collects events for a hold and reports each theme once.
 //
-// Reading the events and delivering them are kept apart: whoever listens takes
-// as long as it takes, and the operating system goes on producing events
-// meanwhile.
+// Reading events and delivering them are separate: a slow listener does not
+// block reading, and the operating system keeps producing events meanwhile.
 func (c Catalogue) debounce(
 	ctx context.Context,
 	hold time.Duration,
@@ -106,8 +105,8 @@ func (c Catalogue) debounce(
 // over.
 type themeBatch struct {
 	pending map[string]bool
-	// ready is what a hold has already closed over, waiting to be taken. It
-	// keeps growing while nobody takes it: one batch, never two.
+	// ready holds the themes of a closed hold, waiting to be taken. It keeps growing
+	// while nothing takes it: one batch, never two.
 	ready   []string
 	inReady map[string]bool
 }

@@ -20,15 +20,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// chunksPerQuery bounds one answer about what owes a vector.
+// chunksPerQuery bounds the number of chunks lacking a vector returned per query.
 const chunksPerQuery = 200
 
-// Embed gives the chunks of one vault the vectors they owe.
+// Embed computes the missing vectors for the chunks of one vault.
 //
-// It resumes because it holds no position of its own: what to do next is
-// whatever has no vector from the model in use, so a run that was interrupted is
-// continued by starting another, and a chunk that has one is never asked about
-// again.
+// It is resumable because it holds no position: it selects the chunks that have
+// no vector for the current model, so an interrupted run continues by starting
+// another, and a chunk that has a vector is never selected again.
 type Embed struct {
 	readers vaultport.VaultReaders
 	chunks  embeddingport.VectorQueries
@@ -67,9 +66,9 @@ func (u Embed) inferWorkers() int {
 	return 1
 }
 
-// NewEmbed is what a vault's chunks are given vectors through: the vault the
-// text is read out of, what says which chunks owe a vector from the model in
-// use, and where the vectors are written.
+// NewEmbed creates an Embed from the readers of vault text, the query for chunks
+// lacking a vector for the current model, and the repository where vectors are
+// written.
 func NewEmbed(
 	readers vaultport.VaultReaders, chunks embeddingport.VectorQueries, vectors embeddingport.VectorRepository,
 ) Embed {
@@ -109,7 +108,7 @@ type completedBatch struct {
 	source  string
 }
 
-// Execute embeds what one vault owes, in groups, until nothing owes anything.
+// Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
 func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error) {
 	var res EmbedResult
 	if u.Embedder == nil {
@@ -356,12 +355,12 @@ func (u Embed) storeBatches(
 	}
 }
 
-// read recovers what each chunk holds by opening its source again. The index
-// keeps where a chunk is, not what it says.
+// read recovers the text of each chunk by reopening its source; the index stores
+// chunk positions, not content.
 //
-// A chunk whose source is gone, or whose place is not in the text that source
-// holds now, is left as it is: the file is what is true, and the index follows it
-// when the file is next read.
+// A chunk whose source is gone, or whose position is not in the current source
+// text, is left unchanged: the file is the source of truth, and the index
+// follows it when the file is next read.
 func (u Embed) read(
 	ctx context.Context,
 	source *extracted,
@@ -466,8 +465,9 @@ func (u Embed) prepareBatch(
 	return prep, nil
 }
 
-// queueText queues the text at index i for inference. A nil seen queues every
-// text; otherwise a key already in seen shares the position of its first text.
+// queueText queues the text at index i for inference. A nil visited map queues
+// every text; otherwise a key already in visited shares the position of its
+// first text.
 func (p *preparedBatch) queueText(i int, key, value string, visited map[string]int) {
 	if visited != nil {
 		if pos, ok := visited[key]; ok {
@@ -551,9 +551,9 @@ func packVector(q []int8) []byte {
 	return out
 }
 
-// extracted is the text a chunk's offsets belong to, taken out of the source
-// again. The source now open is kept, because the chunks of one source are asked
-// about together.
+// extracted is the text of one source, to which chunk offsets refer, read from
+// the source again. The most recently opened source is cached, because the
+// chunks of one source are processed together.
 type extracted struct {
 	files     vaultport.VaultReader
 	texts     textport.Texts
@@ -562,11 +562,11 @@ type extracted struct {
 	isIndexed bool
 }
 
-// text is the extracted text of one source, and false where the vault no longer
-// holds a source with text at that path.
+// textOf returns the extracted text of one source, and false when the vault no
+// longer holds a source with text at that path.
 //
-// A chunk of a note is re-sliced out of the note's file, and a chunk cut from a
-// version out of that version.
+// A note chunk is sliced from the note's file, and a version chunk from that
+// version.
 func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.isIndexed, nil

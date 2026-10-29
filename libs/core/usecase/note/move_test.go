@@ -31,8 +31,7 @@ func isolate(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 }
 
-// staleLinks answers as the index does, except where it is told to fail or
-// to say nothing.
+// staleLinks behaves as the index, except that it can fail or return no links.
 type staleLinks struct {
 	noteport.LinkQueries
 	backlinksErr error
@@ -65,8 +64,8 @@ func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]
 	return nil, f.err
 }
 
-// failingWriters writes as the filesystem does, except where it is told to
-// fail: to be held, to be opened for the nth time, or to write a file.
+// failingWriters behaves as the filesystem writers, except that it can fail on
+// open (on the nth call), on lock, or on file write.
 type failingWriters struct {
 	vaultport.VaultWriters
 	holdErr  error
@@ -107,8 +106,8 @@ func (f failingWriter) Write(ctx context.Context, path string, content []byte, f
 	return f.VaultWriter.Write(ctx, path, content, fp)
 }
 
-// moveParts are the collaborators of a move a test replaces. What is left
-// unset is what a real caller hands it.
+// moveParts are the collaborators of a move that a test replaces. Unset fields
+// use the production implementation.
 type moveParts struct {
 	links    noteport.LinkQueries
 	names    note.NameQueries
@@ -148,8 +147,7 @@ func openLinked(t *testing.T) changing {
 	})
 }
 
-// A move to the path a note is at is not a move. The answer says which note it
-// was asked about.
+// A move to the note's current path is a no-op. The result reports that path.
 func TestMovingANoteToItsOwnPathAnswersWithThatPath(t *testing.T) {
 	c := openLinked(t)
 
@@ -165,8 +163,8 @@ func TestMovingANoteToItsOwnPathAnswersWithThatPath(t *testing.T) {
 	}
 }
 
-// A move that stops before the file moved says where it was asked to go, and
-// that the file did not.
+// A move that stops before the file moves reports the requested destination
+// and that the file did not move.
 func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 	boom := errors.New("the vault would not do it")
 	for name, c := range map[string]struct {
@@ -215,7 +213,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 	}
 }
 
-// Whoever is drawing the note is told where it went.
+// A move notifies the move subscriber of the old and new paths.
 func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	c := openLinked(t)
 	var notified []domain.Move
@@ -231,9 +229,8 @@ func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	}
 }
 
-// A note nothing points at has no link to name an address for, so a vault that
-// cannot say which names are shared is not asked, and the index is not brought
-// level with notes nothing was written into.
+// A note with no incoming links has no link address to compute, so a vault that
+// cannot list shared names is not queried and the index is not reindexed.
 func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	c := openLinked(t)
 	var request [][]string
@@ -258,8 +255,8 @@ func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	}
 }
 
-// The work after the file moved stops at the first thing that fails, and says
-// so, and the file stays where it landed.
+// The work after the file move stops at the first failure and reports it, and
+// the file stays at its new path.
 func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 	boom := errors.New("the vault would not do it")
 	unterminated := "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n# Heat\n"
@@ -347,7 +344,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 	}
 }
 
-// A link the note no longer holds is not repaired and not reported.
+// A link the note no longer contains is neither repaired nor reported.
 func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 	c := openLinked(t)
 	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), isLinksEmpty: true}}
@@ -380,8 +377,8 @@ func TestANoteThatWentSinceTheLinksWereReadIsLeftOut(t *testing.T) {
 	}
 }
 
-// A note that no longer says the address the index read from it has nothing to
-// repair, and is not written.
+// A note that no longer contains the address the index recorded has nothing to
+// repair and is not written.
 func TestANoteThatNoLongerReturnsTheLinkIsNotSaved(t *testing.T) {
 	c := openLinked(t)
 	c.overwrite(t, "physics/Heat.md", "# Heat\n")

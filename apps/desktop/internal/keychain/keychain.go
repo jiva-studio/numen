@@ -83,9 +83,9 @@ func check(ctx context.Context, name string) error {
 	return nil
 }
 
-// readError maps a failure of the keychain to the core's own: a key that is not
-// there is port.ErrNoKey, and a keychain that cannot be reached is
-// port.ErrNoKeyStore with what the machine said.
+// readError maps a keychain failure to the core's own: a missing key is
+// port.ErrNoKey, and an unreachable keychain is port.ErrNoKeyStore with the
+// machine's error message.
 func readError(name string, err error) error {
 	switch {
 	case err == nil:

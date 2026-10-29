@@ -92,8 +92,8 @@ func normalise(row []float32) {
 	}
 }
 
-// applyPreemphasis lifts the high end of one stretch. The first sample stands as it
-// is, having nothing before it.
+// applyPreemphasis boosts the high frequencies of one segment. The first sample is
+// unchanged, having no predecessor.
 func applyPreemphasis(samples []float32) []float64 {
 	out := make([]float64, len(samples))
 	for i, v := range samples {
@@ -108,8 +108,8 @@ func applyPreemphasis(samples []float32) []float64 {
 
 // spectrogram is the power in each frequency bin of each frame.
 //
-// The signal is reflected outward by half a window at each end, so that a frame
-// is centred on every hop from the first sample to the last.
+// The signal is reflected by half a window at each end, so a frame is centred on
+// every hop from the first sample to the last.
 func spectrogram(x []float64, workers int) ([]float64, int) {
 	if len(x) == 0 {
 		return nil, 0

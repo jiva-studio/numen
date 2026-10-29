@@ -4,9 +4,9 @@ import type { Position, Size } from '@numen/ui'
 export type { Position }
 
 /**
- * A node as the caller describes it. The id is opaque: the plex has no way to
- * ask what it addresses, and the relation is a position in the picture rather than
- * a claim about a graph.
+ * A node as the caller describes it. The id is opaque: the plex cannot query what
+ * it addresses, and the relation is a position in the layout, not a claim about
+ * a graph.
  */
 export interface PlexNode {
   readonly id: string
@@ -27,9 +27,9 @@ export interface PlacedNode extends PlexNode {
 }
 
 /**
- * The shape of a node that is not one yet, drawn where letting go would leave
- * it. A box like any other: it is only that it has no title of its own, and
- * says the relation it would take instead.
+ * The shape of a placeholder that is not a node yet, drawn where releasing the
+ * gesture would place it. It is a box like any other, except that it has no
+ * title of its own and shows the relation it would take.
  */
 export const ghostNode = (node: PlexNode, point: Position, size: Size): PlacedNode => ({
   id: node.id,
@@ -54,23 +54,24 @@ export const isReachable = (node: PlacedNode): boolean =>
   node.relation !== 'focus' && node.opacity >= 1
 
 /**
- * Whether the keyboard stops on a node.
+ * Whether the keyboard can stop on a node.
  *
- * chosen, because a menu is asked for from wherever the keyboard is.
+ * The focused node is a stop although it cannot be chosen, because a menu is
+ * requested from wherever the keyboard is.
  */
 export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
 
 /**
  * What a node is to a gesture, beyond a box with a title.
  *
- * A node is only ever one of these: a hand cannot be reaching out of a node and
- * aiming at it at once, and a node that is not there yet is none of them.
+ * A node has exactly one of these roles: a pointer cannot start a gesture from a
+ * node and be aiming at it at once, and a node that does not exist yet has none.
  *
- * - `open` — nothing is under way, and a hand over it may reach out from it
- * - `closed` — reaching out from here is not on offer
- * - `source` — the gesture under way left from here
- * - `target` — letting go now would link the gesture to this node
- * - `ghost` — not a node yet: the shape of what letting go here would make
+ * - `open` — no gesture is in progress, and a pointer over it may start one
+ * - `closed` — a gesture cannot start here
+ * - `source` — the gesture in progress started here
+ * - `target` — releasing now would link the gesture to this node
+ * - `ghost` — not a node yet: the shape of what releasing here would create
  */
 export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
@@ -79,7 +80,7 @@ export const createAriaLabel = (node: PlexNode): string =>
   `${node.title || 'Untitled'}, ${node.relation}`
 
 /**
- * Where the handle sits within a node: on its trailing edge, halfway down.
+ * The handle position within a node: on its trailing edge, halfway down.
  *
  * Both drawings read it from here: the node draws the handle there, and the
  * plex starts the gesture's thread there.

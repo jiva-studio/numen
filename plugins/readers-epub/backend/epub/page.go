@@ -20,8 +20,7 @@ func computePageBytes(text string) int {
 	return lettersPerPage * len(text) / letters
 }
 
-// PageCount is how many pages the book is read in. A book with no text is one
-// page, which is the page a person is looking at.
+// PageCount is the number of pages in the book. A book with no text has one page.
 func (b *Book) PageCount() int {
 	size := b.PageBytes()
 	return max(1, (len(b.Text)+size-1)/size)
@@ -42,8 +41,8 @@ func (b *Book) PageStart(page int) int {
 	return pos
 }
 
-// PageBytes is how many bytes of this book's text stand on one page. Whoever
-// counts a page of this book counts it by this number.
+// PageBytes is the number of bytes of this book's text on one page. Every page
+// count of this book uses this number.
 func (b *Book) PageBytes() int {
 	if b.pageBytes == 0 {
 		return lettersPerPage

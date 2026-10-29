@@ -1,8 +1,8 @@
 /**
  * The lines of a book's contents.
  *
- * Which line holds an offset and which a typed word finds are decisions, and
- * they are the ones asked about here.
+ * Finding the line that holds an offset and the lines a typed word matches are
+ * the decisions under test.
  */
 import { describe, expect, it } from 'vitest'
 import { findEntries, findLineAt, type ContentsEntry } from './contents'
@@ -23,8 +23,8 @@ describe('the line an offset falls on', () => {
   })
 
   it('is none where the offset precedes every name', () => {
-    // A book whose first name stands past its opening pages leaves them under
-    // no name at all, and the panel marks nothing.
+    // A book whose first name starts after its opening pages leaves those pages
+    // under no name, and the panel marks nothing.
     expect(findLineAt([{ title: 'Chapter One', at: 500, level: 0 }], 12)).toBe(-1)
   })
 

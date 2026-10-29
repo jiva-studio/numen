@@ -1,9 +1,9 @@
 /**
- * The one thing this module decides on its own: how a file the window carries
- * about is written down and read back.
+ * The one thing this module decides on its own: how a file the window references
+ * is serialized and parsed.
  *
- * Everything else here hands a message across unchanged, and the schema says
- * what those look like.
+ * Everything else passes a message through unchanged, and the schema defines its
+ * shape.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Role } from '@numen/protocol'
@@ -103,7 +103,7 @@ describe('the role a link carries', () => {
     ])
   })
 
-  // The roles are the schema's, so a role added there is one this asks for.
+  // The roles come from the schema, so a role added there is covered here.
   it('is every role the schema names, on a link written into a note that is there', async () => {
     const carried = Object.keys(Role).filter(
       (name) => Number.isNaN(Number(name)) && name !== 'UNSPECIFIED',

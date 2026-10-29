@@ -39,8 +39,8 @@ func (c Config) getTextReaders() textport.TextReaders {
 	return c.TextVersions
 }
 
-// SetPluginTexts is the text versions of the vaults, as the plugins work them
-// through the host. Without text versions a plugin is told there are none.
+// SetPluginTexts provides the text versions of the vaults to the plugins through
+// the host. Without text versions, plugins are told there are none.
 func (c Config) SetPluginTexts() {
 	if c.PluginHost == nil {
 		return

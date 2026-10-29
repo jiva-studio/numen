@@ -12,11 +12,11 @@ import (
 // zeroes on each side.
 const sincWidth = 16
 
-// Convert is one signal at another rate.
+// Convert resamples one signal to another rate.
 //
-// Each output sample is what the input says at that moment, band-limited to
-// whichever of the two rates is the lower. It runs on up to workers goroutines;
-// zero or less is one per CPU.
+// Each output sample is the input value at that moment, band-limited to the
+// lower of the two rates. It runs on up to workers goroutines; zero or less is
+// one per CPU.
 func Convert(ctx context.Context, in []float32, from, to, workers int) ([]float32, error) {
 	if from == to || from <= 0 || len(in) == 0 {
 		return in, nil

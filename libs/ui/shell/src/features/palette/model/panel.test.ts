@@ -1,7 +1,7 @@
 /**
- * The panel of actions over the palette: closed until asked for, closed again
- * when its item offers nothing, and choosing in it never reaches an item that
- * is not lit.
+ * The panel of actions over the palette: closed until requested, closed again
+ * when its item offers nothing, and a choice made in it never reaches an item
+ * that is not highlighted.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'

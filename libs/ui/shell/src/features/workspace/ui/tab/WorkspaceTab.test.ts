@@ -1,4 +1,4 @@
-/** What one tab says about itself: its name, what it carries, and its close. */
+/** What one tab reports about itself: its name, its contents, and its close control. */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import WorkspaceTab from './WorkspaceTab.vue'

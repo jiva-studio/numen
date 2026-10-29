@@ -1,7 +1,8 @@
 /**
- * The letters the vaults are opened by, asked without a screen.
+ * The letters the vaults are opened by, tested without a screen.
  *
- * nothing, and a letter typed into a field is text.
+ * A held key or a modified letter opens nothing, and a letter typed into a field
+ * is text.
  */
 import { describe, expect, it } from 'vitest'
 import { getVaultForKey, vaultLetter, VAULT_LETTERS } from './letters'
