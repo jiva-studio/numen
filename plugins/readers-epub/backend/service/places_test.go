@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 )
 
 // createGuidedEpub is a book whose spine is the fourth child of the package element, after a guide,
@@ -44,46 +44,46 @@ func newGuidedBookServer(t *testing.T) (*BookServer, *hosttest.Vault) {
 
 func TestGetCfiNamesTheCharacterAtAnOffset(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
-	book, err := books.GetBook(t.Context(), connect.NewRequest(&epubv1.GetBookRequest{Path: "guided.epub"}))
+	book, err := books.GetBook(t.Context(), api.GetBookRequest{Path: "guided.epub"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second := book.Msg.GetDocuments()[1].GetOffset()
+	second := book.Documents[1].Offset
 
-	got, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "guided.epub", Offset: second + int32(len("Epilogue of the "))}))
+	got, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "guided.epub", Offset: second + int(len("Epilogue of the "))})
 
-	if err != nil || got.Msg.GetCfi() != "epubcfi(/8/4!/4/2/1:17)" {
+	if err != nil || got.Cfi != "epubcfi(/8/4!/4/2/1:17)" {
 		t.Errorf("GetCfi = %v (%v), want epubcfi(/8/4!/4/2/1:17)", got, err)
 	}
 }
 
 func TestFindOffsetReturnsTheOffsetACFINames(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
-	book, err := books.GetBook(t.Context(), connect.NewRequest(&epubv1.GetBookRequest{Path: "guided.epub"}))
+	book, err := books.GetBook(t.Context(), api.GetBookRequest{Path: "guided.epub"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second := book.Msg.GetDocuments()[1].GetOffset()
+	second := book.Documents[1].Offset
 
-	got, err := books.FindOffset(t.Context(), connect.NewRequest(&epubv1.FindOffsetRequest{Path: "guided.epub", Cfi: "epubcfi(/8/4!/4/2/1:17)"}))
+	got, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "guided.epub", Cfi: "epubcfi(/8/4!/4/2/1:17)"})
 
-	want := second + int32(len("Epilogue of the "))
-	if err != nil || got.Msg.GetOffset() != want {
+	want := second + int(len("Epilogue of the "))
+	if err != nil || got.Offset != want {
 		t.Errorf("FindOffset = %v (%v), want offset %d", got, err, want)
 	}
 }
 
 func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
 	books, files := newGuidedBookServer(t)
-	first, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "guided.epub", Offset: 0}))
+	first, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "guided.epub", Offset: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
 	files.File("guided.epub", string(createImageEpub(t)))
 
-	second, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "guided.epub", Offset: 0}))
+	second, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "guided.epub", Offset: 0})
 
-	if err != nil || first.Msg.GetCfi() != "epubcfi(/8/2!/4/2/1:0)" || second.Msg.GetCfi() != "epubcfi(/6/2!/4/2/1:0)" {
+	if err != nil || first.Cfi != "epubcfi(/8/2!/4/2/1:0)" || second.Cfi != "epubcfi(/6/2!/4/2/1:0)" {
 		t.Errorf("the CFIs of offset 0 are %v and %v (%v), want the guided book's and then the pictured book's", first, second, err)
 	}
 }
@@ -91,9 +91,9 @@ func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
 func TestFindOffset_ErrorsOnInvalidCFI(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
 
-	_, err := books.FindOffset(t.Context(), connect.NewRequest(&epubv1.FindOffsetRequest{Path: "guided.epub", Cfi: "/8/4!/4/2"}))
+	_, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "guided.epub", Cfi: "/8/4!/4/2"})
 
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+	if codeOf(err) != server.CodeInvalidArgument {
 		t.Errorf("FindOffset of no CFI: %v, want invalid argument", err)
 	}
 }
@@ -101,9 +101,9 @@ func TestFindOffset_ErrorsOnInvalidCFI(t *testing.T) {
 func TestFindOffsetFindsNoDocumentTheSpineDoesNotHold(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
 
-	_, err := books.FindOffset(t.Context(), connect.NewRequest(&epubv1.FindOffsetRequest{Path: "guided.epub", Cfi: "epubcfi(/6/4!/4/2/1:0)"}))
+	_, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "guided.epub", Cfi: "epubcfi(/6/4!/4/2/1:0)"})
 
-	if connect.CodeOf(err) != connect.CodeNotFound {
+	if codeOf(err) != server.CodeNotFound {
 		t.Errorf("FindOffset of a CFI outside the spine: %v, want not found", err)
 	}
 }
@@ -111,9 +111,9 @@ func TestFindOffsetFindsNoDocumentTheSpineDoesNotHold(t *testing.T) {
 func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
 
-	_, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{}))
+	_, err := books.GetCfi(t.Context(), api.GetCfiRequest{})
 
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+	if codeOf(err) != server.CodeInvalidArgument {
 		t.Errorf("GetCfi without a path: %v, want invalid argument", err)
 	}
 }
@@ -130,9 +130,9 @@ func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
 	books := NewBookServer(files)
 	t.Cleanup(books.Close)
 
-	_, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "blank.epub"}))
+	_, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "blank.epub"})
 
-	if connect.CodeOf(err) != connect.CodeNotFound {
+	if codeOf(err) != server.CodeNotFound {
 		t.Errorf("GetCfi in a book with no text: %v, want not found", err)
 	}
 }

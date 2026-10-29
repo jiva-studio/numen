@@ -7,14 +7,28 @@ import (
 	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
-	"github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1/epubv1connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// The handler a host that links the plugin in serves answers the book service with the token it
-// was given, and refuses a call without it.
-func TestTheLinkedHandlerAnswersTheBookService(t *testing.T) {
+// codeOf returns the code a method failing with err answers.
+func codeOf(err error) server.ErrorCode {
+	if err == nil {
+		return ""
+	}
+	return toAPIError(err).Code
+}
+
+func postMethod(handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/numen.epub/"+method, strings.NewReader(body))
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	recorded := httptest.NewRecorder()
+	handler.ServeHTTP(recorded, req)
+	return recorded
+}
+
+func TestLinkedHandler_RequiresTheHostToken(t *testing.T) {
 	handler, err := NewHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
@@ -22,22 +36,16 @@ func TestTheLinkedHandlerAnswersTheBookService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
 
-	client := epubv1connect.NewBookServiceClient(web.Client(), web.URL)
-	if _, err := client.GetBook(t.Context(), connect.NewRequest(&epubv1.GetBookRequest{Path: "book.epub"})); connect.CodeOf(err) != connect.CodeUnauthenticated {
-		t.Fatalf("GetBook without the token = %v, want unauthenticated", err)
+	if got := postMethod(handler, "GetBook", `{"path":"book.epub"}`, "").Code; got != http.StatusUnauthorized {
+		t.Fatalf("GetBook without the token = %d, want %d", got, http.StatusUnauthorized)
 	}
-	req := connect.NewRequest(&epubv1.GetBookRequest{})
-	req.Header().Set("Authorization", "Bearer linked-token")
-	if _, err := client.GetBook(t.Context(), req); connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("GetBook with no path = %v, want invalid argument", err)
+	if got := postMethod(handler, "GetBook", `{}`, "linked-token"); got.Code != http.StatusBadRequest || !strings.Contains(got.Body.String(), `"code":"invalid_argument"`) {
+		t.Fatalf("GetBook with no path = %d %s, want invalid_argument", got.Code, got.Body)
 	}
 }
 
-// A linked handler reaches the host at the port of its variables.
-func TestTheLinkedHandlerReachesTheHostOfItsVariables(t *testing.T) {
+func TestLinkedHandler_ReachesTheHostOfItsVariables(t *testing.T) {
 	hostServer := httptest.NewServer(http.NotFoundHandler())
 	defer hostServer.Close()
 	port := hostServer.URL[strings.LastIndex(hostServer.URL, ":")+1:]
@@ -46,14 +54,9 @@ func TestTheLinkedHandlerReachesTheHostOfItsVariables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
 
-	req := connect.NewRequest(&epubv1.GetBookRequest{Path: filepath.Join("books", "book.epub")})
-	req.Header().Set("Authorization", "Bearer linked-token")
-	_, err = epubv1connect.NewBookServiceClient(web.Client(), web.URL).GetBook(t.Context(), req)
-
-	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Fatalf("GetBook = %v, want not found", err)
+	body := `{"path":"` + filepath.Join("books", "book.epub") + `"}`
+	if got := postMethod(handler, "GetBook", body, "linked-token"); got.Code != http.StatusNotFound {
+		t.Fatalf("GetBook = %d %s, want %d", got.Code, got.Body, http.StatusNotFound)
 	}
 }

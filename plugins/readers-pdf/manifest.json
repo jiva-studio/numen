@@ -18,10 +18,11 @@
     "keepAliveWhileVisible": false,
     "memoryLimitBytes": 2147483648
   },
+  "services": ["numen.pdf"],
   "backend": {
     "type": "process",
     "entrypoint": "bin/readers-pdf",
-    "serviceName": "numen.pdf.v1.DocumentService"
+    "serviceName": "numen.pdf"
   },
   "frontend": {
     "entrypoint": "dist/index.js",

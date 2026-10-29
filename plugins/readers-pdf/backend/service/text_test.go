@@ -7,13 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
-	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
 
 const pluginID = "md.numen.readers.pdf"
@@ -206,53 +203,53 @@ func TestTheReaderMakesTextOfFilesOnly(t *testing.T) {
 	}
 }
 
-func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
+func TestGetHighlightsPlacesRunsOfTheLiveVersion(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
 	createText(t, server, host.TextCreation{Path: "tiny.pdf"})
 	documents := newDocumentServer(server, texts)
 	text := readLive(t, texts, "tiny.pdf")
 	beta, zeta := strings.Index(text.Text, "beta"), strings.Index(text.Text, "zeta")
 
-	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
+	res, err := documents.GetHighlights(t.Context(), GetHighlightsRequest{
 		Path: "tiny.pdf",
-		Ranges: []*pdfv1.Range{
-			{Start: int32(zeta), End: int32(zeta + len("zeta"))},
-			{Start: int32(beta), End: int32(zeta + len("zeta"))},
+		Ranges: []Range{
+			{Start: zeta, End: zeta + len("zeta")},
+			{Start: beta, End: zeta + len("zeta")},
 		},
-	}))
+	})
 	if err != nil {
 		t.Fatalf("GetHighlights: %v", err)
 	}
 
-	runs := res.Msg.GetRuns()
+	runs := res.Runs
 	if len(runs) != 2 {
 		t.Fatalf("%d runs, want the 2 asked about", len(runs))
 	}
-	if places := runs[0].GetPlaces(); len(places) != 1 || places[0].GetPage() != 1 || len(places[0].GetRects()) != 1 {
+	if places := runs[0].Places; len(places) != 1 || places[0].Page != 1 || len(places[0].Rects) != 1 {
 		t.Errorf("zeta is placed at %v, want one rectangle on page 1", places)
 	}
-	places := runs[1].GetPlaces()
-	if len(places) != 2 || places[0].GetPage() != 0 || places[1].GetPage() != 1 {
+	places := runs[1].Places
+	if len(places) != 2 || places[0].Page != 0 || places[1].Page != 1 {
 		t.Fatalf("beta to zeta is placed at %v, want pages 0 and 1", places)
 	}
-	if len(places[0].GetRects()) != 2 || len(places[1].GetRects()) != 3 {
-		t.Errorf("beta to zeta covers %d and %d words, want 2 and 3", len(places[0].GetRects()), len(places[1].GetRects()))
+	if len(places[0].Rects) != 2 || len(places[1].Rects) != 3 {
+		t.Errorf("beta to zeta covers %d and %d words, want 2 and 3", len(places[0].Rects), len(places[1].Rects))
 	}
 }
 
-func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
+func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
 	documents := newDocumentServer(server, texts)
 
-	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
-		Path: "tiny.pdf", Ranges: []*pdfv1.Range{{Start: 0, End: 5}},
-	}))
+	res, err := documents.GetHighlights(t.Context(), GetHighlightsRequest{
+		Path: "tiny.pdf", Ranges: []Range{{Start: 0, End: 5}},
+	})
 	if err != nil {
 		t.Fatalf("GetHighlights: %v", err)
 	}
 
-	if runs := res.Msg.GetRuns(); len(runs) != 1 || len(runs[0].GetPlaces()) != 0 {
-		t.Errorf("runs %v, want one standing nowhere", runs)
+	if runs := res.Runs; len(runs) != 1 || len(runs[0].Places) != 0 {
+		t.Errorf("runs %v, want one run with no places", runs)
 	}
 }
 

@@ -717,7 +717,7 @@ function scanFile(filePath) {
       } else {
         const mVar = RE_TS_VAR_PARTICIPLE.exec(lineWithoutComments)
         const rawProp = RE_TS_PROP_PARTICIPLE.exec(lineWithoutComments)
-        const isWireProp = rawProp && /\b(?:(?:answer|response|res|file|one|step|call|preset|reviewData|tally|day|task|at)\.(?:written|answered|asked|done)|props\.preset\.answered|props\.day\.asked|\.(?:transcript|ocr|fetched)\.done|\.done\])\b/.test(lineWithoutComments)
+        const isWireProp = rawProp && /\b(?:(?:answer|response|res|file|one|step|call|preset|reviewData|tally|day|task|at)\.(?:written|answered|asked|done)|(?:chunk|iteration|next)\.done|props\.preset\.answered|props\.day\.asked|\.(?:transcript|ocr|fetched)\.done|\.done\])\b/.test(lineWithoutComments)
         const mProp = isWireProp ? null : rawProp
         const mParam = RE_TS_PARAM_PARTICIPLE.exec(lineWithoutComments)
         const m = mVar || mProp || mParam

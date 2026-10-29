@@ -1,0 +1,13 @@
+{
+  "title": "Anabasis",
+  "documents": [
+    { "path": "OEBPS/one.xhtml", "offset": 0, "length": 1500 },
+    { "path": "OEBPS/two.xhtml", "offset": 1500, "length": 2500 }
+  ],
+  "parts": [{ "title": "Book I", "offset": 0, "level": 1 }],
+  "printedPages": [{ "label": "iv", "offset": 120 }],
+  "pageCount": 8,
+  "textBytes": 4000,
+  "pageBytes": 500,
+  "stat": { "path": "Books/Anabasis.epub", "size": 12, "mtime": "1700000000000000000" }
+}

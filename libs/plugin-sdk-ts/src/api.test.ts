@@ -16,18 +16,18 @@ const stream = (text: string): Response =>
 
 describe('createApi', () => {
   it('posts JSON to the service and the method and returns the response', async () => {
-    let seen: { url: string; body: string } | undefined
+    let captured: { url: string; body: string } | undefined
     const api = createApi('org.example.echo', {
       origin: 'http://host',
       fetch: createFetch((url, init) => {
-        seen = { url, body: String(init.body) }
+        captured = { url, body: String(init.body) }
         return Response.json({ text: 'ab' })
       }),
     })
 
     const result = await api.call<{ text: string }, { text: string }>('Echo', { text: 'a' })
 
-    expect(seen).toEqual({ url: 'http://host/org.example.echo/Echo', body: '{"text":"a"}' })
+    expect(captured).toEqual({ url: 'http://host/org.example.echo/Echo', body: '{"text":"a"}' })
     expect(result).toEqual({ ok: true, value: { text: 'ab' } })
   })
 
@@ -67,15 +67,15 @@ describe('createApi', () => {
       ),
     })
 
-    const seen: unknown[] = []
+    const captured: unknown[] = []
     const iterator = api.stream('Count', {})
     let step = await iterator.next()
     while (!step.done) {
-      seen.push(step.value)
+      captured.push(step.value)
       step = await iterator.next()
     }
 
-    expect(seen).toEqual([{ n: 1 }, { n: 2 }])
+    expect(captured).toEqual([{ n: 1 }, { n: 2 }])
     expect(step.value).toBeNull()
   })
 

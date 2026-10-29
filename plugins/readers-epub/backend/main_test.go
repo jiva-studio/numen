@@ -4,14 +4,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/service"
@@ -121,43 +120,43 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("test.epub", string(epubBytes))
 
-	server := service.NewBookServer(files)
+	books := service.NewBookServer(files)
 	ctx := context.Background()
 
 	// Test GetBook
-	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	resp, err := books.GetBook(ctx, api.GetBookRequest{
 		Path: "test.epub",
-	}))
+	})
 	if err != nil {
 		t.Fatalf("unexpected GetBook error: %v", err)
 	}
 
-	if resp.Msg.GetTitle() != "Test Book" {
-		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
+	if resp.Title != "Test Book" {
+		t.Fatalf("expected title 'Test Book', got %q", resp.Title)
 	}
-	if len(resp.Msg.GetDocuments()) != 1 {
-		t.Fatalf("expected 1 document, got %d", len(resp.Msg.GetDocuments()))
+	if len(resp.Documents) != 1 {
+		t.Fatalf("expected 1 document, got %d", len(resp.Documents))
 	}
-	if resp.Msg.GetDocuments()[0].GetPath() != "OEBPS/doc1.xhtml" {
-		t.Fatalf("unexpected document path: %s", resp.Msg.GetDocuments()[0].GetPath())
+	if resp.Documents[0].Path != "OEBPS/doc1.xhtml" {
+		t.Fatalf("unexpected document path: %s", resp.Documents[0].Path)
 	}
 
 	// Test ReadBookMarkup
-	markupResp, err := server.ReadBookMarkup(ctx, connect.NewRequest(&epubv1.ReadBookMarkupRequest{
+	markupResp, err := books.ReadBookMarkup(ctx, api.ReadBookMarkupRequest{
 		Path:     "test.epub",
 		Document: "OEBPS/doc1.xhtml",
-	}))
+	})
 	if err != nil {
 		t.Fatalf("unexpected ReadBookMarkup error: %v", err)
 	}
-	if markupResp.Msg.GetMarkup() == "" {
+	if markupResp.Markup == "" {
 		t.Fatal("expected non-empty markup response")
 	}
 
 	// Test non-existent book
-	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err = books.GetBook(ctx, api.GetBookRequest{
 		Path: "nonexistent.epub",
-	}))
+	})
 	if err == nil {
 		t.Fatal("expected error for nonexistent file, got nil")
 	}
@@ -174,69 +173,47 @@ func TestBookServerVaultBoundary(t *testing.T) {
 
 	files := hosttest.New("vault")
 	files.File("inside.epub", string(epubBytes))
-	server := service.NewBookServer(files)
+	books := service.NewBookServer(files)
 	ctx := context.Background()
 
 	// 1. Path outside vault should fail with permission denied
-	_, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err := books.GetBook(ctx, api.GetBookRequest{
 		Path: outsidePath,
-	}))
+	})
 	if err == nil {
 		t.Fatal("expected error for path outside vault root, got nil")
 	}
-	if connect.CodeOf(err) != connect.CodePermissionDenied {
-		t.Fatalf("expected CodePermissionDenied, got %v", connect.CodeOf(err))
+	if codeOf(err) != server.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v", codeOf(err))
 	}
 
 	// 2. Path traversal should fail with permission denied
-	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err = books.GetBook(ctx, api.GetBookRequest{
 		Path: "../outside.epub",
-	}))
+	})
 	if err == nil {
 		t.Fatal("expected error for traversal path, got nil")
 	}
-	if connect.CodeOf(err) != connect.CodePermissionDenied {
-		t.Fatalf("expected CodePermissionDenied, got %v", connect.CodeOf(err))
+	if codeOf(err) != server.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v", codeOf(err))
 	}
 
 	// 3. Relative path inside vault should succeed
-	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	resp, err := books.GetBook(ctx, api.GetBookRequest{
 		Path: "inside.epub",
-	}))
+	})
 	if err != nil {
 		t.Fatalf("unexpected error for relative path inside vault: %v", err)
 	}
-	if resp.Msg.GetTitle() != "Test Book" {
-		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
+	if resp.Title != "Test Book" {
+		t.Fatalf("expected title 'Test Book', got %q", resp.Title)
 	}
 }
 
-func TestAuthCheckInterceptor(t *testing.T) {
-	interceptor := server.NewAuthInterceptor("secret-token")
-	wrapped := interceptor.WrapUnary(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		return nil, nil
-	})
-
-	ctx := context.Background()
-
-	// Missing token -> unauthenticated
-	req := connect.NewRequest(&epubv1.GetBookRequest{})
-	_, err := wrapped(ctx, req)
-	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
-		t.Fatalf("expected CodeUnauthenticated for missing token, got %v", err)
+func codeOf(err error) server.ErrorCode {
+	var failure *server.APIError
+	if errors.As(err, &failure) {
+		return failure.Code
 	}
-
-	// Wrong token -> unauthenticated
-	req.Header().Set("Authorization", "Bearer wrong-token")
-	_, err = wrapped(ctx, req)
-	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
-		t.Fatalf("expected CodeUnauthenticated for wrong token, got %v", err)
-	}
-
-	// Correct token -> success
-	req.Header().Set("Authorization", "Bearer secret-token")
-	_, err = wrapped(ctx, req)
-	if err != nil {
-		t.Fatalf("unexpected error with valid token: %v", err)
-	}
+	return ""
 }

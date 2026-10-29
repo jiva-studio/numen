@@ -7,20 +7,16 @@ import (
 	"runtime"
 	"slices"
 
-	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
-	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1/pdfv1connect"
 )
 
-// DocumentServer implements pdfv1connect.DocumentServiceHandler. Each call works the vault its
-// Numen-Vault header names.
+// DocumentServer answers the document methods of the plugin API. Each call works the vault its Numen-Vault
+// header names.
 type DocumentServer struct {
-	pdfv1connect.UnimplementedDocumentServiceHandler
-
 	files host.Vault
 	texts host.Texts
 }
@@ -35,91 +31,82 @@ func NewDocumentServer(files host.Vault, texts host.Texts) *DocumentServer {
 	return &DocumentServer{files: files, texts: texts}
 }
 
-// GetDocument returns metadata and dimensions for each page in the PDF.
-func (s *DocumentServer) GetDocument(
-	ctx context.Context,
-	req *connect.Request[pdfv1.GetDocumentRequest],
-) (*connect.Response[pdfv1.GetDocumentResponse], error) {
-	path := req.Msg.GetPath()
-	if path == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
+// Mount registers the document methods on api.
+func (s *DocumentServer) Mount(api *server.API) {
+	server.Handle(api, "GetDocument", s.GetDocument)
+	server.Handle(api, "GetHighlights", s.GetHighlights)
+}
+
+// GetDocument returns the size of each page of the PDF.
+func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest) (GetDocumentResponse, error) {
+	if req.Path == "" {
+		return GetDocumentResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
-	raw, _, err := getVault(s.files, req.Header()).Read(ctx, path)
+	raw, _, err := getVault(s.files, server.GetHeader(ctx)).Read(ctx, req.Path)
 	if err != nil {
-		return nil, readVaultError(err)
+		return GetDocumentResponse{}, readVaultError(err)
 	}
 
 	scan, err := pdf.OpenBytes(raw)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("read pdf: %w", err))
+		return GetDocumentResponse{}, server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read pdf: %v", err))
 	}
 	defer scan.Close()
 
 	pageCount := scan.GetPageCount()
-	pages := make([]*pdfv1.Page, 0, pageCount)
+	pages := make([]Page, 0, pageCount)
 	for i := 0; i < pageCount; i++ {
 		w, h, err := scan.GetPageSize(i)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("page size: %w", err))
+			return GetDocumentResponse{}, server.NewAPIError(server.CodeInternal, fmt.Sprintf("page size: %v", err))
 		}
-		pages = append(pages, &pdfv1.Page{
-			Width:  w,
-			Height: h,
-		})
+		pages = append(pages, Page{Width: w, Height: h})
 	}
-
-	return connect.NewResponse(&pdfv1.GetDocumentResponse{
-		Pages: pages,
-	}), nil
+	return GetDocumentResponse{Pages: pages}, nil
 }
 
-// mostSpans is the most runs one question about highlights may name.
+// mostSpans is the most ranges one GetHighlights request may hold.
 const mostSpans = 64
 
-// GetHighlights answers where runs of the file's live text version stand on its pages. A file with
-// no live version, or one whose version has no places, stands nowhere.
-func (s *DocumentServer) GetHighlights(
-	ctx context.Context,
-	req *connect.Request[pdfv1.GetHighlightsRequest],
-) (*connect.Response[pdfv1.GetHighlightsResponse], error) {
-	path := req.Msg.GetPath()
-	if path == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
+// GetHighlights places each range of the file's live text version on the pages. A file with no live
+// version, or a version without places, has no places.
+func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsRequest) (GetHighlightsResponse, error) {
+	if req.Path == "" {
+		return GetHighlightsResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
-	if _, err := getVault(s.files, req.Header()).StatFile(ctx, path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
-		return nil, readVaultError(err)
+	if _, err := getVault(s.files, server.GetHeader(ctx)).StatFile(ctx, req.Path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
+		return GetHighlightsResponse{}, readVaultError(err)
 	}
-	spans := req.Msg.GetRanges()
-	if len(spans) == 0 || len(spans) > mostSpans {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("ask about between one and %d runs, not %d", mostSpans, len(spans)))
+	if len(req.Ranges) == 0 || len(req.Ranges) > mostSpans {
+		return GetHighlightsResponse{}, server.NewAPIError(server.CodeInvalidArgument, fmt.Sprintf("expected between one and %d ranges, got %d", mostSpans, len(req.Ranges)))
 	}
-	runs := make([]domain.ByteRange, 0, len(spans))
+	runs := make([]domain.ByteRange, 0, len(req.Ranges))
 	end := 0
-	for _, one := range spans {
-		run := domain.ByteRange{Start: int(one.GetStart()), End: int(one.GetEnd())}
+	for _, one := range req.Ranges {
+		run := domain.ByteRange{Start: one.Start, End: one.End}
 		if run.Start < 0 || run.End <= run.Start {
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%d..%d is not a run of the text", run.Start, run.End))
+			return GetHighlightsResponse{}, server.NewAPIError(server.CodeInvalidArgument, fmt.Sprintf("%d..%d is not a range of the text", run.Start, run.End))
 		}
 		runs = append(runs, run)
 		end = max(end, run.End)
 	}
 
 	texts := s.texts
-	if id := host.GetRequestVault(req.Header()); id != "" {
+	if id := host.GetRequestVault(server.GetHeader(ctx)); id != "" {
 		texts = texts.With(id)
 	}
-	text, err := readLiveText(ctx, texts, path, end)
+	text, err := readLiveText(ctx, texts, req.Path, end)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("read the text of %s: %w", path, err))
+		return GetHighlightsResponse{}, server.NewAPIError(server.CodeUnavailable, fmt.Sprintf("read the text of %s: %v", req.Path, err))
 	}
-	out := &pdfv1.GetHighlightsResponse{Runs: make([]*pdfv1.DocumentRun, 0, len(runs))}
+	out := GetHighlightsResponse{Runs: make([]DocumentRun, 0, len(runs))}
 	for _, run := range runs {
-		out.Runs = append(out.Runs, &pdfv1.DocumentRun{Places: writePlaces(host.GetBoxes(text, run))})
+		out.Runs = append(out.Runs, DocumentRun{Places: writePlaces(host.GetBoxes(text, run))})
 	}
-	return connect.NewResponse(out), nil
+	return out, nil
 }
 
-// readLiveText is the live text version of a file, read until it holds the offset end. A file with
+// readLiveText reads the live text version of a file until it holds the offset end. A file with
 // no live version has an empty text.
 func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (domain.VersionText, error) {
 	listing, err := texts.ListVersions(ctx, path)
@@ -152,16 +139,16 @@ func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (
 	}
 }
 
-// writePlaces is the boxes of a run as places, one a page, in the order the pages come.
-func writePlaces(boxes []domain.HighlightBox) []*pdfv1.DocumentPlace {
-	var places []*pdfv1.DocumentPlace
+// writePlaces groups the boxes of a run by page, in page order of appearance.
+func writePlaces(boxes []domain.HighlightBox) []DocumentPlace {
+	places := []DocumentPlace{}
 	for _, box := range boxes {
-		rect := &pdfv1.DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
-		if n := len(places); n > 0 && places[n-1].GetPage() == int32(box.Page) {
+		rect := DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+		if n := len(places); n > 0 && places[n-1].Page == box.Page {
 			places[n-1].Rects = append(places[n-1].Rects, rect)
 			continue
 		}
-		places = append(places, &pdfv1.DocumentPlace{Page: int32(box.Page), Rects: []*pdfv1.DocumentRect{rect}})
+		places = append(places, DocumentPlace{Page: box.Page, Rects: []DocumentRect{rect}})
 	}
 	return places
 }

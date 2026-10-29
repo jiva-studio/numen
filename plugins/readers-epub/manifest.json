@@ -8,6 +8,7 @@
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
+  "services": ["numen.epub"],
   "readers": [{ "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }],
   "textInput": {
     "contentTypes": ["application/epub+zip"],
@@ -21,7 +22,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/readers-epub",
-    "serviceName": "numen.epub.v1.BookService"
+    "serviceName": "numen.epub"
   },
   "frontend": {
     "entrypoint": "dist/index.js",

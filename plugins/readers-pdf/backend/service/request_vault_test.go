@@ -1,17 +1,17 @@
 package service
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 // twoVaults is a current vault without the file and a second vault holding tiny.pdf with its text
@@ -42,33 +42,58 @@ func newTwoVaults(t *testing.T) twoVaults {
 	return twoVaults{current: current, other: other, texts: texts, server: server}
 }
 
+// postAPI asks a method of the document API of a server over HTTP, naming the vault where it is not
+// empty, and decodes the response.
+func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string, response any) int {
+	t.Helper()
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "token"}, func(s *server.Server) error {
+		documents.Mount(s.NewAPI(APIService))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/"+APIService+"/"+method, strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer token")
+	if vault != "" {
+		req.Header.Set("Numen-Vault", vault)
+	}
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code == http.StatusOK {
+		if err := json.Unmarshal(rec.Body.Bytes(), response); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return rec.Code
+}
+
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
 	documents := NewDocumentServer(v.current, v.texts)
-	req := connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: "tiny.pdf", Ranges: []*pdfv1.Range{{Start: 0, End: 4}}})
-	req.Header().Set("Numen-Vault", "Chemistry")
+	var res GetHighlightsResponse
 
-	res, err := documents.GetHighlights(t.Context(), req)
-	if err != nil {
-		t.Fatalf("GetHighlights: %v", err)
+	code := postAPI(t, documents, "GetHighlights", "Chemistry", `{"path":"tiny.pdf","ranges":[{"start":0,"end":4}]}`, &res)
+
+	if code != http.StatusOK {
+		t.Fatalf("GetHighlights answered %d", code)
 	}
-
-	if runs := res.Msg.GetRuns(); len(runs) != 1 || len(runs[0].GetPlaces()) == 0 {
-		t.Errorf("runs %v, want the run placed by Chemistry's text layer", runs)
+	if len(res.Runs) != 1 || len(res.Runs[0].Places) == 0 {
+		t.Errorf("runs %v, want the run placed by Chemistry's text layer", res.Runs)
 	}
 }
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
 	documents := NewDocumentServer(v.current, v.texts)
+	var res GetDocumentResponse
 
-	named := connect.NewRequest(&pdfv1.GetDocumentRequest{Path: "tiny.pdf"})
-	named.Header().Set("Numen-Vault", "Chemistry")
-	res, err := documents.GetDocument(t.Context(), named)
-	if err != nil || len(res.Msg.GetPages()) == 0 {
-		t.Fatalf("GetDocument in Chemistry = %v, %v, want its pages", res, err)
+	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)
+
+	if code != http.StatusOK || len(res.Pages) == 0 {
+		t.Fatalf("GetDocument in Chemistry = %d %v, want its pages", code, res)
 	}
-	if _, err := documents.GetDocument(t.Context(), connect.NewRequest(&pdfv1.GetDocumentRequest{Path: "tiny.pdf"})); err == nil {
+	if code := postAPI(t, documents, "GetDocument", "", `{"path":"tiny.pdf"}`, &res); code == http.StatusOK {
 		t.Error("GetDocument without a vault opened a file the current vault does not hold")
 	}
 }

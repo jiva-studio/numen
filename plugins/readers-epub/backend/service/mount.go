@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1/epubv1connect"
 )
 
 // Mount registers the plugin's services on s, reporting text versions to the host the environment
@@ -33,7 +32,7 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
 	s.OnClose(books.Close)
 	s.OnClose(texts.Close)
-	s.Register(epubv1connect.NewBookServiceHandler(books, s.HandlerOptions()...))
+	mountMethods(s, books)
 	s.RegisterRoute(entriesPattern, NewEntryServer(books))
 	s.Register(host.NewTextProviderHandler(texts, s.HandlerOptions()...))
 	return nil

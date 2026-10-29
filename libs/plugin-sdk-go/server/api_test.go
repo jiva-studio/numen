@@ -167,7 +167,7 @@ func TestNewAPI_PanicsOnAnInvalidName(t *testing.T) {
 	New().NewAPI("a/b")
 }
 
-func TestHandle_GivesTheRequestHeadersToTheMethod(t *testing.T) {
+func TestHandle_ExposesRequestHeaders(t *testing.T) {
 	handler, err := NewLinkedHandler(map[string]string{tokenVar: "api-token"}, func(s *Server) error {
 		Handle(s.NewAPI("org.example.echo"), "Vault", func(ctx context.Context, _ echoRequest) (echoResponse, error) {
 			return echoResponse{Text: GetHeader(ctx).Get("Numen-Vault")}, nil

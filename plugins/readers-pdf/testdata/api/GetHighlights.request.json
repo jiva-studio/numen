@@ -1,0 +1,7 @@
+{
+  "path": "Books/Book.pdf",
+  "ranges": [
+    { "start": 0, "end": 9 },
+    { "start": 10, "end": 20 }
+  ]
+}

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 // getVault scopes files to the vault named by the request's Numen-Vault header when present.
@@ -16,12 +16,12 @@ func getVault(files host.Vault, header http.Header) host.Vault {
 	return files
 }
 
-// readVaultError converts a host vault error into a Connect error.
+// readVaultError converts a host vault error into an API error.
 func readVaultError(err error) error {
 	if errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
-		return connect.NewError(connect.CodePermissionDenied, err)
+		return server.NewAPIError(server.CodePermissionDenied, err.Error())
 	}
-	return connect.NewError(connect.CodeNotFound, err)
+	return server.NewAPIError(server.CodeNotFound, err.Error())
 }
 
 // getStatus returns the HTTP status code for a host vault error.

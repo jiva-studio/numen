@@ -5,12 +5,12 @@ import (
 	"bytes"
 	"context"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 func createMinimalEpub(t *testing.T) []byte {
@@ -71,63 +71,63 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	})
 	vaultDir := files.Vault().Path
 
-	server := NewBookServer(files)
+	books := NewBookServer(files)
 	ctx := context.Background()
 
 	// 1. GetBook outside vault -> PermissionDenied
-	_, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err := books.GetBook(ctx, api.GetBookRequest{
 		Path: outsidePath,
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+	})
+	if err == nil || codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for GetBook outside vault, got %v", err)
 	}
 
 	// 2. ReadBookMarkup outside vault -> PermissionDenied
-	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&epubv1.ReadBookMarkupRequest{
+	_, err = books.ReadBookMarkup(ctx, api.ReadBookMarkupRequest{
 		Path:     outsidePath,
 		Document: "EPUB/chapter1.xhtml",
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+	})
+	if err == nil || codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for ReadBookMarkup outside vault, got %v", err)
 	}
 
 	// 3. Inside vault -> Success
-	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	resp, err := books.GetBook(ctx, api.GetBookRequest{
 		Path: "inside.epub",
-	}))
+	})
 	if err != nil {
 		t.Fatalf("expected success for GetBook inside vault, got %v", err)
 	}
-	if resp.Msg.GetTitle() != "Test Book" {
-		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
+	if resp.Title != "Test Book" {
+		t.Fatalf("expected title 'Test Book', got %q", resp.Title)
 	}
 
 	// 4. GetBook with path traversal -> PermissionDenied
-	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err = books.GetBook(ctx, api.GetBookRequest{
 		Path: "../outside.epub",
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+	})
+	if err == nil || codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for GetBook path traversal, got %v", err)
 	}
 
 	// 5. ReadBookMarkup with path traversal -> PermissionDenied
-	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&epubv1.ReadBookMarkupRequest{
+	_, err = books.ReadBookMarkup(ctx, api.ReadBookMarkupRequest{
 		Path:     "../outside.epub",
 		Document: "EPUB/chapter1.xhtml",
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+	})
+	if err == nil || codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for ReadBookMarkup path traversal, got %v", err)
 	}
 
 	// 6. Double dot in legitimate filename inside vault -> Success
-	resp, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	resp, err = books.GetBook(ctx, api.GetBookRequest{
 		Path: "a..b.epub",
-	}))
+	})
 	if err != nil {
 		t.Fatalf("expected success for double-dot filename inside vault, got %v", err)
 	}
-	if resp.Msg.GetTitle() != "Test Book" {
-		t.Fatalf("expected title 'Test Book', got %q", resp.Msg.GetTitle())
+	if resp.Title != "Test Book" {
+		t.Fatalf("expected title 'Test Book', got %q", resp.Title)
 	}
 
 	// 7. Symlink pointing outside vault rejected even when target does not exist -> PermissionDenied
@@ -135,10 +135,10 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	if err := os.Symlink(filepath.Join(outsideDir, "missing.epub"), brokenLink); err != nil {
 		t.Fatal(err)
 	}
-	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err = books.GetBook(ctx, api.GetBookRequest{
 		Path: brokenLink,
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+	})
+	if err == nil || codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for broken outside symlink, got %v", err)
 	}
 
@@ -146,10 +146,10 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	hiddenVault := hosttest.New("vault")
 	hiddenVault.Hide()
 	emptyServer := NewBookServer(hiddenVault)
-	_, err = emptyServer.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
+	_, err = emptyServer.GetBook(ctx, api.GetBookRequest{
 		Path: "inside.epub",
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
+	})
+	if err == nil || codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for hidden vault, got %v", err)
 	}
 }

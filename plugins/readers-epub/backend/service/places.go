@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
 
-	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/cfi"
-	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 )
 
 // placedBook is the book a place was last asked of, kept while its file is the same bytes: the tab
@@ -24,12 +21,12 @@ type placedBook struct {
 
 // readPlacedBook reads a book of the vault the request works, or returns the one read last while
 // its file is unchanged.
-func (s *BookServer) readPlacedBook(ctx context.Context, header http.Header, path string) (*epub.Book, error) {
+func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Book, error) {
 	if path == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("path required"))
+		return nil, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
-	vaultID := host.GetRequestVault(header)
-	files := getVault(s.files, header)
+	vaultID := getRequestVault(ctx)
+	files := getVault(ctx, s.files)
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)
@@ -56,37 +53,31 @@ func (s *BookServer) readPlacedBook(ctx context.Context, header http.Header, pat
 }
 
 // GetCfi returns the EPUB CFI of the character at an offset of a book's text.
-func (s *BookServer) GetCfi(
-	ctx context.Context,
-	req *connect.Request[epubv1.GetCfiRequest],
-) (*connect.Response[epubv1.GetCfiResponse], error) {
-	book, err := s.readPlacedBook(ctx, req.Header(), req.Msg.GetPath())
+func (s *BookServer) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.GetCfiResponse, error) {
+	book, err := s.readPlacedBook(ctx, req.Path)
 	if err != nil {
-		return nil, err
+		return api.GetCfiResponse{}, err
 	}
-	place, ok := book.GetCFI(int(req.Msg.GetOffset()))
+	place, ok := book.GetCFI(req.Offset)
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("%s has no text to name a place in", req.Msg.GetPath()))
+		return api.GetCfiResponse{}, server.NewAPIError(server.CodeNotFound, fmt.Sprintf("%s has no text to name a place in", req.Path))
 	}
-	return connect.NewResponse(&epubv1.GetCfiResponse{Cfi: place.String()}), nil
+	return api.GetCfiResponse{Cfi: place.String()}, nil
 }
 
 // FindOffset returns the offset of a book's text an EPUB CFI names.
-func (s *BookServer) FindOffset(
-	ctx context.Context,
-	req *connect.Request[epubv1.FindOffsetRequest],
-) (*connect.Response[epubv1.FindOffsetResponse], error) {
-	place, err := cfi.Parse(req.Msg.GetCfi())
+func (s *BookServer) FindOffset(ctx context.Context, req api.FindOffsetRequest) (api.FindOffsetResponse, error) {
+	place, err := cfi.Parse(req.Cfi)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return api.FindOffsetResponse{}, server.NewAPIError(server.CodeInvalidArgument, err.Error())
 	}
-	book, err := s.readPlacedBook(ctx, req.Header(), req.Msg.GetPath())
+	book, err := s.readPlacedBook(ctx, req.Path)
 	if err != nil {
-		return nil, err
+		return api.FindOffsetResponse{}, err
 	}
 	offset, ok := book.FindOffset(place)
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("%s names no document of %s", req.Msg.GetCfi(), req.Msg.GetPath()))
+		return api.FindOffsetResponse{}, server.NewAPIError(server.CodeNotFound, fmt.Sprintf("%s names no document of %s", req.Cfi, req.Path))
 	}
-	return connect.NewResponse(&epubv1.FindOffsetResponse{Offset: int32(offset)}), nil
+	return api.FindOffsetResponse{Offset: offset}, nil
 }
