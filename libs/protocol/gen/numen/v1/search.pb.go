@@ -92,6 +92,122 @@ func (SearchMode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{0}
 }
 
+// FloorSource is where the floor in force comes from.
+type FloorSource int32
+
+const (
+	FloorSource_FLOOR_SOURCE_UNSPECIFIED FloorSource = 0
+	// The settings file names one floor for every model.
+	FloorSource_FLOOR_SOURCE_FILE FloorSource = 1
+	// The person set it for the model in use.
+	FloorSource_FLOOR_SOURCE_MANUAL FloorSource = 2
+	// Measured on the active vault with the model in use.
+	FloorSource_FLOOR_SOURCE_CALIBRATED FloorSource = 3
+	// The starting floor the model's plugin reports for it.
+	FloorSource_FLOOR_SOURCE_MODEL FloorSource = 4
+	// No other source answered.
+	FloorSource_FLOOR_SOURCE_DEFAULT FloorSource = 5
+)
+
+// Enum value maps for FloorSource.
+var (
+	FloorSource_name = map[int32]string{
+		0: "FLOOR_SOURCE_UNSPECIFIED",
+		1: "FLOOR_SOURCE_FILE",
+		2: "FLOOR_SOURCE_MANUAL",
+		3: "FLOOR_SOURCE_CALIBRATED",
+		4: "FLOOR_SOURCE_MODEL",
+		5: "FLOOR_SOURCE_DEFAULT",
+	}
+	FloorSource_value = map[string]int32{
+		"FLOOR_SOURCE_UNSPECIFIED": 0,
+		"FLOOR_SOURCE_FILE":        1,
+		"FLOOR_SOURCE_MANUAL":      2,
+		"FLOOR_SOURCE_CALIBRATED":  3,
+		"FLOOR_SOURCE_MODEL":       4,
+		"FLOOR_SOURCE_DEFAULT":     5,
+	}
+)
+
+func (x FloorSource) Enum() *FloorSource {
+	p := new(FloorSource)
+	*p = x
+	return p
+}
+
+func (x FloorSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FloorSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_search_proto_enumTypes[1].Descriptor()
+}
+
+func (FloorSource) Type() protoreflect.EnumType {
+	return &file_numen_v1_search_proto_enumTypes[1]
+}
+
+func (x FloorSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FloorSource.Descriptor instead.
+func (FloorSource) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{1}
+}
+
+// CalibrationOutcome is how a calibration ended when it did not fail.
+type CalibrationOutcome int32
+
+const (
+	CalibrationOutcome_CALIBRATION_OUTCOME_UNSPECIFIED CalibrationOutcome = 0
+	// The floor was measured and kept.
+	CalibrationOutcome_CALIBRATION_OUTCOME_DONE CalibrationOutcome = 1
+	// The vault holds too few embedded notes to measure.
+	CalibrationOutcome_CALIBRATION_OUTCOME_TOO_FEW CalibrationOutcome = 2
+)
+
+// Enum value maps for CalibrationOutcome.
+var (
+	CalibrationOutcome_name = map[int32]string{
+		0: "CALIBRATION_OUTCOME_UNSPECIFIED",
+		1: "CALIBRATION_OUTCOME_DONE",
+		2: "CALIBRATION_OUTCOME_TOO_FEW",
+	}
+	CalibrationOutcome_value = map[string]int32{
+		"CALIBRATION_OUTCOME_UNSPECIFIED": 0,
+		"CALIBRATION_OUTCOME_DONE":        1,
+		"CALIBRATION_OUTCOME_TOO_FEW":     2,
+	}
+)
+
+func (x CalibrationOutcome) Enum() *CalibrationOutcome {
+	p := new(CalibrationOutcome)
+	*p = x
+	return p
+}
+
+func (x CalibrationOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CalibrationOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_search_proto_enumTypes[2].Descriptor()
+}
+
+func (CalibrationOutcome) Type() protoreflect.EnumType {
+	return &file_numen_v1_search_proto_enumTypes[2]
+}
+
+func (x CalibrationOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CalibrationOutcome.Descriptor instead.
+func (CalibrationOutcome) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{2}
+}
+
 type SearchNamesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What was typed, as it was typed. Words are matched together, and the last
@@ -501,6 +617,524 @@ func (x *Passage) GetSelector() string {
 	return ""
 }
 
+type GetFloorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFloorRequest) Reset() {
+	*x = GetFloorRequest{}
+	mi := &file_numen_v1_search_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFloorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFloorRequest) ProtoMessage() {}
+
+func (x *GetFloorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFloorRequest.ProtoReflect.Descriptor instead.
+func (*GetFloorRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{6}
+}
+
+type GetFloorResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The floor in force, in cosine similarity.
+	Floor  float64     `protobuf:"fixed64,1,opt,name=floor,proto3" json:"floor,omitempty"`
+	Source FloorSource `protobuf:"varint,2,opt,name=source,proto3,enum=numen.v1.FloorSource" json:"source,omitempty"`
+	// The name of the model the floor is for.
+	Model string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	// The floor in force when the person has set none.
+	AutomaticFloor float64 `protobuf:"fixed64,4,opt,name=automatic_floor,json=automaticFloor,proto3" json:"automatic_floor,omitempty"`
+	// Whether the person set the floor for the model in use.
+	IsManual bool `protobuf:"varint,5,opt,name=is_manual,json=isManual,proto3" json:"is_manual,omitempty"`
+	// The floor the person set, zero while none is.
+	ManualFloor float64 `protobuf:"fixed64,6,opt,name=manual_floor,json=manualFloor,proto3" json:"manual_floor,omitempty"`
+	// What the last calibration measured, absent before the first.
+	Calibration   *FloorCalibration `protobuf:"bytes,7,opt,name=calibration,proto3,oneof" json:"calibration,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFloorResponse) Reset() {
+	*x = GetFloorResponse{}
+	mi := &file_numen_v1_search_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFloorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFloorResponse) ProtoMessage() {}
+
+func (x *GetFloorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFloorResponse.ProtoReflect.Descriptor instead.
+func (*GetFloorResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetFloorResponse) GetFloor() float64 {
+	if x != nil {
+		return x.Floor
+	}
+	return 0
+}
+
+func (x *GetFloorResponse) GetSource() FloorSource {
+	if x != nil {
+		return x.Source
+	}
+	return FloorSource_FLOOR_SOURCE_UNSPECIFIED
+}
+
+func (x *GetFloorResponse) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *GetFloorResponse) GetAutomaticFloor() float64 {
+	if x != nil {
+		return x.AutomaticFloor
+	}
+	return 0
+}
+
+func (x *GetFloorResponse) GetIsManual() bool {
+	if x != nil {
+		return x.IsManual
+	}
+	return false
+}
+
+func (x *GetFloorResponse) GetManualFloor() float64 {
+	if x != nil {
+		return x.ManualFloor
+	}
+	return 0
+}
+
+func (x *GetFloorResponse) GetCalibration() *FloorCalibration {
+	if x != nil {
+		return x.Calibration
+	}
+	return nil
+}
+
+// FloorCalibration is what one calibration measured.
+type FloorCalibration struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The middle of the similarities between a query and passages that are not
+	// about it.
+	Median float64 `protobuf:"fixed64,1,opt,name=median,proto3" json:"median,omitempty"`
+	// How far those similarities spread around the middle.
+	Spread float64 `protobuf:"fixed64,2,opt,name=spread,proto3" json:"spread,omitempty"`
+	// How many of them fall in each of equal bins from zero to one.
+	Histogram []int32 `protobuf:"varint,3,rep,packed,name=histogram,proto3" json:"histogram,omitempty"`
+	// How many queries were measured against how many passages.
+	QueryCount   int32 `protobuf:"varint,4,opt,name=query_count,json=queryCount,proto3" json:"query_count,omitempty"`
+	PassageCount int32 `protobuf:"varint,5,opt,name=passage_count,json=passageCount,proto3" json:"passage_count,omitempty"`
+	// When it was measured, in seconds since the epoch.
+	CalibratedAt  int64 `protobuf:"varint,6,opt,name=calibrated_at,json=calibratedAt,proto3" json:"calibrated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FloorCalibration) Reset() {
+	*x = FloorCalibration{}
+	mi := &file_numen_v1_search_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FloorCalibration) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FloorCalibration) ProtoMessage() {}
+
+func (x *FloorCalibration) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FloorCalibration.ProtoReflect.Descriptor instead.
+func (*FloorCalibration) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FloorCalibration) GetMedian() float64 {
+	if x != nil {
+		return x.Median
+	}
+	return 0
+}
+
+func (x *FloorCalibration) GetSpread() float64 {
+	if x != nil {
+		return x.Spread
+	}
+	return 0
+}
+
+func (x *FloorCalibration) GetHistogram() []int32 {
+	if x != nil {
+		return x.Histogram
+	}
+	return nil
+}
+
+func (x *FloorCalibration) GetQueryCount() int32 {
+	if x != nil {
+		return x.QueryCount
+	}
+	return 0
+}
+
+func (x *FloorCalibration) GetPassageCount() int32 {
+	if x != nil {
+		return x.PassageCount
+	}
+	return 0
+}
+
+func (x *FloorCalibration) GetCalibratedAt() int64 {
+	if x != nil {
+		return x.CalibratedAt
+	}
+	return 0
+}
+
+type CalibrateFloorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CalibrateFloorRequest) Reset() {
+	*x = CalibrateFloorRequest{}
+	mi := &file_numen_v1_search_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CalibrateFloorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CalibrateFloorRequest) ProtoMessage() {}
+
+func (x *CalibrateFloorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CalibrateFloorRequest.ProtoReflect.Descriptor instead.
+func (*CalibrateFloorRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{9}
+}
+
+type CalibrateFloorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Outcome       CalibrationOutcome     `protobuf:"varint,1,opt,name=outcome,proto3,enum=numen.v1.CalibrationOutcome" json:"outcome,omitempty"`
+	State         *GetFloorResponse      `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CalibrateFloorResponse) Reset() {
+	*x = CalibrateFloorResponse{}
+	mi := &file_numen_v1_search_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CalibrateFloorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CalibrateFloorResponse) ProtoMessage() {}
+
+func (x *CalibrateFloorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CalibrateFloorResponse.ProtoReflect.Descriptor instead.
+func (*CalibrateFloorResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CalibrateFloorResponse) GetOutcome() CalibrationOutcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return CalibrationOutcome_CALIBRATION_OUTCOME_UNSPECIFIED
+}
+
+func (x *CalibrateFloorResponse) GetState() *GetFloorResponse {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
+type SetFloorRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the floor below is in force. False returns to the automatic one.
+	IsManual bool `protobuf:"varint,1,opt,name=is_manual,json=isManual,proto3" json:"is_manual,omitempty"`
+	// The floor, in cosine similarity from zero to one.
+	Floor         float64 `protobuf:"fixed64,2,opt,name=floor,proto3" json:"floor,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetFloorRequest) Reset() {
+	*x = SetFloorRequest{}
+	mi := &file_numen_v1_search_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetFloorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetFloorRequest) ProtoMessage() {}
+
+func (x *SetFloorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetFloorRequest.ProtoReflect.Descriptor instead.
+func (*SetFloorRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SetFloorRequest) GetIsManual() bool {
+	if x != nil {
+		return x.IsManual
+	}
+	return false
+}
+
+func (x *SetFloorRequest) GetFloor() float64 {
+	if x != nil {
+		return x.Floor
+	}
+	return 0
+}
+
+type SetFloorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	State         *GetFloorResponse      `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetFloorResponse) Reset() {
+	*x = SetFloorResponse{}
+	mi := &file_numen_v1_search_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetFloorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetFloorResponse) ProtoMessage() {}
+
+func (x *SetFloorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetFloorResponse.ProtoReflect.Descriptor instead.
+func (*SetFloorResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SetFloorResponse) GetState() *GetFloorResponse {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
+type ProbeFloorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProbeFloorRequest) Reset() {
+	*x = ProbeFloorRequest{}
+	mi := &file_numen_v1_search_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProbeFloorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProbeFloorRequest) ProtoMessage() {}
+
+func (x *ProbeFloorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProbeFloorRequest.ProtoReflect.Descriptor instead.
+func (*ProbeFloorRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ProbeFloorRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+type ProbeFloorResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The similarity of the nearest passage, zero when the vault has none.
+	BestSimilarity float64 `protobuf:"fixed64,1,opt,name=best_similarity,json=bestSimilarity,proto3" json:"best_similarity,omitempty"`
+	// The floor in force.
+	Floor float64 `protobuf:"fixed64,2,opt,name=floor,proto3" json:"floor,omitempty"`
+	// Whether the nearest passage reaches the floor.
+	DoesPass      bool `protobuf:"varint,3,opt,name=does_pass,json=doesPass,proto3" json:"does_pass,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProbeFloorResponse) Reset() {
+	*x = ProbeFloorResponse{}
+	mi := &file_numen_v1_search_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProbeFloorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProbeFloorResponse) ProtoMessage() {}
+
+func (x *ProbeFloorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProbeFloorResponse.ProtoReflect.Descriptor instead.
+func (*ProbeFloorResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ProbeFloorResponse) GetBestSimilarity() float64 {
+	if x != nil {
+		return x.BestSimilarity
+	}
+	return 0
+}
+
+func (x *ProbeFloorResponse) GetFloor() float64 {
+	if x != nil {
+		return x.Floor
+	}
+	return 0
+}
+
+func (x *ProbeFloorResponse) GetDoesPass() bool {
+	if x != nil {
+		return x.DoesPass
+	}
+	return false
+}
+
 var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
@@ -536,17 +1170,66 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\bselector\x18\n" +
 	" \x01(\tR\bselectorB\a\n" +
 	"\x05_noteJ\x04\b\t\x10\n" +
-	"*\x88\x01\n" +
+	"\"\x11\n" +
+	"\x0fGetFloorRequest\"\xa9\x02\n" +
+	"\x10GetFloorResponse\x12\x14\n" +
+	"\x05floor\x18\x01 \x01(\x01R\x05floor\x12-\n" +
+	"\x06source\x18\x02 \x01(\x0e2\x15.numen.v1.FloorSourceR\x06source\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\x12'\n" +
+	"\x0fautomatic_floor\x18\x04 \x01(\x01R\x0eautomaticFloor\x12\x1b\n" +
+	"\tis_manual\x18\x05 \x01(\bR\bisManual\x12!\n" +
+	"\fmanual_floor\x18\x06 \x01(\x01R\vmanualFloor\x12A\n" +
+	"\vcalibration\x18\a \x01(\v2\x1a.numen.v1.FloorCalibrationH\x00R\vcalibration\x88\x01\x01B\x0e\n" +
+	"\f_calibration\"\xcb\x01\n" +
+	"\x10FloorCalibration\x12\x16\n" +
+	"\x06median\x18\x01 \x01(\x01R\x06median\x12\x16\n" +
+	"\x06spread\x18\x02 \x01(\x01R\x06spread\x12\x1c\n" +
+	"\thistogram\x18\x03 \x03(\x05R\thistogram\x12\x1f\n" +
+	"\vquery_count\x18\x04 \x01(\x05R\n" +
+	"queryCount\x12#\n" +
+	"\rpassage_count\x18\x05 \x01(\x05R\fpassageCount\x12#\n" +
+	"\rcalibrated_at\x18\x06 \x01(\x03R\fcalibratedAt\"\x17\n" +
+	"\x15CalibrateFloorRequest\"\x82\x01\n" +
+	"\x16CalibrateFloorResponse\x126\n" +
+	"\aoutcome\x18\x01 \x01(\x0e2\x1c.numen.v1.CalibrationOutcomeR\aoutcome\x120\n" +
+	"\x05state\x18\x02 \x01(\v2\x1a.numen.v1.GetFloorResponseR\x05state\"D\n" +
+	"\x0fSetFloorRequest\x12\x1b\n" +
+	"\tis_manual\x18\x01 \x01(\bR\bisManual\x12\x14\n" +
+	"\x05floor\x18\x02 \x01(\x01R\x05floor\"D\n" +
+	"\x10SetFloorResponse\x120\n" +
+	"\x05state\x18\x01 \x01(\v2\x1a.numen.v1.GetFloorResponseR\x05state\")\n" +
+	"\x11ProbeFloorRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\"p\n" +
+	"\x12ProbeFloorResponse\x12'\n" +
+	"\x0fbest_similarity\x18\x01 \x01(\x01R\x0ebestSimilarity\x12\x14\n" +
+	"\x05floor\x18\x02 \x01(\x01R\x05floor\x12\x1b\n" +
+	"\tdoes_pass\x18\x03 \x01(\bR\bdoesPass*\x88\x01\n" +
 	"\n" +
 	"SearchMode\x12\x1b\n" +
 	"\x17SEARCH_MODE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11SEARCH_MODE_WORDS\x10\x01\x12\x17\n" +
 	"\x13SEARCH_MODE_MEANING\x10\x02\x12\x15\n" +
 	"\x11SEARCH_MODE_NAMES\x10\x03\x12\x16\n" +
-	"\x12SEARCH_MODE_HYBRID\x10\x042\xb0\x01\n" +
+	"\x12SEARCH_MODE_HYBRID\x10\x04*\xaa\x01\n" +
+	"\vFloorSource\x12\x1c\n" +
+	"\x18FLOOR_SOURCE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11FLOOR_SOURCE_FILE\x10\x01\x12\x17\n" +
+	"\x13FLOOR_SOURCE_MANUAL\x10\x02\x12\x1b\n" +
+	"\x17FLOOR_SOURCE_CALIBRATED\x10\x03\x12\x16\n" +
+	"\x12FLOOR_SOURCE_MODEL\x10\x04\x12\x18\n" +
+	"\x14FLOOR_SOURCE_DEFAULT\x10\x05*x\n" +
+	"\x12CalibrationOutcome\x12#\n" +
+	"\x1fCALIBRATION_OUTCOME_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18CALIBRATION_OUTCOME_DONE\x10\x01\x12\x1f\n" +
+	"\x1bCALIBRATION_OUTCOME_TOO_FEW\x10\x022\xd4\x03\n" +
 	"\rSearchService\x12J\n" +
 	"\vSearchNames\x12\x1c.numen.v1.SearchNamesRequest\x1a\x1d.numen.v1.SearchNamesResponse\x12S\n" +
-	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponse\x12A\n" +
+	"\bGetFloor\x12\x19.numen.v1.GetFloorRequest\x1a\x1a.numen.v1.GetFloorResponse\x12S\n" +
+	"\x0eCalibrateFloor\x12\x1f.numen.v1.CalibrateFloorRequest\x1a .numen.v1.CalibrateFloorResponse\x12A\n" +
+	"\bSetFloor\x12\x19.numen.v1.SetFloorRequest\x1a\x1a.numen.v1.SetFloorResponse\x12G\n" +
+	"\n" +
+	"ProbeFloor\x12\x1b.numen.v1.ProbeFloorRequest\x1a\x1c.numen.v1.ProbeFloorResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_search_proto_rawDescOnce sync.Once
@@ -560,39 +1243,63 @@ func file_numen_v1_search_proto_rawDescGZIP() []byte {
 	return file_numen_v1_search_proto_rawDescData
 }
 
-var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_search_proto_goTypes = []any{
 	(SearchMode)(0),                // 0: numen.v1.SearchMode
-	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
-	(*SearchNamesResponse)(nil),    // 2: numen.v1.SearchNamesResponse
-	(*NameMatch)(nil),              // 3: numen.v1.NameMatch
-	(*SearchPassagesRequest)(nil),  // 4: numen.v1.SearchPassagesRequest
-	(*SearchPassagesResponse)(nil), // 5: numen.v1.SearchPassagesResponse
-	(*Passage)(nil),                // 6: numen.v1.Passage
-	(*Note)(nil),                   // 7: numen.v1.Note
-	(*Heading)(nil),                // 8: numen.v1.Heading
-	(*Range)(nil),                  // 9: numen.v1.Range
+	(FloorSource)(0),               // 1: numen.v1.FloorSource
+	(CalibrationOutcome)(0),        // 2: numen.v1.CalibrationOutcome
+	(*SearchNamesRequest)(nil),     // 3: numen.v1.SearchNamesRequest
+	(*SearchNamesResponse)(nil),    // 4: numen.v1.SearchNamesResponse
+	(*NameMatch)(nil),              // 5: numen.v1.NameMatch
+	(*SearchPassagesRequest)(nil),  // 6: numen.v1.SearchPassagesRequest
+	(*SearchPassagesResponse)(nil), // 7: numen.v1.SearchPassagesResponse
+	(*Passage)(nil),                // 8: numen.v1.Passage
+	(*GetFloorRequest)(nil),        // 9: numen.v1.GetFloorRequest
+	(*GetFloorResponse)(nil),       // 10: numen.v1.GetFloorResponse
+	(*FloorCalibration)(nil),       // 11: numen.v1.FloorCalibration
+	(*CalibrateFloorRequest)(nil),  // 12: numen.v1.CalibrateFloorRequest
+	(*CalibrateFloorResponse)(nil), // 13: numen.v1.CalibrateFloorResponse
+	(*SetFloorRequest)(nil),        // 14: numen.v1.SetFloorRequest
+	(*SetFloorResponse)(nil),       // 15: numen.v1.SetFloorResponse
+	(*ProbeFloorRequest)(nil),      // 16: numen.v1.ProbeFloorRequest
+	(*ProbeFloorResponse)(nil),     // 17: numen.v1.ProbeFloorResponse
+	(*Note)(nil),                   // 18: numen.v1.Note
+	(*Heading)(nil),                // 19: numen.v1.Heading
+	(*Range)(nil),                  // 20: numen.v1.Range
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
-	7,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
-	8,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
-	9,  // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
+	5,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
+	18, // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
+	19, // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
+	20, // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
 	0,  // 4: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
-	6,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
-	7,  // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
-	9,  // 7: numen.v1.Passage.ranges:type_name -> numen.v1.Range
-	9,  // 8: numen.v1.Passage.range:type_name -> numen.v1.Range
-	1,  // 9: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
-	4,  // 10: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
-	2,  // 11: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
-	5,  // 12: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	8,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
+	18, // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
+	20, // 7: numen.v1.Passage.ranges:type_name -> numen.v1.Range
+	20, // 8: numen.v1.Passage.range:type_name -> numen.v1.Range
+	1,  // 9: numen.v1.GetFloorResponse.source:type_name -> numen.v1.FloorSource
+	11, // 10: numen.v1.GetFloorResponse.calibration:type_name -> numen.v1.FloorCalibration
+	2,  // 11: numen.v1.CalibrateFloorResponse.outcome:type_name -> numen.v1.CalibrationOutcome
+	10, // 12: numen.v1.CalibrateFloorResponse.state:type_name -> numen.v1.GetFloorResponse
+	10, // 13: numen.v1.SetFloorResponse.state:type_name -> numen.v1.GetFloorResponse
+	3,  // 14: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
+	6,  // 15: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
+	9,  // 16: numen.v1.SearchService.GetFloor:input_type -> numen.v1.GetFloorRequest
+	12, // 17: numen.v1.SearchService.CalibrateFloor:input_type -> numen.v1.CalibrateFloorRequest
+	14, // 18: numen.v1.SearchService.SetFloor:input_type -> numen.v1.SetFloorRequest
+	16, // 19: numen.v1.SearchService.ProbeFloor:input_type -> numen.v1.ProbeFloorRequest
+	4,  // 20: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
+	7,  // 21: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
+	10, // 22: numen.v1.SearchService.GetFloor:output_type -> numen.v1.GetFloorResponse
+	13, // 23: numen.v1.SearchService.CalibrateFloor:output_type -> numen.v1.CalibrateFloorResponse
+	15, // 24: numen.v1.SearchService.SetFloor:output_type -> numen.v1.SetFloorResponse
+	17, // 25: numen.v1.SearchService.ProbeFloor:output_type -> numen.v1.ProbeFloorResponse
+	20, // [20:26] is the sub-list for method output_type
+	14, // [14:20] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_search_proto_init() }
@@ -604,13 +1311,14 @@ func file_numen_v1_search_proto_init() {
 	file_numen_v1_shared_proto_init()
 	file_numen_v1_search_proto_msgTypes[2].OneofWrappers = []any{}
 	file_numen_v1_search_proto_msgTypes[5].OneofWrappers = []any{}
+	file_numen_v1_search_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_search_proto_rawDesc), len(file_numen_v1_search_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   6,
+			NumEnums:      3,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

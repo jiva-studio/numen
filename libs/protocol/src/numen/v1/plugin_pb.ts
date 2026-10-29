@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSKMAwoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESEQoJbW9kZWxzX29mGAsgASgJEjQKCm9wdGlvbnNfYnkYDCABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Ei4KBHdoZW4YDSABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nQ29uZGl0aW9uEg4KBmFjY2VwdBgOIAMoCRIMCgRpY29uGA8gASgJQgYKBF9taW5CBgoEX21heEIHCgVfc3RlcCJDChNQbHVnaW5TZXR0aW5nT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCSJGChRQbHVnaW5TZXR0aW5nT3B0aW9ucxIuCgdvcHRpb25zGAEgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSJwCgxQbHVnaW5TZWNyZXQSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIuCgR3aGVuGAQgASgLMiAubnVtZW4udjEuUGx1Z2luU2V0dGluZ0NvbmRpdGlvbiKmAwoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSJwoHc2VjcmV0cxgJIAMoCzIWLm51bWVuLnYxLlBsdWdpblNlY3JldBIWCg5zdG9yZWRfc2VjcmV0cxgKIAMoCRI3ChJjb21wbGV0aW9uX2NvbnNlbnQYDCABKA4yGy5udW1lbi52MS5Db21wbGV0aW9uQ29uc2VudBIoCgdmYWlsdXJlGA0gASgLMhcubnVtZW4udjEuUGx1Z2luRmFpbHVyZRIUCgxoYXNfZnJvbnRlbmQYDiABKAgSJwoHcmVhZGVycxgPIAMoCzIWLm51bWVuLnYxLlBsdWdpblJlYWRlckoECAsQDFIGbW9kZWxzIi4KDFBsdWdpblJlYWRlchIKCgJpZBgBIAEoCRISCgpleHRlbnNpb25zGAIgAygJIkoKDVBsdWdpbkZhaWx1cmUSDgoGcmVhc29uGAEgASgJEhkKEWZhaWxlZF9hdF91bml4X21zGAIgASgDEg4KBmRldGFpbBgDIAEoCSITChFHZXRQbHVnaW5zUmVxdWVzdCI7ChJHZXRQbHVnaW5zUmVzcG9uc2USJQoHcGx1Z2lucxgBIAMoCzIULm51bWVuLnYxLlBsdWdpbkluZm8iJAoTRGVsaXZlckV2ZW50UmVxdWVzdBINCgVldmVudBgBIAEoCSJVChREZWxpdmVyRXZlbnRSZXNwb25zZRItCgVlcnJvchgBIAEoDjIeLm51bWVuLnYxLlBsdWdpbkV2ZW50RXJyb3JDb2RlEg4KBnJlYXNvbhgCIAEoCSq4AQoRQ29tcGxldGlvbkNvbnNlbnQSIgoeQ09NUExFVElPTl9DT05TRU5UX1VOU1BFQ0lGSUVEEAASHgoaQ09NUExFVElPTl9DT05TRU5UX1BFTkRJTkcQARIgChxDT01QTEVUSU9OX0NPTlNFTlRfUkVRVUVTVEVEEAISHgoaQ09NUExFVElPTl9DT05TRU5UX0FMTE9XRUQQAxIdChlDT01QTEVUSU9OX0NPTlNFTlRfREVOSUVEEAQqZAoUUGx1Z2luRXZlbnRFcnJvckNvZGUSJwojUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIjCh9QTFVHSU5fRVZFTlRfRVJST1JfQ09ERV9SRUZVU0VEEAEy2AEKFlBsdWdpbkxpZmVjeWNsZVNlcnZpY2USNQoEUGluZxIVLm51bWVuLnYxLlBpbmdSZXF1ZXN0GhYubnVtZW4udjEuUGluZ1Jlc3BvbnNlEkEKCFNodXRkb3duEhkubnVtZW4udjEuU2h1dGRvd25SZXF1ZXN0GhoubnVtZW4udjEuU2h1dGRvd25SZXNwb25zZRJECglDb25maWd1cmUSGi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0GhsubnVtZW4udjEuQ29uZmlndXJlUmVzcG9uc2UyWAoNUGx1Z2luU2VydmljZRJHCgpHZXRQbHVnaW5zEhsubnVtZW4udjEuR2V0UGx1Z2luc1JlcXVlc3QaHC5udW1lbi52MS5HZXRQbHVnaW5zUmVzcG9uc2UyYwoSUGx1Z2luRXZlbnRTZXJ2aWNlEk0KDERlbGl2ZXJFdmVudBIdLm51bWVuLnYxLkRlbGl2ZXJFdmVudFJlcXVlc3QaHi5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSKMAwoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESEQoJbW9kZWxzX29mGAsgASgJEjQKCm9wdGlvbnNfYnkYDCABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Ei4KBHdoZW4YDSABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nQ29uZGl0aW9uEg4KBmFjY2VwdBgOIAMoCRIMCgRpY29uGA8gASgJQgYKBF9taW5CBgoEX21heEIHCgVfc3RlcCJDChNQbHVnaW5TZXR0aW5nT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCSJGChRQbHVnaW5TZXR0aW5nT3B0aW9ucxIuCgdvcHRpb25zGAEgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSJwCgxQbHVnaW5TZWNyZXQSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIuCgR3aGVuGAQgASgLMiAubnVtZW4udjEuUGx1Z2luU2V0dGluZ0NvbmRpdGlvbiLcAwoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSJwoHc2VjcmV0cxgJIAMoCzIWLm51bWVuLnYxLlBsdWdpblNlY3JldBIWCg5zdG9yZWRfc2VjcmV0cxgKIAMoCRI3ChJjb21wbGV0aW9uX2NvbnNlbnQYDCABKA4yGy5udW1lbi52MS5Db21wbGV0aW9uQ29uc2VudBIoCgdmYWlsdXJlGA0gASgLMhcubnVtZW4udjEuUGx1Z2luRmFpbHVyZRIUCgxoYXNfZnJvbnRlbmQYDiABKAgSJwoHcmVhZGVycxgPIAMoCzIWLm51bWVuLnYxLlBsdWdpblJlYWRlchI0Cg5zZXR0aW5nc192aWV3cxgQIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdzVmlld0oECAsQDFIGbW9kZWxzIj4KElBsdWdpblNldHRpbmdzVmlldxIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRINCgVhZnRlchgDIAEoCSIuCgxQbHVnaW5SZWFkZXISCgoCaWQYASABKAkSEgoKZXh0ZW5zaW9ucxgCIAMoCSJKCg1QbHVnaW5GYWlsdXJlEg4KBnJlYXNvbhgBIAEoCRIZChFmYWlsZWRfYXRfdW5peF9tcxgCIAEoAxIOCgZkZXRhaWwYAyABKAkiEwoRR2V0UGx1Z2luc1JlcXVlc3QiOwoSR2V0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiVQoURGVsaXZlckV2ZW50UmVzcG9uc2USLQoFZXJyb3IYASABKA4yHi5udW1lbi52MS5QbHVnaW5FdmVudEVycm9yQ29kZRIOCgZyZWFzb24YAiABKAkquAEKEUNvbXBsZXRpb25Db25zZW50EiIKHkNPTVBMRVRJT05fQ09OU0VOVF9VTlNQRUNJRklFRBAAEh4KGkNPTVBMRVRJT05fQ09OU0VOVF9QRU5ESU5HEAESIAocQ09NUExFVElPTl9DT05TRU5UX1JFUVVFU1RFRBACEh4KGkNPTVBMRVRJT05fQ09OU0VOVF9BTExPV0VEEAMSHQoZQ09NUExFVElPTl9DT05TRU5UX0RFTklFRBAEKmQKFFBsdWdpbkV2ZW50RXJyb3JDb2RlEicKI1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfUkVGVVNFRBABMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMlgKDVBsdWdpblNlcnZpY2USRwoKR2V0UGx1Z2lucxIbLm51bWVuLnYxLkdldFBsdWdpbnNSZXF1ZXN0GhwubnVtZW4udjEuR2V0UGx1Z2luc1Jlc3BvbnNlMmMKElBsdWdpbkV2ZW50U2VydmljZRJNCgxEZWxpdmVyRXZlbnQSHS5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -460,6 +460,13 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
    * @generated from field: repeated numen.v1.PluginReader readers = 15;
    */
   readers: PluginReader[];
+
+  /**
+   * The components the frontend draws inside the plugin's settings.
+   *
+   * @generated from field: repeated numen.v1.PluginSettingsView settings_views = 16;
+   */
+  settingsViews: PluginSettingsView[];
 };
 
 /**
@@ -468,6 +475,41 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
  */
 export const PluginInfoSchema: GenMessage<PluginInfo> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 12);
+
+/**
+ * PluginSettingsView is a component of a plugin's frontend drawn among its settings.
+ *
+ * @generated from message numen.v1.PluginSettingsView
+ */
+export type PluginSettingsView = Message<"numen.v1.PluginSettingsView"> & {
+  /**
+   * The id the frontend registers the component under.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * What the component is called.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * The key of the setting the component is drawn after, empty for the top.
+   *
+   * @generated from field: string after = 3;
+   */
+  after: string;
+};
+
+/**
+ * Describes the message numen.v1.PluginSettingsView.
+ * Use `create(PluginSettingsViewSchema)` to create a new message.
+ */
+export const PluginSettingsViewSchema: GenMessage<PluginSettingsView> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 13);
 
 /**
  * PluginReader is a tab of a plugin's frontend that opens files.
@@ -497,7 +539,7 @@ export type PluginReader = Message<"numen.v1.PluginReader"> & {
  * Use `create(PluginReaderSchema)` to create a new message.
  */
 export const PluginReaderSchema: GenMessage<PluginReader> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 13);
+  messageDesc(file_numen_v1_plugin, 14);
 
 /**
  * PluginFailure is why a plugin is suspended, and when it was.
@@ -532,7 +574,7 @@ export type PluginFailure = Message<"numen.v1.PluginFailure"> & {
  * Use `create(PluginFailureSchema)` to create a new message.
  */
 export const PluginFailureSchema: GenMessage<PluginFailure> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 14);
+  messageDesc(file_numen_v1_plugin, 15);
 
 /**
  * @generated from message numen.v1.GetPluginsRequest
@@ -545,7 +587,7 @@ export type GetPluginsRequest = Message<"numen.v1.GetPluginsRequest"> & {
  * Use `create(GetPluginsRequestSchema)` to create a new message.
  */
 export const GetPluginsRequestSchema: GenMessage<GetPluginsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 15);
+  messageDesc(file_numen_v1_plugin, 16);
 
 /**
  * @generated from message numen.v1.GetPluginsResponse
@@ -562,7 +604,7 @@ export type GetPluginsResponse = Message<"numen.v1.GetPluginsResponse"> & {
  * Use `create(GetPluginsResponseSchema)` to create a new message.
  */
 export const GetPluginsResponseSchema: GenMessage<GetPluginsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 16);
+  messageDesc(file_numen_v1_plugin, 17);
 
 /**
  * @generated from message numen.v1.DeliverEventRequest
@@ -581,7 +623,7 @@ export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
  * Use `create(DeliverEventRequestSchema)` to create a new message.
  */
 export const DeliverEventRequestSchema: GenMessage<DeliverEventRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 17);
+  messageDesc(file_numen_v1_plugin, 18);
 
 /**
  * @generated from message numen.v1.DeliverEventResponse
@@ -603,7 +645,7 @@ export type DeliverEventResponse = Message<"numen.v1.DeliverEventResponse"> & {
  * Use `create(DeliverEventResponseSchema)` to create a new message.
  */
 export const DeliverEventResponseSchema: GenMessage<DeliverEventResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 18);
+  messageDesc(file_numen_v1_plugin, 19);
 
 /**
  * CompletionConsent is whether the person lets a plugin ask for model

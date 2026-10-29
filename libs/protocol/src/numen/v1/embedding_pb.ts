@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/embedding.proto.
  */
 export const file_numen_v1_embedding: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKFAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUiHQoLRmxvYXRWZWN0b3ISDgoGdmFsdWVzGAEgAygCIiIKEUVtYmVkQmF0Y2hSZXF1ZXN0Eg0KBXRleHRzGAEgAygJIjwKEkVtYmVkQmF0Y2hSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3IyuQEKEEVtYmVkZGluZ1NlcnZpY2USXAoRR2V0RW1iZWRkaW5nTW9kZWwSIi5udW1lbi52MS5HZXRFbWJlZGRpbmdNb2RlbFJlcXVlc3QaIy5udW1lbi52MS5HZXRFbWJlZGRpbmdNb2RlbFJlc3BvbnNlEkcKCkVtYmVkQmF0Y2gSGy5udW1lbi52MS5FbWJlZEJhdGNoUmVxdWVzdBocLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKZAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASIdCgtGbG9hdFZlY3RvchIOCgZ2YWx1ZXMYASADKAIiIgoRRW1iZWRCYXRjaFJlcXVlc3QSDQoFdGV4dHMYASADKAkiPAoSRW1iZWRCYXRjaFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvcjK5AQoQRW1iZWRkaW5nU2VydmljZRJcChFHZXRFbWJlZGRpbmdNb2RlbBIiLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVzcG9uc2USRwoKRW1iZWRCYXRjaBIbLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRCYXRjaFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.GetEmbeddingModelRequest
@@ -58,6 +58,14 @@ export type GetEmbeddingModelResponse = Message<"numen.v1.GetEmbeddingModelRespo
    * @generated from field: int32 concurrency = 6;
    */
   concurrency: number;
+
+  /**
+   * The similarity a passage starts out having to reach to answer a query under
+   * this model, zero when the plugin knows none.
+   *
+   * @generated from field: double floor_hint = 7;
+   */
+  floorHint: number;
 };
 
 /**

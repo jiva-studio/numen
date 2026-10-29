@@ -26,6 +26,23 @@ service SearchService {
   // caller says which way it is asked, so a client drawing them apart asks once
   // for each.
   rpc SearchPassages(SearchPassagesRequest) returns (SearchPassagesResponse);
+
+  // GetFloor is the similarity a passage has to reach to answer a search by
+  // meaning in the active vault, where it comes from, and what the last
+  // calibration measured.
+  rpc GetFloor(GetFloorRequest) returns (GetFloorResponse);
+
+  // CalibrateFloor measures where the model in use puts text about different
+  // things in the active vault, and keeps the floor that follows from it.
+  rpc CalibrateFloor(CalibrateFloorRequest) returns (CalibrateFloorResponse);
+
+  // SetFloor chooses between the calibrated floor and one the person sets, for
+  // the model in use.
+  rpc SetFloor(SetFloorRequest) returns (SetFloorResponse);
+
+  // ProbeFloor is how near the best passage of the active vault stands to a
+  // query, to be compared with the floor.
+  rpc ProbeFloor(ProbeFloorRequest) returns (ProbeFloorResponse);
 }
 
 message SearchNamesRequest {
@@ -136,4 +153,113 @@ message Passage {
   // The selector of the text version segment the hit is in, as JSON, and empty
   // for a note. It locates the hit in the file; the SDK documents its keys.
   string selector = 10;
+}
+
+// FloorSource is where the floor in force comes from.
+enum FloorSource {
+  FLOOR_SOURCE_UNSPECIFIED = 0;
+
+  // The settings file names one floor for every model.
+  FLOOR_SOURCE_FILE = 1;
+
+  // The person set it for the model in use.
+  FLOOR_SOURCE_MANUAL = 2;
+
+  // Measured on the active vault with the model in use.
+  FLOOR_SOURCE_CALIBRATED = 3;
+
+  // The starting floor the model's plugin reports for it.
+  FLOOR_SOURCE_MODEL = 4;
+
+  // No other source answered.
+  FLOOR_SOURCE_DEFAULT = 5;
+}
+
+message GetFloorRequest {}
+
+message GetFloorResponse {
+  // The floor in force, in cosine similarity.
+  double floor = 1;
+
+  FloorSource source = 2;
+
+  // The name of the model the floor is for.
+  string model = 3;
+
+  // The floor in force when the person has set none.
+  double automatic_floor = 4;
+
+  // Whether the person set the floor for the model in use.
+  bool is_manual = 5;
+
+  // The floor the person set, zero while none is.
+  double manual_floor = 6;
+
+  // What the last calibration measured, absent before the first.
+  optional FloorCalibration calibration = 7;
+}
+
+// FloorCalibration is what one calibration measured.
+message FloorCalibration {
+  // The middle of the similarities between a query and passages that are not
+  // about it.
+  double median = 1;
+
+  // How far those similarities spread around the middle.
+  double spread = 2;
+
+  // How many of them fall in each of equal bins from zero to one.
+  repeated int32 histogram = 3;
+
+  // How many queries were measured against how many passages.
+  int32 query_count = 4;
+  int32 passage_count = 5;
+
+  // When it was measured, in seconds since the epoch.
+  int64 calibrated_at = 6;
+}
+
+message CalibrateFloorRequest {}
+
+// CalibrationOutcome is how a calibration ended when it did not fail.
+enum CalibrationOutcome {
+  CALIBRATION_OUTCOME_UNSPECIFIED = 0;
+
+  // The floor was measured and kept.
+  CALIBRATION_OUTCOME_DONE = 1;
+
+  // The vault holds too few embedded notes to measure.
+  CALIBRATION_OUTCOME_TOO_FEW = 2;
+}
+
+message CalibrateFloorResponse {
+  CalibrationOutcome outcome = 1;
+  GetFloorResponse state = 2;
+}
+
+message SetFloorRequest {
+  // Whether the floor below is in force. False returns to the automatic one.
+  bool is_manual = 1;
+
+  // The floor, in cosine similarity from zero to one.
+  double floor = 2;
+}
+
+message SetFloorResponse {
+  GetFloorResponse state = 1;
+}
+
+message ProbeFloorRequest {
+  string query = 1;
+}
+
+message ProbeFloorResponse {
+  // The similarity of the nearest passage, zero when the vault has none.
+  double best_similarity = 1;
+
+  // The floor in force.
+  double floor = 2;
+
+  // Whether the nearest passage reaches the floor.
+  bool does_pass = 3;
 }

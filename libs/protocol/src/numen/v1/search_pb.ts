@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIo0BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLYAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIfCgZyYW5nZXMYBCADKAsyDy5udW1lbi52MS5SYW5nZRIQCghsb2NhdGlvbhgFIAEoCRIeCgVyYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZUoECAkQCiqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIo0BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLYAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIfCgZyYW5nZXMYBCADKAsyDy5udW1lbi52MS5SYW5nZRIQCghsb2NhdGlvbhgFIAEoCRIeCgVyYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZUoECAkQCiIRCg9HZXRGbG9vclJlcXVlc3Qi3wEKEEdldEZsb29yUmVzcG9uc2USDQoFZmxvb3IYASABKAESJQoGc291cmNlGAIgASgOMhUubnVtZW4udjEuRmxvb3JTb3VyY2USDQoFbW9kZWwYAyABKAkSFwoPYXV0b21hdGljX2Zsb29yGAQgASgBEhEKCWlzX21hbnVhbBgFIAEoCBIUCgxtYW51YWxfZmxvb3IYBiABKAESNAoLY2FsaWJyYXRpb24YByABKAsyGi5udW1lbi52MS5GbG9vckNhbGlicmF0aW9uSACIAQFCDgoMX2NhbGlicmF0aW9uIogBChBGbG9vckNhbGlicmF0aW9uEg4KBm1lZGlhbhgBIAEoARIOCgZzcHJlYWQYAiABKAESEQoJaGlzdG9ncmFtGAMgAygFEhMKC3F1ZXJ5X2NvdW50GAQgASgFEhUKDXBhc3NhZ2VfY291bnQYBSABKAUSFQoNY2FsaWJyYXRlZF9hdBgGIAEoAyIXChVDYWxpYnJhdGVGbG9vclJlcXVlc3QicgoWQ2FsaWJyYXRlRmxvb3JSZXNwb25zZRItCgdvdXRjb21lGAEgASgOMhwubnVtZW4udjEuQ2FsaWJyYXRpb25PdXRjb21lEikKBXN0YXRlGAIgASgLMhoubnVtZW4udjEuR2V0Rmxvb3JSZXNwb25zZSIzCg9TZXRGbG9vclJlcXVlc3QSEQoJaXNfbWFudWFsGAEgASgIEg0KBWZsb29yGAIgASgBIj0KEFNldEZsb29yUmVzcG9uc2USKQoFc3RhdGUYASABKAsyGi5udW1lbi52MS5HZXRGbG9vclJlc3BvbnNlIiIKEVByb2JlRmxvb3JSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJIk8KElByb2JlRmxvb3JSZXNwb25zZRIXCg9iZXN0X3NpbWlsYXJpdHkYASABKAESDQoFZmxvb3IYAiABKAESEQoJZG9lc19wYXNzGAMgASgIKogBCgpTZWFyY2hNb2RlEhsKF1NFQVJDSF9NT0RFX1VOU1BFQ0lGSUVEEAASFQoRU0VBUkNIX01PREVfV09SRFMQARIXChNTRUFSQ0hfTU9ERV9NRUFOSU5HEAISFQoRU0VBUkNIX01PREVfTkFNRVMQAxIWChJTRUFSQ0hfTU9ERV9IWUJSSUQQBCqqAQoLRmxvb3JTb3VyY2USHAoYRkxPT1JfU09VUkNFX1VOU1BFQ0lGSUVEEAASFQoRRkxPT1JfU09VUkNFX0ZJTEUQARIXChNGTE9PUl9TT1VSQ0VfTUFOVUFMEAISGwoXRkxPT1JfU09VUkNFX0NBTElCUkFURUQQAxIWChJGTE9PUl9TT1VSQ0VfTU9ERUwQBBIYChRGTE9PUl9TT1VSQ0VfREVGQVVMVBAFKngKEkNhbGlicmF0aW9uT3V0Y29tZRIjCh9DQUxJQlJBVElPTl9PVVRDT01FX1VOU1BFQ0lGSUVEEAASHAoYQ0FMSUJSQVRJT05fT1VUQ09NRV9ET05FEAESHwobQ0FMSUJSQVRJT05fT1VUQ09NRV9UT09fRkVXEAIy1AMKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZRJBCghHZXRGbG9vchIZLm51bWVuLnYxLkdldEZsb29yUmVxdWVzdBoaLm51bWVuLnYxLkdldEZsb29yUmVzcG9uc2USUwoOQ2FsaWJyYXRlRmxvb3ISHy5udW1lbi52MS5DYWxpYnJhdGVGbG9vclJlcXVlc3QaIC5udW1lbi52MS5DYWxpYnJhdGVGbG9vclJlc3BvbnNlEkEKCFNldEZsb29yEhkubnVtZW4udjEuU2V0Rmxvb3JSZXF1ZXN0GhoubnVtZW4udjEuU2V0Rmxvb3JSZXNwb25zZRJHCgpQcm9iZUZsb29yEhsubnVtZW4udjEuUHJvYmVGbG9vclJlcXVlc3QaHC5udW1lbi52MS5Qcm9iZUZsb29yUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -246,6 +246,261 @@ export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 5);
 
 /**
+ * @generated from message numen.v1.GetFloorRequest
+ */
+export type GetFloorRequest = Message<"numen.v1.GetFloorRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetFloorRequest.
+ * Use `create(GetFloorRequestSchema)` to create a new message.
+ */
+export const GetFloorRequestSchema: GenMessage<GetFloorRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 6);
+
+/**
+ * @generated from message numen.v1.GetFloorResponse
+ */
+export type GetFloorResponse = Message<"numen.v1.GetFloorResponse"> & {
+  /**
+   * The floor in force, in cosine similarity.
+   *
+   * @generated from field: double floor = 1;
+   */
+  floor: number;
+
+  /**
+   * @generated from field: numen.v1.FloorSource source = 2;
+   */
+  source: FloorSource;
+
+  /**
+   * The name of the model the floor is for.
+   *
+   * @generated from field: string model = 3;
+   */
+  model: string;
+
+  /**
+   * The floor in force when the person has set none.
+   *
+   * @generated from field: double automatic_floor = 4;
+   */
+  automaticFloor: number;
+
+  /**
+   * Whether the person set the floor for the model in use.
+   *
+   * @generated from field: bool is_manual = 5;
+   */
+  isManual: boolean;
+
+  /**
+   * The floor the person set, zero while none is.
+   *
+   * @generated from field: double manual_floor = 6;
+   */
+  manualFloor: number;
+
+  /**
+   * What the last calibration measured, absent before the first.
+   *
+   * @generated from field: optional numen.v1.FloorCalibration calibration = 7;
+   */
+  calibration?: FloorCalibration | undefined;
+};
+
+/**
+ * Describes the message numen.v1.GetFloorResponse.
+ * Use `create(GetFloorResponseSchema)` to create a new message.
+ */
+export const GetFloorResponseSchema: GenMessage<GetFloorResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 7);
+
+/**
+ * FloorCalibration is what one calibration measured.
+ *
+ * @generated from message numen.v1.FloorCalibration
+ */
+export type FloorCalibration = Message<"numen.v1.FloorCalibration"> & {
+  /**
+   * The middle of the similarities between a query and passages that are not
+   * about it.
+   *
+   * @generated from field: double median = 1;
+   */
+  median: number;
+
+  /**
+   * How far those similarities spread around the middle.
+   *
+   * @generated from field: double spread = 2;
+   */
+  spread: number;
+
+  /**
+   * How many of them fall in each of equal bins from zero to one.
+   *
+   * @generated from field: repeated int32 histogram = 3;
+   */
+  histogram: number[];
+
+  /**
+   * How many queries were measured against how many passages.
+   *
+   * @generated from field: int32 query_count = 4;
+   */
+  queryCount: number;
+
+  /**
+   * @generated from field: int32 passage_count = 5;
+   */
+  passageCount: number;
+
+  /**
+   * When it was measured, in seconds since the epoch.
+   *
+   * @generated from field: int64 calibrated_at = 6;
+   */
+  calibratedAt: bigint;
+};
+
+/**
+ * Describes the message numen.v1.FloorCalibration.
+ * Use `create(FloorCalibrationSchema)` to create a new message.
+ */
+export const FloorCalibrationSchema: GenMessage<FloorCalibration> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 8);
+
+/**
+ * @generated from message numen.v1.CalibrateFloorRequest
+ */
+export type CalibrateFloorRequest = Message<"numen.v1.CalibrateFloorRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.CalibrateFloorRequest.
+ * Use `create(CalibrateFloorRequestSchema)` to create a new message.
+ */
+export const CalibrateFloorRequestSchema: GenMessage<CalibrateFloorRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 9);
+
+/**
+ * @generated from message numen.v1.CalibrateFloorResponse
+ */
+export type CalibrateFloorResponse = Message<"numen.v1.CalibrateFloorResponse"> & {
+  /**
+   * @generated from field: numen.v1.CalibrationOutcome outcome = 1;
+   */
+  outcome: CalibrationOutcome;
+
+  /**
+   * @generated from field: numen.v1.GetFloorResponse state = 2;
+   */
+  state?: GetFloorResponse | undefined;
+};
+
+/**
+ * Describes the message numen.v1.CalibrateFloorResponse.
+ * Use `create(CalibrateFloorResponseSchema)` to create a new message.
+ */
+export const CalibrateFloorResponseSchema: GenMessage<CalibrateFloorResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 10);
+
+/**
+ * @generated from message numen.v1.SetFloorRequest
+ */
+export type SetFloorRequest = Message<"numen.v1.SetFloorRequest"> & {
+  /**
+   * Whether the floor below is in force. False returns to the automatic one.
+   *
+   * @generated from field: bool is_manual = 1;
+   */
+  isManual: boolean;
+
+  /**
+   * The floor, in cosine similarity from zero to one.
+   *
+   * @generated from field: double floor = 2;
+   */
+  floor: number;
+};
+
+/**
+ * Describes the message numen.v1.SetFloorRequest.
+ * Use `create(SetFloorRequestSchema)` to create a new message.
+ */
+export const SetFloorRequestSchema: GenMessage<SetFloorRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 11);
+
+/**
+ * @generated from message numen.v1.SetFloorResponse
+ */
+export type SetFloorResponse = Message<"numen.v1.SetFloorResponse"> & {
+  /**
+   * @generated from field: numen.v1.GetFloorResponse state = 1;
+   */
+  state?: GetFloorResponse | undefined;
+};
+
+/**
+ * Describes the message numen.v1.SetFloorResponse.
+ * Use `create(SetFloorResponseSchema)` to create a new message.
+ */
+export const SetFloorResponseSchema: GenMessage<SetFloorResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 12);
+
+/**
+ * @generated from message numen.v1.ProbeFloorRequest
+ */
+export type ProbeFloorRequest = Message<"numen.v1.ProbeFloorRequest"> & {
+  /**
+   * @generated from field: string query = 1;
+   */
+  query: string;
+};
+
+/**
+ * Describes the message numen.v1.ProbeFloorRequest.
+ * Use `create(ProbeFloorRequestSchema)` to create a new message.
+ */
+export const ProbeFloorRequestSchema: GenMessage<ProbeFloorRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 13);
+
+/**
+ * @generated from message numen.v1.ProbeFloorResponse
+ */
+export type ProbeFloorResponse = Message<"numen.v1.ProbeFloorResponse"> & {
+  /**
+   * The similarity of the nearest passage, zero when the vault has none.
+   *
+   * @generated from field: double best_similarity = 1;
+   */
+  bestSimilarity: number;
+
+  /**
+   * The floor in force.
+   *
+   * @generated from field: double floor = 2;
+   */
+  floor: number;
+
+  /**
+   * Whether the nearest passage reaches the floor.
+   *
+   * @generated from field: bool does_pass = 3;
+   */
+  doesPass: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ProbeFloorResponse.
+ * Use `create(ProbeFloorResponseSchema)` to create a new message.
+ */
+export const ProbeFloorResponseSchema: GenMessage<ProbeFloorResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 14);
+
+/**
  * SearchMode is how a search is asked. Each mode is an order of its own, and a
  * hybrid search fuses them into one.
  *
@@ -298,6 +553,91 @@ export const SearchModeSchema: GenEnum<SearchMode> = /*@__PURE__*/
   enumDesc(file_numen_v1_search, 0);
 
 /**
+ * FloorSource is where the floor in force comes from.
+ *
+ * @generated from enum numen.v1.FloorSource
+ */
+export enum FloorSource {
+  /**
+   * @generated from enum value: FLOOR_SOURCE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The settings file names one floor for every model.
+   *
+   * @generated from enum value: FLOOR_SOURCE_FILE = 1;
+   */
+  FILE = 1,
+
+  /**
+   * The person set it for the model in use.
+   *
+   * @generated from enum value: FLOOR_SOURCE_MANUAL = 2;
+   */
+  MANUAL = 2,
+
+  /**
+   * Measured on the active vault with the model in use.
+   *
+   * @generated from enum value: FLOOR_SOURCE_CALIBRATED = 3;
+   */
+  CALIBRATED = 3,
+
+  /**
+   * The starting floor the model's plugin reports for it.
+   *
+   * @generated from enum value: FLOOR_SOURCE_MODEL = 4;
+   */
+  MODEL = 4,
+
+  /**
+   * No other source answered.
+   *
+   * @generated from enum value: FLOOR_SOURCE_DEFAULT = 5;
+   */
+  DEFAULT = 5,
+}
+
+/**
+ * Describes the enum numen.v1.FloorSource.
+ */
+export const FloorSourceSchema: GenEnum<FloorSource> = /*@__PURE__*/
+  enumDesc(file_numen_v1_search, 1);
+
+/**
+ * CalibrationOutcome is how a calibration ended when it did not fail.
+ *
+ * @generated from enum numen.v1.CalibrationOutcome
+ */
+export enum CalibrationOutcome {
+  /**
+   * @generated from enum value: CALIBRATION_OUTCOME_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The floor was measured and kept.
+   *
+   * @generated from enum value: CALIBRATION_OUTCOME_DONE = 1;
+   */
+  DONE = 1,
+
+  /**
+   * The vault holds too few embedded notes to measure.
+   *
+   * @generated from enum value: CALIBRATION_OUTCOME_TOO_FEW = 2;
+   */
+  TOO_FEW = 2,
+}
+
+/**
+ * Describes the enum numen.v1.CalibrationOutcome.
+ */
+export const CalibrationOutcomeSchema: GenEnum<CalibrationOutcome> = /*@__PURE__*/
+  enumDesc(file_numen_v1_search, 2);
+
+/**
  * SearchService answers what a vault holds that matches what was typed.
  *
  * @generated from service numen.v1.SearchService
@@ -330,6 +670,51 @@ export const SearchService: GenService<{
     methodKind: "unary";
     input: typeof SearchPassagesRequestSchema;
     output: typeof SearchPassagesResponseSchema;
+  },
+  /**
+   * GetFloor is the similarity a passage has to reach to answer a search by
+   * meaning in the active vault, where it comes from, and what the last
+   * calibration measured.
+   *
+   * @generated from rpc numen.v1.SearchService.GetFloor
+   */
+  getFloor: {
+    methodKind: "unary";
+    input: typeof GetFloorRequestSchema;
+    output: typeof GetFloorResponseSchema;
+  },
+  /**
+   * CalibrateFloor measures where the model in use puts text about different
+   * things in the active vault, and keeps the floor that follows from it.
+   *
+   * @generated from rpc numen.v1.SearchService.CalibrateFloor
+   */
+  calibrateFloor: {
+    methodKind: "unary";
+    input: typeof CalibrateFloorRequestSchema;
+    output: typeof CalibrateFloorResponseSchema;
+  },
+  /**
+   * SetFloor chooses between the calibrated floor and one the person sets, for
+   * the model in use.
+   *
+   * @generated from rpc numen.v1.SearchService.SetFloor
+   */
+  setFloor: {
+    methodKind: "unary";
+    input: typeof SetFloorRequestSchema;
+    output: typeof SetFloorResponseSchema;
+  },
+  /**
+   * ProbeFloor is how near the best passage of the active vault stands to a
+   * query, to be compared with the floor.
+   *
+   * @generated from rpc numen.v1.SearchService.ProbeFloor
+   */
+  probeFloor: {
+    methodKind: "unary";
+    input: typeof ProbeFloorRequestSchema;
+    output: typeof ProbeFloorResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_search, 0);

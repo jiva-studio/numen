@@ -125,6 +125,20 @@ message PluginInfo {
   bool has_frontend = 14;
   // The readers the manifest declares, with the files each opens.
   repeated PluginReader readers = 15;
+  // The components the frontend draws inside the plugin's settings.
+  repeated PluginSettingsView settings_views = 16;
+}
+
+// PluginSettingsView is a component of a plugin's frontend drawn among its settings.
+message PluginSettingsView {
+  // The id the frontend registers the component under.
+  string id = 1;
+
+  // What the component is called.
+  string title = 2;
+
+  // The key of the setting the component is drawn after, empty for the top.
+  string after = 3;
 }
 
 // PluginReader is a tab of a plugin's frontend that opens files.
