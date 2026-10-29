@@ -61,7 +61,7 @@ const tab = (
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
     getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note' }],
-    getCommandIcon: (id) => (id === 'plugin:share' ? SHARE_ICON : null),
+    getCommandIcon: (id) => (id === 'plugin:share' || id === 'read' ? SHARE_ICON : null),
     getNoteIcon: (type) => (type === 'sample' ? SAMPLE_ICON : null),
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref('Opening.md'),
@@ -193,11 +193,11 @@ describe('the menu on a node', () => {
     expect(one.ran).toEqual([['plugin:share', 'Child.md', 'Child']])
   })
 
-  it('draws its own items with its own icons, and a declared command with the one the window gives', () => {
+  it('draws an item with the icon the window gives its command, and none for a command it gives none', () => {
     const one = tab('Root.md')
 
     expect(one.state.getMenuIcon('plugin:share')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('read')).not.toBeNull()
+    expect(one.state.getMenuIcon('read')).toBe(SHARE_ICON)
     expect(one.state.getMenuIcon('plugin:unknown')).toBeNull()
   })
 

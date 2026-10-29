@@ -2,7 +2,6 @@
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
 import { computed, ref, watch, type Component } from 'vue'
-import { findIcon } from '../lib/icons'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import { getFileName, NOTE_TYPE } from '@numen/plugin-sdk'
 import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
@@ -196,8 +195,8 @@ function usePlexMenu(options: {
     if (path) deps.runCommand(id, path, getName(path))
   }
 
-  /** The icon of an item: the plex's own, or the one the window gives a declared command. */
-  const getMenuIcon = (id: string): Component | null => findIcon(id) ?? deps.getCommandIcon(id)
+  /** The icon of an item, which is the one the window draws the command with. */
+  const getMenuIcon = (id: string): Component | null => deps.getCommandIcon(id)
 
   return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon }
 }
