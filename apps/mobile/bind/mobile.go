@@ -120,7 +120,7 @@ func Start(dir string) (int, error) {
 	}
 	current := running
 	// Start has already returned the port, so a serve that ends on its own
-	// leaves the caller with a port nobody listens on. The error is written to
+	// leaves the caller with a port that has no listener. The error is written to
 	// the stream the platform collects, and the port is reported as 0.
 	go func() {
 		err := server.Serve(listener)
@@ -227,7 +227,7 @@ func registerVault(cfg container.Config, root string) (string, error) {
 }
 
 // Page is the origin from which the platform serves this application's page:
-// `androidScheme` in capacitor.config.ts, with no port. The core listens on the
+// `androidScheme` in capacitor.config.ts, with no port. The core serves on the
 // loopback interface, so requests from the page are cross-origin.
 const Page = "http://localhost"
 
@@ -235,9 +235,9 @@ const Page = "http://localhost"
 // webview loaded.
 //
 // It allows only Page. The socket is on the loopback interface and reachable by
-// every process on the phone, so a page in a browser could otherwise send
-// requests to it; allowing a single origin makes the browser block such
-// requests and their responses. CORS is not authentication: it does not
+// every process on the phone, so any page in a browser can send requests
+// to it; allowing a single origin makes the browser block such requests and
+// their responses. CORS is not authentication: it does not
 // restrict non-browser clients.
 func allowOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

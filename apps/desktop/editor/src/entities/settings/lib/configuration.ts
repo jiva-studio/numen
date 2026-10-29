@@ -63,7 +63,7 @@ export interface PluginSettingOptionsBy {
   readonly options: Readonly<Record<string, readonly PluginSettingOption[]>>
 }
 
-/** A secret, such as an API key, that a plugin asks the host to store. */
+/** A secret, such as an API key, that a plugin requests the host to store. */
 export interface PluginSecret {
   /** What the plugin reads the key under. */
   readonly name: string
@@ -95,7 +95,7 @@ export interface PluginSettingInfo {
 
 /**
  * Whether the user permits a plugin to call a model: `none` is a plugin without
- * the ai:complete permission, `asked` is a plugin that requested it since the
+ * the ai:complete permission, `requested` is a plugin that requested it since the
  * host started and has received no answer.
  */
 export type Consent = 'none' | 'pending' | 'requested' | 'allowed' | 'denied'

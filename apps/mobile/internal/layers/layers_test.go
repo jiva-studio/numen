@@ -15,7 +15,7 @@ import (
 )
 
 // named are files the walk has to have reached: the binding the phone starts
-// the core through. A count says how much was read and not which files.
+// the core through. A count does not identify which files were read.
 var named = []string{"bind/mobile.go"}
 
 // standing is a file of this application, parsed.
@@ -26,7 +26,7 @@ type standing struct {
 
 // readSources is every hand-written Go file of this application, parsed.
 //
-// A test file is excluded: a test lies outside the package it exercises and
+// Test files are excluded: they live outside the package they exercise.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 

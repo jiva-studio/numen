@@ -1,6 +1,6 @@
 /**
  * The commands offered for the current selection, what a command executes on
- * it, and which commands the row of another command reaches.
+ * it, and which commands appear on the row of another command.
  */
 import { describe, expect, it } from 'vitest'
 import { createCommands, isCommandPrefixTyped, getNoteCommands } from './commands'

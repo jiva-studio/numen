@@ -51,7 +51,7 @@ export const writes: Record<NameSourceCode, boolean> = {
   [NAME_SOURCE.FILENAME]: false,
 }
 
-/** The relationship kind of a link, as named in the window. */
+/** The role of a link, as named in the window. */
 const called: Record<NoteRoleCode, Role | null> = {
   [NOTE_ROLE.UNSPECIFIED]: null,
   [NOTE_ROLE.PARENT]: 'parent',
@@ -61,7 +61,7 @@ const called: Record<NoteRoleCode, Role | null> = {
   [NOTE_ROLE.ATTACHMENT]: 'attachment',
 }
 
-/** The relationship kind of a link, as named in the schema. */
+/** The role of a link, as named in the schema. */
 export const roles = getNames<Role, NoteRoleCode>(called)
 
 /** The position of a note relative to the focused note, as named in the window. */

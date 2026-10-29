@@ -5,7 +5,7 @@ import type { OpenTabs } from '@/entities/tab'
 export interface VaultPort {
   getInitialOpenPath(): Promise<{ path: string } | null>
   state(): Promise<{
-    /** The folder's identity, used to request the vault again. */
+    /** The folder's identity, which looks up the vault. */
     id: string
     /** The user-visible vault name. */
     name: string
@@ -34,7 +34,7 @@ export interface VaultPort {
     renamed: readonly PathRename[]
   }>
   /**
-   * Everything the application is doing in the background, for as long as the caller listens.
+   * Everything the application is doing in the background, until the caller aborts the signal.
    *
    * The whole list is sent whenever any of it changes, and the first list is sent immediately.
    * It is a stream because work can begin without a request from the window: for example an
@@ -42,7 +42,7 @@ export interface VaultPort {
    */
   watchTasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /**
-   * The places another component asked to show to the user: a source and the ranges of its text,
+   * The places another component requested to display: a source and the ranges of its text,
    * counted in bytes. A length of zero names the source and no place inside it.
    */
   watchFocus(signal: AbortSignal): AsyncIterable<{
@@ -54,7 +54,7 @@ export interface VaultPort {
   /** The tabs last written for the vault in the window, kept by the core across restarts. */
   readOpenTabs(): Promise<OpenTabs>
   /**
-   * The window quitting, for as long as the client listens. The stream opens with the token this
+   * The window quitting, until the client aborts the signal. The stream opens with the token this
    * client replies under.
    */
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>

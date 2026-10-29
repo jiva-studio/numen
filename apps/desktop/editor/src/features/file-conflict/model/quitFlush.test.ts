@@ -1,5 +1,5 @@
 /**
- * The path by which quitting reaches a buffer that only the page holds.
+ * The path by which quitting flushes a buffer that only the page holds.
  *
  * The guarded failure is silent: the window closes, the application reports
  * that everything was written, and the last seconds of typing are lost.
@@ -315,7 +315,7 @@ describe('a page holding text the file changed under', () => {
     note.dismiss()
     await settle()
 
-    // No result is reported for that token now, and the page has not been asked again.
+    // No result is reported for that token now, and the page has not been requested again.
     expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'asking' }])
 
     mockStream.send({ token: '3', flush: true })

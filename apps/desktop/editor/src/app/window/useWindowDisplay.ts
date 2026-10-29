@@ -15,7 +15,7 @@ import { createWindowStreams } from './useWindowStreams'
  * One window reads the vault once: one stream of changes, one stream of edits,
  * one stream of requested notes, one stream of running tasks, and one set of
  * counts. What is rendered from any of it, and by how many tabs, is the
- * window's concern; nothing here knows what a tab holds.
+ * window's concern; nothing here depends on the contents of a tab.
  */
 /** What the window passes for reading a vault, alongside the vault itself. */
 export interface DisplayOptions {

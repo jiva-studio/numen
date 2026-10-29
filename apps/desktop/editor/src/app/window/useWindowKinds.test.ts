@@ -27,12 +27,12 @@ vi.mock('../plugins/fileServices', () => ({
   createPathCommandHost: () => ({}),
 }))
 
-/** A tool tab that follows a note, and what its kind says it is attached to. */
+/** A tool tab that follows a note, and the note its kind is attached to. */
 interface Graph {
   readonly target?: { path: string; title: string }
 }
 
-/** A kind of tab that accepts text. */
+/** A tab kind that accepts text. */
 const CHAT = { kind: 'chat', isTool: true, receiveText: () => {} }
 
 const create = ({

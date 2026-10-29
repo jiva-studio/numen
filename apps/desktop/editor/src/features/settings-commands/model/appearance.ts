@@ -2,7 +2,7 @@
  * The window appearance: the theme applied, which half of a color pair its
  * tokens are read as, and the interface and reading-text sizes.
  *
- * A theme and a mode are applied as soon as the keyboard reaches them. A size
+ * A theme and a mode are applied as soon as the keyboard focuses them. A size
  * is applied after the keyboard has rested on the row for HELD, and the
  * settings values are restored as soon as the keyboard leaves the list.
  */

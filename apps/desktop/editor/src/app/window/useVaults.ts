@@ -33,7 +33,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
     return one ? { id: one.id, name: one.name } : { id: '', name: '' }
   })
 
-  /** One vault of the list, updated to the name it was just given. */
+  /** One vault of the list, with its name replaced by the given name. */
   const setVaultName = (vault: VaultRef) => {
     items.value = {
       ...items.value,

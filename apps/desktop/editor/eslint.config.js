@@ -3,7 +3,7 @@
 // formatting rule would start rewriting files.
 //
 // The library's ban on importing the domain is the one rule that stops at this
-// package: a window is the layer that knows what a vault is.
+// package: a window is the layer that depends on the vault domain.
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'

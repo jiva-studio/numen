@@ -12,7 +12,7 @@ import type { FileOpeners } from './openers'
 export type CreateKind = string
 
 /**
- * What the window asks the vault to create from nothing. A creator that returns
+ * What the window requests the vault to create. A creator that returns
  * nothing has already reported the failure to the user.
  */
 export interface VaultCreator {

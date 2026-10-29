@@ -7,7 +7,7 @@
 import { shallowRef } from 'vue'
 import type { RunSupport } from '../../types'
 
-/** The runs supported by one window: all of them until the application reports otherwise. */
+/** The runs supported by one window: all of them until the application reports one as unsupported. */
 export const runSupport = (): RunSupport => {
   const completedRuns = shallowRef<ReadonlySet<string>>(new Set())
   return {

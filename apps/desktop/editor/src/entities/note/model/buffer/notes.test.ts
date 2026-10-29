@@ -871,7 +871,7 @@ describe('closing a note', () => {
 })
 
 describe('a note that could not be written, closed, and opened again', () => {
-  /** A core whose writes fail while `down.on` is set and succeed otherwise. */
+  /** A core whose writes fail while `down.on` is set and succeed when it is cleared. */
   const createFlakyCore = () => {
     const base = fake()
     base.files.set('Heat.md', 'one')

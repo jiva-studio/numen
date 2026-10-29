@@ -27,7 +27,7 @@ export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 /** The note a neighbourhood is drawn around. */
 export interface Focus {
-  /** The note's current path in the vault. Empty for a note the vault no longer contains. */
+  /** The note's current path in the vault. Empty when the vault does not contain the note. */
   readonly path: string
   readonly title: string
 }
@@ -98,14 +98,14 @@ export interface NewNote {
 }
 
 /**
- * The kind of relationship a link has. The list is closed: navigation and
+ * The role of a link. The list is closed: navigation and
  * rendering read it, so an unlisted role has no behaviour.
  */
 export type Role = 'parent' | 'child' | 'jump' | 'ref' | 'attachment'
 
 /**
  * One relationship as declared by the note it is written in: the target note
- * by path, and the kind of relationship.
+ * by path, and the role.
  */
 export interface Link {
   to: string

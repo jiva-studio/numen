@@ -7,7 +7,7 @@ package version
 import "fmt"
 
 // The tag this build was made from, the number of commits since it, and the
-// commit. A build made by hand carries these defaults.
+// commit. A manual build uses these defaults.
 var (
 	version = "0.0.0-dev"
 	build   = "0"

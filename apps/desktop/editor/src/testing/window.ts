@@ -2,7 +2,7 @@
  * The mounted window with every port it uses mocked.
  *
  * A test declares the application's responses in `vaultState`, reads the requests it
- * received in `asked`, and mounts the window with `mountWindow`.
+ * received from the recorded log, and mounts the window with `mountWindow`.
  */
 import './vaultMock'
 import './moduleMocks'
@@ -32,7 +32,7 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const DEBOUNCE = 200
 
 /**
- * Every window mounted by a test. A mounted window listens for the keystrokes
+ * Every window mounted by a test. A mounted window handles the keystrokes
  * that open the palette, so each is unmounted after the test.
  */
 const windows: { unmount(): void }[] = []

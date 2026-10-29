@@ -12,7 +12,7 @@ export const requests = {
   moved: [] as string[],
   folders: [] as string[],
   worn: [] as string[],
-  /** How often an open editor was told to remeasure. */
+  /** How often an open editor was requested to remeasure. */
   measured: 0,
   /** Every key the window handed down to the book it is showing. */
   pressed: [] as string[],

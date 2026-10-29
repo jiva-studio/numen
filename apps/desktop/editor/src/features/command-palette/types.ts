@@ -131,7 +131,7 @@ export interface CommandInvocation {
    * offers a list the window holds puts the one that was chosen here.
    */
   readonly name: string
-  /** The kind of tab the command was invoked from; determines where a note it creates opens. */
+  /** The tab kind the command was invoked from; determines where a note it creates opens. */
   readonly kind: string | null
   /** The tab the command was invoked from, for a command about the tab itself. */
   readonly tab: string
@@ -155,7 +155,7 @@ export interface PaletteLists {
 }
 
 /**
- * What the window knows about a note by its filed name. The step stays open
+ * What the window records about a note by its file name. The step stays open
  * while the vault changes, so this is re-read each time the step is drawn and
  * once more when the command is invoked.
  */
@@ -168,7 +168,7 @@ export interface NoteLookup {
 
 /**
  * The runs this build cannot perform. The application reports them the first
- * time one is requested; this window no longer lists it from then on.
+ * time one is requested; this window omits it from then on.
  */
 export interface RunSupport {
   /** Whether this build can do a run at all. A view drawing it follows the answer. */
@@ -195,7 +195,7 @@ export interface Notes {
    * current one.
    */
   openFile(path: string, title: string, showing: 'current' | 'split'): void
-  /** Opens a file just created here, as the type it was created as. */
+  /** Opens a file created by this command, as the type it was created as. */
   openNewFile(
     path: string,
     title: string,

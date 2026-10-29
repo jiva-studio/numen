@@ -2,7 +2,7 @@
  * The notices shown in the window's corner.
  *
  * Everything the window reports is one card: work in progress, a current state, and
- * the outcome of the last request. A new kind of any of them is an entry in one of
+ * the outcome of the last request. A new work item, state or outcome is an entry in one of
  * the three lists and requires no change here.
  */
 import { createNotice } from '@numen/shell'

@@ -454,7 +454,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     },
     getSetting: contextHost.getSetting,
     onSettingChange: contextHost.onSettingChange,
-    /** A change to the vault, delivered to every plugin that listens for one. */
+    /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
     disposePlugin,

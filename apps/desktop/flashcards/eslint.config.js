@@ -1,6 +1,6 @@
 // Correctness and boundary rules for the flashcards window, based on the rules
 // `@numen/ui` already defines. No formatting rules are enabled: formatting is
-// done by hand, and a formatting rule would rewrite files.
+// done manually, and a formatting rule would rewrite files.
 //
 // The library's ban on importing the protocol does not apply to this package:
 // the shell requests the plugins of its target from the window.

@@ -6,7 +6,7 @@ import type { TallyUnit } from '@numen/shell'
 /**
  * One piece of work the application is doing behind the window.
  *
- * Every kind of work is represented as a Task, and the window renders the list it
+ * Every work item is a Task, and the window renders the list it
  * receives.
  */
 export interface Task {

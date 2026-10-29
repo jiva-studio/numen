@@ -102,7 +102,7 @@ export interface TabContext {
 
 /** The runs this build does not support. */
 export interface RunContext {
-  /** The runs this window knows this build does not support. */
+  /** The runs this build does not support, as recorded by this window. */
   readonly runSupport: RunSupport
 }
 
