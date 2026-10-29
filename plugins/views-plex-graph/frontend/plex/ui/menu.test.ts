@@ -21,7 +21,7 @@ const mountPlex = (props: Partial<PlexProps> = {}) =>
     attachTo: document.body,
   })
 
-/** A right-click, the event a webview would otherwise handle with its own menu. */
+/** A right-click, the event a webview handles with its own menu by default. */
 const rightClick = (element: Element, pos = { x: 320, y: 240 }) => {
   const event = new MouseEvent('contextmenu', {
     clientX: pos.x,

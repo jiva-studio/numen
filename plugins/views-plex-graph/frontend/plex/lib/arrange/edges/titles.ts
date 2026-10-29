@@ -3,7 +3,7 @@
  * there, in plex coordinates.
  *
  * A title stays on its own line, clear of every box and of every other title:
- * at the middle while that is clear, otherwise moved along the curve to the
+ * at the middle when that position is clear, and moved along the curve to the
  * nearest clear position, truncated to the longest clear stretch when the whole
  * text fits nowhere, and dropped when that stretch is shorter than half.
  */
@@ -90,9 +90,9 @@ export function separateTitles(
 }
 
 /**
- * The edges with measurable text, least free room first, each with its position
- * in the graph. A line as long as its text comes before one with room to spare,
- * and edges equal in that keep their input order.
+ * The edges with measurable text, least free space first, each with its position
+ * in the graph. A line as long as its text comes before a line with free space
+ * to spare, and edges with equal free space keep their input order.
  */
 function sortTightestFirst(
   edges: readonly PlacedEdge[],

@@ -33,12 +33,12 @@ export const getRelationWithoutDirection = (
 ): PlexRelation | null => (relations.includes('child') ? 'child' : (relations[0] ?? null))
 
 /**
- * Which way a point lies from another.
+ * The direction from one point to another.
  *
- * Not simply the axis with the larger distance: rows are wide and columns are
- * narrow, so the outermost child of a wide row is further sideways than it is
- * down, and a drag towards where the children are would name a direction off to
- * the side.
+ * The axis with the larger distance does not decide it: rows are wide and
+ * columns are narrow, so the outermost child of a wide row is further sideways
+ * than it is down, and a drag towards the children would give a sideways
+ * direction. `bias` weights the vertical distance.
  */
 function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null

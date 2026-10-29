@@ -81,7 +81,7 @@ export const viewOn = (
   return { view, went }
 }
 
-/** A vault that accepts every note it is asked to create, and records the requests. */
+/** A vault that accepts every note creation request, and records the requests. */
 export const createVault = (takes = true) => {
   const createdItem: [string, string][] = []
   const joined: [string, string, string, string?][] = []

@@ -5,8 +5,8 @@ export const lerp = (from: number, to: number, t: number): number => from + (to 
 /**
  * A fraction clamped to the range 0 to 1.
  *
- * NaN is caught here. Otherwise it reaches a transform as `opacity="NaN"` and
- * the node is not drawn, with no indication why.
+ * NaN returns 1. A NaN passed on becomes `opacity="NaN"` in a transform and
+ * the node is not drawn, with no error.
  */
 export const clamp01 = (value: number): number => {
   if (Number.isNaN(value)) return 1

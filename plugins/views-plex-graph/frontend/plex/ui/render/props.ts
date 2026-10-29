@@ -57,7 +57,7 @@ export interface PlexViewProps {
   pending?: PlexPending | null
   /**
    * An external drag over the drawing: the pointer position and the relation
-   * created by dropping there. Both must be set, otherwise nothing is drawn.
+   * created by dropping there. Both must be set; with either unset nothing is drawn.
    */
   draggedAt?: Position | null
   dropRelation?: PlexRelation | null
@@ -123,7 +123,7 @@ export interface PlexNodeEvents {
   (event: 'menu', point: Position, trigger: MenuTrigger): void
   /**
    * The node gained or lost focus. The expanded box is drawn last, and only
-   * the whole drawing knows which box that is.
+   * only the whole drawing determines which box that is.
    */
   (event: 'settle', resting: boolean): void
   /** A heading of this node was chosen. The identifier is the caller's. */

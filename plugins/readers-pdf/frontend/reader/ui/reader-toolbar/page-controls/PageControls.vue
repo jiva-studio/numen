@@ -25,7 +25,7 @@ const currentPage = defineModel<number>('at', { default: 0 })
 
 /**
  * The text being edited in the page field, empty when idle. A number field
- * yields a number for input that parses as one and the text itself otherwise.
+ * yields a number for input that parses as one, and the text itself for any other input.
  */
 const typing = ref<string | number | null>(null)
 

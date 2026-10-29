@@ -127,7 +127,7 @@ func readBook(doc *document) *Book {
 	pages := min(doc.pages, mostPages)
 	starts := make([]int, 0, pages)
 	for i := 0; i < pages; i++ {
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="text extraction halts when accumulated text reaches mostText"
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="text extraction halts when accumulated text equals mostText"
 		if text.Len() >= mostText {
 			break
 		}

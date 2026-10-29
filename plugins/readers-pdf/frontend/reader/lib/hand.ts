@@ -23,9 +23,9 @@ export const DRAG_THRESHOLD = 3
 /**
  * How far a wheel moves the row.
  *
- * When nothing lies above or below the row, vertical wheel movement is added to
+ * When the row has no content above or below it, vertical wheel movement is added to
  * horizontal movement, so scrolling down advances to the next page. When the
- * viewport has vertical room (`hasBelow`), vertical movement stays vertical.
+ * viewport can scroll vertically (`hasBelow`), vertical movement stays vertical.
  */
 export function getWheelOffset(wheel: Wheel, hasBelow: boolean): Offset {
   if (hasBelow) return { x: wheel.x, y: wheel.y }

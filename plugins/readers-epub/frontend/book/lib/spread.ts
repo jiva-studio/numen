@@ -3,7 +3,7 @@
  *
  * The arithmetic is separate from the component: the number of spreads in a
  * laid-out document, where each begins, which spread a run of text falls in,
- * and how far into a run a byte offset lies. A test evaluates it without a
+ * and how far into a run a byte offset is. A test evaluates it without a
  * browser.
  */
 import type { TextRange } from '@numen/ui'

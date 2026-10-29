@@ -7,7 +7,7 @@ const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
 
 /**
  * A reader in a container of a given size. Tests have no layout, so the
- * container size is set explicitly and the reader is told to measure again.
+ * container size is set explicitly and the reader is triggered to measure again.
  */
 const reader = async (width: number, high: number) => {
   const wrapper = mount(Reader, {

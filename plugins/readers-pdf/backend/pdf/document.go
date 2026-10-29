@@ -47,7 +47,7 @@ var workers struct {
 	afterFunc func(time.Duration, func()) Timer
 }
 
-// SetAfterFunc sets the timer factory used to release idle workers.
+// SetAfterFunc sets the timer factory that releases idle workers.
 func SetAfterFunc(fn func(time.Duration, func()) Timer) {
 	workers.Lock()
 	defer workers.Unlock()
@@ -112,8 +112,8 @@ func getPoolSize() int {
 }
 
 // waitForWorker is how long a reader waits for a free worker. Reading a
-// document takes a second or two, and the wait is bounded so that a worker stuck
-// inside the library produces an error and not a hang.
+// document takes a second or two. The wait is bounded: a worker stuck inside the
+// library produces an error.
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 
@@ -272,8 +272,8 @@ func open(src source) (*document, error) {
 	if err != nil {
 		putWorker(worker)
 		closeFile()
-		// A file that requires a password has text no one here can read; it is
-		// reported as encrypted, not malformed.
+		// A file that requires a password has unreadable text; it is reported as
+		// encrypted, not malformed.
 		// gomutants:disable-next-line EXPRESSION_REMOVE reason="password-protected PDFs return ErrEncrypted"
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
 			return nil, fmt.Errorf("%w: %w", ErrEncrypted, err)

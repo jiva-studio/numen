@@ -12,8 +12,7 @@ describe('whether a link leads out of the window', () => {
   })
 
   it('leads nowhere outward, where the href is no address at all', () => {
-    // An invalid href is resolved against the book itself, which knows the intended
-    // location.
+    // An invalid href is resolved against the book itself.
     expect(isExternalHref('::')).toBe(false)
   })
 })

@@ -241,7 +241,7 @@ export const Reaching: Story = {
     ).toBeGreaterThan(0)
 
     // Pressing it starts a gesture; the node is not selected and does not take
-    // the focus a press would otherwise give it.
+    // the focus a press gives by default.
     await userEvent.pointer([{ keys: '[MouseLeft]', target: handle()! }])
     await expect(args.onReach).toHaveBeenCalledTimes(1)
     await expect(args.onActivate).not.toHaveBeenCalled()
@@ -302,7 +302,7 @@ export const AwkwardLabels: Story = {
       await expect(text.width).toBeLessThanOrEqual(box.width)
     }
 
-    // One line with an ellipsis, never two. The first title has room to wrap
+    // One line with an ellipsis, never two. The first title has space to wrap
     // and the second has none, and neither node grows taller.
     for (const tooLong of [/^Заметка/, /^Supercalifragilistic/]) {
       const title = canvas.getByLabelText(tooLong).querySelector('.plex__title-text')!

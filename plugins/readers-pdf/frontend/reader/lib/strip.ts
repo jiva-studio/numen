@@ -54,8 +54,8 @@ export const UPRIGHT: Page = { width: 612, height: 792 }
 
 /**
  * How far beyond the viewport edge pages are drawn, as a fraction of the
- * viewport. A target page is drawn before it is reached, and a page just left
- * stays drawn in case the scroll reverses.
+ * viewport. A target page is drawn before the scroll arrives at it, and a page
+ * scrolled out of view stays drawn in case the scroll reverses.
  */
 const BEYOND = 1.5
 

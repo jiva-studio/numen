@@ -80,8 +80,8 @@ const activeReading =
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
 
-      // Keys also go to the element that hosts the reader. The story listens where
-      // the tab listens, and the book reports whether it handled the key.
+      // Keys also go to the element that hosts the reader. The story registers the
+      // key handler on that element, and the book reports whether it handled the key.
       const book = ref<{ handleKey(event: KeyboardEvent): boolean } | null>(null)
       const turns = (event: KeyboardEvent) => {
         if (book.value?.handleKey(event)) event.preventDefault()
@@ -281,7 +281,7 @@ export const OneColumnTurns: Story = {
 
 /**
  * A wide area takes two columns, and the two turn together. Turning one column
- * at a time shows the right-hand page twice.
+ * at a time shows the right page twice.
  */
 export const TwoColumns: Story = {
   decorators: [WIDE],
@@ -309,8 +309,8 @@ export const TwoColumns: Story = {
 }
 
 /**
- * An image whose height exceeds the column is clipped at the column edge, and the cut part
- * lies on a page that is never turned to.
+ * An image whose height exceeds the column is clipped at the column edge, and the clipped
+ * part is on a page that is never turned to.
  */
 export const ImageTallerThanTheColumn: Story = {
   decorators: [WIDE],
@@ -488,7 +488,7 @@ export const SetLarger: Story = {
     )
 
     // The columns are laid out again and there are more of them, so the spread
-    // differs. The reading position lies on it.
+    // differs. The reading position is on it.
     await waitFor(
       async () => {
         const activeRun = getRunsOf(canvasElement).find(

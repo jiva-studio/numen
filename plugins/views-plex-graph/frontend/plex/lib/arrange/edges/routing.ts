@@ -57,7 +57,7 @@ export const MIDDLE = 0.5
 
 /**
  * The longest prefix of the label that fits the curve, including the ellipsis.
- * The prefix is found by bisection, and a curve with no room for any text
+ * The prefix is found by bisection, and a curve with no space for any text
  * returns the ellipsis alone.
  */
 export function cutToFit(label: string, room: number, width: (label: string) => number): string {

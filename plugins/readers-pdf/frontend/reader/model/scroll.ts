@@ -2,8 +2,8 @@
  * Scroll position changes of the page strip: by pointer drag, by wheel, and by
  * programmatic scrolling.
  *
- * The scroll direction of a wheel and the drag-to-scroll offset are computed in
- * `hand.ts`; this module applies those results to the scroll element.
+ * The wheel offset (`getWheelOffset`) and the drag-to-scroll offset are computed
+ * in the lib layer; this module applies those results to the scroll element.
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
 import { Hand, getWheelOffset } from '../lib/hand'

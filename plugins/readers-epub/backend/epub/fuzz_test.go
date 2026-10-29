@@ -22,7 +22,7 @@ const mostPerBook = 256 << 20
 const mostFuzzed = 1 << 20
 
 // A book read without error satisfies the invariants the rest of the
-// application relies on: every offset lies inside the text, parts are in reading
+// application relies on: every offset is inside the text, parts are in reading
 // order, and each part has a one-line name. The tier recorded for the parts is
 // the tier that produced them.
 //

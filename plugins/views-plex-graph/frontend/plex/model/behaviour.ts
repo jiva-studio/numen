@@ -1,7 +1,7 @@
 /**
- * How the plex behaves under a hand and over time, declared once: how long the
- * attention rests before a box widens, how a node offers to be reached out of,
- * how it is asked for on its own, and the clock a box opens on.
+ * How the plex responds to pointer input and to time, declared once: the delay
+ * before a box widens, how a node offers to be reached, how a node is requested
+ * on its own, and the clock a box opens on.
  */
 import { EXPANSION_DELAY } from './sizing/expansion'
 import { byHandle, type ReachStrategy } from './interaction/reachStrategy'
@@ -13,7 +13,7 @@ export interface PlexBehaviour {
   readonly expansionDelay: number
   /** How a node offers to be reached out of. */
   readonly reaching: ReachStrategy
-  /** How a node is asked for on its own. */
+  /** How a node is requested on its own. */
   readonly showing: ShowStrategy
   /** The clock a box opens on. */
   readonly clock: Clock

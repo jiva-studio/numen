@@ -2,7 +2,7 @@
  * A small graph, and the rule for extracting one neighbourhood from it.
  *
  * This is the application's job, stubbed. None of it may move into the component:
- * once the plex works out who a sibling is, it knows the domain. It exists because
+ * once the plex works out who a sibling is, it depends on the domain. It exists because
  * movement can only be judged by walking a real graph back and forth.
  */
 import type { PlexEdge } from '../lib/edge'

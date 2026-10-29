@@ -25,7 +25,7 @@ const larger = (size: Size, delta: number): Size => ({
  * The same plex, drawn larger or smaller.
  *
  * Every length is multiplied. The counts, the fractions and the directions are
- * unchanged, as is the window, which is measured in the pixels it actually has.
+ * unchanged, as is the window, which is measured in its own pixels.
  */
 export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions => ({
   ...options,

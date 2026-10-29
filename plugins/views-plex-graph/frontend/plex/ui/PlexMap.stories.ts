@@ -187,7 +187,7 @@ export const Mapping: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
 
-    // The menu opens on a node and lies entirely inside the viewport.
+    // The menu opens on a node and is entirely inside the viewport.
     const menu = within(document.body).getByRole('menu', {
       name: 'What can be done to this note',
     })

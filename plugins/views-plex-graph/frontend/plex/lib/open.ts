@@ -121,7 +121,7 @@ export function getOpenHeadings(
   const lead = Math.min(LEAD, SPREAD / (many - 1))
   const runs = 1 - lead * (many - 1)
 
-  /** The lowest start position of a heading that still lies within the panel. */
+  /** The lowest start position of a heading that is still within the panel. */
   const floor = suspended.height - 2 * suspended.pad - suspended.headingHeight
 
   const headings = visibleHeadings.map((heading, index) => {

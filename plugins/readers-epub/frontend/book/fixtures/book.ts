@@ -4,7 +4,7 @@
  *
  * The offsets are counted here the way they are counted at their source,
  * in bytes through `TextEncoder`, so a story written in Devanagari or in
- * Cyrillic carries the offsets such a book really carries. Storybook
+ * Cyrillic carries the offsets of a real book. Storybook
  * scaffolding; it is not shipped.
  */
 import { countBytes } from '../lib/bytes'

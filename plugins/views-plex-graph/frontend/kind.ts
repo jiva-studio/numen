@@ -3,7 +3,7 @@
  * graph.
  *
  * The kind keeps its own tabs ordered by last use, so a new plex opens beside
- * the most recent one and a change to the vault reaches every plex.
+ * the most recent one, and a change to the vault updates every plex.
  */
 import { watch } from 'vue'
 import { Waypoints } from '@lucide/vue'
