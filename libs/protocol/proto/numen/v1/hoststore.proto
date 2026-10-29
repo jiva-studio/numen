@@ -52,7 +52,7 @@ enum HostStoreErrorCode {
   HOST_STORE_ERROR_CODE_OUTSIDE = 3;
 
   // Another program holds the file.
-  HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER = 4;
+  HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER = 4;
 }
 
 message ReadStoreFileRequest {

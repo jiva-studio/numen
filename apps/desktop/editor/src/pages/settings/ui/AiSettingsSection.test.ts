@@ -39,7 +39,7 @@ const PROGRAMS: readonly ProgramFixture[] = [
   { name: 'agent-a', title: 'Agent A', isDefault: true },
   { name: 'agent-b', title: 'Agent B', models: [{ name: 'b-fast', title: 'B fast' }] },
 ]
-const ASKING = createPlugin('test.asking', 'Asking Plugin', { consent: 'asked' })
+const ASKING = createPlugin('test.asking', 'Asking Plugin', { consent: 'requested' })
 const ALLOWED = createPlugin('test.allowed', 'Allowed Plugin', { consent: 'allowed' })
 
 const createSection = (

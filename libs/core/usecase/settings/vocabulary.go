@@ -29,11 +29,11 @@ type (
 
 // Whether the person lets a plugin ask for model completions.
 const (
-	ConsentNone       = pluginport.ConsentNone
-	ConsentUnanswered = pluginport.ConsentUnanswered
-	ConsentAsked      = pluginport.ConsentAsked
-	ConsentAllowed    = pluginport.ConsentAllowed
-	ConsentRefused    = pluginport.ConsentRefused
+	ConsentNone      = pluginport.ConsentNone
+	ConsentPending   = pluginport.ConsentPending
+	ConsentRequested = pluginport.ConsentRequested
+	ConsentAllowed   = pluginport.ConsentAllowed
+	ConsentDenied    = pluginport.ConsentDenied
 )
 
 // What a model's files are on this machine.

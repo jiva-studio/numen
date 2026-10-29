@@ -115,8 +115,8 @@ export const mapVaultResult = (from: {
 /** Whether the person lets a plugin ask a model, in the words the window uses. */
 export const consented: Record<CompletionConsentCode, Consent> = {
   [COMPLETION_CONSENT.UNSPECIFIED]: 'none',
-  [COMPLETION_CONSENT.UNANSWERED]: 'unanswered',
-  [COMPLETION_CONSENT.ASKED]: 'asked',
+  [COMPLETION_CONSENT.PENDING]: 'pending',
+  [COMPLETION_CONSENT.REQUESTED]: 'requested',
   [COMPLETION_CONSENT.ALLOWED]: 'allowed',
-  [COMPLETION_CONSENT.REFUSED]: 'denied',
+  [COMPLETION_CONSENT.DENIED]: 'denied',
 }

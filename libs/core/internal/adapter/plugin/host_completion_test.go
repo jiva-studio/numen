@@ -86,13 +86,13 @@ func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 		t.Fatal("the plugin is not listed")
 		return pluginport.ConsentNone
 	}
-	if info() != pluginport.ConsentUnanswered {
+	if info() != pluginport.ConsentPending {
 		t.Errorf("before asking: %v, want unanswered", info())
 	}
 	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, completionport.ErrNoConsent) {
 		t.Fatalf("unanswered: error = %v, want port.ErrNoConsent", err)
 	}
-	if info() != pluginport.ConsentAsked {
+	if info() != pluginport.ConsentRequested {
 		t.Errorf("after asking: %v, want asked", info())
 	}
 
@@ -112,7 +112,7 @@ func TestTheConsentIsThePersonsAnswer(t *testing.T) {
 	if err := host.CheckCompletionConsent(askingPluginID); !errors.Is(err, completionport.ErrNoConsent) {
 		t.Errorf("rejected: error = %v, want port.ErrNoConsent", err)
 	}
-	if info() != pluginport.ConsentRefused {
+	if info() != pluginport.ConsentDenied {
 		t.Errorf("rejected: %v", info())
 	}
 }

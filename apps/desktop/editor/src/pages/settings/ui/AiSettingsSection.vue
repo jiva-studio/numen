@@ -50,7 +50,9 @@ const modelChoices = computed(() =>
   ),
 )
 const askingPlugins = computed(() => getAskingPlugins(plugins.value))
-const waitingPlugins = computed(() => askingPlugins.value.filter((one) => one.consent === 'asked'))
+const waitingPlugins = computed(() =>
+  askingPlugins.value.filter((one) => one.consent === 'requested'),
+)
 const pluginsWithSecrets = computed(() => getPluginsWithSecrets(plugins.value))
 
 /** The secrets of the plugin whose condition holds. */

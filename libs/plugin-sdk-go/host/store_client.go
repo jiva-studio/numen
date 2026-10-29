@@ -73,7 +73,7 @@ func readStoreError(code v1.HostStoreErrorCode) error {
 		return ErrNotExist
 	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE:
 		return ErrOutside
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER:
+	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER:
 		return ErrLockedByAnother
 	}
 	return fmt.Errorf("host: rejected with code %s", code)

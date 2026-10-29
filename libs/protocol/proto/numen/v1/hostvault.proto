@@ -118,7 +118,7 @@ enum HostVaultErrorCode {
   HOST_VAULT_ERROR_CODE_ALREADY_EXISTS = 5;
 
   // Another program holds the file.
-  HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER = 6;
+  HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER = 6;
 
   // The path is not a note this vault holds.
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;

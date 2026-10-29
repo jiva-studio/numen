@@ -156,15 +156,15 @@ enum CompletionConsent {
 
   // The person has not answered, and the plugin has not asked since the host
   // started.
-  COMPLETION_CONSENT_UNANSWERED = 1;
+  COMPLETION_CONSENT_PENDING = 1;
 
   // person has not answered.
-  COMPLETION_CONSENT_ASKED = 2;
+  COMPLETION_CONSENT_REQUESTED = 2;
 
   // The person lets the plugin ask.
   COMPLETION_CONSENT_ALLOWED = 3;
 
-  COMPLETION_CONSENT_REFUSED = 4;
+  COMPLETION_CONSENT_DENIED = 4;
 }
 
 // PluginService allows querying discovered plugins and their settings schemas.

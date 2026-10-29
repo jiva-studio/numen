@@ -91,7 +91,7 @@ func fail(code v1.HostVaultErrorCode) error {
 		return ErrStale
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:
 		return ErrAlreadyExists
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER:
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER:
 		return ErrLockedByAnother
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
 		return ErrNotANote

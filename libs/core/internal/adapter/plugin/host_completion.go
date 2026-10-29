@@ -49,9 +49,9 @@ func (h *Host) getCompletionConsentLocked(manifest pluginport.PluginManifest) pl
 	case isSet && allowed:
 		return pluginport.ConsentAllowed
 	case isSet:
-		return pluginport.ConsentRefused
+		return pluginport.ConsentDenied
 	case h.consentAsks[manifest.ID]:
-		return pluginport.ConsentAsked
+		return pluginport.ConsentRequested
 	}
-	return pluginport.ConsentUnanswered
+	return pluginport.ConsentPending
 }

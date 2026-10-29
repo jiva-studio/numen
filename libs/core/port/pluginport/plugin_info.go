@@ -65,12 +65,12 @@ type CompletionConsent int
 const (
 	// ConsentNone is a plugin that does not hold the ai:complete permission.
 	ConsentNone CompletionConsent = iota
-	// ConsentUnanswered is a plugin the person has not answered for, and that
+	// ConsentPending is a plugin the person has not answered for, and that
 	// has not asked since the host started.
-	ConsentUnanswered
-	// ConsentAsked is a plugin that has asked since the host started, was
-	ConsentAsked
+	ConsentPending
+	// ConsentRequested is a plugin that has asked since the host started, was
+	ConsentRequested
 	// ConsentAllowed is a plugin the person lets ask.
 	ConsentAllowed
-	ConsentRefused
+	ConsentDenied
 )

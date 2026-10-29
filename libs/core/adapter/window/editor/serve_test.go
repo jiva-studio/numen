@@ -706,10 +706,10 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 
 func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.CompletionConsent]coreSettings.Consent{
-		v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED: coreSettings.ConsentUnanswered,
-		v1.CompletionConsent_COMPLETION_CONSENT_ASKED:      coreSettings.ConsentAsked,
-		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:    coreSettings.ConsentAllowed,
-		v1.CompletionConsent_COMPLETION_CONSENT_REFUSED:    coreSettings.ConsentRefused,
+		v1.CompletionConsent_COMPLETION_CONSENT_PENDING:   coreSettings.ConsentPending,
+		v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED: coreSettings.ConsentRequested,
+		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:   coreSettings.ConsentAllowed,
+		v1.CompletionConsent_COMPLETION_CONSENT_DENIED:    coreSettings.ConsentDenied,
 	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.Consents[is] })
 }
 

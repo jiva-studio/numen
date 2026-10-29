@@ -167,11 +167,11 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 
 // Consents is whether the person lets a plugin ask a model, as the wire carries it.
 var Consents = map[setting.Consent]v1.CompletionConsent{
-	setting.ConsentNone:       v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
-	setting.ConsentUnanswered: v1.CompletionConsent_COMPLETION_CONSENT_UNANSWERED,
-	setting.ConsentAsked:      v1.CompletionConsent_COMPLETION_CONSENT_ASKED,
-	setting.ConsentAllowed:    v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
-	setting.ConsentRefused:    v1.CompletionConsent_COMPLETION_CONSENT_REFUSED,
+	setting.ConsentNone:      v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
+	setting.ConsentPending:   v1.CompletionConsent_COMPLETION_CONSENT_PENDING,
+	setting.ConsentRequested: v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED,
+	setting.ConsentAllowed:   v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
+	setting.ConsentDenied:    v1.CompletionConsent_COMPLETION_CONSENT_DENIED,
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the

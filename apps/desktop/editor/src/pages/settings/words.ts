@@ -70,8 +70,8 @@ export const WORDS = {
   consentAllowed: 'Allow model use',
   consentDetail: {
     none: '',
-    unanswered: 'Not set. Requests fail until you choose.',
-    asked: 'Requested. Requests fail until you choose.',
+    pending: 'Not set. Requests fail until you choose.',
+    requested: 'Requested. Requests fail until you choose.',
     allowed: 'Allowed. Requests go to the agent in its settings.',
     denied: 'Denied. Requests return an error.',
   },

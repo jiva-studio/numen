@@ -111,7 +111,7 @@ describe('every setting', () => {
               capabilities: [CAPABILITY_AGENT_PROVIDER],
               secrets: [{ name: 'apiKey', title: 'API key', description: '' }],
               storedSecrets: ['apiKey'],
-              completionConsent: CompletionConsent.ASKED,
+              completionConsent: CompletionConsent.REQUESTED,
               hasFrontend: true,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settings: [
@@ -161,7 +161,7 @@ describe('every setting', () => {
         capabilities: [CAPABILITY_AGENT_PROVIDER],
         secrets: [{ name: 'apiKey', title: 'API key', description: '', when: undefined }],
         storedSecrets: ['apiKey'],
-        consent: 'asked',
+        consent: 'requested',
         hasFrontend: true,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settings: [

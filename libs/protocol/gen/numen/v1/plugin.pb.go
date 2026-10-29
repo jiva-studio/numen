@@ -30,29 +30,29 @@ const (
 	CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED CompletionConsent = 0
 	// The person has not answered, and the plugin has not asked since the host
 	// started.
-	CompletionConsent_COMPLETION_CONSENT_UNANSWERED CompletionConsent = 1
+	CompletionConsent_COMPLETION_CONSENT_PENDING CompletionConsent = 1
 	// person has not answered.
-	CompletionConsent_COMPLETION_CONSENT_ASKED CompletionConsent = 2
+	CompletionConsent_COMPLETION_CONSENT_REQUESTED CompletionConsent = 2
 	// The person lets the plugin ask.
 	CompletionConsent_COMPLETION_CONSENT_ALLOWED CompletionConsent = 3
-	CompletionConsent_COMPLETION_CONSENT_REFUSED CompletionConsent = 4
+	CompletionConsent_COMPLETION_CONSENT_DENIED  CompletionConsent = 4
 )
 
 // Enum value maps for CompletionConsent.
 var (
 	CompletionConsent_name = map[int32]string{
 		0: "COMPLETION_CONSENT_UNSPECIFIED",
-		1: "COMPLETION_CONSENT_UNANSWERED",
-		2: "COMPLETION_CONSENT_ASKED",
+		1: "COMPLETION_CONSENT_PENDING",
+		2: "COMPLETION_CONSENT_REQUESTED",
 		3: "COMPLETION_CONSENT_ALLOWED",
-		4: "COMPLETION_CONSENT_REFUSED",
+		4: "COMPLETION_CONSENT_DENIED",
 	}
 	CompletionConsent_value = map[string]int32{
 		"COMPLETION_CONSENT_UNSPECIFIED": 0,
-		"COMPLETION_CONSENT_UNANSWERED":  1,
-		"COMPLETION_CONSENT_ASKED":       2,
+		"COMPLETION_CONSENT_PENDING":     1,
+		"COMPLETION_CONSENT_REQUESTED":   2,
 		"COMPLETION_CONSENT_ALLOWED":     3,
-		"COMPLETION_CONSENT_REFUSED":     4,
+		"COMPLETION_CONSENT_DENIED":      4,
 	}
 )
 
@@ -1422,11 +1422,11 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason*\xb8\x01\n" +
 	"\x11CompletionConsent\x12\"\n" +
-	"\x1eCOMPLETION_CONSENT_UNSPECIFIED\x10\x00\x12!\n" +
-	"\x1dCOMPLETION_CONSENT_UNANSWERED\x10\x01\x12\x1c\n" +
-	"\x18COMPLETION_CONSENT_ASKED\x10\x02\x12\x1e\n" +
-	"\x1aCOMPLETION_CONSENT_ALLOWED\x10\x03\x12\x1e\n" +
-	"\x1aCOMPLETION_CONSENT_REFUSED\x10\x04*d\n" +
+	"\x1eCOMPLETION_CONSENT_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aCOMPLETION_CONSENT_PENDING\x10\x01\x12 \n" +
+	"\x1cCOMPLETION_CONSENT_REQUESTED\x10\x02\x12\x1e\n" +
+	"\x1aCOMPLETION_CONSENT_ALLOWED\x10\x03\x12\x1d\n" +
+	"\x19COMPLETION_CONSENT_DENIED\x10\x04*d\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
 	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +

@@ -43,7 +43,7 @@ const PLUGINS: readonly PluginInfo[] = [
     secrets: [{ name: 'apiKey', title: 'apiKey', description: '' }],
   }),
   createPlugin('sample.asking', 'Sample Asking Plugin', {
-    consent: 'asked',
+    consent: 'requested',
     settings: [
       {
         key: 'agent',

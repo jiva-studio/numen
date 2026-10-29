@@ -34,7 +34,7 @@ const (
 	// The name is not a file of the plugin's folder.
 	HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE HostStoreErrorCode = 3
 	// Another program holds the file.
-	HostStoreErrorCode_HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER HostStoreErrorCode = 4
+	HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER HostStoreErrorCode = 4
 )
 
 // Enum value maps for HostStoreErrorCode.
@@ -44,14 +44,14 @@ var (
 		1: "HOST_STORE_ERROR_CODE_NO_VAULT",
 		2: "HOST_STORE_ERROR_CODE_MISSING",
 		3: "HOST_STORE_ERROR_CODE_OUTSIDE",
-		4: "HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER",
+		4: "HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER",
 	}
 	HostStoreErrorCode_value = map[string]int32{
-		"HOST_STORE_ERROR_CODE_UNSPECIFIED":     0,
-		"HOST_STORE_ERROR_CODE_NO_VAULT":        1,
-		"HOST_STORE_ERROR_CODE_MISSING":         2,
-		"HOST_STORE_ERROR_CODE_OUTSIDE":         3,
-		"HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER": 4,
+		"HOST_STORE_ERROR_CODE_UNSPECIFIED":       0,
+		"HOST_STORE_ERROR_CODE_NO_VAULT":          1,
+		"HOST_STORE_ERROR_CODE_MISSING":           2,
+		"HOST_STORE_ERROR_CODE_OUTSIDE":           3,
+		"HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER": 4,
 	}
 )
 
@@ -731,13 +731,13 @@ const file_numen_v1_hoststore_proto_rawDesc = "" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"M\n" +
 	"\x17RenameStoreFileResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostStoreErrorCodeR\x05error*\xd0\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostStoreErrorCodeR\x05error*\xd2\x01\n" +
 	"\x12HostStoreErrorCode\x12%\n" +
 	"!HOST_STORE_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_STORE_ERROR_CODE_NO_VAULT\x10\x01\x12!\n" +
 	"\x1dHOST_STORE_ERROR_CODE_MISSING\x10\x02\x12!\n" +
-	"\x1dHOST_STORE_ERROR_CODE_OUTSIDE\x10\x03\x12)\n" +
-	"%HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER\x10\x042\x96\x04\n" +
+	"\x1dHOST_STORE_ERROR_CODE_OUTSIDE\x10\x03\x12+\n" +
+	"'HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER\x10\x042\x96\x04\n" +
 	"\x10HostStoreService\x12P\n" +
 	"\rReadStoreFile\x12\x1e.numen.v1.ReadStoreFileRequest\x1a\x1f.numen.v1.ReadStoreFileResponse\x12V\n" +
 	"\x0fAppendStoreFile\x12 .numen.v1.AppendStoreFileRequest\x1a!.numen.v1.AppendStoreFileResponse\x12S\n" +

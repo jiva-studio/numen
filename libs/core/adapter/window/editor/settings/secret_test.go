@@ -53,15 +53,15 @@ func TestABuildWithoutKeysServesNone(t *testing.T) {
 func TestAPluginTravelsWithItsConsent(t *testing.T) {
 	infos := NewWirePluginInfos([]setting.PluginInfo{{
 		ID: "md.numen.sample", Secrets: []setting.PluginSecret{{Name: "apiKey", Title: "API key"}}, StoredSecrets: []string{"apiKey"},
-		Consent: setting.ConsentAsked,
+		Consent: setting.ConsentRequested,
 	}})
 	one := infos[0]
-	if one.GetCompletionConsent() != v1.CompletionConsent_COMPLETION_CONSENT_ASKED ||
+	if one.GetCompletionConsent() != v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED ||
 		len(one.GetStoredSecrets()) != 1 || one.GetSecrets()[0].GetName() != "apiKey" {
 		t.Errorf("travelled as %v", one)
 	}
 	for _, consent := range []setting.Consent{
-		setting.ConsentNone, setting.ConsentUnanswered, setting.ConsentAsked, setting.ConsentAllowed, setting.ConsentRefused,
+		setting.ConsentNone, setting.ConsentPending, setting.ConsentRequested, setting.ConsentAllowed, setting.ConsentDenied,
 	} {
 		if _, found := Consents[consent]; !found {
 			t.Errorf("consent %v has no wire value", consent)
