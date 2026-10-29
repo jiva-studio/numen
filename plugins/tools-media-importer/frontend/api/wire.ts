@@ -1,25 +1,27 @@
 /**
- * Wire adapter for the plugin's LinkService, the window's MediaService and the plugin's tasks.
+ * Wire adapter for the plugin's importer service, the window's MediaService and the plugin's tasks.
  */
-import { createClient } from '@connectrpc/connect'
 import {
+  createApi,
   getMediaSource,
   getPageSource,
-  retryWhileBusy,
-  transport,
+  type ApiError,
+  type Result,
   type TaskHost,
+  UNAVAILABLE,
 } from '@numen/plugin-sdk'
-import { LinkErrorCode, LinkService } from '../gen/numen/links/v1/link_pb.js'
 import type { Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
+import { ErrorCode, SERVICE, type Methods } from './importer'
 import { createWorkWatcher } from './work'
 
 /** The id the manifest declares the plugin under. */
 export const PLUGIN_ID = 'md.numen.tools.media.importer'
 
-const client = {
-  links: createClient(LinkService, transport),
-}
+const BUSY_ATTEMPTS = 5
+const BUSY_DELAY_MS = 1000
+
+const api = createApi(SERVICE)
 
 let taskHost: TaskHost | undefined
 
@@ -28,21 +30,39 @@ export const setTaskHost = (host: TaskHost | undefined) => {
   taskHost = host
 }
 
-/** What a person reads for each refusal. */
-const REFUSALS: Readonly<Record<LinkErrorCode, string>> = {
-  [LinkErrorCode.UNSPECIFIED]: words.failed,
-  [LinkErrorCode.NOT_A_LINK]: words.notALink,
-  [LinkErrorCode.NO_VAULT]: words.noVault,
+/** What a person reads for a failure of a method. */
+export const describeError = (error: ApiError): string => {
+  switch (error.code) {
+    case ErrorCode.notFound:
+      return words.notALink
+    case ErrorCode.failedPrecondition:
+      return words.noVault
+    default:
+      return words.failed
+  }
 }
 
-/** What a person reads for a refusal of the schema. */
-export const describeRefusal = (code: LinkErrorCode): string => REFUSALS[code] ?? words.failed
+/** Calls a method of the importer service. */
+const call = <M extends keyof Methods>(
+  method: M,
+  request: Methods[M]['request'],
+): Promise<Result<Methods[M]['response'], ApiError>> => api.call(method, request)
 
-/** The outcome of a call that returns nothing but a refusal. */
-const readOutcome = (answer: { readonly error: LinkErrorCode }): Outcome<null> =>
-  answer.error === LinkErrorCode.UNSPECIFIED
-    ? { ok: true, value: null }
-    : { ok: false, error: describeRefusal(answer.error) }
+/** Calls a method again after a wait while the application answers unavailable. */
+const callWhileBusy = async <M extends keyof Methods>(
+  method: M,
+  request: Methods[M]['request'],
+): Promise<Result<Methods[M]['response'], ApiError>> => {
+  for (let attempt = 1; ; attempt++) {
+    const result = await call(method, request)
+    if (result.ok || result.error.code !== UNAVAILABLE || attempt >= BUSY_ATTEMPTS) return result
+    await new Promise((resolve) => setTimeout(resolve, BUSY_DELAY_MS))
+  }
+}
+
+/** The outcome of a call whose response holds no value. */
+const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
+  result.ok ? { ok: true, value: null } : { ok: false, error: describeError(result.error) }
 
 const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
 
@@ -53,39 +73,31 @@ export const refreshLinks = (paths: readonly string[]): void => {
 
 export const links: Links = {
   getLink: async (path) => {
-    const answer = await retryWhileBusy(() => client.links.getLink({ path }))
-    if (answer.error !== LinkErrorCode.UNSPECIFIED) {
-      return { ok: false, error: describeRefusal(answer.error) }
-    }
-    return {
-      ok: true,
-      value: {
-        url: answer.url,
-        isCopyable: answer.isCopyable,
-        copySize: Number(answer.copySize),
-        isTextDeleted: answer.isTextDeleted,
-        embedPage: answer.embedPage,
-      },
-    }
+    const result = await callWhileBusy('GetLink', { path })
+    if (!result.ok) return { ok: false, error: describeError(result.error) }
+    return { ok: true, value: result.value }
   },
-  readArticle: async (path) =>
-    (await retryWhileBusy(() => client.links.readArticle({ path }))).text,
+  readArticle: async (path) => {
+    const result = await callWhileBusy('ReadArticle', { path })
+    if (!result.ok) throw new Error(result.error.message)
+    return result.value.text
+  },
   getSource: (path) => getMediaSource(path),
   getPageSource: (page) => getPageSource(PLUGIN_ID, page),
   fetchText: async (path, isUserStarted) =>
-    readOutcome(await client.links.fetchText({ path, isUserStarted })),
-  copyVideo: async (path) => readOutcome(await client.links.copyVideo({ path })),
-  deleteCopy: async (path) => readOutcome(await client.links.deleteCopy({ path })),
+    readOutcome(await call('FetchText', { path, isUserStarted })),
+  copyVideo: async (path) => readOutcome(await call('CopyVideo', { path })),
+  deleteCopy: async (path) => readOutcome(await call('DeleteCopy', { path })),
   watchWork: (path, onChange) => work.watch(path, onChange),
 }
 
-/** Makes a link note of each web address in the folder; answers the notes made. */
+/** Creates a link note of each web address in the folder; returns the paths of the notes. */
 export const createLinks = async (
   folder: string,
   urls: readonly string[],
 ): Promise<Outcome<readonly string[]>> => {
-  const answer = await client.links.createLinks({ folder, urls: [...urls] })
-  return answer.error === LinkErrorCode.UNSPECIFIED
-    ? { ok: true, value: answer.paths }
-    : { ok: false, error: describeRefusal(answer.error) }
+  const result = await call('CreateLinks', { folder, urls })
+  return result.ok
+    ? { ok: true, value: result.value.paths }
+    : { ok: false, error: describeError(result.error) }
 }

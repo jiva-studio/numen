@@ -13,8 +13,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@connectrpc/connect": "^2.0.1",
-    "@connectrpc/connect-web": "^2.0.1",
     "@numen/plugin-sdk": "workspace:*"
   },
   "peerDependencies": {

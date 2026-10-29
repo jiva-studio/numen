@@ -1,6 +1,6 @@
 // Package service is the backend of the media importer plugin: it makes link notes, fetches the text
 // their addresses publish as text versions of them, copies the videos they point at to be played
-// in their place, and serves LinkService and the plugin's commands.
+// in their place, and serves the importer API and the plugin's commands.
 package service
 
 import (
@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1/linksv1connect"
 )
 
 // EnvMockML names the variable that has the plugin reach video sites through the mock downloader.
@@ -108,7 +107,7 @@ func getLanguages(value string) []string {
 	return out
 }
 
-// Mount registers the text provider, LinkService and the commands on s over the host given. A
+// Mount registers the text provider, the importer API and the commands on s over the host given. A
 // video site is reached through the mock downloader where isMock is set. The fetches end with s.
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
@@ -119,7 +118,7 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	}
 	s.SetUpdateConfig(f.updateConfig)
 	s.Register(host.NewTextProviderHandler(link.NewProvider(links), s.HandlerOptions()...))
-	s.Register(linksv1connect.NewLinkServiceHandler(linkServer{links: links}, s.HandlerOptions()...))
+	mountAPI(s, links)
 	command.Mount(s, commands)
 	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
 	s.OnClose(links.Close)

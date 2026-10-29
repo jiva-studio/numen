@@ -7,7 +7,7 @@ const contract = ['plugin-sdk', 'ui']
 
 export default [
   {
-    ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'frontend/gen/**', 'stories/.storybook/**'],
+    ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'stories/.storybook/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -136,7 +136,7 @@ export default [
         {
           patterns: [
             {
-              group: ['**/api/wire*', './api/wire*', '../api/wire*', '@connectrpc/*', '@bufbuild/*'],
+              group: ['**/api/wire*', './api/wire*', '../api/wire*'],
               message: '.vue components are humble views and must talk to model/composables, never directly to wire/RPC',
             },
           ],

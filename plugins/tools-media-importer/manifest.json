@@ -12,7 +12,7 @@
       "type": "link"
     }
   ],
-  "services": ["numen.links.v1.LinkService"],
+  "services": ["numen.importer"],
   "textInput": {
     "noteTypes": ["link"]
   },
@@ -66,7 +66,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/tools-media-importer",
-    "serviceName": "numen.links.v1.LinkService"
+    "serviceName": "numen.importer"
   },
   "frontend": {
     "entrypoint": "dist/index.js",

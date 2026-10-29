@@ -1,63 +1,84 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
-	linksv1 "github.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1/linksv1connect"
 )
 
-// The handler a host that links the plugin in serves answers LinkService with the token it was
-// given, and refuses a call without it.
-func TestTheLinkedHandlerAnswersTheLinkService(t *testing.T) {
+// The handler a host that links the plugin in answers the importer API with the token it was
+// given, and rejects a call without it.
+func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": "1"})
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	client := linksv1connect.NewLinkServiceClient(web.Client(), web.URL)
+	url := web.URL + "/" + api.Service + "/" + api.MethodGetLink
 
-	unauthReq := connect.NewRequest(&linksv1.GetLinkRequest{Path: "links/a.md"})
-	if _, err := client.GetLink(t.Context(), unauthReq); connect.CodeOf(err) != connect.CodeUnauthenticated {
-		t.Fatalf("GetLink without the token = %v, want unauthenticated", err)
+	post := func(token string) *http.Response {
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, strings.NewReader(`{"path":"notes/plain.txt"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		res, err := web.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = res.Body.Close() })
+		return res
 	}
-	req := connect.NewRequest(&linksv1.GetLinkRequest{Path: "notes/plain.txt"})
-	req.Header().Set("Authorization", "Bearer linked-token")
-	resp, err := client.GetLink(t.Context(), req)
-	if err != nil {
-		t.Fatalf("GetLink: %v", err)
+
+	if res := post(""); res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("GetLink without the token = %d, want 401", res.StatusCode)
 	}
-	if resp.Msg.GetError() != linksv1.LinkErrorCode_LINK_ERROR_CODE_NOT_A_LINK {
-		t.Errorf("a file that is no note is answered %v", resp.Msg.GetError())
+	res := post("linked-token")
+	var failure server.APIError
+	if err := json.NewDecoder(res.Body).Decode(&failure); err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusNotFound || failure.Code != server.CodeNotFound {
+		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", res.StatusCode, failure)
 	}
 }
 
-// Every value of the schema's error code is codes for some refusal.
-func TestGetErrorCodeCoversEveryLinkErrorCode(t *testing.T) {
-	var codes []linksv1.LinkErrorCode
-	for _, err := range []error{nil, address.ErrNotAURL, link.ErrNotALink, host.ErrNoVault} {
-		code, ok := getErrorCode(err)
-		if !ok {
-			t.Errorf("%v is written as no code", err)
-		}
-		codes = append(codes, code)
+// Every error a link operation reports maps to the API code a client reads.
+func TestToAPIErrorMapsLinkErrors(t *testing.T) {
+	cases := []struct {
+		err  error
+		code server.ErrorCode
+	}{
+		{address.ErrNotAURL, server.CodeNotFound},
+		{link.ErrNotALink, server.CodeNotFound},
+		{host.ErrNotExist, server.CodeNotFound},
+		{host.ErrNoVault, server.CodeFailedPrecondition},
 	}
-	for value := range linksv1.LinkErrorCode_name {
-		if !slices.Contains(codes, linksv1.LinkErrorCode(value)) {
-			t.Errorf("%v is written for no refusal", linksv1.LinkErrorCode(value))
+	for _, one := range cases {
+		var failure *server.APIError
+		if !errors.As(toAPIError(one.err), &failure) || failure.Code != one.code {
+			t.Errorf("%v maps to %v, want %s", one.err, toAPIError(one.err), one.code)
 		}
 	}
-	if _, ok := getErrorCode(errors.New("the disk is full")); ok {
-		t.Error("an error the schema names no code for is written as one")
+	if toAPIError(nil) != nil {
+		t.Error("nil maps to an error")
+	}
+	other := errors.New("the disk is full")
+	if !errors.Is(toAPIError(other), other) {
+		t.Error("an unmapped error is changed")
 	}
 }
 
