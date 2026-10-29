@@ -18,7 +18,7 @@ func toEntropy(role domain.LinkRole) domain.Link {
 
 const linkedHeat = "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks:\n  - to: Entropy\n    role: parent\n    type: series\n---\n# Heat\n"
 
-func TestAddingLinksRefusesAnyThatTheNoteCannotCarry(t *testing.T) {
+func TestEditLinks_RejectsLinksNoteCannotHold(t *testing.T) {
 	t.Parallel()
 	for name, tc := range map[string]struct {
 		first domain.Link
@@ -57,7 +57,7 @@ func TestCheckingALinkNamesWhatItLacks(t *testing.T) {
 	}
 }
 
-func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
+func TestEditLinks_ChecksCallerFingerprint(t *testing.T) {
 	t.Parallel()
 	edits := map[string]func(c changing, item domain.FileStat) error{
 		"adding": func(c changing, activeItem domain.FileStat) error {

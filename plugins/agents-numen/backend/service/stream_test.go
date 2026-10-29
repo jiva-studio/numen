@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestTheReplyIsSaidPieceByPieceInTheOrderItIsSaved(t *testing.T) {
+func TestStream_EmitsReplyChunksInOrder(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("Water the garden today.")}}
 	s := newServer(model.serve(t).URL)
 	task := newTask("", "Plan?")
@@ -21,7 +21,7 @@ func TestTheReplyIsSaidPieceByPieceInTheOrderItIsSaved(t *testing.T) {
 	steps := ask(t, s, task)
 	ask(t, s, task)
 
-	if got, want := getSaid(steps), []string{"Water ", "the ", "garden ", "today."}; !slices.Equal(got, want) {
+	if got, want := getSpoken(steps), []string{"Water ", "the ", "garden ", "today."}; !slices.Equal(got, want) {
 		t.Errorf("said %q, want %q", got, want)
 	}
 	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != reasonDone {
@@ -181,9 +181,9 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 	}
 }
 
-func TestAChatAPIThatRejectsToStreamIsAskedUnstreamed(t *testing.T) {
+func TestStream_FallsBackToUnstreamedOnRejection(t *testing.T) {
 	model := &fakeChat{
-		refusesStream: true,
+		rejectsStream: true,
 		replies:       []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("Water the garden.")},
 	}
 	vault := &fakeVault{}
@@ -194,7 +194,7 @@ func TestAChatAPIThatRejectsToStreamIsAskedUnstreamed(t *testing.T) {
 	if got := describeSteps(steps); got != "model call finished model said stopped" {
 		t.Fatalf("steps are %q", got)
 	}
-	if got := getSaid(steps); !slices.Equal(got, []string{"Water the garden."}) {
+	if got := getSpoken(steps); !slices.Equal(got, []string{"Water the garden."}) {
 		t.Errorf("said %q", got)
 	}
 	var streamed []bool
@@ -217,13 +217,13 @@ func TestABadRequestIsReportedWhenTheUnstreamedOneFailsToo(t *testing.T) {
 	}
 }
 
-func TestAChatAPIThatIgnoresTheStreamHasItsWholeReplySaid(t *testing.T) {
+func TestStream_EmitsWholeReplyWhenAPIIgnoresStreaming(t *testing.T) {
 	model := &fakeChat{ignoresStream: true, replies: []message{newTextReply("Water the garden.")}}
 	s := newServer(model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if got := getSaid(steps); !slices.Equal(got, []string{"Water the garden."}) {
+	if got := getSpoken(steps); !slices.Equal(got, []string{"Water the garden."}) {
 		t.Errorf("said %q", got)
 	}
 	if requests := model.getRequests(); len(requests) != 1 || !requests[0].Stream {

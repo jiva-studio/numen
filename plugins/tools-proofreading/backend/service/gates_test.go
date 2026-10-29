@@ -13,7 +13,7 @@ func batch() Batch {
 	}}
 }
 
-func TestAMarkOfOursComingBackRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsReplyContainingMarker(t *testing.T) {
 	reply := "10|the " + Opens + "12" + Closes + "Södërby garden hedge."
 
 	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
@@ -25,7 +25,7 @@ func TestAMarkOfOursComingBackRefusesTheBatch(t *testing.T) {
 	}
 }
 
-func TestALineTheBatchDidNotNameRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsUnknownLineNumber(t *testing.T) {
 	reply := "10|the Södërby garden hedge.\n999|a line this batch never carried"
 
 	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
@@ -37,7 +37,7 @@ func TestALineTheBatchDidNotNameRefusesTheBatch(t *testing.T) {
 	}
 }
 
-func TestAReplyLineWithoutANumberAndABarRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsLineWithoutNumberAndBar(t *testing.T) {
 	reply := "Here are the lines I would put right:\n10|the Södërby garden hedge."
 
 	if fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance); replyVal {
@@ -149,7 +149,7 @@ func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 	}
 }
 
-func TestANumberRunningIntoTheLineRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsNumberFusedToText(t *testing.T) {
 	reply := "10the Södërby garden hedge."
 
 	if fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance); replyVal {
@@ -186,7 +186,7 @@ func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
 }
 
 // A line whose own text opens with digits is a row whose number was left out.
-func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsRowWhenNumberIsTextDigits(t *testing.T) {
 	dated := Batch{Number: 3, Lines: []Line{
 		{Number: 1, Text: "1 January 1970 was a Thursday"},
 	}}

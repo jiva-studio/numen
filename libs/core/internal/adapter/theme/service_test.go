@@ -93,7 +93,7 @@ func TestTheListReturnsWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 	}
 }
 
-func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
+func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	writeTheme(t, aged.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
 
@@ -233,7 +233,7 @@ func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
 }
 
 // A theme deleted out of the folder does not leave the window undressed, and the
-func TestAThemeTheSettingsNameThatIsMissingIsSaidAndTheDefaultWorn(t *testing.T) {
+func TestThemes_MissingSettingsThemeReportsAndUsesDefault(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
 	answer := aged.themes(t)
 	if answer.GetApplied() != theme.Default {
@@ -248,7 +248,7 @@ func TestAThemeTheSettingsNameThatIsMissingIsSaidAndTheDefaultWorn(t *testing.T)
 }
 
 // A build with no settings behind it still lists what it ships.
-func TestAServiceGivenNoSettingsWearsThisProductsPalette(t *testing.T) {
+func TestThemes_NoSettingsUsesDefaultPalette(t *testing.T) {
 	service := &theme.Service{Catalogue: createThemeFolder(t)}
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {

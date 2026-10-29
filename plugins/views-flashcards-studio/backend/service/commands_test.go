@@ -57,7 +57,7 @@ func TestACardModelMadeByItsCommandDeclaresAField(t *testing.T) {
 	}
 }
 
-func TestAFileOfThatNameAlreadyThereIsSaidAndNothingOpens(t *testing.T) {
+func TestCreateDeck_ErrorsWhenFileExists(t *testing.T) {
 	commands, _ := newCommands(t)
 	request := command.Request{Command: "create-deck", Arguments: command.Arguments{"title": "Lakes"}}
 	if _, err := commands.RunCommand(t.Context(), request); err != nil {

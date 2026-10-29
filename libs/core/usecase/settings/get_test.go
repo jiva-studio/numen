@@ -62,7 +62,7 @@ func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
 	}
 }
 
-func TestGetRefusesWhenTheFileCannotBeRead(t *testing.T) {
+func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, error) { return "", "", errRead },

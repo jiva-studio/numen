@@ -404,7 +404,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 	}
 }
 
-func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
+func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 	cmd := exec.Command("sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)

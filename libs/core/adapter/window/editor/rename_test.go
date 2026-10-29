@@ -142,10 +142,10 @@ func oneName(t *testing.T, f *going, preserved bool) error {
 	return err
 }
 
-// TestTurningTheSettingIsAnsweredByTheNextRename. The palette turns it, the
+// TestRenameNote_UsesSettingChangedSinceLaunch. The palette turns it, the
 // file is written, and the rename after it reads what was written. Nothing is
 // launched again in between.
-func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
+func TestRenameNote_UsesSettingChangedSinceLaunch(t *testing.T) {
 	f := opening(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
 		"Heat.md":    "---\ntitle: Heat\n---\nA measure.\n",
@@ -264,10 +264,10 @@ func TestRenamingOntoATakenNameReturnsWhatTheNoteIsCalled(t *testing.T) {
 	}
 }
 
-// TestRenamingRefusesATitleNoFileCanBeNamedAfter. The note is not opened for a
+// TestRenameNote_RejectsTitleWithoutFilename. The note is not opened for a
 // title that leaves nothing to name it. The titles that exercise the rule are
-// the core's, in TestRenamingRefusesATitleNoNoteCanBeGiven.
-func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
+// the core's, in TestRename_RejectsInvalidTitle.
+func TestRenameNote_RejectsTitleWithoutFilename(t *testing.T) {
 	const target = "# Old\n"
 	f := openWindow(t, nil, map[string]string{"Old.md": target})
 
@@ -425,9 +425,9 @@ func TestRemovingARemadeNote(t *testing.T) {
 	}
 }
 
-// TestARemovedFileIsReportedTheFirstTimeItIsAskedFor. The watcher reports only
+// TestWatchVaultChanges_ReportsRemovedAsset. The watcher reports only
 // the paths the vault holds a source for, and a picture is not one of them.
-func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
+func TestWatchVaultChanges_ReportsRemovedAsset(t *testing.T) {
 	client, root := openVault(t, map[string]string{
 		"Note.md":            "---\ntitle: Note\n---\n\n# Note\n",
 		"assets/diagram.png": "a picture, near enough\n",
@@ -723,7 +723,7 @@ func getResolved(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*
 	return delta
 }
 
-func TestAnAddressIsAnsweredWithTheNoteItReaches(t *testing.T) {
+func TestResolveAddresses_ReturnsTargetNote(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\nid: " + identified + "\n---\n\nheat\n",
 		"Note.md":            "---\ntitle: Note\n---\n\nprose\n",
@@ -859,7 +859,7 @@ func TestANameSavedInNoNoteReachesTheNoteItNames(t *testing.T) {
 	}
 }
 
-func TestAnAddressAskedTwiceIsAnsweredOnce(t *testing.T) {
+func TestResolveAddresses_DeduplicatesAddresses(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\nheat\n",
 	})
@@ -947,9 +947,9 @@ func TestANoteMadeInTheChildRelationIsTheParentsChild(t *testing.T) {
 	}
 }
 
-// TestANoteIsMadeInTheFolderItWasAskedFor. The person's arrangement of their own
+// TestCreateNote_UsesRequestedFolder. The person's arrangement of their own
 // folders is followed and never altered.
-func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
+func TestCreateNote_UsesRequestedFolder(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"physics/Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
@@ -1620,13 +1620,13 @@ func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 	}
 }
 
-// TestAFileLetGoOfOverTheTreeArrivesAndIsSaid is the path a drop takes: the
+// TestImports_DroppedFileAppearsInTree is the path a drop takes: the
 // window hands over what the person release, the vault holds it, and everyone
 // drawing the vault is told where to look.
 //
 // A picture is what the watcher reports to nobody, so the stream is the only
 // way the tree finds out about one.
-func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
+func TestImports_DroppedFileAppearsInTree(t *testing.T) {
 	client, _, root, installation := openVaultWithWindow(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
@@ -1683,7 +1683,7 @@ func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
 
 // A file that is already there stays as it is, and what stopped the drop stands
 // in the list of what the window is doing.
-func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
+func TestImports_ExistingNameKeepsFileAndReportsTask(t *testing.T) {
 	_, rendered, root, installation := openVaultWithWindow(t, map[string]string{"Entropy.md": "# Mine\n"})
 
 	outside := t.TempDir()

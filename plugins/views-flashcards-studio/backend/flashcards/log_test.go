@@ -310,12 +310,12 @@ type filling struct {
 	callCount int
 }
 
-var errNoRoom = errors.New("no room left on the disk")
+var errNoSpace = errors.New("no room left on the disk")
 
 func (f *filling) AppendLog(ctx context.Context, name string, content []byte) error {
 	f.callCount++
 	if f.callCount > 1 {
-		return errNoRoom
+		return errNoSpace
 	}
 	return f.LogStore.AppendLog(ctx, name, content)
 }
@@ -337,10 +337,10 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoRoom) {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoSpace) {
 		t.Fatalf("an answer that did not land came back with %v", err)
 	}
-	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoRoom) {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoSpace) {
 		t.Errorf("the answer after it came back with %v", err)
 	}
 	if full.store.callCount != 2 {
@@ -464,7 +464,7 @@ func TestAnAnswerReturnsWhichCardAndThroughWhichCard(t *testing.T) {
 }
 
 // A Record built with no clock refuses an answer and does not panic.
-func TestARecordWithNoClockRefusesAnAnswer(t *testing.T) {
+func TestRecord_ErrorsWithoutClock(t *testing.T) {
 	t.Parallel()
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 

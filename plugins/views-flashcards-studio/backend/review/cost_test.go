@@ -221,7 +221,7 @@ func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
 // deck that owes nothing.
 //
 // The shares are proportional to what the decks owe.
-func TestNoDeckConsumesMoreOfTheDayThanItOwes(t *testing.T) {
+func TestDivideBudget_ShareNeverExceedsOwed(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)
@@ -241,7 +241,7 @@ func TestNoDeckConsumesMoreOfTheDayThanItOwes(t *testing.T) {
 //
 // The shares are proportional, and what they leave over goes by the largest
 // fraction.
-func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
+func TestDivideBudget_SharesAreProportional(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)

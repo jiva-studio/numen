@@ -555,11 +555,11 @@ func packVector(q []int8) []byte {
 // again. The source now open is kept, because the chunks of one source are asked
 // about together.
 type extracted struct {
-	files  vaultport.VaultReader
-	texts  textport.Texts
-	path   string
-	text   string
-	isHeld bool
+	files     vaultport.VaultReader
+	texts     textport.Texts
+	path      string
+	text      string
+	isIndexed bool
 }
 
 // text is the extracted text of one source, and false where the vault no longer
@@ -569,9 +569,9 @@ type extracted struct {
 // version out of that version.
 func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
-		return e.text, e.isHeld, nil
+		return e.text, e.isIndexed, nil
 	}
-	e.path, e.text, e.isHeld = path, "", false
+	e.path, e.text, e.isIndexed = path, "", false
 
 	read, err := e.read(ctx, path, from)
 	switch {
@@ -581,7 +581,7 @@ func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool
 		return "", false, fmt.Errorf("read %s: %w", path, err)
 	}
 	e.text = read
-	e.isHeld = true
+	e.isIndexed = true
 	return e.text, true, nil
 }
 

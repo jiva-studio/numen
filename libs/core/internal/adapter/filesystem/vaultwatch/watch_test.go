@@ -78,9 +78,9 @@ func TestOneSaveIsOneReport(t *testing.T) {
 	}
 }
 
-// TestAFolderThatGoesAwayCannotBeAnsweredFromDisk. What it held is known to the
+// TestWatchVault_RequestsReloadWhenFolderRemoved. What it held is known to the
 // index, so the watcher asks for the vault to be read again.
-func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
+func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":            "# Note\n",
 		"projects/Plan.md":   "# Plan\n",

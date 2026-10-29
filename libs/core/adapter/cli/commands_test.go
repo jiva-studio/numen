@@ -559,7 +559,7 @@ func TestScanReportsTheBooksItRead(t *testing.T) {
 	}
 }
 
-func TestScanRebuildsTheIndexWhenAsked(t *testing.T) {
+func TestScan_RebuildsIndexWithRebuildFlag(t *testing.T) {
 	t.Parallel()
 	target := createNoteVault(t)
 	s := &scanFixture{}

@@ -51,7 +51,7 @@ func TestOpeningTheStoreWritesNothing(t *testing.T) {
 // on writing into: creating the parents of a name would put a stub where the
 // vault was, and what is written there is shadowed the moment the real one is
 // back.
-func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
+func TestAppend_RejectsMissingVaultFolder(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
 	if err := derived.Append(ctx, "area/run.txt", []byte("one\n")); err != nil {
@@ -87,7 +87,7 @@ func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
 
 // A store opened on a folder carrying no identity has none to lose, so the
 // folder itself is what says it is still there.
-func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsMissing(t *testing.T) {
+func TestAppend_RejectsMissingFolderWithoutIdentity(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "vault")
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
@@ -350,14 +350,14 @@ func TestAClaimCannotLeaveTheStore(t *testing.T) {
 	}
 }
 
-// claimHeld is what the child process prints once it holds the claim, and
+// claimLocked is what the child process prints once it holds the claim, and
 // holdingEnv is the vault it is asked to hold it in.
 const (
-	claimHeld  = "the claim is held"
-	holdingEnv = "NUMEN_TEST_CLAIM_ROOT"
+	claimLocked = "the claim is held"
+	holdingEnv  = "NUMEN_TEST_CLAIM_ROOT"
 )
 
-func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
+func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 	// `numen recognise` is a separate binary and runs while the window is open,
 	// so what one process holds every other has to see.
 	derived, root := store(t)
@@ -385,11 +385,11 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 	// The child says other things first, and the claim is the line waited for.
 	response := bufio.NewScanner(stdout)
 	for response.Scan() {
-		if response.Text() == claimHeld {
+		if response.Text() == claimLocked {
 			break
 		}
 	}
-	if response.Text() != claimHeld {
+	if response.Text() != claimLocked {
 		t.Fatalf("the child never took the claim: %v", response.Err())
 	}
 
@@ -403,7 +403,7 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	root := os.Getenv(holdingEnv)
 	if root == "" {
-		t.Skip("this test is run by TestAClaimHeldByAnotherProcessIsRefused")
+		t.Skip("this test is run by TestClaimName_RejectsClaimFromOtherProcess")
 	}
 	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
@@ -415,7 +415,7 @@ func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	}
 	defer release()
 
-	fmt.Println(claimHeld)
+	fmt.Println(claimLocked)
 	io.ReadAll(os.Stdin)
 }
 

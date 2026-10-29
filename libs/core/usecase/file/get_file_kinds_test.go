@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) {
+func TestGetFileKinds_PreservesRequestOrderAndOmitsMissing(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"a.md":   "# a\n",
 		"b.mp3":  "sound",
@@ -37,7 +37,7 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 	}
 }
 
-func TestANoteTheIndexDoesNotHoldYetIsAnsweredWithTheTypeItsFileNames(t *testing.T) {
+func TestGetFileKinds_UnindexedNoteUsesFileNameType(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"presets/gentle.md": "---\ntype: preset\n---\n# Gentle\n",
 		"plain.md":          "# plain\n",

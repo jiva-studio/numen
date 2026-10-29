@@ -145,7 +145,7 @@ func (failingBridge) Close() error { return errors.New("not closed") }
 
 // The check refuses each way a bridge can answer a plugin that cannot answer
 // wrongly, and passes the way it should.
-func TestTheErrorCheckRefusesABridgeThatAnswersWrongly(t *testing.T) {
+func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 	cases := []struct {
 		name string
 		open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error)

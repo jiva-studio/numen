@@ -12,20 +12,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// heldWalk is a vault whose walk says when it began and then waits to be let
+// blockedWalk is a vault whose walk says when it began and then waits to be let
 // go, so that two scans of it can be caught overlapping.
-type heldWalk struct {
+type blockedWalk struct {
 	began chan struct{}
 	let   chan struct{}
 }
 
-func newHeldWalk() heldWalk {
-	return heldWalk{began: make(chan struct{}, 2), let: make(chan struct{})}
+func newBlockedWalk() blockedWalk {
+	return blockedWalk{began: make(chan struct{}, 2), let: make(chan struct{})}
 }
 
-func (h heldWalk) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
+func (h blockedWalk) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
 
-func (h heldWalk) WalkFiles(ctx context.Context, _ func(domain.FileStat) error) error {
+func (h blockedWalk) WalkFiles(ctx context.Context, _ func(domain.FileStat) error) error {
 	h.began <- struct{}{}
 	select {
 	case <-h.let:
@@ -35,15 +35,15 @@ func (h heldWalk) WalkFiles(ctx context.Context, _ func(domain.FileStat) error) 
 	}
 }
 
-func (heldWalk) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
-func (heldWalk) Read(context.Context, string) ([]byte, error)         { return nil, nil }
+func (blockedWalk) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
+func (blockedWalk) Read(context.Context, string) ([]byte, error)         { return nil, nil }
 
-func (heldWalk) StatFile(context.Context, string) (domain.FileStat, error) {
+func (blockedWalk) StatFile(context.Context, string) (domain.FileStat, error) {
 	return domain.FileStat{}, nil
 }
 
 // hasWalkBegun says whether a walk began before the wait ran out.
-func (h heldWalk) hasWalkBegun() bool {
+func (h blockedWalk) hasWalkBegun() bool {
 	select {
 	case <-h.began:
 		return true
@@ -52,17 +52,17 @@ func (h heldWalk) hasWalkBegun() bool {
 	}
 }
 
-// heldWalks opens that one vault, whichever vault is asked for.
-type heldWalks struct{ reader heldWalk }
+// blockedWalks opens that one vault, whichever vault is asked for.
+type blockedWalks struct{ reader blockedWalk }
 
-func (h heldWalks) Open(domain.Vault) (vaultport.VaultReader, error) { return h.reader, nil }
+func (h blockedWalks) Open(domain.Vault) (vaultport.VaultReader, error) { return h.reader, nil }
 
 // One index is walked a vault at a time: a second scan writing into it waits
 // for the first to finish.
 func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 	t.Parallel()
-	target := newHeldWalk()
-	readers := heldWalks{reader: target}
+	target := newBlockedWalk()
+	readers := blockedWalks{reader: target}
 	db := openIndex(t)
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
@@ -94,8 +94,8 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 // a vault they each keep their own index of.
 func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 	t.Parallel()
-	target := newHeldWalk()
-	readers := heldWalks{reader: target}
+	target := newBlockedWalk()
+	readers := blockedWalks{reader: target}
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
 	isDone := make(chan error, 2)

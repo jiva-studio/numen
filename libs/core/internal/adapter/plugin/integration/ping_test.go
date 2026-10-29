@@ -91,7 +91,7 @@ func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
 	}
 }
 
-func TestCheckPluginProtocolRefusesAProtocolTheHostDoesNotSpeak(t *testing.T) {
+func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	newer := pluginport.PluginProtocolVersion + 1
 	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
 	manifest := manifestfile.Manifest{ID: "md.numen.newer", Protocol: newer}

@@ -312,7 +312,7 @@ func TestAPathTheVaultReturnsContainsNothingIsNotReadAsANote(t *testing.T) {
 }
 
 // A deck goes out in string fields, so bytes that are not text are named as such.
-func TestADeckThatIsNotTextIsSaidToBeNotText(t *testing.T) {
+func TestReadDeck_ReportsNotTextOutcome(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Scan.md", "---\ntype: deck\n---\n\n## Wren \xff\xfe\n\n[[Animal]]\n")
 

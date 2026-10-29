@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestTheWorkersAskedForAreTheWorkersUsed(t *testing.T) {
+func TestGetWorkerCount_UsesRequestedCount(t *testing.T) {
 	if got := GetWorkerCount(3, 100); got != 3 {
 		t.Errorf("%d workers share the work, want 3", got)
 	}

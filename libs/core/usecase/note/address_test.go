@@ -78,7 +78,7 @@ func TestALinkToNowhereIsRefused(t *testing.T) {
 	}
 }
 
-func TestAVaultThatCannotBeAskedWritesNoLink(t *testing.T) {
+func TestAddress_UnqueryableVaultWritesNoLink(t *testing.T) {
 	t.Parallel()
 	_, err := note.GetAddress(t.Context(), unreachable{}, "v", "Note.md")
 

@@ -34,7 +34,7 @@ func TestRemoveConsumesAVaultOffTheListAndPreservesItsFolder(t *testing.T) {
 	}
 }
 
-func TestRemoveTrashesTheFolderWhenAskedTo(t *testing.T) {
+func TestRemove_TrashesFolderOnRequest(t *testing.T) {
 	t.Parallel()
 	retained, removed, registry := twoVaults(t)
 	remove, trash, _ := newRemove(registry)
@@ -68,7 +68,7 @@ func TestRemoveKeepsTheVaultInFrontOfThePerson(t *testing.T) {
 	}
 }
 
-func TestRemoveRefusesAVaultThatIsNotOnTheList(t *testing.T) {
+func TestRemove_RejectsUnlistedVault(t *testing.T) {
 	t.Parallel()
 	retained, _, registry := twoVaults(t)
 	remove, _, _ := newRemove(registry)

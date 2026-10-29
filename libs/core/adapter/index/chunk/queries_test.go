@@ -436,7 +436,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 	}
 }
 
-func TestASearchByWordsKeepsNoMoreThanItIsAskedFor(t *testing.T) {
+func TestFindLexical_HonorsLimit(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindFile}} {
@@ -668,7 +668,7 @@ func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	}
 }
 
-func TestASearchByMeaningKeepsNoMoreThanItIsAskedFor(t *testing.T) {
+func TestFindNearest_HonorsLimit(t *testing.T) {
 	db := meaningFixture(t)
 	queries := db.ChunkQueries()
 
@@ -931,7 +931,7 @@ func TestOwedChunksAreTheSmallOnesWithNoVectorNewestSourceFirst(t *testing.T) {
 	}
 }
 
-func TestAnotherRecipeOwesEveryChunkAgain(t *testing.T) {
+func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"s1", "s2"}}.save(t, db)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
@@ -984,7 +984,7 @@ func TestAWalkOfOwedChunksInPagesVisitsEachOnce(t *testing.T) {
 	}
 }
 
-func TestACursorThatPointsPastEverythingOwesNothing(t *testing.T) {
+func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century, large: "l", smalls: []string{"a1"}}.save(t, db)
 	queries := db.ChunkQueries()

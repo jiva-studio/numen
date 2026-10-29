@@ -20,7 +20,7 @@ func TestTheStepsRunInTheOrderTheyWereGiven(t *testing.T) {
 
 // The application's shutdown and the return of the run it was made in both ask,
 // and the window is release once.
-func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
+func TestSequenceRun_RunsStepsOnce(t *testing.T) {
 	times := 0
 	steps := NewSequence(func() { times++ })
 

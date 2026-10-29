@@ -228,14 +228,14 @@ func (c Config) settingsFile() (string, error) {
 	if c.SettingsPath != "" {
 		return c.SettingsPath, nil
 	}
-	if file, selected := c.getPathBeside("numen.json"); selected {
+	if file, selected := c.getAdjacentPath("numen.json"); selected {
 		return file, nil
 	}
 	return settings.Path()
 }
 
-// getPathBeside resolves a file path relative to the registry directory.
-func (c Config) getPathBeside(name string) (string, bool) {
+// getAdjacentPath resolves a file path relative to the registry directory.
+func (c Config) getAdjacentPath(name string) (string, bool) {
 	if c.RegistryPath == "" {
 		return "", false
 	}

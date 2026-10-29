@@ -177,7 +177,7 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 }
 
 // screen has a nought to draw.
-func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
+func TestVaultCount_UnansweredVaultHasZeroLearned(t *testing.T) {
 	api, target := newAPI(t, learnedDecks)
 	v := target[0]
 	setNow(api, firstMorning)
@@ -196,7 +196,7 @@ func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
 // The first two are what the window costs: the list of vaults on screen, and
 // the last of their counts landing. The third counts every vault inside one
 // answer.
-func BenchmarkFrontDoor(b *testing.B) {
+func BenchmarkWatchCardsDue(b *testing.B) {
 	const vaults, cards, days, perDay = 4, 5000, 60, 100
 
 	target := make([]map[string]string, 0, vaults)

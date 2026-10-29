@@ -113,7 +113,7 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 	if read == nil {
 		return running, reason
 	}
-	isHeld := a.IsVaultIndexed.Execute(ctx, v)
+	isIndexed := a.IsVaultIndexed.Execute(ctx, v)
 	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	go func() {
 		defer cancel()
@@ -126,7 +126,7 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 				}
 			}()
 		}
-		a.runIndexing(runCtx, read, v, isHeld)
+		a.runIndexing(runCtx, read, v, isIndexed)
 	}()
 	return true, ""
 }

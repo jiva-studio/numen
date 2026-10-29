@@ -319,8 +319,8 @@ type PresetCardsDue struct {
 	// Answer counts and elapsed review time for the current review day.
 	Answered        int32 `protobuf:"varint,7,opt,name=answered,proto3" json:"answered,omitempty"`
 	TookMs          int64 `protobuf:"varint,8,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
-	AnsweredNew     int32 `protobuf:"varint,9,opt,name=answered_new,json=answeredNew,proto3" json:"answered_new,omitempty"`
-	AnsweredReviews int32 `protobuf:"varint,10,opt,name=answered_reviews,json=answeredReviews,proto3" json:"answered_reviews,omitempty"`
+	ReviewedNew     int32 `protobuf:"varint,9,opt,name=answered_new,json=answeredNew,proto3" json:"answered_new,omitempty"`
+	ReviewedReviews int32 `protobuf:"varint,10,opt,name=answered_reviews,json=answeredReviews,proto3" json:"answered_reviews,omitempty"`
 	// Configured daily budget limits for the current day of the week.
 	New     int32   `protobuf:"varint,11,opt,name=new,proto3" json:"new,omitempty"`
 	Reviews int32   `protobuf:"varint,12,opt,name=reviews,proto3" json:"reviews,omitempty"`
@@ -424,14 +424,14 @@ func (x *PresetCardsDue) GetTookMs() int64 {
 
 func (x *PresetCardsDue) GetAnsweredNew() int32 {
 	if x != nil {
-		return x.AnsweredNew
+		return x.ReviewedNew
 	}
 	return 0
 }
 
 func (x *PresetCardsDue) GetAnsweredReviews() int32 {
 	if x != nil {
-		return x.AnsweredReviews
+		return x.ReviewedReviews
 	}
 	return 0
 }

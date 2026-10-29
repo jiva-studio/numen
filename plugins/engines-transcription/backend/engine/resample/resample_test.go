@@ -51,7 +51,7 @@ func TestResamplingWhatIsAlreadyRight(t *testing.T) {
 
 // An hour of sound is minutes of arithmetic, and a person closing the window
 // waits for none of it.
-func TestResamplingStopsWhenAsked(t *testing.T) {
+func TestConvert_StopsOnCancelledContext(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
 

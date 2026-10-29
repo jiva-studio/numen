@@ -215,7 +215,7 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 	}
 }
 
-func TestASearchOverTheIndexWithNoModelIsAnsweredByTheWords(t *testing.T) {
+func TestSearch_WithoutModelUsesWords(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
 	found, err := cfg.NewSearch(read(t, cfg), nil, nil).Execute(t.Context(), vault, "disorder", search.Parameters{})

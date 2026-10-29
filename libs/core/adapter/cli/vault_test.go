@@ -77,7 +77,7 @@ func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, e
 	return out.String(), err
 }
 
-func TestAVaultCommandNeedsToBeAskedForOne(t *testing.T) {
+func TestVaultCommand_RequiresSubcommand(t *testing.T) {
 	t.Parallel()
 	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, "vault")
 	if err == nil || !strings.Contains(err.Error(), "usage:\n  numen-cli vault add <path>") {
@@ -157,7 +157,7 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	}
 }
 
-func TestAVaultCommandReturnsWhatTheListRefuses(t *testing.T) {
+func TestVaultCommand_ReturnsVaultListError(t *testing.T) {
 	isolate(t)
 	for name, c := range map[string]struct {
 		breaks string
@@ -193,7 +193,7 @@ func TestAVaultCommandReturnsWhatTheListRefuses(t *testing.T) {
 	}
 }
 
-func TestAVaultCommandReturnsWhatTheIndexRefuses(t *testing.T) {
+func TestVaultCommand_ReturnsIndexError(t *testing.T) {
 	isolate(t)
 	for _, args := range [][]string{
 		{"vault", "rename", "first", "renamed"},
@@ -223,7 +223,7 @@ func TestAVaultCommandReturnsWhatTheIndexRefuses(t *testing.T) {
 	}
 }
 
-func TestAnIndexThatRefusesToForgetKeepsTheListAndTheFolder(t *testing.T) {
+func TestVaultRemove_IndexErrorKeepsListAndFolder(t *testing.T) {
 	isolate(t)
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "first")

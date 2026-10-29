@@ -135,7 +135,7 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 
 // call through a field typed port.X, and lets through a call through a field of
 // another type and a call on a value that is no field.
-func TestWhatTheDrivingCallRuleRefuses(t *testing.T) {
+func TestDrivingCallRule_RejectsPortFieldCalls(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "call.go", `package p
 
 type Notes struct {
@@ -250,7 +250,7 @@ func TestNoDrivingAdapterImportsAPortDirectly(t *testing.T) {
 	}
 }
 
-func TestWhatTheLintCoverageRuleRefuses(t *testing.T) {
+func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
 	got := getUncovered([]string{"**/adapter/window/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)

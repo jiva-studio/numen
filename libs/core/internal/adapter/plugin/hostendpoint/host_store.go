@@ -59,7 +59,7 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 	switch {
 	case errors.Is(err, hostvault.ErrNoVault):
 		return noStoreVault, nil
-	case errors.Is(err, vaultport.ErrHeldByAnother):
+	case errors.Is(err, vaultport.ErrLockedByAnother):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER, nil
 	case errors.Is(err, vaultport.ErrOutside):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE, nil

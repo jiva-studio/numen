@@ -79,7 +79,7 @@ func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
 	server, opens := newCountingServer(t, files)
 	for i := range maxCachedBooks + 1 {
 		name := "copy" + string(rune('a'+i)) + ".epub"
-		files.File(name, string(createPictureEpub(t)))
+		files.File(name, string(createImageEpub(t)))
 		if _, err := readEntryFrom(server, name, "EPUB/cover.png"); err != nil {
 			t.Fatal(err)
 		}

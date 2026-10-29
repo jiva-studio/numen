@@ -8,7 +8,7 @@ import (
 
 // Work a person is sitting in front of takes the lock before work the vault set
 // itself, whatever order they arrived in.
-func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
+func TestLock_GrantsToRequestedHolderFirst(t *testing.T) {
 	var g Lock
 
 	target, err := g.Acquire(t.Context(), false, nil)

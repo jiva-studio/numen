@@ -39,7 +39,7 @@ func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 // A name is taken out of the store while its claim is still held. Transcription
 // holds the claim on a partial answer for as long as it is working and takes
 // the partial away as its last act, so the claim outlives the name it is on.
-func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
+func TestRemove_SucceedsWhileNameClaimed(t *testing.T) {
 	derived, root := store(t)
 	const name = "area/abc.partial.txt"
 

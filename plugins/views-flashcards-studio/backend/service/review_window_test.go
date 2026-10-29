@@ -333,8 +333,8 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	}
 }
 
-// TestADeckReturnsHowMuchOfItWasAnsweredToday verifies answered count metrics per deck.
-func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
+// TestVaultCount_ReturnsAnsweredTodayPerDeck verifies answered count metrics per deck.
+func TestVaultCount_ReturnsAnsweredTodayPerDeck(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)
@@ -423,7 +423,7 @@ func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 //
 // Asking for more of the cards back is shorter intervals, so the same history
 // leaves more of them owed today.
-func TestATargetMovedIsNotAnsweredFromTheWorkingOutBelowTheOldOne(t *testing.T) {
+func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)

@@ -32,7 +32,7 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 
 // A write that runs out of room fails, leaves no temporary file and keeps no
 // descriptor open.
-func TestAWriteThatRunsOutOfRoomPreservesNothingPrior(t *testing.T) {
+func TestWrite_FileSizeLimitRemovesTempFileAndDescriptor(t *testing.T) {
 	dir := t.TempDir()
 	files := appstate.VaultFilesAt(dir)
 

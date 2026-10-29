@@ -79,7 +79,7 @@ func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	files.File("guided.epub", string(createPictureEpub(t)))
+	files.File("guided.epub", string(createImageEpub(t)))
 
 	second, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{Path: "guided.epub", Offset: 0}))
 
@@ -88,7 +88,7 @@ func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
 	}
 }
 
-func TestFindOffsetRefusesAStringThatIsNoCFI(t *testing.T) {
+func TestFindOffset_ErrorsOnInvalidCFI(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
 
 	_, err := books.FindOffset(t.Context(), connect.NewRequest(&epubv1.FindOffsetRequest{Path: "guided.epub", Cfi: "/8/4!/4/2"}))
@@ -108,7 +108,7 @@ func TestFindOffsetFindsNoDocumentTheSpineDoesNotHold(t *testing.T) {
 	}
 }
 
-func TestGetCfiRefusesNoPath(t *testing.T) {
+func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 	books, _ := newGuidedBookServer(t)
 
 	_, err := books.GetCfi(t.Context(), connect.NewRequest(&epubv1.GetCfiRequest{}))

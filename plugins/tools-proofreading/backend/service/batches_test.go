@@ -250,7 +250,7 @@ func TestASeamContainsTheLinesOnBothSidesOfASplit(t *testing.T) {
 
 // A batch over a cut is built for the cuts it is asked for and no others. The cut after
 // the last batch is no cut at all.
-func TestOnlyTheSplitsAskedForAreBuilt(t *testing.T) {
+func TestSplitBatches_BuildsOnlyRequestedBatches(t *testing.T) {
 	cues := makeTranscript(8)
 	if got := numbers(cutBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
 		t.Errorf("batchesAcrossCuts %v, want the window over the second cut", got)

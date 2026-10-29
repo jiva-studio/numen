@@ -99,7 +99,7 @@ func TestForgetPreservesTheFolderWhereItIs(t *testing.T) {
 	}
 }
 
-func TestForgetRefusesTheOnlyVault(t *testing.T) {
+func TestForget_RejectsOnlyVault(t *testing.T) {
 	t.Parallel()
 	add, registry := newAdd(t)
 	only, err := add.Execute(folder(t, "personal"), "")
@@ -137,7 +137,7 @@ func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 	}
 }
 
-func TestForgetKeepsTheCauseWhenTheIndexRefuses(t *testing.T) {
+func TestForget_PreservesCauseOnIndexError(t *testing.T) {
 	t.Parallel()
 	_, removed, registry := twoVaults(t)
 	index := &indexRows{fails: errRefused}

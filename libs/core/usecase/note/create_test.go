@@ -146,7 +146,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 	}
 }
 
-func TestANoteMadeBeforeTheVaultCanBeAskedItsNamesIsStillReported(t *testing.T) {
+func TestCreate_ReportsNoteBeforeVaultNamesAvailable(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
 	create := note.NewCreate(vaultwriter.VaultWriters{}, unreachable{}, c.index, time.Now)

@@ -49,7 +49,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 
 // A vault the index already carries is drawn from what it holds, so indexing it
 // again is work drawn only once it has lasted. An instant walk says nothing.
-func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
+func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 	target := domain.Vault{ID: "held", Name: "Held"}
 	api := newAPI(t, target)
 	blockCh := make(chan struct{})

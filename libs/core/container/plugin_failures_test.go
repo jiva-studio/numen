@@ -41,7 +41,7 @@ func newFailingConfig(t *testing.T) Config {
 	return Config{PluginHost: host}
 }
 
-func TestAPluginHeldOffExistsInTheTaskListUntilItRecovers(t *testing.T) {
+func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 	cfg := newFailingConfig(t)
 	tasks := run.NewTasks()
 	cfg.ReportPluginFailures(tasks)

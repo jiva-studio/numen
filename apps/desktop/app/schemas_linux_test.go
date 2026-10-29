@@ -39,7 +39,7 @@ func TestSettingsAreFoundWhereTheEnvironmentNamesThem(t *testing.T) {
 	}
 }
 
-func TestAMachineWithNoSettingsIsSaidToHaveNone(t *testing.T) {
+func TestHasSchemas_FalseWithoutSchemaDirectories(t *testing.T) {
 	t.Setenv("GSETTINGS_SCHEMA_DIR", "")
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
 

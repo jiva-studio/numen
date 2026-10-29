@@ -19,7 +19,7 @@ import (
 // The share is the one pass a day makes over the whole material, and a day
 // nobody asked about is a day it is not worked out on. What the days that were
 // asked for come to does not stand on which of them were.
-func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T) {
+func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
@@ -947,7 +947,7 @@ func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
 // passes it on a day. A chance of recall is a level: a card falls under the
 // target as it fades and rises over it when it is answered, so no day holds all
 // of them at once. And a preset aiming at a date is answered by its date.
-func TestTheDayTheMaterialIsLearnedIsAskedWhereItIsADay(t *testing.T) {
+func TestProjection_LearnedDayByRule(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
@@ -1245,7 +1245,7 @@ func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 // and how many a review card needs counts days of review. A week at half the load
 // has half a week of room and needs as many days of review as any other, so the
 // second is weighed at the shares of the days it takes.
-func TestAPaceBelowALightWeekDividesByTheRoomThatIsLeft(t *testing.T) {
+func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	delta := review.NewFSRS()
 	p := review.Defaults()
@@ -1389,7 +1389,7 @@ func TestANewCardsLearningStepFallsInTheDayItWasBegun(t *testing.T) {
 
 // A card the day answers into minutes falls due again before that day closes,
 // and the day asks it again.
-func TestAnAnswerThatLandsInsideTheDayIsAskedAgainInIt(t *testing.T) {
+func TestProjection_ReanswersLapsedCardWithinDay(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
 		By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost, Days: 1,

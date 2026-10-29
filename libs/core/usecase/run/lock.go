@@ -9,7 +9,7 @@ import (
 // The priorities a run waits at, the first of them served first. Work a person
 // is sitting in front of goes before work the vault set itself.
 const (
-	priorityAsked = iota
+	priorityRequested = iota
 	priorityUnasked
 	priorities
 )
@@ -18,9 +18,9 @@ const (
 // run at a time. A run waits at the priority its work belongs to and is served
 // in the order it arrived there.
 type Lock struct {
-	mu      sync.Mutex
-	isHeld  bool
-	waiting [priorities][]chan struct{}
+	mu        sync.Mutex
+	isIndexed bool
+	waiting   [priorities][]chan struct{}
 	// watchers are closed the next time a run waits.
 	watchers []chan struct{}
 }
@@ -31,12 +31,12 @@ type Lock struct {
 func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (func(), error) {
 	pos := priorityUnasked
 	if requested {
-		pos = priorityAsked
+		pos = priorityRequested
 	}
 
 	g.mu.Lock()
-	if !g.isHeld {
-		g.isHeld = true
+	if !g.isIndexed {
+		g.isIndexed = true
 		g.mu.Unlock()
 		return g.release, nil
 	}
@@ -72,7 +72,7 @@ func (g *Lock) release() {
 			return
 		}
 	}
-	g.isHeld = false
+	g.isIndexed = false
 }
 
 // holds it, and hands it on.

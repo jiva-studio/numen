@@ -32,7 +32,7 @@ func (l linked) GetName(path string) string {
 	return path
 }
 
-func TestCheckRootRefusesWhatIsNotAFolderForNotes(t *testing.T) {
+func TestCheckRoot_RejectsNonNotesFolder(t *testing.T) {
 	t.Parallel()
 	sep := string(filepath.Separator)
 	home := filepath.Join(sep, "people", "ann")
@@ -71,7 +71,7 @@ func TestCheckRootLetsAFolderThroughWhereNoHomeFolderIsKnown(t *testing.T) {
 	}
 }
 
-func TestCheckRootNotMadeRefusesEveryRoot(t *testing.T) {
+func TestCheckRoot_UncreatedRejectsEveryRoot(t *testing.T) {
 	t.Parallel()
 	root := filepath.Join(string(filepath.Separator), "notes")
 	var unmade *vaults.CheckRoot

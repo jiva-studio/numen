@@ -89,13 +89,13 @@ func readsEverything(step string) bool {
 		!strings.HasPrefix(step, "SCAN h")
 }
 
-// TestEveryQuestionIsAnsweredThroughAnIndex asks the database how it intends to
+// TestQueryPlans_UseIndexes asks the database how it intends to
 // answer.
 //
 // The schema comes from the migrations, the database is populated because an
 // empty one is answered from rules of thumb, and it is measured through the
 // call a scan makes.
-func TestEveryQuestionIsAnsweredThroughAnIndex(t *testing.T) {
+func TestQueryPlans_UseIndexes(t *testing.T) {
 	ctx := t.Context()
 	db := openPopulatedDB(t)
 

@@ -419,7 +419,7 @@ func (f failingLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to st
 	return f.LinkQueries.GetBacklinks(ctx, id, to)
 }
 
-func TestLinksThatCannotBeAskedForAreAnError(t *testing.T) {
+func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{
 		"source.md":        "Points at [[Entropy]].\n",

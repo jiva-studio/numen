@@ -49,7 +49,7 @@ func TestRunWrapsExecutionError(t *testing.T) {
 }
 
 // A program that produces no output reports that it said nothing.
-func TestGetLastLineReturnsFallbackWhenSaidNothing(t *testing.T) {
+func TestGetLastLine_ReturnsFallbackWhenEmpty(t *testing.T) {
 	if got := getLastLine(""); got != "it said nothing" {
 		t.Errorf("getLastLine(\"\") = %q, want %q", got, "it said nothing")
 	}

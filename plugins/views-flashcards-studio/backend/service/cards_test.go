@@ -244,7 +244,7 @@ func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 // TestADeckWrittenBackKeepsTheCardsItHeld. Every card and every section the
 // client did not touch arrives on the other side as the bytes it went in as,
 // the prose under a card's wikilink and under a section's heading among them.
-func TestADeckSavedBackKeepsTheCardsItHeld(t *testing.T) {
+func TestWriteDeck_RoundTripPreservesCards(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": dividedDeck,

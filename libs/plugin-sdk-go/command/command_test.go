@@ -44,7 +44,7 @@ func run(t *testing.T, handler command.Handler, request *numenv1.RunCommandReque
 	return res.Msg
 }
 
-func TestACommandRunsWithItsFileAndArgumentsAndAnswersWhatItSaid(t *testing.T) {
+func TestCommand_RunsWithFileAndArgumentsAndReturnsOutput(t *testing.T) {
 	res := run(t, newRegistry(t), &numenv1.RunCommandRequest{
 		Command: "greet", Path: "a.md", Arguments: map[string]string{"name": "Ann", "loud": "true"},
 	})
@@ -54,7 +54,7 @@ func TestACommandRunsWithItsFileAndArgumentsAndAnswersWhatItSaid(t *testing.T) {
 	}
 }
 
-func TestACommandThatDidNotSucceedIsAnsweredWithItsCodeAndItsWords(t *testing.T) {
+func TestCommand_FailureReturnsCodeAndMessage(t *testing.T) {
 	cases := map[string]struct {
 		request *numenv1.RunCommandRequest
 		want    numenv1.CommandErrorCode

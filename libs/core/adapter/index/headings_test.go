@@ -101,7 +101,7 @@ func TestAPathThatNamesNothingIsAbsent(t *testing.T) {
 	}
 }
 
-func TestEachNoteAskedAboutIsAnsweredForItself(t *testing.T) {
+func TestGetHeadings_ReturnsHeadingsPerNote(t *testing.T) {
 	db := openDB(t)
 	saveNoteWithHeadings(t, db, first, "notes/one.md", domain.Heading{Level: 1, Text: "Of one", Line: 0})
 	saveNoteWithHeadings(t, db, first, "notes/two.md", domain.Heading{Level: 1, Text: "Of two", Line: 0})

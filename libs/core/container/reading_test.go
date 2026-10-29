@@ -65,7 +65,7 @@ func read(t *testing.T, cfg container.Config) *container.Index {
 }
 
 // An installation with no model searches by words, and that is a whole answer.
-func TestASearchWithNoModelIsAnsweredByTheWords(t *testing.T) {
+func TestSearchOver_WithoutModelUsesWords(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
 	found, err := cfg.NewSearchOver(read(t, cfg).Passages(), nil, nil).
@@ -85,7 +85,7 @@ func TestASearchWithNoModelIsAnsweredByTheWords(t *testing.T) {
 }
 
 // A second opening of the index says what the vault holds.
-func TestASecondOpeningOfTheIndexKnowsItsSources(t *testing.T) {
+func TestReopenedIndex_KeepsSources(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
 	target, err := read(t, cfg).SourcesKnown().GetSourcesUnder(t.Context(), vault.ID, "Entropy.md")

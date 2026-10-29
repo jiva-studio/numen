@@ -87,7 +87,7 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 
 // assertion to an anonymous interface and to a port, in a type switch as well,
 // and lets through an assertion to a concrete type and to an error.
-func TestWhatTheInterfaceProbeRuleRefuses(t *testing.T) {
+func TestInterfaceProbeRule_RejectsInterfaceAssertions(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "probe.go", `package p
 
 func probe(target any, reader vaultport.VaultReader) {
@@ -175,7 +175,7 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 
 // type of a package under internal/, by whatever name the file imports it, and
 // lets through the domain's, the standard library's and a selector on a value.
-func TestWhatThePortInternalRuleRefuses(t *testing.T) {
+func TestPortInternalRule_RejectsInternalTypes(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "port.go", `package port
 
 import (

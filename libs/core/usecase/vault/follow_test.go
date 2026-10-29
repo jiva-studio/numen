@@ -26,7 +26,7 @@ type hand struct {
 	lostChan chan struct{}
 }
 
-func newHand() *hand {
+func newManualWatcher() *hand {
 	return &hand{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
 
@@ -105,7 +105,7 @@ func next[T any](t *testing.T, from <-chan T) T {
 // TestAChangedNoteIsBroughtUpToDateAndReported.
 func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	f := newFollowed(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
@@ -128,7 +128,7 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 // source it sees; what a listener is told to look at again is notes.
 func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	f := newFollowed(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
@@ -153,7 +153,7 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 // Not knowing what changed is answered by looking at everything, books included.
 func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	f := newFollowed(t, map[string]string{"Note.md": "# Note\n"}, watcher)
 
 	watcher.lostChan <- struct{}{}
@@ -168,7 +168,7 @@ func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 // than told which notes moved.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	f := newFollowed(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
@@ -195,7 +195,7 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 // application is failing when it is working.
 func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	v := testsupport.NewVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -266,7 +266,7 @@ func TestWhatAVaultChangedAsksForAReadWhenAnythingMayHaveChanged(t *testing.T) {
 
 func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	db := openIndex(t)
 	follow := vaults.NewFollow(
@@ -297,7 +297,7 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 // and the report clears once a walk succeeds.
 func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	t.Parallel()
-	watcher := newHand()
+	watcher := newManualWatcher()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {

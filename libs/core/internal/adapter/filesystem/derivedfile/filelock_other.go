@@ -2,5 +2,5 @@
 
 package derivedfile
 
-// wrapHeldByAnother is err. Here a file is read whatever else has it open.
-func wrapHeldByAnother(err error) error { return err }
+// wrapLockedByAnother is err. Here a file is read whatever else has it open.
+func wrapLockedByAnother(err error) error { return err }

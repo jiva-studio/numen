@@ -200,7 +200,7 @@ func TestListBeforeAnythingIsAdded(t *testing.T) {
 	}
 }
 
-func TestUsageIsShownWhenNothingIsAsked(t *testing.T) {
+func TestRun_PrintsUsageWithoutCommand(t *testing.T) {
 	s := newSession(t)
 	out, err := s.run()
 	if err == nil {

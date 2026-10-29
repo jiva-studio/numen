@@ -155,7 +155,7 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	defer root.Close()
 	raw, err := root.ReadFile(pos)
 	if err != nil {
-		return nil, wrapHeldByAnother(err)
+		return nil, wrapLockedByAnother(err)
 	}
 	return raw, nil
 }
@@ -589,11 +589,10 @@ func (d *DerivedStore) Rename(_ context.Context, from, to string) error {
 		return err
 	}
 	if err := root.Rename(oldPos, newPos); err != nil {
-		return wrapHeldByAnother(err)
+		return wrapLockedByAnother(err)
 	}
 	return atomicfile.SyncDirectory(root, filepath.Dir(newPos))
 }
-
 
 // IndexClaim is the hold on a vault's vectors: a claim on one name of the store.
 type IndexClaim struct {

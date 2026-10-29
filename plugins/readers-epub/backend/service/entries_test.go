@@ -14,7 +14,7 @@ import (
 func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 	t.Helper()
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
-	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(createPictureEpub(t))})
+	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(createImageEpub(t))})
 	current.Beside(other)
 	books := NewBookServer(current)
 	t.Cleanup(books.Close)
@@ -41,7 +41,7 @@ func TestTheEntriesRouteServesAPictureOfTheBookInTheVaultTheRequestNames(t *test
 	}
 }
 
-func TestTheEntriesRouteRefusesABookThatChanged(t *testing.T) {
+func TestEntriesRoute_ConflictOnChangedBook(t *testing.T) {
 	mux, _ := serveEntries(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub&size=1&mtime=1", nil)

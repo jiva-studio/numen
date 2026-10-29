@@ -184,7 +184,7 @@ func TestAFolderThatIsNotThereIsUnreadable(t *testing.T) {
 	}
 }
 
-func TestAVaultTheMachineCannotBeAskedAboutIsNotAdded(t *testing.T) {
+func TestAdd_UnreadableVaultIsNotAdded(t *testing.T) {
 	t.Parallel()
 	root := folder(t, "notes")
 	for _, tc := range []struct {

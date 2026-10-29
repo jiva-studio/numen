@@ -176,7 +176,7 @@ func TestCaptionsAreTheTimedTextVersionOfTheirLink(t *testing.T) {
 	}
 }
 
-func TestAnAddressThatPublishesNothingIsNotAskedAgainUnlessAPersonAsks(t *testing.T) {
+func TestFetchText_SkipsEmptyAddressUnlessUserStarted(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, silentAddress)
 
@@ -329,7 +329,7 @@ func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
 	}
 }
 
-func TestAFetchNobodyAskedForFetchesALinkNeverFetched(t *testing.T) {
+func TestFetchText_BackgroundFetchPopulatesNewLink(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 

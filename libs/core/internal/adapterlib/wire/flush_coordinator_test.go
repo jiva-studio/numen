@@ -18,7 +18,7 @@ func isClosed(c <-chan struct{}) bool {
 }
 
 // TestAVaultNothingIsDrawnFromOwesNothing.
-func TestAVaultNothingIsGeneratedFromOwesNothing(t *testing.T) {
+func TestFlushCoordinator_NoPagesNeedsNoFlush(t *testing.T) {
 	var pages flushCoordinator
 
 	request := pages.startRequest()
@@ -31,7 +31,7 @@ func TestAVaultNothingIsGeneratedFromOwesNothing(t *testing.T) {
 }
 
 // TestAPageSaysNothingUntilItIsAsked.
-func TestAPageReturnsNothingUntilItIsAsked(t *testing.T) {
+func TestFlushCoordinator_PageIdleUntilFlushRequested(t *testing.T) {
 	var pages flushCoordinator
 
 	token, notified, isDone := pages.registerClient()
@@ -95,14 +95,14 @@ func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
 func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 	var pages flushCoordinator
 
-	first, toldFirst, doneFirst := pages.registerClient()
+	first, notifiedFirst, doneFirst := pages.registerClient()
 	defer doneFirst()
-	second, toldSecond, doneSecond := pages.registerClient()
+	second, notifiedSecond, doneSecond := pages.registerClient()
 	defer doneSecond()
 
 	request := pages.startRequest()
-	<-toldFirst
-	<-toldSecond
+	<-notifiedFirst
+	<-notifiedSecond
 	pages.recordFlush(first, flushWritten)
 	pages.recordFlush(second, flushAsking)
 
@@ -156,8 +156,8 @@ func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 	}
 }
 
-// TestAPageThatOpensWhileTheWindowIsGoingIsAsked.
-func TestAPageThatOpensWhileTheWindowIsGoingIsAsked(t *testing.T) {
+// TestFlushCoordinator_PageRegisteredDuringCloseReceivesFlush.
+func TestFlushCoordinator_PageRegisteredDuringCloseReceivesFlush(t *testing.T) {
 	var pages flushCoordinator
 
 	request := pages.startRequest()
@@ -217,13 +217,13 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	if isClosed(second.allWritten) {
 		t.Fatal("a request with the question still standing was owed nothing")
 	}
-	again, toldAgain, doneAgain := pages.registerClient()
+	again, notifiedAgain, doneAgain := pages.registerClient()
 	defer doneAgain()
 	if again == token {
 		t.Fatalf("the page that came back listens under the token that went, %q", again)
 	}
 	select {
-	case request := <-toldAgain:
+	case request := <-notifiedAgain:
 		if request != again {
 			t.Errorf("flush token mismatch: request %q, listener %q", request, again)
 		}

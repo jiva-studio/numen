@@ -129,7 +129,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 }
 
 // written to, whichever message finds it out.
-func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
+func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 	for name, fails := range map[string]func(n int, msg any) bool{
 		// The vaults are listed before anything is counted.
 		"listing": func(n int, _ any) bool { return n == 1 },
@@ -159,7 +159,7 @@ func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 
 // A page found gone while a count is still running ends the stream, which is
 // the only report there is.
-func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
+func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 	api, _ := newAPI(t, deck)
 	front(t, api)
 
@@ -201,7 +201,7 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 
 // A stream that has just said a count is not about to say the list again: the
 // time it waits starts over with every count.
-func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
+func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 	api, target := newAPI(t, deck, other)
 	front(t, api)
 
@@ -300,7 +300,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 
 // A stream whose client has gone waits for the counts already running before
 // it ends, so no count outlives the call that asked for it.
-func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
+func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	api, target := newAPI(t, deck, deck, deck, deck, deck, deck)
 	front(t, api)
 

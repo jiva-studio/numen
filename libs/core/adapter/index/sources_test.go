@@ -178,7 +178,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 }
 
 // A cursor this index did not hand out fails, and nothing is visited.
-func TestACursorThisIndexDidNotHandOutIsRefused(t *testing.T) {
+func TestGetUnembeddedChunks_RejectsForeignCursor(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
 
@@ -237,7 +237,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 }
 
 // A path the vault holds no source at is not held.
-func TestAPathWithNoSourceIsNotHeld(t *testing.T) {
+func TestGetSourceText_UnknownPathReturnsNotFound(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, second, "library/a.epub", thisYear, "violins tune")
 

@@ -44,8 +44,8 @@ func createZipEpub(t *testing.T, entries map[string][]byte) []byte {
 	return buf.Bytes()
 }
 
-// createPictureEpub is a book with one chapter and one picture entry.
-func createPictureEpub(t *testing.T) []byte {
+// createImageEpub is a book with one chapter and one picture entry.
+func createImageEpub(t *testing.T) []byte {
 	t.Helper()
 	return createZipEpub(t, map[string][]byte{
 		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
@@ -70,7 +70,7 @@ func createPictureEpub(t *testing.T) []byte {
 func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime int64) {
 	t.Helper()
 	name = "pictured.epub"
-	files = hosttest.OnDisk(t, "vault", map[string]string{name: string(createPictureEpub(t))})
+	files = hosttest.OnDisk(t, "vault", map[string]string{name: string(createImageEpub(t))})
 	info, err := files.StatFile(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
@@ -104,7 +104,7 @@ func TestReadBookEntryAnswersWithoutABaseline(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
+func TestReadBookEntry_ErrorsOnChangedFile(t *testing.T) {
 	files, name, size, mtime := writeBook(t)
 	cases := map[string]*epubv1.FileStat{
 		"another size":  {Path: name, Size: size + 1, Mtime: mtime},
@@ -120,7 +120,7 @@ func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesAnEntryTheArchiveLacks(t *testing.T) {
+func TestReadBookEntry_ErrorsOnMissingArchiveEntry(t *testing.T) {
 	files, name, _, _ := writeBook(t)
 	_, err := readEntry(t, files, name, "EPUB/missing.png", nil)
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -128,10 +128,10 @@ func TestReadBookEntryRefusesAnEntryTheArchiveLacks(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesAPathOutsideTheVault(t *testing.T) {
+func TestReadBookEntry_ErrorsOnPathOutsideVault(t *testing.T) {
 	files, _, _, _ := writeBook(t)
 	outside := filepath.Join(t.TempDir(), "outside.epub")
-	if err := os.WriteFile(outside, createPictureEpub(t), 0o644); err != nil {
+	if err := os.WriteFile(outside, createImageEpub(t), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := readEntry(t, files, outside, "EPUB/cover.png", nil)
@@ -143,7 +143,7 @@ func TestReadBookEntryRefusesAPathOutsideTheVault(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesAFileThatIsNoBook(t *testing.T) {
+func TestReadBookEntry_ErrorsOnInvalidBook(t *testing.T) {
 	files, _, _, _ := writeBook(t)
 	files.File("junk.epub", "junk")
 	_, err := readEntry(t, files, "junk.epub", "EPUB/cover.png", nil)
@@ -152,7 +152,7 @@ func TestReadBookEntryRefusesAFileThatIsNoBook(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesNoPath(t *testing.T) {
+func TestReadBookEntry_ErrorsOnEmptyPath(t *testing.T) {
 	files, _, _, _ := writeBook(t)
 	_, err := readEntry(t, files, "", "EPUB/cover.png", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -160,7 +160,7 @@ func TestReadBookEntryRefusesNoPath(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesNoEntry(t *testing.T) {
+func TestReadBookEntry_ErrorsOnEmptyEntry(t *testing.T) {
 	files, name, _, _ := writeBook(t)
 	_, err := readEntry(t, files, name, "", nil)
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -168,7 +168,7 @@ func TestReadBookEntryRefusesNoEntry(t *testing.T) {
 	}
 }
 
-func TestReadBookEntryRefusesNotFound(t *testing.T) {
+func TestReadBookEntry_ErrorsOnMissingBook(t *testing.T) {
 	files, _, _, _ := writeBook(t)
 	subDir := filepath.Join(files.Vault().Path, "sub")
 	if err := os.Mkdir(subDir, 0o755); err != nil {

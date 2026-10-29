@@ -108,7 +108,7 @@ func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
 }
 
 // A span that stands exactly is never reported where it only nearly stands.
-func TestWhatExistsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
+func TestFindRanges_ExactMatchPrecedesApproximate(t *testing.T) {
 	text := "he said \"yes\" and he said “yes”"
 	spans, plainly := FindRanges(text, "\"yes\"")
 	if plainly {
@@ -138,7 +138,7 @@ func TestASpanThatIsNotThereIsNotFound(t *testing.T) {
 
 // A note rewritten whole still names the sentence that changed, so what is
 // drawn is the change and not the note.
-func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
+func TestDiff_ReturnsOnlyChangedSpan(t *testing.T) {
 	was := "# Title\n\nA hedgehog is named.\n\nAnd nothing else.\n"
 	now := "# Title\n\nAn axe is named.\n\nAnd nothing else.\n"
 

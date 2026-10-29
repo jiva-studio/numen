@@ -136,7 +136,7 @@ func TestProvisionUnpacksAZipArchive(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesAnArchiveThatIsNotThePinnedOne(t *testing.T) {
+func TestProvision_RejectsUnpinnedArchive(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -150,7 +150,7 @@ func TestProvisionRefusesAnArchiveThatIsNotThePinnedOne(t *testing.T) {
 	assertNoFile(t, cfg.Dir)
 }
 
-func TestProvisionRefusesALibraryThatIsNotThePinnedOne(t *testing.T) {
+func TestProvision_RejectsUnpinnedLibrary(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", []byte("another library"))
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -165,7 +165,7 @@ func TestProvisionRefusesALibraryThatIsNotThePinnedOne(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesAnArchiveWithoutTheLibrary(t *testing.T) {
+func TestProvision_RejectsArchiveMissingLibrary(t *testing.T) {
 	archive := buildTgz(t, "libother.so", libraryBytes)
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
@@ -342,7 +342,7 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesAnAddressThatIsNotHTTPS(t *testing.T) {
+func TestProvision_RejectsNonHTTPSURL(t *testing.T) {
 	cfg := onnxruntime.Config{
 		Dir: t.TempDir(), Machine: []string{},
 		Release: onnxruntime.Release{
@@ -357,7 +357,7 @@ func TestProvisionRefusesAnAddressThatIsNotHTTPS(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesASumThatIsNotASha256(t *testing.T) {
+func TestProvision_RejectsInvalidSHA256(t *testing.T) {
 	cfg := onnxruntime.Config{
 		Dir: t.TempDir(), Machine: []string{},
 		Release: onnxruntime.Release{
@@ -372,7 +372,7 @@ func TestProvisionRefusesASumThatIsNotASha256(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesALibraryNameThatIsAPath(t *testing.T) {
+func TestProvision_RejectsLibraryNameWithPath(t *testing.T) {
 	cfg := onnxruntime.Config{
 		Dir: t.TempDir(), Machine: []string{},
 		Release: onnxruntime.Release{
@@ -387,7 +387,7 @@ func TestProvisionRefusesALibraryNameThatIsAPath(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesAnUnknownProvider(t *testing.T) {
+func TestProvision_RejectsUnknownProvider(t *testing.T) {
 	cfg := onnxruntime.Config{Dir: t.TempDir(), Provider: "tensorrt", Machine: []string{}}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "tensorrt") {
 		t.Fatalf("Provision() = %v, want the provider named", err)
@@ -584,7 +584,7 @@ func TestProvisionFallsBackToThePinnedCPUBuildForAutoAndCPU(t *testing.T) {
 	}
 }
 
-func TestProvisionRefusesAGPUProviderForThePinnedCPUBuild(t *testing.T) {
+func TestProvision_RejectsGPUProviderOnCPUBuild(t *testing.T) {
 	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
 	server, _ := serve(t, archive)
 	for _, name := range []string{"cuda", "directml", "rocm"} {

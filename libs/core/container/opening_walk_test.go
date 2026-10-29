@@ -84,7 +84,7 @@ func TestTheWalkRebuildsTheIndexWhenTheOpenerReturnsSo(t *testing.T) {
 
 // What went wrong while the vault is followed reaches the opener's handler, and
 // so does the end of it.
-func TestTheOpenersHandlerHearsHowFollowingTheVaultWent(t *testing.T) {
+func TestVaultOpener_ReportsFollowErrorsAndEnd(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	watcher := makeWatcher()
 	opening := cfg.VaultOpenerWith(db, cfg.VaultReaders(), watcher)
@@ -157,7 +157,7 @@ func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 }
 
 // Making room in an index that is open works, and in one that is closed says so.
-func TestAnIndexCompactsWhileOpenAndRefusesOnceClosed(t *testing.T) {
+func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	_, db, _ := openVault(t, note)
 
 	if err := db.Compact(t.Context()); err != nil {
@@ -189,7 +189,7 @@ func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 }
 
 // Whether an asset owes a read is whether one changed or everything did.
-func TestAnAssetOwesAReadWhenOneChangedOrEverythingDid(t *testing.T) {
+func TestShouldReadAssets_TrueForAssetsOrReload(t *testing.T) {
 	for _, one := range []struct {
 		what string
 		got  container.VaultChanges

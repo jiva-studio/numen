@@ -157,7 +157,7 @@ func (b *budgets) charge(share *allowance, reviewCard review.ReviewCardID, isNew
 	if isNew {
 		cost = one.cost.New
 	}
-	if !one.hasRoom(isNew, counted, cost) || !share.hasRoom(isNew, counted, cost) {
+	if !one.hasCapacity(isNew, counted, cost) || !share.hasCapacity(isNew, counted, cost) {
 		return false
 	}
 	one.spend(isNew, counted, cost)
@@ -165,8 +165,8 @@ func (b *budgets) charge(share *allowance, reviewCard review.ReviewCardID, isNew
 	return true
 }
 
-// hasRoom checks whether sufficient allowance remains for the review cost.
-func (a *allowance) hasRoom(isNew, counted bool, cost time.Duration) bool {
+// hasCapacity checks whether sufficient allowance remains for the review cost.
+func (a *allowance) hasCapacity(isNew, counted bool, cost time.Duration) bool {
 	remaining, closes := a.admits.Reviews, a.admits.Limits.Reviews
 	if isNew {
 		remaining, closes = a.admits.New, a.admits.Limits.New

@@ -23,22 +23,22 @@ func newRetryHandler(t *testing.T, retry func(context.Context, string) (*setting
 }
 
 // A plugin that starts again is answered with no failure.
-func TestARetriedPluginThatStartsIsAnsweredWithNoFailure(t *testing.T) {
-	var askedID string
+func TestRetryPlugin_SuccessReturnsNoFailure(t *testing.T) {
+	var requestedID string
 	handler := newRetryHandler(t, func(_ context.Context, id string) (*setting.PluginFailure, error) {
-		askedID = id
+		requestedID = id
 		return nil, nil
 	})
 
 	answer, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 
-	if err != nil || answer.Msg.GetFailure() != "" || askedID != "md.numen.sample" {
-		t.Fatalf("answered %v, %v for %q", answer, err, askedID)
+	if err != nil || answer.Msg.GetFailure() != "" || requestedID != "md.numen.sample" {
+		t.Fatalf("answered %v, %v for %q", answer, err, requestedID)
 	}
 }
 
 // A plugin that fails again is answered with its reason.
-func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
+func TestRetryPlugin_FailureReturnsReason(t *testing.T) {
 	handler := newRetryHandler(t, func(context.Context, string) (*setting.PluginFailure, error) {
 		return &setting.PluginFailure{PluginID: "md.numen.sample", Reason: "Timed out while starting"}, nil
 	})

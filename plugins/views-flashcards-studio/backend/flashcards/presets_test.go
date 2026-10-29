@@ -133,7 +133,7 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 }
 
 // preset it is scheduled by.
-func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
+func TestSession_DeckWithTwoPresetsUsesFirstBudget(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":        term,
@@ -215,7 +215,7 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 
 // A deck naming no preset and carrying no such entry has nothing said against
 // it: standing on the defaults is not a problem.
-func TestADeckNamingNoPresetHasNothingSaidAgainstIt(t *testing.T) {
+func TestGetForDeck_NoPresetHasNoProblems(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
 
@@ -653,7 +653,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 
 // A note over the bound a read refuses is a note a save refuses too, and
 // nothing is written.
-func TestASaveRefusesANoteOverTheBound(t *testing.T) {
+func TestPresetsSave_ErrorsOnNoteOverBound(t *testing.T) {
 	t.Parallel()
 	body := "# Sanskrit\n\n" + strings.Repeat("Grammar and vocabulary. ", note.MaxBytes/20)
 	s := openVault(t, map[string]string{
@@ -919,7 +919,7 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 
 // A build that cannot ask which notes are presets says so. A vault holding none
 // answers with an empty list, and only that is a fact about the vault.
-func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
+func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
@@ -1271,7 +1271,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 // The entry a choice writes is a link the index resolves, so what points at a
 // preset is answered by asking for its backlinks. A deck that named its preset
 // by identifier is answered the same way after it is moved.
-func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
+func TestPresetsPoint_BacklinksResolveAfterChoice(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Sanskrit.md":     "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\ntype: preset\ngoal: minutes_a_day\n---\n\n# Sanskrit\n",

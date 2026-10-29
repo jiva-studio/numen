@@ -42,8 +42,8 @@ var errNoMode = errors.New("a search says how it is asked")
 // ask for. A window draws a list a person reads; a number past that is a
 // question about the corpus and is answered as the ceiling.
 const (
-	mostFound = 20
-	mostAsked = 200
+	mostFound      = 20
+	maxQueryLength = 200
 )
 
 // SearchNames hands the client the names in the vault that match what was
@@ -180,7 +180,7 @@ func atMost(limit int32) int {
 	if limit <= 0 {
 		return mostFound
 	}
-	return min(int(limit), mostAsked)
+	return min(int(limit), maxQueryLength)
 }
 
 // getPassageSources is every file the passages came out of, each named once.

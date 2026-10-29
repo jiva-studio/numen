@@ -150,7 +150,7 @@ func startSession(t *testing.T, api *API, v domain.Vault) *flashcardsv1.StartSes
 
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run fails.
-func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
+func TestAnswerCard_ErrorsOnRunOfOtherVault(t *testing.T) {
 	api, target, installation := newAPIOn(t, deck, other)
 	one, two := target[0], target[1]
 
@@ -391,7 +391,7 @@ func TestAQuestionAboutAVaultNobodyContainsIsRefused(t *testing.T) {
 
 // What each of the four would do to the card is worked out with the card, so a
 // person choosing between them is shown what they are choosing between.
-func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
+func TestStartSession_CardsCarryRatingIntervals(t *testing.T) {
 	api, target := newAPI(t, deck)
 	session := startSession(t, api, target[0])
 	ahead := session.GetCards()[0].GetIntervals()
@@ -448,8 +448,8 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 	}
 }
 
-// TestEveryVaultIsCountedOnTheFrontDoor verifies all vaults are reported.
-func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
+// TestWatchCardsDue_CountsEveryVault verifies all vaults are reported.
+func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
 	api, target := newAPI(t, deck, other)
 
 	out := front(t, api)
@@ -464,7 +464,7 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 }
 
 // Counting cards does not modify vault files.
-func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
+func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	handwritten := map[string]string{
 		"Term.md": deck["Term.md"],
 		"decks/Own.md": "---\ntype: deck\n---\n" +
@@ -499,7 +499,7 @@ var pointed = map[string]string{
 }
 
 // WatchCardsDue returns daily progress and limits for each preset.
-func TestTheFrontDoorReturnsWhatTodayCameToBelowEachPreset(t *testing.T) {
+func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
 	api, target := newAPI(t, pointed)
 	v := target[0]
 
@@ -588,7 +588,7 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 }
 
 // WatchCardsDue returns settings for each preset independently.
-func TestTheFrontDoorReturnsWhatEachPresetOfAVaultContains(t *testing.T) {
+func TestWatchCardsDue_ReturnsSettingsPerPreset(t *testing.T) {
 	api, _ := newAPI(t, twoPresets)
 
 	got := make(map[string]int32)
@@ -723,7 +723,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 
 // Under a goal of minutes a day long enough for the whole of the material is
 // closed by nothing: the material itself ran out, and no card limit is named.
-func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
+func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 
@@ -828,7 +828,7 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 }
 
 // A vault with no review history has nothing overdue.
-func TestAVaultNobodyHasAnsweredHasNothingOverdue(t *testing.T) {
+func TestGetCurve_UnansweredVaultHasNothingOverdue(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 

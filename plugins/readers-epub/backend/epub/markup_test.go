@@ -149,7 +149,7 @@ func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {
 
 // A cover naming no picture of the archive draws none: an address the window
 // refuses is a broken picture on the page.
-func TestACoverThatWrapsNoPictureDrawsNone(t *testing.T) {
+func TestCover_WithoutImageReferenceYieldsNoPicture(t *testing.T) {
 	for _, one := range []struct{ name, svg string }{
 		{"nothing at all", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">
 			<rect width="600" height="800"/></svg>`},
@@ -175,7 +175,7 @@ func TestACoverThatWrapsNoPictureDrawsNone(t *testing.T) {
 
 // A cover written in the version of SVG that names what it draws with href, and
 // one carrying the picture itself.
-func TestACoverNamesThePictureItDraws(t *testing.T) {
+func TestCover_ResolvesImageHref(t *testing.T) {
 	const content = "data:image/png;base64,iVBORw0KGgo="
 	for _, one := range []struct{ svg, want string }{
 		{`<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,

@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// enqueueBehind starts the plugin's work while the lock is held and returns once
+// enqueueAfter starts the plugin's work while the lock is held and returns once
 // it waits, with the channel its turn arrives on.
-func enqueueBehind(
+func enqueueAfter(
 	t *testing.T, ctx context.Context, work *PluginWork, pluginID string, isUserStarted bool,
 ) (<-chan pluginport.Lease, <-chan error) {
 	t.Helper()
@@ -55,8 +55,8 @@ func TestPluginWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	background, _ := enqueueBehind(t, t.Context(), work, "indexer", false)
-	requested, _ := enqueueBehind(t, t.Context(), work, "transcriber", true)
+	background, _ := enqueueAfter(t, t.Context(), work, "indexer", false)
+	requested, _ := enqueueAfter(t, t.Context(), work, "transcriber", true)
 
 	release()
 	first := receiveLease(t, requested, "transcriber")
@@ -83,7 +83,7 @@ func TestLeaseReportsContention(t *testing.T) {
 		t.Fatal("signalled work behind the turn while none is queued")
 	default:
 	}
-	next, _ := enqueueBehind(t, t.Context(), work, "recogniser", true)
+	next, _ := enqueueAfter(t, t.Context(), work, "recogniser", true)
 	select {
 	case <-contended:
 	case <-time.After(time.Second):
@@ -144,8 +144,8 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, cleared := enqueueBehind(t, t.Context(), work, "transcriber", true)
-	other, _ := enqueueBehind(t, t.Context(), work, "recogniser", false)
+	_, cleared := enqueueAfter(t, t.Context(), work, "transcriber", true)
+	other, _ := enqueueAfter(t, t.Context(), work, "recogniser", false)
 
 	work.ClearPlugin("transcriber")
 

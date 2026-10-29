@@ -37,7 +37,7 @@ type sentRequest struct {
 
 // fakeChat is an OpenAI-compatible chat API that answers each request with the next reply it holds,
 // with the reply in pieces: its text word by word, and each tool call in three fragments. script,
-// where it is set, is the data of the events that answer the first request. refusesStream answers
+// where it is set, is the data of the events that answer the first request. rejectsStream answers
 // a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.
 type fakeChat struct {
 	mu      sync.Mutex
@@ -48,7 +48,7 @@ type fakeChat struct {
 	models  []string
 	// parameters are the parameters each model lists as supported, by model.
 	parameters    map[string][]string
-	refusesStream bool
+	rejectsStream bool
 	ignoresStream bool
 	requests      []sentRequest
 	replyCount    int
@@ -73,7 +73,7 @@ func (f *fakeChat) serveChat(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&got)
 	got.Auth = r.Header.Get("Authorization")
 	f.requests = append(f.requests, got)
-	if got.Stream && f.refusesStream {
+	if got.Stream && f.rejectsStream {
 		http.Error(w, `{"error":{"message":"stream is not supported"}}`, http.StatusBadRequest)
 		return
 	}
@@ -255,8 +255,8 @@ func describeSteps(steps []*agentrun.AskAgentResponse) string {
 	return strings.Join(words, " ")
 }
 
-// getSaid is every piece of the transcript, in the order it was sent.
-func getSaid(steps []*agentrun.AskAgentResponse) []string {
+// getSpoken is every piece of the transcript, in the order it was sent.
+func getSpoken(steps []*agentrun.AskAgentResponse) []string {
 	var response []string
 	for _, one := range steps {
 		if text := one.GetText(); text != "" {
@@ -281,7 +281,7 @@ func assertToolSteps(t *testing.T, steps []*agentrun.AskAgentResponse) {
 	if call.GetTool() != "Read a note" || call.GetKind() != "read" || call.GetCall() != "call-1" || call.GetPath() != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
-	if response, last := strings.Join(getSaid(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != reasonDone {
+	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != reasonDone {
 		t.Errorf("the answer is %q, stopped %q", response, last.GetStopped())
 	}
 }
@@ -353,7 +353,7 @@ func TestAFailureOfTheChatAPIStopsTheRunWithItsReason(t *testing.T) {
 	}
 }
 
-func TestAVaultThatCannotBeReachedStopsTheRunBeforeTheModelIsAsked(t *testing.T) {
+func TestHarness_UnreachableVaultStopsRunBeforeModelCall(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("hi")}}
 	s := newServer(model.serve(t).URL)
 	nowhere := httptest.NewServer(http.NotFoundHandler())
@@ -391,7 +391,7 @@ func TestTheKeyIsTheOneConfigurePassesOverAndNoneIsSentWithoutOne(t *testing.T) 
 	}
 }
 
-func TestAConversationGoesOnFromWhatWasSaidUntilItIsFinished(t *testing.T) {
+func TestHarness_ConversationContinuesUntilFinished(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("Noted.")}}
 	s := newServer(model.serve(t).URL)
 	task := newTask("", "Remember the garden.")
@@ -538,7 +538,7 @@ func TestTheVaultTokenIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
 	}
 }
 
-func TestAFailedListingIsAskedAgain(t *testing.T) {
+func TestHarness_FailedListingIsRequeried(t *testing.T) {
 	model := &fakeChat{status: http.StatusServiceUnavailable, models: []string{"m1"}}
 	s := newServer(model.serve(t).URL)
 	if _, err := s.listModels(t.Context()); err == nil {
@@ -637,7 +637,7 @@ func TestATaskNamingNoToolOffersTheModelNoTool(t *testing.T) {
 
 	steps := ask(t, s, task)
 
-	if got := strings.Join(getSaid(steps), ""); got != "the answer" {
+	if got := strings.Join(getSpoken(steps), ""); got != "the answer" {
 		t.Errorf("the answer is %q", got)
 	}
 	if connected.Load() {
@@ -670,7 +670,7 @@ func TestARemoteChatAPIWithNoKeyStopsTheRunBeforeAnyRequest(t *testing.T) {
 	}
 }
 
-func TestALocalChatAPIWithNoKeyIsAsked(t *testing.T) {
+func TestHarness_LocalChatAPIWithoutKeyIsCalled(t *testing.T) {
 	model := &fakeChat{replies: []message{newTextReply("hi")}}
 	s := &Server{}
 	s.Configure(map[string]string{SettingBaseURL: model.serve(t).URL})
@@ -849,7 +849,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	if calledWith != `{"query":"test"}` {
 		t.Errorf("custom tool was called with %q, want %q", calledWith, `{"query":"test"}`)
 	}
-	if response := strings.Join(getSaid(steps), ""); response != "Result received." {
+	if response := strings.Join(getSpoken(steps), ""); response != "Result received." {
 		t.Errorf("the answer is %q, want %q", response, "Result received.")
 	}
 }

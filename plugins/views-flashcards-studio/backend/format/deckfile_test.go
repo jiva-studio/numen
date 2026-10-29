@@ -577,7 +577,7 @@ func TestACardIsSplitByWhatItsLinkPointsAt(t *testing.T) {
 // A machine must not choose between two cards of one card id: which of the two a
 // person meant is a thing only they know, and a write that guesses puts what
 // they typed into the other one.
-func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
+func TestSetValue_ErrorsOnDuplicateCardID(t *testing.T) {
 	raw := "---\ntype: deck\n---\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 46\"\n"
@@ -717,7 +717,7 @@ func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
 
 // A card standing under a section the deck does not hold fails. Writing it
 // under whichever section stands last moves somebody's card without saying so.
-func TestDeckBodyRefusesACardBelowASectionTheDeckDoesNotHold(t *testing.T) {
+func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 	_, err := format.DeckBody(format.Deck{
 		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
 		Cards:    []format.Card{{Heading: "Llama", CardModelLink: "Animal", Section: 99}},
@@ -1097,7 +1097,7 @@ func TestAddCardBelowASectionWritesAtItsEnd(t *testing.T) {
 }
 
 // A card standing under a section before the first or past the last fails.
-func TestDeckBodyRefusesACardBelowAPlaceOutsideTheSections(t *testing.T) {
+func TestDeckBody_ErrorsOnSectionOutOfRange(t *testing.T) {
 	for _, item := range []int{-2, 2} {
 		_, err := format.DeckBody(format.Deck{
 			Sections: []format.Section{{Name: "One"}, {Name: "Two"}},

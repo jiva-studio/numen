@@ -135,7 +135,7 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 }
 
 // constructor also takes, and not the ones it does not.
-func TestWhatTheUseCaseRuleRefuses(t *testing.T) {
+func TestUseCaseRule_RejectsUnusedPortFields(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "held.go", `package p
 
 type Read struct {

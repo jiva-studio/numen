@@ -23,7 +23,7 @@ var errComingUp = errors.New("the vault is still coming up")
 // errTooManyPaths is a filter naming more paths than are answered at once.
 var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
-const mostAsked = 200
+const maxQueryLength = 200
 
 // eachOnce is the paths a client asked about, each named once.
 func eachOnce(paths []string) ([]string, error) {
@@ -36,7 +36,7 @@ func eachOnce(paths []string) ([]string, error) {
 		observed[path] = true
 		out = append(out, path)
 	}
-	if len(out) > mostAsked {
+	if len(out) > maxQueryLength {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyPaths)
 	}
 	return out, nil

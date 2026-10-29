@@ -81,9 +81,9 @@ func TestNotesAreSavedInGroups(t *testing.T) {
 	}
 }
 
-// TestALongNoteClosesTheGroupEarly covers the size bound. No other test or
+// TestScanWrites_LongNoteClosesBatchEarly covers the size bound. No other test or
 // benchmark has a vault of long files, so nothing else reaches it.
-func TestALongNoteClosesTheGroupEarly(t *testing.T) {
+func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	const notes, each = 12, 1 << 20

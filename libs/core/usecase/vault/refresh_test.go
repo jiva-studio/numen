@@ -577,7 +577,7 @@ func TestADeletedNoteIsRemovedWithoutBeingSaved(t *testing.T) {
 	}
 }
 
-func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testing.T) {
+func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)

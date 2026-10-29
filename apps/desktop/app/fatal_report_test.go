@@ -210,7 +210,7 @@ func TestError_NamesUnopenedTarget(t *testing.T) {
 
 // The two faults sqlite answers for with one sentence are two states here: a
 // path that is a folder is not a folder nobody may write in.
-func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
+func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}

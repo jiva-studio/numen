@@ -51,7 +51,7 @@ func stop(why string) agentport.Step { return agentport.Step{Kind: domain.StepSt
 
 // The pieces the agent says are the answer, in the order they arrive, and the run is stopped once
 // it has been read.
-func TestTheAnswerIsWhatTheAgentSaid(t *testing.T) {
+func TestAnswer_EqualsAgentOutput(t *testing.T) {
 	target := &starter{run: newRun(
 		agentport.Step{Kind: domain.StepModelStart}, say("The "), say("answer."), stop(""),
 	)}
@@ -67,7 +67,7 @@ func TestTheAnswerIsWhatTheAgentSaid(t *testing.T) {
 }
 
 // An agent that stops with "done", or closes its steps without a stop, has answered.
-func TestAnAgentThatIsCompletedHasAnswered(t *testing.T) {
+func TestAnswer_CompletedAgentHasAnswer(t *testing.T) {
 	for name, steps := range map[string][]agentport.Step{
 		"done":    {say("yes"), stop("done")},
 		"no stop": {say("yes")},

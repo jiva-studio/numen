@@ -59,7 +59,7 @@ func TestClosingAnIndexReturnsWhatEitherPoolRefused(t *testing.T) {
 	}
 }
 
-func TestClosingAnIndexClosesTheReadPoolWhenTheWritePoolRefuses(t *testing.T) {
+func TestClose_ClosesReadPoolWhenWritePoolFails(t *testing.T) {
 	read := poolRefusing(t, nil)
 	db := &DB{write: poolRefusing(t, errors.New("stuck")), read: read}
 	_ = db.Close()

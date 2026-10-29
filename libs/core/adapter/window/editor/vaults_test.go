@@ -102,8 +102,8 @@ func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (str
 	return f.pick, f.isChosen, f.fails
 }
 
-// getAsked is what the dialog was told to say and where to open.
-func (f *folders) getAsked() (string, string) {
+// getRequested is what the dialog was told to say and where to open.
+func (f *folders) getRequested() (string, string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.title, f.from
@@ -588,13 +588,13 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	if out.Msg.GetIsChosen() || out.Msg.GetPath() != "" {
 		t.Errorf("the answer is %v", out.Msg)
 	}
-	if title, from := f.dialog.getAsked(); title != "Where are your notes?" || from != f.first.Path {
+	if title, from := f.dialog.getRequested(); title != "Where are your notes?" || from != f.first.Path {
 		t.Errorf("the dialog was titled %q and opened at %q", title, from)
 	}
 }
 
-// TestTheFolderThePersonChoseIsAnswered.
-func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
+// TestChooseFolder_ReturnsChosenPath.
+func TestChooseFolder_ReturnsChosenPath(t *testing.T) {
 	f := onAList(t)
 	f.dialog.pick, f.dialog.isChosen = f.second.Path, true
 

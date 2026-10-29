@@ -139,7 +139,7 @@ func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	}
 }
 
-func TestAnInvalidVersionIsAnsweredWithItsCode(t *testing.T) {
+func TestHostText_InvalidVersionReturnsErrorCode(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	fakeCallers.vault = newMemoryVault(nil)
 	fakeCallers.texts = newMemoryTexts()
@@ -152,7 +152,7 @@ func TestAnInvalidVersionIsAnsweredWithItsCode(t *testing.T) {
 	}
 }
 
-func TestTextCallsWithNoVaultOrNoPermissionAreAnswered(t *testing.T) {
+func TestHostText_ErrorWithoutVaultOrPermission(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	res, err := newTextClient(t, fakeCallers, "token-a").ListTextVersions(t.Context(), connect.NewRequest(&v1.ListTextVersionsRequest{Path: "a.pdf"}))
 	if err != nil {

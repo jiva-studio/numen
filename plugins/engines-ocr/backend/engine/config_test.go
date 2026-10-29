@@ -188,7 +188,7 @@ func TestANegativeNumberIsNoNumberAtAll(t *testing.T) {
 	}
 }
 
-func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileReturnsOtherwise(t *testing.T) {
+func TestLayoutLabels_DefaultsUnlessFileOverrides(t *testing.T) {
 	labels := (LayoutModel{}).labels()
 	if len(labels) != 25 || labels[0] != "abstract" || labels[24] != "vision_footnote" {
 		t.Errorf("the model knows %v", labels)

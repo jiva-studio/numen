@@ -13,7 +13,7 @@ import (
 // one kind runs in the order it arrived.
 type Queue struct {
 	mu         sync.Mutex
-	isHeld     bool
+	isIndexed  bool
 	requested  []chan struct{}
 	background []chan struct{}
 	watchers   []chan struct{}
@@ -28,8 +28,8 @@ func NewQueue() *Queue { return &Queue{tasks: map[string]host.Task{}} }
 
 func (q *Queue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
 	q.mu.Lock()
-	if !q.isHeld {
-		q.isHeld = true
+	if !q.isIndexed {
+		q.isIndexed = true
 		q.mu.Unlock()
 		return &queueTurn{queue: q}, nil
 	}
@@ -101,7 +101,7 @@ func (q *Queue) release() {
 			return
 		}
 	}
-	q.isHeld = false
+	q.isIndexed = false
 }
 
 // leave takes a wait that ended out of the queue, and hands on a turn that arrived as it ended.

@@ -14,8 +14,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -43,7 +43,7 @@ func answerCard(t *testing.T, api *API, vault string, session *flashcardsv1.Star
 // A card that has been answered before comes back carrying at its current position: it
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
-func TestACardAlreadyAnsweredReachesBackWithWhereItExists(t *testing.T) {
+func TestStartSession_AnsweredCardCarriesScheduleState(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 
@@ -333,7 +333,7 @@ func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 }
 
 // Taking an answer back answers with a response, which is empty.
-func TestTakingAnAnswerBackIsAnsweredWithAResponse(t *testing.T) {
+func TestTakeBackAnswer_ReturnsEmptyResponse(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 	session := startSession(t, api, v)
@@ -367,7 +367,7 @@ func TestACardWithNoProjectionCarriesNone(t *testing.T) {
 
 // A stretch reaches every day of a long history, answered and still to come:
 // the days outside it do not end the walk through the days inside it.
-func TestAStretchOfALongHistoryContainsEveryDayInsideIt(t *testing.T) {
+func TestListReviewDays_RangeCoversLongHistory(t *testing.T) {
 	api, target := newAPI(t, lived)
 	v := target[0]
 	runDays(t, api, v, 14)

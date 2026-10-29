@@ -32,9 +32,9 @@ var ErrOverlaps = errors.New("a vault does not lie inside another")
 // over the list as a whole.
 type Vaults []Vault
 
-// CheckRoom says whether a folder can be a vault of its own. The vault in the way is
+// CheckOverlap says whether a folder can be a vault of its own. The vault in the way is
 // named, because the person is choosing a folder and needs to know which one.
-func (vs Vaults) CheckRoom(path string) error {
+func (vs Vaults) CheckOverlap(path string) error {
 	for _, other := range vs {
 		if other.Path == path {
 			continue

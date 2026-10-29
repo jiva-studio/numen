@@ -28,7 +28,7 @@ func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
 		request := tools.GetCallContext(ctx)
-		return CurrentCard{Deck: request[askedDeck], Card: request[askedCard], Template: request[askedTemplate]}, nil
+		return CurrentCard{Deck: request[requestedDeck], Card: request[requestedCard], Template: request[requestedTemplate]}, nil
 	})
 }
 

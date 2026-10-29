@@ -506,9 +506,9 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	}
 }
 
-// TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther. One settling runs at a
+// TestVaultSession_ConcurrentSwapAndCloseDoNotCancel. One settling runs at a
 // time. The second to arrive fails, and the first runs to its end.
-func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
+func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	f := openTwoVaults(t)
 
 	stream, isDone := f.watchQuit(t)
@@ -592,7 +592,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 	return f
 }
 
-func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
+func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
@@ -697,9 +697,9 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	return nil
 }
 
-// TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered. A note is made through
+// TestCreateNote_IndexFailureStillSucceeds. A note is made through
 // its own use case, and it reports the same thing a save does.
-func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
+func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
 	*f.installation.Services.NoteCreate() = f.installation.Services.NoteCreate().WithIndex(refuseToLevel)
@@ -718,10 +718,10 @@ func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	}
 }
 
-// TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered. The file is in the
+// TestRemoveFile_IndexFailureStillSucceeds. The file is in the
 // trash and search still answers about it, and what its links now reach is
 // reported all the same.
-func TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
+func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Ontology\n    role: parent\n---\n\n" +
@@ -1022,7 +1022,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 //
 // A vault with no identity is every vault at once in one database, and a vault
 // with no path is whichever folder this process happens to be standing in.
-func TestAWindowActiveOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
+func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 	f := openEmptyWindow(t)
 
 	request := map[string]func() error{

@@ -71,7 +71,7 @@ func TestAnswerToAnotherRequestOrWithoutModelsIsAnError(t *testing.T) {
 }
 
 // The program is asked over stdin and its answer carries the id of the request.
-func TestTheProgramIsAskedForItsModels(t *testing.T) {
+func TestModels_QueriesProgramForModels(t *testing.T) {
 	request := t.TempDir() + "/asked"
 	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)
 	answer = strings.ReplaceAll(answer, "'", "")
@@ -111,7 +111,7 @@ func TestAProgramThatCannotListItsModelsOffersTheFallback(t *testing.T) {
 	}
 }
 
-func TestTheDepthAskedIsHeldToTheLevelsOfTheModel(t *testing.T) {
+func TestModels_DepthLimitedToModelLevels(t *testing.T) {
 	s := &agentServer{}
 	models, err := parseModels(strings.NewReader(readFixture(t)), "r1")
 	if err != nil {
@@ -133,7 +133,7 @@ func TestTheDepthAskedIsHeldToTheLevelsOfTheModel(t *testing.T) {
 	}
 }
 
-func TestACachedListIsNotAskedAgain(t *testing.T) {
+func TestModels_CachedListIsNotRequeried(t *testing.T) {
 	s := &agentServer{}
 	s.getModelCache().Put("x", []claudeModel{{Value: "m"}})
 	got, err := s.getModels(context.Background(), []string{"x"}, nil)

@@ -154,13 +154,13 @@ func (s vaulted) run(t *testing.T, pos time.Time) sitting {
 // runNamed is a run whose file is named for one instant and whose answers were
 // given at another, which is what a run written on another machine and carried
 // here by a synchroniser looks like.
-func (s vaulted) runNamed(t *testing.T, named, answeredAt time.Time) sitting {
+func (s vaulted) runNamed(t *testing.T, named, reviewedAt time.Time) sitting {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, func() time.Time { return answeredAt })
+	return newSitting(run, func() time.Time { return reviewedAt })
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
@@ -409,7 +409,7 @@ func TestACardWithNoCardModelIsLeftOut(t *testing.T) {
 
 // A review card missing a front or a back lays out nothing, so nothing is asked through
 // it. The card model's other review cards are asked as usual.
-func TestACardMissingASideIsNotAsked(t *testing.T) {
+func TestListReviewCards_SkipsCardMissingSide(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
 		"Half.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -432,7 +432,7 @@ func TestACardMissingASideIsNotAsked(t *testing.T) {
 
 // A card that leaves a field empty is asked like any other: the placeholder lays
 // out as nothing, and the card is still somebody's card.
-func TestACardPreservingAFieldEmptyIsStillAsked(t *testing.T) {
+func TestRanking_KeepsCardWithEmptyField(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
 		"Term.md": vault["Term.md"],
@@ -454,7 +454,7 @@ func TestACardPreservingAFieldEmptyIsStillAsked(t *testing.T) {
 }
 
 // reached.
-func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
+func TestCountCardsDue_UnansweredVaultIsAllNew(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 

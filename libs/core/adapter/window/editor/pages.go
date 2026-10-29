@@ -88,7 +88,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 				return
 			}
 		}
-		s.serveBeside(w, r, isWhole, files)
+		s.serveAdjacent(w, r, isWhole, files)
 	})
 }
 
@@ -180,9 +180,9 @@ const updateRoute = "/api/app-update/latest.json"
 // updateEndpoint is where the published release manifest sits.
 const updateEndpoint = "https://dl.numen.md/latest/latest.json"
 
-// serveBeside answers what no service does: the bytes of a file, the page the
+// serveAdjacent answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
-func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
+func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case r.URL.Path == updateRoute:
 		s.serveUpdate(w, r)

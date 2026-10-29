@@ -94,7 +94,7 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 }
 
 // A window with no agent refuses a question as a precondition the installation does not meet.
-func TestAWindowWithNoAgentRefusesAQuestion(t *testing.T) {
+func TestAskAgent_FailsPreconditionWithoutAgent(t *testing.T) {
 	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewAgentServiceClient(server.Client(), server.URL)

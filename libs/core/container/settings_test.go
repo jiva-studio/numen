@@ -176,7 +176,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 }
 
 // A line said is kept for whoever read the settings to put in front of a person.
-func TestWhatIsSaidWhileReadingIsCached(t *testing.T) {
+func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 	var target Settings
 	target.AddNotice("first")
 	target.AddNotice("second")

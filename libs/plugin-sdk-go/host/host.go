@@ -25,8 +25,8 @@ var (
 	ErrStale = notesedit.ErrStale
 	// ErrAlreadyExists is what a create gets when a file is already there.
 	ErrAlreadyExists = errors.New("host: a file is already there")
-	// ErrHeldByAnother is what a name gets when another program holds the file.
-	ErrHeldByAnother = errors.New("host: the file is held by another program")
+	// ErrLockedByAnother is what a name gets when another program holds the file.
+	ErrLockedByAnother = errors.New("host: the file is held by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.

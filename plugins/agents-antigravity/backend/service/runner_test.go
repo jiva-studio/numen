@@ -137,7 +137,7 @@ func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentr
 
 // The answer of the CLI arrives as the text deltas of its response steps, and its result, which
 // repeats them, is not said again.
-func TestTheAnswerOfTheCliIsSaidOnce(t *testing.T) {
+func TestRunner_CLIAnswerEmittedOnce(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy",
 		`echo '{"event":"init","conversation_id":"s-1","init":{"model":"m"}}'`+"\n"+
 			`echo '{"event":"step_update","step_update":{"conversation_id":"s-1","step_index":0,"state":"DONE","step_type":"user_input"}}'`+"\n"+
@@ -163,7 +163,7 @@ func TestTheAnswerOfTheCliIsSaidOnce(t *testing.T) {
 }
 
 // A result with a response and no streamed text says the response.
-func TestTheResponseOfTheCliIsSaidWhereNoTextWasStreamed(t *testing.T) {
+func TestRunner_CLIResponseEmittedWhenNothingStreamed(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy",
 		`echo '{"event":"result","result":{"status":"SUCCESS","response":"fine"}}'`+"\n")
 

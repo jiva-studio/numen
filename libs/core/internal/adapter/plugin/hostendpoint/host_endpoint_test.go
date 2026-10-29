@@ -142,7 +142,7 @@ func readCode(t *testing.T, err error) connect.Code {
 
 // A plugin holding the permission is answered with the text, and the completer
 // is told the question as the plugin put it.
-func TestAPluginWithThePermissionIsAnswered(t *testing.T) {
+func TestHostEndpoint_ServesPluginWithPermission(t *testing.T) {
 	var requestVal completionport.Question
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(_ context.Context, question completionport.Question) (string, error) {
 		requestVal = question
@@ -301,7 +301,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 }
 
 // The endpoint listens on the loopback interface and answers for a token.
-func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
+func TestHostEndpoint_ListensOnLoopbackAndServes(t *testing.T) {
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "ok", nil }))
 	endpoint, err := Open(t.Context(), Address, fakeCallers)
 	if err != nil {
@@ -330,7 +330,7 @@ func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
 
 // A plugin the person has not let ask a model is answered NO_CONSENT, and
 // nothing is asked of a model.
-func TestAPluginWithoutConsentIsAnsweredNoConsent(t *testing.T) {
+func TestHostEndpoint_ReturnsNoConsentWithoutConsent(t *testing.T) {
 	request := false
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) {
 		request = true

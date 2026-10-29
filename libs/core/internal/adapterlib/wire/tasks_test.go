@@ -48,7 +48,7 @@ func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTa
 // A window is handed each list by the write that follows it, so a list with
 // nothing after it is a list nobody is holding: work that ended relies on
 // screen as work still running.
-func TestOneChangeIsSaidTwice(t *testing.T) {
+func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 	tasks := run.NewTasks()
 	stream := openTaskStream(t, tasks)
 
@@ -74,7 +74,7 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 
 // Two windows can be open on the same vault, so a question about a window says which. One naming
 // another window is not answered with this one's.
-func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
+func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 	route, handler := numenv1connect.NewWindowServiceHandler(
 		&Window{Named: "another", Tasking: run.NewTasks()},
 	)

@@ -477,7 +477,7 @@ func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 	}
 }
 
-func TestCreateTextRefusesASourceThePluginDoesNotTake(t *testing.T) {
+func TestCreateText_RejectsSourceUnsupportedByPlugin(t *testing.T) {
 	s := newScene(t)
 	if err := s.versions.CreateText(t.Context(), s.vault, proofreader, scanPath, ""); !errors.Is(err, textport.ErrSourceNotAccepted) {
 		t.Fatalf("a proofreader asked to read a file: got %v", err)

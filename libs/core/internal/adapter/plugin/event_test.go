@@ -175,7 +175,7 @@ func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	}
 }
 
-func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testing.T) {
+func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,

@@ -101,7 +101,7 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 	}
 }
 
-func TestWindowTabsGetWithAskedFocus(t *testing.T) {
+func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	mgr := NewManager()
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, nil); err != nil {

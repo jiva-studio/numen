@@ -172,7 +172,7 @@ func TestNoApplicationLogs(t *testing.T) {
 
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
-func TestWhatTheLoggingRuleRefuses(t *testing.T) {
+func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	var violations []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
@@ -239,7 +239,7 @@ func getClaimedPorts(file *ast.File) []string {
 
 // shapes of the claim are one claim, and the walk has to reach the one written
 // inside a function; a variable holding a port is left alone.
-func TestWhatThePortClaimRefuses(t *testing.T) {
+func TestPortClaimRule_RejectsPortClaims(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "claim.go", `package p
 
 var _ port.Agent = (*Agent)(nil)

@@ -35,7 +35,7 @@ func twoPages() []Batch {
 	}
 }
 
-func TestAScanIsAskedPageByPageAndCorrectionsComeBackInLineOrder(t *testing.T) {
+func TestProofreadScan_PromptsPerPageAndOrdersCorrections(t *testing.T) {
 	m := &model{script: func(prompt string) string {
 		if strings.Contains(prompt, "dgo") {
 			return "12|the dog ran"
@@ -77,7 +77,7 @@ func TestAScanFailureEndsTheRun(t *testing.T) {
 	}
 }
 
-func TestTheEditLimitOfARequestIsHeld(t *testing.T) {
+func TestProofreadScan_AppliesEditLimit(t *testing.T) {
 	pages := []Batch{{Number: 1, Lines: []Line{{Number: 1, Text: "abcdefghij"}}}}
 	reply := newReplyModel("1|abcdeXYZ")
 
@@ -100,7 +100,7 @@ func speech(count int) []Line {
 	return out
 }
 
-func TestSpeechIsAskedBelowTheSpeechInstructionWithWhatTheRecordingContains(t *testing.T) {
+func TestProofreadSpeech_UsesSpeechInstruction(t *testing.T) {
 	m := newReplyModel("")
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(3), 10, 0, 0, 0)
 	if err != nil {
@@ -117,7 +117,7 @@ func TestSpeechIsAskedBelowTheSpeechInstructionWithWhatTheRecordingContains(t *t
 	}
 }
 
-func TestSpeechIsAnsweredAWindowAtATimeAndReturnsWhereToContinue(t *testing.T) {
+func TestProofreadSpeech_ProcessesWindowsAndReturnsNext(t *testing.T) {
 	m := newReplyModel("")
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(20), 4, 1, 0, 8)
 	if err != nil {
@@ -151,7 +151,7 @@ func TestSpeechPastTheEndIsCompleted(t *testing.T) {
 	}
 }
 
-func TestASplitBatchIsAskedWhereARunReachedPastABatch(t *testing.T) {
+func TestProofreadSpeech_RetriesSplitBatchForSpanningRun(t *testing.T) {
 	request := 0
 	m := &model{script: func(prompt string) string {
 		request++
@@ -170,7 +170,7 @@ func TestASplitBatchIsAskedWhereARunReachedPastABatch(t *testing.T) {
 	}
 }
 
-func TestARunReachingPastTheWindowIsAskedAgainFromWhereItBegins(t *testing.T) {
+func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 	m := &model{script: func(prompt string) string {
 		if strings.Contains(prompt, Opens+"7"+Closes) {
 			return "6-9|a sentence reaching past the window"

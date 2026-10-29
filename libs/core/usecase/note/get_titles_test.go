@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 )
 
-func TestTitlesAnswerInTheOrderAskedAndNameWhatIsMissing(t *testing.T) {
+func TestGetTitles_PreservesRequestOrderAndReportsMissing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "Work.md": "# Work\n"})
 

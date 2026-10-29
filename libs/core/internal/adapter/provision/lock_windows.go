@@ -34,7 +34,7 @@ func acquireFileLock(path string) (func() error, error) {
 	if err := windows.LockFileEx(handle, flags, 0, 1, 0, &region); err != nil {
 		_ = file.Close()
 		if errors.Is(err, windows.ERROR_LOCK_VIOLATION) || errors.Is(err, windows.ERROR_IO_PENDING) {
-			return nil, errLockHeld
+			return nil, errLockBusy
 		}
 		return nil, err
 	}

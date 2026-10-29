@@ -291,7 +291,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
-	claim := &fakeClaim{isHeld: true}
+	claim := &fakeClaim{isIndexed: true}
 
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(vaults{first.ID: shelf}, index, index)

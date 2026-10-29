@@ -333,8 +333,8 @@ func TestAGroupThatFailsWhenFullStopsTheScanWithWhatWasCounted(t *testing.T) {
 
 func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
-	target := newHeldWalk()
-	readers := heldWalks{reader: target}
+	target := newBlockedWalk()
+	readers := blockedWalks{reader: target}
 	db := openIndex(t)
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 

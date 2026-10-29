@@ -15,7 +15,7 @@ import (
 var errNoKeychain = errors.New("no keychain on this machine")
 
 // The key the window sends is handed on with the plugin and the secret, and a
-func TestAKeyIsHandedOnAndAErrorIsSaid(t *testing.T) {
+func TestPluginSecret_ForwardsKeyAndReturnsError(t *testing.T) {
 	var got [3]string
 	handler := &Handler{
 		WriteSecret: setting.NewWriteSecret(func(_ context.Context, pluginID, name, key string) error {

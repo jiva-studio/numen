@@ -146,7 +146,7 @@ func TestAnEmptyLogReadsAsNothing(t *testing.T) {
 
 // Each of the four is said in the word a person uses for it, which is what a
 // log line and anything read by a person carry.
-func TestEachRatingIsSaidInItsOwnWord(t *testing.T) {
+func TestRating_StringReturnsName(t *testing.T) {
 	for _, one := range []struct {
 		r    review.Rating
 		want string
@@ -205,7 +205,7 @@ func makeJumbledHistory() []review.Answer {
 
 // A history put in order once is the history each of the four questions was
 // putting in order for itself.
-func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
+func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 	answers := makeJumbledHistory()
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	named := day.GetName(answers[0].At)

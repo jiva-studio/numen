@@ -399,7 +399,7 @@ func (c corpus) writeSections(t *testing.T, v domain.Vault, path string) {
 	}
 }
 
-func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
+func TestSearch_ReturnsRequestedSection(t *testing.T) {
 	// A search by words ranks by how often the words appear, so a paragraph in the
 	// middle of a chapter outranks the chapter's own opening. Asked where a book
 	ctx := t.Context()
@@ -542,7 +542,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	}
 }
 
-func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
+func TestSearch_BookQueryUsesBookSources(t *testing.T) {
 	// A vault holds far more notes than books. Asked about a book and told to
 	// look everywhere, a search answers with whatever the vault holds most of,
 	// and the person who said "in the book" is handed a note.

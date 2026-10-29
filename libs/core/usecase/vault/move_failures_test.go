@@ -155,7 +155,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 
 // What points at a folder's contents is asked of the notes under it, every one,
 // and of nothing else.
-func TestOnlyTheNotesBelowAFolderAreAskedWhatPointsAtThem(t *testing.T) {
+func TestMove_QueriesBacklinksForNotesInFolderOnly(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",

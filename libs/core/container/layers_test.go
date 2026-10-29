@@ -337,7 +337,7 @@ func TestNoInnerLayerImportsATransport(t *testing.T) {
 	}
 }
 
-func TestWhatTheTransportRuleRefuses(t *testing.T) {
+func TestTransportRule_RejectsTransportImports(t *testing.T) {
 	var rejected []string
 	for _, to := range []string{
 		"connectrpc.com/connect",
@@ -427,7 +427,7 @@ func TestNothingOfTheCoreLogs(t *testing.T) {
 
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
-func TestWhatTheLoggingRuleRefuses(t *testing.T) {
+func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	var rejected []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
@@ -618,7 +618,7 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 
 // has to find the field and the type it is spelled in, and let through the ones
 // that are the core's own word and the ones that name no identity at all.
-func TestWhatTheIdentityRuleRefuses(t *testing.T) {
+func TestIdentityRule_RejectsIdentityFields(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "identity.go", `package p
 
 type Thing struct {
@@ -677,7 +677,7 @@ func getClaimedPorts(file *ast.File) []string {
 
 // shapes of the claim are one claim, and the walk has to reach the one written
 // inside a function; a variable holding a port is left alone.
-func TestWhatThePortClaimRefuses(t *testing.T) {
+func TestPortClaimRule_RejectsPortClaims(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "claim.go", `package p
 
 var _ vaultport.VaultReader = (*Reader)(nil)
@@ -755,7 +755,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 // root goes on binding an adapter to it.
 //
 // The tests are read: a port a test alone still asks for is asked for.
-func TestEveryPortIsAskedForSomewhereElse(t *testing.T) {
+func TestPorts_EveryPortTypeIsReferenced(t *testing.T) {
 	unasked, err := getUnnamedTypes("..", filepath.Join("..", "port"), true)
 	if err != nil {
 		t.Fatal(err)
@@ -786,7 +786,7 @@ func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 // Read against port/ as the whole tree, nothing outside it names anything, and
 // the rule has to come back with the names below. It is what says the passes
 // above are passing on the naming and not on an empty walk.
-func TestWhatThePortRuleRefuses(t *testing.T) {
+func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	pos := filepath.Join("..", "port")
 	unnamed, err := getUnnamedTypes(pos, pos, false)
 	if err != nil {
@@ -820,7 +820,7 @@ func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 
 // Read against port/ as the whole tree, nothing outside it calls anything, and
 // the rule has to come back with the methods below.
-func TestWhatThePortMethodRuleRefuses(t *testing.T) {
+func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	pos := filepath.Join("..", "port")
 	uncalled, err := getUncalledMethods(pos, pos)
 	if err != nil {
@@ -1070,8 +1070,8 @@ func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	}
 }
 
-// TestWhatTheLayerAliasRuleRefuses verifies rejection of layer names as import aliases.
-func TestWhatTheLayerAliasRuleRefuses(t *testing.T) {
+// TestLayerAliasRule_RejectsLayerNamedAliases verifies rejection of layer names as import aliases.
+func TestLayerAliasRule_RejectsLayerNamedAliases(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "alias.go", `package p
 
 import (
@@ -1249,7 +1249,7 @@ var internalAdapters = []string{
 }
 
 // The adapters under internal/ are these and no others.
-func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
+func TestInternalAdapters_MatchDeclaredList(t *testing.T) {
 	found, err := getAdaptersIn(filepath.Join("..", "internal", "adapter"), "internal/adapter")
 	if err != nil {
 		t.Fatal(err)
@@ -1411,7 +1411,7 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 
 // finds the field and the type it is written in, and lets through the one that
 // is a time and the ones that name no instant at all.
-func TestWhatTheInstantRuleRefuses(t *testing.T) {
+func TestInstantRule_RejectsTimeFields(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "instant.go", `package p
 
 import "time"
@@ -1516,7 +1516,7 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 
 // reaches a parameter and a result alike, lets through the one that is the
 // core's own word, and reads nothing into a parameter with no name.
-func TestWhatTheIdentityRuleRefusesInASignature(t *testing.T) {
+func TestIdentityRule_RejectsIdentitySignatureParams(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "asking.go", `package p
 
 import "context"
@@ -1543,7 +1543,7 @@ type Store interface {
 
 // the clock read and each timer armed, and lets through the arithmetic over an
 // instant and the constructors that read no clock.
-func TestWhatTheClockRuleRefuses(t *testing.T) {
+func TestClockRule_RejectsClockReads(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "clock.go", `package p
 
 import "time"
@@ -1677,11 +1677,11 @@ func getPortNames() []string {
 }
 
 var serializationImports = map[string]bool{
-	"encoding/json":                 true,
-	"encoding/xml":                  true,
-	"gopkg.in/yaml.v3":              true,
-	"github.com/BurntSushi/toml":    true,
-	"google.golang.org/protobuf":    true,
+	"encoding/json":              true,
+	"encoding/xml":               true,
+	"gopkg.in/yaml.v3":           true,
+	"github.com/BurntSushi/toml": true,
+	"google.golang.org/protobuf": true,
 }
 
 var serializationTags = []string{"json:", "yaml:", "sql:", "db:", "xml:", "protobuf:"}

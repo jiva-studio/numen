@@ -68,7 +68,7 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	}
 }
 
-func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
+func TestErase_RejectsFolderWithoutIdentity(t *testing.T) {
 	t.Parallel()
 	_, removed, registry := twoVaults(t)
 	erase, trash, index, _ := newErase(registry)
@@ -119,7 +119,7 @@ func TestAFolderThatIsMissingIsForgottenAndNothingIsTrashed(t *testing.T) {
 	}
 }
 
-func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
+func TestErase_RejectsOnlyVaultBeforeTouchingFolder(t *testing.T) {
 	t.Parallel()
 	add, registry := newAdd(t)
 	only, err := add.Execute(folder(t, "personal"), "")
@@ -181,7 +181,7 @@ func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 
 // Both halves of what a folder must carry are checked: that it carries an
 // identity, and that it is this vault's.
-func TestEraseRefusesAFolderWhoseIdentityIsNotThisVaults(t *testing.T) {
+func TestErase_RejectsFolderWithOtherIdentity(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		name    string

@@ -346,7 +346,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 // The card is answered twice at the hour the day opens: a card answered no time
 // at all since its last answer is one the projection is certain came back, so
 // the two work the same interval out and what is compared is where it is put.
-func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
+func TestSchedules_AnsweredAndProjectedCardShareDueDay(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
 	delta := review.NewFSRSAt(0.9)
@@ -514,7 +514,7 @@ const (
 )
 
 // replayed once, and every request after that is told what the replay came to.
-func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
+func TestCountCardsDue_UsesScheduleCache(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()

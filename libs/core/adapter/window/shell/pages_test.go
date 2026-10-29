@@ -89,7 +89,7 @@ func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 
 // The page itself is asked for at its addresses, and a build carrying no
 // interface answers them with the files the window was given.
-func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
+func TestHandler_ServesPageAtRootAndIndex(t *testing.T) {
 	files := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("the files"))
 	})
@@ -113,7 +113,7 @@ func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
 
 // A `data:` URI is the whole of what this window widens: no script from elsewhere, no form submitted
 // anywhere, and nothing fetched off the machine.
-func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
+func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 	target := csp.Sources{Images: []string{"data:"}}.Policy()
 	if policy != target {
 		t.Errorf("the policy reads %q", policy)

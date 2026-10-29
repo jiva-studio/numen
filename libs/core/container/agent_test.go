@@ -66,8 +66,8 @@ func (s *providerServer) FinishConversation(
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }
 
-// getAsked are the tasks the plugin was given.
-func (s *providerServer) getAsked() []*v1.AskAgentRequest {
+// getRequested are the tasks the plugin was given.
+func (s *providerServer) getRequested() []*v1.AskAgentRequest {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.requested)
@@ -273,10 +273,10 @@ func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 		steps = append(steps, step)
 	}
 
-	if len(one.getAsked()) != 0 || len(two.getAsked()) != 1 {
-		t.Fatalf("the first plugin was asked %d times and the second %d", len(one.getAsked()), len(two.getAsked()))
+	if len(one.getRequested()) != 0 || len(two.getRequested()) != 1 {
+		t.Fatalf("the first plugin was asked %d times and the second %d", len(one.getRequested()), len(two.getRequested()))
 	}
-	if got := two.getAsked()[0]; got.GetPrompt() != "hello" || got.GetAgent() != "beta" || got.GetModel() != "m" ||
+	if got := two.getRequested()[0]; got.GetPrompt() != "hello" || got.GetAgent() != "beta" || got.GetModel() != "m" ||
 		got.GetMaxSteps() != 3 || got.GetRoot() != "/vault" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" ||
 		got.GetToolsToken() != "t" {
 		t.Errorf("the plugin was asked %v", got)
@@ -296,14 +296,14 @@ func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 			t.Errorf("a task naming %q was taken", name)
 		}
 	}
-	if len(one.getAsked())+len(two.getAsked()) != 0 {
+	if len(one.getRequested())+len(two.getRequested()) != 0 {
 		t.Error("a plugin was asked for a task nobody runs")
 	}
 }
 
 // Ending a conversation goes to the plugin it was asked in, and ending one that was asked nowhere
 // goes nowhere.
-func TestAConversationEndsWhereItWasAsked(t *testing.T) {
+func TestEndConversation_RoutesToStartingPlugin(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
@@ -357,7 +357,7 @@ func TestTheWindowIsOfferedWhatThePluginsList(t *testing.T) {
 }
 
 // A conversation asked on two plugins is ended on both.
-func TestAConversationAskedOnTwoPluginsEndsOnBoth(t *testing.T) {
+func TestEndConversation_EndsOnEveryPluginUsed(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 
@@ -426,7 +426,7 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 		!strings.Contains(err.Error(), "no agent plugin runs") {
 		t.Fatalf("a program nothing lists was run: %v", err)
 	}
-	if len(served.getAsked()) != 0 {
+	if len(served.getRequested()) != 0 {
 		t.Fatal("the plugin was asked for a program it did not list")
 	}
 	run, err := provider.StartRun(t.Context(), agentport.Task{Question: "q", Agent: "gamma", Command: []string{"/opt/gamma"}})
@@ -435,7 +435,7 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 	}
 	for range run.GetSteps() {
 	}
-	if request := served.getAsked(); len(request) != 1 || !slices.Equal(request[0].GetCommand(), []string{"/opt/gamma"}) {
+	if request := served.getRequested(); len(request) != 1 || !slices.Equal(request[0].GetCommand(), []string{"/opt/gamma"}) {
 		t.Errorf("the plugin was asked %v", request)
 	}
 }

@@ -193,7 +193,7 @@ func TestANoteThatIsNotThereIsMadeByAnOverwriteAndRefusedOtherwise(t *testing.T)
 	}
 }
 
-func TestAnEditIsHeldToItsBound(t *testing.T) {
+func TestEdit_EnforcesSizeLimit(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	e := editing(f)
 	e.Bound = 10

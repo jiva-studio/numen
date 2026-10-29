@@ -74,7 +74,7 @@ func TestRemoveDuplicatesKeepsTheFirstPathToEachFile(t *testing.T) {
 	}
 }
 
-func TestCheckLibraryRefusesAFileThatIsNotALibrary(t *testing.T) {
+func TestCheckLibrary_RejectsNonLibraryFile(t *testing.T) {
 	switch runtime.GOOS {
 	case "darwin", "freebsd", "linux", "netbsd", "windows":
 	default:

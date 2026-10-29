@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 )
 
-func TestRemovingANoteRefusesAFolderAndKeepsTheRestOfTheCall(t *testing.T) {
+func TestRemoveNote_FolderFailsAndRestProceeds(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"dir/Heat.md": "# Heat\n", "Work.md": "# Work\n"})
 	remove := note.NewRemoveNote(c.remove(), vaultreader.Readers{})

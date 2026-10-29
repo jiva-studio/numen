@@ -96,7 +96,7 @@ func TestANameThatResolvesExactlyIsNotAmbiguous(t *testing.T) {
 
 // Quiet: a vault being written is full of links to notes not yet made, and they
 // would bury everything else.
-func TestADanglingLinkArrivesOnlyWhenAskedFor(t *testing.T) {
+func TestCheck_DanglingLinkReportedOnlyWhenRequested(t *testing.T) {
 	l, v := scanVault(t, map[string]string{
 		"Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})

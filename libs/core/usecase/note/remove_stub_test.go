@@ -117,7 +117,7 @@ func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 	}
 }
 
-func TestRemovingStopsWhenTheLinksCannotBeAskedAbout(t *testing.T) {
+func TestRemove_StopsWhenLinksQueryFails(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
@@ -152,7 +152,7 @@ func TestRemovingStopsWhenTheVaultCannotBeOpenedForWriting(t *testing.T) {
 }
 
 // Only a note has links, so nothing else under a folder is asked about.
-func TestOnlyNotesAreAskedWhatPointsAtThem(t *testing.T) {
+func TestRemove_QueriesBacklinksForNotesOnly(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.sources.underCtx = []domain.FileStat{
@@ -206,7 +206,7 @@ func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 
 // A trash that already holds a hundred copies is full: the hundredth is the
 // last name tried.
-func TestAFullTrashRefusesTheNoteAfterAHundredNames(t *testing.T) {
+func TestRemove_FullTrashFailsAfter100Names(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.writers.writer.move = func(_, to string) error {
@@ -316,7 +316,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 }
 
 // The file is gone and the index is not level: the answer says both.
-func TestAnIndexThatCannotBeLevelledIsSaidAlongsideTheRemoval(t *testing.T) {
+func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
@@ -367,7 +367,7 @@ func TestAMoveThatFailsKeepsThePathInTheAnswer(t *testing.T) {
 	}
 }
 
-func TestDestroyingStopsWhenTheLinksCannotBeAskedAbout(t *testing.T) {
+func TestDestroy_StopsWhenLinksQueryFails(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	broken := errors.New("the index is gone")

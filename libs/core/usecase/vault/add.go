@@ -58,7 +58,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	recognized := domain.Vaults(target)
-	if err := recognized.CheckRoom(root); err != nil {
+	if err := recognized.CheckOverlap(root); err != nil {
 		return domain.Vault{}, err
 	}
 

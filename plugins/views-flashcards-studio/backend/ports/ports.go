@@ -23,8 +23,8 @@ var (
 	ErrNotANote = edit.ErrNotANote
 	// ErrAlreadyExists is what making a file says when one is already there.
 	ErrAlreadyExists = errors.New("a file is already there")
-	// ErrHeldByAnother is what a name gets when a program outside this one has the file.
-	ErrHeldByAnother = errors.New("the file is held by another program")
+	// ErrLockedByAnother is what a name gets when a program outside this one has the file.
+	ErrLockedByAnother = errors.New("the file is held by another program")
 )
 
 // Clock is what time it is. A use case that takes none has none.

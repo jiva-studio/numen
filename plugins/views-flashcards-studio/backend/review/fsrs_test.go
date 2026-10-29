@@ -57,7 +57,7 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 
 // An answer leaves a card seen, which is what tells it from one nobody has
 // reached yet.
-func TestAnAnsweredCardIsObserved(t *testing.T) {
+func TestFSRSNext_AnsweredCardIsNotNew(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
@@ -284,7 +284,7 @@ func clampLastAnswer(s review.Schedule) review.Schedule {
 // The days a review card stood away do not go below none, so every such review card
 // is answered the same, and answered as the library answers one whose last
 // answer falls at that instant.
-func TestAReviewCardAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
+func TestFSRSNext_ClampsElapsedDaysToZero(t *testing.T) {
 	delta, engine := makeSchedulers(0)
 
 	// A review card the scheduler has put into review, carrying an answer given

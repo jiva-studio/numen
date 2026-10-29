@@ -161,7 +161,7 @@ func TestRerankKeepsACandidateAtTheFloor(t *testing.T) {
 	}
 }
 
-func TestRerankRefusesAVectorOfAnotherWidth(t *testing.T) {
+func TestRerank_RejectsVectorOfWrongWidth(t *testing.T) {
 	q := scripted(t, [][]driver.Value{{int64(9), signed(1, 2, 3)}}, nil)
 	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(9), nil, -2)
 	if err == nil {

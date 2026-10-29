@@ -95,7 +95,7 @@ func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t 
 	}
 }
 
-func TestFittingTheRecipeAndWidthAlreadyHeldPreservesTheCoarseIndexAlone(t *testing.T) {
+func TestFitRecipe_SameRecipeAndWidthKeepsCoarseIndex(t *testing.T) {
 	db := openDB(t)
 	book(t, db, first, "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)

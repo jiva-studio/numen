@@ -174,7 +174,7 @@ func TestAFileTheHostMayNotOpenFailsWithWhatItWasReportedToFailWith(t *testing.T
 	}
 }
 
-func TestTheIndexKnowsAFileChangedAdjacentItOnlyOnceItIsReported(t *testing.T) {
+func TestHostTest_IndexSeesExternalFileOnlyAfterScan(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"A.md": "---\ntype: sample\n---\n"})
 	if err := os.WriteFile(filepath.Join(v.Vault().Path, "B.md"), []byte("---\ntype: sample\n---\n"), 0o644); err != nil {

@@ -147,7 +147,7 @@ func TestCreatingReturnsWhenTheNameIsAlreadyTaken(t *testing.T) {
 	}
 }
 
-func TestCreatingRefusesToLandOnAnExistingNote(t *testing.T) {
+func TestCreate_RejectsExistingNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -557,7 +557,7 @@ func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 	}
 }
 
-func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
+func TestWrite_RejectsStaleEdit(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(

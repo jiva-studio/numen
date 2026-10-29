@@ -21,10 +21,10 @@ import (
 // back as; those are named in driving and are not this rule's business.
 const compilerHolds = module + "internal/adapter/"
 
-// getHeldAdapters is every place src answers with an adapter the compiler
+// getRetainedAdapters is every place src answers with an adapter the compiler
 // holds, said in full. A method on an unexported receiver is left out: it is
 // not the root's answer to anybody outside.
-func getHeldAdapters(name, src string) []string {
+func getRetainedAdapters(name, src string) []string {
 	f, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
 	if err != nil {
 		return []string{name + " does not parse: " + err.Error()}
@@ -104,7 +104,7 @@ func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 			t.Fatal(err)
 		}
 		read++
-		for _, why := range getHeldAdapters(name, string(src)) {
+		for _, why := range getRetainedAdapters(name, string(src)) {
 			t.Errorf("%s: %s", name, why)
 		}
 	}
@@ -116,7 +116,7 @@ func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 	}
 	// The rule is about what the root answers with, so it is worth nothing where
 	// the root answers nothing. Trash is a port handed out under its own name.
-	if len(getHeldAdapters("probe.go", `package container
+	if len(getRetainedAdapters("probe.go", `package container
 
 import "`+module+`port"
 
@@ -128,7 +128,7 @@ func (c Config) Trash() port.Trash { return nil }
 
 // What the rule refuses, asked directly. Each case is a shape the walk meets in
 // this package, so an error here is the whole of the rule and not a sample.
-func TestWhatThePortRuleRefusesTheRoot(t *testing.T) {
+func TestPortsRule_RejectsRootPackageAdapters(t *testing.T) {
 	for _, one := range []struct {
 		what      string
 		src       string
@@ -194,7 +194,7 @@ func (c Config) Options(opts filesystem.Options) error { return nil }`,
 			isRefused: false,
 		},
 	} {
-		findings := getHeldAdapters("probe.go", one.src)
+		findings := getRetainedAdapters("probe.go", one.src)
 		if one.isRefused && len(findings) == 0 {
 			t.Errorf("%s is not rejected", one.what)
 		}

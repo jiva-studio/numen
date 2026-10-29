@@ -9,7 +9,7 @@ import (
 
 // person may have downloaded, and this is the whole of what stops one reaching
 // the network.
-func TestAWindowIsHeldToOnePolicy(t *testing.T) {
+func TestPolicy_WindowUsesSingleCSP(t *testing.T) {
 	const target = "default-src 'self'; img-src 'self'; media-src 'self'; frame-src 'self'; " +
 		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +

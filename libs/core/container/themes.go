@@ -41,7 +41,7 @@ func (c Config) getCatalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
 		return theme.OpenAt(c.ThemesPath)
 	}
-	if folder, selected := c.getPathBeside("themes"); selected {
+	if folder, selected := c.getAdjacentPath("themes"); selected {
 		return theme.OpenAt(folder)
 	}
 	return theme.Open()

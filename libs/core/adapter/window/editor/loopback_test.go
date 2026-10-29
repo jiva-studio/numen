@@ -34,13 +34,13 @@ func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
-// heldVaults is the vaults an installation holds, for an address naming one the
+// lockedVaults is the vaults an installation holds, for an address naming one the
 // window is not showing.
-type heldVaults []domain.Vault
+type lockedVaults []domain.Vault
 
-func (l heldVaults) List() ([]domain.Vault, error) { return l, nil }
+func (l lockedVaults) List() ([]domain.Vault, error) { return l, nil }
 
-func (l heldVaults) FindVault(id string) (domain.Vault, bool, error) {
+func (l lockedVaults) FindVault(id string) (domain.Vault, bool, error) {
 	for _, v := range l {
 		if string(v.ID) == id {
 			return v, true, nil
@@ -49,13 +49,13 @@ func (l heldVaults) FindVault(id string) (domain.Vault, bool, error) {
 	return domain.Vault{}, false, nil
 }
 
-func (l heldVaults) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (l lockedVaults) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 
-func (heldVaults) Save(domain.Vault) error { return nil }
+func (lockedVaults) Save(domain.Vault) error { return nil }
 
-func (heldVaults) Remove(domain.VaultID) error { return nil }
+func (lockedVaults) Remove(domain.VaultID) error { return nil }
 
-func (heldVaults) RecordOpened(domain.VaultID) error { return nil }
+func (lockedVaults) RecordOpened(domain.VaultID) error { return nil }
 
 // openLoopback is the socket a player reaches this API over, closed with the test.
 func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
@@ -102,7 +102,7 @@ func (takenAway) Addr() net.Addr { return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1
 // A socket that stopped answering is said, and gives out no more addresses. An
 // address on a dead socket is a recording that will not play, with nothing
 // anywhere to say why.
-func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
+func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 
 	response := make(chan error, 1)
@@ -128,7 +128,7 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 
 // The address is the whole of what tells this window's own asking from anybody
 // else's, so a request without it is answered with nothing.
-func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
+func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
@@ -153,7 +153,7 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	target := api.state.GetCurrentVault()
-	find := vaults.NewFind(heldVaults{target})
+	find := vaults.NewFind(lockedVaults{target})
 	api.server.find = &find
 	back, handler := openLoopback(t, api)
 

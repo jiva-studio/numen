@@ -181,7 +181,7 @@ func readNote(t *testing.T, api *Services, path string) *v1.ReadBaseline {
 }
 
 // A note holding prose the client has not read is its own answer.
-func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
+func TestWriteNote_ReportsConflictOnUnreadDiskChange(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := readNote(t, api, "Entropy.md")
 
@@ -285,7 +285,7 @@ func (b beatenReader) StatFile(ctx context.Context, path string) (domain.FileSta
 }
 
 // A join reads a note, splices its frontmatter and puts it back.
-func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
+func TestJoinNote_ReportsConflictWhenNoteChanged(t *testing.T) {
 	api := openEditor(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
@@ -417,7 +417,7 @@ func TestEditLoad(t *testing.T) {
 // The window says what currently open, and whoever answers on their behalf
 // reads the last of it.
 
-func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
+func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 	state := &State{}
 	api := &workspaceHandler{state: state}
 

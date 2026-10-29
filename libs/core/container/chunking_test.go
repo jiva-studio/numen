@@ -46,7 +46,7 @@ func TestNoBoundSplitsAtTheDefaultBound(t *testing.T) {
 	}
 }
 
-func TestTheModelSaidIsWhatAChunkIsSplitBelow(t *testing.T) {
+func TestSplitNotes_LimitFollowsEmbeddingMaxTokens(t *testing.T) {
 	cfg := container.DefaultEmbedding()
 	cfg.MaxTokens = 512
 	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {

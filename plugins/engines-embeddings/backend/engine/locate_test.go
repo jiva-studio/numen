@@ -17,7 +17,7 @@ import (
 	"github.com/gomlx/go-huggingface/hub"
 )
 
-func TestLocateRefusesToFetchWhileOffline(t *testing.T) {
+func TestLocate_ErrorsWhenOffline(t *testing.T) {
 	t.Setenv(EnvOffline, "1")
 	t.Setenv(EnvDir, t.TempDir())
 	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
@@ -26,7 +26,7 @@ func TestLocateRefusesToFetchWhileOffline(t *testing.T) {
 	}
 }
 
-func TestLocateRefusesToFetchWhenDownloadIsOff(t *testing.T) {
+func TestLocate_ErrorsWhenDownloadDisabled(t *testing.T) {
 	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo"}, nil)
 	if err == nil || !strings.Contains(err.Error(), "enable download") {
 		t.Fatalf("Locate() error = %v", err)
@@ -115,14 +115,14 @@ func TestLocateUsesAPinnedSnapshotWhileOffline(t *testing.T) {
 	}
 }
 
-func TestLocateRefusesACachedModelWithAnotherSum(t *testing.T) {
+func TestLocate_ErrorsOnModelChecksumMismatch(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "corrupt", "tokenizer.json": "tokens"})
 	if _, err := Locate(context.Background(), pinnedModel("abc"), nil); err == nil || !strings.Contains(err.Error(), "pinned") {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }
 
-func TestLocateRefusesACachedTokenizerWithAnotherSum(t *testing.T) {
+func TestLocate_ErrorsOnTokenizerChecksumMismatch(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "corrupt"})
 	if _, err := Locate(context.Background(), pinnedModel("abc"), nil); err == nil || !strings.Contains(err.Error(), "pinned") {
 		t.Fatalf("Locate() error = %v", err)

@@ -49,7 +49,7 @@ func getPluginDependencyRefusal(mod, dep string) string {
 
 // What getPluginDependencyRefusal says is the whole of the rule, so it is asked
 // directly.
-func TestWhatThePluginDependencyRuleRefuses(t *testing.T) {
+func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 	self := pluginsPrefix + "sample"
 	for _, one := range []struct {
 		dep       string
@@ -300,7 +300,7 @@ func parseSource(t *testing.T, src string) *ast.File {
 
 // What getPluginIDLiterals says is the whole of the rule, so it is asked
 // directly.
-func TestWhatThePluginIDRuleRefuses(t *testing.T) {
+func TestPluginIDRule_RejectsPluginIDLiterals(t *testing.T) {
 	for _, one := range []struct {
 		src       string
 		isRefused bool
@@ -404,7 +404,7 @@ func getAnonymousAssertions(file *ast.File) []token.Pos {
 
 // What getAnonymousAssertions says is the whole of the rule, so it is asked
 // directly.
-func TestWhatTheAnonymousAssertionRuleRefuses(t *testing.T) {
+func TestAnonymousAssertionRule_RejectsInterfaceAssertions(t *testing.T) {
 	for _, one := range []struct {
 		src       string
 		isRefused bool
@@ -450,7 +450,7 @@ func getManifestIssues(data []byte) []error {
 
 // What getManifestIssues says is the whole of the rule, so it is asked
 // directly.
-func TestWhatTheManifestValidatorRefuses(t *testing.T) {
+func TestManifestValidator_RejectsInvalidManifests(t *testing.T) {
 	valid := `{"id":"org.example.sample","name":"Sample","version":"1.0.0"}`
 	if issues := getManifestIssues([]byte(valid)); len(issues) != 0 {
 		t.Fatalf("a valid manifest has issues %v", issues)

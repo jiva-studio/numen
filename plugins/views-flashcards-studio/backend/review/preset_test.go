@@ -670,11 +670,11 @@ func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 // lastAnswer is the instant the schedules below were last answered at.
 var lastAnswer = time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 
-// whereItStands generates where the answers so far have left one review card: how
+// genSchedule generates where the answers so far have left one review card: how
 // long it is sent away for, and how long the scheduler expects it to stay
 // and carries a day it is wanted on like any other: what says nobody has
 // answered it is that it was never answered, and not that nothing is set on it.
-func whereItStands(t *rapid.T) review.Schedule {
+func genSchedule(t *rapid.T) review.Schedule {
 	// Whole days as often as the minutes between them: an interval is counted in
 	// days, so the day it falls exactly on is the case that decides the rule.
 	away := time.Duration(rapid.IntRange(0, 400).Draw(t, "away"))*24*time.Hour +
@@ -703,11 +703,11 @@ func ruleNamed(t *rapid.T) review.Preset {
 }
 
 // preset says and whenever it is asked.
-func TestAReviewCardNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
+func TestIsLearned_UnansweredCardIsNeverLearned(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		p := ruleNamed(t)
-		s := whereItStands(t)
+		s := genSchedule(t)
 		s.Last = time.Time{}
 		pos := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
 		if p.IsLearned(s, pos) {
@@ -726,7 +726,7 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		p := ruleNamed(t)
-		s := whereItStands(t)
+		s := genSchedule(t)
 		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
 		standard := review.Defaults()
@@ -756,7 +756,7 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		s := whereItStands(t)
+		s := genSchedule(t)
 		short := rapid.IntRange(1, 365).Draw(t, "shorter")
 		long := rapid.IntRange(short, 365).Draw(t, "longer")
 		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
@@ -781,7 +781,7 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		s := whereItStands(t)
+		s := genSchedule(t)
 		if s.IsNew() {
 			return
 		}

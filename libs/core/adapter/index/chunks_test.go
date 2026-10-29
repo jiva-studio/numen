@@ -639,7 +639,7 @@ func TestAChunkCannotClaimAnotherVault(t *testing.T) {
 	}
 }
 
-func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
+func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	// Three keys, because three different things go out of date and each one is
 	// repaired by different work: the file, the recipe that read it, and the
 	// model the vectors came from.
@@ -705,7 +705,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	}
 }
 
-func TestAnAnswerAboutWhatOwesWorkResumes(t *testing.T) {
+func TestGetUnembeddedChunks_ResumesFromLastID(t *testing.T) {
 	// A vault holds more chunks than one batch, and the question is asked again
 	// with the last id of the answer before it.
 	ctx := t.Context()

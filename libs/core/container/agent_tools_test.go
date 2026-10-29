@@ -318,8 +318,8 @@ func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 	host, vault, cards := vaultAndCards(t, agent)
 	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
 
-	askedContext := map[string]string{cardKey: "c-7"}
-	steps := runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Context: askedContext})
+	requestContext := map[string]string{cardKey: "c-7"}
+	steps := runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Context: requestContext})
 
 	if last := steps[len(steps)-1]; last.Kind != domain.StepStop || last.Detail != "done" {
 		t.Fatalf("the run stopped with %+v", last)
@@ -341,7 +341,7 @@ func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 		t.Errorf("the calls returned %v", results)
 	}
 	for _, served := range []*toolPlugin{vault, cards} {
-		if requests := served.getRequests(); len(requests) != 1 || !maps.Equal(requests[0].GetContext(), askedContext) {
+		if requests := served.getRequests(); len(requests) != 1 || !maps.Equal(requests[0].GetContext(), requestContext) {
 			t.Errorf("the plugin was called with %v", requests)
 		}
 	}
@@ -433,7 +433,7 @@ func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 }
 
 // While the run goes on, the endpoint answers its token and refuses any other.
-func TestTheEndpointRefusesAnotherToken(t *testing.T) {
+func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
 	run, err := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil).GetAgent().

@@ -307,7 +307,7 @@ func TestAHostWithNoVaultToOfferAnswersThatItHasNone(t *testing.T) {
 	}
 }
 
-func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
+func TestReadFile_ReturnsContentAndStat(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
 	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
@@ -364,7 +364,7 @@ func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
 	}
 }
 
-func TestTheWritersAreHeldUntilTheyAreLetGo(t *testing.T) {
+func TestLockVault_BlocksWritersUntilUnlock(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	locked, err := client.LockVault(t.Context(), connect.NewRequest(&v1.LockVaultRequest{}))
 	if err != nil || locked.Msg.GetLock() == "" {
@@ -399,7 +399,7 @@ func TestTheIndexIsBroughtLevelWithTheFilesNamed(t *testing.T) {
 	}
 }
 
-func TestWhatTheIndexReturnsOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
+func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	client, _ := newVaultFixture(t)
 	ctx := t.Context()
 
@@ -548,7 +548,7 @@ func TestAHeaderNamesTheVaultACallWorks(t *testing.T) {
 	}
 }
 
-func TestEveryVaultTheInstallationKnowsIsListed(t *testing.T) {
+func TestListVaults_ReturnsEveryKnownVault(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	vault.others = map[domain.VaultID]*memoryVault{
 		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
@@ -568,7 +568,7 @@ func TestEveryVaultTheInstallationKnowsIsListed(t *testing.T) {
 	}
 }
 
-func TestWhereTheIndexExistsIsSaid(t *testing.T) {
+func TestGetIndexState_MapsIndexStatus(t *testing.T) {
 	client, vault := newVaultFixture(t)
 	cases := map[pluginport.PluginIndexStatus]v1.HostIndexState{
 		pluginport.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,

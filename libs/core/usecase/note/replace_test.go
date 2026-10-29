@@ -17,7 +17,7 @@ func (c changing) replace() note.Replace {
 }
 
 // What is asked for is replaced, and what is not asked for is the bytes it was.
-func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
+func TestReplace_ChangesOnlyRequestedSpan(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
@@ -118,7 +118,7 @@ func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 
 // A replacement already in the note and an original that is gone is a write
 // that landed. Saying so is what stops it landing twice.
-func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
+func TestReplace_ReportsReplacementAlreadyPresent(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
 

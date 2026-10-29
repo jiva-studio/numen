@@ -13,8 +13,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -233,8 +233,8 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *flashca
 			OwedDue:         int32(preset.Due),
 			OwedNew:         int32(preset.New),
 			Answered:        int32(preset.Answered),
-			AnsweredNew:     int32(preset.AnsweredNew),
-			AnsweredReviews: int32(preset.AnsweredReviews),
+			ReviewedNew:     int32(preset.ReviewedNew),
+			ReviewedReviews: int32(preset.ReviewedReviews),
 			TookMs:          preset.Took.Milliseconds(),
 			New:             int32(preset.Budget.New),
 			Reviews:         int32(preset.Budget.Reviews),

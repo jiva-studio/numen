@@ -152,7 +152,7 @@ func TestARenameFailsWhenTheListCannotBeSaved(t *testing.T) {
 	}
 }
 
-func TestARenameFailsWhenTheIndexRefusesTheVault(t *testing.T) {
+func TestRename_FailsWhenIndexRejectsVault(t *testing.T) {
 	t.Parallel()
 	_, v, registry := twoVaults(t)
 

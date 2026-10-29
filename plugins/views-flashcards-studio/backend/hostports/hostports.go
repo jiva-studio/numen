@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
@@ -87,8 +87,8 @@ func readError(err error) error {
 	switch {
 	case errors.Is(err, host.ErrAlreadyExists):
 		return ports.ErrAlreadyExists
-	case errors.Is(err, host.ErrHeldByAnother):
-		return ports.ErrHeldByAnother
+	case errors.Is(err, host.ErrLockedByAnother):
+		return ports.ErrLockedByAnother
 	}
 	return err
 }

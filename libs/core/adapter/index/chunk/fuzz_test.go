@@ -34,8 +34,8 @@ var typedSeeds = []string{
 	"",
 }
 
-// mostAsked is how much of what was typed is put to a database.
-const mostAsked = 256
+// maxQueryLength is how much of what was typed is put to a database.
+const maxQueryLength = 256
 
 // Nothing a person can type reaches FTS5 as syntax. Whatever is typed, the
 // expression it is turned into is a query FTS5 accepts, and the words it asks
@@ -70,7 +70,7 @@ func FuzzExpression(f *testing.F) {
 		// database is what a search box could hold. The round trip below is
 		// asked of every length.
 		expression := Expression(typed, growing)
-		if len(typed) <= mostAsked && !strings.ContainsRune(expression, 0) {
+		if len(typed) <= maxQueryLength && !strings.ContainsRune(expression, 0) {
 			var count int
 			row := db.QueryRow(`SELECT count(*) FROM said WHERE text MATCH ?`, expression)
 			// An empty expression is not a query, and no search is made.

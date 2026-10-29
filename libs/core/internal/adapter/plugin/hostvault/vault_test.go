@@ -89,7 +89,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	}
 }
 
-func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T) {
+func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 	access, v := diskVault(t, map[string]string{"samples/A.md": "body"})
 	var indexed []string
 	access.Index = func(_ context.Context, got domain.Vault, paths []string) error {
@@ -144,7 +144,7 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 	}
 }
 
-func TestACacheIsCachedPerPluginAndNameAndRefusesNamesThatEscape(t *testing.T) {
+func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 	access, _ := diskVault(t, nil)
 
 	if _, found, err := access.ReadCache(t.Context(), "md.numen.a", "schedules"); err != nil || found {

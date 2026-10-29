@@ -100,7 +100,7 @@ func TestStartPointsEveryFolderLookupAtTheFolderItWasGiven(t *testing.T) {
 	}
 }
 
-func TestStartAnswersTheErrorOfAFolderTheEnvironmentRefuses(t *testing.T) {
+func TestStart_ReturnsSetenvError(t *testing.T) {
 	keepEnvironment(t)
 	port, err := Start("a\x00folder")
 	var sysErr *os.SyscallError
@@ -622,7 +622,7 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	}
 }
 
-func TestRegisterVaultFilesAVaultReachedByALinkOnceWhicheverWayItIsAskedFor(t *testing.T) {
+func TestRegisterVault_SymlinkAndTargetShareOneEntry(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "target")
 	if err := os.Mkdir(target, 0o755); err != nil {
@@ -706,7 +706,7 @@ func closeListenersOf(t *testing.T, server *http.Server) {
 	}
 }
 
-func TestPortIsZeroAndTheErrorIsSaidOnceTheServerStopsAcceptingOnItsOwn(t *testing.T) {
+func TestPort_ZeroAndErrorLoggedAfterServerStopsAccepting(t *testing.T) {
 	read := captureStderr(t)
 	startIn(t, t.TempDir())
 	mu.Lock()

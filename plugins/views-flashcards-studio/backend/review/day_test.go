@@ -73,7 +73,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	}
 }
 
-func TestACardNobodyAnsweredIsOwed(t *testing.T) {
+func TestDayIsOwed_UnansweredCard(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
 	if !day.IsOwed(review.Schedule{}, time.Now()) {
 		t.Error("a card with no answers behind it is not owed")
@@ -216,7 +216,7 @@ func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 // What was answered on a day is a sum: an answer taken back is not in it, a
 // line that stands twice is counted once, and nothing depends on the order the
 // answers were read in.
-func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
+func TestGetDayTallies_CountsAnswersPerDay(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	one := review.Answer{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"), Rating: review.Good}
 	two := review.Answer{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Again}
@@ -239,7 +239,7 @@ func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
 
 // A day says how each of the four was answered on it, because fifty cards a
 // person could not recall is a different day from fifty they could.
-func TestADayReturnsHowEachOfTheFourWasAnswered(t *testing.T) {
+func TestGetDayTallies_CountsPerRating(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	response := func(id string, r review.Rating) review.Answer {
 		return review.Answer{
@@ -311,7 +311,7 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 // A preset counting in cards counts a card rated again as the one card, and a
 // preset counting in shows counts each time it was put to the person. The time
 // spent is the same time either way.
-func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
+func TestGetSpentTime_CountsCardsAndShows(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	underMap := map[review.ReviewCardID]string{on: "Steady.md"}
 
@@ -366,7 +366,7 @@ func TestTheFirstAnswerOfAReviewCardIsTheEarliestOne(t *testing.T) {
 
 // One answer counts an hour of it at most, whatever the card stood on the
 // screen for.
-func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
+func TestGetSpentTime_CapsLongAnswer(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	underMap := map[review.ReviewCardID]string{on: ""}
 
@@ -384,7 +384,7 @@ func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
 // The review cards a day has answered are the day's however late it ran. A card
 // answered at one in the morning was answered that evening, and a budget
 // counting in cards has already charged it.
-func TestTheCardsADayAnsweredAreCountedByTheDayTheyFallIn(t *testing.T) {
+func TestGetReviewed_GroupsByDayOfAnswer(t *testing.T) {
 	evening := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	night := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
 	morning := review.ReviewCardID{Card: "3f4g5h6j7k", Template: "Recognise"}
@@ -427,7 +427,7 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 }
 
 // sat down this morning has not broken anything.
-func TestADayNotAnsweredOnYetDoesNotEndAStreak(t *testing.T) {
+func TestStreak_OpenDayDoesNotEndStreak(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-27": 2, "2026-08-28": 9})
 
 	if got := review.Streak(counting, days, moment(t, "2026-08-29T09:00:00")); got != 2 {
@@ -463,7 +463,7 @@ func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 	}
 }
 
-func TestNothingAnsweredIsNoStreak(t *testing.T) {
+func TestStreak_ZeroWithoutAnswers(t *testing.T) {
 	if got := review.Streak(counting, nil, moment(t, "2026-08-29T09:00:00")); got != 0 {
 		t.Errorf("the streak is %d", got)
 	}
@@ -504,7 +504,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 
 // A card a person had learned and could not recall is asked and not recalled,
 // which is what the number is for.
-func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
+func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	delta := review.NewFSRS()
 

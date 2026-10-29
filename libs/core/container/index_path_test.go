@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-func TestOpenIndexRefusesConfigWithoutIndexPath(t *testing.T) {
+func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
 	cfg := container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
 	if _, err := cfg.OpenIndex(t.Context()); !errors.Is(err, container.ErrNoIndexPath) {
 		t.Fatalf("OpenIndex without IndexPath: %v, want ErrNoIndexPath", err)

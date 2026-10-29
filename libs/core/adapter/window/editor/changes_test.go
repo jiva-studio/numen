@@ -409,7 +409,7 @@ type held struct {
 	once  sync.Once
 }
 
-func newHeld() *held {
+func newBlockedWriter() *held {
 	return &held{begun: make(chan struct{}, 1), until: make(chan struct{})}
 }
 
@@ -459,7 +459,7 @@ func (w records) Write(
 // TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses. The window may not
 // take the vault away from a write that is already on its way to it.
 func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
-	hold := newHeld()
+	hold := newBlockedWriter()
 	f := openWindow(t, hold, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	defer hold.release()
 
@@ -521,9 +521,9 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	}
 }
 
-// TestTheQuitWaitsForThePageToWriteWhatItOwes. The owed write is a buffer in
+// TestQuit_WaitsForPageFlush. The owed write is a buffer in
 // the webview, so the quit asks for it and does not go until it has landed.
-func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
+func TestQuit_WaitsForPageFlush(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	listening, hangUp := context.WithCancel(t.Context())
@@ -755,8 +755,8 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	}
 }
 
-// TestTheWindowGoesOnceTheQuestionsAreAnswered.
-func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
+// TestFlushPending_ClosesAfterQuestionsAnswered.
+func TestFlushPending_ClosesAfterQuestionsAnswered(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.installation.Close() })
 
@@ -963,7 +963,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 
 // A setting written is answered by the next question, and the model chosen for
 // the agent stands where the models said it would.
-func TestASettingSavedIsAnsweredByTheNextQuestion(t *testing.T) {
+func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
@@ -1273,7 +1273,7 @@ func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	}
 }
 
-func TestEachModeIsAskedByItself(t *testing.T) {
+func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -1358,7 +1358,7 @@ func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 	}
 }
 
-func TestAnAnswerIsSplitToWhatWasAskedFor(t *testing.T) {
+func TestSearchNames_HonorsLimit(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"a.md": "# Entropy one\n",
 		"b.md": "# Entropy two\n",
@@ -1376,7 +1376,7 @@ func TestAnAnswerIsSplitToWhatWasAskedFor(t *testing.T) {
 	}
 }
 
-func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
+func TestSearchPassages_BlankQueryReturnsNothing(t *testing.T) {
 	client, _ := openVault(t, map[string]string{"a.md": "# Entropy\n"})
 
 	for _, query := range []string{"", "   "} {
@@ -1469,7 +1469,7 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	}
 }
 
-func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
+func TestListHeadings_DeduplicatesPaths(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
@@ -1486,10 +1486,10 @@ func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
 	}
 }
 
-// TestMorePathsThanAreAnsweredAtOnceAreRefused. A note carrying no headings is
+// TestListHeadings_RejectsTooManyPaths. A note carrying no headings is
 // absent from the answer, so an answer cut to fit the ceiling would be one a
 // caller cannot tell from a note with nothing in it.
-func TestMorePathsThanAreAnsweredAtOnceAreRefused(t *testing.T) {
+func TestListHeadings_RejectsTooManyPaths(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})

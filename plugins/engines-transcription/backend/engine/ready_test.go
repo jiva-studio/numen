@@ -21,7 +21,7 @@ func writeEmptyFile(t *testing.T, dir, name string) string {
 // Ready is answered by what is on this machine: a path written down is the
 // file it names, the four files of the transducer are looked for by name in the
 // models folder, and a name that is neither is not fetched.
-func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
+func TestReady_ChecksLocalModelFiles(t *testing.T) {
 	dir := t.TempDir()
 	runtime := writeEmptyFile(t, dir, "libonnxruntime.so")
 	segmenterPath := writeEmptyFile(t, dir, "silero.onnx")

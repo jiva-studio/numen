@@ -100,7 +100,7 @@ func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
 	}
 }
 
-func TestANameNothingWasAddedBelowAndArgumentsThatAreNoObjectAreAnsweredWithAnErrorCode(t *testing.T) {
+func TestCall_UnknownNameAndNonObjectArgsReturnErrorCode(t *testing.T) {
 	registry := newRegistry(t)
 
 	if got := call(t, registry, "other", `{}`).GetError(); got != numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
@@ -111,7 +111,7 @@ func TestANameNothingWasAddedBelowAndArgumentsThatAreNoObjectAreAnsweredWithAnEr
 	}
 }
 
-func TestATextResultIsAnsweredAsText(t *testing.T) {
+func TestCall_TextResultReturnsText(t *testing.T) {
 	registry := tools.New()
 	if err := tools.Add(registry, tools.Spec{Name: "count", Effect: tools.ReadOnly}, func(context.Context, struct{}) (int, error) {
 		return 3, nil
@@ -138,7 +138,7 @@ func TestTwoToolsOfOneNameAreRefused(t *testing.T) {
 	}
 }
 
-func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
+func TestCall_ContextCarriesTokenMark(t *testing.T) {
 	registry := tools.New()
 	type in struct{}
 	type out struct {
@@ -159,7 +159,7 @@ func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
 	}
 }
 
-func TestACallKnowsTheVaultItWorks(t *testing.T) {
+func TestCall_ContextCarriesVault(t *testing.T) {
 	registry := tools.New()
 	type in struct{}
 	type out struct {

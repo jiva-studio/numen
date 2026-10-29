@@ -132,7 +132,7 @@ func askStub(t *testing.T, script, model, level string) (said, stopReason string
 	return said, stopReason
 }
 
-func TestAFamilyAskedWithoutALevelRunsTheModelOfItsDefaultLevel(t *testing.T) {
+func TestModels_FamilyWithoutLevelUsesDefaultLevelModel(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	cases := []struct{ name, listing, level, want string }{

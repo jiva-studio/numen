@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestASizeIsHeldToItsBound(t *testing.T) {
+func TestWrite_EnforcesSizeLimit(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		name           string
@@ -66,7 +66,7 @@ func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 	}
 }
 
-func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
+func TestWrite_EnforcesWriterLimit(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
 	body := strings.Repeat("x", note.MaxBytes+1)
@@ -172,7 +172,7 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 	}
 }
 
-func TestAWriterWithASmallerBoundRefusesWhatTheDefaultAllows(t *testing.T) {
+func TestWrite_SmallerWriterLimitRejectsDefaultAllowed(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
 	small := c.newWrite()

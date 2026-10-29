@@ -457,7 +457,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	want := []flashcards.PresetCardsDue{
 		{
 			Preset: "", Decks: 1, Cards: 1, Due: 1,
-			Answered: 1, AnsweredNew: 1, Took: 4 * time.Second,
+			Answered: 1, ReviewedNew: 1, Took: 4 * time.Second,
 			Budget: review.Budget{New: 10, Reviews: 200, Minutes: 20},
 			Limits: review.Limits{
 				Minutes: review.ClosedMinutes, Backlog: review.ClosedBacklog,
@@ -465,7 +465,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 		},
 		{
 			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Due: 2,
-			Answered: 2, AnsweredNew: 2, Took: 15 * time.Second,
+			Answered: 2, ReviewedNew: 2, Took: 15 * time.Second,
 			Budget: review.Budget{New: 4, Reviews: 23, Minutes: 10},
 			Limits: review.Limits{
 				Minutes: review.ClosedMinutes, Backlog: review.ClosedBacklog,
@@ -542,7 +542,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 
 // What was answered on another day is not what today came to, and neither is an
 // answer taken back.
-func TestADayContainsWhatWasAnsweredInIt(t *testing.T) {
+func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
 
@@ -570,7 +570,7 @@ func TestADayContainsWhatWasAnsweredInIt(t *testing.T) {
 // What a day came to is counted deck by deck as well as preset by preset, so a
 // deck nobody answered today is not carried by the one beside it under the same
 // preset.
-func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
+func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
 
@@ -797,7 +797,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 	}
 }
 
-func TestADeckNobodyHasAnsweredExistsAtNothingLearned(t *testing.T) {
+func TestCountCardsDue_UnansweredDeckHasZeroLearned(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
 
@@ -875,7 +875,7 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 
 // What a person answered on a day is counted from the vault's own answers, and
 // the days are named for the day they began on.
-func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
+func TestCountAnswers_GroupsByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
@@ -912,7 +912,7 @@ func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 }
 
 // not a failure.
-func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
+func TestCountAnswers_EmptyVaultHasNoDays(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -1091,7 +1091,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	}
 }
 
-func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
+func TestCountAnswers_EmptyVaultHasNoDueCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -1598,7 +1598,7 @@ func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 
 // A name several notes answer to resolves to the nearest, and a person reading
 // the wrong note has no other way to find out.
-func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
+func TestReadNeighbourhood_MarksAmbiguousName(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md":     "---\ntype: deck\n---\n\nCut from [[Migration]].\n",

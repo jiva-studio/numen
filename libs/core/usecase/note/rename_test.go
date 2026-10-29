@@ -294,7 +294,7 @@ func TestAFileRenamedBelowFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T
 	}
 }
 
-func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
+func TestRename_RejectsExistingTarget(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Old.md":     "---\ntitle: Old\n---\nA measure.\n",
@@ -331,7 +331,7 @@ func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) er
 
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
-func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
+func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
@@ -353,7 +353,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 	}
 }
 
-func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
+func TestRename_RejectsInvalidTitle(t *testing.T) {
 	t.Parallel()
 	for name, title := range map[string]string{
 		"nothing at all":                "",
@@ -403,7 +403,7 @@ func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 
 // A title longer than a filename will take is cut to make the name, and the
 // whole of it goes into the note, where the order of resolution finds it.
-func TestALongTitleIsSplitFromTheNameAndCachedWhole(t *testing.T) {
+func TestRename_LongTitleTruncatesNameAndCachesFullTitle(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
 	title := strings.TrimSpace(strings.Repeat("disorder ", 20))

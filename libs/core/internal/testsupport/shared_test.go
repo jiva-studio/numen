@@ -52,7 +52,7 @@ func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 
 // Put over the schema's own files, the rule has to refuse the two halves apart:
 // a file that answers with something, and a file that reaches for something.
-func TestWhatTheSharedFileRuleRefuses(t *testing.T) {
+func TestSharedFileRule_ReportsViolations(t *testing.T) {
 	for _, one := range []struct {
 		path string
 		why  []string

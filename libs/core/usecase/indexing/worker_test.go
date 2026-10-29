@@ -456,7 +456,7 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 
 // The versions of a file changed are a pass that cuts it again and gives the
 // vault the vectors it owes.
-func TestVersionChangeEmbedsWhatTheVaultOwes(t *testing.T) {
+func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)

@@ -33,7 +33,7 @@ func TestAStoreKeepsWhatIsAppendedAndListsIt(t *testing.T) {
 	}
 }
 
-func TestAStoreRefusesWhatTheHostRefuses(t *testing.T) {
+func TestPluginStore_RejectsWhatHostRejects(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.New("Physics")
 	s := v.Store()

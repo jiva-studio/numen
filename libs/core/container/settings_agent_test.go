@@ -45,9 +45,9 @@ func TestASettingsAgentTaskNamingNoProgramGoesToTheProgramTheSettingsUse(t *test
 
 	runTask(t, agent, agentport.Task{Question: "q", Conversation: "c-1"})
 
-	requests := one.getAsked()
-	if len(requests) != 1 || len(two.getAsked()) != 0 {
-		t.Fatalf("the first plugin was asked %d times and the second %d", len(requests), len(two.getAsked()))
+	requests := one.getRequested()
+	if len(requests) != 1 || len(two.getRequested()) != 0 {
+		t.Fatalf("the first plugin was asked %d times and the second %d", len(requests), len(two.getRequested()))
 	}
 	if got := requests[0]; got.GetAgent() != "alpha" || got.GetModel() != "section-model" ||
 		!slices.Equal(got.GetCommand(), []string{"/bin/alpha"}) || got.GetPrompt() != "q" {
@@ -69,7 +69,7 @@ func TestASettingsAgentTaskGoesToTheDefaultWhereTheSettingsNameNone(t *testing.T
 
 	runTask(t, agent, agentport.Task{Question: "q"})
 
-	if requests := one.getAsked(); len(requests) != 1 || requests[0].GetAgent() != "alpha" {
+	if requests := one.getRequested(); len(requests) != 1 || requests[0].GetAgent() != "alpha" {
 		t.Errorf("the default plugin was asked %v", requests)
 	}
 }
@@ -81,21 +81,21 @@ func TestASettingsAgentTaskNamingAProgramGoesToIt(t *testing.T) {
 
 	runTask(t, agent, agentport.Task{Question: "q", Agent: "beta", Model: "asked-model"})
 
-	if requests := two.getAsked(); len(requests) != 1 || len(one.getAsked()) != 0 ||
+	if requests := two.getRequested(); len(requests) != 1 || len(one.getRequested()) != 0 ||
 		requests[0].GetAgent() != "beta" || requests[0].GetModel() != "asked-model" {
-		t.Errorf("the second plugin was asked %v, the first %v", requests, one.getAsked())
+		t.Errorf("the second plugin was asked %v, the first %v", requests, one.getRequested())
 	}
 }
 
 // Settings that turn the agent off refuse a task naming no program.
-func TestASettingsAgentRefusesATaskWhereTheSettingsTurnTheAgentOff(t *testing.T) {
+func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 	host, one, two := twoProviders(t)
 	agent := openSettingsAgent(t, host, `{"agent": {"use": ""}}`)
 
 	if _, err := agent.StartRun(t.Context(), agentport.Task{Question: "q"}); err == nil {
 		t.Error("a task was taken with the agent turned off")
 	}
-	if len(one.getAsked())+len(two.getAsked()) != 0 {
+	if len(one.getRequested())+len(two.getRequested()) != 0 {
 		t.Error("a plugin was asked")
 	}
 }

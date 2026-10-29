@@ -64,7 +64,7 @@ type hand struct {
 	lostChan chan struct{}
 }
 
-func byHand() *hand {
+func newManualWatcher() *hand {
 	return &hand{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
 
@@ -309,7 +309,7 @@ func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) str
 // through the watch and through nothing else, and the vault is read for the
 // first time with the person already working in it.
 func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	readers := newSlowWait()
 	defer readers.release()
 
@@ -342,7 +342,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 // TestANoteChangedUnderTheScanIsReadAgain. The scan writes in groups from what
 // it read, so its copy of a note lands last however early the note was read.
 func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	readers := newSlowWait()
 	defer readers.release()
 
@@ -369,7 +369,7 @@ func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
 // TestANoteDeletedUnderTheScanStaysDeleted. The scan holds a copy of a note it
 // read, and the note went while it held it.
 func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	readers := newSlowWait()
 	defer readers.release()
 
@@ -397,7 +397,7 @@ func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
 // was when it walked it, and what it does not hold in that list it leaves
 // alone.
 func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	readers := newSlowWait()
 	defer readers.release()
 
@@ -423,7 +423,7 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 
 // TestAVaultWhoseScanFailedIsStillFollowed. A vault that could not be read is
 func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, watcher, unreadable{VaultReaders: vaultreader.Readers{}})
@@ -455,7 +455,7 @@ func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 
 // TestAWatchThatStopsSaysSo.
 func TestAWatchThatStopsReturnsSo(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, watcher, vaultreader.Readers{})
@@ -531,7 +531,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	readers := vaultreader.Readers{}
-	watcher := byHand()
+	watcher := newManualWatcher()
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
@@ -890,7 +890,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 }
 
 // size for themselves is what it is release for.
-func TestASizeSaidForOneLaunchExistsUntilAPersonChoosesOne(t *testing.T) {
+func TestListThemes_LaunchScaleAppliesUntilUserSetsScale(t *testing.T) {
 	cfg := newConfig(t)
 	cfg.InterfaceScale = 1.25
 	client := newThemeClient(t, cfg)

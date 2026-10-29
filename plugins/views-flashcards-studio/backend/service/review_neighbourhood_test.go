@@ -54,7 +54,7 @@ func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T
 // A note the deck points at that cannot be read comes back named the way the
 // editor names it, so a person meets one vocabulary for a rejected note and not
 // one for each window.
-func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
+func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 	api, target := newAPI(t, joined)
 	v := target[0]
 
@@ -126,7 +126,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 
 // A note the deck points at is said to be pointed at, and a note pointing at
 // the deck is not. Every entry is a note of the vault.
-func TestANoteIsSaidToBePointedAtOnlyWhereTheDeckPointsAtIt(t *testing.T) {
+func TestGetDeckNeighbourhood_MarksOnlyDeckLinkedNotes(t *testing.T) {
 	api, target := newAPI(t, backlinked)
 
 	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{

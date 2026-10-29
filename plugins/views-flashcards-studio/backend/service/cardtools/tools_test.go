@@ -209,9 +209,9 @@ func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	}
 }
 
-// TestADeckAnswersWithTheFieldsItWasAskedFor. A card holds as much as a person
+// TestDeckRead_ReturnsRequestedFieldsOnly. A card holds as much as a person
 // wrote under it, and a call that wants one field pays for one field.
-func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
+func TestDeckRead_ReturnsRequestedFieldsOnly(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	read := readCards(t, session, map[string]any{
@@ -345,9 +345,9 @@ func TestACardOfAMarkTwoCardsCarryIsNotSavedTo(t *testing.T) {
 	}
 }
 
-// TestACardIsAddedToTheSectionItWasAskedFor. A person divides a deck, so an
+// TestCardAdd_UsesRequestedSection. A person divides a deck, so an
 // agent writing into it says which run of it a card belongs to.
-func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
+func TestCardAdd_UsesRequestedSection(t *testing.T) {
 	session, v := newSession(t, map[string]string{
 		"Animal.md": animalCardModel,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
@@ -989,7 +989,7 @@ func TestACardModelIsReadAndEditedInPlace(t *testing.T) {
 }
 
 // Reading a non-card model note as a card model fails.
-func TestACardModelReadRefusesNonCardModel(t *testing.T) {
+func TestCardModelRead_ErrorsOnNonCardModel(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	response := getToolError(t, session, "card_model_read", map[string]any{

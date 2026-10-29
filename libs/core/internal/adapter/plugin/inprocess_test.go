@@ -458,7 +458,7 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 }
 
 // A built-in plugin's permissions are the built-in's again when its copy on disk leaves.
-func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
+func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)

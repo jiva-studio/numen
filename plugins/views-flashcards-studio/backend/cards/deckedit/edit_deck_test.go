@@ -115,7 +115,7 @@ func (e editing) version(t *testing.T) deckedit.DeckVersion {
 	return deckedit.DeckVersion{Path: mammals, FileStat: got.FileStat}
 }
 
-func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
+func TestPageCards_ReturnsRunOrSingleCardWithRequestedFields(t *testing.T) {
 	e := newEditing(t)
 
 	whole, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: mammals, Limit: 50})

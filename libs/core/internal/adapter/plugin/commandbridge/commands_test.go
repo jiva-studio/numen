@@ -156,7 +156,7 @@ func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	}
 }
 
-func TestACommandThatFailsIsTheFailureWithWhatThePluginSaid(t *testing.T) {
+func TestRunCommand_FailureCarriesPluginMessage(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{
 		Error: v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, Message: "the disk is full",
 	}}

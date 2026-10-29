@@ -86,7 +86,7 @@ func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
 }
 
 // A file that appears between the question and the read is answered by its
-func TestAFileThatAppearsAfterItWasAskedAboutIsNotANote(t *testing.T) {
+func TestRead_FileAppearingAfterLookupIsNotNote(t *testing.T) {
 	t.Parallel()
 
 	got, err := readStated(t, statedReader{statErr: fs.ErrNotExist, raw: []byte("# Entropy\n")})
@@ -131,7 +131,7 @@ func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 	}
 }
 
-func TestAPathTheVaultRefusesAsANoteIsNotANote(t *testing.T) {
+func TestRead_PathRejectedByVaultIsNotNote(t *testing.T) {
 	t.Parallel()
 
 	got, err := readStated(t, statedReader{statErr: vaultport.ErrNotANote, raw: []byte("# Entropy\n")})

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
@@ -16,9 +16,9 @@ var errNoVault = errors.New("the call names no vault")
 // The keys of what the host tells a tool about the window the agent was started from. The review
 // writes them, under this plugin's id, as the context of the question.
 const (
-	askedDeck     = "md.numen.views.flashcards.studio/deck"
-	askedCard     = "md.numen.views.flashcards.studio/card"
-	askedTemplate = "md.numen.views.flashcards.studio/template"
+	requestedDeck     = "md.numen.views.flashcards.studio/deck"
+	requestedCard     = "md.numen.views.flashcards.studio/card"
+	requestedTemplate = "md.numen.views.flashcards.studio/template"
 )
 
 // Tools provides MCP tools for interacting with flashcards.

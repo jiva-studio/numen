@@ -105,7 +105,7 @@ func TestARouterIsRefusedWhatItCannotWorkWithout(t *testing.T) {
 
 // A plugin naming no agent is answered by the default agent and model, through
 // a task that names no tool and no conversation.
-func TestAPluginNamingNoAgentIsAnsweredByTheDefault(t *testing.T) {
+func TestRouter_NoAgentNamedUsesDefault(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}}, choices{}, fake)
 
@@ -166,7 +166,7 @@ func TestAPluginsOwnChoiceExistsOverTheDefault(t *testing.T) {
 
 // The agent a plugin's setting names fails the question as it fails: the
 // question is not taken to any other agent.
-func TestAMissingAgentFailsTheQuestionWithNoOtherAgentAsked(t *testing.T) {
+func TestRouter_MissingAgentFailsWithoutFallback(t *testing.T) {
 	fake := &programs{getErr: completionport.ErrNoRoute}
 	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}},
 		choices{"plugin.a": {Agent: "absent"}}, fake)

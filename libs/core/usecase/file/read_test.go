@@ -66,7 +66,7 @@ func TestANoteIsReadAsTheFileItIs(t *testing.T) {
 
 // A transcript is long, and an agent reads it a range at a time: what the answer
 // says about the range is what the next call is asked with.
-func TestALongFileIsReadARangeAtATime(t *testing.T) {
+func TestRead_LongFileReadsByRange(t *testing.T) {
 	whole := strings.Repeat("one line of what was said\n", 400)
 	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
 
@@ -158,7 +158,7 @@ func TestARangeReachingTheEndOfTheFileIsNotSplit(t *testing.T) {
 
 // A range goes out in a string field, so bytes that are not text are named as
 // such and not carried.
-func TestAFileThatIsNotTextIsSaidToBeNotText(t *testing.T) {
+func TestRead_NonTextFileReportsNotText(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"scan.txt": "words \xff\xfe more"})
 
 	got := read(t, u, v, "scan.txt", 0, 0)
@@ -251,7 +251,7 @@ func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
 
 // A folder is not a file, and a path holding one is answered and not being
 // opened and read.
-func TestAPathContainingAFolderIsSaidToBeOne(t *testing.T) {
+func TestRead_FolderPathReportsFolder(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lectures/kinetics.txt": "said"})
 
 	if got := read(t, u, v, "lectures", 0, 0); got.Outcome != file.AFolder {

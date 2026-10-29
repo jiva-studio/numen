@@ -25,7 +25,7 @@ func TestAQuestionIsReadWithItsMessagesAndPurpose(t *testing.T) {
 }
 
 // error is none.
-func TestAErrorIsAnsweredWithItsCode(t *testing.T) {
+func TestCompletion_ErrorResponseCarriesCode(t *testing.T) {
 	for _, tc := range []struct {
 		err  error
 		want v1.CompletionErrorCode

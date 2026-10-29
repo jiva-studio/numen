@@ -200,7 +200,7 @@ func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (t
 // TestANoteSavedGetsItsVectorsBack. A save cuts the note again, and its chunks
 // owe their vectors from the moment they are written.
 func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	readers := newWalking()
 	model := &fakeEmbedder{dims: 64}
 
@@ -232,7 +232,7 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	const saves = 8
 
-	watcher := byHand()
+	watcher := newManualWatcher()
 	readers := newWalking()
 	model := &fakeEmbedder{dims: 64}
 
@@ -300,7 +300,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 // TestANoteWrittenAfterTheScanFailedIsEmbedded. A vault that could not be read
 // is a vault somebody is still writing in, and what they write is embedded.
 func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
-	watcher := byHand()
+	watcher := newManualWatcher()
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
@@ -368,7 +368,7 @@ func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Co
 
 // The embedder an installation configured reaches the search as well as the
 // filling of the index, and this asks for it.
-func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
+func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
 	if err := os.MkdirAll(pDir, 0o755); err != nil {

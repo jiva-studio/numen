@@ -69,9 +69,9 @@ func findMatching(pattern string) []string {
 	return out
 }
 
-// getBesideDirs returns the folders a library may stand beside: the plugin, its
+// getAdjacentDirs returns the folders a library may stand beside: the plugin, its
 // bin folder and the host, each with its models folder.
-func getBesideDirs(pluginDir string) []string {
+func getAdjacentDirs(pluginDir string) []string {
 	dirs := []string{pluginDir, filepath.Join(pluginDir, "bin")}
 	if self, err := os.Executable(); err == nil {
 		dirs = append(dirs, filepath.Dir(self))
@@ -100,7 +100,7 @@ func getCandidates(pluginDir, home, librarySum string, machine []string) []strin
 func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, storePattern string) []string {
 	name := getLibraryName(runtime.GOOS)
 	var out []string
-	for _, dir := range getBesideDirs(pluginDir) {
+	for _, dir := range getAdjacentDirs(pluginDir) {
 		if pos := filepath.Join(dir, name); isFile(pos) {
 			out = append(out, pos)
 		}

@@ -93,7 +93,7 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 // theme is an ordinary stylesheet a person may have downloaded, and the policy
 // is the whole of what stops one reaching the network: a remote `url()` is
 // into is permitted by `style-src`.
-func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
+func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 	target := csp.Sources{}.Policy()
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
@@ -124,11 +124,11 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 	}
 }
 
-// TestEveryServiceTheVaultIsAskedAboutIsMounted. Four services answer about the
+// TestHandler_MountsEveryVaultService. Four services answer about the
 // handler the application hands over. A route nothing is mounted at falls
 // through to the pages and is answered not found; a route a service holds
 // answers a GET as a method that call does not take.
-func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
+func TestHandler_MountsEveryVaultService(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
@@ -314,7 +314,7 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 
 // A build that cannot say what it wears serves the page as it was built, and
 // the tokens the build carries stand.
-func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
+func TestPages_ServesUnthemedPageUnchanged(t *testing.T) {
 	files, err := Pages()
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
@@ -375,11 +375,11 @@ func (blockingVaults) Save(domain.Vault) error                   { return nil }
 func (blockingVaults) Remove(domain.VaultID) error               { return nil }
 func (blockingVaults) RecordOpened(domain.VaultID) error         { return nil }
 
-// TestTheDoorShutsPriorTheQuestionsAlreadyTaken. A search, a note and a link
+// TestHandler_ClosingWaitsForInFlightRequests. A search, a note and a link
 // are answered straight from the index, and one that passed the door a moment
 // before it shut is still on the index when everything an answer reaches into
 // is taken away.
-func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
+func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	begun := make(chan struct{}, 1)
 	until := make(chan struct{})
 	b := blockingVaults{begun: begun, until: until}

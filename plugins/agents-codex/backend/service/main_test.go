@@ -136,7 +136,7 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 
 // A listing that failed is left alone for a while and then asked for again, and what Codex lists then is
 // cached.
-func TestAFailedCodexListingIsAskedForAgain(t *testing.T) {
+func TestModels_FailedListingIsRequeried(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	failing := agenttest.WriteScript(t, "codex", "exit 1\n")

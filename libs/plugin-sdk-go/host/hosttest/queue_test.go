@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 )
 
-func enqueueBehind(t *testing.T, q *hosttest.Queue, isUserStarted bool) <-chan host.Turn {
+func enqueueAfter(t *testing.T, q *hosttest.Queue, isUserStarted bool) <-chan host.Turn {
 	t.Helper()
 	turns := make(chan host.Turn, 1)
 	queued := make(chan struct{})
@@ -33,8 +33,8 @@ func TestQueueRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	contended := first.WatchWaiting()
-	background := enqueueBehind(t, q, false)
-	requested := enqueueBehind(t, q, true)
+	background := enqueueAfter(t, q, false)
+	requested := enqueueAfter(t, q, true)
 	select {
 	case <-contended:
 	default:

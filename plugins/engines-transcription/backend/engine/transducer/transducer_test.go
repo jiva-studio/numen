@@ -79,7 +79,7 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	}
 }
 
-func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
+func TestDecode_ErrorsOnNarrowJoiner(t *testing.T) {
 	_, err := Decoder{
 		Frames:    1,
 		Blank:     8192,
@@ -94,7 +94,7 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	}
 }
 
-func TestDecodeRefusesJoinerWithNoStepScores(t *testing.T) {
+func TestDecode_ErrorsOnJoinerWithoutStepScores(t *testing.T) {
 	const blank = 3
 	_, err := Decoder{
 		Frames:    1,

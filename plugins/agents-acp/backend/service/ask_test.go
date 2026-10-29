@@ -250,7 +250,7 @@ func TestTheProgramsAreTheACPAgentsTheSettingsName(t *testing.T) {
 }
 
 // The session has no MCP servers, the client offers no file system or terminal, and every request
-func TestAskAgentRefusesEveryRequestOfTheAgent(t *testing.T) {
+func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "plain")
 
 	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"})

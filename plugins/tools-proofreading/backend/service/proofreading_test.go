@@ -211,7 +211,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 	}
 }
 
-func TestProofreadAsksAboutALongTranscriptAWindowAtATime(t *testing.T) {
+func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 	s := newScene(t)
 	s.settings.updateConfig(map[string]string{"batch_size": "2", "overlap": "1", "in_flight": "1"})
 	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
@@ -262,7 +262,7 @@ func TestTheVersionMadeFromARecognitionStaysLiveWithTheOCRPluginOff(t *testing.T
 	}
 }
 
-func TestProofreadRefusesWhatItCannotRead(t *testing.T) {
+func TestProofread_ErrorsOnUnreadableInput(t *testing.T) {
 	s := newScene(t)
 	s.run.kinds = map[domain.TextKind]bool{kindRecognition: true}
 	article := s.hold(t, layerID, "notes/article.url", "article", "article", "", []domain.TextSegment{{Text: "words"}})
@@ -322,7 +322,7 @@ func TestCreateTextOfTheFileIsInvalid(t *testing.T) {
 	}
 }
 
-func TestTheModelIsAskedByPurposeAlone(t *testing.T) {
+func TestNewAskModel_SetsProofreadingPurpose(t *testing.T) {
 	m := &modelHost{script: func(string) string { return "" }}
 
 	if _, err := newAskModel(m.complete)(t.Context(), "be careful", "the prompt"); err != nil {

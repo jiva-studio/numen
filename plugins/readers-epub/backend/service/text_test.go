@@ -6,8 +6,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
@@ -57,7 +57,7 @@ func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 }
 
 func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
-	raw := createPictureEpub(t)
+	raw := createImageEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 	book, err := epub.Read(raw)
 	if err != nil {
@@ -112,7 +112,7 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 }
 
 func TestTheBookReaderMakesTextOfFilesOnly(t *testing.T) {
-	_, server := newTextVault(t, "book.epub", createPictureEpub(t))
+	_, server := newTextVault(t, "book.epub", createImageEpub(t))
 
 	err := server.CreateText(t.Context(), host.TextCreation{Path: "book.epub", Source: "md.numen.tools.proofreading/fix"})
 
@@ -157,7 +157,7 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 }
 
 func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
-	raw := createPictureEpub(t)
+	raw := createImageEpub(t)
 	physics := hosttest.New("Physics")
 	chemistry := hosttest.New("Chemistry")
 	physics.Beside(chemistry)
@@ -215,7 +215,7 @@ func firstWord(text string) string {
 }
 
 func TestTheTextOfABookCarriesTheCFIOfItsCharacters(t *testing.T) {
-	raw := createPictureEpub(t)
+	raw := createImageEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 
 	createText(t, server, host.TextCreation{Path: "book.epub"})

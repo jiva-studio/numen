@@ -50,7 +50,7 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 	}
 }
 
-func TestTheMessagesOfCodexAreSaid(t *testing.T) {
+func TestRunner_EmitsCodexMessages(t *testing.T) {
 	script := agenttest.WriteScript(t, "codex",
 		`echo '{"type":"item.completed","item":{"id":"i0","type":"agent_message","text":"The answer."}}'`+"\n"+
 			`echo '{"type":"item.completed","item":{"type":"agent_message","text":""}}'`+"\n"+

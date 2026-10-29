@@ -430,7 +430,7 @@ func TestIndexSkipsAFileWithNoTextSource(t *testing.T) {
 	if res.Seen != 0 || res.Recorded != 0 {
 		t.Errorf("the run reports %+v, want the file left out", res)
 	}
-	if _, isHeld := index.sources[first.ID]["pictures/cover.sample"]; isHeld {
+	if _, isIndexed := index.sources[first.ID]["pictures/cover.sample"]; isIndexed {
 		t.Error("the index holds a file that has no text")
 	}
 	if got := texts.getRequested(); len(got) != 0 {

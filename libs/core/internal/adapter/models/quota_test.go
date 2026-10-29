@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func TestReserveQuotaRejectsWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T) {
+func TestReserveQuota_RejectsOverCommit(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(EnvQuota, "100")
 

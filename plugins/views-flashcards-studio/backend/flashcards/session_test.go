@@ -288,7 +288,7 @@ func TestASessionOverThePresetOfTheDecksNamingNone(t *testing.T) {
 
 // The cards a preset offers are what its own allowance admits for the day, and
 // the decks under it share that one budget.
-func TestASessionOverAPresetIsHeldToItsBudget(t *testing.T) {
+func TestSession_PresetBudgetLimitsOfferedCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":        term,
@@ -601,7 +601,7 @@ func TestASecondSessionConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 
 // A card the day has already charged for comes round again for nothing under
 // `counts: cards`, and spends the budget again under `counts: shows`.
-func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
+func TestSession_CountsCardsOrShowsForRepeatedCard(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
 		counts string
@@ -981,7 +981,7 @@ func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 
 // A day's new cards and a day's reviews are two budgets, so a preset out of the
 // one goes on asking the other.
-func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
+func TestSession_NewCardBudgetIndependentOfReviews(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":      term,
@@ -1005,7 +1005,7 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 }
 
 // the preset it now names.
-func TestADeckRepointedBetweenSessionsIsHeldToItsNewPreset(t *testing.T) {
+func TestSession_RepointedDeckUsesNewPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":     term,
@@ -1216,7 +1216,7 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 
 // A day carrying none of the load is asked no card, and the day after it opens
 // on the whole of the budget.
-func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
+func TestSession_ZeroLoadDayOffersNoCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":     term,

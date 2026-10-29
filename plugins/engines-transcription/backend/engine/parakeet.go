@@ -326,7 +326,7 @@ type decodeBuffers struct {
 	prediction []float32
 	frame      []float32
 
-	targetTensor, countTensor, stateTensor, cellTensor, frameTensor, saidTensor *ort.Value
+	targetTensor, countTensor, stateTensor, cellTensor, frameTensor, predictionTensor *ort.Value
 }
 
 // newDecodeBuffers makes the buffers and the tensors over them.
@@ -348,7 +348,7 @@ func newDecodeBuffers() (*decodeBuffers, error) {
 		{&b.stateTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{layers, 1, hidden}, b.state) }},
 		{&b.cellTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{layers, 1, hidden}, b.cell) }},
 		{&b.frameTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, encoded, 1}, b.frame) }},
-		{&b.saidTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, hidden, 1}, b.prediction) }},
+		{&b.predictionTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, hidden, 1}, b.prediction) }},
 	} {
 		tensor, err := one.create()
 		if err != nil {
@@ -363,7 +363,7 @@ func newDecodeBuffers() (*decodeBuffers, error) {
 // destroy releases the tensors that were made.
 func (b *decodeBuffers) destroy() {
 	for _, tensor := range []*ort.Value{
-		b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor, b.frameTensor, b.saidTensor,
+		b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor, b.frameTensor, b.predictionTensor,
 	} {
 		if tensor != nil {
 			tensor.Destroy()
@@ -395,7 +395,7 @@ func (b *decodeBuffers) getDecoderInputs() map[string]*ort.Value {
 func (b *decodeBuffers) getJoinerInputs() map[string]*ort.Value {
 	return map[string]*ort.Value{
 		inputEncoded: b.frameTensor,
-		inputDecoded: b.saidTensor,
+		inputDecoded: b.predictionTensor,
 	}
 }
 
@@ -409,7 +409,7 @@ func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, jo
 	decoderRun, _ = ortraw.NewGraph(calls, t.decoder, decoderInputNames, decoderOutputs,
 		[]*ort.Value{b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor})
 	joinerRun, _ = ortraw.NewGraph(calls, t.joiner, joinerInputNames, joinerOutputs,
-		[]*ort.Value{b.frameTensor, b.saidTensor})
+		[]*ort.Value{b.frameTensor, b.predictionTensor})
 	return decoderRun, joinerRun
 }
 

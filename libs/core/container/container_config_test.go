@@ -48,7 +48,7 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 	}
 }
 
-func TestSettingsThatCannotBeReadAreSaidWithTheFileTheyStandIn(t *testing.T) {
+func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 	cfg, path := writeSettings(t, `{not json`)
 
 	content, response, err := cfg.ReadSettings()()
@@ -155,7 +155,7 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 	}
 }
 
-func TestWhatWentWrongIsReportedToWhoeverAskedToBeReported(t *testing.T) {
+func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 	var notified []error
 	problem := errors.New("a vacuum that could not run")
 

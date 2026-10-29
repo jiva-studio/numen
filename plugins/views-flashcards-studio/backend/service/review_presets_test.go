@@ -75,9 +75,9 @@ var handwritten = map[string]string{
 	"decks/Words.md": deck["decks/Words.md"],
 }
 
-// typedByHand is that deck as a person left it: pointed at the preset, and
+// typedManually is that deck as a person left it: pointed at the preset, and
 // holding a card they typed and gave no card id.
-const typedByHand = "---\ntype: deck\nlinks:\n" +
+const typedManually = "---\ntype: deck\nlinks:\n" +
 	"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
 	"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
 	"\n### Meaning\n\nCompost made of fallen leaves alone\n" +
@@ -92,7 +92,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 	v := target[0]
 
 	pos := filepath.Join(v.Path, "decks", "Words.md")
-	if err := os.WriteFile(pos, []byte(typedByHand), 0o644); err != nil {
+	if err := os.WriteFile(pos, []byte(typedManually), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -151,7 +151,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 
 // A preset the deck names that cannot be read comes back rejected as the editor
 // refuses a note, and carries no preset.
-func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
+func TestGetVaultDeckPreset_UnreadablePresetMatchesEditorError(t *testing.T) {
 	api, target := newAPI(t, pointed)
 	v := target[0]
 	if err := os.Remove(filepath.Join(v.Path, "Sanskrit.md")); err != nil {
@@ -241,7 +241,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 
 // Why a preset schedules nothing is the core's verdict, and every preset the
 // nothing else in the answer would tell a window that it is stopped.
-func TestEachPresetOnTheFrontDoorReturnsWhyItSchedulesNothing(t *testing.T) {
+func TestWatchCardsDue_ReturnsStoppedReasonPerPreset(t *testing.T) {
 	// The card ids are the ones the application writes, so the cards stand without
 	// the vault being sat down to.
 	assigned := func(pos string, cardID string) string {

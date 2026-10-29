@@ -38,7 +38,7 @@ func notesAt(paths ...string) []domain.NoteChunks {
 
 // Each path written through the index while a walk runs is held once, in the
 // order it was first written, whether it was saved or removed.
-func TestThePathsSavedBelowAWalkAreHeldOnceInOrder(t *testing.T) {
+func TestBufferedNoteRepository_RecordsPathsOnceInOrder(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
 	buffered.StartRecording()
 
@@ -62,7 +62,7 @@ func TestThePathsSavedBelowAWalkAreHeldOnceInOrder(t *testing.T) {
 }
 
 // A write that fails is answered with the failure.
-func TestAWriteThatFailsIsAnsweredWithTheFailure(t *testing.T) {
+func TestBufferedNoteRepository_ReturnsWriteError(t *testing.T) {
 	broken := errors.New("the index is full")
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{err: broken}}
 
@@ -76,7 +76,7 @@ func TestAWriteThatFailsIsAnsweredWithTheFailure(t *testing.T) {
 
 // Once the paths are taken the walk is over, and what is written after it is
 // held no longer; the next walk holds again.
-func TestNothingIsHeldOnceTheWalkIsOver(t *testing.T) {
+func TestBufferedNoteRepository_StopsRecordingAfterStop(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
 	buffered.StartRecording()
 	if err := buffered.Save(t.Context(), "v", notesAt("a.md")); err != nil {

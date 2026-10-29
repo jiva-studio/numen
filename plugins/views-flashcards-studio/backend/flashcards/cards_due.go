@@ -50,8 +50,8 @@ type PresetCardsDue struct {
 	New int
 	// Answered is the count of cards reviewed during today's session, with Took recording total review duration.
 	Answered        int
-	AnsweredNew     int
-	AnsweredReviews int
+	ReviewedNew     int
+	ReviewedReviews int
 	Took            time.Duration
 	// Budget defines the limits configured for this day of the week.
 	Budget review.Budget
@@ -294,8 +294,8 @@ func (b *budgets) getCardsDue(due, newCards map[string]int) []PresetCardsDue {
 			Preset: path, Cards: b.cards[path],
 			Due: due[path], New: newCards[path],
 			Answered:        one.spentStats.Answered,
-			AnsweredNew:     one.spentStats.New,
-			AnsweredReviews: one.spentStats.Reviews,
+			ReviewedNew:     one.spentStats.New,
+			ReviewedReviews: one.spentStats.Reviews,
 			Took:            one.spentStats.Took,
 			Budget:          one.admits.Keeps, Limits: one.admits.Limits,
 			Stops: one.admits.Stops,

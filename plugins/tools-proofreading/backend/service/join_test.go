@@ -72,7 +72,7 @@ func TestARefusedBatchReturnsNothingRanPastIt(t *testing.T) {
 
 // A run skipping a line the batch carries is an answer against the wrong
 // numbers.
-func TestARunSkippingALineRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsRunSkippingLine(t *testing.T) {
 	batch := makeBrokenBatch()
 	batch.Lines = append(batch.Lines[:1], batch.Lines[2:]...)
 	if _, _, ok := GetFixedLines(batch, "4-6 | whatever it says", 0); ok {
@@ -81,7 +81,7 @@ func TestARunSkippingALineRefusesTheBatch(t *testing.T) {
 }
 
 // A run written backwards is not a run.
-func TestARunSavedBackwardsRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsBackwardRun(t *testing.T) {
 	if _, _, ok := GetFixedLines(makeBrokenBatch(), "6-4 | whatever it says", 0); ok {
 		t.Error("the batch was taken")
 	}
@@ -89,7 +89,7 @@ func TestARunSavedBackwardsRefusesTheBatch(t *testing.T) {
 
 // An answer of marks that are not words empties a line as surely as an answer
 // of nothing does.
-func TestAnAnswerOfNothingButMarksRefusesTheBatch(t *testing.T) {
+func TestGetFixedLines_RejectsReplyOfOnlyMarks(t *testing.T) {
 	for _, reply := range []string{"4 | ...", "4 | —", "4 | "} {
 		if _, _, ok := GetFixedLines(makeBrokenBatch(), reply, 0); ok {
 			t.Errorf("the batch was taken with %q", reply)

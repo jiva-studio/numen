@@ -119,7 +119,7 @@ func TestEachCodeOfTheStoreIsItsOwnError(t *testing.T) {
 		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT:        host.ErrNoVault,
 		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING:         host.ErrNotExist,
 		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE:         host.ErrOutside,
-		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER: host.ErrHeldByAnother,
+		v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER: host.ErrLockedByAnother,
 	}
 	for code, want := range cases {
 		h := newStoreHost()

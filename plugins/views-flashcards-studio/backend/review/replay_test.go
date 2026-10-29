@@ -139,7 +139,7 @@ func TestALineTakingAnAnswerBackTwiceConsumesItBackOnce(t *testing.T) {
 }
 
 // means by a new card.
-func TestAReviewCardNobodyAnsweredHasNoSchedule(t *testing.T) {
+func TestReplay_UnansweredCardHasNoSchedule(t *testing.T) {
 	remaining := review.OrderAnswers(nil).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
 	if len(remaining) != 0 {
 		t.Errorf("no answers left %d schedules", len(remaining))

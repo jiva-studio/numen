@@ -75,7 +75,7 @@ func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 
 // linking is the whole of the rule above, so it is asked directly. A rule that
 // has never been seen to refuse is an assumption.
-func TestWhatThePluginsRuleRefuses(t *testing.T) {
+func TestPluginsRule_RejectsPluginsDependency(t *testing.T) {
 	deps := []string{
 		core + "adapter/cli",
 		core + "usecase/note",

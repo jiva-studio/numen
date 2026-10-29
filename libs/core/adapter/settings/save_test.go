@@ -224,7 +224,7 @@ func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
 	}
 }
 
-func TestAFieldThisBuildKnowsNothingAboutReachesThroughAsItWas(t *testing.T) {
+func TestSave_PreservesUnknownFields(t *testing.T) {
 	path := write(t, `{"v":1,"appearance":{"zoom":1.5,"tint":"warm"},"tomorrow":{"of":["a","later","build"]}}`)
 	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatal(err)

@@ -98,7 +98,7 @@ func TestNoApplicationLogs(t *testing.T) {
 
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
-func TestWhatTheLoggingRuleRefuses(t *testing.T) {
+func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	var violations []string
 	for _, to := range []string{
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",

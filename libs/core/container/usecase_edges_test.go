@@ -112,7 +112,7 @@ func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
 }
 
 // The edge rule is called directly on declared and undeclared edges.
-func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
+func TestUseCaseEdgeRule_RejectsUndeclaredEdges(t *testing.T) {
 	for _, tc := range []struct {
 		from, to  string
 		isRefused bool

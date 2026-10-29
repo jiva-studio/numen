@@ -37,7 +37,7 @@ func replaceWith(chunks ...chunk.Chunk) func(s *store) error {
 	}
 }
 
-func TestAWriteThatTheDatabaseRefusesReturnsWhichStatementAndKeepsTheDatabasesReason(t *testing.T) {
+func TestRepositoryWrite_ErrorNamesStatementAndWrapsCause(t *testing.T) {
 	unchanged := []chunk.Chunk{{
 		Start: 0, Length: 20, Text: "whole", Opens: []string{"Beginnings"}, Small: []chunk.Chunk{
 			{Start: 0, Length: 10, Text: "left"}, {Start: 10, Length: 10, Text: "right"},
@@ -153,7 +153,7 @@ func TestASourceThatCannotBeLookedUpIsAnErrorAndNotAMissingOne(t *testing.T) {
 	}
 }
 
-func TestASmallChunkTheDatabaseRefusesFailsTheSplit(t *testing.T) {
+func TestReplaceChunks_SmallChunkInsertFailureFails(t *testing.T) {
 	s := newStore(t)
 	s.cut(repoVaultA, "book", "a.epub", nil)
 	s.exec(`CREATE TRIGGER refuse BEFORE INSERT ON chunks WHEN NEW.parent_id IS NOT NULL BEGIN SELECT RAISE(ABORT, 'boom'); END`)

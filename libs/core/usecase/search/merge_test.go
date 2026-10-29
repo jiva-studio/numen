@@ -101,7 +101,7 @@ func TestOneDocumentConsumesOneResult(t *testing.T) {
 	}
 }
 
-func TestADocumentAnswersWithTheSectionNamedWhatWasAsked(t *testing.T) {
+func TestCollapse_DocumentUsesNamedSection(t *testing.T) {
 	// The paragraph that says the words most often stands first in the fused
 	// order, and the section carrying the name is further down.
 	fused := []domain.Passage{
@@ -136,7 +136,7 @@ func TestADocumentWithNoSectionOfThatNameIsUnchanged(t *testing.T) {
 	}
 }
 
-func TestADocumentAnswersWithAsManyPassagesAsWereAskedFor(t *testing.T) {
+func TestCollapse_LimitsPassagesPerDocument(t *testing.T) {
 	fused := []domain.Passage{
 		{ChunkID: "1", Source: "book.epub", Start: 0, Length: 10},
 		{ChunkID: "2", Source: "book.epub", Start: 90, Length: 10},

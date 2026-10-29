@@ -75,10 +75,10 @@ func (s *settler) getSettledCount() int {
 	return s.callCount
 }
 
-// TestACloseCalledOffCanBeAskedForAgain. A settling that ends with a question
+// TestVaultFlush_RetriesAfterCancelledClose. A settling that ends with a question
 // standing leaves the window where it is, and every later ask settles the vault
 // again.
-func TestACloseCalledOffCanBeAskedForAgain(t *testing.T) {
+func TestVaultFlush_RetriesAfterCancelledClose(t *testing.T) {
 	vault := newSettler(false, false, true)
 	g := &vaultFlush{flush: vault.settle}
 
@@ -159,10 +159,10 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 	}
 }
 
-// TestAQuitAskedForElsewhereDoesNotGoOnAQuestion. The goroutine a quit leaves
+// TestRequestQuit_WaitsWhileQuestionPending. The goroutine a quit leaves
 // behind may refuse the quit and nothing else: a person is answering, and the
 // application is not to go out from under them.
-func TestAQuitAskedForElsewhereDoesNotGoOnAQuestion(t *testing.T) {
+func TestRequestQuit_WaitsWhileQuestionPending(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
 
@@ -198,10 +198,10 @@ func TestRequestedQuitProceedsOnceVaultIsFlushed(t *testing.T) {
 	}
 }
 
-// TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain. The person answers,
+// TestCloseWindow_RepeatsCloseAfterQuestionAnswered. The person answers,
 // the page says it has nothing left, and the close the person asked for
 // happens.
-func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
+func TestCloseWindow_RepeatsCloseAfterQuestionAnswered(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
 
@@ -230,10 +230,10 @@ func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
 	}
 }
 
-// TestAWindowNobodyAnswersForIsNotAskedForAgain. A page that raised a question
+// TestCloseWindow_NoRepeatWhenPageClosed. A page that raised a question
 // and then went says nothing more, and the window stays where the person left
 // it.
-func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
+func TestCloseWindow_NoRepeatWhenPageClosed(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
 

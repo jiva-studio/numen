@@ -69,7 +69,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 
 // The window's settings are four fields of one section, and a file writing one
 // of them says nothing about the rest.
-func TestAFileNamingTheTextSizeStillWearsTheDefaultTheme(t *testing.T) {
+func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 	cfg, err := openAt(write(t, `{"appearance":{"text_scale":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -362,7 +362,7 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 // characters and cuts what is past that off the end. The end is where what a
 // person can do about it is written, so the line is one a number cannot
 // lengthen: every number a setting refuses says the same thing.
-func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
+func TestOpen_OutOfRangeErrorMessageLength(t *testing.T) {
 	// Numbers a file can hold and this setting will not take, written the ways
 	// a person and a machine write them.
 	for _, zoom := range []string{

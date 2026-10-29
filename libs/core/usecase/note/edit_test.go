@@ -148,7 +148,7 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 // The file is asked about only when something is held against what it is: a
 // tab that presents what it last saw, or a caller that said nothing and is held
 // to what is read just now.
-func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) {
+func TestEdit_ReadsFileOnlyWhenFingerprintRequired(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		name      string
@@ -192,7 +192,7 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 }
 
 // was read, so a save that lands in between is not written over.
-func TestAnEditThatNamedNoFingerprintIsHeldToWhatItReadJustNow(t *testing.T) {
+func TestEdit_NoFingerprintChecksAgainstLatestRead(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	theirs := "# Heat\n\nSaved in the meantime, and longer.\n"

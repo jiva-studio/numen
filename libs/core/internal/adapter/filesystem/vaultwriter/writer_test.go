@@ -291,7 +291,7 @@ func TestStatingAFileOpensNothing(t *testing.T) {
 
 // One vault is held by one writer at a time, and holding one says nothing
 // about the next.
-func TestOneVaultIsHeldByOneWriterAtATime(t *testing.T) {
+func TestLock_AllowsOneWriterPerVault(t *testing.T) {
 	writers := vaultwriter.VaultWriters{}
 	here := testsupport.NewVault(t, nil)
 	elsewhere := testsupport.NewVault(t, nil)
@@ -535,7 +535,7 @@ func TestAVaultReachedThroughALinkIsSavedLikeAnyOther(t *testing.T) {
 // A person names a note in their own editor, and a name the filesystem accepts
 // is a name this vault saves. The temporary file written beside it carries a
 // leading dot and a suffix of its own, and the whole of that has to fit as well.
-func TestANoteWithALongNameIsSaved(t *testing.T) {
+func TestCreate_AcceptsLongNoteName(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 

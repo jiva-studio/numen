@@ -111,7 +111,7 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE:         host.ErrOutside,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:           host.ErrStale,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:  host.ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER: host.ErrHeldByAnother,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER: host.ErrLockedByAnother,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:      host.ErrNotANote,
 	}
 	for code, want := range cases {
@@ -133,7 +133,7 @@ func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 	}
 }
 
-func TestALinkPreservesEverythingTheHostSaidOfIt(t *testing.T) {
+func TestGetLink_PreservesHostFields(t *testing.T) {
 	links, err := clientTo(t, &answering{}).GetLinks(context.Background(), "a.md")
 
 	want := domain.ResolvedLink{
@@ -181,7 +181,7 @@ func TestAWatchBeginsAfterTheFirstMessageAndTellsTheChanges(t *testing.T) {
 	}
 }
 
-func TestAVaultNamedByIdentityIsAskedForByHeader(t *testing.T) {
+func TestClient_SendsVaultIdentityHeader(t *testing.T) {
 	a := &answering{}
 	client := clientTo(t, a)
 

@@ -16,7 +16,7 @@ var counting = review.Day{Starts: review.DayStartTime}
 
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.
-func TestWhatAVaultWasAnsweredOnReachesBackInOrder(t *testing.T) {
+func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
 
@@ -53,7 +53,7 @@ func TestWhatAVaultWasAnsweredOnReachesBackInOrder(t *testing.T) {
 
 // A vault nobody answered has nothing to draw, which is an answer and not a
 // failure.
-func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
+func TestListReviewDays_EmptyVaultHasNoDays(t *testing.T) {
 	api, target := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
@@ -112,7 +112,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 // A vault whose cards are all still to come says so and does not fail: a person
 // who answered everything this morning has an empty grid behind them and a full
 // one ahead.
-func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
+func TestListReviewDays_EmptyVaultHasNoDueDays(t *testing.T) {
 	api, target := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),

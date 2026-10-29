@@ -45,7 +45,7 @@ func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheCardsPassTheBound(t *tes
 	}
 }
 
-func TestTheCardsHeldNeverPassTheBound(t *testing.T) {
+func TestCardCache_NeverExceedsBound(t *testing.T) {
 	t.Parallel()
 	c := newCardCache()
 	for i := range 50 {
@@ -173,8 +173,8 @@ func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 // A run file another program holds open is one run of the log that could not be
 // acted on. A synchroniser and a backup reader each hold a file for moments at a
 // time, and the store says so in one word whatever the system underneath it is.
-func TestARunHeldByAnotherProgramIsOneSkippedRun(t *testing.T) {
-	store := answering{why: fmt.Errorf("run.jsonl: %w", ports.ErrHeldByAnother)}
+func TestLogReadFile_CountsLockedRunAsSkipped(t *testing.T) {
+	store := answering{why: fmt.Errorf("run.jsonl: %w", ports.ErrLockedByAnother)}
 
 	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Run: "run"})
 	if err != nil {

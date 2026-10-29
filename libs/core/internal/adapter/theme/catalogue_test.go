@@ -191,7 +191,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 	}
 }
 
-func TestANameMatchingNothingWearsThisProductsPaletteAndReturnsWhichNameItWas(t *testing.T) {
+func TestGetApplied_UnknownNameFallsBackToDefaultAndReportsName(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {

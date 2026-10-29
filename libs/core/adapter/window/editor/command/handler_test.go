@@ -77,7 +77,7 @@ func TestTheCommandsAreListedWithoutThoseHiddenInThePaletteOrOverNotesOfAType(t 
 	}
 }
 
-func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
+func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 	valid := &v1.RunPluginCommandRequest{
 		PluginId: "org.example.sample", Command: "create-sample", Path: "a.md", Arguments: map[string]string{"pages": "2"},
 	}

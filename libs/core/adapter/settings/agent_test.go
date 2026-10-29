@@ -119,7 +119,7 @@ func TestTheFieldsASectionNamesAreTaken(t *testing.T) {
 }
 
 // A file read twice into one section keeps what the first said and the second left out.
-func TestASectionReadTwiceKeepsWhatTheFirstSaid(t *testing.T) {
+func TestAgentUnmarshal_RepeatedReadMergesSection(t *testing.T) {
 	var target settings.Agent
 	for _, file := range []string{`{"claude": {"model": "opus"}}`, `{"claude": {"max_steps": 5}}`} {
 		if err := json.Unmarshal([]byte(file), &target); err != nil {

@@ -91,7 +91,7 @@ func TestARefusedReplyPreservesItsLinesToTheOtherBatch(t *testing.T) {
 	}
 }
 
-func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
+func TestGatherReplies_KeepsUncoveredLinesUnchanged(t *testing.T) {
 	replies := map[int]string{0: "3|we spoke of the harbour lights"}
 
 	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)

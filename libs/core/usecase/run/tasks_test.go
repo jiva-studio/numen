@@ -44,7 +44,7 @@ func TestWorkReportedAgainReplacesItself(t *testing.T) {
 	}
 }
 
-func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
+func TestRemove_MissingTaskIsNoOp(t *testing.T) {
 	tasks := NewTasks()
 	tasks.Remove("nothing")
 	if list := tasks.List(); len(list) != 0 {

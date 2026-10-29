@@ -16,59 +16,59 @@ func vaultsAt(paths ...string) domain.Vaults {
 	return vs
 }
 
-func TestAFolderInsideAVaultHasNoRoom(t *testing.T) {
-	err := vaultsAt("/notes").CheckRoom("/notes/deep")
+func TestCheckOverlap_FolderInsideVaultFails(t *testing.T) {
+	err := vaultsAt("/notes").CheckOverlap("/notes/deep")
 
 	if !errors.Is(err, domain.ErrOverlaps) {
-		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
+		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
 	}
 	if got := err.Error(); !strings.Contains(got, "Vault /notes") || !strings.Contains(got, "is inside") {
-		t.Errorf("CheckRoom error = %q, want it to name the vault it lies inside", got)
+		t.Errorf("CheckOverlap error = %q, want it to name the vault it lies inside", got)
 	}
 }
 
-func TestAFolderContainingAVaultHasNoRoom(t *testing.T) {
-	err := vaultsAt("/notes/deep").CheckRoom("/notes")
+func TestCheckRoom_FolderContainingVaultFails(t *testing.T) {
+	err := vaultsAt("/notes/deep").CheckOverlap("/notes")
 
 	if !errors.Is(err, domain.ErrOverlaps) {
-		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
+		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
 	}
 	if got := err.Error(); !strings.Contains(got, "Vault /notes/deep") || !strings.Contains(got, "holds") {
-		t.Errorf("CheckRoom error = %q, want it to name the vault it holds", got)
+		t.Errorf("CheckOverlap error = %q, want it to name the vault it holds", got)
 	}
 }
 
-func TestAFolderAdjacentEveryVaultHasRoom(t *testing.T) {
+func TestCheckRoom_SiblingFolderPasses(t *testing.T) {
 	vs := vaultsAt("/notes", "/notes-two", "/other/notes")
 
-	if err := vs.CheckRoom("/books"); err != nil {
-		t.Errorf("CheckRoom(/books) = %v, want room", err)
+	if err := vs.CheckOverlap("/books"); err != nil {
+		t.Errorf("CheckOverlap(/books) = %v, want room", err)
 	}
-	if err := vs.CheckRoom("/notes-three"); err != nil {
-		t.Errorf("CheckRoom(/notes-three) = %v, want room", err)
+	if err := vs.CheckOverlap("/notes-three"); err != nil {
+		t.Errorf("CheckOverlap(/notes-three) = %v, want room", err)
 	}
 }
 
 func TestAVaultsOwnFolderIsNotInItsWay(t *testing.T) {
-	if err := vaultsAt("/notes").CheckRoom("/notes"); err != nil {
-		t.Errorf("CheckRoom(/notes) = %v, want room", err)
+	if err := vaultsAt("/notes").CheckOverlap("/notes"); err != nil {
+		t.Errorf("CheckOverlap(/notes) = %v, want room", err)
 	}
 }
 
 func TestAnOverlapIsFoundPastTheVaultsBeforeIt(t *testing.T) {
-	err := vaultsAt("/a", "/b", "/c").CheckRoom("/c/inner")
+	err := vaultsAt("/a", "/b", "/c").CheckOverlap("/c/inner")
 
 	if !errors.Is(err, domain.ErrOverlaps) {
-		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
+		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
 	}
 }
 
 func TestAFolderWhosePathIsNotRelatedToAVaultIsNotBelowIt(t *testing.T) {
-	if err := vaultsAt("/notes").CheckRoom("relative/dir"); err != nil {
-		t.Errorf("CheckRoom(relative/dir) = %v, want room", err)
+	if err := vaultsAt("/notes").CheckOverlap("relative/dir"); err != nil {
+		t.Errorf("CheckOverlap(relative/dir) = %v, want room", err)
 	}
-	if err := vaultsAt("/notes").CheckRoom("/notes/..hidden"); !errors.Is(err, domain.ErrOverlaps) {
-		t.Errorf("CheckRoom(/notes/..hidden) = %v, want ErrOverlaps: a name starting with two dots is inside", err)
+	if err := vaultsAt("/notes").CheckOverlap("/notes/..hidden"); !errors.Is(err, domain.ErrOverlaps) {
+		t.Errorf("CheckOverlap(/notes/..hidden) = %v, want ErrOverlaps: a name starting with two dots is inside", err)
 	}
 }
 
@@ -126,15 +126,15 @@ func TestAFreeNameIsCachedAndATakenOneIsNumberedFromTwo(t *testing.T) {
 }
 
 func TestTheSameFolderSavedTwoWaysIsNotInsideItself(t *testing.T) {
-	if err := vaultsAt("/notes/").CheckRoom("/notes"); err != nil {
-		t.Errorf("CheckRoom(/notes) = %v, want room", err)
+	if err := vaultsAt("/notes/").CheckOverlap("/notes"); err != nil {
+		t.Errorf("CheckOverlap(/notes) = %v, want room", err)
 	}
 }
 
 func TestAnOverlapIsFoundAfterTheVaultAtTheSamePath(t *testing.T) {
-	err := vaultsAt("/x/y", "/x").CheckRoom("/x/y")
+	err := vaultsAt("/x/y", "/x").CheckOverlap("/x/y")
 
 	if !errors.Is(err, domain.ErrOverlaps) {
-		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
+		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
 	}
 }

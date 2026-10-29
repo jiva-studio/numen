@@ -92,7 +92,7 @@ func TestEveryPluginWithABackendDeclaresAMemoryLimitAndAnIdlePolicy(t *testing.T
 	}
 }
 
-func TestWhatTheLifecycleRuleRefuses(t *testing.T) {
+func TestLifecycleRule_ReportsMissingLifecycleFields(t *testing.T) {
 	for name, one := range map[string]struct {
 		manifest string
 		gaps     int
@@ -167,7 +167,7 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 	}
 }
 
-func TestWhatThePermissionRuleRefuses(t *testing.T) {
+func TestPermissionRule_ReportsPermissionDifferences(t *testing.T) {
 	valid := []string{"vault:read", "network:outbound", "network"}
 	if got := listPermissionDifferences([]string{"vault:read", "network:outbound", "network"}, valid); len(got) != 0 {
 		t.Errorf("equal lists differ: %v", got)
@@ -441,7 +441,7 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 	}
 }
 
-func TestWhatTheSettingRuleRefuses(t *testing.T) {
+func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	manifest := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
 		{Key: "language"}, {Key: "dpi"}, {Key: "agent", Type: pluginport.SettingTypeAgent},
 	}}
@@ -498,7 +498,7 @@ func TestEveryCapabilityInAManifestIsResolvedOrMarked(t *testing.T) {
 	}
 }
 
-func TestWhatTheCapabilityRuleRefuses(t *testing.T) {
+func TestCapabilityRule_RejectsUnresolvedCapabilities(t *testing.T) {
 	var violations []string
 	for _, capability := range []string{
 		"document",
@@ -545,7 +545,7 @@ func TestEveryActivationEventIsOneTheHostEmits(t *testing.T) {
 	}
 }
 
-func TestWhatTheActivationEventRuleRefuses(t *testing.T) {
+func TestActivationEventRule_RejectsUnsupportedEvents(t *testing.T) {
 	var violations []string
 	for _, event := range []string{
 		"*",
@@ -623,7 +623,7 @@ func TestEveryPluginFollowsTheNamingRule(t *testing.T) {
 	}
 }
 
-func TestWhatThePluginNamingRuleRefuses(t *testing.T) {
+func TestPluginNamingRule_ReportsNamingIssues(t *testing.T) {
 	for name, one := range map[string]struct {
 		folder string
 		id     string
