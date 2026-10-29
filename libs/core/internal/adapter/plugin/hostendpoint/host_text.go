@@ -12,8 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textwire"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 )
@@ -82,7 +81,7 @@ const noTexts = v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT
 func (e *textEndpoint) PutTextVersion(
 	ctx context.Context, req *connect.Request[v1.PutTextVersionRequest],
 ) (*connect.Response[v1.PutTextVersionResponse], error) {
-	call, err := e.begin(req.Header(), plugindir.PermissionVaultWrite)
+	call, err := e.begin(req.Header(), manifestfile.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func (e *textEndpoint) PutTextVersion(
 	}
 	res := &v1.PutTextVersionResponse{Error: code}
 	if code == v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED {
-		res.Version = textwire.WriteVersion(version)
+		res.Version = writeVersion(version)
 	}
 	return connect.NewResponse(res), nil
 }
@@ -108,7 +107,7 @@ func (e *textEndpoint) PutTextVersion(
 func (e *textEndpoint) RemoveTextVersion(
 	ctx context.Context, req *connect.Request[v1.RemoveTextVersionRequest],
 ) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	call, err := e.begin(req.Header(), plugindir.PermissionVaultWrite)
+	call, err := e.begin(req.Header(), manifestfile.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +124,7 @@ func (e *textEndpoint) RemoveTextVersion(
 func (e *textEndpoint) ListTextVersions(
 	ctx context.Context, req *connect.Request[v1.ListTextVersionsRequest],
 ) (*connect.Response[v1.ListTextVersionsResponse], error) {
-	call, err := e.begin(req.Header(), plugindir.PermissionVaultRead)
+	call, err := e.begin(req.Header(), manifestfile.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +138,7 @@ func (e *textEndpoint) ListTextVersions(
 	}
 	res := &v1.ListTextVersionsResponse{Error: code, LiveVersionId: string(listing.Live)}
 	for _, one := range listing.Versions {
-		res.Versions = append(res.Versions, textwire.WriteVersion(one))
+		res.Versions = append(res.Versions, writeVersion(one))
 	}
 	return connect.NewResponse(res), nil
 }
@@ -147,7 +146,7 @@ func (e *textEndpoint) ListTextVersions(
 func (e *textEndpoint) ReadText(
 	ctx context.Context, req *connect.Request[v1.ReadTextRequest],
 ) (*connect.Response[v1.ReadTextResponse], error) {
-	call, err := e.begin(req.Header(), plugindir.PermissionVaultRead)
+	call, err := e.begin(req.Header(), manifestfile.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +159,6 @@ func (e *textEndpoint) ReadText(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{
-		Error: code, Segments: textwire.WriteSegments(page.Segments), NextCursor: page.NextCursor,
+		Error: code, Segments: writeSegments(page.Segments), NextCursor: page.NextCursor,
 	}), nil
 }

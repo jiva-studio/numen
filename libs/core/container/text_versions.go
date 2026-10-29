@@ -4,7 +4,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textproviderbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -20,9 +20,9 @@ func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
 	var plugins interface {
 		textport.TextPlugins
 		textport.TextProviders
-	} = textproviderbridge.NoPlugins{}
+	} = textbridge.NoPlugins{}
 	if c.PluginHost != nil && !c.SafeMode {
-		plugins = textproviderbridge.NewPlugins(c.PluginHost)
+		plugins = textbridge.NewPlugins(c.PluginHost)
 	}
 	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, plugins, c.VaultReaders(), c.Clock())
 }

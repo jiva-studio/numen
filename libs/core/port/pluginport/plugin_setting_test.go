@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	_ "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	. "github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 

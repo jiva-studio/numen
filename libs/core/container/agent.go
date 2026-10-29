@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolserver"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/usecase/completion"
@@ -113,5 +113,5 @@ func (c Config) serveTools(agent agentport.Agent) agentport.Agent {
 	if agent == nil {
 		return nil
 	}
-	return toolserver.NewAgent(agent, c.PluginHost, toolserver.Full)
+	return toolsbridge.NewAgent(agent, c.PluginHost, toolsbridge.Full)
 }

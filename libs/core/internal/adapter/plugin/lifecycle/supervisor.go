@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
@@ -223,7 +223,7 @@ func (s *Supervisor) CheckPermission(permission string) error {
 
 // ValidatePath checks that targetPath is within vaultRoot and the plugin has vault:read permission.
 func (s *Supervisor) ValidatePath(vaultRoot, targetPath string) (string, error) {
-	if err := s.CheckPermission(plugindir.PermissionVaultRead); err != nil {
+	if err := s.CheckPermission(manifestfile.PermissionVaultRead); err != nil {
 		return "", err
 	}
 	return s.validator.ValidatePath(vaultRoot, targetPath)

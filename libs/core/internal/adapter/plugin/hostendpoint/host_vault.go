@@ -16,7 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
@@ -82,7 +82,7 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
-	case errors.Is(err, vaultaccess.ErrNoVault):
+	case errors.Is(err, hostvault.ErrNoVault):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, nil
 	case errors.Is(err, vaultport.ErrStale):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, nil
@@ -221,7 +221,7 @@ func (e *vaultEndpoint) WatchMoves(
 		return err
 	}
 	if vault == nil {
-		return connect.NewError(connect.CodeFailedPrecondition, vaultaccess.ErrNoVault)
+		return connect.NewError(connect.CodeFailedPrecondition, hostvault.ErrNoVault)
 	}
 	moves, err := vault.WatchMoves(ctx)
 	if err != nil {
@@ -574,11 +574,11 @@ func (e *vaultEndpoint) WatchVault(
 		return err
 	}
 	if vault == nil {
-		return connect.NewError(connect.CodeFailedPrecondition, vaultaccess.ErrNoVault)
+		return connect.NewError(connect.CodeFailedPrecondition, hostvault.ErrNoVault)
 	}
 	watched, showing := vault.GetVault()
 	if !showing {
-		return connect.NewError(connect.CodeFailedPrecondition, vaultaccess.ErrNoVault)
+		return connect.NewError(connect.CodeFailedPrecondition, hostvault.ErrNoVault)
 	}
 	changes, missing, err := vault.Watch(ctx)
 	if err != nil {

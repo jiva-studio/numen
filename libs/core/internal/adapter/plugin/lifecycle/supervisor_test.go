@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -146,22 +146,22 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 
 func TestSupervisorPermissionNormalization(t *testing.T) {
 	sup := New()
-	sup.SetPermissions([]string{plugindir.PermissionVaultRead, "network"})
+	sup.SetPermissions([]string{manifestfile.PermissionVaultRead, "network"})
 
-	if !sup.HasPermission(plugindir.PermissionVaultRead) {
-		t.Errorf("expected permission %s to be present", plugindir.PermissionVaultRead)
+	if !sup.HasPermission(manifestfile.PermissionVaultRead) {
+		t.Errorf("expected permission %s to be present", manifestfile.PermissionVaultRead)
 	}
-	if !sup.HasPermission(plugindir.PermissionNetworkOutbound) {
-		t.Errorf("expected permission %s to be normalized and present", plugindir.PermissionNetworkOutbound)
+	if !sup.HasPermission(manifestfile.PermissionNetworkOutbound) {
+		t.Errorf("expected permission %s to be normalized and present", manifestfile.PermissionNetworkOutbound)
 	}
 	if !sup.HasPermission("network") {
 		t.Errorf("expected alias network to return true")
 	}
-	if err := sup.CheckPermission(plugindir.PermissionNetworkOutbound); err != nil {
-		t.Errorf("expected CheckPermission for %s to pass: %v", plugindir.PermissionNetworkOutbound, err)
+	if err := sup.CheckPermission(manifestfile.PermissionNetworkOutbound); err != nil {
+		t.Errorf("expected CheckPermission for %s to pass: %v", manifestfile.PermissionNetworkOutbound, err)
 	}
-	if sup.HasPermission(plugindir.PermissionVaultWrite) {
-		t.Errorf("expected undeclared permission %s to be false", plugindir.PermissionVaultWrite)
+	if sup.HasPermission(manifestfile.PermissionVaultWrite) {
+		t.Errorf("expected undeclared permission %s to be false", manifestfile.PermissionVaultWrite)
 	}
 }
 

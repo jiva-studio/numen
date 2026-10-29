@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
@@ -39,7 +39,7 @@ var (
 )
 
 // Launcher is a function that spawns a plugin process and provides its stdout stream.
-type Launcher func(ctx context.Context, p plugindir.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
+type Launcher func(ctx context.Context, p manifestfile.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
 
 // PersistHandler persists a changed plugin setting to host configuration.
 type PersistHandler = pluginport.PluginPersistHandler
@@ -64,7 +64,7 @@ type Host struct {
 	mu               sync.RWMutex
 	target           string
 	dirs             []string
-	plugins          map[string]plugindir.DiscoveredPlugin
+	plugins          map[string]manifestfile.DiscoveredPlugin
 	supervisors      map[string]*lifecycle.Supervisor
 	endpoints        map[string]transport.Endpoint
 	launcher         Launcher
@@ -88,7 +88,7 @@ type Host struct {
 	onDisk           map[string]bool
 	discoverMu       sync.RWMutex
 	failedPlugins    []pluginport.PluginFailure
-	problems         []plugindir.DiscoveryProblem
+	problems         []manifestfile.DiscoveryProblem
 	completer        completionport.Completer
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
@@ -116,7 +116,7 @@ func NewHost(target string, dirs ...string) *Host {
 		mu:               sync.RWMutex{},
 		target:           target,
 		dirs:             dirs,
-		plugins:          make(map[string]plugindir.DiscoveredPlugin),
+		plugins:          make(map[string]manifestfile.DiscoveredPlugin),
 		supervisors:      make(map[string]*lifecycle.Supervisor),
 		endpoints:        make(map[string]transport.Endpoint),
 		launcher:         nil,
@@ -325,7 +325,7 @@ func (h *Host) GetEventBus() *eventbus.Bus {
 }
 
 // GetPlugins returns all discovered plugins registered with the host, in the order of their ids.
-func (h *Host) GetPlugins() []plugindir.DiscoveredPlugin {
+func (h *Host) GetPlugins() []manifestfile.DiscoveredPlugin {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -339,27 +339,27 @@ func (h *Host) GetPlugins() []plugindir.DiscoveredPlugin {
 // getPluginsInOrderLocked returns the registered plugins in the order of their ids. Every lookup
 // and listing of the host walks the plugins in this order, so the first plugin to match is the one
 // with the lowest id.
-func (h *Host) getPluginsInOrderLocked() []plugindir.DiscoveredPlugin {
-	result := make([]plugindir.DiscoveredPlugin, 0, len(h.plugins))
+func (h *Host) getPluginsInOrderLocked() []manifestfile.DiscoveredPlugin {
+	result := make([]manifestfile.DiscoveredPlugin, 0, len(h.plugins))
 	for _, p := range h.plugins {
 		result = append(result, p)
 	}
-	slices.SortFunc(result, func(a, b plugindir.DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
+	slices.SortFunc(result, func(a, b manifestfile.DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
 	return result
 }
 
 // GetPlugin retrieves a single plugin by its unique identifier.
-func (h *Host) GetPlugin(id string) (plugindir.DiscoveredPlugin, bool) {
+func (h *Host) GetPlugin(id string) (manifestfile.DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if h.safeMode {
-		return plugindir.EmptyDiscoveredPlugin(), false
+		return manifestfile.EmptyDiscoveredPlugin(), false
 	}
 
 	p, ok := h.plugins[id]
 	if !ok || !h.isPluginEnabledLocked(id) {
-		return plugindir.EmptyDiscoveredPlugin(), false
+		return manifestfile.EmptyDiscoveredPlugin(), false
 	}
 	return p, true
 }
@@ -368,7 +368,7 @@ func (h *Host) GetPlugin(id string) (plugindir.DiscoveredPlugin, bool) {
 // capability. Where none is enabled, the error is a *port.UnavailableError: PluginDisabled when a
 // plugin declares it and it is switched off or the host is in safe mode, PluginNotInstalled when
 // none declares it.
-func (h *Host) ResolveCapability(capability string) (plugindir.DiscoveredPlugin, error) {
+func (h *Host) ResolveCapability(capability string) (manifestfile.DiscoveredPlugin, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -387,24 +387,24 @@ func (h *Host) ResolveCapability(capability string) (plugindir.DiscoveredPlugin,
 	if h.safeMode {
 		missing.Err = ErrSafeModeActive
 	}
-	return plugindir.EmptyDiscoveredPlugin(), missing
+	return manifestfile.EmptyDiscoveredPlugin(), missing
 }
 
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
-func (h *Host) ResolveService(service string) (plugindir.DiscoveredPlugin, bool) {
+func (h *Host) ResolveService(service string) (manifestfile.DiscoveredPlugin, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if h.safeMode {
-		return plugindir.EmptyDiscoveredPlugin(), false
+		return manifestfile.EmptyDiscoveredPlugin(), false
 	}
 	for _, p := range h.getPluginsInOrderLocked() {
 		if p.Manifest.HasService(service) && h.isPluginEnabledLocked(p.Manifest.ID) {
 			return p, true
 		}
 	}
-	return plugindir.EmptyDiscoveredPlugin(), false
+	return manifestfile.EmptyDiscoveredPlugin(), false
 }
 
 // ResolveNoteProfile finds how the index keeps the notes of a type, as the enabled plugin with the
@@ -430,7 +430,7 @@ func getProfileOf(declared pluginport.PluginNoteType) domain.NoteProfile {
 }
 
 // FindPluginByCapability finds the plugin ResolveCapability finds, and whether there is one.
-func (h *Host) FindPluginByCapability(capability string) (plugindir.DiscoveredPlugin, bool) {
+func (h *Host) FindPluginByCapability(capability string) (manifestfile.DiscoveredPlugin, bool) {
 	p, err := h.ResolveCapability(capability)
 	return p, err == nil
 }
@@ -472,17 +472,17 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 	return activated, errors.Join(errs...)
 }
 
-func (h *Host) prepareSupervisorLocked(pluginID string) (plugindir.DiscoveredPlugin, *lifecycle.Supervisor, error) {
+func (h *Host) prepareSupervisorLocked(pluginID string) (manifestfile.DiscoveredPlugin, *lifecycle.Supervisor, error) {
 	if h.isClosed {
-		return plugindir.DiscoveredPlugin{}, nil, errHostClosed
+		return manifestfile.DiscoveredPlugin{}, nil, errHostClosed
 	}
 	if h.safeMode {
-		return plugindir.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled, Err: ErrSafeModeActive}
+		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled, Err: ErrSafeModeActive}
 	}
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
-		return plugindir.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{
+		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{
 			PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound,
 		}
 	}
@@ -491,10 +491,10 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (plugindir.DiscoveredPlu
 	sup := h.supervisors[pluginID]
 
 	if !h.isPluginEnabledLocked(pluginID) {
-		return plugindir.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
+		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
 	if _, isBuiltIn := h.getBuiltInLocked(pluginID); !isBuiltIn && !p.Manifest.HasBackend() {
-		return plugindir.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginWithoutBackend}
+		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginWithoutBackend}
 	}
 
 	return p, sup, nil
@@ -664,7 +664,7 @@ func (h *Host) beginActivationLocked(pluginID string, sup *lifecycle.Supervisor)
 	return nil
 }
 
-func (h *Host) runActivation(ctx context.Context, p plugindir.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func (h *Host) runActivation(ctx context.Context, p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	endpoint, err := h.activatePlugin(ctx, p, sup)
 	if err != nil {
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
@@ -709,7 +709,7 @@ func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) 
 }
 
 //nolint:contextcheck // background supervisor outlives request
-func (h *Host) startPluginProcess(ctx context.Context, p plugindir.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
@@ -779,7 +779,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p plugindir.DiscoveredPlu
 	return endpoint, nil
 }
 
-func resolvePluginBinary(p plugindir.DiscoveredPlugin) (string, error) {
+func resolvePluginBinary(p manifestfile.DiscoveredPlugin) (string, error) {
 	if p.Manifest.Backend.Entrypoint == "" {
 		return "", security.ErrEmptyEntrypoint
 	}
@@ -798,7 +798,7 @@ func resolvePluginBinary(p plugindir.DiscoveredPlugin) (string, error) {
 
 func (h *Host) defaultLauncher(
 	ctx context.Context,
-	p plugindir.DiscoveredPlugin,
+	p manifestfile.DiscoveredPlugin,
 	port int,
 	token string,
 ) (*os.Process, io.ReadCloser, error) {
@@ -1696,7 +1696,7 @@ func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport
 }
 
 // getRequirements returns the dependencies the plugin is launched with under the settings in force.
-func (h *Host) getRequirements(p plugindir.DiscoveredPlugin) []pluginport.DependencyRequirement {
+func (h *Host) getRequirements(p manifestfile.DiscoveredPlugin) []pluginport.DependencyRequirement {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))

@@ -16,7 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -26,7 +26,7 @@ import (
 func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) plugin.Launcher {
 	t.Helper()
 	pingPort := plugintest.ServePing(t, protocol)
-	return func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := plugintest.NewIdleCommand()
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
@@ -94,7 +94,7 @@ func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
 func TestCheckPluginProtocolRefusesAProtocolTheHostDoesNotSpeak(t *testing.T) {
 	newer := pluginport.PluginProtocolVersion + 1
 	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
-	manifest := plugindir.Manifest{ID: "md.numen.newer", Protocol: newer}
+	manifest := manifestfile.Manifest{ID: "md.numen.newer", Protocol: newer}
 
 	err := transport.CheckPluginProtocol(t.Context(), manifest, endpoint)
 	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host speaks 1") {
@@ -111,7 +111,7 @@ func TestCheckPluginProtocolNamesAPluginThatDoesNotAnswerPing(t *testing.T) {
 	}
 	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: addr.Port, Token: ""}
 
-	err := transport.CheckPluginProtocol(t.Context(), plugindir.Manifest{ID: "md.numen.silent"}, endpoint)
+	err := transport.CheckPluginProtocol(t.Context(), manifestfile.Manifest{ID: "md.numen.silent"}, endpoint)
 	if err == nil || !strings.Contains(err.Error(), "ping plugin md.numen.silent") {
 		t.Fatalf("checkPluginProtocol() = %v, want the ping failure naming the plugin", err)
 	}

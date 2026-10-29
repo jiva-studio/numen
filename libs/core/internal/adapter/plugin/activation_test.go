@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -55,7 +55,7 @@ func TestAProcessThatNeverPrintsReadyIsKilledAtTheActivationDeadline(t *testing.
 			t.Errorf("close pipe: %v", err)
 		}
 	})
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, silent, nil
 	})
 
@@ -80,7 +80,7 @@ func TestACrashingPluginIsNotStartedAgainWithinItsBackoff(t *testing.T) {
 	host.SetActivationPolicy(policy)
 
 	launches := 0
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("exec format error")
 	})
@@ -108,7 +108,7 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 	var notified []string
 	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { notified = append(notified, failure.PluginID) })
 	launches := 0
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("exec format error")
 	})
@@ -154,7 +154,7 @@ func TestTheBackoffDoublesUpToItsLimit(t *testing.T) {
 
 func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("canceled")
 	})
 	ctx, cancel := context.WithCancel(t.Context())
@@ -176,7 +176,7 @@ func TestConcurrentCallersDoNotRestartAFailedActivationWithinItsBackoff(t *testi
 
 	var launches atomic.Int32
 	release := make(chan struct{})
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches.Add(1)
 		<-release
 		return nil, nil, errors.New("exec format error")

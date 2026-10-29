@@ -7,9 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolserver"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
@@ -133,7 +133,7 @@ func (h *Host) getEnvironmentVars(ctx context.Context, pluginID string, processP
 }
 
 // RegisterPlugin adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
-func (h *Host) RegisterPlugin(p plugindir.DiscoveredPlugin, sup *lifecycle.Supervisor) {
+func (h *Host) RegisterPlugin(p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.plugins[p.Manifest.ID] = p
@@ -180,5 +180,5 @@ func (h *Host) clearPluginWork(pluginID string) {
 // GetPluginTools is the tools the plugins with the tools capability offer on the full server, which
 // a plugin serves to programs outside Numen.
 func (h *Host) GetPluginTools() hostendpoint.PluginTools {
-	return toolserver.NewCatalog(h, toolserver.Full)
+	return toolsbridge.NewCatalog(h, toolsbridge.Full)
 }
