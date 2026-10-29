@@ -16,6 +16,8 @@ let filterLang = 'all' // all | ts | go
 let jsonOutPath = ''
 let isFixMode = false
 let isStrictMode = false
+let isAddedOnly = false
+let addedBaseRef = ''
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i]
@@ -33,6 +35,9 @@ for (let i = 0; i < args.length; i++) {
     }
   } else if (arg === '--summary') {
     isSummaryOnly = true
+  } else if (arg === '--added-only') {
+    isAddedOnly = true
+    if (args[i + 1] && !args[i + 1].startsWith('-') && !path.isAbsolute(args[i + 1]) && args[i + 1] !== '.') addedBaseRef = args[++i]
   } else if (arg === '--strict') {
     isStrictMode = true
   } else if (arg === '--check') {
@@ -66,6 +71,8 @@ Options:
   --lang <ts|go|all>    Filter by language: ts (TS/Vue/JS) or go (Go backend) (default: all)
   --json [path]         Output full findings as JSON (default: narrative-report.json)
   --summary             Output only summary counts and top-offending files
+  --added-only [ref]    Count advisory findings only on lines added in the staged diff (with --staged)
+                        or against <ref> (default HEAD)
   --check               Exit with code 1 if any findings exist (for CI / pre-commit)
   --strict              Count advisory prose rules (rationale, actor, narrative-verb, poetic-noun,
                         filler, long-test-name) as findings, so --check fails on them
@@ -489,6 +496,13 @@ const ADVISORY_COMMENT_RULES = [
   { name: 'poetic-noun', re: /\b(?:the picture|ink|shadow|breath|in the air|front door|back door|room|hand|ground)\b/i },
   { name: 'filler', re: /\b(?:just|actually|really|very|simply|quite|kind of|a little|basically|in fact)\b/i },
 ]
+const ADVISORY_IDENTIFIER_WORDS = new Set([
+  'held', 'said', 'told', 'asked', 'answered', 'beside', 'behind', 'along', 'stands', 'sits',
+  'owes', 'wears', 'hands', 'listens', 'hears', 'knows', 'wants', 'refuses', 'picture', 'ink',
+  'shadow', 'breath', 'ground', 'hand', 'door', 'room',
+])
+const RE_IDENTIFIER = /\b[A-Za-z_$][A-Za-z0-9_$]{3,}\b/g
+const RE_ERROR_STRING = /(?:errors\.New|fmt\.Errorf|throw\s+new\s+Error|new\s+ConnectError)\s*\(\s*["`']([^"`']*)["`']/
 const MAX_GO_TEST_NAME_LENGTH = 60
 const MAX_TS_TEST_TITLE_LENGTH = 90
 
@@ -522,6 +536,8 @@ const advisory = {
   'narrative-verb': [],
   'poetic-noun': [],
   filler: [],
+  'compound-identifier': [],
+  'error-prose': [],
   'long-test-name': [],
 }
 
@@ -1041,6 +1057,23 @@ function scanFile(filePath) {
         }
       }
     }
+
+    if (isCode && !isCommentLine && shouldCheckCategory('advisory')) {
+      for (const idMatch of lineWithoutStrings.replace(/\/\/.*$/, '').matchAll(RE_IDENTIFIER)) {
+        const parts = idMatch[0].split(/(?<=[a-z0-9])(?=[A-Z])|_/).map((w) => w.toLowerCase())
+        if (parts.length < 2) continue
+        const bad = /^shadowRoot$/.test(idMatch[0]) ? null : parts.find((w) => ADVISORY_IDENTIFIER_WORDS.has(w))
+        if (bad) {
+          advisory['compound-identifier'].push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: idMatch[0], text: trimmed.slice(0, 140) })
+          break
+        }
+      }
+      const errText = RE_ERROR_STRING.exec(line)?.[1]
+      if (errText) {
+        const hit = [ADVISORY_COMMENT_RULES[1], ADVISORY_COMMENT_RULES[2]].map((r) => r.re.exec(errText)).find(Boolean)
+        if (hit) advisory['error-prose'].push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: hit[0].toLowerCase(), text: trimmed.slice(0, 140) })
+      }
+    }
     if (isCode && shouldCheckCategory('advisory')) {
       const goName = isGo ? RE_GO_TEST_FUNC.exec(line)?.[1] : null
       const tsTitle = !isGo ? RE_TS_TEST_TITLE.exec(line)?.[1] : null
@@ -1132,6 +1165,30 @@ function walk(dir) {
   }
 }
 
+/** Added line numbers per absolute file path, from the staged diff or the diff against a ref. */
+function getAddedLines() {
+  const added = new Map()
+  try {
+    const cmd = isStagedOnly ? 'git diff --cached -U0 --no-color' : `git diff -U0 --no-color ${addedBaseRef || 'HEAD'}`
+    const diff = execSync(cmd, { encoding: 'utf8', cwd: rootDir, maxBuffer: 256 * 1024 * 1024 })
+    let current = null
+    for (const row of diff.split('\n')) {
+      if (row.startsWith('+++ b/')) {
+        current = path.resolve(rootDir, row.slice(6))
+        added.set(current, new Set())
+      } else if (current && row.startsWith('@@')) {
+        const m = /\+(\d+)(?:,(\d+))?/.exec(row)
+        const start = Number(m[1])
+        const count = m[2] === undefined ? 1 : Number(m[2])
+        for (let n = start; n < start + count; n++) added.get(current).add(n)
+      }
+    }
+  } catch {
+    return added
+  }
+  return added
+}
+
 if (isStagedOnly) {
   const staged = getStagedFiles()
   for (const file of staged) {
@@ -1144,6 +1201,14 @@ if (isStagedOnly) {
     scanFile(rootDir)
   } else {
     walk(rootDir)
+  }
+}
+
+if (isAddedOnly) {
+  const addedLines = getAddedLines()
+  const base = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
+  for (const name of Object.keys(advisory)) {
+    advisory[name] = advisory[name].filter((item) => addedLines.get(path.resolve(base, item.file))?.has(item.line))
   }
 }
 
@@ -1342,6 +1407,7 @@ if (isJsonOutput) {
         backendTotal: stats.backendTotal,
         totalIssues,
         findings,
+        advisory,
       },
       null,
       2,
