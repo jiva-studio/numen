@@ -469,7 +469,7 @@ func (s breakingStmt) QueryContext(ctx context.Context, args []driver.NamedValue
 
 // rowFault fails the reading of the rows returned by a statement containing
 // text: when unreadable is set, the first row holds a value that no destination
-// accepts; otherwise the iteration ends in an error.
+// accepts; when it is not set, the iteration ends in an error.
 type rowFault struct {
 	text       string
 	unreadable bool

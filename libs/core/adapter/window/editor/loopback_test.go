@@ -86,7 +86,7 @@ func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.Fil
 	return ref
 }
 
-// takenAway is a listener that stops accepting when asked, as when the
+// takenAway is a listener that stops accepting on request, as when the
 // system revokes the socket.
 type takenAway struct {
 	net.Listener
@@ -219,7 +219,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 }
 
 // A player reads the size of a recording from the first response and requests
-// its end, which is used to estimate the length of a VBR mp3 with no Xing header.
+// its end, which gives an estimate of the length of a VBR mp3 with no Xing header.
 func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
@@ -250,7 +250,7 @@ func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	}
 }
 
-// The player reaches the server over a socket, not in-process, so the test
+// The player connects to the server over a socket, not in-process, so the test
 // covers the whole path.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)

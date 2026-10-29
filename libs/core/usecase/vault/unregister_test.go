@@ -177,7 +177,7 @@ func TestEitherVaultOfTwoMayBeForgotten(t *testing.T) {
 	}
 }
 
-// A vault no longer in the list is not the last vault, regardless of what else remains.
+// A vault removed from the list is not the last vault, regardless of what else remains.
 func TestAVaultNotOnTheListIsNotTheLastVault(t *testing.T) {
 	t.Parallel()
 	first, _, registry := twoVaults(t)

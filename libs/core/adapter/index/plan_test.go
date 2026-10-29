@@ -88,7 +88,7 @@ func readsEverything(step string) bool {
 		!strings.HasPrefix(step, "SCAN h")
 }
 
-// TestQueryPlans_UseIndexes asks the database for its query plan.
+// TestQueryPlans_UseIndexes reads the database's query plan.
 //
 // The schema comes from the migrations. The database is populated because the
 // planner uses rules of thumb for an empty one, and the plans are obtained

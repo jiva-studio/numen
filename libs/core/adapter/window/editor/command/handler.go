@@ -49,7 +49,7 @@ func (h *Handler) ListCommands(
 	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
 }
 
-// RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or reaches
+// RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to
 // no plugin is answered with an error code and a user-readable message.
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],

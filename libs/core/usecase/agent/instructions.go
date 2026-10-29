@@ -9,7 +9,7 @@ import (
 // GetInstructions returns the instructions for the agent about the user it is
 // answering.
 //
-// Tools address a note by path, but the user knows a note by its title: a note
+// Tools address a note by path, but the user refers to a note by its title: a note
 // is "Harmonic oscillator", never `physics/classical/Harmonic oscillator.md`.
 func GetInstructions(task agentport.Task) string {
 	var b strings.Builder

@@ -61,7 +61,7 @@ func noteWith(vocabulary []string, n int) string {
 	return "---\ntitle: Note\n---\n\n" + prose(vocabulary, n)
 }
 
-// asked is a model that returns a vector direction determined by the input
+// fakeEmbedder is a model that returns a vector direction determined by the input
 // text. It makes no calls outside this process and counts its requests, which
 // gives the number of passes run.
 type fakeEmbedder struct {
@@ -159,9 +159,9 @@ func direction(text string, dims int) []float32 {
 	return out
 }
 
-// walking counts the walks of a vault. Reading the sources walks the whole
-// vault before embedding; embedding alone opens the files the index already
-// holds a chunk of, and does not walk.
+// walking counts the traversals of a vault. Reading the sources traverses the whole
+// vault before embedding; embedding alone opens the files in which the index already
+// has a chunk, and does not traverse.
 type walking struct {
 	vaultport.VaultReaders
 	walks atomic.Int64
@@ -288,7 +288,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 		t.Fatalf("%d of %d chunks carry a vector with nothing saved yet", embedded, target)
 	}
 
-	// Longer than the file on disk, so every chunk position lies within the saved
+	// Longer than the file on disk, so every chunk position is within the saved
 	// note.
 	save(t, f, "Note.md", prose(after, 240))
 

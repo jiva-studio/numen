@@ -25,10 +25,10 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
+	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
-	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 // Installation is a window put together and running: the questions a client
@@ -59,7 +59,7 @@ type Installation struct {
 	made  Assembly
 	tasks *run.Tasks
 	out   io.Writer
-	// checkIdentity rejects a vault whose folder no longer carries its identity.
+	// checkIdentity rejects a vault whose folder does not carry its identity.
 	checkIdentity vaults.CheckIdentity
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.

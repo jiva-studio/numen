@@ -110,8 +110,8 @@ func (c Chunk) ExtractText(text string) string { return text[c.Start : c.Start+c
 // chunk a small one belongs to.
 func (c Chunk) computeMiddle() int { return c.Start + c.Length/2 }
 
-// Chunks cuts the text and returns every chunk as the index holds it. The
-// build function creates one chunk from a cut, and is told whether it is a
+// Chunks cuts the text and returns every chunk as the index stores it. The
+// build function creates one chunk from a cut and receives whether it is a
 // large chunk or a small one inside it.
 func Chunks(
 	text string, parts []domain.PartStart, sizes Sizes, reads Legibility,

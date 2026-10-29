@@ -143,7 +143,7 @@ func TestANameAlreadyTaken(t *testing.T) {
 
 // TestAVolumeThatConsumesNoTrash verifies that a folder is never deleted when
 // there is nowhere to move it: a volume whose root rejects a trash directory
-// has none, and the returned error says so.
+// has none, and the returned error reports that.
 func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("root writes into a directory whose mode refuses it")

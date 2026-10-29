@@ -105,7 +105,7 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 	}
 }
 
-// The window frames no host. A frame runs that host's own scripts and reaches
+// The window frames no host. A frame runs that host's own scripts and calls
 // that host's own machines, so any added host must appear in a reviewed diff.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
 	response := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
@@ -377,7 +377,7 @@ func (blockingVaults) Remove(domain.VaultID) error               { return nil }
 func (blockingVaults) RecordOpened(domain.VaultID) error         { return nil }
 
 // TestHandler_ClosingWaitsForInFlightRequests. A search, a note and a link are
-// answered from the index. A request admitted just before the handler closes
+// answered from the index. A request admitted immediately before the handler closes
 // still uses the index while everything its answer depends on is torn down.
 func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	begun := make(chan struct{}, 1)

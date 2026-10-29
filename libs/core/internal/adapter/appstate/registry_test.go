@@ -208,8 +208,8 @@ func TestRemovingTheVaultOpenedLastForgetsThatItWas(t *testing.T) {
 	if got, found, err := r.GetLastVault(); err != nil || found {
 		t.Errorf("last = %v %v %v, want nothing", got, found, err)
 	}
-	// The file no longer contains it either: an identity that no list entry
-	// carries must not appear in the file.
+	// The file does not contain it either: an identity that no list entry
+	// carries is absent from the file.
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

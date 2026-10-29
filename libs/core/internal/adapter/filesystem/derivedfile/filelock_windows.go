@@ -9,11 +9,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// wrapLockedByAnother wraps vaultport.ErrLockedByAnother around err when another
-// process holds the file, and returns err itself otherwise.
+// wrapLockedByAnother wraps vaultport.ErrLockedByAnother around err when
+// another process holds the file, and returns any other err unchanged.
 //
-// Windows denies every other opener while a program has a file open, and reports
-// this with two error codes.
+// Windows denies every other opener while a program has a file open, and
+// reports this with two error codes.
 func wrapLockedByAnother(err error) error {
 	if errors.Is(err, windows.ERROR_SHARING_VIOLATION) ||
 		errors.Is(err, windows.ERROR_LOCK_VIOLATION) {

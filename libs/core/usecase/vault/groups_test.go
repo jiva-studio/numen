@@ -8,7 +8,7 @@ import (
 )
 
 // TestFlushClearsTheBackingArray: a flushed group must not keep referencing the
-// notes it just wrote through the slice's backing array, so the GC can
+// notes it wrote through the slice's backing array, so the GC can
 // reclaim them before the next group fills those slots.
 func TestFlushClearsTheBackingArray(t *testing.T) {
 	g := &grouping{write: func(context.Context, []domain.Note) error { return nil }}

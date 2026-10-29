@@ -171,7 +171,7 @@ func getRootRelativeName(resolved, root string) string {
 	return filepath.ToSlash(resolved[len(root)+1:])
 }
 
-// IsUnderRoot reports whether a resolved path is the root or lies inside it.
+// IsUnderRoot reports whether a resolved path is the root or inside it.
 func IsUnderRoot(resolved, root string) bool {
 	return resolved == root || strings.HasPrefix(resolved, root+string(filepath.Separator))
 }

@@ -344,7 +344,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 	}
 }
 
-// A link the note no longer contains is neither repaired nor reported.
+// A link the note does not contain is neither repaired nor reported.
 func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 	c := openLinked(t)
 	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), isLinksEmpty: true}}
@@ -377,7 +377,7 @@ func TestANoteThatWentSinceTheLinksWereReadIsLeftOut(t *testing.T) {
 	}
 }
 
-// A note that no longer contains the address the index recorded has nothing to
+// A note that does not contain the address the index recorded has nothing to
 // repair and is not written.
 func TestANoteThatNoLongerReturnsTheLinkIsNotSaved(t *testing.T) {
 	c := openLinked(t)

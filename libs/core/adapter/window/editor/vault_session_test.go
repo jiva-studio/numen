@@ -981,7 +981,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Errorf("a window standing on nothing is doing %+v", executing)
 	}
 
-	// Focus opens on the first requested place, and a place reaches only a stream
+	// Focus opens on the first requested place, and a place arrives only at a stream
 	// that is already subscribed. The place is therefore requested repeatedly
 	// while the stream opens, until it arrives.
 	asking, cancel := context.WithCancel(t.Context())

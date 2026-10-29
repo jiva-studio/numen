@@ -48,7 +48,7 @@ type toolCall struct {
 	arguments string
 }
 
-// toolAgent is an agent plugin that reaches the tools of its task over MCP: it
+// toolAgent is an agent plugin that connects to the tools of its task over MCP: it
 // lists them, makes the calls it is given and records each result.
 type toolAgent struct {
 	numenv1connect.UnimplementedAgentServiceHandler
@@ -309,7 +309,7 @@ func runToEnd(t *testing.T, agent agentport.Agent, task agentport.Task) []agentp
 }
 
 // An agent run in the editor receives its own endpoint: the agent lists the tools
-// of every tools plugin there, and a call reaches the plugin that listed the tool,
+// of every tools plugin there, and a call is routed to the plugin that listed the tool,
 // with the run's context.
 func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{

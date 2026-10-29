@@ -90,7 +90,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 					"vault, delete its service folder and add it again",
 				ErrCopy, root, existing.Path, id)
 		}
-		// The old location is gone, or is no longer this vault: the folder moved, and the
+		// The old location is missing, or holds a different vault: the folder moved, and the
 		// registry must be updated.
 	}
 

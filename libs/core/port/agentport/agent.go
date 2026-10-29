@@ -22,7 +22,7 @@ type Agent interface {
 	EndConversation(ctx context.Context, conversation string) error
 }
 
-// Task is the user's question, the focus it was asked from, and the
+// Task is the user's question, the focus it originates from, and the
 // conversation it belongs to.
 type Task struct {
 	Question string

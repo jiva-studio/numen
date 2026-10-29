@@ -37,7 +37,7 @@ const pluginPageReferrer = "strict-origin-when-cross-origin"
 //
 // The window loads from the toolkit's own scheme, and a browser sends no
 // Referer from a page with a non-http scheme; a video site that checks the
-// Referer refuses to play in a frame of such a page. A page served here has an
+// Referer rejects playback in a frame of such a page. A page served here has an
 // http origin, so the Referer is sent.
 func (l *Loopback) servePluginPage(w http.ResponseWriter, r *http.Request, rest string) {
 	plugins := l.getPluginServices()

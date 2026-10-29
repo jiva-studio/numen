@@ -31,10 +31,10 @@ const (
 	Unreadable = edit.Unreadable
 )
 
-// Contents is one note as a read hands it over.
+// Contents is one note as Read returns it.
 type Contents = edit.Contents
 
-// Read hands over the prose of one note.
+// Read returns the prose of one note.
 type Read struct {
 	readers vaultport.VaultReaders
 }
@@ -48,7 +48,7 @@ func NewRead(readers vaultport.VaultReaders) Read {
 // Execute reads the note at path.
 //
 // An error is the vault being out of reach. What is wrong with the note itself
-// is an outcome, and the caller is told which one.
+// is an outcome, and the result identifies which one.
 func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Contents, error) {
 	if u.readers == nil {
 		return Contents{}, errNotOpen

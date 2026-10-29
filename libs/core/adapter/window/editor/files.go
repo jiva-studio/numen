@@ -88,7 +88,7 @@ func (h *fileHandler) ListFiles(
 //
 // Whether a note exists is read from the vault and its type from the index, or
 // from the note itself when nothing has scanned it yet, so a file a plugin has
-// just written opens in the editor made for it. A window with no vault has no
+// created opens in the editor made for it. A window with no vault has no
 // source, and a path with nothing at it is omitted.
 func (h *fileHandler) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
@@ -209,7 +209,7 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 }
 
 // RemoveFile removes a file or a folder from the vault. It goes to the trash,
-// and a request that asks for it destroys a note permanently.
+// and a request with the destroy flag deletes a note permanently.
 func (h *fileHandler) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {

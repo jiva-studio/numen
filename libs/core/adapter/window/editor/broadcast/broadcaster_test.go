@@ -5,7 +5,7 @@ import (
 )
 
 // A listener reading while tell runs on another goroutine receives numbers
-// in the order they were told, never out of order and never twice.
+// in the order they were sent, never out of order and never twice.
 func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 	bcast := Broadcaster[int]{Capacity: 16}
 	line, isDone := bcast.Subscribe()

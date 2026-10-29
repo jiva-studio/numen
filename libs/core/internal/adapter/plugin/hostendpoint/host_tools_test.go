@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 )
 
-// toolCall is one call the tools were asked to run.
+// toolCall records one call to run a tool.
 type toolCall struct {
 	callerID string
 	name     string

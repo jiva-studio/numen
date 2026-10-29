@@ -157,7 +157,7 @@ func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	}
 }
 
-// A model the program no longer lists is replaced by the model the program responds with, without being requested.
+// A model the program does not list is replaced by the model the program responds with, without being requested.
 func TestAModelTheProgramNoLongerListsIsReplacedByItsDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	completer, _ := serveCompletions(t, host, `{"ai": {"default": {"agent": "alpha", "model": "retired"}}}`)

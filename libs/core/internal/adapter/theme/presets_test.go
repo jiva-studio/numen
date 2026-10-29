@@ -50,8 +50,9 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 	}
 }
 
-// A token takes a colour, a length, or a shadow, which is lengths and a colour
-// in one value. A preset that sets a token uses the shape that token takes.
+// A token takes a colour, a length, or an elevation, which combines lengths and
+// a colour in one value. A preset that sets a token uses the shape that token
+// takes.
 func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
@@ -137,7 +138,7 @@ func resolveToken(value string, tokens map[string]string) string {
 }
 
 // getValueKind classifies a value by its shape. A colour and a length are
-// identified directly, and a shadow is the remainder.
+// identified directly, and an elevation is any other value.
 func getValueKind(value string) valueKind {
 	switch {
 	case isColour(value):
@@ -177,7 +178,7 @@ var measure = regexp.MustCompile(`^-?(\d+\.?\d*|\.\d+)(px|rem|em|%)$`)
 func isLength(value string) bool { return value == "0" || measure.MatchString(value) }
 
 // isElevationValue is one layer or several, each consisting of the offsets and
-// the spread of the shadow, followed by its colour.
+// the spread of the layer, followed by its colour.
 func isElevationValue(value string) bool {
 	for _, layer := range splitOn(value, ',') {
 		parts := splitWords(layer)

@@ -167,7 +167,7 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	return owingTo(t, db, v, first)
 }
 
-// Only an index rebuild deletes the vectors of a model that is no longer
+// Only an index rebuild deletes the vectors of a model that is not
 // selected; every other run keeps them, so switching back to a model finds all
 // of its vectors present.
 func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {

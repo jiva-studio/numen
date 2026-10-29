@@ -135,7 +135,7 @@ func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain
 	return stats, nil
 }
 
-// walkAndRecord walks the vault, records each file with text that the index
+// walkAndRecord traverses the vault, records each file with text that the index
 // does not already hold unchanged, and returns every file path it found. A file
 // is recorded only if it has text versions or a plugin that runs on its own
 // can extract its text.
@@ -244,8 +244,8 @@ func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string 
 }
 
 // dropOutdatedText records again, with no recipe, every source cut from a
-// version that is no longer the file's live version: a plugin was switched off,
-// a version was deleted, or a newer one was created while nothing was indexing.
+// version that is not the file's live version: a plugin was switched off,
+// a version was deleted, or a newer one was created while no indexing ran.
 func (u Index) dropOutdatedText(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
 	cut, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
@@ -373,7 +373,7 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (Index
 // cut into.
 //
 // A file with no live version keeps no chunks, and the plugins that run on
-// their own are asked for its text. This is an ordinary outcome, counted, and
+// their own are queried for its text. This is an ordinary outcome, counted, and
 // the run continues. An unreachable vault, or an index that rejects the chunks,
 // stops the run.
 //

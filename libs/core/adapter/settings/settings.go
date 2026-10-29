@@ -4,7 +4,7 @@
 // setting is a section of it, so all settings are in one file. It is named after
 // the application, so its purpose is clear wherever it is displayed or copied.
 // The list of vaults is not stored here: the application rewrites it when a vault
-// is added, and a file the application rewrites is unsuitable for hand-edited
+// is added, and a file the application rewrites is unsuitable for manually edited
 // values.
 //
 // A missing file is an untouched installation. Every field the file omits keeps

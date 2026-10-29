@@ -466,7 +466,7 @@ func (u Embed) prepareBatch(
 }
 
 // queueText queues the text at index i for inference. A nil visited map queues
-// every text; otherwise a key already in visited shares the position of its
+// every text; a non-nil map makes a key already in visited share the position of its
 // first text.
 func (p *preparedBatch) queueText(i int, key, value string, visited map[string]int) {
 	if visited != nil {

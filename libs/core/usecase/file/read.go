@@ -1,5 +1,5 @@
 // Package file holds the scenarios that act on a vault's files by path,
-// regardless of the kind of file the vault classifies each as.
+// regardless of the type the vault classifies each file as.
 package file
 
 import (
@@ -45,8 +45,8 @@ type ReadResult struct {
 	// to the file and aligned to character boundaries.
 	Start  int
 	Length int
-	// Whole is the length of the file in bytes, so a caller knows what lies
-	// before and after the range.
+	// Whole is the length of the file in bytes, which locates the range
+	// within the file.
 	Whole int
 }
 

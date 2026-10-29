@@ -110,7 +110,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 }
 
 // A name that already exists in the folder is a conflict only the user can
-// resolve, so that file is skipped and the rest are copied.
+// resolve; that file is skipped and the rest are copied.
 func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})

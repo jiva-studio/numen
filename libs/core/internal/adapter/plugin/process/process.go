@@ -166,8 +166,8 @@ const (
 	EnvONNXProvider = "NUMEN_ONNX_PROVIDER"
 )
 
-// LaunchEnvironment is what the host tells a plugin process about its launch.
-// It contains neither secrets nor settings: both reach a plugin through
+// LaunchEnvironment is what the host passes to a plugin process about its
+// launch. It contains neither secrets nor settings: both arrive through
 // Configure.
 type LaunchEnvironment struct {
 	VaultPath   string

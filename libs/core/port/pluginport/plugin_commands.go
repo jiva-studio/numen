@@ -33,9 +33,10 @@ var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber
 // id of the text version that met the condition.
 const CommandArgumentVersion = "version-id"
 
-// PluginCommandWhen is the state of a file's text versions in which a command is offered over the
-// file. Every condition a command names has to hold. A command with a condition is offered by the
-// menu of the file, and not by the palette, which knows no file's versions.
+// PluginCommandWhen is the state of a file's text versions in which a command
+// is offered over the file. Every condition a command names has to hold. A
+// command with a condition is offered by the menu of the file, and not by the
+// palette, which has no file context.
 type PluginCommandWhen struct {
 	// LiveTextKinds are the kinds of text, as the plugin that made it names them, one of which the
 	// file's live version has; `*` is any kind. The command is offered over that version.
@@ -169,8 +170,8 @@ func listCommandArgumentIssues(command PluginCommand) []error {
 	return issues
 }
 
-// PluginCommandEntry is one command an enabled plugin declares, and the plugin that does, by its id
-// and by its name as a person reads it.
+// PluginCommandEntry is one command an enabled plugin declares, and the plugin
+// that declares it, by its id and by its display name.
 type PluginCommandEntry struct {
 	PluginID   string
 	PluginName string

@@ -63,9 +63,9 @@ type Services interface {
 	workServices
 }
 
-// Endpoint serves the calls plugins make to the host. It listens on the
-// loopback interface and serves a call only for a token the host issued to a
-// running plugin.
+// Endpoint serves the calls plugins make to the host. It binds the loopback
+// interface and serves a call only for a token the host issued to a running
+// plugin.
 type Endpoint struct {
 	callers Callers
 	server  *http.Server
@@ -105,7 +105,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	return endpoint, nil
 }
 
-// GetPort returns the loopback port the endpoint listens on.
+// GetPort returns the loopback port the endpoint serves on.
 func (e *Endpoint) GetPort() int {
 	return e.port
 }

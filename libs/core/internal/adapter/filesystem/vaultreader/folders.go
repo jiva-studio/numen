@@ -14,15 +14,15 @@ import (
 // walk.
 const Entries = 4096
 
-// Folders records which paths in the vault are folders, so that a deleted path
-// can still be classified as a folder or a file.
+// Folders records which paths in the vault are folders, so a deleted path can
+// be classified as a folder or a file.
 //
 // A name does not determine the type — `2026.archive` is a folder and
 // `notes.txt` is not — and a deleted path cannot be inspected, so the type is
 // recorded while the path exists.
 //
-// The goroutine that drains the events reads the shape and the goroutine that
-// walks a folder new to the watch writes it, so access is guarded by a lock.
+// The goroutine that drains the events reads the shape, and the goroutine that
+// scans a folder new to the watch writes it, so a lock guards access.
 type Folders struct {
 	reader *VaultReader
 
@@ -45,9 +45,9 @@ func (f *Folders) addFolder(path string) {
 	f.Indexed[path] = true
 }
 
-// ReadShape walks the vault once to record its shape, stopping where the
-// vault's own walk stops. A folder created later is recorded from the event that
-// creates it.
+// ReadShape scans the vault once to record its shape, ending where the vault's
+// own walk ends. A folder created later is recorded from the event that creates
+// it.
 //
 // A folder the walk cannot enter is missing from the shape, and the first such
 // error is returned.
@@ -108,18 +108,18 @@ func (f *Folders) removeFolder(path string) {
 //
 // A file maps to itself when the vault holds it. A folder new to the watch maps
 // to everything under it, because such a folder arrives with its contents in
-// place. A folder already known maps to nothing, and so does a folder the walk
+// place. A folder already known maps to nothing, as does a folder the walk
 // skips together with everything under it.
 //
-// A path that no longer exists and that the vault skips as a folder yields no
+// A path that does not exist and that the vault skips as a folder yields no
 // source.
 //
 // `whole` is set when the answer cannot be derived from the disk: a deleted
-// folder took sources with it, and only the index knows their paths. A path
+// folder takes its sources with it, and only the index has their paths. A path
 // outside the vault is the same case.
 //
-// `walk` is a folder new to the watch, returned by name. This function runs
-// where nothing may block.
+// `walk` is a folder new to the watch, returned by name. This function must not
+// block.
 func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool, walk string) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {

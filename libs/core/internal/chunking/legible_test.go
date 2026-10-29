@@ -15,8 +15,8 @@ func TestACJKParagraphWithSentencePunctuationIsClean(t *testing.T) {
 }
 
 // Mixed scripts with a high ratio of unrelated symbols are what the dirty
-// threshold exists to catch, and a wider isAllowedInside must not let that kind of
-// token through.
+// threshold exists to catch, and a more permissive isAllowedInside must not
+// admit such a token.
 func TestMixedScriptNoiseStaysDirty(t *testing.T) {
 	noisy := "wo¤rda wo§rdb wo¥rdc wo¦rdd wo¨rde wo¤rdf wo§rdg wo¥rdh"
 

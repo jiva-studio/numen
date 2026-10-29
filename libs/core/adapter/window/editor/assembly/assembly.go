@@ -8,8 +8,8 @@ type runtimeAssembly interface {
 }
 
 // Assembly is what this window requires from the application's composition root:
-// the vault list and the installation's cache, the ports used to access a vault, and
-// the scenarios and passes used to open one.
+// the vault list and the installation's cache, the ports that access a vault, and
+// the scenarios and passes that open one.
 type Assembly interface {
 	VaultAssembly
 	IndexAssembly

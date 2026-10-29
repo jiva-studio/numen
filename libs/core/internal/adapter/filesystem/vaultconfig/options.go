@@ -97,7 +97,7 @@ func (o Options) IsService(name string) bool {
 	return strings.EqualFold(name, o.GetServiceDir())
 }
 
-// Kind returns the source kind of a file name: a note or any other file.
+// Kind returns the source kind for a file name: a note or any other file.
 func (o Options) Kind(name string) domain.SourceKind {
 	if hasExtension(name, NoteExtensions) {
 		return domain.KindNote

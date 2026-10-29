@@ -35,8 +35,8 @@ type Move struct {
 	// filename is an edit, and an edit stamps the identifier a note arrived
 	// without.
 	now machineport.Clock
-	// Drawing receives the note's new path, so that every view showing the note
-	// under its old name follows it. Nil notifies no one.
+	// Drawing receives the note's new path; every view showing the note
+	// under its old name follows it. Nil sends no notification.
 	Drawing TellMove
 	// Sync reports, for each rename, whether a note's title and filename are kept
 	// identical. Nil keeps them identical.
@@ -162,7 +162,7 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 	return res, nil
 }
 
-// rewriteLink rewrites one link that no longer resolves and records the note
+// rewriteLink rewrites one link that does not resolve and records the note
 // containing it in res.
 func (u Move) rewriteLink(
 	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *MoveResult,
@@ -240,7 +240,7 @@ const (
 	linkDangling
 )
 
-// repair writes `reaches` in place of an address that no longer resolves. Only
+// repair writes `destination` over an address that does not resolve. Only
 // the address changes, and only in the note containing it.
 //
 // It reports whether the link was rewritten and, if not, whether the note still
@@ -250,7 +250,7 @@ const (
 // It reads and writes a note that may be open elsewhere, so it holds the vault
 // write lock across both.
 func (u Move) repair(
-	ctx context.Context, v domain.Vault, in string, address domain.Address, reaches string,
+	ctx context.Context, v domain.Vault, in string, address domain.Address, destination string,
 ) (linkState, error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
@@ -277,11 +277,11 @@ func (u Move) repair(
 		// link it holds is left reaching nothing.
 		return linkDangling, nil
 	}
-	inBlock, err := doc.RedirectLinks(address, reaches)
+	inBlock, err := doc.RedirectLinks(address, destination)
 	if err != nil {
 		return linkUntouched, err
 	}
-	inProse, err := doc.RedirectProse(address, reaches)
+	inProse, err := doc.RedirectProse(address, destination)
 	if err != nil {
 		return linkUntouched, err
 	}

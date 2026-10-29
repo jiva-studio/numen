@@ -49,8 +49,8 @@ func CreateParents(root *os.Root, dir, path string) error {
 }
 
 // CreateTempFile creates a file next to a target, under the vault's own handle.
-// It is os.CreateTemp for a root: a name no one else holds, taken by creating
-// it and not by checking first.
+// It is os.CreateTemp for a root: the name is unique to the creating call and
+// is claimed by creating the file, not by checking for it first.
 func CreateTempFile(root *os.Root, dir, pattern string) (*os.File, string, error) {
 	prefix, suffix, _ := strings.Cut(pattern, "*")
 	for range 10_000 {

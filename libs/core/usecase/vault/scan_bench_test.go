@@ -93,7 +93,7 @@ func BenchmarkWarmScan(b *testing.B) {
 	}
 }
 
-// BenchmarkIncrementalScan is one edited note in an otherwise unchanged vault:
+// BenchmarkIncrementalScan is one edited note in a vault with no other change:
 // a whole walk, and a file stat of every note, for one file. It is the cost of
 // detecting a change without notification, which is what a scan at startup
 // pays; a change the watcher reports goes through Refresh and touches only that
@@ -224,7 +224,7 @@ func touchAll(root string) error {
 	})
 }
 
-// BenchmarkLinks measures resolution, which is where the cost of links lies:
+// BenchmarkLinks measures resolution, which dominates the cost of links:
 // storing them is a handful of rows per note, but every link is resolved again
 // on each request, because resolution is a query and not a stored fact.
 func BenchmarkLinks(b *testing.B) {

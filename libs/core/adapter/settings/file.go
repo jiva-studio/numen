@@ -9,7 +9,7 @@ import (
 )
 
 // checkObject rejects bytes that are not a single JSON object, since the
-// settings are the fields of one object, and accepts them otherwise.
+// settings are the fields of one object.
 func checkObject(raw []byte) error {
 	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {

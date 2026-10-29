@@ -391,8 +391,8 @@ func TestSplittingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 
 func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	// A note is saved with ON CONFLICT DO UPDATE, so its source row survives and
-	// nothing cascades. Its chunks describe changed text, and a stale chunk
-	// points to an offset the file no longer has.
+	// nothing cascades. Its chunks describe changed text, and an outdated chunk
+	// points to an offset the file does not have.
 	ctx := t.Context()
 	db := openDB(t)
 
@@ -824,7 +824,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if len(owing) != 0 {
 		t.Errorf("%d still owe a vector", len(owing))
 	}
-	// The embedded count reaches the total; a count that stays below it is the
+	// The embedded count equals the total; a count that stays below it is the
 	// defect under test.
 	if target != embedded {
 		t.Errorf("%d held, %d embedded", target, embedded)
@@ -1096,9 +1096,9 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 // Text a source stopped containing removes its vector; a removed source removes nothing.
 //
-// A split identifies exactly which text the source contained before and no longer
-// contains, which is the only point where that is known. A source the vault no
-// longer lists is different: an unreadable folder looks the same as one whose
+// A split identifies exactly which text the source contained before and does not
+// contain now, which is the only point where that is known. A source the vault
+// does not list is different: an unreadable folder looks the same as one whose
 // files were deleted, and recomputing the vector is costly.
 func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	ctx := t.Context()
@@ -1208,7 +1208,7 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 
 // Vectors carried in under an older name of the same model are taken up.
 //
-// A migration that carries vectors forward only knows the model and the
+// A migration that carries vectors forward has only the model and the
 // dimension recorded in the rows it reads. The recipe in use adds more
 // information: when the model and dimension match, the migrated vectors were
 // created by the model currently in use and are not recomputed.
@@ -1336,8 +1336,8 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 }
 
 func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
-	// A small chunk positioned where a section begins lies inside the chunk that
-	// opens it. One section named twice would answer twice, and the second answer
+	// A small chunk positioned where a section begins is inside the chunk that
+	// opens it. One section named twice produces two answers, and the second answer
 	// is the same location.
 	ctx := t.Context()
 	db := openDB(t)
@@ -1416,7 +1416,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 
 func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 	// A chunk keeps its row through a split when its content is unchanged, so a
-	// name is not removed with the chunk. A section that no longer exists but still
+	// name is not removed with the chunk. A section that was removed but still
 	// matches by name returns a passage opening where nothing begins.
 	ctx := t.Context()
 	db := openDB(t)

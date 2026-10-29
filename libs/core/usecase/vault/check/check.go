@@ -1,6 +1,6 @@
 // Package check is what a vault is checked against.
 //
-// A vault is edited by hand, by other tools and by other programs, so it
+// A vault is edited manually, by other tools and by other programs, so it
 // accumulates things the application does not act on and does not guess at: a
 // link with no role, a frontmatter block that is not YAML, a name shared by two
 // notes. None of it stops a scan, and without a check it goes unreported.
@@ -26,7 +26,7 @@ import (
 // The name it answers to is a domain.Check: the check's name is reported to
 // users, and the implementation stays in this package.
 type Checker interface {
-	// Name is the check's name, used to select it.
+	// Name is the check's name; callers select a check by it.
 	Name() domain.Check
 	// FindProblems reports the problems found, each against the note to open to
 	// resolve it.

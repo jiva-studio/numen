@@ -6,8 +6,8 @@ import (
 )
 
 func TestOrdinaryWordsAreNotFTSSyntax(t *testing.T) {
-	// Each of these is a legitimate search term, and each is a syntax error if it
-	// reaches FTS5 unquoted: a hyphen is read as a column reference, a plus as an
+	// Each of these is a legitimate search term, and each is a syntax error when
+	// passed to FTS5 unquoted: a hyphen is read as a column reference, a plus as an
 	// operator, a quote as the start of a string.
 	for _, input := range []string{"state-function", "C++", `"entropy`, "a:b", "one (two)"} {
 		got := Expression(input, true)

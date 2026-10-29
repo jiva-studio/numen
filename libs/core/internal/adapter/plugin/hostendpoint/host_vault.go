@@ -115,7 +115,8 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	}
 }
 
-// readKind returns the source kind of the file a file stat describes, or none for a file stat with no file.
+// readKind returns the source kind for the file that a file stat describes, or
+// none for a file stat with no file.
 func readKind(f *v1.HostFileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():

@@ -305,7 +305,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 // The cancellation happens after the walk, not during it: the reader rejects a
 // cancelled context itself, so a scan that never checked the context would
 // still stop during the walk. The pass over the walk results, which is the
-// entire work of a warm scan, is otherwise unguarded.
+// entire work of a warm scan, has no other guard.
 type cancellingReaders struct {
 	vaultport.VaultReaders
 	cancel context.CancelFunc

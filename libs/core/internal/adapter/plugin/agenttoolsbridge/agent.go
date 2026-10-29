@@ -24,7 +24,7 @@ type Agent struct {
 	server  Server
 }
 
-// NewAgent wraps the agent so that its runs can call the tools that the host's
+// NewAgent wraps the agent so its runs can call the tools that the host's
 // plugins provide on the server.
 func NewAgent(agent agentport.Agent, host Host, server Server) *Agent {
 	return &Agent{agent: agent, plugins: plugins{host: host}, server: server}

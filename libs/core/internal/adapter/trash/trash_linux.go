@@ -95,7 +95,7 @@ func getVolumeRoot(path string) (string, error) {
 
 // getVolumeTrashDir returns the trash directory at the root of a mounted
 // volume: the per-user directory inside the shared `.Trash` when that is a
-// sticky directory, and the user's own `.Trash-<uid>` otherwise.
+// sticky directory, and the user's own `.Trash-<uid>` when it is not.
 func getVolumeTrashDir(top string, uid int) (string, error) {
 	shared := filepath.Join(top, ".Trash")
 	if info, err := os.Lstat(shared); err == nil && info.IsDir() && info.Mode()&os.ModeSticky != 0 {

@@ -13,7 +13,7 @@ import (
 
 // A vector is computed once and reclaimed by every vault that holds the same
 // text. What the coarse pass reads is the same either way, so whether a passage
-// reaches the rerank is determined by its text.
+// enters the rerank is determined by its text.
 func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 900)), 1)

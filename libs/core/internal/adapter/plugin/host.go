@@ -574,8 +574,8 @@ func (h *Host) newPluginFailureLocked(pluginID string, sup *lifecycle.Supervisor
 	}
 }
 
-// deliverPluginFailures passes the plugins that have just failed permanently to
-// the failure callback, outside every lock.
+// deliverPluginFailures passes the plugins that failed permanently since the
+// previous call to the failure callback, outside every lock.
 func (h *Host) deliverPluginFailures() {
 	h.mu.Lock()
 	failures := h.failedPlugins

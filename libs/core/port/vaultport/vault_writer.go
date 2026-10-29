@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/edit"
 )
 
-// ErrStale is the write error returned when the file it was about to replace is
-// no longer the one the caller read.
+// ErrStale is the write error returned when the file to be replaced is not the
+// one the caller read.
 var ErrStale = edit.ErrStale
 
 // ErrAlreadyExists is the move error returned when something already exists

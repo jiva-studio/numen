@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// ErrChanged is a file that is no longer the one an address was issued for.
+// ErrChanged is a file that differs from the one an address was issued for.
 var ErrChanged = errors.New("the file changed since this address was given out")
 
 // OpenFile opens one file of the vault to read a part of.
@@ -30,8 +30,8 @@ type OpenedFile struct {
 	ModTime time.Time
 }
 
-// Execute opens the file while its size and modification time match the given ones, and rejects it
-// with ErrChanged otherwise. A zero modification time means no modification time was supplied.
+// Execute opens the file when its size and modification time match the given ones, and rejects it
+// with ErrChanged when they differ. A zero modification time means no modification time was supplied.
 func (u *OpenFile) Execute(ctx context.Context, v domain.Vault, path string, named domain.FileStat) (OpenedFile, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {

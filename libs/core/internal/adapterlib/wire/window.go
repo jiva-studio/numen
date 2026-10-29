@@ -70,8 +70,8 @@ const Again = time.Second
 //
 // The full list is sent on every change, and the first message is sent
 // immediately: a client that connects while work is running needs the current
-// state, and a stream silent until the next change cannot be told from one that
-// never opened.
+// state, and a stream silent until the next change is indistinguishable from
+// one that never opened.
 func (w *Window) WatchTasks(
 	ctx context.Context,
 	r *connect.Request[v1.WatchTasksRequest],
@@ -126,8 +126,9 @@ func (w *Window) WatchQuit(
 	token, notified, isDone := w.clients.registerClient()
 	defer isDone()
 
-	// The token is sent first: a client without one cannot answer a flush request,
-	// and a stream silent until quit cannot be told from one that never opened.
+	// The token is sent first: a client without one cannot respond to a flush
+	// request, and a stream silent until quit is indistinguishable from one
+	// that never opened.
 	if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 		return err
 	}
@@ -205,8 +206,8 @@ func (w *Window) RemoveTask(id string) {
 	}
 }
 
-// RequestFlush asks every client to write its unsaved work and waits for the
-// request to end. It returns false when a client holds work awaiting a user
+// RequestFlush requests every client to write its unsaved work and waits for
+// the request to end. It returns false when a client holds work awaiting a user
 // decision, or when another request superseded this one.
 func (w *Window) RequestFlush(ctx context.Context) bool {
 	request := w.clients.startRequest()
@@ -298,10 +299,10 @@ func parseFlushResult(result v1.FlushResult) flushState {
 
 // flushCoordinator tracks the connected clients and the running flush request.
 //
-// A client holds unwritten work in a buffer this process cannot read, so it is
-// asked to write and responds when done. A disconnected client is not awaited,
-// except when its stream ended in the flushAsking state: its work is still
-// unwritten, so it counts as unanswered until a client reconnects.
+// A client holds unwritten work in a buffer this process cannot read, so it
+// receives a write request and responds when done. A disconnected client is not
+// awaited, except when its stream ended in the flushAsking state: its work is
+// still unwritten, so it counts as unanswered until a client reconnects.
 type flushCoordinator struct {
 	mu      sync.Mutex
 	next    int
@@ -397,9 +398,9 @@ func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.updateProgress()
 }
 
-// startRequest begins a request: every client is told to write, and states from
-// the previous request are cleared. A running request is superseded and its
-// waiters are released.
+// startRequest begins a request: every client receives a write request, and
+// states from the previous request are cleared. A running request is superseded
+// and its waiters are released.
 func (l *flushCoordinator) startRequest() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()

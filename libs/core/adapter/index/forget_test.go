@@ -158,8 +158,8 @@ func list(rows []int64) string {
 }
 
 func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
-	// Nothing cascades into a virtual table. A row left in one of them answers a
-	// search with a passage of a vault the index no longer holds, and the row it
+	// Nothing cascades into a virtual table. A row remaining in one of them answers a
+	// search with a passage of a vault the index does not contain, and the row it
 	// references is gone, so nothing else reports it either.
 	ctx := t.Context()
 	db := openDB(t)

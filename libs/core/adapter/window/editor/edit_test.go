@@ -29,7 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// A change reaches every subscriber drawing the vault, the same way a note
+// A change arrives at every subscriber drawing the vault, the same way a note
 // opened in the editor does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	state := &State{Edits: newEditBroadcaster()}

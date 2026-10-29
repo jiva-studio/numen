@@ -196,8 +196,8 @@ func TestTheKeyReachesThePluginOnlyAsTheValueOfItsSecret(t *testing.T) {
 	}
 }
 
-// A secret without a key is delivered as empty, which tells the plugin it has
-// no value.
+// A secret without a key is delivered as empty, which signals to the plugin
+// that it has no value.
 func TestASecretWithoutAKeyIsHandedOverEmpty(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
@@ -306,8 +306,8 @@ func TestAHostWithoutAKeyStoreFailsToStoreASecret(t *testing.T) {
 	}
 }
 
-// A key set through the host is stored under the plugin and name, reaches the
-// running plugin immediately, and is removed from it when deleted.
+// A key set through the host is stored under the plugin and name, is visible to
+// the running plugin immediately, and is removed from it when deleted.
 func TestAKeySetThroughTheHostReachesTheRunningPlugin(t *testing.T) {
 	store := newKeys(map[string]string{})
 	host, probe := newSecretHost(t, store)

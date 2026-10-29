@@ -223,7 +223,7 @@ type member struct {
 type shape struct {
 	pairs []member
 	// last is the end offset of the final member's value, where a comma and
-	// another member are inserted. For an empty object it is the offset just after the brace.
+	// another member are inserted. For an empty object it is the offset immediately after the brace.
 	last int
 	// indent is the whitespace before the first member's name. Empty for an
 	// object written on one line and for one holding nothing.

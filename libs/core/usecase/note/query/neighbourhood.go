@@ -24,7 +24,7 @@ type ShowNeighbourhood struct {
 type RefQueries interface {
 	// GetNotes returns what is needed to display a note, for the given paths. Paths
 	// that match nothing are absent from the result: a link resolves at call time, and
-	// what it resolved to earlier may no longer exist.
+	// the note a link resolved to earlier can be missing.
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 

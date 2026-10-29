@@ -27,7 +27,7 @@ var driving = map[string]bool{
 	"internal/adapterlib/wire": true,
 }
 
-// The core is reached by the adapters and reaches none of them; an adapter is
+// The adapters depend on the core and the core depends on none of them; an adapter is
 // given what it needs and takes no other adapter; assembly happens in one place.
 //
 // Test files are excluded: a test is external to the package it exercises and
@@ -214,10 +214,10 @@ var looking = map[string]bool{
 	"EvalSymlinks": true, "Glob": true, "Walk": true, "WalkDir": true, "Abs": true,
 }
 
-// A scenario asks a port about the machine and never queries the machine itself.
+// A scenario queries a port about the machine and never queries the machine itself.
 // Resolving a path through every link is one such query, and it has no answer
 // for a folder passed as a content URI: the disk it would read is not the one
-// holding the file. A file, a socket and a system call are the same kind of query.
+// holding the file. A file, a socket and a system call are the same category of query.
 //
 // Taking a path apart and joining it is string arithmetic and is allowed. The
 // distinction is whether the answer is on the disk.
@@ -830,7 +830,7 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 // non-test file outside port/ names as a selector.
 //
 // A selector is the form of a method call site regardless of the receiver's
-// type, so matching is on the name alone: an interface the core reaches through
+// type, so matching is on the name alone: an interface the core calls through
 // a variable never writes port.X at the call site.
 func getUncalledMethods(root, dir string) ([]string, error) {
 	declared, err := methodsIn(dir)
@@ -1642,7 +1642,7 @@ func readTree(dir string) ([]treeEntry, error) {
 	return found, err
 }
 
-// isUnder reports whether a package is a folder or lies beneath it.
+// isUnder reports whether a package is a folder or is within it.
 func isUnder(pkg, folder string) bool {
 	return pkg == folder || strings.HasPrefix(pkg, folder+"/")
 }

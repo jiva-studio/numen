@@ -19,18 +19,18 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// hand is a watcher whose events a test writes itself, so that vault change
-// handling can be tested without a filesystem, a timer or a server.
-type hand struct {
+// manualWatcher is a watcher whose events a test emits itself; vault change
+// handling is tested without a filesystem, a timer or a server.
+type manualWatcher struct {
 	changes  chan []string
 	lostChan chan struct{}
 }
 
-func newManualWatcher() *hand {
-	return &hand{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
+func newManualWatcher() *manualWatcher {
+	return &manualWatcher{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
 
-func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (h *manualWatcher) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return h.changes, h.lostChan, nil
 }
 
@@ -66,7 +66,7 @@ type followed struct {
 }
 
 // newFollowed puts one vault, one index and a watcher a test drives together.
-func newFollowed(t *testing.T, notes map[string]string, watcher *hand) followed {
+func newFollowed(t *testing.T, notes map[string]string, watcher *manualWatcher) followed {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
@@ -124,8 +124,8 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	}
 }
 
-// TestABookThatChangedIsNotANoteThatMoved. The watcher reports every kind of
-// source change; the listener is notified only about notes.
+// TestABookThatChangedIsNotANoteThatMoved. The watcher reports changes to every source
+// type; the listener is notified only about notes.
 func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
@@ -141,7 +141,7 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 		t.Errorf("reported %+v", got)
 	}
 	// A book change is not a note move, and it is not ignored: reading a book is
-	// separate work, so the listener is told which book needs it.
+	// separate work, so the listener receives the book that needs it.
 	if !slices.Equal(got.Assets, []string{"library/A Book.epub"}) {
 		t.Errorf("the book was reported as %v", got.Assets)
 	}
@@ -164,7 +164,7 @@ func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 }
 
 // TestWhatCannotBeFollowedIsRead. When the changed paths are unknown, the only
-// correct response is to rescan everything, and the listener is told to read
+// correct response is to rescan everything, and the listener is notified to read
 // again and does not receive a list of moved notes.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	t.Parallel()

@@ -335,7 +335,7 @@ func TestABookTheVaultNoLongerContainsIsTakenOut(t *testing.T) {
 // A file whose content changed while its size and modification time did not is
 // skipped: the index compares only those three. An archive restored by `unzip`
 // and a tree synced by `rsync -tc` both produce this, and the chunks then
-// describe text the file no longer has. Rebuilding the index reads every file.
+// describe text the file does not contain. Rebuilding the index reads every file.
 func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()

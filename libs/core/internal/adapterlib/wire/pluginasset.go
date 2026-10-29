@@ -9,9 +9,10 @@ import (
 	"strings"
 )
 
-// PluginRoute is the path prefix of everything a window loads from a plugin. /plugin/<id>/<rest>
-// is the file <rest> of the plugin's folder where the folder holds one, and otherwise routes to the
-// backend of the plugin at /plugin/<rest>.
+// PluginRoute is the path prefix of everything a window loads from a plugin.
+// /plugin/<id>/<rest> is the file <rest> of the plugin's folder when the folder
+// holds one, and routes to the backend of the plugin at /plugin/<rest> when it
+// does not.
 const PluginRoute = "/plugin/"
 
 func setPluginAssetContentType(w http.ResponseWriter, path string) {

@@ -129,8 +129,8 @@ func TestReplace_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	}
 }
 
-// The observer drawing the note is told the span in the units a client counts,
-// and told when the change ends.
+// The observer drawing the note receives the span in the units a client counts,
+// and receives a notification when the change ends.
 func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})

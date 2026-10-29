@@ -107,7 +107,7 @@ func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (
 	return menu, recorder
 }
 
-func TestFileMenuOffersCommandForDeclaredKind(t *testing.T) {
+func TestFileMenuListsCommandForDeclaredKind(t *testing.T) {
 	s := newScene(t)
 	menu, _ := newMenu(t, s, proofreadCommand)
 	s.requestText(t)
@@ -152,7 +152,7 @@ func TestFileMenuAcceptsAnyKindWhereTheCommandNamesAll(t *testing.T) {
 	}
 }
 
-func TestFileMenuOffersDeletionForEachPluginVersion(t *testing.T) {
+func TestFileMenuListsDeletionForEachPluginVersion(t *testing.T) {
 	s := newScene(t)
 	menu, _ := newMenu(t, s, deleteProofreadingCommand)
 	s.requestText(t)
@@ -185,7 +185,7 @@ func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
 	}
 }
 
-func TestFileMenuWithoutVersionOffersTypeCommandsUnread(t *testing.T) {
+func TestFileMenuWithoutVersionListsTypeCommandsUnread(t *testing.T) {
 	s := newScene(t)
 	reads := 0
 	recorder := &commands{all: []pluginport.PluginCommandEntry{recogniseCommand, proofreadCommand, deleteProofreadingCommand}}
@@ -231,7 +231,7 @@ func TestFileMenuOfAMissingFileIsNotFound(t *testing.T) {
 	}
 }
 
-func TestFileMenuRunsOfferedEntryCommand(t *testing.T) {
+func TestFileMenuRunsListedEntryCommand(t *testing.T) {
 	s := newScene(t)
 	menu, recorder := newMenu(t, s, proofreadCommand)
 	s.requestText(t)

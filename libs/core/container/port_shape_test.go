@@ -45,7 +45,7 @@ func getInterfaceProbes(file *ast.File) []string {
 
 // A value the core receives is used as the port it was received as. Checking
 // whether it is also another type creates a second port that no constructor,
-// composition root or fake knows about, so what a port promises is all the core
+// composition root or fake references, so what a port promises is all the core
 // may rely on.
 //
 // A case clause of an expression switch is checked as well: it names a port

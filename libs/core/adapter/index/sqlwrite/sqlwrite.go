@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	// asks is the number of attempts a write makes to take the lock. The driver
+	// This is the number of attempts a write makes to take the lock. The driver
 	// waits the busy timeout on each attempt, so the total wait is that timeout
-	// multiplied by asks, bounded by the caller's context.
+	// multiplied by this count, bounded by the caller's context.
 	asks = 3
 	// between is the pause before the next attempt. The write connection returns
 	// to the pool during the pause, so other writes in this process are not
@@ -74,7 +74,7 @@ func (t *Transaction) QueryContext(ctx context.Context, query string, args ...an
 }
 
 // QueryRowContext passes a statement that could not be prepared to the
-// transaction itself, so the error reaches the caller: a row carries the error
+// transaction itself, so the error is returned to the caller: a row carries the error
 // and there is no other channel for it.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it

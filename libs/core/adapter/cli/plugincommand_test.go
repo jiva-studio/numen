@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// pluginCommands declares the commands it is given and records every call it is asked to run.
+// pluginCommands declares the commands it is given and records every call made to run one.
 type pluginCommands struct {
 	entries []plugincommand.Entry
 	calls   []plugincommand.Call

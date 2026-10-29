@@ -36,7 +36,7 @@ func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	return out
 }
 
-// A folder is moved with everything under it, whatever kind of file that is,
+// A folder is moved with everything under it, for any type of file,
 // and what was derived from each source stays with the source.
 func TestAMovedFolderConsumesEverythingBelowIt(t *testing.T) {
 	db := openDB(t)

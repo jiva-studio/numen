@@ -71,21 +71,21 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 	return i.ports.Backend.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
-// Compact reclaims the space the index no longer uses.
+// Compact reclaims the space the index does not use.
 func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Compact(ctx) }
 
-func (i *Index) Vaults() vaultport.VaultRepository           { return i.ports.Vaults }
-func (i *Index) Notes() noteport.NoteRepository              { return i.ports.Notes }
-func (i *Index) Queries() noteport.NoteQueries               { return i.ports.Queries }
-func (i *Index) Passages() sourceport.PassageQueries         { return i.ports.Passages }
-func (i *Index) Progress() indexport.IndexProgress           { return i.ports.Progress }
-func (i *Index) Sources() sourceport.SourceRepository        { return i.ports.Sources }
-func (i *Index) SourcesKnown() sourceport.SourceQueries      { return i.ports.SourcesKnown }
-func (i *Index) Vectors() embeddingport.VectorRepository     { return i.ports.Vectors }
-func (i *Index) VectorQueries() embeddingport.VectorQueries  { return i.ports.VectorQueries }
-func (i *Index) Maintenance() indexport.IndexMaintenance     { return i.ports.Maintenance }
-func (i *Index) Path() string                                { return i.ports.Path }
-func (i *Index) Links() noteport.LinkQueries                 { return i.ports.Links }
-func (i *Index) Problems() problemport.ProblemQueries        { return i.ports.Problems }
-func (i *Index) OpenTabs() windowport.OpenTabsStore          { return i.ports.OpenTabs }
-func (i *Index) TextVersions() textport.VersionRepositories  { return i.ports.TextVersions }
+func (i *Index) Vaults() vaultport.VaultRepository          { return i.ports.Vaults }
+func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Notes }
+func (i *Index) Queries() noteport.NoteQueries              { return i.ports.Queries }
+func (i *Index) Passages() sourceport.PassageQueries        { return i.ports.Passages }
+func (i *Index) Progress() indexport.IndexProgress          { return i.ports.Progress }
+func (i *Index) Sources() sourceport.SourceRepository       { return i.ports.Sources }
+func (i *Index) SourcesKnown() sourceport.SourceQueries     { return i.ports.SourcesKnown }
+func (i *Index) Vectors() embeddingport.VectorRepository    { return i.ports.Vectors }
+func (i *Index) VectorQueries() embeddingport.VectorQueries { return i.ports.VectorQueries }
+func (i *Index) Maintenance() indexport.IndexMaintenance    { return i.ports.Maintenance }
+func (i *Index) Path() string                               { return i.ports.Path }
+func (i *Index) Links() noteport.LinkQueries                { return i.ports.Links }
+func (i *Index) Problems() problemport.ProblemQueries       { return i.ports.Problems }
+func (i *Index) OpenTabs() windowport.OpenTabsStore         { return i.ports.OpenTabs }
+func (i *Index) TextVersions() textport.VersionRepositories { return i.ports.TextVersions }

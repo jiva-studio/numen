@@ -78,8 +78,8 @@ func TestOneSaveIsOneReport(t *testing.T) {
 	}
 }
 
-// TestWatchVault_RequestsReloadWhenFolderRemoved. The index knows the contents
-// of the removed folder, so the watcher requests a full vault reload.
+// TestWatchVault_RequestsReloadWhenFolderRemoved. The index has the contents of
+// the removed folder, so the watcher requests a full vault reload.
 func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":            "# Note\n",
@@ -131,9 +131,9 @@ func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
 	}
 }
 
-// TestAFolderWithADotInItsNameIsStillAFolder. A name does not determine the
-// kind of a path: `2026.archive` is a folder and `Note.md.tmp` is not, and only
-// the folder is scanned for notes.
+// TestAFolderWithADotInItsNameIsStillAFolder. A name does not determine whether
+// a path is a folder: `2026.archive` is a folder and `Note.md.tmp` is not, and
+// only the folder is scanned for notes.
 func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":              "# Note\n",
