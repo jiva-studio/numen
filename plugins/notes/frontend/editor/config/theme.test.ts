@@ -3,7 +3,7 @@
  *
  * A rule the browser cannot parse is dropped silently, and so is a colour that
  * references a missing token. Both are checked here against the sheet the theme
- * actually emits.
+ * emits.
  */
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'

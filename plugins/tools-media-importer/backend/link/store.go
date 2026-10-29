@@ -53,7 +53,7 @@ type record struct {
 	Copy       string          `json:"copy,omitempty"`
 }
 
-// getKind returns the kind of text a fetch produced: captions, or the prose of an article.
+// getKind returns the text kind a fetch produced: captions, or the prose of an article.
 func getKind(fetched download.Text) domain.TextKind {
 	if len(fetched.Cues) > 0 {
 		return kindCaptions

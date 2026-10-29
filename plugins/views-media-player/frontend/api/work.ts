@@ -1,6 +1,6 @@
 /**
  * Which files have work in progress, according to the host's list of plugin tasks: one shared
- * subscription, open while any tab listens to it.
+ * subscription, open while any tab is subscribed to it.
  */
 
 /** One task reported by the host: the file it is on, its progress, and any error. */

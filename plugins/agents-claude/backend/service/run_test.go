@@ -95,7 +95,7 @@ func verifyTokenConfigFile(t *testing.T, dir string, argv []string) {
 
 // File names in a synced vault are chosen by the syncing party, and the system
 // prompt is the one place where a name would be read as an instruction. The
-// current note is identified through a tool, so no part of the vault reaches the
+// current note is identified through a tool, so no part of the vault enters the
 // prompt.
 func TestTheSystemPromptIsTheTasksInstructionsAndNoNoteName(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "argv")
@@ -125,7 +125,7 @@ func TestTheSystemPromptIsTheTasksInstructionsAndNoNoteName(t *testing.T) {
 }
 
 // echoSession is a program that reports the session "s-" and the prompt it
-// received, and records the session it was asked to resume.
+// received, and records the session it is given to resume.
 func echoSession(t *testing.T, dir string) string {
 	t.Helper()
 	return writeScript(t, "claude",
@@ -138,7 +138,7 @@ func echoSession(t *testing.T, dir string) string {
 			"printf '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"s-%s\"}\\n' \"$asked\"\n")
 }
 
-// resumed returns the sessions each task asked to resume, one per task.
+// resumed returns the sessions requested for resumption by each task, one per task.
 func resumed(t *testing.T, dir, requested string) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+requested))

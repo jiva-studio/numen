@@ -52,7 +52,7 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 // updateConfig applies the settings received from the host. A resolution that is
 // not a positive number is ignored, as is a model the plugin does not provision.
 // The paths of a custom model are received only while the custom model is
-// selected, and are empty otherwise.
+// selected, and are empty in every other case.
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

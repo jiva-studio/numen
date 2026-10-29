@@ -46,7 +46,7 @@ func getVersionName(path string) string {
 	return hex.EncodeToString(sum[:]) + ".jsonl"
 }
 
-// textKind is the kind of the text versions that the plugin creates.
+// textKind labels the text versions the plugin creates.
 const textKind domain.TextKind = "recognition"
 
 // readRecord returns the progress of the path's recognition, or nil when there is none.

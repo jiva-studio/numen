@@ -26,7 +26,7 @@ import { type BlockNode, blockMarks, findBlocks, getMarks } from './marks'
 /**
  * How far beyond the visible lines the marks are drawn, in characters. Resizing
  * a pane moves the viewport a line at a time, and marks already drawn cover the
- * lines it reaches.
+ * lines the viewport moves into.
  */
 const margin = 2000
 

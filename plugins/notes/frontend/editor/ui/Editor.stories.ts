@@ -288,7 +288,7 @@ export const TableTypedInto: Story = {
     await expect(document.activeElement).toBe(cells(canvasElement)[1])
 
     // Typing writes back to that cell only. The browser performs the typing: the
-    // cell accepts plain text, and only a real keystroke reaches it.
+    // cell takes text input only from a real keystroke.
     const context = await import('vitest/browser')
     await context.userEvent.fill(cells(canvasElement)[3] as HTMLElement, 'Enthalpy')
 

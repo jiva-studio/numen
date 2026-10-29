@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
-// textKind is the kind of the text versions the plugin creates.
+// textKind labels the text versions the plugin creates.
 const textKind domain.TextKind = "transcript"
 
 // getTranscriptionKey is the key of what the model heard in a recording: the hash of its bytes.

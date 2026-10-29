@@ -1,6 +1,6 @@
 /**
- * The typing a user does before it reaches the recording: the words show on
- * screen as they are edited, and reach the file only once typing pauses.
+ * The typing a user does before it is applied to the recording: the words appear on
+ * screen as they are edited, and update the file only once typing pauses.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'

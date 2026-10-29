@@ -23,7 +23,7 @@ export const VOICES = {
 
 export type Voice = keyof typeof VOICES
 
-/** How far along a turn is. Settled unless stated otherwise. */
+/** How far along a turn is. Defaults to settled. */
 export type TurnState = 'settled' | 'arriving' | 'failed'
 
 export interface Turn {

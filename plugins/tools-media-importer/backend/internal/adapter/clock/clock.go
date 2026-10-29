@@ -3,7 +3,7 @@ package clock
 
 import "time"
 
-// Now returns the current local time.
+// Now gets the current local time.
 func Now() time.Time {
 	return time.Now()
 }

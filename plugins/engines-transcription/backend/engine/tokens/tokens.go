@@ -64,8 +64,8 @@ func (p Pieces) GetIndex(piece string) int {
 	return -1
 }
 
-// GetText returns the text of a run of tokens. A token the model knows and this file does
-// not is left out.
+// GetText returns the text of a run of tokens. A token in the model vocabulary and absent from this file
+// is omitted.
 func (p Pieces) GetText(response []int) string {
 	size := 0
 	for _, token := range response {

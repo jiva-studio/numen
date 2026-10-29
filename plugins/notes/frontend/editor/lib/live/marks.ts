@@ -34,7 +34,7 @@ export interface BlockNode {
  * What is drawn between `from` and `to`.
  *
  * A widget replacing whole lines must come from the state; everything else is drawn
- * for the lines on screen. `pass` says which of the two this pass is collecting.
+ * for the lines on screen. `pass` selects which of the two this pass collects.
  */
 interface MarkSpan {
   readonly from: number

@@ -82,7 +82,7 @@ func TestProviderSetting(t *testing.T) {
 }
 
 // The backend takes the settings of the provider chosen: the URL of a custom service only while it
-// is chosen, the model of a remote service only while one is chosen, and the local model otherwise.
+// is chosen, the model of a remote service only while one is chosen, and the local model when neither is chosen.
 func TestOnlyTheSettingsOfTheChosenProviderAreTaken(t *testing.T) {
 	emb := newEmbeddingServer()
 	local := emb.getModelName()

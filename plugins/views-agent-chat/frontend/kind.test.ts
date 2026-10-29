@@ -1,6 +1,6 @@
 /**
  * The agent tabs of a window: their names, what a command targeting one applies
- * to, what closing one tells the agent, and how a request to the window
+ * to, what closing one signals to the agent, and how a request to the window
  * affects one.
  */
 import { describe, expect, it } from 'vitest'

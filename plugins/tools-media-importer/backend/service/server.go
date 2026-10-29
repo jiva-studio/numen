@@ -25,7 +25,7 @@ const EnvMockML = "NUMEN_MOCK_ML"
 // PluginID is the identity the manifest gives the plugin.
 const PluginID = "md.numen.tools.media.importer"
 
-// openHostAt reaches the host at the endpoint.
+// openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	return link.Host{
 		Vault: host.NewClient(endpoint),

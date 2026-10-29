@@ -27,7 +27,7 @@ type Files interface {
 	ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error)
 }
 
-// Engines opens the model used to transcribe a recording. The model is opened once and reused.
+// Engines opens the model that transcribes a recording. The model is opened once and reused.
 type Engines func(ctx context.Context) (engine.TranscriberPort, error)
 
 // Transcriber transcribes the recordings requested by the user, one at a time through the core's queue,

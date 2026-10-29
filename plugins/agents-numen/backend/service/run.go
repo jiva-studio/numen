@@ -143,7 +143,7 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 }
 
 // ask requests the next message from the model with its text streamed to emit. When a chat API
-// refuses to stream, the same request is made unstreamed and logged as such, and later requests are
+// does not support streaming, the same request is made unstreamed and logged as such, and later requests are
 // made unstreamed, with the whole text going to emit at once.
 func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
 	var reqErr error
