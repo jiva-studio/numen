@@ -34,22 +34,17 @@ func NewPlugins(host Host) Plugins {
 	return Plugins{host: host}
 }
 
-// GetTextPlugins is every enabled plugin that declares a text input, in the order of their ids.
+// GetTextPlugins is every enabled plugin that declares `texts`, in the order of their ids.
 func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 	var out []textport.TextPlugin
 	for _, info := range p.host.GetPluginInfos() {
 		found, ok := p.host.GetPlugin(info.ID)
-		if !ok || found.Manifest.TextInput == nil {
+		if !ok || found.Manifest.Texts == nil {
 			continue
 		}
-		in := found.Manifest.TextInput
-		plugin := textport.TextPlugin{
-			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(in.ContentTypes), Kinds: in.Kinds, IsAutoRun: in.IsAutoRun,
-		}
-		for _, one := range in.NoteTypes {
-			plugin.NoteTypes = append(plugin.NoteTypes, domain.NoteType(one))
-		}
-		out = append(out, plugin)
+		out = append(out, textport.TextPlugin{
+			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(found.Manifest.Texts.ContentTypes),
+		})
 	}
 	return out
 }
@@ -65,14 +60,14 @@ func (p Plugins) getFileInput(types []domain.ContentType) domain.FileInput {
 	return out
 }
 
-// OpenProvider is the text provider of an enabled plugin that declares a text input.
+// OpenProvider is the text provider of an enabled plugin that names content types under `texts`.
 func (p Plugins) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
 	found, ok := p.host.GetPlugin(pluginID)
 	if !ok {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
-	if found.Manifest.TextInput == nil {
-		return nil, fmt.Errorf("plugin %s declares no text input", pluginID)
+	if found.Manifest.Texts == nil || len(found.Manifest.Texts.ContentTypes) == 0 {
+		return nil, fmt.Errorf("plugin %s makes no text of files on its own", pluginID)
 	}
 	return provider{service: bridge.Service[numenv1connect.TextProviderServiceClient]{
 		Host: p.host, PluginID: pluginID, NewClient: numenv1connect.NewTextProviderServiceClient,
@@ -92,7 +87,7 @@ func (p provider) CreateText(ctx context.Context, req textport.TextCreation) err
 	}
 	defer func() { _ = lease.Close() }()
 	res, err := client.CreateText(ctx, connect.NewRequest(&v1.TextProviderServiceCreateTextRequest{
-		VaultId: string(req.Vault), Path: req.Path, SourceVersionId: string(req.Source), IsUserStarted: req.IsUserStarted,
+		VaultId: string(req.Vault), Path: req.Path,
 	}))
 	if err != nil {
 		return fmt.Errorf("rpc create text: %w", err)

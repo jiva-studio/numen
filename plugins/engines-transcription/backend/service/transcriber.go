@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
@@ -73,31 +73,8 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 	return runCtx, cancel
 }
 
-// Wait waits for every transcription started.
-func (t *Transcriber) Wait() { t.wg.Wait() }
-
 // getTaskID is what the transcription of one recording is called in the list of tasks.
 func getTaskID(path string) string { return "transcription:" + path }
-
-// Start begins transcribing a recording and returns once the task is shown. A recording already
-// being transcribed is left to the run that has it.
-func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) error {
-	key, isClaimed := t.claim(vault, path)
-	if !isClaimed {
-		return nil
-	}
-	if err := t.queue.ReportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true}); err != nil {
-		t.clearRunning(key)
-		return err
-	}
-	t.wg.Go(func() {
-		defer t.clearRunning(key)
-		runCtx, cancel := t.withClosing(context.WithoutCancel(ctx))
-		defer cancel()
-		_ = t.transcribe(runCtx, vault, path)
-	})
-	return nil
-}
 
 // errAlreadyTranscribing is a recording another run is transcribing.
 var errAlreadyTranscribing = errors.New("the recording is already being transcribed")

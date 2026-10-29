@@ -138,7 +138,6 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
 	model := &models{cfg: cfg, isMock: isMock, open: openParakeet}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
-	s.Register(host.NewTextProviderHandler(provider{transcriber: transcriber}, s.HandlerOptions()...))
 	commands := command.New()
 	// The registry is new, so the one id cannot be added twice.
 	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))

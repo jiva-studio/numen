@@ -40,9 +40,9 @@ const (
 
 // TextProviderServiceClient is a client for the numen.v1.TextProviderService service.
 type TextProviderServiceClient interface {
-	// CreateText asks the plugin to make text of a file, or of a version of it.
-	// The work continues after the call returns, and the plugin records each
-	// version through HostTextService.PutTextVersion.
+	// CreateText asks the plugin to make text of a file. The work continues after
+	// the call returns, and the plugin records each version through
+	// HostTextService.PutTextVersion.
 	CreateText(context.Context, *connect.Request[v1.TextProviderServiceCreateTextRequest]) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error)
 }
 
@@ -78,9 +78,9 @@ func (c *textProviderServiceClient) CreateText(ctx context.Context, req *connect
 
 // TextProviderServiceHandler is an implementation of the numen.v1.TextProviderService service.
 type TextProviderServiceHandler interface {
-	// CreateText asks the plugin to make text of a file, or of a version of it.
-	// The work continues after the call returns, and the plugin records each
-	// version through HostTextService.PutTextVersion.
+	// CreateText asks the plugin to make text of a file. The work continues after
+	// the call returns, and the plugin records each version through
+	// HostTextService.PutTextVersion.
 	CreateText(context.Context, *connect.Request[v1.TextProviderServiceCreateTextRequest]) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error)
 }
 

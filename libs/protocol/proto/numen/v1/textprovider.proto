@@ -4,16 +4,17 @@ package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
-// TextProviderService is served by every plugin that makes text of vault files.
-// The host calls it; plugins never call one another's.
+// TextProviderService is served by every plugin whose manifest lists content
+// types under `texts`. The host calls it for a file of one of those types that
+// has no live text; plugins never call one another's.
 //
 // A plugin writes each text it makes into its own folder of the vault's store,
 // as JSON Lines of TextSegment, and records it through
 // HostTextService.PutTextVersion. The host reads the file itself.
 service TextProviderService {
-  // CreateText asks the plugin to make text of a file, or of a version of it.
-  // The work continues after the call returns, and the plugin records each
-  // version through HostTextService.PutTextVersion.
+  // CreateText asks the plugin to make text of a file. The work continues after
+  // the call returns, and the plugin records each version through
+  // HostTextService.PutTextVersion.
   rpc CreateText(TextProviderServiceCreateTextRequest) returns (TextProviderServiceCreateTextResponse);
 }
 
@@ -49,12 +50,6 @@ message TextSegment {
 message TextProviderServiceCreateTextRequest {
   string vault_id = 1;
   string path = 2;
-  // source_version_id is the version the text is made from, and empty for the
-  // file itself.
-  string source_version_id = 3;
-  // is_user_started is set for a text a person asked for, which runs before
-  // text nobody asked for.
-  bool is_user_started = 4;
 }
 
 message TextProviderServiceCreateTextResponse {

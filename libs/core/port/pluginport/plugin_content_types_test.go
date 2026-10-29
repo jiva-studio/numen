@@ -37,9 +37,9 @@ func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
 	}
 }
 
-func TestIsHandlingMatchesTheTextInputTypes(t *testing.T) {
+func TestIsHandlingMatchesTheTypesOfTheTextsItMakes(t *testing.T) {
 	m, err := pluginport.ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
-		"textInput": {"contentTypes": ["audio/*", "video/*"]}}`))
+		"texts": {"contentTypes": ["audio/*", "video/*"]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

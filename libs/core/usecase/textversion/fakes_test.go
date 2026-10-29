@@ -204,25 +204,30 @@ type fakeProvider struct {
 
 	mu      sync.Mutex
 	created int
-	// isUserStarted is whether each creation was asked for by a person, in order.
-	isUserStarted []bool
 }
 
+// CreateText makes the text of the file, as a plugin does when the host asks.
 func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation) error {
-	params := textversion.VersionPut{Path: req.Path, Source: req.Source, Kind: f.kind}
+	return f.create(ctx, req.Path, "")
+}
+
+// create makes the text of the file, or of the version where source names one, as a plugin does
+// when a command runs.
+func (f *fakeProvider) create(ctx context.Context, path string, source domain.TextVersionID) error {
+	params := textversion.VersionPut{Path: path, Source: source, Kind: f.kind}
 	var segments []domain.TextSegment
-	if req.Source == "" {
-		params.SourceHash = domain.HashContent(f.files[req.Path])
+	if source == "" {
+		params.SourceHash = domain.HashContent(f.files[path])
 		params.Key = "file-" + params.SourceHash[:8]
-		segments = f.make(req.Path, domain.VersionText{}, false)
+		segments = f.make(path, domain.VersionText{}, false)
 	} else {
-		source, err := f.versions.GetVersionText(ctx, f.vault, req.Path, req.Source)
+		text, err := f.versions.GetVersionText(ctx, f.vault, path, source)
 		if err != nil {
 			return err
 		}
-		params.SourceHash = source.Version().Hash
-		params.Key = "from-" + strings.ReplaceAll(string(req.Source), "/", "-")
-		segments = f.make(req.Path, source, true)
+		params.SourceHash = text.Version().Hash
+		params.Key = "from-" + strings.ReplaceAll(string(source), "/", "-")
+		segments = f.make(path, text, true)
 	}
 	params.File = params.Key + ".jsonl"
 	if _, err := f.folders.WriteTextFile(ctx, f.pluginID, params.File, segments); err != nil {
@@ -230,7 +235,6 @@ func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation
 	}
 	f.mu.Lock()
 	f.created++
-	f.isUserStarted = append(f.isUserStarted, req.IsUserStarted)
 	f.mu.Unlock()
 	_, err := f.versions.PutVersion(ctx, f.vault, f.pluginID, params)
 	return err

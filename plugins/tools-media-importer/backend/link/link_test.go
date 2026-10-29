@@ -196,23 +196,6 @@ func TestAnAddressThatPublishesNothingIsNotAskedAgainUnlessAPersonAsks(t *testin
 	}
 }
 
-func TestTheHostAsksForTheTextOfALinkAndItIsFetched(t *testing.T) {
-	w := newWorld(t)
-	made := w.create(t, articleAddress)
-
-	provider := link.NewProvider(w.links)
-	if err := provider.CreateText(t.Context(), host.TextCreation{Vault: w.vault.Vault().ID, Path: made.Path}); err != nil {
-		t.Fatal(err)
-	}
-	w.links.Wait()
-	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
-		t.Errorf("the article reads %q (%v)", text, err)
-	}
-	if err := provider.CreateText(t.Context(), host.TextCreation{Vault: w.vault.Vault().ID, Path: made.Path, Source: "v1"}); !errors.Is(err, host.ErrInvalidVersion) {
-		t.Errorf("a request made from a version was answered %v", err)
-	}
-}
-
 func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
@@ -403,37 +386,6 @@ func TestFetchTextAfterACopyFetchesTheText(t *testing.T) {
 	}
 	if count := w.sites.texts.Load(); count != 1 {
 		t.Errorf("the address was asked %d times for text, want once", count)
-	}
-}
-
-func TestTheTextOfALinkIsRecordedInTheVaultTheRequestNames(t *testing.T) {
-	w := newWorld(t)
-	chemistry := hosttest.New("Chemistry")
-	w.vault.Beside(chemistry)
-	note := "---\ntype: link\nurl: " + articleAddress + "\n---\n"
-	chemistry.File("links/rance.md", note)
-	other := w.texts.With("Chemistry").(*hosttest.Texts)
-	other.File("links/rance.md", []byte(note))
-	other.SetStore(pluginID, chemistry.Store())
-
-	if err := link.NewProvider(w.links).CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: "links/rance.md"}); err != nil {
-		t.Fatal(err)
-	}
-	w.links.Wait()
-
-	inChemistry, err := other.ListVersions(t.Context(), "links/rance.md")
-	if err != nil || inChemistry.Live == "" {
-		t.Fatalf("Chemistry lists %+v (%v), want the article live", inChemistry, err)
-	}
-	if inShown, _ := w.texts.ListVersions(t.Context(), "links/rance.md"); len(inShown.Versions) != 0 {
-		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
-	}
-	if names, _ := w.store.List(t.Context()); len(names) != 0 {
-		t.Errorf("the shown vault's folder holds %v, want nothing", names)
-	}
-	read, err := w.links.ReadArticle(t.Context(), link.Link{Vault: "Chemistry", Path: "links/rance.md"})
-	if err != nil || read == "" {
-		t.Errorf("the article read in Chemistry is %q (%v), want its text", read, err)
 	}
 }
 

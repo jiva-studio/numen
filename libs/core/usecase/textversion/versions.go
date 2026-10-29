@@ -291,7 +291,7 @@ func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHa
 	}
 	var failures []error
 	for _, plugin := range u.plugins.GetTextPlugins() {
-		if !plugin.IsAutoRun || !plugin.Files.IsFileAccepted(path) {
+		if !plugin.Files.IsFileAccepted(path) {
 			continue
 		}
 		key := request{vault: v.ID, path: path, fileHash: fileHash, pluginID: plugin.ID}
@@ -310,7 +310,7 @@ func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHa
 // versions, or an enabled plugin that runs on its own takes it.
 func (u *Versions) IsTextSource(ctx context.Context, v domain.Vault, path string) (bool, error) {
 	for _, plugin := range u.plugins.GetTextPlugins() {
-		if plugin.IsAutoRun && plugin.Files.IsFileAccepted(path) {
+		if plugin.Files.IsFileAccepted(path) {
 			return true, nil
 		}
 	}

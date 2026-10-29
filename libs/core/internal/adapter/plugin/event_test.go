@@ -220,7 +220,7 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	}
 }
 
-// readingType is a plugin that makes text from files of the type.
+// readingType is a plugin that makes text of files of the type.
 func readingType(contentType domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{TextInput: &pluginport.PluginTextInput{ContentTypes: []domain.ContentType{contentType}}}
+	return pluginport.PluginManifest{Texts: &pluginport.PluginTextMaker{ContentTypes: []domain.ContentType{contentType}}}
 }

@@ -217,23 +217,15 @@ type rawCommand struct {
 	IsHiddenInPalette bool                 `json:"hiddenInPalette,omitempty"`
 }
 
-type rawTextInput struct {
+type rawTexts struct {
 	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
-	Kinds        []domain.TextKind    `json:"kinds,omitempty"`
-	NoteTypes    []string             `json:"noteTypes,omitempty"`
-	IsAutoRun    bool                 `json:"autoRun,omitempty"`
 }
 
-func (t *rawTextInput) toPort() *pluginport.PluginTextInput {
+func (t *rawTexts) toPort() *pluginport.PluginTextMaker {
 	if t == nil {
 		return nil
 	}
-	return &pluginport.PluginTextInput{
-		ContentTypes: t.ContentTypes,
-		Kinds:        t.Kinds,
-		NoteTypes:    t.NoteTypes,
-		IsAutoRun:    t.IsAutoRun,
-	}
+	return &pluginport.PluginTextMaker{ContentTypes: t.ContentTypes}
 }
 
 type rawPlayback struct {
@@ -272,7 +264,7 @@ type rawManifest struct {
 	Services         []string                   `json:"services,omitempty"`
 	NoteTypes        []rawNoteType              `json:"noteTypes,omitempty"`
 	Commands         []rawCommand               `json:"commands,omitempty"`
-	TextInput        *rawTextInput              `json:"textInput,omitempty"`
+	Texts            *rawTexts                  `json:"texts,omitempty"`
 	Playback         *rawPlayback               `json:"playback,omitempty"`
 	ContentTypes     []rawContentType           `json:"contentTypes,omitempty"`
 	Readers          []rawReader                `json:"readers,omitempty"`
@@ -317,7 +309,7 @@ func (r rawManifest) toPort(lifecycle pluginport.PluginLifecycle) pluginport.Plu
 		Services:         r.Services,
 		NoteTypes:        convertNoteTypes(r.NoteTypes),
 		Commands:         convertCommands(r.Commands),
-		TextInput:        r.TextInput.toPort(),
+		Texts:            r.Texts.toPort(),
 		Playback:         playback,
 		ContentTypes:     convertContentTypes(r.ContentTypes),
 		Readers:          convertReaders(r.Readers),

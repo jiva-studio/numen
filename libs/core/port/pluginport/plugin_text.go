@@ -3,52 +3,27 @@ package pluginport
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrInvalidTextInput is a text input that points at no version, or at the wrong one.
-var ErrInvalidTextInput = errors.New("invalid text input")
+// ErrInvalidTexts is a `texts` declaration that names a content type wrongly.
+var ErrInvalidTexts = errors.New("invalid texts")
 
-// PluginTextInput is what a plugin makes text from: files of the content types
-// ContentTypes names, text versions of the kinds Kinds names, and notes of the
-// plugin's own types NoteTypes names. IsAutoRun asks the host to run the plugin
-// on a file of its content types that has no live text version. The plugin
-// starts the text of a note of its types itself.
-//
-// A plugin that declares one serves numen.v1.TextProviderService.
-type PluginTextInput struct {
+// PluginTextMaker is what a plugin declares of the text it makes: it puts text versions of vault
+// files. ContentTypes, where it names any, are the types of the files the host asks the plugin
+// for the text of when they have no live text version; the plugin then serves
+// numen.v1.TextProviderService. A plugin that makes its text when a command runs names none.
+type PluginTextMaker struct {
 	ContentTypes []domain.ContentType
-	Kinds        []domain.TextKind
-	NoteTypes    []string
-	IsAutoRun    bool
 }
 
-// listTextInputIssues checks that a text input names something to read, every
-// content type as a type or a mask, every kind as a non-empty name and every note
-// type as one the plugin declares.
-func (m PluginManifest) listTextInputIssues() []error {
-	in := m.TextInput
-	if in == nil {
+// listTextsIssues checks that every content type of the declaration is a type or a mask.
+func (m PluginManifest) listTextsIssues() []error {
+	if m.Texts == nil {
 		return nil
 	}
-	var issues []error
-	if len(in.ContentTypes) == 0 && len(in.Kinds) == 0 && len(in.NoteTypes) == 0 {
-		issues = append(issues, fmt.Errorf("%w: it names no content type, no kind and no note type", ErrInvalidTextInput))
-	}
-	issues = append(issues, m.listUndeclaredNoteTypes(ErrInvalidTextInput, in.NoteTypes)...)
-	issues = append(issues, listContentTypesIssues(ErrInvalidTextInput, in.ContentTypes)...)
-	for _, kind := range in.Kinds {
-		if strings.TrimSpace(string(kind)) == "" {
-			issues = append(issues, fmt.Errorf("%w: a kind has no name", ErrInvalidTextInput))
-		}
-	}
-	if in.IsAutoRun && len(in.ContentTypes) == 0 {
-		issues = append(issues, fmt.Errorf("%w: a plugin that runs on its own reads files", ErrInvalidTextInput))
-	}
-	return issues
+	return listContentTypesIssues(ErrInvalidTexts, m.Texts.ContentTypes)
 }
 
 // PluginTextPut is what a plugin reports of one of its text versions. File is

@@ -1,13 +1,12 @@
 package service
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
@@ -108,16 +107,6 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 				t.Errorf("versions %v, want none", listing.Versions)
 			}
 		})
-	}
-}
-
-func TestTheBookReaderMakesTextOfFilesOnly(t *testing.T) {
-	_, server := newTextVault(t, "book.epub", createPictureEpub(t))
-
-	err := server.CreateText(t.Context(), host.TextCreation{Path: "book.epub", Source: "md.numen.tools.proofreading/fix"})
-
-	if !errors.Is(err, host.ErrInvalidVersion) {
-		t.Errorf("CreateText of a version = %v, want ErrInvalidVersion", err)
 	}
 }
 

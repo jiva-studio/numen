@@ -38,6 +38,7 @@ type scene struct {
 	folders  *memoryFiles
 	repo     *memoryVersions
 	made     providers
+	byID     map[string]*fakeProvider
 }
 
 func newScene(t *testing.T) *scene {
@@ -49,9 +50,9 @@ func newScene(t *testing.T) *scene {
 		folders:  &memoryFiles{},
 		repo:     &memoryVersions{},
 		plugins: &plugins{all: []textport.TextPlugin{
-			{ID: ocr, Name: "OCR", Files: domain.FileInput{".pdf"}},
-			{ID: pdfReader, Name: "PDF", Files: domain.FileInput{".pdf"}, IsAutoRun: true},
-			{ID: proofreader, Name: "Proofreading", Kinds: []domain.TextKind{kindPage, kindRecognition}},
+			{ID: ocr, Name: "OCR"},
+			{ID: pdfReader, Name: "PDF", Files: domain.FileInput{".pdf"}},
+			{ID: proofreader, Name: "Proofreading"},
 		}},
 	}
 	page := func(word string, n int) domain.TextSegment {
@@ -70,6 +71,7 @@ func newScene(t *testing.T) *scene {
 			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "teh", "the")}}
 		}}
 	s.made = providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
+	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, s.made, fileReaders(s.files), steppingClock())
 	if err != nil {
 		t.Fatal(err)
@@ -110,15 +112,15 @@ func (s *scene) requireLive(t *testing.T, step string, wantID domain.TextVersion
 	}
 }
 
-// runEntry runs the plugin as a person starts it: over the live version where it reads versions,
-// and over the file otherwise.
+// runEntry runs the command of the plugin: over the live version where it reads versions, and
+// over the file otherwise.
 func (s *scene) runEntry(t *testing.T, pluginID string) {
 	t.Helper()
-	req := textport.TextCreation{Vault: s.vault.ID, Path: scanPath, IsUserStarted: true}
+	var source domain.TextVersionID
 	if pluginID == proofreader {
-		req.Source, _ = s.getLive(t)
+		source, _ = s.getLive(t)
 	}
-	if err := s.made[pluginID].CreateText(t.Context(), req); err != nil {
+	if err := s.byID[pluginID].create(t.Context(), scanPath, source); err != nil {
 		t.Fatalf("the plugin %s: %v", pluginID, err)
 	}
 }

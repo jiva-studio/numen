@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
@@ -100,12 +100,9 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 }
 
 // CreateText starts writing the text layer of a file as a version made from the file, and returns.
-// The plugin reads files, so a request for text of a version is invalid. A file whose layer is being
+// A file whose layer is being
 // written already is not started again.
 func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
-	if req.Source != "" {
-		return fmt.Errorf("%w: the PDF reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
-	}
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -133,7 +130,6 @@ func (s *TextServer) finish(key string) {
 func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
-		IsUserStarted: req.IsUserStarted,
 	}
 	err := s.putLayer(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
@@ -147,7 +143,7 @@ func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
 // a locked one and a scan have no text layer, and get no version.
 func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) error {
-	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}

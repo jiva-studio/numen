@@ -3,7 +3,7 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
-import type { Selector, TextInput, VaultTexts } from './texts'
+import type { Selector, TextMaker, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
@@ -309,11 +309,11 @@ export interface PluginManifest {
     entrypoint: string
     styles?: string
   }
-  /** What the plugin makes text from; a plugin that makes no text declares none. */
+  /** What the plugin declares of the text it makes; a plugin that makes no text declares none. */
   /** The types of file the plugin brings, each with the globs of its names, such as `*.deck`. */
   contentTypes?: { type: string; globs: string[] }[]
   /** The readers of the frontend, by registered id, with the content types each opens and its rank. */
   readers?: { id: string; contentTypes: string[]; rank: 'default' | 'alternate' }[]
-  textInput?: TextInput
+  texts?: TextMaker
   settings?: SettingDeclaration[]
 }

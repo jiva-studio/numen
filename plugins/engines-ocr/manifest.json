@@ -8,9 +8,8 @@
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "textInput": {
-    "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
-    "autoRun": true
+  "texts": {
+    "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
   },
   "commands": [
     {

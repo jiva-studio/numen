@@ -9,9 +9,8 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }],
-  "textInput": {
-    "contentTypes": ["application/pdf"],
-    "autoRun": true
+  "texts": {
+    "contentTypes": ["application/pdf"]
   },
   "lifecycle": {
     "idleTimeoutSeconds": 180,

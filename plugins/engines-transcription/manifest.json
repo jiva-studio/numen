@@ -7,9 +7,7 @@
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "textInput": {
-    "contentTypes": ["audio/*", "video/*"]
-  },
+  "texts": {},
   "commands": [
     {
       "id": "transcribe",

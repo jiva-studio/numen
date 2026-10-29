@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/textprovider.proto.
  */
 export const file_numen_v1_textprovider: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS90ZXh0cHJvdmlkZXIucHJvdG8SCG51bWVuLnYxIj4KC1RleHRTZWdtZW50EgwKBHRleHQYASABKAkSDwoHaGVhZGluZxgCIAEoCRIQCghzZWxlY3RvchgDIAEoCSJ6CiRUZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEcGF0aBgCIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgDIAEoCRIXCg9pc191c2VyX3N0YXJ0ZWQYBCABKAgiTwolVGV4dFByb3ZpZGVyU2VydmljZUNyZWF0ZVRleHRSZXNwb25zZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUqpwEKDVRleHRFcnJvckNvZGUSHwobVEVYVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGwoXVEVYVF9FUlJPUl9DT0RFX01JU1NJTkcQARIcChhURVhUX0VSUk9SX0NPREVfTk9fVkFVTFQQAhIbChdURVhUX0VSUk9SX0NPREVfSU5WQUxJRBADEh0KGVRFWFRfRVJST1JfQ09ERV9OT1RfT1dORVIQBDKEAQoTVGV4dFByb3ZpZGVyU2VydmljZRJtCgpDcmVhdGVUZXh0Ei4ubnVtZW4udjEuVGV4dFByb3ZpZGVyU2VydmljZUNyZWF0ZVRleHRSZXF1ZXN0Gi8ubnVtZW4udjEuVGV4dFByb3ZpZGVyU2VydmljZUNyZWF0ZVRleHRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChtudW1lbi92MS90ZXh0cHJvdmlkZXIucHJvdG8SCG51bWVuLnYxIj4KC1RleHRTZWdtZW50EgwKBHRleHQYASABKAkSDwoHaGVhZGluZxgCIAEoCRIQCghzZWxlY3RvchgDIAEoCSJGCiRUZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEcGF0aBgCIAEoCSJPCiVUZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSqnAQoNVGV4dEVycm9yQ29kZRIfChtURVhUX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIbChdURVhUX0VSUk9SX0NPREVfTUlTU0lORxABEhwKGFRFWFRfRVJST1JfQ09ERV9OT19WQVVMVBACEhsKF1RFWFRfRVJST1JfQ09ERV9JTlZBTElEEAMSHQoZVEVYVF9FUlJPUl9DT0RFX05PVF9PV05FUhAEMoQBChNUZXh0UHJvdmlkZXJTZXJ2aWNlEm0KCkNyZWF0ZVRleHQSLi5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlcXVlc3QaLy5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * TextSegment is one segment of a text. A version file holds one segment per
@@ -60,22 +60,6 @@ export type TextProviderServiceCreateTextRequest = Message<"numen.v1.TextProvide
    * @generated from field: string path = 2;
    */
   path: string;
-
-  /**
-   * source_version_id is the version the text is made from, and empty for the
-   * file itself.
-   *
-   * @generated from field: string source_version_id = 3;
-   */
-  sourceVersionId: string;
-
-  /**
-   * is_user_started is set for a text a person asked for, which runs before
-   * text nobody asked for.
-   *
-   * @generated from field: bool is_user_started = 4;
-   */
-  isUserStarted: boolean;
 };
 
 /**
@@ -152,8 +136,9 @@ export const TextErrorCodeSchema: GenEnum<TextErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_textprovider, 0);
 
 /**
- * TextProviderService is served by every plugin that makes text of vault files.
- * The host calls it; plugins never call one another's.
+ * TextProviderService is served by every plugin whose manifest lists content
+ * types under `texts`. The host calls it for a file of one of those types that
+ * has no live text; plugins never call one another's.
  *
  * A plugin writes each text it makes into its own folder of the vault's store,
  * as JSON Lines of TextSegment, and records it through
@@ -163,9 +148,9 @@ export const TextErrorCodeSchema: GenEnum<TextErrorCode> = /*@__PURE__*/
  */
 export const TextProviderService: GenService<{
   /**
-   * CreateText asks the plugin to make text of a file, or of a version of it.
-   * The work continues after the call returns, and the plugin records each
-   * version through HostTextService.PutTextVersion.
+   * CreateText asks the plugin to make text of a file. The work continues after
+   * the call returns, and the plugin records each version through
+   * HostTextService.PutTextVersion.
    *
    * @generated from rpc numen.v1.TextProviderService.CreateText
    */

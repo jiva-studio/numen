@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,8 +8,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
@@ -193,16 +192,6 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 				t.Errorf("versions %v, want none", listing.Versions)
 			}
 		})
-	}
-}
-
-func TestTheReaderMakesTextOfFilesOnly(t *testing.T) {
-	_, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-
-	err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf", Source: "md.numen.engines.ocr/page"})
-
-	if !errors.Is(err, host.ErrInvalidVersion) {
-		t.Errorf("CreateText of a version = %v, want ErrInvalidVersion", err)
 	}
 }
 

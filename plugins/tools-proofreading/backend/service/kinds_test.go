@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
-func TestReadKindsReturnsTheManifestKinds(t *testing.T) {
+func TestReadKindsReturnsTheKindsOfTheProofreadCommand(t *testing.T) {
 	kinds, err := readKinds(proofreading.Manifest)
 	if err != nil {
 		t.Fatal(err)
@@ -26,7 +26,7 @@ func TestReadKindsReturnsTheManifestKinds(t *testing.T) {
 }
 
 func TestReadKindsRejectsAManifestWithoutKinds(t *testing.T) {
-	if _, err := readKinds([]byte(`{"textInput":{"contentTypes":["audio/*"]}}`)); !errors.Is(err, errNoKinds) {
+	if _, err := readKinds([]byte(`{"commands":[{"id":"proofread","title":"Proofread"}]}`)); !errors.Is(err, errNoKinds) {
 		t.Errorf("got %v, want %v", err, errNoKinds)
 	}
 }

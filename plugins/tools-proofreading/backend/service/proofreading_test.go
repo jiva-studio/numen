@@ -39,7 +39,6 @@ type scene struct {
 	model    *modelHost
 	settings *settings
 	run      *Proofreading
-	provider *provider
 }
 
 // modelHost is a completer that answers every prompt through its script and keeps what it was asked.
@@ -76,8 +75,6 @@ func newScene(t *testing.T) *scene {
 		t.Fatal(err)
 	}
 	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, kinds, newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
-	s.provider = newProvider(s.run)
-	t.Cleanup(s.provider.Close)
 	return s
 }
 
@@ -300,25 +297,16 @@ func TestAFailureOfTheModelIsShownAsATask(t *testing.T) {
 	}
 }
 
-func TestCreateTextProofreadsInTheBackground(t *testing.T) {
+func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 	s := newScene(t)
 	scan := s.holdScan(t)
 
-	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Physics", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Physics", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
-	s.provider.Wait()
 
 	if _, live := s.readLive(t, scanPath); live.PluginID != PluginID {
 		t.Errorf("the live version is %+v", live)
-	}
-}
-
-func TestCreateTextOfTheFileIsInvalid(t *testing.T) {
-	s := newScene(t)
-	err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Physics", Path: scanPath})
-	if !errors.Is(err, host.ErrInvalidVersion) {
-		t.Fatalf("got %v", err)
 	}
 }
 

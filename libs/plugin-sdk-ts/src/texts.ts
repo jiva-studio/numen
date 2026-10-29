@@ -69,22 +69,11 @@ export interface VaultTexts {
   ): Promise<Result<TextVersion, TextErrorCode>>
 }
 
-// TextInput is what a manifest says a plugin makes text from: files of the content types
-// `contentTypes` names, such as `audio/*`, and versions of the kinds `kinds` names. `autoRun` asks
-// to be run on a file of its types that has no live version. `menuEntry` is the plugin's entry in
-// the menu of a file its input takes; a plugin without one is not offered there.
-export interface TextInput {
+// TextMaker is what a manifest declares of the text a plugin makes. `contentTypes`, where it names
+// any, are the types of the files, such as `audio/*`, that the host asks the plugin for the text of
+// when they have no live version. A plugin that makes its text when a command runs names none.
+export interface TextMaker {
   contentTypes?: string[]
-  kinds?: TextKind[]
-  autoRun?: boolean
-  menuEntry?: TextMenuEntry
-}
-
-// TextMenuEntry is what a plugin's entry in a file's menu reads and is drawn with. `icon` is a
-// Lucide icon name, such as `scan-text`.
-export interface TextMenuEntry {
-  title: string
-  icon?: string
 }
 
 // joinTextSegments is a text as one string.

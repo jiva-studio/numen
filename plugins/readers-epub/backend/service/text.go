@@ -9,8 +9,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
@@ -109,9 +109,6 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 // plugin reads files, so a request for text of a version is invalid. A book whose text is being
 // written already is not started again.
 func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
-	if req.Source != "" {
-		return fmt.Errorf("%w: the EPUB reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
-	}
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -139,7 +136,6 @@ func (s *TextServer) finish(key string) {
 func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
-		IsUserStarted: req.IsUserStarted,
 	}
 	err := s.putText(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
@@ -153,7 +149,7 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 // putText reports the text of a book as a version made from the file. A file that is no book, a
 // locked book and a book with no text get no version.
 func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task host.Task) error {
-	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}

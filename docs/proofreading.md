@@ -105,7 +105,7 @@ A printed line holds its words: on a page they stay where they were printed. Spe
 
 ## Who does it
 
-The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core knows nothing of proofreading. The plugin declares a text input of timed and positioned text and serves `numen.v1.TextProviderService`. The plugin declares the command `proofread` with the condition `when.liveTextKinds: ["*"]`, so the file's menu offers **Proofread** over the live version of any kind, and the host gives the command that version as its argument `version-id`.
+The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core knows nothing of proofreading. The plugin declares `texts` and puts the versions it makes through the host. The plugin declares the command `proofread` with the condition `when.liveTextKinds: ["*"]`, so the file's menu offers **Proofread** over the live version of any kind, and the host gives the command that version as its argument `version-id`.
 
 The plugin reads the live version through the host, numbers its parts from one, builds the batches, holds the two instructions, applies the gates to each reply, and gathers the replies of overlapping batches. The corrected lines take the places of the parts they answer for: a correction keeps its part's page and rectangles or its times, and a run of cues answered as one becomes one part spanning their times. The plugin keeps the corrected text in its folder of the vault's store, `.numen/md.numen.tools.proofreading/proofread-<hash>.json`, one file a version read, rewritten when that version is proofread again, and reports it to the host as a version whose input is the version it read.
 

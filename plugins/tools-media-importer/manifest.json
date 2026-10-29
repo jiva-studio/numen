@@ -13,9 +13,7 @@
     }
   ],
   "services": ["numen.links.v1.LinkService"],
-  "textInput": {
-    "noteTypes": ["link"]
-  },
+  "texts": {},
   "playback": {
     "noteTypes": ["link"]
   },
