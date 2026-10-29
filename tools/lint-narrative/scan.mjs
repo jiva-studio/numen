@@ -15,6 +15,7 @@ let filterWord = ''
 let filterLang = 'all' // all | ts | go
 let jsonOutPath = ''
 let isFixMode = false
+let isStrictMode = false
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i]
@@ -32,6 +33,8 @@ for (let i = 0; i < args.length; i++) {
     }
   } else if (arg === '--summary') {
     isSummaryOnly = true
+  } else if (arg === '--strict') {
+    isStrictMode = true
   } else if (arg === '--check') {
     isCheckMode = true
   } else if (arg === '--lang') {
@@ -64,13 +67,15 @@ Options:
   --json [path]         Output full findings as JSON (default: narrative-report.json)
   --summary             Output only summary counts and top-offending files
   --check               Exit with code 1 if any findings exist (for CI / pre-commit)
+  --strict              Count advisory prose rules (rationale, actor, narrative-verb, poetic-noun,
+                        filler, long-test-name) as findings, so --check fails on them
   --category <name>     Filter by category:
                           fake-casts | participles | prepositions | metaphors |
                           third-person | domain | tests | comments | gerunds |
                           regular-participles | test-assertions |
                           conversational | async | domestic |
                           error-storytelling | domestic-structs | domestic-verbs |
-                          masked-primitives | boolean-prefixes | ui-words
+                          masked-primitives | boolean-prefixes | ui-words | advisory
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -469,6 +474,24 @@ function findUiWordsRule(text) {
   return UI_WORDS_RULES.find((rule) => rule.re.test(plain)) ?? null
 }
 
+
+// 22. Advisory prose rules. Counted as findings only with --strict; reported as counts otherwise.
+const ADVISORY_COMMENT_RULES = [
+  {
+    name: 'rationale',
+    re: /\b(?:rather than|instead of|otherwise|would have|so that|to avoid|which is why|no longer|used to|previously|formerly|now (?:reads|returns|uses|takes))\b/i,
+  },
+  { name: 'actor', re: /\b(?:the person|a person|the person's|nobody|no one|whoever|somebody|someone)\b/i },
+  {
+    name: 'narrative-verb',
+    re: /\b(?:stands|stood|sits|sat|hands (?:back|over|it)|tells|told|says|said|asks|asked|owes|owed|refuses|wears|worn|travels|reaches|listens|hears|knows|wants|walks (?:the|a)|lies)\b/i,
+  },
+  { name: 'poetic-noun', re: /\b(?:the picture|ink|shadow|breath|in the air|front door|back door|room|hand|ground)\b/i },
+  { name: 'filler', re: /\b(?:just|actually|really|very|simply|quite|kind of|a little|basically|in fact)\b/i },
+]
+const MAX_GO_TEST_NAME_LENGTH = 60
+const MAX_TS_TEST_TITLE_LENGTH = 90
+
 const findings = {
   fakeTurnCasts: [],
   participleIdentifiers: [],
@@ -491,6 +514,15 @@ const findings = {
   bareBooleans: [],
   huntAndOffering: [],
   uiWords: [],
+}
+
+const advisory = {
+  rationale: [],
+  actor: [],
+  'narrative-verb': [],
+  'poetic-noun': [],
+  filler: [],
+  'long-test-name': [],
 }
 
 const stats = {
@@ -999,6 +1031,26 @@ function scanFile(filePath) {
       }
     }
 
+
+    // 22. Advisory prose rules
+    if (isCode && isCommentLine && shouldCheckCategory('advisory')) {
+      for (const rule of ADVISORY_COMMENT_RULES) {
+        const m = rule.re.exec(line)
+        if (m) {
+          advisory[rule.name].push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: m[0].toLowerCase(), text: trimmed.slice(0, 140) })
+        }
+      }
+    }
+    if (isCode && shouldCheckCategory('advisory')) {
+      const goName = isGo ? RE_GO_TEST_FUNC.exec(line)?.[1] : null
+      const tsTitle = !isGo ? RE_TS_TEST_TITLE.exec(line)?.[1] : null
+      if (goName && goName.length > MAX_GO_TEST_NAME_LENGTH) {
+        advisory['long-test-name'].push({ file: relPath, line: lineNum, lang: 'go', word: goName, text: trimmed })
+      } else if (tsTitle && tsTitle.length > MAX_TS_TEST_TITLE_LENGTH) {
+        advisory['long-test-name'].push({ file: relPath, line: lineNum, lang: 'ts', word: tsTitle.slice(0, 60), text: trimmed })
+      }
+    }
+
     // 20. Hunting and offering interaction metaphors (hunt, offered, lit)
     if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
       const m = isGo ? RE_GO_HUNT_OFFER.exec(lineWithoutStrings) : RE_TS_HUNT_OFFER.exec(lineWithoutStrings)
@@ -1096,7 +1148,9 @@ if (isStagedOnly) {
 }
 
 // Compute Aggregates
+const advisoryTotal = Object.values(advisory).reduce((sum, items) => sum + items.length, 0)
 const totalIssues =
+  (isStrictMode ? advisoryTotal : 0) +
   findings.fakeTurnCasts.length +
   findings.participleIdentifiers.length +
   findings.prepositionIdentifiers.length +
@@ -1120,8 +1174,9 @@ const totalIssues =
   findings.uiWords.length
 
 const fileCounts = {}
-for (const cat of Object.keys(findings)) {
-  for (const item of findings[cat]) {
+const countedGroups = isStrictMode ? { ...findings, ...advisory } : findings
+for (const cat of Object.keys(countedGroups)) {
+  for (const item of countedGroups[cat]) {
     fileCounts[item.file] = (fileCounts[item.file] || 0) + 1
   }
 }
@@ -1194,6 +1249,11 @@ console.log(`18. Masked UI interaction primitives (questions, outward)   : ${fin
 console.log(`19. Bare boolean properties (open, closed, disabled, stale): ${findings.bareBooleans.length}`)
 console.log(`20. Hunting and offering metaphors (hunt, offered, lit)    : ${findings.huntAndOffering.length}`)
 console.log(`21. Narrative UI copy in words files (that…, so…, That…)  : ${findings.uiWords.length}`)
+console.log('----------------------------------------------------------------------')
+console.log(`ADVISORY PROSE RULES${isStrictMode ? ' (counted, --strict)' : ' (not counted; use --strict)'}`)
+for (const [name, items] of Object.entries(advisory)) {
+  console.log(`  ${name.padEnd(16)}: ${items.length}`)
+}
 console.log('----------------------------------------------------------------------')
 console.log(`FRONTEND VIOLATIONS (TypeScript / Vue)                    : ${stats.frontendTotal}`)
 console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats.backendTotal}`)
@@ -1293,7 +1353,7 @@ if (isJsonOutput) {
 
 if (isCheckMode && totalIssues > 0) {
   console.log('Findings:')
-  for (const [category, items] of Object.entries(findings)) {
+  for (const [category, items] of Object.entries(countedGroups)) {
     for (const item of items) {
       const label = item.word || item.title || item.kind || ''
       console.log(`  ${item.file}:${item.line} [${category}${label ? `: ${label}` : ''}] ${item.text}`)
