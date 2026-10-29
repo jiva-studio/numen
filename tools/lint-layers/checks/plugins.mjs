@@ -408,7 +408,7 @@ export function verifyPluginsNoCrossPluginKnowledge() {
   failOnFindings("A plugin hardcodes another plugin's ID, tab kind, text kind or command", findCrossPluginKnowledge());
 }
 
-/** G10: Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */
+/** Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */
 function findPluginBackendLayerInversions() {
   const found = [];
   for (const file of listShippedFiles(["plugins/*.go"])) {
@@ -433,11 +433,11 @@ function findPluginBackendLayerInversions() {
 }
 
 export function verifyPluginBackendInternalLayers() {
-  failOnFindings("Plugin backend inner package imports outer service/engine package (G10)", findPluginBackendLayerInversions());
+  failOnFindings("Plugin backend inner package imports outer service/engine package", findPluginBackendLayerInversions());
 }
 
 /**
- * P4 / G14: Golden Template & Config Drift Verification for Standalone Plugins.
+ * Golden Template & Config Drift Verification for Standalone Plugins.
  */
 function parseEnabledGoLinters(yamlText) {
   const m = yamlText.match(/enable:\s*\n((?:\s*-\s*[\w-]+\s*\n)+)/);
@@ -530,7 +530,7 @@ function findPluginConfigDrift() {
 }
 
 export function verifyPluginConfigGoldenParity() {
-  failOnFindings("Plugin configuration missing or drifted from golden template plugins/.example/ (P4)", findPluginConfigDrift());
+  failOnFindings("Plugin configuration missing or drifted from golden template plugins/.example/", findPluginConfigDrift());
 }
 
 /**
@@ -590,14 +590,14 @@ export const PLUGIN_VERIFIERS = [
     id: "plugin-config-golden-parity",
     scope: "plugins",
     module: "plugins",
-    name: "Plugin Configs Match Golden Example plugins/.example/ & Root .golangci.yml (P4)",
+    name: "Plugin Configs Match Golden Example plugins/.example/ & Root .golangci.yml",
     run: verifyPluginConfigGoldenParity,
   },
   {
     id: "plugin-backend-layers",
     scope: "plugins",
     module: "plugins",
-    name: "Plugin Backend Internal Hexagonal Layer Direction (G10)",
+    name: "Plugin Backend Internal Hexagonal Layer Direction",
     run: verifyPluginBackendInternalLayers,
   },
   {

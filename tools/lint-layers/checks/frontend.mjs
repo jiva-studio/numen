@@ -249,7 +249,7 @@ export function verifyAppsNoDirectProtocol() {
   failOnFindings("An application frontend imports @numen/protocol directly instead of using @numen/plugin-sdk", findAppDirectProtocolImports());
 }
 
-/** F1 & F10: Segment direction (ui -> model -> api -> lib) and no @x cross-entity imports. */
+/** Segment direction (ui -> model -> api -> lib) and no @x cross-entity imports. */
 function findFrontendSegmentAndCrossEntityViolations() {
   const found = [];
   const segRank = { lib: 0, api: 1, model: 2, ui: 3 };
@@ -261,7 +261,7 @@ function findFrontendSegmentAndCrossEntityViolations() {
     if (!source) continue;
     for (const { line, value } of source.literals) {
       if (value.includes("/@x/")) {
-        found.push({ file, line, symbol: `cross-entity @x import (F10): ${JSON.stringify(value)}` });
+        found.push({ file, line, symbol: `cross-entity @x import: ${JSON.stringify(value)}` });
       }
       if (segIdx !== -1 && value.startsWith(".")) {
         const fromSeg = parts[segIdx];
@@ -273,7 +273,7 @@ function findFrontendSegmentAndCrossEntityViolations() {
           Object.prototype.hasOwnProperty.call(segRank, toSeg) &&
           segRank[toSeg] > segRank[fromSeg]
         ) {
-          found.push({ file, line, symbol: `upward segment import ${fromSeg} -> ${toSeg} (F1): ${JSON.stringify(value)}` });
+          found.push({ file, line, symbol: `upward segment import ${fromSeg} -> ${toSeg}: ${JSON.stringify(value)}` });
         }
       }
     }
@@ -282,10 +282,10 @@ function findFrontendSegmentAndCrossEntityViolations() {
 }
 
 export function verifyFrontendSegmentsAndEntities() {
-  failOnFindings("Frontend upward segment imports (lib/api/model -> ui) or @x cross-entity imports (F1, F10)", findFrontendSegmentAndCrossEntityViolations());
+  failOnFindings("Frontend upward segment imports (lib/api/model -> ui) or @x cross-entity imports", findFrontendSegmentAndCrossEntityViolations());
 }
 
-/** F5: Vue <style> raw colors/fallbacks and <template> array transforms. */
+/** Vue <style> raw colors/fallbacks and <template> array transforms. */
 function findVueStyleAndTemplateViolations() {
   const found = [];
   for (const file of listShippedFiles(["libs/ui/core/src", "libs/ui/shell/src", "apps/desktop/editor/src", "apps/desktop/flashcards/src", "apps/mobile/src", "plugins"])) {
@@ -296,7 +296,7 @@ function findVueStyleAndTemplateViolations() {
       const baseLine = raw.slice(0, tplMatch.index).split("\n").length;
       tplMatch[1].split("\n").forEach((line, idx) => {
         const m = line.match(/\.(filter|map|reduce|sort|slice)\s*\(|\bnew\s+Date\s*\(|\bJSON\.(?:stringify|parse)\s*\(/);
-        if (m) found.push({ file, line: baseLine + idx, symbol: `<template> inline computation ${m[0].trim()} (F5)` });
+        if (m) found.push({ file, line: baseLine + idx, symbol: `<template> inline computation ${m[0].trim()}` });
       });
     }
     const styleMatch = raw.match(/<style[^>]*>([\s\S]*?)<\/style>/);
@@ -305,13 +305,13 @@ function findVueStyleAndTemplateViolations() {
       styleMatch[1].split("\n").forEach((line, idx) => {
         if (/^\s*\/\//.test(line)) return;
         if (/#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(|\bhsla?\s*\(/.test(line)) {
-          found.push({ file, line: baseLine + idx, symbol: `<style> raw color literal (F5): ${line.trim()}` });
+          found.push({ file, line: baseLine + idx, symbol: `<style> raw color literal: ${line.trim()}` });
         }
         if (/var\(\s*--[\w-]+\s*,/.test(line)) {
-          found.push({ file, line: baseLine + idx, symbol: `<style> token fallback var(--token, fallback) (F5): ${line.trim()}` });
+          found.push({ file, line: baseLine + idx, symbol: `<style> token fallback var(--token, fallback): ${line.trim()}` });
         }
         if (/^\s*--numen-[\w-]+\s*:/.test(line)) {
-          found.push({ file, line: baseLine + idx, symbol: `<style> local --numen-* token override (F5): ${line.trim()}` });
+          found.push({ file, line: baseLine + idx, symbol: `<style> local --numen-* token override: ${line.trim()}` });
         }
       });
     }
@@ -320,10 +320,10 @@ function findVueStyleAndTemplateViolations() {
 }
 
 export function verifyVueStyleAndTemplatePurity() {
-  failOnFindings("Vue <style> token bypass or <template> inline transform (F5)", findVueStyleAndTemplateViolations());
+  failOnFindings("Vue <style> token bypass or <template> inline transform", findVueStyleAndTemplateViolations());
 }
 
-/** F9: Every TypeScript package with a tsconfig.json has an eslint.config.js. */
+/** Every TypeScript package with a tsconfig.json has an eslint.config.js. */
 function findTsPackagesWithoutEslint() {
   const candidates = [
     "libs/ui/core",
@@ -336,11 +336,11 @@ function findTsPackagesWithoutEslint() {
   ];
   return candidates
     .filter((dir) => fs.existsSync(path.join(REPO_ROOT, dir, "tsconfig.json")) && !fs.existsSync(path.join(REPO_ROOT, dir, "eslint.config.js")))
-    .map((dir) => ({ file: `${dir}/tsconfig.json`, line: 1, symbol: "missing eslint.config.js (F9)" }));
+    .map((dir) => ({ file: `${dir}/tsconfig.json`, line: 1, symbol: "missing eslint.config.js" }));
 }
 
 export function verifyAllTsPackagesHaveEslint() {
-  failOnFindings("TypeScript package missing eslint.config.js (F9)", findTsPackagesWithoutEslint());
+  failOnFindings("TypeScript package missing eslint.config.js", findTsPackagesWithoutEslint());
 }
 
 export const FRONTEND_VERIFIERS = [
@@ -348,7 +348,7 @@ export const FRONTEND_VERIFIERS = [
     id: "all-ts-packages-eslint",
     scope: "libs",
     module: "sdk",
-    name: "Every TypeScript Package Has ESLint Configured (F9)",
+    name: "Every TypeScript Package Has ESLint Configured",
     run: verifyAllTsPackagesHaveEslint,
   },
   {
@@ -397,14 +397,14 @@ export const FRONTEND_VERIFIERS = [
     id: "frontend-segments-and-entities",
     scope: "apps",
     module: "desktop",
-    name: "Frontend Segment Direction (ui -> model -> api -> lib) & No @x Entity Cross-Imports (F1, F10)",
+    name: "Frontend Segment Direction (ui -> model -> api -> lib) & No @x Entity Cross-Imports",
     run: verifyFrontendSegmentsAndEntities,
   },
   {
     id: "vue-style-and-template",
     scope: "apps",
     module: "desktop",
-    name: "Vue <style> Tokens & <template> Purity (F5)",
+    name: "Vue <style> Tokens & <template> Purity",
     run: verifyVueStyleAndTemplatePurity,
   },
   {
