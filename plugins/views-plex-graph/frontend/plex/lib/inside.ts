@@ -133,7 +133,7 @@ interface HeadingsWidthContext {
 
 /**
  * The width of the headings and its position: the width the longest heading
- * requires, never narrower than the node's own box and never wider than the
+ * requires, never narrower than the node's own box and never exceeding the
  * window. It grows about the node's midpoint and shifts back inside the window
  * where the midpoint leaves no room to grow.
  */

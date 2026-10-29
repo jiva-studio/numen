@@ -44,7 +44,7 @@ interface JoinAdjacent {
  *
  * When the parent divides its length in the direction of the requested side, the
  * pane joins it as a sibling; otherwise the node is wrapped in a branch, which
- * sits one level deeper and divides the other way. A node with no parent is the
+ * is one level deeper and divides the other way. A node with no parent is the
  * root, and the workspace rotates its axis to fit.
  */
 export function putAdjacent(

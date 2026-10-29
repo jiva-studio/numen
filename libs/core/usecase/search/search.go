@@ -481,7 +481,7 @@ func (s sourceTexts) getText(ctx context.Context, path, version string) (string,
 // source. A source edited after indexing is shorter than the chunk offsets
 // indicate.
 //
-// The result is copied from the source's decoded text instead of sliced from it,
+// The result is copied from the source's decoded text and not sliced from it,
 // so a retained passage holds only the span and not the whole document.
 func span(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {

@@ -37,7 +37,7 @@ const emit = defineEmits<{
 const runs = computed(() => Math.max(props.length, props.at, 0))
 
 /**
- * While the bar is dragged, the dragged position is shown instead of the
+ * While the bar is dragged, the dragged position is shown in place of the
  * playback position, until the seek takes effect.
  */
 const dragging = ref<number | null>(null)

@@ -165,7 +165,7 @@ func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 
 // TestWhatCannotBeFollowedIsRead. When the changed paths are unknown, the only
 // correct response is to rescan everything, and the listener is told to read
-// again instead of receiving a list of moved notes.
+// again and does not receive a list of moved notes.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()

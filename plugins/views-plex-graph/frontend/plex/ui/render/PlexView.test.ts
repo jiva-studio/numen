@@ -372,7 +372,7 @@ describe('two lines between one pair', () => {
 describe('a node keeps its own drawing across a change', () => {
   it('is the same element after the ones around it move', async () => {
     // A node holds its own state (pointer hover, keyboard focus) and the browser
-    // holds focus on an element. If nodes are keyed by position instead of by name,
+    // holds focus on an element. If nodes are keyed by position and not by name,
     // one node inherits another's element and both follow whatever occupies that
     // position.
     const view = mount(PlexView, {

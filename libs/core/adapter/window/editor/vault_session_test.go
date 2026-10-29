@@ -191,7 +191,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	}
 }
 
-// getShownVault returns the identity of the vault the named window is showing.
+// getShownVault returns the identity of the vault the named window displays.
 func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 

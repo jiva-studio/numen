@@ -12,7 +12,7 @@ import (
 // Every value of every enum this file converts maps to a defined result.
 //
 // The values are enumerated from the schema, so a value added there fails this
-// test instead of being silently ignored.
+// test and is not silently ignored.
 
 func TestEveryModeCrossesBothWays(t *testing.T) {
 	testsupport.RoundTrip(t, ConvertModeFromWire, ConvertModeToWire)

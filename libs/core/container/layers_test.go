@@ -132,7 +132,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 
 // A test that builds an adapter is external to the package it exercises. The
 // rules above skip test files for that reason: an adapter built from within the
-// package sits in its compilation unit when the tests build, and every other
+// package is in its compilation unit when the tests build, and every other
 // scenario in the core is tested from a package_test.
 //
 // An adapter's own test is not covered by this: it builds the adapter under test,

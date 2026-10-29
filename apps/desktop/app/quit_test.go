@@ -159,7 +159,7 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 	}
 }
 
-// TestRequestQuit_WaitsWhileQuestionPending. The goroutine left behind by a quit
+// TestRequestQuit_WaitsWhileQuestionPending. The goroutine remaining after a quit
 // may only cancel the quit: the user is responding to a prompt, and the
 // application must not exit while it is open.
 func TestRequestQuit_WaitsWhileQuestionPending(t *testing.T) {

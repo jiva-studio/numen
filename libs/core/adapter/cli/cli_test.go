@@ -343,7 +343,7 @@ func TestLinksShowsBothDirections(t *testing.T) {
 	if !strings.Contains(from, "points at:") {
 		t.Errorf("links said:\n%s", from)
 	}
-	// A link with no target is reported explicitly rather than omitted.
+	// A link with no target is reported explicitly and not omitted.
 	broken := s.mustRun("links", "demo", "edge/broken-links.md")
 	if !strings.Contains(broken, "nothing by that name") {
 		t.Errorf("a dangling link was not reported:\n%s", broken)

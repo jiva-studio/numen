@@ -18,7 +18,7 @@ var quantising = embeddingport.EmbeddingModel{
 
 // atScale returns the recipe of m with its quantization scale replaced by
 // scale. It reads the scale suffix from the current recipe, so a recipe that no
-// longer carries the scale fails the test instead of passing silently.
+// longer carries the scale fails the test and does not pass silently.
 func atScale(t *testing.T, m embeddingport.EmbeddingModel, scale float64) string {
 	t.Helper()
 

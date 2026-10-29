@@ -307,7 +307,7 @@ export const Lit: Story = {
 }
 
 /**
- * A list of values opens with the current value active, wherever it sits in the
+ * A list of values opens with the current value active, wherever it is in the
  * list. The caller acts on the active item without first navigating to it.
  */
 export const OpensOnAValue: Story = {

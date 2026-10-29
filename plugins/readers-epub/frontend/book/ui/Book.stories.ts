@@ -309,7 +309,7 @@ export const TwoColumns: Story = {
 }
 
 /**
- * An image taller than the column is cut by the column edge, and the cut part
+ * An image whose height exceeds the column is clipped at the column edge, and the cut part
  * lies on a page that is never turned to.
  */
 export const ImageTallerThanTheColumn: Story = {

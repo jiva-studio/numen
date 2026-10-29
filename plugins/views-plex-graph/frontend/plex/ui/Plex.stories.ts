@@ -628,7 +628,7 @@ export const OneHandleAtATime: Story = {
  *
  * Only a browser can verify it: whether a `contextmenu` event reaches an SVG
  * group, whether preventing it suppresses the webview's own menu, and whether
- * the right button over the handle targets the node under it instead of the
+ * the right button over the handle targets the node under it and not the
  * handle.
  */
 export const AskingForAMenu: Story = {

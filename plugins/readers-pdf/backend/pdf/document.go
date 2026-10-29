@@ -112,7 +112,7 @@ func getPoolSize() int {
 
 // waitForWorker is how long a reader waits for a free worker. Reading a
 // document takes a second or two, and the wait is bounded so that a worker stuck
-// inside the library produces an error instead of a hang.
+// inside the library produces an error and not a hang.
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 

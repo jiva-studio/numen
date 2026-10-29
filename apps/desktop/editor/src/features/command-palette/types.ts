@@ -168,7 +168,7 @@ export interface NoteLookup {
 
 /**
  * The runs this build cannot perform. The application reports them the first
- * time one is requested; this window stops offering it from then on.
+ * time one is requested; this window no longer lists it from then on.
  */
 export interface RunSupport {
   /** Whether this build can do a run at all. A view drawing it follows the answer. */

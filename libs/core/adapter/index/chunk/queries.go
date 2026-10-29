@@ -516,7 +516,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 }
 
 // GetRecognisedSources returns, by path, the sources of one kind whose text a
-// producer created rather than read from the file's own bytes.
+// producer created and not read from the file's own bytes.
 //
 // A scan uses it to find sources whose files are gone: the store is a folder on
 // disk that the user may empty, and a source whose files are missing returns no
