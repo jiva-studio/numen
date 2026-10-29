@@ -14,7 +14,7 @@ const open = () => {
   const state = { isDown: false }
   const cardModels = vi.fn<Cards['cardModels']>(async () => {
     if (state.isDown) throw new Error('down')
-    return { cardModels: [OFFER], held: 1 }
+    return { cardModels: [OFFER], total: 1 }
   })
   const cards: Cards = {
     cardModels,

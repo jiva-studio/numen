@@ -21,7 +21,7 @@ defineProps<{
 /** The grid labels for a day, in this window's wording. */
 const words: HeatmapWords = {
   names: heatmapDayName,
-  answered: 'answered',
+  reviewed: 'answered',
   nothing: 'Nothing answered',
   toCome: 'to come',
   again: GRADE_LABELS.again,

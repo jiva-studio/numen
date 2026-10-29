@@ -59,60 +59,60 @@ const panel = (
     },
     showNotice: (one) => notices.push(one),
   })
-  return { held: target, notices, on, showing, about, ports }
+  return { wrapper: target, notices, on, showing, about, ports }
 }
 
 describe('the panel coming in', () => {
   it('does not come in between cards', () => {
-    const { held } = panel({ card: null })
-    held.openPanel()
-    expect(held.open.value).toBe(false)
-    expect(held.context.value).toBeNull()
+    const { wrapper } = panel({ card: null })
+    wrapper.openPanel()
+    expect(wrapper.open.value).toBe(false)
+    expect(wrapper.context.value).toBeNull()
   })
 
   it('arrives in on the card the session is on, turned or not', () => {
-    const { held } = panel()
-    held.openPanel()
-    expect(held.open.value).toBe(true)
-    expect(held.about.value?.cardId).toBe('3f4g5h6j7k')
+    const { wrapper } = panel()
+    wrapper.openPanel()
+    expect(wrapper.open.value).toBe(true)
+    expect(wrapper.about.value?.cardId).toBe('3f4g5h6j7k')
   })
 
   // A control that does nothing is pressed repeatedly.
   it('says why it cannot come in, and does not', () => {
-    const { held, notices } = panel({ unreachable: 'Agent unreachable.' })
-    held.openPanel()
-    expect(held.open.value).toBe(false)
-    expect(held.context.value).toBeNull()
+    const { wrapper, notices } = panel({ unreachable: 'Agent unreachable.' })
+    wrapper.openPanel()
+    expect(wrapper.open.value).toBe(false)
+    expect(wrapper.context.value).toBeNull()
     expect(notices).toEqual(['Agent unreachable.'])
   })
 
   it('is put away and keeps the conversation', () => {
-    const { held } = panel()
-    held.openPanel()
-    const context = held.context.value
-    held.closePanel()
-    expect(held.open.value).toBe(false)
-    expect(held.context.value).toBe(context)
+    const { wrapper } = panel()
+    wrapper.openPanel()
+    const context = wrapper.context.value
+    wrapper.closePanel()
+    expect(wrapper.open.value).toBe(false)
+    expect(wrapper.context.value).toBe(context)
   })
 
   // The window shows one thing at a time, and the strip can only stand on one
   // stop. A panel coming in is the other one going out.
   it('takes the window off the other panel when it arrives in', () => {
-    const { held, showing } = panel({ showing: 'reading' })
-    held.openPanel()
+    const { wrapper, showing } = panel({ showing: 'reading' })
+    wrapper.openPanel()
     expect(showing.value).toBe('asking')
   })
 })
 
 describe('the context of the conversation about a card', () => {
   it('asks with the port made for the card, about the deck the card is in', () => {
-    const { held, about, ports } = panel()
-    held.openPanel()
+    const { wrapper, about, ports } = panel()
+    wrapper.openPanel()
 
     expect(about).toEqual([card()])
-    expect(held.context.value?.agent).toBe(ports[0])
-    expect(held.context.value?.focus).toBe('decks/Words.md')
-    expect(held.context.value?.placeholder).toBe(words.ask)
+    expect(wrapper.context.value?.agent).toBe(ports[0])
+    expect(wrapper.context.value?.focus).toBe('decks/Words.md')
+    expect(wrapper.context.value?.placeholder).toBe(words.ask)
   })
 
   it('says why the agent cannot be reached, as the window says it now', () => {
@@ -134,76 +134,76 @@ describe('the context of the conversation about a card', () => {
 
   // The current card is never answered from the previous one's conversation.
   it('is gone when the card is answered', () => {
-    const { held } = panel()
-    held.openPanel()
+    const { wrapper } = panel()
+    wrapper.openPanel()
 
-    held.endConversation()
+    wrapper.endConversation()
 
-    expect(held.open.value).toBe(false)
-    expect(held.about.value).toBeNull()
-    expect(held.context.value).toBeNull()
+    expect(wrapper.open.value).toBe(false)
+    expect(wrapper.about.value).toBeNull()
+    expect(wrapper.context.value).toBeNull()
   })
 
   // A card is answered with whichever panel is up, and answering it ends the
   // conversation wherever the window happens to be standing.
   it('leaves the window where it is when the card is answered from the reading', () => {
-    const { held, showing } = panel()
-    held.openPanel()
+    const { wrapper, showing } = panel()
+    wrapper.openPanel()
     showing.value = 'reading'
 
-    held.endConversation()
+    wrapper.endConversation()
 
     expect(showing.value).toBe('reading')
-    expect(held.context.value).toBeNull()
+    expect(wrapper.context.value).toBeNull()
   })
 
   it('is made again for the next card', () => {
-    const { held, on, about } = panel()
-    held.openPanel()
-    const first = held.context.value
+    const { wrapper, on, about } = panel()
+    wrapper.openPanel()
+    const first = wrapper.context.value
 
-    held.endConversation()
+    wrapper.endConversation()
     on.value = card({ cardId: 'zpqrstvwxy' })
-    held.openPanel()
+    wrapper.openPanel()
 
-    expect(held.context.value).not.toBe(first)
+    expect(wrapper.context.value).not.toBe(first)
     expect(about.map((one) => one.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
   })
 })
 
 describe('the panel requested for again', () => {
   it('keeps the conversation of the card it is already on', () => {
-    const { held, about } = panel()
-    held.openPanel()
-    const context = held.context.value
-    held.closePanel()
+    const { wrapper, about } = panel()
+    wrapper.openPanel()
+    const context = wrapper.context.value
+    wrapper.closePanel()
 
-    held.openPanel()
+    wrapper.openPanel()
 
     expect(about).toHaveLength(1)
-    expect(held.context.value).toBe(context)
+    expect(wrapper.context.value).toBe(context)
   })
 
   // A review card is its card id and its template together: the same note
   // addressed through the other template is another card.
   it('makes a conversation of its own for another card with the same review card', () => {
-    const { held, about, on } = panel()
-    held.openPanel()
-    const first = held.context.value
+    const { wrapper, about, on } = panel()
+    wrapper.openPanel()
+    const first = wrapper.context.value
 
     on.value = card({ cardId: 'zpqrstvwxy' })
-    held.openPanel()
+    wrapper.openPanel()
 
-    expect(held.context.value).not.toBe(first)
+    expect(wrapper.context.value).not.toBe(first)
     expect(about.map((one) => one.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
   })
 
   it('makes a conversation of its own for the other review card of the same card', () => {
-    const { held, about, on } = panel()
-    held.openPanel()
+    const { wrapper, about, on } = panel()
+    wrapper.openPanel()
 
     on.value = card({ template: 'Name it' })
-    held.openPanel()
+    wrapper.openPanel()
 
     expect(about.map((one) => one.template)).toEqual(['Say it', 'Name it'])
   })

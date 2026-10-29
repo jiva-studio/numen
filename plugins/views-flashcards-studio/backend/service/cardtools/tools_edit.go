@@ -46,7 +46,7 @@ type cardAddInput struct {
 	CardModel   string       `json:"cardModel" jsonschema:"the card model it is cut by, by the name card_model_list gave under name"`
 	Values      []FieldValue `json:"values" jsonschema:"what the card holds, in the order to write it"`
 	Section     *int         `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
-	Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string       `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardAdd(registry *tools.Registry) error {
@@ -89,7 +89,7 @@ type cardEditInput struct {
 	CardID      string       `json:"cardId" jsonschema:"the card's id, as card_read gives it"`
 	Values      []FieldValue `json:"values" jsonschema:"the fields to write, and what to put under each"`
 	CardModel   string       `json:"cardModel,omitempty" jsonschema:"the card model it is cut by from now on, by the name card_model_list gave under name; left out, the card keeps the one it names"`
-	Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string       `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardEdit(registry *tools.Registry) error {
@@ -124,7 +124,7 @@ type cardValueRemoveInput struct {
 	Path        string `json:"path" jsonschema:"the deck the card is in"`
 	CardID      string `json:"cardId" jsonschema:"the card's id, as card_read gives it"`
 	Field       string `json:"field" jsonschema:"the field to take off, as card_read gives it under field"`
-	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
@@ -151,7 +151,7 @@ func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 type cardRemoveInput struct {
 	Path        string `json:"path" jsonschema:"the deck the card is in"`
 	CardID      string `json:"cardId" jsonschema:"the card's id, as card_read gives it"`
-	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardRemove(registry *tools.Registry) error {
@@ -177,7 +177,7 @@ func (t *Tools) addCardRemove(registry *tools.Registry) error {
 type cardSectionAddInput struct {
 	Path        string `json:"path" jsonschema:"the deck to divide"`
 	Name        string `json:"name" jsonschema:"what the section is called"`
-	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
@@ -203,7 +203,7 @@ type cardSectionRenameInput struct {
 	Path        string `json:"path" jsonschema:"the deck the section is in"`
 	Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
 	Name        string `json:"name" jsonschema:"what it is called from now on"`
-	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
@@ -228,7 +228,7 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 type cardSectionRemoveInput struct {
 	Path        string `json:"path" jsonschema:"the deck the section is in"`
 	Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
-	Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
@@ -255,7 +255,7 @@ type cardModelEditInput struct {
 	Path        string         `json:"path" jsonschema:"the card model to edit"`
 	Fields      []string       `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
 	Templates   []CardTemplate `json:"templates" jsonschema:"the ways a card cut by this card model is shown"`
-	Fingerprint string         `json:"fingerprint" jsonschema:"what card_model_read said the card model was, which refuses a write over somebody else's edit"`
+	Fingerprint string         `json:"fingerprint" jsonschema:"the card model fingerprint returned by card_model_read; a write against a changed card model is rejected"`
 }
 
 func (t *Tools) addCardCardModelEdit(registry *tools.Registry) error {

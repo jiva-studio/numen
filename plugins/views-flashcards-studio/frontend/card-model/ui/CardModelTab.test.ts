@@ -34,7 +34,7 @@ const mountCardModel = async (problems: readonly DeckProblem[] = []) => {
   ]
 
   const core: Cards = {
-    cardModels: async () => ({ cardModels: [], held: 0 }),
+    cardModels: async () => ({ cardModels: [], total: 0 }),
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name in the fields and in the braces of every template.

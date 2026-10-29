@@ -115,7 +115,7 @@ func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
 			if (i+day)%7 == 0 {
 				rating = api.RatingAgain
 			}
-			_, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+			_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 				Vault: string(v.ID), Run: session.Run,
 				CardID: one.CardID, Template: one.Template,
 				Rating: rating, DurationMs: took.Milliseconds(),
@@ -356,7 +356,7 @@ func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
 		t.Fatalf("the deck offered %d review cards to answer", len(sat.Cards))
 	}
 	for _, card := range sat.Cards[:3] {
-		if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+		if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 			Vault: string(v.ID), Run: sat.Run,
 			CardID: card.CardID, Template: card.Template,
 			Rating: api.RatingGood, DurationMs: 6000,

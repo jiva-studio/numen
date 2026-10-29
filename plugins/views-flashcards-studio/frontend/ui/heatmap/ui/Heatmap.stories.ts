@@ -31,7 +31,7 @@ const now = new Date(2026, 7, 29, 12)
 /** The words a window puts on a day's account. */
 const words: Words = {
   names: (day) => day,
-  answered: 'answered',
+  reviewed: 'answered',
   nothing: 'Nothing answered',
   toCome: 'to come',
   again: 'Again',
@@ -52,12 +52,12 @@ function createYear(): Map<string, Tally> {
     const reply = ((back * 7) % 60) + 1
     const again = back % 5 === 0 ? 2 : 0
     out.set(getDayName(on), {
-      answered: reply,
+      reviewed: reply,
       again,
       hard: 1,
       good: Math.max(0, reply - again - 2),
       easy: 1,
-      asked: Math.max(0, reply - 1),
+      tested: Math.max(0, reply - 1),
       recalled: Math.max(0, reply - 1 - again),
     })
   }
@@ -184,7 +184,7 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
   const today = canvas.querySelector('[data-today]')
   await expect(today).not.toBeNull()
   await userEvent.hover(today as Element)
-  const response = canvas.querySelector('[data-day-summary="account"]')
+  const response = canvas.querySelector('[data-day-detail="root"]')
   await expect(response).not.toBeNull()
   return response as HTMLElement
 }
@@ -199,12 +199,12 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
 export const ADayReviewed: Story = {
   args: {
     did: createOneDay({
-      answered: 26,
+      reviewed: 26,
       again: 2,
       hard: 3,
       good: 18,
       easy: 3,
-      asked: 24,
+      tested: 24,
       recalled: 20,
     }),
     now,
@@ -213,23 +213,25 @@ export const ADayReviewed: Story = {
   render: createContainer,
   play: async ({ canvasElement }) => {
     const response = await pointsAtToday(canvasElement)
-    await expect(response.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
-    await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+    await expect(response.querySelector('[data-day-detail="day"]')?.textContent).toBe(TODAY)
+    await expect(response.querySelector('[data-day-detail="count"]')?.textContent?.trim()).toBe(
       '26 answered',
     )
 
-    const four = [...response.querySelectorAll('[data-day-summary="four"] li')].map(
+    const ratings = [...response.querySelectorAll('[data-day-detail="ratings"] li')].map(
       (one) => one.textContent,
     )
-    await expect(four).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
+    await expect(ratings).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
 
-    const came = response.querySelector('[data-day-summary="came"]') as HTMLElement
-    await expect(came.textContent?.trim()).toBe('83% of cards you are reviewing came back')
+    const recallRate = response.querySelector('[data-day-detail="recall-rate"]') as HTMLElement
+    await expect(recallRate.textContent?.trim()).toBe('83% of cards you are reviewing came back')
 
     // 8rem is the least the panel is drawn at and not the most, so the panel
     // takes the width of its longest line and the share relies on one line.
-    const box = came.getBoundingClientRect()
-    await expect(box.height).toBeLessThan(2 * Number.parseFloat(getComputedStyle(came).lineHeight))
+    const box = recallRate.getBoundingClientRect()
+    await expect(box.height).toBeLessThan(
+      2 * Number.parseFloat(getComputedStyle(recallRate).lineHeight),
+    )
     await expect(Math.round(box.width)).toBe(Math.round(response.getBoundingClientRect().width))
   },
 }
@@ -240,18 +242,26 @@ export const ADayReviewed: Story = {
  */
 export const ADayOfNewCards: Story = {
   args: {
-    did: createOneDay({ answered: 12, again: 0, hard: 1, good: 9, easy: 2, asked: 0, recalled: 0 }),
+    did: createOneDay({
+      reviewed: 12,
+      again: 0,
+      hard: 1,
+      good: 9,
+      easy: 2,
+      tested: 0,
+      recalled: 0,
+    }),
     now,
     words,
   },
   render: createContainer,
   play: async ({ canvasElement }) => {
     const response = await pointsAtToday(canvasElement)
-    await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+    await expect(response.querySelector('[data-day-detail="count"]')?.textContent?.trim()).toBe(
       '12 answered',
     )
-    await expect(response.querySelectorAll('[data-day-summary="four"] li')).toHaveLength(3)
-    await expect(response.querySelector('[data-day-summary="came"]')).toBeNull()
+    await expect(response.querySelectorAll('[data-day-detail="ratings"] li')).toHaveLength(3)
+    await expect(response.querySelector('[data-day-detail="recall-rate"]')).toBeNull()
   },
 }
 
@@ -261,11 +271,11 @@ export const ADayOfNothing: Story = {
   render: createContainer,
   play: async ({ canvasElement }) => {
     const response = await pointsAtToday(canvasElement)
-    await expect(response.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+    await expect(response.querySelector('[data-day-detail="count"]')?.textContent?.trim()).toBe(
       'Nothing answered',
     )
-    await expect(response.querySelector('[data-day-summary="four"]')).toBeNull()
-    await expect(response.querySelector('[data-day-summary="came"]')).toBeNull()
+    await expect(response.querySelector('[data-day-detail="ratings"]')).toBeNull()
+    await expect(response.querySelector('[data-day-detail="recall-rate"]')).toBeNull()
   },
 }
 

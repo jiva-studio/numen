@@ -21,7 +21,7 @@ export interface SessionClient {
    * to the decks one preset schedules, and to the budget that preset keeps.
    */
   startSession(params: { vault: string; deck: string; preset?: string }): Promise<SessionStart>
-  answerCard(params: {
+  recordReview(params: {
     vault: string
     run: string
     cardId: string
@@ -29,7 +29,7 @@ export interface SessionClient {
     rating: Rating
     durationMs: number
   }): Promise<{ answer: string }>
-  takeBackAnswer(params: { vault: string; run: string; answer: string }): Promise<unknown>
+  undoReview(params: { vault: string; run: string; answer: string }): Promise<unknown>
 }
 
 /** What opening a session comes back with. */
@@ -132,7 +132,7 @@ async function submitAnswer(deps: {
   elapsedMs: number
 }): Promise<string | null> {
   try {
-    const response = await deps.cards.answerCard({
+    const response = await deps.cards.recordReview({
       vault: deps.vault,
       run: deps.run,
       cardId: deps.card.cardId,
@@ -155,7 +155,7 @@ async function revertAnswer(deps: {
   answer: string
 }): Promise<boolean> {
   try {
-    await deps.cards.takeBackAnswer({ vault: deps.vault, run: deps.run, answer: deps.answer })
+    await deps.cards.undoReview({ vault: deps.vault, run: deps.run, answer: deps.answer })
     return true
   } catch (why) {
     deps.reportError(why)
@@ -303,7 +303,6 @@ export function useReviewSession(deps: SessionDeps) {
     vault: vault as Ref<string>,
     run,
     cardList: cards.cardList,
-    asked: cards.cardList,
     cardIndex: cards.cardIndex,
     isAnswerShown: cards.isAnswerShown,
     shown: cards.isAnswerShown,

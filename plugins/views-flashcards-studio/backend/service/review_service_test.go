@@ -20,15 +20,15 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// answerCard answers one card of a session and returns the line recorded for
+// recordReview answers one card of a session and returns the line recorded for
 // it.
-func answerCard(t *testing.T, handler *API, vault string, session *api.StartSessionResponse) string {
+func recordReview(t *testing.T, handler *API, vault string, session *api.StartSessionResponse) string {
 	t.Helper()
 	if len(session.Cards) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := session.Cards[0]
-	out, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	out, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: vault, Run: session.Run,
 		CardID: card.CardID, Template: card.Template,
 		Rating: api.RatingGood,
@@ -55,7 +55,7 @@ func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
 			t.Errorf("a card nobody answered is due at %q", card.Due)
 		}
 	}
-	answerCard(t, handler, string(v.ID), first)
+	recordReview(t, handler, string(v.ID), first)
 
 	// Answered well, so the card is due in minutes and is presented again in this
 	// session: the card carries the state from that answer.
@@ -79,9 +79,9 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	v := target[0]
 
 	session := startSession(t, handler, v)
-	provided := answerCard(t, handler, string(v.ID), session)
+	provided := recordReview(t, handler, string(v.ID), session)
 
-	if _, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	if _, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: string(v.ID), Run: session.Run, Answer: provided,
 	}); err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	v := target[0]
 	session := startSession(t, handler, v)
 
-	_, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	_, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: string(v.ID), Run: session.Run,
 	})
 	if codeOf(err) != server.CodeInvalidArgument {
@@ -120,9 +120,9 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, deck)
 	v := target[0]
 	session := startSession(t, handler, v)
-	provided := answerCard(t, handler, string(v.ID), session)
+	provided := recordReview(t, handler, string(v.ID), session)
 
-	_, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	_, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: string(v.ID), Run: "nothing", Answer: provided,
 	})
 	if codeOf(err) != server.CodeNotFound {
@@ -135,7 +135,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t, deck)
 
-	_, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing",
 		CardID: "k7m2xq9fzp", Template: "Recognise", Rating: api.RatingGood,
 	})
@@ -176,7 +176,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t, deck)
 
-	_, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	_, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	})
 	if codeOf(err) != server.CodeNotFound {
@@ -316,14 +316,14 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 	handler, _ := newAPI(t, deck)
 
-	_, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing", Rating: api.RatingGood,
 	})
 	if codeOf(err) != server.CodeNotFound || hasCause(err, ErrNoRun) {
 		t.Errorf("answering failed with %v, want a vault nobody holds", err)
 	}
 
-	_, err = handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	_, err = handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	})
 	if codeOf(err) != server.CodeNotFound || hasCause(err, ErrNoRun) {
@@ -332,13 +332,13 @@ func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 }
 
 // Taking an answer back answers with a response, which is empty.
-func TestTakeBackAnswer_ReturnsEmptyResponse(t *testing.T) {
+func TestUndoReview_ReturnsEmptyResponse(t *testing.T) {
 	handler, target := newAPI(t, deck)
 	v := target[0]
 	session := startSession(t, handler, v)
-	answer := answerCard(t, handler, string(v.ID), session)
+	answer := recordReview(t, handler, string(v.ID), session)
 
-	out, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	out, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: string(v.ID), Run: session.Run, Answer: answer,
 	})
 	if err != nil {
@@ -425,7 +425,7 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	session := startSession(t, handler, v)
 	card := session.Cards[0]
 
-	out, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	out, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: string(v.ID), Run: session.Run,
 		CardID: card.CardID, Template: card.Template, Rating: api.RatingGood,
 	})
@@ -433,7 +433,7 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 		t.Errorf("answering came back with %+v and %v, want an internal error", out, err)
 	}
 
-	back, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	back, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: string(v.ID), Run: session.Run, Answer: "01J8F3K2M9QRSTVWXYZ012",
 	})
 	if codeOf(err) != server.CodeInternal || back != nil {

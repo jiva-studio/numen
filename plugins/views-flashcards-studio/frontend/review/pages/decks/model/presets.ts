@@ -134,7 +134,7 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
   const tallies = new Map<string, PresetTally>()
   for (const { deck, result } of reads) {
     if (!result.ok) continue
-    const { held: preset } = result.value
+    const { settings: preset } = result.value
     let into = tallies.get(preset.path)
     if (!into) {
       into = createTally(preset)
@@ -149,7 +149,7 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
 }
 
 /** One preset currently before a deck has been counted into it. */
-const createTally = (preset: DeckPreset['held']): PresetTally => ({
+const createTally = (preset: DeckPreset['settings']): PresetTally => ({
   path: preset.path,
   name: preset.name || 'Defaults',
   settings: preset.settings,
@@ -192,9 +192,9 @@ const getDayOwed = (one: PresetTally, day: PresetCardsDue | undefined) => ({
 
 /** What has been answered under a preset since the day opened, and nothing where the count answered nothing. */
 const getDayReviewed = (day: PresetCardsDue | undefined) => ({
-  answered: day?.answered ?? 0,
-  answeredNew: day?.answeredNew ?? 0,
-  answeredReviews: day?.answeredReviews ?? 0,
+  reviewed: day?.reviewed ?? 0,
+  reviewedNew: day?.reviewedNew ?? 0,
+  reviewedReviews: day?.reviewedReviews ?? 0,
   took: day?.took ?? 0,
 })
 
@@ -211,9 +211,9 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
   cards: one.owed,
   budget: { new: one.new, reviews: one.reviews, minutes: one.minutes },
   closes: one.closes,
-  answered: one.answered,
-  answeredNew: one.answeredNew,
-  answeredReviews: one.answeredReviews,
+  reviewed: one.reviewed,
+  reviewedNew: one.reviewedNew,
+  reviewedReviews: one.reviewedReviews,
   took: one.took,
   // The count answered for this preset, so its verdict is the count's.
   paused: getStoppedWords(one.stopsOn, null, today),

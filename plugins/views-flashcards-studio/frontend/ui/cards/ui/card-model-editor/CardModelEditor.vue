@@ -90,8 +90,8 @@ const {
 } = useDrag<InsertionPoint>({
   order: () => props.templates.map((each) => each.id),
   nowhere: null,
-  isMoved: (held, lands) => lands !== held,
-  move: (held, lands) => emit('move-template', held, lands),
+  isMoved: (dragged, lands) => lands !== dragged,
+  move: (dragged, lands) => emit('move-template', dragged, lands),
 })
 
 const sample = computed(() => sampleValues(declaredFields.value))

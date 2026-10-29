@@ -25,13 +25,13 @@ const TODAY = getDayName(new Date())
 
 /** One day's answers, as the grid above the decks counts them. */
 const tally = (answers: number, recalls: number): HeatmapTally => ({
-  answered: answers,
+  reviewed: answers,
   again: Math.round(answers * 0.12),
   hard: Math.round(answers * 0.18),
   good: Math.round(answers * 0.52),
   easy:
     answers - Math.round(answers * 0.12) - Math.round(answers * 0.18) - Math.round(answers * 0.52),
-  asked: Math.round(answers * 0.8),
+  tested: Math.round(answers * 0.8),
   recalled: recalls,
 })
 
@@ -97,9 +97,9 @@ const preset = (overrides: Partial<Preset> = {}): Preset => ({
   cards: 0,
   budget: { new: 12, reviews: 140, minutes: 25 },
   closes: BY_MINUTES,
-  answered: 0,
-  answeredNew: 0,
-  answeredReviews: 0,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
   took: 0,
   paused: '',
   wrong: '',
@@ -121,9 +121,9 @@ const SANSKRIT = preset({
   named: 7,
   reviewCards: 2_174,
   cards: 61,
-  answered: 79,
-  answeredNew: 11,
-  answeredReviews: 68,
+  reviewed: 79,
+  reviewedNew: 11,
+  reviewedReviews: 68,
   took: 14,
 })
 
@@ -144,9 +144,9 @@ const ANATOMY = preset({
   cards: 22,
   budget: { new: 20, reviews: 90, minutes: 0 },
   closes: BY_CARDS,
-  answered: 96,
-  answeredNew: 20,
-  answeredReviews: 76,
+  reviewed: 96,
+  reviewedNew: 20,
+  reviewedReviews: 76,
   took: 21,
 })
 

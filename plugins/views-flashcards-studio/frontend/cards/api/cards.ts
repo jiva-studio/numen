@@ -53,7 +53,7 @@ export const deckService: DeckService = {
 export const cardModelService: CardModelService = {
   cardModels: async (limit) => {
     const answer = await cardsService.listCardModels({ limit: limit ?? 0 })
-    return { cardModels: answer.cardModels.map(deserializeCardModelSummary), held: answer.total }
+    return { cardModels: answer.cardModels.map(deserializeCardModelSummary), total: answer.total }
   },
   createCardModel: async (title, folder, fields) => {
     const answer = await cardsService.createCardModel({ title, path: folder, fields: [...fields] })

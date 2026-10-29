@@ -197,7 +197,7 @@ export interface DeckService {
  */
 export interface CardModelService {
   /** Every card model in the vault, with its name and its fields. */
-  cardModels(limit?: number): Promise<{ cardModels: readonly CardModelSummary[]; held: number }>
+  cardModels(limit?: number): Promise<{ cardModels: readonly CardModelSummary[]; total: number }>
   /**
    * A card model declaring those fields and showing no template, the same way.
    */

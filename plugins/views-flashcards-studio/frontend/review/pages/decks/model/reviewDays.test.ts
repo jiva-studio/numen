@@ -40,7 +40,7 @@ describe('what a vault was answered on', () => {
 
     await one.read('01VAULT')
 
-    expect(one.days.value.get('2026-08-28')?.answered).toBe(12)
+    expect(one.days.value.get('2026-08-28')?.reviewed).toBe(12)
     expect(one.streak.value).toBe(2)
     expect(one.answerCount.value).toBe(15)
     expect(one.of.value).toBe('01VAULT')
@@ -211,7 +211,7 @@ describe('what is retained of a vault after another answer', () => {
     await slow
 
     expect(errors).toHaveLength(0)
-    expect(one.days.value.get('2026-08-29')?.answered).toBe(1)
+    expect(one.days.value.get('2026-08-29')?.reviewed).toBe(1)
     expect(one.of.value).toBe('01OTHER')
   })
 })

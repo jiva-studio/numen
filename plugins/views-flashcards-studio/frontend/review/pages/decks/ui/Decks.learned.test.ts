@@ -31,9 +31,9 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   cards: 16,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
-  answered: 0,
-  answeredNew: 0,
-  answeredReviews: 0,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
   took: 0,
   paused: '',
   wrong: '',
@@ -89,7 +89,7 @@ describe('how much of a deck remains learned', () => {
   //   // The tile above renders a bare share of the day's work, so this one always
   //   // carries the word: the two answer different questions.
   it('never remains as a figure alone', () => {
-    const one = mountDecks(vault(), [preset({ answered: 10, took: 10 })])
+    const one = mountDecks(vault(), [preset({ reviewed: 10, took: 10 })])
 
     for (const el of one.findAll('.decks__learned')) {
       expect(el.text()).toContain('learned')

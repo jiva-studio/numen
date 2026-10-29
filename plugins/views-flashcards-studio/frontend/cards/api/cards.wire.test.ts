@@ -42,7 +42,7 @@ describe('the card models of a vault', () => {
 
     expect(await cards.cardModels(1)).toEqual({
       cardModels: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
-      held: 3,
+      total: 3,
     })
   })
 

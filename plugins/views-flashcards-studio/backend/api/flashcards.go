@@ -112,8 +112,8 @@ type StartSessionResponse struct {
 	Skipped   int32          `json:"skipped"`
 }
 
-// AnswerCardRequest is the request of the AnswerCard method.
-type AnswerCardRequest struct {
+// RecordReviewRequest is the request of the RecordReview method.
+type RecordReviewRequest struct {
 	Vault    string `json:"vault"`
 	Run      string `json:"run"`
 	CardID   string `json:"cardId"`
@@ -123,20 +123,20 @@ type AnswerCardRequest struct {
 	DurationMs int64 `json:"durationMs"`
 }
 
-// AnswerCardResponse is the response of the AnswerCard method.
-type AnswerCardResponse struct {
+// RecordReviewResponse is the response of the RecordReview method.
+type RecordReviewResponse struct {
 	Answer string `json:"answer"`
 }
 
-// TakeBackAnswerRequest is the request of the TakeBackAnswer method.
-type TakeBackAnswerRequest struct {
+// UndoReviewRequest is the request of the UndoReview method.
+type UndoReviewRequest struct {
 	Vault  string `json:"vault"`
 	Run    string `json:"run"`
 	Answer string `json:"answer"`
 }
 
-// TakeBackAnswerResponse is the response of the TakeBackAnswer method.
-type TakeBackAnswerResponse struct {
+// UndoReviewResponse is the response of the UndoReview method.
+type UndoReviewResponse struct {
 }
 
 // ListReviewDaysRequest is the request of the ListReviewDays method.

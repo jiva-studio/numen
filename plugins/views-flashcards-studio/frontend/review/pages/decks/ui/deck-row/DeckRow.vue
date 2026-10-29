@@ -43,7 +43,7 @@ const paused = computed(() => props.preset?.paused ?? '')
  * nothing remains. Something was answered under its preset today, and the
  * preset still had budget for more.
  */
-const isDone = computed(() => !!props.preset && !isSpent(props.preset) && props.preset.answered > 0)
+const isDone = computed(() => !!props.preset && !isSpent(props.preset) && props.preset.reviewed > 0)
 
 /**
  * The label of a deck with no cards remaining where the day's work did not

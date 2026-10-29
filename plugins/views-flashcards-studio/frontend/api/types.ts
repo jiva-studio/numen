@@ -577,8 +577,8 @@ export interface StartSessionResponse {
   skipped: number
 }
 
-/** AnswerCardRequest is the request of the AnswerCard method. */
-export interface AnswerCardRequest {
+/** RecordReviewRequest is the request of the RecordReview method. */
+export interface RecordReviewRequest {
   vault?: string
   run?: string
   cardId?: string
@@ -588,20 +588,20 @@ export interface AnswerCardRequest {
   durationMs?: number
 }
 
-/** AnswerCardResponse is the response of the AnswerCard method. */
-export interface AnswerCardResponse {
+/** RecordReviewResponse is the response of the RecordReview method. */
+export interface RecordReviewResponse {
   answer: string
 }
 
-/** TakeBackAnswerRequest is the request of the TakeBackAnswer method. */
-export interface TakeBackAnswerRequest {
+/** UndoReviewRequest is the request of the UndoReview method. */
+export interface UndoReviewRequest {
   vault?: string
   run?: string
   answer?: string
 }
 
-/** TakeBackAnswerResponse is the response of the TakeBackAnswer method. */
-export type TakeBackAnswerResponse = Record<string, never>
+/** UndoReviewResponse is the response of the UndoReview method. */
+export type UndoReviewResponse = Record<string, never>
 
 /** ListReviewDaysRequest is the request of the ListReviewDays method. */
 export interface ListReviewDaysRequest {

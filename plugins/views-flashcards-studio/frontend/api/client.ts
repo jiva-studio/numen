@@ -6,8 +6,8 @@
 import { createApi } from '@numen/plugin-sdk'
 import { ApiFailure, CANCELED } from './failure'
 import type {
-  AnswerCardRequest,
-  AnswerCardResponse,
+  RecordReviewRequest,
+  RecordReviewResponse,
   ComputeCurveRequest,
   ComputeCurveResponse,
   CreateCardModelRequest,
@@ -40,8 +40,8 @@ import type {
   ScheduleDeckResponse,
   StartSessionRequest,
   StartSessionResponse,
-  TakeBackAnswerRequest,
-  TakeBackAnswerResponse,
+  UndoReviewRequest,
+  UndoReviewResponse,
   WatchCardsDueRequest,
   WatchCardsDueResponse,
   WatchReloadsRequest,
@@ -138,10 +138,10 @@ export const reviewService = {
     watch<WatchCardsDueRequest, WatchCardsDueResponse>('WatchCardsDue', request, options),
   startSession: (request: StartSessionRequest, options?: CallOptions) =>
     call<StartSessionRequest, StartSessionResponse>('StartSession', request, options),
-  answerCard: (request: AnswerCardRequest, options?: CallOptions) =>
-    call<AnswerCardRequest, AnswerCardResponse>('AnswerCard', request, options),
-  takeBackAnswer: (request: TakeBackAnswerRequest, options?: CallOptions) =>
-    call<TakeBackAnswerRequest, TakeBackAnswerResponse>('TakeBackAnswer', request, options),
+  recordReview: (request: RecordReviewRequest, options?: CallOptions) =>
+    call<RecordReviewRequest, RecordReviewResponse>('RecordReview', request, options),
+  undoReview: (request: UndoReviewRequest, options?: CallOptions) =>
+    call<UndoReviewRequest, UndoReviewResponse>('UndoReview', request, options),
   watchReloads: (request: WatchReloadsRequest, options?: CallOptions) =>
     watch<WatchReloadsRequest, WatchReloadsResponse>('WatchReloads', request, options),
   listReviewDays: (request: ListReviewDaysRequest, options?: CallOptions) =>

@@ -77,8 +77,8 @@ const {
 } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
-  isMoved: (held, lands) => canDropField(props.fields, held, lands),
-  move: (held, lands) => emit('move', held, lands),
+  isMoved: (dragged, lands) => canDropField(props.fields, dragged, lands),
+  move: (dragged, lands) => emit('move', dragged, lands),
 })
 
 const rows = computed(() => fieldRows(props.fields, dragged.value))

@@ -97,7 +97,7 @@ function createReviewActions(deps: ReviewActionDeps) {
     deps.goToVaults()
   }
 
-  const answerCard = async (how: Grade) => {
+  const recordReview = async (how: Grade) => {
     deps.agentPanel.endConversation()
     await deps.state.answer(how)
   }
@@ -109,7 +109,7 @@ function createReviewActions(deps: ReviewActionDeps) {
     await readSchedules()
   }
 
-  return { readSchedules, start, startPreset, leave, goToVaults, answerCard, refresh }
+  return { readSchedules, start, startPreset, leave, goToVaults, recordReview, refresh }
 }
 
 /**
@@ -184,7 +184,7 @@ export const useReview = (deps: ReviewDeps) => {
     getShowing: () => panels.showing.value,
     start: (deck) => void actions.start(deck),
     show: state.show,
-    answer: (how) => void actions.answerCard(how),
+    answer: (how) => void actions.recordReview(how),
     takeBack: () => void state.takeBack(),
     leave: () => void actions.leave(),
     goToVaults: actions.goToVaults,
@@ -224,7 +224,7 @@ export const useReview = (deps: ReviewDeps) => {
       state,
       at: panels.at,
       moveTo: panels.moveTo,
-      answerCard: actions.answerCard,
+      recordReview: actions.recordReview,
       toggleAgent: panels.toggleAgent,
       toggleNotes: panels.toggleNotes,
       leave: actions.leave,

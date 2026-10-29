@@ -33,9 +33,9 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   cards: 16,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
-  answered: 0,
-  answeredNew: 0,
-  answeredReviews: 0,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
   took: 0,
   paused: '',
   wrong: '',
@@ -61,9 +61,9 @@ const vault: VaultCardsDue = {
       decks: 1,
       cards: 20,
       owed: 16,
-      answered: 0,
-      answeredNew: 0,
-      answeredReviews: 0,
+      reviewed: 0,
+      reviewedNew: 0,
+      reviewedReviews: 0,
       took: 0,
       new: 10,
       reviews: 45,
@@ -133,7 +133,7 @@ describe('a deck with nothing waiting', () => {
   // Something was answered under the preset today and nothing of this deck is
   // left, which is the day's work met.
   it('says the day is done where the deck was answered and owes none', () => {
-    const one = mountDecks([preset({ cards: 0, answered: 6, took: 3 })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, reviewed: 6, took: 3 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__met').text()).toBe('Done today')
     expect(one.findAll('.due-count')).toHaveLength(1)
@@ -143,7 +143,7 @@ describe('a deck with nothing waiting', () => {
   // Having nothing due is not having finished. Nothing was answered under this
   // preset today, so no deck of it has done anything.
   it('says a deck nothing fell due for has nothing, and never that it is done', () => {
-    const one = mountDecks([preset({ cards: 0, answered: 0, took: 0 })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, reviewed: 0, took: 0 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('nothing due today')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -152,7 +152,7 @@ describe('a deck with nothing waiting', () => {
   // Other decks under this preset spent the budget, so this deck has no cards to
   // ask. That is the preset's reason, like a paused preset's.
   it('says the preset is full where its budget is what left the deck nothing', () => {
-    const one = mountDecks([preset({ cards: 0, answered: 55, took: 20 })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, reviewed: 55, took: 20 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('daily limit reached')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -248,7 +248,7 @@ describe('the tile and the decks under it', () => {
           decks: ['decks/Words.md', 'decks/Roots.md', 'decks/Stems.md'],
           named: 3,
           reviewCards: 60,
-          answered: 0,
+          reviewed: 0,
           took: 0,
         }),
       ],

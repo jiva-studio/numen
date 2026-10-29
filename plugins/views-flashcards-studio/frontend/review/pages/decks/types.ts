@@ -54,9 +54,9 @@ export interface Preset {
    * The two beside the total divide it the way a budget does, so each is
    * weighed against the budget of its own kind.
    */
-  readonly answered: number
-  readonly answeredNew: number
-  readonly answeredReviews: number
+  readonly reviewed: number
+  readonly reviewedNew: number
+  readonly reviewedReviews: number
   readonly took: number
   /** Why it schedules nothing, and empty while it schedules something. */
   readonly paused: string
