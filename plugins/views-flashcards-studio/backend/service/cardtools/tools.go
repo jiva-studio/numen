@@ -68,7 +68,7 @@ func (t *Tools) getToolVault(ctx context.Context) (domain.Vault, error) {
 	}
 	v, err := t.vault.With(domain.VaultID(id)).GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
-		return domain.Vault{}, errors.New("the vault the agent works is not one this installation knows")
+		return domain.Vault{}, errors.New("the agent vault is not registered in this installation")
 	}
 	return v, err
 }

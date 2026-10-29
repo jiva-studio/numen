@@ -126,7 +126,7 @@ func checkInputs(model string, names []string) (bool, error) {
 		case tokenTypeIDs:
 			isTyped = true
 		default:
-			return false, fmt.Errorf("%s asks for an unsupported input: %s", model, name)
+			return false, fmt.Errorf("%s requires an unsupported input: %s", model, name)
 		}
 	}
 	if !slices.Contains(names, inputIDs) || !slices.Contains(names, attentionMask) {

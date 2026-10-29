@@ -210,13 +210,13 @@ func (u Embed) produceBatches(
 		}
 		owing, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
-			return fmt.Errorf("what owes a vector from %s: %w", model, err)
+			return fmt.Errorf("pending vectors from %s: %w", model, err)
 		}
 		if len(owing) == 0 {
 			return nil
 		}
 		if next == after {
-			return fmt.Errorf("what owes a vector from %s does not carry on past %d chunks", model, len(owing))
+			return fmt.Errorf("pending vectors from %s do not continue past %d chunks", model, len(owing))
 		}
 		mu.Lock()
 		res.Owing += len(owing)

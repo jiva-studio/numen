@@ -26,7 +26,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <span class="section-heading__held">
+  <span class="section-heading__content">
     <span class="section-heading__name" :data-typed="text || stem">
       <NameBox
         class="section-heading__title rounded-node min-w-0"
@@ -44,7 +44,7 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.section-heading__held {
+.section-heading__content {
   display: flex;
   align-items: center;
   min-inline-size: 0;
@@ -89,8 +89,8 @@ const emit = defineEmits<{
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 
-.section-heading__held:hover .section-heading__actions,
-.section-heading__held:focus-within .section-heading__actions {
+.section-heading__content:hover .section-heading__actions,
+.section-heading__content:focus-within .section-heading__actions {
   inline-size: auto;
   padding-inline-start: var(--numen-inset);
   opacity: 1;

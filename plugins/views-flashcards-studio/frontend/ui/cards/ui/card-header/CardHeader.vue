@@ -90,7 +90,7 @@ const step = (event: KeyboardEvent): void => {
       <Icon name="grip" />
     </span>
 
-    <span class="card-header__held min-w-0 flex-1"><slot /></span>
+    <span class="card-header__content min-w-0 flex-1"><slot /></span>
     <span class="card-header__actions flex shrink-0 items-center"><slot name="actions" /></span>
   </CardRow>
 </template>

@@ -56,7 +56,7 @@ type RenameResult struct {
 
 // errFilenameNamesIt ends the edit without writing. A note its filename names
 // has nothing in it to bring into line, and is moved and not edited.
-var errFilenameNamesIt = errors.New("the filename says it")
+var errFilenameNamesIt = errors.New("the filename determines the title")
 
 func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	title = strings.TrimSpace(title)

@@ -485,7 +485,7 @@ func TestAKeyThatCannotBeRead(t *testing.T) {
 		"load: {sat: 120}\n":      "outside",
 		"load: {sat: 12.5}\n":     "whole per cent",
 		"load: {sat: half}\n":     "not a number",
-		"goal: by_date\n":         "which day",
+		"goal: by_date\n":         "requires the day",
 		"by_date: 30 September\n": "by_date",
 		"counts: minutes\n":       "counts",
 		"learned: sideways\n":     "learned",

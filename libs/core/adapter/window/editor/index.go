@@ -11,13 +11,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 // quietPeriod is how long the vault has to have been still before the notes
@@ -48,7 +48,7 @@ func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
 }
 
 // errNoProgress is a window with nothing that says how far the vectors have got.
-var errNoProgress = errors.New("nothing says how far the index has got")
+var errNoProgress = errors.New("index progress is unknown")
 
 // newIndexWorker is the indexing of the vaults this window shows, over the
 // embedder the installation holds. still is how long the vault has to have been

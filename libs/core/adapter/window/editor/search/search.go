@@ -36,7 +36,7 @@ func NewHandler(vaults VaultProvider) *Handler {
 }
 
 // errNoMode is a search that named no mode to ask it in.
-var errNoMode = errors.New("a search says how it is asked")
+var errNoMode = errors.New("a search requires a mode")
 
 // How many answers a client gets when it names no number, and the most it may
 // ask for. A window draws a list a person reads; a number past that is a

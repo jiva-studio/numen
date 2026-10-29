@@ -313,7 +313,7 @@ func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 		t.Errorf("decks = %v", got.Decks)
 	}
 	if request != 1 {
-		t.Errorf("the index was asked for the decks %d times, want once", request)
+		t.Errorf("the index was queried for the decks %d times, want once", request)
 	}
 }
 

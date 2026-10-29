@@ -188,7 +188,7 @@ func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 		case len(*tr.moves) < 150:
 			return nil
 		}
-		return errors.New("the trash was asked too many times")
+		return errors.New("the trash was queried too many times")
 	}
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")

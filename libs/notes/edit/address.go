@@ -18,7 +18,7 @@ type NameQueries interface {
 
 // ErrUnaddressable is a note no link reaches: its name carries a character a link is read up to.
 // Nothing is written.
-var ErrUnaddressable = errors.New("no link reaches a note named this")
+var ErrUnaddressable = errors.New("no link can address a note with this name")
 
 // GetAddress is how a note the application knows by path is written into a link: by its name, or by
 // its path where the name would mean another note.

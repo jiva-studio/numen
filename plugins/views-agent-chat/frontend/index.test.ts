@@ -113,7 +113,7 @@ describe('view-agent-chat plugin', () => {
           workspace: host.workspace,
         }),
       ),
-    ).toThrow('an agent chat needs the window it is drawn in and the agent it asks')
+    ).toThrow('an agent chat requires a window and an agent')
   })
 
   it('activates through the default plugin lifecycle', async () => {

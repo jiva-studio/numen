@@ -27,7 +27,7 @@ const four = computed(() =>
 <template>
   <ul v-if="four.length" class="day-summary__four" data-day-summary="four">
     <li v-for="one in four" :key="one.tone" :data-tone="one.tone">
-      <span class="day-summary__said" data-day-summary="said">{{ one.label }}</span>
+      <span class="day-summary__label" data-day-summary="label">{{ one.label }}</span>
       <span class="day-summary__how-many" data-day-summary="how-many">{{ one.count }}</span>
     </li>
   </ul>
@@ -50,11 +50,11 @@ const four = computed(() =>
 }
 
 /* The word for each answer is drawn in what that answer means. */
-.day-summary__four li[data-tone='again'] .day-summary__said {
+.day-summary__four li[data-tone='again'] .day-summary__label {
   color: var(--numen-alarm);
 }
 
-.day-summary__four li[data-tone='hard'] .day-summary__said {
+.day-summary__four li[data-tone='hard'] .day-summary__label {
   color: var(--numen-caution-fg);
 }
 

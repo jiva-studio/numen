@@ -45,7 +45,7 @@ const four = (wrapper: ReturnType<typeof account>) =>
     .findAll('[data-day-summary="four"] li')
     .map((one) => [
       one.attributes('data-tone'),
-      one.get('[data-day-summary="said"]').text(),
+      one.get('[data-day-summary="label"]').text(),
       one.get('[data-day-summary="how-many"]').text(),
     ])
 

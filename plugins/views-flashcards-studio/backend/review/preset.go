@@ -479,7 +479,7 @@ func readByDate(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["by_date"]
 	if !present || raw == nil {
 		if p.Goal == GoalDate && p.By.IsZero() {
-			*problems = append(*problems, "a preset aiming at a day says which day, under by_date")
+			*problems = append(*problems, "a preset targeting a day requires the day, under by_date")
 		}
 		return
 	}
@@ -497,7 +497,7 @@ func readByDate(front map[string]any, p *Preset, problems *[]string) {
 		*problems = append(*problems, "by_date is not a day")
 	}
 	if p.Goal == GoalDate && p.By.IsZero() {
-		*problems = append(*problems, "a preset aiming at a day says which day, under by_date")
+		*problems = append(*problems, "a preset targeting a day requires the day, under by_date")
 	}
 }
 

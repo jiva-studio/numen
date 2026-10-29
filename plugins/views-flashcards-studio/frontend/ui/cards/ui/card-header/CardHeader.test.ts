@@ -130,10 +130,10 @@ describe('the handle at the start of the strip', () => {
 describe('what the strip is drawn with', () => {
   it('puts what it is given at its start and what it is pressed for at its end', () => {
     mountedHeader = mountHeader({
-      default: '<span class="held">Title</span>',
+      default: '<span class="content">Title</span>',
       actions: '<button>Remove</button>',
     })
-    expect(mountedHeader.get('.card-header__held .held').text()).toBe('Title')
+    expect(mountedHeader.get('.card-header__content .content').text()).toBe('Title')
     expect(mountedHeader.get('.card-header__actions button').text()).toBe('Remove')
   })
 })

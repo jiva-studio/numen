@@ -25,7 +25,7 @@ export function activate(context: PluginContext): void {
   const { workspace, agent } = context
   if (!workspace) return
   if (!agent) {
-    throw new Error('an agent chat needs the window it is drawn in and the agent it asks')
+    throw new Error('an agent chat requires a window and an agent')
   }
   const chats = createAgentKind({ workspace, agent }, (deps) =>
     useAgentConversation(

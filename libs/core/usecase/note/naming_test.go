@@ -19,13 +19,13 @@ func TestWhatARenameRestoresIntoLine(t *testing.T) {
 		"one name, a title in the frontmatter": {
 			sync: true, delta: note.ByFrontmatter, isMoving: true, isWriting: true,
 		},
-		"one name, and the filename says it": {
+		"one name, and the filename determines the title": {
 			sync: true, delta: note.ByFilename, isMoving: true, isWriting: false,
 		},
 		"told apart, a title in the frontmatter": {
 			sync: false, delta: note.ByFrontmatter, isMoving: false, isWriting: false,
 		},
-		"told apart, and the filename says it": {
+		"told apart, and the filename determines the title": {
 			sync: false, delta: note.ByFilename, isMoving: true, isWriting: false,
 		},
 	} {

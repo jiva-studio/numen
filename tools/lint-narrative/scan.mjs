@@ -1063,7 +1063,7 @@ function scanFile(filePath) {
       for (const idMatch of lineWithoutStrings.replace(/\/\/.*$/, '').matchAll(RE_IDENTIFIER)) {
         const parts = idMatch[0].split(/(?<=[a-z0-9])(?=[A-Z])|_/).map((w) => w.toLowerCase())
         if (parts.length < 2) continue
-        const bad = /^shadowRoot$/.test(idMatch[0]) ? null : parts.find((w) => ADVISORY_IDENTIFIER_WORDS.has(w))
+        const bad = /^(?:shadowRoot|ShadowRoot|attachShadow|boxShadow)$/.test(idMatch[0]) ? null : parts.find((w) => ADVISORY_IDENTIFIER_WORDS.has(w))
         if (bad) {
           advisory['compound-identifier'].push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: idMatch[0], text: trimmed.slice(0, 140) })
           break

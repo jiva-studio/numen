@@ -28,7 +28,7 @@ func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	classes := int64(len(lines)) + 2
 	lines = append(lines, " ")
 	if cfg.Classes > 0 && cfg.Classes != classes {
-		return 0, "", fmt.Errorf("%s knows %d characters and the settings say %d", model, classes, cfg.Classes)
+		return 0, "", fmt.Errorf("%s has %d characters but the settings specify %d", model, classes, cfg.Classes)
 	}
 
 	file, err := os.CreateTemp("", "numen-alphabet-*.txt")

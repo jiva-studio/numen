@@ -77,7 +77,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			holds: []string{"title: TCP/IP", "A measure.", "id: "},
 			lacks: []string{"# TCP/IP"},
 		},
-		"no key, and the filename says it": {
+		"no key, and the filename determines the title": {
 			raw:   "A measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",

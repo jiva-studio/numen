@@ -21,7 +21,7 @@ type published struct {
 func parseCues(raw []byte) ([]Cue, error) {
 	var captions published
 	if err := json.Unmarshal(raw, &captions); err != nil {
-		return nil, fmt.Errorf("what the captions said: %w", err)
+		return nil, fmt.Errorf("read captions: %w", err)
 	}
 	cues := make([]Cue, 0, len(captions.Events))
 	for _, event := range captions.Events {

@@ -33,7 +33,7 @@ func TestGetFileKinds_PreservesRequestOrderAndOmitsMissing(t *testing.T) {
 		t.Errorf("the note is %v", listing.Types["a.md"])
 	}
 	if len(index.requested) != 1 || len(index.requested[0]) != 1 {
-		t.Errorf("the index was asked %v, want one question about the one note", index.requested)
+		t.Errorf("the index was queried %v, want one question about the one note", index.requested)
 	}
 }
 

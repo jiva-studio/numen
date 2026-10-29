@@ -49,7 +49,7 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 		t.Errorf("the sample is %v", listing.Types["samples/spanish.md"])
 	}
 	if len(index.requested) != 1 || len(index.requested[0]) != 2 {
-		t.Errorf("the index was asked %v, want one question about the two notes", index.requested)
+		t.Errorf("the index was queried %v, want one question about the two notes", index.requested)
 	}
 }
 

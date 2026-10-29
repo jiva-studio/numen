@@ -60,7 +60,7 @@ func IsNoNote(err error) bool {
 }
 
 // WrapUnlevelled is what bringing the index up to date came to, said so that a caller can tell it
-// from a write that never landed. The paths are the ones the index was asked about.
+// from a write that never landed. The paths are the ones the index was queried about.
 func WrapUnlevelled(err error, paths ...string) error {
 	if err == nil {
 		return nil

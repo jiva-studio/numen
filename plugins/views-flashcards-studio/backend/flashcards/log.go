@@ -218,7 +218,7 @@ func (u Record) Answer(
 		return review.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
 	}
 	if on.Card == "" || on.Template == "" {
-		return review.Answer{}, errors.New("an answer says which card, and through which review card")
+		return review.Answer{}, errors.New("an answer requires a card and a review card")
 	}
 
 	if u.now == nil {

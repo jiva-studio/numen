@@ -242,7 +242,7 @@ func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 		hasIndex: true,
 		index: func(_ context.Context, _ domain.Vault, paths []string) error {
 			request = append(request, paths)
-			return errors.New("the index was asked")
+			return errors.New("the index was queried")
 		},
 	}
 

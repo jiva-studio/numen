@@ -29,8 +29,8 @@ const (
 
 var (
 	errUnknownCaller = errors.New("the token names no running plugin")
-	errNotTCP        = errors.New("the host endpoint listens on no TCP address")
-	errNotLoopback   = errors.New("the host endpoint listens on the loopback interface only")
+	errNotTCP        = errors.New("the host endpoint has no TCP address")
+	errNotLoopback   = errors.New("the host endpoint is not bound to the loopback interface")
 )
 
 // Callers is what the host endpoint asks the host about a call: who made

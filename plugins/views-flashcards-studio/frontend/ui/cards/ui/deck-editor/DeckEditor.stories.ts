@@ -507,7 +507,7 @@ export const InSections: Story = {
 
     // What a person reaches for is the name and the way to be rid of it. It is
     // as wide as the two of them, and the line either side is the rule's.
-    const element = found(canvasElement, '[data-section-head="roots"] .section-heading__held')
+    const element = found(canvasElement, '[data-section-head="roots"] .section-heading__content')
     expect(element.getBoundingClientRect().width).toBeLessThan(
       leaves.getBoundingClientRect().width / 3,
     )

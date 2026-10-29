@@ -74,7 +74,7 @@ func (r *Router) Complete(ctx context.Context, pluginID string, question complet
 	}
 	text, err := agentport.Answer(ctx, r.programs, task)
 	if err != nil && isReplaced {
-		return "", fmt.Errorf("%w (the model %q is not offered by %s; asked %q)", err, route.Model, program.Name, model)
+		return "", fmt.Errorf("%w (the model %q is not available from %s; requested %q)", err, route.Model, program.Name, model)
 	}
 	return text, err
 }

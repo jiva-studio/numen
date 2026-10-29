@@ -629,7 +629,7 @@ func checkBounds(p review.Preset) error {
 			ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
 	}
 	if p.Goal == review.GoalDate && p.By.IsZero() {
-		return fmt.Errorf("%w: a preset aiming at a day says which day", ErrOutOfBounds)
+		return fmt.Errorf("%w: a preset targeting a day requires the day", ErrOutOfBounds)
 	}
 	if !review.IsKnownRule(p.Rule) {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
