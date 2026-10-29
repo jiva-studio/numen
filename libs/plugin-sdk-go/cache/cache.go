@@ -183,7 +183,8 @@ func (c *Cache[V]) Get(ctx context.Context, key string, load func(context.Contex
 		return current.value, found, nil
 	}
 	if c.isAsync {
-		return c.getAsyncLocked(key, current.value, found, load)
+		value, isFound := c.getAsyncLocked(key, current.value, found, load)
+		return value, isFound, nil
 	}
 	return c.getSyncLocked(ctx, key, found, load)
 }
@@ -241,16 +242,16 @@ func (c *Cache[V]) shouldUseDiskLocked() bool {
 	return c.isAsync || c.isDiskEnabled || c.dir != ""
 }
 
-func (c *Cache[V]) getAsyncLocked(key string, current V, found bool, load func(context.Context) (V, error)) (V, bool, error) {
+func (c *Cache[V]) getAsyncLocked(key string, current V, found bool, load func(context.Context) (V, error)) (V, bool) {
 	if found {
 		c.enqueueAsyncLoadLocked(key, load)
 		c.mu.Unlock()
-		return current, true, nil
+		return current, true
 	}
 	if _, isInFlight := c.inFlight[key]; isInFlight {
 		c.mu.Unlock()
 		var zero V
-		return zero, false, nil
+		return zero, false
 	}
 	if c.shouldUseDiskLocked() {
 		return c.loadDiskAndRefreshLocked(key, load)
@@ -258,10 +259,10 @@ func (c *Cache[V]) getAsyncLocked(key string, current V, found bool, load func(c
 	c.enqueueAsyncLoadLocked(key, load)
 	c.mu.Unlock()
 	var zero V
-	return zero, false, nil
+	return zero, false
 }
 
-func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Context) (V, error)) (V, bool, error) {
+func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Context) (V, error)) (V, bool) {
 	c.mu.Unlock()
 	diskVal, ok := c.readDiskEntry(key)
 	now := c.getNow()
@@ -272,16 +273,16 @@ func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Contex
 		}
 		c.enqueueAsyncLoadLocked(key, load)
 		c.mu.Unlock()
-		return diskVal, true, nil
+		return diskVal, true
 	}
 	if latest, exists := c.entries[key]; exists {
 		c.mu.Unlock()
-		return latest.value, true, nil
+		return latest.value, true
 	}
 	c.enqueueAsyncLoadLocked(key, load)
 	c.mu.Unlock()
 	var zero V
-	return zero, false, nil
+	return zero, false
 }
 
 func (c *Cache[V]) enqueueAsyncLoadLocked(key string, load func(context.Context) (V, error)) {
