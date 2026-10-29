@@ -1642,8 +1642,8 @@ func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	}
 }
 
-// A link that resolves to nothing is kept only for a name that previously
-// resolved. An address that never named a note is not such a name, and showing
+// A link that resolves to nothing is retained only for a name that resolved
+// earlier. An address that never named a note is not such a name, and displaying
 // it as a missing note reports a question the vault does not have.
 func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 	t.Parallel()

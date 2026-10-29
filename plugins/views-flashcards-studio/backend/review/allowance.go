@@ -34,7 +34,7 @@ func (p Preset) getBudget(day time.Weekday) Budget {
 
 // BudgetName is one budget that may stop a day of review, named by the key the
 // preset writes it under. A budget the goal does not name never closes the day,
-// and a day that asked for everything available is closed by nothing: the
+// and a day that requested everything available is closed by nothing: the
 // material ran out.
 type BudgetName string
 
@@ -178,8 +178,8 @@ func (p Preset) GetAllowance(
 // IsNextCardDebt reports whether the next card of this day comes from the debt
 // before it. False is a card from the material the preset has not begun.
 //
-// Debt and begun are the counts of each kind the day has taken so far, and owed and
-// isNew report whether the debt side and the unbegun side have a card left to give.
+// Debt and begun are the counts of each kind the day has taken so far, and the two
+// flags after them report whether the debt side and the unbegun side have a card left to give.
 // The day is split between the two in the share the preset names; a side with
 // nothing left leaves the rest of the day to the other, and an odd card goes to the
 // debt.

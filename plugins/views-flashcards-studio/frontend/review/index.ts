@@ -21,7 +21,7 @@ import type { MountView } from './shared/views'
 export { createVaultCounts } from './app/counts'
 export { createNotices } from './app/notices'
 
-/** The kind of the tab the review is rendered in. */
+/** The tab kind the review is rendered in. */
 export const REVIEW = 'flashcards.review'
 
 /** The dependencies the review needs from the window it is rendered in. */

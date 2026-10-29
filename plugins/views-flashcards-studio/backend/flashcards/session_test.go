@@ -513,7 +513,7 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 
 	got := byDeck(s.sessionAt(t, today, saturday))
 	// Twelve due review cards in each deck. One minute pays for three of the slow
-	// ones, or all twelve of the quick ones with room for three new cards.
+	// ones, or all twelve of the quick ones plus three new cards.
 	if got["decks/Slow.md"] != 3 {
 		t.Errorf("the slow cards were asked %d in a minute, want 3", got["decks/Slow.md"])
 	}

@@ -21,8 +21,8 @@ export interface BufferCard {
    */
   readonly cardId: string
   /**
-   * The section the card is placed under, by the identity the editor knows that
-   * section by. Null for a card before the first section.
+   * The section the card is placed under, by the identity the editor uses for that
+   * section. Null for a card before the first section.
    */
   readonly section: string | null
   /**

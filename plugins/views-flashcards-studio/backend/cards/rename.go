@@ -252,8 +252,8 @@ func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
-// deckWriter is the read and write of one deck, so that a failure on one deck is
-// reported as one error and the later decks are still written.
+// deckWriter is the read and write of one deck. A failure on one deck is reported
+// as one error and the later decks are still written.
 type deckWriter struct {
 	reader ports.VaultReader
 	writer ports.VaultWriter

@@ -76,7 +76,7 @@ var handwritten = map[string]string{
 	"decks/Words.md": deck["decks/Words.md"],
 }
 
-// typedManually is that deck with a hand-typed card: it points at the preset and
+// typedManually is that deck with a manually typed card: it points at the preset and
 // contains a card with no card id.
 const typedManually = "---\ntype: deck\nlinks:\n" +
 	"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +

@@ -121,7 +121,7 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 }
 
 // The suggestion of a curve of minutes is the first grid place whose minutes do
-// not close: the shortest day that asks every card the day holds.
+// not close: the shortest day that presents every card the day holds.
 func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	t.Parallel()
 	// A vault deep enough that the short days of the grid are cut short by the
@@ -488,7 +488,7 @@ func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 }
 
 // The range a date is chosen from depends on the vault and not on the date, so
-// a date near at hand still yields a range that can be dragged out.
+// a date close to today still yields a range that can be dragged out.
 func TestProjectCurve_NearDateKeepsExtensionRange(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
@@ -546,7 +546,7 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 // A day at none of the load is no session, so the curve draws the day after it.
 //
 // A weekday with no load has no session. The case arises when the load of the
-// current weekday has just been set to zero, and a curve reading zero at every
+// current weekday is set to zero, and a curve reading zero at every
 // place of the range would not inform the setting it is meant to steer.
 func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 	t.Parallel()
@@ -664,7 +664,7 @@ func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
-	// Every card is answered on days in the past and none is asked for months: the
+	// Every card is answered on days in the past and none is due for months: the
 	// intervals are long and the recall probability today is low.
 	for back := 240; back >= 180; back -= 15 {
 		record := s.run(t, noon.AddDate(0, 0, -back))
@@ -821,7 +821,7 @@ func TestTheMarkOfADateExistsOnTheDayTheFileNames(t *testing.T) {
 // Each place of a date's range is read on the day it names.
 //
 // Past that day the preset schedules nothing, so a debt read at the end of the
-// horizon is owed against no schedule, and a retained share read there covers
+// horizon is overdue against no schedule, and a retained share read there covers
 // material no schedule reviews.
 func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 	t.Parallel()
@@ -959,7 +959,7 @@ func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 	}
 }
 
-// A day further off than the projection reaches has no place on the range, and
+// A day further off than the projection extends has no place on the range, and
 // the range is drawn as far as it extends.
 //
 // A date ten years away shows where the day falls outside the range, so the curve
@@ -1167,7 +1167,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	}
 }
 
-// A build with no index reaches no deck and returns ErrNotCarried.
+// A build with no index covers no deck and returns ErrNotCarried.
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)

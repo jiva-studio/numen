@@ -50,7 +50,7 @@ var (
 )
 
 // WrapUnlevelled wraps err as a failure to bring the index up to date after a
-// write, so that a caller can tell it from a write that never landed.
+// write. A caller distinguishes it from a write that never landed.
 func WrapUnlevelled(err error, paths ...string) error { return edit.WrapUnlevelled(err, paths...) }
 
 // CheckSize holds a file to the most it may be. Zero holds it to nothing.

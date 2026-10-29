@@ -148,7 +148,7 @@ about 46"
 	}
 }
 
-// A card copied by hand carries the card id it was copied from. Both are read and
+// A card copied manually carries the card id it was copied from. Both are read and
 // both are displayed with a mark: no user content disappears from the screen, and
 // which of the two is meant cannot be determined by the application.
 func TestTwoCardsOfOneMark(t *testing.T) {

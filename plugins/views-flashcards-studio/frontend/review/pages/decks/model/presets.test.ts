@@ -465,7 +465,7 @@ describe('which preset schedules each deck', () => {
       }),
     })
 
-    // A preset that schedules nothing is asked for no cards, so the count holds no
+    // A preset that schedules nothing schedules no cards, so the count holds no
     // card of its decks and the row states the reason.
     await one.read(vault([{ deck: 'decks/Words.md', due: 0, new: 0 }]), '2026-09-05')
 

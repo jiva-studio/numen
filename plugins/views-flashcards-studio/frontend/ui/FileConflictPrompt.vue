@@ -2,8 +2,8 @@
 /**
  * The prompt for a file that changed or disappeared under an open tab.
  *
- * A file that changed after the tab read it stops saving and asks which of the
- * two versions to keep. A file that is gone keeps the content on screen and
+ * A file that changed after the tab read it stops saving and prompts for which of the
+ * two versions to retain. A file that is gone keeps the content on screen and
  * offers to recreate it. The wording of both is supplied by the tab.
  */
 import type { FileConflict } from '@numen/plugin-sdk'

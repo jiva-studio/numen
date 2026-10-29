@@ -471,7 +471,7 @@ func TestStreak_ZeroWithoutAnswers(t *testing.T) {
 }
 
 // Retention is counted over the cards that were learned, and only those: a card
-// still being learned is asked again after ten minutes, which says nothing about
+// still being learned is presented again after ten minutes, which indicates nothing about
 // how well anything is remembered.
 func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
@@ -485,7 +485,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 		})
 	}
 
-	// One card learned on the first day, and asked again a week later.
+	// One card learned on the first day, and presented again a week later.
 	response("01A", on, "2026-08-01T09:00:00", review.Easy)
 	response("01B", on, "2026-08-08T09:00:00", review.Good)
 	// Another card met for the first time on that second day.
@@ -497,14 +497,14 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	if _, target := got["2026-08-01"]; target {
 		t.Errorf("a card being learned was counted: %+v", got["2026-08-01"])
 	}
-	// The second day has one learned card that was asked and recalled, and one new
+	// The second day has one learned card that was presented and recalled, and one new
 	// card.
-	if want := (review.RecallTally{Asked: 1, Recalled: 1}); got["2026-08-08"] != want {
+	if want := (review.RecallTally{Tested: 1, Recalled: 1}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
 	}
 }
 
-// A card that was learned and then not recalled counts as asked and not
+// A card that was learned and then not recalled counts as presented and not
 // recalled, which is what the retention number measures.
 func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
@@ -515,7 +515,7 @@ func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 	}).GetRetained(delta, counting)
 
-	if want := (review.RecallTally{Asked: 1, Recalled: 0}); got["2026-08-08"] != want {
+	if want := (review.RecallTally{Tested: 1, Recalled: 0}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
 	}
 }

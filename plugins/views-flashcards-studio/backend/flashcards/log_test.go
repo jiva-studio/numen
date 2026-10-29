@@ -360,7 +360,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 
 // A run file that cannot be read counts as one failed run, not as the whole
 // window. The reader already skips a torn line and counts it, and a file that
-// cannot be opened is the same kind of event: every other recorded answer is
+// cannot be opened is the same event: every other recorded answer is
 // returned.
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	t.Parallel()

@@ -443,7 +443,7 @@ func (h *reviewHandler) ListReviewDays(
 			Hard:     int32(one.Hard),
 			Good:     int32(one.Good),
 			Easy:     int32(one.Easy),
-			Tested:   int32(came.Asked),
+			Tested:   int32(came.Tested),
 			Recalled: int32(came.Recalled),
 		})
 	}

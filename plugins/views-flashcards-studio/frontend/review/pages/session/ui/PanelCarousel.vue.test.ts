@@ -7,13 +7,13 @@ import PanelCarousel from './PanelCarousel.vue'
 import type { PanelPlace } from '../model/carousel'
 
 /**
- * The three panels. jsdom performs no layout, so the strip is given the widths
- * it would have: a panel on each side of a card as wide as the container, with
+ * The three panels. jsdom performs no layout, so the strip is given fixed widths:
+ * a panel on each side of a card as wide as the container, with
  * a gap between each pair.
  */
 const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
-    //     // The parent listens and responds by setting the prop, so the parent owns
+    //     // The parent handles the event by setting the prop, so the parent owns
     //     // the position. A strip without a listener keeps its own position.
     props: { at: place, 'onUpdate:at': () => {} },
     slots: {
@@ -256,8 +256,8 @@ describe('a wheel on the strip', () => {
     expect(one.emitted('update:at')).toEqual([['after']])
   })
 
-  //   // A wheel scroll during a programmatic move would otherwise leave the strip
-  //   // between two of the three stops with nothing to pull it to either.
+  //   // A wheel scroll during a programmatic move leaves the strip
+  //   // between two of the three stops with no snap to either.
   it('is settled when it is turned while the strip is being taken somewhere', async () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()

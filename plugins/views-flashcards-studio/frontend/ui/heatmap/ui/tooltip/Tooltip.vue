@@ -5,8 +5,8 @@ import { measureRect } from '../../../../dom'
  * never captures it.
  *
  * It is placed on the far side of the item it describes, uses the near side
- * where the far side has no room, and is clamped inside the edge where neither
- * has room.
+ * where the far side has no free space, and is clamped inside the edge where
+ * neither has free space.
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
@@ -32,7 +32,7 @@ const props = withDefaults(
 /* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
 
-/** Its own size, which only the rendered element knows. Placement is computed from it. */
+/** Its own size, which is available only from the rendered element. Placement is computed from it. */
 const size = ref<Size>({ width: 0, height: 0 })
 
 /** The area to stay inside, measured again whenever it changes. */

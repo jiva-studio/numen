@@ -14,7 +14,7 @@ const LongestAnswer = time.Minute
 // GetCountedTime returns how long this answer counts for, capped at LongestAnswer.
 func (a Answer) GetCountedTime() time.Duration { return min(a.Took, LongestAnswer) }
 
-// ShortestAnswer is the minimum time a kind of answer is costed at. A card graded
+// ShortestAnswer is the minimum time an answer is costed at. A card graded
 // before it could be read is an accidental key press and not review.
 const ShortestAnswer = time.Second
 
@@ -40,7 +40,7 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second, Sho
 //
 // A preset is costed from the answers to its own review cards: a preset of long
 // cards and a preset of short cards convert the same minutes into different
-// counts. A review card that no preset groups is left out, and a kind of answer
+// counts. A review card that no preset groups is excluded, and an answer half
 // that a preset has too few answers for keeps the default cost.
 func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
@@ -80,7 +80,7 @@ func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 	t.begun = append(t.begun, took)
 }
 
-// cost returns the cost these answers imply for each kind of answer, with each
+// cost returns the cost these answers imply for each half of an answer, with each
 // half set to the default where the history is too short.
 func (t *answerTimes) cost() AnswerCost {
 	out := DefaultCost

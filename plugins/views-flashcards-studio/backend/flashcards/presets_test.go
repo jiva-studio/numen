@@ -294,8 +294,8 @@ func minutes() review.Preset {
 
 // frontmatter returns the frontmatter block of a note after a write, parsed by the
 // same parser as every other note. A missing key, a duplicated key and a block
-// that no longer parses are all detected here, and not by the substring checks of
-// the write.
+// that fails to parse are all detected here by parsing, not by the substring
+// checks of the write.
 func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
 	t.Helper()
 	raw := []byte(read(t, s.vault, path))
@@ -350,7 +350,7 @@ func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 
 // An indented block is spliced at the position of its own keys. A key at column
 // zero ends the mapping, and the user's keys below it, including the identity,
-// are no longer read.
+// are not read.
 func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{

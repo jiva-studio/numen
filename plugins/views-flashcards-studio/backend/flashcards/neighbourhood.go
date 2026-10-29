@@ -232,7 +232,7 @@ func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neigh
 
 // AssignCardIDs gives a card id to every card of a vault that carries none.
 //
-// A card typed by hand has no card id until the application writes its file, and
+// A card typed manually has no card id until the application writes its file, and
 // a card with no card id cannot have an answer recorded against it. A deck
 // containing one is written, which creates a card id for every card in it.
 //

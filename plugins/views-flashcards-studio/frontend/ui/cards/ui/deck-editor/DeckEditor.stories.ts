@@ -243,7 +243,7 @@ const CORPORA = {
           },
         ],
       },
-      /* A card copied by hand and the card it was copied from: the file names
+      /* A card copied manually and the card it was copied from: the file names
          the two alike, and the window draws each under an identity of its own
          so both are read and both are typed into. */
       {
@@ -453,7 +453,7 @@ export default meta
 type Story = StoryObj<Knobs>
 
 /**
- * Three cards, two card models, and one card missing a field. The plus asks which
+ * Three cards, two card models, and one card missing a field. The plus button prompts for the
  * card model, and the card it creates has empty fields.
  */
 export const ADeck: Story = {
