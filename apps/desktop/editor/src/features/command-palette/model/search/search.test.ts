@@ -603,7 +603,7 @@ describe('what a row is drawn as', () => {
 })
 
 describe('a group landing under the keyboard', () => {
-  it('names a passage by at its current position in the vault, not by at its current position in the list', async () => {
+  it('keys a passage by its vault position, not by its list position', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,

@@ -176,7 +176,7 @@ describe('a window that closes while a stream is read', () => {
     expect(resets).toStrictEqual([])
   })
 
-  it('says nothing, waits for nothing and lets go of nothing when the stream fails after it closed', async () => {
+  it('reports no loss, waits and resets nothing when the stream fails after closing', async () => {
     let open = true
     const missing: string[] = []
     const waits: number[] = []

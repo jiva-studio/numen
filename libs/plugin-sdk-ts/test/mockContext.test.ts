@@ -170,7 +170,7 @@ describe('mock plugin context', () => {
     expect(createMockPluginContext()).not.toHaveProperty('agent')
   })
 
-  it('passes over the open files and the way to close a tab it is given, and none where it is given none', () => {
+  it('forwards the provided buffers and closeTab and omits them when not provided', () => {
     const buffers = { track: () => ({ dispose: () => {} }) } as unknown as NonNullable<
       PluginContext['buffers']
     >

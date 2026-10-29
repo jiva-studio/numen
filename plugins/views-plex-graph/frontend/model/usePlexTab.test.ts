@@ -193,7 +193,7 @@ describe('the menu on a node', () => {
     expect(one.ran).toEqual([['plugin:share', 'Child.md', 'Child']])
   })
 
-  it('draws its own items with its own icons, and a declared command with the one the window gives', () => {
+  it('uses its own icons for its own items and the window icon for declared commands', () => {
     const one = tab('Root.md')
 
     expect(one.state.getMenuIcon('plugin:share')).toBe(SHARE_ICON)

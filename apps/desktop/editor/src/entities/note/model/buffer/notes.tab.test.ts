@@ -915,7 +915,7 @@ describe('a note that moved', () => {
     expect(next.effects).toEqual([{ kind: 'read', path: 'Renamed.md', generation: 2 }])
   })
 
-  it('is followed even where the tab has something unwritten, so its save lands where the note is', () => {
+  it('follows a rename for a tab with unsaved text and keeps the text', () => {
     const next = transitionTab(tab({ editorText: 'mine', since: 10 }), {
       kind: 'changed',
       paths: [],

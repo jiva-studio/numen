@@ -118,7 +118,7 @@ describe('a file of a kind made', () => {
 })
 
 describe('a file nothing offers to make', () => {
-  it('answers nothing, opens nothing and writes nothing of its own, the creator having returned why', async () => {
+  it('returns an empty path, opens no tab and writes no message when the creator fails', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const openedTabs: string[] = []
     tabOpeners.registerEditor('sample', (path) => openedTabs.push(path))

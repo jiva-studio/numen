@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 describe('reaching the core', () => {
-  it('starts the core through the NumenCore plugin and asks each service on the loopback at its port', async () => {
+  it('starts the core via the NumenCore plugin and requests each service on loopback at its port', async () => {
     const request: string[] = []
     vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
       request.push(input instanceof Request ? input.url : String(input))

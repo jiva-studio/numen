@@ -78,7 +78,7 @@ describe('a note requested for', () => {
     expect(asked.listHeadings.mock.calls.at(-1)?.[0]).toEqual({ paths: ['a.md', 'b.md'] })
   })
 
-  it('has the wikilinks of a text resolved from the note that wrote them, less the ones that cross', async () => {
+  it('resolves wikilinks of a text relative to the source note and omits crossed links', async () => {
     asked.resolveAddresses.mockResolvedValue({
       found: [
         { raw: '[[B]]', address: 'name://B', text: 'B' },

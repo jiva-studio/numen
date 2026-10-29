@@ -229,7 +229,7 @@ describe('a number to that many places', () => {
 })
 
 describe('what a curve is read in', () => {
-  it('is the cards a day answers under a goal of minutes, and the minutes it costs under the others', () => {
+  it('returns reviews per day for the minutes goal and minutes for the other goals', () => {
     const one = point({ reviews: 40, minutes: 15 })
 
     expect(getPointCost('minutes', one)).toBe(40)

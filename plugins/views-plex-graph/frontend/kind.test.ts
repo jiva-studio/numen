@@ -107,7 +107,7 @@ describe('a change to the vault', () => {
     expect(one.views[0]?.went.at(-1)).toBe('Quantum.md')
   })
 
-  it('keeps a plex on the note it is on its way to when the vault changes before the answer lands', async () => {
+  it('keeps the plex on its navigation target when the vault changes before the response', async () => {
     const fixture = createHost()
     const answers: (() => void)[] = []
     const plexes = createPlexKind(fixture.host, () =>

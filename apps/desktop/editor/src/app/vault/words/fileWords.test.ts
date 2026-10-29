@@ -6,7 +6,7 @@ import type { Entry, MoveResult } from '@numen/protocol'
 import { mapEntry, mapMoveResult } from './fileWords'
 
 describe('a row of a listing', () => {
-  it('keeps its path, name and folder flag, and says whether it is a note and its type in window words', () => {
+  it('maps an entry to path, name, folder flag, note flag and type', () => {
     const row = {
       path: 'Samples/Animals.md',
       name: 'Animals',

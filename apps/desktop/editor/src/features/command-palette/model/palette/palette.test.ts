@@ -1355,7 +1355,7 @@ describe('a command requested for while a step remains open', () => {
 })
 
 describe('what a step draws', () => {
-  it('draws each note found by its title, lit where a name matched, and by its file where it has none', async () => {
+  it('lists each found note by title, highlights name matches and falls back to the file name', async () => {
     const { commands } = createPalette({}, [
       name('physics/Entropy.md', 'Entropy'),
       name('physics/Heat.md', 'Heat', 'What it counts'),

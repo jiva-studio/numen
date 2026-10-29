@@ -40,7 +40,7 @@ describe('createUnavailableKind', () => {
     expect(view.text()).not.toContain('cards/Place.md')
   })
 
-  it('dispatches numen:open-settings event with the feature filter when Open Settings button is clicked', async () => {
+  it('dispatches numen:open-settings with the feature filter on Open Settings click', async () => {
     const kind = createUnavailableKind('reader:markdown')
     const view = mount(kind.pane, { props: { state: kind.open('cards/Place.md', 'tab') } })
 

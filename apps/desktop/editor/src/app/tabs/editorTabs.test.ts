@@ -70,7 +70,7 @@ describe('what the window knows of the note open at a path', () => {
     expect(lookup.getTitle('a.md')).toBe('Alpha')
   })
 
-  it('is the tab of a kind that edits files where no note editor remains at the path, called what the tab is', () => {
+  it('returns the file-editor tab and its title when no note editor exists at the path', () => {
     const lookup = create(null)
 
     expect(lookup.getTabAt('a.md')).toBe('sample:a')

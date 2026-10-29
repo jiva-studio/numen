@@ -67,21 +67,13 @@ describe('matchesPluginQuery and matchesSystemRow', () => {
   it('matches feature, category, capability, and id qualifiers', () => {
     const ctx = createContext()
 
-    expect(
-      matchesPluginQuery(filesPlugin, parsePluginQuery('feature:files'), ctx),
-    ).toBe(true)
-    expect(
-      matchesPluginQuery(filesPlugin, parsePluginQuery('category:views'), ctx),
-    ).toBe(true)
-    expect(
-      matchesPluginQuery(agentPlugin, parsePluginQuery('capability:agent'), ctx),
-    ).toBe(true)
-    expect(
-      matchesPluginQuery(notesPlugin, parsePluginQuery('id:md.numen.notes'), ctx),
-    ).toBe(true)
+    expect(matchesPluginQuery(filesPlugin, parsePluginQuery('feature:files'), ctx)).toBe(true)
+    expect(matchesPluginQuery(filesPlugin, parsePluginQuery('category:views'), ctx)).toBe(true)
+    expect(matchesPluginQuery(agentPlugin, parsePluginQuery('capability:agent'), ctx)).toBe(true)
+    expect(matchesPluginQuery(notesPlugin, parsePluginQuery('id:md.numen.notes'), ctx)).toBe(true)
   })
 
-  it('shows system row only when no plugin qualifiers are present and terms match system keywords', () => {
+  it('matches the system row only without plugin qualifiers and with matching keywords', () => {
     expect(matchesSystemRow(parsePluginQuery(''))).toBe(true)
     expect(matchesSystemRow(parsePluginQuery('theme'))).toBe(true)
     expect(matchesSystemRow(parsePluginQuery('@disabled'))).toBe(false)

@@ -428,7 +428,7 @@ describe('PluginDetail with settings that follow one another', () => {
   const findRow = (wrapper: ReturnType<typeof mount>, key: string) =>
     wrapper.findAllComponents(SettingRow).find((r) => r.props('at') === `test.linked-${key}`)
 
-  it('lists the languages of the current model with their detail subtitles and no narrative origin text', () => {
+  it('lists the languages of the current model with detail subtitles and no origin text', () => {
     const { wrapper } = createDetail(LINKED)
     const row = findRow(wrapper, 'language')!
     expect(row.findComponent(Select).props('choices')).toEqual([
@@ -446,7 +446,7 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(row.find('.settings__fixed').text()).toBe('English')
   })
 
-  it('falls back to the active provider option when a string setting holds an option of another provider', () => {
+  it("falls back to the active option when a string setting holds another provider's value", () => {
     const embeddingsPlugin = createPluginInfo('md.numen.engines.embeddings', 'Embeddings', {
       settings: [
         {
@@ -490,7 +490,7 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(row.findComponent(Select).props('modelValue')).toBe('Xenova/bge-m3')
   })
 
-  it('shows the settings and the key of a provider only while it is chosen, placing the key after provider', () => {
+  it('shows provider settings and key only while the provider is selected, key after provider', () => {
     const local = createDetail(LINKED)
     expect(findRow(local.wrapper, 'url')).toBeUndefined()
     expect(local.wrapper.findComponent(SecretField).exists()).toBe(false)

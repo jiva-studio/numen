@@ -54,7 +54,7 @@ describe('linkInspector helper module', () => {
   })
 
   describe('findPairNeighbour', () => {
-    it('finds the neighbour at the end of the pair that is not the focus, whichever end is requested first', () => {
+    it('finds the non-focus neighbour of a pair regardless of argument order', () => {
       const nh = neighbourhood({ path: 'Other.md' }, { path: 'Third.md' })
 
       expect(findPairNeighbour(nh, 'Focus.md', 'Other.md')?.path).toBe('Other.md')

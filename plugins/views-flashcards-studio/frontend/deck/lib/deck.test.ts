@@ -794,7 +794,7 @@ describe('cards and sections standing among three headings', () => {
       expect(place(moved).at(-1)).toStrictEqual(['ma', currentDeck.sections[2]?.id])
     })
 
-    it('remains ahead of the cards of later sections where the section it was let go past holds none', () => {
+    it("stays before later sections' cards when the section it was dropped past has no cards", () => {
       const currentDeck = createThreeHeadingDeck()
       const roots = currentDeck.sections[0]?.id ?? ''
       const moved = dropCard(removeCard(currentDeck, 'mb'), 'ma', createCardRunEnd(roots))

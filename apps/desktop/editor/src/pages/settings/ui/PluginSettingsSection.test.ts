@@ -191,7 +191,7 @@ const ASKING: PluginInfo = {
 }
 
 describe('a setting of type agent', () => {
-  it('offers the default, returned with the agent that answers it, then the agents the plugins list', () => {
+  it('lists the default choice labelled with its agent, then the agents from the plugins', () => {
     const { wrapper } = createSection({}, [ASKING], PROGRAMS)
     const selects = wrapper.findAllComponents({ name: 'Select' })
     expect(selects).toHaveLength(1)

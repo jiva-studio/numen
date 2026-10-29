@@ -212,7 +212,7 @@ describe('editor preferences in setup', () => {
     expect(open({ lineNumbers: true }).dom.querySelector('.cm-lineNumbers')).not.toBeNull()
   })
 
-  it('numbers horizontal rule block widgets continuously alongside text lines and themes the gutter', () => {
+  it('numbers horizontal rule block widgets continuously with text lines and themes the gutter', () => {
     const view = open({ lineNumbers: true }, '---\ntype: stencil\n---')
     const numbers = Array.from(
       view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement'),
