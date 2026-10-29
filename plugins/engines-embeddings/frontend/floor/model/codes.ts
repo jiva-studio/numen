@@ -1,0 +1,17 @@
+/** The protocol enums the panel reads, under the names the panel uses. */
+import { CALIBRATION_OUTCOME as OUTCOME, FLOOR_SOURCE as SOURCE } from '@numen/plugin-sdk'
+
+export const FLOOR_SOURCE = {
+  UNSPECIFIED: SOURCE.UNSPECIFIED,
+  FILE: SOURCE.FILE,
+  MANUAL: SOURCE.MANUAL,
+  CALIBRATED: SOURCE.CALIBRATED,
+  MODEL: SOURCE.MODEL,
+  DEFAULT: SOURCE.DEFAULT,
+} as const
+
+export const CALIBRATION_OUTCOME = {
+  UNSPECIFIED: OUTCOME.UNSPECIFIED,
+  DONE: OUTCOME.DONE,
+  TOO_FEW: OUTCOME.TOO_FEW,
+} as const

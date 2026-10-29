@@ -1,0 +1,29 @@
+{
+  "name": "@numen/engines.embeddings",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Settings panel of the Vector Embeddings plugin: the search relevance threshold",
+  "main": "./frontend/index.ts",
+  "types": "./frontend/index.ts",
+  "scripts": {
+    "build": "vite build",
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "workspace:*",
+    "@numen/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@numen/plugin-sdk": "workspace:*",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.0"
+  }
+}

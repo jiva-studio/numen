@@ -46,3 +46,37 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 		t.Errorf("serves %q and %v to the windows, want nothing", manifest.Backend.ServiceName, manifest.Services)
 	}
 }
+
+// The plugin mounts the relevance panel in its settings, after the model setting.
+func TestManifestDeclaresTheFloorSettingsView(t *testing.T) {
+	var manifest struct {
+		Targets  []string `json:"targets"`
+		Frontend struct {
+			Entrypoint string `json:"entrypoint"`
+		} `json:"frontend"`
+		SettingsViews []struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+			After string `json:"after"`
+		} `json:"settingsViews"`
+		Settings []struct {
+			Key string `json:"key"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(manifest.Targets, "desktop.editor") || manifest.Frontend.Entrypoint == "" {
+		t.Errorf("targets %v and frontend %q, want desktop.editor and an entrypoint", manifest.Targets, manifest.Frontend.Entrypoint)
+	}
+	if len(manifest.SettingsViews) != 1 || manifest.SettingsViews[0].ID != "floor" || manifest.SettingsViews[0].After != "model" {
+		t.Fatalf("settingsViews = %+v, want floor after model", manifest.SettingsViews)
+	}
+	isDeclared := false
+	for _, setting := range manifest.Settings {
+		isDeclared = isDeclared || setting.Key == manifest.SettingsViews[0].After
+	}
+	if !isDeclared {
+		t.Errorf("the settings view follows %q, which is not a setting", manifest.SettingsViews[0].After)
+	}
+}

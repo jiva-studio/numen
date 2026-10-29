@@ -104,7 +104,7 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 		s.modelInfo.Name = s.remoteModel
 	}
 	if !s.isMock {
-		s.modelInfo.Dimensions = resolveModelDimensions(s.modelInfo.Name)
+		applyModelProfile(&s.modelInfo, s.modelInfo.Name)
 		applyDimensionEnv(&s.modelInfo)
 	}
 }
@@ -125,19 +125,14 @@ func getDefaultRemoteModel(provider string) string {
 	return modelEmbedding3Small
 }
 
-func resolveModelDimensions(model string) int {
-	switch model {
-	case "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "Xenova/all-MiniLM-L6-v2", "Xenova/all-MiniLM-L12-v2":
-		return 384
-	case modelOpenRouterEmbedding3Small, modelEmbedding3Small, "openai/text-embedding-ada-002", "text-embedding-ada-002":
-		return 1536
-	case "openai/text-embedding-3-large", "text-embedding-3-large":
-		return 3072
-	case "qwen/qwen3-embedding-8b":
-		return 4096
-	default:
-		return 1024
-	}
+// applyModelProfile sets the dimensions, token limit, pooling and floor hint
+// that the profile of the model lists.
+func applyModelProfile(info *engine.ModelInfo, model string) {
+	profile := engine.GetModelProfile(model)
+	info.Dimensions = profile.Dimensions
+	info.MaxTokens = profile.MaxTokens
+	info.Pooling = profile.Pooling
+	info.FloorHint = profile.FloorHint
 }
 
 func (s *embeddingServer) updateLocalModelLocked(model string) {
@@ -190,6 +185,7 @@ func newEmbeddingServer() *embeddingServer {
 	}
 	info, local := engine.DefaultBGEM3Config()
 	applyModelOverrides(&info, &local)
+	info.FloorHint = engine.GetModelProfile(info.Name).FloorHint
 	applyDimensionEnv(&info)
 	applyRuntimeEnv(&local)
 
@@ -270,7 +266,7 @@ func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error)
 	localInfo := s.modelInfo
 	if !s.isMock {
 		localInfo.Name = s.localName
-		localInfo.Dimensions = resolveModelDimensions(s.localName)
+		applyModelProfile(&localInfo, s.localName)
 		applyDimensionEnv(&localInfo)
 	}
 	emb, err := s.open(ctx, localInfo, s.localModel)
@@ -309,6 +305,7 @@ func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, 
 		Pooling:     info.Pooling,
 		From:        info.From,
 		Concurrency: int32(getIndexShare(passes)),
+		FloorHint:   info.FloorHint,
 	}, nil
 }
 
