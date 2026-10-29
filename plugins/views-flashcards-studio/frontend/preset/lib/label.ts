@@ -10,6 +10,7 @@ export interface InlinePositionStyle {
   readonly insetInlineStart?: string
   readonly insetBlockStart?: string
   readonly translate?: string
+  readonly [property: `--${string}`]: string | number | undefined
 }
 type CSSProperties = InlinePositionStyle
 import type { Position } from '@numen/ui'

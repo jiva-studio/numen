@@ -193,7 +193,7 @@ describe('flashcards-studio plugin', () => {
       activate(
         createMockPluginContext({
           pluginId: 'md.numen.views.flashcards.studio',
-          workspace: ctx.workspace,
+          ...(ctx.workspace ? { workspace: ctx.workspace } : {}),
         }),
       ),
     ).toThrow('the flashcards need the window their tabs are drawn in and its open files')
