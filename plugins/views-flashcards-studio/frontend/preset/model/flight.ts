@@ -46,7 +46,7 @@ export const sendWrite = async (flight: WriteFlight, options: FlightOptions): Pr
   try {
     answer = await core.write(path, settings, flight.at)
   } catch {
-    // The window says what it could not do; what the call carried back adds nothing a person can act on.
+    // The window reports that it could not write; the call's own error adds nothing the user can act on.
     flight.errorMessage.value = words.unwritten
     return
   }

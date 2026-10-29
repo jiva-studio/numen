@@ -1,10 +1,9 @@
 /**
- * The words set on the one control's picture, and the room each of them takes.
+ * The text labels of the curve control plot and the space each takes.
  *
- * Everything here is worked out in the picture's own units. A word is placed
- * against a line or over a mark, and what it evaluates to is a box; two boxes that
- * touch are two words that would print over each other, and the picture drops
- * one of them.
+ * All geometry is in plot units. A label is positioned against a line or above
+ * a mark and evaluates to a box; two overlapping boxes would print over each
+ * other, and the plot omits one of them.
  */
 export interface InlinePositionStyle {
   readonly insetInlineStart?: string
@@ -24,26 +23,26 @@ import {
   type Extent,
 } from './plot'
 
-/** How far the name of a mark stands above it, and how wide it is set. */
+/** Vertical offset of a mark name above its mark, and half the width of a mark name. */
 export const AXIS_LABEL_LIFT = 9
 export const LABEL = 34
 
-/** The room a number set against a line takes, in the picture's own units. */
+/** Space taken by a number placed against a line, in plot units. */
 export const AXIS_LABEL_WIDTH = 64
 export const AXIS_LABEL_HEIGHT = 15
 
 /**
- * The room the bubble over the knob takes, and how far off the knob it sits.
- * The width and height are what it evaluates to at the interface's own size, and
- * are what everything else on the picture is kept clear of. The gap stands off
- * far enough that the curve on either side of the knob is read through it, and
- * is the same gap on whichever side the bubble hangs.
+ * Space taken by the callout above the knob, and its distance from the knob.
+ * The width and height are the rendered size at the interface's default size,
+ * and every other plot element is kept clear of that box. The gap leaves the
+ * curve on either side of the knob visible, and is the same on whichever side
+ * the callout is placed.
  */
 export const CALLOUT_WIDTH = 104
 export const CALLOUT_HEIGHT = 48
 export const CALLOUT_GAP = 24
 
-/** The room one word takes on the picture, in the picture's own units. */
+/** Space taken by one label on the plot, in plot units. */
 export interface Box {
   readonly x: number
   readonly y: number
@@ -51,7 +50,7 @@ export interface Box {
   readonly high: number
 }
 
-/** Whether two words stand clear of each other. */
+/** Whether two label boxes do not overlap. */
 export const areBoxesSeparate = (one: Box, two: Box): boolean =>
   one.x + one.wide <= two.x ||
   two.x + two.wide <= one.x ||
@@ -59,9 +58,9 @@ export const areBoxesSeparate = (one: Box, two: Box): boolean =>
   two.y + two.high <= one.y
 
 /**
- * Whether a number set against this height stands clear of everything drawn
- * near the edge it is set at. A number that would print over the line or over
- * a mark is not drawn: the axis loses the label and the drawing keeps its own.
+ * Whether a number placed at this height does not overlap anything drawn near
+ * the edge it is placed at. A number that would overlap the line or a mark is
+ * omitted: the axis drops the label and the drawing keeps its own.
  */
 export const isAxisLabelClear = (
   y: number,
@@ -75,7 +74,8 @@ export const isAxisLabelClear = (
 }
 
 /**
- * Where a name over a mark is set: above it, pulled back inside the picture at
+ * Position of a mark name: above the mark, shifted inward where the mark is
+ * near the left or right edge of the plot so the name stays inside the plot.
  */
 export const getMarkNameStyle = (position: Position): CSSProperties => {
   let back = '-50%'
@@ -88,7 +88,7 @@ export const getMarkNameStyle = (position: Position): CSSProperties => {
   }
 }
 
-/** The room that name takes, which the knob's own figures stand clear of. */
+/** Space taken by a mark name, which the knob's own figures are kept clear of. */
 export const getNameBox = (position: Position): Box => {
   let back = LABEL
   if (position.x < PLOT_LEFT + LABEL) back = 0
@@ -101,14 +101,14 @@ export const getNameBox = (position: Position): Box => {
   }
 }
 
-/** Where a number against one of a plot's own lines is set, in the plot's room. */
+/** Position of a number against one of a plot's own lines, in the plot's space. */
 export const getAxisNumber = (y: number, lift: string, high = PLOT_HEIGHT): CSSProperties => ({
   insetInlineStart: `${(PLOT_LEFT / PLOT_WIDTH) * 100}%`,
   insetBlockStart: `${(y / high) * 100}%`,
   translate: `0 ${lift}`,
 })
 
-/** The room that number takes, which the knob's own figures stand clear of. */
+/** Space taken by that number, which the knob's own figures are kept clear of. */
 export const getAxisNumberBox = (y: number, lift: string): Box => ({
   x: PLOT_LEFT,
   y: lift === '0' ? y : y - AXIS_LABEL_HEIGHT,
@@ -116,7 +116,7 @@ export const getAxisNumberBox = (y: number, lift: string): Box => ({
   high: AXIS_LABEL_HEIGHT,
 })
 
-/** The bubble over the knob: the side it hangs on, the room it takes, and where. */
+/** The callout above the knob: the side it is placed on, the space it takes, and its position. */
 export interface Callout {
   readonly isUnder: boolean
   readonly box: Box
@@ -125,10 +125,10 @@ export interface Callout {
 }
 
 /**
- * Where the bubble over the knob is set. It sits above the knob, and below it
- * where above would take it off the top, so it never covers the curve the knob
- * is riding. The tail is anchored on the knob itself and turns over with the
- * bubble, so what the numbers belong to is never in doubt.
+ * Position of the callout above the knob. It is placed above the knob, and
+ * below it where above would leave the top of the plot, so it never covers the
+ * curve the knob is on. The tail is anchored on the knob and flips with the
+ * callout, so the numbers always refer to the knob.
  */
 export const createCallout = (knob: Position): Callout => {
   const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HEIGHT < PLOT_TOP
@@ -157,14 +157,14 @@ export const createCallout = (knob: Position): Callout => {
   }
 }
 
-/** A mark the picture carries, and the name it wants over it where it wants one. */
+/** A mark on the plot, and the name displayed above it where it has one. */
 export interface Mark {
   readonly key: string
   readonly at: Position
   readonly text: string
 }
 
-/** A name that fit: where it is set, and the room it took. */
+/** A mark name that fits: its position and the space it takes. */
 export interface Label {
   readonly key: string
   readonly text: string
@@ -190,7 +190,7 @@ export const createLabels = (marks: readonly Mark[], calloutBox: Box | null): re
   return out
 }
 
-/** A number read off an edge of the picture: where it is set, and what it says. */
+/** A number read at an edge of the plot: its position and its text. */
 export interface Height {
   readonly at: CSSProperties
   readonly box: Box
@@ -198,10 +198,11 @@ export interface Height {
 }
 
 /**
- * What the height of the picture evaluates to, against the lines it is read off. An
- * extent of no width is one number and is said once, on the foot, where a curve
- * that never moves is drawn. A number the line, a mark or the readout over the
- * knob relies on is dropped: the axis gives way, and the drawing keeps what it.
+ * Axis labels for the plot height, positioned against the lines they are read
+ * from. An extent of zero width is one number, displayed once at the foot, where
+ * a constant curve is drawn. A number that overlaps the line, a mark or the
+ * callout above the knob is omitted: the axis drops the label and the drawing
+ * keeps its own.
  */
 export interface AxisLabelsContext {
   places: readonly Position[]
@@ -262,8 +263,8 @@ export const createBacklogAxisLabels = (
 }
 
 /**
- * Where the knob's own value is set. It rides a line of its own under the
- * picture, so it never prints over a number read off the picture's edges.
+ * Position of the knob's own value. It is placed on a line of its own below the
+ * plot, so it never overlaps a number read at the plot edges.
  */
 export const getKnobValueStyle = (knob: Position | null): CSSProperties => {
   if (!knob) return {}

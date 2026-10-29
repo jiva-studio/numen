@@ -50,8 +50,8 @@ func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 	}
 }
 
-// A vault nobody answered has nothing to draw, which is an answer and not a
-// failure.
+// A vault with no answers has no days to draw; this is an empty result and not an
+// error.
 func TestListReviewDays_EmptyVaultHasNoDays(t *testing.T) {
 	handler, target := newAPI(t, deck)
 
@@ -98,7 +98,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	if coming.Reviewed != 1 {
 		t.Errorf("%d cards fall on %s, want the one", coming.Reviewed, coming.Day)
 	}
-	// A day is written so that it sorts as text the way it sorts in time.
+	// A day is formatted so that it sorts as text in the same order as in time.
 	if today := counting.GetName(time.Now()); coming.Day <= today {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.Day, today)
 	}
@@ -108,9 +108,9 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	}
 }
 
-// A vault whose cards are all still to come says so and does not fail: a person
-// who answered everything this morning has an empty grid behind them and a full
-// one ahead.
+// A vault whose cards are all due in the future returns empty past days and does
+// not fail: a user who answered everything this morning has an empty past grid
+// and a full upcoming one.
 func TestListReviewDays_EmptyVaultHasNoDueDays(t *testing.T) {
 	handler, target := newAPI(t, deck)
 
@@ -154,8 +154,8 @@ func TestAVaultNobodyContainsIsRefused(t *testing.T) {
 	}
 }
 
-// The stretch reaches the answer itself: a day outside
-// what was asked for is in neither list.
+// A stretch containing no answers returns empty lists: a day outside the
+// requested range is in neither list.
 func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
 	handler, target := newAPI(t, deck)
 	v := target[0]
@@ -181,8 +181,8 @@ func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
 		t.Errorf("a stretch in 1970 came back with %d days and %d ahead",
 			len(out.Days), len(out.Due))
 	}
-	// The streak and the count are over the whole of the vault whatever stretch
-	// was asked for.
+	// The streak and the count cover the whole vault regardless of the requested
+	// stretch.
 	if out.Reviewed != int32(len(session.Cards)) {
 		t.Errorf("the vault holds %d answers, want %d",
 			out.Reviewed, len(session.Cards))

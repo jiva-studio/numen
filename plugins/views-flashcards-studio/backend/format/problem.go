@@ -1,18 +1,18 @@
 package format
 
-// Problem is something in a card model or a deck that could not be acted on and
-// was not guessed at. It is filed against the file somebody would open to
-// settle it, and shown on the card or the template it is about.
+// Problem is an issue in a card model or a deck that was reported and not
+// guessed at. It is attached to the file that must be edited to resolve it, and
+// displayed on the card or template it concerns.
 type Problem struct {
 	Fault Fault
-	// Card is where the card stands, counted from the first card of the deck,
-	// its position because two cards of one card id is a problem, and there the
-	// card id reaches both.
+	// Card is the index of the card, counted from the first card of the deck. An
+	// index identifies the card because two cards with one card id is itself a
+	// problem, and the card id would then match both.
 	Card     int
 	Template int
 	// Field is a field's name, which is all a field ever is.
 	Field string
-	// Detail says what is wrong, in the words the person is shown.
+	// Detail describes the problem in the words displayed to the user.
 	Detail string
 }
 
@@ -24,7 +24,7 @@ const NoPosition = -1
 type Fault string
 
 const (
-	// FaultTwoFields is one name declared twice by a card model. The first stands.
+	// FaultTwoFields is one name declared twice by a card model. The first declaration is used.
 	FaultTwoFields Fault = "two-fields"
 	// FaultNoFields is a card model declaring no field at all. Its cards have
 	// nothing to be filled with, and it cuts nothing.
@@ -38,17 +38,17 @@ const (
 	// FaultNoCardModel is a card whose first paragraph is not a lone wikilink.
 	// Its values are read.
 	FaultNoCardModel Fault = "no-card-model"
-	// FaultNotACardModel is a card whose wikilink reaches a note that is not a
+	// FaultNotACardModel is a card whose wikilink resolves to a note that is not a
 	// card model. Its values are read.
 	FaultNotACardModel Fault = "not-a-card-model"
 	// FaultDuplicateCardID is one card id carried by two cards of a deck. Both are read
 	// and both are shown marked, and neither is given another.
 	FaultDuplicateCardID Fault = "duplicate-card-id"
-	// FaultTwoValues is one card writing a field's heading twice. The first
-	// stands.
+	// FaultTwoValues is one card with the heading of a field written twice. The
+	// first value is used.
 	FaultTwoValues Fault = "two-values"
-	// FaultNotWritten is a deck a rename did not reach, so a card holds a
-	// heading its card model no longer declares.
+	// FaultNotWritten is a deck a rename did not update, so a card contains a
+	// heading that its card model does not declare.
 	FaultNotWritten Fault = "not-written"
 	// FaultTooLarge is a deck over the bound, whose bytes were not read.
 	FaultTooLarge Fault = "too-large"

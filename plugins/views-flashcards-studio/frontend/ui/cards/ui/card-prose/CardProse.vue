@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import { renderCardHtml } from './render'
 
 const props = defineProps<{
-  /** HTML, as a person wrote it. */
+  /** HTML, as written by the user. */
   text: string
 }>()
 
@@ -45,12 +45,12 @@ const onClick = (press: MouseEvent) => {
   user-select: text;
   -webkit-user-select: text;
 
-  /* Nothing wraps a line a person wrote with no tag around it, so the breaks
+  /* A line written with no enclosing tag is not wrapped, so the breaks
      between such lines are kept and each reads as the line it is. */
   white-space: pre-wrap;
 }
 
-/* Inside a tag a person wrote, the whitespace is the markup's: a list is not
+/* Inside a user-written tag the whitespace belongs to the markup: a list is not
    indented by the spaces the file was laid out with. Preformatted text keeps
    its own. */
 .prose :deep(*:not(pre, pre *)) {

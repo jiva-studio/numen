@@ -1,4 +1,4 @@
-/** The presets of a vault, as the window asks for them and as the schema writes them. */
+/** The presets of a vault, as the window requests them and as the schema defines them. */
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { formatFingerprint, parseFingerprint } from '../../api/fingerprint'
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
@@ -27,7 +27,7 @@ import {
   type SettingsBounds,
 } from '../lib/presets'
 
-/** The same questions, in the shape the window asks them. */
+/** The same requests, in the shape the window uses. */
 export const presets: Presets = {
   read: async (path) => parseRead(await presetsService.readPreset({ path })),
   getDeckPreset: async (deck) => parseRead(await presetsService.getDeckPreset({ deck })),
@@ -70,7 +70,7 @@ export const presets: Presets = {
   },
 }
 
-/** What a read answered, whichever of the two asked it. */
+/** The result of a read, whichever of the two requests produced it. */
 const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetReadResult => {
   const error = findErrorCode(answer)
   if (error) return asFailure(error)

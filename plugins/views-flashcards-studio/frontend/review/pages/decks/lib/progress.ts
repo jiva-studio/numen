@@ -1,18 +1,18 @@
-/** How far a preset stands through its day, and what its decks still offer. */
+/** How far a preset is through its day, and what its decks still offer. */
 import type { DeckCardsDue } from '../../../entities/vault'
 
 import type { Preset } from '../types'
 
 /**
- * Whether starting a session on one deck is offered: it owes something today, and the
+ * Whether starting a session on one deck is allowed: it has cards due today, and the
  * preset scheduling it schedules something.
  */
 export const canStart = (deck: DeckCardsDue, presets: ReadonlyMap<string, Preset>): boolean =>
   deck.due + deck.new > 0 && !presets.get(deck.deck)?.paused
 
 /**
- * Whether a deck holds nothing that can ever be asked for: every review card in
- * it is one nobody has begun, and the preset scheduling it begins none a day.
+ * Whether a deck holds nothing that can ever be presented: every review card in
+ * it is unbegun, and the preset scheduling it begins none a day.
  *
  * It is a fact about the material, and not a reason the preset is stopped. The
  * preset schedules; there is nothing here for it to schedule.
@@ -21,16 +21,16 @@ export const hasNothingToBegin = (deck: DeckCardsDue, preset: Preset | undefined
   deck.reviewCards > 0 && deck.unbegun === deck.reviewCards && preset?.budget.new === 0
 
 /**
- * How far through its day a preset stands: what has been answered against the
- * cards the day holds, and what it has taken against the minutes the day runs,
+ * How far through its day a preset is: the answered cards against the
+ * cards the day holds, and the time taken against the minutes the day runs,
  * whichever of the two is further along.
  *
- * A day answered past what its budget holds stands above one.
+ * A day answered beyond its budget yields a value above one.
  */
 export const getSpentShare = (one: Preset): number => {
-  // Only a budget that closes the day is weighed against, and each is weighed
-  // against what was answered of its own kind. A preset steered by its minutes
-  // keeps its card counts as the person left them.
+  // Only a budget that closes the day is weighed, and each is weighed
+  // against the answers of its own kind. A preset steered by its minutes
+  // leaves its card counts unweighed.
   const shares = [
     one.closes.new ? share(one.answeredNew, one.budget.new) : 0,
     one.closes.reviews ? share(one.answeredReviews, one.budget.reviews) : 0,
@@ -49,8 +49,8 @@ const share = (count: number, budget: number): number => (budget > 0 ? count / b
 export const isSpent = (one: Preset): boolean => getSpentShare(one) >= 1
 
 /**
- * How much of a deck stands learned, as a share of its review cards, and null for
- * a deck holding none: a share of nothing is no share.
+ * How much of a deck is learned, as a share of its review cards, and null for
+ * a deck holding none: a share of nothing is not defined.
  */
 export const getLearnedShare = (deck: DeckCardsDue): number | null =>
   deck.reviewCards > 0 ? deck.learned / deck.reviewCards : null

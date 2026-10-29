@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
 
-// A preset says how the decks pointing at it are scheduled. What the window
-// asks about one is what these say.
+// A preset defines how the decks pointing at it are scheduled. These tests
+// cover what the window reads and writes about a preset.
 
 // scheduling is a vault with the notes given in it, and a client asking about
 // its presets the way the window does.
@@ -36,8 +36,8 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	}
 }
 
-// sanskrit is a preset a person wrote, with a deck pointing at it and a deck
-// pointing at nothing.
+// sanskrit is a preset note, with one deck pointing at it and one deck
+// pointing at no preset.
 const sanskrit = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 	"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nload:\n  sat: 50\n  sun: 0\n" +
 	"even_load: true\n---\n\n# Sanskrit\n\nGrammar and vocabulary.\n"
@@ -145,9 +145,9 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	}
 }
 
-// TestADeckWhosePresetLinkHasNoRoleIsToldSo. An entry of the `links:` block
-// written with no role is not read, so a preset named in one schedules nothing
-// and the window says why the deck is on the defaults.
+// TestADeckWhosePresetLinkHasNoRoleIsReportedSo: an entry of the `links:` block
+// without a role is ignored, so a preset named in it schedules nothing and the
+// client reports why the deck uses the defaults.
 func TestADeckWhosePresetLinkHasNoRoleIsReportedSo(t *testing.T) {
 	f := newScheduling(t, map[string]string{
 		"Sanskrit.md": sanskrit,
@@ -174,8 +174,8 @@ func TestADeckWhosePresetLinkHasNoRoleIsReportedSo(t *testing.T) {
 const counting = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 	"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\ncounts: shows\n---\n\n# Shows\n"
 
-// TestWhatABudgetCountsSurvivesAReadAndAWrite. A preset spending its budget per
-// showing is read, written back as it was read, and still says so.
+// TestWhatABudgetCountsSurvivesAReadAndAWrite: a preset whose budget counts
+// showings is read, written unchanged, and still counts showings.
 func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
@@ -235,9 +235,9 @@ func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 	}
 }
 
-// TestAClientNamingNoCountsIsRefused. What a budget counts is written on every
-// save, so a save that named none would move a preset off what the person set
-// it to.
+// TestAClientNamingNoCountsIsRefused: what a budget counts is written on every
+// save, so a save without it would change the preset's setting. The request is
+// rejected.
 func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
@@ -254,9 +254,9 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	}
 }
 
-// TestACurveComesBackWithItsTwoPlaces. The control is drawn from where the
-// preset stands to what is suggested, so a curve that came back without both
-// places is a control with nothing to point at.
+// TestACurveReachesBackWithItsTwoPlaces: the control is drawn from the current
+// setting to the suggested setting, so a curve missing either place cannot be
+// drawn.
 func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 	f := newScheduling(t, pointed)
 
@@ -316,8 +316,9 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 	}
 }
 
-// TestAPresetMadeIsAPresetToRead. A preset is made where there was no file, and
-// it says it is a preset from the moment it exists. It names none of its
+// TestAPresetMadeIsAPresetToRead: a preset is created where no file existed,
+// and has the preset type from the moment it exists. It writes none of its
+// settings, so every setting takes its default.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
@@ -459,8 +460,8 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	}
 }
 
-// TestADeckIsNotScheduledByANoteThatIsNotAPreset. A note that is not a preset
-// schedules nothing, so the client is told and the deck is left alone.
+// TestADeckIsNotScheduledByANoteThatIsNotAPreset: a note that is not a preset
+// schedules nothing, so the client receives an error and the deck is unchanged.
 func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 	f := newScheduling(t, map[string]string{
 		"Sanskrit.md":    sanskrit,
@@ -500,8 +501,8 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	}
 }
 
-// TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead. Somebody editing
-// their own deck outranks a client that read it and arrived late.
+// TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead: a concurrent
+// edit of the deck takes precedence over a client holding an outdated read.
 func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 

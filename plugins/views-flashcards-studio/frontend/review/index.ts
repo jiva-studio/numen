@@ -1,6 +1,7 @@
 /**
- * The review of the cards in the window of the desktop.flashcards target: a tab the window opens on
- * the vault a person chose, and the summary drawn beside each vault on the window's list.
+ * The review of the cards in the window of the desktop.flashcards target: a tab
+ * that opens on the vault the user chose, and the summary rendered beside each
+ * vault on the window's list.
  */
 import { computed, defineComponent, h, type PropType } from 'vue'
 import {
@@ -20,10 +21,10 @@ import type { MountView } from './shared/views'
 export { createVaultCounts } from './app/counts'
 export { createNotices } from './app/notices'
 
-/** The kind of the tab the review is drawn in. */
+/** The kind of the tab the review is rendered in. */
 export const REVIEW = 'flashcards.review'
 
-/** What the review asks of the window it is drawn in. */
+/** The dependencies the review needs from the window it is rendered in. */
 export interface ReviewKindDeps {
   readonly counts: VaultCounts
   readonly notices: NoticeHost
@@ -57,7 +58,7 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
   }
 }
 
-/** What each vault owes, as the view a window mounts beside it on its list. */
+/** The cards due in each vault, as the view a window mounts beside it on its list. */
 export function createVaultSummaryView(counts: VaultCounts): ViewRegistration {
   return {
     capability: VAULT_SUMMARY,

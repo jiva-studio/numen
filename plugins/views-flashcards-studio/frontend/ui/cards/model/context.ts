@@ -1,6 +1,7 @@
 /**
- * What every card of one deck editor shares, however deep it stands. A value is
- * written four components below the editor that tells the caller of it.
+ * What every card of one deck editor shares, however deeply it is nested. A value
+ * is written four components below the editor, which reports the change to its
+ * caller.
  */
 import type { InjectionKey } from 'vue'
 
@@ -10,7 +11,7 @@ export interface CardFieldTarget {
 }
 
 export interface DeckContext {
-  /** One value of a card as it now reads; `target` says which of a field's values. */
+  /** Writes one value of a card; `target` identifies which of a field's values. */
   readonly write: (card: string, target: CardFieldTarget, text: string) => void
 }
 

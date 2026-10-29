@@ -30,8 +30,9 @@ type UnwrittenDeck struct {
 	Problem format.Problem
 }
 
-// RenameResult says what a rename reached and what it did not.
+// RenameResult reports what a rename changed and what it did not.
 type RenameResult struct {
+	// CardModel is the file stat of the card model after the write, which the
 	// caller presents at its next write.
 	CardModel domain.FileStat
 	// Decks is every deck a heading was rewritten in, and Cards is how many
@@ -42,38 +43,37 @@ type RenameResult struct {
 	NotWritten []UnwrittenDeck
 }
 
-// RenameField gives one of a card model's fields a different name.
+// RenameField renames one of a card model's fields.
 //
 // A field's name is written where the card model declares it, in the braces of
 // every template that places it, and as a heading in every card of every deck that
-// card model cuts. So the rename reaches them all. The card model is written once,
-// both of its names in the one write; then every deck of the vault is read, the
-// heading is rewritten in the cards of that card model, and what is placed under it is
-// untouched.
+// the card model generates. The rename applies to all of them. The card model is
+// written once, with both names in the one write; then every deck of the vault is
+// read, the heading is rewritten in the cards of that card model, and the content
+// under it is not changed.
 //
-// Every field a card model declares is written this way, the first included.
+// Every field a card model declares is renamed this way, the first included.
 type RenameField struct {
 	maxDecks int
 
 	readers ports.VaultReaders
 	writers ports.VaultWriters
 	notes   TypeQueries
-	// links answers where the wikilink a card names its card model by lands, which
-	// is what says the card is cut by this card model.
+	// 	// links resolves the wikilink by which a card names its card model, which
+	// 	// identifies the card model that generates the card.
 	links ports.LinkQueries
 	index note.Levels
 	// now is when this is happening. An identifier written here carries it.
 	now ports.Clock
 }
 
-// TypeQueries is the one question a rename asks of the index. The whole of the
-// rename runs under the vault's write lock, so what it may ask is what it is
-// given: a question per note of the vault is every other write waiting behind
-// it.
+// TypeQueries is the single index query a rename needs. The rename runs entirely
+// under the vault's write lock, so the queries it makes are limited: one query per
+// note of the vault would block every other write behind it.
 type TypeQueries interface {
-	// GetPathsOfType is every note of one type the vault holds, by path. A caller after
-	// the decks or the card models of a vault asks for them, and opens no file to
-	// find out what each note is.
+	// 	// GetPathsOfType returns every note of one type in the vault, by path. A
+	// 	// caller that needs the decks or the card models of a vault uses it, and no
+	// 	// file is opened to determine the type of each note.
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
@@ -252,15 +252,15 @@ func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
-// deckWriter is one deck's read and write, so that what could not be done to it
-// is one error and the decks after it are written all the same.
+// deckWriter is the read and write of one deck, so that a failure on one deck is
+// reported as one error and the later decks are still written.
 type deckWriter struct {
 	reader ports.VaultReader
 	writer ports.VaultWriter
 	links  ports.LinkQueries
 	vault  domain.Vault
-	// read is what opens the card models this deck's cards are cut by, which is
-	// what says which of a card's fields is first.
+	// 	// read opens the card models that generate this deck's cards, and determines
+	// 	// which of a card's fields is first.
 	read            Read
 	writeIdentifier func(func(string) (bool, error)) error
 }

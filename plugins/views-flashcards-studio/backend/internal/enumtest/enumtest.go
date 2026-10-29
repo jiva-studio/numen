@@ -1,4 +1,4 @@
-// Package enumtest checks that every value of a wire enumeration reaches something.
+// Package enumtest checks that every value of a wire enumeration is handled.
 package enumtest
 
 import "testing"

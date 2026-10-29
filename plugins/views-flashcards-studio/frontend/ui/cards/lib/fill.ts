@@ -8,7 +8,7 @@
 
 import type { FieldValue } from './card'
 
-/** The braces, and what a person may write between them. */
+/** The braces, and the field name allowed between them. */
 const SLOT = /\{\{([^{}]*)\}\}/g
 
 /** One slot at its current position in a template. */
@@ -20,7 +20,7 @@ export interface Slot {
   readonly to: number
 }
 
-/** Every slot a template names, in the order it stands. */
+/** Every slot a template names, in template order. */
 export function getSlots(template: string): readonly Slot[] {
   const found: Slot[] = []
   for (const match of template.matchAll(SLOT)) {
@@ -56,8 +56,8 @@ export function renderPreview(
 }
 
 /**
- * The slots a template names that the fields do not, each said once, in the order
- * they stand.
+ * The slots a template names that the fields do not declare, each listed once, in
+ * template order.
  */
 export function getUndeclaredSlots(template: string, fields: readonly string[]): readonly string[] {
   const observed = new Set<string>()

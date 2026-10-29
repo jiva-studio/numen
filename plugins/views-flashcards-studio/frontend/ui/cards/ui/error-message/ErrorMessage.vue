@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * What is wrong with something, said beside it: one thing in a paragraph, and
- * several in a list.
+ * Error text displayed next to the element it concerns: a paragraph for one
+ * message and a list for several.
  *
- * Whatever it is said in is the one element, so an `id` handed to this lands on
- * what a box beside it names in `aria-describedby`, and so does a role.
+ * The text is rendered in a single element, so an `id` passed to this component
+ * lands on the element that a control references in `aria-describedby`, and so
+ * does a role.
  */
 defineProps<{
   /** What is wrong: one thing, or each of several. */

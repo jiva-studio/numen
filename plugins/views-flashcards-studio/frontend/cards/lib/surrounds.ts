@@ -1,7 +1,7 @@
 /**
- * The prose standing around what a card tab edits, kept as the person left it.
- * A note is theirs, and what they wrote above the first card and below the last
- * comes back written as it went out.
+ * The prose around the part a card tab edits, preserved unchanged. A note
+ * belongs to its user, and the text above the first card and below the last is
+ * written back as it was read.
  */
 export interface Surrounds {
   /** The prose below the frontmatter and above the first of them. */

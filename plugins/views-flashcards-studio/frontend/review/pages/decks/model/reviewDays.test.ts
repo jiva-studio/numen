@@ -46,8 +46,8 @@ describe('what a vault was answered on', () => {
     expect(one.of.value).toBe('01VAULT')
   })
 
-  // A person who moved on while the answer was on its way is looking at another
-  // vault, and these days are not its days.
+  // A user who switched to another vault while the response was pending is looking
+  // at another vault, and these days do not belong to it.
   it('is dropped when the person has moved to another vault', async () => {
     let settle = (_: ReviewDays) => {}
     const cards: ReviewDaysClient = {
@@ -117,8 +117,8 @@ describe('what a vault was answered on', () => {
   })
 })
 
-// A vault grows a day for every day it is reviewed, and the grid draws the
-// stretch it has room for. The ask is that stretch and not the whole of it.
+// A vault gains a day for every day it is reviewed, and the grid renders the
+// range it has space for. The request covers that range and not the whole history.
 describe('the days requested about', () => {
   it('is the stretch the widest grid could draw, and not every day there is', async () => {
     let request: { vault: string; from: string; to: string } | null = null
@@ -138,7 +138,7 @@ describe('the days requested about', () => {
     expect(response.to).not.toBe('')
     expect(response.from < response.to).toBe(true)
 
-    // A grid with less room asks about less time.
+    // A grid with less space requests a shorter range.
     const narrow = useReviewDays({ cards, reportError: () => {}, widest: () => 200 })
     await narrow.read('01VAULT')
     const less = request as unknown as { from: string; to: string }

@@ -19,7 +19,7 @@ const wire = vi.hoisted(() => {
     await new Promise<never>(() => {})
   }
 
-  /** A stream that hands over what the test sends it, and stays open between. */
+  /** A stream that delivers what the test sends it, and stays open between sends. */
   const createChannel = () => {
     const queue: unknown[] = []
     let wake: (() => void) | null = null
@@ -171,13 +171,13 @@ const { mountNothing } = await import('../shared/views')
 
 type Review = ReturnType<typeof useReview>
 
-/** The corner the review last opened says its notices in. */
+/** The notice host of the most recently opened review. */
 let notices = createMockNoticeHost()
 
 /** The agent of the window the review last opened. */
 let agent = createMockAgentHost()
 
-/** What the review last opened asked of the window to go back to the vaults. */
+/** The callback the most recently opened review calls to return to the vaults. */
 let goToVaults = vi.fn()
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -212,8 +212,8 @@ const openSession = async () => {
 }
 
 /**
- * Everything the review hands out, as plain values: a ref stands for what it
- * holds, and what cannot be compared — the functions — stands for nothing.
+ * Everything the review exposes, as plain values: a ref becomes the value it
+ * contains, and functions, which cannot be compared, become null.
  */
 const shot = (value: unknown): unknown => {
   if (isRef(value)) return shot(value.value)
@@ -226,7 +226,7 @@ const shot = (value: unknown): unknown => {
   return value
 }
 
-/** A key pressed while the review is in front, as the window hands it over. */
+/** A key pressed while the review is focused, as the host delivers it. */
 const press = async (review: Review, key: string) => {
   const event = new KeyboardEvent('keydown', { key, cancelable: true })
   const isKept = review.onKeyDown(event)
@@ -495,8 +495,8 @@ describe('the keys of the review', () => {
     expect((await press(review, ' ')).isKept).toBe(true)
     expect(review.session.state.isAnswerShown.value).toBe(true)
 
-    // With the answer showing, the space bar asks nothing of the card and is
-    // left to the page.
+    //     // With the answer displayed, the space bar does nothing for the card and is
+    //     // left to the page.
     expect((await press(review, ' ')).isKept).toBe(false)
 
     await press(review, '3')

@@ -35,8 +35,8 @@ func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 	}
 }
 
-// One deck that cannot be read is not a reason to refuse a person the rest of
-// their cards. What was wrong with it is settled in the editor.
+// A deck that cannot be read does not remove the cards of the other decks.
+// The read failure is reported in the editor.
 func TestADeckThatCannotBeReadPreservesTheOthersActive(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -71,7 +71,7 @@ func TestADeckThatCannotBeReadPreservesTheOthersActive(t *testing.T) {
 	}
 }
 
-// readTally hands out the vault's readers and says how many times each file was
+// readTally returns the vault's readers and counts how many times each file is
 // read.
 type readTally struct {
 	inner ports.VaultReaders
@@ -401,7 +401,7 @@ func TestADeckPastTheCardBoundIsParsedAgainWhileTheOthersStay(t *testing.T) {
 	s := openVault(t, vault)
 	reads := &readTally{inner: s.env.Ports.Readers}
 	reviewCards := flashcards.NewListReviewCards(reads, s.notes, s.links)
-	// Mammals stands as four review cards and Words as one.
+	// Mammals yields four review cards and Words yields one.
 	reviewCards.MaxCards = 3
 	for range 2 {
 		if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
@@ -510,7 +510,8 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 	}
 }
 
-// pointed nothing at it can still see it, and it says nothing of a day.
+// A preset that no deck points at is still listed in the count, with no day
+// counts.
 func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	t.Parallel()
 	files := make(map[string]string, len(scheduled)+1)
@@ -567,9 +568,8 @@ func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 	}
 }
 
-// What a day came to is counted deck by deck as well as preset by preset, so a
-// deck nobody answered today is not carried by the one beside it under the same
-// preset.
+// Answers are counted per deck as well as per preset, so a deck without answers
+// today does not take the count of another deck on the same preset.
 func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
@@ -596,9 +596,9 @@ func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	}
 }
 
-// It is asked for every vault a person holds, and again whenever the window
-// opens, a session ends or a vault moves, so a count over answers nothing has
-// changed replays nothing.
+// The count is requested for every vault, and again when the window opens, a
+// session ends or a vault changes. A repeated count over unchanged answers
+// replays nothing.
 func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, scheduled)
@@ -638,15 +638,15 @@ func (r replaying) Next(
 	return r.Scheduler.Next(s, pos, rating)
 }
 
-// answer writes down one card answered well, and returns the line it stands
-// as. Every card of this vault is shown through the one review card.
+// answer writes one correct answer for a card and returns its line. Every card
+// of this vault is shown through the one review card.
 func answer(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Good, took)
 }
 
-// answerAgain writes down one card the person could not recall, which comes round
-// answerAgain in the same session.
+// answerAgain writes one failed answer for a card, which makes the card due
+// again in the same session.
 func answerAgain(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Again, took)
@@ -721,12 +721,11 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 	t.Error("the preset was not among what the vault holds")
 }
 
-// A count is dropped once the window that asked for it has gone. Counting a
-// vault reads every deck in it and replays its whole answer log, and nobody is
-// waiting for either.
+// A count is dropped once the window that requested it is gone. Counting a
+// vault reads every deck in it and replays its whole answer log.
 //
-// The scenario here holds nothing to read a vault through, so nothing past the
-// first check can run.
+// The scenario has no reader for the vault, so nothing past the first check can
+// run.
 func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	t.Parallel()
 	removed, went := context.WithCancel(t.Context())
@@ -758,9 +757,8 @@ var learnedVault = map[string]string{
 	"decks/Three.md": deckOf("", 2, 20),
 }
 
-// How much of a deck stands learned is counted under the rule the preset that
-// deck names counts by, and two decks on one preset are counted under the one
-// rule.
+// The number of learned cards in a deck is counted by the rule of the preset
+// the deck names, and two decks on one preset are counted by the same rule.
 func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
@@ -839,8 +837,8 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 	}
 }
 
-// How many of a deck's review cards nobody has begun is counted off the same
-// pass, so a deck every review card of which is unbegun says so on its own row.
+// The number of unbegun review cards in a deck is counted in the same pass, so
+// a deck whose review cards are all unbegun reports that on its own row.
 func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
@@ -873,8 +871,8 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	}
 }
 
-// What a person answered on a day is counted from the vault's own answers, and
-// the days are named for the day they began on.
+// Answers per day are counted from the vault's own answers, and each answer
+// belongs to the day it began on.
 func TestCountAnswers_GroupsByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -996,8 +994,8 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 }
 
 // One identifier is one answer, however many files carry it. A synchroniser
-// that met a conflict leaves a second copy of a run beside the first, and the
-// day holds what the person answered.
+// that meets a conflict leaves a second copy of a run next to the first, and the
+// day counts the answer once.
 func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1061,8 +1059,8 @@ func spaces(n int) []byte {
 	return out
 }
 
-// What is still to come is counted by the day it falls on, so a person can see
-// the week ahead of them as well as the year behind.
+// Upcoming cards are counted by the day they fall due, which covers the week
+// ahead as well as the year behind.
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1118,9 +1116,9 @@ type countedCachedRun struct {
 	IDs  []string                `json:"ids"`
 }
 
-// writeCache puts a cache of its own over the vault's counting: the runs are
-// the ones a counting just wrote, so the cache names this vault's files at the
-// length they stand at, and what each day came to is the test's to say.
+// writeCache writes a cache over the vault's counting. The runs are the ones
+// the last counting wrote, so the cache records this vault's file lengths, and the
+// test supplies the per-day tallies.
 func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tally) {
 	t.Helper()
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
@@ -1148,9 +1146,8 @@ func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tal
 	}
 }
 
-// A cache written by a build that kept the counting in another shape is not
-// read: what it holds is not what this build would have written, and the
-// answers are there to be counted again.
+// A cache written in another shape is not read: its contents differ from what
+// this build writes, and the answers are counted again.
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1173,8 +1170,8 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	}
 }
 
-// The same cache under the shape this build writes is believed, which is what
-// says the shape is what the reading turns on and not the file's name.
+// A cache in the shape this build writes is trusted. The shape, and not the
+// file name, decides whether the cache is read.
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1194,8 +1191,8 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	}
 }
 
-// A build that keeps nothing counts the whole log at every launch, and says the
-// same as one that keeps it.
+// A build that caches nothing counts the whole log at every launch and returns
+// the same result as one that caches.
 func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1216,9 +1213,8 @@ func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	}
 }
 
-// What is still to come is worked out from the schedules. A counting with no
-// scheduler behind it says what was answered and nothing about what is coming,
-// and not refusing to count at all.
+// Upcoming cards are computed from the schedules. A counting without a
+// scheduler reports the answers and no upcoming cards, and does not fail.
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1242,13 +1238,13 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	}
 }
 
-// A card owed today is not still to come either, however it was answered.
+// A card due today is not counted as upcoming, however it was answered.
 func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
-	// Answered again, so it comes back in minutes and is owed today.
+	// Answered again, so it is due again within minutes and is due today.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Again, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1262,9 +1258,9 @@ func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 	}
 }
 
-// A caller draws a fixed stretch of time, so it asks for one. Both ends are
-// inside it, an end left empty is unbounded at that end, and the streak and the
-// count are over the whole vault either way.
+// A caller requests a fixed range of days. Both ends are inclusive, an empty
+// end is unbounded at that end, and the streak and the count cover the whole
+// vault either way.
 func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -1320,7 +1316,7 @@ func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 
-	// The deck cannot be replaced. What a person meets is the editor holding
+	// The deck cannot be replaced, so the editor reports it as unwritten.
 	s.env.Host.RefuseWriting("decks/Own.md", fs.ErrPermission)
 
 	assigned, err := s.assigning.Execute(t.Context(), s.vault)
@@ -1360,7 +1356,7 @@ func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
 	}
 }
 
-// A vault whose decks are all written has nothing to report, which is what says
+// A vault whose decks are all written reports no unwritten decks.
 func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
@@ -1477,10 +1473,10 @@ func TestTheCardModelACardIsSplitByIsNotSomethingToRead(t *testing.T) {
 	}
 }
 
-// What a deck is joined to is the notes it was written from. A deck names the
-// preset that schedules it and may name another deck, and neither is a note
-// somebody wrote about the material. It holds on both sides: a deck pointing
-// at this one is a deck all the same.
+// A deck is joined to the notes it was written from. A deck names the preset
+// that schedules it and may name another deck, and neither is a note written
+// about the material. This holds on both sides: a deck pointing at this one is
+// still a deck.
 func TestOnlyTheNotesADeckWasSavedFromAreRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
@@ -1507,8 +1503,7 @@ func TestOnlyTheNotesADeckWasSavedFromAreRead(t *testing.T) {
 			t.Errorf("joined to %v, want %v", got, want)
 		}
 	}
-	// What was left out was never on its way to being read, so nothing is
-	// reported as text a person did not get.
+	// Excluded notes are never read, so none is reported as unread.
 	if j.Unread != 0 {
 		t.Errorf("%d of them are said to have come without their text", j.Unread)
 	}
@@ -1596,8 +1591,8 @@ func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 	}
 }
 
-// A name several notes answer to resolves to the nearest, and a person reading
-// the wrong note has no other way to find out.
+// A name shared by several notes resolves to the nearest one, and the reader
+// cannot detect the ambiguity without the mark.
 func TestReadNeighbourhood_MarksAmbiguousName(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
@@ -1615,8 +1610,8 @@ func TestReadNeighbourhood_MarksAmbiguousName(t *testing.T) {
 	}
 }
 
-// A panel of titles with nothing under any of them says nothing about why, so
-// the vault being out of reach is an error and not thirty silent entries.
+// A panel of titles with no content gives no reason, so an unreachable vault is
+// an error and not a list of empty entries.
 func TestAVaultOutOfReachIsAnError(t *testing.T) {
 	t.Parallel()
 	u, add := reading(t)
@@ -1647,10 +1642,9 @@ func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	}
 }
 
-// A name that came loose is the whole reason a link resolving to nothing is
-// kept. An address that never named a note is not a name that came loose, and
-// drawing one as a note that is missing says the vault has a question in it
-// where it has none.
+// A link that resolves to nothing is kept only for a name that previously
+// resolved. An address that never named a note is not such a name, and showing
+// it as a missing note reports a question the vault does not have.
 func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
@@ -1792,9 +1786,9 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 	}
 }
 
-// A deck points at the preset it is scheduled by, so that preset stands among
-// the notes the deck is joined to. A preset is how the cards come round and not
-// what they were written from.
+// A deck points at the preset that schedules it, so the preset is among the
+// notes the deck is joined to. A preset defines the schedule and is not a source
+// of the cards.
 func TestThePresetADeckIsScheduledByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
@@ -1813,7 +1807,7 @@ func TestThePresetADeckIsScheduledByIsNotSomethingToRead(t *testing.T) {
 }
 
 // A preset written into a note that points back at the deck is read like any
-// other note: what the deck is scheduled by is what the deck's own link says.
+// other note: the deck's own link determines which preset schedules it.
 func TestAPresetIsLeftOutOfEveryCardsPanel(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{

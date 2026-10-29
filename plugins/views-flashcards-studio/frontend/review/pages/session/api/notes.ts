@@ -1,8 +1,8 @@
 /**
- * What the window asks about the notes a deck is joined to.
+ * Queries for the notes a deck is linked to.
  *
- * Nothing here draws. What arrives is turned into the plain values the panel
- * carries, so what the schema calls things stops at this file.
+ * Nothing here renders. The response is converted into the plain values the
+ * panel uses, so schema names do not leave this file.
  */
 import { formatErrorCodeMessage } from '../../../../cards/wire/errors'
 
@@ -16,9 +16,9 @@ export interface Neighbour {
   readonly path: string
   readonly title: string
   readonly body: string
-  /** What the person called the relationship, where they called it anything. */
+  /** The label the user gave the relationship, if any. */
   readonly label: string
-  /** The deck points at it; otherwise it points at the deck. */
+  /** True when the deck links to the note; false when the note links to the deck. */
   readonly hasPoints: boolean
   /** Several notes answer to the name, and this is the nearest. */
   readonly isAmbiguous: boolean
@@ -26,7 +26,7 @@ export interface Neighbour {
   readonly error: string
 }
 
-/** What one deck stands among. */
+/** The notes linked to one deck. */
 export interface DeckNeighbourhood {
   readonly notes: readonly Neighbour[]
   /** How many at the end came named and not read. */

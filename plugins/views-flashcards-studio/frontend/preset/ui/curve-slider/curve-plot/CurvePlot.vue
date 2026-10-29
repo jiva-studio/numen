@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The room the curve is drawn in, with the axis it is read against, the labels
- * and heights that stand beside it, and the callout at the knob.
+ * The area the curve is drawn in, with the axis it is read against, the labels
+ * and heights beside it, and the callout at the knob.
  */
 import { PLOT_HEIGHT, PLOT_WIDTH } from '../../../lib/plot'
 import type { Goal } from '../../../types'

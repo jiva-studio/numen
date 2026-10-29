@@ -1,9 +1,9 @@
 /**
- * What the window has to say, handed to the corner the host draws.
+ * The notices of the window, passed to the notice host.
  *
- * Apart from the template because what is said and in what severity are rules: an
- * error is said in the person's own words, and a call the window itself
- * stopped says nothing.
+ * Separate from the template because the message text and its severity are
+ * rules: an error is shown with the failure's own message, and a call that the
+ * window itself cancelled shows nothing.
  */
 import { formatFailureMessage } from '../../api/failure'
 import type { NoticeHost, NoticeTask, Severity } from '@numen/plugin-sdk'
@@ -12,8 +12,8 @@ export function createNotices(host: NoticeHost) {
   const showNotice = (text: string, severity: Severity) => host.show(text, severity)
 
   /**
-   * Trouble, in the person's own words. A call the window itself stopped has
-   * nothing to say, and nothing is raised for it.
+   * Shows a failure message. A call that the window itself cancelled has
+   * nothing to report, and no notice is raised for it.
    */
   const reportError = (why: unknown) => {
     const text = sentence(formatFailureMessage(why))
@@ -26,7 +26,7 @@ export function createNotices(host: NoticeHost) {
   return { showNotice, reportError, setTasks }
 }
 
-/** One thing said, as a sentence: it opens with a capital and it ends. */
+/** One message as a sentence: it starts with a capital letter and ends with punctuation. */
 const sentence = (text: string): string => {
   if (!text) return ''
   const ended = /[.!?]$/.test(text) ? text : `${text}.`

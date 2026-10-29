@@ -40,13 +40,13 @@ export interface CardModelWords {
   readonly noTemplates: string
   readonly fieldStem: string
   readonly templateStem: string
-  /** What is said of the first field, which is not moved and not removed. */
+  /** The message for the first field, which cannot be moved or removed. */
   readonly pinned: string
-  /** What is said of the slots a template names that the fields do not. */
+  /** The message for the slots a template names that the fields do not. */
   readonly stray: (fields: readonly string[]) => string
-  /** What is said of a field's name that cannot be used. */
+  /** The message for an unusable field name. */
   readonly objection: (objection: Objection) => string
-  /** What is said of a template's name that cannot be used. */
+  /** The message for an unusable template name. */
   readonly templateObjection: (objection: HeadingObjection) => string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
@@ -80,8 +80,8 @@ export const CARD_MODEL_WORDS: CardModelWords = {
 }
 
 /**
- * What the caller found wrong with a card model. A template's stands beside its name
- * and a field's is placed under that field's row.
+ * What the caller found wrong with a card model. A template's problems are shown
+ * beside its name and a field's under that field's row.
  */
 export interface CardModelProblems {
   /** What is wrong with each template, under the identity it was drawn by. */
@@ -103,7 +103,7 @@ export interface FieldRow {
   readonly at: number
   /** How many fields stand with it. */
   readonly of: number
-  /** It stands first, so it is what a card cut by this card model is named by. */
+  /** It is first, so cards of this card model are named by it. */
   readonly hasNames: boolean
   /** It is on its way somewhere else in the order. */
   readonly isDragged: boolean
@@ -132,7 +132,7 @@ export interface TemplateRow {
   readonly at: number
   /** How many templates stand with it. */
   readonly of: number
-  /** The fields a card is asked for, which are what may be written into a half. */
+  /** The fields the card model provides, which may be inserted into a half. */
   readonly fields: readonly string[]
   /** The names the other templates carry, which this one's is measured against. */
   readonly taken: readonly string[]
@@ -142,7 +142,7 @@ export interface TemplateRow {
   /** The same two, with the sample values standing in the braces. */
   readonly frontPreview: string
   readonly backPreview: string
-  /** The slots each half names that the fields do not, each said once. */
+  /** The slots each half names that the fields do not, each listed once. */
   readonly frontStray: readonly string[]
   readonly backStray: readonly string[]
 }
@@ -188,14 +188,14 @@ export interface Pane {
   /** The markup as it is written, or the sample standing in its braces. */
   readonly text: string
   readonly isBlank: boolean
-  /** The slots the half names that the fields do not, said under the markup. */
+  /** The slots the half names that the fields do not, listed under the markup. */
   readonly stray: readonly string[]
 }
 
 /**
- * The four parts of one template, in the order they are drawn: each half's markup
- * and then what that markup evaluates to. Two parts to a row stand the front above
- * the back; one to a row stands each preview under the half it is of.
+ * The four parts of one template, in display order: each half's markup and then
+ * its evaluated preview. Two parts per row place the front above the back; one
+ * part per row places each preview below its half.
  */
 export function getPanes(
   template: TemplateRow,

@@ -1,6 +1,6 @@
 /**
- * The decks and the card models a vault holds, as the window asks for them and as
- * they come back.
+ * The decks and the card models a vault holds, as the window requests them and as
+ * they are returned.
  */
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { formatFingerprint, parseFingerprint } from '../../api/fingerprint'
@@ -108,7 +108,7 @@ export const cardModelService: CardModelService = {
   },
 }
 
-/** The card models and the decks of that vault, in the shape the window asks about them. */
+/** The card models and the decks of that vault, in the shape the window requests them. */
 export const cards: Cards = {
   ...deckService,
   ...cardModelService,

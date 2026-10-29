@@ -1,6 +1,6 @@
 /**
- * What the deck tabs of a window do when one opens, comes on screen, is asked
- * about, and closes.
+ * What the deck tabs of a window do when one opens, becomes visible, is queried,
+ * and closes.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asValue } from '@numen/plugin-sdk'

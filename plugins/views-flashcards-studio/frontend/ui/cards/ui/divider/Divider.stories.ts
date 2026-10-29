@@ -2,8 +2,8 @@
  * Every situation a rule has to survive. Also the test corpus: each story is
  * run in a browser by `@storybook/addon-vitest`.
  *
- * the middle, or leads the rule where the rule is asked for that, which is how
- * a card heads the box one of its values is typed in.
+ * The rule carries its action label in the middle, or at the start of the rule
+ * when requested, which is how a card heads the box of one of its values.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
@@ -14,9 +14,9 @@ import { Button } from '@numen/ui'
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 interface Knobs {
-  /** What the action the rule holds says. */
+  /** The label of the action the rule holds. */
   label: string
-  /** Where on the rule it stands. */
+  /** Where on the rule the label is placed. */
   at: 'middle' | 'start'
   /** How wide the window drawing the rule is. */
   width: string
@@ -78,7 +78,7 @@ export const OtherScripts: Story = { args: { label: 'Добавить поле' 
 /** A word with nothing in it to break at. */
 export const Unbroken: Story = { args: { label: UNBROKEN } }
 
-/** Nothing said at all. */
+/** No text at all. */
 export const NoTextAtAll: Story = { args: { label: '' } }
 
 /** A window too narrow for the word and the line both. */

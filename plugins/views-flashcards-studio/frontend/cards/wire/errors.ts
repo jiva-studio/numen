@@ -21,7 +21,7 @@ export type ErrorCode =
   | 'deckTooLarge'
   | 'notAPreset'
 
-/** The code each schema code is, and nothing for `STALE`: the window asks the person about that one. */
+/** The code for each schema code, and null for `STALE`: the window asks the user about that one. */
 const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
   [ProtoErrorCode.MISSING]: 'missing',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
@@ -38,7 +38,7 @@ const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
   [ProtoErrorCode.STALE]: null,
 }
 
-/** What each error code says. */
+/** The message for each error code. */
 export const ERRORS: Readonly<Record<ErrorCode, string>> = {
   missing: 'note not in the vault',
   notANote: 'not a note',
@@ -55,12 +55,12 @@ export const ERRORS: Readonly<Record<ErrorCode, string>> = {
   notAPreset: 'that note is not a preset',
 }
 
-/** What a schema code without a code of its own says. */
+/** The message for a schema code that has no code of its own. */
 const SCHEMA_ONLY_WORDS: Readonly<Partial<Record<ProtoErrorCode, string>>> = {
   [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
 }
 
-/** What is said for a schema code this build does not know. */
+/** The message for a schema code that this build does not know. */
 const UNEXPECTED = 'internal error'
 
 /** What one answer failed on, and nothing where it succeeded. */
@@ -71,10 +71,10 @@ export const findErrorCode = (from: { error?: ProtoErrorCode | undefined }): Err
 export const isStaleAnswer = (from: { error?: ProtoErrorCode | undefined }): boolean =>
   from.error === ProtoErrorCode.STALE
 
-/** What one error code says. */
+/** The message for one error code. */
 export const getErrorWords = (code: ErrorCode): string => ERRORS[code]
 
-/** What one code of the schema says, and nothing where there was no error. */
+/** The message for one schema code, and an empty string when there was no error. */
 export const formatErrorCodeMessage = (code: ProtoErrorCode | undefined): string => {
   if (code === undefined) return ''
   const own = SCHEMA_ONLY_WORDS[code]

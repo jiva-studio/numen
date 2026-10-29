@@ -1,10 +1,10 @@
 /**
- * The counting of the vaults is started by whichever part of the review asks
- * first, and ended when the plugin is disposed.
+ * The counting of the vaults is started by whichever part of the review requests
+ * it first, and ended when the plugin is disposed.
  *
- * The streams are HTTP calls that stay open until something ends them. A
- * plugin disposed without ending them leaves them running against a page
- * nobody is looking at.
+ * The streams are HTTP calls that stay open until they are ended. A plugin
+ * disposed without ending them leaves them running against a page that is no
+ * longer displayed.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -46,7 +46,7 @@ async function* failsOnAbort(signal?: AbortSignal): AsyncGenerator<never> {
   })
 }
 
-/** A stream that hands over what it is given, and then stays open. */
+/** A stream that yields the items it is given, and then stays open. */
 async function* sends(...items: unknown[]): AsyncGenerator<unknown> {
   yield* items
   await new Promise<never>(() => {})

@@ -479,7 +479,7 @@ export const Rating = {
 } as const
 export type Rating = (typeof Rating)[keyof typeof Rating]
 
-/** VaultCardsDue is what one vault owes for review. Unread holds the reason the vault could not be counted. */
+/** VaultCardsDue is what one vault has due for review. Unread holds the reason the vault could not be counted. */
 export interface VaultCardsDue {
   id: string
   name: string
@@ -493,7 +493,7 @@ export interface VaultCardsDue {
   isIndexing: boolean
 }
 
-/** DeckCardsDue is what one deck owes for review. */
+/** DeckCardsDue is what one deck has due for review. */
 export interface DeckCardsDue {
   deck: string
   reviewCards: number

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The settings a preset's goal schedules by, a row to each. A row is drawn in
- * and written when the person is done with it.
+ * The settings a preset's goal schedules by, one row per setting. Each row is
+ * drawn with its own control and written when the edit is committed.
  *
  * A row carries `data-preset-row`, the field it is about. `data-preset` names
  * the parts of one: `name`, `detail`, `day`, `choice` and `percent`.
@@ -55,7 +55,7 @@ const fields = computed(() => getGoalFields(settings.value.goal, settings.value.
   --preset-settings-choice: 10rem;
   --preset-settings-air: 0.5rem;
   --preset-settings-label-gap: 0.125rem;
-  /* The track a share is moved along, and the room the figure beside it takes. */
+  /* The track a share is moved along, and the width of the figure beside it. */
   --preset-settings-track: 9rem;
   --preset-settings-percent: 2.25rem;
   display: grid;

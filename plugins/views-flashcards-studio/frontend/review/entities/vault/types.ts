@@ -1,10 +1,10 @@
 /**
- * What a vault owes today: the vault, the decks in it, and the presets
- * scheduling them.
+ * What a vault has due today: the vault, the decks in it, and the presets that
+ * schedule them.
  */
 import type { StopReason } from '../../../api/types.js'
 
-/** One deck's share of what a vault owes. */
+/** One deck's share of what a vault has due. */
 export interface DeckCardsDue {
   readonly deck: string
   readonly reviewCards: number
@@ -16,8 +16,8 @@ export interface DeckCardsDue {
    */
   readonly learned: number
   /**
-   * which is one of these has nothing that can come round until something
-   * begins them.
+   * How many of its review cards have not been started. Such a card cannot
+   * return for review until it is started.
    */
   readonly unbegun: number
 }
@@ -32,7 +32,7 @@ export interface PresetCardsDue {
   /** How many review cards stand in those decks. A deck holding none still points here. */
   readonly cards: number
   /**
-   * It is what a session over this preset asks, and is printed currently.
+   * The number of cards a session over this preset returns.
    */
   readonly owed: number
   /**
@@ -45,9 +45,9 @@ export interface PresetCardsDue {
   readonly answeredReviews: number
   readonly took: number
   /**
-   * What the day holds under it, the day of the week having had its say: cards
-   * of each kind, and how long the day runs. A budget the goal does not name
-   * stands as the person left it and closes nothing.
+   * What the day contains under it, after the day of the week is applied: cards
+   * of each kind, and how long the day runs. A budget that the goal does not
+   * name keeps the user's value and closes nothing.
    */
   readonly new: number
   readonly reviews: number
@@ -55,8 +55,8 @@ export interface PresetCardsDue {
   /** Which key each budget closes the day on, and empty where it closes none. */
   readonly closes: BudgetKeys
   /**
-   * Why it schedules nothing on this day, as the core says it. A preset no deck
-   * points at is answered here and nowhere else.
+   * Why it schedules nothing on this day, as reported by the core. A preset that
+   * no deck references is reported here and nowhere else.
    */
   readonly stopsOn: StopReason
 }

@@ -25,12 +25,11 @@ type ReviewLog struct {
 	// order is what History hands out, worked out at the first asking and kept
 	// for the rest of them.
 	order func() review.History
-	// Files are what the answers were read from, sorted by name. What tells a
-	// cache it is out of date is any difference in this list.
+	// Files are the log files the answers were read from, sorted by name. Any
+	// difference in this list invalidates a cache.
 	//
-	// A run is appended to and never rewritten, so its length is what says
-	// whether it has changed. A name alone says nothing: the file a session is
-	// writing to keeps its name and grows all evening.
+	// A run is append-only, so its length indicates whether it has changed. A name
+	// alone does not: the file of an active session keeps its name while it grows.
 	Files []ports.Entry
 	// Skipped is how many lines could not be acted on: a run that stopped
 	// partway, or a line of a version this build does not know.
@@ -40,8 +39,8 @@ type ReviewLog struct {
 // GetHistory returns the answers in the order they were given: nothing a line takes
 // back, one line to an identifier, earliest first.
 //
-// One request asks several things of one loaded log, and each of them reads this
-// order. It is worked out once for the log and handed to all of them.
+// One request evaluates several things over one loaded log, and each reads this
+// order. It is computed once per log and shared.
 func (h ReviewLog) GetHistory() review.History {
 	if h.order == nil {
 		return review.OrderAnswers(h.Answers)
@@ -66,8 +65,8 @@ func (u Log) GetLogFiles(ctx context.Context, v domain.Vault) ([]ports.Entry, er
 
 // Read is every answer a vault holds.
 //
-// A vault nobody has reviewed holds no folder and no files, which is an answer
-// and not a failure.
+// A vault with no reviews holds no folder and no files, which yields an empty
+// log and not an error.
 func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
@@ -98,19 +97,19 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 // LogFile is one file of the log as it was read.
 type LogFile struct {
 	Answers []review.Answer
-	// Size is the length read, which is what says whether the file has changed.
-	// It is the length read and not the length listed: a run this machine is
-	// writing grows between the two.
+	// Size is the length read, which indicates whether the file has changed. It is
+	// the length read and not the length listed, because a run this machine is writing
+	// grows between the two.
 	Size int
 	// Skipped is how many of its lines could not be acted on.
 	Skipped int
 	// IsGone is a file listed and then taken away by another machine's
 	// synchroniser before it could be read.
 	IsGone bool
-	// IsUnreadable is a file that would not open: the permissions refuse it, or
-	// another program holds it. It is counted among the lines that could not be
-	// acted on and left out of the files the history was read from, so a
-	// schedule worked out without it says so.
+	// IsUnreadable is a file that could not be opened: permissions deny it, or
+	// another program holds it. It is counted among the lines that could not be acted
+	// on and excluded from the files the history was read from, so a schedule computed
+	// without it reports that.
 	IsUnreadable bool
 }
 
@@ -189,18 +188,18 @@ func (r *LogWriter) Append(ctx context.Context, a review.Answer) error {
 	return nil
 }
 
-// ErrNoRating is what an answer outside the four gets. Nothing here guesses
-// what a person meant to say about their own recall.
+// ErrNoRating is returned for an answer outside the four ratings. A rating is
+// never inferred.
 var ErrNoRating = errors.New("not one of the four ratings")
 
 // ErrNoAnswer is a taking back that names no answer.
 var ErrNoAnswer = errors.New("an answer taken back names the one it takes back")
 
-// Record writes down what a person answered.
+// Record writes answers to the log.
 //
-// A line is appended and nothing is ever rewritten, so what was recorded stands
-// whatever happens next — including a person taking an answer back, which is a
-// line of its own naming the one it takes back.
+// A line is appended and never rewritten, so a recorded answer persists, including
+// when it is taken back: taking back is a line of its own naming the answer it
+// reverses.
 type Record struct{ now ports.Clock }
 
 // errNoClock is what a Record that was given no clock answers.
@@ -233,8 +232,8 @@ func (u Record) Answer(
 	return a, nil
 }
 
-// TakeBack writes down that an answer was taken back. A person hits the wrong
-// key, and the record of that is what says so.
+// TakeBack writes that an answer was taken back. The record of the reversal
+// marks the answer as reversed.
 func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review.Answer, error) {
 	if id == "" {
 		return review.Answer{}, ErrNoAnswer

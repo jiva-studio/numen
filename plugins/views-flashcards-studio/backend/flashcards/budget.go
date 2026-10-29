@@ -259,7 +259,7 @@ type budgetAllocation struct{ owed, newCards []bool }
 type deckShare struct {
 	deck           string
 	owed, newCards []int
-	// owedIndex and newIndex track progress through owed and new card pools.
+	// owedIndex and newIndex are positions in the owed and new card pools.
 	owedIndex, newIndex int
 	debt, begun         int
 }

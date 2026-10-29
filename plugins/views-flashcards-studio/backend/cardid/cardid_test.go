@@ -24,7 +24,7 @@ func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 	}
 }
 
-// An identifier says which card this is, so two of them are two cards.
+// Generated identifiers are distinct, so two of them are two cards.
 func TestTwoIdentifiersDiffer(t *testing.T) {
 	observed := map[cardid.ID]bool{}
 	for range 100 {

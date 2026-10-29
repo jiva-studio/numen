@@ -1,17 +1,16 @@
 /**
  * Which screen the window is on, and what each screen holds.
  *
- * The screens stand in one order and a person goes back along it. What a screen
- * took up is declared once, beside the screen; going back lets go of everything
- * the screens being left hold. So what is forgotten follows from where a person
- * went, and no screen change carries a list of its own to keep up to date.
+ * The screens form one ordered sequence and navigation goes back along it. What
+ * a screen holds is declared once, with the screen; going back releases
+ * everything held by the screens being left. What is released follows from the
+ * navigation path, and no screen change carries a cleanup list of its own.
  */
 import { ref } from 'vue'
 import type { Ref } from 'vue'
 
 /**
- * What each screen holds, by the screen it belongs to. A screen holding nothing
- * says nothing here.
+ * What each screen holds, by screen. A screen holding nothing has no entry here.
  */
 export type ScreenCleanups<Name extends string> = Readonly<
   Partial<Record<Name, readonly (() => void)[]>>

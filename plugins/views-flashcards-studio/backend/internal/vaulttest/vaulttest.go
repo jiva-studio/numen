@@ -13,7 +13,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 )
 
-// Queries answers what the index says of a vault's notes, links and parse problems.
+// Queries answers queries about a vault's notes, links and parse problems from
+// the index.
 type Queries struct {
 	hostports.Notes
 	hostports.Links
@@ -59,10 +60,11 @@ func Of(host *hosttest.Vault) Env {
 	}
 }
 
-// Installation is a host that knows several vaults, as the application does, and the ports over it.
+// Installation is a host with several vaults, as the application has, and the
+// ports over it.
 type Installation struct {
 	vaults map[domain.VaultID]*hosttest.Vault
-	// Host is the host as the plugin reaches it. It shows no vault of its own.
+	// 	// Host is the host as the plugin reaches it. It has no vault of its own.
 	Host *hosttest.Vault
 	// Ports answers every port the use cases take.
 	Ports hostports.Ports
@@ -70,7 +72,7 @@ type Installation struct {
 	Queries Queries
 }
 
-// NewInstallation is a host that knows no vault yet.
+// NewInstallation returns a host with no vault yet.
 func NewInstallation() Installation {
 	host := hosttest.New("installation")
 	host.Hide()

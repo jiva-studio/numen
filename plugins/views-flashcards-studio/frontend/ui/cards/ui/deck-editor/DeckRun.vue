@@ -155,7 +155,7 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
   block-size: var(--gap);
 }
 
-/* A run drawing neither a card nor a plus takes no room of its own, which is
+/* A run that renders neither a card nor a plus takes no space of its own, which is
    the place before the first section of a deck holding nothing there. */
 .deck__grid:empty {
   display: none;
@@ -174,7 +174,7 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
   gap: var(--gap);
 }
 
-/* A tile is the room one card is drawn in, and the card fills it. */
+/* A tile is the space one card is rendered in, and the card fills it. */
 .deck__tile {
   position: relative;
   display: grid;

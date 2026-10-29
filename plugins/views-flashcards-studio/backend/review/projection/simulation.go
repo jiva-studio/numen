@@ -7,19 +7,19 @@ import (
 	"time"
 )
 
-// Ahead is how many days a projection runs when it is not told.
+// Ahead is how many days a projection runs when no count is set.
 const Ahead = 90
 
-// LeastStability is the least a projected review card is taken to stand at, in
-// days, which is a minute. The scheduler divides by stability, so a review card a
-// long run of lapses has worn down to none of it answers with a number nobody
-// can read, and every figure weighed against it after that is that number.
+// LeastStability is the lower bound on the stability of a projected review card,
+// in days, equal to one minute. The scheduler divides by stability, so a review
+// card whose stability has decayed to zero after a long run of lapses produces
+// unusable numbers, and every figure computed from it would be unusable too.
 const LeastStability = 1.0 / (24 * 60)
 
-// MostShowings is how many times one day of review asks a review card. An answer
-// a card did not come back on sends it away for minutes, and the day it lands
-// back in is the day it was asked in; a card that keeps landing there is put
-// down and picked up by the day after.
+// MostShowings is the maximum number of times one day of review shows a review
+// card. An answer that does not return the card for several minutes schedules it
+// later in the same day; a card that keeps landing in the same day is dropped and
+// picked up by the following day.
 const MostShowings = 8
 
 // Simulation projects a preset forward over the days ahead: its review cards
@@ -34,24 +34,24 @@ type Simulation struct {
 	Cost AnswerCost
 	// Days is how far ahead it runs, and runs Ahead days when it is zero.
 	Days int
-	// Retains is the days of the run whose returning share it works out, counting
-	// the day it opens as none. A day nobody names is not worked out, and the
-	// projection answers for none of it.
+	// Retains lists the days of the run for which the returning share is computed,
+	// counting the day the run opens as none. A day that is not listed is not
+	// computed, and the projection reports no share for it.
 	//
-	// The share is a pass over every review card the preset holds, and it is the
-	// one thing a day counts over the whole material.
+	// The share is a pass over every review card of the preset, and it is the only
+	// value that a day computes over the whole material.
 	Retains []int
 	// Recalls is what this run assumes about coming back. A run holding none
 	// reads GetModelledRecall.
 	Recalls RecallChance
-	// Spent is what the day holding now has already gone through under this
-	// preset. The first day of a run is a real day a person may be halfway
-	// through, and what it has left is what a session opened now would offer.
+	// Spent is what the current day has already used under this preset. The first day
+	// of a run is a real day that may be partly spent, and what remains of it is what
+	// a session opened now would return.
 	Spent Spent
 }
 
-// GetDurationDays is how many days this run walks, counting the day it opens as the
-// first. A run told nothing walks Ahead of them.
+// GetDurationDays returns how many days this run walks, counting the day it opens
+// as the first. A run with no count set walks Ahead days.
 func (s Simulation) GetDurationDays() int {
 	if s.Days <= 0 {
 		return Ahead
@@ -67,18 +67,18 @@ const LongestLearning = 10 * 365
 // giving it up.
 const mostAnswers = 1000
 
-// GetDaysToLearn is how many days of review a review card begun now needs before this
-// preset counts it learned, when every day that review card falls due in answers
-// it.
+// GetDaysToLearn returns how many days of review a review card begun now needs
+// before this preset counts it as learned, when every day on which the card falls
+// due answers it.
 //
-// It is one number for the whole material nobody has begun: those review cards
-// all stand at the same nothing. A rule no such review card reaches is
-// NeverLearns.
+// It is one number for the whole material that has not begun: those review cards
+// all start from the same empty schedule. A rule that no such review card
+// satisfies yields NeverLearns.
 //
-// A day of the week at none of the load schedules nothing, so it asks the card
-// review card nothing and counts for none of the days the pace divides by. A week
-// carrying such a day needs as many days of review as its slowest day of the
-// week does, so the pace holds for a review card begun on any of them.
+// A day of the week with none of the load schedules nothing, so it shows the
+// review card nothing and does not count toward the days the pace divides by. A
+// week with such a day needs as many days of review as its slowest day of the
+// week, so the pace holds for a review card begun on any of them.
 func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: scheduler, Day: d}
 	from := d.GetStart(now)
@@ -114,8 +114,9 @@ func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 	return NeverLearns
 }
 
-// getScheduleAfterShowing is where one showing leaves a review card, at the hour the day
-// opens. A review card the day is not asking for stands where it is.
+// getScheduleAfterShowing returns the schedule of a review card after one
+// showing, at the hour the day opens. A review card the day does not show keeps
+// its schedule.
 func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
 	if !c.IsNew() && !c.Due.Before(ends) {
 		return c
@@ -123,12 +124,12 @@ func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p 
 	return s.step(c, open, p, on)
 }
 
-// getScheduleAfterDay is where a day of review leaves a review card when the day answers
-// every showing it asks for: an answer that leaves the card falling due before
-// the day closes is a card the day asks again, up to MostShowings.
+// getScheduleAfterDay returns the schedule of a review card after a day of review
+// that answers every showing it contains: an answer that makes the card due before
+// the day closes is shown again, up to MostShowings.
 //
-// It is the day with no budget over it, which is the day the learning of a card
-// review card is counted in.
+// It is the day with no budget applied, which is the day in which the learning of
+// a review card is counted.
 func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
 		if !c.IsNew() && !s.Day.IsOwed(c, open) {
@@ -151,11 +152,11 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bo
 			break
 		}
 		if !c.IsNew() && !c.Due.Before(s.Day.GetEnd(open)) {
-			// Nothing is asked of it until the day its schedule falls in.
+			// The card is not shown until the day its schedule falls in.
 			open = s.Day.GetStart(c.Due)
 		}
 		ends := s.Day.GetEnd(open)
-		// A day of the week at none of the load asks it nothing, and the next
+		// A day of the week with none of the load does not show the card, and the next
 		// day of review picks it up.
 		if p.GetShare(open.Weekday()) != 0 {
 			c = s.getScheduleAfterDay(c, open, p)
@@ -165,8 +166,9 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bo
 	return p.IsLearned(c, delta)
 }
 
-// short is how many of these review cards cannot be learned by the day the preset
-// aims at, whatever the pace, and how many of a material nobody has begun.
+// short returns how many of these review cards cannot be learned by the target
+// day of the preset at any pace, plus the count of unbegun material if that
+// cannot be learned either.
 func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
@@ -542,7 +544,7 @@ func (d *simulationDay) finishDay(out *Projection, answerRetained bool, elapsed 
 	d.open = d.ends
 }
 
-// finalizeProjection calculates daily averages and remaining owed cards.
+// finalizeProjection calculates daily averages and the remaining due cards.
 func (s Simulation) finalizeProjection(
 	out *Projection, elapsed time.Duration, cards []Schedule, open time.Time,
 ) {

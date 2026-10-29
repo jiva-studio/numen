@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * One deck of a vault: what it is called, which preset schedules it, how much
- * of it stands learned, and what it owes today.
+ * One deck of a vault: its name, the preset that schedules it, how much of it
+ * is learned, and the number of cards due today.
  */
 import { computed } from 'vue'
 import { Button, KeyCap, Skeleton } from '@numen/ui'
@@ -17,7 +17,7 @@ import type { Preset } from '../../types'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   deck: DeckCardsDue
-  /** at its current position in the list, which is the letter it is picked by. */
+  /** The position of the deck in the list, which determines the letter that picks it. */
   index: number
   /** The preset scheduling it, and nothing where none was read. */
   preset: Preset | undefined
@@ -25,7 +25,7 @@ const props = defineProps<{
   hasPresets: boolean
   /** Whether the vault has been counted. */
   isCounted: boolean
-  /** Whether it can be sat down to. */
+  /** Whether a session can be started on it. */
   canOpen: boolean
 }>()
 
@@ -39,16 +39,16 @@ defineEmits<{
 const paused = computed(() => props.preset?.paused ?? '')
 
 /**
- * Whether the deck's day is done, which is the day's work met and not merely
- * nothing standing: something was answered under its preset today, and its
- * preset still had room for more.
+ * Whether the deck's day is complete: the day's work was met and not merely
+ * nothing remains. Something was answered under its preset today, and the
+ * preset still had budget for more.
  */
 const isDone = computed(() => !!props.preset && !isSpent(props.preset) && props.preset.answered > 0)
 
 /**
- * What a deck with nothing left says where the day's work was not what emptied
- * it: the preset's day is spent, nothing here can be begun at all, or the day
- * held nothing of this deck.
+ * The label of a deck with no cards remaining where the day's work did not
+ * empty it: the preset's budget for the day is spent, nothing in the deck can
+ * be begun, or the day had no cards of this deck.
  */
 const stoppedLabel = computed(() => {
   if (props.preset && isSpent(props.preset)) return STOPPED.full
@@ -56,9 +56,9 @@ const stoppedLabel = computed(() => {
 })
 
 /**
- * How much of the deck stands learned, and empty where the share cannot be
- * said: a deck holding no review card is a share of nothing, and a deck whose
- * preset was not read has no rule to be counted by.
+ * How much of the deck is learned, or empty where the share cannot be
+ * computed: a deck with no review cards has no share, and a deck whose preset
+ * was not read has no rule to count by.
  */
 const share = computed(() => {
   if (props.hasPresets && !props.preset) return LEARNED.unruled

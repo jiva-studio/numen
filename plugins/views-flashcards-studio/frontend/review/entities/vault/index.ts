@@ -1,4 +1,4 @@
-/** The vaults an installation holds, and what each of them owes today. */
+/** The vaults of an installation, and the number of cards each has due today. */
 export { getDeckName } from './lib/names'
 export { useReviewCounter } from './model/counts'
 export type { CardsDueClient } from './model/counts'

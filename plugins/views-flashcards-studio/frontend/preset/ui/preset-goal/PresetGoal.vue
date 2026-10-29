@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * The goal a preset is scheduled by, the switch that chooses it, and the curve
- * curve's place and says why.
+ * control. Where the goal has nothing to work on, a message states why in place
+ * of the curve.
  */
 import { computed } from 'vue'
 import { SegmentedControl } from '@numen/ui'
@@ -21,7 +22,7 @@ const { curve, material, place, settings, stopped: stoppedAt, isWaiting } = prop
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => getIdleReason(curve.value))
 
-/** What is said in the control's place where the goal has nothing to work on. */
+/** The message shown in place of the control when the goal has nothing to work on. */
 const emptyGoalExplanation = computed(() => {
   if (nothing.value === 'noCards') return words.noCards(curve.value.decks)
   return nothing.value === 'unpointed'
@@ -97,7 +98,7 @@ function onSliderCommit() {
   gap: var(--numen-node-gap);
 }
 
-/* What the three segments are, said over them. */
+/* Label above the three goal segments. */
 .preset__label {
   margin: 0;
   color: var(--numen-hushed);
@@ -107,7 +108,7 @@ function onSliderCommit() {
   text-transform: uppercase;
 }
 
-/* No deck points here, said where the curve would stand. */
+/* Message shown in place of the curve when no deck points at the preset. */
 .preset__unpointed {
   margin: 0;
   color: var(--numen-hushed);

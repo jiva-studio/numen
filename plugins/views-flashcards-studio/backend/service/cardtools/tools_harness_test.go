@@ -13,9 +13,9 @@ import (
 // session is the tools the plugin offers, called the way the host calls them.
 type session struct {
 	registry *tools.Registry
-	// toolContext is what the host tells each tool about the window the agent was started from.
+	// toolContext is the context the host provides to each tool about the window the agent was started from.
 	toolContext map[string]string
-	// vault is the vault the host says each call works.
+	// vault is the vault the host reports as the target of each call.
 	vault domain.VaultID
 }
 

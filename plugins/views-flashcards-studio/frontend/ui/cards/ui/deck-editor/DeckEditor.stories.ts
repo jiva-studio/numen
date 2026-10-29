@@ -24,7 +24,7 @@ interface Corpus {
   }
 }
 
-/** What a corpus says is wrong, as the grid takes it. */
+/** The validation problems of a corpus, in the form the grid takes. */
 const createProblems = (corpus: Corpus): DeckProblems => ({
   at: new Map(Object.entries(corpus.wrong?.at ?? {})),
   under: new Map(
@@ -453,8 +453,8 @@ export default meta
 type Story = StoryObj<Knobs>
 
 /**
- * Three cards, two card models, and one card leaving a field out. The plus asks
- * which card model, and the card it makes relies on empty fields.
+ * Three cards, two card models, and one card missing a field. The plus asks which
+ * card model, and the card it creates has empty fields.
  */
 export const ADeck: Story = {
   play: async ({ canvasElement }) => {
@@ -492,8 +492,7 @@ export const InSections: Story = {
     const heads = [...canvasElement.querySelectorAll('[data-section-head]')]
     expect(heads.map((head) => head.getAttribute('data-section-head'))).toEqual(['roots', 'leaves'])
 
-    // A section holding no card keeps its heading, and stands as wide as the
-    // grid under it.
+    // A section holding no card keeps its heading, which spans the grid width.
     const leaves = found(canvasElement, '[data-section-head="leaves"]')
     expect(canvasElement.querySelectorAll('[data-section="leaves"]')).toHaveLength(0)
     expect(leaves.getBoundingClientRect().width).toBeGreaterThan(240)
@@ -505,15 +504,15 @@ export const InSections: Story = {
       'Roots',
     )
 
-    // What a person reaches for is the name and the way to be rid of it. It is
-    // as wide as the two of them, and the line either side is the rule's.
+    // The interactive part of the heading is the name and the remove button. It is
+    // as wide as the two of them, and the line either side belongs to the rule.
     const element = found(canvasElement, '[data-section-head="roots"] .section-heading__content')
     expect(element.getBoundingClientRect().width).toBeLessThan(
       leaves.getBoundingClientRect().width / 3,
     )
 
-    // The bin takes no room until the name is reached for, so the line runs
-    // keeps nothing that hangs past it.
+    // The remove button takes no width until the name is focused, so the rule ends
+    // at the heading's edge and nothing overhangs it.
     const actions = found(canvasElement, '[data-section-head="roots"] .section-heading__actions')
     expect(actions.getBoundingClientRect().width).toBe(0)
 
@@ -571,7 +570,7 @@ export const FarTooMany: Story = {
 /** Values that are not Latin, and a field name with nothing to break at. */
 export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 
-/** No cards, and one plus standing alone in the middle of what it is asked from. */
+/** No cards, and one plus alone in the middle of the empty deck. */
 export const NothingAtAll: Story = {
   args: { corpus: 'nothing at all' },
   play: async ({ canvasElement }) => {
@@ -580,7 +579,7 @@ export const NothingAtAll: Story = {
 
     expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(0)
 
-    // It is named for a reader, and says nothing beside itself.
+    // It is named for assistive technology and has no visible text.
     expect(button.getAttribute('aria-label')).toBe('Add a card')
     expect(button.textContent?.trim()).toBe('')
     expect(button.querySelector('svg')?.getBoundingClientRect().width).toBeGreaterThan(24)
@@ -600,7 +599,7 @@ export const NothingAtAll: Story = {
     expect(rect.height).toBeGreaterThan(64)
     expect(rect.width).toBeGreaterThan(240)
 
-    // What it opens stands where it was pressed, inside that same outline.
+    // The opened prompt appears at the pressed button, inside the same outline.
     await userEvent.click(button)
     const promptElement = found(canvasElement, '[data-plus] .deck__asking')
     expect(middle(promptElement.getBoundingClientRect())).toEqual(
@@ -626,7 +625,7 @@ export const WhatIsWrongWithACard: Story = {
     expect(getText('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
     expect(getText('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the card model')
 
-    // The card nothing was said against carries no mark at all.
+    // The card with no problems has no mark.
     expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
     expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(4)
 
@@ -672,8 +671,8 @@ const measure = (canvasElement: HTMLElement, least = 3): void => {
 }
 
 /**
- * A window too narrow for two columns: one column, and no sideways scrolling.
- * what the wrapping evaluates to, which is worked out by the ground behind it.
+ * A window too narrow for two columns: one column, no horizontal scrolling, and a
+ * long value wraps within its box.
  */
 export const Narrow: Story = {
   args: { corpus: 'a value that wraps', width: '22rem' },

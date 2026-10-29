@@ -14,7 +14,7 @@ import type {
   VaultCardModel,
 } from '../types'
 
-/** What kind of problem it is, in the words the window uses. */
+/** The problem kind, named as the window names it. */
 const kinds: Record<ProblemKinds, ProblemKind> = {
   [ProblemKinds.UNSPECIFIED]: 'unknown',
   [ProblemKinds.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',

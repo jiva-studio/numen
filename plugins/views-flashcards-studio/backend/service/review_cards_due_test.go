@@ -12,9 +12,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// The list a person sees is drawn from the first message, and counting a vault
-// reads every deck in it. So the vaults stand there by name and by where they
-// are, with nothing counted and nothing said about what they hold.
+// The vault list shown to the user is built from the first message, and
+// counting a vault reads every deck in it. The vaults therefore arrive with
+// their name and location, with no count and no deck information.
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	handler, target := newAPI(t, deck, other)
 
@@ -133,8 +133,8 @@ var learnedDecks = map[string]string{
 	"decks/Far.md":  newCardModelDeck("Word", "", 2, 5100),
 }
 
-// The count carries how much of each deck stands learned, so the deck screen
-// draws the core's own answer and works out no rule of its own.
+// The count includes how much of each deck is learned, so the deck screen
+// displays the core's result and applies no rule of its own.
 func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 	handler, target := newAPI(t, learnedDecks)
 	v := target[0]
@@ -185,12 +185,12 @@ func TestVaultCount_UnansweredVaultHasZeroLearned(t *testing.T) {
 	}
 }
 
-// What a person waits for when the review window opens on an installation of
+// The time the user waits when the review window opens on an installation with
 // several vaults.
 //
-// The first two are what the window costs: the list of vaults on screen, and
-// the last of their counts landing. The third counts every vault inside one
-// answer.
+// The first two benchmarks measure the window's cost: the time to display the
+// vault list, and the time until the last vault count arrives. The third
+// measures counting every vault in one response.
 func BenchmarkWatchCardsDue(b *testing.B) {
 	const vaults, cards, days, perDay = 4, 5000, 60, 100
 
@@ -262,8 +262,8 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	})
 }
 
-// benchDeck is one card model of one review card and cards cards, spread over twenty
-// decks the way a person's own vault spreads them.
+// benchDeck is one card model with one review card and cards cards, spread
+// over twenty decks like a typical vault.
 func benchDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": deck["Term.md"]}

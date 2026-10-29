@@ -10,6 +10,6 @@ export interface FieldValue {
 /** One card model a card may be cut by: the word it is shown as, and its slots. */
 export interface CardModel {
   readonly name: string
-  /** The slots it names, in the order a person is asked for them. */
+  /** The slots it names, in the order they are requested from the user. */
   readonly fields: readonly string[]
 }

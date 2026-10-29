@@ -1,9 +1,9 @@
 /**
- * What a card evaluates to on the way to the screen.
+ * What a card renders to on the way to the screen.
  *
- * The card keeps the breaks a person typed, so a line they wrote with no tag
- * around it reads as a line. A break between two tags is the whitespace of
- * HTML and is no line of the card.
+ * The card keeps the line breaks the user typed, so a line written with no tag
+ * around it renders as a line. A break between two tags is HTML whitespace and
+ * is not a line of the card.
  */
 import { describe, expect, it } from 'vitest'
 import { renderCardHtml } from './render'

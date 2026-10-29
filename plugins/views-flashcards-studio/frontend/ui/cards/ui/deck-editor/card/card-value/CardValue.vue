@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * in, and what is wrong with it said underneath.
+ * One value of a card, edited in an auto-sizing text box, with the problems with
+ * the value shown underneath.
  */
 import { inject } from 'vue'
 import { ErrorMessage } from '../../../error-message'
@@ -29,7 +30,7 @@ const props = withDefaults(
 const deck = inject(DECK_CONTEXT)
 if (!deck) throw new Error('A card value is drawn outside a deck')
 
-/** The value as it now reads, told to the deck with the card and the place it is in. */
+/** Reports the value's new text to the deck, with the card and the place the value is in. */
 const onWrite = (text: string): void =>
   deck.write(props.card, { field: props.value.field, index: props.value.index }, text)
 </script>

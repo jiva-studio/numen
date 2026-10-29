@@ -1,6 +1,6 @@
 /**
- * One card drawn on its own, which is what a caller laying out its own tiles
- * draws: what it says of its place among the tiles, and the words it asks for.
+ * One card rendered on its own, as a caller laying out its own tiles renders
+ * it: its position among the tiles, and the text it requests.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'

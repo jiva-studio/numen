@@ -9,9 +9,9 @@ describe('the four answers', () => {
     expect(grades).toEqual(['again', 'hard', 'good', 'easy'])
   })
 
-  // What is written down is what the person pressed. Nothing downstream can
-  // tell one rating from another, so a pair crossed here is a card sent away
-  // for a week because a person said they had forgotten it.
+  // The recorded rating is the grade the user selected. Nothing downstream can
+  // distinguish one rating from another, so a swapped pair here schedules a
+  // forgotten card a week ahead.
   it('are written down as the four they name', () => {
     expect(RATING_BY_GRADE.again).toBe(Rating.AGAIN)
     expect(RATING_BY_GRADE.hard).toBe(Rating.HARD)

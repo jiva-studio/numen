@@ -28,28 +28,28 @@ type ReviewCard struct {
 	// first field.
 	Heading string
 
-	// What it is laid out from. It is read once with the deck and kept,
-	// so laying out is the last thing done and only for a card about to be
-	// shown: counting what a vault owes fills in no template at all.
+	// The card model the card is laid out from. It is read once with the deck and
+	// cached, so laying out is the last step and runs only for a card about to be
+	// shown: counting due cards fills in no template at all.
 	cardModel  format.CardModel
 	reviewCard format.CardTemplate
 	card       format.Card
 }
 
-// Lay is the review card filled with this card's values: what stands before the answer
-// and what stands after it, as HTML.
+// Lay returns the review card filled with this card's values: the front shown
+// before the answer and the back shown after it, as HTML.
 func (s ReviewCard) Lay() (front, back string) { return format.Lay(s.reviewCard, s.card) }
 
-// ListReviewCards is every review card a vault holds, read out of its files.
+// ListReviewCards returns every review card a vault holds, read from its files.
 //
-// Nothing here writes. A card carrying no card id cannot be answered and is left
-// out; giving it one is assigning card ids, which a person's own vault has done to it
-// before they are asked anything.
+// It writes nothing. A card without a card id cannot be answered and is
+// excluded; assigning card ids is done when the vault's decks are written, before
+// any review card is requested.
 type ListReviewCards struct {
 	readers ports.VaultReaders
-	// notes says which notes of the vault are decks. A build holding none
-	// answers ErrNotCarried for every vault, the same as an index that has not
-	// read this one yet.
+	// notes identifies which notes of the vault are decks. A build without one
+	// returns ErrNotCarried for every vault, as does an index that has not read this
+	// vault yet.
 	notes ports.NoteQueries
 	links ports.LinkQueries
 	// cache is the review cards of the decks already parsed, for the life of the window.
@@ -63,9 +63,10 @@ type ListReviewCards struct {
 	MaxCards int
 }
 
-// NewListReviewCards is what a vault's review cards are read through: the vault the
-// decks and the card models are read out of, what says which of its notes are
-// decks, and where the wikilink a card names its card model by lands.
+// NewListReviewCards returns a ListReviewCards that reads review cards through
+// the vault holding the decks and the card models, the query that identifies
+// which notes are decks, and the resolver for the wikilink by which a card names
+// its card model.
 func NewListReviewCards(
 	readers ports.VaultReaders, notes ports.NoteQueries, links ports.LinkQueries,
 ) ListReviewCards {
@@ -112,16 +113,16 @@ func (u ListReviewCards) GetDeckPaths(ctx context.Context, v domain.Vault) ([]st
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
-// cards of one preset hands it the decks pointing there, and the rest of the
-// vault is left unread.
+// GetReviewCards returns the review cards of the decks at paths. A caller that
+// needs the cards of one preset passes the decks pointing at that preset, and
+// the rest of the vault is not read.
 //
-// A deck whose file and card models are the ones its review cards were last parsed from is
-// not parsed again. The decks that are parsed are parsed on up to Cores places at
-// once, and the review cards come back in the order of paths.
+// A deck whose file and card models match those its review cards were last parsed
+// from is not parsed again. The decks that are parsed are parsed concurrently on
+// up to Cores workers, and the review cards are returned in the order of paths.
 //
-// A deck that cannot be read contributes no review card and is not an error. What
-// was wrong with it is the deck's own problem, and the editor is where it is
-// settled.
+// A deck that cannot be read contributes no review card and is not an error. The
+// failure is a problem of the deck itself and is reported in the editor.
 func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, paths []string) []ReviewCard {
 	epoch := u.cache.begin()
 	reader, err := u.readers.Open(v)
@@ -254,9 +255,9 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 	return out
 }
 
-// getDeckCards returns the review cards one deck holds: every card of a card id, through every
-// review card of the card model it names that lays anything out. It also says which
-// card models the review cards stand on, and whether every card model a card named was read.
+// getDeckCards returns the review cards one deck holds: every card with a card id, through every
+// review card of the card model it names that lays anything out. It also returns which
+// card models the review cards depend on, and whether every card model a card named was read.
 func (u ListReviewCards) getDeckCards(
 	ctx context.Context, v domain.Vault, deck cards.DeckContents, cardModels *cardModelMemo,
 ) (out []ReviewCard, used map[string]domain.FileStat, isWhole bool) {
@@ -331,8 +332,8 @@ type deckCards struct {
 	reviewCards []ReviewCard
 }
 
-// isCurrent says whether the deck and every card model it was cut by are the files
-// the review cards were parsed from.
+// isCurrent reports whether the deck and every card model it was cut by are the
+// files the review cards were parsed from.
 func (e deckCards) isCurrent(deck domain.FileStat, cardModels map[string]domain.FileStat) bool {
 	if !e.deck.IsUnchanged(deck) || len(e.cardModels) != len(cardModels) {
 		return false
@@ -497,7 +498,7 @@ func (c *reviewCardCache) getSize() int {
 	return c.total
 }
 
-// hasDeck says whether the deck at key is held.
+// hasDeck reports whether the deck at key is cached.
 func (c *reviewCardCache) hasDeck(key deckKey) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -505,8 +506,8 @@ func (c *reviewCardCache) hasDeck(key deckKey) bool {
 	return target
 }
 
-// getEntry returns the deck an element of the order stands for. Only decks are put in
-// it, so the zero entry is never seen.
+// getEntry returns the deck for an element of the order. Only decks are added
+// to it, so the zero entry is never returned.
 func getEntry(pos *list.Element) *cached {
 	one, _ := pos.Value.(*cached)
 	if one == nil {

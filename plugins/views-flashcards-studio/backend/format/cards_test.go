@@ -53,11 +53,11 @@ func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 	}
 }
 
-// A card's heading is the first line of its first field, cut to fit one line.
-// It stops at the first break and at format.HeadingRunes characters, counted as
-// a person counts them, and the spaces at either end are dropped.
+// A card's heading is the first line of its first field, truncated to one line.
+// It ends at the first line break and at format.HeadingRunes characters,
+// counted in Unicode characters, and leading and trailing spaces are removed.
 //
-// The value is a stranger's: it is HTML a person wrote, in a file another
+// The value is untrusted input: it is user-written HTML in a file that another
 // editor may have written.
 func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
 	t.Parallel()
@@ -85,21 +85,22 @@ func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
 	})
 }
 
-// atom is one piece of a field's first line, and unbroken says whether the cut
+// atom is one piece of a field's first line; isUnbroken reports whether the cut
 // may fall inside it.
 type atom struct {
 	text       string
 	isUnbroken bool
 }
 
-// drawAtoms generates a first line as a run of pieces the test knows the bounds
-// of: prose the cut may fall anywhere in, and the runs it may not — a wikilink,
-// an embed, a run of emphasis, and the shapes that stand one inside another.
+// drawAtoms generates a first line as a sequence of pieces whose boundaries
+// are known to the test: prose the cut may fall anywhere in, and runs it must not
+// split: a wikilink, an embed, a run of emphasis, and nested combinations of
+// these.
 //
-// The prose carries no bracket, no star, no underscore and no exclamation card id,
-// so a piece the cut may fall inside can neither open a run of its own nor
-// close one an earlier piece opened. That is what lets the test say where every
-// unbroken run is without working it out the way the code under test does.
+// The prose contains no bracket, asterisk, underscore or exclamation mark, so a
+// piece the cut may fall inside cannot open a run of its own or close a run an
+// earlier piece opened. This lets the test determine every unbroken run without
+// repeating the algorithm under test.
 func drawAtoms(t *rapid.T) []atom {
 	prose := rapid.StringMatching(`[\p{L}\p{N} ,.;:()-]{4,40}`)
 	target := rapid.StringMatching(`[\p{L}\p{N} .-]{4,30}`)
@@ -114,9 +115,9 @@ func drawAtoms(t *rapid.T) []atom {
 		cardID := emphasis.Draw(t, "emphasis")
 		return cardID + inner.Draw(t, "held") + cardID
 	})
-	// A link inside a run of emphasis is the link's, and the run around it is
-	// one run; a link's brackets hold whatever a person wrote, an embed
-	// included, and the link closes at its own last pair.
+	// A link inside a run of emphasis belongs to the link, and the enclosing run
+	// is one run; the link brackets may contain any user text, including an embed,
+	// and the link ends at its last closing pair.
 	nested := rapid.Custom(func(t *rapid.T) string {
 		cardID := emphasis.Draw(t, "emphasis")
 		return cardID + inner.Draw(t, "before") + link.Draw(t, "link") + cardID
@@ -143,8 +144,8 @@ func drawAtoms(t *rapid.T) []atom {
 }
 
 // The cut never falls inside a wikilink, an embed or a run of emphasis: it
-// falls in front of the whole of whichever it lands in. A heading ending inside
-// a link is markup a person is shown as the name of their card.
+// falls before the whole run that contains the cut position. A heading ending
+// inside a link would display markup as the card name.
 func TestTheSplitNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 	t.Parallel()
 	var trimmed, straddled int
@@ -193,9 +194,9 @@ func TestTheSplitNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 			}
 		}
 	})
-	// The property says where a cut may fall, so a run of it that never cut
-	// anything, or never met a link straddling the place the cut falls, has
-	// asked nothing.
+	// The property constrains where a cut may fall, so a generation that never
+	// cut a line, or never produced a run spanning the cut position, tests
+	// nothing.
 	if trimmed < 25 || straddled < 15 {
 		t.Fatalf("%d lines were cut and %d of those had a run standing across the cut",
 			trimmed, straddled)

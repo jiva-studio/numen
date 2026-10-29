@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The four answers of one day, and how many of each. An answer nobody gave
- * that day is left out, and a day with none of them draws nothing.
+ * The four answers of one day, and how many of each. An answer given zero times
+ * that day is omitted, and a day with none of them draws nothing.
  */
 import { computed } from 'vue'
 
@@ -10,7 +10,7 @@ import type { Words } from '../../../lib/words'
 
 const props = defineProps<{
   day: Day
-  /** What each answer is called, in the person's own language. */
+  /** The name of each answer, in the user's language. */
   words: Words
 }>()
 

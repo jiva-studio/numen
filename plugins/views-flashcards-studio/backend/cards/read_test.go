@@ -73,7 +73,7 @@ func (r faultyReader) Read(ctx context.Context, path string) ([]byte, error) {
 type unanswered struct {
 	ports.LinkQueries
 	t *testing.T
-	// isQuiet card ids a question asked of it as a failure of the test.
+	// isQuiet makes any link resolution request fail the test.
 	isQuiet bool
 }
 
@@ -153,7 +153,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsAnError(t *testing.T) {
 	}
 }
 
-// A deck whose cards name no card model asks the index nothing.
+// A deck whose cards name no card model makes no link resolution request.
 func TestADeckNamingNoCardModelAsksNoLinkQuestion(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Bare.md", "---\ntype: deck\n---\n\n## Wren\n\n### Name\n\nWren\n")
@@ -291,8 +291,8 @@ func TestAFileOfAnotherKindIsNotADeck(t *testing.T) {
 	}
 }
 
-// What the vault says is at a path outranks the bytes: a path it says holds no
-// note is not read as one, and a read failing there is an error.
+// The vault's report of what is at a path outranks the bytes: a path the vault
+// reports as holding no note is not read as one, and a read failing there is an error.
 func TestAPathTheVaultReturnsContainsNothingIsNotReadAsANote(t *testing.T) {
 	vs := newVaults(t)
 
@@ -345,7 +345,7 @@ func TestADeckWhoseFrontmatterCannotBeReadIsUnreadable(t *testing.T) {
 	}
 }
 
-// A deck over the bound says how large it is.
+// A deck over the bound reports how large it is.
 func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 	vs := newVaults(t)
 	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Mammals.md"), cards.MaxBytes+1); err != nil {

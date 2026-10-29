@@ -1,6 +1,6 @@
 /**
- * What a deck tab holds, asked without a screen: what it reads, what it writes
- * back, and what it does when the file moved past what it read.
+ * What a deck tab holds, tested without a screen: what it reads, what it writes
+ * back, and its behavior when the file changed after it was read.
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '../../api/types.js'
@@ -28,11 +28,11 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
   'stops' | 'stopsOn'
 >
 
-/** A moment for whatever the tab asked the vault for to come back. */
+/** Waits for the tab's pending vault requests to resolve. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-// The two cards name one card model two ways: by a path from the root, and by a
-// name carrying an alias. Both reach the file the vault says they reach.
+// The two cards reference one card model in two ways: by a path from the root,
+// and by a name with an alias. Both resolve to the file the vault reports.
 const CARDS: readonly VaultCard[] = [
   {
     cardId: 'k7m2xq9fzp',
@@ -61,7 +61,7 @@ const CARDS: readonly VaultCard[] = [
 const getCardName = (card: { values: readonly { field: string; text: string }[] }): string =>
   card.values[0]?.text || '—'
 
-/** A vault holding one deck, writing down every write it was asked for. */
+/** A vault holding one deck, recording every write it receives. */
 const vault = (
   answers: {
     error?: ErrorCode | 'changed'
@@ -69,21 +69,21 @@ const vault = (
     bound?: number
     /** The write answers that the file moved past what the tab read. */
     isChanged?: boolean
-    /** The cards the file holds, where a test wants other ones. */
+    /** The cards the file holds, when a test needs different ones. */
     cards?: readonly VaultCard[]
-    /** The sections the file holds, where a test wants some. */
+    /** The sections the file holds, when a test needs some. */
     sections?: readonly { name: string; preamble: string }[]
-    /** The vault is out of reach, and a read of the deck reaches nothing. */
+    /** The vault is unreachable, and reading the deck fails. */
     isUnreachable?: boolean
     /** What a write of the deck fails for. */
     wrote?: ErrorCode
     /** How many listings of the card models go unanswered before one answers. */
     unlisted?: number
-    /** The presets the vault holds, where a test wants other ones. */
+    /** The presets the vault holds, when a test needs different ones. */
     presets?: readonly PresetChoice[]
     /** The preset the deck names, and nothing for a deck naming none. */
     by?: string
-    /** What is said against what the deck names. */
+    /** The problem reported against the preset the deck names. */
     saying?: string
     /** What putting the deck on a preset fails for. */
     notScheduled?: ErrorCode
@@ -92,7 +92,7 @@ const vault = (
   } = {},
 ) => {
   const content: string[] = []
-  /** Each deck as the vault was handed it, for what a card carries to be asked. */
+  /** Each deck as written to the vault, to check what a card carries. */
   const wrote: Parameters<Cards['writeDeck']>[1][] = []
   const observed: (string | null)[] = []
   let reads = 0
@@ -146,7 +146,7 @@ const vault = (
 
   /** Which preset the deck names, as the vault answers it. */
   let presetPath = answers.by ?? ''
-  /** Every deck put on a preset, as the window asked for it. */
+  /** Every deck assigned to a preset, as requested by the window. */
   const attached: { deck: string; preset: string; seen: string }[] = []
 
   const presets: Presets = {
@@ -588,8 +588,8 @@ describe('a deck read again under the window', () => {
     marks: tab.marks.value,
   })
 
-  // The file is read wrong in a way that stands against one card, so a mark
-  // that went is a mark this can see going.
+  // The file has a problem that applies to one card, so a mark that disappears
+  // is observable.
   const withoutCardModel: DeckProblem = {
     kind: 'cardWithoutACardModel',
     card: 1,
@@ -699,7 +699,7 @@ describe('a deck read again under the window', () => {
     expect(one.tab.deck.value.cards[0]?.id).toBe(status)
   })
 
-  /* A section stands whatever the cards do. A card written into the file from
+  /* A section is unaffected by what the cards do. A card written into the file from
      somewhere else is a reading of a different length, and the sections of it
      are the sections that were already drawn. */
   it('keeps it where the file gained a card the window did not write', async () => {
@@ -725,7 +725,7 @@ describe('a deck read again under the window', () => {
     expect(one.tab.deck.value.sections[0]?.id).toBe(status)
   })
 
-  /* A write takes a moment, and a person typing does not stop for it. The card
+  /* A write takes time while the user keeps typing. The card
      that comes back named carries what it windowTabs when it was sent, and what is
      being typed into is the same card. */
   it('keeps it where the typing went on while the write was away', async () => {

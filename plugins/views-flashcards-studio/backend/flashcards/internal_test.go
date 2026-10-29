@@ -82,15 +82,15 @@ func TestReplacingADeckCountsItsCardsOnce(t *testing.T) {
 	}
 }
 
-// How many places of a curve run at once is what the build was told, and a
-// build told nothing runs them one at a time. Reading the machine's cores here
-// instead would answer whatever the machine happens to have.
+// The number of places of a curve computed concurrently is the configured value,
+// and a build with no configuration computes them one at a time. The test does
+// not read the machine's core count.
 func TestHowManyPlacesRunAtOnce(t *testing.T) {
 	t.Parallel()
 	for _, cores := range []int{0, 1, 3} {
 		want := max(1, cores)
-		// A place holds its ground until as many as are admitted stand beside
-		// it, so what stood there at once is what the room allowed.
+		// A place blocks until as many places as the limit admits are waiting
+		// alongside it, so the number running at once equals the limit.
 		let := make(chan struct{})
 		var letting sync.Once
 		var mu sync.Mutex
@@ -132,9 +132,9 @@ func (a answering) ReadLog(context.Context, string) ([]byte, error) {
 	return nil, a.why
 }
 
-// A run file nobody may open is one run of the log that could not be acted on.
-// The answers in every other file are still the person's, so a schedule is
-// worked out from them and says how much it did not see.
+// A run file that cannot be opened is one skipped run of the log. The answers in
+// every other file remain valid, so a schedule is computed from them and reports
+// how many runs it skipped.
 func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrPermission}}
 
@@ -161,7 +161,7 @@ func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 	}
 }
 
-// Anything else the store says is trouble the caller is told about.
+// Any other store error is returned to the caller.
 func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 	store := answering{why: fmt.Errorf("the disk is not there")}
 
@@ -170,9 +170,9 @@ func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 	}
 }
 
-// A run file another program holds open is one run of the log that could not be
-// acted on. A synchroniser and a backup reader each hold a file for moments at a
-// time, and the store says so in one word whatever the system underneath it is.
+// A run file locked by another program is one skipped run of the log. A
+// synchroniser and a backup reader each lock a file briefly, and the store
+// reports it as ErrLockedByAnother whatever the underlying system is.
 func TestLogReadFile_CountsLockedRunAsSkipped(t *testing.T) {
 	store := answering{why: fmt.Errorf("run.jsonl: %w", ports.ErrLockedByAnother)}
 
@@ -185,8 +185,8 @@ func TestLogReadFile_CountsLockedRunAsSkipped(t *testing.T) {
 	}
 }
 
-// deckLoad is one deck of a preset and what it holds: cards that are owed, and
-// cards nobody has begun.
+// deckLoad is one deck of a preset and its content: due cards and cards not yet
+// started.
 type deckLoad struct {
 	path          string
 	owed, unbegun int
@@ -206,12 +206,12 @@ func newDeckLoads(t *rapid.T) []deckLoad {
 	return out
 }
 
-// getTakenCards is what a day of this budget hands over, with the decks reached
-// in this order: the review cards the session takes, by name.
+// getTakenCards returns the review cards, by name, that a day of this budget
+// takes, with the decks visited in this order.
 //
-// The order stands for the order the vault was walked in. Each deck's own cards
-// keep the order they stand in, which is the deck's and not the walk's. A
-// budget of no minutes is a day that does not close on them.
+// The order represents the order the vault was walked in. Each deck's own cards
+// keep the deck's order, not the walk's. A budget of no minutes is a day that
+// does not close on them.
 func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review.ReviewCardID]bool {
 	limits := review.Limits{New: review.ClosedNew, Reviews: review.ClosedReviews}
 	if keeps.Minutes > 0 {
@@ -290,11 +290,11 @@ func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 // A day of one minute over a deck of one unbegun card and a deck of five: a
 // card costs twenty seconds, so the shares of the minute — ten seconds and
 // fifty — buy two cards in the larger deck and none in the smaller. The twenty
-// seconds nobody could spend buy a third card in the larger deck, which is
-// where four cards are still standing, and not the one card of the deck whose
+// seconds that no deck could spend buy a third card in the larger deck, which
+// still has four cards remaining, and not the one card of the deck whose
 // name sorts first.
 //
-// What no deck can use is offered round again, to the deck still holding most.
+// Budget that no deck can use is offered again, to the deck with the most cards remaining.
 func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 	t.Parallel()
 	keeps := review.Budget{New: 6, Minutes: 1}
@@ -304,7 +304,7 @@ func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 	if want := (map[string]int{five: 3}); !maps.Equal(got, want) {
 		t.Fatalf("a day of one minute handed over %v, want %v", got, want)
 	}
-	// The same two decks under each other's names hand over the same cards.
+	// The same two decks under swapped names yield the same cards.
 	got = countHandedOver([]deckLoad{{path: five, unbegun: 1}, {path: one, unbegun: 5}}, keeps)
 	if want := (map[string]int{one: 3}); !maps.Equal(got, want) {
 		t.Fatalf("a day of one minute over the same decks renamed handed over "+
@@ -312,9 +312,9 @@ func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 	}
 }
 
-// A vault hands over the same cards however its files are walked. The decks are
-// handed their shares in the order their paths stand, so the order a walk
-// reached them in decides nothing.
+// A vault yields the same cards whatever order its files are walked in. The
+// decks receive their shares in path order, so the walk order decides
+// nothing.
 //
 // A vault divides the same day however its files are walked.
 func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {

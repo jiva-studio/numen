@@ -1,4 +1,4 @@
-/** What a gesture in a deck makes of the file, asked without a screen. */
+/** What a gesture in a deck does to the file, tested without a screen. */
 import { describe, expect, it } from 'vitest'
 import { HEAD as CARD_HEAD, createRunEnd as createCardRunEnd } from '../../ui/cards'
 import type { VaultDeck } from '../../cards'
@@ -130,7 +130,7 @@ describe('a deck as the window holds it', () => {
     expect(card.cards.map((card) => card.section)).toStrictEqual([card.sections[0]?.id, null])
   })
 
-  /* A section the reading does not hold is no section: the card stands before
+  /* A section the reading does not contain is not a section: the card is placed before
      the first, drawn and counted, and is written back standing there. */
   it('remains a card before the first section where the reading holds no section it names', () => {
     const parsed = readItem()
@@ -482,7 +482,7 @@ describe('a card dragged among the sections', () => {
   })
 
   // A card naming a section the deck does not hold is drawn before the first
-  // heading, so that is where it counts from when another lands past it.
+  // heading, which is where it is counted from when another card lands after it.
   it('remains past a card whose section the deck has lost, which is placed under none', () => {
     const card = createSectionedDeck()
     const missing = {
@@ -566,7 +566,7 @@ describe('a section of a deck', () => {
     ])
   })
 
-  /* A section is a name, so taking it away takes away a name: the text it stood
+  /* A section is a name, so removing it removes only a name: the text it was
      on stays in the deck, standing after the text above it. */
   it('leaves the text it stood on with the section above it when it goes', () => {
     const card = deck({
@@ -686,9 +686,9 @@ describe('whether two evaluations of a file read the same', () => {
   })
 
   // The heading is read back from the first field wherever the deck is written,
-  // so a save carrying a value the window typed comes back under a heading the
-  // window never held. That is the vault keeping its own word, not somebody
-  // writing this deck elsewhere, and what a person is typing into stands.
+  // so a save carrying a value typed in the window returns under a heading the
+  // window never held. That is the vault applying its own heading, not another
+  // writer changing this deck, and the text being typed is kept.
   it('is so where only the heading a write read back is different', () => {
     const other = readItem()
     const wrote = {

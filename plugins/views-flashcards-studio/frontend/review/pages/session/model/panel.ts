@@ -4,51 +4,52 @@ import type { AgentPort, ConversationContext } from '@numen/plugin-sdk'
 import { WORDS as words } from '../lib/agentWords'
 import type { ReviewCard } from '../../../entities/card'
 
-/** What the panel asks of the window it is drawn in. */
+/** What the panel requires from the host window. */
 export interface AgentPanelDeps {
   /**
-   * What answers a question about a card, asked for the card it is about. The
-   * card travels beside every question of that conversation and never inside
-   * one, so the agent reads its name as a tool's answer.
+   * Returns the agent for a card. The card is attached to every question of
+   * that conversation and is never part of the question text, so the agent
+   * reads its name as a tool result.
    */
   readonly agent: (card: ReviewCard) => AgentPort
-  /** The card in front of the person, and nothing between cards. */
+  /** The current card, and null between cards. */
   readonly card: () => ReviewCard | null
-  /** Why nothing can be asked here, empty while something can. */
+  /** The reason nothing can be asked here, empty while a question can be asked. */
   readonly unreachable: () => string
   readonly open: () => boolean
   /**
-   * The panel asked for, or put away. The window can only be showing one thing,
-   * so it is the window that holds which, and every panel moves that one thing.
+   * Opens or closes the panel. The window shows one panel at a time, so the
+   * window holds which panel is open, and every panel changes that one state.
    */
   readonly showPanel: (open: boolean) => void
-  /** Where the window says what a person has to know. */
+  /** Shows a message to the user. */
   readonly showNotice: (message: string) => void
 }
 
 /**
- * The panel a card is asked about in. It holds which card the conversation is about and the
- * context the conversation view is mounted with; the conversation itself is the view's, and ends
- * when the context goes.
+ * The panel a card is asked about in. It holds the card the conversation is about
+ * and the context the conversation view is mounted with; the conversation
+ * itself belongs to the view and ends when the context is dropped.
  */
 export function useAgentPanel(deps: AgentPanelDeps) {
   const open = computed(() => deps.open())
 
-  /** The card asked about, and the context of its conversation, made when a card is first asked about. */
+  /** The card asked about and the context of its conversation, created when a card is first asked about. */
   const current = shallowRef<{ card: ReviewCard; context: ConversationContext } | null>(null)
 
   /** The card the open conversation is about, and nothing while none is. */
   const about = computed(() => current.value?.card ?? null)
 
-  /** What the conversation view is mounted with, and nothing while no card is asked about. */
+  /** The context the conversation view is mounted with, null while no card is asked about. */
   const context = computed(() => current.value?.context ?? null)
 
   /**
-   * The conversation about one card, made once and ended with the card.
+   * The conversation about one card, created once and ended with the card.
    *
-   * What is sent is what the person wrote and nothing else. Which card they are on is the agent's
-   * to ask for: the deck, the card id and the template are named by a vault that may have been synced from
-   * anywhere, and a name written into the question is read as instruction.
+   * Only the user's text is sent. The agent requests the card details itself:
+   * the deck, the card id and the template name come from a vault that may have
+   * been synced from anywhere, and a name written into the question is read as
+   * an instruction.
    */
   const startConversation = (targetCard: ReviewCard) => {
     const currentCard = current.value?.card
@@ -67,8 +68,8 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   }
 
   /**
-   * The panel asked for, on whichever card is up. A window that can reach no
-   * agent says so: a gesture that does nothing is a gesture a person repeats.
+   * Opens the panel on the current card. When no agent is reachable the panel
+   * shows a notice, because a control that does nothing is pressed repeatedly.
    */
   const openPanel = () => {
     const card = deps.card()

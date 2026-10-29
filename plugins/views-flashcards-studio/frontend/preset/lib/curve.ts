@@ -17,9 +17,9 @@ export const getPointCost = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
- * The day the overdue pile is gone, read off the very projection the backlog is
- * drawn from. Null is a place with nothing overdue to be gone at all, and -1
- * is a pile still standing on the last day projected.
+ * The day the overdue backlog is cleared, computed from the same projection the
+ * backlog is drawn from. Null means nothing is overdue, and -1 means the backlog
+ * remains on the last projected day.
  */
 export const clearBacklog = (backlog: readonly number[]): number | null => {
   if (!backlog.some((one) => one > 0)) return null
@@ -28,7 +28,8 @@ export const clearBacklog = (backlog: readonly number[]): number | null => {
 }
 
 /**
- * A number held inside the bounds of the setting it is. A setting the
+ * Limits a value to the bounds of its setting. A setting without bounds returns the
+ * value unchanged.
  */
 export const clamp = (value: number, within: Bounds | undefined): number =>
   within === undefined ? value : Math.min(Math.max(value, within.min), within.max)
@@ -45,9 +46,10 @@ export const findNearest = (grid: readonly number[], value: number): number => {
 }
 
 /**
- * and the place it opens at is the one nearest it, so while the knob has not
- * been moved off that place the preset's own value is what is said. A knob
- * walked anywhere else relies on a place, and the place is exact.
+ * Returns the value shown for the knob at a place of the grid. The place the knob
+ * opens at is the grid place nearest the preset's own value, so while the knob
+ * stays at that place the preset's own value is returned. At any other place the
+ * grid value is returned and is exact.
  */
 export const getKnobValue = (curve: Curve, place: number): number =>
   curve.now.index >= 0 && place === curve.now.index ? curve.now.value : (curve.grid[place] ?? 0)
@@ -56,13 +58,13 @@ export const getKnobValue = (curve: Curve, place: number): number =>
 export type GoalIdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
 
 /**
- * Whether the goal has nothing to work on, and why. The counts the curve
- * carries say the first two: no deck points here, or the decks that do hold
- * nothing between them. A preset holding cards is never told it holds none.
+ * Whether the goal has nothing to work on, and why. The counts the curve carries
+ * identify the first two: no deck points at the preset, or the decks that do hold
+ * no cards in total. A preset holding cards never reports that it holds none.
  *
- * The third is a preset that schedules and has nothing it can schedule: every
- * review card here is one nobody has begun, and no place of the range begins one.
- * It is a fact about the material, and not a reason the preset is stopped.
+ * The third is a preset that schedules but has nothing it can schedule: every
+ * review card is unbegun, and no place of the range begins one. It describes the
+ * material and is not a reason the preset is stopped.
  */
 export const getIdleReason = (curve: Curve): GoalIdleReason => {
   if (!curve.isHonest) return ''
@@ -72,7 +74,7 @@ export const getIdleReason = (curve: Curve): GoalIdleReason => {
   return ''
 }
 
-/** Whether no place of the range asks for a card. A range with no place says nothing. */
+/** Whether no place of the range asks for a card. An empty range returns false. */
 const hasNoReviews = (curve: Curve): boolean =>
   curve.at.length > 0 && curve.at.every((one) => one.reviews === 0)
 
@@ -90,8 +92,8 @@ export interface ProduceScheduleOptions {
 }
 
 /**
- * The settings one place of the curve produces, which is the goal's own value
- * off the grid. Every other setting stands as the person left it.
+ * The settings one place of the curve produces: the goal's own value taken from
+ * the grid. Every other setting keeps its current value.
  */
 export const produceSchedule = (
   was: Settings,

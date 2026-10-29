@@ -1,6 +1,6 @@
 /**
- * A preset is written one write at a time: a write asked for while another is
- * out goes after it, and a file changed elsewhere is not written over.
+ * A preset is written one write at a time: a write requested while another is in
+ * progress runs after it, and a file changed externally is not overwritten.
  */
 import { describe, expect, it } from 'vitest'
 import type { MessageWriter } from '@numen/plugin-sdk'
@@ -31,7 +31,7 @@ const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)
   return { core, based }
 }
 
-/** What the window was told, in order. */
+/** The messages the window received, in order. */
 const createMessages = () => {
   const response: [string, string | undefined][] = []
   return {

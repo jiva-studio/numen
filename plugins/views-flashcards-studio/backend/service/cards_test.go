@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
 
-// A card model says what a card has and a deck holds the cards. What the window
-// asks about either is what these say.
+// A card model declares what a card has and a deck holds the cards. Queries
+// about either are answered from these.
 
 // cutting is a vault with the notes given in it, and a client asking about its
 // decks and its card models the way the window does.
@@ -49,25 +49,25 @@ func onDisk(t *testing.T, root, path string) string {
 const animal = "---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n\n" +
 	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 
-// cardRun is the cards of a deck as somebody wrote them, the middle one under
-// no wikilink, so it names no card model and the problem stands against that one.
+// cardRun is the cards of a deck as written by the user. The middle card has
+// no wikilink, so it names no card model and the problem is reported against it.
 const cardRun = "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
 	"## Alpaca ^3n8vr4tqch\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n\n" +
 	"## Vicuña ^9wq2xr4t8h\n\n[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n"
 
 const threeCards = "---\ntype: deck\n---\n\n" + cardRun
 
-// dividedRun is a deck a person divided, every card of it whole: each stands
-// under the section it was written in, each carries a card id, and each names the
-// card model its heading is read through.
+// dividedRun is a deck divided into sections with every card complete: each
+// card is in the section it was written in, has a card id, and names the card
+// model through which its heading is read.
 const dividedRun = "# Camelids\n\nwhat a person wrote about their own deck\n\n" +
 	"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
 	"# Others\n\n## Vicuña ^9wq2xr4t8h\n\n[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n"
 
 const dividedDeck = "---\ntype: deck\n---\n\n" + dividedRun
 
-// getFieldValue is what a card holds under one field. A card has no name, so this is
-// how a test says which card it is looking at.
+// getFieldValue returns the value a card holds under one field. A card has no
+// name, so tests use the field value to identify a card.
 func getFieldValue(card *api.Card, field string) string {
 	for _, v := range card.Values {
 		if v.Field == field {
@@ -86,9 +86,9 @@ func deck(t *testing.T, f *cutting, path string) *api.ReadDeckResponse {
 	return answer
 }
 
-// TestAProblemStandsAgainstTheCardItIsAbout. A card is addressed by where it
-// stands, so a problem's position is an index into the cards the same answer
-// carried.
+// TestAProblemExistsAgainstTheCardItIsAbout covers problem positions. A card is
+// addressed by its position, so a problem's position is an index into the cards
+// of the same response.
 func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
@@ -137,9 +137,9 @@ func TestACardReachesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 	}
 }
 
-// TestACardSaysWhichSectionItStandsUnder. A deck of two hundred cards is a list
-// a person divides, and which run a card falls in is the deck's and not the
-// card's own text.
+// TestACardReturnsWhichSectionItExistsBelow covers section assignment. A deck
+// of two hundred cards is divided into sections, and the section of a card is
+// determined by the deck and not by the card's own text.
 func TestACardReturnsWhichSectionItExistsBelow(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
@@ -170,8 +170,9 @@ func TestACardReturnsWhichSectionItExistsBelow(t *testing.T) {
 	}
 }
 
-// TestTwoCardsOfOneMarkStandAgainstBoth. Which of the two a person meant is a
-// thing only they know, so both are shown and both are marked.
+// TestTwoCardsOfOneMarkStandAgainstBoth covers duplicate marks. Which of the
+// two cards is meant is not determinable, so both are returned and both are
+// marked.
 func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
@@ -194,9 +195,9 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 	}
 }
 
-// TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead. Somebody editing
-// their own deck outranks a client that read it, thought about it and arrived
-// late.
+// TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead covers concurrent
+// edits. A deck edited by the user takes precedence over a client write based on
+// an earlier read.
 func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
@@ -204,8 +205,7 @@ func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	})
 
 	read := deck(t, f, "Animals.md")
-	// The person writes their own deck while the client is thinking about what
-	// it read.
+	// The user edits the deck while the client still holds the earlier read.
 	theirs := threeCards + "\n## Guanaco\n\n[[Animal]]\n\n### Height\n\nabout 43\"\n"
 	if err := os.WriteFile(filepath.Join(f.root, "Animals.md"), []byte(theirs), 0o644); err != nil {
 		t.Fatal(err)
@@ -258,10 +258,10 @@ func TestWriteDeck_RoundTripPreservesCards(t *testing.T) {
 	}
 }
 
-// TestAHeadingOfTwoLinesWritesNoSecondCard. A heading is one line, so what a
-// client sends as one is cut where the lines under it begin. A second `##` in
-// there is a card the next read adopts and gives a card id to, and nobody wrote
-// it.
+// TestAHeadingOfTwoLinesWritesNoSecondCard covers multi-line headings. A
+// heading is one line, so a heading sent as several lines is cut at the second
+// line. A second `##` in the text would become a card that the next read
+// adopts and assigns a card id to, although it was not written by the user.
 func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
 
@@ -295,8 +295,8 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	}
 }
 
-// TestACardUnderASectionTheDeckDoesNotHoldIsRefused. Writing it under whichever
-// section stands last moves somebody's card and says nothing about it.
+// TestACardBelowASectionTheDeckDoesNotHoldIsRefused covers unknown sections.
+// Writing the card under the last section would silently move it.
 func TestACardBelowASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
 
@@ -322,10 +322,9 @@ func TestACardBelowASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	}
 }
 
-// TestACardWithNoCardModelKeepsTheHeadingItStandsUnder. Nothing can say which of
-// that card's fields is first, so nothing can write its heading again: it is
-// left exactly currently, and a person who changed nothing sees the file
-// they wrote.
+// TestACardWithNoCardModelKeepsTheHeadingItExistsBelow covers cards without a
+// card model. The first field of such a card is not determinable, so its heading
+// cannot be rewritten and is left unchanged, and the file stays as written.
 func TestACardWithNoCardModelKeepsTheHeadingItExistsBelow(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
@@ -355,8 +354,8 @@ func TestACardWithNoCardModelKeepsTheHeadingItExistsBelow(t *testing.T) {
 	}
 }
 
-// TestAListOfCardModelsCutShortSaysHowManyTheVaultHolds. A list that stops at a
-// ceiling and says nothing about it reads as all there is.
+// TestListCardModels_LimitedListReturnsTotal covers truncated lists. A list
+// truncated at a limit without a total would read as complete.
 func TestListCardModels_LimitedListReturnsTotal(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
@@ -381,9 +380,9 @@ func TestListCardModels_LimitedListReturnsTotal(t *testing.T) {
 	}
 }
 
-// TestADeckMadeIsADeckToRead. A deck is made where there was no file, and it
-// says it is a deck from the moment it exists, so the read that follows is a
-// deck's read and not a note's.
+// TestADeckMadeIsADeckToRead covers deck creation. A created deck is marked as
+// a deck from creation, so the following read is a deck read and not a note
+// read.
 func TestADeckMadeIsADeckToRead(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal})
 
@@ -412,8 +411,9 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	}
 }
 
-// TestACardModelMadeDeclaresTheFieldsItWasGiven. A card model is made with the
-// fields a card cut by it is asked for, the first of which names the card.
+// TestACardModelMadeDeclaresTheFieldsItWasGiven covers card model creation. A
+// card model is created with the fields its cards require, and the first field
+// names the card.
 func TestACardModelMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := newCutting(t, nil)
 
@@ -444,9 +444,10 @@ func TestACardModelMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	}
 }
 
-// TestRenamingAFieldReachesTheDecksThatCardModelCuts. A field's name is written
-// where the card model declares it and as a heading in every card that card model
-// cuts, so the rename reaches them all and says which decks it wrote.
+// TestRenamingAFieldReachesTheDecksThatCardModelSplits covers field renames.
+// A field name is written where the card model declares it and as a heading in
+// every card of that card model, so the rename applies to all of them and the
+// response lists the decks written.
 func TestRenamingAFieldReachesTheDecksThatCardModelSplits(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
@@ -521,9 +522,9 @@ func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 	}
 }
 
-// TestRenamingAFieldLeavesAloneACardModelThatChangedSinceItWasRead. Somebody
-// editing their own card model outranks a client that read it, thought about it
-// and arrived late.
+// TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite covers concurrent
+// edits. A card model edited by the user takes precedence over a client rename
+// based on an earlier read.
 func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
@@ -537,8 +538,7 @@ func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The person writes their own card model while the client is thinking about
-	// what it read.
+	// The user edits the card model while the client still holds the earlier read.
 	theirs := animal + "\n## Name it\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 	if err := os.WriteFile(
 		filepath.Join(f.root, "cards", "Animal.md"), []byte(theirs), 0o644,
@@ -559,14 +559,15 @@ func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
 		t.Errorf("the card model on disk is now %q", target)
 	}
-	// The card model leads, so a rename it rejected reaches no deck.
+	// The card model is written first, so a rejected rename changes no deck.
 	if targetVal := onDisk(t, f.root, "Animals.md"); targetVal != deckBefore {
 		t.Errorf("a deck was written\n was %q\n now %q", deckBefore, targetVal)
 	}
 }
 
-// TestADeckIsRefusedWhereTheNoteIsACardModel. Two files must agree for a card to
-// be drawn, and a client handed the wrong one is told which it got.
+// TestADeckIsRefusedWhereTheNoteIsACardModel covers mismatched files. A card
+// needs both files to agree, and a client that supplies the wrong one receives
+// the name of the one it supplied.
 func TestADeckIsRefusedWhereTheNoteIsACardModel(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal})
 
@@ -579,9 +580,10 @@ func TestADeckIsRefusedWhereTheNoteIsACardModel(t *testing.T) {
 	}
 }
 
-// TestACardNamesItsCardModelTheWayALinkNamesANote. The wikilink under a card's
-// heading is an ordinary link, so a path from the root and a name carrying an
-// alias reach the same card model, and the answer says where that card model is filed.
+// TestACardNamesItsCardModelTheWayALinkNamesANote covers card model links. The
+// wikilink under a card's heading is an ordinary link, so a path from the root
+// and a name with an alias resolve to the same card model, and the response
+// contains the path of that card model.
 func TestACardNamesItsCardModelTheWayALinkNamesANote(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
@@ -658,8 +660,8 @@ func TestACardModelIsSavedWithItsTemplatesAndItsFields(t *testing.T) {
 	}
 }
 
-// TestACardModelIsWrittenWithTheFieldsItNowDeclares. A person adding a field
-// writes the card model's frontmatter and its templates in the one act.
+// TestACardModelIsSavedWithTheFieldsItNowDeclares covers adding a field. Adding
+// a field writes the card model's frontmatter and its templates in one write.
 func TestACardModelIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
@@ -688,15 +690,14 @@ func TestACardModelIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	}
 }
 
-// TestWritingACardModelThatChangedSinceItWasReadWritesNothing. Changed says
-// nothing was written, so the templates are not on disk either and what the person
-// wrote is the file.
+// TestWritingACardModelThatChangedSinceItWasReadWritesNothing covers conflicts.
+// A changed result means nothing was written, so the templates are not on disk
+// either and the file keeps the user's content.
 func TestWritingACardModelThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := cardModel(t, f, "cards/Animal.md")
-	// The person writes their own card model while the client is thinking about
-	// what it read.
+	// The user edits the card model while the client still holds the earlier read.
 	theirs := animal + "\n## Name it\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 	if err := os.WriteFile(
 		filepath.Join(f.root, "cards", "Animal.md"), []byte(theirs), 0o644,
@@ -782,9 +783,9 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	}
 }
 
-// TestAPathThatLeavesTheVaultIsTheClientsToCorrect. Nothing escapes the vault
-// either way; what is being said is whose mistake it was, and a path the client
-// built is the client's.
+// TestAPathThatPreservesTheVaultIsTheClientsToCorrect covers escaping paths.
+// The vault is never escaped in either case; the difference is which side is
+// at fault, and a path built by the client is the client's error.
 func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
@@ -810,9 +811,9 @@ func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	}
 }
 
-// TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument. A field a
-// card model already declares is a name the client is holding wrongly, and it is
-// told so.
+// TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument covers duplicate
+// field names. A target name that the card model already declares is an invalid
+// client argument, and the response reports it.
 func TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 

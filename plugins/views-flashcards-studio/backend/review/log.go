@@ -6,9 +6,8 @@ import (
 	"time"
 )
 
-// Rating is how well a card came back. A person says which of the four, and
-// nothing here decides it for them: how well a thing was recalled is what a
-// scheduler has to be told to space anything sensibly.
+// Rating is how well a card was recalled, one of four values. The user selects
+// the rating; the scheduler requires it to space reviews.
 type Rating uint8
 
 const (
@@ -22,8 +21,8 @@ const (
 	Easy
 )
 
-// Valid reports whether a rating is one of the four. Anything else read out of
-// a file is a line nobody can act on.
+// Valid reports whether a rating is one of the four. Any other value read from a
+// file is an unusable line.
 func (r Rating) Valid() bool { return r >= Again && r <= Easy }
 
 func (r Rating) String() string {
@@ -41,22 +40,22 @@ func (r Rating) String() string {
 }
 
 // ReviewCardID is the key a schedule is filed under: one card, and one review card of
-// the card model that cuts it. The card is the card id it is known by, and the review card is
-// the name it carries in its card model.
+// the card model that cuts it. The card is identified by its card id, and the review card is
+// identified by its name in the card model.
 //
-// A card is shown once through each of its card model's templates, and each of them
-// asks a different thing, so each has a path of its own. The card id travels with
-// the card between decks and between vaults; the template's name does not travel at
-// all, and renaming a review card starts its schedule again.
+// A card is shown once through each of its card model's templates, and each
+// template presents a different prompt, so each has its own schedule. The card id
+// moves with the card between decks and between vaults; the template name does
+// not, and renaming a review card restarts its schedule.
 type ReviewCardID struct {
 	Card     string
 	Template string
 }
 
-// Answer is one card answered once, or one answer taken back.
+// Answer is one card answered once, or one answer revoked.
 //
-// It carries an identifier of its own so that taking it back names it exactly,
-// and so that two answers given in the same millisecond stay two.
+// It carries its own identifier, so a revocation references it exactly and
+// two answers given in the same millisecond remain distinct.
 type Answer struct {
 	ID string
 	// ReviewCard is which card was shown, through which review card. It is empty on an
@@ -66,9 +65,8 @@ type Answer struct {
 	// Rating is how well the card came back. It is zero on an answer that takes
 	// another back.
 	Rating Rating
-	// Took is how long the card stood on the screen, recorded to the
-	// millisecond. Nothing schedules by it today; it is the one thing about an
-	// answer that cannot be measured later.
+	// Took is how long the card was displayed, recorded to the millisecond. No
+	// schedule uses it today; it cannot be measured later.
 	Took time.Duration
 	// Undoes is the identifier of the answer this one takes back, and is empty
 	// on an answer of a card.
@@ -79,18 +77,19 @@ type Answer struct {
 // one.
 func (a Answer) IsUndo() bool { return a.Undoes != "" }
 
-// Version is the shape of one line. A build reading a line of a version it does
-// not know skips it: an answer it half-understood, counted into a schedule,
-// would be worse than one it left out and said so.
+// Version is the format version of one line. A build that reads a line of an
+// unknown version skips it, because a partially understood answer counted into a
+// schedule is worse than a skipped one.
 const Version = 1
 
-// TimestampLayout is how an instant is written: UTC to the millisecond, so that the lines
-// of one run sort as text in the order they were written. It carries no offset,
-// so what is formatted with it is a time already in UTC.
+// TimestampLayout is how an instant is written: UTC to the millisecond, so
+// the lines of one run sort as text in write order. It carries no offset, so a
+// time formatted with it must already be in UTC.
 const TimestampLayout = "2006-01-02T15:04:05.000Z"
 
-// ParseTimestamp reads an instant as a line carries it, offset and all. The file is
-// text in a person's own folder and travels between machines, so what is read
+// ParseTimestamp reads an instant as a line carries it, including the offset.
+// The file is text in the user's folder and is copied between machines, so any
+// RFC 3339 offset is accepted.
 func ParseTimestamp(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
 // line is one line of a log, currently in the file.
@@ -105,10 +104,11 @@ type line struct {
 	Undo     string `json:"undo,omitempty"`
 }
 
-// Write turns an answer into the bytes it stands as in a file, newline and all.
+// Write encodes an answer as the bytes stored in a file, including the newline.
 //
-// A line is written whole or not at all, and the newline is what says it landed
-// whole: what follows the last one in a file is a run that stopped partway.
+// A line is written whole or not at all, and the trailing newline marks it as
+// complete: any content after the last newline in a file is a run that stopped
+// partway.
 func Write(a Answer) ([]byte, error) {
 	l := line{V: Version, ID: a.ID, At: a.At.UTC().Format(TimestampLayout)}
 	if a.IsUndo() {
@@ -125,15 +125,14 @@ func Write(a Answer) ([]byte, error) {
 	return append(raw, '\n'), nil
 }
 
-// Read takes the answers out of one log file, and says how many lines it could
-// not act on.
+// Read returns the answers in one log file and the number of lines it could
+// not use.
 //
-// It never fails. A log is appended to by a process that may stop at any
-// moment and is carried between machines by something that knows nothing about
-// it, so a line that cannot be read is a line to leave out and count — never a
-// reason to refuse the rest of somebody's history.
+// It never fails. A log is appended to by a process that may stop at any moment
+// and is copied between machines by external tools, so an unreadable line is
+// skipped and counted, and never prevents reading the rest of the history.
 func Read(raw []byte) (answers []Answer, skipped int) {
-	// What stands after the last newline is a line that did not land whole.
+	// Content after the last newline is a line that was not written whole.
 	if lastNewline := bytes.LastIndexByte(raw, '\n'); lastNewline < 0 {
 		return nil, whole(raw)
 	} else if lastNewline+1 < len(raw) {

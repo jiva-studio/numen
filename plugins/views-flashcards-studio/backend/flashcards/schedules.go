@@ -20,9 +20,9 @@ const keptVersion = 2
 
 type scheduleCache struct {
 	V int `json:"v"`
-	// By is the assignment this was worked out under: which review card stood
-	// under which target. A schedule worked out under one assignment is not read
-	// back under another.
+	// By is the assignment this was computed under: which scheduler applies to which
+	// review card. A schedule computed under one assignment is not reused under
+	// another.
 	By string `json:"by"`
 	// Files are the log files this was worked out from, each with the length it
 	// had. A run is appended to under one name, so a name alone would call a
@@ -62,12 +62,12 @@ type Schedules struct {
 	// it out at every launch.
 	Cache     ports.ScheduleStore
 	scheduler review.Scheduler
-	// day is where one day of review gives way to the next, which is what says
-	// on which day a card placed by its preset lands.
+	// day defines where one day of review ends and the next begins, which determines
+	// the day on which a card placed by its preset lands.
 	day review.Day
-	// reviewCards and presets say which preset schedules each review card, so a
-	// card is worked out at the share of the cards its own preset asks for. A
-	// build holding neither works every card out by By.
+	// reviewCards and presets determine which preset schedules each review card, so a
+	// card is computed at the retention its own preset requests. A build without
+	// either computes every card with By.
 	reviewCards ListReviewCards
 	presets     Presets
 	// At is the scheduler asking for a share of the cards to come back. A build
@@ -99,14 +99,14 @@ func (u Schedules) Presets() Presets {
 	return u.presets
 }
 
-// assignment is which scheduler each review card is worked out by, and what that
-// assignment evaluates to.
+// assignment is the scheduler each review card is computed by, and the mark that
+// identifies that assignment.
 //
-// The mark is what says a cache is out of date. A target moving, a deck
-// repointed, a card moved between decks and a preset placing its cards
-// differently all move it, and the whole cache is thrown away: a schedule
-// depends on every answer before it, so nothing worked out under the old
-// assignment can be kept.
+// The mark identifies a stale cache. A changed target, a deck pointed at another
+// preset, a card moved between decks and a preset that places its cards
+// differently all change the mark, and the whole cache is discarded: a schedule
+// depends on every preceding answer, so nothing computed under the old assignment
+// can be reused.
 type assignment struct {
 	policy review.Assignment
 	mark   string
@@ -194,9 +194,9 @@ func (u Schedules) getAssignmentFrom(
 	return out, nil
 }
 
-// getMark is one name for an assignment, whatever order it was walked in. It is
-// a digest because a vault of many cards names many review cards, and what a mark
-// is asked is whether it is the one that stands.
+// getMark returns one name for an assignment, independent of the order in which
+// it was walked. It is a digest because a vault with many cards names many review
+// cards, and the mark is only compared for equality with the current one.
 func getMark(lines []string) string {
 	slices.Sort(lines)
 	sum := sha256.New()
@@ -243,8 +243,8 @@ func (u Schedules) Execute(
 	return u.replayAndRemember(ctx, v, target, asks), nil
 }
 
-// GetFromLog is where a log that has already been read leaves every review card.
-// A caller holding the answers does not read them again to be told this.
+// GetFromLog returns the schedule of every review card from a log that has
+// already been read. A caller that holds the answers does not read them again.
 func (u Schedules) GetFromLog(
 	ctx context.Context, v domain.Vault, log ReviewLog,
 ) (map[review.ReviewCardID]review.Schedule, error) {
@@ -255,21 +255,21 @@ func (u Schedules) GetFromLog(
 	return u.getSchedulesCached(ctx, v, log, asks), nil
 }
 
-// worked is where a log a caller has already read leaves the review cards of one
-// assignment.
+// getSchedules returns the schedules of the review cards of one assignment from a
+// log the caller has already read.
 //
-// caller here holds the review cards of one preset. A cache is thrown away when
-// what it was worked out under changes, so the two are never one answer and the
-// cache takes no part: neither read nor written.
+// Callers hold the review cards of one preset. A cache is discarded when the
+// assignment it was computed under changes, so the two results are never the same
+// answer and the cache is neither read nor written.
 func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.ReviewCardID]review.Schedule {
 	return replaySchedules(u.day, target, asks)
 }
 
-// getSchedulesCached is the same, with what a replay came to kept for the next
+// getSchedulesCached is getSchedules with the replay result stored for the next
 // launch.
 //
-// stand on the same log and the same assignment, so the second of them to run
-// is told what the first worked out.
+// Callers on the same log and the same assignment share the cache, so the second
+// call receives what the first computed.
 func (u Schedules) getSchedulesCached(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.ReviewCardID]review.Schedule {
@@ -279,8 +279,8 @@ func (u Schedules) getSchedulesCached(
 	return u.replayAndRemember(ctx, v, target, asks)
 }
 
-// replayAndRemember works the answers out and remembers what they came to. It
-// is what a caller that has already found the cache out of date asks for.
+// replayAndRemember computes the schedules from the answers and stores the
+// result. Callers use it after finding the cache out of date.
 func (u Schedules) replayAndRemember(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.ReviewCardID]review.Schedule {
@@ -289,8 +289,8 @@ func (u Schedules) replayAndRemember(
 	return out
 }
 
-// replaySchedules is where the answers leave every review card, and is what a
-// caller that only reads them asks for.
+// replaySchedules returns the schedule of every review card from the answers, for
+// callers that only read them.
 func replaySchedules(
 	d review.Day, target ReviewLog, asks assignment,
 ) map[review.ReviewCardID]review.Schedule {
@@ -335,8 +335,8 @@ func (u Schedules) readRemembered(
 	return out, true
 }
 
-// read reports whether a cache was worked out from exactly the log that now
-// stands: the same files, each the length it was read at.
+// read reports whether a cache was computed from exactly the current log: the
+// same files, each with the length it was read at.
 func read(was []cachedFile, files []ports.Entry) bool {
 	if len(was) != len(files) {
 		return false

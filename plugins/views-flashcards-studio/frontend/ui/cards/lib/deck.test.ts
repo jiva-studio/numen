@@ -233,8 +233,8 @@ describe('grid', () => {
     ]
     const tile = getTiles(grid(orphan))[0]
     expect(tile?.isKnown).toBe(false)
-    // Nothing names these values, so nothing lays them out. They stay in the
-    // file, and the tile says which card model it is waiting for.
+    // No card model matches these values, so no template renders them. They stay
+    // in the file, and the tile shows which card model it is waiting for.
     expect(tile?.filled).toEqual([])
     expect(tile?.cardModel).toBe('Gone')
   })
@@ -299,8 +299,8 @@ describe('grid', () => {
       expect(runs.flatMap((run) => run.tiles).map((tile) => tile.at)).toEqual([1, 3, 4])
     })
 
-    // A card is made at the end of a run, so every run cards may be put in
-    // carries a plus, and each stands where it is drawn among them all.
+    // A card is added at the end of a run, so every run that cards may be added
+    // to has a plus, and each plus has a position among all of them.
     it('counts each plus at its current position, and every tile against them all', () => {
       const displayedGrid = grid(SECTIONED, SECTIONS)
       expect(displayedGrid.runs.map((run) => run.plusAt)).toEqual([2, 5, 6])

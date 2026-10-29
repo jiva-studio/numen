@@ -53,7 +53,7 @@ export const parseStepKey = (key: string): StepDirection | null => {
   return null
 }
 
-/** The keys that drag what is held one place, as a reader is told them. */
+/** The keys that move the dragged entry by one position, as shown to the user. */
 export const STEP_KEYS = 'ArrowUp ArrowDown'
 
 /**
@@ -106,8 +106,8 @@ export function checkFieldName(name: string, names: readonly string[]): NameChec
 }
 
 /**
- * What is wrong with a name that stands as a heading. It is written nowhere a
- * brace is read, so a brace in it is a character like any other.
+ * The problem with a name used as a heading. A heading is not written where a
+ * brace is interpreted, so a brace in it is an ordinary character.
  */
 export function checkHeadingName(
   name: string,
@@ -133,8 +133,8 @@ export function getFreeName(names: readonly string[], stem: string): string {
 }
 
 /**
- * A name is compared as written and the first of two stands, so a name a
- * card model declares twice is one field.
+ * A name is compared as written and the first of two identical names is used,
+ * so a name a card model declares twice is one field.
  */
 export const getDeclaredFields = (fields: readonly string[]): readonly string[] => [
   ...new Set(fields),

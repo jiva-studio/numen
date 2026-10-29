@@ -2,7 +2,7 @@
 import type { StopReason } from '../api/types.js'
 import { type ErrorCode, getErrorWords } from '../cards/wire/errors'
 import { formatStopReasonMessage } from '../cards/wire/stop'
-/** What a preset tab says: the one control, the settings under it, and what went wrong. */
+/** Interface copy of the preset tab: the control, its settings, and error messages. */
 import { many, percent } from '@numen/ui'
 import type { BudgetUnit, Goal, Rule } from './types'
 import type { Field } from './lib/fields'
@@ -26,56 +26,56 @@ export const WORDS = {
   preset: 'Preset',
   /** The command that opens the preset of the note in front. */
   openPreset: 'Open preset tab',
-  /** What a preset tab is called before the vault has said what the note is. */
+  /** Tab title used until the vault supplies the note title. */
   newPreset: 'Preset',
   /** The deck in front names no preset, so the defaults schedule it. */
   noPreset: 'No preset set. Scheduled by the defaults.',
-  /** What the three segments are, said over them. */
+  /** Labels of the three goal segments, shown above them. */
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
   budgetUnitName: (unit: BudgetUnit) => BUDGET_UNITS[unit],
   ruleName: (rule: Rule) => RULES[rule],
-  /** What each axis measures, said along the axis it names. */
+  /** Axis titles of the curve, one per axis. */
   axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a session' : 'Minutes per day'),
   axisX: (goal: Goal) => {
     if (goal === 'retention') return 'Retention'
     return goal === 'date' ? 'Days from today' : 'Minutes per day'
   },
-  /** What the backlog under the picture measures, said along the axis it names. */
+  /** Axis titles of the backlog chart. */
   backlogY: 'Cards overdue',
   backlogX: 'Days from today',
   /** One height of the backlog, and one day along it. */
   formatBacklogCards: (value: number) => many(value, 'card'),
   formatBacklogDays: (days: number) => `${count(days)} d`,
   /**
-   * What the bubble over the knob says: the value being held, and under it what
-   * that value buys. Each line is short enough to be taken at a glance.
+   * Lines of the bubble above the knob: the current value, and below it what that
+   * value buys. Each line is short enough to read at a glance.
    *
-   * A goal of a date says nothing about the overdue, since every card is to be
-   * got through by that day and the day the pile goes says nothing. Where
-   * nothing is overdue there is no such line either.
+   * A goal of a date has no overdue line: every card is scheduled by that day, so
+   * the day the backlog clears carries no information. No overdue line appears when
+   * nothing is overdue.
    */
   buys: (goal: Goal, input: BuyInput): readonly string[] =>
     getBuyFacts(goal, input).map(formatBuyFact),
-  /** One height of the picture, against the line it is the height of. */
+  /** Formats one vertical-axis value of the curve in the unit of the goal. */
   formatGoalCost: (goal: Goal, value: number) =>
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
-  /** One place along the picture, in the units of the goal's grid. */
+  /** Formats one horizontal-axis value of the curve in the units of the goal's grid. */
   formatGoalValue: (goal: Goal, value: number) => {
     if (goal === 'retention') return percent(value)
     return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
   },
   /**
-   * What the control is acting on, said over the picture: the decks that point
-   * here and the material they hold between them.
+   * Lines describing what the control acts on: the decks that point at the preset
+   * and the material they hold in total.
    */
   material: (counts: MaterialCounts) => getMaterialFacts(counts).map(formatMaterialFact),
   /**
-   * When the material is learned, and how much of it stands learned now, read
-   * off the run the picture is drawn from. Where there is no day the whole of
-   * it stands learned on, nothing is said in its place: what is left is what
-   * stands learned today. A pace whose days run out with one still to learn
-   * has a day to speak of and says it has not come.
+   * Lines stating when the material is learned and how much is learned now, taken
+   * from the run the curve is drawn from. When no day exists on which the whole
+   * material is learned, no day is stated and the line gives the count learned
+   * today. A pace whose days run out with a card still unlearned states that the
+   * learned day is not reached.
    */
   learning: (learns: number | undefined, learned: number, cards: number) =>
     getLearningFacts(learns, learned, cards).map(formatLearningFact),
@@ -86,7 +86,7 @@ export const WORDS = {
   settings: 'Resulting settings',
   /** The knob, and what it is announced as while it is moved. */
   knob: 'Preset goal',
-  /** Said in the picture's place while the application works the curve out. */
+  /** Placeholder shown in place of the curve while the application computes it. */
   waiting: 'Loading…',
   /**
    * The suggested mark, named for what it is under each goal. Under minutes it
@@ -116,7 +116,7 @@ export const WORDS = {
     const clause = formatStopReasonMessage(why)
     return clause ? `No cards scheduled: ${clause}.` : ''
   },
-  /** What is wrong with the file, said above the control. */
+  /** Heading of the list of problems with the file, shown above the control. */
   problems: 'Preset problems',
   /** The file moved under the window, and the two answers to that. */
   changed: 'Not saved: the file changed on disk.',
@@ -128,6 +128,6 @@ export const WORDS = {
   unreachable: 'Preset unreadable: no response from the vault.',
   /** The vault answered a write with neither a file nor a reason. */
   unwritten: 'Settings not saved: no response from the vault. Your settings are kept.',
-  /** The vault would not work the picture out. */
+  /** The vault could not compute the curve. */
   noCurve: 'Chart unavailable: no response from the vault.',
 }

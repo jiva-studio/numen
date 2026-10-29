@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// answerCard is one card of a session answered, and the line that stands for
+// answerCard answers one card of a session and returns the line recorded for
 // it.
 func answerCard(t *testing.T, handler *API, vault string, session *api.StartSessionResponse) string {
 	t.Helper()
@@ -39,9 +39,9 @@ func answerCard(t *testing.T, handler *API, vault string, session *api.StartSess
 	return out.Answer
 }
 
-// A card that has been answered before comes back carrying at its current position: it
-// has been seen, and it is due at an instant the page can read. A card nobody
-// has answered carries neither.
+// A card that has been answered before is returned with its current schedule
+// state: it has been seen, and it has a due instant the page can parse. A card
+// never answered carries neither.
 func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
 	handler, target := newAPI(t, deck)
 	v := target[0]
@@ -57,8 +57,8 @@ func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
 	}
 	answerCard(t, handler, string(v.ID), first)
 
-	// Answered well, so the card is minutes away and asked again in this
-	// session: what it carries is where the answer left it.
+	// Answered well, so the card is due in minutes and is presented again in this
+	// session: the card carries the state from that answer.
 	next := startSession(t, handler, v)
 	if len(next.Cards) == 0 {
 		t.Fatal("the card answered a moment ago is not asked again")
@@ -72,8 +72,8 @@ func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
 	}
 }
 
-// A person hits the wrong key and takes it back, and what they took back is
-// not part of what they answered.
+// A mistaken answer is withdrawn, and a withdrawn answer is not part of the
+// answered count.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	handler, target := newAPI(t, deck)
 	v := target[0]
@@ -151,9 +151,9 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 	return nil, errors.New("the list of vaults cannot be read")
 }
 
-// A window that cannot read the installation's vaults says so. An empty list
-// would read as an installation holding none, which is a person told their
-// vaults are gone.
+// A window that cannot read the installation's vaults reports the error. An empty
+// list would read as an installation holding no vaults, which informs the user
+// their vaults are gone.
 func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
 	handler := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}, Store: installation.Host.Store()})}
@@ -184,8 +184,8 @@ func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
 	}
 }
 
-// Something moving underneath the window reaches the page, so a deck written
-// while a person is looking at the list is a deck they are shown.
+// A change under the window is delivered to the page, so a deck written while the list
+// is displayed appears in the list.
 func TestSomethingMovingReachesThePage(t *testing.T) {
 	handler, _, installation := newAPIOn(t)
 	client := newFlashcardsClient(t, handler)
@@ -196,7 +196,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	}
 	t.Cleanup(func() { stream.Close() })
 
-	// The stream says it is listening before anything has moved.
+	// The stream sends an initial message before any change.
 	if !stream.Receive() {
 		t.Fatalf("the stream said nothing: %v", stream.Err())
 	}
@@ -311,8 +311,8 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	}
 }
 
-// An answer for a vault nobody holds fails as that, and not as a run nobody
-// opened.
+// An answer for a vault that does not exist fails as an unknown vault, and not
+// as an unopened run.
 func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 	handler, _ := newAPI(t, deck)
 
@@ -364,8 +364,8 @@ func TestACardWithNoProjectionCarriesNone(t *testing.T) {
 	}
 }
 
-// A stretch reaches every day of a long history, answered and still to come:
-// the days outside it do not end the walk through the days inside it.
+// A range covers every day of a long history, answered and upcoming: the days
+// outside it do not end the walk through the days inside it.
 func TestListReviewDays_RangeCoversLongHistory(t *testing.T) {
 	handler, target := newAPI(t, lived)
 	v := target[0]

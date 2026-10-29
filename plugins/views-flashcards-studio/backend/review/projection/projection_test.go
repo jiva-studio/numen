@@ -13,19 +13,19 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// A projection answers the returning share for the days it was asked for, and
-// holds no number under any other day.
+// A projection reports the returning share for the requested days only and
+// holds no value for any other day.
 //
-// The share is the one pass a day makes over the whole material, and a day
-// nobody asked about is a day it is not worked out on. What the days that were
-// asked for come to does not stand on which of them were.
+// The share is computed in one pass over the whole material per day. Days
+// that were not requested are not computed, and the values of the requested
+// days do not depend on which days were requested.
 func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
 
-	// Both rules: one carries the count from day to day and walks the material
-	// only where the share is wanted, and the other walks it every day.
+	// Both rules: one carries the count from day to day and scans the material
+	// only for the requested days; the other scans it every day.
 	interval, recall := review.Defaults(), review.Defaults()
 	recall.Rule, recall.Retention = review.RuleRetention, 0.9
 	for name, p := range map[string]review.Preset{
@@ -123,9 +123,9 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 	}
 }
 
-// What is overdue is what has had its day and was not answered on it: a card
-// falling due later in the day holding now has not had its day, and one nobody
-// has answered has had none.
+// A review card is overdue when its due day has passed and it was not answered
+// on that day. A card falling due later in the current day is not overdue, and
+// a card that has never been answered is not overdue.
 func TestWhatExistsOverdue(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
@@ -148,8 +148,8 @@ func TestWhatExistsOverdue(t *testing.T) {
 		t.Errorf("%d review cards stand overdue, want the one due yesterday", got)
 	}
 
-	// A run opening with nothing overdue has nothing to clear, and one nobody
-	// is answering never gets there.
+	// A run that starts with nothing overdue has nothing to clear, and a run with
+	// no answers never clears.
 	run := projection.Simulation{By: review.NewFSRS(), Day: day, Cost: review.DefaultCost, Days: 3}
 	p := review.Preset{Goal: review.GoalRetention}
 	schedules := map[review.ReviewCardID]review.Schedule{soon: soonAt, unbegun: {}}
@@ -161,12 +161,12 @@ func TestWhatExistsOverdue(t *testing.T) {
 	}
 }
 
-// The day answers the review cards waiting longest, and leaves the rest of the
-// pile standing.
+// A day answers the longest-waiting review cards first and leaves the rest of
+// the overdue pile unanswered.
 //
-// The same day is run again with only those two owed, and every figure read off
-// the material is the figure of the first: what the day got through is the two
-// oldest debts and not two others of the five.
+// The same day is run again with only those two cards overdue, and every
+// figure read from the material equals the first run: the day answers the two
+// oldest overdue cards and not two others of the five.
 func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
@@ -200,8 +200,8 @@ func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 		t.Errorf("the day left %d review cards standing, want the other three", got.Backlog[0])
 	}
 
-	// The same five review cards, with the three the day did not reach owed on
-	// the days after it instead.
+	// The same five review cards, with the three the day did not reach due on
+	// the following days.
 	thirdAt.Due, fourthAt.Due, fifthAt.Due =
 		open.AddDate(0, 0, 1), open.AddDate(0, 0, 2), open.AddDate(0, 0, 3)
 	want := runProjection(t, run, now, p, map[review.ReviewCardID]review.Schedule{
@@ -364,11 +364,11 @@ func TestMinutesADayCountedOneCardAtATime(t *testing.T) {
 	}
 }
 
-// countRounds is how many times one review card comes round over these days,
-// walked from one review to the next.
+// countRounds is the number of times one review card is answered over these
+// days, walked from one review to the next.
 //
-// It carries its own copy of what an answer does to a review card, so that what
-// it says about the load is not what the projection says about it.
+// It applies its own copy of the answer update to the review card, which makes the
+// count independent of the projection under test.
 func countRounds(
 	delta review.Scheduler, c review.Schedule, from time.Time, days int,
 ) int {
@@ -396,7 +396,7 @@ func countRounds(
 		c.Difficulty = good.Difficulty*back + again.Difficulty*(1-back)
 		c.Due = when.Add(time.Duration(away * float64(time.Second)))
 
-		// One answer a day: a card sent minutes away is asked again tomorrow.
+		// One answer a day: a card rescheduled minutes ahead is presented again the next day.
 		pos = ahead.GetEnd(when)
 	}
 }
@@ -451,9 +451,9 @@ func TestAHigherTargetIsMoreReviews(t *testing.T) {
 
 // A day carrying a share of the load answers that share of the cards.
 //
-// A pile deep enough to fill every day is what says the count is the budget's
-// and not the material's: each day hands over what it keeps, and the half day
-// hands over half of it.
+// With a pile deep enough to fill every day, the count is bounded by the
+// budget and not by the material: each day answers its full budget, and the
+// half-load day answers half of it.
 func TestADayCarriesTheShareOfTheLoadItIsGiven(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -479,8 +479,8 @@ func TestADayCarriesTheShareOfTheLoadItIsGiven(t *testing.T) {
 	}
 }
 
-// A day carrying none of the load takes no card, and the day after it picks up
-// what stood over.
+// A day carrying none of the load answers no card, and the following day
+// answers the cards that remained.
 func TestADayCarryingNoneOfTheLoadConsumesNoCard(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -510,8 +510,8 @@ func weekdays(now time.Time, days int) []time.Weekday {
 	return out
 }
 
-// A preset scheduling nothing projects nothing: no answers, and every review card
-// it holds still owed.
+// A preset that schedules nothing projects nothing: no answers, and every
+// review card stays overdue.
 func TestAPresetSchedulingNothingProjectsNothing(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Now())
@@ -590,9 +590,9 @@ func TestNothingOverdueClearsInNoDays(t *testing.T) {
 
 // A day that begins new cards still clears the backlog it answered.
 //
-// A card begun this morning is asked for again ten minutes later, so it stands
-// past its hour for the rest of the day. It is no part of what the day left
-// behind.
+// A card begun in the morning is presented again ten minutes later, so it is due
+// before the end of the day. It is not part of the backlog remaining after
+// the day.
 func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -616,9 +616,9 @@ func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
 	}
 }
 
-// The backlog day by day is what a band under a curve is drawn from: it begins
-// where the pile stands now, and the day it reaches nothing is the day the
-// clearing names.
+// The daily backlog series is the source of the band under the curve: it
+// starts at the current pile size, and the first day with an empty pile is
+// the clearing day.
 func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -658,8 +658,8 @@ func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 	}
 }
 
-// A day the preset does not admit answers nothing, so nothing can leave the
-// overdue pile on it: across such a day the pile stands where it was or grows.
+// A day the preset does not admit answers nothing, so the overdue pile
+// cannot shrink on it: across such a day the pile stays the same or grows.
 func TestAPausedDayNeverDropsTheOverduePile(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -710,11 +710,11 @@ func makeSentAway(
 	}
 }
 
-// What stands learned today is counted under the rule the preset names, and
-// each rule reads its own value: an interval of 21 days learns the card sent
-// away for 40 and passes over the one sent away for 5, and a chance of recall
-// of nine in ten learns the card answered yesterday and passes over the one
-// answered two hundred days ago.
+// The learned count is evaluated under the rule the preset names, and each
+// rule reads its own value: an interval rule of 21 days counts a card with a
+// 40-day interval and not one with a 5-day interval, and a recall rule of
+// 0.9 counts a card answered yesterday and not one answered two hundred days
+// ago.
 func TestWhatExistsLearnedToday(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
@@ -767,7 +767,7 @@ func TestWhatExistsLearnedToday(t *testing.T) {
 	}
 }
 
-// A review card whose chance of recall stands exactly at the target is learned.
+// A review card whose chance of recall equals the target is learned.
 func TestACardAtTheTargetExactlyIsLearned(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	p := review.Defaults()
@@ -821,8 +821,8 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 		t.Error("a vault with something still to learn was learned in no days")
 	}
 
-	// The same cards, and five thousand nobody has begun at fifty a day: the
-	// material outruns a horizon of sixty days, and no day is named.
+	// The same cards, and five thousand unbegun at fifty a day: the material
+	// exceeds the sixty-day horizon, and no learned day is reported.
 	shorter := run
 	shorter.Days = 60
 	crowded := runProjection(t, shorter, now, p, pos, 5000)
@@ -860,7 +860,7 @@ func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 		By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost, Days: 40,
 	}
 
-	// A hundred review cards nobody has begun, and a month to learn them in.
+	// A hundred unbegun review cards and a month to learn them in.
 	p := review.Defaults()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 30)
 	p.Rule, p.Interval = review.RuleInterval, 21
@@ -880,19 +880,19 @@ func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 	}
 }
 
-// How many review cards cannot be learned by the day the preset aims at, whatever
-// the pace, is counted and said.
+// The number of review cards that cannot be learned by the day the preset
+// aims at, at any pace, is counted and reported.
 //
-// A review card begun today needs a fortnight to be sent away for three weeks, so
-// ten days leaves every unbegun one of them short. Nothing is moved to hide it:
-// the day stands, the rule stands, and the pace gets there every review card that
-// can.
+// A review card begun today needs a fortnight to reach a three-week interval,
+// so a ten-day horizon leaves every unbegun card of that kind short. The day
+// and the rule are unchanged, and the pace covers every review card that
+// can be reached.
 func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
 		By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost, Days: 30,
 	}
-	// One review card already sent away for forty days, and five nobody has begun.
+	// One review card with a forty-day interval, and five unbegun cards.
 	reviewCard, schedule := makeSentAway("long", now, 30, 40, 60)
 	pos := map[review.ReviewCardID]review.Schedule{reviewCard: schedule}
 
@@ -941,12 +941,13 @@ func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
 	}
 }
 
-// The day the whole material stands learned is answered where it is a day.
+// The day on which the whole material is learned is reported where such a day
+// exists.
 //
-// An interval is passed once and stays passed, so the last review card to pass it
-// passes it on a day. A chance of recall is a level: a card falls under the
-// target as it fades and rises over it when it is answered, so no day holds all
-// of them at once. And a preset aiming at a date is answered by its date.
+// An interval is passed once and stays passed, so the last review card to pass
+// it does so on a definite day. A chance of recall is a level: a card falls
+// below the target as it fades and rises above it when answered, so no day
+// holds all of them at once. A preset aiming at a date is reported by its date.
 func TestProjection_LearnedDayByRule(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -974,17 +975,18 @@ func TestProjection_LearnedDayByRule(t *testing.T) {
 	if got := runProjection(t, run, now, dated, pos, 0).Learns; got != review.LearnsUnasked {
 		t.Errorf("a preset aiming at a day answers with day %d beside it", got)
 	}
-	// What a date is qualified by is the count no pace reaches.
+	// A date is qualified by the count that no pace can complete.
 	if got := runProjection(t, run, now, dated, pos, 0).Short; got < 0 {
 		t.Errorf("a date says %d review cards cannot get there", got)
 	}
 }
 
-// The day a review card daysToLearn is the day the projection learns it.
+// The day a review card reports from daysToLearn is the day the projection
+// learns it.
 //
-// The pace of a date is worked out from the first and the picture beside it
-// from the second, so a day is one day in both: a review card begun today is
-// learned on the day the pace was told it would be.
+// The pace of a date is computed from the first and the projection from the
+// second, so a day is the same day in both: a review card begun today is
+// learned on the day the pace predicted.
 func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	delta := review.NewFSRS()
@@ -1013,12 +1015,12 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	}
 }
 
-// A date reaches the same material whether or not the days are evened out.
+// A date learns the same material whether or not the days are evened out.
 //
-// The pace of a date walks a review card with no day chosen for it, and the run
-// beside it chooses one. The days past the front of a run carry nothing, so the
-// lightest day of a window is its last and every review card is asked for later
-// than the pace was told it would be.
+// The pace of a date simulates a review card with no day chosen for it, and the
+// run chooses one. The days beyond the front of a run carry nothing, so the
+// lightest day of a window is its last and every review card is presented
+// later than the pace predicted.
 func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	p := review.Defaults()
@@ -1037,8 +1039,8 @@ func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 		t.Errorf("the day it aims at gets through %v of the material with the days evened "+
 			"out and %v without", got.Through[21], was.Through[21])
 	}
-	// And the pace is one that gets there: what it says no pace reaches is what
-	// the run leaves unlearned.
+	// The pace achieves the target: the count reported as unreachable at any pace
+	// equals the count the run leaves unlearned.
 	if got.Short != 0 || got.Through[21] < 0.5 {
 		t.Errorf("the pace leaves %d review cards short and gets through %v of the material",
 			got.Short, got.Through[21])
@@ -1076,15 +1078,14 @@ func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
 	}
 }
 
-// No figure a projection reports is a number nobody can read.
+// Every figure a projection reports is a finite number in its valid range.
 //
-// The scheduler divides by stability, so a review card a long run of lapses has
-// worn down to none of it answers with one, and the share of the material left
-// in the head is the mean over every review card beside it.
+// The scheduler divides by stability, so a review card reduced by a long
+// run of lapses to zero stability yields an infinite value, and the retained
+// share of the material is the mean over every review card.
 func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	// One review card worn down to no stability at all, among forty nobody has
-	// begun.
+	// One review card with zero stability, among forty unbegun cards.
 	aged := review.Schedule{
 		Last: now.AddDate(0, 0, -1), Due: now.AddDate(0, 0, -1),
 		Difficulty: 9, Reps: 300, Lapses: 300, Phase: 2,
@@ -1124,7 +1125,7 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 // handed a whole day of new material, and the days around it were paced as
 // though it had carried its own.
 func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
-	// A Saturday, so the light day is the day being asked about.
+	// A Saturday, so the light day is the requested day.
 	now := getDayStart(time.Date(2026, 3, 7, 9, 41, 0, 0, time.Local))
 	if now.Weekday() != time.Saturday {
 		t.Fatalf("the day the pace is asked on is a %v", now.Weekday())
@@ -1143,11 +1144,11 @@ func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 	}
 }
 
-// What a projection assumes about coming back is an input to the run.
+// The recall assumption of a projection is an input to the run.
 //
-// A run told that nothing is forgotten leaves a review card exactly where the
-// scheduler leaves one answered well, and a run told nothing follows it down
-// the middle of what it may do, which is somewhere short of that.
+// A run with full recall leaves a review card where the scheduler leaves one
+// answered well, and a run with the modelled recall leaves it at the expected
+// value, which is between the two.
 func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -1178,7 +1179,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 			"and following the middle of what a card may do leaves %v", forgot, middle)
 	}
 
-	// A run told what the model says is the run told nothing.
+	// A run given the modelled recall explicitly equals a run with the default recall.
 	response := run
 	response.Recalls = review.GetModelledRecall
 	if got, _ := runProjection(t, response, now, p, pos, 0).Retained.GetShare(0); got != middle {
@@ -1239,12 +1240,13 @@ func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 	}
 }
 
-// The pace of a date divides the material by days of review, in the one unit.
+// The pace of a date divides the material by days of review, in one unit.
 //
-// How many days there are counts each day for the share of the load it carries,
-// and how many a review card needs counts days of review. A week at half the load
-// has half a week of room and needs as many days of review as any other, so the
-// second is weighed at the shares of the days it takes.
+// The number of days available counts each day by the share of the load it
+// carries, and the number a review card needs counts days of review. A week
+// at half the load has half a week of capacity and needs as many days of
+// review as any other, so the second is weighted by the shares of the days it
+// takes.
 func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	delta := review.NewFSRS()
@@ -1275,17 +1277,17 @@ func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	}
 }
 
-// allForgotten is a run in which no review card asked comes back. It is what puts
-// a lapse inside the day it was answered in, on every card.
+// allForgotten is a recall model in which no answered review card is recalled.
+// It places a lapse inside the day it was answered in, on every card.
 func allForgotten(review.Schedule, time.Time) float64 { return 0 }
 
-// A day counting showings spends a slot on every one of them, and a day
-// counting cards charges a review card once and asks it again for nothing.
+// A day counting showings spends a slot on every showing, and a day counting
+// cards charges a review card once and presents it again at no cost.
 //
-// Nothing comes back here, so every card the day asks falls back into it. A day
-// counting showings hands over as many showings as its budget holds, and a day
-// counting cards hands over that many review cards, each asked until the day puts it
-// down.
+// Nothing is recalled here, so every card the day presents falls back into it. A
+// day counting showings answers as many showings as its budget holds, and a
+// day counting cards answers that many review cards, each presented until the day
+// stops asking it.
 func TestADayCountingShowingsSpendsASlotOnEveryShowing(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -1354,8 +1356,8 @@ func TestWhatADaysBudgetIsSpentOnIsReadBelowEachGoal(t *testing.T) {
 			}
 			continue
 		}
-		// Every showing is charged, so the day is over when both counts are, and
-		// a day counting cards asks for more on the same budget.
+		// Every showing is charged, so the day ends when both counts are reached, and
+		// a day counting cards presents more cards on the same budget.
 		if want := newADay + reviewsADay; shows != want {
 			t.Errorf("under %s the day gave %d showings counting showings, want %d",
 				one.goal, shows, want)
@@ -1387,8 +1389,8 @@ func TestANewCardsLearningStepFallsInTheDayItWasBegun(t *testing.T) {
 	}
 }
 
-// A card the day answers into minutes falls due again before that day closes,
-// and the day asks it again.
+// A card the day answers into minutes falls due again before the day ends,
+// and the day presents it again.
 func TestProjection_ReanswersLapsedCardWithinDay(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
@@ -1405,8 +1407,8 @@ func TestProjection_ReanswersLapsedCardWithinDay(t *testing.T) {
 	}
 }
 
-// A day asks one review card MostShowings times and no more. A card that keeps
-// landing back in the day it was answered in is put down, and the day after it
+// A day presents one review card at most MostShowings times. A card that keeps
+// landing back in the day it was answered in is dropped, and the next day
 // picks it up.
 func TestADayAsksOneReviewCardNoMoreThanMostShowings(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -1468,17 +1470,17 @@ func TestADeckOfNothingProjectsNothingAtEitherCounting(t *testing.T) {
 	}
 }
 
-// A day's showings and the review cards they are of are two counts, and what
-// separates them is the card the day comes back to.
+// A day's showings and its review cards are two counts, and they differ by
+// the cards the day presents again.
 //
-// The load a caller draws is counted in review cards: a card asked twice in a day is
-// the one card, and the second showing is time and not another card.
+// The load a caller reads is counted in review cards: a card presented twice in a
+// day is one card, and the second showing costs time and not another card.
 func TestADaysShowingsAndItsReviewCardsAreTwoCounts(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
 		By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost, Days: 3,
 	}
-	// A budget that never binds, so the day asks everything it has.
+	// A budget that never binds, so the day presents everything it has.
 	p := review.Preset{Goal: review.GoalRetention, NewADay: 1, ReviewsADay: 9999}
 
 	got := runProjection(t, run, now, p, nil, 1)
@@ -1496,9 +1498,9 @@ func TestADaysShowingsAndItsReviewCardsAreTwoCounts(t *testing.T) {
 	}
 }
 
-// A review card begun on any day of the week is learned in the days of review the
-// preset is paced by, so a week carrying a quiet day daysToLearn as slowly as its
-// slowest day and answers the same figure whichever day it is asked on.
+// A review card begun on any day of the week is learned in the days of review
+// the preset is paced by, so a week with a light day reports daysToLearn as
+// slowly as its slowest day and the same figure whichever day it is requested on.
 func TestAWeekLearnsAsSlowlyAsItsSlowestDay(t *testing.T) {
 	delta := review.NewFSRS()
 	p := review.Defaults()
@@ -1516,8 +1518,8 @@ func TestAWeekLearnsAsSlowlyAsItsSlowestDay(t *testing.T) {
 	}
 }
 
-// An even load moves reviews to the quieter days around them, so the busiest
-// day of a week stands nearer its quietest.
+// An even load moves reviews to the lighter neighbouring days, so the busiest
+// day of a week is closer to its lightest.
 func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -1531,8 +1533,8 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	p.IsEvenLoad = true
 	even := runProjection(t, run, now, p, pos, 0)
 
-	// The first week pays the backlog, which stands where the answers already
-	// given left it.
+	// The first week pays down the backlog, which equals the backlog remaining
+	// after the answers already given.
 	if got := getWidestWeek(lumpy.Load[7:]); got != 120 {
 		t.Errorf("a load left alone spread its widest week over %d answers, want 120", got)
 	}
@@ -1541,8 +1543,8 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	}
 }
 
-// getWidestWeek is the most a week's busiest day stands above its quietest, over every
-// week of a projection.
+// getWidestWeek is the largest difference between a week's busiest and
+// lightest day, over every week of a projection.
 func getWidestWeek(load []int) int {
 	out := 0
 	for i := 0; i+7 <= len(load); i++ {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The curve itself, and the knob dragged along it. It is the slider a person
- * points at, so it takes the pointer and the keys.
+ * The curve itself, and the knob dragged along it. It is the slider the user
+ * operates, so it handles the pointer and the keys.
  */
 import {
   PLOT_BOTTOM,

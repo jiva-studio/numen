@@ -8,7 +8,7 @@ import type { PanelPlace } from '../model/carousel'
 import { grades } from '../../../entities/card'
 import type { ReviewCard } from '../../../entities/card'
 
-/** A card as the application hands it over. */
+/** A card as the application provides it. */
 const card: ReviewCard = {
   deck: 'decks/Words.md',
   section: '',
@@ -34,16 +34,16 @@ const session = (more: { at?: PanelPlace; isShown?: boolean } = {}) =>
     slots: { panel: '<p>the panel</p>', reading: '<p>the reading</p>' },
   })
 
-/** The way into the panel, wherever it stands. */
+/** The controls that open the panel, wherever they are rendered. */
 const getAskButtons = (one: VueWrapper) =>
   one.findAll('button').filter((it) => it.text().includes('Ask'))
 
-/** The way into the reading, wherever it stands. */
+/** The controls that open the reading panel, wherever they are rendered. */
 const getReadingButtons = (one: VueWrapper) =>
   one.findAll('button').filter((it) => it.text().includes('Read'))
 
 describe('the way into the panel', () => {
-  // A person asks about the card they are on, turned or not.
+  // The user opens the panel for the current card, turned or not.
   it('is to be pressed on either side of the card', () => {
     expect(getAskButtons(session({ isShown: false }))[0]?.attributes('disabled')).toBeUndefined()
     expect(getAskButtons(session({ isShown: true }))[0]?.attributes('disabled')).toBeUndefined()
@@ -79,8 +79,8 @@ describe('the way into the panel', () => {
     expect(one.emitted('ask')).toHaveLength(1)
   })
 
-  // The control is the way in and the way out both: what it asks for is the
-  // same whichever of the three the window is on, and the window decides.
+  // The control both opens and closes the panel: it emits the same request
+  // whichever of the three views is displayed, and the window decides.
   it('asks for the panel in the same words while the panel is up', async () => {
     const one = session({ at: 'after' })
     await getAskButtons(one)[0]?.trigger('click')
@@ -89,7 +89,7 @@ describe('the way into the panel', () => {
 })
 
 describe('a session with the panel up', () => {
-  // A person grades the card while the panel stands.
+  // The user grades the card while the panel is open.
   it('still draws the four answers, and still says which was pressed', async () => {
     const one = session({ at: 'after' })
     const answers = one.findAll('.session__answer')
@@ -103,8 +103,8 @@ describe('a session with the panel up', () => {
     expect(session({ at: 'after' }).text()).toContain('the panel')
   })
 
-  // Which of the two is in the window is the strip's own; the session only says
-  // which it wants.
+  // Which of the two panels is displayed is decided by the strip; the session
+  // only requests one.
   it('notifies what remains the two alongside each other which of them is wanted', () => {
     const up = session({ at: 'after' })
     expect(up.find('.carousel__after').attributes('inert')).toBeUndefined()

@@ -1,8 +1,8 @@
-// and the words the schema does.
+// Package presetwire converts presets between the domain types and the schema:
+// the numbers are the domain's, and the words are the schema's.
 //
-// A preset is asked about from the editor's window and from the window a person
-// runs their cards in, and the two hand the same settings and the same curve
-// over.
+// A preset is queried from the editor window and from the review window, and both
+// receive the same settings and the same curve.
 package presetwire
 
 import (
@@ -18,8 +18,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// GetSettingsBounds is how far each setting of a preset goes, as the schema
-// carries it. They are the domain's own, so a client draws the field a person
+// GetSettingsBounds returns how far each setting of a preset may go, as the
+// schema carries it. The bounds are the domain's own, so a client draws each field
+// with the limits the domain enforces.
 func GetSettingsBounds() *api.SettingsBounds {
 	return &api.SettingsBounds{
 		MinutesADay: getBounds(review.MinutesADayBounds),
@@ -264,8 +265,8 @@ func ConvertBudgetUnitToWire(u review.BudgetUnit) api.BudgetUnit {
 	}
 }
 
-// ConvertBudgetUnitFromWire is what a client said a day's budget is counted in, in the words
-// settings are weighed.
+// ConvertBudgetUnitFromWire converts the unit that a client sent for a day's
+// budget into the domain's budget unit.
 func ConvertBudgetUnitFromWire(u api.BudgetUnit) review.BudgetUnit {
 	switch u {
 	case api.BudgetUnitCards:
@@ -277,8 +278,8 @@ func ConvertBudgetUnitFromWire(u api.BudgetUnit) review.BudgetUnit {
 	}
 }
 
-// convertLearnedDay is the day the whole material stands learned, as the schema
-// carries it. A place with no such day to name carries none.
+// convertLearnedDay returns the day on which the whole material is learned, as
+// the schema carries it. A projection with no such day returns nil.
 func convertLearnedDay(day int) *int32 {
 	if day == review.LearnsUnasked {
 		return nil

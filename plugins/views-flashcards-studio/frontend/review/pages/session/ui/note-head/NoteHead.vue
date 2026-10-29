@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * What one note is called where it is read, and what is said quietly under it.
+ * The title of one note where it is read, and the secondary text under it.
  */
 import { WORDS as words } from '../../lib/notesWords'
 import type { Neighbour } from '../../api/notes'
@@ -46,7 +46,7 @@ const getNoteName = (one: Neighbour) => one.title || one.written
   font-size: var(--numen-text-1);
 }
 
-/* Two things said quietly about one note stand apart on the same line. */
+/* Two secondary items of one note sit apart on the same line. */
 .reading__quiet > span + span {
   margin-inline-start: var(--numen-inset);
 }

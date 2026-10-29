@@ -78,7 +78,7 @@ const CORPORA = {
     ],
   },
   'nothing at all': { fields: [], templates: [] },
-  /* Everything a file written by hand can hold that the editor did not make:
+  /* Everything a hand-written file can contain that the editor did not create:
      one name declared twice, where the first stands and one row is drawn for
      it; a template naming slots the fields do not; marks a person wrote; and a
      template with nothing in it at all. */
@@ -262,12 +262,12 @@ const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
   [...canvas.querySelectorAll('[data-field]')].map((row) => row.getAttribute('data-field'))
 
 /**
- * Four fields and two templates, one of them asking the other way round.
+ * Four fields and two templates, one of them in the reverse direction.
  *
- * A field's row is one block: the line and the ground are the row's, and the
- * handle, the box and the way to remove it stand inside it carrying neither.
- * The first field names every card, so it keeps the shape the others have with
- * middle of a rule as wide as the list.
+ * A field's row is one block: the divider line and the background belong to the
+ * row, and the drag handle, the input and the remove button are inside it
+ * without their own. The first field names every card and has the same row
+ * shape as the others.
  */
 export const ACardModel: Story = {
   args: { width: '64rem' },
@@ -336,10 +336,10 @@ export const ACardModel: Story = {
 }
 
 /**
- * What a person does to a card model: a field written into one template and no other,
- * a field asked for, and a template dragged to another place. The order of the
- * templates is the order a card's repetitions are taken from it, so nothing among
- * them is fixed.
+ * User actions on a card model: a field inserted into one template only, a
+ * field added, and a template dragged to another position. The order of the
+ * templates is the order in which a card's repetitions are taken, so no
+ * template position is fixed.
  */
 export const WhatAPersonDoesToIt: Story = {
   play: async ({ canvasElement }) => {
@@ -354,7 +354,7 @@ export const WhatAPersonDoesToIt: Story = {
     expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
     expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
-    // A field asked for is placed under a name nothing had taken, below the last.
+    // An added field is named with an unused name and placed after the last field.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
     expect(getDrawnFields(canvasElement)).toEqual([
       'Name',
@@ -391,8 +391,8 @@ export const WhatAPersonDoesToIt: Story = {
 }
 
 /**
- * Forty fields and twelve templates, far more than the window has room for. Every
- * row and every template is drawn, and none of it is drawn sideways.
+ * Forty fields and twelve templates, more than fit in the window. Every
+ * row and every template is rendered, and nothing overflows horizontally.
  */
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
@@ -412,15 +412,16 @@ export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 export const NothingAtAll: Story = { args: { corpus: 'nothing at all' } }
 
 /**
- * Everything a file can hold that the editor did not make: one name declared
- * twice, a template naming a slot the fields do not, marks a person wrote that
- * must never be drawn as marks, and a template with nothing in it at all.
+ * Everything a file can contain that the editor did not create: one name
+ * declared twice, a template naming a slot the fields do not declare, marks
+ * written by the user that must not be rendered as marks, and a template with
+ * no content.
  */
 export const WhatIsWrong: Story = {
   args: { corpus: 'what is wrong', width: '64rem' },
   play: async ({ canvasElement }) => {
-    // The first of two fields of one name stands, and there is no second row
-    // and no second chip going nowhere.
+    // The first of two fields with one name is used, so there is no second row and
+    // no second chip with no target.
     expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height'])
     expect(canvasElement.querySelectorAll('.card-model__field input')).toHaveLength(2)
     const chips = [...canvasElement.querySelectorAll('[data-template="stray"] [data-insert]')]

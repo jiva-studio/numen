@@ -81,8 +81,8 @@ func (s *messageStream[Res]) Close() {
 	<-s.finished
 }
 
-// reviewClient asks the review the way the window does: a unary method answers directly and a
-// stream method answers with a messageStream.
+// reviewClient calls the review service the way the window does: a unary method
+// returns directly and a stream method returns a messageStream.
 type reviewClient struct {
 	*reviewHandler
 }

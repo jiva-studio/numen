@@ -15,12 +15,12 @@ import (
 type Projection struct {
 	// Days is how many days were projected.
 	Days int
-	// ReviewsADay and MinutesADay are the daily load, over the days the preset
-	// admitted: the review cards a day asks, and how long its showings take.
+	// ReviewsADay and MinutesADay are the daily load over the days the preset
+	// admitted: the review cards a day returns, and how long its showings take.
 	ReviewsADay float64
 	MinutesADay float64
 	// Retained is the share of the material that comes back, on the days the run
-	// was asked to answer for.
+	// reports retention for.
 	Retained RetentionByDay
 	// Answered is how many answers were given over the days projected.
 	Answered int
@@ -28,8 +28,8 @@ type Projection struct {
 	// many of them have been answered at least once by the last day.
 	ReviewCards int
 	Seen        int
-	// Owed is the review cards answered before and standing owed on the last day,
-	// which is the backlog the budget did not carry.
+	// Owed is the number of review cards answered before and still due on the last
+	// day, which is the backlog the budget did not cover.
 	Owed int
 	// Clears is how many days of review it takes before nothing is overdue: no
 	// review card is left whose day has come and gone. A day that begins with
@@ -49,16 +49,16 @@ type Projection struct {
 	// recall falls as a card fades and rises when it is answered, so a material
 	// aiming at a date is answered by its date. Both are LearnsUnasked.
 	Learns int
-	// Short is how many review cards cannot be learned by the day the preset aims
-	// at, whatever the pace: the rule wants more days than the date leaves them.
-	// A preset aiming at no day has none.
+	// Short is how many review cards cannot be learned by the target day of the
+	// preset, at any pace: the rule needs more days than the date allows. A preset
+	// with no target day has none.
 	Short int
-	// Load is how many showings each day projected carried, Reviewed is how many
+	// Load is how many showings each projected day contained, Reviewed is how many
 	// review cards those showings were of, and Spent is how long they took.
 	//
-	// A day asks a review card again while its answer leaves it falling due before
-	// the day closes. A budget kept in cards is spent on Reviewed and one kept in
-	// showings on Load, and the minutes go on every showing either way.
+	// A day returns a review card again while its answer makes it due before the day
+	// closes. A budget counted in cards is spent on Reviewed and one counted in
+	// showings on Load, and the minutes are charged on every showing in both cases.
 	Load     []int
 	Reviewed []int
 	Spent    []time.Duration
@@ -68,9 +68,9 @@ type Projection struct {
 	// Closed is every budget that stopped each day projected asking for more,
 	// one entry a day.
 	Closed []BudgetNames
-	// Backlog is how many review cards stood overdue at the end of each day
-	// projected: their day had passed and that day did not get to them. It is
-	// the pile a person watches shrink, and it begins where Overdue stands now.
+	// Backlog is how many review cards are overdue at the end of each projected day:
+	// their day has passed and that day did not reach them. It starts from the
+	// current Overdue count and shrinks as the backlog clears.
 	Backlog []int
 	// Through is the share of the material learned by the end of each day
 	// projected, under the rule the preset names. Getting through the material
@@ -79,8 +79,8 @@ type Projection struct {
 }
 
 // RetentionByDay is the share of the material that comes back at the end of a
-// day, on the days a run was asked to answer for. A day it was not asked for
-// holds no share, and GetShare says so.
+// day, for the days a run reports retention for. A day without a report has no
+// share, and GetShare reports that.
 type RetentionByDay struct{ on map[int]float64 }
 
 // GetShare is the share of the material that came back at the end of this day
@@ -134,7 +134,8 @@ func (p Projection) minutesADay(limitDay int) float64 {
 }
 
 // isAllLearned reports whether every review card that can be learned by this day of
-// the run stands learned on it. Short is how many cannot be, whatever the pace.
+// isAllLearned reports whether every review card that can be learned by this day
+// of the run is learned on it. Short is how many cannot be learned at any pace.
 func (p Projection) isAllLearned(day int) bool {
 	if p.ReviewCards == 0 {
 		return true
@@ -142,13 +143,12 @@ func (p Projection) isAllLearned(day int) bool {
 	return p.Through[day] >= float64(p.ReviewCards-p.Short)/float64(p.ReviewCards)
 }
 
-// Session is the first day of this run the preset admits: the next session a
-// person will actually sit down to. False is a run admitting no day at all,
-// which holds no session.
+// Session is the first day of this run that the preset admits: the next session
+// the user starts. False means the run admits no day, so it has no session.
 //
-// It is one real day of the run, so the count read off it is the count a
-// session on that day hands a person. A day the preset does not admit is no
-// session, and the day after it is the one a person meets.
+// It is one real day of the run, so the count read from it is the count a session
+// on that day returns. A day the preset does not admit is not a session, and the
+// following day is the next one the user starts.
 func (p Projection) Session() (int, bool) {
 	for day, admitted := range p.Admitted {
 		if admitted {
@@ -174,11 +174,11 @@ func CountOverdue(d Day, schedules map[ReviewCardID]Schedule, now time.Time) int
 	return out
 }
 
-// mergeByDue puts what a day before did not reach and what falls due in this one
-// into one run, the review card owed longest first.
+// mergeByDue merges the carried cards from the previous day and the cards that
+// fall due in this day into one run, the longest overdue review card first.
 //
-// Both are in that order already, so a day sees the whole of what it owes for
-// the cost of what it owes.
+// Both inputs are already in that order, so a day processes everything it has due
+// in a single linear pass.
 func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
 	a, b := 0, 0
 	for a < len(carried) && b < len(fell) {
@@ -194,13 +194,13 @@ func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
 	return append(into, fell[b:]...)
 }
 
-// learnedCount is how much of the material stands learned and how much of it
+// learnedCount tracks how much of the material is learned and how much of it
 // comes back, at the close of a day.
 //
-// Under a rule of an interval what stands learned is a fact about a review card's
-// schedule: the count is carried from day to day and asked again only of a card
-// review card the day answered. Under a rule of a chance of recall it is a fact about
-// the instant, and is read off the same number as the share that comes back.
+// Under an interval rule, learned is a property of a review card's schedule: the
+// count is carried from day to day and recomputed only for review cards that the
+// day answered. Under a recall-chance rule, learned is a property of the instant,
+// and is read from the same value as the share that comes back.
 type learnedCount struct {
 	preset    Preset
 	isCarried bool
@@ -258,13 +258,14 @@ func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	}
 }
 
-// finish is how many review cards stand learned at this instant, and what share
-// of the material comes back at it where the day is one the run answers for. A
-// review card nobody has begun comes back to nobody, and counts in the material.
+// countLearned returns how many review cards are learned at this instant, and the
+// share of the material that comes back at it when the day is one the run reports
+// retention for. A review card that has not begun contributes nothing to the share
+// and counts in the material.
 //
-// A carried count is a fact about a review card's schedule, so the walk over the
-// whole material is made on the days the share is wanted. A count read off the
-// chance of recall is the same walk, and the share falls out of it.
+// A carried count is a property of a review card's schedule, so the walk over the
+// whole material runs only on days where the share is requested. A count read from
+// the recall chance is the same walk, and the share is a by-product.
 func (r *learnedCount) countLearned(
 	cards []Schedule, pos time.Time, reviewCards int, wanted bool,
 ) (int, float64) {
@@ -292,8 +293,9 @@ func (r *learnedCount) countLearned(
 	return stands, back / float64(reviewCards)
 }
 
-// compareByDue puts the review card owed longest first. Two schedules alike in all of
-// this are one review card as far as any of these numbers go.
+// compareByDue orders review cards by due time, the longest overdue first. Two
+// schedules that are equal in all compared fields are one review card for these
+// numbers.
 func compareByDue(a, b Schedule) int {
 	if !a.Due.Equal(b.Due) {
 		return a.Due.Compare(b.Due)

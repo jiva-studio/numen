@@ -1,5 +1,6 @@
 /**
- * What the vault last said about each deck file: filed under a path, carried
+ * What the vault last reported about each deck file, stored under its path and
+ * kept across reads.
  */
 import { describe, expect, it } from 'vitest'
 import { WORDS, type DeckProblem } from '../../cards'

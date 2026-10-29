@@ -87,8 +87,8 @@ func FuzzWhole(f *testing.F) {
 	})
 }
 
-// createIDs creates card ids a run at a time, so that what comes out of one body
-// is the same on every machine and in every run.
+// createIDs creates card ids a run at a time, so the output for one body is the
+// same on every machine and in every run.
 func createIDs() func() cardid.ID {
 	pos := 0
 	return func() cardid.ID {

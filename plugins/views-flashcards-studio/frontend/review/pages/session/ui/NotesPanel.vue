@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * The panel the notes a deck is joined to are read in.
+ * The panel in which the notes joined to a deck are read.
  *
- * They are read one under another: a person who came here to read is reading.
+ * The notes are stacked vertically in one column for continuous reading.
  */
 import { nextTick, useTemplateRef, watch } from 'vue'
 import { Prose } from '@numen/ui'
@@ -23,10 +23,10 @@ const column = useTemplateRef<HTMLElement>('column')
 /* --------------------------------- Hooks ---------------------------------- */
 defineExpose({ scrollPage })
 
-// A link pressed in the card opens the panel on the note it names, so the
-// reading starts where the person was looking. The notes are waited for: the
-// panel comes in while they are still being asked for, and a note cannot be
-// scrolled to before it is drawn.
+// A link pressed in the card opens the panel on the note it names, so reading
+// starts at that note. The watcher waits for the notes: the panel opens while they
+// are still being requested, and a note cannot be scrolled to before it is
+// rendered.
 watch(
   () => [props.panel.open.value, props.panel.col.value, props.panel.notes.value] as const,
   ([open, col, notes]) => {
@@ -103,7 +103,7 @@ function scrollPage(back = false) {
 </template>
 
 <style scoped>
-/* The panel stands where the card stood and is the same thing to look col, so it
+/* The panel occupies the card's place and looks the same, so it
    takes the card's ground. */
 .reading {
   display: flex;

@@ -2,13 +2,13 @@
 import { Rating } from '../../../api/types.js'
 import { getNames } from '../../../api/names'
 
-/** How well a card came back. A person says which of the four. */
+/** How well a card was recalled. The user picks one of the four. */
 export type Grade = 'again' | 'hard' | 'good' | 'easy'
 
 /** The four, in the order they are offered and answered by number. */
 export const grades: readonly Grade[] = ['again', 'hard', 'good', 'easy']
 
-/** What each of them is called on the button that says it. */
+/** The label of each grade on the answer button. */
 export const GRADE_LABELS: Readonly<Record<Grade, string>> = {
   again: 'Again',
   hard: 'Hard',

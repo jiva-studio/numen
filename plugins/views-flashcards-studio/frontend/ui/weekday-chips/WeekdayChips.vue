@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { measureRect } from '../../dom'
 /**
- * The days of the week as seven chips, each standing at a level. Pressing a day
- * offers the levels, and the day it was chosen for is handed back with it.
+ * The days of the week as seven chips, each at a level. Pressing a day
+ * opens the levels, and the day it was chosen for is returned with the choice.
  *
- * keeps the keyboard, says so, and offers nothing.
+ * A disabled row keeps keyboard focus, is announced as disabled, and opens no menu.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'

@@ -39,8 +39,8 @@ describe('the summary of a vault', () => {
     }
   })
 
-  // Nought is a vault with nothing to review, and it is not what a vault
-  // nobody has counted says.
+  //   // Zero is a vault with nothing to review, and it differs from a vault whose
+  //   // count has not arrived.
   it('is not the same as a vault counted at nothing', () => {
     const counted = mountSummary(vault({ due: 0, new: 0 }))
 
@@ -48,7 +48,7 @@ describe('the summary of a vault', () => {
     expect(counted.text()).toContain('0')
   })
 
-  // A vault that could not be counted says why, and says nothing about cards.
+  //   // A vault that could not be counted shows why, and shows nothing about cards.
   it('says why a vault could not be counted, and prints no shape for it', () => {
     const one = mountSummary(vault({ unread: 'this folder cannot be read as a vault' }))
 

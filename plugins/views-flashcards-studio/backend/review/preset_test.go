@@ -103,8 +103,8 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 
 	p.Rule = review.RuleRetention
 
-	// The same two review cards, under the other rule: what is asked now is the
-	// chance of recalling them today, and the intervals take no part.
+	// The same two review cards under the other rule: the result depends on the
+	// chance of recalling them today, and the intervals are not used.
 	if p.IsLearned(schedule(200, 21, 10), now) {
 		t.Error("a card 200 days past an answer at a stability of 10 is recalled nine times in ten")
 	}
@@ -116,11 +116,11 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	}
 }
 
-// A preset naming no rule counts by the default rule at its default value.
+// A preset that names no rule counts by the default rule at its default value.
 //
-// A key nobody wrote leaves the default in force. It never leaves a threshold
-// every review card passes: a preset that says nothing about what counts as
-// learned counts nothing learned that three weeks away would not.
+// A key that is absent leaves the default in force. It never produces a threshold
+// that every review card passes: a preset with no learned rule counts nothing as
+// learned that a date three weeks away would not.
 func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.UTC)
 	last := now.AddDate(0, 0, -1)
@@ -145,8 +145,8 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 		t.Error("a review card sixteen days off is learned under an interval nobody wrote")
 	}
 
-	// And the other rule, whose value nobody wrote, holds cards to the default
-	// chance of recall.
+	// The other rule, whose value is absent, holds cards to the default chance of
+	// recall.
 	faded := review.Schedule{
 		Last: now.AddDate(0, 0, -200), Due: now, Reps: 3, Stability: 10,
 	}
@@ -338,8 +338,8 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 		t.Errorf("its Friday stops on %q", got)
 	}
 
-	// A preset that schedules nothing at all says so on a light day too, and the
-	// day of the week is not what to fix.
+	// A preset that schedules nothing reports that on a light day too, and the day of
+	// the week is not the cause.
 	p.MinutesADay = 0
 	if got := p.GetStopReason(day, thursday); got != review.StoppedNoMinutes {
 		t.Errorf("a paused preset stops today on %q, want %q", got, review.StoppedNoMinutes)
@@ -395,7 +395,7 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	}
 }
 
-// front is a preset's frontmatter, as the parser hands it over.
+// front is a preset's frontmatter, as the parser returns it.
 func front(t *testing.T, output string) map[string]any {
 	t.Helper()
 	var out map[string]any
@@ -405,7 +405,7 @@ func front(t *testing.T, output string) map[string]any {
 	return out
 }
 
-// A preset says how the decks pointing at it are scheduled.
+// A preset defines how the decks that reference it are scheduled.
 func TestWhatAPresetReturns(t *testing.T) {
 	p, problems := review.ReadPreset(front(t, `
 goal: minutes_a_day
@@ -567,9 +567,9 @@ func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
 	}
 }
 
-// The defaults are written once and read twice: here, and in the window, where
-// a person making a preset is shown the numbers it is scheduled by. Both read
-// this one corpus, and neither owns it.
+// The defaults are defined once and read twice: here, and in the preset editor,
+// which displays the numbers a new preset is scheduled by. Both read this one
+// corpus, and neither owns it.
 const presetCorpus = "../../frontend/testdata/presets.json"
 
 // defaultPreset is a preset naming nothing, in the words a preset file writes
@@ -670,10 +670,9 @@ func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 // lastAnswer is the instant the schedules below were last answered at.
 var lastAnswer = time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 
-// genSchedule generates where the answers so far have left one review card: how
-// long it is sent away for, and how long the scheduler expects it to stay
-// and carries a day it is wanted on like any other: what says nobody has
-// answered it is that it was never answered, and not that nothing is set on it.
+// genSchedule generates the schedule of one review card after the answers so far:
+// the interval until it is due, and its stability. A card that was never answered
+// is generated like any other, and is distinguished only by having no last answer.
 func genSchedule(t *rapid.T) review.Schedule {
 	// Whole days as often as the minutes between them: an interval is counted in
 	// days, so the day it falls exactly on is the case that decides the rule.
@@ -689,9 +688,9 @@ func genSchedule(t *rapid.T) review.Schedule {
 	return out
 }
 
-// ruleNamed generates a preset's three settings for the rule, over the whole of
-// what each may be and past both ends of it: a value a rule cannot hold is what
-// a preset written by hand carries.
+// ruleNamed generates a preset's three settings for the rule, over the whole
+// range each may take and beyond both ends of it: a value that a rule cannot hold
+// is what a hand-written preset can contain.
 func ruleNamed(t *rapid.T) review.Preset {
 	return review.Preset{
 		Rule: review.LearnedRule(rapid.SampledFrom([]string{
@@ -702,7 +701,8 @@ func ruleNamed(t *rapid.T) review.Preset {
 	}
 }
 
-// preset says and whenever it is asked.
+// A review card that was never answered is not learned, whatever the preset says
+// and whenever it is evaluated.
 func TestIsLearned_UnansweredCardIsNeverLearned(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -717,9 +717,9 @@ func TestIsLearned_UnansweredCardIsNeverLearned(t *testing.T) {
 	})
 }
 
-// A preset naming a rule it does not have, or a value the rule cannot hold,
-// counts by the default rule at its default value. A key nobody wrote leaves
-// the default in force, and never a threshold every card passes.
+// A preset that names a rule it does not have, or a value the rule cannot hold,
+// counts by the default rule at its default value. An absent key leaves the
+// default in force and never produces a threshold that every card passes.
 //
 // A preset that names no rule counts by the default rule at its default value.
 func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
@@ -746,13 +746,12 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	})
 }
 
-// Under a rule of an interval a review card is learned once it is sent away for
-// the preset's interval or longer, so the further away it is sent the more
-// presets count it learned: a card learned under one interval is learned under
-// every shorter one.
+// Under the interval rule a review card is learned once its interval is at least
+// the preset's interval, so a card learned under one interval is learned under
+// every shorter interval.
 //
-// Under learned: interval a card is learned once the interval it is sent away
-// for reaches the preset's interval.
+// Under learned: interval a card is learned once its interval reaches the
+// preset's interval.
 func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -771,13 +770,14 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	})
 }
 
-// Under a rule of retention, learned is where the review card stands now and not
-// a milestone it passed: the chance of recalling it only falls as the days go
-// by, so a card counted learned on a later day was counted learned on every
-// earlier one, and a lapse that collapses its stability takes it out of that
-// standing.
+// Under the retention rule, learned is a property of the current state of the
+// review card and not a milestone that was passed: the chance of recall only
+// falls as days pass, so a card counted as learned on a later day was counted as
+// learned on every earlier day, and a lapse that collapses its stability removes
+// it from the learned state.
 //
-// Learned is a state and not a milestone, asked of where the card stands now.
+// Learned is a state and not a milestone, evaluated at the current state of the
+// card.
 func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

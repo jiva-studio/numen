@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// SchedulingPolicy is what one review card is worked out under: the scheduler
-// that spaces it, and the preset that says which day it lands on.
+// SchedulingPolicy is what one review card is computed under: the scheduler
+// that spaces it, and the preset that determines which day it falls on.
 type SchedulingPolicy struct {
 	By     Scheduler
 	Preset Preset
@@ -23,21 +23,21 @@ func ScheduleBy(s Scheduler) Assignment {
 	return func(ReviewCardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 
-// History is a vault's answers in the order they were given: nothing a
-// line takes back, one line to an identifier, earliest first.
+// History is a vault's answers in the order they were given: no revoked lines,
+// one line per identifier, earliest first.
 //
-// One request asks several things of one history — where it leaves each card,
-// what each day came to, what a preset spent. The order is worked out once and
-// handed to each of them.
+// One request queries several things from one history: the schedule of each
+// card, the tally of each day, and what a preset spent. The order is computed
+// once and shared by all of them.
 type History []Answer
 
 // OrderAnswers puts a vault's answers in the order they were given.
 func OrderAnswers(answers []Answer) History { return getActiveAnswers(answers) }
 
-// Replay works out where this history leaves every review card, each under the
-// scheduler its own preset asks for and on the day its own preset puts it.
+// Replay computes the schedule of every review card in this history, each under
+// the scheduler its own preset requests and on the day its own preset assigns.
 //
-// The days the answers have already filled are what the next card is placed
+// The days already filled by earlier answers are what the next card is placed
 // against.
 func (h History) Replay(d Day, assignment Assignment) map[ReviewCardID]Schedule {
 	out := make(map[ReviewCardID]Schedule)
@@ -51,16 +51,16 @@ func (h History) Replay(d Day, assignment Assignment) map[ReviewCardID]Schedule 
 	return out
 }
 
-// RecallTally is how much of what came round in days came back, over one day:
-// the answers given to spaced review cards, and how many of those came back at
-// all.
+// RecallTally is how many of the cards that came due in days were recalled,
+// over one day: the answers given to spaced review cards, and how many of those
+// were recalled.
 //
-// A review card the scheduler is still putting into memory is in neither. What is
-// asked of one is whether it comes back after ten minutes, which says nothing
-// about memory.
+// A review card still in the learning phase is in neither count. The question
+// for such a card is whether it is recalled after ten minutes, which gives no
+// information about long-term memory.
 type RecallTally struct {
-	// Asked is the answers given to spaced review cards, and Recalled the ones
-	// among them that were not Again.
+	// Asked is the answers given to spaced review cards, and Recalled the subset
+	// of them that were not Again.
 	Asked    int
 	Recalled int
 }
@@ -86,8 +86,8 @@ func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally 
 	return out
 }
 
-// walkAnswers walks the answers in the order they were given, telling each one
-// to the caller with the schedule the review card stood at before it.
+// walkAnswers iterates over the answers in the order they were given and passes each
+// one to the caller with the schedule the review card had before it.
 func walkAnswers(
 	delta Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[ReviewCardID]Schedule {

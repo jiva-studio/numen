@@ -1,10 +1,10 @@
 /**
- * The deck one tab is showing, read out of the string the store holds, and
- * what is wrong with it against the card the grid draws.
+ * The deck one tab displays, read from the string the store holds, and the
+ * problems of the file against the cards the grid displays.
  *
- * Both are held against what they were read from. A deck reading as the one on
- * screen leaves that one standing, so the card a person is typing into is not
- * drawn again under a fresh identity.
+ * Both are compared against what they were read from. A deck that reads equal to
+ * the displayed one keeps the displayed one, so the card being edited is not
+ * rendered again under a new identity.
  */
 import { type DeckProblem, createMarks, areMarksEqual, type Marks } from '../../cards'
 import {
@@ -53,11 +53,11 @@ export function createDeckReader(
   const marked = new Map<string, { problems: readonly DeckProblem[]; marks: Marks }>()
 
   /**
-   * What is wrong with a file, against the card the grid is drawing. A problem
-   * carries where it stood in the file it was read from, so it is put against
-   * a card once, when the reading it came in on is the newest one: a card
-   * dragged elsewhere in the order or a card removed beside it takes its mark
-   * with it from there.
+   * What is wrong with a file, against the card the grid displays. A problem
+   * carries its position in the file it was read from, so it is applied to a
+   * card once, when the reading it arrived in is the newest: a card moved
+   * elsewhere in the order or a card removed next to it takes its mark
+   * with it.
    */
   const getMarks = (id: string): Marks => {
     const problems = getProblems(store.getPath(id))
@@ -68,8 +68,7 @@ export function createDeckReader(
       getDeck(id).cards.map((card) => card.id),
       [],
     )
-    // Marks saying what the last ones said leave what is drawn against the
-    // file standing.
+    // Marks equal to the previous marks keep the displayed marks unchanged.
     const marks = target && areMarksEqual(target.marks, readItem) ? target.marks : readItem
     marked.set(id, { problems, marks })
     return marks

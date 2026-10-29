@@ -15,7 +15,7 @@ import (
 
 // Conversions from an outcome or a write error to the ErrorCode of a response.
 
-// convertOutcomeToErrorCode says which error code an outcome is, and whether it is one at all.
+// convertOutcomeToErrorCode returns the error code of an outcome, and whether the outcome is an error.
 func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	switch o {
 	case edit.Missing:
@@ -34,8 +34,8 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	return api.ErrorCodeUnspecified, false
 }
 
-// getErrorCode says which error code a write's error is, and whether it is one at all. Anything
-// else is the vault being out of reach.
+// getErrorCode returns the error code of a write error, and whether the error
+// has one. Any other error means the vault is unavailable.
 func getErrorCode(err error) (api.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, ports.ErrStale):
@@ -77,5 +77,5 @@ func newError(code server.ErrorCode, err error) error {
 	return server.NewAPIError(code, err.Error())
 }
 
-// isUnlevelled says whether a write reached the vault and the index did not follow.
+// isUnlevelled reports whether a write reached the vault and the index was not updated.
 func isUnlevelled(err error) bool { return errors.Is(err, edit.ErrUnlevelled) }

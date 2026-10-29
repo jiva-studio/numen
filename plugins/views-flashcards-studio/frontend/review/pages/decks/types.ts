@@ -61,9 +61,9 @@ export interface Preset {
   /** Why it schedules nothing, and empty while it schedules something. */
   readonly paused: string
   /**
-   * What is wrong with the preset, in the words to show, and empty where
-   * nothing is: what the file said that could not be read, or why the file
-   * itself could not be.
+   * The problem with the preset as display text, and empty when there is none:
+   * what the file contained that could not be read, or why the file itself could
+   * not be read.
    */
   readonly wrong: string
 }

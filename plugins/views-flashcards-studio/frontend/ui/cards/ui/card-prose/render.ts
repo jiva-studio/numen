@@ -1,13 +1,13 @@
 /**
- * What a card is written with, drawn.
+ * What a card is written with, rendered.
  *
- * A template is HTML, so what a person wrote is drawn as the markup it is, and a
- * deck may come from another person, so that markup is measured against what a
- * card may be drawn with first.
+ * A template is HTML, so the user's text is rendered as the markup it is, and a
+ * deck may come from another author, so the markup is first checked against
+ * what a card may render.
  *
- * Nothing wraps a line written with no tag around it, so the card keeps the
- * breaks it was written with and each such line reads as the line it is. A
- * break standing between two tags is whitespace of the markup, and is taken out.
+ * Nothing wraps a line with no tag around it, so the card keeps the breaks it
+ * was written with and each such line renders as its own line. A break between
+ * two tags is markup whitespace and is removed.
  */
 import { safe } from '../../lib/safe'
 

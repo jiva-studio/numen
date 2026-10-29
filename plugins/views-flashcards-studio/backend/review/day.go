@@ -22,9 +22,11 @@ func Clock(starts time.Duration) string {
 	return fmt.Sprintf("%02d:%02d", int(starts.Hours()), int(starts.Minutes())%60)
 }
 
-// Day is where one day of review gives way to the next.
+// Day defines the boundaries of a day of review, where one day ends and the
+// next begins.
 //
-// A card owed today is owed for the whole of it, whatever hour its schedule
+// A card due on a day is due for the whole of it, whatever hour its schedule
+// puts the due time at.
 type Day struct {
 	// Starts is how long past midnight a day begins.
 	Starts time.Duration
@@ -62,9 +64,9 @@ func (d Day) GetStart(target time.Time) time.Time {
 	return d.getStartTime(y, m, day-1)
 }
 
-// GetDate is the date the day holding at began on, as a plain date. A day is
-// named and numbered from this, so that it is one day of review whatever the
-// clock did around its boundaries.
+// GetDate is the date of the day containing target, as a plain date. A day is
+// named and numbered from this date, so it is one day of review regardless of
+// clock changes at its boundaries.
 func (d Day) GetDate(target time.Time) time.Time {
 	local := target.In(d.zone())
 	y, m, day := local.Date()
@@ -76,8 +78,9 @@ func (d Day) GetDate(target time.Time) time.Time {
 	return date
 }
 
-// getStartTime is the instant the day of this date began. The boundary is an hour of
-// and ends at the hour a person reads.
+// getStartTime is the instant the day of this date begins. The boundary is an
+// hour of the wall clock in the zone the days are counted in, and the day ends
+// at the same hour of the next date.
 func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	h, minute := d.boundary()
 	open := time.Date(y, m, day, h, minute, 0, 0, d.zone())
@@ -94,8 +97,8 @@ func (d Day) boundary() (int, int) {
 	return int(d.Starts / time.Hour), int(d.Starts % time.Hour / time.Minute)
 }
 
-// wall is a clock reading taken apart from the zone it was read in, so that two
-// of them can be subtracted.
+// wall is a clock reading with the zone removed, which allows two readings to be
+// subtracted.
 func wall(pos time.Time) time.Time {
 	y, m, day := pos.Date()
 	return time.Date(y, m, day, pos.Hour(), pos.Minute(), 0, 0, time.UTC)
@@ -109,9 +112,9 @@ func (d Day) GetEndOfDate(named time.Time) time.Time {
 	return d.getStartTime(y, m, day+1)
 }
 
-// IsOwed reports whether a card is to be answered on this review card in the day
-// holding now. A review card that has never been answered is owed the first time
-// it is asked about.
+// IsOwed reports whether a review card is due for answer in the day containing
+// now. A review card that has never been answered is due the first time it is
+// requested.
 func (d Day) IsOwed(s Schedule, now time.Time) bool {
 	return s.IsNew() || s.Due.Before(d.GetEnd(now))
 }
@@ -119,9 +122,10 @@ func (d Day) IsOwed(s Schedule, now time.Time) bool {
 // LatestDayStart is how far past midnight a day of review may be made to begin.
 const LatestDayStart = 12 * time.Hour
 
-// ParseDayStart is how long past midnight a day of review begins, from the hour a person wrote it as,
-// `HH:MM`. Nothing written is the default. Anything that is not an hour of the day, or is past
-// LatestDayStart, is ErrNotAnHour, and the default stands with it.
+// ParseDayStart parses the time past midnight at which a day of review begins
+// from an `HH:MM` string. An empty string yields the default. A value that is
+// not a time of day, or exceeds LatestDayStart, yields ErrNotAnHour and the
+// default.
 func ParseDayStart(raw string) (time.Duration, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -142,21 +146,20 @@ func ParseDayStart(raw string) (time.Duration, error) {
 // the day it began on, in the zone the days are counted in.
 const DayLayout = "2006-01-02"
 
-// GetName is the name of the day an answer given at this instant falls in.
+// GetName is the name of the day of review that target falls in.
 //
-// It is the day a person would say they answered on, which is the day the
-// review day began — an answer given at one in the morning belongs to the day
-// before, and is named for it.
+// It is the day the answer belongs to: an answer given at one in the morning
+// belongs to the previous day when the review day begins after that hour, and
+// is named for it.
 func (d Day) GetName(target time.Time) string {
 	return d.GetDate(target).Format(DayLayout)
 }
 
-// Tally is one day's answers: how many were given, and how each of the four was
-// said.
+// Tally is one day's answers: the number given, and the number for each of the
+// four ratings.
 //
-// The four are kept apart because a day of fifty cards a person could not
-// recall is a different day from fifty they could, and the two are the same
-// number.
+// The ratings are kept apart because a day of fifty failed answers differs
+// from a day of fifty successful ones, and both have the same total.
 type Tally struct {
 	Answered int
 	Again    int
@@ -220,15 +223,16 @@ type Spent struct {
 	Took     time.Duration
 }
 
-// GetSpentUnder is what the day named came to under each preset, by the path
-// the review cards are grouped under.
+// GetSpentUnder is what the named day consumed under each preset, keyed by the
+// path of the preset the review cards are grouped under.
 //
-// A review card nothing groups is left out, and so is an answer taken back. Each
-// answer counts for what Answer.Counted makes of it.
+// A review card with no preset is omitted, and so is an undone answer. Each
+// answer is counted as Answer.Counted determines.
 //
-// Counts says how each preset counts, by the same path, and a path it does not
-// name counts in cards: a review card counts once for the day however many times
-// it is answered in it. Every one of those answers counts its time either way.
+// counts gives the unit each preset counts in, keyed by the same path; a path
+// not in counts is counted in cards: a review card counts once for the day
+// however many times it is answered in it. Every answer contributes its time
+// under either unit.
 func GetSpentUnder(
 	d Day, day string, answers []Answer,
 	presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
@@ -240,8 +244,8 @@ func GetSpentUnder(
 func (h History) GetSpentUnder(
 	d Day, day string, presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
-	// Which review cards have been answered before the answer in hand, over the
-	// whole history and not this day alone.
+	// The review cards answered before the current answer, over the whole history
+	// and not only this day.
 	before := make(map[ReviewCardID]bool, len(h))
 	// Which review cards the day has already counted, so a card that comes round
 	// again in it is still the one card.
@@ -292,11 +296,11 @@ func (h History) GetReviewed(d Day, day string) map[ReviewCardID]bool {
 	return out
 }
 
-// Streak is how many days up to now were reviewed without a gap.
+// Streak is the number of consecutive days up to now with at least one answer.
 //
-// on yet does not end a streak: a person who has not sat down this morning has
-// not broken anything, and their streak is what they had last night. A day they
-// did answer on counts from itself.
+// A current day without answers does not end the streak: the streak is the
+// run of days ending the previous day. A current day with answers is counted
+// as part of the run.
 func Streak(d Day, days map[string]Tally, now time.Time) int {
 	pos := now.In(d.zone())
 	if days[d.GetName(pos)].Answered == 0 {

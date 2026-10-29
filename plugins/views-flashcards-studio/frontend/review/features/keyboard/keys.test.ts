@@ -87,8 +87,8 @@ describe('the keys a session is done with', () => {
     expect(getSessionKeyIntent(createPress('r'), { isShown: true })).toBeNull()
   })
 
-  // Control and A is how a person selects what they have written, and the field
-  // is the one place in this window anything is written.
+  // Control and A selects the text of the focused field, and the field is the
+  // only place in this window where text is entered.
   it('leaves the overlay key to the field a question is written in', () => {
     for (const tag of ['INPUT', 'TEXTAREA']) {
       expect(
@@ -119,8 +119,8 @@ describe('the keys a session is done with', () => {
     })
   })
 
-  // The reading is read down, and space is the key the hand is already on. The
-  // answer is still shown by the control standing under both panes.
+  // The notes pane is read from top to bottom, and space is the key already in
+  // use for it. The answer is still revealed by the control below both panes.
   it('scrolls the reading with the space bar and not turning the card', () => {
     expect(getSessionKeyIntent(createPress(' '), { isShown: false, isNotesOpen: true })).toEqual({
       does: 'scroll',
@@ -155,8 +155,8 @@ describe('the keys a session is done with', () => {
     }
   })
 
-  // Once the card is over, enter belongs to whatever the person has moved
-  // focus to: a button reached with the keyboard is pressed with the keyboard.
+  // After the card ends, enter acts on the element that has focus: a button
+  // focused with the keyboard is activated with the keyboard.
   it('leaves enter alone', () => {
     expect(getSessionKeyIntent(createPress('Enter'), { isShown: false })).toBeNull()
     expect(getSessionKeyIntent(createPress('Enter'), { isShown: true })).toBeNull()
@@ -225,13 +225,13 @@ describe('the keys a session is done with', () => {
 })
 
 describe('the keys a deck is chosen with', () => {
-  // The whole vault is the daily act, so it is the key under the hand.
+  // The whole vault is the daily action, so it is bound to enter.
   it('opens review for all decks on enter', () => {
     expect(getPickerKeyIntent(createPress('Enter'), 5)).toEqual({ does: 'all' })
     expect(getPickerKeyIntent(createPress(' '), 5)).toEqual({ does: 'all' })
   })
 
-  // A person reads down the list and presses what they see.
+  // The user reads down the list and presses the key shown for a deck.
   it('opens review for matched deck key', () => {
     expect(getPickerKeyIntent(createPress('a'), 5)).toEqual({ does: 'deck', at: 0 })
     expect(getPickerKeyIntent(createPress('c'), 5)).toEqual({ does: 'deck', at: 2 })
@@ -272,7 +272,7 @@ describe('the keys a deck is chosen with', () => {
   it('names each deck by the letter it is picked with', () => {
     expect(getLetter(0)).toBe('a')
     expect(getLetter(25)).toBe('z')
-    // Past the alphabet a deck is picked with the hand.
+    // Past the alphabet a deck has no letter key.
     expect(getLetter(26)).toBe('')
   })
 })

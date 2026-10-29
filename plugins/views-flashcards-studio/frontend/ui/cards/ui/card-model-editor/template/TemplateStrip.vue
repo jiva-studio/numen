@@ -15,7 +15,7 @@ const props = withDefaults(
   defineProps<{
     /** The template, laid out against the fields the card model declares. */
     template: TemplateRow
-    /** What the caller found wrong with this template, said beside its name. */
+    /** Problems the caller found with this template, shown beside its name. */
     wrong?: readonly string[]
     /** The words it is drawn with. */
     words?: CardModelWords
@@ -45,7 +45,7 @@ const naming = useNameEntry<HeadingObjection>({
 /** Why what is in the name box cannot be used, and nothing while it can. */
 const objections = computed(() => naming.getObjection(props.template.id))
 
-/** What is said of a name that cannot be used, and nothing while it can. */
+/** The message for a name that cannot be used, empty while it can. */
 const says = computed(() => {
   const objection = objections.value
   return objection === null ? null : props.words.templateObjection(objection)
@@ -170,7 +170,7 @@ const says = computed(() => {
   inset-block-end: calc(var(--box-air) + 1.875rem);
 }
 
-/* What is wrong is read over whatever it covers, so it carries a ground. */
+/* Problems are drawn over the content they cover, so they have a background. */
 .template__amiss > .template__objections {
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius);

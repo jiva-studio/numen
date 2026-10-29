@@ -137,9 +137,7 @@ export interface ReplaceValueTarget {
   text: string
 }
 
-/**
- * One value of one card as it now reads.
- */
+/** One value of one card after the change. */
 export const replaceCardValue = (
   deck: BufferDeck,
   id: string,

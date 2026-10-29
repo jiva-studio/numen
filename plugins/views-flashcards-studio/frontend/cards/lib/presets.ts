@@ -43,7 +43,7 @@ export const BUDGET_UNITS: readonly BudgetUnit[] = ['cards', 'shows']
 /** The two, in the order they are offered. */
 export const RULES: readonly Rule[] = ['interval', 'retention']
 
-/** The whole of a day's load, which a day nothing was said about carries. */
+/** The full load of a day, which a day with no configured load carries. */
 export const WHOLE_LOAD = 100
 
 /** The shares of a day's load a day may be put at, in the order they are offered. */
@@ -80,10 +80,10 @@ export interface SettingsBounds {
   readonly load?: Bounds
 }
 
-/** How far each setting goes until the application has said. */
+/** The range of each setting until the application reports it. */
 export const NO_BOUNDS: SettingsBounds = {}
 
-/** One preset as a read hands it over. */
+/** One preset as returned by a read. */
 export interface Preset {
   readonly path: string
   readonly title: string
@@ -137,9 +137,7 @@ export interface CurvePoint {
 /** A curve point that falls outside the grid. */
 export const NO_CURVE_POINT: CurvePoint = { index: -1, value: 0, day: '' }
 
-/**
- * What a preset schedules, as the figures over the picture count it.
- */
+/** What a preset schedules, as the figures on the curve count it. */
 export interface PresetCounts {
   readonly decks: number
   readonly cards: number
@@ -158,13 +156,13 @@ export interface Curve extends PresetCounts {
   readonly isHonest: boolean
 }
 
-/** One preset as a person choosing between them sees it. */
+/** One preset as presented in a list of choices. */
 export interface PresetChoice {
   readonly path: string
   readonly title: string
 }
 
-/** What the window asks about the presets of a vault. */
+/** Reads and writes of the presets of a vault. */
 export interface Presets {
   read(path: string): Promise<PresetReadResult>
   list(): Promise<readonly PresetChoice[]>

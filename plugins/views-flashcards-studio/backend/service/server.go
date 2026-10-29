@@ -55,11 +55,11 @@ func mount(s *server.Server, vault host.Vault, store host.Store) error {
 	return backend.Mount(s)
 }
 
-// settingDayStart is the setting that says when a day of review begins.
+// settingDayStart is the setting that defines when a day of review begins.
 const settingDayStart = "day_start_time"
 
-// Configure takes the settings the host hands over. A day that begins at an hour that is none stands
-// at the default.
+// Configure applies the settings supplied by the host. A day start that is not a
+// valid hour uses the default.
 func (b *Backend) Configure(values map[string]string) {
 	starts, err := review.ParseDayStart(values[settingDayStart])
 	if err != nil {

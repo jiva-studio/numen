@@ -90,8 +90,8 @@ const CORPORA = {
     cut: ANIMAL,
     card: { id: 'b8k4n2vqz6', section: null, cardModel: 'Animal', filled: [] },
   },
-  /* A card naming a card model the vault does not hold: nothing says what its
-     boxes are, so it draws none and keeps what it holds in the file. */
+  /* A card naming a card model the vault does not hold: the fields are
+     unknown, so no boxes are drawn and the card's content stays in the file. */
   'no card model': {
     cut: null,
     card: {
@@ -116,8 +116,8 @@ const CORPORA = {
     },
     wrong: ['the first paragraph of this card is not a lone wikilink, so it names no card model'],
   },
-  /* A card writing one field twice. Both values are kept where a person can see
-     them and take one out. */
+  /* A card with one field written twice. Both values are displayed so the user
+     can see them and remove one. */
   'a field written twice': {
     cut: ANIMAL,
     card: {
@@ -133,7 +133,7 @@ const CORPORA = {
     wrong: ['this card writes one field twice'],
     wrongUnder: { Name: ['this card writes Name twice'] },
   },
-  /* A card from somebody else. A value is a box, so no tag of one is drawn. */
+  /* A card from another source. A value is a box, so no tag is rendered. */
   'tags that must not survive': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
@@ -259,9 +259,9 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
 /**
  * A card cut by a card model of four fields, holding two of them.
  *
- * A value is the room under the rule that names it: the name relies on the
+ * A value is the area under the rule that names it: the name is anchored to the
  * line, the box begins where the line ends, and nothing is drawn around it.
- * Every one of them is open to typing, and the strip over them opens nothing.
+ * Every value is editable, and the strip above them is not.
  */
 export const ACard: Story = {
   play: async ({ canvasElement }) => {
@@ -278,7 +278,7 @@ export const ACard: Story = {
     const name = label.getBoundingClientRect()
     expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
 
-    // The rule runs to both edges of the card, past the room the values keep.
+    // The rule spans both edges of the card, past the area of the values.
     const edges = tile.getBoundingClientRect()
     expect(line.left - edges.left).toBeLessThan(2)
     expect(edges.right - line.right).toBeLessThan(2)
@@ -299,14 +299,14 @@ export const ACard: Story = {
     const heights = boxes.map((box) => Math.round(box.getBoundingClientRect().height))
     expect(new Set(heights).size).toBe(1)
 
-    // The card keeps the ground both the rules and the boxes stand on.
+    // The card keeps the surface that both the rules and the boxes are drawn on.
     const cell = found(canvasElement, '.autosize')
     const ground = getComputedStyle(cell).backgroundColor
     expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
     expect(getComputedStyle(cell).borderTopWidth).toBe('0px')
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
-    // The strip says what cut the card, and holds the one way to remove it.
+    // The strip shows the card model of the card and holds the one control to remove it.
     const header = found(canvasElement, '.card-header')
     expect(found(canvasElement, '[data-cut-of]').textContent?.trim()).toBe('Animal')
     expect(tile.querySelector('[aria-expanded]')).toBeNull()
@@ -331,8 +331,8 @@ export const ACard: Story = {
     await userEvent.type(box, '!')
     expect((box as HTMLTextAreaElement).value).toContain('!')
 
-    // Every box keeps what was typed, breaks and all, the first field's among
-    // them: a field holds as many lines as a person writes.
+    // Every box keeps what was typed, including line breaks and the first field: a
+    // field holds as many lines as are written.
     const first = found(canvasElement, '[data-value="Name"]') as HTMLTextAreaElement
     await userEvent.click(first)
     await userEvent.type(first, '{Enter}b')
@@ -354,7 +354,8 @@ export const AFirstFieldOfManyLines: Story = {
 }
 
 /**
- * what the wrapping evaluates to, which is worked out by the ground behind it.
+ * A value that wraps: its height is the result of the wrapping, which is
+ * computed by the layout of the surrounding element.
  */
 export const AValueThatWraps: Story = {
   args: { corpus: 'a value that wraps', width: '18rem' },
@@ -379,8 +380,8 @@ export const NoCardModel: Story = {
   play: async ({ canvasElement }) => {
     const tile = found(canvasElement, '[data-card="m3t9w5rj1x"]')
 
-    // Nothing says what its boxes are, so it draws none and says what it asked
-    // for.
+    // The card model is unknown, so no boxes are drawn and the missing card model
+    // is named.
     expect(tile.textContent).toContain('No card model called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
@@ -403,10 +404,10 @@ export const NoCardModel: Story = {
 /**
  * A card whose first paragraph is not a lone wikilink.
  *
- * That nothing cut it is a plain fact and stands quietly on the strip, where
- * the name of a card model relies on every other card. What the vault holds
- * against the card is said once, and what the card holds is read where it
- * would be typed.
+ * The missing card model is reported as a plain fact on the strip, where the
+ * name of a card model is shown for every other card. The problems the vault
+ * found with the card are reported once, and the card content is shown where
+ * it is edited.
  */
 export const CutByNothing: Story = {
   args: { corpus: 'cut by nothing' },
@@ -419,7 +420,7 @@ export const CutByNothing: Story = {
     const label = found(canvasElement, '.card__field')
     expect(getComputedStyle(cutElement).color).toBe(getComputedStyle(label).color)
 
-    // It is said once: the body carries what the vault found and nothing else.
+    // The problem is reported once: the body shows what the vault found and nothing else.
     const response = [...tile.querySelectorAll('.card__objections')]
     expect(response).toHaveLength(1)
     expect(response[0]?.textContent).toContain('not a lone wikilink')
@@ -444,11 +445,11 @@ export const CutByNothing: Story = {
 }
 
 /**
- * A card writing one field twice, with what the vault found wrong with it.
+ * A card with one field written twice, with the problems the vault found.
  *
- * What stands against the card is said under its strip, above the first value;
- * what stands against one value is said under that value, once, at the last box
- * standing for it.
+ * Problems with the card are shown under its strip, above the first value;
+ * problems with one value are shown under that value, once, at the last box of
+ * that value.
  */
 export const WhatIsWrongWithIt: Story = {
   args: { corpus: 'a field written twice' },
@@ -464,7 +465,7 @@ export const WhatIsWrongWithIt: Story = {
       first.getBoundingClientRect().top + 1,
     )
 
-    // It is said once, under the second of the two boxes standing for Name.
+    // It is reported once, under the second of the two boxes for Name.
     const underCards = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
     expect(underCards).toHaveLength(1)
     expect(underCards[0]?.textContent).toContain('this card writes Name twice')
@@ -487,7 +488,7 @@ export const WhatIsWrongWithIt: Story = {
   },
 }
 
-/** A card from somebody else. A value is a box, so no tag of one is drawn. */
+/** A card from another source. A value is a box, so no tag is rendered. */
 export const TagsThatMustNotSurvive: Story = {
   args: { corpus: 'tags that must not survive' },
   play: async ({ canvasElement }) => {
@@ -496,8 +497,7 @@ export const TagsThatMustNotSurvive: Story = {
     expect(canvasElement.querySelector('[onerror]')).toBeNull()
     expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
 
-    // What the person wrote is theirs to read and change, standing as the text
-    // of a box.
+    // The content the user wrote is readable and editable as the text of a box.
     const box = canvasElement.querySelector<HTMLTextAreaElement>('[data-value="Answer"]')
     expect(box?.value).toContain('<script>')
   },

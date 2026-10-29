@@ -31,8 +31,8 @@ describe('how full a day is drawn', () => {
     expect(getFill(1)).toBe(1)
   })
 
-  // The figure said and the colour drawn are one number, so a level the row
-  // cannot draw is not a level it announces either.
+  // The announced figure and the drawn colour are one number, so a level the row
+  // cannot draw is not announced either.
   it('is brought inside nothing and the whole at its current position outside them', () => {
     expect(getFill(4)).toBe(1)
     expect(getFill(-0.2)).toBe(0)

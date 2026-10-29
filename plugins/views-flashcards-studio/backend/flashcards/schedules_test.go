@@ -16,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// A build that keeps nothing works the schedules out from the answers at every
-// launch, and says what a build that keeps them says. The cache is a saving and
-// never an answer of its own.
+// A build without a cache computes the schedules from the answers at every
+// launch and produces the same schedules as a build with a cache. The cache only
+// saves work and never determines a result.
 func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -188,8 +188,8 @@ func answerBothAlike(t *testing.T, s vaulted) {
 	}
 }
 
-// A card is scheduled at the share of the cards its own preset asks for, so two
-// presets asking for different shares send the same answer different distances.
+// A card is scheduled at the retention its own preset requests, so two presets
+// with different retention targets give the same answer different intervals.
 func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newTargetedNotes(0.95, 0.75))
@@ -203,7 +203,7 @@ func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
 	if high.Due.IsZero() || low.Due.IsZero() {
 		t.Fatalf("the two cards came to %+v and %+v", high, low)
 	}
-	// More of the cards asked back is shorter intervals.
+	// A higher retention target gives shorter intervals.
 	if !high.Due.Before(low.Due) {
 		t.Errorf("asking for 0.95 comes round at %v and 0.75 at %v", high.Due, low.Due)
 	}
@@ -262,8 +262,8 @@ func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 		t.Fatalf("the two cards stand at one day, %v", was[underHigh].Due)
 	}
 
-	// The decks swap presets, so the card that asked for 0.95 now asks for 0.75
-	// and the other way about.
+	// The decks swap presets, so the card with the 0.95 target gets 0.75
+	// and the reverse.
 	write(t, s, "decks/High.md", strings.Replace(files["decks/High.md"], "to: High", "to: Low", 1))
 	write(t, s, "decks/Low.md", strings.Replace(files["decks/Low.md"], "to: Low", "to: High", 1))
 
@@ -282,8 +282,8 @@ func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 // two targets in force are the two that were in force.
 func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 	t.Parallel()
-	// The card that moves, written so that it can be cut from one deck and
-	// pasted into the other.
+	// The card that moves is written in a form that can be cut from one deck and pasted
+	// into the other.
 	movedCard := "\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n"
 	files := newTargetedNotes(0.95, 0.75)
 	files["decks/High.md"] += "\n## Stays ^card000001\n\n[[Term]]\n\n### Word\n\nkr\n" +
@@ -309,8 +309,8 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 	}
 }
 
-// A vault whose decks name no preset is scheduled as it always was: the
-// defaults are the target the whole vault stood at.
+// A vault whose decks name no preset is scheduled with the defaults, which are
+// the target for the whole vault.
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -339,13 +339,13 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	}
 }
 
-// The day a card comes back on is one answer, whether it is answered or
-// projected. A preset evening its days out moves the card off the day carrying
-// none of the load, and the session and the picture move it to the same one.
+// The due day of a card is the same whether the card is answered or projected.
+// A preset that evens out the load moves the card to the day with no load, and
+// the session and the plot move it to the same day.
 //
-// The card is answered twice at the hour the day opens: a card answered no time
-// at all since its last answer is one the projection is certain came back, so
-// the two work the same interval out and what is compared is where it is put.
+// The card is answered twice at the hour the day opens. A card answered zero
+// time after its last answer is one the projection treats as certainly recalled,
+// so both paths compute the same interval and the test compares the day chosen.
 func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
@@ -505,15 +505,16 @@ func TestScheduleAlgorithmPluggable(t *testing.T) {
 }
 
 // A warm request over a vault of two hundred cards answered over thirty days.
-// What is counted below is the work a request does and not its size, so a small
-// vault says what a large one says.
+// The counts below measure the work of a request and not its size, so a small
+// vault gives the same counts as a large one.
 const (
 	loadCards  = 200
 	loadDays   = 30
 	loadPerDay = 20
 )
 
-// replayed once, and every request after that is told what the replay came to.
+// TestCountCardsDue_UsesScheduleCache covers the schedule cache. The answers are
+// replayed once, and every later request is served from the replay result.
 func TestCountCardsDue_UsesScheduleCache(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
@@ -600,9 +601,8 @@ func TestTheCacheAnswersWhatAReplayAnswers(t *testing.T) {
 	}
 }
 
-// loadCounts is what one request asked of the store, of the cache and of the
-// scheduler. Each of these is work a request is meant to do once, so each is
-// counted.
+// loadCounts is the calls one request made to the store, the cache and the
+// scheduler. Each of these is work a request does once, so each is counted.
 type loadCounts struct {
 	// Listed is how many times the log folder was listed, and Opened how many
 	// run files were read.
@@ -612,12 +612,12 @@ type loadCounts struct {
 	// times it was written.
 	Consulted int
 	Rewritten int
-	// Dated is how many times the scheduler was asked where an answer leaves a
-	// card.
+	// Dated is how many times the scheduler was called for the date following an
+	// answer.
 	Dated int
 }
 
-// countingStores counts what a use case asks of one vault's store.
+// countingStores counts the calls a use case makes to one vault's store.
 type countingStores struct {
 	inner ports.LogStores
 	on    *loadCounts
@@ -650,7 +650,7 @@ func (s countingStore) AppendLog(ctx context.Context, name string, content []byt
 	return s.inner.AppendLog(ctx, name, content)
 }
 
-// countingKept counts what a use case asks of the cache.
+// countingKept counts the calls a use case makes to the cache.
 type countingKept struct {
 	inner ports.ScheduleStore
 	on    *loadCounts
@@ -666,7 +666,7 @@ func (k countingKept) Write(ctx context.Context, vaultID domain.VaultID, content
 	return k.inner.Write(ctx, vaultID, content)
 }
 
-// countingBy counts how often the scheduler is asked for a next date.
+// countingBy counts how often the scheduler is called for a next date.
 type countingBy struct {
 	inner review.Scheduler
 	on    *loadCounts
@@ -686,8 +686,8 @@ func (b countingBy) Endings(s review.Schedule, pos time.Time) (review.Schedule, 
 
 func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s) }
 
-// loaded is a vault of many cards and many run files, with everything a request
-// asks of the store, the cache and the scheduler counted.
+// loaded is a vault of many cards and many run files, with every call to the
+// store, the cache and the scheduler counted.
 type loaded struct {
 	vaulted
 	on          *loadCounts
@@ -748,7 +748,7 @@ func (l loaded) logRead(tb testing.TB) (flashcards.ReviewLog, error) {
 	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
 }
 
-// countLoads runs one request with the counters cleared, and says what it asked.
+// countLoads runs one request with the counters reset and returns the counts.
 func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	tb.Helper()
 	*l.on = loadCounts{}
@@ -758,8 +758,8 @@ func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	return *l.on
 }
 
-// deckOf is a vault of one card model of one review card and cards cards, spread over
-// twenty decks the way a person's own vault spreads them.
+// loadDeck builds a vault with one card model, one review card and the given
+// number of cards, spread over twenty decks.
 func loadDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": vault["Term.md"]}
@@ -835,10 +835,10 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 // The requests a window makes of a vault, over fifty thousand review cards
 // answered a hundred and fifty times a day for six months.
 //
-// The first three are warm: the caches are filled before the clock starts,
-// which is what a person's second question of an evening costs. The last is the
-// history screen on a build that keeps no counting, which is what the first
-// question of a launch costs.
+// The first three are warm: the caches are filled before the clock starts, which
+// is the cost of a repeated query within a session. The last is the history
+// screen on a build without a counting cache, which is the cost of the first
+// query after a launch.
 func BenchmarkVault(b *testing.B) {
 	l := load(b, 50000, 180, 150)
 	ctx := b.Context()
@@ -941,8 +941,8 @@ func (a lookups) GetLinks(ctx context.Context, vaultID domain.VaultID, from stri
 	return a.LinkQueries.GetLinks(ctx, vaultID, from)
 }
 
-// Counting a vault reads it once: every deck is opened once and asked once
-// which preset schedules it.
+// Counting a vault reads it once: every deck is opened once and queried once
+// for the preset that schedules it.
 func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -1010,8 +1010,8 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	}
 }
 
-// The answers are read once at a launch: what is owed and the schedules it is
-// counted from come out of the one read.
+// The answers are read once at a launch: the due count and the schedules are
+// both computed from that one read.
 func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{

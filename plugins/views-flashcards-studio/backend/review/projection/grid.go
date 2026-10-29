@@ -22,9 +22,9 @@ func pickEvenlySpacedDays(days, places int) []int {
 	return out
 }
 
-// setNearestStep puts one place of the range on the grid, in place of the place
-// nearest it. The two ends stand: a range begins tomorrow and reaches as far as
-// it reaches, whatever day the file names.
+// setNearestStep replaces the place nearest pos with pos on the grid. The two end
+// places remain fixed: a range begins tomorrow and extends to its natural end,
+// whatever day the file names.
 //
 // The point under the place is worked out for the day the preset aims at.
 func setNearestStep(steps []int, pos int) []int {
@@ -43,9 +43,8 @@ func setNearestStep(steps []int, pos int) []int {
 	return steps
 }
 
-// snap puts the value the preset holds on the grid, in place of the place of
-// it nearest that value, so what is drawn under the place is drawn for the
-// setting the person is standing at.
+// snap replaces the grid place nearest the value with the value, so the figures
+// drawn at that place are those of the preset's current setting.
 //
 // First and last are the places a value may take: a range whose ends say what
 // the setting may be at all keeps them.
@@ -62,7 +61,7 @@ func snap(grid []float64, value float64, first, last int) {
 	grid[pos] = value
 }
 
-// abs is how far a whole number stands from nothing.
+// abs returns the absolute value of a whole number.
 func abs(one int) int {
 	if one < 0 {
 		return -one

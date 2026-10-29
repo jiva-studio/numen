@@ -1,7 +1,8 @@
 /**
- * The curve of a preset is sketched at once and asked of the application, one
- * question at a time; an answer already held is drawn without asking, and an
- * answer to a question nobody is waiting for is not drawn.
+ * The curve of a preset is first rendered as a sketch and then requested from
+ * the application, one request at a time; a response already held is rendered
+ * without a request, and a response to a request that is no longer awaited is
+ * not rendered.
  */
 import { describe, expect, it } from 'vitest'
 import {

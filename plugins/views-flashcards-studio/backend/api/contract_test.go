@@ -38,8 +38,8 @@ var messageTypes = map[string]struct{ request, response func() any }{
 	"GetVaultDeckPreset":   {func() any { return new(api.GetVaultDeckPresetRequest) }, func() any { return new(api.GetVaultDeckPresetResponse) }},
 }
 
-// normalize returns the canonical JSON of raw, so that two documents with the same content and a
-// different layout compare equal.
+// normalize returns the canonical JSON of raw: two documents with the same content
+// and a different layout compare equal.
 func normalize(t *testing.T, raw []byte) string {
 	t.Helper()
 	var value any

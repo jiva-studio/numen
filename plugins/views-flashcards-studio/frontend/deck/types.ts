@@ -10,8 +10,7 @@ import type { Choice, DeckPreset } from './model/useDeckSchedule'
 export type { Choice, DeckPreset }
 
 /**
- * One card as the window holds it: what the file says, under the identity it is
- * addressed by.
+ * One card as the editor holds it: the file's content, addressed by its identity.
  */
 export interface BufferCard {
   /** The identity the window addresses it by: its card id, or one minted for it. */
@@ -22,12 +21,12 @@ export interface BufferCard {
    */
   readonly cardId: string
   /**
-   * The section it is placed under, by the identity this window knows that section
-   * at. Nothing for a card standing before the first.
+   * The section the card is placed under, by the identity the editor knows that
+   * section by. Null for a card before the first section.
    */
   readonly section: string | null
   /**
-   * The line its heading says, with the card id taken off.
+   * The heading line, with the card id removed.
    */
   readonly heading: string
   /**

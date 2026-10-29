@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * What one day of the grid came to. The day is handed to it, and where it
- * stands is the tooltip's business.
+ * The summary of one day of the grid. The day is passed in, and positioning it
+ * is the tooltip's responsibility.
  *
- * `data-day-summary` names each part of the account: `account` is the whole of it,
- * and `day`, `count`, `four`, `said`, `how-many` and `came` are its lines.
+ * `data-day-summary` names each part of the summary: `account` is the whole
+ * summary, and `day`, `count`, `four`, `said`, `how-many` and `came` are its
+ * lines.
  */
 import { computed } from 'vue'
 
@@ -14,14 +15,13 @@ import type { Words } from '../../lib/words'
 
 const props = defineProps<{
   day: Day
-  /** What each line of it is called, in the person's own language. */
+  /** The label of each line, in the user's language. */
   words: Words
 }>()
 
 /**
- * How much of what the person is already reviewing came back to them, where any
- * of it was asked at all. A day of nothing but new cards has no share to give,
- * and says none.
+ * The share of the reviewed cards that were recalled, where any card was presented.
+ * A day with only new cards has no share and shows an empty string.
  */
 const came = computed(() => {
   if (props.day.asked <= 0) return ''

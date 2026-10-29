@@ -1,13 +1,13 @@
 /**
- * Asking about the card in front of a person.
+ * Questions about the card currently displayed.
  *
- * Nothing here draws: the port is the window's `AgentPort`, and this says what
- * the question is about.
+ * Nothing here renders: the port is the window's `AgentPort`, and this module
+ * adds the card the question is about.
  */
 import type { AgentPort } from '@numen/plugin-sdk'
 import type { ReviewCard } from '../../../entities/card'
 
-/** The keys the card tools read the card in front of the person under. */
+/** The keys under which the card tools read the card currently displayed. */
 export const CARD_CONTEXT = {
   deck: 'md.numen.views.flashcards.studio/deck',
   card: 'md.numen.views.flashcards.studio/card',
@@ -15,13 +15,13 @@ export const CARD_CONTEXT = {
 } as const
 
 /**
- * The agent a conversation about one card of a vault is held with.
+ * The agent for a conversation about one card of a vault.
  *
- * Which card that is travels in the context of the question and never inside
- * it. A deck in a synced vault is named by whoever synced it, and a name in the
- * question is read as instruction; `card_current` gives the agent the same name
- * as a tool's answer, which is data. The window shows no vault of its own, so
- * the question names the vault the card tools work.
+ * The card identity is passed in the context of the question and not inside
+ * it. A deck name in a synced vault is set by the sync source, and a name in
+ * the question text would be read as an instruction; `card_current` returns the
+ * same name as a tool result, which is data. The window has no vault of its own,
+ * so the question names the vault the card tools operate on.
  */
 export const createCardAgentPort = (
   agent: AgentPort,

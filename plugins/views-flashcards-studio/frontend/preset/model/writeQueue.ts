@@ -46,7 +46,7 @@ export const sendWrite = async (queue: WriteQueue, options: WriteOptions): Promi
   try {
     answer = await core.write(path, settings, queue.revision)
   } catch {
-    // The window says what it could not do; what the call carried back adds nothing a person can act on.
+    // The window states what failed; the error returned by the call adds nothing the user can act on.
     queue.errorMessage.value = words.unwritten
     return
   }

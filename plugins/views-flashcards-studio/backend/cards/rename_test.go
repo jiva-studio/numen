@@ -125,8 +125,8 @@ func TestRenamingTheFirstFieldReachesEveryDeckThatCardModelSplits(t *testing.T) 
 	if !strings.Contains(cardModel, "fields:\n  - Species\n  - Height\n") {
 		t.Errorf("the card model was not renamed: %q", cardModel)
 	}
-	// The heading is read from the field, and it stands where it stood: what a
-	// field is called is no part of what a card is called.
+	// 	// The heading is read from the field and keeps its position: the name of a
+	// 	// field is not part of the name of a card.
 	mammals := read(t, vs.first, "decks/Mammals.md")
 	if !strings.Contains(mammals, "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Species\n\nLlama\n") {
 		t.Errorf("the card of that card model was not renamed: %q", mammals)
@@ -140,9 +140,9 @@ func TestRenamingTheFirstFieldReachesEveryDeckThatCardModelSplits(t *testing.T) 
 	}
 }
 
-// A rename reaches the decks of the vault it was asked of, and no other's. The
-// second vault holds a card naming the first vault's card model, under a heading of
-// the same name.
+// A rename applies to the decks of the vault it targets, and to no other vault.
+// The second vault holds a card that references the first vault's card model,
+// under a heading with the same name.
 func TestARenameStaysInItsOwnVault(t *testing.T) {
 	vs := newVaults(t)
 	quartz := read(t, vs.second, "decks/Quartz.md")
@@ -156,8 +156,8 @@ func TestARenameStaysInItsOwnVault(t *testing.T) {
 		t.Errorf("the other vault was written\n was %q\n now %q", quartz, after)
 	}
 
-	// And the other way round: the second vault's own card model reaches its own
-	// deck, and nothing of the first's.
+	// 	// In the other direction: the second vault's own card model applies to its
+	// 	// own deck and to nothing of the first vault.
 	mammals := read(t, vs.first, "decks/Mammals.md")
 	if _, err := newRenameField(t, vs).Execute(t.Context(), vs.second, cards.Rename{
 		CardModel: "Mineral.md", From: "Height", To: "Crystal habit",
@@ -250,8 +250,8 @@ func TestARenameTheCardModelRefusedReachesNoDeck(t *testing.T) {
 	}
 }
 
-// A deck over the bound is not read, so the rename does not reach it and says
-// so.
+// A deck over the size bound is not read, so the rename does not apply to it and
+// reports that.
 func TestADeckOverTheBoundIsNotRenamed(t *testing.T) {
 	vs := newVaults(t)
 	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Birds.md"), cards.MaxBytes+1); err != nil {
@@ -294,10 +294,10 @@ func (q byType) GetTypes(
 	return q.NoteQueries.GetTypes(ctx, vaultID, paths)
 }
 
-// A rename asks the index for the decks of the vault and for nothing else.
+// A rename queries the index for the decks of the vault and for nothing else.
 //
-// The whole of it runs under the vault's write lock, so a question per note is
-// every other write in the application waiting behind a vault-sized loop.
+// The whole rename runs under the vault's write lock, so one query per note would
+// block every other write in the application behind a loop over the whole vault.
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
 	var request int
@@ -317,8 +317,8 @@ func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	}
 }
 
-// shut is a vault that refuses to be written: no lock is given and no writer
-// opens. A test that card ids it watched fails on being asked at all.
+// shut is a vault that rejects writes: no lock is granted and no writer opens.
+// When `isWatched` is set, a lock or open call fails the test.
 type shut struct {
 	ports.VaultWriters
 	t         *testing.T
@@ -407,8 +407,7 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 	}
 }
 
-// A rename made with nothing to level the index writes all the same, and says
-// what it wrote.
+// A rename with no index to update still writes, and reports what it wrote.
 func TestARenameWithNoIndexToLevelReturnsWhatItWrote(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRenameField(
@@ -531,8 +530,8 @@ func TestARenameOfACardModelThatWillNotOpenWritesNothing(t *testing.T) {
 	}
 }
 
-// The card model is written against what the vault said it was when the rename
-// looked at it, so a person saving it in the meantime keeps what they saved.
+// The card model is written against its state when the rename read it, so a
+// concurrent save of the card model by the user is preserved.
 func TestARenameDoesNotWriteOverACardModelSavedWhileItRan(t *testing.T) {
 	vs := newVaults(t)
 	saved := animals["Animal.md"] + "\nA line written while the rename ran.\n"
@@ -683,8 +682,8 @@ func TestADeckAtTheBoundIsRenamed(t *testing.T) {
 	}
 }
 
-// A deck holding no card of the card model is not written, byte for byte, though a
-// write would have given its card a card id and the deck an identifier.
+// A deck with no card of the card model is not written, byte for byte, although a
+// write would have assigned its card a card id and the deck an identifier.
 func TestADeckContainingNoCardOfTheCardModelIsLeftAsItWas(t *testing.T) {
 	vs := newVaults(t)
 	words := "---\ntype: deck\n---\n\n## Gloss\n\n[[Term]]\n\n### Word\n\nGloss\n\n### Height\n\nnot a length\n"

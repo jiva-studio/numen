@@ -17,7 +17,7 @@ import { Icon } from '../icon'
 import { parseStepKey, STEP_KEYS, type StepDirection } from '../../lib/order'
 
 defineProps<{
-  /** What is said of taking hold of it. */
+  /** The label of the control for grabbing the card. */
   drag: string
 }>()
 
@@ -26,8 +26,8 @@ const emit = defineEmits<{
   (event: 'dragstart', press: DragEvent): void
   (event: 'dragend', press: DragEvent): void
   /**
-   * It was asked to go one place along the order, with the press itself.
-   * Whether there is a place that way is the caller's.
+   * The card is moved one position along the order, with the key press itself.
+   * Whether there is a position in that direction is decided by the caller.
    */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
 }>()
@@ -58,7 +58,7 @@ const press = (event: PointerEvent): void => {
 
 onScopeDispose(release)
 
-/** The handle asked by an arrow to carry what it heads one place along. */
+/** The handle moved by an arrow key to carry the card it heads one position along. */
 const step = (event: KeyboardEvent): void => {
   const direction = parseStepKey(event.key)
   if (direction !== null) emit('step', direction, event)

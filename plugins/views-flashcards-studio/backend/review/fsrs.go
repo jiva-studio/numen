@@ -21,9 +21,9 @@ const FSRSName = "fsrs-5"
 // FSRS spaces a card by how well it came back, carrying two numbers between
 // answers: how long the card is expected to stay recalled, and how hard it is.
 //
-// The parameters are the library's and the arithmetic over them is here, so a
-// scheduler carries no state between answers and one may be asked about many
-// review cards at once.
+// The parameters come from the library and the arithmetic over them is here, so a
+// scheduler carries no state between answers and one instance can serve many
+// review cards concurrently.
 type FSRS struct {
 	p    fsrs.Parameters
 	name string
@@ -31,10 +31,10 @@ type FSRS struct {
 
 // NewFSRS is the scheduler on its published parameters.
 //
-// The fuzz those parameters allow — a day either way, so that cards learnt
-// together do not come round together forever — is turned off. A schedule is
-// worked out again from the answers whenever it is wanted, and a scheduler that
-// answered differently each time would give a different one every launch.
+// Fuzz, the library's random offset of a day either way that keeps cards learned
+// together from falling due together, is disabled. A schedule is recomputed from
+// the answers whenever it is needed, and a scheduler with varying output would
+// produce a different schedule on every launch.
 func NewFSRS() FSRS {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
@@ -124,22 +124,23 @@ func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
 	}
 }
 
-// atAnswer is a review card at the instant it is answered: the phase the answer
-// finds it in, how many whole days it stood away, and where the answer leaves
-// what no rating decides.
+// atAnswer is a review card at the instant it is answered: its phase, the whole
+// days elapsed since its last answer, and the schedule after the answer for
+// everything no rating decides.
 type atAnswer struct {
 	phase fsrs.State
-	// away is how many whole days the review card stood away, and is none for one
+	// away is the number of whole days elapsed since the last answer, and zero for a
+	// card that has not been answered.
 	away float64
-	// last is where the review card stood before the answer, and out is where the
-	// answer leaves it but for what the rating decides.
+	// last is the schedule before the answer, and out is the schedule after the
+	// answer except for the fields the rating decides.
 	last Schedule
 	out  Schedule
 }
 
-// readAtAnswer reads a review card at the instant it is answered. One nobody has
-// answered opens at the phase the scheduler begins a card in, at no stability
-// and no difficulty.
+// readAtAnswer builds the atAnswer state of a review card at the instant it is
+// answered. An unanswered card starts in the phase the scheduler begins cards in,
+// with zero stability and zero difficulty.
 func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	one := atAnswer{phase: fsrs.New}
 	if !s.IsNew() {
@@ -162,9 +163,9 @@ func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	return one
 }
 
-// getNextFromNew is where an answer leaves a review card nobody had answered.
-// Three of the four put it into memory over minutes, and the fourth sends it
-// away in days.
+// getNextFromNew returns the schedule after an answer to a review card that has
+// not been answered. Three of the four ratings schedule it in minutes, and the
+// fourth in days.
 func (f FSRS) getNextFromNew(one atAnswer, pos time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.first(r)
@@ -208,12 +209,13 @@ func (f FSRS) getNextFromLearning(one atAnswer, pos time.Time, r fsrs.Rating) Sc
 	return out
 }
 
-// getNextFromReview is where an answer leaves a review card the scheduler has put
-// into review, worked out from how likely it was to come back. The ending it
-// did not come back on is a lapse and is asked again in minutes.
+// getNextFromReview returns the schedule after an answer to a review card in the
+// review phase, computed from its recall probability at the answer instant. The
+// Again rating is a lapse and is scheduled again in minutes.
 //
-// Each interval is held past the one below it, so the day an answer names is
-// worked out from the endings under it and not from its own stability alone.
+// Each interval is at least one day longer than the interval below it, so the due
+// day derives from the intervals of the lower ratings and not from the rating's own
+// stability alone.
 func (f FSRS) getNextFromReview(one atAnswer, pos time.Time, back float64, r fsrs.Rating) Schedule {
 	d, s := one.last.Difficulty, one.last.Stability
 	out := one.out
@@ -250,13 +252,12 @@ func (f FSRS) getRecall(one atAnswer) float64 {
 	return math.Pow(1+f.p.Factor*one.away/one.last.Stability, f.p.Decay)
 }
 
-// getInterval is how many days an answer sends a review card standing at this
-// stability away for, at the share of the cards this scheduler asks to bring
-// back.
+// getInterval returns the number of days an answer schedules a review card of
+// this stability, at the scheduler's target retention.
 //
-// The parameters carry no fuzz, so the interval is the number this arithmetic
-// gives, and a review card answered the same way is sent away for the same day at
-// every launch.
+// The parameters carry no fuzz, so the interval is exactly the value of this
+// arithmetic, and a review card answered the same way receives the same due day
+// on every launch.
 func (f FSRS) getInterval(stability float64) float64 {
 	out := stability / f.p.Factor * (math.Pow(f.p.RequestRetention, 1/f.p.Decay) - 1)
 	return math.Max(math.Min(math.Round(out), f.p.MaximumInterval), 1)

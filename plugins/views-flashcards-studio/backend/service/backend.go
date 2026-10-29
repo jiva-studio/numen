@@ -150,7 +150,7 @@ func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 	return v, nil
 }
 
-// getVault is the vault of an identity, as the host knows it.
+// getVault returns the vault with an identity, as the host reports it.
 func (b *Backend) getVault(ctx context.Context, id string) (domain.Vault, error) {
 	v, err := b.vault.With(domain.VaultID(id)).GetVault(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {

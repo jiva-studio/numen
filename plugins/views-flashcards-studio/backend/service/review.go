@@ -24,11 +24,11 @@ import (
 // window, and an answer belongs to the session it was given in.
 var ErrNoRun = errors.New("no run of that name is open")
 
-// reviewHandler answers the window a person runs their cards in.
+// reviewHandler serves the review window.
 //
-// The runs it holds are the sessions open here, one to a vault. A run is a file in a vault that only
-// this backend appends to, and it is release when another session opens on that vault: what was
-// written stands, and the next session opens a file of its own.
+// The runs it holds are the sessions open here, one per vault. A run is a file in a vault that only
+// this backend appends to. It is released when another session opens on that vault: the written
+// answers remain, and the next session opens a new file.
 type reviewHandler struct {
 	*Backend
 }
@@ -49,12 +49,12 @@ func (s *sessions) store(v domain.Vault, run *flashcards.LogWriter) {
 	s.run[v.ID] = run
 }
 
-// getRun is the run this backend has open on a vault, and only under the name that run writes.
+// getRun returns the run this backend has open on a vault, found only under the name that run writes.
 //
-// The vault is part of what is asked for, because an answer is written to the vault its run was
-// opened on: a run named against another vault would put a person's answer in a history it does not
-// belong to, and an answer written is not written again. The name is asked for as well, so a page
-// holding the name of a session that is over cannot go on writing to it.
+// The vault is part of the lookup, because an answer is written to the vault its run was
+// opened on: a run named against another vault would put an answer in the wrong history, and a
+// written answer is not written again. The name is part of the lookup as well, so a page
+// holding the name of a finished session cannot continue writing to it.
 func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -75,8 +75,8 @@ func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcard
 	return run, nil
 }
 
-// formatTime is how an instant reaches the page: the one shape everything here writes, so the page
-// parses one.
+// formatTime formats an instant for the page: the one shape everything here writes, so the page
+// parses a single format.
 func formatTime(t time.Time) string {
 	if t.IsZero() {
 		return ""
@@ -90,12 +90,11 @@ func formatTime(t time.Time) string {
 // vault's worth of cards while it runs.
 const atOnce = 4
 
-// WatchCardsDue counts every vault the installation knows.
+// WatchCardsDue counts every vault the installation contains.
 //
-// The vaults go first, by name and by where they are, and each count follows as
-// it is worked out. A vault that could not be counted arrives with nothing
-// counted and the reason on it. One vault the editor has never read is not a
-// reason to refuse a person the others.
+// The vaults are sent first, with name and location, and each count follows as
+// it is computed. A vault that cannot be counted is sent with no count and the
+// error. A single unreadable vault does not block the counts of the others.
 func (a *reviewHandler) WatchCardsDue(
 	ctx context.Context, _ *api.WatchCardsDueRequest,
 	send func(*api.WatchCardsDueResponse) error,
@@ -122,11 +121,11 @@ func (a *reviewHandler) WatchCardsDue(
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	// Counting four vaults reads four vaults, and nothing else tells this
-	// handler its client has gone: the request context belongs to the process
-	// and is not cancelled when a page is reloaded away from under the stream.
-	// A write that fails is the one report there is, so the list goes again
-	// while nothing has been counted, and a person reloading twice does not
+	// Counting four vaults reads four vaults, and nothing else signals this
+	// handler that its client has gone: the request context belongs to the process
+	// and is not cancelled when a page is reloaded during the stream.
+	// A failed write is the only signal, so the list is sent again periodically
+	// while nothing has been counted, and a repeated reload does not
 	// leave two sets of counters reading the vault.
 	repeat := clock.NewTicker(again)
 	defer repeat.Stop()
@@ -248,10 +247,10 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 	return one
 }
 
-// StartSession opens a session and hands over what to ask, in order.
+// StartSession opens a session and returns the cards to ask, in order.
 //
 // A session is opened over one deck, over one preset, or over the whole vault.
-// when there is something to answer.
+// The cards are returned only when there is something to answer.
 func (a *reviewHandler) StartSession(
 	ctx context.Context, req *api.StartSessionRequest,
 ) (*api.StartSessionResponse, error) {
@@ -459,10 +458,10 @@ func sortReviewDays(days []*api.ReviewDay) []*api.ReviewDay {
 	return days
 }
 
-// GetDeckNeighbourhood hands over what the deck being sat to is joined to.
+// GetDeckNeighbourhood returns what the selected deck is linked to.
 //
-// Nothing here writes and no run is named: a person may read around a deck
-// before they have started on it, and reading is not part of a session.
+// Nothing here writes and no run is named: a deck can be browsed before a
+// session starts, and reading is not part of a session.
 func (a *reviewHandler) GetDeckNeighbourhood(
 	ctx context.Context, req *api.GetDeckNeighbourhoodRequest,
 ) (*api.GetDeckNeighbourhoodResponse, error) {
@@ -497,14 +496,14 @@ func (a *reviewHandler) GetDeckNeighbourhood(
 	return out, nil
 }
 
-// again is how often a stream that has seen nothing move says so, so that a page can tell a
-// stream that is open from one that is not.
+// again is the interval at which a stream with no changes sends a message, so a page can tell an
+// open stream from a closed one.
 const again = time.Second
 
-// WatchReloads says something moved, for as long as the caller listens.
+// WatchReloads signals that something changed, for as long as the caller is subscribed.
 //
-// What moved is not carried: what this window shows is counts and the cards behind them, and they are
-// asked for again whatever changed.
+// The change itself is not carried: the window shows counts and the cards behind them, and they are
+// requested again after any change.
 func (a *reviewHandler) WatchReloads(
 	ctx context.Context,
 	_ *api.WatchReloadsRequest,
@@ -517,8 +516,8 @@ func (a *reviewHandler) WatchReloads(
 		return newError(server.CodeUnavailable, err)
 	}
 
-	// Named as listening before anything has moved. A stream that says nothing until a file changes
-	// cannot be told from one that never opened.
+	// The stream sends an initial message before any change. A stream silent until a file changes
+	// is indistinguishable from one that never opened.
 	if err := send(&api.WatchReloadsResponse{}); err != nil {
 		return err
 	}
@@ -531,7 +530,7 @@ func (a *reviewHandler) WatchReloads(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			// Nothing moved, which is what the opening message says too. A page that has gone fails the
+			// No change, which the opening message also signals. A closed page fails the
 			// write.
 			if err := send(&api.WatchReloadsResponse{}); err != nil {
 				return err

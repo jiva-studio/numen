@@ -26,7 +26,10 @@ const TEMPLATES: readonly CardModelTemplate[] = [
 ]
 
 const mountCardModel = (props: Record<string, unknown> = {}) =>
-  mount(CardModel, { attachTo: document.body, props: { fields: FIELDS, templates: TEMPLATES, ...props } })
+  mount(CardModel, {
+    attachTo: document.body,
+    props: { fields: FIELDS, templates: TEMPLATES, ...props },
+  })
 
 type Editor = ReturnType<typeof mountCardModel>
 
@@ -173,10 +176,12 @@ describe('Card model, the fields', () => {
   it('says why a name typed cannot be used, while it is being typed', async () => {
     const target = mountCardModel()
     await type(target, 'Height', 'Weight')
-    expect(getRow(target, 'Height').get('.card-model__objections').text()).toBe('That name is taken')
+    expect(getRow(target, 'Height').get('.card-model__objections').text()).toBe(
+      'That name is taken',
+    )
 
-    // The line belongs to the row, and the box says what is wrong with it to a
-    // reader.
+    // The line belongs to the row, and the box exposes the error to assistive
+    // technology.
     expect(getRow(target, 'Height').get('.card-model__row').attributes('data-objections')).toBe(
       'taken',
     )
@@ -324,7 +329,7 @@ describe('Card model, the fields', () => {
       )
       expect(grip.attributes('tabindex')).toBe('-1')
       expect(grip.attributes('aria-disabled')).toBe('true')
-      // A handle that goes nowhere along the order says no keys it answers.
+      // A handle that cannot move along the order exposes no keyboard shortcuts.
       expect(grip.attributes('aria-keyshortcuts')).toBeUndefined()
     })
 
@@ -423,7 +428,9 @@ describe('Card model, the templates', () => {
     const box = target.get<HTMLInputElement>('[data-template="one"] header input')
     box.element.value = 'Two'
     await box.trigger('input')
-    expect(target.get('[data-template="one"] header [role="alert"]').text()).toBe('That name is taken')
+    expect(target.get('[data-template="one"] header [role="alert"]').text()).toBe(
+      'That name is taken',
+    )
   })
 
   it('emits the template and the half a box was typed into', async () => {
@@ -435,12 +442,17 @@ describe('Card model, the templates', () => {
   it('remains the way to add a template on a rule of the same make', () => {
     const target = mountCardModel()
     const rules = target.findAll('.divider')
-    expect(rules.map((rule) => rule.get('button').text())).toEqual(['Add a field', 'Add a template'])
+    expect(rules.map((rule) => rule.get('button').text())).toEqual([
+      'Add a field',
+      'Add a template',
+    ])
     for (const rule of rules) expect(rule.attributes('role')).toBe('presentation')
   })
 
   it('asks for a template under a name nothing has taken', async () => {
-    const target = mountCardModel({ templates: [{ id: 'a', name: 'Template', front: '', back: '' }] })
+    const target = mountCardModel({
+      templates: [{ id: 'a', name: 'Template', front: '', back: '' }],
+    })
     await target
       .findAll('button')
       .filter((each) => each.text() === 'Add a template')[0]

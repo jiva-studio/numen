@@ -23,8 +23,8 @@ import (
 type Write struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	// links answers where the wikilink a card names its card model by lands, which
-	// is what says which of the card's fields is first.
+	// links resolves the card model a card's wikilink names, which determines
+	// which of the card's fields is first.
 	links ports.LinkQueries
 	index note.Levels
 	// now is when this is happening. An identifier written here carries it.
@@ -80,9 +80,9 @@ func (u Write) Deck(
 	return WriteResult{FileStat: pos, Given: provided}, err
 }
 
-// createWholeBody returns the body with every card made whole, and the card ids that
-// took. The card models are read against the body being written, so a card whose
-// wikilink the caller has just changed is cut by the card model it now names.
+// createWholeBody returns the body with a card id on every card, and the card ids
+// that were assigned. The card models are read against the body being written, so a
+// card whose wikilink the caller changed is resolved against the card model the new wikilink names.
 func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardID, error) {

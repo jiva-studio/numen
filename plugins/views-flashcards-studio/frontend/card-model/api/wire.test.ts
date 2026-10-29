@@ -1,8 +1,9 @@
 /**
- * What the window remembers about a card model file between the vault's answers.
+ * The wire's memory of a card model file between vault responses.
  *
- * What is proved here is the remembering: a file the vault has said nothing
- * last read or write earned, and a file that moved keeps the transcript of it.
+ * These tests cover that memory: a file the vault reports nothing new about
+ * keeps the result of its last read or write, and a file that moved past the
+ * tab keeps a record of it.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
@@ -17,7 +18,7 @@ import { WORDS as words } from '../../cards'
 import { ERRORS } from '../../cards/wire/errors'
 import { createCardModelWire, NOTHING } from './wire'
 
-/** One card model as the vault reads it, with whatever a test wants said of it. */
+/** One card model as the vault reads it, with the overrides a test needs. */
 const cardModel = (overrides: Partial<VaultCardModel> = {}): VaultCardModel => ({
   path: 'Word.md',
   title: 'Word',
@@ -38,7 +39,7 @@ const problem: DeckProblem = {
   text: 'Front',
 }
 
-/** A vault answering whatever a test tells it to, and nothing else. */
+/** A vault returning whatever a test configures, and nothing else. */
 const vault = () => ({
   cardModels: vi.fn(),
   createDeck: vi.fn(),

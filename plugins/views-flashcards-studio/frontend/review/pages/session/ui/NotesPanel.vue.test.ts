@@ -9,7 +9,7 @@ import { WORDS as words } from '../lib/notesWords'
 import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 import type { NotesPanelState } from '../model/notes'
 
-/** One note as the window hands it over. */
+/** One note as the window receives it. */
 const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
@@ -54,8 +54,8 @@ describe('the panel the deck is read in', () => {
     expect(one.findAll('.reading__name').map((it) => it.text())).toEqual(['Leaf mould', 'Humus'])
   })
 
-  // What the deck was made from and what has since been hung off it are read
-  // differently, so which way the link runs is said.
+  // The notes the deck was made from and the notes that were later linked to it
+  // are read differently, so the direction of the link is reported.
   it('says which of them point at the deck and not being pointed at', async () => {
     const one = await mountPanel({
       notes: [
@@ -93,8 +93,7 @@ describe('the panel the deck is read in', () => {
     expect(one.text()).toContain('note not in the vault')
   })
 
-  // The bound is where a person can see it, and not a list that quietly
-  // stops.
+  // The limit is visible to the user and is not a silently truncated list.
   it('says how many at the end it did not read', async () => {
     const one = await mountPanel({ notes: [createNeighbour()], unread: 4 })
     expect(one.text()).toContain(words.named(4))
@@ -114,8 +113,8 @@ describe('a reading opened on one note', () => {
     Element.prototype.scrollIntoView = scrolled
   })
 
-  // The panel comes in while the notes are still being asked for, so what was
-  // named is waited for and not looked for once and given up on.
+  // The panel opens while the notes are still being requested, so the requested
+  // note is awaited and not looked up once and abandoned.
   it('scrolls to it once the notes have arrived', async () => {
     const panel = createPanel({
       notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],

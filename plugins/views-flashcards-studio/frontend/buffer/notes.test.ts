@@ -105,7 +105,7 @@ describe('openNotes for flashcards studio', () => {
     expect(store.getOpenNote('tab-1').state).toBe('stale')
     expect(store.stale('tab-1')).not.toBeNull()
 
-    // When stale, close refuses to drop the tab
+    // With an out-of-date buffer, close leaves the tab open
     const closedWhileStale = await store.close('tab-1')
     expect(closedWhileStale).toBe(false)
     expect(store.getOpenIds()).toHaveLength(1)

@@ -9,12 +9,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// The share of the day that goes to the debt is read where one pot is spent
-// between the two, and the goal says so where it says which budget closes its
-// day.
-//
-// and the share decides nothing. A goal of a date carries the whole material by
-// its own reckoning.
+// Only a goal of minutes reads the backlog share, which divides one budget
+// between the debt and new material. Under a goal of retention the share
+// decides nothing, and a goal of a date covers the whole material by its own
+// computation.
 func TestWhichSettingsAGoalReads(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
 	for _, one := range []struct {
@@ -155,10 +153,8 @@ func TestTheDebtConsumesItsShareOfEveryPointOfTheRun(t *testing.T) {
 }
 
 // A side that runs short leaves the rest of the day to the other, so a day is
-// never left unspent: whatever the share says, a day holding cards on one side
-// alone spends the whole of what it admits on that side.
-//
-// A side that runs short leaves the rest of the day to the other.
+// never left unspent: whatever the share, a day with cards on one side only
+// spends all it admits on that side.
 func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -191,8 +187,6 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 // it and every further showing of it that day is free, so what a day of any
 // number of showings costs is the review cards it showed. A budget counting showings
 // charges every one of them.
-//
-// A budget counts cards, and may be told to count showings.
 func TestWhatADayOfShowingsCosts(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

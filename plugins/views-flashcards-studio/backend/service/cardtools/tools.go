@@ -13,8 +13,9 @@ import (
 
 var errNoVault = errors.New("the call names no vault")
 
-// The keys of what the host tells a tool about the window the agent was started from. The review
-// writes them, under this plugin's id, as the context of the question.
+// The keys of the context the host passes to a tool about the window the agent
+// was started from. The review writes them, under this plugin's id, as the
+// context of the request.
 const (
 	requestedDeck     = "md.numen.views.flashcards.studio/deck"
 	requestedCard     = "md.numen.views.flashcards.studio/card"

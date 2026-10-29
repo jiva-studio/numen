@@ -14,7 +14,7 @@ const mountCard = (front: string, overrides: { back?: string; isShown?: boolean 
     },
   })
 
-/** A hand going down on the card, across by so much, and up again. */
+/** A pointer drag on the card by the given distance, followed by release. */
 const dragCard = async (reviewCard: ReturnType<typeof mountCard>, distance: number) => {
   const card = reviewCard.find('.card').element as HTMLElement
   card.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100 }))
@@ -32,8 +32,8 @@ describe('a card', () => {
     expect(wrapper.text()).toContain('Compost')
   })
 
-  // A card is HTML, so the marks of another format are the characters somebody
-  // typed and nothing more.
+  // A card is HTML, so the marks of another format are plain characters and
+  // nothing more.
   it('draws the marks a card carries as the text they are', () => {
     const reviewCard = mountCard('**bold** and *italic*', { back: '- a list', isShown: true })
     expect(reviewCard.find('strong').exists()).toBe(false)
@@ -69,7 +69,7 @@ describe('a card', () => {
     expect(reviewCard.html()).not.toContain('<form')
     expect(reviewCard.html()).not.toContain('<iframe')
     expect(reviewCard.html()).not.toContain('onclick')
-    // What the card actually says is still there.
+    // The card's actual text is still present.
     expect(reviewCard.text()).toContain('before')
     expect(reviewCard.text()).toContain('after')
   })
@@ -108,8 +108,8 @@ describe('a card', () => {
     expect(reviewCard.emitted('read')).toBeUndefined()
   })
 
-  // A name carrying no scheme points inside the vault, and that is what stands
-  // in the reading beside the card.
+  // A name without a scheme points inside the vault, and that note is opened in
+  // the reading panel beside the card.
   it('opens the reading on a note a link inside it names', async () => {
     const reviewCard = mountCard('<p><a href="notes/Leaf%20mould.md">leaf mould</a></p>')
 
@@ -118,8 +118,8 @@ describe('a card', () => {
     expect(reviewCard.emitted('read')).toEqual([['notes/Leaf mould.md']])
   })
 
-  // A card comes from whoever wrote it, and a name escaped wrongly is still a
-  // press this window has to survive.
+  // A card's text comes from its author, and a wrongly escaped name must not
+  // break the window.
   it('takes a badly escaped name as the characters it already is', async () => {
     const reviewCard = mountCard('<p><a href="notes/50%.md">fifty</a></p>')
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * What a vault owes today, drawn beside it on the window's list of vaults.
+ * What a vault has due today, displayed next to it in the window's list of vaults.
  *
  * Each vault's number arrives on its own. A vault whose count has not arrived
  * shows the shape that number will take; one that is being read, or could not
- * be, says so instead.
+ * be read, shows that state.
  */
 import { computed } from 'vue'
 import { DueCount } from '../../../ui/cards'

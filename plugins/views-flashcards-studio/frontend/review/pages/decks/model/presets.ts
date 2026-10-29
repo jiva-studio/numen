@@ -1,9 +1,9 @@
 /**
- * Which preset schedules each deck of a vault, and what a day under each of
- * them evaluates to.
+ * The preset that schedules each deck of a vault, and the day's totals under
+ * each preset.
  *
- * It is asked for when a vault is opened and again whenever that vault moves,
- * and the decks of one preset are counted together however many there are.
+ * It is loaded when a vault is opened and again when that vault changes, and
+ * the decks of one preset are counted together.
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { StopReason } from '../../../../api/types.js'
@@ -24,7 +24,7 @@ export interface VaultPresetsDeps {
 export function useVaultPresets(deps: VaultPresetsDeps) {
   const presets = shallowRef<readonly Preset[]>([])
 
-  /** Which vault the presets on hand belong to. */
+  /** The vault the loaded presets belong to. */
   const of = ref('')
 
   /**
@@ -49,8 +49,8 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     recognized.value = false
   }
 
-  // Today is the review day, which the application measures and this window is
-  // told: it begins at the hour the settings name.
+  // Today is the review day, which the application computes and this window
+  // receives: it begins at the hour set in the settings.
   const readItem = async (due: VaultCardsDue | null, today: string) => {
     if (!due) {
       forget()
@@ -91,7 +91,7 @@ interface PresetTally {
   decks: string[]
   due: number
   fresh: number
-  /** What was wrong in the file, each said once however many decks name it. */
+  /** Problems found in the file, each listed once however many decks name it. */
   problems: Set<string>
 }
 
@@ -184,8 +184,8 @@ const getPresetFromDecks = (
 const getDayOwed = (one: PresetTally, day: PresetCardsDue | undefined) => ({
   named: day?.decks ?? one.decks.length,
   reviewCards: day?.cards ?? 0,
-  // What a session over it asks is the count's own figure, and a build that
-  // answered none falls back to what its decks owe between them.
+  // The number of cards in a session is the count's own figure; a build whose
+  // count returned none uses the sum of cards due across its decks.
   cards: day?.owed ?? one.due + one.fresh,
   closes: day?.closes ?? CLOSES_NOTHING,
 })

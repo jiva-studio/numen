@@ -19,8 +19,8 @@ const fieldsKey = "fields"
 // ReadCardModel reads a note as a card model: the fields it declares in its
 // frontmatter, and the templates its body lays out.
 //
-// It never fails. A template missing a side and a placeholder nobody declared are
-// problems against the card model, and everything else in the file is read.
+// It never fails. A template missing a side and a placeholder that is not
+// declared are problems of the card model, and everything else in the file is read.
 type cardModelReader struct {
 	body      []byte
 	declared  map[string]bool
@@ -124,8 +124,8 @@ func (r *cardModelReader) addTemplate(sec section, secsAfter []section) {
 // ReadCardModel reads a note as a card model: the fields it declares in its
 // frontmatter, and the templates its body lays out.
 //
-// It never fails. A template missing a side and a placeholder nobody declared are
-// problems against the card model, and everything else in the file is read.
+// It never fails. A template missing a side and a placeholder that is not
+// declared are problems of the card model, and everything else in the file is read.
 func ReadCardModel(n domain.Note) CardModel {
 	body := []byte(n.Body)
 	declaredFields, problems := fields(n.Frontmatter)
@@ -171,11 +171,12 @@ func ReadCardModel(n domain.Note) CardModel {
 	return r.cardModel
 }
 
-// fields is what the frontmatter declares, in the order a person is asked for
-// them. A name is compared as written, and the first of two of one name stands.
+// fields returns what the frontmatter declares, in the order the user supplies
+// them. Names are compared as written, and the first of two with the same name is
+// kept.
 //
-// An entry that is not a name at all is not a field, and every template that places
-// it says so. A card model left with no field cuts nothing, and says so.
+// An entry that is not a name is not a field, and every template that places it
+// reports a problem. A card model with no field cuts nothing, and reports that.
 func fields(frontmatter map[string]any) ([]string, []Problem) {
 	list, _ := frontmatter[fieldsKey].([]any)
 

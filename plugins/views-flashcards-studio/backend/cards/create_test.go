@@ -82,7 +82,7 @@ func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 	}
 }
 
-// A note made with no index to bring level is still made, and says where.
+// A note created with no index to update is still created, and reports its path.
 func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault

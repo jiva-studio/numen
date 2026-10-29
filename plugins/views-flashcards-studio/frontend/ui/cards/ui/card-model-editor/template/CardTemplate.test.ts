@@ -28,12 +28,19 @@ const createTemplate = (
   fields: readonly string[] = FIELDS,
   sample?: readonly FieldValue[],
 ): TemplateRow => {
-  const arrangedRow = templateRows([template], fields, sample ?? sampleValues(getDeclaredFields(fields)))[0]
+  const arrangedRow = templateRows(
+    [template],
+    fields,
+    sample ?? sampleValues(getDeclaredFields(fields)),
+  )[0]
   if (!arrangedRow) throw new Error('a corpus holding no template')
   return arrangedRow
 }
 
-const mountTemplate = (template: TemplateRow = createTemplate(TEMPLATE), props: Record<string, unknown> = {}) =>
+const mountTemplate = (
+  template: TemplateRow = createTemplate(TEMPLATE),
+  props: Record<string, unknown> = {},
+) =>
   mount(CardTemplate, {
     attachTo: document.body,
     props: { template, ...props },
@@ -110,9 +117,11 @@ describe('Template, the window', () => {
   })
 
   it('says a part is empty where what is written in it fills out to nothing', () => {
-    const template = createTemplate({ id: 'one', name: 'One', front: '{{Height}}', back: 'said' }, FIELDS, [
-      { field: 'Height', text: '' },
-    ])
+    const template = createTemplate(
+      { id: 'one', name: 'One', front: '{{Height}}', back: 'said' },
+      FIELDS,
+      [{ field: 'Height', text: '' }],
+    )
     const target = mountTemplate(template)
 
     expect(target.get('[data-pane="front-written"]').attributes('data-blank')).toBeUndefined()
@@ -125,7 +134,9 @@ describe('Template, the window', () => {
   })
 
   it('draws no braces in the preview, and the tags around them as tags', () => {
-    const target = mountTemplate(createTemplate(TEMPLATE, FIELDS, [{ field: 'Height', text: 'about 45"' }]))
+    const target = mountTemplate(
+      createTemplate(TEMPLATE, FIELDS, [{ field: 'Height', text: 'about 45"' }]),
+    )
     const preview = target.get('[data-preview="back"]')
     expect(preview.text()).toContain('about 45"')
     expect(preview.text()).not.toContain('{{')
@@ -133,7 +144,7 @@ describe('Template, the window', () => {
     expect(preview.get('b').text()).toBe('Height:')
   })
 
-  /* A template is HTML, so the marks of another format are characters a person
+  /* A template is HTML, so the marks of another format are characters the user
      typed and are drawn as themselves. */
   it('draws the marks a template carries as the text they are', () => {
     const target = mountTemplate(

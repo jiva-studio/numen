@@ -16,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// A run is listed and then taken away by another machine's synchroniser before
-// it can be read. That is a file gone, not a vault whose history cannot be
-// read: everything else the person answered is still theirs.
+// A run file is listed and then removed by another machine's synchroniser before
+// it can be read. That is a missing file, not a vault whose history cannot be
+// read: every other recorded answer remains valid.
 func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -132,9 +132,9 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	}
 }
 
-// reordered is a vault's store whose listing flips between ascending and
-// descending order each time it is asked, which is what a directory's own
-// order is not promised to keep across two listings of it.
+// reordered is a vault's store whose listing alternates between ascending and
+// descending order on each call, because a directory listing is not guaranteed to
+// keep the same order across two calls.
 type reordered struct {
 	ports.LogStore
 	reverse bool
@@ -153,8 +153,8 @@ func (r *reordered) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 	return out, nil
 }
 
-// reorderedStores opens the one store every call flips the order of, so the
-// same vault's listing keeps flipping across every call that asks for it.
+// reorderedStores opens the one store whose listing order flips on every call, so
+// the listing of the same vault keeps flipping across all calls that request it.
 type reorderedStores struct {
 	ports.LogStores
 	store *reordered
@@ -212,8 +212,8 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	}
 }
 
-// refusing is a vault's store that cannot be read at all: a disk that has gone
-// away, a folder somebody's permissions closed.
+// refusing is a vault's store that cannot be read at all, as with an unavailable
+// disk or a folder with closed permissions.
 type refusing struct {
 	ports.LogStores
 }
@@ -234,9 +234,9 @@ func (closed) ReadLog(context.Context, string) ([]byte, error) {
 	return nil, errClosed
 }
 
-// A vault whose answers cannot be read is not a vault of no answers. The
-// difference is a person's whole history, so it fails and said rather than
-// counted as nothing.
+// A vault whose answers cannot be read is not a vault with no answers. The
+// difference is the user's whole history, so the read fails with an error and does
+// not count as zero.
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -287,8 +287,8 @@ func TestASessionIntoAVaultThatIsMissingStops(t *testing.T) {
 	}
 }
 
-// brimming is a store that takes one append and refuses every one after it,
-// which is a disk filling up under a session.
+// brimming is a store that accepts one append and rejects every later one,
+// which simulates a disk filling up during a session.
 type brimming struct {
 	ports.LogStores
 	store *filling
@@ -358,9 +358,10 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	}
 }
 
-// A run file that cannot be read is one run, not the whole window. The reader
-// already skips a torn line and counts it, and a file nobody may open is the
-// same kind of event: everything else the person answered is returned.
+// A run file that cannot be read counts as one failed run, not as the whole
+// window. The reader already skips a torn line and counts it, and a file that
+// cannot be opened is the same kind of event: every other recorded answer is
+// returned.
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -403,8 +404,8 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	}
 }
 
-// A vault nobody has reviewed holds no folder and no files, which is an answer
-// and not a failure.
+// A vault with no reviews has no folder and no files, which is a valid empty
+// result and not a failure.
 func TestAVaultNobodyReviewedContainsNoRuns(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -437,8 +438,9 @@ func TestALoadedLogIsInsertInOrderOnce(t *testing.T) {
 	}
 }
 
-// An answer belongs to one card through one review card. A line naming neither stands
-// is written and not left in the log for every later reading to skip.
+// An answer belongs to one card through one review card. A line missing either
+// identifier is rejected before it is written, so it never enters the log for
+// later reads to skip.
 func TestAnAnswerReturnsWhichCardAndThroughWhichCard(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -463,7 +465,7 @@ func TestAnAnswerReturnsWhichCardAndThroughWhichCard(t *testing.T) {
 	}
 }
 
-// A Record built with no clock refuses an answer and does not panic.
+// A Record built with no clock returns an error for an answer and does not panic.
 func TestRecord_ErrorsWithoutClock(t *testing.T) {
 	t.Parallel()
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
@@ -476,8 +478,8 @@ func TestRecord_ErrorsWithoutClock(t *testing.T) {
 	}
 }
 
-// Taking back an answer names the one it takes back. Nothing here guesses which
-// of a session's answers a person meant.
+// Taking back an answer names the answer to take back. The call does not guess
+// which of the session's answers is meant.
 func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)

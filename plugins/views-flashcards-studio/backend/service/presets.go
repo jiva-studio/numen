@@ -81,9 +81,9 @@ func (h *presetsHandler) CreatePreset(
 	}, nil
 }
 
-// ScheduleDeck puts a deck on a preset. A deck still holding what the client
-// read is written; one holding something else is left alone and the client is
-// told the deck changed.
+// ScheduleDeck assigns a deck to a preset. A deck whose content matches what the
+// client read is written; a deck with different content is left unchanged and the
+// client is informed that the deck changed.
 func (h *presetsHandler) ScheduleDeck(
 	ctx context.Context, req *api.ScheduleDeckRequest,
 ) (*api.ScheduleDeckResponse, error) {
@@ -93,9 +93,9 @@ func (h *presetsHandler) ScheduleDeck(
 	}
 	pos, err := h.scenarios().flash.Presets.Point(
 		ctx, showing, req.Deck, req.Preset, readFileStat(req.Baseline))
-	// A write that reached the vault is a write that happened, so the client is
-	// handed the file stat it presents at its next save, and told where the
-	// index did not follow.
+	// A write that reached the vault has happened, so the client receives the file
+	// stat to present at its next save, and is informed where the index did not
+	// follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.ScheduleDeckResponse{
@@ -136,9 +136,9 @@ func (h *presetsHandler) ReadPreset(
 	return out, nil
 }
 
-// WritePreset puts settings into a preset. A note still holding what the client
-// read is written; one holding something else is left alone and the client is
-// told the note changed.
+// WritePreset writes settings into a preset. A note whose content matches what
+// the client read is written; a note with different content is left unchanged
+// and the client is informed that the note changed.
 func (h *presetsHandler) WritePreset(
 	ctx context.Context, req *api.WritePresetRequest,
 ) (*api.WritePresetResponse, error) {
@@ -151,9 +151,9 @@ func (h *presetsHandler) WritePreset(
 		return nil, newError(server.CodeInvalidArgument, err)
 	}
 	pos, err := h.scenarios().flash.Presets.Save(ctx, showing, req.Path, settings, readFileStat(req.Baseline))
-	// A write that reached the vault is a write that happened, so the client is
-	// handed the file stat it presents at its next save, and told where the
-	// index did not follow.
+	// A write that reached the vault has happened, so the client receives the file
+	// stat to present at its next save, and is informed where the index did not
+	// follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.WritePresetResponse{
@@ -175,9 +175,9 @@ func (h *presetsHandler) WritePreset(
 	return &api.WritePresetResponse{Error: reason}, nil
 }
 
-// ComputeCurve is what these settings come to over the whole range of the goal
-// they name. Nothing is written: what a curve is asked for is the value a
-// person is moving and has not settled.
+// ComputeCurve computes what these settings amount to over the whole range of
+// the goal they name. Nothing is written: a curve is requested for a value the
+// user is adjusting and has not committed.
 func (h *presetsHandler) ComputeCurve(
 	ctx context.Context, req *api.ComputeCurveRequest,
 ) (*api.ComputeCurveResponse, error) {

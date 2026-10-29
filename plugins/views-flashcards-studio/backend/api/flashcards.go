@@ -11,7 +11,8 @@ const (
 	RatingEasy        Rating = "easy"
 )
 
-// VaultCardsDue is what one vault owes for review. Unread holds the reason the vault could not be counted.
+// VaultCardsDue is what one vault has due for review. Unread holds the reason the
+// vault could not be counted.
 type VaultCardsDue struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name"`
@@ -25,7 +26,7 @@ type VaultCardsDue struct {
 	IsIndexing  bool              `json:"isIndexing"`
 }
 
-// DeckCardsDue is what one deck owes for review.
+// DeckCardsDue is what one deck has due for review.
 type DeckCardsDue struct {
 	Deck        string `json:"deck"`
 	ReviewCards int32  `json:"reviewCards"`

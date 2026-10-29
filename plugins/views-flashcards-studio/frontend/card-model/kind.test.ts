@@ -1,6 +1,6 @@
 /**
- * What a card model tab holds, asked without a screen: what it reads, what it
- * writes back, and where what is wrong with it stands.
+ * What a card model tab holds, tested without a screen: what it reads, what it
+ * writes back, and where its problems are shown.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
@@ -11,29 +11,29 @@ import { ERRORS } from '../cards/wire/errors'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from './kind'
 import { WORDS as words } from '../cards'
 
-/** A moment for whatever the tab asked the vault for to come back. */
+/** Waits for the tab's pending vault requests to resolve. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const TEMPLATES: readonly VaultTemplate[] = [
   { name: 'Recognise', preamble: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
 ]
 
-/** A vault holding one card model, writing down every write it was asked for. */
+/** A vault holding one card model, recording every write it receives. */
 const vault = (
   answers: {
     error?: ErrorCode
     problems?: readonly DeckProblem[]
     isChanged?: boolean
-    /** What renaming a field comes back with, where a test wants another answer. */
+    /** The result of renaming a field, when a test needs a different result. */
     renaming?: FieldRenameResult
-    /** The vault is out of reach, and a read of the card model reaches nothing. */
+    /** The vault is unreachable, and reading the card model fails. */
     isUnreachable?: boolean
     /** What a write of the card model fails for. */
     wrote?: ErrorCode
   } = {},
 ) => {
   const content: string[] = []
-  /** Each field rename the tab asked the vault for. */
+  /** Each field rename the tab requested from the vault. */
   const renameCalls: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let templates: readonly VaultTemplate[] = TEMPLATES
@@ -42,7 +42,7 @@ const vault = (
     cardModels: async () => ({ cardModels: [], held: 0 }),
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
-    // The vault writes the name wherever it stands: in the fields, and in the
+    // The vault writes the name wherever it occurs: in the fields and in the
     // braces of every template.
     renameField: async (path, field, observed) => {
       const { from, to } = field
@@ -325,7 +325,9 @@ describe('a card model the vault rejected', () => {
 describe('what is wrong with a card model', () => {
   it('remains against the template it was read against', async () => {
     const { tab } = await open({
-      problems: [{ kind: 'templateMissingASide', card: null, template: 0, field: '', text: 'no back' }],
+      problems: [
+        { kind: 'templateMissingASide', card: null, template: 0, field: '', text: 'no back' },
+      ],
     })
 
     const template = tab.cardModel.value.templates[0]?.id ?? ''
@@ -359,8 +361,8 @@ describe('what is wrong with a card model', () => {
 })
 
 describe('a card model read again under the window', () => {
-  // The file is read wrong in a way that stands against one template, so a mark
-  // that went is a mark this can see going.
+  // The file has a problem that applies to one template, so a mark that
+  // disappears is observable.
   const sideless: DeckProblem = {
     kind: 'templateMissingASide',
     card: null,
@@ -401,7 +403,9 @@ describe('a card model read again under the window', () => {
     one.cardModels.applyPathChanges(['Animal.md'])
     await settle()
 
-    expect(one.tab.cardModel.value.templates.map((template) => template.name)).toStrictEqual(['Recall'])
+    expect(one.tab.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
+      'Recall',
+    ])
     expect(one.tab.cardModel.value).not.toBe(was)
   })
 })

@@ -18,7 +18,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 )
 
-// request names is worth nothing when the path alone tells the two apart.
+// elsewhere is a second vault whose deck at decks/Words.md is scheduled by its own
+// preset, Grammar. The vault a request names selects the preset, since the path
+// alone does not distinguish the two.
 var elsewhere = map[string]string{
 	"Term.md": deck["Term.md"],
 	"Grammar.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 5\n" +
@@ -74,8 +76,8 @@ var handwritten = map[string]string{
 	"decks/Words.md": deck["decks/Words.md"],
 }
 
-// typedManually is that deck as a person left it: pointed at the preset, and
-// holding a card they typed and gave no card id.
+// typedManually is that deck with a hand-typed card: it points at the preset and
+// contains a card with no card id.
 const typedManually = "---\ntype: deck\nlinks:\n" +
 	"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
 	"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
@@ -148,8 +150,8 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 	}
 }
 
-// A preset the deck names that cannot be read comes back rejected as the editor
-// refuses a note, and carries no preset.
+// A preset the deck names that cannot be read returns an error, as the editor
+// rejects a note, and carries no preset.
 func TestGetVaultDeckPreset_UnreadablePresetMatchesEditorError(t *testing.T) {
 	handler, target := newAPI(t, pointed)
 	v := target[0]
@@ -225,7 +227,8 @@ func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	}
 }
 
-// Which cards were meant is a question, and the window is asked it again.
+// Naming a deck and a preset together is ambiguous about which cards are meant,
+// so the request is rejected.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	handler, target := newAPI(t, presetted)
 	v := target[0]
@@ -238,11 +241,12 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	}
 }
 
-// Why a preset schedules nothing is the core's verdict, and every preset the
-// nothing else in the answer would tell a window that it is stopped.
+// Why a preset schedules nothing is the core's verdict, and the response carries
+// it per preset, since nothing else in the response indicates that a preset is
+// stopped.
 func TestWatchCardsDue_ReturnsStoppedReasonPerPreset(t *testing.T) {
-	// The card ids are the ones the application writes, so the cards stand without
-	// the vault being sat down to.
+	// The card ids are the ones the application writes, so the cards need no vault
+	// write to receive ids.
 	assigned := func(pos string, cardID string) string {
 		return "---\ntype: deck\nlinks:\n  - to: " + pos + "\n    role: ref\n    type: preset\n" +
 			"---\n\n## Card ^" + cardID + "\n\n[[Term]]\n\n### Word\n\nw\n\n### Meaning\n\nm\n"

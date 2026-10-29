@@ -38,7 +38,7 @@ defineEmits<{
 </template>
 
 <style scoped>
-/* What the answer does, said quietly beside it: it is read once, when a person
+/* A secondary caption for what the answer does: it is read once, when the user
    is learning what the four mean, and glanced at after that. */
 .answer__ahead {
   color: var(--numen-hushed);

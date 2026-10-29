@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * stands. Its axis is days and not the goal's range, and it keeps its room
- * whether or not there is a backlog to draw.
+ * The backlog plot at the position of the knob. Its axis is days and not the
+ * goal's range, and it keeps its height whether or not there is a backlog to
+ * draw.
  *
  * It carries the slider's `data-control` for the parts it shares with the plot
  * above; the run itself is drawn by `BacklogChart`.
@@ -31,7 +32,7 @@ const props = defineProps<{
 }>()
 
 // --- State ---
-/** The backlog at the place the knob stands, one figure a day. */
+/** The backlog at the knob position, one figure per day. */
 const backlog = computed<readonly number[]>(() => getBacklogRun(props.curve, props.place))
 
 /**
@@ -50,9 +51,9 @@ const line = computed(() => createLinePath(positions.value))
 const hasBacklog = computed(() => props.isHonest && backlog.value.length > 1)
 
 /**
- * The ends of the extent, against the lines they are the height of. Nothing
- * overdue is the foot, so a run holding nothing at all is that one number on
- * the floor it lies along.
+ * The ends of the extent, with the lines they are the height of. Nothing
+ * overdue is the base, so a run with no backlog is that one number on the
+ * baseline.
  */
 const heights = computed(() =>
   createBacklogAxisLabels(extent.value, positions.value, (value) =>
@@ -60,7 +61,7 @@ const heights = computed(() =>
   ),
 )
 
-/** The days at either end of the extent, which the grid says nothing about. */
+/** The days at either end of the extent, which the grid does not label. */
 const ends = computed(() => [
   words.formatBacklogDays(1),
   words.formatBacklogDays(backlog.value.length),

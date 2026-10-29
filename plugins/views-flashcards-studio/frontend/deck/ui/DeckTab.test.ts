@@ -1,8 +1,9 @@
 /**
- * A deck tab drawn: where a mark lands, and what a gesture in the grid reaches.
+ * A rendered deck tab: where a mark is placed, and what a gesture in the grid
+ * affects.
  *
- * What is wrong with a card is drawn inside that card's tile, so this asks the
- * tile and not the tab.
+ * A problem with a card is rendered inside that card's tile, so these tests
+ * query the tile and not the tab.
  */
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
@@ -24,11 +25,12 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
   'stops' | 'stopsOn'
 >
 
-/** A moment for whatever the tab asked the vault for to come back. */
+/** Waits for the tab's pending vault requests to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-// Each tab is drawn into the page, so the one before it goes before the next
-// stands: a mark is teleported to the tile a selector finds in the whole page.
+// Each tab is rendered into the page, so the previous tab is unmounted before
+// the next one is mounted: a mark is teleported to the tile that a selector
+// finds in the whole page.
 enableAutoUnmount(afterEach)
 
 afterEach(() => {
@@ -71,7 +73,7 @@ const mountDeck = async (
     presets?: readonly PresetChoice[]
     /** The preset the deck names, and nothing for a deck naming none. */
     by?: string
-    /** What is said against what the deck names. */
+    /** The message shown for what the deck names. */
     saying?: string
     notScheduled?: ErrorCode
   } = {},
@@ -104,7 +106,7 @@ const mountDeck = async (
 
   /** Which preset the deck names, as the vault answers it. */
   let presetPath = schedule.by ?? ''
-  /** Every deck put on a preset, as the tab asked for it. */
+  /** Every deck assigned to a preset, as requested by the tab. */
   const appliedPresets: string[] = []
 
   const presets: Presets = {
@@ -201,7 +203,7 @@ describe('a deck drawn', () => {
   it('writes a card cut by the card model that was chosen', async () => {
     const { window, tab } = await mountDeck()
 
-    // The plus of the last section, so the card it makes stands last of all.
+    // The plus button of the last section, so the new card is last of all.
     await window.findAll('[data-plus]').at(-1)!.find('button').trigger('click')
     await window.find('[data-cut="Animal"]').trigger('click')
 

@@ -88,7 +88,7 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	}
 }
 
-// A line nobody can act on is left out and counted, and the rest of the file is
+// A line that cannot be interpreted is skipped and counted, and the rest of the file is read.
 func TestALineNobodyCanActOnIsCounted(t *testing.T) {
 	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","template":"Recognise","at":"2026-08-29T09:12:33.412Z","rating":3}`
 	for name, line := range map[string]string{
@@ -111,8 +111,8 @@ func TestALineNobodyCanActOnIsCounted(t *testing.T) {
 	}
 }
 
-// The file is text in a person's own folder and travels between machines, so an
-// instant carrying an offset is read as the instant it is.
+// The log file is text in the user's folder and is copied between machines,
+// so a timestamp with a UTC offset is read as the instant it denotes.
 func TestAnInstantIsReadWithWhateverOffsetItCarries(t *testing.T) {
 	line := `{"v":1,"id":"01K","card":"k7m2xq9fzp","template":"F",` +
 		`"at":"2026-08-29T11:12:33.412+02:00","rating":3}`
@@ -144,8 +144,8 @@ func TestAnEmptyLogReadsAsNothing(t *testing.T) {
 	}
 }
 
-// Each of the four is said in the word a person uses for it, which is what a
-// log line and anything read by a person carry.
+// Each of the four ratings is written as its name, which is the form used in
+// log lines and in any output read by a user.
 func TestRating_StringReturnsName(t *testing.T) {
 	for _, one := range []struct {
 		r    review.Rating
@@ -164,8 +164,8 @@ func TestRating_StringReturnsName(t *testing.T) {
 	}
 }
 
-// Only the four are ratings. A number out of a file that is not one of them is
-// a line nobody can act on, and saying so is what leaves it out.
+// Only the four are ratings. Any other number in a file is an uninterpretable
+// line and is skipped.
 func TestOnlyTheFourAreRatings(t *testing.T) {
 	for _, r := range []review.Rating{
 		review.Again, review.Hard, review.Good, review.Easy,
@@ -231,10 +231,10 @@ func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 	}
 }
 
-// logSeeds are the shapes a log arrives in: an answer, an answer taken back, a
-// run that stopped part way through a line, a line of a version nobody knows, a
-// line missing what a line must carry, a blank line, an instant written with an
-// offset, JSON that is not a line at all, and bytes that are no log at all.
+// logSeeds are the forms a log may take: an answer, an undone answer, a run
+// truncated in the middle of a line, a line with an unknown version, a line
+// missing a required field, a blank line, a timestamp with an offset, JSON that
+// is not a line, and bytes that are not a log.
 var logSeeds = []string{
 	`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
 	`{"v":1,"id":"b","at":"2026-01-01T00:00:01.000Z","undo":"a"}` + "\n",
@@ -249,12 +249,12 @@ var logSeeds = []string{
 	"",
 }
 
-// Nothing is dropped without being counted: every line a log holds is an answer
-// read out of it or one it says it could not act on.
+// No line is dropped without being counted: every line of a log is either an
+// answer read from it or a line counted as skipped.
 //
-// A log is appended to by a process that may stop at any moment and is carried
-// between machines by something that knows nothing about it, so the bytes are a
-// stranger's.
+// A log is appended to by a process that may stop at any moment and is copied
+// between machines by software that does not know its format, so its bytes are
+// untrusted input.
 func FuzzReadLog(f *testing.F) {
 	for _, seed := range logSeeds {
 		f.Add(seed)
@@ -345,8 +345,8 @@ func FuzzWriteAnswer(f *testing.F) {
 		}
 
 		answers, skipped := review.Read(raw)
-		// A line the reader refuses is one it could not have written: it carries
-		// no identifier, or it answers with a rating that is not one of the four.
+		// A line the reader rejects is one the writer cannot have produced: it has no
+		// identifier, or it has a rating that is not one of the four.
 		shouldFail := want.ID == "" ||
 			(!want.IsUndo() && (want.ReviewCard.Card == "" ||
 				want.ReviewCard.Template == "" || !want.Rating.Valid()))

@@ -1,25 +1,25 @@
 <script setup lang="ts">
 /**
- * A box as tall as what it holds. The ground behind it carries the box's own
- * text in the same type at the same measure, and the cell is sized by the
- * ground, so the box never scrolls.
+ * A box as tall as its content. The cell's `::after` content carries the box's
+ * text in the same type at the same width, and the cell is sized by it, so the
+ * box never scrolls.
  *
- * Everything a caller hands it lands on the box, but for a class and a style,
- * which stand on the cell.
+ * Every attribute the caller passes is applied to the box, except `class` and
+ * `style`, which are applied to the cell.
  */
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
 defineProps<{
-  /** What the box holds, as it now reads. */
+  /** The current text of the box. */
   text: string
   /** What a `<label for>` names the box by. Without one the box makes up its own. */
   id?: string
 }>()
 
 const emit = defineEmits<{
-  /** The text as it now reads, after something was typed into the box. */
+  /** The current text, emitted after the user types into the box. */
   (event: 'write', text: string): void
 }>()
 
@@ -56,12 +56,10 @@ defineExpose({
 </template>
 
 <style scoped>
-/* A box holding nothing stands as tall as a box holding one line. */
+/* An empty box is as tall as a box holding one line. */
 .autosize {
   display: grid;
-  min-block-size: calc(
-    var(--autosize-lines) * var(--numen-line-height) * 1em + 2 * var(--box-air)
-  );
+  min-block-size: calc(var(--autosize-lines) * var(--numen-line-height) * 1em + 2 * var(--box-air));
 }
 
 /* The space at the end keeps a line for text ending in a newline, and for no

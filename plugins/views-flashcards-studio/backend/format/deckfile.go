@@ -10,26 +10,27 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 )
 
-// ErrNoSuchCard is what changing a card says when the deck holds no card of
-// that card id. A card is known by its card id, so a card rewritten from end to end
-// is still that card.
+// ErrNoSuchCard is returned when a change addresses a card id that no card of
+// the deck carries. A card is identified by its card id, so a card rewritten
+// in full keeps its identity.
 var ErrNoSuchCard = errors.New("card not found in deck")
 
-// ErrTwoCards is what changing a card says when two cards of the deck carry
-// the card id it was addressed by. Both are read and both are shown, and which of
-// the two is meant is a thing only the person who wrote them knows.
+// ErrTwoCards is returned when a change addresses a card id carried by two
+// cards of the deck. Both cards are read and displayed, and the change does
+// not choose between them.
 var ErrTwoCards = errors.New("two cards of this deck carry that card id")
 
-// ErrNoSuchSection is what changing a section says when the deck holds no
-// section standing there.
+// ErrNoSuchSection is returned when a change addresses a section index that
+// the deck does not hold.
 var ErrNoSuchSection = errors.New("section not found in deck")
 
-// ErrNoSuchValue is what removing a value says when the card writes nothing
-// under that field. The card model may well declare it: what is not there is what
-// the person wrote.
+// ErrNoSuchValue is returned when a value is removed from a card that has no
+// heading for that field. The card model may declare the field; the card
+// file does not contain it.
 var ErrNoSuchValue = errors.New("this card writes no value under that field")
 
-// byte of the file left as it arrived. A change is a splice: the run one value
+// DeckFile is a deck opened for changing. Every byte of the file that a
+// change does not reach is unchanged. A change is a splice: the run one value
 // occupies is replaced, and nothing else in the file is written.
 type DeckFile struct {
 	doc *markdown.Document
@@ -51,10 +52,10 @@ func OpenDeckBody(body string) *DeckFile {
 	return &DeckFile{doc: markdown.OpenBody([]byte(body))}
 }
 
-// Bytes is the deck as it now stands.
+// Bytes is the deck with all changes applied.
 func (f *DeckFile) Bytes() []byte { return f.doc.Bytes() }
 
-// Body is the deck's prose as it now stands.
+// Body is the deck's prose with all changes applied.
 func (f *DeckFile) Body() string { return f.doc.Body() }
 
 // WriteIdentifier writes the identifier a file carrying none is to carry, and
@@ -72,7 +73,7 @@ func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {
 	return true, doc.SetIdentifier(identifier)
 }
 
-// Deck is what the file now says.
+// Deck is the deck read from the current content of the file.
 func (f *DeckFile) Deck(ref domain.FileStat) Deck {
 	deck, _ := readDeck(ref, []byte(f.doc.Body()))
 	return deck
@@ -90,15 +91,15 @@ func (f *DeckFile) Whole(
 	return provided, nil
 }
 
-// SetValue writes what the card of a card id holds under one field. A field the
-// card does not carry yet is added at the end of it, which leaves the fields it
-// does carry in the order the person wrote them.
+// SetValue writes the value of one field of the card with a card id. A field
+// the card does not contain is added at the end of the card, and the fields it
+// contains keep their order.
 //
-// A card id two cards of the deck carry addresses neither: choosing between them
-// is ErrTwoCards.
+// A card id carried by two cards of the deck addresses neither: the result is
+// ErrTwoCards.
 //
-// Writing the first field is what rewrites the heading, and that is done where
-// the deck is made whole, not here.
+// Writing the first field rewrites the heading, which is done where the deck
+// is made whole and not here.
 func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
@@ -117,12 +118,12 @@ func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
 	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
 }
 
-// RemoveValue takes one field off a card: its heading line and what stands
-// under it. The fields around it keep the order the person wrote them in, and
-// a card writing nothing under that field is ErrNoSuchValue.
+// RemoveValue removes one field from a card: its heading line and its value.
+// The other fields keep their order, and a card with no heading for that
+// field yields ErrNoSuchValue.
 //
-// Taking the first field off is what rewrites the heading, and that is done
-// where the deck is made whole, not here.
+// Removing the first field rewrites the heading, which is done where the deck
+// is made whole and not here.
 func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
@@ -133,12 +134,12 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 		if v.field != field {
 			continue
 		}
-		// The blank line under the value went with it, so what follows closes
-		// up against what the value stood beneath.
+		// The blank line after the value is removed with it, so the following block
+		// adjoins the preceding one.
 		head, to := v.head, v.to
 		content := ""
-		// A value nothing stood under was last in the file, and what is above
-		// it now ends on the one break a file ends with.
+		// A value at the end of the file leaves the preceding content ending with
+		// the single line break a file ends with.
 		if to == len(body) {
 			head = getTrimmedEnd(body, 0, head)
 			if head > 0 {
@@ -150,8 +151,9 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
 
-// that named none is given the paragraph under its heading, and the values it
-// already holds stay where they stand.
+// SetCardModel sets the card model link of a card. A card without a link
+// receives the link as the paragraph after its heading, and the values it
+// contains keep their position.
 func (f *DeckFile) SetCardModel(card cardid.ID, name string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
@@ -165,20 +167,20 @@ func (f *DeckFile) SetCardModel(card cardid.ID, name string) error {
 	return f.doc.SpliceBody(span.from, span.from, "\n"+link+"\n")
 }
 
-// RemoveCard takes a card out of the deck: its heading, the card model it named
-// and every value under it. What stood above and below is left where it was.
+// RemoveCard removes a card from the deck: its heading, its card model link
+// and every value. The content before and after the card is unchanged.
 func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
 	if err != nil {
 		return err
 	}
-	// The blank line under the card went with it, so what follows closes up
-	// against what the card stood beneath.
+	// The blank line after the card is removed with it, so the following block
+	// adjoins the preceding one.
 	head, to := span.head, span.end
 	content := ""
-	// A card nothing stood under was last, and what is above it now ends on the
-	// one break a file ends with.
+	// A card at the end of the file leaves the preceding content ending with the
+	// single line break a file ends with.
 	if to == len(body) {
 		head = getTrimmedEnd(body, 0, head)
 		if head > 0 {
@@ -188,9 +190,9 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	return f.doc.SpliceBody(head, to, content)
 }
 
-// getCardSpan is where the card of a card id stands. A deck holding none of that
-// card id is ErrNoSuchCard, and a deck holding two is ErrTwoCards: choosing
-// between them is choosing which of the two the person meant.
+// getCardSpan returns the span of the card with a card id. A deck with no card
+// of that card id yields ErrNoSuchCard, and a deck with two yields
+// ErrTwoCards.
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
 	_, spans := readDeck(domain.FileStat{}, body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
@@ -225,24 +227,23 @@ func (f *DeckFile) RenameSection(index int, name string) error {
 	return f.doc.SpliceBody(heads[index].head, heads[index].from, line)
 }
 
-// RemoveSection takes away the heading of the section standing at one place in
-// the deck. A section is a name and nothing else, so the cards that stood under
-// it and what a person wrote beneath it stay where they are, under whatever now
-// stands above them.
+// RemoveSection removes the heading of the section at one index. A section is
+// a name only, so the cards and prose after the heading are unchanged and
+// belong to the preceding section.
 func (f *DeckFile) RemoveSection(index int) error {
 	body := []byte(f.doc.Body())
 	heads := sectionHeads(body)
 	if index < 0 || index >= len(heads) {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, index)
 	}
-	// The blank line under the heading went with it, so the block below closes
-	// up against what the heading stood beneath.
+	// The blank line after the heading is removed with it, so the following block
+	// adjoins the preceding one.
 	head, to := heads[index].head, heads[index].from
 	for to < len(body) && (body[to] == '\n' || body[to] == '\r') {
 		to++
 	}
-	// A section with nothing under it stood last, and what is above it now ends
-	// on the one break a file ends with.
+	// A section at the end of the file leaves the preceding content ending with
+	// the single line break a file ends with.
 	content := ""
 	if to == len(body) {
 		head = getTrimmedEnd(body, 0, head)
@@ -253,8 +254,8 @@ func (f *DeckFile) RemoveSection(index int) error {
 	return f.doc.SpliceBody(head, to, content)
 }
 
-// AddSection writes a section at the end of the deck. What a person wrote under
-// its heading is written back under it, and nothing here reads it.
+// AddSection appends a section at the end of the deck. The prose after the
+// heading is written unchanged.
 func (f *DeckFile) AddSection(s Section) error {
 	body := []byte(f.doc.Body())
 	blocks := []string{headingLine(SectionLevel, oneLine(s.Name))}
@@ -308,20 +309,19 @@ func cardBlock(card Card) string {
 	return strings.Join(blocks, "\n\n")
 }
 
-// DeckBody is the markdown a deck is written as: the preamble as it arrived,
-// each section and each card laid down in the order they stand, and the tail
-// verbatim below the last value.
+// DeckBody is the markdown a deck is written as: the preamble unchanged,
+// each section and each card in deck order, and the tail verbatim after the
+// last value.
 //
-// Every card is laid down again, so a deck that goes through here comes back in
-// the format's own spelling: one blank line between the blocks, and no
-// whitespace at the end of a line, whatever the person wrote. A caller changing
-// one card of a file somebody else writes by hand wants OpenDeckBody, which
-// splices and leaves every card it did not reach alone.
+// Every card is written again, so the output uses the format's own spelling:
+// one blank line between blocks and no trailing whitespace on a line. A
+// caller changing one card of a file edited manually uses OpenDeckBody, which
+// splices and leaves every card it does not change unchanged.
 //
-// A card carries which section it is placed under, so a section no card reaches is
-// written at its current position: in front of the cards of the sections after it, or at
-// the end where nothing is placed under it. A card standing under a section the
-// deck does not hold is ErrNoSuchSection.
+// A card names the section it belongs to, so a section no card belongs to is
+// written at its position: before the cards of the following sections, or at
+// the end when no card follows it. A card whose section index the deck does
+// not hold yields ErrNoSuchSection.
 type deckBodyWriter struct {
 	scratch      *DeckFile
 	sections     []Section
@@ -378,11 +378,11 @@ func DeckBody(d Deck) (string, error) {
 }
 
 // RenameField rewrites one field's heading in every card cut by the card model
-// filed at card model, and reports how many it rewrote. The value under each
-// heading is left as it was.
+// at cardModel, and returns the number of cards rewritten. The value under
+// each heading is unchanged.
 //
-// Cutting is where each wikilink this deck writes lands, keyed by what stands
-// in the brackets.
+// cutting maps each wikilink name written in the deck to the path of the note
+// it resolves to.
 func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
 	deck, spans := readDeck(domain.FileStat{}, body)

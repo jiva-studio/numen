@@ -26,9 +26,9 @@ func makeDueByDay(d review.Day, pos time.Time, on map[int]int) *review.DueByDay 
 	return out
 }
 
-// A card goes on the heaviest day of the window around the interval it was sent
-// away for: the day whose share of the load stands highest over what already
-// falls on it. A day at none of the load weighs nothing and takes no card.
+// A card is placed on the heaviest day of the window around the interval it
+// was assigned: the day with the highest share of the load above what already
+// falls on it. A day with none of the load weighs nothing and takes no card.
 func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	pos := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
@@ -66,8 +66,8 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	}
 }
 
-// A table of the days of review says how many review cards fall on the day
-// holding an instant.
+// A table of the days of review gives how many review cards fall on the day
+// containing an instant.
 func TestHowLoadedADayOfReviewIs(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	pos := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
@@ -105,9 +105,9 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 		makeAnswer("01B", reviewCard.Card, reviewCard.Template, "2026-10-13T08:00:00Z", review.Good),
 	}).Replay(day, review.ScheduleBy(delta))[reviewCard]
 
-	// The answer is given ten days before the night the clock goes back, so the
-	// day the scheduler names falls the far side of it and the window the card
-	// may be moved within reaches back over it.
+	// The answer is given ten days before the night the clock goes back, so the day
+	// the scheduler picks falls on the far side of it and the window the card may be
+	// moved within extends back over it.
 	local := time.Date(2026, 10, 15, 10, 0, 0, 0, in)
 	changes := time.Date(2026, 10, 25, 3, 0, 0, 0, in)
 	due := delta.Next(status, local, review.Good).Due
@@ -115,7 +115,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 		t.Fatalf("the card comes back on %v, which is not past the clock change", due.In(in))
 	}
 
-	// The stamp that answer stands as in the log, read back as a replay reads it.
+	// The stamp of that answer in the log, read back as a replay reads it.
 	stamp, err := review.ParseTimestamp(local.UTC().Format(review.TimestampLayout))
 	if err != nil {
 		t.Fatal(err)
@@ -145,14 +145,14 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	}
 }
 
-// scheduling is every arithmetic that places a card's day: the session that hands
-// the cards out, and the projection drawn beside a control. Both go through
-// AssignDueDay, and that is the whole of the list.
+// scheduling lists every function that places a card's day: the session that
+// distributes the cards, and the projection drawn next to a control. Both go
+// through AssignDueDay, and that is the whole list.
 //
-// A function is one arithmetic however many times its body asks — the
-// projection places a card it has begun and a card it has answered again, and
-// they are one step. A third function here is a third arithmetic, kept in step
-// with these two by tests and drifting the day one of them is touched.
+// A function is one arithmetic however many times its body is called: the projection
+// places a card it has begun and a card it has answered again, and they are one
+// step. A third function here would be a third arithmetic, kept consistent with
+// these two only by tests and drifting whenever one of them changes.
 var scheduling = []string{"History.Replay", "Simulation.step"}
 
 // A day is chosen in one function, and a caller wanting one evaluates to it. The

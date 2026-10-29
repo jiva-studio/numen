@@ -1,25 +1,25 @@
 /**
- * Something dragged from one place in an order to another, by the pointer or
- * by the keyboard.
+ * An item dragged from one position in an order to another, by the pointer or by
+ * the keyboard.
  *
- * Everything that knows about events is here; where a drop is allowed and
- * what a drop evaluates to are the caller's, and each is stated once.
+ * All event handling is here; where a drop is allowed and what a drop does are
+ * supplied by the caller, and each is defined once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
 import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '../lib/order'
 
 /**
- * What following a drag takes: the order it runs along, and the rules.
+ * What a drag requires: the order it runs along, and the rules.
  *
- * `At` is where letting go may put the thing dragged. Where a place in the
- * order takes nothing — a row that is pinned — it is
- * `InsertionPoint | undefined`, and `nowhere` is the drop target that stands for
- * that.
+ * `At` is where releasing may place the dragged item. Where a position in the
+ * order accepts nothing, such as a pinned row, `At` is
+ * `InsertionPoint | undefined`, and `nowhere` is the drop target that
+ * represents it.
  */
 export interface DragDeps<At extends InsertionPoint | undefined> {
   /** The order, as the thing dragged is stepped along it. */
   readonly order: () => readonly string[]
-  /** Where a drop target stands while the pointer is over nothing that takes one. */
+  /** The drop target used while the pointer is over nothing that accepts a drop. */
   readonly nowhere: At
   /** Whether letting the thing dragged go there moves it. */
   readonly isMoved: (dragged: string, target: InsertionPoint) => boolean
@@ -29,7 +29,7 @@ export interface DragDeps<At extends InsertionPoint | undefined> {
 
 /** What a drag answers: what is being dragged, where it would land, and the gestures. */
 export interface DragState<At extends InsertionPoint | undefined> {
-  /** What is under the pointer's hand, and nothing while nothing is dragged. */
+  /** The item under the pointer, and null while nothing is dragged. */
   readonly dragged: ShallowRef<string | null>
   /** Where letting go would put it. */
   readonly at: ShallowRef<At>
@@ -41,7 +41,7 @@ export interface DragState<At extends InsertionPoint | undefined> {
   readonly release: () => void
   /** It was let go at its current position. */
   readonly drop: () => void
-  /** It was asked to go one place along the order. */
+  /** The item is moved one position along the order. */
   readonly step: (what: string, direction: StepDirection, press: KeyboardEvent) => void
 }
 

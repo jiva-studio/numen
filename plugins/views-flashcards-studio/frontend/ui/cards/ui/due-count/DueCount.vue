@@ -2,7 +2,8 @@
 /**
  * How many cards are due, as one figure and the word for what it counts.
  *
- * A figure not worked out yet is drawn as the shape it will be, in the same
+ * A figure that is not yet counted is rendered as a skeleton with the same
+ * dimensions as the final figure.
  */
 import { computed } from 'vue'
 import { Skeleton } from '@numen/ui'
@@ -10,14 +11,14 @@ import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(
   defineProps<{
-    /** Cards due isToday: owed, and never asked. Nothing until it is counted. */
+    /** Cards due today. Null until it is counted. */
     due: number | null
     /**
-     * The number alone. Where a list is long and the room is short, the word is
-     * said once above the list and not on every row of it.
+     * The number alone. Where a list is long and space is short, the word is
+     * shown once above the list and not on every row of it.
      */
     isBare?: boolean
-    /** Drawn on a ground of its own, where it relies on a filled button. */
+    /** Drawn with its own background, for use on a filled button. */
     isOnButton?: boolean
     /** The words it is drawn with. */
     words?: DueWords

@@ -43,10 +43,10 @@ func newCardModelDeck(cardModel, pos string, cards, from int) string {
 	return out
 }
 
-// lived is a vault at the size a person's is: two presets and the defaults, four
-// decks between them, and review cards in the hundreds.
+// lived is a vault at realistic size: two presets and the defaults, four decks
+// between them, and review cards in the hundreds.
 //
-// Verbs is cut by the two-template card model, so it holds twice as many review cards as cards.
+// Verbs uses the two-template card model, so it holds twice as many review cards as cards.
 var lived = map[string]string{
 	"Both.md": bothWays,
 	"One.md":  oneWay,
@@ -103,14 +103,13 @@ func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
 		}
 
 		session := startSession(t, handler, v)
-		// How far a person got before they stopped, which is not always the end.
+		// How far the session got before it stopped, which is not always the end.
 		cardCount := len(session.Cards)
 		if day%3 == 1 {
 			cardCount = cardCount * 2 / 3
 		}
 		for i, one := range session.Cards[:cardCount] {
-			// The times run over a spread a person's would, and every one of
-			// them is counted whole.
+			// The times follow a realistic spread, and every one is counted in full.
 			took := time.Duration(4+(i+day)%9) * time.Second
 			rating := api.RatingGood
 			if (i+day)%7 == 0 {
@@ -143,8 +142,8 @@ func getVaultCount(t *testing.T, handler *API, v domain.Vault) *api.VaultCardsDu
 	return nil
 }
 
-// countSessionCards returns how many review cards the deck screen puts in front of a person under
-// one preset: the cards of every deck that preset schedules, owed and new.
+// countSessionCards returns how many review cards the deck screen offers under
+// one preset: the cards of every deck that preset schedules, due and new.
 func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 	out := 0
 	for _, one := range due.Decks {
@@ -167,8 +166,8 @@ func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) r
 	return found.Settings
 }
 
-// writePreset writes settings into the preset at path, which is what the window
-// does when a person lets go of the control.
+// writePreset writes settings into the preset at path, as the window does when
+// the control is released.
 func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
 	if _, err := handler.scenarios().flash.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
@@ -201,16 +200,16 @@ func curves(handler *API) flashcards.ProjectCurve {
 	return c
 }
 
-// The picture over a preset's range and the day its decks offer are one
+// The curve over a preset's range and the day its decks offer use the same
 // arithmetic.
 //
-// A person reads a count of cards off the curve where their control stands, and
-// then reads a count of cards off the deck screen. The two are the same day of
-// the same preset, so they are the same number.
+// The card count read from the curve at the control position and the card count
+// read from the deck screen are the same day of the same preset, so they are
+// the same number.
 //
-// It is a goal of minutes that this holds for, because there the control moves
-// today. A target of retention moves nothing until tomorrow, and its curve is
-// the load over the days projected.
+// This holds for a goal of minutes, because there the control changes today. A
+// retention target changes nothing until tomorrow, and its curve is the load
+// over the projected days.
 func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 	for _, one := range []struct {
 		what   string
@@ -220,10 +219,9 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 		steered func(p *review.Preset, value float64)
 	}{
 		{
-			// A curve of minutes runs to twice what carrying the whole load
-			// costs, so a day in the lower half of the grid relies on the grid
-			// it was read from and the picture is drawn for the day it is left
-			// at.
+			// A curve of minutes extends to twice the cost of carrying the whole load, so
+			// a day in the lower half of the grid depends on the grid the curve was read
+			// from, and the plot is drawn for the day at which the control is left.
 			what: "steered by its minutes", goal: review.GoalMinutes,
 			places:  []int{1, 4, 9},
 			steered: func(p *review.Preset, value float64) { p.MinutesADay = int(value) },
@@ -262,8 +260,9 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 	}
 }
 
-// A curve carries the decks and the review cards the preset schedules, which is
-// what tells a preset with nothing under it from one whose day is simply spent.
+// A curve carries the decks and the review cards the preset schedules, which
+// distinguishes a preset with nothing scheduled from one whose day is fully
+// used.
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	handler, target := newAPI(t, lived)
 	v := target[0]
@@ -281,8 +280,8 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 // allocated to that preset went to this deck.
 var sole = map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 
-// What each deck offers adds up to what the vault offers, and a session on one
-// deck asks for that deck's share and nothing else.
+// The cards each deck offers add up to the cards the vault offers, and a
+// session on one deck requests only that deck's share.
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	handler, target := newAPI(t, lived)
 	v := target[0]
@@ -416,11 +415,11 @@ func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 	}
 }
 
-// A preset's target reaches the cards it schedules, and a working out kept
-// under one target is not answered with under another.
+// A preset's target applies to the cards it schedules, and a computation cached
+// under one target is not reused under another.
 //
-// Asking for more of the cards back is shorter intervals, so the same history
-// leaves more of them owed today.
+// A higher retention target gives shorter intervals, so the same history leaves
+// more cards due today.
 func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
 	handler, target := newAPI(t, lived)
 	v := target[0]
@@ -443,7 +442,7 @@ func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
 			review.RetentionBounds.Max, most, review.RetentionBounds.Min, least)
 	}
 
-	// And the preset beside it, whose target nobody moved, is where it was.
+	// The adjacent preset, whose target is unchanged, keeps its count.
 	if got := countSessionCards(getVaultCount(t, handler, v), underSanskrit); got == 0 {
 		t.Error("the preset nobody touched offers nothing")
 	}

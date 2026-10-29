@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * A deck, edited: its cards as tiles in a grid, standing under the sections
- * they are in, and a plus standing last.
+ * A deck editor: its cards as tiles in a grid, grouped under their sections,
+ * with a plus button last.
  *
- * The grid lays the cards out, drags one from place to place, and asks which
- * card model a new one is cut by. What a card holds is the card's own. What a card
- * stands for is the caller's.
+ * The grid lays out the cards, drags a card between positions, and requests
+ * which card model a new card is created from. A card's content belongs to the
+ * card. What a card means is the caller's.
  */
 import { computed, provide, shallowRef } from 'vue'
 import DeckRun from './DeckRun.vue'
@@ -63,7 +63,7 @@ const emit = defineEmits<{
 const activePickerRunId = shallowRef<string | null>(null)
 
 /**
- * The card under the pointer's hand, and where letting go would put it.
+ * The card under the pointer, and where dropping it would place it.
  */
 const {
   dragged,

@@ -1,8 +1,8 @@
 /**
- * Where the one control's curve is drawn, and where a pointer over it stands.
+ * Where the one control's curve is drawn, and where a pointer over it is positioned.
  *
- * The picture is the control, so the same arithmetic is asked both ways: a
- * place put on the line, and a place read back off a pointer.
+ * The plot is the control, so the same arithmetic runs in both directions: a
+ * place put on the line, and a place read back from a pointer.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -94,8 +94,8 @@ describe('the curve as it is drawn', () => {
     expect(positions[2]?.y).toBe(PLOT_TOP)
   })
 
-  // A count does not go below nothing, so nothing is the foot of the picture
-  // and a run of it lies along that foot.
+  // A count is never below zero, so zero is the foot of the plot and a run of
+  // zeros is drawn along that foot.
   it('lies along the floor where the extent has no width', () => {
     const positions = createPositions(curve([0, 0, 0]), { min: 0, max: 0 })
     expect(positions.every((one) => one.y === PLOT_BOTTOM)).toBe(true)

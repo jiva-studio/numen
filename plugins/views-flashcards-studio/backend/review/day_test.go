@@ -36,7 +36,7 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	}
 }
 
-// out of ends at the hour a person reads.
+// A day with an hour subtracted from its start ends at the wall-clock hour.
 func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	in := london(t)
 	day := review.Day{Starts: review.DayStartTime, In: in}
@@ -48,7 +48,7 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	}
 }
 
-// and a card owed today is owed for the whole of it.
+// A card due later today is due now: a card due today is due for the whole day.
 func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	in := london(t)
 	day := review.Day{Starts: review.DayStartTime, In: in}
@@ -170,7 +170,8 @@ func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
 	}
 }
 
-// Something that is not an hour of the day, or lies past the latest hour a day may begin at, is
+// A value that is not an hour of the day, or is later than the latest hour a day
+// may begin at, returns `ErrNotAnHour` and the default start.
 func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 	for _, content := range []string{"half past four", "18:00", "12:01", "4", "24:00"} {
 		got, err := review.ParseDayStart(content)
@@ -196,9 +197,9 @@ func moment(t *testing.T, response string) time.Time {
 	return pos
 }
 
-// A day is named for the day a person would say they answered on. The night
-// belongs to the day it began in: cards answered at one in the morning are that
-// evening's work.
+// A day is named for the calendar day on which the answers were given. Answers
+// given at night belong to the day on which the night began: cards answered at one
+// in the morning belong to the previous evening's day.
 func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 	for _, one := range []struct{ at, want string }{
 		{"2026-08-29T09:00:00", "2026-08-29"},
@@ -213,9 +214,9 @@ func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 	}
 }
 
-// What was answered on a day is a sum: an answer taken back is not in it, a
-// line that stands twice is counted once, and nothing depends on the order the
-// answers were read in.
+// The tally for a day is a sum: a revoked answer is not in it, a line that appears
+// twice is counted once, and the result does not depend on the order in which the
+// answers were read.
 func TestGetDayTallies_CountsAnswersPerDay(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	one := review.Answer{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"), Rating: review.Good}
@@ -237,8 +238,8 @@ func TestGetDayTallies_CountsAnswersPerDay(t *testing.T) {
 	}
 }
 
-// A day says how each of the four was answered on it, because fifty cards a
-// person could not recall is a different day from fifty they could.
+// A day records how each of the four ratings was given, because fifty cards that
+// were not recalled are a different day from fifty that were.
 func TestGetDayTallies_CountsPerRating(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	response := func(id string, r review.Rating) review.Answer {
@@ -261,7 +262,8 @@ func TestGetDayTallies_CountsPerRating(t *testing.T) {
 	}
 }
 
-// makeTallies is days a person answered on, as many as each says.
+// makeTallies returns the days with answers, with the count of answers each
+// specifies.
 func makeTallies(days map[string]int) map[string]review.Tally {
 	out := make(map[string]review.Tally, len(days))
 	for day, reply := range days {
@@ -308,9 +310,9 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 	}
 }
 
-// A preset counting in cards counts a card rated again as the one card, and a
-// preset counting in shows counts each time it was put to the person. The time
-// spent is the same time either way.
+// A preset counting in cards counts a card rated Again as one card, and a preset
+// counting in showings counts each showing. The time spent is the same in both
+// cases.
 func TestGetSpentTime_CountsCardsAndShows(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	underMap := map[review.ReviewCardID]string{on: "Steady.md"}
@@ -364,8 +366,7 @@ func TestTheFirstAnswerOfAReviewCardIsTheEarliestOne(t *testing.T) {
 	}
 }
 
-// One answer counts an hour of it at most, whatever the card stood on the
-// screen for.
+// One answer counts at most one hour, however long the card was displayed.
 func TestGetSpentTime_CapsLongAnswer(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	underMap := map[review.ReviewCardID]string{on: ""}
@@ -416,7 +417,7 @@ func TestGetReviewed_GroupsByDayOfAnswer(t *testing.T) {
 func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 	days := makeTallies(map[string]int{
 		"2026-08-25": 4,
-		// the 26th is a day nobody answered on
+		// no answers on the 26th
 		"2026-08-27": 2,
 		"2026-08-28": 9,
 		"2026-08-29": 1,
@@ -426,7 +427,7 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 	}
 }
 
-// sat down this morning has not broken anything.
+// An open day, with a session started this morning, does not break a streak.
 func TestStreak_OpenDayDoesNotEndStreak(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-27": 2, "2026-08-28": 9})
 
@@ -448,8 +449,8 @@ func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 	}
 }
 
-// A day counted in no zone in particular is counted in the machine's own,
-// which is where a person's evening is.
+// A day counted in no specific zone is counted in the machine's own zone, which
+// is the zone of the user's evening.
 func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 	here := review.Day{Starts: review.DayStartTime}
 	now := time.Now()
@@ -469,9 +470,9 @@ func TestStreak_ZeroWithoutAnswers(t *testing.T) {
 	}
 }
 
-// What came back is counted over the cards a person had learned, and only
-// those: a card still being learned is asked whether it comes back after ten
-// minutes, which says nothing about how well anything is remembered.
+// Retention is counted over the cards that were learned, and only those: a card
+// still being learned is asked again after ten minutes, which says nothing about
+// how well anything is remembered.
 func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
@@ -496,14 +497,15 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	if _, target := got["2026-08-01"]; target {
 		t.Errorf("a card being learned was counted: %+v", got["2026-08-01"])
 	}
-	// The second is one learned card asked and recalled, and one being met.
+	// The second day has one learned card that was asked and recalled, and one new
+	// card.
 	if want := (review.RecallTally{Asked: 1, Recalled: 1}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
 	}
 }
 
-// A card a person had learned and could not recall is asked and not recalled,
-// which is what the number is for.
+// A card that was learned and then not recalled counts as asked and not
+// recalled, which is what the retention number measures.
 func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	delta := review.NewFSRS()

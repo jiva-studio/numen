@@ -11,9 +11,8 @@ import (
 // is shorter runs at one place a day.
 const Points = 25
 
-// MostAhead is how far ahead a goal of a date is projected. A day further off
-// than this stands nowhere on the range, and the curve is drawn to the end of
-// the range.
+// MostAhead is how far ahead a goal of a date is projected. A day beyond this is
+// outside the range, and the curve is drawn to the end of the range.
 const MostAhead = 5 * 365
 
 // Curve represents preset evaluation across the goal range.
@@ -48,10 +47,10 @@ type Curve struct {
 // Reviews is counted in review cards and Minutes in the showings they take, so a
 // review card the day comes back to costs its minutes and is the one card.
 //
-// What the two are the height of is the goal's own question. Under a goal of
-// minutes they are the first day of the run the preset admits: the next session
-// a person will actually sit down to. Under a goal of retention they are the
-// load over the days the preset admits.
+// The meaning of the two depends on the goal. Under a goal of minutes they are
+// the first day of the run the preset admits: the next session that will be
+// run. Under a goal of retention they are the load over the days the preset
+// admits.
 //
 // A goal of a date reads Reviews off that first day, and fills Minutes with
 // what getting through the material by the day the place names costs, over the
@@ -62,7 +61,7 @@ type Point struct {
 	// Retained is the share of the material that comes back on the last day
 	// projected, which is what the load beside it buys.
 	Retained float64
-	// Owed is the review cards standing owed on the last day the projection ran:
+	// The number of review cards due on the last day the projection ran:
 	// Ahead days off under a goal of minutes or of retention, and the day the
 	// place names under a goal of a date.
 	Owed int
@@ -186,9 +185,9 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	}
 
 	out.Now = CurvePoint{Index: findNearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
-	// What is suggested is the shortest day that asks everything the day holds:
-	// the minutes stop closing it, and the material is what runs out. A load
-	// nothing on the grid carries is suggested at the longest day on it.
+	// The suggested value is the shortest day that covers everything the day holds:
+	// the minutes stop closing it, and the material runs out. A load that no grid
+	// value carries is suggested at the longest day on the grid.
 	out.Suggested = CurvePoint{Index: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
 	for i, one := range out.Points {
 		if len(one.Closed) == 0 {
@@ -199,15 +198,14 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	return out, nil
 }
 
-// retention is the curve of how much is asked of memory.
+// retention is the curve of the memory demand per target.
 //
-// A higher target is shorter intervals and more reviews, so under a budget that
-// binds it is also fewer cards kept up with.
+// A higher target means shorter intervals and more reviews, so under a binding
+// budget it also keeps up with fewer cards.
 //
-// Each place is the load over the days projected, which is what the target costs
-// week after week. Today is no part of it: the schedules a day opens with are
-// the same whatever target is chosen, and what a target changes it changes from
-// tomorrow on.
+// Each place is the load over the projected days, which is what the target
+// costs week after week. Today is excluded: the schedules a day opens with are
+// the same for every target, and a target changes them from tomorrow on.
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
 
@@ -216,8 +214,8 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
 	}
-	// The target the preset asks for is a place of the grid. The two ends are
-	// what memory allows, and no setting displaces them.
+	// The preset's target is a place of the grid. The two ends are fixed by what
+	// memory allows, and no setting displaces them.
 	snap(out.Grid, p.Retention, 1, len(out.Grid)-2)
 
 	// A place is read on the last day of its run, and that is the day the run
@@ -319,7 +317,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	// the material spread over the days up to it. Everything read off a place
 	// comes from that one run.
 	//
-	// A place runs a horizon of Ahead days, and of its own day where that stands
+	// A place runs a horizon of Ahead days, or up to its own day when that is
 	// further off.
 	steps := setNearestStep(pickEvenlySpacedDays(last-first+1, Points), named-first)
 	out.Grid = make([]float64, len(steps))

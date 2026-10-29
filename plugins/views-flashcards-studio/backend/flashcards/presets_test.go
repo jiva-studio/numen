@@ -68,8 +68,8 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	}
 }
 
-// An entry of the `links:` block written with no role is not read, so a preset
-// named in one schedules nothing. The deck is told why it is on the defaults.
+// An entry of the `links:` block with no role is ignored, so a preset named in it
+// schedules nothing. The deck reports why it is on the defaults.
 func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
@@ -97,8 +97,8 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	}
 }
 
-// A preset note that is gone leaves the deck on the defaults, and the address
-// that reaches nothing is named against it.
+// A deleted preset note leaves the deck on the defaults, and the unresolved
+// address is reported as a problem on the deck.
 func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -183,8 +183,8 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	}
 }
 
-// A write that never reached the vault is not one of those: the note is left as
-// it stands and nothing was levelled.
+// A write that does not reach the vault does not return `note.ErrUnlevelled`: the
+// note is unchanged and the save returns an error.
 func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
@@ -213,8 +213,8 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	}
 }
 
-// A deck naming no preset and carrying no such entry has nothing said against
-// it: standing on the defaults is not a problem.
+// A deck that names no preset and has no such entry reports no problem: using the
+// defaults is not an error.
 func TestGetForDeck_NoPresetHasNoProblems(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
@@ -228,8 +228,8 @@ func TestGetForDeck_NoPresetHasNoProblems(t *testing.T) {
 	}
 }
 
-// A link reaching a note that is not a preset leaves the deck on the defaults
-// and says so against it.
+// A link to a note that is not a preset leaves the deck on the defaults and
+// reports a problem on the deck.
 func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
@@ -238,7 +238,8 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The note schedules nothing, so the deck stands with the decks naming none.
+	// The note schedules nothing, so the deck uses the defaults like the decks that
+	// name no preset.
 	if target.Path != "" {
 		t.Errorf("read from %q", target.Path)
 	}
@@ -291,10 +292,10 @@ func minutes() review.Preset {
 	return p
 }
 
-// frontmatter is the whole of what a note's block says after a write, read by
-// the parser every other note is read by. A key that went missing, a key that
-// arrived twice and a block a person can no longer open all show here and in
-// none of the substrings a write puts in.
+// frontmatter returns the frontmatter block of a note after a write, parsed by the
+// same parser as every other note. A missing key, a duplicated key and a block
+// that no longer parses are all detected here, and not by the substring checks of
+// the write.
 func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
 	t.Helper()
 	raw := []byte(read(t, s.vault, path))
@@ -323,9 +324,9 @@ func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 		"colour": "green",
 		"tags":   []any{"study"},
 		"type":   "preset",
-		// Owned, and written where the setting differs from what the note was
-		// read as. The goal it already said is not rewritten, and a setting
-		// standing at the default the note never named stays unnamed.
+		// Owned keys are written where the setting differs from what the note was read
+		// as. The goal already stored is not rewritten, and a setting at the default that
+		// the note never named stays unnamed.
 		"goal": "minutes_a_day", "minutes_a_day": 35, "new_a_day": 8,
 		"reviews_a_day": 45, "retention": 0.87,
 	}
@@ -336,8 +337,8 @@ func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 	if !strings.Contains(target, "# Sanskrit\n\nGrammar and vocabulary.\n") {
 		t.Errorf("the body is gone from\n%s", target)
 	}
-	// The comments are the person's, on a key the application owns as much as
-	// on any other.
+	// The comments are user content and are preserved on keys the application owns
+	// as on any other key.
 	for _, expectedComment := range []string{
 		"# how long a day runs\n", "minutes_a_day: 35 # twenty is plenty\n",
 	} {
@@ -347,9 +348,9 @@ func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 	}
 }
 
-// A block written in from the margin is spliced where its own keys stand. A key
-// written flush ends the mapping, and the person's keys below it — the identity
-// among them — stop being read at all.
+// An indented block is spliced at the position of its own keys. A key at column
+// zero ends the mapping, and the user's keys below it, including the identity,
+// are no longer read.
 func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -459,9 +460,9 @@ func TestTheLoadReachesBackAsItWentIn(t *testing.T) {
 	}
 }
 
-// A `load` entry the read could not make out stands where it was written. The
-// file is never repaired, and a save that wrote only the days it understood
-// would take the rest of the week out with it.
+// A `load` entry that the read cannot parse stays as written. The file is never
+// repaired, and a save that wrote only the days it parsed would delete the rest of
+// the week.
 func TestASavePreservesTheLoadItCouldNotRead(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -485,8 +486,8 @@ func TestASavePreservesTheLoadItCouldNotRead(t *testing.T) {
 		got, "load:\n  fri: half\n  caturdasi: 20\n  sun: 0\n") {
 		t.Errorf("the entries moved:\n%s", got)
 	}
-	// The two the read could not make out are still what it cannot read, and
-	// they are still said against the note.
+	// The two entries that the read cannot parse are still unreadable, and they are
+	// still reported as problems on the note.
 	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
@@ -517,8 +518,8 @@ func TestASavePreservesALoadItCouldReadNoneOf(t *testing.T) {
 	}
 }
 
-// A `load` written as anything but a week of days is the person's whole, and a
-// save leaves it currently.
+// A `load` that is not a week of days is user content, and a save leaves it
+// unchanged.
 func TestASavePreservesALoadThatIsNotAWeek(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -560,9 +561,8 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	}
 }
 
-// The rule a preset does not name keeps its value through a write, so a person
-// who set an interval finds it where they left it after a spell under the other
-// rule.
+// The rule a preset does not name keeps its value through a write, so an interval
+// that was set under one rule is still there after a period under the other rule.
 func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, settled)
@@ -592,12 +592,12 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	}
 }
 
-// A preset written before the rule existed is read at the default rule, and its
+// A preset written before the rule existed is read with the default rule, and its
 // cards are counted against the default threshold.
 //
-// The file names no rule and no interval, which is every preset a person wrote
-// before there was one to name. A review card put off by less than the default
-// interval is not learned, and the counts a window draws say so.
+// The file names no rule and no interval, as every preset written before the rule
+// existed. A review card postponed by less than the default interval is not
+// learned, and the counts of the review window reflect that.
 func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -651,7 +651,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	}
 }
 
-// A note over the bound a read refuses is a note a save refuses too, and
+// A note over the size bound that a read rejects is rejected by a save too, and
 // nothing is written.
 func TestPresetsSave_ErrorsOnNoteOverBound(t *testing.T) {
 	t.Parallel()
@@ -671,9 +671,10 @@ func TestPresetsSave_ErrorsOnNoteOverBound(t *testing.T) {
 	}
 }
 
-// written. The read names it as a problem and the default takes its place while
-// the file is read; the file itself is never repaired, and a save that put the
-// default down would write a value the person never chose.
+// A save keeps a setting that the read could not parse as written. The read
+// reports it as a problem and uses the default in its place; the file is never
+// repaired, and a save that wrote the default would store a value the user never
+// chose.
 func TestASavePreservesTheSettingsItCouldNotRead(t *testing.T) {
 	t.Parallel()
 	for _, wrong := range []string{
@@ -697,7 +698,7 @@ func TestASavePreservesTheSettingsItCouldNotRead(t *testing.T) {
 					"minutes_a_day: 20\n" + wrong + "\n---\n\n# Sanskrit\n",
 			})
 
-			// The person moved the minutes control and nothing else.
+			// Only the minutes control was changed.
 			target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
 			if err != nil {
 				t.Fatal(err)
@@ -720,8 +721,8 @@ func TestASavePreservesTheSettingsItCouldNotRead(t *testing.T) {
 	}
 }
 
-// A setting the read could not make out and the person has since moved is
-// written: that is them settling it.
+// A setting that the read could not parse and the user has since changed is
+// written.
 func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -820,10 +821,12 @@ func TestADayNamedTwiceIsSavedWhereTheReadConsumesIt(t *testing.T) {
 	}
 }
 
-// note is left as the person wrote it.
+// A save with settings that a preset cannot hold returns an error and leaves the
+// note as written.
 //
-// A client that named none of goal, learned or counts sends a value that is not
-// one of them, and a day the goal names has to be there for the goal to read.
+// A client that sets none of goal, learned or counts sends a value that is not
+// one of the allowed values, and the day named by the goal must exist for the goal
+// to be read.
 func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
@@ -917,8 +920,8 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 	}
 }
 
-// A build that cannot ask which notes are presets says so. A vault holding none
-// answers with an empty list, and only that is a fact about the vault.
+// A build that cannot query which notes are presets reports that. A vault with no
+// presets returns an empty list, and only that result is a fact about the vault.
 func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
@@ -1047,8 +1050,8 @@ func TestPointingADeckPreservesTheRestOfTheFrontmatter(t *testing.T) {
 	}
 }
 
-// What the person wrote on the entry stays on it when the deck is moved to
-// another preset.
+// The content of the entry is kept on it when the deck is moved to another
+// preset.
 func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -1102,7 +1105,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	}
 }
 
-// A deck the person has edited since the caller read it is left alone.
+// A deck that was edited after the caller read it is not changed.
 func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
@@ -1303,8 +1306,8 @@ func TestPresetsPoint_BacklinksResolveAfterChoice(t *testing.T) {
 	}
 }
 
-// getPointingDecks is the decks whose preset link reaches the note at path, in
-// the order they are filed under.
+// getPointingDecks returns the decks whose preset link targets the note at path,
+// in file order.
 func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	t.Helper()
 	found, err := s.links.GetBacklinks(t.Context(), s.vault.ID, path)

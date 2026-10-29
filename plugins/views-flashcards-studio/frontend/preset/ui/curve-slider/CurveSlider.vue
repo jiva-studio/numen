@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The one slider of a preset: the goal's curve, drawn as the track a person
- * drags the knob along.
+ * The one slider of a preset: the goal's curve, drawn as the track along which
+ * the knob is dragged.
  */
 import type { Curve, PresetCounts } from '../../types'
 import BacklogPlot from './backlog-plot/BacklogPlot.vue'

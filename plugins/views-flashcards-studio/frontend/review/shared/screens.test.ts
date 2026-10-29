@@ -1,14 +1,14 @@
 /**
- * Going back lets go of what the screens being left hold.
+ * Going back releases what the screens being left hold.
  *
- * The order is what decides: a screen standing after the one gone to is left,
- * and one standing before it is not. Nothing here knows what any holding is.
+ * The order decides: a screen after the target screen is left, and a screen
+ * before it is not. Nothing here knows what any held resource is.
  */
 import { describe, expect, it } from 'vitest'
 
 import { useScreens } from './screens'
 
-/** Three screens, each holding one thing that says when it was release. */
+/** Three screens, each with one release callback that records when it ran. */
 const three = () => {
   const dropped: string[] = []
   const target = useScreens(['list', 'rows', 'one'] as const, {

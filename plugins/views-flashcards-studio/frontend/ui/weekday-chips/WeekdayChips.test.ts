@@ -180,8 +180,8 @@ describe('giving a day a level', () => {
     expect(getMenuLabels()).toEqual(['0%', '50%', '100%'])
   })
 
-  // The day is handed back as it was given, and the level with it; what a level
-  // means, and what becomes of the days it says nothing about, are the caller's.
+  // The day is returned as it was given, with the chosen level; what a level
+  // means, and what happens to the days it does not cover, are decided by the caller.
   it('returns the day it was given and the level chosen for it', async () => {
     const row = mountChips()
     await row.findAll('button')[0]?.trigger('click')
@@ -196,8 +196,8 @@ describe('giving a day a level', () => {
     expect(getChosen(row)).toEqual([['sat', 1]])
   })
 
-  // A chip nobody may turn is pressed like any other and answers with nothing.
-  // It keeps the keyboard, so the week is still read while it is disabled.
+  // A chip that cannot be toggled is pressed like any other and emits nothing.
+  // It keeps keyboard focus, so the week can still be read while it is disabled.
   it('offers nothing while nobody may turn them, and says so on every chip', async () => {
     const row = mountChips({ isDisabled: true })
     const chips = row.findAll('button')

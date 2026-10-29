@@ -1,19 +1,19 @@
 /**
- * Where the one control's curve is drawn, without drawing it.
+ * Geometry of the curve control's plot, without rendering it.
  *
- * Everything is worked out in the picture's own units and scaled to whatever
- * room the tab has. The curve is the control, so the same arithmetic that puts
- * a place on the line reads a place off a pointer.
+ * All geometry is in plot units and scaled to the available tab space. The
+ * curve is the control, so the arithmetic that maps a place to a position on
+ * the line also maps a pointer position to a place.
  */
 import type { Position } from '@numen/ui'
 import { getPointCost } from './curve'
 import type { Curve } from '../types'
 
-/** The picture's own units. It is scaled whole, so a circle stays one. */
+/** Plot units. The plot is scaled uniformly, so a circle stays a circle. */
 export const PLOT_WIDTH = 560
 export const PLOT_HEIGHT = 190
 
-/** The room the line is drawn in, inside the picture. */
+/** Area the line is drawn in, inside the plot. */
 export const PLOT_LEFT = 12
 export const PLOT_RIGHT = PLOT_WIDTH - 12
 export const PLOT_TOP = 16
@@ -25,10 +25,10 @@ export interface Plot {
   readonly foot: number
 }
 
-/** The curve's own plot, which is the picture. */
+/** The curve plot. */
 export const CURVE_PLOT: Plot = { high: PLOT_HEIGHT, top: PLOT_TOP, foot: PLOT_BOTTOM }
 
-/** The backlog's plot under it, which is short and shares the picture's width. */
+/** The backlog plot below the curve plot: shorter, and the same width. */
 export const BACKLOG_PLOT_HEIGHT = 76
 export const BACKLOG_PLOT: Plot = {
   high: BACKLOG_PLOT_HEIGHT,
@@ -36,29 +36,29 @@ export const BACKLOG_PLOT: Plot = {
   foot: BACKLOG_PLOT_HEIGHT - 12,
 }
 
-/** The faint lines drawn across the picture, as shares of the plot's height. */
+/** The faint gridlines across the plot, as shares of the plot height. */
 export const GRIDLINES: readonly number[] = [0.25, 0.5, 0.75]
 
-/** One place of the curve, where the picture draws it. */
+/** One place of the curve, as a position on the plot. */
 export type { Position }
 
-/** Where one place of a grid stands across the picture. */
+/** Horizontal position of one place of the grid on the plot. */
 export const getXAtPlace = (place: number, places: number): number =>
   places <= 1 ? PLOT_LEFT : PLOT_LEFT + ((PLOT_RIGHT - PLOT_LEFT) * place) / (places - 1)
 
 /** The height of one of the faint lines. */
 export const yOfGridline = (share: number): number => PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) * share
 
-/** The stretch of cost the picture is scaled to. */
+/** The range of cost the plot is scaled to. */
 export interface Extent {
   readonly min: number
   readonly max: number
 }
 
 /**
- * The extent a curve is drawn against: nothing at the foot, and the most it
- * ever costs over the top. A count does not go below nothing, so the foot of
- * the picture is nothing under every run and a height is read against it.
+ * The extent a curve is drawn against: zero at the foot, and the highest cost
+ * of the curve at the top. A count is never negative, so the foot of the plot
+ * is zero for every run and a height is read against it.
  */
 export const getExtent = (curve: Curve): Extent => {
   const costs = curve.at.map((point) => getPointCost(curve.goal, point))
@@ -75,9 +75,9 @@ export const getBacklogExtent = (backlog: readonly number[]): Extent => ({
 })
 
 /**
- * Where a backlog is drawn. Nothing overdue is the foot under every run, so a
- * run holding nothing at all lies along the floor and a run holding anything
- * is measured up from it.
+ * Positions of a backlog. An empty backlog is the foot for every run, so a run
+ * with no overdue cards is drawn along the foot and a run with overdue cards is
+ * measured upward from it.
  */
 export const getBacklogPositions = (
   values: readonly number[],
@@ -85,9 +85,9 @@ export const getBacklogPositions = (
 ): readonly Position[] => createSeries(values, extent, BACKLOG_PLOT)
 
 /**
- * Where every place of the curve is drawn, in the extent the picture is scaled
- * to. The extent is the goal's and not this answer's, so a curve that is flat
- * within it is drawn flat, and an extent of no width lies along the foot.
+ * Positions of every place of the curve, in the extent the plot is scaled to.
+ * The extent is set by the goal and not by this curve, so a curve that is flat
+ * within it is drawn flat, and an extent of zero width is drawn along the foot.
  */
 export const createPositions = (curve: Curve, extent: Extent): readonly Position[] =>
   createSeries(
@@ -149,9 +149,9 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
 }
 
 /**
- * The days one place of the curve is drawn over. A goal of a date schedules
- * nothing past the day it names, so what the run says after that day is the
- * arithmetic of doing nothing and is no part of the choice being made.
+ * The number of days one place of the curve is drawn over. A goal of a date
+ * schedules nothing after the day it names, so the run after that day is the
+ * result of doing nothing and is not part of the choice being made.
  */
 const getDayLimit = (curve: Curve, place: number): number =>
   curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
@@ -162,7 +162,7 @@ export const getBacklogRun = (curve: Curve, place: number): readonly number[] =>
   return days < 0 ? run : run.slice(0, days)
 }
 
-/** Where a keystroke takes the knob, and nothing for a keystroke of somebody else's. */
+/** The place a keystroke moves the knob to, or null for a key that does not move it. */
 export const getKeyPlace = (key: string, place: number, places: number): number | null => {
   const last = places - 1
   if (key === 'ArrowLeft' || key === 'ArrowDown') return Math.max(place - 1, 0)
@@ -173,12 +173,13 @@ export const getKeyPlace = (key: string, place: number, places: number): number 
 }
 
 /**
- * the picture's own units. A pointer outside the room the line is drawn in
+ * The place of the curve at a horizontal position, in plot units. A pointer
+ * outside the area the line is drawn in maps to the first or last place.
  */
 export const getPlaceAtX = (x: number, places: number): number => {
   const inside = (x - PLOT_LEFT) / (PLOT_RIGHT - PLOT_LEFT)
   return Math.max(Math.min(Math.round(inside * (places - 1)), places - 1), 0)
 }
 
-/** Two places past the picture's units, which is as fine as a path needs. */
+/** Rounds to two decimal places, which is precise enough for a path. */
 const round = (value: number): number => Math.round(value * 100) / 100

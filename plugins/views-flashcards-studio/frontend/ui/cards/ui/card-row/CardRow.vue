@@ -2,9 +2,9 @@
 /**
  * One row, drawn as one thing.
  *
- * The line around it and the ground under it are the row's own, so a handle, a
- * box to type in and a way to remove it read as one block. Where the keyboard
- * lands inside, the row is what says so.
+ * The border around it and the background behind it are the row's own, so a
+ * handle, an input box and a remove control read as one block. Where keyboard
+ * focus is inside, the row indicates it.
  */
 withDefaults(
   defineProps<{

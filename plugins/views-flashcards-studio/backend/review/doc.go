@@ -1,5 +1,5 @@
-// Package review keeps the answers a person gave their cards and works out
-// when each comes round again.
+// Package review stores the answers a user gave to their cards and computes
+// when each card is due again.
 //
 // An answer is written down once and never changed. A schedule is a pure
 // function of the answers, so changing how cards are spaced replays the

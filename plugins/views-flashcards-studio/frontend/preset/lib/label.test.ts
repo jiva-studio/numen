@@ -1,9 +1,8 @@
 /**
- * The words set on the one control's picture, and the room each takes.
+ * The labels on the control's plot, and the area each takes.
  *
- * A word is placed against a line or over a mark, and what it evaluates to is a
- * box. Two boxes that touch are two words that would print over each other,
- * and the picture drops one of them.
+ * A label is placed against a line or over a mark, and its extent is a box. Two
+ * boxes that touch would print over each other, so the plot drops one of them.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -45,7 +44,7 @@ const mark = (key: string, x: number, y: number, text = key): Mark => ({
   text,
 })
 
-/** A room somewhere in the picture, to stand a word against. */
+/** A box in the plot, to place a label against. */
 const box = (x: number, y: number, width: number, height: number): Box => ({
   x,
   y,
@@ -53,7 +52,7 @@ const box = (x: number, y: number, width: number, height: number): Box => ({
   high: height,
 })
 
-/** Whether a room is wholly inside the picture, which is what the viewBox holds. */
+/** Whether a box is wholly inside the plot, which is the extent of the viewBox. */
 const isInside = (one: Box): boolean =>
   one.x >= 0 && one.y >= 0 && one.x + one.wide <= PLOT_WIDTH && one.y + one.high <= PLOT_HEIGHT
 
@@ -199,8 +198,8 @@ describe('the names of the marks that fit', () => {
     expect(createLabels([mark('knob', PLOT_WIDTH / 2, 100, '')], null)).toStrictEqual([])
   })
 
-  // A name that will not fit is dropped, not moved: nothing here pushes two
-  // names apart, so the second of a touching pair is simply not drawn.
+  // A label that does not fit is dropped and not moved: nothing pushes two labels
+  // apart, so the second of a touching pair is not drawn.
   it.each([
     { gap: LABEL * 2 - 1, expected: ['first'] },
     { gap: LABEL * 2, expected: ['first', 'second'] },
@@ -240,7 +239,7 @@ describe('the names of the marks that fit', () => {
   })
 })
 
-/** A number said as itself, so a test reads the height and not the wording. */
+/** A number formatted as itself, so a test reads the height and not the wording. */
 const formatValue = (value: number): string => String(value)
 
 /** A curve drawn well clear of the left edge, where no number is read. */

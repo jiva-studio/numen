@@ -19,10 +19,10 @@ type section struct {
 	to   int
 }
 
-// sections walks the body a line at a time and returns its headings of the
-// levels from first to last, in document order. A heading inside a code fence
-// is an example of one, and a heading of any other level is text under the
-// section it falls in.
+// sections scans the body line by line and returns its headings of the levels
+// from first to last, in document order. A heading inside a code fence is an
+// example of one, and a heading of any other level is text under the section it
+// falls in.
 //
 // The levels are given because a deck and a card model spend different ones: a
 // first-level heading opens a section of a deck, and the same line on a template is
@@ -80,11 +80,11 @@ func heading(line []byte, first, last int) (level int, name string, ok bool) {
 	return hashes, string(cleaned), true
 }
 
-// readTrimmedRun is one part of the body as a person reads it — one kind of line break,
-// and the blank lines at either end dropped — and the byte the reading of it
-// stopped at. The blank lines it stopped short of separate one part of a deck
-// from the next and belong to neither, which is what leaves a tail at the end
-// of a file.
+// readTrimmedRun is one part of the body as read — with line breaks normalized
+// and the blank lines at either end dropped — and the byte offset where reading
+// of it stopped. The blank lines after that offset separate one part of a deck
+// from the next and belong to neither, which leaves a tail at the end of a
+// file.
 func readTrimmedRun(body []byte, from, to int) (string, int) {
 	begin, end := from, to
 	for begin < end {
@@ -98,8 +98,8 @@ func readTrimmedRun(body []byte, from, to int) (string, int) {
 	return markdown.Normalise(string(body[begin:end])), end
 }
 
-// getTrimmedEnd is the byte a run's own text stops at, the whitespace that
-// follows it counted as nobody's.
+// getTrimmedEnd is the byte offset where a run's own text ends; the whitespace
+// that follows it belongs to no run.
 func getTrimmedEnd(body []byte, from, to int) int {
 	return from + len(bytes.TrimRight(body[from:to], " \t\r\n"))
 }
@@ -121,9 +121,9 @@ func lineFrom(body []byte, from, pos int) int {
 	return from
 }
 
-// trimBlankLines drops the lines at either end that hold nothing but
-// whitespace. What a line begins with is the person's, so an indented block
-// arrives indented.
+// trimBlankLines drops the lines at either end that hold only whitespace. The
+// leading whitespace of a line belongs to the user's text, so an indented block
+// stays indented.
 func trimBlankLines(s string) string {
 	read, _ := readTrimmedRun([]byte(s), 0, len(s))
 	return read

@@ -14,51 +14,52 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// MaxBytes is the most a deck may be and still be read here.
+// MaxBytes is the largest deck that is read.
 //
-// A deck is a file holding what would otherwise be a folder of notes, so it is
-// bounded several times a note's. The size is asked of the file before it is
+// A deck is a single file holding a replacement for a folder of notes, so
+// its limit is several times the limit of a note. The size is read from the
+// file metadata before the file is opened.
 const MaxBytes = 8 << 20
 
-// DeckContents is one deck as a read hands it over.
+// DeckContents is the result of reading one deck.
 type DeckContents struct {
 	Path string
 	// Outcome is how the read ended, out of the list an ordinary note's read
 	// answers with.
 	Outcome note.ReadOutcome
-	// Type is what the note at the path says it is, so a caller that asked for
-	// a deck and was handed a card model is told so.
+	// Type is the note type recorded in the note at the path, so a caller that
+	// requested a deck and received a card model can detect the mismatch.
 	Type domain.NoteType
-	// Body is what the file says. It holds no cards for any outcome but Ok, and
-	// a deck over the bound carries the problem that says why.
+	// Body is the parsed deck. It contains no cards for any outcome other than
+	// Ok, and a deck over the size limit carries the problem that states why.
 	Body format.Deck
 	// Raw is the prose of the file currently, which is what a caller changing
 	// one card splices. It is empty for any outcome but Ok.
 	Raw string
-	// CardModels is where the wikilink under each card's heading lands, keyed by
+	// CardModels maps the wikilink name under each card's heading to the path of the
+	// note it resolves to.
 	CardModels map[string]string
-	// FileStat is what the file was when it was asked about, which is before
-	// its bytes were read.
+	// FileStat is the file metadata, read before the file content.
 	FileStat domain.FileStat
 }
 
-// CardModelContents is one card model as a read hands it over.
+// CardModelContents is the result of reading one card model.
 type CardModelContents struct {
 	Path    string
 	Title   string
 	Outcome note.ReadOutcome
 	Type    domain.NoteType
-	// Body is what the file says: the fields a card is asked for and the templates
-	// it is shown through. It says nothing for any outcome but Ok.
+	// Body is the parsed card model: the fields of a card and the templates it is
+	// rendered through. It is empty for any outcome other than Ok.
 	Body     format.CardModel
 	FileStat domain.FileStat
 }
 
-// Read hands over a deck or a card model, read out of the vault.
+// Read reads a deck or a card model from the vault.
 type Read struct {
 	readers ports.VaultReaders
-	// links answers where the wikilink a card names its card model by lands. A
-	// card model holds no cards, so reading one asks nothing of it.
+	// links resolves the wikilink by which a card names its card model. Reading a
+	// card model does not use it, because a card model holds no cards.
 	links ports.LinkQueries
 }
 
@@ -70,8 +71,8 @@ func NewRead(readers ports.VaultReaders, links ports.LinkQueries) Read {
 
 // Deck reads the deck at path.
 //
-// An error is the vault being out of reach. What is wrong with the file itself
-// is an outcome, and the caller is told which one.
+// An error means the vault is unavailable. A problem with the file itself is
+// reported in the outcome.
 func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckContents, error) {
 	out := DeckContents{Path: path}
 	n, ref, outcome, err := u.readNote(ctx, v, path, MaxBytes)
@@ -79,8 +80,8 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 		return DeckContents{}, err
 	}
 	out.FileStat, out.Outcome, out.Type = ref, outcome, n.Type
-	// A file that will not read is carried out in the outcome above, and adds
-	// nothing to a body nobody read.
+	// An outcome other than Ok and TooLarge is reported in the outcome above and
+	// leaves the body empty.
 	//exhaustive:ignore
 	switch outcome {
 	case note.Ok:
@@ -105,11 +106,12 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	return out, nil
 }
 
-// GetCardCardModels is the card model each card of a deck is cut by, keyed by what
-// that is not a card model, carries a card model of nothing.
+// GetCardCardModels returns the card model each card of a deck is cut by, keyed
+// by the wikilink name written under the card heading. A name that resolves to
+// a note that is not a card model maps to an empty card model.
 //
-// The two files are read against each other here, which is what says which of a
-// card's fields is first.
+// The deck and the card models are read together, which determines the first
+// field of each card.
 func (u Read) GetCardCardModels(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.CardModel, error) {
@@ -121,8 +123,9 @@ func (u Read) GetCardCardModels(
 	return delta, err
 }
 
-// the brackets. The link is written in the deck, so it resolves against the
-// deck's own folder the way every name in that file does.
+// getCardModelPaths maps the wikilink name under each card's heading to the
+// path of the note it resolves to. The link is written in the deck, so it
+// resolves relative to the deck's folder like every name in that file.
 func getCardModelPaths(
 	ctx context.Context, links ports.LinkQueries, vaultID domain.VaultID, path string, d format.Deck,
 ) (map[string]string, error) {
@@ -149,10 +152,12 @@ func getCardModelPaths(
 	return pos, nil
 }
 
-// readCardModels reads the card model the cards of a deck are cut by, keyed by what stands
-// in the brackets. Each file is opened once however many cards name it.
+// readCardModels reads the card models that the cards of a deck are cut by,
+// keyed by the wikilink name. Each file is opened once however many cards name
+// it.
 //
-// A name landing on a note that is not a card model is left out of the card models
+// A name that resolves to a note that is not a card model is omitted from the
+// card models and marked in ordinary.
 func (u Read) readCardModels(
 	ctx context.Context, v domain.Vault, pos map[string]string,
 ) (cardModels map[string]format.CardModel, ordinary map[string]bool, err error) {
@@ -182,8 +187,9 @@ func (u Read) readCardModels(
 	return cardModels, ordinary, nil
 }
 
-// getNonCardModelProblems returns one problem per card whose wikilink reaches a note that is not
-// a card model. The values are read, and no template lays the card out.
+// getNonCardModelProblems returns one problem per card whose wikilink resolves
+// to a note that is not a card model. The values are read, and no template
+// renders the card.
 func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
 	var out []format.Problem
 	for item, card := range d.Cards {
@@ -211,8 +217,8 @@ func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardM
 	return out, nil
 }
 
-// readNote is the file at a path: what the vault says is there, and the note
-// its bytes parse to once everything that would refuse them has been asked.
+// readNote reads the file at a path: the file metadata, and the note parsed
+// from its bytes when every precondition on the file holds.
 func (u Read) readNote(
 	ctx context.Context, v domain.Vault, path string, maxSize int64,
 ) (domain.Note, domain.FileStat, note.ReadOutcome, error) {
@@ -221,9 +227,9 @@ func (u Read) readNote(
 		return domain.Note{}, domain.FileStat{}, "", err
 	}
 
-	// The vault says what is at a path without opening it: a note, a file it
-	// leaves alone, or nothing. The size is among what it says, which is what
-	// keeps a deck over the bound unread.
+	// The vault reports what is at a path without opening it: a note, a file of
+	// another type, or nothing. The metadata includes the size, which keeps a
+	// deck over the limit unread.
 	ref, err := reader.StatFile(ctx, path)
 	target := err == nil
 	switch {
@@ -250,9 +256,9 @@ func (u Read) readNote(
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 
-	// The values of a card go out in string fields. A browser turns an
-	// ill-formed sequence into U+FFFD, and the next save puts those characters
-	// where the person's bytes were.
+	// The values of a card are sent in string fields. A browser replaces an
+	// ill-formed UTF-8 sequence with U+FFFD, and the next save would write those
+	// characters over the original bytes.
 	if !utf8.Valid(raw) {
 		return domain.Note{}, ref, note.NotText, nil
 	}

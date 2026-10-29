@@ -19,7 +19,7 @@ const (
 	argumentTitle          = "title"
 )
 
-// firstCardModelField is the field a card model made by its command declares, which the person renames.
+// firstCardModelField is the field a card model created by its command declares, which the user renames.
 const firstCardModelField = "Field 1"
 
 // Commands runs the commands the manifest declares.
@@ -63,7 +63,7 @@ func (b *Backend) newCreateRun(
 	}
 }
 
-// describeCreateError is why a file was not made, in words a person reads.
+// describeCreateError returns the reason a file was not created, in words for the user.
 func describeCreateError(code api.ErrorCode) string {
 	switch code {
 	case api.ErrorCodeAlreadyExists:

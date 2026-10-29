@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { measureRect } from '../../../../dom'
 /**
- * What a thing is, said beside it while a person points at it. It follows the
- * pointer and never takes it.
+ * A label for the hovered item, displayed beside it. It follows the pointer and
+ * never captures it.
  *
- * It relies on the far side of the thing it is about, takes the near side where
- * the far one has no room, and is brought inside the edge where neither has.
+ * It is placed on the far side of the item it describes, uses the near side
+ * where the far side has no room, and is clamped inside the edge where neither
+ * has room.
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
@@ -31,15 +32,16 @@ const props = withDefaults(
 /* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
 
-/** Its own size, which only the drawing knows. Placement is worked out from it. */
+/** Its own size, which only the rendered element knows. Placement is computed from it. */
 const size = ref<Size>({ width: 0, height: 0 })
 
 /** The area to stay inside, measured again whenever it changes. */
 const { room } = useFreeSpace(props.viewport, measure)
 
 /**
- * Across, it stands beside the thing it is about. Down, it begins where that
- * thing begins, and folds up from there at the foot of the window.
+ * Horizontally, it is placed beside the item it describes. Vertically, it
+ * starts where that item starts, and folds up from there at the bottom of the
+ * window.
  */
 const tooltipPosition = computed(() => ({
   x: getAdjacentPlace({
@@ -88,7 +90,7 @@ function measure(): void {
 .tooltip {
   position: fixed;
   z-index: var(--numen-lift-tooltip);
-  /* As wide as what it says, whatever room is left beside at its current position. */
+  /* As wide as its content, whatever space remains beside it at its current position. */
   inline-size: max-content;
   padding: var(--numen-inset);
   border: 1px solid var(--numen-rule);

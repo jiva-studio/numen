@@ -63,7 +63,7 @@ const CORPORA = {
     fields: ANIMAL,
     template: { id: 'blank', name: '', front: '', back: '' },
   },
-  /* Marks a person wrote, which stand as text, and tags, which are drawn. */
+  /* Marks the user wrote, which render as text, and tags, which are rendered as HTML. */
   'marks a person wrote': {
     fields: ['Name', 'Height'],
     template: {
@@ -73,7 +73,7 @@ const CORPORA = {
       back: '<span style="color: teal">{{Height}}</span>\n<script>window.stolen = 1</script>',
     },
   },
-  /* Forty fields to write in, far more than the strip has room for. */
+  /* Forty fields, more than the strip can display. */
   'far too many fields': {
     fields: many(40),
     template: {
@@ -220,7 +220,7 @@ export const ATemplate: Story = {
     )
     expect(getPaneBox('front-written').right).toBeLessThanOrEqual(getPaneBox('front-preview').left)
 
-    // The front stands above the back, and both halves are cut the same way.
+    // The front is above the back, and both halves are split the same way.
     expect(getPaneBox('front-written').bottom).toBeLessThanOrEqual(getPaneBox('back-written').top)
     expect(Math.round(getPaneBox('back-written').top)).toBe(
       Math.round(getPaneBox('back-preview').top),
@@ -235,8 +235,8 @@ export const ATemplate: Story = {
     )
     expect(getPaneBox('back-written').top - getPaneBox('front-written').bottom).toBeCloseTo(line, 0)
 
-    // A part is a box to write in, not a line: the box fills the part it stands
-    // in, so every point of the part is a point to type at.
+    // A part is a box to type in, not a line: the box fills the part, so every
+    // point of the part focuses the box.
     const part = getPane(canvasElement, 'front-written')
     const box = getBox(canvasElement, 'front')
     const deep = Number.parseFloat(getComputedStyle(box).lineHeight)
@@ -260,7 +260,7 @@ export const ATemplate: Story = {
     }
     expect(body.querySelectorAll('fieldset, legend')).toHaveLength(0)
 
-    // The preview stands what a card fills the slots with, and no brace of the
+    // The preview shows the card with the slots filled, without the braces of the
     // markup it came from.
     const preview = found(canvasElement, '[data-preview="back"]')
     expect(preview.textContent).toContain('about 45" at the shoulder')
@@ -274,7 +274,7 @@ export const ATemplate: Story = {
     expect(tall).toBeGreaterThan(0)
     expect(answer.getBoundingClientRect().height).toBeCloseTo(tall * 3, 0)
 
-    // A field to write into a half is a small quiet chip with a ground of its
+    // A field to insert into a half is a small, muted chip with its own background.
     const chip = found(canvasElement, '[data-insert="Height"]')
     const title = found(canvasElement, '.template__title')
     expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
@@ -282,7 +282,7 @@ export const ATemplate: Story = {
       Number.parseFloat(getComputedStyle(title).fontSize),
     )
 
-    // A field is written into the half last typed in, where the caret stands.
+    // A field is inserted into the half last typed in, at the caret.
     const back = getBox(canvasElement, 'back')
     back.focus()
     back.setSelectionRange(0, 0)
@@ -338,8 +338,7 @@ export const Narrow: Story = {
 export const AStraySlot: Story = {
   args: { corpus: 'a stray slot' },
   play: async ({ canvasElement }) => {
-    // What is wrong is said where the slot itself stands, and under that half
-    // alone.
+    // The error is shown at the slot itself, and under that half only.
     expect(found(canvasElement, '[data-preview="front"] mark').textContent).toBe('{{Colour}}')
     expect(found(canvasElement, '[data-preview="back"] mark').textContent).toBe('{{Weight}}')
     expect(
@@ -350,7 +349,7 @@ export const AStraySlot: Story = {
     ).toBe('Not a field: Weight')
     expect(canvasElement.querySelector('header .template__objections')).toBeNull()
 
-    // still fills the part, and a press meant for the box reaches it.
+    // The box still fills the part, and a click on the part targets the box.
     const pane = getPane(canvasElement, 'front-written').getBoundingClientRect()
     const box = getBox(canvasElement, 'front').getBoundingClientRect()
     expect(box.height).toBeCloseTo(pane.height, 0)
@@ -370,7 +369,7 @@ export const AStraySlot: Story = {
 export const NothingInIt: Story = {
   args: { corpus: 'nothing in it' },
   play: async ({ canvasElement }) => {
-    // An empty part says what it is for, in the middle of itself.
+    // An empty part shows its placeholder, centered.
     const placeholders: string[] = []
     for (const pane of PANES) {
       const element = getPane(canvasElement, pane)
@@ -396,16 +395,16 @@ export const NothingInIt: Story = {
     const pane = getPane(canvasElement, 'front-written')
     expect(content.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
 
-    // The half nothing was written in still says what it is for.
-    expect(getPane(canvasElement, 'back-written').querySelector('.template__ghost')?.textContent).toBe(
-      'Back',
-    )
+    // The half with no text still shows its placeholder.
+    expect(
+      getPane(canvasElement, 'back-written').querySelector('.template__ghost')?.textContent,
+    ).toBe('Back')
   },
 }
 
 /**
- * A card is HTML: a tag a person wrote is drawn, and the marks of another
- * format stand as the characters they are.
+ * A card is HTML: a tag the user wrote is rendered, and the marks of another
+ * format render as literal characters.
  */
 export const MarksAPersonWrote: Story = {
   args: { corpus: 'marks a person wrote' },
@@ -419,15 +418,14 @@ export const MarksAPersonWrote: Story = {
     expect(front.textContent).toBe('**Name** and Name')
     expect(front.querySelectorAll('b, strong')).toHaveLength(1)
 
-    // What the person wrote is theirs to read and change, standing as the text
-    // of a box.
+    // The user's text is editable and shown as the text of a box.
     expect(getBox(canvasElement, 'back').value).toContain('<script>')
   },
 }
 
 /**
- * Forty fields to write in, far more than the strip has room for. The row of
- * fields scrolls inside the strip, which keeps its height and its heading.
+ * Forty fields, more than the strip can display. The row of fields scrolls
+ * inside the strip, which keeps its height and heading.
  */
 export const FarTooManyFields: Story = {
   args: { corpus: 'far too many fields' },
@@ -450,9 +448,9 @@ export const FarTooManyFields: Story = {
 /**
  * What the vault found wrong with the template, and a name another template carries.
  *
- * What stands against the template is said at the end of the strip, over the window
- * under it, and what is wrong with a name being typed is said in the same
- * place, to the box.
+ * The errors found against the template are shown at the end of the strip, above
+ * the editor below it, and the error for a name being typed is shown in the same
+ * place, at the box.
  */
 export const WhatIsWrongWithIt: Story = {
   args: { corpus: 'something wrong with it' },
@@ -461,9 +459,9 @@ export const WhatIsWrongWithIt: Story = {
     expect(response.textContent).toContain('this template has no back')
     expect(response.querySelectorAll('li')).toHaveLength(2)
 
-    // The strip is one row deep with all items rendered, and the window begins
-    // where the strip ends: what is wrong hangs over the window and takes no
-    // room from it.
+    // The strip is one row high with all items rendered, and the editor begins
+    // where the strip ends: the error overlays the editor and takes no space from
+    // it.
     const header = found(canvasElement, '.card-header').getBoundingClientRect()
     const head = found(canvasElement, '.template__head').getBoundingClientRect()
     const body = found(canvasElement, '.template__body').getBoundingClientRect()
@@ -473,13 +471,15 @@ export const WhatIsWrongWithIt: Story = {
     expect(overRect.top).toBeGreaterThanOrEqual(head.bottom - 1)
     expect(overRect.bottom).toBeGreaterThan(body.top)
 
-    // It stays inside the template, and a press meant for the window reaches it.
+    // It stays inside the template, and a click meant for the editor is received by it.
     const template = found(canvasElement, '[data-template]').getBoundingClientRect()
     expect(overRect.right).toBeLessThanOrEqual(template.right + 1)
-    expect(getComputedStyle(found(canvasElement, 'header .template__amiss')).pointerEvents).toBe('none')
+    expect(getComputedStyle(found(canvasElement, 'header .template__amiss')).pointerEvents).toBe(
+      'none',
+    )
     expect(getComputedStyle(response).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
-    // A name another template carries cannot be used, and the box says so.
+    // A name that another template uses is rejected, and the box shows the error.
     const name = found(canvasElement, '.template__title') as HTMLInputElement
     await userEvent.clear(name)
     await userEvent.type(name, 'Recognise')
@@ -492,11 +492,11 @@ export const WhatIsWrongWithIt: Story = {
 }
 
 /**
- * On the dark set of tokens, where a field's chip takes its hover from the
- * template's own ink mixed into the chip's ground.
+ * On the dark set of tokens, where a field chip's hover colour is the template's
+ * text colour mixed into the chip's background.
  *
- * The mix is one expression for both sets, so on the dark set it has to move
- * the chip towards the ink, which is lighter there than the ground under it.
+ * The mix is one expression for both sets, so on the dark set it moves the chip
+ * towards the text colour, which is lighter there than the background.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -504,8 +504,8 @@ export const Dark: Story = {
     await expectDark(canvasElement)
     const chip = within(canvasElement).getByRole('button', { name: 'Insert: Height' })
 
-    // The ink the chip is read by stands above the ground it relies on, which
-    // is the way round the dark set is written.
+    // The chip's text is lighter than its background, as the dark set defines
+    // them.
     const ink = lightness(getComputedStyle(chip).color)
     const restingLightness = lightness(getComputedStyle(chip).backgroundColor)
     expect(ink).toBeGreaterThan(restingLightness)
@@ -517,8 +517,7 @@ export const Dark: Story = {
       ),
     )
 
-    // The chip is still a chip under the hand: lighter than it was, and still
-    // darker than what is written on it.
+    // The hovered chip is lighter than at rest, and still darker than its text.
     expect(lightness(getComputedStyle(chip).backgroundColor)).toBeLessThan(ink)
   },
 }

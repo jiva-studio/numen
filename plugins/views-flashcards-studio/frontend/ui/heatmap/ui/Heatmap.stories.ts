@@ -1,9 +1,9 @@
 /**
- * What a person did on each day, as a grid of weeks.
+ * Per-day review activity, as a grid of weeks.
  *
  * The stories are the behaviour test: this library runs them in a browser, so a
- * state with no story is a state nothing draws — and how many weeks fit the
- * room there is can only be answered by a browser that laid them out.
+ * state with no story is a state nothing draws, and the number of weeks that fit
+ * the available width can only be determined by a browser layout.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -47,7 +47,7 @@ function createYear(): Map<string, Tally> {
   for (let back = 0; back < 300; back += 1) {
     const on = new Date(now)
     on.setDate(on.getDate() - back)
-    // Sundays off, and the rest a hand of cards.
+    // Sundays have no answers; other days have varying counts.
     if (on.getDay() === 0) continue
     const reply = ((back * 7) % 60) + 1
     const again = back % 5 === 0 ? 2 : 0
@@ -66,7 +66,7 @@ function createYear(): Map<string, Tally> {
 
 const cells = (canvas: HTMLElement) => canvas.querySelectorAll('[data-heatmap-day]')
 
-/** A year of answers, in the room a window gives it. */
+/** A year of answers, in the width a window provides. */
 export const AYear: Story = {
   args: { did: createYear(), now, words },
   render: (args) => ({
@@ -84,9 +84,8 @@ export const AYear: Story = {
 }
 
 /**
- * The same year in half the room. A narrow window shows fewer weeks rather than
- * a grid standing in the middle of empty room, and the cells are the size they
- * were.
+ * The same year in half the width. A narrow window shows fewer weeks, and the
+ * grid spans the available width with cells of unchanged size.
  */
 export const Narrow: Story = {
   args: { did: createYear(), now, words },
@@ -102,7 +101,7 @@ export const Narrow: Story = {
     const one = viewElement[0] as SVGRectElement | undefined
     await expect(one?.getAttribute('width')).toBe('11')
 
-    // The grid reaches the far edge, and not ending short of it.
+    // The grid extends to the far edge.
     const grid = within(canvasElement).getByRole('img', {
       name: 'What was answered on each day',
     })
@@ -166,9 +165,9 @@ const TODAY = getDayName(now)
 const createOneDay = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])
 
 /**
- * Every cell but the one holding now ignores the pointer, so the account these
- * stories read is the one of the day the test pointed at, wherever the
- * browser's own pointer stands.
+ * Every cell except the current day ignores the pointer, so the summary these
+ * stories read is that of the day the test points at, wherever the browser's own
+ * pointer is.
  */
 const ONLY_TODAY = '[data-only-today] [data-heatmap-day]:not([data-today]) { pointer-events: none }'
 
@@ -236,8 +235,8 @@ export const ADayReviewed: Story = {
 }
 
 /**
- * A day of nothing but new material. No card the person is reviewing was asked,
- * so there is no share to give and the panel gives none.
+ * A day with only new material. No review card was asked, so there is no recall
+ * share and the panel shows none.
  */
 export const ADayOfNewCards: Story = {
   args: {
@@ -256,7 +255,7 @@ export const ADayOfNewCards: Story = {
   },
 }
 
-/** A day nobody answered on says so, and says nothing else. */
+/** A day with no answers shows the empty state and nothing else. */
 export const ADayOfNothing: Story = {
   args: { did: new Map<string, Tally>(), now, words },
   render: createContainer,
@@ -294,12 +293,12 @@ const CORNERS = [
 ]
 
 /**
- * The grid hard against each edge of the window in turn, pointed at in the
- * corner it reaches.
+ * The grid pinned against each edge of the window in turn, pointed at in the
+ * corner nearest that edge.
  *
- * An account stands beside the day it is about, and the side it wants is off
- * the screen in two of these four, so this is where the whole of it being read
- * is decided.
+ * A summary is placed beside the day it describes, and the side it prefers is off
+ * the screen in two of these four, so this story determines whether the whole
+ * summary remains readable.
  */
 export const AtEveryEdge: Story = {
   args: { did: createYear(), now, words },

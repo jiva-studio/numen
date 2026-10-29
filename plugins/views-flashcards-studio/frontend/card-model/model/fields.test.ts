@@ -24,7 +24,7 @@ const lacking = (template: number, text: string): DeckProblem => ({
   text,
 })
 
-/** One card model tab's fields over a body held in a variable, and what it asked for. */
+/** The fields of one card model tab over a body held in a variable, and what the tab requested. */
 const create = () => {
   let count = 0
   const state = {
@@ -134,7 +134,9 @@ describe('the marks a card model carries', () => {
 
 describe('what a gesture makes of the card model', () => {
   const getTemplateNames = (state: { body: string }) =>
-    (JSON.parse(state.body) as { templates: { name: string }[] }).templates.map((template) => template.name)
+    (JSON.parse(state.body) as { templates: { name: string }[] }).templates.map(
+      (template) => template.name,
+    )
 
   it('adds a field at the end', () => {
     const { fields, state, typed } = create()

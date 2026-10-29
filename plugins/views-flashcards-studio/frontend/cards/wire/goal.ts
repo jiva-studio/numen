@@ -13,9 +13,9 @@ import { getNames } from '../../api/names'
 export type Goal = 'minutes' | 'retention' | 'date'
 
 /**
- * The goal in a window's own words, and nothing for a preset naming none: what
- * the default is belongs to whoever asked. Keyed by the schema, so a goal added
- * to it has to be given a word here before this compiles.
+ * The goal as the window names it, and null for a preset naming none: the
+ * default belongs to the caller. Keyed by the schema, so a goal added
+ * to it requires a word here before this compiles.
  */
 export const goalOf: Readonly<Record<Goals, Goal | null>> = {
   [Goals.UNSPECIFIED]: null,

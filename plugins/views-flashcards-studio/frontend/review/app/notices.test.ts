@@ -28,8 +28,8 @@ describe('what the window has to say', () => {
     expect(one.host.getShown()).toEqual([{ text: 'Vault unreadable.', severity: 'error' }])
   })
 
-  // Pressing a tile whose count is a moment stale fails, and what the
-  // application said is what a person needs. How it travelled is not.
+  // Pressing a tile whose count is out of date fails, and the user needs the
+  // application's message. The transport is irrelevant to them.
   it('says an error without the wire it came over', () => {
     const one = createWindowNotices()
     one.reportError(

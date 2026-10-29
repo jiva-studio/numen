@@ -30,8 +30,8 @@ describe('the strip itself', () => {
     expect(header(mountedHeader).attributes('title')).toBe('Drag this block')
   })
 
-  // A strip holds a name box and buttons, so it is a container and no control,
-  // and the keyboard is owed a control wherever it stops.
+  // The header holds a name input and buttons, so it is a container and not a
+  // control, and keyboard focus goes to the controls inside it.
   it('is no stop on the way round the screen, and is drawn as a header', () => {
     mountedHeader = mountHeader()
     expect(header(mountedHeader).attributes('tabindex')).toBeUndefined()

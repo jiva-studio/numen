@@ -1,5 +1,5 @@
 /**
- * The service the review asks. Every question names the vault it is about: the window is over all
- * of them at once.
+ * The service the review calls. Every request names the vault it concerns: the
+ * window covers all vaults at once.
  */
 export { reviewService as cards } from '../../api/client'

@@ -2,8 +2,8 @@ package api
 
 import "reflect"
 
-// FillCollections replaces every nil slice and nil map reachable from the pointer with an empty
-// one, so that a collection is encoded as `[]` or `{}` and never as `null`.
+// FillCollections replaces every nil slice and nil map reachable from the pointer
+// with an empty one: a collection is encoded as `[]` or `{}` and never as `null`.
 func FillCollections(target any) {
 	fillValue(reflect.ValueOf(target))
 }

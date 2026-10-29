@@ -1,10 +1,11 @@
 /**
  * A day of the calendar, written down and read back.
  *
- * A day travels as the year, the month and the day, and that is the only shape
- * arithmetic is done in here: two written days are counted apart on the
- * calendar itself, where an hour put into or taken out of a clock is not a
- * length of time at all. A day is read off an instant in the zone the machine
+ * A day is represented as the year, the month and the day, and that is the only
+ * shape arithmetic is done in here: two written days are counted apart on the
+ * calendar itself, where an hour added to or removed from a clock is not a
+ * length of time at all. A day is read from an instant in the time zone of the
+ * machine.
  */
 
 /** How long a day of the calendar is, where no clock changes under it. */
@@ -18,9 +19,9 @@ export const getDayName = (date: Date): string => {
 }
 
 /**
- * The instant a written day is read at, which is noon of it. A day is held away
- * from both its ends so that a clock moved an hour either way leaves it the day
- * it was.
+ * The instant a written day is read at, which is noon of that day. Noon is
+ * far from both ends of the day, so a clock change of one hour in either
+ * direction leaves the instant on the same day.
  */
 export const parseDay = (day: string): Date => {
   const [year, month, dayNum] = day.split('-').map(Number)

@@ -115,8 +115,8 @@ func write(t *testing.T, v domain.Vault, path, raw string) {
 	}
 }
 
-// A deck opened and put back with the prose it came out of is the file it was.
-// Anything less is a diff nobody asked for, on every save, forever.
+// A deck read and saved with the prose it was read with is unchanged. Any
+// difference would produce a spurious diff on every save.
 func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
@@ -180,7 +180,7 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
 		t.Errorf("problem = %+v, want it against the first card and Name", filed[0])
 	}
 
-	// Both are kept, and the first stands.
+	// Both cards are kept, and the first is used for the lookup.
 	if target, ok := got.Body.Cards[0].Value("Name"); !ok || target != "Llama" {
 		t.Errorf("Name = %q, want the first", target)
 	}
@@ -189,9 +189,9 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
 	}
 }
 
-// A card's wikilink may reach a note that is not a card model, and then no template
-// lays the card out and nothing says what it is asked for. That is a problem
-// against the deck, on the card it stands against.
+// A card's wikilink may resolve to a note that is not a card model; then no
+// template renders the card and the fields it requires are unknown. The deck
+// reports a problem against that card.
 func TestACardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Loose.md", "---\ntype: deck\n---\n"+
@@ -228,7 +228,7 @@ func TestACardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	}
 }
 
-// prose is what stands below the frontmatter, which is what a write is given.
+// prose returns the content after the frontmatter, which is the input of a write.
 func prose(t *testing.T, raw string) string {
 	t.Helper()
 	_, body, found := strings.Cut(raw, "---\n")
@@ -242,8 +242,8 @@ func prose(t *testing.T, raw string) string {
 	return body
 }
 
-// The size is asked of the file before it is opened, so a deck over the bound
-// fails with none of its bytes read.
+// The size is read from the file metadata before the file is opened, so a deck
+// over the limit is rejected without reading any of its bytes.
 func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	vs := newVaults(t)
 	path := filepath.Join(vs.first.Path, "decks", "Mammals.md")
@@ -289,8 +289,8 @@ func TestACardModelIsBoundedAsANote(t *testing.T) {
 	}
 }
 
-// A deck that changed since it was read is left alone: someone editing their own
-// file outranks a caller that read it, thought about it, and arrived late.
+// A deck that changed since it was read is not overwritten: a concurrent edit
+// of the file takes precedence over a caller holding an outdated read.
 func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
@@ -307,7 +307,7 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	}
 	content := read(t, vs.first, "decks/Birds.md")
 
-	// The same file stat again is a caller holding what the file no longer is.
+	// The same file stat again is an outdated read of a file that has since changed.
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.FileStat)
 	if !errors.Is(err, ports.ErrStale) {
@@ -318,9 +318,9 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	}
 }
 
-// A deck and a card model are made with the key that says what they are, so each is
-// what it is to everything that reads the vault before a card is written into
-// it.
+// A deck and a card model are created with the key that identifies their type,
+// so each has that type for every reader of the vault before a card is
+// written into it.
 func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
@@ -356,7 +356,8 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	}
 }
 
-// A preset is made with the key that says what it is and with none of its
+// A preset is created with the key that identifies its type and none of its
+// settings.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
@@ -408,8 +409,8 @@ func TestACardModelIsMadeWithAFirstField(t *testing.T) {
 	}
 }
 
-// The window asking which kind of card to make is drawn from the vault's own
-// card models, and from no other vault's.
+// The card model selection lists the card models of the requested vault and
+// no other vault's.
 func TestTheCardModelsOfOneVaultAreListed(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewList(vs.ports.Readers, vs.queries)
@@ -444,8 +445,8 @@ func TestTheCardModelsOfOneVaultAreListed(t *testing.T) {
 	}
 }
 
-// A list that stops short opens no file for the card models it leaves out, and the
-// count still says how many the vault holds.
+// A truncated list opens no file for the card models it omits, and the total
+// still reports how many the vault holds.
 func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	vs := newVaults(t)
 	counted := &counting{VaultReaders: vs.ports.Readers}
@@ -466,8 +467,8 @@ func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	}
 }
 
-// counting is a reader that says how many times a file was opened, so a test
-// about what was not read can say so.
+// counting is a reader that counts how many times a file was opened, so a test
+// can assert which files were not read.
 type counting struct {
 	ports.VaultReaders
 	reads int

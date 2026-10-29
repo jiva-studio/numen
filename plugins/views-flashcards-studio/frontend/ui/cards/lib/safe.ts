@@ -23,16 +23,17 @@ const canLinkTo = (url: string): boolean => {
 }
 
 /**
- * A picture a card may draw: its own bytes, or a file this window serves.
+ * A picture a card may display: its own bytes, or a file this window serves.
  *
- * An address off the machine is a request the moment the card is drawn, which
- * tells whoever wrote the deck that it was read, and from where.
+ * An address off the machine is a network request as soon as the card is
+ * rendered, which reveals to the deck's author that the deck was read, and from
+ * where.
  */
 const canShow = (url: string): boolean => {
   const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
-  // An address opening with two slashes names a host and keeps the window's
-  // own scheme, so it names no scheme and reaches off the machine all the same.
+  // An address starting with two slashes names a host and inherits the window's
+  // scheme, so it has no scheme of its own and still reaches off the machine.
   return scheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
 }
 

@@ -1,6 +1,7 @@
 /**
- * A box as tall as what it holds: what the ground behind it carries, what a
- * caller's attributes land on, and what is said when something is typed.
+ * A textarea whose height fits its content: the mirror element behind it that
+ * carries the same text, where caller attributes are applied, and the event
+ * emitted on typing.
  */
 import { mount } from '@vue/test-utils'
 import { h } from 'vue'
@@ -17,8 +18,8 @@ describe('the box', () => {
     expect(box(mountBox({ text: 'two words' })).element.value).toBe('two words')
   })
 
-  // The cell is sized by the ground, so the ground has to carry the same text
-  // the box does or the box is the wrong height for it.
+  //   // The cell is sized by the mirror element, so the mirror has to carry the same
+  //   // text as the textarea or the textarea has the wrong height.
   it('is sized by a ground carrying the same text', () => {
     const one = mountBox({ text: 'a line\nand another' })
     expect(one.get('.autosize').attributes('data-autosize')).toBe('a line\nand another')
@@ -36,8 +37,8 @@ describe('the box', () => {
 })
 
 describe('what a caller passes it', () => {
-  // A caller lays out the cell and talks to the box, so the two are told
-  // apart: everything but the class and the style is the box's.
+  //   // A caller styles the cell and addresses the textarea, so the two are
+  //   // separated: everything except the class and the style goes to the textarea.
   it('lays the class and the style on the cell', () => {
     const one = mount(AutosizeTextarea, {
       props: { text: 'said' },

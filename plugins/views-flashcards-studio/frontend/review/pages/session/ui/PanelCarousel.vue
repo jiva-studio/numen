@@ -9,7 +9,7 @@ import { useTemplateRef } from 'vue'
 import { useCarouselStrip } from '../model/carousel'
 import type { PanelPlace } from '../model/carousel'
 
-/** A hand moves this as much as the owner does, so it is a model and not a prop. */
+/** A pointer drag changes this as the owner does, so it is a model and not a prop. */
 const currentPlace = defineModel<PanelPlace>('at', { required: true })
 
 /* --------------------------------- State ---------------------------------- */
@@ -67,13 +67,13 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
   overflow-y: hidden;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
-  /* Taken there and not put there, so a key and a hand read as the same
+  /* Scrolling is smooth, so a key and a drag read as the same
      movement. A hand is already moving it and turns this off.
 
      Nothing snaps the strip: a snap put back over a strip a hand has already
      moved lands it instantly, and what settles it is the smoothing here. */
   scroll-behavior: smooth;
-  /* The strip is taken sideways and a card is read down, so the hand going
+  /* The strip scrolls sideways and a card is read down, so the swipe going
      across belongs here and the hand going up and down does not. */
   touch-action: pan-y;
 }
@@ -82,7 +82,7 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
   display: none;
 }
 
-/* A hand on the strip is where the strip is, and nothing pulls it to a stop of
+/* While the strip is dragged it follows the pointer, and nothing pulls it to a stop of
    its own while that hand is down. */
 .carousel--taking {
   scroll-behavior: auto;

@@ -1,8 +1,8 @@
 /**
  * What survives a card's HTML and what does not.
  *
- * A deck may come from another person and the window is a webview, so every
- * attempt below is one that has to be gone by the time it reaches a screen.
+ * A deck may come from another author and the window is a webview, so every
+ * attempt below must be removed before it reaches the screen.
  */
 import { describe, expect, it } from 'vitest'
 import { safe } from './safe'
@@ -108,8 +108,8 @@ describe('safe, what does not survive', () => {
     expect(safe(`<img src="${response}">`)).toBe(`<img src="${response}">`)
   })
 
-  // A deck may have come from another person. A picture fetched from their
-  // machine is a request the moment the card is drawn, and tells them the deck
+  // A deck may come from another author. An image fetched from a remote host is a
+  // network request when the card is rendered, and reveals to that host that the deck
   // was read and from where.
   it('drops an image that would be fetched from off the machine', () => {
     expect(cleanHtml('<img src="https://tracker.example/pixel.png">')).toBe('<img>')
@@ -159,7 +159,7 @@ describe('safe, what does not survive', () => {
     expect(tags(response)).not.toContain('svg')
   })
 
-  /* Nothing reads the text before this does, so what a person wrote arrives
+  /* Nothing reads the text before this does, so the author's text arrives
      here exactly as they left it, tags unclosed and all. */
   it('leaves no tag that would run in a tag name hiding another', () => {
     expect(tags('<scr<script>ipt>alert(1)</scr</script>ipt>')).not.toContain('script')
@@ -213,8 +213,8 @@ describe('safe, the styles a card may carry', () => {
     )
   })
 
-  // A class names rules the window wrote and the deck's author never saw. The
-  // declarations above are the whole of what a card says about how it looks,
+  // A class names styles defined by the application and not by the card. The
+  // declarations above are the whole of what a card specifies about its appearance, so classes are dropped.
   it('drops a class, which names the window s own styles and not the card s', () => {
     expect(cleanHtml('<div class="fixed inset-0 bg-black">a</div>')).toBe('<div>a</div>')
   })

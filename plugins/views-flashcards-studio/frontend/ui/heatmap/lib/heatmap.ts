@@ -1,9 +1,9 @@
 /**
- * A year of days as a grid of weeks, laid out to the width there is for it.
+ * A year of days as a grid of weeks, laid out to the available width.
  *
- * Apart from the drawing because how many days fit, which day each cell is and
- * how dark it is drawn are arithmetic, and arithmetic inside a component is
- * arithmetic nobody can check without a screen.
+ * Separate from the rendering because the number of days that fit, the date of
+ * each cell and its shade are arithmetic, and arithmetic inside a component
+ * cannot be tested without a screen.
  */
 import { parseDay, getDayName } from '../../../lib/day'
 
@@ -12,20 +12,20 @@ import { AHEAD, ROWS } from './grid'
 /** What one day behind came to. */
 export interface Tally {
   readonly answered: number
-  /** How each of the four was said. */
+  /** The number of answers per rating. */
   readonly again: number
   readonly hard: number
   readonly good: number
   readonly easy: number
   /**
-   * The answers given to cards the person is already reviewing, and how many of
-   * those came back. A card still coming round in minutes is in neither.
+   * The answers given to cards already under review, and how many of those were
+   * recalled. A card still repeating within minutes is in neither count.
    */
   readonly asked: number
   readonly recalled: number
 }
 
-/** A day nobody answered on, which is what an empty cell holds. */
+/** A day with no answers, which is the value of an empty cell. */
 export const NOTHING: Tally = {
   answered: 0,
   again: 0,
@@ -74,10 +74,10 @@ export function getDays(
   const last = new Date(now)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
-  // The grid takes the width it is given, and it opens on the week a person
-  // began in: their days are read from the left, and the room past what they
-  // have yet done stretches out to the right. Once they have been here longer
-  // than the width holds, the oldest weeks fall off the left instead.
+  // The grid takes the width it is given and starts on the week of the first
+  // recorded day: its days run from the left, and the space after the last day
+  // extends to the right. Once the history is longer than the width, the oldest
+  // weeks are dropped from the left.
   const startDate = new Date(last)
   startDate.setDate(startDate.getDate() - (columns * ROWS - 1))
 
@@ -104,8 +104,8 @@ export function getDays(
 }
 
 /**
- * The day a person's history begins, or today where they have none. A day still
- * to come counts: a vault whose cards are all ahead has a beginning too.
+ * The first day of the history, or today when there is none. A day still to come
+ * counts: a vault whose cards are all in the future has a first day too.
  */
 function getFirstDay(
   did: ReadonlyMap<string, unknown>,
@@ -134,9 +134,8 @@ function weekday(date: Date): number {
 }
 
 /**
- * How dark a day is drawn. The steps are small on purpose: a person who
- * answered five cards did sit down, and the grid says so as plainly as it says
- * a day of fifty.
+ * The shade of a day. The steps are small: five answered cards is a day of
+ * activity, and the grid shows it as clearly as a day of fifty.
  */
 export function getWeight(did: number): Day['weight'] {
   if (did <= 0) return 0
@@ -160,7 +159,7 @@ export interface Cell {
 /** How far apart two cells begin. */
 const getStep = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
 
-/** How tall the grid stands: seven rows, with no gap past the last of them. */
+/** The grid height: seven rows, with no gap after the last one. */
 export function getGridHeight(grid: { cell: number; gap: number }): number {
   return ROWS * getStep(grid) - grid.gap
 }

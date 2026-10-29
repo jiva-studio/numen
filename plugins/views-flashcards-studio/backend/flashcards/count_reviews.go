@@ -27,8 +27,8 @@ type cachedRun struct {
 	Size int    `json:"size"`
 	// Days is what this run alone came to.
 	Days map[string]review.Tally `json:"days"`
-	// IDs are the identifiers its lines carry, which is what says an answer
-	// another run holds too is the one answer.
+	// IDs are the identifiers its lines carry, which identify an answer that
+	// another run also holds as the same answer.
 	IDs []string `json:"ids"`
 }
 
@@ -37,8 +37,9 @@ type ReviewCounts struct {
 	// Days is how many answers were given on each day, by the name of the day:
 	// the year, the month and the day it began on.
 	Days map[string]review.Tally
-	// Due is how many review cards fall on each day still to come, by the same
-	// names. A card owed today or owed and late is not in it: what is behind is
+	// Due is how many review cards fall due on each day still to come, keyed by the
+	// same day names. A card due today, or due and overdue, is not included, because
+	// an overdue card is not upcoming.
 	Due map[string]int
 	// Retained is how much of what came round in days came back on each day. A
 	// review card the scheduler is still putting into memory is not in it.
@@ -65,8 +66,8 @@ type CountReviews struct {
 	// Cache is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
 	Cache ports.ScheduleStore
-	// schedules is where the answers have left every review card, which is what
-	// says how much falls on each day still to come.
+	// schedules holds the state each review card is in after its answers, from
+	// which the number of cards due on each upcoming day is computed.
 	schedules Schedules
 	day       review.Day
 	now       ports.Clock
@@ -122,8 +123,8 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	u.remember(ctx, v, run.now)
 	run.out.Streak = review.Streak(u.day, run.out.Days, u.now())
 
-	// What is still to come, and how much came back, are both worked out from
-	// the answers in the order they were given, so they are asked for together.
+	// The upcoming cards and the retained cards are both computed from the answers
+	// in the order they were given, so they are requested together.
 	due, retained, err := u.getDueAndRetained(ctx, v, run.log)
 	if err != nil {
 		return ReviewCounts{}, err
@@ -144,8 +145,8 @@ type reviewCounter struct {
 	// over the whole log, so a line another run was counted for is not counted
 	// again.
 	countedIDs map[string]bool
-	// coming is whether what is still to come is worked out from the whole
-	// history, so that every run is read and the reading is handed on.
+	// coming is whether the upcoming cards are computed from the whole history, so
+	// that every run is read and the result is passed on.
 	coming bool
 	log    ReviewLog
 }
@@ -207,9 +208,8 @@ func (run *reviewCounter) addDays(ids []string, days map[string]review.Tally) {
 	}
 }
 
-// addTallies is two days' answers put together, which is how the runs of one
-// day are added up: a person may have answered in two sessions, and it is one
-// day.
+// addTallies adds the answers of two tallies, which is how the runs of one day
+// are combined: the answers of two sessions on one day make one day.
 func addTallies(one, other review.Tally) review.Tally {
 	return review.Tally{
 		Answered: one.Answered + other.Answered,
@@ -251,15 +251,15 @@ func getUncounted(answers []review.Answer, countedIDs map[string]bool) []review.
 	return out
 }
 
-// getDueAndRetained is how much falls on each day still to come, and how much
-// of what came round in days came back on each day behind.
+// getDueAndRetained returns how many cards fall due on each day still to come,
+// and how many of the cards that came due in days were recalled, per past day.
 //
-// The answers are the reading the days were counted from, so the whole log is
-// opened once for the screen.
+// The answers are the data the days were counted from, so the whole log is opened
+// once for the screen.
 //
-// A card owed today, or owed and late, is not in what is to come: what a person
-// it. Where a card falls is worked out from the answers like everything else,
-// so the day it shows is the day it would be asked on.
+// A card due today, or due and overdue, is not in the upcoming count. Where a card
+// falls is computed from the answers like everything else, so the day shown is
+// the day the card would be shown.
 func (u CountReviews) getDueAndRetained(
 	ctx context.Context, v domain.Vault, target ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {

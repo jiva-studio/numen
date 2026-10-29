@@ -1,10 +1,9 @@
 /**
- * How the strip of three panels moves: where it stops, where a hand leaves it,
- * and where it is taken from there.
+ * How the strip of three panels moves: its stops, where a pointer release
+ * leaves it, and where it moves from there.
  *
- * The three are a strip the width of all of them, scrolled to the one in the
- * window, and the strip settles on the nearest of the three where a hand lets
- * go.
+ * The strip is as wide as all three panels, scrolled to the visible one, and
+ * it settles on the nearest of the three when a pointer is released.
  */
 import { win } from '../../../../dom'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -28,7 +27,7 @@ export interface CarouselStripDeps {
   readonly window: Readonly<ShallowRef<HTMLElement | null>>
   /** The middle of the three, which the stops are read off. */
   readonly middle: Readonly<ShallowRef<HTMLElement | null>>
-  /** Which of the three is in the window, moved by a hand as much as by the owner. */
+  /** Which of the three is visible, changed by a pointer as much as by the owner. */
   readonly currentPlace: Ref<PanelPlace>
 }
 

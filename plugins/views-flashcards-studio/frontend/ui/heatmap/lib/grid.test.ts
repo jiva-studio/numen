@@ -1,5 +1,5 @@
 /**
- * The room a grid is laid out in, and the stretch of time a grid that wide
+ * The width a grid is laid out in, and the span of time a grid of that width
  * draws.
  */
 import { describe, expect, it } from 'vitest'
@@ -10,8 +10,8 @@ import { getDays } from './heatmap'
 describe('the stretch a grid asks about', () => {
   const now = new Date('2026-09-18T12:00:00Z')
 
-  // Whatever room a grid ends up with, the days it draws stand inside what was
-  // asked about for the widest room it could have had.
+  // Whatever width a grid ends up with, the days it draws are within the span
+  // requested for the widest width it could have.
   it('holds every day a narrower grid would draw', () => {
     const widest = { width: 1600, cell: 11, gap: 3 }
     const stretch = getStretch(widest, now)
@@ -31,8 +31,8 @@ describe('the stretch a grid asks about', () => {
     expect(new Date(`${to}T12:00:00Z`).getUTCDay()).toBe(0)
   })
 
-  // nobody asked about, and they come back empty. The caller passes the room
-  // the page has, which is what bounds the grid.
+  // Columns the span does not cover are empty. The caller passes the width of
+  // the page, which bounds the grid.
   it('omits extra days when rendered width exceeds requested span', () => {
     const request = getStretch({ width: 640, cell: 11, gap: 3 }, now)
     const { columns } = measureGrid({ width: 1600, cell: 11, gap: 3 })
@@ -42,7 +42,7 @@ describe('the stretch a grid asks about', () => {
     expect(outside.length).toBeGreaterThan(0)
   })
 
-  // A wider grid asks about more time, and never about less.
+  // A wider grid covers more time, and never less.
   it('grows with the room there is', () => {
     const narrowStretch = getStretch({ width: 200, cell: 11, gap: 3 }, now)
     const wideStretch = getStretch({ width: 1600, cell: 11, gap: 3 }, now)

@@ -50,7 +50,7 @@ export {
 
 export type { Field }
 
-/** What a person can put into one row of the receipt. */
+/** The value of one row of the receipt. */
 export type SettingValue = number | string | boolean | Load
 
 export interface PresetSettingsData {

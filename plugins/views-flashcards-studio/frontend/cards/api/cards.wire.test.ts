@@ -11,7 +11,7 @@ import { asFailure, asValue } from '@numen/plugin-sdk'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
-/** What the window asked for, as the transport wrote it out. */
+/** The request as the transport serialized it. */
 let request: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */

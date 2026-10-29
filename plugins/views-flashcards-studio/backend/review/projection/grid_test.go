@@ -2,10 +2,10 @@ package projection
 
 import "testing"
 
-// How far a curve of minutes runs is twice the longer of what carrying the
-// whole load costs and what the preset keeps, so the day the person is on and
-// the day the load asks for both stand inside it. It is never shorter than a
-// short day and never longer than a day holds.
+// The upper bound of a minutes curve is twice the larger of the cost of the
+// whole load and the minutes the preset keeps, so the current day and the day
+// the load requires are both inside it. It is never below the least ceiling
+// and never above the minutes in a day.
 func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct{ load, keeping, want float64 }{
@@ -23,8 +23,8 @@ func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 	}
 }
 
-// The place of the grid a value falls at is the nearest of them, the first of
-// two it stands equally far from. A value beyond either end stands nowhere.
+// The place of the grid for a value is the nearest grid value, the first one
+// when two are equally near. A value beyond either end has no place.
 func TestThePlaceOfTheGridAValueFallsAt(t *testing.T) {
 	t.Parallel()
 	grid := []float64{10, 20, 30, 40}

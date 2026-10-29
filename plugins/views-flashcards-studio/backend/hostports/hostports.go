@@ -28,8 +28,9 @@ type Ports struct {
 	Schedules func(name string) ports.ScheduleStore
 }
 
-// New answers the ports from the host vault and the plugin's folder. A call on a vault names it by
-// identity, so that the same ports serve a window showing one vault and a window counting them all.
+// New returns the ports over the host vault and the plugin's folder. A call on a
+// vault names it by identity, so the same ports serve a window for one vault and a
+// window that counts all of them.
 func New(vault host.Vault, store host.Store) Ports {
 	return Ports{
 		Readers:   Readers{Vault: vault},
@@ -93,7 +94,7 @@ func readError(err error) error {
 	return err
 }
 
-// Notes answers what the index says of a vault's notes.
+// Notes answers queries about a vault's notes from the index.
 type Notes struct{ Vault host.Vault }
 
 func (n Notes) GetNotes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
@@ -130,7 +131,7 @@ func (n Notes) GetNamedPaths(ctx context.Context, id domain.VaultID, name string
 	return n.Vault.With(id).GetNamedPaths(ctx, name)
 }
 
-// Has says whether the index carries the vault.
+// Has reports whether the index contains the vault.
 func (n Notes) Has(ctx context.Context, id domain.VaultID) (bool, error) {
 	state, err := n.Vault.With(id).EnsureIndexed(ctx)
 	if errors.Is(err, host.ErrUnknownVault) {
@@ -142,7 +143,7 @@ func (n Notes) Has(ctx context.Context, id domain.VaultID) (bool, error) {
 	return state.Status == host.Indexed, nil
 }
 
-// Links answers what the index says of a vault's links.
+// Links answers queries about a vault's links from the index.
 type Links struct{ Vault host.Vault }
 
 func (l Links) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {

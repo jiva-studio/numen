@@ -1,8 +1,9 @@
 /**
- * What a vault was answered on, for the grid of days the vault screen draws.
+ * The answers recorded for a vault, for the grid of days on the vault screen.
  *
- * Apart from the template because it is asked for when a vault is opened and
- * again whenever that vault moves, and what is held between the two is a rule.
+ * Kept outside the template because it loads when a vault is opened and again
+ * when that vault changes, and the state retained between loads follows a
+ * rule.
  */
 import { getCurrentDate } from '../../../../dom'
 import { ref } from 'vue'
@@ -42,9 +43,9 @@ export interface ReviewDaysDeps {
   cards: ReviewDaysClient
   reportError(why: unknown): void
   /**
-   * The widest the grid of days could be drawn, in pixels. The days asked
-   * about are the days a grid that wide would draw, and a vault holds one for
-   * every day it has ever been reviewed.
+   * The widest the grid of days can be rendered, in pixels. The requested days
+   * are the days a grid of that width displays, and a vault has an entry for
+   * every day on which it has been reviewed.
    */
   widest(): number
   /** What day it is. The machine's own, where a caller names none. */
@@ -60,7 +61,7 @@ export function useReviewDays(deps: ReviewDaysDeps) {
   const streak = ref(0)
   const reply = ref(0)
 
-  /** Which vault the days on hand belong to, so another vault's are not drawn. */
+  /** The vault the loaded days belong to; the days of another vault are not displayed. */
   const of = ref('')
 
   const forget = () => {
@@ -80,8 +81,8 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     try {
       const { from, to } = getHeatmapStretch({ width: deps.widest(), cell: CELL, gap: GAP }, now())
       const reviewData = await deps.cards.listReviewDays({ vault, from, to })
-      // A person who moved to another vault while this was on its way is
-      // looking at that one, and these days are not its days.
+      // If the user switched to another vault while this request was pending, the
+      // result belongs to the previous vault and is discarded.
       if (of.value !== vault) return
       days.value = new Map(reviewData.days.map((one) => [one.day, createTally(one)]))
       due.value = new Map(reviewData.due.map((one) => [one.day, one.reviewed]))

@@ -1,10 +1,10 @@
 /**
- * The strip of three panels: where it stops, what a hand and a wheel do to it,
- * and what a move asked for by a key does to both.
+ * The strip of three panels: where it stops, what a pointer and a wheel do to it,
+ * and what a key-initiated move does to both.
  *
- * jsdom lays nothing out, so the strip is given the widths it would have had: a
- * panel either side of a card the width of the window, with the card standing
- * at 220 and the strip running out at 440.
+ * jsdom performs no layout, so the strip is given the widths it would have: a
+ * panel on either side of a card as wide as the window, with the card at 220 and
+ * the strip ending at 440.
  */
 import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
@@ -86,7 +86,7 @@ const createStrip = (
   if (!target) throw new Error('the strip was not set up')
   const strip: ReturnType<typeof useCarouselStrip> = target
 
-  /** The strip left where a wheel put it, and the strip told. */
+  /** Sets the strip's scroll position as a wheel would, and notifies the strip. */
   const scrollTo = (to: number) => {
     window_.scrollLeft = to
     strip.onScroll()
@@ -384,7 +384,7 @@ describe('a strip taken off the screen', () => {
   })
 })
 
-/** The owner's hold on where the strip is, which hears of every write made to it. */
+/** The owner of the strip's position, which records every write made to it. */
 const createOwner = (place: PanelPlace) => {
   const target = ref<PanelPlace>(place)
   const writes: PanelPlace[] = []

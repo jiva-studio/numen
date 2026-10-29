@@ -21,7 +21,7 @@ withDefaults(
 )
 
 const emit = defineEmits<{
-  /** The half as it now reads. */
+  /** The text of the half after the change. */
   (event: 'write', text: string): void
   /** The box was typed in. */
   (event: 'aim'): void
@@ -67,7 +67,11 @@ defineExpose({
     </div>
 
     <!-- An empty part says what it is for, in the middle of itself. -->
-    <p v-if="pane.isBlank" class="template__ghost caps-numen text-small text-hushed" aria-hidden="true">
+    <p
+      v-if="pane.isBlank"
+      class="template__ghost caps-numen text-small text-hushed"
+      aria-hidden="true"
+    >
       {{ pane.label }}
     </p>
 
@@ -80,7 +84,7 @@ defineExpose({
 </template>
 
 <style scoped>
-/* A part is a pane of the window: it carries a ground and no line of its own.
+/* A part is a pane of the window: it has a background and no border of its own.
    What it holds and what it says while it holds nothing share its one cell. */
 .template__pane {
   position: relative;
@@ -115,14 +119,14 @@ defineExpose({
   pointer-events: none;
 }
 
-/* What is wrong is read over whatever it covers, so it carries a ground. */
+/* Problem messages are displayed over the content below them, so they have a background. */
 .template__amiss > .template__objections {
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius);
   background: var(--numen-alarm-bg);
 }
 
-/* A template's box stands open at a few lines and grows with what is written in
+/* A template's box starts at a few lines and grows with what is written in
    it, as every other box does. */
 .template__box {
   --autosize-lines: var(--pane-lines);

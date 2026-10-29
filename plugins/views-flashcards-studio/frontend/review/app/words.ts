@@ -1,4 +1,4 @@
-/** What the review says while a vault's count is on its way, in the words it says them by. */
+/** The text the review shows while a vault's count is pending. */
 // Stryker disable StringLiteral: interface copy
 export const REVIEW_WORDS = {
   /** A vault whose count has not arrived because it is still being read into the index. */

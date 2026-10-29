@@ -14,8 +14,8 @@ import (
 // MostRead is how many of the joined notes come back with their text.
 //
 // A hub note is pointed at by hundreds of others and a note may be a megabyte,
-// so reading every one of them is a reading of the vault. The rest come back
-// named and unread, and are read when somebody asks for one.
+// so reading every one reads the whole vault. The remainder is returned named and
+// unread, and is read on request.
 const MostRead = 30
 
 // Neighbourhood is what a deck is joined to.
@@ -35,17 +35,17 @@ type Neighbour struct {
 	Path  string
 	Title string
 	Body  string
-	// Label is what the person called the relationship, where they did.
+	// Label is the relationship label given in the link, when one was given.
 	Label string
 	// IsBacklink is this note pointing at the deck. False is the deck pointing
 	// at it.
 	IsBacklink bool
-	// IsAmbiguous is several notes answering to the name that was written. The
-	// link resolves to the nearest, and a person reading the wrong note has no
-	// other way to find out.
+	// IsAmbiguous is whether several notes match the name that was written. The link
+	// resolves to the nearest match; this flag is the only signal that another note
+	// shares the name.
 	IsAmbiguous bool
-	// Outcome is how the reading of the text ended. Empty for a note whose text
-	// was never asked for.
+	// Outcome is how reading the text ended. Empty for a note whose text was not
+	// requested.
 	Outcome note.ReadOutcome
 }
 
@@ -60,9 +60,9 @@ type ShowNeighbourhood struct {
 	reads  note.Read
 }
 
-// NewShowNeighbourhood is what the reading beside a review is made of: what the
-// deck is joined to, what says which of those notes are decks and card models of
-// its own, and what the prose of each is read out of.
+// NewShowNeighbourhood constructs a ShowNeighbourhood from the source of the
+// deck's links, the note queries that identify which of those notes are decks and
+// card models, and the reader of each note's prose.
 //
 // The prose is read only where a deck names something.
 func NewShowNeighbourhood(
@@ -143,10 +143,9 @@ func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbo
 // getLinkedNeighbour is the neighbour a link of the deck leads to, and whether
 // it is one to show. A note reached is marked in seen.
 func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbour, bool) {
-	// Only an address that names a note can name one that is missing. An
-	// attachment and a web address are neither read here nor gone, and
-	// drawing them as notes whose name has come loose says a vault has a
-	// question in it where it has none.
+	// Only an address that names a note can name a missing note. Attachments and web
+	// addresses are neither read here nor missing, and drawing them as notes with
+	// unresolved names would report a vault problem that does not exist.
 	if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
 		return Neighbour{}, false
 	}
@@ -179,8 +178,8 @@ func getNeighbourTitle(
 	}
 	ref, isNote := notes[one.Path]
 	if !isNote {
-		// The index answered where the link landed and then no longer
-		// held a note there: it is written while this reads it.
+		// The index reported where the link lands but holds no note there: the entry
+		// changed during this read.
 		return Neighbour{}, false
 	}
 	// An ordinary note is what the cards were written from, and is
@@ -197,8 +196,8 @@ func getNeighbourTitle(
 		// the cards come round and not what they were written from.
 		return Neighbour{}, false
 	case format.TypeDeck:
-		// Another deck is more cards to answer, and this is what the cards
-		// in front of a person were written from.
+		// Another deck holds more cards to answer and is not a source of the cards under
+		// review.
 		return Neighbour{}, false
 	}
 	one.Title = ref.Title
@@ -229,12 +228,12 @@ func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neigh
 
 // AssignCardIDs gives a card id to every card of a vault that carries none.
 //
-// A card typed by hand carries no card id until the application writes its file,
-// and a card with no card id has nothing an answer can be recorded against. A deck
-// holding one is written, which mints a card id for every card in it.
+// A card typed by hand has no card id until the application writes its file, and
+// a card with no card id cannot have an answer recorded against it. A deck
+// containing one is written, which creates a card id for every card in it.
 //
-// This is the one thing flashcards writes into a vault, and it is done when a
-// and not for the counting of what is owed.
+// This is the only write flashcards makes into a vault. It is made when a session
+// starts and not when due cards are counted.
 type AssignCardIDs struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
@@ -247,10 +246,11 @@ type AssignCardIDs struct {
 	now ports.Clock
 }
 
-// NewAssignCardIDs is what a vault's cards are given card ids through: the vault the
-// decks are read out of and written back to, what says which of its notes are
-// decks, where the wikilink a card names its card model by lands, what brings a
-// written deck level in the index, and what time it is.
+// NewAssignCardIDs constructs an AssignCardIDs from the vault readers and writers
+// for reading and rewriting decks, the note queries that identify which notes are
+// decks, the link queries that resolve the wikilink naming a card's card model,
+// the index function that updates the index after a deck is written, and the
+// clock.
 func NewAssignCardIDs(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,

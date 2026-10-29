@@ -1,9 +1,9 @@
 /**
- * The settings under the control: the rows a person types into, and what the
- * tab says about what it could not do.
+ * The settings below the control: the rows the user types into, and the
+ * messages the tab shows for operations that failed.
  *
- * A row is written once the typing is flushed, and the words a row is drawn in
- * come from one place, which is what the two sources are read for.
+ * A row is written once the typing is flushed, and the words of a row come from
+ * one source, which both sources are checked against.
  */
 import { describe, expect, it } from 'vitest'
 import { ref, shallowRef } from 'vue'
@@ -26,9 +26,9 @@ describe('the settings under the control', () => {
     expect(tab.findAll('[data-preset-row]')).toHaveLength(6)
   })
 
-  // What a budget is spent on is a row like any other, and a person moving it
-  // writes the group the way every other row does. It is placed under the goal
-  // whose budget is cards.
+  //   // What a budget is spent on is a row like any other, and changing it writes
+  //   // the group the way every other row does. It is placed under the goal whose
+  //   // budget is cards.
   it('offers the two things a budget is spent on', async () => {
     const { tab, recorded } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
@@ -38,9 +38,9 @@ describe('the settings under the control', () => {
     expect(recorded).toStrictEqual(['type counts shows', 'flushPending'])
   })
 
-  // The share of a day the debt takes is moved along its whole range, so any
-  // of the hundred stands and none of them is a named position. The track
-  // draws no figure, so the per cent is read out beside it.
+  //   // The share of a day taken by the backlog is moved along its whole range, so
+  //   // every one of the hundred values is valid and none is a named position. The
+  //   // track draws no figure, so the percentage is displayed beside it.
   it('moves the share of a day the debt takes along a track, and reads it out', async () => {
     const { tab, recorded } = mountPresetTab({}, { backlog: 70 })
     expect(tab.text()).toContain(words.fieldName('backlog'))
@@ -135,8 +135,8 @@ describe('the settings under the control', () => {
   })
 })
 
-// A tab showing a failure is a tab with a way back: the file is read again,
-// which is what a fixed permission bit or a restored folder wants.
+// // A tab that displays a failure offers a retry: the file is read again, which
+// // recovers from a fixed permission bit or a restored folder.
 describe('what the tab says went wrong', () => {
   const mountWithError = (words: string) => {
     const one = createTab()
@@ -164,9 +164,9 @@ describe('what the tab says went wrong', () => {
   })
 })
 
-// A file someone else wrote while the tab stood open is not a failure, so it
-// is said as a status and not as an alert. The way out is the same one: read
-// the file again.
+// // A file changed by someone else while the tab was open is not a failure, so it
+// // is shown as a status and not as an alert. The recovery is the same: read the
+// // file again.
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = createTab()
@@ -300,8 +300,8 @@ describe('the line the tab is read against', () => {
   })
 })
 
-// Every figure a person reads of a chance of recall is a percentage: the mark
-// on the curve, the words beside it, the axis. The row it is typed into is one.
+// // Every figure shown for a chance of recall is a percentage: the mark on the
+// // curve, the words beside it, and the axis. The row it is typed into is one too.
 describe('the row a chance of recall is typed into', () => {
   it('remains in per cent, and is bounded and stepped in per cent', () => {
     const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
@@ -329,8 +329,8 @@ describe('the row a chance of recall is typed into', () => {
   })
 })
 
-// The rules are a choice between two, and the line that asked for them is where
-// the keyboard comes back to.
+// // The rules are a choice between two, and focus returns to the line that
+// // requested them.
 describe('the rules under the learned row', () => {
   it('marks the rule in force and returns the focus to the line that requested', async () => {
     // Attached to the page, because taking the focus back is what is measured.

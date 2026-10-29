@@ -65,7 +65,7 @@ describe('the day a goal is weighed against', () => {
   })
 
   it('leaves a preset due today running in the hours past midnight', async () => {
-    // One in the morning: the calendar says the fifth, and the review day that
+    // One in the morning: the calendar shows the fifth, and the review day that
     // began at four on the fourth is still running.
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 5, 1, 0, 0))

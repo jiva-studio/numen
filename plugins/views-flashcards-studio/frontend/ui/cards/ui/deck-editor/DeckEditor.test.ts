@@ -1,10 +1,10 @@
 /**
- * What the deck editor draws from the cards it was handed, and what it emits.
+ * What the deck editor renders from the cards it receives, and what it emits.
  *
- * The negatives are here: no tile says what card model cuts it, the head holds
- * nothing but the two things a tile is reached for, the plus offers nothing
- * until it is pressed, a card let go at its current position moves nothing, and a card
- * whose card model was not handed in keeps every value it has.
+ * The negative cases: no tile names the card model that cuts it, the head holds
+ * only the two things a tile is used for, the plus button offers nothing until
+ * it is pressed, a card dropped at its current position moves nothing, and a
+ * card whose card model was not supplied keeps every value it has.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -79,7 +79,7 @@ const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<v
   await overTarget.trigger('drop')
 }
 
-/** A box typed into, as a person types into it. */
+/** A box typed into, as a user types into it. */
 const typeInto = (box: HTMLTextAreaElement | undefined, text: string): void => {
   if (!box) throw new Error('no box to type in')
   box.value = text
@@ -372,8 +372,8 @@ describe('DeckEditor', () => {
     expect(card.emitted('move')).toBeUndefined()
   })
 
-  // A card is put somewhere, and the caret says where. Let go where the caret
-  // says nothing — the ground between the tiles — it stays where it was.
+  // A card is moved to a position, and the caret marks it. A card dropped where
+  // the caret shows no position — the gap between the tiles — stays where it was.
   it('moves nothing where a card is let go on no place at all', async () => {
     const card = mountDeck()
     await getTile(card, 'llama').get('[data-grip]').trigger('dragstart')
@@ -417,7 +417,7 @@ describe('DeckEditor', () => {
     const card = mountDeck({ cards: orphan })
     const tile = getTile(card, 'gone')
 
-    // The card model is named, so the person knows what the card is waiting for.
+    // The card model is named, so the user can see what the card is waiting for.
     expect(tile.get('.card__objections').text()).toBe('No card model called Missing')
     // Nothing names the values, so nothing draws them. They stay in the file.
     expect(tile.findAll('.card__value')).toHaveLength(0)
@@ -478,8 +478,8 @@ describe('DeckEditor', () => {
 
     await card.setProps({ cardModels: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
 
-    // The card model no longer names the field, so its box goes and its value
-    // stays in the file. The caret goes with the box and lands in no other.
+    // After the card model drops the field, its box is removed and its value
+    // stays in the file. The caret leaves with the box and moves to no other.
     expect(getFields(card, 'llama')).toEqual(['Name', 'Life span'])
     expect(getTile(card, 'llama').find('[data-value="Height"]').exists()).toBe(false)
     expect(document.activeElement).not.toBe(getBox(card, 'llama', 'Life span').element)

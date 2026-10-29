@@ -1,6 +1,6 @@
 /**
- * What the one control draws itself from: the picture's scale, the marks on it,
- * the bubble over the knob, and the keys that walk it.
+ * What the curve control is drawn from: the plot scale, the marks on it, the
+ * callout above the knob, and the keys that move the knob.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
@@ -178,7 +178,7 @@ describe('the picture the pointer is read against', () => {
   })
 })
 
-/** A picture the pointer is read against, scaled and shifted as the test says. */
+/** A chart the pointer is read against, scaled and shifted as the test specifies. */
 const createChart = (a: number, e: number, isCaptured = false) => {
   const isDone: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {

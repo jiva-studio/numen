@@ -1,18 +1,18 @@
-// Package cardid mints the identifiers a card is known by, and reads whether
-// a string is one.
+// Package cardid generates the identifiers that identify a card, and checks
+// whether a string is one.
 //
-// The identifier says which card this is and nothing else. It is minted once,
-// and it travels with the card: the same card moved to another deck or another
-// vault is the same identifier, and nothing about it is recomputed. A card's
-// heading writes it behind a caret, where it is called the card's id.
+// The identifier identifies the card and carries no other information. It is
+// generated once and moves with the card: the same card moved to another deck
+// or vault keeps the same identifier, which is never recomputed. A card's
+// heading writes it after a caret, where it is called the card id.
 package cardid
 
 import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 )
 
-// Crockford base32 in lower case: no i, l, o or u, so that an identifier read
-// aloud or retyped from a file does not turn into a different one.
+// Crockford base32 in lower case, without i, l, o or u, which prevents an identifier
+// read aloud or retyped from a file from becoming a different identifier.
 const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 
 // Length is how many characters an identifier is. Ten of this alphabet is
@@ -61,7 +61,8 @@ func IsValid(s ID) bool {
 	return true
 }
 
-// ID is what a card is, for as long as it exists. It is minted once, and it travels with the card: the
-// same card moved to another deck or another vault is the same identifier, and nothing about it is
-// recomputed. A card's heading writes it behind a caret, where it is called the card's id.
+// ID identifies a card for as long as it exists. It is generated once and
+// moves with the card: the same card moved to another deck or vault keeps the
+// same identifier, which is never recomputed. A card's heading writes it after
+// a caret, where it is called the card id.
 type ID string

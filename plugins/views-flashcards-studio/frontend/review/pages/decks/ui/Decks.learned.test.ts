@@ -86,8 +86,8 @@ describe('how much of a deck remains learned', () => {
     expect(one.findAll('.decks__learned').map((el) => el.text())).toEqual(['25% learned'])
   })
 
-  // The tile above draws a bare share of the day's work, so this one carries
-  // the word wherever it stands: the two are different questions.
+  //   // The tile above renders a bare share of the day's work, so this one always
+  //   // carries the word: the two answer different questions.
   it('never remains as a figure alone', () => {
     const one = mountDecks(vault(), [preset({ answered: 10, took: 10 })])
 
@@ -110,8 +110,8 @@ describe('how much of a deck remains learned', () => {
     expect(one.findAll('.decks__learned')).toHaveLength(0)
   })
 
-  // A count that has not landed says a figure is coming and never that there
-  // is none, and the row does not move when it arrives.
+  //   // A count that has not arrived shows a placeholder figure and never claims that
+  //   // there is none, and the row does not move when it arrives.
   it('is drawn as the shape it will be until the count lands', () => {
     const one = mountDecks(vault({ isCounted: false }), [])
 

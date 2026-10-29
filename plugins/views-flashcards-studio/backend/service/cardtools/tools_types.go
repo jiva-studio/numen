@@ -15,9 +15,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// How much one call may ask about the cards of a vault. A deck is a file holding what would
-// otherwise be a folder of notes, so a deck with no ceiling on it is a way to put a vault in a
-// context window by accident.
+// Limits on how much one call may request about the cards of a vault. A deck is a file holding what would
+// be a folder of notes, so an unbounded deck read can fill a context window.
 const (
 	maxCardModels = 50
 	maxCards      = 50
@@ -36,8 +35,8 @@ func instant(nanos int64) time.Time {
 // CardModel is a card model as the list of them names it.
 type CardModel struct {
 	Path string `json:"path" jsonschema:"the card model's path relative to the vault folder"`
-	// Name is what a card's wikilink writes. A link is resolved by path and by filename, so the name
-	// that reaches this card model is its filename without the extension.
+	// Name is the text of a card's wikilink. A link is resolved by path and by filename, so
+	// the name that resolves to this card model is its filename without the extension.
 	Name   string   `json:"name" jsonschema:"the name to write in a card's wikilink, which is the filename without its extension"`
 	Title  string   `json:"title" jsonschema:"what the card model is called, which is what a person sees"`
 	Fields []string `json:"fields,omitempty" jsonschema:"what a card cut by this card model is asked for, in order; absent for a card model that could not be read"`
@@ -51,7 +50,7 @@ type Card struct {
 	Values    []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
 }
 
-// FieldValue is what somebody wrote under one of a card's fields.
+// FieldValue is the text of one of a card's fields.
 type FieldValue struct {
 	Field string `json:"field" jsonschema:"the field's name, spelled as the card model declares it"`
 	Text  string `json:"text" jsonschema:"the HTML under that heading"`
@@ -63,7 +62,7 @@ type Fault struct {
 	Why  string `json:"why" jsonschema:"what is wrong, and what the application did about it"`
 }
 
-// CurrentCard is the card in front of the person, as an agent is told about it. The deck is the file
+// CurrentCard is the card the user is viewing, as reported to an agent. The deck is the file containing it.
 type CurrentCard struct {
 	Deck     string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
 	Card     string `json:"card,omitempty" jsonschema:"the card's id, as card_read gives it"`
@@ -121,8 +120,8 @@ func newTemplates(templates []format.CardTemplate) []CardTemplate {
 	return out
 }
 
-// faults is what was wrong with a deck, on the card each stands against. The position is counted from
-// the deck's first card, whichever run of them a call asked for.
+// faults lists the problems of a deck, each on the card it concerns. The position is counted from
+// the deck's first card, whichever range of cards a call requested.
 func faults(problems []format.Problem) []Fault {
 	if len(problems) == 0 {
 		return nil
@@ -144,12 +143,12 @@ func countBytes(vs []FieldValue) int {
 	return size
 }
 
-// fingerprintOf is what a deck or a card model was when it was read, as an agent hands it back.
+// fingerprintOf encodes the state of a deck or a card model when it was read, as returned to an agent.
 func fingerprintOf(ref domain.FileStat) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
 }
 
-// parseFingerprint is the file stat a caller presents. A tool that changes what somebody may have
+// parseFingerprint parses the file stat a caller presents from an earlier read. A tool that modifies a file compares it with the current stat to detect concurrent edits.
 func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
 		return domain.FileStat{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")

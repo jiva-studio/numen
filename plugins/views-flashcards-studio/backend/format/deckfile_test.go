@@ -15,9 +15,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// deck is the awkward one every write is tested against: a key nobody owns, a
-// card of a card model and a card of none, and fields written in an order of the
-// person's own.
+// deck is the awkward fixture every write is tested against: an unrecognized key,
+// a card of a card model and a card of none, and fields in an author-defined order.
 const deck = "---\n" +
 	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
 	"type: deck\n" +
@@ -50,9 +49,8 @@ const deck = "---\n" +
 	"\n" +
 	"перегной\n"
 
-// A deck opened and not changed comes back byte for byte, and the cards it
-// holds are the ones in the file. Anything less is a diff the person did not
-// ask for, on every save, forever.
+// A deck opened and not changed is written back byte for byte, and its cards are
+// the ones in the file. Any difference is an unrequested diff on every save.
 func TestOpenAndWriteChangesNothing(t *testing.T) {
 	for name, one := range map[string]struct {
 		raw   string
@@ -125,9 +123,8 @@ func setValue(t *testing.T, raw string, card cardid.ID, field, value string) str
 	return string(f.Bytes())
 }
 
-// Everything the write did not touch — the frontmatter and its key order, the
-// preamble, the lead, the cards around it — is the person's, and comes out as
-// it went in.
+// Everything the write does not touch — the frontmatter and its key order, the
+// preamble, the lead, the surrounding cards — is written back unchanged.
 func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
 	got := setValue(t, deck, llama, "Height", "about 46\"")
 
@@ -136,8 +133,8 @@ func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
 	}
 }
 
-// A card carries its fields in the order the person wrote them, and a write
-// does not tidy them into the order the card model declares.
+// A card keeps its fields in the order they were written, and a write does not
+// reorder them into the order the card model declares.
 func TestSetValueKeepsTheOrderTheFieldsWereSavedIn(t *testing.T) {
 	raw := setValue(t, deck, llama, "Life span", "about 25 years")
 
@@ -172,7 +169,7 @@ func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 	}
 }
 
-// removeValue is a field taken off a card, and the file as it now stands.
+// removeValue removes a field from a card and returns the resulting file.
 func removeValue(t *testing.T, raw string, card cardid.ID, field string) string {
 	t.Helper()
 	f, err := format.OpenDeck([]byte(raw))
@@ -208,7 +205,7 @@ func TestRemoveValueOfTheLastFieldPreservesNoBlankLine(t *testing.T) {
 }
 
 // A field the card writes nothing under fails, and nothing is written.
-// The card model may well declare it: what is not there is what the person wrote.
+// The card model may declare the field; only what is present in the file counts.
 func TestRemoveValueOfAFieldTheCardDoesNotWrite(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
@@ -253,16 +250,16 @@ func TestSetValueOfACardTheDeckDoesNotHold(t *testing.T) {
 	}
 }
 
-// A deck whose frontmatter cannot be read is never written: repairing it means
-// guessing at what the person wrote.
+// A deck whose frontmatter cannot be read is never written: repairing it
+// requires guessing the intended content.
 func TestADeckThatCannotBeReadIsNotOpened(t *testing.T) {
 	if _, err := format.OpenDeck([]byte("---\ntype: [deck\n---\n\n## Llama\n")); err == nil {
 		t.Error("a broken frontmatter block opened for writing")
 	}
 }
 
-// A card is addressed by its card id, and two cards of one heading are told apart
-// by nothing else. Writing the second reaches the second.
+// A card is addressed by its card id, and two cards with one heading are
+// distinguished by that id alone. Writing the second card changes the second card.
 func TestSetValueReachesTheCardOfThatMarkAlone(t *testing.T) {
 	raw := "---\ntype: deck\n---\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
@@ -274,9 +271,9 @@ func TestSetValueReachesTheCardOfThatMarkAlone(t *testing.T) {
 	}
 }
 
-// A section is made at the end of the deck, given another name at its current position,
-// and taken away. Taking one away takes its heading and nothing else: the cards
-// that stood under it stay where they are.
+// A section is created at the end of the deck, renamed at its current position,
+// and removed. Removing a section removes its heading and nothing else: the cards
+// under it remain in place.
 func TestTheSplicesASectionNeeds(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
@@ -507,10 +504,10 @@ func TestRenamingAFieldNobodyDeclares(t *testing.T) {
 	}
 }
 
-// A field's name is a name of its own, so a card model already declaring the name
-// asked for is not written: the file would declare it twice, every template would
-// place the same field, and the values under the old heading would be shown by
-// nothing.
+// A field's name is unique in the card model, so a name the card model already
+// declares is not written: the file would declare it twice, every template would
+// place the same field, and the values under the old heading would be displayed by
+// no template.
 func TestRenamingAFieldOntoAFieldTheCardModelDeclares(t *testing.T) {
 	f, err := format.OpenCardModel([]byte(cardModel))
 	if err != nil {
@@ -671,8 +668,8 @@ func TestRemovingTheLastSectionPreservesNoBlankLine(t *testing.T) {
 	}
 }
 
-// The card id is created where the deck is made whole, so that is what knows it
-// and what says which card was given which.
+// The card id is created where the deck is made whole, so that operation knows
+// which card received which id.
 func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
@@ -715,8 +712,8 @@ func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
 	}
 }
 
-// A card standing under a section the deck does not hold fails. Writing it
-// under whichever section stands last moves somebody's card without saying so.
+// A card in a section the deck does not hold fails. Writing it under the last
+// section would move a card between sections silently.
 func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 	_, err := format.DeckBody(format.Deck{
 		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
@@ -727,9 +724,9 @@ func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 	}
 }
 
-// rough is a deck body as a person leaves one: CRLF endings, blank lines
-// doubled where they felt like it, and whitespace at the ends of their lines.
-// None of it is what the format would write, and all of it is theirs.
+// rough is a deck body with hand-written formatting: CRLF endings, doubled blank
+// lines, and trailing whitespace on lines. The format writes none of it, and a
+// write preserves all of it.
 var rough = strings.ReplaceAll(
 	"Cards I am learning.\n\n\n"+
 		"# The ones with fur\n\n"+
@@ -747,10 +744,9 @@ const (
 	vicuna = "9wq2ktr5bd"
 )
 
-// A deck is a file somebody writes by hand beside the tools, so a change that
-// names one card leaves every other card the bytes it was — the blank lines
-// they doubled, the whitespace at the ends of their lines, and the endings the
-// file carries.
+// A deck is a file that is also edited by hand, so a change that targets one
+// card leaves every other card byte-identical: doubled blank lines, trailing
+// whitespace, and the file's line endings.
 func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 	for name, change := range map[string]func(*format.DeckFile) error{
 		"a value written": func(f *format.DeckFile) error {
@@ -802,8 +798,8 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 }
 
 // cardRun is the bytes one card of a body occupies, from its heading to the
-// heading of the card below it. Neither card it is asked about stands last, so
-// what follows one is always another card's heading.
+// heading of the next card. Neither card under test is last, so what follows each
+// is always another card's heading.
 func cardRun(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
 	from := strings.Index(body, "## "+getCardHeading(t, body, card))
@@ -857,8 +853,8 @@ func TestRemovingTheLastCardPreservesNoBlankLine(t *testing.T) {
 	}
 }
 
-// A card asked into a section the deck does not hold fails, the way a card
-// written under one is.
+// A card addressed into a section the deck does not hold fails, as a written
+// card does.
 func TestAddCardBelowASectionTheDeckDoesNotHold(t *testing.T) {
 	file := format.OpenDeckBody(rough)
 	if err := file.AddCardUnder(9, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
@@ -921,8 +917,8 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 	}
 }
 
-// Making a deck whole through its file writes the card ids into the file and says
-// which cards were given one.
+// Making a deck whole through its file writes the card ids into the file and
+// reports which cards were assigned one.
 func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
 	provided, err := f.Whole(map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}},
@@ -938,8 +934,8 @@ func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 	}
 }
 
-// A card that cannot be found fails before anything is written, whichever
-// change was asked for.
+// A card that cannot be found fails before anything is written, whatever the
+// requested change.
 func TestSetCardModelAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
 	body := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n"
 	f := format.OpenDeckBody(body)
@@ -954,7 +950,7 @@ func TestSetCardModelAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
 	}
 }
 
-// The card ids of the cards the tests below write by hand.
+// Card ids of the cards the tests below write explicitly.
 const (
 	cardIDA = "aaaaaaaaaa"
 	cardIDB = "bbbbbbbbbb"
@@ -1042,7 +1038,7 @@ func TestAnEmptyMarkAddressesNoCard(t *testing.T) {
 	}
 }
 
-// A place before the first section or after the last stands nowhere.
+// A place before the first section or after the last is outside the deck.
 func TestASectionOutsideTheDeckIsRefused(t *testing.T) {
 	for _, item := range []int{-1, 1} {
 		f := format.OpenDeckBody(deck)
@@ -1073,8 +1069,8 @@ func TestRenamingTheLastSectionWhoseHeadingEndsTheFile(t *testing.T) {
 	}
 }
 
-// A card asked into a section is written at the end of it: in front of the
-// section after it, or at the end of the deck where none follows.
+// A card added to a section is written at the end of it: before the next
+// section, or at the end of the deck when none follows.
 func TestAddCardBelowASectionWritesAtItsEnd(t *testing.T) {
 	raw := "# One\n\n## Llama ^aaaaaaaaaa\n\n# Two\n"
 	card := format.Card{Heading: "Camel", CardID: cardIDB}
@@ -1246,8 +1242,8 @@ func TestSetTheLastValueToNothingEndsTheFileOnItsHeading(t *testing.T) {
 	}
 }
 
-// A card written after text that does not end its line stands two breaks below
-// it.
+// A card written after text that does not end its line is separated from it by
+// two line breaks.
 func TestAddCardAfterTextWithoutALineBreak(t *testing.T) {
 	f := format.OpenDeckBody("Notes on animals")
 	if err := f.AddCard(format.Card{Heading: "Alpaca"}); err != nil {
@@ -1328,8 +1324,8 @@ func TestWriteIdentifier(t *testing.T) {
 	})
 }
 
-// proseCardModel is the awkward one the round trip is tested against: a key
-// nobody owns, prose above the first template and prose under a template's heading.
+// proseCardModel is the awkward fixture the round trip is tested against: an
+// unrecognized key, prose above the first template and prose under a template's heading.
 const proseCardModel = "---\n" +
 	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
 	"type: card-model\n" +
@@ -1352,9 +1348,8 @@ const proseCardModel = "---\n" +
 	"\n" +
 	"{{Height}}\n"
 
-// A card model read and written straight back comes out as the body it went in
-// as. Anything less is a diff the person did not ask for, on every save,
-// forever.
+// A card model read and written back unchanged yields the same body. Any
+// difference is an unrequested diff on every save.
 func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 	for name, raw := range map[string]string{
 		"the card model": proseCardModel,
@@ -1391,13 +1386,12 @@ func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 	}
 }
 
-// vault is where the fixtures a person can open in the application stand.
+// vault is the directory of fixtures that can be opened in the application.
 const vault = "testdata/cards"
 
-// Every deck and card model of the fixture vault, read and written straight back,
-// comes out as the body it went in as. These are the files a person is shown,
-// awkward on purpose, and a save that touched nothing is a save that changed
-// nothing.
+// Every deck and card model of the fixture vault, read and written back, yields
+// the same body. The fixtures are awkward on purpose, and a save that changes
+// nothing must produce no change.
 func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 	entries, err := os.ReadDir(vault)
 	if err != nil {
@@ -1436,9 +1430,8 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 	}
 }
 
-// A write that reaches one template reaches nothing else: the prose above the first
-// template and the prose under every other template's heading come out as the bytes
-// they went in as.
+// A write to one template changes nothing else: the prose above the first
+// template and the prose under every other template's heading keep their bytes.
 func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 	raw := "---\ntype: card-model\n---\n" +
 		"How I show these.\n\n" +
@@ -1511,8 +1504,8 @@ func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
 	}
 }
 
-// A card of a card model nobody holds keeps the heading it has, and is given its
-// card id all the same.
+// A card of an undeclared card model keeps its heading and is still assigned
+// its card id.
 func TestWholeKeepsTheHeadingOfACardWhoseCardModelIsUnknown(t *testing.T) {
 	body := "\n## Old\n\n[[Plant]]\n\n### Name\n\nFern\n"
 
@@ -1524,8 +1517,8 @@ func TestWholeKeepsTheHeadingOfACardWhoseCardModelIsUnknown(t *testing.T) {
 	}
 }
 
-// A heading already in step is not written again: the spacing around it stays
-// as the person typed it.
+// A heading that already matches is not written again: the spacing around it is
+// preserved as authored.
 func TestWholePreservesAHeadingInStepAsItExists(t *testing.T) {
 	body := "\n##   Llama ^k7m2xq9fzp  \n\n[[Animal]]\n\n### Name\n\nLlama\n"
 

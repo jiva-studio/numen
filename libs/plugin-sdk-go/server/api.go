@@ -94,8 +94,8 @@ func GetHeader(ctx context.Context) http.Header {
 	return header
 }
 
-func withHeader(r *http.Request) context.Context {
-	return context.WithValue(r.Context(), headerKey{}, r.Header)
+func withHeader(ctx context.Context, header http.Header) context.Context {
+	return context.WithValue(ctx, headerKey{}, header)
 }
 
 func (a *API) mount(method string, handler http.Handler) {
@@ -115,7 +115,7 @@ func Handle[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 			writeFailure(w, NewAPIError(CodeInvalidArgument, err.Error()))
 			return
 		}
-		res, err := fn(withHeader(r), req)
+		res, err := fn(withHeader(r.Context(), r.Header), req)
 		if err != nil {
 			writeFailure(w, toAPIError(err))
 			return
@@ -144,7 +144,7 @@ func Stream[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 		send := func(res Res) error {
 			return writeEvent(w, flusher, "", res)
 		}
-		if err := fn(withHeader(r), req, send); err != nil {
+		if err := fn(withHeader(r.Context(), r.Header), req, send); err != nil {
 			if r.Context().Err() == nil {
 				_ = writeEvent(w, flusher, "error", toAPIError(err))
 			}

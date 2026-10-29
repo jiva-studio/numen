@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * A line across the width with something standing on it, in the middle or
- * leading the line where it is given `at="start"`.
+ * A line across the full width with content on it, centered or at the start of
+ * the line when `at="start"`.
  *
- * The line is the divider's own decoration: nothing is announced around what
- * stands there, and what stands there keeps its own name. The line gives way as
- * the room runs out, and the divider stays one line however narrow it is drawn.
+ * The line is the divider's own decoration: nothing is announced around the
+ * content, and the content keeps its own accessible name. The line shortens as
+ * the available width shrinks, and the divider stays one line however narrow it
+ * is.
  */
 withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 </script>
@@ -41,7 +42,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
   flex: 0 0 var(--numen-box-air);
 }
 
-/* What relies on the divider is drawn at its own width while there is room for
+/* The pending content is drawn at its own width while there is space for
    it, and is what the width goes to first. */
 .divider__pending {
   display: flex;

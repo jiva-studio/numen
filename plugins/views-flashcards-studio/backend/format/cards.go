@@ -38,14 +38,14 @@ type CardModel struct {
 	Preamble  string
 	Tail      string
 	Templates []CardTemplate
-	// Problems are what was wrong with the file and could not be repaired.
-	// They are shown to the person, and never guessed at.
+	// Problems are the faults in the file that could not be repaired. They are
+	// reported and never corrected automatically.
 	Problems []Problem
 }
 
-// CardTemplate is one way a card is shown, as its card model declares it: what
-// stands before the answer and what stands after it, each with `{{Field}}` where
-// a value goes. A template with only one of the two lays out nothing.
+// CardTemplate is one way a card is displayed, as its card model declares it: the
+// content before the answer and the content after it, each with `{{Field}}` where a
+// value goes. A template with only one of the two lays out nothing.
 type CardTemplate struct {
 	Name     string
 	Preamble string
@@ -68,12 +68,12 @@ type Deck struct {
 	Problems []Problem
 }
 
-// Section is a run of a deck a person has given a name. It is a name and
-// nothing else: no fields, no card model, no schedule, no card id.
+// Section is a named run of a deck. It is a name and nothing else: no fields, no
+// card model, no schedule, no card id.
 type Section struct {
 	Name string
-	// Nothing lays it out and nothing reads it: it is a person writing about
-	// their own deck, and it is kept exactly currently.
+	// Nothing lays it out and nothing reads it: it is free text the author wrote about
+	// the deck, and it is preserved verbatim.
 	Preamble string
 }
 
@@ -118,8 +118,8 @@ func (s CardModel) First() string {
 }
 
 // Value is what the card holds under one field's heading, and whether it holds
-// it. Two headings of one name are a problem against the deck, and the first
-// stands.
+// it. Two headings of one name are a problem against the deck, and the first is
+// used.
 func (c Card) Value(field string) (string, bool) {
 	for _, v := range c.Values {
 		if v.Field == field {
@@ -129,10 +129,10 @@ func (c Card) Value(field string) (string, bool) {
 	return "", false
 }
 
-// Card is the card of a card id. A deck holding none of that card id is
-// ErrNoSuchCard, and a deck holding two is ErrTwoCards: both are read and both
-// are shown, and a machine choosing between them would be choosing which of
-// the two a person meant.
+// Card is the card with the given card id. A deck holding none of that card id
+// yields ErrNoSuchCard, and a deck holding two yields ErrTwoCards: both are
+// reported, and choosing automatically between them would guess which one the
+// author meant.
 func (d Deck) Card(carried cardid.ID) (Card, error) {
 	found := Card{}
 	target := false

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// note is a file as the application reads one, so a test says what is in the
+// note is a file as the application reads it, so a test states the content of the
 // file and nothing about how it is parsed.
 func note(t *testing.T, raw string) domain.Note {
 	t.Helper()
@@ -149,8 +149,8 @@ about 46"
 }
 
 // A card copied by hand carries the card id it was copied from. Both are read and
-// both are shown marked: nothing a person wrote goes missing from the screen,
-// and which of the two is meant is a thing only they know.
+// both are displayed with a mark: no user content disappears from the screen, and
+// which of the two is meant cannot be determined by the application.
 func TestTwoCardsOfOneMark(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck
@@ -338,8 +338,8 @@ func TestACardWithNothingInItsHeading(t *testing.T) {
 	}
 }
 
-// A first-level heading opens a section. The cards under it are its own until
-// the next one, and the section is a name and the person's own text.
+// A first-level heading opens a section. The cards under it belong to it until the
+// next one, and the section is a name plus the user's own text.
 func TestAFirstLevelHeadingOpensASection(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck
@@ -412,8 +412,8 @@ The ones I began with.
 	}
 }
 
-// A deck of sections and no cards is sections all the same, and what a person
-// wrote under each of them is kept.
+// A deck of sections and no cards is still sections, and the text written under
+// each of them is kept.
 func TestADeckOfSectionsAndNoCards(t *testing.T) {
 	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n# Animals\n\n### Not a card\n\nprose.\n"))
 
@@ -518,9 +518,9 @@ func TestAnEmptyDeck(t *testing.T) {
 	}
 }
 
-// A value stops where its own text stops, so what a file ends with once the
-// last value has been read is the tail and is nobody's value. The preamble is
-// the bytes above the first card, down to the one its heading opens on.
+// A value ends where its own text ends, so what a file ends with after the last
+// value is the tail and belongs to no value. The preamble is the bytes above the
+// first card, down to the line its heading opens on.
 func TestThePreambleAndTheTail(t *testing.T) {
 	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\nCards I am learning.\n\n"+
 		"## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n\n\n"))

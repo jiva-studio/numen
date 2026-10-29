@@ -1,8 +1,8 @@
 /**
- * The preset tab: the goal, the picture of it, the backlog under that, and the
- * rows of settings the answer produced. What is asked here is what only a
- * browser can answer: where the columns, the readout under the knob, the bubble
- * over it and the numbers along the axis are put.
+ * The preset tab: the goal, the curve plot, the backlog plot below it, and the
+ * rows of settings derived from the curve. These stories cover what only a
+ * browser can verify: the layout of the columns, the readout under the knob, the
+ * bubble above it and the numbers along the axis.
  */
 import { StopReason } from '../../api/types.js'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -67,7 +67,7 @@ interface Knobs {
   place: number
   /** The goal the tab is steered by. */
   goal: Settings['goal']
-  /** An answer to the picture is on its way, so nothing is drawn in its room. */
+  /** A curve response is pending, so the plot area is empty. */
   isWaiting: boolean
   /** Whether the curve on screen is the application's answer. */
   isHonest: boolean
@@ -111,8 +111,8 @@ const createPresetTab = (args: Knobs): PresetTabState => {
 }
 
 /**
- * The same tab twice in one width, with an answer on the picture and still
- * waiting for one, so what is drawn in each can be held against the other.
+ * The same tab twice at one width, once with a curve response and once still
+ * waiting for one, so the rendering of each can be compared.
  */
 const bothWays = (args: Knobs) => ({
   components: { PresetTab },
@@ -132,11 +132,11 @@ const bothWays = (args: Knobs) => ({
 const getTabs = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[data-tab]'))
 
-/** The rooms a tab holds its two plots in: the picture's, then the backlog's. */
+/** The containers a tab holds its two plots in: the curve plot, then the backlog plot. */
 const getRooms = (tab: HTMLElement): readonly HTMLElement[] =>
   Array.from(tab.querySelectorAll<HTMLElement>('[data-control="room"]'))
 
-/** The tab in the room a window gives it. */
+/** The tab in the container provided by the story. */
 const room = (args: Knobs) => ({
   components: { PresetTab },
   setup: () => ({ state: createPresetTab(args) }),
@@ -164,10 +164,10 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The tab as a person meets it, with an answer already on the picture. */
+/** The tab with a curve response already rendered. */
 export const APreset: Story = {}
 
-/** The picture, which is the control the knob is walked along. */
+/** The curve plot, which is the element the knob moves along. */
 const getImage = (canvas: HTMLElement): SVGSVGElement =>
   within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement
 
@@ -243,11 +243,11 @@ export const TheRowsShareTheirColumns: Story = {
 }
 
 /**
- * The knob walked to either end of its grid.
+ * The knob moved to either end of its grid.
  *
- * The value under the knob rides a line of its own and is pulled back onto the
- * picture at the ends, so it never hangs off the side. That pull is the
- * `translate` property, and only a browser says where it left the words.
+ * The value readout under the knob is on its own line and is shifted back
+ * onto the plot at the ends, so it never overflows the side. The shift is the
+ * `translate` property, and only a browser reports where the text ends up.
  */
 export const TheReadoutStaysBelowThePlot: Story = {
   play: async ({ canvasElement }) => {
@@ -259,8 +259,8 @@ export const TheReadoutStaysBelowThePlot: Story = {
     const getValueElement = (value: number) =>
       within(canvasElement).getByText(words.formatGoalValue('minutes', value))
 
-    // At either end, and in the middle: the value stands within the picture it
-    // is read off, and it is drawn at all.
+    // At either end and in the middle, the value is inside the plot it is read from
+    // and is rendered.
     for (const [key, value] of [
       ['{Home}', 0],
       ['{End}', 30],
@@ -277,11 +277,11 @@ export const TheReadoutStaysBelowThePlot: Story = {
 }
 
 /**
- * The bubble that says what the place under the knob buys.
+ * The bubble that shows what the position under the knob buys.
  *
- * It is hung off the knob's own point and pulled back by half its width, or by
- * the whole of it at the trailing end, so it stays over the picture. Its tail
- * relies on the knob whichever way it was pulled.
+ * It is anchored to the knob's point and shifted back by half its width, or by
+ * its full width at the trailing end, so it stays over the plot. Its tail
+ * points at the knob in either case.
  */
 export const TheBubbleIsAboveTheKnob: Story = {
   play: async ({ canvasElement }) => {
@@ -289,7 +289,7 @@ export const TheBubbleIsAboveTheKnob: Story = {
     const frame = picture.getBoundingClientRect()
     picture.focus()
 
-    // The bubble says the value being held, so it is found by what it says.
+    // The bubble shows the current value, so it is located by its text.
     for (const [key, value] of [
       ['{Home}', 0],
       ['{End}', 30],
@@ -307,11 +307,12 @@ export const TheBubbleIsAboveTheKnob: Story = {
 }
 
 /**
- * with an answer on it above, and the same tab still waiting for one below.
+ * The tab twice in one view: with a curve response above, and still waiting for
+ * one below.
  *
- * The plot keeps its room whether or not there is a backlog to draw, so nothing
- * below it moves when the answer lands. Only a browser can say that: the room is
- * held by an aspect ratio, which is a number until something lays it out.
+ * The plot keeps its height whether or not a backlog is drawn, so nothing below
+ * it moves when the response arrives. Only a browser can verify that: the height
+ * is set by an aspect ratio, which is only a number until the layout is computed.
  */
 export const TheBacklogKeepsItsSpace: Story = {
   render: bothWays,
@@ -319,7 +320,7 @@ export const TheBacklogKeepsItsSpace: Story = {
     const [answered, waiting] = getTabs(canvasElement)
     const getBacklogRect = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
 
-    // The backlog's own two axes are named, and it is drawn under the picture it
+    // The backlog's two axes are labelled, and it is drawn below the curve plot it
     // belongs to and not beside it.
     const canvas = within(answered!)
     const backlog = canvas.getByText(words.backlogY)
@@ -341,7 +342,7 @@ export const TheBacklogKeepsItsSpace: Story = {
     expect(answered!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(1)
     expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
-    // The room is the same either way, and in the backlog's own proportion.
+    // The height is the same in both cases, with the backlog's own aspect ratio.
     const backlogBox = getBacklogRect(answered!)
     const empty = getBacklogRect(waiting!)
     expect(backlogBox.width).toBeGreaterThan(0)
@@ -352,10 +353,10 @@ export const TheBacklogKeepsItsSpace: Story = {
 }
 
 /**
- * The answer still on its way.
+ * The curve response is pending.
  *
- * The room the picture is drawn in keeps its proportion while nothing is in it,
- * so the rows under it do not jump when the line lands.
+ * The plot container keeps its aspect ratio while empty, so the rows below it
+ * do not move when the curve arrives.
  */
 export const WaitingForAnAnswer: Story = {
   args: { isHonest: false, isWaiting: true },
@@ -364,8 +365,8 @@ export const WaitingForAnAnswer: Story = {
     canvas.getByText(words.waiting)
     expect(canvas.queryByRole('slider', { name: words.knob })).toBeNull()
 
-    // The room the picture will be drawn in is standing there empty, in the
-    // picture's own proportion, so nothing below it moves when the line lands.
+    // The container for the plot is present and empty, with the plot's aspect ratio,
+    // so nothing below it moves when the curve arrives.
     const empty = getRooms(canvasElement)[0]!.getBoundingClientRect()
     expect(empty.width).toBeGreaterThan(0)
     expect(empty.width / empty.height).toBeCloseTo(PLOT_WIDTH / PLOT_HEIGHT, 1)
@@ -378,10 +379,11 @@ export const WaitingForAnAnswer: Story = {
 }
 
 /**
- * The knob under the keyboard.
+ * The knob under keyboard focus.
  *
- * The ring is drawn on the knob, which is the thing the arrows move, and not
- * round the picture holding it. Only a browser says which of the two wears it.
+ * The focus ring is drawn on the knob, which the arrow keys move, and not
+ * around the plot containing it. Only a browser reports which element has the
+ * ring.
  */
 export const TheRingIsOnTheKnob: Story = {
   play: async ({ canvasElement }) => {
@@ -397,21 +399,22 @@ export const TheRingIsOnTheKnob: Story = {
     }
     await waitFor(() => expect(picture).toHaveFocus())
 
-    // The knob wears the ring: it is stroked in another colour and heavier.
+    // The knob has the ring: its stroke has another colour and a greater width.
     const target = getComputedStyle(knob)
     expect(target.stroke).not.toBe(before.stroke)
     expect(Number.parseFloat(target.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
 
-    // The picture itself wears none.
+    // The plot itself has no outline.
     expect(getComputedStyle(picture).outlineStyle).toBe('none')
   },
 }
 
 /**
- * The knob is dragged, not only walked with the arrows. The picture reads the
- * pointer off its own element — where the pointer landed against the screen,
- * and the capture that keeps the drag on it after the pointer has left. Only a
- * browser has either, so only a browser can say the element is reached at all.
+ * The knob is dragged and not only moved with the arrow keys. The plot reads the
+ * pointer position from its own element: the pointer coordinates relative to the
+ * screen, and the pointer capture that keeps the drag on the element after the
+ * pointer leaves it. Only a browser provides both, so only a browser can verify
+ * that the element receives the pointer events.
  */
 export const TheKnobFollowsThePointer: Story = {
   args: { place: 3 },

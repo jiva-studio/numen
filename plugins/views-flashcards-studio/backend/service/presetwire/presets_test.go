@@ -13,9 +13,9 @@ import (
 
 // Settings that name no rule count by the default rule at its default value.
 //
-// They are what a window written before the key existed sends, and what a
-// preset written before it holds. A key nobody wrote leaves the default in
-// force: it never leaves a threshold every review card passes.
+// They are what a client written before the key existed sends, and what a
+// preset written before it holds. A missing key leaves the default in force: it
+// never produces a threshold that every review card passes.
 func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	old := &api.Settings{
 		Goal:        api.GoalRetention,
@@ -109,10 +109,10 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 	}
 }
 
-// Every setting of a preset goes out on the schema and comes back as it was.
+// Every setting of a preset is sent on the schema and returned unchanged.
 //
-// A setting dropped on either side is a person moving a control, watching the
-// value never leave the window, and finding the note written without it.
+// A setting dropped on either side means a control change that never leaves the
+// window and a note that is written without it.
 func TestEverySettingReachesBackAsItWentOut(t *testing.T) {
 	was := review.Preset{
 		Goal:        review.GoalDate,
@@ -176,11 +176,11 @@ func TestEverySettingReachesBackAsItWentOut(t *testing.T) {
 	}
 }
 
-// A goal, a rule and what a budget counts arriving unspecified are each not a
+// A goal, a rule and a budget unit received as unspecified are each not a
 // value.
 //
-// A client that names none of them is one that has not said, and the settings
-// are weighed against what a preset may hold before anything is written.
+// A client that names none of them has not set them, and the settings are
+// validated against what a preset may hold before anything is written.
 func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 	p, err := ConvertSettingsFromWire(&api.Settings{})
 	if err != nil {
@@ -200,9 +200,8 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 
 // Every verdict is the schema value of the same name.
 //
-// Both windows hold a sentence per verdict, and each of them names the schema
-// value. A verdict carried across as another one puts the wrong sentence in
-// front of the person.
+// Both windows hold a sentence per verdict, and each names the schema value. A
+// verdict converted to another one shows the wrong sentence to the user.
 func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	for _, one := range []struct {
 		why      review.StopReason
@@ -221,18 +220,19 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 		}
 	}
 
-	// A verdict nobody has taught this table is not "the preset schedules". A
-	// preset stopped for a reason the schema has no word for would be drawn as
-	// one handing out a day of review.
+	// A verdict missing from this table is not "the preset schedules". A preset
+	// stopped for a reason the schema has no value for would be displayed
+	// as one that offers a day of review.
 	if got := ConvertStopReasonToWire(review.StopReason("sideways")); got != api.StopReasonUnspecified {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }
 
-// A goal, a rule and a count the schema does not name cross as unspecified.
+// A goal, a rule and a count that the schema does not name convert as
+// unspecified.
 //
-// A note names them in its own words, and a word the reader made nothing of
-// leaves the field where its default stands.
+// A note names them in its own words, and a word the reader does not recognise
+// leaves the field at its default.
 func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
 	if got := ConvertGoalToWire(review.Goal("sideways")); got != api.GoalUnspecified {
 		t.Errorf("a goal the schema does not name crosses as %v", got)

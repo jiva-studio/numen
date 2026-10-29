@@ -10,10 +10,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// Every value of every enum this package carries across reaches something.
+// Every value of every enum this package converts maps to a value.
 //
-// The values are walked from the schema, so a value added there is a test that fails and not a
-// message that quietly says nothing.
+// The values are enumerated from the schema, so a value added there fails this
+// test and does not convert to a message with no content.
 
 func TestEveryGoalCrossesBothWays(t *testing.T) {
 	enumtest.RoundTrip(t, api.GoalValues, ConvertGoalFromWire, ConvertGoalToWire)

@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// A path the vault says holds a file it leaves alone is an outcome of the file,
-// and no error.
+// A path that the vault reports as a file it does not handle is an outcome of
+// the file, and not an error.
 func TestAPathTheVaultPreservesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 	vs := newVaults(t)
 	remaining := faulty{inner: vs.ports.Readers,
@@ -28,8 +28,8 @@ func TestAPathTheVaultPreservesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 	}
 }
 
-// A deck that was there when it was looked at and gone when it was read says
-// what it was when it was looked at.
+// A deck that existed when it was looked up and is gone when it is read reports
+// what it was when it was looked up.
 func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 	vs := newVaults(t)
 	removed := faulty{inner: vs.ports.Readers, read: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
@@ -46,8 +46,8 @@ func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 	}
 }
 
-// A deck whose cards name no card model has no card model to hand back, and that is
-// no map at all.
+// A deck whose cards name no card model has no card model to return, and the
+// result is no map at all.
 func TestADeckNamingNoCardModelIsSplitByNone(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRead(vs.ports.Readers, nil)

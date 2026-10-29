@@ -1,4 +1,4 @@
-/** What a keystroke asks for, on each screen it may be pressed at. */
+/** What each keystroke does, on each screen it may be pressed at. */
 export {
   ASK_KEY,
   getPickerKeyIntent,

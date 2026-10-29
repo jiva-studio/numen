@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// MaxCardModels is how many card models one answer carries. A vault holding more is
-// answered with this many and told how many it holds, so a list that stops
-// short says so.
+// MaxCardModels is how many card models one response carries. A vault holding
+// more returns this many together with the total it holds, so a truncated list
+// is reported as truncated.
 const MaxCardModels = 200
 
 // NewWireCardModel is one card model as the schema carries it.
@@ -37,9 +37,9 @@ func NewWireSummary(s cards.CardModelSummary) *api.CardModelSummary {
 	return &api.CardModelSummary{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 
-// NewRenameResponse is what a rename reached and what it did not, as the schema carries
-// it. A deck it could not be written to keeps the old heading, and the problem
-// says which deck and why.
+// NewRenameResponse reports which decks a rename reached and which it did not,
+// as the schema carries it. A deck that could not be written keeps the old
+// heading, and the problem names the deck and the reason.
 func NewRenameResponse(r cards.RenameResult, stat *api.FileStat) *api.RenameCardModelFieldResponse {
 	out := &api.RenameCardModelFieldResponse{
 		Decks: r.Decks,
@@ -152,8 +152,8 @@ func position(offset int) *int32 {
 	return &pos
 }
 
-// newWireProblemKind is what kind of problem it is, as the schema names it, and whether the schema
-// names it at all.
+// newWireProblemKind returns the kind of a problem as the schema names it, and
+// whether the schema names it at all.
 func newWireProblemKind(fault format.Fault) (api.ProblemKind, bool) {
 	switch fault {
 	case format.FaultTwoFields:

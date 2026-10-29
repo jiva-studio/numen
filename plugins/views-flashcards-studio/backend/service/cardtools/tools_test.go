@@ -12,10 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// The operations an agent works a deck through: the cards of a file are read as
-// cards, one is added, changed or taken out, and the file is written back with
-// the wikilink under each heading and every card nobody touched as the bytes it
-// was. These are what those operations do.
+// The operations an agent uses on a deck: the cards of a file are read as cards,
+// one is added, changed or removed, and the file is written back with the wikilink
+// under each heading and every untouched card byte-for-byte unchanged. These tests
+// cover those operations.
 
 const animalCardModel = "---\ntype: card-model\nfields:\n  - Name\n  - Height\n  - Life span\n---\n\n" +
 	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
@@ -65,8 +65,8 @@ type cards struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
-// getFieldText is what a card holds under one field. A card has no name, so this
-// is how a test says which card it is looking at.
+// getFieldText returns the text of one field of a card. A card has no name, so a
+// test selects a card by this text.
 func getFieldText(c card, field string) string {
 	for _, v := range c.Values {
 		if v.Field == field {
@@ -114,9 +114,9 @@ func TestADeckIsReadAsCardsAndNotAsMarkdown(t *testing.T) {
 	}
 }
 
-// TestADeckTellsAnAgentWhereItsSectionsStand. A person divides a deck into
-// sections, so an agent that cannot see them writes into a list it does not
-// know the shape of.
+// TestADeckTellsAnAgentWhereItsSectionsStand. A deck is divided into sections, so
+// an agent that cannot see them writes into a list whose structure it does not
+// know.
 func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -131,8 +131,8 @@ func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 	}
 }
 
-// TestAFaultStandsAgainstTheCardItIsAbout. A card is addressed by where it
-// stands, so a fault says which card it is against.
+// TestAFaultStandsAgainstTheCardItIsAbout. A card is addressed by its position,
+// so an error identifies the card it concerns.
 func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -177,8 +177,8 @@ func TestADeckAnswersARunOfItsCardsAndReturnsHowManyItContains(t *testing.T) {
 	}
 }
 
-// TestADeckAnswersWithTheOneCardAMarkAddresses. A deck holds as many cards as a
-// person writes, and an agent that knows which one it wants reads that one.
+// TestADeckAnswersWithTheOneCardAMarkAddresses. A deck holds any number of cards,
+// and an agent that knows which card it needs reads only that card.
 func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -199,8 +199,8 @@ func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 		t.Error("a card was read with nothing to present at the next write of its deck")
 	}
 
-	// A card is one card wherever it stands and however many were asked for, so
-	// what says where a run of them starts and how long it runs says nothing.
+	// A card is one card at any position and for any requested count, so the start
+	// offset and the length of a run do not change which card is returned.
 	past := readCards(t, session, map[string]any{
 		"path": "Animals.md", "cardId": alpaca, "from": 5, "limit": 500,
 	})
@@ -209,8 +209,8 @@ func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	}
 }
 
-// TestDeckRead_ReturnsRequestedFieldsOnly. A card holds as much as a person
-// wrote under it, and a call that wants one field pays for one field.
+// TestDeckRead_ReturnsRequestedFieldsOnly. A card holds every field written under
+// it, and a call that requests one field receives only that field.
 func TestDeckRead_ReturnsRequestedFieldsOnly(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -241,8 +241,8 @@ func TestDeckRead_ReturnsRequestedFieldsOnly(t *testing.T) {
 	}
 }
 
-// TestReadingACardOfAMarkTheDeckHasNotGotIsRefused. A card id that reaches nothing
-// is answered the way the writing tools answer it.
+// TestReadingACardOfAMarkTheDeckHasNotGotIsRefused. A card id that matches no card
+// returns the same error as the writing tools.
 func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -285,9 +285,9 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsCardModel(t *testing.T) {
 	}
 }
 
-// TestACardAddedComesBackUnderTheMarkItIsAddressedBy. The card id is given where
-// the deck is written, so the write is what knows it: without it in the answer,
-// an agent adding a card to a deck of many cannot reach what it just wrote.
+// TestACardAddedComesBackUnderTheMarkItIsAddressedBy. The write assigns the card
+// id, so the write response must include it: without it, an agent adding a card to
+// a deck of many cards cannot address the card it just wrote.
 func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -302,7 +302,7 @@ func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 		t.Fatal("the card that was written came back with nothing to address it by")
 	}
 
-	// The card id reaches that card and no other.
+	// The card id addresses that card and no other.
 	call[map[string]any](t, session, "card_edit", map[string]any{
 		"path": "Animals.md", "cardId": made.CardID,
 		"values":      []map[string]string{{"field": "Height", "text": "about 34\""}},
@@ -317,10 +317,10 @@ func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 	}
 }
 
-// TestACardOfAMarkTwoCardsCarryIsNotWrittenTo. Both are read and both are
-// shown, so a person can open the second and ask for it; which of the two they
-// meant is a thing only they know, and a machine choosing would put what they
-// typed in the other one — or delete it, with nothing to bring it back.
+// TestACardOfAMarkTwoCardsCarryIsNotWrittenTo. Both cards are returned by a read,
+// so a caller can request the second one; the tool cannot determine which of the
+// two the caller means, and writing to either could overwrite the wrong card or
+// delete it irrecoverably. The write returns an error.
 func TestACardOfAMarkTwoCardsCarryIsNotSavedTo(t *testing.T) {
 	copied := "---\ntype: deck\n---\n\n" +
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
@@ -345,8 +345,8 @@ func TestACardOfAMarkTwoCardsCarryIsNotSavedTo(t *testing.T) {
 	}
 }
 
-// TestCardAdd_UsesRequestedSection. A person divides a deck, so an
-// agent writing into it says which run of it a card belongs to.
+// TestCardAdd_UsesRequestedSection. A deck is divided into sections, so an agent
+// writing into it names the section a card belongs to.
 func TestCardAdd_UsesRequestedSection(t *testing.T) {
 	session, v := newSession(t, map[string]string{
 		"Animal.md": animalCardModel,
@@ -382,8 +382,8 @@ func TestCardAdd_UsesRequestedSection(t *testing.T) {
 	}
 }
 
-// TestASectionIsMadeThroughTheTools. A person can divide a deck, and the two
-// are served one set, so an agent can divide one too.
+// TestASectionIsMadeThroughTheTools. A deck can be divided into sections, and the
+// tools are served as one set, so an agent can create a section too.
 func TestASectionIsMadeThroughTheTools(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -404,8 +404,8 @@ func TestASectionIsMadeThroughTheTools(t *testing.T) {
 	}
 }
 
-// TestACardIsEditedAndTheCardsBesideItAreLeftAlone. The prose somebody wrote
-// under another card's wikilink is theirs, and no write of ours moves it.
+// TestACardIsEditedAndTheCardsBesideItAreLeftAlone. The prose written under
+// another card's wikilink is user content, and an edit does not move it.
 func TestACardIsEditedAndTheCardsAdjacentItAreLeftAlone(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -430,8 +430,8 @@ func TestACardIsEditedAndTheCardsAdjacentItAreLeftAlone(t *testing.T) {
 	}
 }
 
-// A person asks an agent to take a field off a card. card_edit only ever writes
-// a value, and an empty value is a field standing empty.
+// An agent removes a field from a card. card_edit only writes a value, and an
+// empty value leaves an empty field.
 func TestAFieldIsTakenOffACardAndTheOthersStay(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -489,8 +489,8 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	}
 }
 
-// TestAWriteIsRefusedOverAnEditNobodySaw. Somebody editing their own deck
-// outranks an agent that read it, thought about it and arrived late.
+// TestAWriteIsRefusedOverAnEditNobodySaw. A manual edit of the deck takes
+// precedence over an agent write based on a stale read, which returns an error.
 func TestAWriteIsRefusedOverAnEditNobodySaw(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -538,8 +538,8 @@ func TestTheCardModelsOfAVaultAreListedWithWhatTheyAskFor(t *testing.T) {
 	}
 }
 
-// TestACardModelIsMadeAsACardModelAndNotAsANote. One key says what a note is, and
-// the file carries it from the moment it exists.
+// TestACardModelIsMadeAsACardModelAndNotAsANote. One key identifies a note type,
+// and the file carries it from creation.
 func TestACardModelIsMadeAsACardModelAndNotAsANote(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -632,10 +632,10 @@ func TestRenamingAFieldIsRefusedWhereTheVaultContainsTooManyDecks(t *testing.T) 
 	}
 }
 
-// A deck is made through the tools an agent has, and filled through them.
+// A deck is created and filled through the agent tools.
 //
-// The window and the tools are served one set, so a deck a person can make is
-// a deck an agent can make.
+// The editor and the tools are served as one set, so a deck a user can create is
+// a deck an agent can create.
 func TestADeckIsMadeThroughTheTools(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -694,8 +694,8 @@ func TestACardModelIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 		"values":      []map[string]string{{"field": "Height", "text": "about 45\""}},
 		"fingerprint": deckFingerprint(t, session, "Deck.md"),
 	})
-	// A rename reaches the cards that card model cuts, and a card whose wikilink
-	// lands nowhere is cut by none.
+	// A rename applies to the cards that the card model generates, and a card whose
+	// wikilink matches no card model is generated by none.
 	renameResult := call[struct {
 		Decks []string `json:"decks"`
 		Cards int      `json:"cards"`
@@ -708,8 +708,8 @@ func TestACardModelIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 	}
 }
 
-// The list of card models says what it answers with. A ceiling that is not said is
-// a short list read as the whole vault.
+// The list of card models reports its ceiling. A ceiling that is not reported
+// makes a truncated list look like the whole vault.
 func TestTheListOfCardModelsReturnsItsCeiling(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -756,9 +756,9 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 	}
 }
 
-// The card in front of the person is a tool's answer, so a deck named by whoever synced the vault
-// reaches the agent as data. The host says which card that is with each call, and the tool is offered
-// on the server of the window cards are reviewed in alone.
+// The current card is a tool response, so a deck name set by whoever synced the
+// vault reaches the agent as data. The host sends the current card with each call,
+// and the tool is offered only on the server of the review window.
 func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	session, _ := newSession(t, vault())
 	type current struct {
@@ -783,8 +783,8 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	}
 }
 
-// Every field a card model declares is placed under its own heading in every card it
-// cuts, the first included, so renaming any of them reaches every deck.
+// Every field a card model declares is placed under its own heading in every card
+// it generates, the first included, so renaming any field applies to every deck.
 func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -802,9 +802,9 @@ func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 	}
 }
 
-// roughDeck is a deck as a person leaves one: blank lines doubled where they
-// felt like it, and whitespace at the ends of their lines. None of it is what
-// the format would write, and all of it is theirs.
+// roughDeck is a deck with hand-edited formatting: doubled blank lines and
+// trailing whitespace. None of it is what the format writes, and all of it is
+// preserved.
 const roughDeck = "---\ntype: deck\n---\n\n" +
 	"# Camelids\n\n\n" +
 	"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
@@ -819,8 +819,8 @@ func roughVault() map[string]string {
 	return map[string]string{"Animal.md": animalCardModel, "Animals.md": roughDeck}
 }
 
-// A deck is a file somebody writes by hand beside the tools, so a call that
-// names one card leaves every card it did not name the bytes it was.
+// A deck is a file that users also edit by hand, so a call that names one card
+// leaves every other card byte-for-byte unchanged.
 func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 	for name, args := range map[string]map[string]any{
 		"card_add": {
@@ -861,8 +861,7 @@ func mergeArgs(args, every map[string]any) map[string]any {
 	return out
 }
 
-// A person divides a deck and thinks better of the name, so a section is
-// renamed without the cards under it moving or being rewritten.
+// A section can be renamed without moving or rewriting the cards under it.
 func TestASectionIsRenamedAndTheCardsBelowItStay(t *testing.T) {
 	session, v := newSession(t, vault())
 
@@ -884,8 +883,8 @@ func TestASectionIsRenamedAndTheCardsBelowItStay(t *testing.T) {
 	}
 }
 
-// A section is a name and nothing else, so taking one away takes the name and
-// leaves every card that stood under it where it was.
+// A section is a name and nothing else, so removing one removes the name and
+// leaves every card under it in place.
 func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 	session, v := newSession(t, vault())
 

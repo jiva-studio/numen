@@ -1,4 +1,4 @@
-/** What this screen says of a preset: its goal, its day, and why it asks nothing. */
+/** Interface copy for a preset on this screen: its goal, its day, and why it schedules nothing. */
 // Stryker disable StringLiteral: interface copy
 import { StopReason } from '../../../api/types.js'
 import { formatStopReasonMessage } from '../../../cards/wire/stop'
@@ -14,16 +14,16 @@ import type { Preset, Settings } from './types'
 export const STOPPED = {
   /** The day held none of its cards. */
   nothing: 'nothing due today',
-  /** The budget was spent, and elsewhere for a deck that says this. */
+  /** The budget is spent; a deck reporting the same shows this text. */
   full: 'daily limit reached',
   /** Every review card here is unbegun, and the preset begins none a day. */
   noneToBegin: 'no new cards',
 } as const
 
 /**
- * How much of a deck stands learned, and what is said where no share can be.
+ * How much of a deck is learned, and the text used when no share can be computed.
  *
- * The word stands with the figure.
+ * The word accompanies the figure.
  */
 export const LEARNED = {
   share: (of: number) => `${percent(of)} learned`,
@@ -32,10 +32,10 @@ export const LEARNED = {
 } as const
 
 /**
- * How many cards starting a session on this preset would put in front of a person,
- * which is what its decks still owe today, or why it would put none there.
+ * How many cards starting a session on this preset would present, which is what
+ * its decks still have due today, or the reason it would present none.
  *
- * It is the count the session itself will ask, so it is printed currently.
+ * It is the count the session itself will ask, so it is printed as is.
  */
 export const getLeftWords = (one: Preset): string => {
   if (one.cards > 0) return many(one.cards, 'card')
@@ -60,8 +60,8 @@ export const getStoppedWords = (
   })
 
 /**
- * What the goal of a preset evaluates to, in the few words a person reads at a
- * glance. A day is said as a person reads one, and not as the file writes it.
+ * The goal of a preset in a few words. A day is formatted for reading and not as
+ * the file writes it.
  */
 export const getGoalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
@@ -79,7 +79,7 @@ export const getGoalWords = (settings: Settings, today: string): string => {
   }
 }
 
-/** A day as a person reads one, without the year they are already in. */
+/** A day formatted for reading, without the current year. */
 const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })
 
 const getDayWords = (day: string): string => short.format(parseDay(day))

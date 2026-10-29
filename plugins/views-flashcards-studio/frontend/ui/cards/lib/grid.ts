@@ -16,27 +16,27 @@ export interface PlacedFieldValue extends CardFieldValue {
   /** at its current position among the values, counting from one. */
   readonly at: number
   /**
-   * What tells it from every other value of its tile. Values standing under
-   * one field are told apart by their order under it.
+   * Identifies the value within its tile. Values under one field are
+   * distinguished by their order under it.
    */
   readonly key: string
   /** at its current position among the values the card writes under its own field, from one. */
   readonly index: number
   /**
-   * It is the last box standing for its field, which is where what is wrong
-   * with that field is said, once.
+   * Whether this is the last box of its field, where the field's error is shown
+   * once.
    */
   readonly isLast: boolean
 }
 
 /** One card as a tile of the grid. */
 export interface Tile {
-  /** What tells the card from every other of the deck, as the caller named it. */
+  /** Identifies the card within the deck, as named by the caller. */
   readonly id: string
   /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
   readonly cardModel: string | null
-  /** Its values, in the order its card model asks for them. */
+  /** Its values, in the order its card model declares them. */
   readonly filled: readonly PlacedFieldValue[]
   /** at its current position among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
@@ -62,15 +62,16 @@ export interface Run {
   readonly section: PlacedSection | null
   readonly tiles: readonly Tile[]
   /**
-   * It draws a drop target of its own. A run under a section is landed on by that
-   * section's heading and a run holding cards by the first of them; the cards
-   * before the first section have neither where none of them stands.
+   * Whether the run draws a drop target of its own. A run under a section is
+   * targeted by that section's heading and a run holding cards by the first of
+   * them; the cards before the first section have neither when they hold no card.
    */
   readonly isDropTarget: boolean
   /**
-   * where the run draws none. A card is made at the end of a run, so a run
-   * cards may be put in has one: every section, and the cards before the first
-   * section wherever any of them stands there.
+   * Position of the run's plus among the grid positions, and null when the run
+   * draws none. A card is created at the end of a run, so every run that can
+   * receive cards has one: every section, and the cards before the first section
+   * when they hold a card or the deck has no section.
    */
   readonly plusAt: number | null
 }
@@ -84,11 +85,8 @@ export interface Grid {
 }
 
 /**
- * The tiles of a deck, in the order the cards were handed in, each laid out
- * under the card model it names and standing in the run of the section it is
- * under. A card naming a card model that was not handed in keeps every value it
- * has, and a card naming a section that was not handed in stands before the
- * first section, where every card handed in is drawn and counted.
+ * Inputs shared by every tile: the ids of the sections that exist, and the id of
+ * the card being dragged.
  */
 interface PlacementContext {
   readonly sectioned: ReadonlySet<string | null>
@@ -111,11 +109,9 @@ function createTile(
     return index
   }
 
-  // A value the card model does not name is the person's and stays in the file,
-  // and nothing here draws it or says a word about it. A card whose card model
-  // was not handed in draws no value at all, and says which card model it is
-  // waiting for. A card naming no card model waits for nothing, so everything it
-  // wrote stands as it was written.
+  // A value the card model does not declare stays in the file and is not drawn. A
+  // card whose card model was not supplied draws no value and is not known. A card
+  // naming no card model draws every value it contains.
   const named = card.cardModel !== null
   const counted = getCardFieldValues(card.filled, fields)
     .filter((each) => each.isDeclared || !named)
@@ -147,11 +143,11 @@ export interface DeckGridSource {
 }
 
 /**
- * The tiles of a deck, in the order the cards were handed in, each laid out
- * under the card model it names and standing in the run of the section it is
- * under. A card naming a card model that was not handed in keeps every value it
- * has, and a card naming a section that was not handed in stands before the
- * first section, where every card handed in is drawn and counted.
+ * The grid of a deck: its cards in input order, each laid out under the card
+ * model it names and placed in the run of its section. A card naming an
+ * unsupplied card model keeps every value in the file, and a card naming an
+ * unsupplied section is placed before the first section, so every supplied card
+ * is drawn and counted.
  */
 export function getGrid(deck: DeckGridSource, dragCard: string | null = null): Grid {
   const { cards, sections, cardModels } = deck
@@ -178,9 +174,8 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
     })),
   ]
 
-  // Everything the grid draws is counted off in the order it is drawn in, the
-  // tiles of each run and then the plus that ends it, so a reader is told
-  // where each of them stands among them all.
+  // Every drawn element is numbered in drawing order: the tiles of each run, then
+  // the run's plus, so each element's position among all is known.
   let seat = 0
   const runs: readonly Run[] = renderedTiles.map((run) => {
     const arrangedTiles = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
@@ -196,9 +191,10 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
 }
 
 /**
- * Whether letting a dragged card go there moves it. A card let go where it
- * stands moves nothing: the head of the deck is where the first card standing
- * under no section already is, and the end of a run is where its last card is.
+ * Whether dropping the dragged card at the target moves it. A drop at the
+ * card's own position moves nothing: the head of the deck is the position of the
+ * first card under no section, and the end of a run is the position of its last
+ * card.
  */
 export const isMoved = (
   runs: readonly Run[],

@@ -1,4 +1,4 @@
-/** What the summary of a vault says, in the words it says them by. */
+/** Interface copy of a vault's summary. */
 // Stryker disable StringLiteral: interface copy
 export const VAULTS_WORDS = {
   /** A vault whose count has not arrived because it is still being read. */

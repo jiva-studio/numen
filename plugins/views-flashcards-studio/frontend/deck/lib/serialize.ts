@@ -66,7 +66,7 @@ export const serializeBufferDeckToString = (deck: BufferDeck): string =>
     })),
   })
 
-/** The deck a string stands for. A string holding nothing is a deck of no cards. */
+/** The deck a string represents. An empty string is a deck of no cards. */
 export const deserializeBufferDeckFromString = (body: string): BufferDeck =>
   body ? (JSON.parse(body) as BufferDeck) : NO_DECK
 

@@ -1,10 +1,10 @@
 /**
- * One session: the cards left to ask, where in them a person is, and what has
- * been written into the vault.
+ * One session: the cards remaining, the position within them, and what has been
+ * written into the vault.
  *
- * Apart from the template because these are the rules that decide what a person
- * is asked and what their vault is told, and a rule inside a component is a rule
- * only exercised by looking at the screen.
+ * Separate from the template because these rules decide which cards are presented
+ * and what is written to the vault, and a rule inside a component can only be
+ * exercised through the screen.
  */
 import { getNow } from '../../../../dom'
 import { computed, ref, shallowRef } from 'vue'
@@ -14,7 +14,7 @@ import { RATING_BY_GRADE } from '../../../entities/card'
 import type { Rating } from '../../../../api/types'
 import type { ReviewCard, Grade, Intervals } from '../../../entities/card'
 
-/** What a session asks of the application, and no more of it than that. */
+/** What a session requests of the application, and nothing more. */
 export interface SessionClient {
   /**
    * Deck is one deck, or empty for every deck the vault holds. Preset holds it
@@ -58,11 +58,11 @@ export interface Report {
   readonly skipped: number
 }
 
-/** What a session is built over: the application, and what it says went wrong. */
+/** What a session is built over: the application client, and the error reporter. */
 export interface SessionDeps {
   cards: SessionClient
   reportError(why: unknown): void
-  /** When it is, in milliseconds. How long a card stood there is measured with it. */
+  /** The current time in milliseconds. The time a card is on screen is measured with it. */
   now?(): number
 }
 

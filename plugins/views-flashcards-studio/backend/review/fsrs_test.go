@@ -13,14 +13,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// The four ratings are what a person says about a card, and they order the day
-// it comes round again: the better it came back, the longer it is left.
+// The four ratings order the next due day: the better the rating, the later the
+// card is due.
 func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
-	// A card already spaced, so that the four answers are told apart by what
-	// they do to it and not by the first steps of learning.
+	// A card already in review, so the four ratings are distinguished by their effect
+	// on a scheduled card and not by the first learning steps.
 	learnt := delta.Next(delta.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
 	later := learnt.Due
@@ -55,8 +55,7 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 	}
 }
 
-// An answer leaves a card seen, which is what tells it from one nobody has
-// reached yet.
+// An answer marks a card as reviewed, which distinguishes it from a new card.
 func TestFSRSNext_ReviewedCardIsNotNew(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
@@ -160,8 +159,8 @@ func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 	assertFinitePositive(t, "Endings again", again.Stability)
 }
 
-// A schedule says which scheduler filled it, because the numbers one carries
-// between answers are its own.
+// A schedule records which scheduler produced it, because the values carried
+// between answers are specific to that scheduler.
 func TestASchedulerReturnsWhichItIs(t *testing.T) {
 	got := review.NewFSRS().GetName()
 	if !strings.HasPrefix(got, review.FSRSName+".") {
@@ -178,9 +177,8 @@ func TestASchedulerReturnsWhichItIs(t *testing.T) {
 // libraryNow is the instant the schedules below are answered at.
 var libraryNow = time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
 
-// libraryGaps are how long a review card stood away before it was answered: an
-// answer given at once, one given in the minutes a card is put into memory
-// over, and one given days, months and years later.
+// libraryGaps are the elapsed times before a review card is answered: none, a few
+// minutes (within the learning steps), and days, months and years.
 var libraryGaps = []time.Duration{
 	0,
 	time.Minute,
@@ -197,9 +195,9 @@ var libraryGaps = []time.Duration{
 // libraryRatings are the four answers, in the library's own vocabulary.
 var libraryRatings = []fsrs.Rating{fsrs.Again, fsrs.Hard, fsrs.Good, fsrs.Easy}
 
-// libraryRetentions are the shares of the cards a scheduler may be asked to
-// bring back: the scheduler on its published parameters, and one at each end of
-// what a preset may hold and a few places between.
+// libraryRetentions are the target retentions the scheduler is exercised with: its
+// published parameters, both ends of the range a preset may hold, and a few values
+// in between.
 var libraryRetentions = []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 
 // The scheduler works an interval out from its parameters, and what it works
@@ -237,22 +235,22 @@ func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 	return review.NewFSRSAt(retention), fsrs.NewFSRS(p)
 }
 
-// libraryAgrees asks both about one review card, at every rating and at both
-// endings, and holds the two answers to being the same schedule.
+// libraryAgrees evaluates the scheduler and the library on one review card, at
+// every rating and at both endings, and requires the two results to be the same
+// schedule.
 //
-// What the library is asked about is the review card as it stood away. A card
-// review card answered no later than the answer it already carries stood no time away,
-// and that is the review card the library is asked about — the same arithmetic on
-// the days that actually went by, and what the scheduler makes of such a card
-// review card is written down in the test below.
+// The library is evaluated on the card after clampLastAnswer: a review card whose
+// last answer is not before the evaluation instant has zero elapsed days. The
+// scheduler's handling of such a card is tested in
+// TestFSRSNext_ClampsElapsedDaysToZero.
 func libraryAgrees(
 	t *testing.T, retention float64, delta review.FSRS, engine *fsrs.FSRS,
 	s review.Schedule,
 ) {
 	t.Helper()
-	// A review schedule standing at no stability is floored before it is
-	// read. The library's answer to one is not asked here; its own test
-	// checks what this scheduler makes of it.
+	// A review schedule with zero stability is floored before it is read. The
+	// library's result for it is not compared here; its own test checks the
+	// scheduler's handling.
 	if fsrs.State(s.Phase) == fsrs.Review && s.Stability <= 0 {
 		return
 	}
@@ -269,8 +267,9 @@ func libraryAgrees(
 		again, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Again).Card))
 }
 
-// clampLastAnswer is a review card at the days it stood away. One answered no
-// later than the answer it already carries stood none of them.
+// clampLastAnswer returns the schedule with its last answer limited to the
+// evaluation instant, so a review card answered no earlier than that instant has
+// zero elapsed days.
 func clampLastAnswer(s review.Schedule) review.Schedule {
 	if !s.IsNew() && libraryNow.Before(s.Last) {
 		s.Last = libraryNow
@@ -278,17 +277,16 @@ func clampLastAnswer(s review.Schedule) review.Schedule {
 	return s
 }
 
-// A review card answered no later than the answer it already carries stood no
-// time away, however far ahead of the instant it is asked about that answer is.
+// A review card whose last answer is not before the evaluation instant has zero
+// elapsed days, however far after that instant the answer lies.
 //
-// The days a review card stood away do not go below none, so every such review card
-// is answered the same, and answered as the library answers one whose last
-// answer falls at that instant.
+// Elapsed days are never negative, so every such card yields the result the
+// library gives a card whose last answer falls at that instant.
 func TestFSRSNext_ClampsElapsedDaysToZero(t *testing.T) {
 	delta, engine := makeSchedulers(0)
 
-	// A review card the scheduler has put into review, carrying an answer given
-	// after the instant it is asked about.
+	// A review card in the review phase whose last answer is after the evaluation
+	// instant.
 	ahead := delta.Next(delta.Next(review.Schedule{},
 		libraryNow.AddDate(0, 0, -30), review.Good),
 		libraryNow.AddDate(0, 0, 1), review.Good)
@@ -296,7 +294,7 @@ func TestFSRSNext_ClampsElapsedDaysToZero(t *testing.T) {
 		t.Fatalf("review card phase = %d, want %d", ahead.Phase, fsrs.Review)
 	}
 
-	// The same review card as one that stood no time away.
+	// The same review card with its last answer at the evaluation instant.
 	status := ahead
 	status.Last = libraryNow
 
@@ -313,12 +311,12 @@ func TestFSRSNext_ClampsElapsedDaysToZero(t *testing.T) {
 	}
 }
 
-// libraryWalked is every review card a walk of seven answers reaches, each answer
-// given a gap of its own after the answer already on the review card.
+// libraryWalked returns every review card reached by a walk of seven answers,
+// each answer given after a gap of its own following the answer already on the
+// review card.
 //
-// The walk opens far enough back that its last answer still falls before the
-// instant these review cards are asked about, so every gap the library is handed
-// runs forwards.
+// The walk starts far enough back that its last answer falls before the evaluation
+// instant, so every gap passed to the library is non-negative.
 func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	type step struct {
 		s         review.Schedule
@@ -341,9 +339,9 @@ func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	return out
 }
 
-// libraryWalkOpens is how long before the instant a review card is asked about a
-// walk of seven answers opens. Every gap taken together is more than seven of
-// them, so no answer of the walk falls after that instant.
+// libraryWalkOpens is the interval before the evaluation instant at which a walk
+// of seven answers starts. It is the sum of all gaps, which is at least the sum of
+// any seven, so no answer of the walk falls after that instant.
 var libraryWalkOpens = func() time.Duration {
 	var all time.Duration
 	for _, g := range libraryGaps {
@@ -352,18 +350,18 @@ var libraryWalkOpens = func() time.Duration {
 	return all
 }()
 
-// libraryMade is a grid of review cards standing where a walk does not reach: at
-// the stability a run of lapses wears a card down to and at the stability of a
-// card nothing shifts, at each end of the difficulty scale, and answered after
-// gaps from none to years.
+// libraryMade is a grid of review cards outside the reach of a walk: at the
+// stability a run of lapses reduces a card to and at the stability of an unmodified
+// card, at each end of the difficulty scale, answered after gaps from none to
+// years.
 func libraryMade() []review.Schedule {
 	stabilities := []float64{
 		0, 1e-6, review.LeastStability, 0.01, 0.1, 1, 2.5, 7, 20, 100, 1000, 36500, 1e6,
 	}
 	difficulties := []float64{0, 1, 1.5, 3.2, 5, 7.7, 10}
-	// A review card answered before the answer it already carries stands a
-	// negative number of days away, which a projection reaches: the material it
-	// opens on carries answers whose interval runs past the day it opens.
+	// Negative gaps give a review card whose last answer is after the evaluation
+	// instant. A projection produces such cards: the material it starts from carries
+	// answers whose interval extends past the start day.
 	gaps := []time.Duration{
 		-400 * 24 * time.Hour, -40 * 24 * time.Hour, -24 * time.Hour, -time.Minute,
 		0, time.Minute, 24 * time.Hour, 2 * 24 * time.Hour,
@@ -435,7 +433,7 @@ func asCard(s review.Schedule) fsrs.Card {
 	}
 }
 
-// asSchedule is where the library's card stands, as a schedule.
+// asSchedule converts the library's card to a schedule.
 func asSchedule(c fsrs.Card) review.Schedule {
 	return review.Schedule{
 		Due:        c.Due,

@@ -1,8 +1,8 @@
 /**
- * How wide something is, measured and kept measured.
+ * How wide something is, measured and kept up to date.
  *
- * Apart from the drawing because a grid laid out to the room it has needs the
- * room as a number, and where that number comes from is not the grid's concern.
+ * Separate from the rendering because a grid laid out to its available width
+ * needs the width as a number, and the source of that number is not the grid's concern.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Ref } from 'vue'

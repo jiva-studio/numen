@@ -2,7 +2,7 @@ import type { ErrorCode } from '../../cards/wire/errors'
 import { type DeckProblem, WORDS as words } from '../../cards'
 import { getFileName } from '@numen/plugin-sdk'
 
-/** What the vault said about one file the last time it was read or written. */
+/** What the vault reported about one file the last time it was read or written. */
 export interface VaultAnswer {
   /**
    * What is wrong with the file, in the order the cards were read in. Which

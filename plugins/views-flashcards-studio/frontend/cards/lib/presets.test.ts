@@ -1,9 +1,10 @@
 /**
- * How a preset writes the share of a day's load each day of the week carries.
+ * How a preset writes the share of a day's load that each day of the week
+ * carries.
  *
- * The whole of a day is what a day nothing was said about carries, so the file
- * names only the days standing under it. That is the file's own way of writing
- * it, and nothing that draws a week knows of it.
+ * A day with no entry carries the whole load, so the file names only the days
+ * with a smaller share. That is the file's own format, and nothing that draws a
+ * week depends on it.
  */
 import { describe, expect, it } from 'vitest'
 import { DEFAULTS, getLoadOn, setLoadOn, LOADS, WHOLE_LOAD } from './presets'
@@ -16,9 +17,8 @@ import type { BudgetUnit, Goal, Rule } from './presets'
 import corpus from '../../testdata/presets.json'
 
 /**
- * The key a preset file writes each word under, which is the words the corpus
- * is written in. Every word the window has stands here, so one added to it has
- * to be given its key before this compiles.
+ * The key a preset file writes each goal word under. Every goal the window has
+ * is listed here, so a goal added to it requires a key before this compiles.
  */
 const GOAL_KEYS: Record<Goal, string> = {
   minutes: 'minutes_a_day',

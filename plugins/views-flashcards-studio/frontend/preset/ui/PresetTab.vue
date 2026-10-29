@@ -82,10 +82,10 @@ function onRefresh() {
 }
 
 /*
- * The column the tab is read in, centred in whatever room the pane has. Its
- * two edges are the lines this tab is read against: a block that draws a box
- * puts the box's edge on them, and a block that draws none puts its text
- * there. Nothing in the column is inset from them, and nothing is pulled out.
+ * The column the tab is read in, centred in the available pane width. Its two
+ * edges are the lines this tab aligns to: a block that draws a box puts the
+ * box's edge on them, and a block that draws none puts its text there. Nothing
+ * in the column is inset from them, and nothing extends past them.
  */
 .preset__column {
   display: flex;

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * One card of a deck, as a tile: a strip it is dragged by and removed from, and
- * under it the card's values, each in a box that is always open to typing.
+ * under it the card's values, each in a box that is always editable.
  *
- * Every field of the card model is placed under its own name and holds as many lines
- * as a person writes. What is wrong with the card is said under its strip, and
- * what is wrong with one value is said under that value.
+ * Every field of the card model is placed under its own name and holds as many
+ * lines as the card writes. Problems with the card are shown under its strip, and
+ * problems with one value are shown under that value.
  */
 import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
@@ -20,7 +20,7 @@ const props = withDefaults(
   defineProps<{
     /** The card, laid out against the card model that cuts it. */
     tile: Tile
-    /** What is wrong with this card, said under its heading. */
+    /** Problems with this card, shown under its heading. */
     wrong?: readonly string[]
     /** What is wrong with each of its values, under the field the value is in. */
     wrongUnder?: ReadonlyMap<string, readonly string[]>
@@ -35,7 +35,7 @@ const emit = defineEmits<{
   /** The card taken up by the pointer, and let go again. */
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void
-  /** The card asked to go one place along the order. */
+  /** The card requested to move one place along the order. */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
 }>()
 
@@ -48,12 +48,12 @@ const uid = useId()
  */
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
-/** What the strip says cut the card, and where nothing cut it, that nothing did. */
+/** The card model name shown on the strip, or the unknown text when the card has none. */
 const cardModelTitle = computed(() => props.tile.cardModel ?? props.words.unknown(null))
 
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
-/** What is wrong with one value, said once, under the last box standing for its field. */
+/** Problems with one value, shown once under the last box of its field. */
 const getProblems = (value: PlacedFieldValue): readonly string[] =>
   value.isLast ? (props.wrongUnder.get(value.field) ?? []) : []
 </script>
@@ -164,7 +164,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
   padding-inline: var(--box-pad-inline);
 }
 
-/* A card holding nothing says so in the middle of the room it is given. */
+/* A card with no values displays its empty message centered in the card. */
 .card__silence {
   margin: auto;
   padding-inline: var(--box-pad-inline);

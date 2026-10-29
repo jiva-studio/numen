@@ -12,7 +12,8 @@ import (
 // Day is where one day of review gives way to the next.
 type Day = review.Day
 
-// owes, what to ask next, and what an answer is written to.
+// Scenarios is the set of use cases the plugin exposes: what is due, what to ask
+// next, and where an answer is written.
 type Scenarios struct {
 	ReviewCards   ListReviewCards
 	AssignCardIDs AssignCardIDs
@@ -85,8 +86,7 @@ func NewScenarios(cfg Config) Scenarios {
 	// up.
 	presets.Problems = cfg.Problems
 
-	// Each card is worked out at the share of the cards its own preset asks
-	// for, which is what says which preset a review card is placed under.
+	// Each card is scheduled at the retention target of its own preset.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
 	var createScheduler func(retention float64) review.Scheduler
 	if cfg.Scheduler != nil {

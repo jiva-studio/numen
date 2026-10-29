@@ -39,7 +39,7 @@ const budget = (fields: Partial<Budget> = {}): Budget => ({
 /** A preset steered by how long its day runs, which is the ordinary one. */
 const byMinutes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
-/** One steered by what it asks of memory, where the counts are what close it. */
+/** A preset steered by counts of cards, where the counts close the day. */
 const byCounts: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const preset = (fields: Partial<Preset> = {}): Preset => ({
@@ -61,7 +61,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   ...fields,
 })
 
-/** One preset of a vault as the count hands it over. */
+/** One preset of a vault as returned by the count. */
 const presetDue = (fields: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   preset: 'Sanskrit.md',
   title: 'Sanskrit',
@@ -123,15 +123,15 @@ const createPresets = (
   },
 })
 
-// Why a preset schedules nothing is the core's verdict, and the window says it
-// in words. Two of the reasons name a day: the day the goal aimed at, which the
-// settings carry, and the day of the week the person is standing in.
+// Why a preset schedules nothing is the core's verdict, rendered here in words.
+// Two of the reasons name a day: the day the goal targets, which the settings
+// carry, and the current day of the week.
 describe('why a preset schedules nothing, in words', () => {
   const on = '2026-09-05'
 
   it('says nothing at all of a preset that schedules', () => {
     expect(getStoppedWords(StopReason.NOTHING, settings(), on)).toBe('')
-    // A build that said nothing about it is read as scheduling.
+    // A build that reports nothing is read as scheduling.
     expect(getStoppedWords(StopReason.UNSPECIFIED, settings(), on)).toBe('')
   })
 
@@ -147,7 +147,7 @@ describe('why a preset schedules nothing, in words', () => {
     expect(getStoppedWords(StopReason.PAST_DAY, datePreset, on)).toMatch(
       /^target date August.*passed$/,
     )
-    // A preset counted with no settings on hand still says what stopped it.
+    // A preset counted without settings still reports what stopped it.
     expect(getStoppedWords(StopReason.PAST_DAY, null, on)).toBe('target date passed')
   })
 
@@ -202,9 +202,9 @@ describe('what a goal evaluates to in words', () => {
   })
 })
 
-// A budget the goal does not name stands as the person left it and binds
-// nothing. Weighing the day against one of those is measuring against a wall
-// that is not there.
+// A budget the goal does not name keeps its configured value and does not bind.
+// Weighing the day against such a budget would measure against a limit that does
+// not apply.
 describe('how far through its day a preset remains', () => {
   // The user's defaults keep ten new cards a day while being steered by twenty
   // minutes, which is nearer sixty cards. Ten was never a wall.
@@ -233,9 +233,9 @@ describe('how far through its day a preset remains', () => {
     expect(getSpentShare(one)).toBeCloseTo(0.2)
   })
 
-  // Two budgets closing one day are two walls, and a day stands as far along as
-  // the nearer of them. Answering every new card the day holds is the whole of
-  // what the day could give on that side.
+  // Two budgets that close one day both limit it, and the day's progress is that of
+  // the budget reached first. Answering every new card the day holds exhausts the
+  // day on that side.
   it('remains at the fuller of two counts and not at their sum', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 200, minutes: 20 }),
@@ -282,15 +282,15 @@ describe('how far through its day a preset remains', () => {
 })
 
 describe('what starting a session on a preset would ask', () => {
-  // The count is what the session will put in front of a person, so it is
-  // printed currently, under every goal.
+  // The count is what a session will present, so it is printed as is, under every
+  // goal.
   it('is the count itself, whatever budget the preset keeps', () => {
     expect(getLeftWords(preset({ cards: 34 }))).toBe('34 cards')
     expect(getLeftWords(preset({ cards: 34, budget: budget({ minutes: 0 }) }))).toBe('34 cards')
     expect(getLeftWords(preset({ cards: 1 }))).toBe('1 card')
   })
 
-  // A tile with nothing to offer says why, as the deck rows under it do.
+  // A tile with nothing to offer states the reason, as the deck rows below it do.
   it('says the day is full where the budget is what left it nothing', () => {
     expect(getLeftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('daily limit reached')
   })
@@ -465,8 +465,8 @@ describe('which preset schedules each deck', () => {
       }),
     })
 
-    // A preset that schedules nothing is asked for nothing, so the count owes
-    // no card of its decks and the row says why instead.
+    // A preset that schedules nothing is asked for no cards, so the count holds no
+    // card of its decks and the row states the reason.
     await one.read(vault([{ deck: 'decks/Words.md', due: 0, new: 0 }]), '2026-09-05')
 
     expect(one.presets.value[0]).toMatchObject({
@@ -534,8 +534,8 @@ describe('which preset schedules each deck', () => {
     expect(one.byDeck.value.size).toBe(1)
   })
 
-  // A preset no deck answers for has no settings on hand, so the count's own
-  // verdict is the only thing that can say it schedules nothing.
+  // A preset no deck references has no settings, so the count's own verdict is the
+  // only source of the reason it schedules nothing.
   it('says why a preset no deck points at schedules nothing', async () => {
     const one = useVaultPresets({ presets: createPresets({}) })
 
@@ -563,8 +563,8 @@ describe('which preset schedules each deck', () => {
     })
   })
 
-  // An empty deck owes nothing, so no deck answers for the preset it names and
-  // the count is the only place that row can come from.
+  // An empty deck has no cards due, so no deck references the preset it names and
+  // the count is the only source of that row.
   it('gives a preset whose only deck is empty a row of its own', async () => {
     const one = useVaultPresets({ presets: createPresets({}) })
 
@@ -670,8 +670,8 @@ describe('which preset schedules each deck', () => {
     expect(one.presets.value[0]?.wrong).toBe('')
   })
 
-  // What was wrong in the file is the person's to settle in the editor, and
-  // this window is where they find out there is anything to settle.
+  // Errors in the file are resolved in the editor, and this window reports that
+  // there is something to resolve.
   it('carries what was wrong in a preset it did read, once for all its decks', async () => {
     const one = useVaultPresets({
       presets: {
@@ -718,8 +718,8 @@ describe('which preset schedules each deck', () => {
     expect(one.presets.value[0]?.budget).toStrictEqual({ new: 7, reviews: 33, minutes: 12 })
   })
 
-  // A person who moves on while the presets of the vault they left are still
-  // being asked is handed nothing of that vault.
+  // A user who navigates away while the presets of the previous vault are still
+  // being requested receives nothing from that vault.
   it('holds no preset of a vault left while its presets were being requested', async () => {
     let answer = () => {}
     const request = new Promise<void>((then) => {

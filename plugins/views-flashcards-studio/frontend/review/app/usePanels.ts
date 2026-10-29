@@ -1,9 +1,9 @@
 /**
- * The two panels standing beside the card, and which of the three the window is
- * showing.
+ * The two panels beside the card, and which of the three views the window
+ * displays.
  *
- * One thing is in the window at a time, so one thing says which, and a panel
- * coming in is the other one going out.
+ * One view is displayed at a time, so a single state holds which one, and
+ * opening a panel closes the other.
  */
 import { computed, ref } from 'vue'
 
@@ -21,13 +21,13 @@ import type { ReviewCard } from '../entities/card'
 export interface PanelsDeps {
   /** The agent of the window, which every question about a card goes to. */
   readonly agent: AgentPort
-  /** The card in front of the person, and nothing between cards. */
+  /** The current card, and null between cards. */
   readonly card: () => ReviewCard | null
-  /** Why nothing can be asked here, empty while something can. */
+  /** The reason nothing can be asked here, empty while a question can be asked. */
   readonly unreachable: () => string
   /** The vault the session is on. */
   readonly vault: () => string
-  /** Where the window says what a person has to know. */
+  /** Shows a message to the user. */
   readonly showNotice: (text: string) => void
   /** The wikilinks of a text, as the core reads them. */
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
@@ -35,12 +35,12 @@ export interface PanelsDeps {
 
 export const usePanels = (deps: PanelsDeps) => {
   /**
-   * thing is in the window at a time, so one thing says which, and a panel coming
-   * in is the other one going out.
+   * Which view the window displays. One view is displayed at a time, so a single
+   * state holds which one, and opening a panel closes the other.
    */
   const showing = ref<'reading' | 'here' | 'asking'>('here')
 
-  /** The same thing in the words the strip stands the three in. */
+  /** The same state expressed in the positions the strip uses for the three views. */
   const panelPlace = computed<PanelPlace>(() => {
     if (showing.value === 'reading') return 'before'
     if (showing.value === 'asking') return 'after'
@@ -48,8 +48,8 @@ export const usePanels = (deps: PanelsDeps) => {
   })
 
   /**
-   * The strip taken somewhere by a hand. A panel reached this way is opened, not
-   * merely shown: what is in it is fetched and started when it is asked for.
+   * Moves the strip to a position. A panel opened this way is opened and not
+   * only displayed: its content is fetched and started when the panel is opened.
    */
   const moveTo = (where: PanelPlace) => {
     if (where === 'before') void notesPanel.openPanel()
@@ -86,11 +86,10 @@ export const usePanels = (deps: PanelsDeps) => {
   })
 
   /**
-   * The two ways in, each of them also the way out: a person who brought a panel
-   * in with a key or a control takes it away with the same one.
+   * The two entry points, each also the way out: a panel opened with a key or a
+   * control is closed with the same one.
    *
-   * A link pressed in the card names the note to open on and brings the reading
-   * in: the press was about that note.
+   * A link pressed in the card opens the reading panel on the linked note.
    */
   const toggleNotes = (note = '') => {
     if (note === '' && showing.value === 'reading') notesPanel.closePanel()

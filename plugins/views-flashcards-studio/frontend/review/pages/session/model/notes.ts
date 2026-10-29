@@ -1,14 +1,13 @@
 /**
- * The panel the deck's notes are read in: what is in it, and what it is asked
- * for.
+ * The panel in which the deck's notes are read: its content and its requests.
  *
- * Everything the panel is, is here. What draws it reads this and decides
+ * All of the panel's state is here. The view renders this state and decides
  * nothing.
  *
- * What is read belongs to the deck and not to the card, because a link is
- * written in a file and the file is the deck. So it is asked for once a deck
- * and kept while the cards of that deck go by; a session over a whole vault
- * walks several decks, and each is asked for as it comes round.
+ * The notes belong to the deck and not to the card, because a link is written
+ * in a file and the file is the deck. They are therefore requested once per deck
+ * and kept while the cards of that deck are shown; a session over a whole vault
+ * walks several decks, and each is requested as it is reached.
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { TextLink } from '@numen/plugin-sdk'
@@ -17,12 +16,12 @@ import type { LinkPiece } from '@numen/ui'
 import { WORDS as words } from '../lib/notesWords'
 import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 
-/** What the panel asks of the window it is drawn in. */
+/** What the panel requires from the host window. */
 export interface NotesPanelDeps {
   readonly open: () => boolean
   /**
-   * The panel asked for, or put away. The window can only be showing one thing,
-   * so it is the window that holds which, and every panel moves that one thing.
+   * Opens or closes the panel. The window shows one panel at a time, so the
+   * window holds which panel is open, and every panel changes that one state.
    */
   readonly showPanel: (open: boolean) => void
   /** The vault the session is on. */
@@ -30,7 +29,7 @@ export interface NotesPanelDeps {
   readonly deck: () => string
   /** What the deck is joined to. */
   readonly getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>
-  /** Where the window says what a person has to know. */
+  /** Shows a message to the user. */
   readonly showNotice: (message: string) => void
   /** The wikilinks of a text, as the core reads them. */
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>

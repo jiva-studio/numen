@@ -1,12 +1,13 @@
 /**
- * What every vault the installation holds evaluates to today.
+ * The due counts of every vault the installation holds today.
  *
- * Apart from the template because counting is asked for from three places — the
- * window opening, a session ending, and a vault moving underneath it — and one
- * count runs at a time however many ask.
+ * Kept outside the template because counting starts from three places — the
+ * window opening, a session ending, and a vault changing — and one count runs
+ * at a time however many request it.
  *
- * The vaults arrive first, by name and by where they are, and each count
- * follows on its own. A vault whose count has not arrived relies on the list
+ * The vaults arrive first, with their name and location, and each count
+ * follows separately. A vault whose count has not arrived is displayed from
+ * the list alone, without a count.
  */
 import { ref, shallowRef } from 'vue'
 import type { StopReason } from '../../../../api/types.js'

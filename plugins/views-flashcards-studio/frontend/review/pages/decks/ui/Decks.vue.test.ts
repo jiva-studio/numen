@@ -117,7 +117,7 @@ describe('the decks of a vault', () => {
 })
 
 describe('a deck with nothing waiting', () => {
-  /** A vault whose one deck holds these cards and owes this much of them. */
+  /** A vault whose one deck holds these cards and has this many of them due. */
   const createVault = (
     reviewCards: number,
     due: number,
@@ -149,8 +149,8 @@ describe('a deck with nothing waiting', () => {
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
-  // The budget was spent elsewhere under this preset, so this deck is asked
-  // nothing. That is the preset's reason, the way a paused one's is.
+  // Other decks under this preset spent the budget, so this deck has no cards to
+  // ask. That is the preset's reason, like a paused preset's.
   it('says the preset is full where its budget is what left the deck nothing', () => {
     const one = mountDecks([preset({ cards: 0, answered: 55, took: 20 })], createVault(20, 0, 0))
 
@@ -158,8 +158,8 @@ describe('a deck with nothing waiting', () => {
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
-  // Every review card here is one nobody has begun and the preset begins none a
-  // day, so no next day picks any of them up. The preset is not stopped.
+  // Every review card here is unbegun and the preset begins none per day, so no
+  // later day picks any of them up. The preset is not stopped.
   it('says nothing here can be begun where the preset begins none a day', () => {
     const one = mountDecks(
       [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],

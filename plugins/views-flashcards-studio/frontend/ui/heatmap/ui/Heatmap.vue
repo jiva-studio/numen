@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { getCurrentDate, measureRect } from '../../../dom'
 /**
- * What a person did on each day and what is still coming to them, as a grid of
- * weeks.
+ * Per-day review activity and the cards due on coming days, as a grid of weeks.
  *
- * A column is a week: the weeks behind run up to the one they are in, and a few
- * of what is still to come stand after it. How many weeks are drawn is how many
- * fit the room there is.
+ * A column is a week: the weeks before the current one run up to it, and a few
+ * coming weeks follow it. How many weeks are drawn is how many fit the available
+ * width.
  *
- * Each cell carries `data-heatmap-day`, the day it stands for.
+ * Each cell carries `data-heatmap-day`, the day it represents.
  */
 import { computed, ref, useTemplateRef } from 'vue'
 
@@ -28,7 +27,7 @@ const props = withDefaults(
     did: ReadonlyMap<string, Tally>
     /** How much falls on each day still to come, by the day it falls on. */
     due?: ReadonlyMap<string, number>
-    /** What a day's account is called, in the person's own language. */
+    /** The labels of a day's summary, in the user's language. */
     words: Words
     /** When it is. */
     now?: Date
@@ -52,12 +51,12 @@ const height = computed(() => getGridHeight(grid.value))
 
 const cells = computed(() => getCells(grid.value, visibleDays.value))
 
-/** The day a person is pointing at, and the cell on the page it is drawn in. */
+/** The day under the pointer, and the box of the cell it is drawn in. */
 const pointed = ref<{ day: Day; at: Box } | null>(null)
 
 /* -------------------------------- Handlers -------------------------------- */
 const onSetPointed = (day: Day, press: MouseEvent) => {
-  const cell = measureRect((press.target as SVGRectElement))
+  const cell = measureRect(press.target as SVGRectElement)
   pointed.value = {
     day,
     at: { x: cell.x, y: cell.y, width: cell.width, height: cell.height },
@@ -113,7 +112,7 @@ const onSetPointed = (day: Day, press: MouseEvent) => {
   overflow: visible;
 }
 
-/* A day nobody answered on is the ground the grid is drawn on, and a day
+/* A day with no answers has the neutral fill of the grid, and a day
    answered on is the accent, at the weight of what was done. */
 .heatmap__day {
   fill: var(--numen-raised);
@@ -161,7 +160,7 @@ const onSetPointed = (day: Day, press: MouseEvent) => {
   stroke: none;
 }
 
-/* Today is where a person's eye goes first, so it is ringed whatever it holds. */
+/* Today is ringed whatever it holds. */
 .heatmap__day[data-today] {
   stroke: var(--numen-ink);
   stroke-width: 1.5;

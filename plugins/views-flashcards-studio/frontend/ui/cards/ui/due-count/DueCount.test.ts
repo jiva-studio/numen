@@ -1,6 +1,6 @@
 /**
- * The pill saying how many cards are due, and what it says while the figure is
- * still on its way.
+ * The pill showing how many cards are due, and what it shows while the figure
+ * is pending.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'

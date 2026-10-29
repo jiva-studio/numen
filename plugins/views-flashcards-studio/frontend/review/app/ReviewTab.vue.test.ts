@@ -123,7 +123,7 @@ afterEach(() => {
   started.splice(0)
 })
 
-/** One keystroke, as the window hands it to the review in front. */
+/** One keystroke, as the window delivers it to the active review. */
 const press = async (state: Review, key: string) => {
   state.onKeyDown(new KeyboardEvent('keydown', { key, cancelable: true }))
   await flushPromises()

@@ -1,7 +1,7 @@
 /**
- * The few icons a card model and a deck are drawn with, declared once.
+ * The few icons that a card model and a deck are rendered with, declared once.
  *
- * Each is drawn on twelve units and takes the ink of whatever holds it.
+ * Each is drawn on a twelve-unit grid and takes the color of its container.
  */
 
 /** What an icon shows. */

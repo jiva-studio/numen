@@ -1,8 +1,8 @@
 /**
- * The seven days, as they are drawn and as they are named.
+ * The seven days, with their display and full names.
  *
- * Pure: which day the week is turned to start on is arithmetic over a list,
- * and the names are the caller's to hand in.
+ * Pure: the rotation to a chosen first day of the week is arithmetic over a
+ * list, and the names are supplied by the caller.
  */
 
 /** What a day is called. */
@@ -11,11 +11,11 @@ export interface DayName {
   readonly id: string
   /** What is drawn on the chip: a letter or two. */
   readonly short: string
-  /** What the day is called, which is what a screen reader says. */
+  /** The full name of the day, which is what a screen reader announces. */
   readonly long: string
 }
 
-/** One day as the row draws it: what it is called, and how full it stands. */
+/** One day as the row renders it: its name, and its fill level. */
 export interface Day extends DayName {
   /** How full the chip is drawn, from nothing to the whole of it. */
   readonly level: number
@@ -43,19 +43,20 @@ export const rotateWeek = <One extends DayName>(
 }
 
 /**
- * How full a chip is drawn, which is the level brought inside nothing and the
- * whole of it. A level outside that is none a chip can show, and the figure
- * said and the colour drawn are this one number.
+ * The fill of a chip, which is the level clamped to the range from empty to
+ * full. A level outside that range cannot be displayed, and the figure shown and
+ * the colour drawn are derived from this one number.
  */
 export const getFill = (level: number): number => Math.min(Math.max(level, 0), 1)
 
-/** How full a chip stands, written out as a share of the whole. */
+/** The fill of a chip, as a percentage string. */
 export const getFillPercent = (level: number): string => `${Math.round(getFill(level) * 100)}%`
 
 /**
- * not name is added at its current position among them, so a day is never asked to
- * choose without its own level among the choices. No level in force leaves the
- * offer as it is.
+ * getMenuLevels returns the levels offered in a menu. A level in force that the
+ * levels do not contain is added at its sorted position among them, so a day
+ * always has its own level among the choices. When no level is in force the
+ * levels are returned unchanged.
  */
 export const getMenuLevels = (
   levels: readonly number[],

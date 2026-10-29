@@ -1,5 +1,5 @@
 /**
- * Which settings a goal schedules by, and the one word that says their shape.
+ * Which settings a goal schedules by, and the one word that names their shape.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -19,7 +19,7 @@ const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS
 describe('the settings a goal schedules by', () => {
   // A goal names one budget, and the budgets of the other two take no part in
   // it: they are not drawn, so nothing on the screen offers to cut the day
-  // short by a measure the person did not name.
+  // short by a measure the user did not choose.
   it('is the minutes alone under a goal of minutes', () => {
     const goalFields = getGoalFields('minutes', DEFAULTS.learned)
     expect(goalFields).toContain('minutesADay')
@@ -61,9 +61,9 @@ describe('the settings a goal schedules by', () => {
     expect(getGoalFields('date', DEFAULTS.learned)).not.toContain('counts')
   })
 
-  // The share of a day that goes to the debt says what a day is spent on and
-  // closes nothing. A goal of a date carries the whole material by its own
-  // reckoning and has no part in it.
+  // The share of a day that goes to the debt decides what a day is spent on and
+  // closes nothing. A goal of a date covers the whole material by its own
+  // computation and ignores it.
   it('draws the backlog share under the two goals that keep a budget of a day', () => {
     expect(getGoalFields('minutes', DEFAULTS.learned)).toContain('backlog')
     expect(getGoalFields('retention', DEFAULTS.learned)).toContain('backlog')
@@ -107,8 +107,8 @@ describe('the rule for what is learned', () => {
     }
   })
 
-  // A curve is asked again where a setting it is drawn from moves, and both of
-  // these move it: what is learned is counted off the run.
+  // A curve is recomputed when a setting it is drawn from changes, and both of
+  // these change it: what counts as learned is computed from the run.
   it('gives the curve its shape, both the rule and the days it reads', () => {
     const one = settings({ learned: 'interval', interval: 21 })
     expect(getShapeKey(one)).not.toBe(getShapeKey({ ...one, interval: 30 }))

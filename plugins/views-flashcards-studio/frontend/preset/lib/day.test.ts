@@ -1,10 +1,11 @@
 /**
- * The day a preset counts from is the review day the window was told.
+ * The day a preset counts from is the review day the window was given.
  *
- * A day of review begins at the hour the settings name, so between midnight and
- * that hour the calendar has moved on and the review day has not. A tab
- * counting from the calendar says one number and the answer that lands says
- * another, and a date typed or written out is a day off the day the core reads.
+ * A day of review begins at the hour set in the settings, so between midnight
+ * and that hour the calendar date has advanced and the review day has not. A
+ * tab counting from the calendar date would show a different number from the
+ * result that arrives, and a typed or formatted date would be one day away from
+ * the day the core reads.
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '../../api/types.js'
@@ -94,8 +95,8 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
       content.push(payload)
       return asValue({ at: 'two' })
     },
-    // A curve nobody answers leaves the sketch standing, which is what the
-    // arithmetic here is read off.
+    // A curve that is never answered keeps the local estimate, which is what the
+    // arithmetic here is read from.
     curve: async () => answer ?? new Promise<Curve>(() => {}),
   }
   const kind = usePresetTab({
@@ -110,9 +111,10 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   return { state, written: content }
 }
 
-// One in the morning: the calendar says the fifth, and the review day that
-// began at four on the fourth is the day the window was told. The core counts
-// eight days to the twelfth from that day, and the calendar would count seven.
+// One in the morning: the calendar date is the fifth, and the review day that
+// began at four on the fourth is the day the window was given. The core counts
+// eight days from that day to the twelfth, and the calendar date would give
+// seven.
 describe('a goal of a date', () => {
   it('counts the days to it from the review day', async () => {
     const { state } = await openPresetTab({ goal: 'date', byDate: BY })

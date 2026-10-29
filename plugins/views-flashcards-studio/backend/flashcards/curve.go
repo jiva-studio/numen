@@ -19,7 +19,7 @@ type Point = projection.Point
 // Points is how many places a curve is worked out at.
 const Points = projection.Points
 
-// Ahead is how many days a projection runs when it is not told.
+// Ahead is how many days a projection runs when no length is given.
 const Ahead = projection.Ahead
 
 // MostAhead is how far ahead a goal of a date is projected.
@@ -35,8 +35,8 @@ var OutsideGrid = projection.OutsideGrid
 type ProjectCurve struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	// presets says which preset each deck is scheduled by. A build holding no
-	// links projects every deck of the vault.
+	// presets identifies which preset schedules each deck. A build without links
+	// projects every deck of the vault.
 	presets Presets
 	day     review.Day
 	now     ports.Clock
@@ -103,8 +103,8 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return Curve{}, err
 	}
-	// A deck is asked once which preset schedules it, however many review cards
-	// it holds, and a preset note is opened once however many decks name it.
+	// A deck is queried once for the preset that schedules it, however many review
+	// cards it holds, and a preset note is opened once however many decks name it.
 	reads := u.presets.OpenReads()
 	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
@@ -130,9 +130,9 @@ func (u ProjectCurve) Execute(
 		cost = review.DefaultCost
 	}
 	now := u.now()
-	// The projection is run by the scheduler this preset asks for, which is the
-	// one its cards are scheduled by, and it opens on the day a person is
-	// already partway through.
+	// The projection runs with the scheduler this preset requests, which is the one
+	// that schedules its cards, and it starts on the current day with the answers
+	// already given.
 	run := projection.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
@@ -152,7 +152,7 @@ func (u ProjectCurve) Execute(
 
 // scheduledCards is the review cards a preset schedules.
 type scheduledCards struct {
-	// decks says for each deck asked whether the preset schedules it.
+	// decks records for each requested deck whether the preset schedules it.
 	decks map[string]bool
 	// schedules is the schedule of each review card that has been answered.
 	schedules map[review.ReviewCardID]review.Schedule
@@ -233,8 +233,8 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 	return out, nil
 }
 
-// countPointingDecks is how many of these decks name the preset at path. Asked
-// is what has already been worked out from the cards standing.
+// countPointingDecks returns how many of these decks name the preset at path.
+// requested holds what has already been determined from the cards.
 func (u ProjectCurve) countPointingDecks(
 	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
 	decks []string, requested map[string]bool,
@@ -256,15 +256,15 @@ func (u ProjectCurve) countPointingDecks(
 	return out, nil
 }
 
-// computePlaces works out every place of a grid, each of them alongside the others.
+// computePlaces computes every place of a grid concurrently.
 //
-// No place reads another's answer: a run is given the schedules the answers
-// have already produced, reads them and nothing else, and writes only what it
-// returns. Each answer is put down at the place it belongs to.
+// No place reads another's result: a run receives the schedules already produced
+// from the answers, reads only those, and writes only what it returns. Each
+// result is stored at the place it belongs to.
 //
-// A place that fails is left to the places beside it, and the error handed back
-// is the earliest place's. A request nobody is waiting for is ended by the run
-// of each place reading the context it was given.
+// A failing place does not stop the others, and the error returned is that of the
+// earliest failing place. A request with no remaining waiter ends because each
+// place's run reads the context it was given.
 func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {
 	failed := make([]error, count)
 	room := make(chan struct{}, max(1, u.Cores))

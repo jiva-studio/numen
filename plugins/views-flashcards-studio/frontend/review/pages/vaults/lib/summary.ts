@@ -1,5 +1,5 @@
 /**
- * What the summary beside a vault says: how many cards it has waiting, or why
+ * What the summary next to a vault states: how many cards it has due, or why
  * there is no number.
  */
 import type { VaultCardsDue } from '../../../entities/vault'

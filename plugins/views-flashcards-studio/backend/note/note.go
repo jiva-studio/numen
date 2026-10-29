@@ -17,7 +17,7 @@ import (
 type (
 	// ReadOutcome is how a read ended.
 	ReadOutcome = edit.ReadOutcome
-	// Contents is one note as a read hands it over.
+	// Contents is one note as returned by a read.
 	Contents = edit.Contents
 	// Levels brings the named notes up to date in the index.
 	Levels = edit.Levels
@@ -44,8 +44,8 @@ var (
 	ErrBodyUnwritable = edit.ErrBodyUnwritable
 )
 
-// WrapUnlevelled is what bringing the index up to date came to, said so that a caller can tell it
-// from a write that never landed.
+// WrapUnlevelled wraps err as a failure to bring the index up to date after a
+// write, so that a caller can tell it from a write that never landed.
 func WrapUnlevelled(err error, paths ...string) error { return edit.WrapUnlevelled(err, paths...) }
 
 // CheckSize holds a file to the most it may be. Zero holds it to nothing.
@@ -98,7 +98,7 @@ func (f files) Write(ctx context.Context, path string, content []byte, stat doma
 
 func (f files) Lock(ctx context.Context) (func(), error) { return f.writers.Lock(ctx, f.vault) }
 
-// Read hands over the prose of one note.
+// Read returns the prose of one note.
 type Read struct {
 	readers ports.VaultReaders
 }
@@ -181,7 +181,7 @@ type ShowLinks struct {
 	links ports.LinkQueries
 }
 
-// NewShowLinks is what both halves are asked of.
+// NewShowLinks returns a ShowLinks that serves both halves from links.
 func NewShowLinks(links ports.LinkQueries) ShowLinks { return ShowLinks{links: links} }
 
 // Execute returns both halves of what the note is joined to.

@@ -12,7 +12,7 @@ import {
   createBufferCardModel,
 } from '../lib/card-model'
 
-/** What the vault said about one file the last time it was read or written. */
+/** What the vault reported about one file the last time it was read or written. */
 export interface VaultAnswer {
   readonly problems: readonly DeckProblem[]
   readonly reading: ErrorCode | null

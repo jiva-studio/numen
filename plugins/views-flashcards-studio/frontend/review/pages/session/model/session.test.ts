@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useReviewSession } from './session'
 import type { SessionClient, SessionStart } from './session'
 
-/** One card as the application hands it over. */
+/** One card as the application returns it. */
 const createCard = (cardId: string) => ({
   deck: 'decks/Words.md',
   section: '',
@@ -25,9 +25,9 @@ const opening = (...cards: string[]): SessionStart => ({
 })
 
 /**
- * createSession is the application as a test holds it: what it was asked, and
- * what it answers. An answer that never settles is what a slow disk looks like
- * from here, so a second press arrives while the first is still being written.
+ * createSession is the application as a test models it: the requests it
+ * received and the answers it returns. An answer that never resolves simulates
+ * a slow disk, so a second press arrives while the first is still being written.
  */
 function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
   const asks: { what: string; request: unknown }[] = []
@@ -57,7 +57,7 @@ function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?
 
 // A session is opened over a deck, over the whole vault, or over one preset.
 // The empty path is a preset of its own — the one scheduling the decks that
-// name none — so it is told apart from naming no preset at all.
+// name none — so it is distinct from naming no preset at all.
 describe('what a session is opened over', () => {
   it('names no preset where it is opened over decks', async () => {
     const { one, asks } = createSession()
@@ -221,7 +221,7 @@ describe('a session', () => {
     refuses = true
     await one.takeBack()
 
-    // The vault holds the answer; the window may not pretend otherwise.
+    // The vault holds the answer, so the window keeps it as recorded.
     expect(errors).toHaveLength(1)
     expect(one.answers.value).toHaveLength(1)
     expect(one.cardIndex.value).toBe(1)
@@ -334,7 +334,7 @@ describe('an answer taken back', () => {
     expect(one.answers.value).toEqual(['011'])
   })
 
-  // The answer is taken out of the vault once, whatever a second press says.
+  // The answer is withdrawn from the vault once, regardless of a second press.
   it('is taken back once, whatever a second press says', async () => {
     let settle = () => {}
     const asks: string[] = []

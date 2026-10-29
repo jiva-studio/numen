@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { useNotesPanel } from './notes'
 import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 
-/** One note as the window hands it over. */
+/** One note as the window supplies it. */
 const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
@@ -57,7 +57,7 @@ describe('the panel the deck is read in', () => {
     expect(held.unread.value).toBe(2)
   })
 
-  // A gesture that does nothing is a gesture a person repeats.
+  // A silent failure invites the user to repeat the gesture, so the failure is reported.
   it('says why it could not be read, and holds nothing', async () => {
     const { held, notices, open } = panel({ refuses: true })
     await held.openPanel()
@@ -131,7 +131,7 @@ describe('what is read belongs to the deck', () => {
     expect(target.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
-  // A person must never read one deck's notes under another deck's card.
+  // One deck's notes must never be displayed under another deck's card.
   it('holds nothing of the deck behind it while the next is being requested for', async () => {
     const pendingCallbacks: (() => void)[] = []
     const open = ref(false)
@@ -208,7 +208,7 @@ describe('a link pressed in the card', () => {
 })
 
 describe('the asking', () => {
-  /** The panel over a window that answers each deck when the test says. */
+  /** The panel over a window that responds to each deck when the test triggers it. */
   const slowPanel = () => {
     const pendingRequests: { deck: string; answer: () => void; refuse: () => void }[] = []
     const deck = ref('decks/Words.md')

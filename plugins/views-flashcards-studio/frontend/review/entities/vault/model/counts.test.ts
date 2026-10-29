@@ -54,7 +54,7 @@ const createVaultList = (...all: readonly VaultCounts[]): DueCounts => ({
 /** One vault's count, as it arrives on its own. */
 const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: one })
 
-/** A count a test feeds by hand, message by message. */
+/** A count fed manually by a test, message by message. */
 const createFeed = () => {
   const target: DueCounts[] = []
   let wake: (() => void) | null = null
@@ -323,8 +323,8 @@ describe('counting what every vault owes', () => {
     expect(one.vaults.value).toHaveLength(0)
   })
 
-  // A person who has chosen their vault, or closed the window, is not waiting
-  // for the rest of the counts and is not told that they stopped.
+  // A user who has chosen a vault or closed the window is not waiting for the
+  // remaining counts and is not shown a stop as an error.
   it('stops the count without calling it a failure', async () => {
     const errors: unknown[] = []
     const front = createFeed()

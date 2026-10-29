@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-// EvenFrom and EvenTo are the intervals a card may be moved within, in days.
-// One falling short of the first or past the second stands where the scheduler
-// put it.
+// EvenFrom and EvenTo bound the intervals, in days, within which a card may be
+// moved. An interval below EvenFrom or above EvenTo keeps the due day the
+// scheduler chose.
 const (
 	EvenFrom = 2.5
 	EvenTo   = 90
@@ -55,36 +55,37 @@ func weekday(number int) time.Weekday {
 	return time.Weekday(((number+int(time.Thursday))%7 + 7) % 7)
 }
 
-// Places is the day a card answered at this instant comes back on, and counts
-// it against that day.
+// AssignDueDay returns the day a card answered at this instant is due, and
+// counts the card against that day.
 //
-// It is chosen inside the tolerance the scheduler allows around the interval it
-// worked out. Every day of that window carries a weight — the share of the load
-// its day of the week keeps, over what already falls on it — and the heaviest
-// takes the card, the day the scheduler named winning a tie. A day at nothing
-// weighs nothing and takes no card.
+// The day is chosen inside the tolerance the scheduler allows around the
+// interval it computed. Every day of that window has a weight, the share of
+// the load its day of the week carries divided by the number of cards already
+// due on it, and the heaviest day takes the card; the day the scheduler chose
+// wins a tie. A day with zero share has zero weight and takes no card.
 //
-// It is pressure and not a promise: no day is forbidden to carry more than its
-// share, and a preset keeping no even load leaves the card where it fell.
+// The weight biases the choice and does not enforce a limit: no day is
+// prevented from carrying more than its share, and a preset with an uneven
+// load disabled keeps the card on the day the scheduler chose.
 //
-// A preset aiming at a day moves no review card. The days beyond the front of a
-// projection carry nothing, so the lightest day of a window is its last, and a
-// card put there is a card asked for later.
+// A preset aiming at a date moves no review card. The days beyond the front of
+// a projection carry nothing, so the lightest day of a window is its last, and
+// a card moved there is presented later.
 //
-// It is the one place a day is chosen. A session and a projection of it both
-// come here.
+// This is the only place a day is chosen. A session and its projection both
+// call it.
 func (p Preset) AssignDueDay(s *DueByDay, now, due time.Time) time.Time {
 	out := p.computeDueDay(s, now, due)
 	s.Add(out)
 	return out
 }
 
-// GetDueDay is the day a card answered at this instant would come back on,
-// counting it against no day.
+// GetDueDay returns the day a card answered at this instant would be due,
+// without counting it against any day.
 //
-// The four windows put to a person are four askings of one card, and one of
-// them is answered. AssignDueDay chooses the day each of them names, so the
-// button says the day the card comes back on.
+// The four answer options shown to the user are four candidate answers for one
+// card, and one of them is applied. AssignDueDay chooses the day for the
+// applied answer, and GetDueDay chooses the day each button displays.
 func (p Preset) GetDueDay(s *DueByDay, now, due time.Time) time.Time {
 	return p.computeDueDay(s, now, due)
 }
@@ -120,15 +121,16 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	return due.In(in).AddDate(0, 0, on-dueDay).In(due.Location())
 }
 
-// getWeight is how much a numbered day of review wants another card: the share
-// of the load its day of the week keeps, over what already falls on it.
+// getWeight is how much a numbered day of review needs another card: the share
+// of the load its day of the week carries, divided by the cards already due on
+// it plus one.
 func (p Preset) getWeight(s *DueByDay, day int) float64 {
 	return p.GetShare(weekday(day)) / float64(1+s.on[day])
 }
 
-// slacks is how far either side of an interval a card may be put, by how long
-// the interval is: the wider it is, the more days come round when a person
-// expects them.
+// slacks is the tolerance on either side of an interval within which a card may
+// be moved, by interval length: the longer the interval, the larger the
+// tolerance in days.
 var slacks = []struct{ from, to, factor float64 }{
 	{2.5, 7, 0.15},
 	{7, 20, 0.1},

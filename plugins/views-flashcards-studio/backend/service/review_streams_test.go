@@ -17,22 +17,23 @@ import (
 
 var errPageGone = errors.New("the page is gone")
 
-// breaking serves a stream whose writes fail where fails says so, and reports
-// what the handler returned. The handler runs under ctx.
+// breaking serves a stream whose writes fail where `fails` returns true, and
+// reports what the handler returned. The handler runs under ctx.
 type breaking struct {
 	fails    func(n int, msg any) bool
 	ctx      context.Context
 	returned chan error
 }
 
-// breakingClient is the window's client over a review whose streams are broken as b says.
+// breakingClient is the client of the review window over streams broken as b
+// specifies.
 type breakingClient struct {
 	handler *API
 	b       breaking
 }
 
-// newBreakingClient is the window's client over a review whose streams are
-// broken as b says.
+// newBreakingClient returns the client of the review window over streams broken
+// as b specifies.
 func newBreakingClient(_ *testing.T, handler *API, b breaking) breakingClient {
 	return breakingClient{handler: handler, b: b}
 }
@@ -82,8 +83,8 @@ func awaitReturn(t *testing.T, returned <-chan error) error {
 	}
 }
 
-// A stream whose page can no longer be written to ends with the write's error,
-// at whichever message it was found out.
+// A stream whose page can no longer be written to ends with the write's error, at
+// whichever message the failure was detected.
 func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancelled, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -94,10 +95,10 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		moved bool
 	}{
 		"opening": {cancelled, func(n int, _ any) bool { return n == 1 }, false},
-		// Nothing moved, and the window says so again until the page is found
-		// gone.
+		// 		// Nothing changed, and the stream repeats the message until the page is
+		// 		// found gone.
 		"repeating": {t.Context(), func(n int, _ any) bool { return n > 1 }, false},
-		// Something moved, and the page is gone by the time it is told.
+		// 		// Something changed, and the page is gone by the time it is sent.
 		"reloading": {t.Context(), func(_ int, msg any) bool {
 			return msg.(*api.WatchReloadsResponse).Reload
 		}, true},
@@ -197,8 +198,8 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 	return nil, errNothingRead
 }
 
-// A stream that has just said a count is not about to say the list again: the
-// time it waits starts over with every count.
+// A stream that has just sent a count does not send the list again immediately:
+// the wait before the list restarts after every count.
 func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 	handler, target := newAPI(t, deck, other)
 	front(t, handler)
@@ -222,8 +223,8 @@ func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
 
-	// The first count lands half way to the list being said again, and the
-	// second lands after the moment the list was due from the start.
+	// 	// The first count arrives halfway to the next list message, and the second
+	// 	// arrives after the point at which the list was due from the start.
 	time.AfterFunc(500*time.Millisecond, openFirst)
 	time.AfterFunc(1300*time.Millisecond, openSecond)
 
@@ -296,8 +297,8 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 	}
 }
 
-// A stream whose client has gone waits for the counts already running before
-// it ends, so no count outlives the call that asked for it.
+// A stream whose client has disconnected waits for the counts already running
+// before it ends, so no count outlives the call that started it.
 func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	handler, target := newAPI(t, deck, deck, deck, deck, deck, deck)
 	front(t, handler)
@@ -348,8 +349,9 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	}
 }
 
-// TestAStreamWhoseClientWentAwayEnds. A stream rooted at the process is never told the page it was
-// opened from is gone. A write that fails is the one report there is, so the stream makes one.
+// TestAStreamWhoseClientWentAwayEnds. A stream rooted at the process receives no
+// notice that the page it was opened from is gone. A failed write is the only
+// report available, so the stream sends one.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	handler, _ := newAPI(t)
 	returned := make(chan error, 1)

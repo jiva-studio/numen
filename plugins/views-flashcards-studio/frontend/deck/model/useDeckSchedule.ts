@@ -10,8 +10,8 @@ export interface DeckPreset {
   /** What that preset is called, in the words on the line. */
   readonly name: string
   /**
-   * What is wrong with what the deck names — a preset the vault no longer
-   * holds, a note that is not a preset — and nothing where nothing is.
+   * What is wrong with what the deck names — a preset missing from the vault, a
+   * note that is not a preset — and empty where nothing is.
    */
   readonly errorMessage: string
 }
@@ -25,7 +25,7 @@ export interface Choice {
   readonly name: string
 }
 
-/** The deck's own file, as the scheduler reaches it. */
+/** The deck's own file, as the scheduler accesses it. */
 export interface ScheduledStore {
   getPath(id: string): string
   getFilePath(id: string): string
@@ -126,7 +126,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     scheduled.value.delete(from)
   }
 
-  /** What a tab that has closed was told about the choice it made. */
+  /** Forgets the choice a closed tab made. */
   const forgetTab = (id: string): void => {
     chose.value.delete(id)
   }

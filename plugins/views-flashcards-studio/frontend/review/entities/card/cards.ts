@@ -1,7 +1,7 @@
-/** One review card as it is put to a person, and where the four would leave it. */
+/** One review card as presented for review, and where each of the four ratings would schedule it. */
 import type { Grade } from './grades'
 
-/** One review card as it is put to a person. */
+/** One review card as presented for review. */
 export interface ReviewCard {
   readonly deck: string
   readonly section: string
@@ -18,18 +18,18 @@ export interface ReviewCard {
 }
 
 /**
- * How long each of the four would leave the card, in seconds from when it was
- * asked. A person choosing between the four is choosing between these.
+ * How long each of the four ratings would schedule the card out, in seconds from
+ * when it was requested. The choice between the four ratings is a choice between
+ * these.
  */
 export type Intervals = Readonly<Record<Grade, number>>
 
 /**
- * A length of time, at the coarsest a person reads it by: minutes inside an
+ * A length of time at the coarsest unit that reads naturally: minutes inside an
  * hour, hours inside a day, then days, months and years.
  *
- * A card coming round in eleven minutes and one coming round in twelve are the
- * same answer to the person choosing, and the shorter the word the faster the
- * four are read.
+ * A card due in eleven minutes and one due in twelve are the same answer for the
+ * choice between ratings, and the shorter the text the faster the four are read.
  */
 export const getTimeAhead = (seconds: number): string => {
   const minutes = Math.max(1, Math.round(seconds / 60))

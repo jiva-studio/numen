@@ -1,8 +1,8 @@
 /**
- * What a preset schedules, and what it says when it schedules nothing.
+ * What a preset schedules, and what it reports when it schedules nothing.
  *
- * A goal draws the settings it schedules by and no others, and a preset with
- * nothing to work on says so where the picture would stand.
+ * A goal renders the settings it schedules by and no others, and a preset with
+ * nothing to schedule reports that where the curve would be.
  */
 import { StopReason } from '../../api/types.js'
 import { describe, expect, it } from 'vitest'
@@ -74,16 +74,16 @@ describe('a goal with nothing to work on', () => {
     expect(mountPresetTab({ ...nothing, decks: 1 }).tab.text()).not.toContain(words.unpointed)
   })
 
-  // The preset schedules and there is nothing here it can schedule. It is said
-  // in the control's place, and it is not a reason the preset is stopped.
+  //   // The preset schedules and there is nothing here it can schedule. The message
+  //   // replaces the control, and it is not a reason the preset is stopped.
   it('says a material nobody has begun that no place of the range begins', () => {
     const { tab } = mountPresetTab({ ...nothing, decks: 1, cards: 900, unbegun: 900 })
     expect(tab.text()).toContain(words.beginsNothing)
     expect(tab.findAll('[data-preset="stopped"]')).toHaveLength(0)
   })
 
-  // A preset holding cards is never told it holds none, so a curve of zeros
-  // keeps its control and says nothing about the vault.
+  //   // A preset with cards never reports that it has none, so a curve of zeros
+  //   // keeps its control and reports nothing about the vault.
   it('draws the control for a preset holding cards, whatever its curve evaluates to', () => {
     const { tab } = mountPresetTab({ ...nothing, decks: 4, cards: 900 })
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)

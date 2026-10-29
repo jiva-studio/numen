@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// which budget closed a day and never reads the words a preset file writes.
-// This is the whole of it: a value added to the schema is answered here before
-// it can travel, and the window's own table is keyed by the schema, so it is
-// asked for a word at the same moment.
+// Every budget the schema names has a counterpart in the core. The conversion is
+// keyed by the budget that closed a day and does not read the words a preset file
+// contains. A value added to the schema fails here before it can be sent, and the
+// window's table, which is keyed by the schema, is checked at the same time.
 func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
 	target := map[api.BudgetName]review.BudgetName{
 		api.BudgetNameUnspecified: review.ClosedNothing,

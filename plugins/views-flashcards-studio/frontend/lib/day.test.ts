@@ -28,9 +28,8 @@ describe('a day as it is written down', () => {
     expect(getDayName(new Date(2026, 11, 31))).toBe('2026-12-31')
   })
 
-  // A machine east or west of Greenwich reads a different date from the one in
-  // London for part of every day, and the calendar a person is looking at is
-  // their own.
+  // A machine east or west of Greenwich reads a different date from London for
+  // part of every day, and the calendar the user sees is their own.
   it('is the day on the person’s own calendar, not the day at Greenwich', () => {
     inZone('America/New_York', () => {
       expect(getDayName(new Date(2026, 8, 5, 23, 30))).toBe('2026-09-05')

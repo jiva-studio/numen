@@ -7,27 +7,26 @@ import (
 	"time"
 )
 
-// LongestAnswer is the most one answer is counted at. A card left on the screen
-// while a person answered the door stands there for an hour, and the hour is
-// not review.
+// LongestAnswer is the maximum time one answer counts for. A card left displayed
+// for an hour is capped, because the idle time is not review.
 const LongestAnswer = time.Minute
 
-// GetCountedTime is how long this answer counts for, wherever one is counted:
+// GetCountedTime returns how long this answer counts for, capped at LongestAnswer.
 func (a Answer) GetCountedTime() time.Duration { return min(a.Took, LongestAnswer) }
 
-// ShortestAnswer is the shortest a kind of answer is costed at. A card graded
-// before it could be read is a key hit and not review.
+// ShortestAnswer is the minimum time a kind of answer is costed at. A card graded
+// before it could be read is an accidental key press and not review.
 const ShortestAnswer = time.Second
 
-// LeastAnswers is how many answers of a kind a history holds before it says
-// default.
+// LeastAnswers is the number of answers of a kind that a history needs before its
+// median replaces the default.
 const LeastAnswers = 10
 
-// AnswerCost is how long an answer takes: one of a card the scheduler is still
-// putting into memory, and one of a card that comes round in days.
+// AnswerCost is how long an answer takes: one for a card that the scheduler is
+// still learning, and one for a card that returns after days.
 //
-// ReadNew and ReadReview say which halves the history answered. A half it does
-// a person says which of the two it is showing.
+// ShouldReadNew and ShouldReadReview report which halves the history supplied. A
+// half without enough answers keeps the default value.
 type AnswerCost struct {
 	New, Review                     time.Duration
 	ShouldReadNew, ShouldReadReview bool
@@ -36,12 +35,13 @@ type AnswerCost struct {
 // DefaultCost is what a vault holding no answer times is projected at.
 var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 
-// GetCostUnder is how long an answer takes under each preset, by the path the
-// review cards are grouped under.
+// GetCostUnder returns how long an answer takes under each preset, keyed by the
+// path the review cards are grouped under.
 //
 // A preset is costed from the answers to its own review cards: a preset of long
-// cards and one of short cards turn the same minutes into different counts. A
-// review card nothing groups is left out, and a kind of answer a preset holds too
+// cards and a preset of short cards convert the same minutes into different
+// counts. A review card that no preset groups is left out, and a kind of answer
+// that a preset has too few answers for keeps the default cost.
 func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[ReviewCardID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
 	walkAnswers(scheduler, answers, func(before Schedule, a Answer) {
@@ -67,8 +67,8 @@ func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[ReviewCar
 // answerTimes is how long the answers of each kind took, one entry an answer.
 type answerTimes struct{ begun, spaced []time.Duration }
 
-// addAnswer counts one answer. An answer carrying no time at all says nothing
-// about how long its kind takes.
+// addAnswer counts one answer. An answer with no recorded time carries no
+// information about how long its kind takes.
 func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 	if took <= 0 {
 		return
@@ -80,8 +80,8 @@ func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 	t.begun = append(t.begun, took)
 }
 
-// cost is what these answers say a kind of answer takes, each half standing at
-// the default where the history is too short to say.
+// cost returns the cost these answers imply for each kind of answer, with each
+// half set to the default where the history is too short.
 func (t *answerTimes) cost() AnswerCost {
 	out := DefaultCost
 	if middle, read := getMedian(t.begun); read {
@@ -93,12 +93,12 @@ func (t *answerTimes) cost() AnswerCost {
 	return out
 }
 
-// getMedian is the middle of these answers, and whether there are enough of
-// them to have one.
+// getMedian returns the median of these answers, and whether there are enough
+// answers to compute one.
 //
-// Answer times are a right tail: a person answers the door, and the card stands
-// on the screen while they do. The middle is where half the answers fall either
-// side of it, and one long answer moves it by one place.
+// Answer times have a long right tail: a card stays displayed while the user is
+// interrupted. The median is the value with half the answers on each side, and
+// one long answer shifts it by one position.
 func getMedian(took []time.Duration) (time.Duration, bool) {
 	if len(took) < LeastAnswers {
 		return 0, false
@@ -111,17 +111,18 @@ func getMedian(took []time.Duration) (time.Duration, bool) {
 	return max(out, ShortestAnswer), true
 }
 
-// DivideBudget is a budget handed out in proportion to what each deck owes of it.
+// DivideBudget divides a budget among decks in proportion to what each deck has
+// due.
 //
-// A deck owing nine times another's takes nine times the share, a deck owing
-// nothing takes nothing, and no deck takes more than it owes — the remainder is
-// handed out a card at a time. What the proportions leave over goes by the
-// largest fraction, and where the fractions stand equal the deck owing more
-// takes it; decks owing the same take it in the order they are given.
+// A deck with nine times another deck's due count receives nine times the share,
+// a deck with nothing due receives nothing, and no deck receives more than it has
+// due; the remainder is distributed one card at a time. The units left over by
+// the proportions go to the largest fractions, with ties going to the deck with
+// more due, and decks with equal due counts receive them in the order given.
 //
-// The proportion itself is worked out in floating point: a budget of
-// nanoseconds times what one deck owes of them overflows an integer. Every
-// share handed back is whole.
+// The proportion is computed in floating point: a budget in nanoseconds times
+// one deck's due count overflows an integer. Every returned share is a whole
+// number.
 func DivideBudget(budget int, owes []int) []int {
 	out := make([]int, len(owes))
 	total := 0

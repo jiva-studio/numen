@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * What a person has been doing in this vault: the days they answered on, the
- * weeks ahead of them, and what each day came to.
+ * The user's activity in this vault: the days they answered on, the coming
+ * weeks, and the tally for each day.
  *
- * It is read at a glance and stands above what they came here to do.
+ * It is read at a glance and is placed above the main content.
  */
 import { Heatmap, dayName as heatmapDayName } from '../../../../ui/heatmap'
 import type { Tally as HeatmapTally, Words as HeatmapWords } from '../../../../ui/heatmap'
@@ -18,7 +18,7 @@ defineProps<{
   due: ReadonlyMap<string, number>
 }>()
 
-/** What the grid says about a day, in this window's words. */
+/** The grid labels for a day, in this window's wording. */
 const words: HeatmapWords = {
   names: heatmapDayName,
   answered: 'answered',

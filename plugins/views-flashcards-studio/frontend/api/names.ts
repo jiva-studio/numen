@@ -1,8 +1,9 @@
 /**
  * What a window calls each value of a wire enumeration, and what it sends back.
  *
- * The table of words is keyed by the enumeration, so the compiler asks for a word the moment the
- * enumeration carries a value more, and the sending side is read off that table.
+ * The table of words is keyed by the enumeration, so the compiler requires a word
+ * whenever the enumeration gains a value, and the sending side is derived from
+ * that table.
  */
 
 /** What each word a window uses is, as the wire enumeration names it. */

@@ -136,7 +136,7 @@ export default [
         {
           patterns: [
             {
-              group: ['**/api/wire*', './api/wire*', '../api/wire*'],
+              group: ['**/api/wire*', './api/wire*', '../api/wire*', '@connectrpc/*', '@bufbuild/*'],
               message: '.vue components are humble views and must talk to model/composables, never directly to wire/RPC',
             },
           ],

@@ -1,8 +1,8 @@
 /**
- * A preset tab drawn in a document, standing at the settings a test names.
+ * A preset tab mounted in a document with the settings a test names.
  *
- * The window is not here: what the tab holds is made up, and everything it was
- * asked to do is written down in the order it was asked.
+ * The window is absent: the tab's data is fabricated, and every action the tab
+ * requested is recorded in order.
  */
 import { StopReason } from '../../api/types.js'
 import { afterEach, beforeEach, vi } from 'vitest'
@@ -21,8 +21,8 @@ import {
 } from '../types'
 
 /**
- * How far each setting goes, as the application answers a read. A test says
- * what the tab was told and reads the drawn control against it.
+ * The range of each setting, as the application returns it on a read. A test
+ * states what the tab was given and checks the rendered control against it.
  */
 export const BOUNDS = {
   minutesADay: { min: 0, max: 24 * 60 },
@@ -110,7 +110,7 @@ export interface TabFixtureOptions {
   counts?: PresetCounts | null
 }
 
-/** A tab standing at those settings, and everything it was asked to do. */
+/** A tab with those settings, and a record of every action it requested. */
 const createTab = (
   overrides: Partial<Curve> = {},
   settings: Partial<Settings> = {},

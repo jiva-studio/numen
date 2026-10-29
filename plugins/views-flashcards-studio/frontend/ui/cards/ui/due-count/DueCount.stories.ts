@@ -80,8 +80,8 @@ export const Bare: Story = {
 }
 
 /**
- * Still being counted: the pill holds the shape the figure will take, and says
- * so to a reader who is listening.
+ * Still being counted: the pill keeps the shape the figure will take, and
+ * announces it to screen readers.
  */
 export const StillCounting: Story = {
   args: { due: null },
@@ -95,9 +95,9 @@ export const StillCounting: Story = {
 /**
  * On the dark set of tokens, on the surface and on a filled button.
  *
- * The pill on a button is drawn from the button's own text, so its ground has
- * to come to rest between the button's ground and that text — on the dark set
- * as on the light one, where the two are the other way about.
+ * The pill on a button is drawn from the button's own text colour, so its background has
+ * to fall between the button's background and that text colour — on the dark set
+ * as on the light one, where the two are reversed.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -109,9 +109,9 @@ export const Dark: Story = {
     expect(plain).toBeDefined()
     expect(overflow).toBeDefined()
 
-    // On its own the pill carries both of its own colours, and they are told
-    // apart: its ground is thin, so it is read over the surface behind it, and
-    // on the dark set the figure stands above that ground.
+    // On its own the pill carries both of its own colours, and they differ:
+    // its background is thin, so it is read over the surface behind it, and
+    // on the dark set the figure is lighter than that background.
     const alone = getComputedStyle(plain!)
     const backdropColor = getComputedStyle(
       canvasElement.querySelector('.numen') as HTMLElement,
@@ -120,8 +120,8 @@ export const Dark: Story = {
       lightness(alone.backgroundColor, backdropColor) + 24,
     )
 
-    // On the button it carries neither: the ink is the button's, and the
-    // ground is that ink laid thinly over the button's own.
+    // On the button it carries neither: the text colour is the button's, and the
+    // background is that colour laid thinly over the button's own.
     const filled = getComputedStyle(button)
     const ink = lightness(filled.color)
     const ground = lightness(filled.backgroundColor)

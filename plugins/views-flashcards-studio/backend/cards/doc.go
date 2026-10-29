@@ -1,9 +1,9 @@
-// Package cards holds the scenarios that act on the two notes a flashcard is
-// made of: the card model that says what a card has, and the deck that holds the
-// cards.
+// Package cards contains the use cases that operate on the two notes a
+// flashcard is made of: the card model, which defines what a card contains, and
+// the deck, which contains the cards.
 //
-// What a deck and a card model are made of is the format package. This is where
-// they meet a vault: a file is looked at before it is opened, a write is held
-// to what the caller read, and a field renamed in a card model reaches every deck
-// that card model cuts.
+// The format package defines what a deck and a card model are made of. This
+// package connects them to a vault: a file's metadata is checked before it is
+// opened, a write is checked against what the caller read, and a field renamed
+// in a card model is renamed in every deck that card model cuts.
 package cards

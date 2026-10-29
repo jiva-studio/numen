@@ -10,8 +10,8 @@ export const GOALS: Record<Goal, string> = {
 }
 
 /**
- * What each of the two rules for the learned is offered as: a name, since a
- * control offers names and the row under it says what they mean.
+ * The label of each of the two rules for the learned state: a name, since a
+ * control offers names and the row below it explains what they mean.
  */
 export const RULES: Record<Rule, string> = {
   interval: 'By days',
@@ -24,7 +24,7 @@ export const BUDGET_UNITS: Record<BudgetUnit, string> = {
   shows: 'Reviews',
 }
 
-/** What each setting is called, and the one line that says what it is. */
+/** The name of each setting, and a one-line description. */
 export const FIELDS: Record<Field, readonly [string, string]> = {
   newADay: ['New per day', 'Maximum new cards per day.'],
   reviewsADay: ['Reviews per day', 'Maximum review cards per day.'],

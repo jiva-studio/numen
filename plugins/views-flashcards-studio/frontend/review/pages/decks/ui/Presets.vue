@@ -1,16 +1,14 @@
 <script setup lang="ts">
 /**
- * What the goals of this vault come to today: one tile for each preset that
- * schedules something, saying what its goal is and how far through it the day
- * stands.
+ * The progress of this vault's goals today: one tile for each preset that
+ * schedules something, showing its goal and how far through it the day is.
  *
- * A preset keeps a budget in cards and a budget in time. The day stands as far
- * through as the fuller of the two, which is the one a person is nearest the
- * end of.
+ * A preset has a budget in cards and a budget in time. The day's progress is
+ * the larger of the two fractions, which is the budget closest to being used.
  *
- * A preset nothing points at, and one whose decks hold no cards, are no part of
- * anybody's day: they are files being set up, and the editor's preset tab is
- * where they are read.
+ * A preset that no deck points at, and one whose decks hold no cards, are not
+ * part of the day: they are being set up, and the editor's preset tab is where
+ * they are shown.
  */
 import { computed } from 'vue'
 

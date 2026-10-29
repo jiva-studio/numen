@@ -1,10 +1,10 @@
 /**
- * Every situation the days of the week have to survive. Also the test corpus:
- * each story is run in a browser by `@storybook/addon-vitest`.
+ * Every situation the weekday chips must handle. Also the test corpus: each
+ * story is run in a browser by `@storybook/addon-vitest`.
  *
- * The awkward ones are the names: a week starting on Sunday, names in another
- * script, and letters wide enough to burst a round chip. The level a day stands
- * at is read off the chip without opening anything.
+ * The difficult cases are the names: a week starting on Sunday, names in
+ * another script, and letters wide enough to overflow a round chip. The level of
+ * a day is readable from the chip without opening the menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
@@ -105,7 +105,7 @@ const getMenuLabels = (): readonly string[] =>
 /** One day of the week at half of it. */
 export const TheDaysOfTheWeek: Story = {}
 
-/** Every day at the whole of it, which is a week nothing was said about. */
+/** Every day at the full level, which is a week with no levels configured. */
 export const NoneAtAll: Story = { args: { levelOf: {} } }
 
 /** A day at nothing. */
@@ -122,8 +122,9 @@ export const AllOfThem: Story = {
 export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 
 /**
- * Levels the offer does not name, one of them past anything a chip can be
- * filled with. A chip says the level it is drawn at, and the levels it offers
+ * Levels the menu does not list, one of them above the maximum a chip can be
+ * filled with. A chip shows the level it is drawn at, and the menu lists the
+ * levels it offers together with the chip's own level.
  */
 export const LevelOutsideMenu: Story = {
   args: { levelOf: { sat: 0.37, sun: 4 } },
@@ -171,7 +172,7 @@ export const NoLevelsAtAll: Story = {
   args: { levels: [], levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
-    // day is never asked to choose without its own among the choices.
+    // The menu always contains the level of the chip that opened it.
     await waitFor(() => expect(getMenuLabels()).toEqual(['100%']))
   },
 }
@@ -189,7 +190,7 @@ export const FarTooMany: Story = {
     const all = chips(canvasElement)
     expect(all).toHaveLength(31)
 
-    // Nothing is squeezed to make room: every chip is the size of the first.
+    // No chip shrinks to make space: every chip has the size of the first.
     const first = all[0]?.getBoundingClientRect()
     for (const chip of all) {
       const box = chip.getBoundingClientRect()
@@ -227,12 +228,12 @@ export const AwkwardNames: Story = {
   },
 }
 
-/** Days nobody may turn. */
+/** Days that cannot be changed. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
 /**
- * A row nobody may turn is still read: the chips keep the keyboard and say
- * they are disabled, and pressing one offers nothing.
+ * A read-only row is still focusable: the chips keep keyboard focus and
+ * expose the disabled state, and pressing one opens no menu.
  */
 export const DisabledOpensNoMenu: Story = {
   args: { isDisabled: true },
@@ -323,9 +324,9 @@ export const TheKeyboardComesBack: Story = {
 /**
  * The same week on the dark set of tokens, where the fill of a chip is blended.
  *
- * The blend runs from the ground a chip relies on towards the accent, so a
- * heavier day sits further from a day standing at nothing — and on the dark set
- * that is towards the light.
+ * The blend runs from the background of the chip toward the accent, so a
+ * heavier day is further from a day at level zero, and on the dark set that
+ * direction is toward lighter colors.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -337,16 +338,17 @@ export const Dark: Story = {
     const all = chips(canvasElement)
     expect(all).toHaveLength(7)
 
-    // blended from: Friday, Thursday, Wednesday, Tuesday and Monday, in that
-    // order, each one further from it.
+    // Saturday, at level zero, is the base the others are blended from; Friday,
+    // Thursday, Wednesday, Tuesday and Monday follow in that order, each further
+    // from it.
     const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)
     const rising = [5, 4, 3, 2, 1, 0].map((idx) => ground(all[idx] as HTMLElement))
     for (const [at, chip] of rising.slice(1).entries()) {
       expect(chip).toBeGreaterThan((rising[at] as number) + 1)
     }
 
-    // A day filled past half is read in the accent's own ink, which on the dark
-    // set stands below the ground it is written on.
+    // A day filled above half uses the accent's own text color, which on the dark
+    // set is darker than the background it is written on.
     const heavy = getComputedStyle(all[0] as HTMLElement)
     expect(lightness(heavy.color)).toBeLessThan(lightness(heavy.backgroundColor))
   },

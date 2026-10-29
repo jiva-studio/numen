@@ -6,9 +6,9 @@ import { getDayName } from '../../../lib/day'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
-  // A wide window shows more of the year and not the same weeks drawn
-  // larger, and a narrow one shows fewer and not a grid marooned in the
-  // middle of empty room.
+  // A wide window shows more weeks of the year and not the same weeks drawn
+  // larger, and a narrow window shows fewer weeks and not a grid centered in empty
+  // space.
   it('takes as many columns as the room holds', () => {
     const cell = 10
     const gap = 2
@@ -36,7 +36,7 @@ describe('how much of a year fits', () => {
   })
 })
 
-/** The days a person answered on, as many cards as each says. */
+/** Tallies for the days with answers, with the given number of cards each. */
 const createTallies = (days: [string, number][]) =>
   new Map(
     days.map(([day, reply]) => [
@@ -53,8 +53,8 @@ describe('the days a grid draws', () => {
     expect(getDays(1, new Date('2026-08-29T12:00:00'), did)).toHaveLength(ROWS)
   })
 
-  // The weeks behind run up to the one a person is in, and a few weeks of what
-  // is coming stand after it, so the grid says what is ahead as well.
+  // The weeks before today run up to the current week, and a few weeks after it
+  // are drawn, so the grid also shows what is ahead.
   it('keeps room after today for what is still to come', () => {
     // Saturday.
     const now = new Date('2026-08-29T12:00:00')
@@ -74,7 +74,7 @@ describe('the days a grid draws', () => {
     }
   })
 
-  // The grid is as wide as the room it was given: a week to every column.
+  // The grid spans the available width: one week per column.
   it('draws a week for every column it was given', () => {
     const now = new Date('2026-08-29T12:00:00')
     const days = getDays(30, now, createTallies([['2026-08-28', 3]]))
@@ -83,9 +83,9 @@ describe('the days a grid draws', () => {
     expect(days.some((one) => one.isToday)).toBe(true)
   })
 
-  // Nobody wants years of empty squares from before they ever sat down. The
-  // grid opens on the week they began in, and the room past what they have yet
-  // done stretches out to the right.
+  // Years of empty cells before the first answer are not drawn. The grid starts at
+  // the week of the first answer, and the weeks after the last answer extend to the
+  // right.
   it('opens on the week a person began in', () => {
     const now = new Date('2026-08-29T12:00:00')
     const days = getDays(30, now, createTallies([['2026-08-28', 3]]))
@@ -124,9 +124,8 @@ describe('the days a grid draws', () => {
     expect(days.some((one) => one.isToday)).toBe(true)
   })
 
-  // A day still to come holds what falls on it, and a day behind holds what was
-  // answered on it. Today holds what was answered: that is the number a person
-  // is adding to.
+  // A day still to come holds what falls on it, and a past day holds what was
+  // answered on it. Today holds what was answered: that is the number being added to.
   it('reads what is coming for the days still to come', () => {
     const now = new Date('2026-08-29T12:00:00')
     const isDone = createTallies([
@@ -164,8 +163,7 @@ describe('the days a grid draws', () => {
 })
 
 describe('how dark a day is drawn', () => {
-  // A person who answered five cards did sit down, and the grid says so as
-  // plainly as it says a day of fifty.
+  // A day with five answers is drawn as active, as a day with fifty is.
   it('is nothing for a day nobody answered on, and rises with what was done', () => {
     expect(getWeight(0)).toBe(0)
     expect(getWeight(1)).toBe(1)

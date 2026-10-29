@@ -14,15 +14,15 @@ export interface Marks {
   readonly bySection: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
   /** What is wrong with each field, under the name the file spells it. */
   readonly fields: ReadonlyMap<string, readonly string[]>
-  /** What is wrong that stands against no card, no template and no field. */
+  /** Problems that belong to no card, no template and no field. */
   readonly whole: readonly string[]
 }
 
 /**
- * Each problem against the thing it relies on. A problem carries where it
- * stands, so a card under no card model and two cards of one card id each land on the
+ * Each problem against the item it concerns. A problem carries its location, so
+ * a card under no card model and two cards with one card id each land on the
  * tile they were read from, and a problem naming a field lands on that field of
- * that card. One standing past the end of what was read is against the file.
+ * that card. A problem located past the end of what was read is against the file.
  */
 export const createMarks = (
   problems: readonly DeckProblem[],

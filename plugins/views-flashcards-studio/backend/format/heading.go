@@ -19,9 +19,9 @@ const caret = "^"
 // ReadHeading reads a card's heading — the text after the hashes — into what it
 // shows and the card id it carries.
 //
-// A card id is separated from the text by one space, stands last, and is a card id
-// only at the length and in the alphabet card ids are written in. Anything else at
-// the end of a heading is heading text, and comes back as part of the text.
+// A card id is separated from the text by one space, is the last token, and is a
+// card id only at the length and in the alphabet card ids are written in. Anything
+// else at the end of a heading is heading text and is returned as part of the text.
 func ReadHeading(heading string) (text string, carried cardid.ID) {
 	pos := strings.LastIndex(heading, " ")
 	last := heading
@@ -95,10 +95,10 @@ var emphasisRe = regexp.MustCompile(
 // for: one character that opens and closes nothing.
 const maskRune = 'x'
 
-// getUnsplittableRanges is every run of the line a cut may not fall inside: its links, and
-// its runs of emphasis. A link's brackets hold whatever a person wrote, so the
-// runs of emphasis are looked for over the line with every link covered over,
-// and a run holding a link is one run.
+// getUnsplittableRanges returns every range of the line that a cut may not fall
+// inside: its links and its runs of emphasis. Link brackets hold arbitrary text,
+// so runs of emphasis are searched in the line with every link masked, and a run
+// containing a link is one run.
 func getUnsplittableRanges(line string) [][]int {
 	found := links(line)
 	masked := []byte(line)
@@ -157,7 +157,8 @@ func links(line string) [][]int {
 	return out
 }
 
-// oneLine is what a name a caller composed a heading from stands as. A heading
+// oneLine returns the first line of a name, normalised and trimmed, because a
+// heading is a single line.
 func oneLine(name string) string {
 	line := markdown.Normalise(name)
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {

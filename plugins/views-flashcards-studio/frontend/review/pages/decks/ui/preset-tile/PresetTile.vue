@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * One preset's tile: what its goal is, how far through it the day stands, and
- * what a session on it would ask.
+ * One preset's tile: its goal, how much of the day's work is done, and what a
+ * session on it would request.
  */
 import { Button } from '@numen/ui'
 
@@ -117,7 +117,7 @@ defineEmits<{
   text-align: end;
 }
 
-/* A preset scheduling nothing today stands with its reason and nothing else. */
+/* A preset that schedules nothing today shows its reason and nothing else. */
 .presets__preset--paused .presets__name,
 .presets__preset--paused .presets__goal {
   color: var(--numen-hushed);

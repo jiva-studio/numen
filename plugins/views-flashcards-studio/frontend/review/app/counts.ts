@@ -1,10 +1,12 @@
 /**
- * What every vault owes today, counted once for the window and read by each part of the review that
- * shows it: the summary beside each vault on the window's list, and the decks of the vault open.
+ * The cards due in every vault today, counted once for the window and read by
+ * each part of the review that shows them: the summary beside each vault on the
+ * window's list, and the decks of the open vault.
  *
- * Counting starts with the first part that asks for it, and runs until the plugin is disposed. A
- * deck written or a card changed underneath the window is followed for as long, and answered by
- * whatever refresh the open review sets, or by counting again where none is open.
+ * Counting starts with the first part that requests it, and runs until the
+ * plugin is disposed. A deck written or a card changed outside the window is
+ * tracked for as long, and handled by the refresh that the open review sets, or
+ * by counting again where no review is open.
  */
 import { createFollower } from '@numen/ui'
 
@@ -12,7 +14,7 @@ import { cards } from '../shared/clients'
 import { useReviewCounter } from '../entities/vault'
 
 export interface VaultCountsDeps {
-  /** What went wrong, in the person's own words. */
+  /** Reports a failure to the user. */
   readonly reportError: (why: unknown) => void
 }
 

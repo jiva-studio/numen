@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * What a file that moved out from under a tab puts to the person holding it.
+ * The prompt for a file that changed or disappeared under an open tab.
  *
- * A file that moved past what the tab read stops saving and asks which of the
- * two is theirs. A file that is gone keeps what is on screen and offers to make
- * it again. What either is said in is the tab's own.
+ * A file that changed after the tab read it stops saving and asks which of the
+ * two versions to keep. A file that is gone keeps the content on screen and
+ * offers to recreate it. The wording of both is supplied by the tab.
  */
 import type { FileConflict } from '@numen/plugin-sdk'
 
@@ -19,16 +19,16 @@ export interface FileConflictWords {
 }
 
 defineProps<{
-  /** What could not be read or written, in words a person reads. */
+  /** The read or write error, as a message for the user. */
   errorMessage: string
   conflict: FileConflict
   words: FileConflictWords
 }>()
 
 defineEmits<{
-  /** The person keeps what they have written, over whatever the file holds. */
+  /** The user keeps their own content over whatever the file holds. */
   keep: []
-  /** The person takes what the file holds. */
+  /** The user takes the content the file holds. */
   take: []
 }>()
 </script>

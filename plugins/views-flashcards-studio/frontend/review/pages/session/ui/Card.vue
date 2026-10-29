@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * One card, currently in front of a person: the front, and the back once
- * they have said they are ready for it.
+ * One card of the session: the front, and the back once the answer is requested.
  *
  * A review card is drawn by the one component every review card is drawn by, so a card reads
  * here the way it reads where it was written.
@@ -23,11 +22,11 @@ const emit = defineEmits<{
   (event: 'read', note: string): void
 }>()
 
-/** A hand that moved less than this across was pressing and not dragging. */
+/** A pointer that moved less than this distance horizontally is a press and not a drag. */
 const MAX_TAP_DISTANCE = 4
 
 /* --------------------------------- State ---------------------------------- */
-/** Where the hand went down, for telling a press from a drag across the card. */
+/** Horizontal position where the pointer went down, to tell a press from a drag across the card. */
 const from = ref<number | null>(null)
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -49,7 +48,7 @@ const onFollow = (href: string, press: MouseEvent) => {
 /** The card is turned over by pressing it, a press spent on a link aside. */
 const onClick = (press: MouseEvent) => {
   if (press.defaultPrevented) return
-  // press that went nowhere is a person asking for the answer.
+  // A press that did not drag requests the answer.
   const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null
   if (distanceX <= MAX_TAP_DISTANCE && !props.isShown) emit('show')
@@ -57,8 +56,8 @@ const onClick = (press: MouseEvent) => {
 
 /* -------------------------------- Helpers --------------------------------- */
 /**
- * A name written into an href is escaped, and a card comes from whoever wrote
- * it: one escaped wrongly is taken as the characters it already is.
+ * A name written into an href is URI-escaped. A card's content is author-supplied,
+ * so a malformed escape is kept as the literal characters.
  */
 function decodeHref(href: string): string {
   try {

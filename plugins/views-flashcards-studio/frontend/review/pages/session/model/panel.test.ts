@@ -77,7 +77,7 @@ describe('the panel coming in', () => {
     expect(held.about.value?.cardId).toBe('3f4g5h6j7k')
   })
 
-  // A gesture that does nothing is a gesture a person repeats.
+  // A control that does nothing is pressed repeatedly.
   it('says why it cannot come in, and does not', () => {
     const { held, notices } = panel({ unreachable: 'Agent unreachable.' })
     held.openPanel()
@@ -132,7 +132,7 @@ describe('the context of the conversation about a card', () => {
     expect(target.context.value?.getUnreachable?.()).toBe(words.unreachable)
   })
 
-  // The card in front of a person is never answered out of the one behind it.
+  // The current card is never answered from the previous one's conversation.
   it('is gone when the card is answered', () => {
     const { held } = panel()
     held.openPanel()
@@ -184,8 +184,8 @@ describe('the panel requested for again', () => {
     expect(held.context.value).toBe(context)
   })
 
-  // A review card is its card id and its template together: the same note asked the other way
-  // round is another card.
+  // A review card is its card id and its template together: the same note
+  // addressed through the other template is another card.
   it('makes a conversation of its own for another card with the same review card', () => {
     const { held, about, on } = panel()
     held.openPanel()

@@ -32,10 +32,10 @@ func (p Preset) getBudget(day time.Weekday) Budget {
 	}
 }
 
-// BudgetName is one budget a day of review may be stopped by, in the words the
-// preset writes the key in. A budget the goal does not name is never one of
-// them, and a day that asked for everything there was is closed by nothing:
-// the material ran out.
+// BudgetName is one budget that may stop a day of review, named by the key the
+// preset writes it under. A budget the goal does not name never closes the day,
+// and a day that asked for everything available is closed by nothing: the
+// material ran out.
 type BudgetName string
 
 const (
@@ -45,8 +45,8 @@ const (
 	ClosedReviews BudgetName = "reviews_a_day"
 	// ClosedDate is a day paced by the day the preset aims at.
 	ClosedDate BudgetName = "by_date"
-	// ClosedBacklog is the share of a day that goes to the debt. It closes
-	// that a goal either reads or leaves idle.
+	// ClosedBacklog is the share of a day that goes to the debt. It closes nothing;
+	// it is a setting that a goal either reads or leaves idle.
 	ClosedBacklog BudgetName = "backlog"
 	// ClosedPaused is a preset scheduling nothing at all.
 	ClosedPaused BudgetName = "paused"
@@ -54,9 +54,9 @@ const (
 
 // BudgetNames is every budget that closed one day of review.
 //
-// A goal of retention holds a day to both card counts, and a day that ran out
-// of new cards and of reviews names both: a person raising one of them and
-// finding nothing changed is reading a day the other closed too.
+// A goal of retention holds a day to both card counts, and a day that exhausted
+// both new cards and reviews names both: raising one of them changes nothing when
+// the other also closed the day.
 type BudgetNames []BudgetName
 
 // closers is every budget a day may be closed by, in the order a closing names
@@ -100,21 +100,21 @@ type Limits struct {
 	Reviews BudgetName
 	Minutes BudgetName
 	// Backlog is the share of the day that goes to the debt. It closes nothing:
-	// it says what the day is spent on, and it is empty under a goal whose day
-	// is not one pot spent between the two. A goal of a date carries the whole
-	// material by its own reckoning, and a goal of retention holds each side to
-	// a count of its own.
+	// it states what the day is spent on, and it is empty under a goal whose day is
+	// not a single pot split between the two. A goal of a date covers the whole
+	// material by its own schedule, and a goal of retention holds each side to a
+	// count of its own.
 	Backlog BudgetName
 }
 
-// Allowance is what one day of a preset admits: how many cards of each kind it
-// has room for, how long the day still runs, and which of the three closes it.
+// Allowance is what one day of a preset admits: the remaining number of cards of
+// each kind, the remaining time, and which of the three budgets closes it.
 //
 // It is the one answer to what a day admits: a session spends against it, and a
 // projection runs on it.
 type Allowance struct {
-	// Keeps is what the preset keeps for the whole of this day, the day of the
-	// week having had its say.
+	// Keeps is what the preset keeps for the whole of this day, after the weekday's
+	// load is applied.
 	Keeps Budget
 	// New, Reviews and Minutes are what is left of it.
 	New     int
@@ -170,10 +170,11 @@ func (p Preset) GetAllowance(
 // IsNextCardDebt reports whether the next card of this day comes from the debt
 // before it. False is a card from the material the preset has not begun.
 //
-// Debt and begun are how many of each the day has taken so far, and owed and
-// fresh whether either side has a card left to give. The day is spent between
-// the two in the share the preset names; a side with nothing left leaves the
-// rest of the day to the other, and an odd card goes to the debt.
+// Debt and begun are the counts of each kind the day has taken so far, and owed and
+// isNew report whether the debt side and the unbegun side have a card left to give.
+// The day is split between the two in the share the preset names; a side with
+// nothing left leaves the rest of the day to the other, and an odd card goes to the
+// debt.
 //
 // It is the one rule for how a day is spent.
 func (a Allowance) IsNextCardDebt(debt, begun int, owed, isNew bool) bool {

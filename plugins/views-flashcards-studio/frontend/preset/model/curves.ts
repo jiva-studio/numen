@@ -81,7 +81,7 @@ export interface CurveContext {
   setErrorMessage: (msg: string) => void
 }
 
-/** One curve, asked for and landed. */
+/** Requests one curve and applies the result. */
 const fetchCurve = async (state: CurveState, context: CurveContext): Promise<void> => {
   const { path, getSettings, core, bounds, today, setErrorMessage } = context
   const mine = state.asks.acquireRequest()
@@ -105,7 +105,7 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
   try {
     answer = await core.curve(path, settings)
   } catch {
-    // The window says what it could not do; what the call carried back adds nothing a person can act on.
+    // The window states what failed; the error returned by the call adds nothing the user can act on.
     if (!mine.isCurrent) return
     setErrorMessage(words.noCurve)
     state.isWaiting.value = false

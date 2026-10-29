@@ -1,7 +1,8 @@
-// Package ports is what the use cases of the plugin ask of the vault they work, the answers they keep
-// between launches, and the clock.
+// Package ports defines what the plugin's use cases require of the vault they
+// operate on, the cached results kept between launches, and the clock.
 //
-// A use case orchestrates these and knows nothing of how the host answers them.
+// A use case orchestrates these and does not depend on how the host implements
+// them.
 package ports
 
 import (
@@ -15,13 +16,13 @@ import (
 )
 
 var (
-	// ErrStale is what a write says when the file it was about to replace is no longer the one the
-	// caller read.
+	// ErrStale is returned by a write when the file to be replaced differs from the
+	// one the caller read.
 	ErrStale = edit.ErrStale
 	// ErrNotANote is what a path gets when there is a file at it and the vault does not hold it as a
 	// note.
 	ErrNotANote = edit.ErrNotANote
-	// ErrAlreadyExists is what making a file says when one is already there.
+	// ErrAlreadyExists is returned when creating a file that already exists.
 	ErrAlreadyExists = errors.New("a file is already there")
 	// ErrLockedByAnother is what a name gets when a program outside this one has the file.
 	ErrLockedByAnother = errors.New("the file is held by another program")
@@ -32,8 +33,8 @@ type Clock func() time.Time
 
 // VaultReader is what a use case reads of one vault's files.
 type VaultReader interface {
-	// StatFile says what the file is without opening it. It returns fs.ErrNotExist for a file
-	// that is not there and ErrNotANote for one the vault does not hold as a note.
+	// StatFile returns the file's stat without opening it. It returns fs.ErrNotExist
+	// for a missing file and ErrNotANote for one the vault does not hold as a note.
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the bytes of the file.
 	Read(ctx context.Context, path string) ([]byte, error)
@@ -47,8 +48,8 @@ type VaultReaders interface {
 
 // VaultWriter is what a use case changes in one vault's files.
 type VaultWriter interface {
-	// Write replaces the file if it is still what the file stat says, else it returns ErrStale. An
-	// empty file stat holds the write to nothing.
+	// Write replaces the file if it still matches the file stat, and
+	// returns ErrStale when it does not. An empty file stat requires that the file does not exist.
 	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error
@@ -61,7 +62,7 @@ type VaultWriters interface {
 	Lock(ctx context.Context, v domain.Vault) (release func(), err error)
 }
 
-// NoteQueries is what the index says of a vault's notes.
+// NoteQueries is what the index provides about a vault's notes.
 type cardModelQueries interface {
 	GetCardModels(ctx context.Context, vaultID domain.VaultID) ([]CardModel, error)
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
@@ -75,12 +76,12 @@ type NoteQueries interface {
 	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
-// LinkQueries is what the index says of a vault's links.
+// LinkQueries is what the index provides about a vault's links.
 type LinkQueries interface {
 	GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error)
-	// ResolveLinks says where each address written in a note lands, keyed by what was written. An
-	// address that reaches nothing is absent.
+	// ResolveLinks returns the target of each address written in a note, keyed by
+	// the address as written. An address that resolves to nothing is absent.
 	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, rawLinks []string) (map[string]domain.ResolvedLink, error)
 }
 
@@ -119,7 +120,7 @@ type ScheduleStore interface {
 	Write(ctx context.Context, vaultID domain.VaultID, content []byte) error
 }
 
-// ScheduleAlgorithm is which algorithm schedules a card, at the share of the cards a preset asks for.
+// ScheduleAlgorithm is the algorithm that schedules a card at the retention a preset requests.
 type ScheduleAlgorithm interface {
 	GetName() string
 	CreateScheduler(retention float64) review.Scheduler

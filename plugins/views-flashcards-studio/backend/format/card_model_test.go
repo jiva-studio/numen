@@ -73,8 +73,8 @@ Which animal lives {{Life span}}?
 	}
 
 	s := format.ReadCardModel(n)
-	// The order is the order a person is asked for them, and the first of them
-	// is what a card is named by.
+	// The order is the order the fields are presented in, and the first is the
+	// field a card is named by.
 	if got := s.Fields; !slices.Equal(got, []string{"Name", "Height", "Weight", "Life span"}) {
 		t.Errorf("fields = %v", got)
 	}
@@ -96,7 +96,7 @@ Which animal lives {{Life span}}?
 }
 
 // A card model declaring no field has no name to put in a card's heading, so it
-// cuts nothing and says so. The rest of the file is read.
+// cuts nothing and reports it. The rest of the file is read.
 func TestACardModelDeclaringNoField(t *testing.T) {
 	for name, content := range map[string]string{
 		"no key at all":     "",
@@ -118,8 +118,8 @@ func TestACardModelDeclaringNoField(t *testing.T) {
 			if got := getProblem(t, s.Problems, format.FaultNoFields); got.Card != format.NoPosition {
 				t.Errorf("problem = %+v, want it against the file", got)
 			}
-			// The rest of it is read, and a template placing anything at all places
-			// a field nobody declared.
+			// The rest of it is read, and a template placing any field at all places a
+			// field that was not declared.
 			if len(s.Templates) != 1 {
 				t.Fatalf("templates = %v, the rest of the card model is read", s.Templates)
 			}
@@ -390,7 +390,7 @@ func TestAFieldThatIsNotAWordIsSkippedAndTheFieldsAfterItStand(t *testing.T) {
 	}
 }
 
-// A card id stands last, one space after the heading's text, and is a card id only at
+// A card id is last, one space after the heading's text, and is a card id only at
 // that length and in that alphabet. Anything else at the end of a heading is
 // heading text.
 func TestReadHeading(t *testing.T) {
@@ -502,7 +502,7 @@ func TestProject(t *testing.T) {
 		"inside emphasis holding an embed": {
 			upTo(100) + " **the [[compost]] one made of leaves**", upTo(100),
 		},
-		// A link's brackets hold whatever a person wrote, brackets included, and
+		// A link's brackets contain the user's text, brackets included, and
 		// the link closes at its own last one.
 		"inside a wikilink holding an embed": {
 			upTo(100) + " [[a ![[img.png]] b]] tail", upTo(100),

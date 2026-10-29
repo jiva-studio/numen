@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// counted is a writer that says how many times a file was replaced, so a test
-// about one write can say it was one.
+// counted is a writer that counts how many times a file was replaced, so a test
+// of one write can assert that it was a single write.
 type counted struct {
 	ports.VaultWriters
 	writes int
@@ -42,8 +42,8 @@ func (w *countedWriter) Write(
 }
 
 // The templates are the body and the fields are one key of the frontmatter, and
-// both are the one file, so one write carries both. Two writes leave the file
-// in a shape nobody asked for whenever the second of them does not land.
+// both are in the same file, so one write carries both. Two writes can leave the
+// file in an unintended state whenever the second one fails.
 func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := newVaults(t)
 	writers := &counted{VaultWriters: vs.ports.Writers}
@@ -78,8 +78,8 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	}
 }
 
-// A card model already declaring exactly these fields, in this order, is not
-// written a second time, so what the person wrote around them stands.
+// A card model that already declares exactly these fields, in this order, is
+// not written again, so the content around them is preserved.
 func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "Kept.md", "---\ntype: card-model\nfields:\n"+
@@ -106,8 +106,8 @@ func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 	}
 }
 
-// newWriteForDeck puts a deck in the vault and brings the index up to date, so
-// that the wikilink under each card's heading reaches the card model it names.
+// newWriteForDeck adds a deck to the vault and updates the index, so the
+// wikilink under each card's heading resolves to the card model it names.
 func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 	t.Helper()
 	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
@@ -149,8 +149,8 @@ func TestWritingADeckLargerThanANote(t *testing.T) {
 	}
 }
 
-// A card typed into a deck by hand carries no card id until the application next
-// writes that file, which is when it is given one.
+// A card typed into a deck manually has no card id until the application next
+// writes that file, which assigns one.
 func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
@@ -213,8 +213,8 @@ func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 	}
 }
 
-// The field is what stands. A person may leave the heading disagreeing with it,
-// and the next write puts the heading back in step.
+// The field is authoritative. If the heading disagrees with it, the next write
+// corrects the heading.
 func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Something else ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
@@ -240,11 +240,10 @@ func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
 	}
 }
 
-// A card carrying no heading at all for the field that is first says nothing
-// about what its heading should be, so the heading is left exactly as it
-// stands. A rename that could not be written to a deck leaves every card in it
-// that way, and the next ordinary save must not read that as a heading of
-// nothing.
+// A card with no heading for the first field gives no information about what
+// its heading should be, so the heading is left unchanged. A rename that could
+// not be written to a deck leaves every card in it in this state, and the next
+// ordinary save must not treat it as an empty heading.
 func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
 	vs := newVaults(t)
 	// The card model declares Name first, and this card was written when the field
@@ -262,8 +261,8 @@ func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
 	}
 }
 
-// The card id is minted where the deck is made whole, so the write is what knows
-// it, and a caller that has just added a card is told what to address it by.
+// The card id is assigned when the deck is completed, so the write returns it and
+// returns it, and a caller that added a card can address it by that id.
 func TestAWriteReturnsWhichMarksItGave(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
@@ -302,8 +301,8 @@ func TestACardWhoseCardModelCannotBeReadIsNotReprojected(t *testing.T) {
 	}
 }
 
-// A deck whose cards are already whole comes back the file it was, under either
-// line ending. Anything less is a diff nobody asked for, on every save, forever.
+// A deck whose cards are already complete is returned unchanged, under either
+// line ending. Any change would be an unintended diff on every save.
 func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 	body := "\nCards I am learning.\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +

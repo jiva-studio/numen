@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * What a strip is pressed to be rid of what it heads: the bin alone, named to
- * a reader.
+ * A strip's control for removing what it heads: the bin icon alone, with an
+ * accessible name.
  *
- * It carries no ground and no shape of its own, and comes up to the ink of what
- * it relies on under the hand about to press it.
+ * It has no background or shape of its own, and takes the colour of the
+ * element it is placed on while it is hovered or focused.
  */
 import { Icon } from '../icon'
 

@@ -9,16 +9,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 )
 
-// ErrNoSuchField is what changing a field says when the card model declares no
-// field of that name.
+// ErrNoSuchField is returned when changing a field of a card model that does not
+// declare a field of that name.
 var ErrNoSuchField = errors.New("this card model declares no field of that name")
 
-// ErrFieldTaken is what renaming a field says when the card model already declares
-// a field of the name asked for. Two fields of one name are one field to every
-// template and every card, and the values under the other are held by nothing.
+// ErrFieldTaken is returned when renaming a field to a name that the card model
+// already declares. Two fields with one name are one field to every template and
+// every card, and the values under the other field would be orphaned.
 var ErrFieldTaken = errors.New("this card model already declares a field of that name")
 
-// template is changed by replacing the run it occupies.
+// CardModelFile is a card model note opened for editing; each edit replaces the
+// run of text it targets.
 type CardModelFile struct {
 	doc *markdown.Document
 }
@@ -32,7 +33,7 @@ func OpenCardModel(raw []byte) (*CardModelFile, error) {
 	return &CardModelFile{doc: doc}, nil
 }
 
-// Bytes is the card model as it now stands.
+// Bytes returns the current content of the card model.
 func (f *CardModelFile) Bytes() []byte { return f.doc.Bytes() }
 
 // WriteIdentifier writes the identifier a file carrying none is to carry, and
@@ -41,8 +42,8 @@ func (f *CardModelFile) WriteIdentifier(identifier string) (bool, error) {
 	return writeIdentifier(f.doc, identifier)
 }
 
-// Fields is what the card model now declares, in the order a person is asked for
-// them.
+// Fields returns the fields the card model currently declares, in declaration
+// order.
 func (f *CardModelFile) Fields() []string {
 	names, _ := f.doc.List(fieldsKey)
 	return names
@@ -54,12 +55,13 @@ func (f *CardModelFile) SetFields(names []string) error {
 	return f.doc.SetList(fieldsKey, names)
 }
 
-// RenameField gives one declared field a different name and leaves it where it
-// and ErrFieldTaken when it already declares one of the name asked for.
+// RenameField renames one declared field in place. It returns ErrNoSuchField when
+// the card model does not declare `from`, and ErrFieldTaken when it already
+// declares `to`.
 //
 // A field's name is written twice in this file: where `fields` declares it, and
 // in the braces of every template that places it. Both are written here, so the
-// card model that comes out declares what its templates place.
+// resulting card model declares what its templates place.
 func (f *CardModelFile) RenameField(from, to string) error {
 	names := f.Fields()
 	pos := slices.Index(names, from)
@@ -76,8 +78,9 @@ func (f *CardModelFile) RenameField(from, to string) error {
 	return f.replacePlaceholders(from, to)
 }
 
-// replacePlaceholders writes the new name into every `{{Field}}` that named the old one. The
-// markdown around the braces is the person's and is left as it was.
+// replacePlaceholders replaces the old name with the new name in every
+// `{{Field}}` placeholder. The markdown around the braces is user content and is
+// unchanged.
 func (f *CardModelFile) replacePlaceholders(from, to string) error {
 	body := f.doc.Body()
 	content := "{{" + to + "}}"

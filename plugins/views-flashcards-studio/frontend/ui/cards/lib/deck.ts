@@ -1,6 +1,6 @@
 /**
- * What a deck is, as plain values: cards standing what a person typed in the
- * slots a card model names, under the sections they stand in. What any of it means
+ * What a deck is, as plain values: cards holding the text typed into the slots
+ * a card model names, grouped under their sections. Interpretation of any of it
  * is the caller's. No DOM, no measurement, no clock.
  */
 
@@ -31,9 +31,9 @@ export const getRunEnd = (target: InsertionPoint): string | null =>
 /** One card as the deck draws it. */
 export interface DeckCard {
   /**
-   * What tells this card from every other of the deck, for as long as it is
-   * drawn. It is the caller's own word for the card and travels back in every
-   * event about it, so no two cards may carry one.
+   * Distinguishes this card from every other card of the deck while it is
+   * displayed. It is the caller's identifier for the card and is returned in
+   * every event about it, so no two cards may share one.
    */
   readonly id: string
   /** The section it is placed under, and nothing for a card before the first. */
@@ -44,9 +44,9 @@ export interface DeckCard {
 }
 
 /**
- * One section of a deck: a name, under an identity the caller minted for it. A
- * section carries no card id and its name need not be unique, so nothing the file
- * holds tells one from another.
+ * One section of a deck: a name and an identity assigned by the caller. A
+ * section carries no card id and its name need not be unique, so nothing in the
+ * file distinguishes one section from another.
  */
 export interface DeckSection {
   readonly id: string
@@ -59,11 +59,11 @@ export interface CardWords {
   readonly drag: string
   readonly cut: string
   readonly cardStem: string
-  /** What is said of a card holding no value at all. */
+  /** The text for a card with no values. */
   readonly nothing: string
   /**
-   * What is said of a card cut by a card model that was not handed in, and of a
-   * card that names none, which the strip says in place of a card model's name.
+   * The text for a card whose card model was not supplied, and for a card that
+   * names none; the strip displays it in place of a card model's name.
    */
   readonly unknown: (cardModel: string | null) => string
   /** What a list of things wrong is called to a reader. */
@@ -77,11 +77,11 @@ export interface CardWords {
 export interface DeckWords extends CardWords {
   readonly add: string
   readonly addSection: string
-  /** What a section is named from, before the place it stands among them. */
+  /** The base of a generated section name, followed by its position among the sections. */
   readonly sectionStem: string
   /**
-   * What is said of a section's name that cannot be used. Two sections may
-   * carry one name, so a name with nothing in it is the whole of it.
+   * The message for an unusable section name. Two sections may share a name, so
+   * only an empty name is unusable.
    */
   readonly sectionObjection: string
 }
@@ -102,9 +102,9 @@ export const DECK_WORDS: DeckWords = {
 }
 
 /**
- * What the caller found wrong with what it handed in. A card's is placed under its
- * heading and a value's is placed under that value, so nothing is said in a place
- * that leaves a person guessing what it is about.
+ * The problems the caller found in the deck it supplied. A card's problems are
+ * placed under its heading and a value's under that value, so each message
+ * appears next to what it concerns.
  */
 export interface DeckProblems {
   /** What is wrong with each card, under the identity it was drawn by. */
@@ -128,11 +128,11 @@ export interface CardFieldValue extends FieldValue {
 }
 
 /**
- * A card's values in the order the card model asks for them, empty where the card
- * leaves a slot out, and a slot the card writes twice standing twice. A slot
+ * A card's values in the order the card model requests them, empty where the card
+ * omits a slot, and a slot the card writes twice appearing twice. A slot
  * the card model names twice is one slot and appears once. The values the card model
- * is empty for come after the rest, marked as named by nothing, and what
- * is drawn of them is the caller's.
+ * has no slot for come after the rest, marked as unnamed, and how
+ * they are rendered is the caller's.
  */
 export function getCardFieldValues(
   values: readonly FieldValue[],
@@ -149,6 +149,6 @@ export function getCardFieldValues(
   return [...status, ...stray]
 }
 
-/** The empty values a card model's slots make, for a card nobody has typed into. */
+/** The empty values for a card model's slots, for a card with no typed text. */
 export const getBlanks = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: '' }))

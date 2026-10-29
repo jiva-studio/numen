@@ -1,9 +1,10 @@
 /**
- * What one preset tab holds: the knob, the fields under it, and what is
- * written.
+ * What one preset tab holds: the knob, the fields under it, and the written
+ * file.
  *
- * The goal steers one value, and the knob and the field showing it are two
- * views of it. Every other field is a person's to take out of the goal's hands.
+ * The goal determines one value, and the knob and the field displaying it are two
+ * views of it. Every other field is set by the user and is not derived from the
+ * goal.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -66,7 +67,7 @@ const curve: Curve = {
   isHonest: true,
 }
 
-/** The review day every test here is told, so a goal of a date counts from one place. */
+/** The review day used by every test, so a date goal counts from one fixed day. */
 const NOW = '2026-08-30'
 
 /** The same range read as days, which is the goal a date steers. */
@@ -79,20 +80,20 @@ const dated: Curve = {
 }
 
 /** A vault answering with one preset and that curve, and what was written into it. */
-/** The file every test here opens, which stands where the curve's marks stand. */
+/** The preset every test opens; its values match the marks on the curve. */
 const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
 
-/** What a test says a read answered: parts of the preset, or the rejection instead. */
+/** The stubbed read result: parts of the preset, or an error in place of them. */
 type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }
 
-/** What a test says a write answered: the file it left, or the rejection instead. */
+/** The stubbed write result: the resulting file, or an error in place of it. */
 type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
 
-/** A read built from what the test said of it. */
+/** A read result built from the fields a test overrides. */
 const readAs = (base: ReadPreset, overrides: ReadOver): PresetReadResult =>
   overrides.error ? asFailure(overrides.error) : asValue({ ...base, ...overrides })
 
-/** A write built from what the test said of it. */
+/** A write result built from the fields a test overrides. */
 const writeAs = (overrides: WriteOver): PresetWriteResult =>
   overrides.error ? asFailure(overrides.error) : asValue({ at: overrides.at ?? 'two' })
 
@@ -233,9 +234,8 @@ describe('the value the goal steers', () => {
     expect(writtenFiles.at(-1)?.minutesADay).toBe(30)
   })
 
-  // The knob rides 25 places of a grid and a person types whatever they like.
-  // What they typed is what the file gets; the knob only shows where that
-  // leaves them.
+  // The knob covers 25 grid positions and the field accepts any number. The file
+  // receives the typed number; the knob moves to the nearest grid position.
   it('is the number typed, and the knob goes to the place nearest it', async () => {
     const { state, writtenFiles } = await openPresetTab()
     state.updateSetting('minutesADay', 21)
@@ -338,8 +338,9 @@ describe('the curve behind the knob', () => {
     expect(state.material.value).toBeNull()
   })
 
-  // A goal already worked out is drawn again as it was, so moving between the
-  // three is instant and never puts the picture back into its waiting state.
+  // A goal whose curve is already computed is drawn again from that result, so
+  // switching between the three goals is immediate and does not return the plot
+  // to its waiting state.
   it('is requested for once for each goal, however often they are moved between', async () => {
     const { state, requests } = await openPresetTab()
     const settle = async () => {
@@ -384,8 +385,8 @@ describe('the curve behind the knob', () => {
     expect(state.curve.value.decks).toBe(1)
   })
 
-  // The range the line is drawn over runs to the value the knob rides, so a
-  // value typed past the end of it is a curve nobody has been answered.
+  // The curve range ends at the value the knob maps to, so a value typed past
+  // the end of the range requires a new curve request.
   it('is requested for again where a value past the end of the range is typed', async () => {
     const createReachingCurve = (settings: Settings): Curve => ({
       ...curve,
@@ -402,8 +403,8 @@ describe('the curve behind the knob', () => {
     expect(state.curve.value.grid.at(-1)).toBe(120)
   })
 
-  // The figures over the picture are read as the answer to what relies on
-  // screen, so the run of a settled question is nobody's answer to a new one.
+  // The plotted figures are the result for the settings currently in the tab, so
+  // the curve of an earlier request is not valid for new settings.
   it('is nobody’s answer while the answer to the settings now standing is out', async () => {
     const { state } = await openPresetTab()
     expect(state.curve.value.isHonest).toBe(true)
@@ -415,8 +416,8 @@ describe('the curve behind the knob', () => {
   })
 })
 
-// The goal is the one choice a person makes outright, and it is theirs the
-// moment they make it. A window shut before an answer lands loses nothing.
+// The goal is the one choice applied immediately. Closing the tab before a
+// curve response arrives loses nothing.
 describe('the goal chosen', () => {
   it('is written without waiting on the curve behind it', async () => {
     const { state, writtenFiles } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
@@ -444,9 +445,8 @@ describe('the goal chosen', () => {
   })
 })
 
-// A tab is the one thing that holds a preset. Anything else answering for one
-// answers with settings nobody set, and writes them into the file at the first
-// control release.
+// A tab is the only holder of a preset. Any other holder reports settings
+// that were never set, and writes them into the file at the first control release.
 describe('a preset no tab has open', () => {
   it('is retained by nothing, where no tab ever opened it', async () => {
     const { getState } = await openPresetTab()
@@ -470,8 +470,8 @@ describe('a preset no tab has open', () => {
   })
 })
 
-// A person who is told what happened can do something about it. One sentence
-// over every error names none of them.
+// Each error code has its own message, so the user can act on it. One shared
+// sentence for every error identifies none of them.
 describe('what the tab says it encountered as an error', () => {
   const errors: readonly ErrorCode[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
 
@@ -503,8 +503,8 @@ describe('what the tab says it encountered as an error', () => {
     expect(new Set(messages).size).toBe(errors.length)
   })
 
-  // The settings are in the tab and nowhere else once a write fails, and
-  // a person deciding what to do next has to be told that.
+  // After a failed write the settings exist only in the tab, and the tab reports
+  // that.
   it('says the settings are still here where a write failed', async () => {
     for (const error of errors) {
       expect(words.notSaved(error)).toContain('are kept')
@@ -518,8 +518,9 @@ describe('what the tab says it encountered as an error', () => {
   })
 })
 
-// A picture that says it is indexing the vault says an answer is on its way.
-// Where none is coming, the tab says what happened and stops saying it.
+// While the plot is waiting on the vault index, the tab reports that a response
+// is pending. When no response is coming, the tab reports the error and clears
+// the waiting state.
 describe('a curve nobody answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {
     const { state } = await openPresetTab({}, () => Promise.reject(new Error('the vault is gone')))
@@ -541,8 +542,8 @@ describe('a curve nobody answers', () => {
   })
 })
 
-// A setting typed is written when the control is release, so at any moment
-// where it is asked to go, and where the window is.
+// A typed setting is written when the control is released. Until then the tab
+// holds the pending value and the position of the control.
 describe('what a tab still owes the file', () => {
   it('is written before the tab goes', async () => {
     const { state, writtenFiles, closed } = await openPresetTab()
@@ -774,9 +775,9 @@ describe('a setting the goal on screen does not name', () => {
 })
 
 /**
- * A curve worked out off the settings it was asked under, the way the
- * application works one out: its range runs to what carrying the load costs,
- * which the share of the day going to the debt moves.
+ * A curve computed from the given settings the way the application computes one:
+ * its range extends to the cost of carrying the load, which changes with the
+ * share of the day assigned to the debt.
  */
 const createRangedCurve = (settings: Settings): Curve => {
   const top = 60 + settings.backlog
@@ -792,12 +793,12 @@ const createRangedCurve = (settings: Settings): Curve => {
   }
 }
 
-// Nothing but the field a person types in may change, and the budget the goal
-// steers least of all: it is what the picture is scaled to.
+// Only the field being typed in changes. The goal's budget field is never
+// modified, because the plot is scaled to it.
 describe('a field the goal does not getGoalField, typed', () => {
-  // A curve asked for under a new share of the day comes back over a range of
-  // knob goes back to where the preset stands, so the picture and the file say
-  // one thing and the next touch of the knob writes what the file already says.
+  // A curve requested under a new share of the day returns with a different
+  // range. The knob returns to the position of the preset, so the plot and the
+  // file agree and the next knob change writes the value already in the file.
   it('leaves the knob standing where the preset remains, whatever range arrives back', async () => {
     const { state, writtenFiles } = await openPresetTab({ minutesADay: 23 }, createRangedCurve)
     expect(state.place.value).toBe(state.curve.value.now.index)
@@ -848,11 +849,11 @@ describe('a field the goal does not getGoalField, typed', () => {
 })
 
 /**
- * A tab draws its rows before its first read lands, so a person can move one of
- * them while the file's own settings are still on their way. What they moved is
- * theirs; every other row is standing at a placeholder, and the file has the say
- * over it. Writing the placeholders back would lose the preset a person never
- * looked at.
+ * A tab draws its rows before the first read completes, so a field can be
+ * changed while the file's settings are still pending. The changed field keeps
+ * its value; every other row shows a placeholder, and the file determines its
+ * value. Writing the placeholders back would overwrite preset values that were
+ * never displayed.
  */
 describe('a field moved before the first read lands', () => {
   it('leaves every other setting to the read, and writes what the read returned', async () => {
@@ -892,8 +893,8 @@ describe('a field moved before the first read lands', () => {
   })
 })
 
-// How far a setting goes is the application's and not the window's: a field
-// drawn from a copy of its own accepts a number the write then refuses.
+// The limits of each setting come from the application. A field using a local
+// copy of the limits accepts a number that the write then rejects.
 describe('how far each setting goes', () => {
   it('is what the read answered', async () => {
     const { state } = await openPresetTab()
@@ -925,8 +926,8 @@ describe('how far each setting goes', () => {
   })
 })
 
-// A hand on a track moves through every value between where it started and
-// where it stops, and each of those is a curve nobody asked to see.
+// Dragging a control passes through every value between the start and the end
+// position, and each intermediate value would trigger a curve request.
 describe('a control dragged across its range', () => {
   it('keeps one curve in the air and asks again for where the hand came to rest', async () => {
     const waiters: ((one: Curve) => void)[] = []
@@ -935,7 +936,7 @@ describe('a control dragged across its range', () => {
       () => new Promise<Curve>((take) => waiters.push(take)),
     )
 
-    // The read's own curve is the one in the air; every step of the drag lands
+    // The read's curve is the pending request; every step of the drag is applied
     // on top of it.
     for (const share of [0.8, 0.82, 0.84, 0.86]) tab.updateSetting('retention', share)
     await flushPromises()
@@ -958,7 +959,7 @@ const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   },
 })
 
-/** A write that never comes back, so what the tab owes stays owed. */
+/** A write that never resolves, so the pending write stays pending. */
 const neverWritten = () => new Promise<WriteOver>(() => {})
 
 describe('the tab a preset is drawn in', () => {
@@ -1043,8 +1044,8 @@ describe('a tab read again', () => {
   })
 })
 
-// What a person chose and has not seen written is theirs, and a read of the
-// file does not take it back.
+// A choice that is not yet written is kept when a read completes; the read does
+// not overwrite it.
 describe('a choice not yet written, across a read', () => {
   it('keeps the goal chosen', async () => {
     const { state, applyPathChanges } = await openPresetTab({}, curve, () => ({}), neverWritten)

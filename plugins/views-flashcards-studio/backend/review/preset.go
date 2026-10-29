@@ -30,15 +30,15 @@ type Preset struct {
 	// Retention is the share of cards recalled when they come round again.
 	Retention float64
 
-	// Rule is what counts as a review card the person has learned, written under
-	// Interval under RuleInterval, Retention under RuleRetention.
+	// Rule is the criterion for a learned review card: Interval is used under
+	// RuleInterval, Retention under RuleRetention.
 	Rule LearnedRule
 	// Interval is how long a review card is sent away for before it is learned, in
 	// days, and is read under RuleInterval.
 	Interval int
 
-	// Counts is what a day's budget is counted in: the cards a day holds, or the
-	// times they are put to a person.
+	// Counts is the unit of a day's budget: the cards a day holds, or the number
+	// of times they are presented.
 	Counts BudgetUnit
 
 	// Backlog is how much of a day goes to what is overdue before anything
@@ -47,8 +47,8 @@ type Preset struct {
 	// material comes first; between them the day is split, and a side that runs
 	// short leaves the rest to the other.
 	//
-	// It says what a day is spent on, closes nothing, and is read where one pot
-	// is spent between the two.
+	// It sets what a day is spent on, closes nothing, and applies where one budget
+	// is divided between the two.
 	Backlog int
 
 	// Load is how much of a day's load each day of the week carries, in per
@@ -110,8 +110,8 @@ func IsKnownGoal(g Goal) bool {
 	return false
 }
 
-// LearnedRule is what a preset counts as learned. The value it reads stands
-// under the key it names, and the other rule keeps its value and takes no part.
+// LearnedRule is the criterion by which a preset counts a card as learned. The
+// value is stored under the key the rule names, and the other rule keeps its value and takes no part.
 type LearnedRule string
 
 const (
@@ -180,7 +180,7 @@ const (
 )
 
 // IsCharged reports whether a showing of a review card spends a slot of a day's
-// count, where shown is whether the day has asked that review card already.
+// count, where isShown reports whether the day has already presented that review card.
 //
 // It is the one place the counting is read.
 func (u BudgetUnit) IsCharged(isShown bool) bool { return u == BudgetUnitShows || !isShown }
@@ -251,8 +251,8 @@ const (
 	// StoppedNoLoad is a day of the week carrying none of the load. It is a
 	// fact about one day: the preset schedules on the days that carry some.
 	StoppedNoLoad StopReason = "no_load"
-	// StoppedNoWeek is a week carrying none of the load. Every day of it stands
-	// at nothing, so there is no day for the cards to be picked up on.
+	// StoppedNoWeek is a week carrying none of the load. Every day of it has a share
+	// of zero, so there is no day on which cards are due.
 	StoppedNoWeek StopReason = "no_week"
 )
 
@@ -330,7 +330,7 @@ const NeverClears = -1
 // horizon ends with one review card still to learn.
 const NeverLearns = -1
 
-// LearnsUnasked is a projection with no day on which the whole material stands
+// LearnsUnasked is a projection with no day on which the whole material is
 // learned.
 const LearnsUnasked = -2
 
@@ -349,13 +349,13 @@ func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int
 	return int(math.Ceil(float64(unbegunCards) / in))
 }
 
-// getCapacityToBegin is how much room a date leaves for beginning cards: the days
-// of review from the day holding now up to the last one on which a card begun
-// still has its learning before the day the preset aims at.
+// getCapacityToBegin returns the capacity a date leaves for beginning cards: the
+// review days from the day containing now up to the last day on which a card
+// begun still completes its learning before the day the preset targets.
 //
-// Each day counts for the share of the load its day of the week carries, and
-// the learning is counted in days of review, so the days it takes are dropped
-// at the shares they carry.
+// Each day counts for the share of the load its weekday carries, and learning
+// is counted in review days, so the days it takes are weighted by the shares
+// they carry.
 func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
@@ -418,12 +418,9 @@ func (p Preset) IsPast(d Day, now time.Time) bool {
 	return !now.Before(d.GetEndOfDate(p.By))
 }
 
-// ReadPreset is what a preset note's frontmatter says, and what could not be
-// read in it.
-//
-// A key that cannot be read is a problem against the note and keeps its
-// default, and the file is never repaired.
-// readGoal parses the goal field from frontmatter.
+// readGoal parses the goal field from frontmatter. A key that cannot be read is
+// recorded as a problem against the note and keeps its default; the file is
+// never repaired.
 func readGoal(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["goal"]
 	if !present || raw == nil {
@@ -585,8 +582,8 @@ func readLoad(front map[string]any, p *Preset, problems *[]string) {
 		*problems = append(*problems, "load is a day of the week against a share of a day's load")
 		return
 	}
-	// A map hands its keys over in whatever order it holds them, and a
-	// note read twice says the same both times.
+	// A map iterates in arbitrary order, so the keys are sorted and a note read
+	// twice yields the same result.
 	for _, name := range slices.Sorted(maps.Keys(days)) {
 		readDayShare(name, days[name], p, len(days), problems)
 	}
@@ -632,8 +629,8 @@ func DayName(day time.Weekday) string {
 	return strings.ToLower(day.String()[:3])
 }
 
-// readWholeNumber is one setting written in whole numbers, and what the note
-// said about it.
+// readWholeNumber reads one setting written as a whole number and records a
+// problem when the note's value is invalid.
 func readWholeNumber(
 	front map[string]any, key string, bounds Bounds, fallback int, problems *[]string,
 ) int {
@@ -656,7 +653,7 @@ func readWholeNumber(
 	return fallback
 }
 
-// number is what YAML hands over for a number, whichever of the two it chose.
+// number converts a YAML number to float64, whichever of the two numeric types the parser produced.
 func number(raw any) (float64, bool) {
 	switch value := raw.(type) {
 	case int:

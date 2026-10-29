@@ -7,7 +7,7 @@
 export interface DueWords {
   /** The figure and what it counts, as one reading. */
   readonly formatDue: (due: number) => string
-  /** What is said while the figure is still being worked out. */
+  /** Text shown while the figure is still being computed. */
   readonly counting: string
 }
 

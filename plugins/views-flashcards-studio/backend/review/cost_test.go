@@ -36,16 +36,16 @@ func makeAnswers(
 	return out
 }
 
-// What an answer costs is the middle of the answers to its kind: half of them
-// fall either side of it, so a person who answered the door once moves it by one
-// place and not by minutes.
+// What an answer costs is the median of the answers of its kind: half of them
+// fall on either side of it, so a single outlier moves it by one position and
+// not by minutes.
 func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
 
 	// Twelve review cards answered three times each: three seconds while a card
-	// review card is being learned and nine once it comes round in days. One of them
-	// stood on the screen for an hour every time.
+	// review card is being learned and nine once it is scheduled in days. One of them
+	// stayed on the screen for an hour every time.
 	answers := makeAnswers(pos, 12, 3, func(reviewCard, step int) time.Duration {
 		switch {
 		case reviewCard == 0:
@@ -69,8 +69,8 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	}
 }
 
-// A history too short to say what a kind of answer costs leaves that kind at
-// the default, and says it did.
+// A history too short to determine what one answer kind costs leaves that kind
+// at the default and reports it.
 func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
@@ -88,7 +88,7 @@ func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 }
 
 // The two kinds of answer are counted apart: a history of one kind leaves the
-// other at the default and says which of the two it is.
+// other at the default and reports which of the two it is.
 func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
@@ -108,7 +108,7 @@ func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 }
 
 // A history of key hits is costed at the shortest an answer is costed at, so a
-// day is never priced at more cards than a person could sit through.
+// day is never priced at more cards than can be answered.
 func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
@@ -121,13 +121,13 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 	}
 }
 
-// One answer nobody sat through is counted at what a card is worth, so an hour
-// away from the screen is an hour of no review.
+// An abandoned answer is capped at the longest cost, so an hour away from the
+// screen does not count as an hour of review.
 func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
 
-	// Every answer stood on the screen for an hour, so the middle of them is
+	// Every answer stayed on the screen for an hour, so the median of them is
 	// what one answer is capped at.
 	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return time.Hour })
 
@@ -145,8 +145,8 @@ func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 	}
 }
 
-// An answer carrying no time at all says nothing about how long its kind takes,
-// so the answers that do carry one are the whole of what a cost is read from.
+// An answer carrying no time reveals nothing about how long its kind takes, so
+// only the answers that carry a time determine a cost.
 func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
@@ -180,16 +180,16 @@ func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost 
 	return review.DefaultCost
 }
 
-// drawDivision generates what a preset's decks owe of one of its budgets, and
-// the budget there is to divide between them. A budget larger than the whole of
-// what is owed and one smaller than any single share both fall inside the
-// range, so both ends of the division are generated as often as the middle.
+// drawDivision generates the amount each of a preset's decks has due and the
+// budget to divide between them. The budget range covers values above the total
+// due and below any single share, so both ends of the division are generated as
+// often as the middle.
 func drawDivision(t *rapid.T) (int, []int) {
 	owes := rapid.SliceOfN(rapid.IntRange(0, 400), 0, 8).Draw(t, "owes")
 	return rapid.IntRange(0, 1200).Draw(t, "budget"), owes
 }
 
-// getTotalOwed is what a set of decks owes altogether.
+// getTotalOwed returns the total due across a set of decks.
 func getTotalOwed(owes []int) int {
 	out := 0
 	for _, one := range owes {
@@ -198,9 +198,9 @@ func getTotalOwed(owes []int) int {
 	return out
 }
 
-// A day is handed out whole: what the decks take between them is the budget
-// where the budget is the smaller, and everything owed where it is not. What no
-// deck could use is not left on the day.
+// A day is distributed whole: the decks together take the budget when it is
+// smaller than the total due, and the whole total due when it is not. No
+// unusable remainder is left on the day.
 //
 // A preset's day is divided over the decks it schedules.
 func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
@@ -216,9 +216,9 @@ func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
 	})
 }
 
-// No deck takes more of the day than it owes of it, and a deck owing nothing
-// takes nothing: a share is what a deck owes, so there is nothing to hand a
-// deck that owes nothing.
+// No deck takes more of the day than it has due, and a deck with nothing due
+// takes nothing: a share is bounded by what the deck has due, so a deck with
+// nothing due receives no share.
 //
 // The shares are proportional to what the decks owe.
 func TestDivideBudget_ShareNeverExceedsOwed(t *testing.T) {
@@ -284,11 +284,11 @@ func TestADeckOwingMoreNeverConsumesLess(t *testing.T) {
 }
 
 // The decks take the same shares between them whatever order they are given in.
-// A share is worked out from what its deck owes and from nothing else, so
-// renaming a deck's file moves no card from one deck to another.
+// A share is computed from the amount its deck has due and nothing else, so renaming a
+// deck's file moves no card from one deck to another.
 //
 // The shares are proportional to what the decks owe, and where the fractions
-// stand equal the deck owing more takes the remainder.
+// are equal the deck owing more takes the remainder.
 func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -312,13 +312,13 @@ func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 	})
 }
 
-// Decks owing quite different amounts stand at the same fraction: half a day
-// leaves a deck owing an odd number half a card over, whatever that number is,
-// so a deck owing one and a deck owing seven are level. The two cards over go to
-// the two decks owing most of those standing level, and not to the decks owing
-// one card each.
+// Decks owing different amounts have the same fraction: half a day leaves a
+// deck owing an odd number half a card over, whatever that number is, so a deck
+// owing one and a deck owing seven are equal. The two remaining cards go to the
+// two decks owing the most among those with equal fractions, and not to the
+// decks owing one card each.
 //
-// Where the fractions stand equal the deck owing more takes the remainder.
+// Where the fractions are equal the deck owing more takes the remainder.
 func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
 	t.Parallel()
 	owes := []int{0, 1, 1, 7, 239, 400}

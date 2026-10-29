@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * One template of a card model, edited: a strip it is dragged by, holding its name and
- * one row of the fields, and under that one window divided into four parts.
+ * One template of a card model, edited: a strip it is dragged by, holding its
+ * name and one row of the fields, and below that one area divided into four
+ * parts.
  *
- * Each half is written in a box of its own, and beside it stands what that half
- * evaluates to. A field pressed in the strip is written into the half last typed
- * in. What the template stands for is the caller's, and so is what is wrong with it.
+ * Each half is written in its own box, with its evaluated result next to it. A
+ * field pressed in the strip is inserted into the half last typed in. The
+ * caller owns the template and its problems.
  */
 import { computed, nextTick, shallowRef, type ComponentPublicInstance } from 'vue'
 import { CardHeader } from '../../card-header'
@@ -27,7 +28,7 @@ const props = withDefaults(
   defineProps<{
     /** The template, laid out against the fields the card model declares. */
     template: TemplateRow
-    /** What the caller found wrong with this template, said beside its name. */
+    /** The problems the caller found with this template, shown next to its name. */
     wrong?: readonly string[]
     /** The words it is drawn with. */
     words?: CardModelWords
@@ -42,9 +43,9 @@ const emit = defineEmits<{
   /** The template taken up by the pointer, and let go again. */
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void
-  /** The template asked to go one place along the order. */
+  /** The template is moved one position along the order. */
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
-  /** One half of it, as it now reads. */
+  /** One half of it, with its current text. */
   (event: 'write', half: Half, text: string): void
 }>()
 
@@ -75,9 +76,9 @@ const onSetBox = (pane: Pane, element: Element | ComponentPublicInstance | null)
 }
 
 /**
- * A field written into the half the caret is in, where the caret stands, the caret
- * following it. A box nothing has been typed in holds no caret, so the field
- * goes after what is written there.
+ * Inserts a field into the half the caret is in, at the caret position, and
+ * moves the caret after it. A box that has never been typed in has no caret, so
+ * the field is appended to its content.
  */
 const onPut = async (field: string): Promise<void> => {
   const half = focusedHalf.value
@@ -148,7 +149,7 @@ const isFocused = (pane: Pane): boolean =>
   --box-air: 0.5rem;
   --box-pad-inline: var(--numen-box-air);
 
-  /* How tall a part of the window stands before what is in it makes it taller. */
+  /* The height of a part in lines before its content makes it taller. */
   --pane-lines: 6;
   --pane-min: calc(var(--pane-lines) * var(--numen-line-height) * 1em + 2 * var(--box-air));
 

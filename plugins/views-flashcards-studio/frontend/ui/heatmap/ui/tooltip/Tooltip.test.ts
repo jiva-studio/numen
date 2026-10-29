@@ -1,10 +1,9 @@
 /**
- * Where the tooltip stands: beside the thing it is about, on the near side
- * where the far one has no room, and inside the edge where neither has.
+ * Tooltip placement: beside the target, on the near side where the far side has
+ * no space, and inside the viewport edge where neither side has space.
  *
- * The document a test runs in lays nothing out, so the size the tooltip turned
- * out to be is given to it here. Everything the placement does follows from
- * that size and the room it is given.
+ * The test document performs no layout, so the tooltip size is supplied here.
+ * Everything the placement does follows from that size and the available space.
  */
 import { mount } from '@vue/test-utils'
 import { browserViewport, type Viewport } from '@numen/ui'
@@ -47,7 +46,7 @@ const createBox = (overrides: Partial<Box> = {}): Box => ({
   ...overrides,
 })
 
-/** Drawn, and placed: the size it turned out to be reaches the style on the
+/** Mounted and placed: the measured size is applied to the style on the
  *  frame after the one it was measured on. */
 const mountTooltip = async (props: Record<string, unknown> = {}) => {
   const tooltip = mount(Tooltip, {
@@ -119,8 +118,8 @@ describe('the thing it is about moving', () => {
 })
 
 describe('the room it is placed in', () => {
-  // Told nothing about the room, it stays inside the window, and the window is
-  // measured again whenever it changes size.
+  // With no viewport supplied, it stays inside the window, and the window is
+  // measured again whenever its size changes.
   it('is the window where a caller measures none of its own', async () => {
     const was = window.innerWidth
     window.innerWidth = 2000

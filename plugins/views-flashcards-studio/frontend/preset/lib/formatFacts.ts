@@ -2,14 +2,14 @@
 import { many, percent, plural } from '@numen/ui'
 import type { BuyFact, LearningFact, MaterialFact } from './facts'
 
-/** A count as a person reads one. */
+/** A count formatted for display. */
 export const count = (value: number): string => `${Math.round(value)}`
 
 /** An error clause as a sentence. */
 export const sayAsSentence = (clause: string): string =>
   `${clause.charAt(0).toUpperCase()}${clause.slice(1)}.`
 
-/** A fact about what a place buys, said. */
+/** A fact about what a setting provides, formatted as text. */
 export const formatBuyFact = (fact: BuyFact): string => {
   switch (fact.kind) {
     case 'daysOff':
@@ -29,7 +29,7 @@ export const formatBuyFact = (fact: BuyFact): string => {
   }
 }
 
-/** A fact about the material, said as a figure and the name under it. */
+/** A fact about the material, formatted as a figure and its name. */
 export const formatMaterialFact = (fact: MaterialFact): { figure: string; name: string } => {
   const figure = count(fact.count)
   switch (fact.kind) {
@@ -44,7 +44,7 @@ export const formatMaterialFact = (fact: MaterialFact): { figure: string; name: 
   }
 }
 
-/** A fact about what is learned, said as a figure and the name under it. */
+/** A fact about what is learned, formatted as a figure and its name. */
 export const formatLearningFact = (fact: LearningFact): { figure: string; name: string } => {
   switch (fact.kind) {
     case 'notYet':

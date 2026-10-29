@@ -1,8 +1,8 @@
 /**
- * The review of one vault put together: what it holds is which screen is on.
+ * The review of one vault assembled: the screen that is shown is its state.
  *
- * The rules are beside it: what a session is, what a keystroke asks for, and
- * what the review has to say. Everything here is made once, as the window
+ * The rules sit beside it: what a session is, what a keystroke requests, and
+ * what the review reports. Everything here is created once, when the window
  * opens the review on a vault, and released when the window closes it.
  */
 import { computed, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
@@ -25,11 +25,11 @@ import type { Report } from '../pages/session'
 export interface ReviewDeps {
   /** The vault the window opened the review on. */
   readonly vault: string
-  /** What every vault owes, which the review of one vault reads its own out of. */
+  /** The cards due in every vault, from which the review of one vault reads its own. */
   readonly counts: VaultCounts
   /** The corner of the window the notices are drawn in. */
   readonly notices: NoticeHost
-  /** The agent of the window, which says whether it can be reached and answers about a card. */
+  /** The agent of the window, which reports whether it is reachable and answers questions about a card. */
   readonly agent: AgentHost
   /** How the agent panel mounts the conversation another plugin declares. */
   readonly mountView: MountView

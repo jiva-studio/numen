@@ -19,8 +19,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// newStudiedNotes is a vault of one preset, one deck of as many cards pointing
-// which is what a person meets the first time they open one of these controls.
+// newStudiedNotes returns a vault with one preset, a deck of `cards` cards linked
+// to it, and a second deck linked to no preset.
 func newStudiedNotes(cards int) map[string]string {
 	deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
 	for i := range cards {
@@ -69,12 +69,11 @@ func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	return u
 }
 
-// noon is a fixed hour, so that a curve is the same curve whenever the tests
-// are run.
+// noon is a fixed time of day, so curves are identical across test runs.
 var noon = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 
-// A curve is asked for once per position of a control a person is dragging, and
-// none of those asks writes anything.
+// A control requests one curve per position while it is dragged, and none of
+// those requests writes anything.
 func TestACurveWritesNoScheduleCache(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -121,8 +120,8 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 	}
 }
 
-// What a curve of minutes suggests is the first place of the grid the minutes
-// no longer close: the shortest day that asks everything the day holds.
+// The suggestion of a curve of minutes is the first grid place whose minutes do
+// not close: the shortest day that asks every card the day holds.
 func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	t.Parallel()
 	// A vault deep enough that the short days of the grid are cut short by the
@@ -250,8 +249,8 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 // More days to do the same material in is never more minutes a day: the date
 // paces the material, so a nearer day is a dearer one.
 //
-// It is the pace that thins, so it is said of the days a pace can reach. A day
-// out of reach is handed the whole material at once whatever day it is.
+// The pace thins only for days a pace can reach. A day out of reach schedules
+// the whole material at once regardless of the date.
 func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -279,8 +278,8 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 				got.Days[i], one.Minutes, got.Days[i-1], got.Points[i-1].Minutes)
 		}
 	}
-	// And the range holds both regimes, so the fall is said of a pace that
-	// thins and not of one that never changed.
+	// The range contains both regimes, so the decrease is asserted for a pace that
+	// thins and not for one that is constant.
 	if got.Points[0].Short == 0 || got.Points[len(got.Points)-1].Short != 0 {
 		t.Errorf("the range leaves %d review cards short at one end and %d at the other",
 			got.Points[0].Short, got.Points[len(got.Points)-1].Short)
@@ -300,8 +299,8 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	p := review.Preset{
 		Goal: review.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 1, ReviewsADay: 45,
-		// A review card sent away for three weeks, which twenty-five days leave
-		// room for and the days near the left of the range do not.
+		// A review card with a three-week interval, which a range of twenty-five days
+		// accommodates and the short end of the range does not.
 		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
@@ -347,8 +346,8 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	}
 }
 
-// The load each day of the week carries and an even load are projected, so what
-// stands where the preset stands is worked out with them applied.
+// The load of each weekday and an even load are projected, so the curve at the
+// preset's own setting is computed with them applied.
 func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -400,16 +399,16 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Thirty cards of a one-template card model against one, so the day the load
-	// wants is not the same day.
+	// The preset's decks and the deck naming no preset hold different cards, so the
+	// load yields different review counts at the first point.
 	if mine.Points[0].Reviews <= rest.Points[0].Reviews {
 		t.Errorf("the preset's deck answers %v a day and the deck naming none answers %v",
 			mine.Points[0].Reviews, rest.Points[0].Reviews)
 	}
 }
 
-// A curve carries how many review cards stand under the preset, so a preset whose
-// decks hold nothing is told apart from one nothing points at.
+// A curve carries the number of review cards under the preset, so a preset whose
+// decks hold nothing is distinguishable from one no deck points at.
 func TestACurveCarriesTheReviewCardsBelowThePreset(t *testing.T) {
 	t.Parallel()
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
@@ -439,8 +438,8 @@ func TestACurveCarriesTheReviewCardsBelowThePreset(t *testing.T) {
 	}
 }
 
-// Nothing about a curve is written to the vault: it is shown beside a control,
-// and what the control settles is written by the person moving it.
+// A curve is never written to the vault: it is displayed beside a control, and
+// the control writes the value that is set.
 func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)
@@ -476,8 +475,8 @@ func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 			t.Errorf("the %s mark is at place %d of %d", name, mark.Index, len(c.Grid))
 			continue
 		}
-		// A mark relies on a place of the grid, so the figures a person reads
-		// under it are the figures of the setting they are learned at.
+		// A mark references a grid place, so the figures displayed under it are the
+		// figures of the setting the mark represents.
 		if mark.Value != c.Grid[mark.Index] {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
 				name, mark.Value, c.Grid[mark.Index])
@@ -488,13 +487,12 @@ func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 	}
 }
 
-// The range a date is chosen from relies on the vault and not on the date, so a
-// day the file names close at hand is a range a person can still drag out.
+// The range a date is chosen from depends on the vault and not on the date, so
+// a date near at hand still yields a range that can be dragged out.
 func TestProjectCurve_NearDateKeepsExtensionRange(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
-	// The day after tomorrow, which is the shortest range a person could have
-	// left themselves with.
+	// The day after tomorrow is the shortest selectable range.
 	p := review.Preset{
 		Goal: review.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -517,12 +515,11 @@ func TestProjectCurve_NearDateKeepsExtensionRange(t *testing.T) {
 	}
 }
 
-// What a curve says about a backlog is measured over the same horizon on every
-// goal.
+// The backlog measure of a curve uses the same horizon on every goal.
 //
-// A goal of a date runs each place to its own day, and a place near the left of
-// the range is still asked how long a backlog takes to clear over the horizon
-// every other place answers over.
+// A goal of a date runs each place to its own day, and a place at the short end of
+// the range is still evaluated for how long a backlog takes to clear over the
+// horizon that every other place uses.
 func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -548,9 +545,9 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 
 // A day at none of the load is no session, so the curve draws the day after it.
 //
-// A person who has just given today's weekday nothing is the person most in
-// need of the picture, and a picture reading nought at every place of the range
-// says nothing about the setting it is there to steer.
+// A weekday with no load has no session. The case arises when the load of the
+// current weekday has just been set to zero, and a curve reading zero at every
+// place of the range would not inform the setting it is meant to steer.
 func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
@@ -641,8 +638,8 @@ func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 	}
 }
 
-// getLearned is what a curve of these settings says stands learned, at every
-// place of it, without repeating a value.
+// getLearned returns the learned count at every place of the curve of these
+// settings, omitting consecutive repeated values.
 func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 	t.Helper()
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -658,7 +655,7 @@ func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 	return out
 }
 
-// What stands learned today moves with the rule and its threshold, and with
+// The learned count for today depends on the rule and its threshold and on
 // nothing else.
 //
 // It is read off the schedules the vault already holds, before a projected day
@@ -667,8 +664,8 @@ func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
 func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
-	// Every card answered on days going back, and nothing asked for months: the
-	// intervals are long and the chance of recalling them today is not.
+	// Every card is answered on days in the past and none is asked for months: the
+	// intervals are long and the recall probability today is low.
 	for back := 240; back >= 180; back -= 15 {
 		record := s.run(t, noon.AddDate(0, 0, -back))
 		for i := range 30 {
@@ -724,12 +721,11 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	}
 }
 
-// The day the whole material stands learned is drawn where a preset is steered
-// by its minutes and where it is steered by its retention, and nowhere under a
-// date: a preset aiming at a day is answered by that day.
+// The day on which the whole material is learned is drawn for a minutes goal and
+// a retention goal, and not for a date goal, where the preset's own date applies.
 //
-// It is a prediction under a stated assumption — that every card asked comes
-// back — so it is read off a run of its own and not off the run beside it.
+// It is a prediction under the assumption that every scheduled card is recalled,
+// so it is computed from a run of its own and not from the run of the curve.
 func TestCurves_MinutesAndRetentionGoalsNameLearnedDay(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -782,9 +778,8 @@ func TestCurves_MinutesAndRetentionGoalsNameLearnedDay(t *testing.T) {
 
 // The day the file names is a place of the grid, and the mark relies on it.
 //
-// The picture puts the mark on the range and the person reads the numbers
-// beneath it, so those numbers are the day they named and not the day beside
-// it.
+// The mark is placed on the range and the figures under it are read at the mark,
+// so they are the figures of the day the file names and not of an adjacent day.
 func TestTheMarkOfADateExistsOnTheDayTheFileNames(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -825,9 +820,9 @@ func TestTheMarkOfADateExistsOnTheDayTheFileNames(t *testing.T) {
 
 // Each place of a date's range is read on the day it names.
 //
-// Past that day the preset schedules nothing, so a debt read off the end of the
-// horizon is a debt nobody was asked to pay and a share left in the head is a
-// material nobody was asked about.
+// Past that day the preset schedules nothing, so a debt read at the end of the
+// horizon is owed against no schedule, and a retained share read there covers
+// material no schedule reviews.
 func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -858,10 +853,10 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 
 // A place of a date's range is one run, and everything read off it agrees.
 //
-// The height of the curve and the mark on it answered out of two runs: the
-// height came from the preset's own date, which schedules nothing past the day
-// it names, so every place to the right of that day drew a material falling out
-// of the head while the mark beside it said the day was met.
+// The height of the curve and the mark on it come from one run. The preset's own
+// date schedules nothing past the day it names, so a separate run for the height
+// draws material forgotten at every place after that day while the mark reports
+// the day as met.
 func TestAPlaceOfADateIsOneRun(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -911,9 +906,9 @@ func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 
 // The day suggested for a date is a day the material can be learned by.
 //
-// It took the soonest day whose cost fitted the minutes the preset keeps and
-// asked nothing else, so a range whose first day leaves the whole material out
-// of reach was answered with tomorrow.
+// It is the soonest day whose cost fits the minutes the preset keeps and that
+// leaves no card out of reach; a range whose first day leaves the whole material
+// out of reach does not suggest tomorrow.
 func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -964,12 +959,11 @@ func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 	}
 }
 
-// A day further off than the projection reaches stands nowhere on the range,
-// and the range is drawn as far as it goes.
+// A day further off than the projection reaches has no place on the range, and
+// the range is drawn as far as it extends.
 //
-// A person who has given themselves a decade sees where their day fell off the
-// picture. An empty picture is what a day already past says, and the two are
-// not one answer.
+// A date ten years away shows where the day falls outside the range, so the curve
+// is non-empty. A date already past yields an empty curve; the two cases differ.
 func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 2)
@@ -991,18 +985,18 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	}
 }
 
-// The curve opens on the day a person is already partway through.
+// The curve starts from the current day, which may be partly complete.
 //
-// The first place of a run is a real day and not a fresh one: what it draws is
-// what a session opened now would hand over. An evening re-opening of the tab
-// otherwise draws a day already spent as a day still to come.
+// The first place of a run is the remainder of the current day and not a full day:
+// it draws what a session opened now would contain. Re-opening the tab in the
+// evening does not draw an already spent day as a day still to come.
 func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
 	// The session and curve are evaluated for one day.
 	write(t, s, "Sanskrit.md", "---\ntype: preset\ngoal: minutes_a_day\n"+
 		"minutes_a_day: 3\nnew_a_day: 0\nreviews_a_day: 0\n---\n\n# Sanskrit\n")
-	// Every review card owed today, at six seconds an answer.
+	// Every review card is due today, at six seconds per answer.
 	before := s.run(t, noon.AddDate(0, 0, -30))
 	for i := range 30 {
 		answer(t, before, cardID(i), 6*time.Second)
@@ -1036,12 +1030,11 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	}
 }
 
-// The setting a person is learned at is a place of the grid, so the figures
+// The setting a preset is learned at is a place of the grid, so the figures
 // under the mark are the figures of that setting.
 //
-// The mark carried the preset's own value while the figures beside it were the
-// grid's nearest place, so a day of fifteen minutes was drawn as a day of
-// fourteen and a day of one minute as a day of two.
+// The mark's value and the figures under it come from the same grid place: a
+// setting of fifteen minutes reads fifteen and one minute reads one.
 func TestTheMarkExistsOnTheSettingThePresetContains(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -1121,9 +1114,9 @@ func TestACurveCarriesTheVerdictOnTheSettingsItWasGeneratedBelow(t *testing.T) {
 // A goal keeping no account of what its pace gets through leaves no place of
 // its curve falling short.
 //
-// The stretch a budget does not get through is drawn as a line of its own over
-// the curve. A goal of minutes and a goal of retention set no pace at a day,
-// and every place of theirs stands as one nothing is short of.
+// The shortfall of a budget is drawn as a line of its own over the curve. A goal
+// of minutes and a goal of retention set no pace per day, so no place of theirs
+// has a shortfall.
 func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
@@ -1147,8 +1140,8 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 
 // A curve is drawn under the settings a save would take.
 //
-// A control asks for a curve at the value under the hand, and that value is
-// written the moment the hand is release. Settings the writer refuses draw no
+// A control requests a curve at the value being dragged, and that value is
+// written when the drag is released. Settings the writer rejects produce no
 // curve.
 func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	t.Parallel()
@@ -1174,7 +1167,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	}
 }
 
-// A build carrying no index reaches no deck, and answers ErrNotCarried.
+// A build with no index reaches no deck and returns ErrNotCarried.
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)
@@ -1189,14 +1182,13 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	}
 }
 
-// A curve works every place of its grid out alongside the others, and the curve
-// it evaluates to is the same curve every time it is asked for.
+// A curve computes the places of its grid concurrently, and the curve is
+// identical on every evaluation.
 //
-// Run under the race detector this is what holds the places to sharing nothing:
-// each run reads the schedules it is given and writes only what it returns.
-// Read without it, what it holds is that the answer does not depend on the order
-// the places happen to finish in, which is the order of the cores the machine
-// has.
+// Under the race detector the test verifies that places share no state: each run
+// reads the schedules it is given and writes only what it returns. Without it, the
+// test verifies that the result does not depend on the order in which places
+// finish, which varies with the core count.
 func TestProjectCurve_IsDeterministic(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 200)
@@ -1222,8 +1214,8 @@ func TestProjectCurve_IsDeterministic(t *testing.T) {
 	}
 }
 
-// atOnceGoals is one preset under each goal, so that all three of the loops
-// that work a grid out are asked the question.
+// atOnceGoals returns one preset per goal, so all three grid-evaluation loops are
+// exercised.
 func atOnceGoals() []struct {
 	name   string
 	preset review.Preset
@@ -1251,9 +1243,8 @@ func atOnceGoals() []struct {
 	}
 }
 
-// describeCurve is a whole curve written out, every scalar and every series of
-// it, so that two of them are compared by what they say and not by what they
-// point at.
+// describeCurve formats every scalar and every series of a curve as a string, so
+// curves are compared by value and not by pointer identity.
 func describeCurve(c projection.Curve) string {
 	return fmt.Sprintf("%v", c)
 }
@@ -1295,9 +1286,9 @@ func curveWhole(cards int) map[string]string {
 
 // The curve of a preset holding the whole vault, at four sizes of it.
 //
-// What the projection costs relies on the review cards the preset holds, and
-// these four rows are what says how it grows with them. The log grows with the
-// vault too, at the same half an answer a review card the row above is built on.
+// The projection cost depends on the review cards the preset holds; these four
+// sizes show how it grows with them. The log grows with the vault as well, at the
+// same half an answer per review card as the row above.
 //
 // The schedule cache is filled before the clock starts, which is what opening
 // the window and then a preset tab costs.
@@ -1362,8 +1353,8 @@ func BenchmarkPresetCurve(b *testing.B) {
 	}
 }
 
-// closing is the vault's files with the request cancelled at the first one
-// read, which is a person shutting the window while its decks are being read.
+// closing wraps the vault's file readers and cancels the request at the first
+// read, simulating a closed window while its decks are being read.
 type closing struct {
 	inner  ports.VaultReaders
 	cancel context.CancelFunc
@@ -1405,8 +1396,8 @@ func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
 	}
 }
 
-// sanskrit is the identifier the preset of that name carries, so that a deck
-// can name it the auxiliary way.
+// sanskrit is the identifier of the preset of that name, so a deck can reference
+// it by identifier.
 const sanskrit = "01M02ACGM0FYMSXNDP29C90JNR"
 
 // newPointedNotes is a vault of three presets and five decks. Three decks name
@@ -1489,9 +1480,9 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, revie
 // the same range, the same value at every place of it, the same marks, and the
 // same decks and review cards behind them.
 //
-// The vault it is asked of holds decks of other presets and decks of none, and
-// the one it is read against holds only the decks the preset schedules. Both
-// hold one history, so what the two answers differ by is the reading.
+// The queried vault holds decks of other presets and decks of none; the
+// comparison vault holds only the decks the preset schedules. Both hold one
+// history, so any difference between the answers comes from the reading.
 func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	t.Parallel()
 	shapes := []struct {

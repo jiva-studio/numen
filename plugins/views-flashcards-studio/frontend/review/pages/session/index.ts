@@ -1,4 +1,4 @@
-/** The session screen: the card in front of a person, and the two panels beside it. */
+/** The session screen: the card under review, and the two side panels. */
 export { createCardAgentPort } from './api/agent'
 export { getDeckNeighbourhood } from './api/notes'
 export { WORDS } from './lib/agentWords'

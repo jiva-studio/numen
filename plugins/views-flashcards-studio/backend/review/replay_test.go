@@ -53,8 +53,8 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 	}
 }
 
-// A person who took an answer back is not counted as having given it, and both
-// lines stay in the file.
+// An answer that was taken back is not counted as given, and both lines remain in
+// the file.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	provided := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
 	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:00:04Z"), Undoes: "01A"}
@@ -65,7 +65,7 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	}
 }
 
-// Each review card of a card model asks a different thing, so each has a path of its own.
+// Each review card of a card model tests a different thing, so each has its own path.
 func TestEachCardOfACardIsScheduledOnItsOwn(t *testing.T) {
 	recognise := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
 	name := makeAnswer("01B", "k7m2xq9fzp", "Name it", "2026-08-20T09:00:10Z", review.Again)
@@ -171,8 +171,8 @@ func session(t *rapid.T) []review.Answer {
 				Card:     rapid.SampledFrom(cards).Draw(t, "card"),
 				Template: rapid.SampledFrom(templates).Draw(t, "template"),
 			},
-			// Minutes, over a few days, so that two answers of one instant are
-			// drawn about as often as two of different ones.
+			// Minutes over a few days, so two answers at one instant are generated about as
+			// often as two at different instants.
 			At:     baseTime.Add(time.Duration(rapid.IntRange(0, 5000).Draw(t, "minutes")) * time.Minute),
 			Rating: review.Rating(rapid.IntRange(int(review.Again), int(review.Easy)).Draw(t, "rating")),
 		}
@@ -185,20 +185,20 @@ func session(t *rapid.T) []review.Answer {
 	return answers
 }
 
-// A schedule is the answers themselves and never the order the files carrying
-// them arrived in, and one identifier is one answer however many lines carry
-// it. A synchroniser that met a conflict leaves a second copy of a run beside
-// the first, and a person restoring a backup puts one there by hand; a card
-// counted twice is sent away for longer than it was earned.
+// A schedule depends on the answers themselves and never on the order in which
+// the files carrying them arrived, and one identifier is one answer however many
+// lines carry it. A synchroniser that meets a conflict leaves a second copy of a
+// run next to the first, and a restored backup can add another; a card counted
+// twice is scheduled further out than it earned.
 func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 	t.Parallel()
 	var copied, level int
 	rapid.Check(t, func(t *rapid.T) {
 		answers := session(t)
-		// Two answers of one instant are put in the order of their identifiers,
-		// which is the one place the order is not the clock's.
-		// The instant is held as a count of nanoseconds: two time.Time values
-		// naming one instant are two keys, and this asks whether they are one.
+		// Two answers at one instant are ordered by their identifiers, which is the only
+		// place the order is not the clock's.
+		// The instant is held as a count of nanoseconds: two time.Time values naming one
+		// instant are two map keys, and this checks whether they are one.
 		when := make(map[review.ReviewCardID]map[int64]bool)
 		for _, a := range answers {
 			if when[a.ReviewCard] == nil {
@@ -238,8 +238,8 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 	}
 }
 
-// An answer taken back leaves the schedule the answers around it leave on their
-// own: a person who took one back is not counted as having given it, whatever
+// An answer taken back leaves the schedule that the surrounding answers produce
+// on their own: an answer that was taken back is not counted as given, whatever
 // else the file holds and however many lines take it back.
 func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	t.Parallel()
@@ -256,8 +256,8 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 				continue
 			}
 			took++
-			// A line taking an answer back stands where the person pressed it,
-			// which is after the answer and before whatever followed.
+			// A line taking an answer back is placed after the answer and before whatever
+			// followed.
 			lines := 1
 			if rapid.Bool().Draw(t, "taken back twice") {
 				lines, twice = 2, twice+1
@@ -279,7 +279,7 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 				took, len(answers), got, want)
 		}
 	})
-	// A run in which nothing was taken back asks nothing of the rule.
+	// A run in which nothing was taken back does not exercise the rule.
 	if took < 200 || twice < 50 {
 		t.Fatalf("%d answers were taken back and %d of those twice over", took, twice)
 	}

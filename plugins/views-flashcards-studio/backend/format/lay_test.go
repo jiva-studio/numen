@@ -13,8 +13,7 @@ import (
 // file, and neither owns it.
 const corpus = "../../frontend/testdata/templates.json"
 
-// table is the corpus as it is written down: what it says of itself, and the
-// templates.
+// table is the corpus as written: its own description, and the templates.
 type table struct {
 	Invariant string   `json:"invariant"`
 	Count     int      `json:"count"`
@@ -78,9 +77,9 @@ func TestAReviewCardMeansTheSameOnEverySurfaceItIsShownOn(t *testing.T) {
 	}
 }
 
-// corpusOf reads the table and refuses one that would pass without asking
-// anything: a file that is empty, that declares no templates, that says nothing of
-// what it is for, or that names one template twice.
+// corpusOf reads the table and rejects one that would pass without testing
+// anything: a file that is empty, that declares no templates, that does not state
+// its purpose, or that names one template twice.
 func corpusOf(t *testing.T) table {
 	t.Helper()
 
@@ -153,7 +152,7 @@ func TestTheFirstFieldLaysOutWhatTheCardContains(t *testing.T) {
 		t.Errorf("front = %q, want the field and not the heading", front)
 	}
 
-	// Which field stands first changes nothing about how one is laid out.
+	// 	// The position of a field does not change how a field is laid out.
 	front, back := format.Lay(template, card)
 	if front != "Llama, and everything the heading had no room for" || back != `45"` {
 		t.Errorf("front = %q, back = %q", front, back)
@@ -207,8 +206,8 @@ func TestAPlaceholderIsANameSavedExactly(t *testing.T) {
 	}
 }
 
-// Nothing escapes the braces. A person writing them in prose gets a
-// placeholder, and this is what that looks like.
+// Braces are not escaped. Braces written in prose produce a placeholder, and this
+// test shows the result.
 func TestBracesAreNotEscaped(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 
@@ -219,7 +218,7 @@ func TestBracesAreNotEscaped(t *testing.T) {
 	}
 }
 
-// A value is HTML, and it lays out as the person wrote it.
+// A value is HTML, and it is laid out as written.
 func TestAValueOfSeveralLinesLaysOutWhole(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{
 		{Field: "Height", Text: "<h4>At the shoulder</h4>\n\nabout 45\""},
@@ -232,8 +231,8 @@ func TestAValueOfSeveralLinesLaysOutWhole(t *testing.T) {
 	}
 }
 
-// A card model declaring no field cuts nothing: every placeholder on it stands for
-// a field nobody declared.
+// A card model that declares no field generates nothing: every placeholder in it
+// refers to an undeclared field.
 func TestACardModelOfNoFieldsLaysNothingOut(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 

@@ -1,7 +1,7 @@
 /**
- *
- * stop on the way round the screen. Nothing overdue is the floor it is read up
- * from, and the room it is drawn in is the same box in every state it has.
+ * The backlog curve drawn for a date goal. The plot is the slider track and a
+ * single tab stop. Zero overdue is the baseline the curve is read from, and the
+ * plot occupies the same box in every state.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -9,8 +9,8 @@ import type { Curve } from '../types'
 import { mountPresetTab, heights, point } from '../fixtures'
 import { WORDS as words } from '../words'
 
-// Past the day a person names, the preset schedules nothing: no card is
-// answered and the pile stacks up. Every series stops at that day.
+// Past the target day of the goal, the preset schedules nothing: no card is
+// answered and the pile grows. Every series stops at that day.
 describe('what a goal of a date draws', () => {
   const climbing = [0, 0, 0, 4, 9, 16, 27, 42, 57, 69, 80, 91, 100]
 
@@ -44,7 +44,7 @@ describe('what a goal of a date draws', () => {
     expect(days(tab)).toBe(13)
   })
 
-  // A shorter run must not make the picture jump, so every place is drawn
+  // A shorter run does not change the plot height, so every place is drawn on one scale.
   it('keeps one height for the backlog, whatever place the knob relies on', async () => {
     const { tab } = createDatedTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
@@ -77,8 +77,8 @@ describe('the plot of what remains overdue', () => {
     expect(tab.get('[data-backlog="line"]').attributes('d')?.startsWith('M')).toBe(true)
   })
 
-  // A day too short to carry what falls due adds to the pile, and the climb is
-  // what the picture is for. The extent is scaled to this one place's own run.
+  // A day too short for the cards that fall due adds to the pile, and the climb
+  // is what the plot shows. The extent is scaled to this place's own run.
   it('draws a backlog that climbs as climbing, and not flat', () => {
     const heights = (d: string) =>
       d
@@ -141,8 +141,8 @@ describe('the plot of what remains overdue', () => {
     )
   })
 
-  // The room a plot is drawn in is the same box in every state it has, so
-  // nothing under the picture moves when the answer lands.
+  // The area a plot is drawn in is the same box in every state, so nothing under
+  // the plot moves when the response arrives.
   it('holds one room for the plot, waiting, drawn and empty areNeighbourhoodsEqual', () => {
     const room = (overrides: Partial<Curve> = {}) =>
       mountPresetTab(overrides)
@@ -152,8 +152,8 @@ describe('the plot of what remains overdue', () => {
     expect(room({ at: [point(), point(), point(), point()] })).toStrictEqual(room())
   })
 
-  // Nothing overdue is the floor the backlog is read up from, and a run holding
-  // nothing at all lies along it.
+  // Zero overdue is the baseline the backlog is read from, and a run of zeros
+  // is drawn along it.
   it('lays a run of nothing overdue along the floor, not through the middle', () => {
     const heights = (d: string) =>
       d
@@ -166,8 +166,8 @@ describe('the plot of what remains overdue', () => {
     const floor = heights(
       createClimbingTab([12, 8, 4, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
     )
-    // Every place of the empty run stands where the run that clears evaluates to
-    // rest, which is the foot the axis is drawn along.
+    // Every place of the empty run is at the resting value of the run that clears,
+    // which is the baseline the axis is drawn along.
     expect(new Set(flat).size).toBe(1)
     expect(flat[0]).toBe(floor[5])
     expect(flat[0]).toBe(floor[4])
@@ -180,7 +180,7 @@ describe('the plot of what remains overdue', () => {
     expect(response).toContain(words.formatBacklogCards(0))
   })
 
-  // walks the backlog with it.
+  // The backlog curve follows the knob, since each place of the grid has its own run.
   it('follows the knob, since each place of the grid keeps its own', async () => {
     const { tab } = mountPresetTab({
       at: [

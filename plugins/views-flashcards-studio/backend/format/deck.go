@@ -9,17 +9,18 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 )
 
-// ReadDeck reads the body of a note as a deck. Which notes are decks is what
-// the frontmatter key `type` says, and this reads whichever it is handed.
+// ReadDeck reads the body of a note as a deck. The frontmatter key `type`
+// determines which notes are decks, and this function reads whichever note it
+// is given.
 //
-// It never fails: a deck that could not be understood is still somebody's
-// writing, and every value in it is read whatever else is wrong.
+// It never fails: a deck that cannot be fully interpreted still has its
+// content, and every value in it is read regardless of other problems.
 func ReadDeck(n domain.Note) Deck {
 	deck, _ := readDeck(n.FileStat, []byte(n.Body))
 	return deck
 }
 
-// headSpan is where one heading line stands: the byte it begins at, and the
+// headSpan is the position of one heading line: the byte it begins at, and the
 // byte after it.
 type headSpan struct {
 	head int
@@ -60,8 +61,8 @@ type cardSpan struct {
 	values   []valueSpan
 }
 
-// valueSpan is where one field of a card stands: its heading line, and the
-// value under it.
+// valueSpan is the position of one field of a card: its heading line, and the
+// value after it.
 type valueSpan struct {
 	field    string
 	head     int
@@ -183,11 +184,11 @@ func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 	return b.deck, b.spans
 }
 
-// findDuplicateCardIDs is one problem against each card of a card id another card in this deck
-// carries. Both are read and both are shown marked: nothing a person wrote goes
-// missing from the screen, and which of the two is meant is a thing only they
-// know. Neither is given another card id, because choosing would be choosing which
-// of the two keeps its history.
+// findDuplicateCardIDs returns one problem for each card whose card id is also
+// carried by another card in this deck. Both cards are read and displayed
+// marked: no user content is hidden from the screen, and the choice between
+// them is left to the user. Neither card is given a new card id, because
+// choosing would decide which of the two keeps its history.
 func findDuplicateCardIDs(cs []Card) []Problem {
 	carried := map[cardid.ID]int{}
 	for _, c := range cs {
@@ -205,10 +206,10 @@ func findDuplicateCardIDs(cs []Card) []Problem {
 	return out
 }
 
-// readCardModelLink reads the lone wikilink paragraph directly beneath a card's heading.
-// It returns what the link says and the byte the lead begins at; a card whose
-// first paragraph is something else names no readCardModelLink, and the whole of what is
-// under the heading is lead.
+// readCardModelLink reads the single-wikilink paragraph directly after a
+// card's heading. It returns the link target and the byte where the lead
+// begins; a card whose first paragraph is anything else has no card model
+// link, and everything after the heading is lead.
 func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) {
 	pos := from
 	for pos < to {
@@ -232,9 +233,9 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 	return "", from
 }
 
-// paragraphEnds reports whether the line just read stood on its own: the next
-// line is blank, or there is no next line. A wikilink with prose under it is a
-// paragraph that begins with a link.
+// paragraphEnds reports whether the line read last is a paragraph by itself:
+// the next line is blank, or there is no next line. A wikilink followed by
+// prose is a paragraph that begins with a link.
 func paragraphEnds(body []byte, pos, to int) bool {
 	if pos >= to {
 		return true

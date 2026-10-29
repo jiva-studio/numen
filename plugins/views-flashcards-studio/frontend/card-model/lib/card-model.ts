@@ -1,10 +1,10 @@
 /**
- * What a card model is while the window holds it, and what each gesture makes of
- * it.
+ * What a card model is while the window holds it, and what each user action
+ * changes in it.
  *
- * The components take names and text and hand them back under identities they
- * were given. Minting those identities, and turning what a person did into the
- * fields and the templates a file is written from, is here.
+ * The components receive names and text and return them under the identities
+ * they were given. Creating those identities, and converting user edits into
+ * the fields and the templates a file is written from, is done here.
  */
 import { orderNames, reorderFields, type InsertionPoint } from '../../ui/cards'
 import {
@@ -15,7 +15,7 @@ import {
   type Surrounds,
 } from '../../cards'
 
-/** One template as the window holds it: what the file says, under an identity of its own. */
+/** One template as the window holds it: the file's content, under its own identity. */
 export interface BufferTemplate {
   /** The identity the window addresses it by, minted at every reading. */
   readonly id: string
@@ -71,7 +71,7 @@ export const serializeCardModel = (cardModel: BufferCardModel): string =>
     })),
   })
 
-/** The card model a string stands for. A string holding nothing names no field. */
+/** The card model a string represents. An empty string names no field. */
 export const parseCardModel = (body: string): BufferCardModel =>
   body ? (JSON.parse(body) as BufferCardModel) : NO_CARD_MODEL
 

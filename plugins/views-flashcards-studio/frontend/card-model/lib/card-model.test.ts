@@ -1,4 +1,4 @@
-/** What a gesture in a card model makes of the file, asked without a screen. */
+/** The effect of a card model gesture on the file, tested without a screen. */
 import { describe, expect, it } from 'vitest'
 import type { VaultCardModel } from '../../cards'
 import {

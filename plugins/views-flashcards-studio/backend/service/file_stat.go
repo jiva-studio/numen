@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 )
 
-// stamp is when a file last changed, as the schema carries it. Zero is a file nothing was said
-// about, not the epoch.
+// stamp returns when a file last changed, as the schema carries it. Zero is a file
+// without a recorded time, and not the epoch.
 func stamp(t time.Time) int64 {
 	if t.IsZero() {
 		return 0
@@ -32,8 +32,8 @@ func writeFileStat(ref domain.FileStat) *api.FileStat {
 	return &api.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-// readFileStat is what a client says a file was when it read it. Nothing said is nothing
-// compared.
+// readFileStat returns the file stat a client reports for a file when it read it.
+// A missing stat is not compared.
 func readFileStat(pos *api.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * The fields a card model names, edited: one row to a field, each carrying a
- * handle, the name typed in it and the way to be rid of it.
+ * The fields a card model declares, edited: one row per field, each with a drag
+ * handle, the editable name and a remove button.
  *
- * The first field names the cards the card model cuts, so it stands first and goes
- * nowhere. What is wrong with a field is the caller's, and is placed under that
- * field's row.
+ * The first field names the cards the card model produces, so it stays first and
+ * cannot be moved. Problems with a field are supplied by the caller and placed
+ * under that field's row.
  */
 import { computed, useId } from 'vue'
 import { Icon } from '../../icon'
@@ -27,7 +27,7 @@ import { fieldRows, CARD_MODEL_WORDS, type CardModelWords } from '../../../lib/c
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** The fields a card is asked for, each named once, in the order they stand. */
+    /** The card model's fields, each named once, in order. */
     fields: readonly string[]
     /** What the caller found wrong with each field, under the name it is declared by. */
     wrong?: Problems | null
@@ -62,9 +62,9 @@ const naming = useNameEntry<Objection>({
 })
 
 /**
- * The field under the pointer's hand, and where letting go would put it: before
- * a field, at the end, or nowhere. The first field names every card, so nothing
- * lands above it and it goes nowhere itself.
+ * The field being dragged and its drop position: before a field, at the end, or
+ * none. The first field names every card, so nothing is dropped above it and it
+ * cannot be dragged itself.
  */
 const {
   dragged,
@@ -89,7 +89,7 @@ const onAdd = (): void => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** What is wrong with a name, where what it is wrong about says so. */
+/** Identifier of the element that lists the problems of a name. */
 const objectionsId = (targetId: string): string =>
   `${uid}-${encodeURIComponent(targetId)}-objections`
 
@@ -145,7 +145,7 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
 .card-model__fields {
   display: flex;
   flex-direction: column;
-  /* The room between rows is the editor's, and this is what it evaluates to
+  /* The spacing between rows is the editor's, and this is the value it takes
      where the rows stand anywhere else. */
   gap: var(--row-gap);
   inline-size: 100%;

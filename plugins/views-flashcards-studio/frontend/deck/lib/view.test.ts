@@ -35,7 +35,7 @@ const deck = (overrides: Partial<BufferDeck> = {}): BufferDeck => ({
   ...overrides,
 })
 
-/** The card just written by the window, and the same card read back with its new card id. */
+/** The card as written by the window, and the same card read back with its new card id. */
 const data = (overrides: Partial<BufferCard> = {}) => ({
   screen: deck({ cards: [card()] }),
   read: deck({ cards: [card({ id: 'k7m2xq9fzp', cardId: 'k7m2xq9fzp', ...overrides })] }),

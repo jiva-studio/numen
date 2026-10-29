@@ -1,9 +1,9 @@
 /**
- * A card model tab drawn: where a mark lands, and what a gesture in the editor
- * reaches.
+ * A card model tab rendered: where a mark appears, and what a gesture in the
+ * editor triggers.
  *
- * What is wrong with a template is drawn inside that template, and what is wrong with a
- * field inside that field's row, so this asks those and not the tab.
+ * A problem with a template is drawn inside that template, and a problem with a
+ * field inside that field's row, so this tests those and not the tab.
  */
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
@@ -15,16 +15,17 @@ import CardModelTab from './CardModelTab.vue'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from '../kind'
 import { WORDS as words } from '../../cards'
 
-/** A moment for whatever the tab asked the vault for to come back. */
+/** Waits for the vault requests made by the tab to complete. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-// Each tab is drawn into the page, so the one before it goes before the next
-// stands: a mark is teleported to the row a selector finds in the whole page.
+// Each tab is rendered into the page, so the previous one is unmounted before the
+// next is mounted: a mark is teleported to the row a selector finds in the whole
+// page.
 enableAutoUnmount(afterEach)
 
 /** A window with one card model open, drawn. */
 const mountCardModel = async (problems: readonly DeckProblem[] = []) => {
-  /** Each field rename the editor asked the vault for. */
+  /** Each field rename the editor requested from the vault. */
   const renameCalls: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let templates: readonly VaultTemplate[] = [

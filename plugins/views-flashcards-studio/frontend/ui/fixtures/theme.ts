@@ -1,10 +1,10 @@
 /**
- * What a story drawn dark relies on. Storybook's furniture; it ships to
- * nobody.
+ * What a story rendered in the dark theme requires. Storybook support code; it is
+ * not shipped.
  *
  * A theme is chosen by `color-scheme` on the root, which is what `light-dark()`
- * in the tokens reads, so that is where a story asks which set of colours it
- * was actually drawn in.
+ * in the tokens reads, so a story checks there which set of colours it was
+ * rendered in.
  */
 import { expect } from 'storybook/test'
 

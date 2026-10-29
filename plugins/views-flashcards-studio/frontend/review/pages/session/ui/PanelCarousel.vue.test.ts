@@ -7,14 +7,14 @@ import PanelCarousel from './PanelCarousel.vue'
 import type { PanelPlace } from '../model/carousel'
 
 /**
- * The three on the screen. jsdom lays nothing out, so the strip is given the
- * widths it would have had: a panel either side of a card the width of the
- * window, with a space between each pair.
+ * The three panels. jsdom performs no layout, so the strip is given the widths
+ * it would have: a panel on each side of a card as wide as the container, with
+ * a gap between each pair.
  */
 const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
-    // The window is listening and answers by setting the prop, so what is in the
-    // window stays the window's answer. A strip nobody listens to keeps its own.
+    //     // The parent listens and responds by setting the prop, so the parent owns
+    //     // the position. A strip without a listener keeps its own position.
     props: { at: place, 'onUpdate:at': () => {} },
     slots: {
       before: '<p>the reading</p>',
@@ -30,17 +30,17 @@ const strip = (place: PanelPlace = 'here') => {
     configurable: true,
   })
   window_.setPointerCapture = () => {}
-  // The widths are only known now, so the strip is stood on its stop the way a
-  // resize stands it on one.
+  //   // The widths are only known now, so the strip is snapped to its stop the way a
+  //   // resize snaps it.
   window.dispatchEvent(new Event('resize'))
   return { one, window_ }
 }
 
-/** A hand going down on the strip, moving, and coming off it. */
+/** A pointer event on the strip: press, move or release. */
 const hand = (kind: string, clientX: number) =>
   new MouseEvent(kind, { button: 0, clientX, bubbles: true })
 
-/** The strip left where a hand or a wheel put it, and the window told. */
+/** Scrolls the strip to a position and notifies the container. */
 const scrollStrip = async (window_: HTMLElement, to: number) => {
   window_.scrollLeft = to
   window_.dispatchEvent(new Event('scroll'))
@@ -82,8 +82,8 @@ describe('a card with a panel on either side of it', () => {
     expect(chat.find('.carousel__after').attributes('inert')).toBeUndefined()
   })
 
-  // Asked for by a key and not a hand, the strip is taken there rather than
-  // put there, so it reads as the same movement either way.
+  //   // When requested by a key and not a pointer, the strip scrolls to the stop
+  //   // with the same movement as a pointer scroll.
   it('scrolls to whichever of the three is requested for', async () => {
     const { one, window_ } = strip()
 
@@ -97,8 +97,8 @@ describe('a card with a panel on either side of it', () => {
     expect(window_.scrollLeft).toBe(220)
   })
 
-  // The stops are the layout's own: where the card stands, and how far the
-  // strip goes. The space the three stand apart by is in them already.
+  //   // The stops come from the layout: the position of the card and the scroll
+  //   // extent of the strip. The gaps between the three panels are already included.
   it('stops where the card remains and not at a width worked out', async () => {
     const { one, window_ } = strip('before')
     Object.defineProperty(one.find('.carousel__here').element, 'offsetLeft', {
@@ -132,8 +132,8 @@ describe('a hand on the strip', () => {
     expect(one.emitted('update:at')).toBeUndefined()
   })
 
-  // A strip taken somewhere by a key passes the others on the way, and that is
-  // not a person asking for one of them. It is what escape closes the panel by.
+  //   // A strip scrolled by a key passes the intermediate stops, and that is not a
+  //   // request for one of them. Escape closes the panel through this path.
   it('says nothing about where it is passing through on its way', async () => {
     const { one, window_ } = strip('after')
 
@@ -143,8 +143,8 @@ describe('a hand on the strip', () => {
     expect(one.emitted('update:at')).toBeUndefined()
   })
 
-  // A hand lets go where it likes, and the strip settles on the nearest stop
-  // and not staying between two of them.
+  //   // A pointer release can land anywhere, and the strip settles on the nearest
+  //   // stop and does not stay between two of them.
   it('settles on the nearest stop when it is let go', async () => {
     const { one, window_ } = strip()
 
@@ -155,8 +155,8 @@ describe('a hand on the strip', () => {
 
     window_.dispatchEvent(hand('pointerup', 380))
     await nextTick()
-    // The window took the hand's word for it, as a window that opened the panel
-    // does.
+    //     // The parent accepts the emitted position, as a parent that opened the panel
+    //     // does.
     await one.setProps({ at: 'after' })
     await nextTick()
 
@@ -228,7 +228,8 @@ describe('a wheel on the strip', () => {
     expect(window_.scrollLeft).toBe(220)
   })
 
-  // standing on, and a wheel is settled the same way a hand is.
+  //   // A scroll to a stop that the parent does not accept returns the strip to the
+  //   // current stop, and a wheel scroll settles the same way as a pointer drag.
   it('is taken back off a stop the window did not take', async () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()
@@ -255,8 +256,8 @@ describe('a wheel on the strip', () => {
     expect(one.emitted('update:at')).toEqual([['after']])
   })
 
-  // A hand that turns the wheel during a move would otherwise leave the strip
-  // standing between two of the three, with nothing left to pull it to either.
+  //   // A wheel scroll during a programmatic move would otherwise leave the strip
+  //   // between two of the three stops with nothing to pull it to either.
   it('is settled when it is turned while the strip is being taken somewhere', async () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()

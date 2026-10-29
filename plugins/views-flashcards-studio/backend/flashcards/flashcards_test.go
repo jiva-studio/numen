@@ -63,8 +63,8 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 		env.Ports.Readers, env.Ports.Writers,
 		env.Queries, env.Queries, scanned, review.Day{}, time.Now)
 	presets.Problems = env.Queries
-	// Each card is worked out at the share of the cards its own preset asks
-	// for, which is how the application builds this.
+	// Each card is scheduled with the share of cards its own preset specifies, as
+	// the application builds it.
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, standings, presets)
 	schedules.Cache = env.Ports.Schedules("schedules")
 
@@ -100,9 +100,8 @@ func write(t *testing.T, s vaulted, path, body string) {
 	}
 }
 
-// remove takes a file out of the vault and brings the index level with it,
-// which is what a person deleting their own note in another window leaves
-// behind.
+// remove deletes a file from the vault and updates the index, as an external
+// deletion of a note does.
 func remove(t *testing.T, s vaulted, path string) {
 	t.Helper()
 	if err := os.Remove(filepath.Join(s.vault.Path, filepath.FromSlash(path))); err != nil {
@@ -186,7 +185,7 @@ func (s vaulted) session(day review.Day) flashcards.Session {
 var today = review.Day{Starts: review.DayStartTime}
 
 // A card appears once for each review card of the card model that cuts it, because each
-// review card asks a different thing.
+// review card presents a different prompt.
 func TestACardExistsOnceForEachCardOfItsCardModel(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -214,8 +213,8 @@ func TestACardExistsOnceForEachCardOfItsCardModel(t *testing.T) {
 	}
 }
 
-// The review card is laid out with this card's values, so what a person is shown is
-// their own writing.
+// The review card is laid out with this card's values, so the displayed text is
+// the user's own writing.
 func TestACardIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -240,16 +239,16 @@ func TestACardIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Error("card not found in vault")
 }
 
-// handwritten is a deck of one card that carries no card id, which is what a deck
-// typed by hand is until the application writes it.
+// handwritten is a deck of one card with no card id, as a manually written deck
+// is until the application writes one.
 var handwritten = map[string]string{
 	"Term.md": vault["Term.md"],
 	"decks/Own.md": "---\ntype: deck\n---\n" +
 		"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
 }
 
-// A card with no card id has nothing an answer could be recorded against, so
-// nothing stands for it. Reading what a vault holds writes nothing.
+// A card with no card id has no key to record an answer against, so it produces
+// no review card. Reading a vault writes nothing.
 func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
@@ -267,8 +266,8 @@ func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	}
 }
 
-// mixed is a deck a person wrote and edited: prose of their own, a section, one
-// card that already carries a card id and one that does not.
+// mixed is a deck with prose, a section, one card that carries a card id and one
+// that does not.
 var mixed = map[string]string{
 	"Term.md": vault["Term.md"],
 	"decks/Mine.md": "---\ntype: deck\n---\n" +
@@ -280,9 +279,8 @@ var mixed = map[string]string{
 		"\n### Слово\n\nLoam\n\n### Значение\n\nSand, silt and clay in the right measure\n",
 }
 
-// assigning card ids changes the card ids and nothing else. The deck is the person's own
-// writing, and a card id minted over one a card already carries would orphan every
-// answer that card has ever been given.
+// assigning card ids changes the card ids and nothing else. A card id assigned
+// over an existing one would orphan every answer recorded for that card.
 func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, mixed)
@@ -319,10 +317,10 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 		t.Error("the deck held a card with no card id and was not written")
 	}
 
-	// And a deck whose cards all carry card ids is not written again. The bytes of
-	// a faithful rewrite are the same bytes, so what says it was left alone is
-	// the file's own time: a write nobody needed wakes every watcher on the
-	// vault and sends the deck through the index again.
+	// A deck whose cards all carry card ids is not written again. A rewrite of
+	// identical content produces the same bytes, so the check is the file's
+	// modification time: an unneeded write notifies every watcher on the vault and
+	// reindexes the deck.
 	was := getModTime(t, s.vault, "decks/Mine.md")
 	again, err := s.assigning.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -349,8 +347,8 @@ func getModTime(t *testing.T, v domain.Vault, path string) time.Time {
 	return pos.ModTime()
 }
 
-// A person starting a session on a vault has its cards given card ids, and what stands
-// then is what they are asked.
+// Starting a session on a vault assigns card ids to its cards, and the session
+// presents those cards.
 func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
@@ -370,8 +368,8 @@ func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	}
 }
 
-// Counting what a vault owes writes nothing to it: a person opening the window
-// is shown every vault they hold, and none of them is written to for that.
+// Counting due cards writes nothing to the vault: opening the application counts
+// every vault without writing to any of them.
 func TestCountingAVaultWritesNothingToIt(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
@@ -385,8 +383,8 @@ func TestCountingAVaultWritesNothingToIt(t *testing.T) {
 	}
 }
 
-// A card whose wikilink reaches a note that is not a card model is a card no review card
-// shows. It is left out, and the rest of the vault is reviewed.
+// A card whose wikilink targets a note that is not a card model has no review
+// card. It is omitted, and the rest of the vault is reviewed.
 func TestACardWithNoCardModelIsLeftOut(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
@@ -407,8 +405,8 @@ func TestACardWithNoCardModelIsLeftOut(t *testing.T) {
 	}
 }
 
-// A review card missing a front or a back lays out nothing, so nothing is asked through
-// it. The card model's other review cards are asked as usual.
+// A review card missing a front or a back lays out nothing, so it is not presented.
+// The card model's other review cards are presented as usual.
 func TestListReviewCards_SkipsCardMissingSide(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
@@ -430,8 +428,8 @@ func TestListReviewCards_SkipsCardMissingSide(t *testing.T) {
 	}
 }
 
-// A card that leaves a field empty is asked like any other: the placeholder lays
-// out as nothing, and the card is still somebody's card.
+// A card with an empty field is presented like any other: the placeholder lays out
+// as empty text, and the card remains a valid card.
 func TestRanking_KeepsCardWithEmptyField(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
@@ -470,9 +468,9 @@ func TestCountCardsDue_UnansweredVaultIsAllNew(t *testing.T) {
 	}
 }
 
-// A card put days away is neither owed nor asked until those days are up. What
-// is owed is the day the schedule falls on, and a card answered easily is not
-// that day's.
+// A card scheduled days ahead is not due until those days have passed. A card
+// is due on the day its schedule falls on, and a card answered easily is not due
+// that day.
 func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -505,8 +503,8 @@ func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	}
 }
 
-// The day the schedule falls on is the day it is owed, whatever hour it falls
-// at: a card put days away comes back when those days are up.
+// A card is due on the day its schedule falls on, at any hour: a card scheduled
+// days ahead is due again when those days have passed.
 func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -524,7 +522,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 		t.Fatal("the answer left no schedule")
 	}
 
-	// The window is opened on the day the card falls on, and it is owed.
+	// The count is taken on the day the card falls on, and the card is due.
 	owed := s.newCountCardsDueAt(today, func() time.Time { return due })
 	owing, err := owed.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -545,8 +543,8 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 }
 
-// An answer is written to the vault's own folder, and it is what the next launch
-// reads: the card is no longer one nobody has reached.
+// An answer is written to the vault's own folder and read back at the next
+// launch: the card is answered.
 func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -573,8 +571,7 @@ func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	}
 }
 
-// An answer taken back is not counted, and the card is one nobody has reached
-// again.
+// A withdrawn answer is not counted, and the card is unanswered again.
 func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -612,8 +609,8 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	}
 }
 
-// A session puts the cards owed and answered before in front of the ones nobody
-// has reached, and the one waiting longest at the very front.
+// A session orders cards that are due or already answered before new cards,
+// with the longest-waiting card first.
 func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -654,7 +651,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	}
 }
 
-// A session over one deck asks that deck's cards and no others.
+// A session over one deck presents that deck's cards and no others.
 func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -669,8 +666,8 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	}
 }
 
-// A cache read back says what a replay says, to the last number it carries. It
-// be a card sent away on a day nobody worked out.
+// A cache read back returns the same values as a replay of the answers, to the
+// last number. It cannot schedule a card on a day that was never computed.
 func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -762,8 +759,8 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 		t.Fatalf("one answer left %d behind it", first[on].Reps)
 	}
 
-	// A second run, which is a second file: the kind of thing that arrives from
-	// another machine after the first was already counted.
+	// A second run writes a second file, as when a file arrives from another
+	// machine after the first was counted.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -796,8 +793,8 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 		t.Fatalf("one answer left %d behind it", first[on].Reps)
 	}
 
-	// The same session, the same file: a second answer appended under the name
-	// the cache already knows.
+	// The same session and file: a second answer appended under the name the cache
+	// already contains.
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -904,8 +901,8 @@ type plantedCard struct {
 
 func formatTime(pos time.Time) string { return pos.UTC().Format(review.TimestampLayout) }
 
-// rewrite changes the cache a vault holds, so that a test can say what a cache
-// claims and see whether it was believed.
+// rewrite changes the cache a vault holds, so a test can set what a cache
+// claims and check whether it was trusted.
 func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	t.Helper()
 	raw, err := s.schedules.Cache.Read(t.Context(), s.vault.ID)

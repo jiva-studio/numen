@@ -1,9 +1,9 @@
 /**
- * The flashcards window at rest: the decks a vault owes today, and one card
- * being answered.
+ * The flashcards window in its resting state: the decks a vault has due today,
+ * and one card being answered.
  *
- * Nothing here waits on a vault. It is the screen a picture of the window is
- * taken from, so every piece is drawn in the state it settles in.
+ * Nothing here waits on a vault. It is the screen a screenshot of the window is
+ * taken from, so every piece renders in its settled state.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { dayAfter, getDayName } from '../../lib/day'
@@ -18,8 +18,8 @@ import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '../entities/vault'
 const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
 
 /**
- * The day this window is read on. The grid of weeks runs up to the week it is
- * in, so the day the picture is taken is the day it is taken of.
+ * The day this window is rendered on. The grid of weeks ends at the current
+ * week, so the date of the screenshot determines the grid.
  */
 const TODAY = getDayName(new Date())
 
@@ -49,8 +49,8 @@ const scatter = (index: number, salt: number): number => {
 }
 
 /**
- * A year of answering: worked most days, with a fortnight away in it, so the
- * grid is read as a person's year and not as a pattern.
+ * A year of answering: most days worked, with a fortnight gap, so the
+ * grid reads as a real year and not as a pattern.
  */
 const DAYS = new Map<string, HeatmapTally>(
   Array.from({ length: 371 }, (_, back) => back)
@@ -192,7 +192,7 @@ const VAULT: VaultCardsDue = {
   unread: '',
 }
 
-/** The preset each deck is scheduled by, which is what the list says under a name. */
+/** The preset that schedules each deck, shown under the deck name in the list. */
 const BY_DECK = new Map<string, Preset>(
   PRESETS.flatMap((one) => one.decks.map((path) => [path, one] as const)),
 )
@@ -247,7 +247,7 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** What the vault owes today: the goals, the days answered on, and the decks. */
+/** What the vault has due today: the goals, the days answered, and the decks. */
 export const CardsDue: Story = {
   render: () =>
     frame(

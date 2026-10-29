@@ -56,7 +56,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
   try {
     answer = await core.read(one.path.value)
   } catch {
-    // The window says what it could not do; what the call carried back adds nothing a person can act on.
+    // The window states what failed; the error returned by the call adds nothing the user can act on.
     one.writeQueue.errorMessage.value = words.unreachable
     one.curves.isWaiting.value = false
     return

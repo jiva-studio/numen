@@ -57,9 +57,9 @@ describe('where the preset itself remains', () => {
   })
 })
 
-// The knob's own readout and the bubble over it say one number, and it is this
-// one: the preset's own value is not a place of the grid, and rounding it onto
-// one would read out a value nobody set.
+// The knob readout and the bubble over it show one number: the preset's own
+// value, which is not a place of the grid. Rounding it onto a grid place would
+// display a value that was never set.
 describe('the value the knob remains at', () => {
   const riding = drawnCurve({ now: { index: 2, value: 21, day: '' } })
 
@@ -85,9 +85,8 @@ describe('a number retained inside the bounds of its setting', () => {
     expect(clamp(-4, BOUNDS.minutesADay)).toBe(0)
   })
 
-  // A tab draws its fields before the first read lands, and a number typed
-  // into one of them is nobody's to bring in until the application has said
-  // how far it goes.
+  // A tab renders its fields before the first read completes, and a number typed
+  // into one of them is not clamped until the application supplies the bounds.
   it('is the number itself where the application has returned no bound', () => {
     expect(clamp(-4, undefined)).toBe(-4)
     expect(clamp(9_000, undefined)).toBe(9_000)
@@ -114,9 +113,9 @@ describe('what one place of the curve produces', () => {
     isHonest: true,
   }
 
-  // The control moves the one value its goal names. What that evaluates to on this
-  // vault is said in a sentence and becomes no setting, so no number the person
-  // did not name can close their day.
+  // The control changes the one value its goal names. The curve's value for this
+  // vault is shown in a sentence and does not become a setting, so no number that
+  // was not entered can close the day.
   it('takes the goal’s own value off the grid, and writes nothing else', () => {
     const was = settings({ newADay: 12, reviewsADay: 0, retention: 0.95 })
     const createdItem = produceSchedule(was, 3, { curve, today, within: BOUNDS })
@@ -188,9 +187,9 @@ describe('a goal with nothing to work on', () => {
     expect(getIdleReason({ ...nothing, decks: 4 })).toBe('noCards')
   })
 
-  // A curve of zeros is a day behind us, a range of nothing, or a question the
-  // application would not answer. None of those is an empty preset: the count
-  // of cards says that and nothing else does.
+  // A curve of zeros is a day already past, an empty range, or a request the
+  // application did not answer. None of those is an empty preset: only the count of
+  // cards indicates that.
   it('is not a preset holding cards, whatever its curve evaluates to', () => {
     expect(getIdleReason({ ...nothing, decks: 4, cards: 900 })).toBe('')
     expect(getIdleReason({ ...nothing, decks: 4, cards: 900, goal: 'date', grid: [1, 2, 3] })).toBe(

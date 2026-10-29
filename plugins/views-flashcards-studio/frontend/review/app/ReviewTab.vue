@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The review of one vault, as the window shows it: the decks the vault owes
+ * The review of one vault, as the window shows it: the decks the vault has due
  * today, and the cards themselves.
  *
- * What the review is made of is `review.ts`, made as the window opens it. What
- * is here is what a person sees of it, and the binding between the two.
+ * What the review is made of is `review.ts`, created when the window opens it.
+ * This component renders it and binds the two.
  */
 import { computed, provide } from 'vue'
 import { Spinner } from '@numen/ui'
@@ -25,7 +25,7 @@ const props = defineProps<{
 const { on, vaultCount, decks, session, notesPage } = props.state
 provide(MOUNT_VIEW, props.state.mountView)
 
-/** What the review says while the decks wait on the vault's count. */
+/** The status shown while the decks wait on the vault's count. */
 const statusText = computed(() => {
   if (vaultCount.value?.unread) return vaultCount.value.unread
   return vaultCount.value?.isIndexing ? REVIEW_WORDS.indexing : REVIEW_WORDS.counting
@@ -101,7 +101,7 @@ function onNotesPage(page: unknown) {
   gap: var(--numen-inset);
 }
 
-/* The review's own quiet voice, which is what it says while it waits. */
+/* The review's muted waiting text, shown while it waits. */
 .review__waiting {
   display: flex;
   margin: 0;

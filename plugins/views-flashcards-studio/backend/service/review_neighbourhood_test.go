@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
 
-// joined is a vault whose deck points at a note of prose, the way a person
-// cuts cards out of something they wrote.
+// joined is a vault whose deck points at a prose note, the way cards are cut
+// from a user's own writing.
 var joined = map[string]string{
 	"Term.md": deck["Term.md"],
 	"Mould.md": "---\ntype: note\n---\n" +
@@ -30,8 +30,8 @@ var joined = map[string]string{
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
 
-// Reading around a deck reaches only the vaults this installation holds, and a
-// question about another fails.
+// Reading around a deck covers only the vaults this installation holds, and a
+// query about another vault fails.
 func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
 	handler, _ := newAPI(t, joined)
 
@@ -50,15 +50,14 @@ func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
 	}
 }
 
-// A note the deck points at that cannot be read comes back named the way the
-// editor names it, so a person meets one vocabulary for a rejected note and not
-// one for each window.
+// A note the deck points at that cannot be read is reported with the same error
+// the editor reports, so a rejected note has one vocabulary across the windows.
 func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 	handler, target := newAPI(t, joined)
 	v := target[0]
 
-	// The index still resolves the link; the file behind it is gone. That is
-	// the ordinary way a person meets this — a note deleted since the scan.
+	// The index still resolves the link; the file behind it is gone. This is the
+	// ordinary case of a note deleted since the last scan.
 	if err := os.Remove(filepath.Join(v.Path, "Mould.md")); err != nil {
 		t.Fatal(err)
 	}
@@ -123,8 +122,8 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 	}
 }
 
-// A note the deck points at is said to be pointed at, and a note pointing at
-// the deck is not. Every entry is a note of the vault.
+// A note the deck points at is marked as linked from the deck, and a note
+// pointing at the deck is not. Every entry is a note of the vault.
 func TestGetDeckNeighbourhood_MarksOnlyDeckLinkedNotes(t *testing.T) {
 	handler, target := newAPI(t, backlinked)
 

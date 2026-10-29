@@ -1,15 +1,16 @@
 /**
  * The presets of a vault, read by the client the schema generates.
  *
- * A preset names only the settings a person moved, so what is proved here is
- * the default, and a bound the application said nothing about is absent.
+ * A preset names only the settings the user changed, so these tests prove that
+ * the default applies, and that a bound the application did not specify is
+ * absent.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure } from '@numen/plugin-sdk'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
-/** What the window asked for, as the transport wrote it out. */
+/** The request as the transport serialised it. */
 let request: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */

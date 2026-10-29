@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * One vault's decks, and what each owes today.
+ * One vault's decks, and the cards each has due today.
  *
- * top as one button. A deck below it is for the person who came for that deck.
+ * Reviewing the whole vault is one button in the footer. A deck row starts a
+ * review of that deck only.
  */
 import { computed } from 'vue'
 import { Button, KeyCap } from '@numen/ui'
@@ -24,7 +25,7 @@ defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-/** The whole vault's count: what is due today and what has never been asked. */
+/** The whole vault's count: cards due today plus new cards. */
 const allDue = computed(() => props.vault.due + props.vault.new)
 </script>
 

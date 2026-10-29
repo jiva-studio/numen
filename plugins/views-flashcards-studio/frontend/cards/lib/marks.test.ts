@@ -1,6 +1,4 @@
-/**
- * Where each problem the vault reports is drawn, asked without a screen.
- */
+/** Where each problem the vault reports is displayed, tested without a screen. */
 import { describe, expect, it } from 'vitest'
 import { areMarksEqual, createMarks } from './marks'
 import type { DeckProblem } from '../types'

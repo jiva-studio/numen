@@ -214,8 +214,8 @@ const createArrangement = (next: () => number, pos: number): string => {
       .replace('{style}', () => amongItems(STYLES))
       .replace('{quote}', () => amongItems(QUOTES))
   }
-  // Half of them carry a known arrangement inside, so the generator reaches
-  // past what it could have stumbled on.
+  //   // Half of the inputs contain a known pattern, so the generator reaches cases
+  //   // that random generation would miss.
   if (next() < 0.5) {
     const into = Math.floor(next() * (out.length + 1))
     out = out.slice(0, into) + amongItems(KNOWN) + out.slice(into)

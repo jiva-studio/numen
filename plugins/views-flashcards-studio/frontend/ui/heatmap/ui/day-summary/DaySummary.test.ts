@@ -39,7 +39,7 @@ const day = (overrides: Partial<Day> = {}): Day => ({
 const account = (overrides: Partial<Day> = {}) =>
   mount(DaySummary, { props: { day: day(overrides), words: WORDS } })
 
-/** Each of the four that was said, and how many of it. */
+/** Each of the four ratings, with its count. */
 const four = (wrapper: ReturnType<typeof account>) =>
   wrapper
     .findAll('[data-day-summary="four"] li')
@@ -78,8 +78,8 @@ describe('the share that came back', () => {
     ).toBe('83% came back')
   })
 
-  // Nothing the person is already reviewing was asked, so there is no share to
-  // give and none is invented.
+  // No cards under review were requested, so there is no share to report and
+  // none is invented.
   it('is not given where nothing being reviewed was requested', () => {
     expect(
       account({ did: 12, asked: 0, recalled: 0 }).find('[data-day-summary="came"]').exists(),

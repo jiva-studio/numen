@@ -1,6 +1,6 @@
 /**
- * Why a preset schedules nothing, as a clause a window reads after something
- * that says which preset it is.
+ * Why a preset schedules nothing, as a clause to display after text that
+ * identifies the preset.
  */
 import { StopReason } from '../../api/types'
 

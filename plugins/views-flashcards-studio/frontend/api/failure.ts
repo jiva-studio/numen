@@ -18,14 +18,14 @@ export class ApiFailure extends Error {
 /** The failure of a call that the window itself stopped. */
 export const CANCELED: ApiError = { code: 'canceled', message: 'canceled' }
 
-/** The codes whose message is written for the person who waits. */
+/** The codes whose message is written for the user who is waiting. */
 const MESSAGE_CODES: ReadonlySet<string> = new Set([
   'invalid_argument',
   'failed_precondition',
   'unavailable',
 ])
 
-/** What each code says when its message is not written for the person. */
+/** The text for each code when its message is not written for the user. */
 const CODE_WORDS: Readonly<Record<string, string>> = {
   invalid_argument: 'invalid request',
   not_found: 'not found',
@@ -33,7 +33,7 @@ const CODE_WORDS: Readonly<Record<string, string>> = {
   unavailable: 'Numen is busy; try again',
 }
 
-/** What is said when nothing more precise can honestly be said. */
+/** The text used when nothing more precise can be stated. */
 const UNEXPECTED = 'internal error'
 
 /** The words of a caught failure; the SDK words any failure that is not an API failure. */

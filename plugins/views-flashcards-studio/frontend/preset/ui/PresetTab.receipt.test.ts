@@ -1,10 +1,10 @@
 /**
- * The receipt in figures under the picture: a row of what the preset is set
- * to, and when the material is learned.
+ * The receipt below the curve: a row of the preset's settings, and when the
+ * material is learned.
  *
- * The figures are read off the very run the line is drawn from. Nothing on a
- * row says who put its value there: a preset is a file, and a file carries
- * values and not a history of them.
+ * The figures come from the same run the line is drawn from. A row does not
+ * indicate who set its value: a preset is a file, and a file carries values and
+ * not their history.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -16,11 +16,11 @@ describe('a row of the receipt', () => {
       const { tab } = mountPresetTab({ goal }, { goal })
       const rows = tab.findAll('[data-preset-row]')
       expect(rows.length).toBeGreaterThan(0)
-      // A mark on the row that shows who put the value there would be one row
-      // drawn unlike the others; every row is drawn areNeighbourhoodsEqual.
+      // A mark showing who set the value would draw one row differently from the
+      // others; every row is drawn identically.
       expect(new Set(rows.map((one) => one.attributes('class'))).size).toBe(1)
-      // A way back under the goal stood in what the row says. What it says is
-      // its name and what it means, and nothing beside them.
+      // The row contains no link back to the goal: it holds its name and its meaning
+      // and nothing else.
       for (const row of rows) {
         expect(row.get('[data-preset="name"]').element.parentElement?.children).toHaveLength(2)
       }
@@ -63,7 +63,7 @@ describe('when the material is learned', () => {
     expect(getLearnedTiles(tab)[0]).toStrictEqual(['70', 'days to learn it'])
   })
 
-  // A pace that does not get there has no day to name, so it says so.
+  // A pace that never reaches the goal has no day to name, so it displays words and not a figure.
   it('says a pace that never gets there in words, and not as a figure', () => {
     const { tab } = mountPresetTab({
       cards: 79,
@@ -88,8 +88,8 @@ describe('when the material is learned', () => {
     expect(tab.findAll('[data-control="learned"] [data-control="tile"]')).toHaveLength(0)
   })
 
-  // There is no day the whole of it stands learned on under every rule, and
-  // where the application carries none the window says nothing in its place.
+  // A rule can have no day on which the whole material is learned, and when the
+  // application supplies none, no tile is drawn in its place.
   it('draws no tile for a day the answer does not carry', () => {
     const { tab } = mountPresetTab({
       cards: 79,
@@ -100,8 +100,8 @@ describe('when the material is learned', () => {
     expect(tab.text()).not.toContain('days to learn it')
   })
 
-  // Under a goal of a date the day is the answer and what qualifies it is said
-  // in the bubble, so the tiles say what stands learned now and nothing else.
+  // Under a goal of a date, the date is the target and its qualification is shown
+  // in the bubble, so the tiles show only the count learned now.
   it('says what remains learned today under a goal of a date, and no day', () => {
     const { tab } = mountPresetTab(
       {

@@ -33,38 +33,36 @@ type Schedule struct {
 	Phase uint8
 }
 
-// IsNew reports whether this review card has never been answered, which is what
-// a person means by a new card.
+// IsNew reports whether this review card has never been answered, which defines
+// a new card.
 func (s Schedule) IsNew() bool { return s.Last.IsZero() }
 
-// Scheduler works out where an answer leaves a review card.
+// Scheduler computes where an answer leaves a review card.
 //
-// It is a port and not a function so that the one thing this application must
-// be able to change — how cards are spaced — is changed by putting another
-// implementation behind it and reading the answers again.
+// It is a port because the one behavior this application must be able to change,
+// how cards are spaced, is changed by supplying another implementation and
+// replaying the answers.
 type Scheduler interface {
-	// GetName says which scheduler this is, and which version of it. A schedule
-	// worked out by one name is not read by another: the numbers a scheduler
-	// carries between answers are its own, and one of them read as another's is
-	// a wrong answer given confidently.
+	// GetName returns the scheduler's name and version. A schedule computed under
+	// one name is not read under another: the values a scheduler carries between
+	// answers are specific to it, and one scheduler's values read as another's
+	// give a wrong result.
 	GetName() string
 
 	// Next is where an answer leaves a schedule.
 	Next(s Schedule, now time.Time, r Rating) Schedule
 
-	// Endings is where an answer leaves a schedule both ways: the ending it
-	// came back on and the ending it did not. It is Next at Good and Next at
-	// Again, asked together, because a projection weighs the two and a
-	// scheduler settles them from one reckoning of the card.
+	// Endings returns both outcomes of an answer: the schedule after a recalled
+	// answer (Next at Good) and after a forgotten one (Next at Again). They are
+	// computed together because a projection weighs the two and a scheduler
+	// derives them from one evaluation of the card.
 	Endings(s Schedule, now time.Time) (good, again Schedule)
 
-	// Spaced reports whether a review card standing at this schedule comes round
-	// in days. One the scheduler is still putting into memory comes round in
-	// minutes.
+	// IsSpaced reports whether a review card at this schedule is next due in
+	// days. A card the scheduler is still learning is due in minutes.
 	//
-	// Retention is measured over the answers given to spaced review cards and no
-	// others: what a card comes back as after ten minutes says nothing about
-	// memory.
+	// Retention is measured over the answers given to spaced review cards only: an
+	// answer after ten minutes carries no information about memory.
 	IsSpaced(s Schedule) bool
 }
 
@@ -74,8 +72,8 @@ var (
 	recallDecay  = fsrs.DefaultParam().Decay
 )
 
-// Recall is the share of cards standing at this stability that come back after
-// this long away. A card nothing is known about comes back to nobody.
+// Recall is the share of cards at this stability that are recalled after this
+// long away. A stability of zero or less yields zero.
 func Recall(away time.Duration, stability float64) float64 {
 	if stability <= 0 {
 		return 0
@@ -84,20 +82,20 @@ func Recall(away time.Duration, stability float64) float64 {
 	return math.Pow(1+recallFactor*days/stability, recallDecay)
 }
 
-// RecallChance is what a projection assumes about coming back: how likely a
-// review card standing here is to be recalled when it is asked at this instant.
+// RecallChance is the recall probability a projection assumes: how likely a
+// review card at this schedule is to be recalled when presented at this instant.
 //
-// A projection follows one card down the middle of what it may do, weighing the
-// ending where it came back against the ending where it did not, and this is
-// the weight. Every figure a run draws is drawn under the assumption it was
-// given, so a caller naming one says which.
+// A projection follows one card along the central path of what it may do,
+// weighing the recalled ending against the forgotten ending by this
+// probability. Every figure a run produces depends on the assumption it was
+// given, so a caller naming a figure states which.
 type RecallChance func(Schedule, time.Time) float64
 
-// GetModelledRecall is the chance the scheduler's own forgetting curve gives a card
-// review card. A run told no other chance reads this one.
+// GetModelledRecall is the recall probability from the scheduler's own
+// forgetting curve for a review card. A run with no other probability uses this one.
 func GetModelledRecall(c Schedule, now time.Time) float64 {
 	return Recall(now.Sub(c.Last), c.Stability)
 }
 
-// GetFullRecall is a run in which every review card asked comes back.
+// GetFullRecall is the recall probability under which every review card is recalled.
 func GetFullRecall(Schedule, time.Time) float64 { return 1 }

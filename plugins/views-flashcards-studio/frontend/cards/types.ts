@@ -9,13 +9,13 @@ export type CreateResult = Result<{ readonly path: string }, ErrorCode>
 export interface CardModelSummary {
   readonly path: string
   readonly title: string
-  /** The names of the fields, in the order a person is asked for them. */
+  /** The names of the fields, in the order they are presented. */
   readonly fields: readonly string[]
 }
 
 /**
- * What kind of problem a card model or a deck has. The list is closed: a mark is drawn
- * by what is wrong with the card or the template it stands against.
+ * The kind of problem a card model or a deck has. The list is closed: a mark is
+ * drawn according to the problem in the card or the template it refers to.
  */
 export type ProblemKind =
   | 'fieldDeclaredTwice'
@@ -34,9 +34,9 @@ export type ProblemKind =
  */
 export interface DeckProblem {
   readonly kind: ProblemKind
-  /** The card it stands against, counted from the first, or nothing. */
+  /** The card it refers to, counted from one, or null. */
   readonly card: number | null
-  /** The template it stands against, counted from the first, or nothing. */
+  /** The template it refers to, counted from one, or null. */
   readonly template: number | null
   /** The field name, as the file spells it. Empty for a problem against no field. */
   readonly field: string
@@ -44,7 +44,7 @@ export interface DeckProblem {
   readonly text: string
 }
 
-/** What a person wrote under one of a card's fields. */
+/** The text written under one of a card's fields. */
 export interface Value {
   readonly field: string
   readonly text: string
@@ -57,11 +57,11 @@ export interface VaultCard {
    */
   readonly cardId: string
   /**
-   * Where the section it is placed under stands among the deck's, counting from the first.
+   * Position of the card's section among the deck's sections, counted from one.
    */
   readonly sectionIndex: number | null
   /**
-   * The line its heading says, with the card id taken off.
+   * The heading line, with the card id removed.
    */
   readonly heading: string
   /**
@@ -196,7 +196,7 @@ export interface DeckService {
  * Card model metadata and schema operations.
  */
 export interface CardModelService {
-  /** Every card model in the vault, by what it is called and what it asks for. */
+  /** Every card model in the vault, with its name and its fields. */
   cardModels(limit?: number): Promise<{ cardModels: readonly CardModelSummary[]; held: number }>
   /**
    * A card model declaring those fields and showing no template, the same way.

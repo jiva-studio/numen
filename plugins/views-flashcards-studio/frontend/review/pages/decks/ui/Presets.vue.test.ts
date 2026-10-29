@@ -54,13 +54,13 @@ describe('what the goals come to today', () => {
     expect(one.find('.presets__done').text()).toBe('20%')
   })
 
-  // The screen is scanned, and a bar reading a fifth costs a row of it to say
-  // what the number already says.
+  // A text figure states the progress: a progress bar would take a row of the
+  // screen to repeat what the number already states.
   it('says how far through the day it is in words alone, and draws nothing', () => {
     const one = mountPresets([preset()])
 
-    // A meter says nothing: it is drawn to be looked at. Everything the tile
-    // draws carries words, so there is none.
+    // A meter has no text content, so none is rendered: every element of the tile
+    // contains text.
     const tile = one.get('.presets__preset')
     expect(tile.findAll('*').filter((each) => each.text() === '')).toStrictEqual([])
     expect(tile.text()).toBe('Sanskrit20 minutes a day20%22 cards')
@@ -94,12 +94,12 @@ describe('what the goals come to today', () => {
       'Pali',
       'Greek',
     ])
-    // The heading, the goal under it, and the number a person looks for.
+    // The heading, the goal below it, and the progress figure.
     expect(presetElements[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
     expect(presetElements[1]?.find('.presets__done').text()).toBe('20%')
   })
 
-  // A person is as far through their day as the budget closing it says.
+  // Progress equals the fraction of the budget that closes the day.
   it('remains as far through as the minutes it is steered by', () => {
     const one = mountPresets([preset({ answered: 11, took: 15 })])
 
@@ -171,8 +171,8 @@ describe('what the goals come to today', () => {
     expect(response.attributes('data-over')).toBeUndefined()
   })
 
-  // The same the other way about: a preset steered by what it asks of memory
-  // keeps its minutes as the person left them.
+  // The reverse case: a preset steered by a retention goal ignores its minutes
+  // budget.
   it('weighs it against the counts where the counts are what close the day', () => {
     const one = mountPresets([
       preset({
@@ -187,8 +187,7 @@ describe('what the goals come to today', () => {
     expect(one.find('.presets__done').text()).toBe('20%')
   })
 
-  // The block says the goal and how far through it the day is, and nothing
-  // else.
+  // The tile shows the goal and the progress of the day only.
   it('says nothing of counts, of what closes the day, or of the week', () => {
     const response = mountPresets([
       preset({ path: 'A.md', settings: settings({ load: { sat: 50 } }) }),
@@ -201,8 +200,8 @@ describe('what the goals come to today', () => {
     expect(response).not.toContain('light in')
   })
 
-  // What a person needs from the tile is why it schedules nothing, not what it
-  // was aiming at, so the reason stands where the goal would.
+  // The tile shows why the preset schedules nothing in place of its goal, so the
+  // reason takes the place of the goal.
   it('greys a preset that schedules nothing and says why in place of the goal', () => {
     const one = mountPresets([preset({ paused: 'no cards per day' })])
 
@@ -241,8 +240,8 @@ describe('what the goals come to today', () => {
     expect(mountPresets([preset()]).findAll('.presets__wrong')).toHaveLength(0)
   })
 
-  // This screen is what a person's day evaluates to. A preset nothing points at is
-  // a file being set up, and the editor's preset tab is where it is read.
+  // This screen shows the day's progress. A preset that no deck points at is
+  // still being set up, and the editor's preset tab is where it is shown.
   it('leaves out a preset no deck points at', () => {
     const one = mountPresets([
       preset({
@@ -277,8 +276,8 @@ describe('what the goals come to today', () => {
     expect(one.text()).not.toContain('no cards')
   })
 
-  // A preset that schedules nothing today is another matter: its decks are in
-  // the list saying so, and a person needs to see why.
+  // A preset that schedules nothing today is listed, because its decks are
+  // listed with that status and the reason must be visible.
   it('keeps a preset that schedules nothing today, alongside the ones that do', () => {
     const one = mountPresets([
       preset({ path: 'A.md', name: 'Sanskrit' }),
@@ -308,8 +307,8 @@ describe('what the goals come to today', () => {
   })
 })
 
-// The tiles are a list with nothing over them, and the figures on them change
-// under a person who has just left a session.
+// The tiles form a list with an accessible name, and the figures are a live
+// region that updates after a session ends.
 describe('the tiles read aloud', () => {
   it('names the list', () => {
     expect(mountPresets([preset()]).find('.presets__list').attributes('aria-label')).toBe(
@@ -324,11 +323,11 @@ describe('the tiles read aloud', () => {
   })
 })
 
-// The figure says how far through the day a person is; the count says what is
-// left to do, which is what they are deciding on.
+// The figure states the progress of the day; the count states the cards
+// remaining, which is the number that informs starting a session.
 describe('what pressing a preset would ask', () => {
-  // The tile prints what pressing it will put in front of a person, so the
-  // number is exact and carries no hedge under any goal.
+  // The tile shows the number of cards a session started from it would present,
+  // so the number is exact under every goal.
   it('counts it under the figure, exactly and without a hedge', () => {
     const one = mountPresets([preset({ cards: 22 })])
 
@@ -351,7 +350,7 @@ describe('what pressing a preset would ask', () => {
     ).toBe('1 card')
   })
 
-  // A tile that cannot be pressed says why, as the deck rows under it do.
+  // A tile that cannot be pressed states the reason, like the deck rows below it.
   it('says why in its place where there is nothing to ask', () => {
     expect(
       mountPresets([preset({ cards: 0, answered: 55, took: 20 })])
@@ -391,8 +390,8 @@ describe('starting a session on a preset', () => {
     expect(one.emitted('start')).toStrictEqual([['Pali.md']])
   })
 
-  // The decks naming no preset are sat down to the way the rest are, and the
-  // note they stand under is no note at all.
+  // Decks that name no preset use the defaults like any other preset, and the
+  // defaults have no note path.
   it('names the defaults by the nothing they stand in', async () => {
     const one = mountPresets([preset({ path: '', name: 'Defaults' })])
 
@@ -401,7 +400,7 @@ describe('starting a session on a preset', () => {
     expect(one.emitted('start')).toStrictEqual([['']])
   })
 
-  // A preset with nothing to offer has said above why, and is not pressed.
+  // A preset with no cards available shows the reason above and is not pressable.
   it('offers no session where the day under it is already done', async () => {
     const one = mountPresets([preset({ cards: 0 })])
 

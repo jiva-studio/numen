@@ -1,14 +1,14 @@
 /**
- * Which settings a goal schedules by, and the one word that says their shape.
+ * The settings a goal schedules by, and the single value that names their set.
  *
- * A goal names one budget, and the settings of the other two take no part in
- * it: they are neither drawn nor written while active, and the file keeps
- * them where the person left them.
+ * A goal selects one budget, and the settings of the other two budgets do not
+ * apply to it: they are neither displayed nor written while the goal is active,
+ * and the file keeps their stored values.
  */
 import type { Bounds, Goal, Rule, Settings, SettingsBounds } from '../types'
 import { round } from './curve'
 
-/** One setting of a preset a person may take out of the goal's hands. */
+/** One setting of a preset that the user may set directly. */
 export type Field =
   | 'minutesADay'
   | 'newADay'
@@ -52,10 +52,10 @@ const BUDGETS: Record<Goal, readonly Field[]> = {
 }
 
 /**
- * The share of a day that goes to the debt before anything new is offered. It
- * says what a day is spent on and closes nothing, so it stands beside a budget
- * and not among them. A goal of a date carries the whole material by its own
- * reckoning and has no part in it.
+ * The share of a day spent on overdue cards before any new card is offered.
+ * It allocates the day's budget and does not close the day, so it is listed
+ * beside a budget and not among the budgets. A goal of a date covers the whole
+ * material by its own schedule and has no backlog share.
  */
 const SPENDING: Record<Goal, readonly Field[]> = {
   minutes: ['backlog'],

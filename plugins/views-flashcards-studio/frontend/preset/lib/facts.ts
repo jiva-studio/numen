@@ -12,7 +12,7 @@ export interface BuyInput {
   horizon: number
   /** Null is nothing overdue, and -1 a pile the days projected do not clear. */
   clears: number | null
-  /** How many review cards no pace reaches by the day, out of how many there are. */
+  /** The number of review cards that no pace completes by the day, out of the total. */
   short: number
   cards: number
 }
@@ -27,8 +27,8 @@ export type BuyFact =
   | { kind: 'overdueStays'; horizon: number }
 
 /**
- * The facts of what a value buys under a goal. A goal of a date says nothing
- * about the overdue, since every card is to be got through by that day; where
+ * The facts about what a value buys under a goal. A goal of a date has no fact
+ * about overdue cards, since every card is to be completed by that day; where
  * nothing is overdue there is no such fact either.
  */
 export function getBuyFacts(goal: Goal, input: BuyInput): readonly BuyFact[] {
@@ -91,9 +91,9 @@ export type LearningFact =
   | { kind: 'learnedToday'; learned: number; cards: number }
 
 /**
- * When the material is learned, then how much of it stands learned now. With
- * no day to speak of, only what stands learned today is stated; a negative day
- * is a pace whose days run out with a card still to learn.
+ * When the material is learned, then how much of it is learned now. With no
+ * day available, only the amount learned today is reported; a negative day is a
+ * pace whose days end with a card still to learn.
  */
 export function getLearningFacts(
   learns: number | undefined,

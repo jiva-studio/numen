@@ -59,7 +59,7 @@ func line(lines []string, i int) string {
 	return lines[i]
 }
 
-// UTC so that the file reads the same on every machine.
+// goldenDay counts days in UTC, so the golden file is identical on every machine.
 var goldenDay = review.Day{Starts: review.DayStartTime, In: time.UTC}
 
 // goldenNow is the instant the projections open on.
@@ -79,7 +79,7 @@ func projections(t *testing.T) string {
 					Answered: 4, New: 1, Reviews: 3, Took: 40 * time.Second,
 				},
 			}
-			// A goal of retention runs under the scheduler it asks for.
+			// A retention goal runs under the scheduler configured for that retention.
 			if p.preset.Goal == review.GoalRetention {
 				run.By = review.NewFSRSAt(p.preset.Retention)
 			}
@@ -90,8 +90,8 @@ func projections(t *testing.T) string {
 			}
 			writeProjection(&out, ran)
 
-			// The day the whole material stands learned is drawn on a second run
-			// of the same place, in which nothing is forgotten.
+			// The day the whole material is learned is computed on a second run of the
+			// same input, with full recall, in which nothing is forgotten.
 			run.Recalls = review.GetFullRecall
 			nothing, err := run.Run(t.Context(), goldenNow, p.preset, m.schedules, m.unreviewed)
 			if err != nil {
@@ -103,9 +103,9 @@ func projections(t *testing.T) string {
 	return out.String()
 }
 
-// goldenDays is every day of a run, which is what the projections are asked to
-// answer the returning share for: what this file writes down is the whole of
-// what a run can say.
+// goldenDays lists every day of a run, which are the days the projections
+// report the returning share for, so the golden file records the complete
+// output of a run.
 func goldenDays(days int) []int {
 	out := make([]int, days)
 	for i := range out {
@@ -200,11 +200,11 @@ type goldenMaterial struct {
 	unreviewed int
 }
 
-// goldenMaterials is the spread of vaults the projections are drawn over:
-// nothing at all, a material nobody has begun, one standing on a large debt,
-// one answered every which way, and one where the day runs out with both the
-// debt and the unbegun material still holding cards, so that the share the day
-// is split in decides what it asks for.
+// goldenMaterials is the set of vaults the projections are computed over:
+// an empty vault, a material with no begun cards, a large debt, a material
+// answered in varied ways, and a vault where the day ends with both overdue
+// cards and unbegun cards remaining, where the split of the day's budget
+// between them determines the result.
 func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 	return []goldenMaterial{
 		{name: "an empty vault", schedules: nil, unreviewed: 0},
@@ -215,13 +215,13 @@ func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 	}
 }
 
-// goldenAt is a material answered a varying number of times each, some of it
-// long overdue and some of it falling due in the weeks ahead.
+// goldenAt is a material in which each card was answered a varying number of
+// times, some long overdue and some due in the coming weeks.
 //
-// The overdue part has its due day put behind the answer that produced it,
-// which is a state a vault does not hold: a due day is worked out forward from
-// the instant of an answer. It stands here as a stress case, and the figures
-// written down under "a large debt" are not a picture of anybody's vault.
+// The overdue part has its due day set before the answer that produced it,
+// which a real vault never holds: a due day is computed forward from the time
+// of an answer. It is a stress case, and the figures recorded for "a large
+// debt" do not represent a real vault.
 func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.ReviewCardID]review.Schedule {
 	out := make(map[review.ReviewCardID]review.Schedule, reviewCards)
 	for i := range reviewCards {
@@ -239,8 +239,8 @@ func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.Revie
 			when = c.Due
 		}
 		if i < overdue {
-			// A review card whose day has come and gone, by more days the further
-			// down the material it stands.
+			// A review card whose due day has passed, by more days the later it appears
+			// in the material.
 			c.Due = goldenNow.AddDate(0, 0, -1-i%30)
 		}
 		out[review.ReviewCardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c

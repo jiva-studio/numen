@@ -22,8 +22,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-// deck is one vault of one card model and one deck, whose single card stands
-// through one review card.
+// deck is one vault of one card model and one deck, whose single card yields one
+// review card.
 var deck = map[string]string{
 	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
@@ -111,8 +111,8 @@ func readCardsDue(
 		}
 		one := response.Counted
 		if one == nil {
-			// The list again, which the stream says while a count is still
-			// running so that a page which has gone is found.
+			// A repeated list, which the stream emits while a count is still running so
+			// that a closed page is detected.
 			continue
 		}
 		where, items := pos[one.ID]
@@ -212,9 +212,9 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	}
 }
 
-// A vault is answered on its own. What a person did in one is not what another
-// owes, and the two vaults here share no card id, no review card and no word, so nothing
-// could pass between them by looking alike.
+// A vault is answered on its own. Work done in one vault does not count toward
+// another: the two vaults share no card id, no review card and no word, so nothing
+// can pass between them by similarity.
 func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 	handler, target, installation := newAPIOn(t, deck, other)
 	one, two := target[0], target[1]
@@ -318,7 +318,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	handler, target, installation := newAPIOn(t, deck, deck)
 	installation.Of(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
-	// Nothing is counted from a walk half done, so the row of a vault being read says so.
+	// A vault whose index walk is incomplete has no count, and its row reports that.
 	rows := map[string]*api.VaultCardsDue{}
 	for _, one := range readCardsDue(t, newFlashcardsClient(t, handler)).Vaults {
 		rows[one.ID] = one
@@ -339,7 +339,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	}
 }
 
-// A vault the index could not read is uncounted, and says why nothing could be counted.
+// A vault the index could not read is uncounted, and the row reports why.
 func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
 	handler, target, installation := newAPIOn(t, deck)
 	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.IndexFailed, Reason: "the disk is full"})
@@ -351,7 +351,7 @@ func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
 	}
 }
 
-// A session opened on a vault the index does not carry fails, and says so.
+// A session opened on a vault the index does not carry fails with an error.
 func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	handler, target, installation := newAPIOn(t, deck)
 	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.Indexing})
@@ -414,8 +414,8 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 	}
 }
 
-// A deck that could not be given card ids is named to the person, so they know
-// which of their cards are not in front of them.
+// A deck that could not be assigned card ids is reported to the user, so the
+// missing cards are identifiable.
 func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 	handler, target, installation := newAPIOn(t, map[string]string{
 		"Term.md": deck["Term.md"],
@@ -625,12 +625,12 @@ var backlogged = map[string]string{
 
 // The deck screen and the preset tab are one arithmetic, under every goal.
 //
-// The window asks CardsDue for what its decks offer today and Curve for the
-// picture over a preset's range, and both are asked here as the window asks
-// them: the settings the curve is drawn for are the ones the vault holds. Where
-// the preset relies on that picture is the day the deck screen offers wherever
-// the control moves today, and the reason a day closed names the budget its own
-// goal steers and no other.
+// The deck screen calls CardsDue for what its decks offer today, and the preset
+// tab calls Curve for the curve over a preset's range. Both are called here as the
+// application calls them: the settings the curve is computed for are the ones the
+// vault holds. The curve at the preset's setting is the day the deck screen offers
+// whenever the control is at today, and the reason a day is closed names the budget
+// its own goal steers and no other.
 func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 	for _, one := range []struct {
 		what   string
@@ -643,8 +643,8 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		// three weeks, and a date paces the day for the cards that can get
 		// there.
 		learned review.LearnedRule
-		// isSameDay is whether the control moves today, so that what the tab
-		// draws at its current position is the day the deck screen offers.
+		// isSameDay is whether the control is at today, so the curve at its current
+		// position equals the day the deck screen offers.
 		isSameDay bool
 	}{
 		{
@@ -723,13 +723,13 @@ func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 	}
 }
 
-// The day suggested under a goal of minutes means what it says: the shortest
-// day that asks everything the day holds, on a vault carrying a backlog.
+// The day suggested under a goal of minutes is the shortest day that asks every
+// card the day holds, on a vault with a backlog.
 //
-// A shorter day is cut short by the clock, and the shortest day on the range is
-// never the answer to a vault behind on its reviews. The cards a shorter day
-// asks may already be the whole count: a card the day comes back to is the one
-// card, and the showings it takes are what the clock runs out on.
+// A shorter day is cut short by the clock, so the shortest day on the range is
+// never the suggestion for a vault behind on its reviews. The cards a shorter day
+// asks may already be the whole count: a card that returns within the day is the
+// same card, and the repeated showings it takes exhaust the clock.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	handler, target := newAPI(t, lived)
 	v := target[0]
@@ -855,8 +855,8 @@ var spread = map[string]string{
 
 // The tile over a preset and the session it opens are one number.
 //
-// A preset is the whole scope of its own budget, so what the count leaves under
-// it is what a session over it asks, and the count carries that figure.
+// A preset is the whole scope of its own budget, so the cards the count leaves
+// for it are the cards a session over it asks, and the count reports that figure.
 func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	handler, target := newAPI(t, spread)
 	v := target[0]
@@ -864,8 +864,8 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	setNow(handler, firstMorning.AddDate(0, 0, 14))
 
 	response := getVaultCount(t, handler, v)
-	// Which decks each preset schedules, so what a session asks can be checked
-	// against the rows it was gathered from.
+	// Which decks each preset schedules, so the cards a session asks can be checked
+	// against the rows they were collected from.
 	underMap := make(map[string][]string)
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
@@ -1009,7 +1009,7 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 				t.Errorf("%v stands %d behind on day %d", curveResp.Grid[i], backlog, day)
 			}
 		}
-		// The day named as the clearing is the day the band reaches nothing.
+		// The day reported as the clearing day is the first day on which the band reaches zero.
 		first := int32(-1)
 		for day, backlog := range band {
 			if backlog == 0 {
@@ -1035,9 +1035,9 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 
 // A curve of retention plots what the target costs week after week.
 //
-// A target does nothing to today, so the height is the load over the days
-// projected: it climbs with the target where nothing binds, and stands still at
-// every place where a count binds at every one of them.
+// A target does not affect today, so the height is the load over the projected
+// days: it increases with the target where no count binds, and is constant at
+// every place where a count binds on every projected day.
 func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 	for _, one := range []struct {
 		what             string
@@ -1045,9 +1045,9 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 		counts           review.BudgetUnit
 		isClimbing       bool
 	}{
-		// A budget of one showing is a day the target cannot spend, whatever it
-		// is. Counting cards it could: the one card is asked again for nothing,
-		// and how often it comes back is the target's own answer.
+		// A budget of one showing is a day the target cannot spend, whatever the
+		// target. Counting cards it could: the one card is asked again for no gain, and
+		// how often it returns is determined by the target.
 		{"a count binding at every place", 12, 1, review.BudgetUnitShows, false},
 		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},
 	} {
@@ -1169,9 +1169,9 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	}
 }
 
-// TestEveryRatingIsRead. A rating the reading does not name comes through as
-// zero, which the use case refuses; a person who pressed a button would be told
-// the answer was not one.
+// TestEveryRatingIsRead. A rating the parser does not recognize is parsed as
+// zero, which the use case rejects; a button press would be reported as not an
+// answer.
 func TestEveryRatingIsRead(t *testing.T) {
 	enumtest.CheckHandled(t, api.RatingValues, func(r api.Rating) bool { return parseRating(r) != 0 })
 }

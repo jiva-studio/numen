@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The panel a card is asked about in: the conversation view a plugin declares, mounted into it.
- * Where no plugin declares one, the panel stays empty and the review goes on without it.
+ * The panel the card conversation is shown in: the conversation view a plugin declares, mounted into it.
+ * Where no plugin declares one, the panel stays empty and the review continues without it.
  */
 import { inject, useTemplateRef } from 'vue'
 
@@ -28,7 +28,7 @@ useMountedConversation({
 </template>
 
 <style scoped>
-/* The panel stands where the card stood and is the same thing to look at, so it
+/* The panel replaces the card in the same position and looks the same, so it
    takes the card's ground. */
 .asking {
   display: flex;

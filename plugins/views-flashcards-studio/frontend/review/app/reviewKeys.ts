@@ -1,9 +1,9 @@
 /**
- * What a keystroke asks of the review, screen by screen.
+ * The action of each keystroke in the review, screen by screen.
  *
- * The decks screen picks a deck by its letter, and the session turns cards
- * over and answers them. What a key means is the keyboard's answer; what is
- * done about it is the review's.
+ * The decks screen selects a deck by its letter, and the session turns cards
+ * over and answers them. This module maps a key to an action; the review
+ * performs the action.
  */
 import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey } from '../features/keyboard'
 import { canStart } from '../pages/decks'
@@ -12,7 +12,7 @@ import type { VaultCardsDue } from '../entities/vault'
 import type { SessionKeyIntent } from '../features/keyboard'
 import type { Preset } from '../pages/decks'
 
-/** The screens of the review, in the order a person goes through them. */
+/** The screens of the review, in the order the user visits them. */
 export type ReviewScreen = 'decks' | 'session'
 
 /** What the keys ask of the review: what it is showing, and what it can do. */
@@ -30,7 +30,7 @@ export interface ReviewKeysDeps {
   readonly start: (deck: string) => void
   /** Turn the card over. */
   readonly show: () => void
-  /** Answer the card in front of the person. */
+  /** Answers the current card. */
   readonly answer: (how: Grade) => void
   /** Take the last answer back. */
   readonly takeBack: () => void
@@ -38,13 +38,13 @@ export interface ReviewKeysDeps {
   readonly leave: () => void
   /** Out of the vault, back to the window's list of vaults. */
   readonly goToVaults: () => void
-  /** The panel a card is asked about in, brought in or taken away. */
+  /** Opens or closes the panel a card is asked about in. */
   readonly toggleAgent: () => void
   /** The panel the deck's notes are read in, brought in or taken away. */
   readonly toggleNotes: () => void
   /** The reading moved a page, forward or back. */
   readonly scrollPage: (back: boolean) => void
-  /** The panel a card is asked about in, put away. */
+  /** Closes the panel a card is asked about in. */
   readonly closeAgent: () => void
   /** The panel the deck's notes are read in, put away. */
   readonly closeNotes: () => void

@@ -19,9 +19,9 @@ type cardsHandler struct {
 	*Backend
 }
 
-// ListCardModels is every card model the vault holds, by what it is called and what
-// it asks for. A vault holding more than one answer carries is answered with as
-// many as it carries, and told how many it holds.
+// ListCardModels returns the card models of the vault, with each title and field
+// list. A vault with more card models than the limit returns that many, and
+// reports the total.
 func (h *cardsHandler) ListCardModels(
 	ctx context.Context, req *api.ListCardModelsRequest,
 ) (*api.ListCardModelsResponse, error) {
@@ -42,8 +42,8 @@ func (h *cardsHandler) ListCardModels(
 	return out, nil
 }
 
-// getCardModelLimit is how many card models one answer carries. Nothing asked for takes the
-// ceiling, and so does more than the ceiling.
+// getCardModelLimit returns how many card models one response contains. A limit
+// of zero or less, or above the ceiling, yields the ceiling.
 func getCardModelLimit(limit int32) int {
 	if limit <= 0 || limit > cardwire.MaxCardModels {
 		return cardwire.MaxCardModels
@@ -109,10 +109,10 @@ func (b *Backend) createCardNote(
 	return cards.CreateNoteResult{}, reason, false, nil
 }
 
-// RenameCardModelField gives one of a card model's fields a different name, in the
-// card model and in every card of every deck that card model cuts. A card model still
-// holding what the client read is written; one holding something else is left
-// alone and the client is told the card model changed.
+// RenameCardModelField renames one field of a card model, in the card model and
+// in every card of every deck that the card model generates. A card model that
+// still matches what the client read is written; a card model that changed is
+// left unchanged and the response reports the change.
 func (h *cardsHandler) RenameCardModelField(
 	ctx context.Context, req *api.RenameCardModelFieldRequest,
 ) (*api.RenameCardModelFieldResponse, error) {
@@ -183,8 +183,8 @@ func (h *cardsHandler) ReadDeck(
 	out := &api.ReadDeckResponse{}
 	if code, ok := errorCodeOfDeck(found.Outcome, found.Type); ok {
 		out.Error = code
-		// The bound travels with the error code, so the interface names it
-		// without holding a number of its own.
+		// 		// The bound is sent with the error code, so the interface names it
+		// 		// without storing a number of its own.
 		if code == api.ErrorCodeDeckTooLarge {
 			out.Bound = cards.MaxBytes
 		}
@@ -196,9 +196,9 @@ func (h *cardsHandler) ReadDeck(
 	return out, nil
 }
 
-// WriteDeck puts cards into a deck. A deck still holding what the client read
-// is written over; one holding something else is left alone and the client is
-// told the deck changed.
+// WriteDeck writes cards into a deck. A deck that still matches what the client
+// read is overwritten; a deck that changed is left unchanged and the response
+// reports the change.
 func (h *cardsHandler) WriteDeck(
 	ctx context.Context, req *api.WriteDeckRequest,
 ) (*api.WriteDeckResponse, error) {
@@ -211,9 +211,9 @@ func (h *cardsHandler) WriteDeck(
 		return nil, newError(server.CodeInvalidArgument, err)
 	}
 	wrote, err := h.scenarios().cards.Write.Deck(ctx, showing, req.Path, body, readFileStat(req.Baseline))
-	// A write that reached the vault is a write that happened, so the client is
-	// handed the file stat it presents at its next save, and told where the
-	// index did not follow.
+	// 	// A write that reached the vault has happened, so the response carries the
+	// 	// file stat the client presents at its next save, and reports where the
+	// 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.WriteDeckResponse{
@@ -233,9 +233,9 @@ func (h *cardsHandler) WriteDeck(
 	return &api.WriteDeckResponse{Error: reason}, nil
 }
 
-// WriteCardModel puts fields and templates into a card model. A card model still holding
-// what the client read is written over; one holding something else is left
-// alone and the client is told the card model changed.
+// WriteCardModel writes fields and templates into a card model. A card model that
+// still matches what the client read is overwritten; a card model that changed is
+// left unchanged and the response reports the change.
 func (h *cardsHandler) WriteCardModel(
 	ctx context.Context, req *api.WriteCardModelRequest,
 ) (*api.WriteCardModelResponse, error) {
@@ -250,9 +250,9 @@ func (h *cardsHandler) WriteCardModel(
 	}
 	pos, err := h.scenarios().cards.Write.CardModel(
 		ctx, showing, req.Path, body, req.Fields, readFileStat(req.Baseline))
-	// A write that reached the vault is a write that happened, so the client is
-	// handed the file stat it presents at its next save, and told where the
-	// index did not follow.
+	// 	// A write that reached the vault has happened, so the response carries the
+	// 	// file stat the client presents at its next save, and reports where the
+	// 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return &api.WriteCardModelResponse{

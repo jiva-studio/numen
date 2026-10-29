@@ -15,7 +15,7 @@ import (
 // under each of the four is the moment that scheduler brings the card back.
 func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	t.Parallel()
-	// The share of the cards each deck's preset asks to come back, by the deck.
+	// Share of cards each deck's preset schedules for recall, keyed by deck.
 	shares := map[string]float64{"decks/Roots.md": 0.99, "decks/Terms.md": 0.9}
 	s := openVault(t, map[string]string{
 		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
@@ -28,8 +28,8 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 			"\n## Term ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nsandhi\n\n### Meaning\n\njoining\n",
 	})
 
-	// Both cards are put into review, so each stands where its own scheduler
-	// left it and the four are asked of a schedule and not of a blank.
+	// Both cards are in review, so each is scheduled by its own scheduler and the
+	// four windows are read from a schedule and not from a blank card.
 	pos := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
 	record := s.run(t, pos.AddDate(0, 0, -200))
 	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
@@ -140,7 +140,7 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 	}
 }
 
-// review cards is the review cards a session asks, in the order it asks them.
+// review cards is the list of review cards a session returns, in session order.
 func reviewCards(sat flashcards.SessionResult) []review.ReviewCardID {
 	out := make([]review.ReviewCardID, 0, len(sat.Queue))
 	for _, one := range sat.Queue {
@@ -183,9 +183,8 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	}
 }
 
-// A session over several presets is one session however many times it is asked
-// for: the same request over the same vault is the same cards in the same
-// order, review card by review card.
+// A session over several presets is deterministic: the same request over the same
+// vault returns the same cards in the same order, review card by review card.
 func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -220,8 +219,8 @@ func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	}
 }
 
-// openSession is what the vault asks at this instant when the session is opened
-// over this deck or this preset.
+// openSession returns the session the vault builds at this instant when it is
+// opened over this deck or this preset.
 func (s vaulted) openSession(
 	t *testing.T, day review.Day, now time.Time, pos flashcards.Scope,
 ) (flashcards.SessionResult, error) {
@@ -244,8 +243,8 @@ func (s vaulted) openSessionByPreset(
 	return sat
 }
 
-// Pressing a preset sits to the cards of every deck pointing at it, and to no
-// card of another preset.
+// Starting a session on a preset applies it to the cards of every deck that
+// references it, and to no card of another preset.
 func TestASessionOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -343,7 +342,8 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	}
 }
 
-// A preset no deck points at has nothing to sit to, and says so.
+// A preset that no deck references applies to no cards, and the session reports
+// that.
 func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -379,7 +379,9 @@ func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 	}
 }
 
-// whole of the allowance, and the second is told why there is nothing left.
+// A session over a preset whose day is spent returns `ErrSchedulesNothing`: the
+// first session uses the whole allowance, and the second reports that nothing is
+// left.
 func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -510,8 +512,8 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 	}
 
 	got := byDeck(s.sessionAt(t, today, saturday))
-	// Twelve review cards of each stand owed. The minute buys three of the slow
-	// ones, and all twelve of the quick ones with room for three unbegun.
+	// Twelve due review cards in each deck. One minute pays for three of the slow
+	// ones, or all twelve of the quick ones with room for three new cards.
 	if got["decks/Slow.md"] != 3 {
 		t.Errorf("the slow cards were asked %d in a minute, want 3", got["decks/Slow.md"])
 	}
@@ -520,8 +522,8 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 	}
 }
 
-// The day of the week a budget is read off is the review day being sat, which
-// the small hours of the morning belong to the day before.
+// The day of the week a budget is read from is the review day, and the small
+// hours of the morning belong to the previous review day.
 func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -614,12 +616,12 @@ func TestSession_CountsCardsOrShowsForRepeatedCard(t *testing.T) {
 			"decks/Two.md": deckOf("Two", 2, 0),
 		})
 
-		// Both cards were answered long enough ago to be owed today.
+		// Both cards were answered long enough ago to be due today.
 		before := s.run(t, saturday.AddDate(0, 0, -30))
 		answer(t, before, cardID(0), 6*time.Second)
 		answer(t, before, cardID(1), 6*time.Second)
 
-		// The first card is put to the person nine times in one session.
+		// The first card is shown nine times in one session.
 		morning := s.run(t, saturday)
 		for range 9 {
 			answerAgain(t, morning, cardID(0), 4*time.Second)
@@ -820,9 +822,9 @@ func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
 	}
 }
 
-// A preset steered by its minutes goes on asking while the minutes last, and
-// the reviews it keeps none of do not close it. Beside it the decks naming no
-// preset are asked their own day.
+// A preset limited by minutes keeps returning cards while minutes remain, and
+// reviews that the preset does not count do not close it. Decks that reference no
+// preset get their own day.
 func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -833,8 +835,7 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 		"decks/Loose.md":  deckOf("", 20, 100),
 	})
 
-	// Six cards answered long enough ago to be owed today, and nothing answered
-	// today.
+	// Six cards answered long enough ago to be due today, and none answered today.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	for i := range 6 {
 		answer(t, before, cardID(i), 6*time.Second)
@@ -874,7 +875,7 @@ func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 	}
 }
 
-// What is owed is what the session asks: the same numbers, deck by deck.
+// The due count is the count the session returns: the same numbers, deck by deck.
 func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -989,8 +990,8 @@ func TestSession_NewCardBudgetIndependentOfReviews(t *testing.T) {
 		"decks/New.md": deckOf("New", 6, 0),
 	})
 
-	// Two cards answered long enough ago to be owed today, which the preset
-	// keeps no reviews for.
+	// Two cards answered long enough ago to be due today, for which the preset counts
+	// no reviews.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	answer(t, before, cardID(0), 6*time.Second)
 	answer(t, before, cardID(1), 6*time.Second)
@@ -1050,8 +1051,8 @@ func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 	}
 }
 
-// A limit edited in the middle of a day holds from that moment, and what the
-// day has already spent stands against it either way.
+// A limit edited in the middle of a day applies from that moment, and what the
+// day has already spent counts against it in both directions.
 func TestALimitEditedInTheMiddleOfADayContainsAtOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -1095,8 +1096,7 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 	answer(t, before, cardID(0), 6*time.Second)
 	answer(t, before, cardID(1), 6*time.Second)
 
-	// One card put to the person three times, which is one card and three
-	// showings.
+	// One card shown three times: one card and three showings.
 	morning := s.run(t, saturday)
 	for range 3 {
 		answerAgain(t, morning, cardID(0), 4*time.Second)
@@ -1124,7 +1124,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 		"decks/On.md": deckOf("On", 20, 0),
 	})
 
-	// Two cards the person could not recall, which come round again in the day.
+	// Two cards that were not recalled, which return later in the same day.
 	morning := s.run(t, saturday)
 	for i := range 2 {
 		answerAgain(t, morning, cardID(i), 6*time.Second)
@@ -1214,8 +1214,8 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 	}
 }
 
-// A day carrying none of the load is asked no card, and the day after it opens
-// on the whole of the budget.
+// A day with none of the load returns no cards, and the following day opens with
+// the whole budget.
 func TestSession_ZeroLoadDayYieldsNoCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -1263,9 +1263,9 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 	}
 }
 
-// A retention edited in the middle of a day is what the cards are worked out at
-// from that moment. The cache stands from before the edit and is thrown away,
-// so what a session asks is the cards at the target now in force.
+// A retention edited in the middle of a day applies to the cards from that
+// moment. The cached cards from before the edit are discarded, so a session
+// returns the cards at the target retention now in force.
 func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -1308,21 +1308,20 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	}
 }
 
-// The session and the curve are one arithmetic.
+// The session and the curve share one computation.
 //
-// What a day admits is worked out in one place, so the count the curve draws at
-// the value the preset holds is the count the sessions of that day hand a person.
-// That day is the next one the preset admits: a day at none of the load is no
-// session at all, so the curve draws the day after it.
+// The count a day admits is computed in one place, so the count the curve plots at
+// the value the preset stores is the count the sessions of that day return. That
+// day is the next one the preset admits: a day with none of the load admits no
+// session, so the curve plots the day after it.
 //
-// The day is driven the way a person drives it, a session at a time until it has
-// nothing left to ask. A card the day comes back to is in a later session than
-// the one that first showed it, so a single session is a batch of that day and
-// not the day.
+// The day is driven session by session until a session returns no cards. A card
+// that returns later in the day appears in a later session than its first
+// showing, so a single session is a batch of that day and not the whole day.
 func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 	t.Parallel()
-	// A day of the week the vault's own preset is read on, so a light Saturday
-	// and a dead Saturday are read where a person meets them.
+	// The weekday is read from the vault's own preset, so a light Saturday and a zero
+	// load Saturday are read the way the review session reads them.
 	const day = 90
 
 	for _, one := range []struct {
@@ -1463,9 +1462,9 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 	}
 }
 
-// getNextAdmittedDay is the next day of review this preset admits, counting
-// from the day holding now, which is the day the curve draws. A preset admitting
-// no day at all is answered with the day it was asked about.
+// getNextAdmittedDay returns the next day of review this preset admits, counting
+// from the day containing now, which is the day the curve plots. A preset that
+// admits no day returns the day it was queried with.
 func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Time {
 	for range 8 {
 		if !p.GetAllowance(day, now, review.Spent{}, 0, 0).IsPaused() {
@@ -1476,8 +1475,8 @@ func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Tim
 	return now
 }
 
-// answersAt is as many review cards answered this way, this many days before the
-// day the vault is sat.
+// answersAt returns that many review cards answered this way, this many days
+// before the review day of the vault.
 func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
@@ -1488,8 +1487,8 @@ func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 	}
 }
 
-// newSpentToday is a day a person is already partway through: review cards owed
-// from a month back, some of them answered twice since the day opened.
+// newSpentToday is a day that is partly spent: review cards due from a month
+// back, some of them answered twice since the day opened.
 func newSpentToday(cards int) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
@@ -1511,8 +1510,8 @@ func newBacklogVault(t *testing.T, front string) vaulted {
 		"On.md":       preset(front),
 		"decks/On.md": deckOf("On", 40, 0),
 	})
-	// Twenty review cards answered long enough ago to be owed today, and twenty
-	// nobody has begun.
+	// Twenty review cards answered long enough ago to be due today, and twenty new
+	// cards.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	for i := range 20 {
 		answer(t, before, cardID(i), 6*time.Second)
@@ -1520,13 +1519,13 @@ func newBacklogVault(t *testing.T, front string) vaulted {
 	return s
 }
 
-// `backlog` says how much of a day goes to the debt before anything unbegun is
-// offered. It is a share of the day and not a budget of its own, so it is read
-// against the one pot a goal of minutes keeps.
+// `backlog` sets the share of a day spent on due review cards before any new card
+// is returned. It is a share of the day and not a separate budget, so it is
+// applied to the single pool that a goal of minutes uses.
 func TestTheBacklogShareReturnsWhatTheDayIsSpentOn(t *testing.T) {
 	t.Parallel()
-	// Four minutes a day over twenty review cards owed and twenty unbegun, which
-	// is more of each than the day can carry.
+	// Four minutes a day for twenty due review cards and twenty new cards, which
+	// exceeds what the day can carry of each.
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
 	all := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
@@ -1575,7 +1574,7 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 			"new_a_day: 20\nreviews_a_day: 20\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 40, 0),
 	})
-	// Two review cards owed, and thirty-eight nobody has begun.
+	// Two due review cards, and thirty-eight new cards.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	for i := range 2 {
 		answer(t, before, cardID(i), 6*time.Second)
@@ -1598,8 +1597,8 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 
 		sat := s.sessionAt(t, today, saturday)
 		newCards := unseen(sat)
-		// Twenty owed, and twenty unbegun over the ten days to the day it aims
-		// at, which is two a day.
+		// Twenty due and twenty new cards over the ten days to the target day, which is
+		// two new cards a day.
 		if owed := countQueue(sat) - newCards; owed != 20 || newCards != 2 {
 			t.Errorf("under %q the day asked %d owed and %d new, want 20 and 2",
 				share, owed, newCards)
@@ -1617,13 +1616,12 @@ func s0(t *testing.T, s vaulted) session {
 	return session{owed: countQueue(sat) - newCards, newCount: newCards}
 }
 
-// The share of the day that goes to the debt moves the day where the day is one
-// pot, and nowhere else.
+// The share of the day that goes to the due cards changes the day's content only
+// when the day is one pool.
 //
-// A goal of minutes spends one pot between the debt and the material it has not
-// begun, so the share decides how much of each is asked. A goal of retention
-// holds each side to a count of its own, so the order the two are drawn in
-// cannot move either total.
+// A goal of minutes spends one pool on due and new cards, so the share decides how
+// many of each are returned. A goal of retention applies a separate count to each
+// side, so the order in which the two are drawn cannot change either total.
 func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 	t.Parallel()
 	const minutes = "goal: minutes_a_day\nminutes_a_day: 4\n"
@@ -1649,12 +1647,12 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 	}
 }
 
-// What a day's budget is spent on decides what a count charges, and leaves the
-// minutes alone.
+// What a day's budget is spent on determines what a count charges, and does not
+// change the minutes.
 //
-// A review card the day has already answered comes round again for no count where
-// the preset counts cards, and the minutes go on it as they go on every answer.
-// A day of a minute spent four times over is a day nobody asked for.
+// A review card already answered in the day returns with no count charge where the
+// preset counts cards, and its minutes are charged like every answer. A day that
+// charges a minute four times is wrong.
 func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 	t.Parallel()
 	for _, counts := range []string{"cards", "shows"} {
@@ -1664,8 +1662,8 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 				"new_a_day: 0\nreviews_a_day: 0\ncounts: " + counts + "\n"),
 			"decks/On.md": deckOf("On", 40, 0),
 		})
-		// Every review card answered long enough ago to be owed today, at six
-		// seconds an answer, so a minute holds ten of them.
+		// Every review card answered long enough ago to be due today, at six seconds an
+		// answer, so a minute holds ten of them.
 		before := s.run(t, saturday.AddDate(0, 0, -30))
 		for i := range 40 {
 			answer(t, before, cardID(i), 6*time.Second)
@@ -1692,13 +1690,14 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 	}
 }
 
-// countDayCards is how many review cards one whole day of review hands over,
-// driven the way a person drives it: a session at a time until the day has
-// nothing left to ask, answering everything each of them holds.
+// countDayCards returns how many review cards one whole day of review contains,
+// driven session by session until the day returns no cards, answering every card
+// of each session.
 //
-// A card the day comes back to is the one card, so a review card is counted once
-// however many sessions show it. Each answer takes what a projection costs its
-// kind at, so driving the day does not move the day's own arithmetic under it.
+// A card that returns later in the day is one card, so a review card is counted
+// once however many sessions show it. Each answer is charged at the cost the
+// projection assigns to its kind, so driving the day does not change the day's
+// own computation.
 func (s vaulted) countDayCards(t *testing.T, day review.Day, now time.Time) int {
 	t.Helper()
 	reviewCards := make(map[review.ReviewCardID]bool)
@@ -1754,8 +1753,8 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 	}
 }
 
-// minutes is how long the whole day of review took, driven the way a person
-// drives it.
+// minutes returns how long the whole day of review took, driven session by
+// session.
 func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Duration {
 	t.Helper()
 	var out time.Duration
@@ -1781,7 +1780,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 	return 0
 }
 
-// And the same ceiling holds when a person sits to one deck at a time.
+// The same ceiling holds when sessions are started deck by deck.
 func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
@@ -1884,7 +1883,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 // when is the instant the divided days below are worked out at.
 var when = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 
-// counts is a preset whose day is closed by a count of cards nobody has begun.
+// counts is a preset whose day is closed by a count of new cards.
 const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
 
 // deckAt is the path of the deck standing at this place.
@@ -1914,7 +1913,7 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	return target
 }
 
-// pressDeck is how many review cards pressing one deck hands over.
+// pressDeck returns how many review cards starting a session on one deck returns.
 func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
@@ -1924,9 +1923,9 @@ func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	return len(sat.Queue)
 }
 
-// reviewDeckSession answers everything one deck hands over, session again until it hands
-// over nothing, and says how many review cards went through. A card the day comes
-// back to is the one card.
+// reviewDeckSession answers every card one deck returns, session after session
+// until a session returns nothing, and returns how many review cards were
+// answered. A card that returns later in the day is one card.
 func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	reviewCards := make(map[review.ReviewCardID]bool)
@@ -1979,12 +1978,12 @@ func TestADeckOwingMoreConsumesTheLargerShare(t *testing.T) {
 	}
 }
 
-// A deck that cannot use a whole share leaves the rest to the others, and the
-// day still spends what it holds.
+// A deck that cannot use a whole share leaves the remainder to the other decks,
+// and the day still spends its full budget.
 //
-// Twenty minutes buys sixty cards nobody has begun. The deck of one card holds
-// too small a share to buy even that card, and what the shares leave over buys
-// the cards the other two could not afford out of their own.
+// Twenty minutes pay for sixty new cards. The deck of one card has a share too
+// small to pay for even that card, and the remainder of the shares pays for the
+// cards the other two decks could not afford from their own shares.
 func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
@@ -2034,7 +2033,7 @@ func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 60)
 	got := s.rows(t, when)
-	// A third of twenty minutes buys twenty cards nobody has begun.
+	// A third of twenty minutes pays for twenty new cards.
 	for item := range 3 {
 		if got[deckAt(item)] != 20 {
 			t.Errorf("%s holds %d of twenty minutes over three equal decks, and a third buys 20 cards",
@@ -2073,8 +2072,8 @@ func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 	}
 }
 
-// Session deck by deck spends the same day whichever deck is sat first, and no
-// deck's own share grows because another was sat before it.
+// Sessions deck by deck spend the same day whichever deck is started first, and
+// no deck's share grows because another deck was started before it.
 func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 	t.Parallel()
 	for _, order := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}} {
@@ -2099,9 +2098,8 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 	}
 }
 
-// The division turns on what each deck owes and not on where the deck stands,
-// so the same vault divides the same day whatever order its files are walked
-// in.
+// The division depends on what each deck has due and not on the deck's position,
+// so the same vault divides the same day in whatever order its files are walked.
 func TestTheDivisionDoesNotTurnOnWhereADeckExists(t *testing.T) {
 	t.Parallel()
 	first := newDeckVault(t, counts, 90, 10).rows(t, when)

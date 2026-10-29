@@ -1,6 +1,6 @@
 /**
- * The line the window draws while the application is still working the honest
- * one out. It is arithmetic over the settings alone, and it says so.
+ * The provisional line drawn while the application computes the actual curve. It
+ * is arithmetic over the settings alone.
  */
 import { dayAfter, daysBetween } from '../../lib/day'
 import {
@@ -23,7 +23,7 @@ const LEAST_CEILING = 60
 /** How long one answer takes where nothing has been answered yet, in seconds. */
 const ANSWER = 8
 
-/** Where the saturating line of minutes reaches half of what it ever reaches. */
+/** The value at which the saturating line of minutes reaches half of its maximum. */
 const HALF = 15
 
 /** The most of the material any day of review brings back. */
@@ -35,14 +35,14 @@ const MIDDLE = 0.9
 /**
  * The sketch of a curve, drawn from the settings alone.
  *
- * `today` is the review day the window was told, which is the day the core
- * counts from. It is not read off a clock here: a day of review begins hours
- * past midnight, and a calendar day would count a date one day nearer for as
- * long as the two disagree.
+ * `today` is the review day supplied by the application, which is the day the
+ * core counts from. It is not read from a clock here: a review day begins hours
+ * after midnight, and a calendar day would count a date one day nearer while the
+ * two differ.
  *
- * `within` is how far each setting goes, as the application answered it. A
- * sketch of a target is drawn across the span it says, so the guess and the
- * answer stand over one range.
+ * `within` is the range of each setting, as supplied by the application. A sketch
+ * of a target is drawn across that span, so the estimate and the actual curve
+ * share one range.
  */
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = createGrid(settings, today, within)
