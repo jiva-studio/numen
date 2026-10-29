@@ -52,7 +52,6 @@ const wire = vi.hoisted(() => {
     requestedDays: [] as { vault: string; from: string; to: string }[],
     requestedPresets: [] as unknown[],
     requestedNotes: [] as unknown[],
-    answered: [] as { cardId: string }[],
     responses: [] as { cardId: string }[],
     takenBack: [] as unknown[],
     scrolled: [] as boolean[],
@@ -154,11 +153,11 @@ vi.mock('../shared/clients', async (original) => ({
         ...wire.opened,
       }
     },
-    answerCard: async (request: { cardId: string }) => {
+    recordReview: async (request: { cardId: string }) => {
       wire.responses.push(request)
       return { answer: 'answer-1' }
     },
-    takeBackAnswer: async (request: unknown) => {
+    undoReview: async (request: unknown) => {
       wire.takenBack.push(request)
       return {}
     },
@@ -442,7 +441,7 @@ describe('a session sat down to', () => {
     expect(review.session.agentPanel.about.value).not.toBeNull()
 
     review.session.state.show()
-    await review.session.answerCard('good')
+    await review.session.recordReview('good')
 
     expect(review.session.agentPanel.about.value).toBeNull()
     expect(review.session.agentPanel.open.value).toBe(false)

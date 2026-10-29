@@ -11,7 +11,7 @@ import { AHEAD, ROWS } from './grid'
 
 /** What one day behind came to. */
 export interface Tally {
-  readonly answered: number
+  readonly reviewed: number
   /** The number of answers per rating. */
   readonly again: number
   readonly hard: number
@@ -21,18 +21,18 @@ export interface Tally {
    * The answers given to cards already under review, and how many of those were
    * recalled. A card still repeating within minutes is in neither count.
    */
-  readonly asked: number
+  readonly tested: number
   readonly recalled: number
 }
 
 /** A day with no answers, which is the value of an empty cell. */
 export const NOTHING: Tally = {
-  answered: 0,
+  reviewed: 0,
   again: 0,
   hard: 0,
   good: 0,
   easy: 0,
-  asked: 0,
+  tested: 0,
   recalled: 0,
 }
 
@@ -90,7 +90,7 @@ export function getDays(
     const day = getDayName(on)
     const isAhead = day > today
     const tally = did.get(day) ?? NOTHING
-    const count = isAhead ? (due.get(day) ?? 0) : tally.answered
+    const count = isAhead ? (due.get(day) ?? 0) : tally.reviewed
     out.push({
       ...(isAhead ? NOTHING : tally),
       day,

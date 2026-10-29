@@ -38,7 +38,7 @@ export interface DeckPreset {
     problems: readonly string[]
     stopsOn: StopReason
   }
-  readonly held: {
+  readonly settings: {
     path: string
     name: string
     settings: Settings
@@ -74,7 +74,7 @@ export const readDeckPreset = async (
     }
     return asValue({
       activePreset: preset,
-      held: preset,
+      settings: preset,
     })
   } catch {
     // whose settings would not read, and that is what is drawn.

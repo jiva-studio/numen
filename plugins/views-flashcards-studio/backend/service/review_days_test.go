@@ -21,7 +21,7 @@ func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 
 	session := startSession(t, handler, v)
 	for _, card := range session.Cards {
-		if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+		if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 			Vault: string(v.ID), Run: session.Run,
 			CardID: card.CardID, Template: card.Template,
 			Rating: api.RatingGood,
@@ -76,7 +76,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := session.Cards[0]
-	if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: string(v.ID), Run: session.Run,
 		CardID: card.CardID, Template: card.Template,
 		Rating: api.RatingEasy,
@@ -162,7 +162,7 @@ func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
 
 	session := startSession(t, handler, v)
 	for _, card := range session.Cards {
-		if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+		if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 			Vault: string(v.ID), Run: session.Run,
 			CardID: card.CardID, Template: card.Template,
 			Rating: api.RatingGood,

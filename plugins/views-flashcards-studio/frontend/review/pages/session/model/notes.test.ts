@@ -18,7 +18,7 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
 })
 
 /** The panel, with the session around it standing in for the window. */
-const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
+const panel = (more: { deck?: string; failure?: boolean } = {}) => {
   const request: { vault: string; deck: string }[] = []
   const open = ref(false)
   const deck = ref(more.deck === undefined ? 'decks/Words.md' : more.deck)
@@ -32,46 +32,46 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     deck: () => deck.value,
     getDeckNeighbourhood: async (vault, of) => {
       request.push({ vault, deck: of })
-      if (more.refuses) throw new Error('out of reach')
+      if (more.failure) throw new Error('out of reach')
       return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
     },
     showNotice: (one) => notices.push(one),
     resolveLinks: async () => [],
   })
-  return { held: target, requests: request, asked: request, notices, open, deck }
+  return { wrapper: target, requests: request, requestLog: request, notices, open, deck }
 }
 
 describe('the panel the deck is read in', () => {
   it('does not come in between cards', async () => {
-    const { held, requests, open } = panel({ deck: '' })
-    await held.openPanel()
+    const { wrapper, requests, open } = panel({ deck: '' })
+    await wrapper.openPanel()
     expect(open.value).toBe(false)
     expect(requests).toEqual([])
   })
 
   it('arrives in on the deck the card remains in, turned or not', async () => {
-    const { held, open } = panel()
-    await held.openPanel()
+    const { wrapper, open } = panel()
+    await wrapper.openPanel()
     expect(open.value).toBe(true)
-    expect(held.notes.value).toHaveLength(1)
-    expect(held.unread.value).toBe(2)
+    expect(wrapper.notes.value).toHaveLength(1)
+    expect(wrapper.unread.value).toBe(2)
   })
 
   // A silent failure invites the user to repeat the gesture, so the failure is reported.
   it('says why it could not be read, and holds nothing', async () => {
-    const { held, notices, open } = panel({ refuses: true })
-    await held.openPanel()
-    expect(held.notes.value).toEqual([])
+    const { wrapper, notices, open } = panel({ failure: true })
+    await wrapper.openPanel()
+    expect(wrapper.notes.value).toEqual([])
     expect(notices).toHaveLength(1)
     expect(open.value).toBe(true)
-    expect(held.isWorking.value).toBe(false)
+    expect(wrapper.isWorking.value).toBe(false)
   })
 
   it('is put away and keeps what was read', async () => {
-    const { held, requests, open } = panel()
-    await held.openPanel()
-    held.closePanel()
-    await held.openPanel()
+    const { wrapper, requests, open } = panel()
+    await wrapper.openPanel()
+    wrapper.closePanel()
+    await wrapper.openPanel()
     expect(open.value).toBe(true)
     expect(requests).toHaveLength(1)
   })
@@ -81,20 +81,20 @@ describe('what is read belongs to the deck', () => {
   // The links are the file's, and the file is the deck, so the cards of one
   // deck are all read against the same notes.
   it('asks once for a deck, however many of its cards go by', async () => {
-    const { held, requests } = panel()
-    await held.openPanel()
-    held.closePanel()
-    await held.openPanel()
+    const { wrapper, requests } = panel()
+    await wrapper.openPanel()
+    wrapper.closePanel()
+    await wrapper.openPanel()
     expect(requests).toEqual([{ vault: 'one', deck: 'decks/Words.md' }])
   })
 
   it('asks again when the card arrives from another deck', async () => {
-    const { held, asked, deck } = panel()
-    await held.openPanel()
+    const { wrapper, requestLog, deck } = panel()
+    await wrapper.openPanel()
     deck.value = 'decks/Trees.md'
-    await held.openPanel()
-    expect(asked.map((one) => one.deck)).toEqual(['decks/Words.md', 'decks/Trees.md'])
-    expect(held.notes.value[0]?.written).toBe('decks/Trees.md')
+    await wrapper.openPanel()
+    expect(requestLog.map((one) => one.deck)).toEqual(['decks/Words.md', 'decks/Trees.md'])
+    expect(wrapper.notes.value[0]?.written).toBe('decks/Trees.md')
   })
 
   // A card answered while the asking is in flight moves the session to another
@@ -165,45 +165,45 @@ describe('what is read belongs to the deck', () => {
   })
 
   it('holds nothing once the session is over', async () => {
-    const { held, open } = panel()
-    await held.openPanel()
-    held.endSession()
-    expect(held.notes.value).toEqual([])
-    expect(held.unread.value).toBe(0)
+    const { wrapper, open } = panel()
+    await wrapper.openPanel()
+    wrapper.endSession()
+    expect(wrapper.notes.value).toEqual([])
+    expect(wrapper.unread.value).toBe(0)
     expect(open.value).toBe(false)
   })
 
   it('asks again for a deck the session has been away from', async () => {
-    const { held, requests } = panel()
-    await held.openPanel()
-    held.endSession()
-    await held.openPanel()
+    const { wrapper, requests } = panel()
+    await wrapper.openPanel()
+    wrapper.endSession()
+    await wrapper.openPanel()
     expect(requests).toHaveLength(2)
   })
 })
 
 describe('a link pressed in the card', () => {
   it('opens the reading on the note it names', async () => {
-    const { held } = panel()
-    await held.openPanel('notes/Leaf mould.md')
-    expect(held.col.value).toBe('notes/Leaf mould.md')
+    const { wrapper } = panel()
+    await wrapper.openPanel('notes/Leaf mould.md')
+    expect(wrapper.col.value).toBe('notes/Leaf mould.md')
   })
 
   // What was sought has been scrolled to, and the next card is not scrolled to
   // the same note again.
   it('is not sought a second time once it has been read to', async () => {
-    const { held } = panel()
-    await held.openPanel('notes/Leaf mould.md')
-    held.read()
-    expect(held.col.value).toBe('')
+    const { wrapper } = panel()
+    await wrapper.openPanel('notes/Leaf mould.md')
+    wrapper.read()
+    expect(wrapper.col.value).toBe('')
   })
 
   it('opens on nothing in particular when the way in is the key', async () => {
-    const { held } = panel()
-    await held.openPanel('notes/Leaf mould.md')
-    held.closePanel()
-    await held.openPanel()
-    expect(held.col.value).toBe('')
+    const { wrapper } = panel()
+    await wrapper.openPanel('notes/Leaf mould.md')
+    wrapper.closePanel()
+    await wrapper.openPanel()
+    expect(wrapper.col.value).toBe('')
   })
 })
 
@@ -229,43 +229,43 @@ describe('the asking', () => {
       showNotice: (one) => notices.push(one),
       resolveLinks: async () => [],
     })
-    return { held: target, waiting: pendingRequests, deck, notices }
+    return { wrapper: target, waiting: pendingRequests, deck, notices }
   }
 
   it('is working while the deck is being requested for, and not once it has answered', async () => {
-    const { held, waiting } = slowPanel()
-    expect(held.isWorking.value).toBe(false)
+    const { wrapper, waiting } = slowPanel()
+    expect(wrapper.isWorking.value).toBe(false)
 
-    const activePrompt = held.openPanel()
-    expect(held.isWorking.value).toBe(true)
+    const activePrompt = wrapper.openPanel()
+    expect(wrapper.isWorking.value).toBe(true)
 
     waiting[0]?.answer()
     await activePrompt
-    expect(held.isWorking.value).toBe(false)
+    expect(wrapper.isWorking.value).toBe(false)
   })
 
   it('is still working on the deck it is on when the deck behind it answers', async () => {
-    const { held, waiting, deck } = slowPanel()
-    const first = held.openPanel()
+    const { wrapper, waiting, deck } = slowPanel()
+    const first = wrapper.openPanel()
     deck.value = 'decks/Trees.md'
-    const second = held.openPanel()
+    const second = wrapper.openPanel()
 
     waiting[0]?.answer()
     await first
-    expect(held.isWorking.value).toBe(true)
+    expect(wrapper.isWorking.value).toBe(true)
 
     waiting[1]?.answer()
     await second
-    expect(held.isWorking.value).toBe(false)
+    expect(wrapper.isWorking.value).toBe(false)
   })
 
   // The deck the session has left could not be reached, and that is nothing to
   // say under the card of another.
   it('says nothing of a deck the session has left that could not be reached', async () => {
-    const { held, waiting, deck, notices } = slowPanel()
-    const first = held.openPanel()
+    const { wrapper, waiting, deck, notices } = slowPanel()
+    const first = wrapper.openPanel()
     deck.value = 'decks/Trees.md'
-    const second = held.openPanel()
+    const second = wrapper.openPanel()
 
     waiting[1]?.answer()
     await second
@@ -273,17 +273,17 @@ describe('the asking', () => {
     await first
 
     expect(notices).toEqual([])
-    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
-    expect(held.unread.value).toBe(1)
+    expect(wrapper.notes.value[0]?.path).toBe('decks/Trees.md')
+    expect(wrapper.unread.value).toBe(1)
   })
 })
 
 describe('the panel put away', () => {
   it('takes the window off the reading', async () => {
-    const { held, open } = panel()
-    await held.openPanel()
+    const { wrapper, open } = panel()
+    await wrapper.openPanel()
 
-    held.closePanel()
+    wrapper.closePanel()
 
     expect(open.value).toBe(false)
   })

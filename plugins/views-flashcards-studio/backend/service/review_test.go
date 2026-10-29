@@ -140,7 +140,7 @@ func startSession(t *testing.T, handler *API, v domain.Vault) *api.StartSessionR
 
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run fails.
-func TestAnswerCard_ErrorsOnRunOfOtherVault(t *testing.T) {
+func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
 	handler, target, installation := newAPIOn(t, deck, other)
 	one, two := target[0], target[1]
 
@@ -150,7 +150,7 @@ func TestAnswerCard_ErrorsOnRunOfOtherVault(t *testing.T) {
 	}
 	card := session.Cards[0]
 
-	_, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault:    string(two.ID),
 		Run:      session.Run,
 		CardID:   card.CardID,
@@ -197,7 +197,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	}
 
 	card := now.Cards[0]
-	_, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault:    string(v.ID),
 		Run:      was.Run,
 		CardID:   card.CardID,
@@ -223,7 +223,7 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 
 	session := startSession(t, handler, one)
 	for _, card := range session.Cards {
-		if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+		if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 			Vault: string(one.ID), Run: session.Run,
 			CardID: card.CardID, Template: card.Template,
 			Rating: api.RatingEasy,
@@ -267,7 +267,7 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 	session := startSession(t, handler, v)
 	card := session.Cards[0]
 
-	provided, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	provided, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault:      string(v.ID),
 		Run:        session.Run,
 		CardID:     card.CardID,
@@ -282,7 +282,7 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 		t.Fatal("the answer came back with nothing to take it back by")
 	}
 
-	if _, err := handler.TakeBackAnswer(t.Context(), &api.TakeBackAnswerRequest{
+	if _, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault:  string(v.ID),
 		Run:    session.Run,
 		Answer: provided.Answer,
@@ -302,7 +302,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	session := startSession(t, handler, v)
 	card := session.Cards[0]
 
-	_, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: string(v.ID), Run: session.Run,
 		CardID: card.CardID, Template: card.Template,
 		Rating: api.RatingUnspecified,
@@ -498,7 +498,7 @@ func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := session.Cards[0]
-	if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+	if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: string(v.ID), Run: session.Run,
 		CardID: card.CardID, Template: card.Template,
 		Rating: api.RatingGood, DurationMs: 6000,

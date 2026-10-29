@@ -133,8 +133,8 @@ type PresetsAPI interface {
 // ReviewSessionAPI answers the sessions and the answers of a review.
 type ReviewSessionAPI interface {
 	StartSession(ctx context.Context, req *api.StartSessionRequest) (*api.StartSessionResponse, error)
-	AnswerCard(ctx context.Context, req *api.AnswerCardRequest) (*api.AnswerCardResponse, error)
-	TakeBackAnswer(ctx context.Context, req *api.TakeBackAnswerRequest) (*api.TakeBackAnswerResponse, error)
+	RecordReview(ctx context.Context, req *api.RecordReviewRequest) (*api.RecordReviewResponse, error)
+	UndoReview(ctx context.Context, req *api.UndoReviewRequest) (*api.UndoReviewResponse, error)
 }
 
 // ReviewWatchAPI answers the streams of the review window.
@@ -178,8 +178,8 @@ func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI
 
 	stream(a, "WatchCardsDue", reviewAPI.WatchCardsDue)
 	handle(a, "StartSession", reviewAPI.StartSession)
-	handle(a, "AnswerCard", reviewAPI.AnswerCard)
-	handle(a, "TakeBackAnswer", reviewAPI.TakeBackAnswer)
+	handle(a, "RecordReview", reviewAPI.RecordReview)
+	handle(a, "UndoReview", reviewAPI.UndoReview)
 	stream(a, "WatchReloads", reviewAPI.WatchReloads)
 	handle(a, "ListReviewDays", reviewAPI.ListReviewDays)
 	handle(a, "GetDeckNeighbourhood", reviewAPI.GetDeckNeighbourhood)

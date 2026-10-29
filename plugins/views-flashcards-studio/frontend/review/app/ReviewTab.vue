@@ -76,7 +76,7 @@ function onNotesPage(page: unknown) {
       :at="session.at.value"
       @update:at="session.moveTo"
       @show="session.state.show"
-      @answer="session.answerCard"
+      @answer="session.recordReview"
       @take-back="session.state.takeBack"
       @leave="session.leave"
       @ask="session.toggleAgent"

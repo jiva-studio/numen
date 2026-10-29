@@ -149,7 +149,7 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 			continue
 		}
 		reply[one.Deck] = true
-		if _, err := handler.AnswerCard(t.Context(), &api.AnswerCardRequest{
+		if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 			Vault: string(v.ID), Run: session.Run,
 			CardID: one.CardID, Template: one.Template,
 			Rating: api.RatingGood, DurationMs: 5000,

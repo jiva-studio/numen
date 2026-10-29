@@ -31,9 +31,9 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   cards: 22,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
-  answered: 11,
-  answeredNew: 2,
-  answeredReviews: 9,
+  reviewed: 11,
+  reviewedNew: 2,
+  reviewedReviews: 9,
   took: 4,
   paused: '',
   wrong: '',
@@ -101,7 +101,7 @@ describe('what the goals come to today', () => {
 
   // Progress equals the fraction of the budget that closes the day.
   it('remains as far through as the minutes it is steered by', () => {
-    const one = mountPresets([preset({ answered: 11, took: 15 })])
+    const one = mountPresets([preset({ reviewed: 11, took: 15 })])
 
     expect(one.find('.presets__done').text()).toBe('75%')
   })
@@ -112,7 +112,7 @@ describe('what the goals come to today', () => {
         settings: settings({ goal: 'retention', minutesADay: 0 }),
         budget: { new: 10, reviews: 45, minutes: 0 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
-        answered: 11,
+        reviewed: 11,
         took: 40,
       }),
     ])
@@ -122,7 +122,7 @@ describe('what the goals come to today', () => {
   })
 
   it('is all of the day where a budget has been met exactly', () => {
-    const one = mountPresets([preset({ answered: 55, took: 20 })])
+    const one = mountPresets([preset({ reviewed: 55, took: 20 })])
 
     expect(one.find('.presets__done').text()).toBe('100%')
   })
@@ -135,9 +135,9 @@ describe('what the goals come to today', () => {
         settings: settings({ goal: 'retention' }),
         budget: { new: 3, reviews: 10, minutes: 20 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
-        answered: 66,
-        answeredNew: 6,
-        answeredReviews: 60,
+        reviewed: 66,
+        reviewedNew: 6,
+        reviewedReviews: 60,
       }),
     ])
     const response = one.find('.presets__done')
@@ -147,7 +147,7 @@ describe('what the goals come to today', () => {
   })
 
   it('says the same of a day that has run past its minutes', () => {
-    const one = mountPresets([preset({ answered: 0, took: 31 })])
+    const one = mountPresets([preset({ reviewed: 0, took: 31 })])
 
     expect(one.find('.presets__done').text()).toBe('over budget')
   })
@@ -161,7 +161,7 @@ describe('what the goals come to today', () => {
       preset({
         budget: { new: 10, reviews: 0, minutes: 20 },
         closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
-        answered: 30,
+        reviewed: 30,
         took: 5,
       }),
     ])
@@ -179,7 +179,7 @@ describe('what the goals come to today', () => {
         settings: settings({ goal: 'retention' }),
         budget: { new: 10, reviews: 45, minutes: 5 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
-        answered: 11,
+        reviewed: 11,
         took: 40,
       }),
     ])
@@ -219,7 +219,7 @@ describe('what the goals come to today', () => {
       preset({
         settings: null,
         cards: 22,
-        answered: 6,
+        reviewed: 6,
         took: 4,
         wrong: 'note not in the vault',
       }),
@@ -250,7 +250,7 @@ describe('what the goals come to today', () => {
         reviewCards: 0,
         settings: null,
         cards: 0,
-        answered: 0,
+        reviewed: 0,
         took: 0,
       }),
     ])
@@ -267,7 +267,7 @@ describe('what the goals come to today', () => {
         reviewCards: 0,
         settings: null,
         cards: 0,
-        answered: 0,
+        reviewed: 0,
         took: 0,
       }),
     ])
@@ -353,12 +353,12 @@ describe('what pressing a preset would ask', () => {
   // A tile that cannot be pressed states the reason, like the deck rows below it.
   it('says why in its place where there is nothing to ask', () => {
     expect(
-      mountPresets([preset({ cards: 0, answered: 55, took: 20 })])
+      mountPresets([preset({ cards: 0, reviewed: 55, took: 20 })])
         .find('.presets__left')
         .text(),
     ).toBe('daily limit reached')
     expect(
-      mountPresets([preset({ cards: 0, answered: 0, took: 0 })])
+      mountPresets([preset({ cards: 0, reviewed: 0, took: 0 })])
         .find('.presets__left')
         .text(),
     ).toBe('nothing due today')

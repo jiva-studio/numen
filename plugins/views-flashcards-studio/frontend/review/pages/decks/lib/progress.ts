@@ -32,8 +32,8 @@ export const getSpentShare = (one: Preset): number => {
   // against the answers of its own kind. A preset steered by its minutes
   // leaves its card counts unweighed.
   const shares = [
-    one.closes.new ? share(one.answeredNew, one.budget.new) : 0,
-    one.closes.reviews ? share(one.answeredReviews, one.budget.reviews) : 0,
+    one.closes.new ? share(one.reviewedNew, one.budget.new) : 0,
+    one.closes.reviews ? share(one.reviewedReviews, one.budget.reviews) : 0,
     one.closes.minutes ? share(one.took, one.budget.minutes) : 0,
   ]
   return Math.max(0, ...shares)

@@ -159,9 +159,9 @@ describe('counting what every vault owes', () => {
       cards: 3,
       // What the day leaves is the two the count sends, added up once here.
       owed: 3,
-      answered: 4,
-      answeredNew: 1,
-      answeredReviews: 3,
+      reviewed: 4,
+      reviewedNew: 1,
+      reviewedReviews: 3,
       took: 1.5,
       new: 8,
       reviews: 45,

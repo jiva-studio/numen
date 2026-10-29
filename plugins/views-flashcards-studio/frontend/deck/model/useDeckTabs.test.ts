@@ -106,7 +106,7 @@ const vault = (
       if (items <= (answers.unlisted ?? 0)) throw new Error('out of reach')
       return {
         cardModels: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
-        held: 1,
+        total: 1,
       }
     },
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),

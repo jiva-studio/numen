@@ -52,9 +52,9 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   cards: 30,
   budget: budget(),
   closes: byMinutes,
-  answered: 0,
-  answeredNew: 0,
-  answeredReviews: 0,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
   took: 0,
   paused: '',
   wrong: '',
@@ -68,9 +68,9 @@ const presetDue = (fields: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   decks: 1,
   cards: 30,
   owed: 0,
-  answered: 0,
-  answeredNew: 0,
-  answeredReviews: 0,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
   took: 0,
   new: 10,
   reviews: 200,
@@ -212,7 +212,7 @@ describe('how far through its day a preset remains', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 0, minutes: 20 }),
       closes: byMinutes,
-      answered: 30,
+      reviewed: 30,
       took: 5,
     })
 
@@ -224,9 +224,9 @@ describe('how far through its day a preset remains', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 45, minutes: 20 }),
       closes: byCounts,
-      answered: 11,
-      answeredNew: 2,
-      answeredReviews: 9,
+      reviewed: 11,
+      reviewedNew: 2,
+      reviewedReviews: 9,
       took: 40,
     })
 
@@ -240,9 +240,9 @@ describe('how far through its day a preset remains', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 200, minutes: 20 }),
       closes: byCounts,
-      answered: 10,
-      answeredNew: 10,
-      answeredReviews: 0,
+      reviewed: 10,
+      reviewedNew: 10,
+      reviewedReviews: 0,
       took: 4,
     })
 
@@ -256,9 +256,9 @@ describe('how far through its day a preset remains', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 0, minutes: 0 }),
       closes: { new: 'by_date', reviews: '', minutes: '' },
-      answered: 50,
-      answeredNew: 10,
-      answeredReviews: 40,
+      reviewed: 50,
+      reviewedNew: 10,
+      reviewedReviews: 40,
       took: 30,
     })
 
@@ -269,7 +269,7 @@ describe('how far through its day a preset remains', () => {
     const one = preset({
       budget: budget({ new: 10, reviews: 45, minutes: 20 }),
       closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: 'minutes_a_day' },
-      answered: 11,
+      reviewed: 11,
       took: 15,
     })
 
@@ -277,7 +277,7 @@ describe('how far through its day a preset remains', () => {
   })
 
   it('remains at nothing where no budget closes the day at all', () => {
-    expect(getSpentShare(preset({ closes: CLOSES_NOTHING, answered: 30, took: 40 }))).toBe(0)
+    expect(getSpentShare(preset({ closes: CLOSES_NOTHING, reviewed: 30, took: 40 }))).toBe(0)
   })
 })
 
@@ -292,11 +292,11 @@ describe('what starting a session on a preset would ask', () => {
 
   // A tile with nothing to offer states the reason, as the deck rows below it do.
   it('says the day is full where the budget is what left it nothing', () => {
-    expect(getLeftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('daily limit reached')
+    expect(getLeftWords(preset({ cards: 0, reviewed: 55, took: 20 }))).toBe('daily limit reached')
   })
 
   it('says nothing fell due where the day retained none of its cards', () => {
-    expect(getLeftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing due today')
+    expect(getLeftWords(preset({ cards: 0, reviewed: 0, took: 0 }))).toBe('nothing due today')
   })
 })
 
@@ -399,7 +399,7 @@ describe('which preset schedules each deck', () => {
           presetDue({
             cards: 49,
             owed: 49,
-            answered: 6,
+            reviewed: 6,
             took: 2.5,
             new: 5,
             reviews: 23,
@@ -415,7 +415,7 @@ describe('which preset schedules each deck', () => {
     expect(one.presets.value[0]).toMatchObject({
       cards: 49,
       budget: { new: 5, reviews: 23, minutes: 10 },
-      answered: 6,
+      reviewed: 6,
       took: 2.5,
     })
   })
@@ -526,7 +526,7 @@ describe('which preset schedules each deck', () => {
       settings: null,
       decks: [],
       cards: 0,
-      answered: 0,
+      reviewed: 0,
       paused: '',
     })
     // Nothing points at it, so no deck is scheduled by it.
@@ -629,7 +629,7 @@ describe('which preset schedules each deck', () => {
           presetDue({
             cards: 40,
             owed: 22,
-            answered: 6,
+            reviewed: 6,
             took: 12,
             new: 0,
             reviews: 0,
@@ -642,7 +642,7 @@ describe('which preset schedules each deck', () => {
 
     expect(one.presets.value[0]).toMatchObject({
       cards: 22,
-      answered: 6,
+      reviewed: 6,
       took: 12,
       budget: { new: 0, reviews: 0, minutes: 20 },
       closes: byMinutes,
@@ -814,9 +814,9 @@ describe('what a preset read from its decks carries of the count', () => {
             decks: 3,
             cards: 55,
             closes: byCounts,
-            answered: 13,
-            answeredNew: 4,
-            answeredReviews: 9,
+            reviewed: 13,
+            reviewedNew: 4,
+            reviewedReviews: 9,
           }),
         ],
       ),
@@ -827,8 +827,8 @@ describe('what a preset read from its decks carries of the count', () => {
       named: 3,
       reviewCards: 55,
       closes: byCounts,
-      answeredNew: 4,
-      answeredReviews: 9,
+      reviewedNew: 4,
+      reviewedReviews: 9,
     })
   })
 
@@ -852,8 +852,8 @@ describe('what a preset read from its decks carries of the count', () => {
       named: 2,
       reviewCards: 0,
       closes: CLOSES_NOTHING,
-      answeredNew: 0,
-      answeredReviews: 0,
+      reviewedNew: 0,
+      reviewedReviews: 0,
     })
   })
 

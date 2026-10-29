@@ -81,7 +81,7 @@ const mountDeck = async (
   const core: Cards = {
     cardModels: async () => ({
       cardModels: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
-      held: 1,
+      total: 1,
     }),
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),

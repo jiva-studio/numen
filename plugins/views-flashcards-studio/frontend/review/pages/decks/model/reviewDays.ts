@@ -84,7 +84,7 @@ export function useReviewDays(deps: ReviewDaysDeps) {
       // If the user switched to another vault while this request was pending, the
       // result belongs to the previous vault and is discarded.
       if (of.value !== vault) return
-      days.value = new Map(reviewData.days.map((one) => [one.day, createTally(one)]))
+      days.value = new Map(reviewData.days.map((one) => [one.day, one]))
       due.value = new Map(reviewData.due.map((one) => [one.day, one.reviewed]))
       streak.value = reviewData.streak
       reply.value = reviewData.reviewed
@@ -95,16 +95,5 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     }
   }
 
-  return { days, due, streak, answerCount: reply, answered: reply, of, read: readItem, forget }
+  return { days, due, streak, answerCount: reply, reviewed: reply, of, read: readItem, forget }
 }
-
-/** One day as the grid holds it. */
-const createTally = (one: Day): HeatmapTally => ({
-  answered: one.reviewed,
-  again: one.again,
-  hard: one.hard,
-  good: one.good,
-  easy: one.easy,
-  asked: one.tested,
-  recalled: one.recalled,
-})

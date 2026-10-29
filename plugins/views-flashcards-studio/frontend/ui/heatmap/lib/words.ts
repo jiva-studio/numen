@@ -12,7 +12,7 @@ export interface Words {
   /** The day itself, formatted as the window formats a date. */
   readonly names: (day: string) => string
   /** "answered", after a number: what was done on a day behind. */
-  readonly answered: string
+  readonly reviewed: string
   /** The text for a day with no answers. */
   readonly nothing: string
   /** "to come", after a number: what falls on a day still ahead. */

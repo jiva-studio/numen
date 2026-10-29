@@ -29,7 +29,7 @@ const opening = (...cards: string[]): SessionStart => ({
  * received and the answers it returns. An answer that never resolves simulates
  * a slow disk, so a second press arrives while the first is still being written.
  */
-function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
+function createSession(how?: { answering?: Promise<{ answer: string }>; failure?: unknown }) {
   const asks: { what: string; request: unknown }[] = []
   let content = 0
   const cards: SessionClient = {
@@ -37,16 +37,16 @@ function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?
       asks.push({ what: 'start', request: one })
       return opening('one', 'two', 'three')
     },
-    async answerCard(one) {
+    async recordReview(one) {
       asks.push({ what: 'answer', request: one })
-      if (how?.refuses) throw how.refuses
+      if (how?.failure) throw how.failure
       if (how?.answering) return how.answering
       content += 1
       return { answer: `01${content}` }
     },
-    async takeBackAnswer(one) {
+    async undoReview(one) {
       asks.push({ what: 'takeBack', request: one })
-      if (how?.refuses) throw how.refuses
+      if (how?.failure) throw how.failure
       return {}
     },
   }
@@ -90,8 +90,8 @@ describe('what a session is opened over', () => {
     const cards: SessionClient = {
       startSession: () =>
         Promise.reject(new Error('this preset schedules nothing today: it is paused')),
-      answerCard: () => Promise.reject(new Error('no')),
-      takeBackAnswer: () => Promise.reject(new Error('no')),
+      recordReview: () => Promise.reject(new Error('no')),
+      undoReview: () => Promise.reject(new Error('no')),
     }
     const errors: unknown[] = []
     const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
@@ -150,7 +150,7 @@ describe('a session', () => {
   })
 
   it('leaves the card where it was when the answer could not be written', async () => {
-    const { one, asks, errors } = createSession({ refuses: new Error('the disk is full') })
+    const { one, asks, errors } = createSession({ failure: new Error('the disk is full') })
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
@@ -197,16 +197,16 @@ describe('a session', () => {
   })
 
   it('keeps the answer it wrote when taking it back failed', async () => {
-    let refuses = false
+    let failure = false
     const cards: SessionClient = {
       async startSession() {
         return opening('one', 'two')
       },
-      async answerCard() {
+      async recordReview() {
         return { answer: '011' }
       },
-      async takeBackAnswer() {
-        if (refuses) throw new Error('gone')
+      async undoReview() {
+        if (failure) throw new Error('gone')
         return {}
       },
     }
@@ -218,7 +218,7 @@ describe('a session', () => {
     expect(one.answers.value).toHaveLength(1)
     expect(one.cardIndex.value).toBe(1)
 
-    refuses = true
+    failure = true
     await one.takeBack()
 
     // The vault holds the answer, so the window keeps it as recorded.
@@ -244,8 +244,8 @@ describe('a session', () => {
   it('says nothing was opened when the vault could not be sat down to', async () => {
     const cards: SessionClient = {
       startSession: () => Promise.reject(new Error('this folder cannot be read as a vault')),
-      answerCard: () => Promise.reject(new Error('no')),
-      takeBackAnswer: () => Promise.reject(new Error('no')),
+      recordReview: () => Promise.reject(new Error('no')),
+      undoReview: () => Promise.reject(new Error('no')),
     }
     const errors: unknown[] = []
     const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
@@ -262,11 +262,11 @@ describe('a session', () => {
       async startSession() {
         return opening('one', 'two')
       },
-      async answerCard(one) {
+      async recordReview(one) {
         asks.push({ request: one })
         return { answer: '011' }
       },
-      async takeBackAnswer() {
+      async undoReview() {
         return {}
       },
     }
@@ -342,10 +342,10 @@ describe('an answer taken back', () => {
       async startSession() {
         return opening('one', 'two', 'three')
       },
-      async answerCard() {
+      async recordReview() {
         return { answer: `01${asks.length}` }
       },
-      takeBackAnswer(one) {
+      undoReview(one) {
         asks.push(one.answer)
         return new Promise<void>((then) => {
           settle = then
@@ -369,16 +369,16 @@ describe('an answer taken back', () => {
   })
 
   it('leaves the session free to answer again once it fails', async () => {
-    let refuses = true
+    let failure = true
     const cards: SessionClient = {
       async startSession() {
         return opening('one', 'two')
       },
-      async answerCard() {
+      async recordReview() {
         return { answer: '011' }
       },
-      async takeBackAnswer() {
-        if (refuses) throw new Error('gone')
+      async undoReview() {
+        if (failure) throw new Error('gone')
         return {}
       },
     }
@@ -392,7 +392,7 @@ describe('an answer taken back', () => {
     expect(errors).toHaveLength(1)
     expect(one.writing.value).toBe(false)
 
-    refuses = false
+    failure = false
     await one.takeBack()
     expect(one.card.value?.cardId).toBe('one')
   })
@@ -421,8 +421,8 @@ describe('the cards a session opens on', () => {
           skipped: 0,
         }
       },
-      answerCard: () => Promise.reject(new Error('no')),
-      takeBackAnswer: () => Promise.reject(new Error('no')),
+      recordReview: () => Promise.reject(new Error('no')),
+      undoReview: () => Promise.reject(new Error('no')),
     }
     const one = useReviewSession({ cards, reportError: () => {} })
 
@@ -457,11 +457,11 @@ describe('a session keeping its own time', () => {
       async startSession() {
         return opening('one')
       },
-      async answerCard(one) {
+      async recordReview(one) {
         response.push(one)
         return { answer: '011' }
       },
-      async takeBackAnswer() {
+      async undoReview() {
         return {}
       },
     }

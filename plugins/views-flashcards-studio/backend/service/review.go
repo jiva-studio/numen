@@ -327,10 +327,10 @@ func newWireIntervals(ahead map[review.Rating]time.Duration) *api.Intervals {
 	}
 }
 
-// AnswerCard writes down how a card came back.
-func (h *reviewHandler) AnswerCard(
-	ctx context.Context, req *api.AnswerCardRequest,
-) (*api.AnswerCardResponse, error) {
+// RecordReview writes down how a card came back.
+func (h *reviewHandler) RecordReview(
+	ctx context.Context, req *api.RecordReviewRequest,
+) (*api.RecordReviewResponse, error) {
 	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
@@ -350,7 +350,7 @@ func (h *reviewHandler) AnswerCard(
 		return nil, newError(server.CodeInternal, err)
 	}
 
-	return &api.AnswerCardResponse{Answer: provided.ID}, nil
+	return &api.RecordReviewResponse{Answer: provided.ID}, nil
 }
 
 // case, which is where the rule is.
@@ -371,10 +371,10 @@ func parseRating(r api.Rating) review.Rating {
 	}
 }
 
-// TakeBackAnswer writes down that an answer was taken back.
-func (h *reviewHandler) TakeBackAnswer(
-	ctx context.Context, req *api.TakeBackAnswerRequest,
-) (*api.TakeBackAnswerResponse, error) {
+// UndoReview writes down that an answer was taken back.
+func (h *reviewHandler) UndoReview(
+	ctx context.Context, req *api.UndoReviewRequest,
+) (*api.UndoReviewResponse, error) {
 	v, err := h.getVault(ctx, req.Vault)
 	if err != nil {
 		return nil, err
@@ -389,7 +389,7 @@ func (h *reviewHandler) TakeBackAnswer(
 		}
 		return nil, newError(server.CodeInternal, err)
 	}
-	return &api.TakeBackAnswerResponse{}, nil
+	return &api.UndoReviewResponse{}, nil
 }
 
 // GetVaultDeckPreset is the preset a deck of the named vault is scheduled by. A

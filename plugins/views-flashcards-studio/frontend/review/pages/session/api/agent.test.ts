@@ -22,7 +22,7 @@ const card: ReviewCard = {
 
 describe('createCardAgentPort', () => {
   it('sends the vault, and the deck, the card and the review card in the query context', async () => {
-    const agent = createMockAgentHost([{ kind: 'said', text: 'Because of the leaves.' }])
+    const agent = createMockAgentHost([{ kind: 'text', text: 'Because of the leaves.' }])
     const signal = new AbortController().signal
     const steps = []
     for await (const step of createCardAgentPort(agent, card, 'v-garden').ask({
@@ -48,7 +48,7 @@ describe('createCardAgentPort', () => {
         },
       },
     ])
-    expect(steps).toEqual([{ kind: 'said', text: 'Because of the leaves.' }])
+    expect(steps).toEqual([{ kind: 'text', text: 'Because of the leaves.' }])
   })
 
   it('finishes the conversation by its id', async () => {

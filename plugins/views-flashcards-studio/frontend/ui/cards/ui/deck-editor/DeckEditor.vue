@@ -76,9 +76,9 @@ const {
 } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  isMoved: (held: string, target: InsertionPoint): boolean =>
-    isMoved(grid.value.runs, held, target),
-  move: (held, target) => emit('move', held, target),
+  isMoved: (dragged: string, target: InsertionPoint): boolean =>
+    isMoved(grid.value.runs, dragged, target),
+  move: (dragged, target) => emit('move', dragged, target),
 })
 
 const grid = computed(() => getGrid(props, dragged.value))
