@@ -44,12 +44,13 @@ type LocalModel struct {
 
 // ModelInfo describes the embedding model properties exposed to clients.
 type ModelInfo struct {
-	Name        string `json:"name"`
-	Dimensions  int    `json:"dimensions"`
-	MaxTokens   int    `json:"max_tokens"`
-	Pooling     string `json:"pooling"`
-	From        string `json:"from"`
-	Concurrency int    `json:"concurrency"`
+	Name        string  `json:"name"`
+	Dimensions  int     `json:"dimensions"`
+	MaxTokens   int     `json:"max_tokens"`
+	Pooling     string  `json:"pooling"`
+	From        string  `json:"from"`
+	Concurrency int     `json:"concurrency"`
+	FloorHint   float64 `json:"floor_hint"`
 }
 
 // CheckIdentity verifies the model dimension, tokens, and pooling.
@@ -136,6 +137,7 @@ func DefaultBGEM3Config() (ModelInfo, LocalModel) {
 		Pooling:     PoolHead,
 		From:        "plugin:md.numen.engines.embeddings",
 		Concurrency: bgeM3Passes,
+		FloorHint:   GetModelProfile("bge-m3").FloorHint,
 	}
 	local := LocalModel{
 		Name:           "Xenova/bge-m3",

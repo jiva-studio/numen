@@ -217,3 +217,65 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 		t.Fatalf("opened %+v / %+v, want bge-m3@1024 on Xenova/bge-m3", activeInfo, activeLocal)
 	}
 }
+
+func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
+	srv := newEmbeddingServer()
+	steps := []struct {
+		values      map[string]string
+		name        string
+		dimensions  int32
+		maxTokens   int32
+		pooling     string
+		floorHint   float64
+		description string
+	}{
+		{map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, "Xenova/multilingual-e5-small", 384, 512, "mean", 0.81, "local e5"},
+		{map[string]string{"provider": "openai", "model": "text-embedding-ada-002"}, "text-embedding-ada-002", 1536, 8191, "head", 0.75, "remote ada"},
+		{map[string]string{"provider": "openrouter", "model": "qwen/qwen3-embedding-8b"}, "qwen/qwen3-embedding-8b", 4096, 32768, "head", 0, "remote qwen"},
+		{map[string]string{"provider": "local", "model": "Xenova/bge-m3"}, "bge-m3", 1024, 8192, "head", 0.30, "local bge-m3"},
+		{map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, "Xenova/multilingual-e5-small", 384, 512, "mean", 0.81, "local e5 again"},
+		{map[string]string{"provider": "local", "model": "owner/unknown"}, "owner/unknown", 1024, 8192, "head", 0, "local unknown"},
+	}
+	for _, step := range steps {
+		srv.updateConfig(step.values)
+		info, err := srv.GetModelInfo(t.Context())
+		if err != nil {
+			t.Fatalf("%s: %v", step.description, err)
+		}
+		if info.GetName() != step.name || info.GetDimensions() != step.dimensions || info.GetMaxTokens() != step.maxTokens ||
+			info.GetPooling() != step.pooling || info.GetFloorHint() != step.floorHint {
+			t.Errorf("%s: got %s/%d/%d/%s/%v, want %s/%d/%d/%s/%v", step.description,
+				info.GetName(), info.GetDimensions(), info.GetMaxTokens(), info.GetPooling(), info.GetFloorHint(),
+				step.name, step.dimensions, step.maxTokens, step.pooling, step.floorHint)
+		}
+	}
+}
+
+func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
+	srv := newEmbeddingServer()
+	var openedInfo engine.ModelInfo
+	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+		openedInfo = info
+		return engine.MockEmbedder{}, nil
+	}
+	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"})
+	if _, err := srv.EmbedTexts(t.Context(), []string{"hello"}); err != nil {
+		t.Fatal(err)
+	}
+	if openedInfo.Dimensions != 384 || openedInfo.MaxTokens != 512 || openedInfo.Pooling != "mean" {
+		t.Fatalf("opened with %+v, want 384 dimensions, 512 tokens, mean pooling", openedInfo)
+	}
+}
+
+func TestTheMockModelReportsNoFloorHint(t *testing.T) {
+	t.Setenv(envMockML, "true")
+	srv := newEmbeddingServer()
+	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"})
+	info, err := srv.GetModelInfo(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.GetName() != "mock-embedding" || info.GetFloorHint() != 0 {
+		t.Fatalf("mock model = %s with hint %v", info.GetName(), info.GetFloorHint())
+	}
+}

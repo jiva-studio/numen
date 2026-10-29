@@ -40,6 +40,7 @@ func GetMockModel() ModelInfo {
 		Pooling:     PoolMean,
 		From:        "mock",
 		Concurrency: 1,
+		FloorHint:   0,
 	}
 }
 

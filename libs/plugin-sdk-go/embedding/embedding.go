@@ -20,6 +20,7 @@ type ModelInfo struct {
 	Pooling     string
 	From        string
 	Concurrency int32
+	FloorHint   float64
 }
 
 func (m ModelInfo) GetName() string       { return m.Name }
@@ -28,6 +29,7 @@ func (m ModelInfo) GetMaxTokens() int32   { return m.MaxTokens }
 func (m ModelInfo) GetPooling() string    { return m.Pooling }
 func (m ModelInfo) GetFrom() string       { return m.From }
 func (m ModelInfo) GetConcurrency() int32 { return m.Concurrency }
+func (m ModelInfo) GetFloorHint() float64 { return m.FloorHint }
 
 // Handler serves embedding model metadata and batch embeddings.
 type Handler interface {
@@ -55,6 +57,7 @@ func (a *adapter) GetEmbeddingModel(
 		Pooling:     info.Pooling,
 		From:        info.From,
 		Concurrency: info.Concurrency,
+		FloorHint:   info.FloorHint,
 	}), nil
 }
 

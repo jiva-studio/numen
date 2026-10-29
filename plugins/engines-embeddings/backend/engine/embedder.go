@@ -162,6 +162,7 @@ func (e *Embedder) GetModel() ModelInfo {
 		Pooling:     e.pooling,
 		From:        e.origin,
 		Concurrency: e.passes,
+		FloorHint:   0,
 	}
 }
 
