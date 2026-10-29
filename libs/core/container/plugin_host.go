@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/serviceproxy"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
@@ -142,9 +142,9 @@ type PluginServices = interface {
 // no plugin host it serves none.
 func (c Config) GetPluginServices() PluginServices {
 	if c.PluginHost == nil {
-		return serviceproxy.NoServices{}
+		return servicebridge.NoServices{}
 	}
-	return serviceproxy.Open(c.PluginHost)
+	return servicebridge.Open(c.PluginHost)
 }
 
 // GetPluginRetrier starts, as the window asks, a plugin the host suspends once more.
@@ -236,7 +236,7 @@ func (c Config) OpenPluginVault(
 	}
 	refresh := makeRefresh(c, db, db.Notes())
 	queries := db.Queries()
-	vaults := vaultaccess.Vault{
+	vaults := hostvault.Vault{
 		Current:  current,
 		Readers:  c.VaultReaders(),
 		Writers:  c.VaultWriters(),
@@ -335,4 +335,3 @@ func (c Config) GetFrontendPluginIDs() []string {
 	}
 	return ids
 }
-

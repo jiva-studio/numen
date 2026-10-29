@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
@@ -237,7 +237,7 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 	launched := make(chan string, 1)
-	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launched <- p.Manifest.ID
 		return nil, nil, errors.New("no process in this test")
 	})
@@ -482,10 +482,10 @@ func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	if err := host.CheckPluginPermission("org.example.sample", plugindir.PermissionVaultWrite); err != nil {
+	if err := host.CheckPluginPermission("org.example.sample", manifestfile.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
-	if err := host.CheckPluginPermission("org.example.sample", plugindir.PermissionVaultRead); err == nil {
+	if err := host.CheckPluginPermission("org.example.sample", manifestfile.PermissionVaultRead); err == nil {
 		t.Error("the permission of the copy that left is still granted")
 	}
 }

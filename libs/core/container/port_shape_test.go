@@ -202,7 +202,7 @@ type Reader interface {
 	}
 }
 
-// TestPortsAreIndependentAndPure verifies G11: no port/* package imports another port/* package,
+// TestPortsAreIndependentAndPure verifies that no port/* package imports another port/* package,
 // and no port/* package imports infrastructure/OS packages (net/url, encoding/json, path/filepath, io/fs, os).
 func TestPortsAreIndependentAndPure(t *testing.T) {
 	dir := filepath.Join("..", "port")

@@ -382,7 +382,7 @@ export function verifySdkEncapsulatesProtocol() {
   failOnFindings("The plugin SDK leaks protocol/notes types or host window IDs in its public contract", findSdkProtocolLeaks());
 }
 
-/** G5: Only plugins/*, apps/*, libs/plugin-host-ts, and the SDKs themselves may import libs/plugin-sdk-go or @numen/plugin-sdk. */
+/** Only plugins/*, apps/*, libs/plugin-host-ts, and the SDKs themselves may import libs/plugin-sdk-go or @numen/plugin-sdk. */
 function findUnauthorizedSdkImports() {
   const found = [];
   for (const file of listShippedFiles(["libs/core", "libs/notes", "libs/protocol", "libs/ui"])) {
@@ -408,10 +408,10 @@ function findUnauthorizedSdkImports() {
 }
 
 export function verifySdkImportedOnlyByPluginsAndApps() {
-  failOnFindings("Only plugins/*, apps/*, and libs/plugin-host-ts may import the plugin SDK (G5)", findUnauthorizedSdkImports());
+  failOnFindings("Only plugins/*, apps/*, and libs/plugin-host-ts may import the plugin SDK", findUnauthorizedSdkImports());
 }
 
-/** G13: Package-level mutable singletons (sync.Mutex, sync.Once, atomic.*, mutable vars) and os.Exit outside cmd/. */
+/** Package-level mutable singletons (sync.Mutex, sync.Once, atomic.*, mutable vars) and os.Exit outside cmd/. */
 function findGoMutableGlobalsAndExits() {
   const found = [];
   for (const file of listShippedFiles(["libs/core", "libs/notes", "libs/plugin-sdk-go", "plugins", "apps/desktop"])) {
@@ -447,25 +447,7 @@ function findGoMutableGlobalsAndExits() {
 }
 
 export function verifyGoNoMutableGlobalsOrExit() {
-  failOnFindings("Go package-level mutable state or os.Exit outside cmd/ (G13)", findGoMutableGlobalsAndExits());
-}
-
-/** P2 (R2 from plugins.md): Proxies rename (Copies/OpenCopy -> Proxies/OpenProxy) and MostHighlights/OrdinaryProfile. */
-function findR2NamingViolations() {
-  const found = [];
-  const r2Symbols = /\b(NewCopies|OpenCopy|WithCopies|CopyPath|ErrNoCopy|MostHighlights|OrdinaryProfile)\b/g;
-  for (const file of listShippedFiles(["libs/core", "libs/notes", "libs/plugin-sdk-go", "libs/plugin-sdk-ts", "libs/ui", "plugins", "apps"])) {
-    const source = readSource(file);
-    if (!source) continue;
-    for (const hit of findInCode(source.code, r2Symbols)) {
-      found.push({ file, line: hit.line, symbol: `R2 legacy name ${hit.symbol} (P2)` });
-    }
-  }
-  return found;
-}
-
-export function verifyR2NamingAndProxies() {
-  failOnFindings("Legacy R2 symbol names (Copies/OpenCopy/MostHighlights/OrdinaryProfile) (P2)", findR2NamingViolations());
+  failOnFindings("Go package-level mutable state or os.Exit outside cmd/", findGoMutableGlobalsAndExits());
 }
 
 export const CORE_VERIFIERS = [
@@ -489,22 +471,15 @@ export const CORE_VERIFIERS = [
     id: "sdk-consumers",
     scope: "libs",
     module: "sdk",
-    name: "Plugin SDK Imported Only By Plugins and Applications (G5)",
+    name: "Plugin SDK Imported Only By Plugins and Applications",
     run: verifySdkImportedOnlyByPluginsAndApps,
   },
   {
     id: "go-no-mutable-globals",
     scope: "libs",
     module: "core",
-    name: "Go No Package-Level Mutable Singletons or os.Exit Outside cmd/ (G13)",
+    name: "Go No Package-Level Mutable Singletons or os.Exit Outside cmd/",
     run: verifyGoNoMutableGlobalsOrExit,
-  },
-  {
-    id: "r2-naming-and-proxies",
-    scope: "libs",
-    module: "core",
-    name: "R2 Proxies & Standard Naming Conventions (P2)",
-    run: verifyR2NamingAndProxies,
   },
   {
     id: "core-depguard",

@@ -108,7 +108,7 @@ func getUseCases(t *testing.T) []string {
 	return findings
 }
 
-// A use case or service across the repository is made with everything it needs, or it is not made (G8).
+// A use case or service across the repository is made with everything it needs, or it is not made.
 func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	for _, one := range getUseCases(t) {
 		t.Error(one + ": a use case is made with what it needs, and not given it afterwards")

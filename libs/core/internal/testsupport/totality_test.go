@@ -37,7 +37,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.SearchMode":           "adapter/window/editor: read by modeOf",
 	"numen.v1.Relation":             "adapter/window/editor: written by convertRelationToWire",
 	"numen.v1.Origin":               "internal/adapter/theme: written by encodeOrigin",
-	"numen.v1.TextErrorCode":        "internal/adapter/plugin/textproviderbridge: read by readError",
+	"numen.v1.TextErrorCode":        "internal/adapter/plugin/textbridge: read by readError",
 	"numen.v1.ToolEffect":           "plugin-sdk-go/tools: written by writeEffect",
 	"numen.v1.ToolErrorCode":        "plugin-sdk-go/tools: written by CallTool",
 	"numen.v1.ToolServer":           "plugin-sdk-go/tools: written by writeServers",

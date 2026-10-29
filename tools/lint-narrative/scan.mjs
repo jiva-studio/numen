@@ -140,7 +140,8 @@ const BANNED_THIRD_PERSON_FUNCTIONS = [
 // 5. Forbidden domain terms (Rule 8 & 9 AGENTS.md)
 const FORBIDDEN_DOMAIN_TERMS = [
   'refusal', 'refused', 'refusalReason', 'readings', 'spoken', 'spokenBy', 'speaks',
-  'reflow', 'reflows', 'reflowed', 'reflowing'
+  'reflow', 'reflows', 'reflowed', 'reflowing',
+  'NewCopies', 'OpenCopy', 'WithCopies', 'CopyPath', 'ErrNoCopy', 'MostHighlights', 'OrdinaryProfile',
 ]
 
 // 6. Distinctive Anglish/biblical narrative idioms in comments

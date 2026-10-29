@@ -204,7 +204,7 @@ func (c Config) Options(opts filesystem.Options) error { return nil }`,
 	}
 }
 
-// TestCompositionRootDefinesNoAdapterStructs verifies G9: container/ is a pure Composition Root
+// TestCompositionRootDefinesNoAdapterStructs verifies that container/ is a pure Composition Root
 // that wires adapters to ports and defines no inline adapter structs with methods of its own.
 func TestCompositionRootDefinesNoAdapterStructs(t *testing.T) {
 	entries, err := os.ReadDir(".")

@@ -1686,7 +1686,7 @@ var serializationImports = map[string]bool{
 
 var serializationTags = []string{"json:", "yaml:", "sql:", "db:", "xml:", "protobuf:"}
 
-// TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies G3: port/, usecase/, and domain/
+// TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies that port/, usecase/, and domain/
 // import no wire/storage format packages and carry no serialization struct tags.
 func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
 	for _, root := range []string{"../port", "../usecase", "../../notes/domain"} {
@@ -1740,7 +1740,7 @@ func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
 	}
 }
 
-// TestUseCasesImportNoOSFilepathOrFS verifies G12: usecase/ never imports path/filepath or io/fs.
+// TestUseCasesImportNoOSFilepathOrFS verifies that usecase/ never imports path/filepath or io/fs.
 func TestUseCasesImportNoOSFilepathOrFS(t *testing.T) {
 	err := filepath.WalkDir("../usecase", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
@@ -1766,7 +1766,7 @@ func TestUseCasesImportNoOSFilepathOrFS(t *testing.T) {
 	}
 }
 
-// TestNoStructCarriesAContext verifies G6: no struct field across Go modules holds context.Context.
+// TestNoStructCarriesAContext verifies that no struct field across Go modules holds context.Context.
 func TestNoStructCarriesAContext(t *testing.T) {
 	roots := []string{"..", "../../notes", "../../plugin-sdk-go", "../../../plugins", "../../../apps/desktop"}
 	for _, root := range roots {
@@ -1809,7 +1809,7 @@ func TestNoStructCarriesAContext(t *testing.T) {
 	}
 }
 
-// TestNothingOutsideAdaptersReadsClockOrRandom verifies G7 across libs/notes, plugins, and apps/desktop.
+// TestNothingOutsideAdaptersReadsClockOrRandom verifies this across libs/notes, plugins, and apps/desktop.
 func TestNothingOutsideAdaptersReadsClockOrRandom(t *testing.T) {
 	roots := []string{"../../notes", "../../../plugins", "../../../apps/desktop"}
 	for _, root := range roots {

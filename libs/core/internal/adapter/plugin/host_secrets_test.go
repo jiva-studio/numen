@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -143,10 +143,10 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
-	host.plugins[secretPluginID] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
+	host.plugins[secretPluginID] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
 		Secrets: []pluginport.PluginSecret{{Name: "apiKey", Title: "API key"}},
-		Settings: []plugindir.Setting{
+		Settings: []manifestfile.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
 	}}

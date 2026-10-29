@@ -11,7 +11,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
@@ -57,7 +57,7 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
-	case errors.Is(err, vaultaccess.ErrNoVault):
+	case errors.Is(err, hostvault.ErrNoVault):
 		return noStoreVault, nil
 	case errors.Is(err, vaultport.ErrHeldByAnother):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER, nil

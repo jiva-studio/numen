@@ -213,9 +213,9 @@ func TestAnEditIsReported(t *testing.T) {
 	}
 }
 
-// TestASaveThroughATemporaryFileIsOneChange is how editors write: a file beside
+// TestASaveThroughATemporaryFileReportsTheNoteOnce is how editors write: a file beside
 // the original, renamed over the top.
-func TestASaveThroughATemporaryFileIsOneChange(t *testing.T) {
+func TestASaveThroughATemporaryFileReportsTheNoteOnce(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	next := watchVault(t, root)
 
@@ -227,8 +227,8 @@ func TestASaveThroughATemporaryFileIsOneChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := next(); !slices.Equal(got, []string{"Note.md"}) {
-		t.Errorf("reported %v, want the note once and not the temporary file", got)
+	if got := next(); !slices.Equal(got, []string{"Note.md", "Note.md.tmp"}) {
+		t.Errorf("reported %v, want the note once and the temporary name that is gone", got)
 	}
 }
 
@@ -280,17 +280,17 @@ func TestABookAppearingIsReported(t *testing.T) {
 	}
 }
 
-// TestAnImageAppearingIsNotReported. Classification is by type on both paths:
-// what the walk does not report the watcher does not report either.
-func TestAnImageAppearingIsNotReported(t *testing.T) {
+// TestAnImageAppearingIsReported. The watcher reports what the walk reports: every
+// regular file the vault does not ignore, whatever its type.
+func TestAnImageAppearingIsReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	next := watchVault(t, root)
 
 	write(t, root, "assets/scan.png", "PNG\n")
 	write(t, root, "Note.md", "# Note\n\nedited\n")
 
-	if got := next(); !slices.Equal(got, []string{"Note.md"}) {
-		t.Errorf("reported %v, want only the note", got)
+	if got := next(); !slices.Equal(got, []string{"Note.md", "assets/scan.png"}) {
+		t.Errorf("reported %v, want the note and the image", got)
 	}
 }
 

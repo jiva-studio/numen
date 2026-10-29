@@ -28,7 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
@@ -117,7 +117,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 		_, _ = cmd.Process.Wait()
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		actualPort := port
 		if actualPort == 0 {
 			actualPort = pingPort
@@ -247,7 +247,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 		_, _ = cmd.Process.Wait()
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		actualPort := port
 		if actualPort == 0 {
 			actualPort = pingPort
@@ -303,7 +303,7 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 		t.Fatalf("create pipe failed: %v", err)
 	}
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, pr, nil
 	})
 
@@ -371,7 +371,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	allowHandshake := make(chan struct{})
 	var once sync.Once
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		launchCount.Add(1)
 		once.Do(func() {
 			close(launchStarted)
@@ -466,7 +466,7 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	slowStarted := make(chan struct{})
 	slowAllowHandshake := make(chan struct{})
 
-	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, p manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "plugin.slow" {
 			close(slowStarted)
 			<-slowAllowHandshake
@@ -543,7 +543,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	var once sync.Once
 	failErr := errors.New("simulated launch failure")
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		once.Do(func() {
 			close(launchStarted)
 		})
@@ -611,7 +611,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	launchStarted := make(chan struct{})
 	allowHandshake := make(chan struct{})
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		close(launchStarted)
 		<-allowHandshake
 		actualPort := port
@@ -750,7 +750,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		_ = cmd.Process.Kill()
 	}
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -843,7 +843,7 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 		_ = cmd.Process.Kill()
 	}
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -987,7 +987,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		_ = cmd.Process.Kill()
 	}
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -1062,7 +1062,7 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 		_ = cmd.Process.Kill()
 	}
 
-	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -1104,7 +1104,7 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 	t.Helper()
 	pingPort := plugintest.ServeHostPing(t)
 	var mu sync.Mutex
-	return func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := plugintest.NewIdleCommand()
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
@@ -1403,7 +1403,7 @@ func newHostOfProviders(t *testing.T) *Host {
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Second) })
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
-		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: plugindir.Manifest{
+		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: manifestfile.Manifest{
 			ID:           id,
 			Capabilities: []string{bridge.CapabilityEmbedding},
 		}}
@@ -1524,7 +1524,7 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 // The host names a running plugin by the token it was launched with.
 func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 	host := newRunningTestHost(t, map[string]runningPlugin{
-		"md.numen.a": {"token-a", []string{plugindir.PermissionAIComplete}},
+		"md.numen.a": {"token-a", []string{manifestfile.PermissionAIComplete}},
 		"md.numen.b": {"token-b", nil},
 		"md.numen.c": {"", nil},
 	})
@@ -1539,10 +1539,10 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 			t.Errorf("token %q names %q", token, got)
 		}
 	}
-	if err := host.CheckPluginPermission("md.numen.b", plugindir.PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
+	if err := host.CheckPluginPermission("md.numen.b", manifestfile.PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
-	if err := host.CheckPluginPermission("md.numen.a", plugindir.PermissionAIComplete); err != nil {
+	if err := host.CheckPluginPermission("md.numen.a", manifestfile.PermissionAIComplete); err != nil {
 		t.Errorf("a plugin with the permission failed: %v", err)
 	}
 }

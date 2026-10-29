@@ -110,6 +110,8 @@ func (f *Folders) removeFolder(path string) {
 // place. A folder already known is empty, and so does one the walk stops
 // at and everything under it.
 //
+// A path that no longer exists and that the vault skips as a folder yields no source.
+//
 // `whole` is set where the answer cannot be worked out from the disk: a folder
 // that has gone took sources with it, and their paths are known only to the
 // index. A path outside the vault is that case too.
@@ -139,6 +141,9 @@ func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool
 	case err != nil && f.IsKnownFolder(path):
 		f.removeFolder(path)
 		return nil, true, ""
+
+	case err != nil && f.reader.isSkipped(path, filepath.Base(absolute)):
+		return nil, false, ""
 	}
 
 	if _, holds := f.reader.getKind(path); !holds {

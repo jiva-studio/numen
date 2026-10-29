@@ -10,7 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
@@ -18,7 +18,7 @@ const pingTimeout = 3 * time.Second
 
 // CheckPluginProtocol pings a started plugin and returns port.ErrUnsupportedProtocol when the protocol
 // it reports differs from the one its manifest declares or from port.PluginProtocolVersion.
-func CheckPluginProtocol(ctx context.Context, m plugindir.Manifest, endpoint Endpoint) error {
+func CheckPluginProtocol(ctx context.Context, m manifestfile.Manifest, endpoint Endpoint) error {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		EndpointClient(endpoint),
 		endpoint.BaseURL(),

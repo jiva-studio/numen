@@ -15,7 +15,7 @@ import (
 )
 
 // wiring are the files of a driving adapter that bind the ports the composition
-// root hands it. Under strict Clean Architecture (G1), zero files are exempted:
+// root hands it. Under strict Clean Architecture, zero files are exempted:
 // every driving adapter speaks only to usecase/* and never holds or calls a port directly.
 var wiring []string
 
@@ -224,7 +224,7 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 	}
 }
 
-// TestNoDrivingAdapterImportsAPortDirectly verifies G1 across all driving adapters in libs/core and apps/desktop.
+// TestNoDrivingAdapterImportsAPortDirectly verifies that no driving adapter in libs/core or apps/desktop imports a port.
 func TestNoDrivingAdapterImportsAPortDirectly(t *testing.T) {
 	roots := []string{"../adapter/cli", "../adapter/window", "../internal/adapter/plugin", "../internal/adapter/theme", "../../../apps/desktop"}
 	for _, root := range roots {

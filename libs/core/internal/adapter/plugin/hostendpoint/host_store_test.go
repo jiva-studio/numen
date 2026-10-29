@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -25,7 +25,7 @@ func (m *memoryVault) OpenStore(pluginID string) (pluginport.PluginStore, error)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.vault == nil {
-		return nil, vaultaccess.ErrNoVault
+		return nil, hostvault.ErrNoVault
 	}
 	if m.storeRoot == "" {
 		return nil, errors.New("the vault keeps no store")

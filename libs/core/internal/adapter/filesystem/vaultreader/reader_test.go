@@ -41,13 +41,14 @@ func walkPaths(t *testing.T, root string) []string {
 	return got
 }
 
-// TestWalkReportsEverySourceAndNothingElse. A walk reports the files something
-// reads and no others: the note in the hidden folder and the service folder are
-// the vault's and not the application's to index.
+// TestWalkReportsEverySourceAndNothingElse. A walk reports every regular file
+// of the vault, whatever its type, and no others: the note in the hidden folder
+// and the service folder are the vault's and not the application's to index.
 func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	got := walkPaths(t, testsupport.VaultDir(t))
 	want := []string{
 		"Thermodynamics.md",
+		"assets/llama.png",
 		"assets/paper.pdf",
 		"cards/Animal.md",
 		"cards/Animals.md",
@@ -255,9 +256,8 @@ func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
 	}
 }
 
-// A listing says which kind of source each file is, and names a file nothing
-// reads all the same. A folder is of no kind and is what a listing of its own
-// answers to.
+// A listing says which kind of source each file is: a note or a file. A folder
+// is of no kind and is what a listing of its own answers to.
 func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{
 		"library/Notes.md":      "# Notes\n",
@@ -279,7 +279,7 @@ func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 		{Path: "library/deeper", Name: "deeper", IsFolder: true},
 		{Path: "library/A Book.epub", Name: "A Book.epub", Kind: domain.KindFile},
 		{Path: "library/Notes.md", Name: "Notes.md", Kind: domain.KindNote},
-		{Path: "library/scan.png", Name: "scan.png"},
+		{Path: "library/scan.png", Name: "scan.png", Kind: domain.KindFile},
 	}
 	if !slices.Equal(entries, want) {
 		t.Errorf("listed %+v, want %+v", entries, want)

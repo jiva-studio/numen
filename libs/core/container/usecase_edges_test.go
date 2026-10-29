@@ -12,7 +12,7 @@ import (
 )
 
 // useCaseEdges are the use cases each use case may build on. Under strict Clean
-// Architecture (G4), use cases are independent application scenarios that compose
+// Architecture, use cases are independent application scenarios that compose
 // via ports or in the composition root, never by importing sibling usecase packages.
 var useCaseEdges = map[string][]string{
 	"note":          nil,
