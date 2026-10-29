@@ -48,6 +48,7 @@ type (
 	PluginRegistryManager  = pluginport.PluginRegistryManager
 	PluginResolver         = pluginport.PluginResolver
 	PluginSecret           = pluginport.PluginSecret
+	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
 	PluginSettingCondition = pluginport.PluginSettingCondition
 	PluginSettingOption    = pluginport.PluginSettingOption

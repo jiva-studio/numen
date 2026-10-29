@@ -244,6 +244,12 @@ type rawReader struct {
 	Rank         domain.HandlerRank   `json:"rank"`
 }
 
+type rawSettingsView struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	After string `json:"after,omitempty"`
+}
+
 type rawManifest struct {
 	ID               string                     `json:"id"`
 	Name             string                     `json:"name"`
@@ -268,6 +274,7 @@ type rawManifest struct {
 	Playback         *rawPlayback               `json:"playback,omitempty"`
 	ContentTypes     []rawContentType           `json:"contentTypes,omitempty"`
 	Readers          []rawReader                `json:"readers,omitempty"`
+	SettingsViews    []rawSettingsView          `json:"settingsViews,omitempty"`
 	Frames           []string                   `json:"frames,omitempty"`
 }
 
@@ -313,6 +320,7 @@ func (r rawManifest) toPort(lifecycle pluginport.PluginLifecycle) pluginport.Plu
 		Playback:         playback,
 		ContentTypes:     convertContentTypes(r.ContentTypes),
 		Readers:          convertReaders(r.Readers),
+		SettingsViews:    convertSettingsViews(r.SettingsViews),
 		Frames:           r.Frames,
 	}
 }
@@ -428,6 +436,17 @@ func convertContentTypes(in []rawContentType) []pluginport.PluginContentType {
 	out := make([]pluginport.PluginContentType, 0, len(in))
 	for _, ct := range in {
 		out = append(out, pluginport.PluginContentType(ct))
+	}
+	return out
+}
+
+func convertSettingsViews(in []rawSettingsView) []pluginport.PluginSettingsView {
+	if in == nil {
+		return nil
+	}
+	out := make([]pluginport.PluginSettingsView, 0, len(in))
+	for _, v := range in {
+		out = append(out, pluginport.PluginSettingsView(v))
 	}
 	return out
 }

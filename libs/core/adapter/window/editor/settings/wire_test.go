@@ -20,3 +20,15 @@ func TestNewWirePluginInfos_KeepsModelsOfProgram(t *testing.T) {
 		t.Errorf("the settings carry %v and %v", got[0], got[1])
 	}
 }
+
+func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
+	wire := NewWirePluginInfos([]setting.PluginInfo{{
+		ID:            "a.b",
+		SettingsViews: []setting.PluginSettingsView{{ID: "floor", Title: "Search relevance", After: "model"}},
+	}})
+
+	got := wire[0].GetSettingsViews()
+	if len(got) != 1 || got[0].GetId() != "floor" || got[0].GetTitle() != "Search relevance" || got[0].GetAfter() != "model" {
+		t.Errorf("the settings views carry %v", got)
+	}
+}

@@ -251,6 +251,8 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, pluginport.ErrInvalidPermission},
 		{"unknown runtime", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["tensorrt"]}`, pluginport.ErrInvalidRuntime},
 		{"runtime declared twice", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime","onnxruntime"]}`, pluginport.ErrInvalidRuntime},
+		{"settings view without a frontend", `{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, pluginport.ErrInvalidSettingsView},
+		{"settings view after an unknown setting", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"entrypoint":"dist/index.js"},"settingsViews":[{"id":"v","title":"T","after":"nope"}]}`, pluginport.ErrInvalidSettingsView},
 	}
 
 	for _, tc := range cases {
@@ -293,6 +295,26 @@ func TestManifestListIssuesReportsEveryViolation(t *testing.T) {
 	}
 	if err := m.Validate(); !errors.Is(err, pluginport.ErrInvalidID) || !errors.Is(err, pluginport.ErrEmptyName) {
 		t.Errorf("Validate must join every issue, got %v", err)
+	}
+}
+
+func TestManifestReadsSettingsViews(t *testing.T) {
+	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","frontend":{"entrypoint":"dist/index.js"},
+		"settings":[{"key":"model","type":"string","title":"Model"}],
+		"settingsViews":[{"id":"floor","title":"Search relevance","after":"model"},{"id":"top","title":"Top"}]}`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []pluginport.PluginSettingsView{{ID: "floor", Title: "Search relevance", After: "model"}, {ID: "top", Title: "Top"}}
+	if !slices.Equal(m.SettingsViews, want) {
+		t.Errorf("SettingsViews = %+v, want %+v", m.SettingsViews, want)
+	}
+}
+
+func TestManifestListIssuesReportsASettingsViewOfNoFrontend(t *testing.T) {
+	m := Manifest{ID: "a.b", Name: "A", Version: "1.0.0", SettingsViews: []pluginport.PluginSettingsView{{ID: "v", Title: "T"}}}
+	if issues := m.ListIssues(); len(issues) != 1 || !errors.Is(issues[0], pluginport.ErrInvalidSettingsView) {
+		t.Errorf("ListIssues = %v, want one ErrInvalidSettingsView", issues)
 	}
 }
 

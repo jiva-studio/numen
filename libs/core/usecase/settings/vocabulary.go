@@ -17,6 +17,7 @@ type (
 	PluginFailure          = pluginport.PluginFailure
 	PluginReaderInfo       = pluginport.PluginReaderInfo
 	PluginSecret           = pluginport.PluginSecret
+	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSettingOption    = pluginport.PluginSettingOption
 	PluginSettingOptions   = pluginport.PluginSettingOptions
 	PluginSettingOptionsBy = pluginport.PluginSettingOptionsBy
