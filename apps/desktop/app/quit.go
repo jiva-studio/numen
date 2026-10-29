@@ -134,7 +134,7 @@ func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 // write the work only it holds. A vault being changed waits for the same bound.
 const quitBound = editor.FlushTimeout
 
-// vaultFlush flushes the vault, whichever way the window is asked to close.
+// vaultFlush flushes the vault, whichever way the window is requested to close.
 //
 // A flush that ends awaiting a user decision leaves the vault unchanged, and
 // the next request starts another flush.

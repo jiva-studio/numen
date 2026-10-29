@@ -28,7 +28,7 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     getFieldText: (target) => target.title,
   },
   // The note moves to the vault's .trash folder, and restoring it is a move.
-  // Destroy is the command that asks for confirmation.
+  // Destroy is the command that requires confirmation.
   { id: 'remove', text: words.remove, group: 'note', isAvailable: isNoteOpen, also: 'destroy' },
   {
     id: 'destroy',

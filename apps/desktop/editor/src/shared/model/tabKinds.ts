@@ -1,4 +1,4 @@
-/** A kind of tab: the state its tabs hold, and the operations a kind may request from the window. */
+/** A tab kind: the state its tabs hold, and the operations a kind may request from the window. */
 import type { Component } from 'vue'
 import type { Result, Selector, TabPlacement } from '@numen/plugin-sdk'
 
@@ -20,7 +20,7 @@ export interface OpenTab {
   readonly path: string
 }
 
-/** A kind of tab: what it holds, its title, and how it releases its state. */
+/** A tab kind: what it holds, its title, and how it releases its state. */
 export interface TabKind<TabState, K extends string = string> {
   /** The word the identities of its tabs are filed under. */
   readonly kind: K

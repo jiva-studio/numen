@@ -21,7 +21,7 @@ import (
 //
 // A user who launched numen from a dock has no terminal, and a message written
 // to one is never seen. Whatever this build could not do is reported here,
-// with what it knows about the state it found.
+// with the state of the installation it found.
 func failWithDialog(cfg container.Config, why error) {
 	page, err := fatalReport{}.page(cfg, why)
 	if err != nil {

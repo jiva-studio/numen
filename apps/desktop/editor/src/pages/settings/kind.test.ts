@@ -9,7 +9,7 @@ import { WORDS as words } from './words'
 import { SETTINGS } from '@/entities/tab'
 import type { WindowHandle } from '@/entities/tab'
 
-/** A window that records what it was asked to open. */
+/** A window that records the kinds it was requested to open. */
 const window_ = () => {
   const openedTab: string[] = []
   const handle = {

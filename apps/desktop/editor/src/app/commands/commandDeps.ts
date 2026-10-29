@@ -102,7 +102,7 @@ function findActiveTabAt(
 
 /**
  * The open files a command can access: those held by the note editors, and those
- * a kind of tab serves.
+ * a tab kind serves.
  */
 export function createCommandNotes(
   reached: Notes,

@@ -262,7 +262,7 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 	}
 }
 
-// The installation's configuration file holds the keys used to reach models.
+// The installation's configuration file holds the model API keys.
 // This build mounts no service for it, so nothing here reads that file out to a
 // caller or overwrites it.
 func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {

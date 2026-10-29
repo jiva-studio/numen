@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// What stopped the application is reported in a window, with what this build
-// knows about the state it found.
+// What stopped the application is reported in a window, with the state of the
+// installation it found.
 func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: pos}
@@ -208,7 +208,7 @@ func TestError_NamesUnopenedTarget(t *testing.T) {
 }
 
 // The two faults sqlite reports with one sentence are two states here: a
-// path that is a folder is distinct from a folder nobody may write in.
+// path that is a folder is distinct from a folder without write permission.
 func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")

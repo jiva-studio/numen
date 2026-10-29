@@ -1,7 +1,7 @@
 /**
  * Flushes the window's unsaved work when the application requests quit. A tab
  * saves after typing stops, so the latest edits exist only in its buffer; the
- * application requests them over a stream this page listens on while rendered.
+ * application requests them over a stream this page subscribes to while rendered.
  * Text that cannot be written raises a conflict, and the window stays open
  * until every conflict is resolved.
  */

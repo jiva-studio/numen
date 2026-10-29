@@ -1,5 +1,5 @@
 // Package layers contains no production code. It holds the layering rules the
-// applications are checked against: the core's own guard walks the core's tree,
+// applications are checked against: the core's own guard scans the core's tree,
 // and an application is located one folder outside it.
 package layers
 

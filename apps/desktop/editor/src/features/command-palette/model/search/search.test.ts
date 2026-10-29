@@ -30,7 +30,7 @@ const WORDS: Words = {
   notEmbedded: 'Semantic index not built yet',
 }
 
-/** A vault that responds when the test says so, and records its requests. */
+/** A vault that responds when the test resolves it, and records its requests. */
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
   const searched: { mode: SearchMode; answer: Deferred<readonly Passage[]> }[] = []

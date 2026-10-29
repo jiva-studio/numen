@@ -112,7 +112,7 @@ export const isUnavailableKind = (kind: AnyTabKind): boolean => placeholders.has
 const getFileName = (path: string): string => path.split('/').pop() ?? path
 
 /**
- * The kind of a tab whose own kind is not registered, because its plugin is disabled or missing.
+ * The tab kind substituted for an unregistered kind, because its plugin is disabled or missing.
  * It keeps the kind, the path and the saved state, so the open tabs keep the tab as it was and
  * the plugin opens it again once it is enabled.
  */

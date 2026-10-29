@@ -5,7 +5,7 @@ import type { Result } from '@numen/plugin-sdk'
 
 /** One vault the installation holds, as the list has it. */
 export interface Vault {
-  /** The identity stored in the folder, used to look up the vault. */
+  /** The identity stored in the folder, the key for looking up the vault. */
   readonly id: string
   /** The display name of the vault. */
   readonly name: string

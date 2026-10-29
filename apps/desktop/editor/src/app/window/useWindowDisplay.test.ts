@@ -287,7 +287,7 @@ describe('another vault under this window', () => {
   })
 
   /**
-   * The vault is re-read for every change it reports, and a change of vault reaches the
+   * The vault is re-read for every change it reports, and a change of vault arrives at the
    * window before the reload does. The folder the page was rendered on is what the reload
    * is compared against.
    */

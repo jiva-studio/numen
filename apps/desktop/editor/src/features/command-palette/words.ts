@@ -38,7 +38,7 @@ export interface AnswerWords {
   readonly alreadyExists: string
 }
 
-/** Text for the step that asks the user to retype a name. */
+/** Text for the step that requires the user to retype a name. */
 export interface RetypeWords {
   readonly action: string
   readonly detail: string

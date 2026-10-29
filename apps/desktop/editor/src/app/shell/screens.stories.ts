@@ -1,7 +1,7 @@
 /**
  * The window around the settings, the tab the window adds to what the library draws.
  *
- * Nothing here reaches a vault. The tab receives the state it would hold, so it
+ * No vault is contacted. The tab receives its state as input, so it
  * renders in its settled state and can be captured as a screenshot.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'

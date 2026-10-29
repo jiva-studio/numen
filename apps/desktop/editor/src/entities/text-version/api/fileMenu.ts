@@ -1,6 +1,6 @@
 /**
  * The menu of a file: the commands the enabled plugins declare that apply to
- * the file as it is now, and an entry as the window hands it back to be run.
+ * the file as it is now, and an entry as the window returns it to be run.
  */
 import { textVersions } from '@/shared/clients'
 

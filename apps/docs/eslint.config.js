@@ -1,6 +1,6 @@
 // Correctness rules for the manual: the frontmatter of each component, the
 // collection it is built from, and the node scripts that write the pages and
-// take the screenshots. Formatting is done by hand, so no rule here concerns
+// take the screenshots. Formatting is done manually, so no rule here concerns
 // code style.
 
 import js from '@eslint/js'

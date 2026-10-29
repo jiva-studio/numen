@@ -118,7 +118,7 @@ function guardTexts(
   }
 }
 
-/** Whether a setting path lies in the agent subtree of the settings. */
+/** Whether a setting path is in the agent subtree of the settings. */
 const isAgentPath = (path: readonly string[]): boolean => path[0] === 'agent'
 
 /**
