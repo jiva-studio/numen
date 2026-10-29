@@ -1520,6 +1520,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
 			Readers:       h.listReaderInfosLocked(p.Manifest),
+			SettingsViews: slices.Clone(p.Manifest.SettingsViews),
 		})
 	}
 	return result

@@ -78,3 +78,48 @@ func TestReadManifestRejectsAReaderWithoutFrontend(t *testing.T) {
 		t.Fatalf("ReadManifest = %v; want ErrInvalidReader", err)
 	}
 }
+
+func TestReadManifestReadsSettingsViews(t *testing.T) {
+	m, err := pluginport.ReadManifest(strings.NewReader(readerManifestHead + `,
+		"settings": [{"key": "model", "type": "string", "title": "Model"}],
+		"settingsViews": [
+			{"id": "floor", "title": "Search relevance", "after": "model"},
+			{"id": "top", "title": "Top"}
+		]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []pluginport.PluginSettingsView{
+		{ID: "floor", Title: "Search relevance", After: "model"},
+		{ID: "top", Title: "Top"},
+	}
+	if !slices.Equal(m.SettingsViews, want) {
+		t.Errorf("SettingsViews = %+v; want %+v", m.SettingsViews, want)
+	}
+}
+
+func TestReadManifestRejectsAnInvalidSettingsView(t *testing.T) {
+	cases := map[string]string{
+		"a view with no id":         `"settingsViews":[{"title":"T"}]`,
+		"a view declared twice":     `"settingsViews":[{"id":"v","title":"T"},{"id":"v","title":"U"}]`,
+		"a view with no title":      `"settingsViews":[{"id":"v"}]`,
+		"a view after an unknown":   `"settingsViews":[{"id":"v","title":"T","after":"nope"}]`,
+		"a view after a secret":     `"settingsViews":[{"id":"v","title":"T","after":"apiKey"}]`,
+		"a view after its own id":   `"settingsViews":[{"id":"v","title":"T","after":"v"}]`,
+		"a view with a blank title": `"settingsViews":[{"id":"v","title":"  "}]`,
+	}
+	for name, fields := range cases {
+		_, err := pluginport.ReadManifest(strings.NewReader(readerManifestHead + "," + fields + "}"))
+		if !errors.Is(err, pluginport.ErrInvalidSettingsView) {
+			t.Errorf("%s: ReadManifest = %v; want ErrInvalidSettingsView", name, err)
+		}
+	}
+}
+
+func TestReadManifestRejectsASettingsViewWithoutFrontend(t *testing.T) {
+	_, err := pluginport.ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",
+		"settingsViews":[{"id":"v","title":"T"}]}`))
+	if !errors.Is(err, pluginport.ErrInvalidSettingsView) {
+		t.Fatalf("ReadManifest = %v; want ErrInvalidSettingsView", err)
+	}
+}

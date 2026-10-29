@@ -160,6 +160,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			Failure:           newWirePluginFailure(one.Failure),
 			HasFrontend:       one.HasFrontend,
 			Readers:           newWireReaders(one.Readers),
+			SettingsViews:     newWireSettingsViews(one.SettingsViews),
 		})
 	}
 	return infos
@@ -317,6 +318,15 @@ func (h *Handler) ChoosePluginPath(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return connect.NewResponse(reply), nil
+}
+
+// newWireSettingsViews is the settings views of a plugin as the wire carries them.
+func newWireSettingsViews(views []setting.PluginSettingsView) []*v1.PluginSettingsView {
+	out := make([]*v1.PluginSettingsView, 0, len(views))
+	for _, one := range views {
+		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title, After: one.After})
+	}
+	return out
 }
 
 // newWireReaders is the readers of a plugin as the wire carries them.

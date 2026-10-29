@@ -47,6 +47,8 @@ type PluginInfo struct {
 	HasFrontend bool
 	// Readers are the readers the manifest declares, with the files each opens.
 	Readers []PluginReaderInfo
+	// SettingsViews are the components the settings page draws among the settings of the plugin.
+	SettingsViews []PluginSettingsView
 }
 
 // PluginReaderInfo is a reader of a plugin and the files it opens.
