@@ -85,6 +85,19 @@ func (s *Server) NewAPI(service string) *API {
 	return &API{server: s, service: service}
 }
 
+type headerKey struct{}
+
+// GetHeader returns the headers of the request a method is answering, such as the Numen-Vault
+// header that names the vault the call works. It returns nil outside a method.
+func GetHeader(ctx context.Context) http.Header {
+	header, _ := ctx.Value(headerKey{}).(http.Header)
+	return header
+}
+
+func withHeader(r *http.Request) context.Context {
+	return context.WithValue(r.Context(), headerKey{}, r.Header)
+}
+
 func (a *API) mount(method string, handler http.Handler) {
 	if method == "" || strings.ContainsAny(method, "/ {}") {
 		panic(fmt.Sprintf("server: invalid API method name %q", method))
@@ -102,7 +115,7 @@ func Handle[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 			writeFailure(w, NewAPIError(CodeInvalidArgument, err.Error()))
 			return
 		}
-		res, err := fn(r.Context(), req)
+		res, err := fn(withHeader(r), req)
 		if err != nil {
 			writeFailure(w, toAPIError(err))
 			return
@@ -131,7 +144,7 @@ func Stream[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 		send := func(res Res) error {
 			return writeEvent(w, flusher, "", res)
 		}
-		if err := fn(r.Context(), req, send); err != nil {
+		if err := fn(withHeader(r), req, send); err != nil {
 			if r.Context().Err() == nil {
 				_ = writeEvent(w, flusher, "error", toAPIError(err))
 			}

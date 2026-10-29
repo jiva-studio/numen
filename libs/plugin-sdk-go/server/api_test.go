@@ -166,3 +166,26 @@ func TestNewAPI_PanicsOnAnInvalidName(t *testing.T) {
 	}()
 	New().NewAPI("a/b")
 }
+
+func TestHandle_GivesTheRequestHeadersToTheMethod(t *testing.T) {
+	handler, err := NewLinkedHandler(map[string]string{tokenVar: "api-token"}, func(s *Server) error {
+		Handle(s.NewAPI("org.example.echo"), "Vault", func(ctx context.Context, _ echoRequest) (echoResponse, error) {
+			return echoResponse{Text: GetHeader(ctx).Get("Numen-Vault")}, nil
+		})
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/org.example.echo/Vault", strings.NewReader("{}"))
+	req.Header.Set("Authorization", "Bearer api-token")
+	req.Header.Set("Numen-Vault", "vault-7")
+	recorded := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorded, req)
+
+	var got echoResponse
+	if err := json.Unmarshal(recorded.Body.Bytes(), &got); err != nil || got.Text != "vault-7" {
+		t.Errorf("response = %q, %v", recorded.Body, err)
+	}
+}
