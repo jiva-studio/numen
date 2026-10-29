@@ -144,7 +144,7 @@ test.describe('Audio Transcription Pipeline', () => {
     const moreBtn = page.locator('.media__more')
     if (await moreBtn.isVisible()) {
       await moreBtn.click()
-      const deleteItem = page.getByText(/Delete the transcript/i).first()
+      const deleteItem = page.getByText(/Delete transcript/i).first()
       if (await deleteItem.isVisible()) {
         await deleteItem.click()
       }

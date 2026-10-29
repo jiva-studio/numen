@@ -41,7 +41,7 @@ func (h *Handler) ListCommands(
 	entries := h.list.Execute()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		if one.Command.IsHiddenInPalette || len(one.Command.NoteTypes) > 0 {
+		if one.Command.IsHiddenInPalette || len(one.Command.NoteTypes) > 0 || one.Command.When != nil {
 			continue
 		}
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))

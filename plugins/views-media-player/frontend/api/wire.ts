@@ -5,9 +5,7 @@
 import {
   getFileMenu,
   getMediaSource,
-  readFileMenuEntries,
   runFileMenuEntry,
-  writeFileMenuAction,
   type TaskHost,
   type VaultTexts,
 } from '@numen/plugin-sdk'
@@ -21,12 +19,6 @@ let taskHost: TaskHost | undefined
 export const setTaskHost = (host: TaskHost | undefined) => {
   taskHost = host
 }
-
-/** The action of the schema an entry's action is. */
-export const writeMenuAction = writeFileMenuAction
-
-/** The entries of the schema the tab reads, leaving out an action it does not know. */
-export const readMenuEntries = readFileMenuEntries
 
 /** The texts of the vault, as the plugin's context gave them when it was activated. */
 let vaultTexts: VaultTexts | undefined

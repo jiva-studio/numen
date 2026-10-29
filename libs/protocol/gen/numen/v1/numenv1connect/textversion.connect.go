@@ -45,8 +45,8 @@ const (
 type TextVersionServiceClient interface {
 	// GetFileMenu lists the entries of a file's menu.
 	GetFileMenu(context.Context, *connect.Request[v1.GetFileMenuRequest]) (*connect.Response[v1.GetFileMenuResponse], error)
-	// RunFileMenuEntry does what an entry offers, as work a person started. The
-	// plugin goes on with the work after the call returns.
+	// RunFileMenuEntry runs the command of an entry the file's menu offers now,
+	// over the entry's version.
 	RunFileMenuEntry(context.Context, *connect.Request[v1.RunFileMenuEntryRequest]) (*connect.Response[v1.RunFileMenuEntryResponse], error)
 }
 
@@ -96,8 +96,8 @@ func (c *textVersionServiceClient) RunFileMenuEntry(ctx context.Context, req *co
 type TextVersionServiceHandler interface {
 	// GetFileMenu lists the entries of a file's menu.
 	GetFileMenu(context.Context, *connect.Request[v1.GetFileMenuRequest]) (*connect.Response[v1.GetFileMenuResponse], error)
-	// RunFileMenuEntry does what an entry offers, as work a person started. The
-	// plugin goes on with the work after the call returns.
+	// RunFileMenuEntry runs the command of an entry the file's menu offers now,
+	// over the entry's version.
 	RunFileMenuEntry(context.Context, *connect.Request[v1.RunFileMenuEntryRequest]) (*connect.Response[v1.RunFileMenuEntryResponse], error)
 }
 

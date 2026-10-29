@@ -44,6 +44,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
             { title: 'Light a file', contentTypes: ['text/plain'] },
             { title: 'Light the room' },
             { title: 'Secret', hiddenInPalette: true },
+            { title: 'Dim a text', when: { hasOwnText: true } },
           ],
         },
         {

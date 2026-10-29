@@ -242,7 +242,7 @@ func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prom
 	return parsed.Choices[0].Message.Content, nil
 }
 
-// Mount registers the text provider and the proofread command on s, using the
+// Mount registers the proofread and delete commands on s, using the
 // host that the environment names. The model is the mock proofreader when the
 // environment enables mock models.
 func Mount(s *server.Server) error {
@@ -296,14 +296,14 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 		return err
 	}
 	run := newProofreading(h, kinds, newAskModel(complete, config.getConfig), config.getConfig)
-	provider := newProvider(run)
 	commands := command.New()
 	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {
 		return err
 	}
+	if err := commands.Add("delete-proofreading", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+		return err
+	}
 	s.SetUpdateConfig(config.updateConfig)
-	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
 	command.Mount(s, commands)
-	s.OnClose(provider.Close)
 	return nil
 }

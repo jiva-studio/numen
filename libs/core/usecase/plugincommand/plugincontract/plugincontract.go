@@ -24,6 +24,7 @@ type (
 	PluginCommandCall      = pluginport.PluginCommandCall
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
+	PluginCommandWhen      = pluginport.PluginCommandWhen
 	PluginCommands         = pluginport.PluginCommands
 	PluginConfigurator     = pluginport.PluginConfigurator
 	PluginContentType      = pluginport.PluginContentType
@@ -39,7 +40,6 @@ type (
 	PluginManager          = pluginport.PluginManager
 	PluginManifest         = pluginport.PluginManifest
 	PluginManifestSetting  = pluginport.PluginManifestSetting
-	PluginMenuEntry        = pluginport.PluginMenuEntry
 	PluginNoteType         = pluginport.PluginNoteType
 	PluginPersistHandler   = pluginport.PluginPersistHandler
 	PluginPlayback         = pluginport.PluginPlayback
@@ -58,11 +58,11 @@ type (
 	PluginStores           = pluginport.PluginStores
 	PluginTask             = pluginport.PluginTask
 	PluginTextHost         = pluginport.PluginTextHost
-	PluginTextInput        = pluginport.PluginTextInput
+	PluginTexts            = pluginport.PluginTexts
 	PluginTextListing      = pluginport.PluginTextListing
 	PluginTextPage         = pluginport.PluginTextPage
+	PluginTextMaker        = pluginport.PluginTextMaker
 	PluginTextPut          = pluginport.PluginTextPut
-	PluginTexts            = pluginport.PluginTexts
 	PluginTransport        = pluginport.PluginTransport
 	PluginVault            = pluginport.PluginVault
 	PluginVaultLifecycle   = pluginport.PluginVaultLifecycle
@@ -79,6 +79,7 @@ type (
 const (
 	CommandArgumentBoolean      = pluginport.CommandArgumentBoolean
 	CommandArgumentNumber       = pluginport.CommandArgumentNumber
+	CommandArgumentVersion      = pluginport.CommandArgumentVersion
 	CommandArgumentString       = pluginport.CommandArgumentString
 	ConsentAllowed              = pluginport.ConsentAllowed
 	ConsentRequested            = pluginport.ConsentRequested
@@ -149,7 +150,7 @@ var (
 	ErrInvalidSetting         = pluginport.ErrInvalidSetting
 	ErrInvalidSettingKey      = pluginport.ErrInvalidSettingKey
 	ErrInvalidSettingType     = pluginport.ErrInvalidSettingType
-	ErrInvalidTextInput       = pluginport.ErrInvalidTextInput
+	ErrInvalidTexts           = pluginport.ErrInvalidTexts
 	ErrInvalidVersion         = pluginport.ErrInvalidVersion
 	ErrNoBackend              = pluginport.ErrNoBackend
 	ErrNoKey                  = pluginport.ErrNoKey

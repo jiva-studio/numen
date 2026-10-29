@@ -2,7 +2,6 @@ package recognition
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -47,12 +46,9 @@ func (p *Provider) Close() {
 	p.Wait()
 }
 
-// CreateText starts recognising the file and returns. The plugin reads files, so a request for text
-// of a version is invalid. A file being recognised already is not started again.
+// CreateText starts recognising the file and returns. A file being recognised already is not
+// started again.
 func (p *Provider) CreateText(ctx context.Context, req host.TextCreation) error {
-	if req.Source != "" {
-		return fmt.Errorf("the plugin recognises files and not %s: %w", req.Source, host.ErrInvalidVersion)
-	}
 	key := string(req.Vault) + "\x00" + req.Path
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -65,7 +61,7 @@ func (p *Provider) CreateText(ctx context.Context, req host.TextCreation) error 
 		defer p.finish(key)
 		defer cancel()
 		// Recognise reports a failure as a task error.
-		_, _ = p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: req.IsUserStarted})
+		_, _ = p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: false})
 	})
 	return nil
 }

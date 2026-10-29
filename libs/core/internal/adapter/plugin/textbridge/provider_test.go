@@ -33,7 +33,7 @@ func (s *texts) CreateText(_ context.Context, req *connect.Request[v1.TextProvid
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.auth = req.Header().Get("Authorization")
-	s.created = append(s.created, req.Msg.GetPath()+"<"+req.Msg.GetSourceVersionId()+"/"+strconv.FormatBool(req.Msg.GetIsUserStarted()))
+	s.created = append(s.created, req.Msg.GetPath())
 	return connect.NewResponse(&v1.TextProviderServiceCreateTextResponse{}), nil
 }
 
@@ -52,9 +52,8 @@ func (h *host) GetPluginInfos() []pluginport.PluginInfo {
 func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.ocr":
-		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", TextInput: &pluginport.PluginTextInput{
-			ContentTypes: []domain.ContentType{"application/pdf"}, Kinds: []domain.TextKind{"article"}, IsAutoRun: true,
-			MenuEntry: &pluginport.PluginMenuEntry{Title: "Recognise text", Icon: "scan-text"},
+		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", Texts: &pluginport.PluginTextMaker{
+			ContentTypes: []domain.ContentType{"application/pdf"},
 		}}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
@@ -96,8 +95,7 @@ func newHost(t *testing.T) (*host, *texts) {
 func TestTheTextPluginsAreTheEnabledOnesThatDeclareAnInput(t *testing.T) {
 	h, _ := newHost(t)
 	got := textbridge.NewPlugins(h).GetTextPlugins()
-	if len(got) != 1 || got[0].ID != "org.example.ocr" || got[0].Name != "Example OCR" || !got[0].IsAutoRun || !got[0].Files.IsFileAccepted("a.pdf") ||
-		got[0].Menu != (textport.MenuItem{Title: "Recognise text", Icon: "scan-text"}) {
+	if len(got) != 1 || got[0].ID != "org.example.ocr" || got[0].Name != "Example OCR" || !got[0].Files.IsFileAccepted("a.pdf") {
 		t.Fatalf("got %+v, want the OCR plugin alone", got)
 	}
 }
@@ -109,10 +107,10 @@ func TestAProviderCreatesTextThroughThePlugin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := provider.CreateText(ctx, textport.TextCreation{Vault: "v1", Path: "a.pdf", Source: "x/y", IsUserStarted: true}); err != nil {
+	if err := provider.CreateText(ctx, textport.TextCreation{Vault: "v1", Path: "a.pdf"}); err != nil {
 		t.Fatal(err)
 	}
-	if len(served.created) != 1 || served.created[0] != "a.pdf<x/y/true" {
+	if len(served.created) != 1 || served.created[0] != "a.pdf" {
 		t.Fatalf("created %v", served.created)
 	}
 	if served.auth != "Bearer secret" {

@@ -18,17 +18,19 @@
       }
     }
   ],
-  "textInput": {
-    "kinds": ["*"],
-    "menuEntry": { "title": "Proofread", "icon": "spell-check" }
-  },
+  "texts": {},
   "commands": [
     {
       "id": "proofread",
-      "title": "Proofread text",
+      "title": "Proofread",
       "icon": "spell-check",
-      "contentTypes": ["*/*"],
-      "hiddenInPalette": true
+      "when": { "liveTextKinds": ["*"] }
+    },
+    {
+      "id": "delete-proofreading",
+      "title": "Delete proofreading",
+      "icon": "trash-2",
+      "when": { "hasOwnText": true }
     }
   ],
   "settings": [

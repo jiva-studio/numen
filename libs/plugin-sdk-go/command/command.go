@@ -29,6 +29,10 @@ var (
 	ErrDuplicate = errors.New("a command of that id is already added")
 )
 
+// ArgumentVersion is the argument the host gives a command whose manifest declares a condition on
+// the text versions of a file: the id of the version that meets it.
+const ArgumentVersion = "version-id"
+
 // Arguments are the values of a call's arguments by their declared names, each as text: a number in
 // decimal, a boolean as true or false. An optional argument left out is absent.
 type Arguments map[string]string

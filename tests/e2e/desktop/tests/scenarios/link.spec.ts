@@ -38,7 +38,7 @@ test.describe('A link', () => {
     const tab = page.getByRole('tabpanel').filter({ hasText: 'tidal-mills.numen.test' })
     await expect(tab.getByText(ARTICLE_TEXT)).toBeVisible({ timeout: 30_000 })
 
-    await runCommand(page, 'Delete text from', /^Delete text from Media Importer/)
+    await runCommand(page, 'Delete text', /^Delete text$/)
     await expect(tab.getByText('The text of this link was deleted.')).toBeVisible({
       timeout: 30_000,
     })

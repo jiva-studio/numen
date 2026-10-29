@@ -12,7 +12,6 @@ import RecordingTab from './RecordingTab.vue'
 import type { Cue } from './lib/cues'
 import type { Player } from './model/player'
 import type { MenuEntry, Recordings } from './types'
-import { WORDS } from './words'
 
 const MEDIA = 'http://127.0.0.1:1/token/v/Lectures/Lecture 4.mp3'
 const PATH = 'Lectures/Lecture 4.mp3'
@@ -40,15 +39,21 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
 }, [])
 
 const TRANSCRIBE: MenuEntry = {
-  action: 'createText',
   pluginId: 'md.test.transcription',
+  pluginName: 'Transcription',
+  command: 'make-text',
+  title: 'Transcribe',
+  icon: 'audio-lines',
   versionId: '',
   isLive: false,
 }
 
 const TRANSCRIBED: MenuEntry = {
-  action: 'deleteVersion',
   pluginId: 'md.test.transcription',
+  pluginName: 'Transcription',
+  command: 'delete-transcript',
+  title: 'Delete transcript',
+  icon: '',
   versionId: 'md.test.transcription/lecture-4',
   isLive: true,
 }
@@ -118,7 +123,7 @@ export const NoTranscript: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() =>
-      expect(canvas.getByRole('button', { name: WORDS.transcribe })).toBeVisible(),
+      expect(canvas.getByRole('button', { name: TRANSCRIBE.title })).toBeVisible(),
     )
   },
 }

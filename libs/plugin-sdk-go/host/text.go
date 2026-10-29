@@ -14,7 +14,7 @@ var (
 	// is missing or is not JSON Lines of segments, or a source that is no other version of the file.
 	ErrInvalidVersion = errors.New("host: the version is not valid")
 	// ErrNotOwner is what a call gets for a version of another plugin, or from a plugin that declares
-	// no text input.
+	// no `texts`.
 	ErrNotOwner = errors.New("host: the version is another plugin's")
 )
 
@@ -84,6 +84,28 @@ func ReadWholeText(ctx context.Context, texts Texts, version TextVersion) (Versi
 		}
 		cursor = page.NextCursor
 	}
+}
+
+// DeleteText removes a text version the plugin of the id made: its record, then its file in the
+// plugin's folder. A version that is not there is ErrNotExist, and one of another plugin is ErrNotOwner.
+func DeleteText(ctx context.Context, texts Texts, store Store, pluginID, path string, id TextVersionID) error {
+	listing, err := texts.ListVersions(ctx, path)
+	if err != nil {
+		return err
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() != id {
+			continue
+		}
+		if version.PluginID != pluginID {
+			return fmt.Errorf("delete %s of %s: %w", id, path, ErrNotOwner)
+		}
+		if err := texts.RemoveVersion(ctx, path, version.Key); err != nil {
+			return err
+		}
+		return store.Delete(ctx, version.File)
+	}
+	return fmt.Errorf("delete %s of %s: %w", id, path, ErrNotExist)
 }
 
 // WriteText writes segments as a version file of the plugin's folder, replacing the file

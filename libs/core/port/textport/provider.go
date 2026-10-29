@@ -11,13 +11,13 @@ var (
 	// ErrNoText is a file, a version or a key nothing has text for, or a
 	// version whose file changed since it was recorded.
 	ErrNoText = errors.New("there is no such text")
-	// ErrNotTextPlugin is a plugin that is not enabled or declares no text input.
+	// ErrNotTextPlugin is a plugin that is not enabled or declares no `texts`.
 	ErrNotTextPlugin = errors.New("the plugin makes no text")
 	// ErrInvalidVersion is a version with no key, no kind or no file, a file
 	// that is not there or is not JSON Lines of segments, or a source that is
 	// no other version of the file.
 	ErrInvalidVersion = errors.New("the version is not valid")
-	// ErrSourceNotAccepted is a source the plugin's declaration does not take.
+	// ErrSourceNotAccepted is a source the plugin does not take.
 	ErrSourceNotAccepted = errors.New("the plugin does not take this source")
 )
 
@@ -25,10 +25,8 @@ var (
 // created from, and empty for the file itself. IsUserStarted is set for text a user
 // requested, which runs before background text.
 type TextCreation struct {
-	Vault         domain.VaultID
-	Path          string
-	Source        domain.TextVersionID
-	IsUserStarted bool
+	Vault domain.VaultID
+	Path  string
 }
 
 // TextProvider is a plugin that makes text of vault files.
@@ -50,20 +48,9 @@ type TextProviders interface {
 // entry in the menu of a file its input accepts, and has no title for a plugin not
 // offered there.
 type TextPlugin struct {
-	ID        string
-	Name      string
-	Files     domain.FileInput
-	Kinds     []domain.TextKind
-	NoteTypes []domain.NoteType
-	IsAutoRun bool
-	Menu      MenuItem
-}
-
-// MenuItem is what a plugin's entry in a file's menu reads and is drawn with.
-// Icon is a Lucide icon name.
-type MenuItem struct {
-	Title string
-	Icon  string
+	ID    string
+	Name  string
+	Files domain.FileInput
 }
 
 // TextPlugins is the plugins that make text.

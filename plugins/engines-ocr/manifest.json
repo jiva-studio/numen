@@ -8,18 +8,21 @@
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "textInput": {
-    "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
-    "autoRun": true,
-    "menuEntry": { "title": "Recognise text", "icon": "scan-text" }
+  "texts": {
+    "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
   },
   "commands": [
     {
       "id": "recognise",
       "title": "Recognise text",
       "icon": "scan-text",
-      "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
-      "hiddenInPalette": true
+      "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
+    },
+    {
+      "id": "delete-recognition",
+      "title": "Delete recognition",
+      "icon": "trash-2",
+      "when": { "hasOwnText": true }
     }
   ],
   "dependencies": [

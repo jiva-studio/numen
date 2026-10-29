@@ -13,13 +13,14 @@ import (
 const trueValue = "true"
 
 // newCommands is the commands the manifest declares.
-func newCommands(links *link.Links) (*command.Registry, error) {
+func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
 		"import":        newImportCommand(links),
 		"download-text": newDownloadTextCommand(links),
 		"download-copy": newDownloadCopyCommand(links),
 		"delete-copy":   newDeleteCopyCommand(links),
+		"delete-text":   command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
 	} {
 		if err := commands.Add(id, run); err != nil {
 			return nil, err

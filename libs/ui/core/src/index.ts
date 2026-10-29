@@ -37,6 +37,9 @@ export { clock } from './shared/lib/time/duration'
 export { createFollower } from './shared/lib/async/stream'
 
 export { Spinner } from './shared/ui/spinner'
+
+/** A Lucide icon drawn by the name a manifest gives it. */
+export { NamedIcon, createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 

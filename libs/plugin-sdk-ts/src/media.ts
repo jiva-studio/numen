@@ -2,7 +2,7 @@
  * Media and file menu calls over the window's transport.
  */
 import { createClient } from '@connectrpc/connect'
-import { FileMenuAction, MediaService, TextVersionService } from '@numen/protocol'
+import { MediaService, TextVersionService } from '@numen/protocol'
 import { retryWhileBusy } from './errors/answers'
 import { transport } from './transport'
 
@@ -27,68 +27,42 @@ export async function getPageSource(pluginId: string, path: string): Promise<str
   return answer.src
 }
 
-/** What a file menu entry does when chosen. */
-export type FileMenuActionKind = 'createText' | 'deleteVersion'
-
-/** One entry of a file's text-version menu. */
+/**
+ * One entry of a file's menu: a command a plugin declares in its manifest, offered over the file
+ * or over a text version of it. `versionId` is the version the command runs over, and empty for a
+ * command over the file. `icon` is a Lucide icon name. `isLive` marks the version that is displayed
+ * and indexed.
+ */
 export interface FileMenuEntry {
-  readonly action: FileMenuActionKind
   readonly pluginId: string
+  readonly pluginName: string
+  readonly command: string
+  readonly title: string
+  readonly icon: string
   readonly versionId: string
   readonly isLive: boolean
 }
 
-/** The schema action codes of a file's text-version menu. */
-export const FILE_MENU_ACTION = {
-  UNSPECIFIED: FileMenuAction.UNSPECIFIED,
-  CREATE_TEXT: FileMenuAction.CREATE_TEXT,
-  DELETE_VERSION: FileMenuAction.DELETE_VERSION,
-} as const
-
-const ACTIONS: ReadonlyMap<number, FileMenuActionKind> = new Map([
-  [FileMenuAction.CREATE_TEXT, 'createText'],
-  [FileMenuAction.DELETE_VERSION, 'deleteVersion'],
-])
-
-/** The action code of the schema an entry's action is. */
-export const writeFileMenuAction = (action: FileMenuActionKind): number =>
-  [...ACTIONS].find(([, one]) => one === action)?.[0] ?? FileMenuAction.UNSPECIFIED
-
-/** The entries of the schema a view reads, leaving out an action it does not know. */
-export const readFileMenuEntries = (
-  entries: readonly {
-    readonly action: number
-    readonly pluginId: string
-    readonly versionId: string
-    readonly isLive: boolean
-  }[],
-): readonly FileMenuEntry[] =>
-  entries.flatMap((one) => {
-    const action = ACTIONS.get(one.action)
-    return action
-      ? [
-          {
-            action,
-            pluginId: one.pluginId,
-            versionId: one.versionId,
-            isLive: one.isLive,
-          },
-        ]
-      : []
-  })
-
-/** Requests the text-version menu entries of a file from the host. */
+/** Requests from the host the entries of the menu of a file. */
 export async function getFileMenu(path: string): Promise<readonly FileMenuEntry[]> {
   const answer = await retryWhileBusy(() => textVersionClient.getFileMenu({ path }))
-  return readFileMenuEntries(answer.entries)
+  return answer.entries.map((one) => ({
+    pluginId: one.pluginId,
+    pluginName: one.pluginName,
+    command: one.command,
+    title: one.title,
+    icon: one.icon,
+    versionId: one.versionId,
+    isLive: one.isLive,
+  }))
 }
 
-/** Runs one text-version menu entry on a file. */
+/** Runs the command of one entry of the menu of a file. */
 export async function runFileMenuEntry(path: string, entry: FileMenuEntry): Promise<void> {
   await textVersionClient.runFileMenuEntry({
     path,
-    action: writeFileMenuAction(entry.action) as FileMenuAction,
     pluginId: entry.pluginId,
+    command: entry.command,
     versionId: entry.versionId,
   })
 }

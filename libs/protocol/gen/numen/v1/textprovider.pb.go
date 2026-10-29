@@ -152,15 +152,9 @@ func (x *TextSegment) GetSelector() string {
 }
 
 type TextProviderServiceCreateTextRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Path    string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// source_version_id is the version the text is made from, and empty for the
-	// file itself.
-	SourceVersionId string `protobuf:"bytes,3,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
-	// is_user_started is set for a text a person asked for, which runs before
-	// text nobody asked for.
-	IsUserStarted bool `protobuf:"varint,4,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VaultId       string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,20 +201,6 @@ func (x *TextProviderServiceCreateTextRequest) GetPath() string {
 		return x.Path
 	}
 	return ""
-}
-
-func (x *TextProviderServiceCreateTextRequest) GetSourceVersionId() string {
-	if x != nil {
-		return x.SourceVersionId
-	}
-	return ""
-}
-
-func (x *TextProviderServiceCreateTextRequest) GetIsUserStarted() bool {
-	if x != nil {
-		return x.IsUserStarted
-	}
-	return false
 }
 
 type TextProviderServiceCreateTextResponse struct {
@@ -275,12 +255,10 @@ const file_numen_v1_textprovider_proto_rawDesc = "" +
 	"\vTextSegment\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x18\n" +
 	"\aheading\x18\x02 \x01(\tR\aheading\x12\x1a\n" +
-	"\bselector\x18\x03 \x01(\tR\bselector\"\xa9\x01\n" +
+	"\bselector\x18\x03 \x01(\tR\bselector\"U\n" +
 	"$TextProviderServiceCreateTextRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12*\n" +
-	"\x11source_version_id\x18\x03 \x01(\tR\x0fsourceVersionId\x12&\n" +
-	"\x0fis_user_started\x18\x04 \x01(\bR\risUserStarted\"V\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"V\n" +
 	"%TextProviderServiceCreateTextResponse\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error*\xa7\x01\n" +
 	"\rTextErrorCode\x12\x1f\n" +

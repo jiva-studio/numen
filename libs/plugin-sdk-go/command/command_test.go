@@ -8,7 +8,10 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
@@ -91,5 +94,32 @@ func TestAddRejectsDuplicateID(t *testing.T) {
 
 	if !errors.Is(err, command.ErrDuplicate) {
 		t.Errorf("a second command under the id is %v, want ErrDuplicate", err)
+	}
+}
+
+func TestNewDeleteTextRunDeletesTheVersionTheHostNames(t *testing.T) {
+	ctx := t.Context()
+	file := []byte("%PDF")
+	texts := hosttest.NewTexts("v1", "org.example.ocr")
+	texts.File("a.pdf", file)
+	store := texts.GetStore("org.example.ocr")
+	if err := host.WriteText(ctx, store, "k.jsonl", []domain.TextSegment{{Text: "a"}}); err != nil {
+		t.Fatal(err)
+	}
+	version, err := texts.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: domain.HashContent(file), File: "k.jsonl"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := command.NewDeleteTextRun(texts, store, "org.example.ocr")
+
+	if _, err := run(ctx, command.Request{Command: "delete", Path: "a.pdf"}); !errors.Is(err, command.ErrBadArguments) {
+		t.Fatalf("a call with no version: got %v, want ErrBadArguments", err)
+	}
+	arguments := command.Arguments{command.ArgumentVersion: string(version.GetID())}
+	if _, err := run(ctx, command.Request{Command: "delete", Path: "a.pdf", Arguments: arguments}); err != nil {
+		t.Fatal(err)
+	}
+	if listing, _ := texts.ListVersions(ctx, "a.pdf"); len(listing.Versions) != 0 {
+		t.Fatalf("the versions after the deletion: %+v", listing.Versions)
 	}
 }

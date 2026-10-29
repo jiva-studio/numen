@@ -3,11 +3,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import { formatErrorMessage } from '@numen/plugin-sdk'
-import { findMenuEntries, useTranscript } from './transcript'
+import { findStarter, getEntryKey, useTranscript } from './transcript'
 import {
   CUES,
   DELETE_ENTRY,
   TALK_URL,
+  PROOFREAD_ENTRY,
   TRANSCRIBE_ENTRY,
   createPlayer,
   createRecordings,
@@ -58,47 +59,42 @@ describe('a recording firstRead', () => {
 })
 
 describe('what the menu offers', () => {
-  it('takes text made from the file as transcribing and from the live version as proofreading', () => {
-    const proofread = {
-      ...TRANSCRIBE_ENTRY,
-      pluginId: 'md.test.proofreading',
-      versionId: DELETE_ENTRY.versionId,
-      isLive: true,
-    }
-    const offers = findMenuEntries([TRANSCRIBE_ENTRY, proofread, DELETE_ENTRY])
-    expect(offers.transcribe).toBe(TRANSCRIBE_ENTRY)
-    expect(offers.proofread).toBe(proofread)
-    expect(offers.deleteText).toBe(DELETE_ENTRY)
+  it('starts text from the first entry over the file', () => {
+    expect(findStarter([DELETE_ENTRY, TRANSCRIBE_ENTRY, PROOFREAD_ENTRY])).toBe(TRANSCRIBE_ENTRY)
+    expect(findStarter([DELETE_ENTRY, PROOFREAD_ENTRY])).toBeUndefined()
   })
 
-  it('is transcribing where nothing was heard, and not deleting', async () => {
+  it('names an entry by its plugin, command and version', () => {
+    expect(getEntryKey(PROOFREAD_ENTRY)).toBe(
+      'md.test.proofreading:correct-text:md.test.transcription/abc',
+    )
+  })
+
+  it('is starting where nothing was heard, and lists nothing in the menu', async () => {
     const { tab } = open(createRecordings([], [TRANSCRIBE_ENTRY]))
     await tab.content.firstRead
-    expect(tab.offers.isTranscribable.value).toBe(true)
-    expect(tab.offers.isDeletable.value).toBe(false)
+    expect(tab.offers.isStartable.value).toBe(true)
+    expect(tab.offers.items.value).toStrictEqual([])
     expect(tab.content.note.value).toBe(WORDS.silence)
   })
 
-  it('is deleting the live version where there are words, and not transcribing', async () => {
+  it('lists every entry in the menu where there are words, and is not starting', async () => {
     const { tab } = open(createRecordings(CUES, [TRANSCRIBE_ENTRY, DELETE_ENTRY]))
     await tab.content.firstRead
-    expect(tab.offers.isTranscribable.value).toBe(false)
-    expect(tab.offers.isDeletable.value).toBe(true)
+    expect(tab.offers.isStartable.value).toBe(false)
+    expect(tab.offers.items.value.map((one) => one.text)).toStrictEqual([
+      TRANSCRIBE_ENTRY.title,
+      DELETE_ENTRY.title,
+    ])
   })
 
-  it('offers no deletion of a version that is not the live one', async () => {
-    const { tab } = open(createRecordings(CUES, [{ ...DELETE_ENTRY, isLive: false }]))
-    await tab.content.firstRead
-    expect(tab.offers.isDeletable.value).toBe(false)
-  })
-
-  it('carries the entry out, and reads the words again after a deletion', async () => {
+  it('carries the entry out, and reads the words again after it', async () => {
     const setup = createRecordings(CUES, [DELETE_ENTRY])
     const { tab, state } = open(setup)
     await tab.content.firstRead
     state.cues = []
 
-    await tab.offers.deleteTranscript()
+    await tab.offers.run(getEntryKey(DELETE_ENTRY))
 
     expect(state.runs).toStrictEqual([DELETE_ENTRY])
     expect(tab.content.cues.value).toStrictEqual([])

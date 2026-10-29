@@ -12,15 +12,31 @@ export const CUES: readonly Cue[] = [
 ]
 
 export const TRANSCRIBE_ENTRY: MenuEntry = {
-  action: 'createText',
   pluginId: 'md.test.transcription',
+  pluginName: 'Transcription',
+  command: 'make-text',
+  title: 'Transcribe',
+  icon: 'audio-lines',
   versionId: '',
   isLive: false,
 }
 
 export const DELETE_ENTRY: MenuEntry = {
-  action: 'deleteVersion',
   pluginId: 'md.test.transcription',
+  pluginName: 'Transcription',
+  command: 'delete-transcript',
+  title: 'Delete transcript',
+  icon: '',
+  versionId: 'md.test.transcription/abc',
+  isLive: true,
+}
+
+export const PROOFREAD_ENTRY: MenuEntry = {
+  pluginId: 'md.test.proofreading',
+  pluginName: 'Proofreading',
+  command: 'correct-text',
+  title: 'Proofread',
+  icon: 'spell-check',
   versionId: 'md.test.transcription/abc',
   isLive: true,
 }

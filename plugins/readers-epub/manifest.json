@@ -10,9 +10,8 @@
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.epub"],
   "readers": [{ "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }],
-  "textInput": {
-    "contentTypes": ["application/epub+zip"],
-    "autoRun": true
+  "texts": {
+    "contentTypes": ["application/epub+zip"]
   },
   "lifecycle": {
     "idleTimeoutSeconds": 300,

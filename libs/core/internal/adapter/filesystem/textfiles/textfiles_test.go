@@ -39,12 +39,6 @@ func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 	if got.Hash != hash || len(got.Segments) != 1 || got.Segments[0] != segments[0] {
 		t.Fatalf("read %+v", got)
 	}
-	if err := files.DeleteTextFile(t.Context(), plugin, "a.jsonl"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := files.ReadTextFile(t.Context(), plugin, "a.jsonl"); !errors.Is(err, textport.ErrNoText) {
-		t.Fatalf("a deleted file: got %v, want ErrNoText", err)
-	}
 }
 
 func TestReadTextFileRejectsANameOutsideThePluginFolder(t *testing.T) {

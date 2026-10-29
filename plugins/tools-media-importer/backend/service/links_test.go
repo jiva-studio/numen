@@ -8,7 +8,7 @@ import (
 )
 
 func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
-	links, _ := newMockLinks(t)
+	links, _, _ := newMockLinks(t)
 	service := linkServer{links: links}
 
 	created, err := service.createLinks(t.Context(), api.CreateLinksRequest{

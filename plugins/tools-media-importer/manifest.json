@@ -13,9 +13,7 @@
     }
   ],
   "services": ["numen.importer"],
-  "textInput": {
-    "noteTypes": ["link"]
-  },
+  "texts": {},
   "playback": {
     "noteTypes": ["link"]
   },
@@ -50,6 +48,12 @@
       "title": "Download video",
       "icon": "download",
       "noteTypes": ["link"]
+    },
+    {
+      "id": "delete-text",
+      "title": "Delete text",
+      "icon": "trash-2",
+      "when": { "hasOwnText": true }
     },
     {
       "id": "delete-copy",

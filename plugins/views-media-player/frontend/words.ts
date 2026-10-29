@@ -12,9 +12,6 @@ export const WORDS = {
   loading: 'Loading…',
   /** Nothing has transcribed this recording. */
   silence: 'No transcript yet.',
-  transcribe: 'Transcribe',
-  proofread: 'Proofread transcript',
-  deleteText: 'Delete transcript',
   /** A run is in progress, and more words arrive as they are transcribed. */
   transcribing: 'Transcribing…',
   /** This window cannot play this kind of audio. */
@@ -30,8 +27,3 @@ export const WORDS = {
   /** The player rejected the type before requesting any data. */
   unwanted: 'Recording type not supported.',
 }
-
-/** The ids of what the tab's menu offers. */
-export const TRANSCRIBE = 'transcribeText'
-export const PROOFREAD = 'proofreadText'
-export const DELETE_TEXT = 'deleteText'

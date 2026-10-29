@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -89,7 +91,6 @@ type scene struct {
 	queue       *hosttest.Queue
 	model       *heardModel
 	transcriber *Transcriber
-	provider    provider
 }
 
 func newScene(t *testing.T) *scene {
@@ -108,17 +109,15 @@ func newScene(t *testing.T) *scene {
 	s.transcriber = NewTranscriber(vaultFiles{vault: vault}, s.store, texts, s.queue,
 		func(context.Context) (engine.TranscriberPort, error) { return s.model, nil })
 	t.Cleanup(s.transcriber.Close)
-	s.provider = provider{transcriber: s.transcriber}
 	texts.SetStore(PluginID, s.store)
 	return s
 }
 
 func (s *scene) transcribe(t *testing.T) {
 	t.Helper()
-	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: s.vault.Vault().ID, Path: lecture}); err != nil {
+	if err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture); err != nil {
 		t.Fatal(err)
 	}
-	s.transcriber.Wait()
 }
 
 func (s *scene) readLive(t *testing.T) (domain.TextVersion, string) {
@@ -138,7 +137,7 @@ func (s *scene) readLive(t *testing.T) (domain.TextVersion, string) {
 	return listing.Versions[i], text.Text
 }
 
-func TestCreateTextWritesATranscriptVersionInTheCommonFormat(t *testing.T) {
+func TestTranscribeWritesATranscriptVersionInTheCommonFormat(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 
@@ -167,7 +166,7 @@ func TestCreateTextWritesATranscriptVersionInTheCommonFormat(t *testing.T) {
 	}
 }
 
-func TestCreateTextOfASilentRecordingRecordsAnEmptyTranscript(t *testing.T) {
+func TestTranscribeOfASilentRecordingRecordsAnEmptyTranscript(t *testing.T) {
 	s := newScene(t)
 	s.model.words = map[int]string{}
 	s.transcribe(t)
@@ -180,7 +179,7 @@ func TestCreateTextOfASilentRecordingRecordsAnEmptyTranscript(t *testing.T) {
 	}
 }
 
-func TestCreateTextSkipsWholeTranscript(t *testing.T) {
+func TestTranscribeSkipsWholeTranscript(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 	s.transcribe(t)
@@ -190,7 +189,7 @@ func TestCreateTextSkipsWholeTranscript(t *testing.T) {
 	}
 }
 
-func TestCreateTextResumesFromPartialTranscript(t *testing.T) {
+func TestTranscribeResumesFromPartialTranscript(t *testing.T) {
 	s := newScene(t)
 	key := domain.HashContent([]byte(lectureSound))
 	if err := (transcripts{store: s.store}).appendBatch(t.Context(), key, []transcript.Cue{{Text: "heard before", From: 0, To: 1000}}, 1000); err != nil {
@@ -210,11 +209,13 @@ func TestCreateTextResumesFromPartialTranscript(t *testing.T) {
 	}
 }
 
-func TestCreateTextReportsUnopenableRecording(t *testing.T) {
+func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	s := newScene(t)
 	s.model.isBroken = true
 
-	s.transcribe(t)
+	if err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture); err == nil {
+		t.Fatal("a recording that cannot be opened was transcribed")
+	}
 
 	tasks := s.queue.ListTasks()
 	if len(tasks) != 1 || tasks[0].About != lecture || !strings.Contains(tasks[0].Error, "cannot be opened") {
@@ -225,34 +226,38 @@ func TestCreateTextReportsUnopenableRecording(t *testing.T) {
 	}
 }
 
-func TestCreateTextWaitsForQueueTurn(t *testing.T) {
+// waitUntil returns once the condition holds, and fails the test where it does not within five
+// seconds.
+func waitUntil(t *testing.T, condition func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !condition() {
+		if time.Now().After(deadline) {
+			t.Fatal("the condition did not hold within five seconds")
+		}
+		runtime.Gosched()
+	}
+}
+
+func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 	s := newScene(t)
 	held, err := s.queue.EnqueueWork(t.Context(), host.Work{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: s.vault.Vault().ID, Path: lecture}); err != nil {
-		t.Fatal(err)
-	}
-	tasks := s.queue.ListTasks()
-	if len(tasks) != 1 || tasks[0].About != lecture {
+	result := make(chan error, 1)
+	go func() { result <- s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture) }()
+	waitUntil(t, func() bool { return len(s.queue.ListTasks()) == 1 })
+	if tasks := s.queue.ListTasks(); tasks[0].About != lecture {
 		t.Fatalf("the tasks are %+v once the transcription was asked for, want it shown", tasks)
 	}
 	held.Release()
-	s.transcriber.Wait()
+	if err := <-result; err != nil {
+		t.Fatal(err)
+	}
 
 	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
 		t.Errorf("the version reads %q", text)
-	}
-}
-
-func TestCreateTextRejectsASourceVersion(t *testing.T) {
-	s := newScene(t)
-
-	err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: s.vault.Vault().ID, Path: lecture, Source: "a/b"})
-
-	if !errors.Is(err, host.ErrInvalidVersion) {
-		t.Errorf("a request naming a source was answered %v", err)
 	}
 }
 
@@ -283,7 +288,7 @@ func TestTranscribeCommandReportsUnopenableRecording(t *testing.T) {
 	}
 }
 
-func TestCreateTextRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
+func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
@@ -292,10 +297,9 @@ func TestCreateTextRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	other.SetStore(PluginID, chemistry.Store())
 	other.File(lecture, []byte(lectureSound))
 
-	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: lecture}); err != nil {
+	if err := s.transcriber.Transcribe(t.Context(), "Chemistry", lecture); err != nil {
 		t.Fatal(err)
 	}
-	s.transcriber.Wait()
 
 	inChemistry, err := other.ListVersions(t.Context(), lecture)
 	if err != nil || inChemistry.Live == "" {

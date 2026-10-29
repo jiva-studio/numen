@@ -28,14 +28,13 @@ export interface TranscriptOptions {
   plays?: MediaTypeProbe
 }
 
-/** The entries of a menu a recording tab offers, each where the menu holds one. */
-export function findMenuEntries(entries: readonly MenuEntry[]) {
-  return {
-    transcribe: entries.find((one) => one.action === 'createText' && one.versionId === ''),
-    proofread: entries.find((one) => one.action === 'createText' && one.isLive),
-    deleteText: entries.find((one) => one.action === 'deleteVersion' && one.isLive),
-  }
-}
+/** What identifies an entry of the menu among the others. */
+export const getEntryKey = (entry: MenuEntry): string =>
+  `${entry.pluginId}:${entry.command}:${entry.versionId}`
+
+/** The entry that starts text from the file, which is the first command over the file itself. */
+export const findStarter = (entries: readonly MenuEntry[]): MenuEntry | undefined =>
+  entries.find((one) => one.versionId === '')
 
 /** Request ordering: only the latest request may apply its result. */
 function createRequestGuard() {
@@ -115,29 +114,24 @@ export function useTranscript(
   }
   const stopWatching = recordings.watchWork(path, setWorking)
 
-  const offers = computed(() => findMenuEntries(entries.value))
+  const starter = computed(() => findStarter(entries.value))
   const isSettled = computed(() => !isLoading.value && !isWorking.value)
-  const isTranscribable = computed(
-    () => isSettled.value && !lines.timed.value && offers.value.transcribe !== undefined,
+  const isStartable = computed(
+    () => isSettled.value && !lines.timed.value && starter.value !== undefined,
   )
-  const isRetranscribable = computed(
-    () => isSettled.value && lines.timed.value && offers.value.transcribe !== undefined,
-  )
-  const isProofreadable = computed(
-    () => isSettled.value && lines.timed.value && offers.value.proofread !== undefined,
-  )
-  const isDeletable = computed(
-    () => isSettled.value && lines.timed.value && offers.value.deleteText !== undefined,
+  /** The entries the menu at the end of the strip lists, once there is text to work on. */
+  const items = computed(() =>
+    isSettled.value && lines.timed.value
+      ? entries.value.map((one) => ({ id: getEntryKey(one), text: one.title }))
+      : [],
   )
 
   const runEntry = async (entry: MenuEntry | undefined) => {
     if (!entry || !isOpen) return
     try {
       await recordings.runMenuEntry(path, entry)
-      if (entry.action === 'deleteVersion') {
-        draft.drop()
-        await readRecording()
-      }
+      draft.drop()
+      await readRecording()
     } catch (err) {
       if (isOpen) error.value = formatErrorMessage(err)
     }
@@ -199,13 +193,12 @@ export function useTranscript(
       },
     },
     offers: {
-      isTranscribable,
-      isRetranscribable,
-      isProofreadable,
-      isDeletable,
-      transcribe: () => runEntry(offers.value.transcribe),
-      proofread: () => runEntry(offers.value.proofread),
-      deleteTranscript: () => runEntry(offers.value.deleteText),
+      starter,
+      isStartable,
+      items,
+      start: () => runEntry(starter.value),
+      run: (key: string) => runEntry(entries.value.find((one) => getEntryKey(one) === key)),
+      getIcon: (key: string) => entries.value.find((one) => getEntryKey(one) === key)?.icon ?? '',
     },
     navigation: { reach, goToLine },
     close,

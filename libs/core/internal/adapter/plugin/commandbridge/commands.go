@@ -48,7 +48,7 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 			continue
 		}
 		for _, command := range plugin.Manifest.Commands {
-			found = append(found, pluginport.PluginCommandEntry{PluginID: plugin.Manifest.ID, Command: command})
+			found = append(found, pluginport.PluginCommandEntry{PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, Command: command})
 		}
 	}
 	return found
@@ -98,4 +98,13 @@ func readCommandError(ctx context.Context, pluginID string, err error) error {
 		return fmt.Errorf("command rpc: %w", err)
 	}
 	return &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginFailed, Err: err}
+}
+
+// NoCommands is an installation with no plugin that declares a command.
+type NoCommands struct{}
+
+func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
+
+func (NoCommands) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+	return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginNotInstalled}
 }

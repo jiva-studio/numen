@@ -46,14 +46,15 @@ func (m PluginManifest) ListContentHandlers() []domain.ContentHandler {
 	return out
 }
 
-// IsHandling reports whether a reader or the text input of the plugin takes a file of the type.
+// IsHandling reports whether a reader of the plugin, or the text it makes of files, takes a file of
+// the type.
 func (m PluginManifest) IsHandling(contentType domain.ContentType) bool {
 	for _, reader := range m.Readers {
 		if isAnyMatching(reader.ContentTypes, contentType) {
 			return true
 		}
 	}
-	return m.TextInput != nil && isAnyMatching(m.TextInput.ContentTypes, contentType)
+	return m.Texts != nil && isAnyMatching(m.Texts.ContentTypes, contentType)
 }
 
 func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) bool {

@@ -1,7 +1,8 @@
 /**
- * The menu the text versions of the file in front make, offered in the
- * palette: the entry each plugin declares, under its title and icon, and
- * deleting a version, each by the plugin the application names.
+ * The commands of the menu of the file in front: the commands the enabled
+ * plugins declare that apply to it now. A command over the file is the one the
+ * palette lists from the manifests; a command over a version of the file is
+ * registered here, one for each version.
  */
 import { computed, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
@@ -9,25 +10,32 @@ import { registerCommand, type Command } from '@/features/command-palette'
 import { getFileMenu, runFileMenuEntry, type FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'
 import { getNamedIcon } from '@/shared/icons'
+import { getPluginCommandId } from './declaredCommands'
 
-/** What the palette files an entry under: the action, the plugin and the version it is over. */
+/** Whether the entry runs over a version of the file, and not over the file. */
+export const isOverVersion = (entry: FileMenuEntry): boolean => entry.versionId !== ''
+
+/** What the palette files an entry under: the declared command it is, or the version it is over. */
 export const getFileMenuId = (entry: FileMenuEntry): string =>
-  `file-menu:${entry.action}:${entry.pluginId}:${entry.versionId}`
+  isOverVersion(entry)
+    ? `file-menu:${entry.pluginId}:${entry.command}:${entry.versionId}`
+    : getPluginCommandId(entry.pluginId, entry.command)
 
-/** What an entry is called in the palette, by the plugin that does it. */
-export const getFileMenuText = (entry: FileMenuEntry): string =>
-  entry.action === 'delete-version' ? WORDS.deleteVersion : entry.title
-
-/** The palette's commands for the entries of the menu of the file at `file`, offered over that file alone. */
-export function createFileMenuPaletteCommands(
+/**
+ * The commands for the entries of the menu of the file at `file`, offered over that file alone. The
+ * plugin name is the detail of an entry whose title another entry has.
+ */
+export function createFileMenuCommands(
   file: string,
   entries: readonly FileMenuEntry[],
 ): readonly Command[] {
+  const counts = new Map<string, number>()
+  for (const entry of entries) counts.set(entry.title, (counts.get(entry.title) ?? 0) + 1)
   return entries.map((entry): Command => ({
     id: getFileMenuId(entry),
-    text: getFileMenuText(entry),
-    ...(entry.pluginName ? { detail: entry.pluginName } : {}),
-    ...(entry.action === 'create-text' ? { icon: getNamedIcon(entry.icon) } : {}),
+    text: entry.title,
+    ...((counts.get(entry.title) ?? 0) > 1 && entry.pluginName ? { detail: entry.pluginName } : {}),
+    ...(entry.icon ? { icon: getNamedIcon(entry.icon) } : {}),
     group: 'file',
     isAvailable: (target) => target.isReady && target.file !== '' && target.file === file,
   }))
@@ -40,8 +48,9 @@ export interface FileMenuCommandsDeps {
 }
 
 /**
- * The menu of one file, reloaded by `load` for the named file, each entry with a
- * handler that runs it and reports that the plugin is working.
+ * The menu of one file, read by `load`. A menu read before is shown immediately
+ * and read again, so plugin changes appear on the next load. Each entry over a
+ * version has a handler that runs it and reports the result.
  */
 export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   const get = deps.get ?? getFileMenu
@@ -50,51 +59,67 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
     file: '',
     entries: [],
   })
+  const entriesByPath = new Map<string, readonly FileMenuEntry[]>()
+  const pendingPaths = new Set<string>()
   let unregisterAll: readonly (() => void)[] = []
-  let loadingFile = ''
-  let loadedFile = ''
+  let currentFile = ''
+
+  const register = (entries: readonly FileMenuEntry[]) => {
+    for (const unregister of unregisterAll) unregister()
+    unregisterAll = entries.filter(isOverVersion).map((entry) =>
+      registerCommand(getFileMenuId(entry), async (invocation, on) => {
+        try {
+          await run(invocation.file, entry)
+          deps.onRun?.(invocation.file)
+          on.writeMessage(WORDS.commandRan(entry.title), 'info')
+        } catch (error) {
+          on.writeMessage(formatErrorMessage(error), 'error')
+        }
+        entriesByPath.delete(invocation.file)
+        await load(invocation.file).catch(() => {})
+      }),
+    )
+  }
+
+  const show = (file: string, entries: readonly FileMenuEntry[]) => {
+    register(entries)
+    menu.value = { file, entries }
+  }
+
+  const isShown = (file: string, entries: readonly FileMenuEntry[]): boolean =>
+    menu.value.file === file && JSON.stringify(menu.value.entries) === JSON.stringify(entries)
 
   const load = async (file: string): Promise<void> => {
-    loadingFile = file
+    currentFile = file
+    if (!file) {
+      show('', [])
+      return
+    }
+    const cached = entriesByPath.get(file)
+    if (cached && !isShown(file, cached)) show(file, cached)
+    if (pendingPaths.has(file)) return
+    pendingPaths.add(file)
     try {
-      const entries = file ? await get(file) : []
-      for (const unregister of unregisterAll) unregister()
-      unregisterAll = entries.map((entry) =>
-        registerCommand(getFileMenuId(entry), async (invocation, on) => {
-          try {
-            await run(invocation.file, entry)
-            deps.onRun?.(invocation.file)
-            on.writeMessage(WORDS.queriedText(entry.pluginName), 'info')
-          } catch (error) {
-            on.writeMessage(formatErrorMessage(error), 'error')
-          }
-        }),
-      )
-      loadedFile = file
-      menu.value = { file, entries }
-      setTimeout(() => {
-        if (loadedFile === file) loadedFile = ''
-      }, 0)
+      const entries = await get(file)
+      entriesByPath.set(file, entries)
+      if (currentFile === file && !isShown(file, entries)) show(file, entries)
     } finally {
-      if (loadingFile === file) loadingFile = ''
+      pendingPaths.delete(file)
     }
   }
 
   const getForFile = (file: string): readonly Command[] => {
-    const current = menu.value
-    if (file && loadingFile !== file && loadedFile !== file) {
-      void load(file).catch(() => {})
-    }
-    return current.file === file ? createFileMenuPaletteCommands(current.file, current.entries) : []
+    if (file) void load(file).catch(() => {})
+    const entries = entriesByPath.get(file)
+    return entries ? createFileMenuCommands(file, entries) : []
   }
 
   const getIcon = (id: string) =>
-    createFileMenuPaletteCommands(menu.value.file, menu.value.entries).find((one) => one.id === id)
-      ?.icon
+    createFileMenuCommands(menu.value.file, menu.value.entries).find((one) => one.id === id)?.icon
 
   return {
     paletteCommands: computed(() =>
-      createFileMenuPaletteCommands(menu.value.file, menu.value.entries),
+      createFileMenuCommands(menu.value.file, menu.value.entries.filter(isOverVersion)),
     ),
     load,
     getForFile,

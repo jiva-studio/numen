@@ -5,13 +5,12 @@ import { measureRect } from './dom'
  *
  * The player is provided through the slot, as is any tab-specific content shown over it.
  */
-import { computed, ref, type Component } from 'vue'
-import { AudioLines, SpellCheck, Trash2 } from '@lucide/vue'
-import { Menu } from '@numen/ui'
+import { computed, ref } from 'vue'
+import { Menu, NamedIcon } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
 import MediaActions from './MediaActions.vue'
 import Transcript from './Transcript.vue'
-import { DELETE_TEXT, PROOFREAD, TRANSCRIBE, WORDS as words } from './words'
+import { WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -60,14 +59,6 @@ function onDismissMenu() {
 function onToggleFollow() {
   props.state.content.setFollowing(!isFollowing.value)
 }
-
-/* -------------------------------- Helpers --------------------------------- */
-function getMenuItemIcon(id: string): Component | null {
-  if (id === PROOFREAD) return SpellCheck
-  if (id === TRANSCRIBE) return AudioLines
-  if (id === DELETE_TEXT) return Trash2
-  return null
-}
 </script>
 
 <template>
@@ -98,11 +89,10 @@ function getMenuItemIcon(id: string): Component | null {
       @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
-        <component
-          :is="getMenuItemIcon(id)"
-          v-if="getMenuItemIcon(id)"
+        <NamedIcon
+          v-if="props.state.offers.getIcon(id)"
+          :name="props.state.offers.getIcon(id)"
           class="media__menu-icon"
-          aria-hidden="true"
         />
       </template>
     </Menu>

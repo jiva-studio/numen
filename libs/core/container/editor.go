@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -50,23 +52,25 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
 	provider := cfg.AgentProvider()
 	return EditorAssembly{
-		PluginDirFn:              cfg.GetPluginDir,
-		EmitEventFn:              cfg.emitPluginEvent,
-		RegistryVal:              registry,
-		VaultReadersFn:           cfg.VaultReaders,
-		VaultWritersFn:           cfg.VaultWriters,
-		VaultIdentityFn:          cfg.VaultIdentity,
-		OpenTabsStoreFn:          func() windowport.OpenTabsStore { return db.OpenTabs() },
-		ClockFn:                  cfg.Clock,
-		NoteQueriesFn:            func() noteport.NoteQueries { return db.Queries() },
-		LinkQueriesFn:            func() noteport.LinkQueries { return db.Links() },
-		ProblemQueriesFn:         func() problemport.ProblemQueries { return db.Problems() },
-		IndexProgressFn:          func() indexport.IndexProgress { return db.Progress() },
-		SourceRepositoryFn:       func() sourceport.SourceRepository { return db.Sources() },
-		SourceQueriesFn:          func() sourceport.SourceQueries { return db.SourcesKnown() },
-		PassageQueriesFn:         func() sourceport.PassageQueries { return db.Passages() },
-		CloseIndexFn:             func() error { return db.Close() },
-		OpenGetSettingsFn:        func() *settings.Get { return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins()) },
+		PluginDirFn:        cfg.GetPluginDir,
+		EmitEventFn:        cfg.emitPluginEvent,
+		RegistryVal:        registry,
+		VaultReadersFn:     cfg.VaultReaders,
+		VaultWritersFn:     cfg.VaultWriters,
+		VaultIdentityFn:    cfg.VaultIdentity,
+		OpenTabsStoreFn:    func() windowport.OpenTabsStore { return db.OpenTabs() },
+		ClockFn:            cfg.Clock,
+		NoteQueriesFn:      func() noteport.NoteQueries { return db.Queries() },
+		LinkQueriesFn:      func() noteport.LinkQueries { return db.Links() },
+		ProblemQueriesFn:   func() problemport.ProblemQueries { return db.Problems() },
+		IndexProgressFn:    func() indexport.IndexProgress { return db.Progress() },
+		SourceRepositoryFn: func() sourceport.SourceRepository { return db.Sources() },
+		SourceQueriesFn:    func() sourceport.SourceQueries { return db.SourcesKnown() },
+		PassageQueriesFn:   func() sourceport.PassageQueries { return db.Passages() },
+		CloseIndexFn:       func() error { return db.Close() },
+		OpenGetSettingsFn: func() *settings.Get {
+			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins())
+		},
 		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
 		OpenWritePluginSecretFn:  func() *settings.WriteSecret { return settings.NewWriteSecret(cfg.GetPluginSecretWriter()) },
 		OpenDeletePluginSecretFn: func() *settings.DeleteSecret { return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter()) },
@@ -92,7 +96,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			request.ShouldRebuildIndex = rebuild
 			return request.ReadWholeVault(ctx, db, embedder, v)
 		},
-		StartVaultFn: cfg.startVault(db),
+		StartVaultFn:     cfg.startVault(db),
 		PluginServicesFn: cfg.GetPluginServices,
 		PluginCommandsFn: cfg.GetPluginCommands,
 		AgentVal:         cfg.serveTools(provider),
@@ -173,7 +177,12 @@ func (c Config) openFileMenu() *textversion.FileMenu {
 	if c.TextVersions == nil {
 		return nil
 	}
-	menu, err := textversion.NewFileMenu(c.TextVersions, c.VaultReaders())
+	var commands pluginport.PluginCommands = commandbridge.NoCommands{}
+	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
+	if c.PluginHost != nil && !c.SafeMode {
+		commands, types = commandbridge.Open(c.PluginHost), c.PluginHost
+	}
+	menu, err := textversion.NewFileMenu(c.TextVersions, commands, types, c.VaultReaders())
 	if err != nil {
 		c.handleError(err)
 		return nil

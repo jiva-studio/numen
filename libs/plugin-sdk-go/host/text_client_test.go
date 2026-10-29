@@ -113,7 +113,7 @@ func TestTheTextClientReadsEveryCodeAsItsError(t *testing.T) {
 	}
 }
 
-// recordingProvider is a provider that records each creation it is requests for.
+// recordingProvider is a provider that records each creation it receives.
 type recordingProvider struct {
 	requests []host.TextCreation
 }
@@ -123,7 +123,7 @@ func (c *recordingProvider) CreateText(_ context.Context, req host.TextCreation)
 	return nil
 }
 
-func TestProviderReceivesUserStartedFlag(t *testing.T) {
+func TestProviderReceivesVaultAndPath(t *testing.T) {
 	provider := &recordingProvider{}
 	mux := http.NewServeMux()
 	mux.Handle(host.NewTextProviderHandler(provider))
@@ -131,16 +131,11 @@ func TestProviderReceivesUserStartedFlag(t *testing.T) {
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewTextProviderServiceClient(server.Client(), server.URL)
 
-	for _, isUserStarted := range []bool{true, false} {
-		req := &v1.TextProviderServiceCreateTextRequest{VaultId: "v", Path: "a.pdf", SourceVersionId: "p/k", IsUserStarted: isUserStarted}
-		if _, err := client.CreateText(t.Context(), connect.NewRequest(req)); err != nil {
-			t.Fatal(err)
-		}
+	req := &v1.TextProviderServiceCreateTextRequest{VaultId: "v", Path: "a.pdf"}
+	if _, err := client.CreateText(t.Context(), connect.NewRequest(req)); err != nil {
+		t.Fatal(err)
 	}
-	want := []host.TextCreation{
-		{Vault: "v", Path: "a.pdf", Source: "p/k", IsUserStarted: true},
-		{Vault: "v", Path: "a.pdf", Source: "p/k"},
-	}
+	want := []host.TextCreation{{Vault: "v", Path: "a.pdf"}}
 	if !slices.Equal(provider.requests, want) {
 		t.Fatalf("got %+v, want %+v", provider.requests, want)
 	}

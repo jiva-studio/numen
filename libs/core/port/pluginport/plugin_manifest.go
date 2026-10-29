@@ -207,8 +207,8 @@ type PluginManifest struct {
 	NoteTypes []PluginNoteType
 	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
 	Commands []PluginCommand
-	// TextInput is what the plugin makes text from. A plugin that makes no text declares none.
-	TextInput *PluginTextInput
+	// Texts is what the plugin declares of the text it makes. A plugin that makes no text declares none.
+	Texts *PluginTextMaker
 	// Playback is the file types the plugin keeps a copy to play of. A plugin that keeps none declares none.
 	Playback *PluginPlayback
 	// ContentTypes are the types of file the plugin brings that the content type table does not know.
@@ -310,7 +310,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
-	issues = append(issues, m.listTextInputIssues()...)
+	issues = append(issues, m.listTextsIssues()...)
 	issues = append(issues, m.listPlaybackIssues()...)
 	issues = append(issues, m.listContentTypeIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
@@ -489,7 +489,7 @@ func (m PluginManifest) listBackendlessIssues() []error {
 		{"services", len(m.Services) > 0},
 		{"secrets", len(m.Secrets) > 0},
 		{"runtimes", len(m.Runtimes) > 0},
-		{"textInput", m.TextInput != nil},
+		{"texts", m.Texts != nil},
 		{"playback", m.Playback != nil},
 	}
 	var issues []error

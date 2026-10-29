@@ -11,17 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// TextCreation asks for text of a file. Source is the version it is made from, and empty for the
-// file itself. IsUserStarted is set for text a person asked for, which runs before text nobody
-// asked for.
+// TextCreation asks for text of a file.
 type TextCreation struct {
-	Vault         VaultID
-	Path          string
-	Source        TextVersionID
-	IsUserStarted bool
+	Vault VaultID
+	Path  string
 }
 
-// TextProvider is what a plugin that declares a text input serves to the host. The plugin writes
+// TextProvider is what a plugin whose `texts` names content types serves to the host. The plugin writes
 // each text into its folder with WriteText and records it through Texts.PutVersion; the host reads
 // the file itself.
 type TextProvider interface {
@@ -59,8 +55,7 @@ func (s providerService) CreateText(
 ) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error) {
 	m := req.Msg
 	code, err := writeTextError(s.provider.CreateText(ctx, TextCreation{
-		Vault: VaultID(m.GetVaultId()), Path: m.GetPath(), Source: TextVersionID(m.GetSourceVersionId()),
-		IsUserStarted: m.GetIsUserStarted(),
+		Vault: VaultID(m.GetVaultId()), Path: m.GetPath(),
 	}))
 	if err != nil {
 		return nil, err

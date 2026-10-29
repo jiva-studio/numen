@@ -21,74 +21,21 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// FileMenuAction is what an entry of a file's menu does. UNSPECIFIED means
-// nothing.
-type FileMenuAction int32
-
-const (
-	FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED FileMenuAction = 0
-	// The plugin makes text of the file, or of version_id where it is set.
-	FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT FileMenuAction = 1
-	// The plugin that made a version deletes it.
-	FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION FileMenuAction = 2
-)
-
-// Enum value maps for FileMenuAction.
-var (
-	FileMenuAction_name = map[int32]string{
-		0: "FILE_MENU_ACTION_UNSPECIFIED",
-		1: "FILE_MENU_ACTION_CREATE_TEXT",
-		2: "FILE_MENU_ACTION_DELETE_VERSION",
-	}
-	FileMenuAction_value = map[string]int32{
-		"FILE_MENU_ACTION_UNSPECIFIED":    0,
-		"FILE_MENU_ACTION_CREATE_TEXT":    1,
-		"FILE_MENU_ACTION_DELETE_VERSION": 2,
-	}
-)
-
-func (x FileMenuAction) Enum() *FileMenuAction {
-	p := new(FileMenuAction)
-	*p = x
-	return p
-}
-
-func (x FileMenuAction) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (FileMenuAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_textversion_proto_enumTypes[0].Descriptor()
-}
-
-func (FileMenuAction) Type() protoreflect.EnumType {
-	return &file_numen_v1_textversion_proto_enumTypes[0]
-}
-
-func (x FileMenuAction) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use FileMenuAction.Descriptor instead.
-func (FileMenuAction) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_textversion_proto_rawDescGZIP(), []int{0}
-}
-
-// FileMenuEntry is one entry of a file's menu. version_id is the input of a
-// text made from a version and the target of a deletion, and empty for a text
-// made from the file. plugin_name is the plugin's name as its manifest gives
-// it. title and icon are what the plugin's manifest declares for its entry,
-// and empty for a deletion; icon is a Lucide icon name. is_live is set when
+// FileMenuEntry is one entry of a file's menu: a command a plugin declares in
+// its manifest, offered over a version of the file. command is the id the
+// manifest declares it under, and title and icon are its declaration; icon is a
+// Lucide icon name. plugin_name is the plugin's name as its manifest gives it.
+// version_id is the text version the command runs over. is_live is set when
 // version_id is the version shown and indexed now.
 type FileMenuEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        FileMenuAction         `protobuf:"varint,1,opt,name=action,proto3,enum=numen.v1.FileMenuAction" json:"action,omitempty"`
-	PluginId      string                 `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	PluginName    string                 `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
-	VersionId     string                 `protobuf:"bytes,4,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
-	IsLive        bool                   `protobuf:"varint,5,opt,name=is_live,json=isLive,proto3" json:"is_live,omitempty"`
-	Title         string                 `protobuf:"bytes,6,opt,name=title,proto3" json:"title,omitempty"`
-	Icon          string                 `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	PluginName    string                 `protobuf:"bytes,2,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
+	Command       string                 `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
+	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Icon          string                 `protobuf:"bytes,5,opt,name=icon,proto3" json:"icon,omitempty"`
+	VersionId     string                 `protobuf:"bytes,6,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
+	IsLive        bool                   `protobuf:"varint,7,opt,name=is_live,json=isLive,proto3" json:"is_live,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -123,13 +70,6 @@ func (*FileMenuEntry) Descriptor() ([]byte, []int) {
 	return file_numen_v1_textversion_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *FileMenuEntry) GetAction() FileMenuAction {
-	if x != nil {
-		return x.Action
-	}
-	return FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED
-}
-
 func (x *FileMenuEntry) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
@@ -140,6 +80,27 @@ func (x *FileMenuEntry) GetPluginId() string {
 func (x *FileMenuEntry) GetPluginName() string {
 	if x != nil {
 		return x.PluginName
+	}
+	return ""
+}
+
+func (x *FileMenuEntry) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+func (x *FileMenuEntry) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *FileMenuEntry) GetIcon() string {
+	if x != nil {
+		return x.Icon
 	}
 	return ""
 }
@@ -156,20 +117,6 @@ func (x *FileMenuEntry) GetIsLive() bool {
 		return x.IsLive
 	}
 	return false
-}
-
-func (x *FileMenuEntry) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
-func (x *FileMenuEntry) GetIcon() string {
-	if x != nil {
-		return x.Icon
-	}
-	return ""
 }
 
 type GetFileMenuRequest struct {
@@ -263,8 +210,8 @@ func (x *GetFileMenuResponse) GetEntries() []*FileMenuEntry {
 type RunFileMenuEntryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Action        FileMenuAction         `protobuf:"varint,2,opt,name=action,proto3,enum=numen.v1.FileMenuAction" json:"action,omitempty"`
-	PluginId      string                 `protobuf:"bytes,3,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	PluginId      string                 `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Command       string                 `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
 	VersionId     string                 `protobuf:"bytes,4,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -307,16 +254,16 @@ func (x *RunFileMenuEntryRequest) GetPath() string {
 	return ""
 }
 
-func (x *RunFileMenuEntryRequest) GetAction() FileMenuAction {
-	if x != nil {
-		return x.Action
-	}
-	return FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED
-}
-
 func (x *RunFileMenuEntryRequest) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
+	}
+	return ""
+}
+
+func (x *RunFileMenuEntryRequest) GetCommand() string {
+	if x != nil {
+		return x.Command
 	}
 	return ""
 }
@@ -368,32 +315,28 @@ var File_numen_v1_textversion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_textversion_proto_rawDesc = "" +
 	"\n" +
-	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\"\xe1\x01\n" +
-	"\rFileMenuEntry\x120\n" +
-	"\x06action\x18\x01 \x01(\x0e2\x18.numen.v1.FileMenuActionR\x06action\x12\x1b\n" +
-	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x1f\n" +
-	"\vplugin_name\x18\x03 \x01(\tR\n" +
-	"pluginName\x12\x1d\n" +
+	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\"\xc9\x01\n" +
+	"\rFileMenuEntry\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1f\n" +
+	"\vplugin_name\x18\x02 \x01(\tR\n" +
+	"pluginName\x12\x18\n" +
+	"\acommand\x18\x03 \x01(\tR\acommand\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12\x12\n" +
+	"\x04icon\x18\x05 \x01(\tR\x04icon\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x04 \x01(\tR\tversionId\x12\x17\n" +
-	"\ais_live\x18\x05 \x01(\bR\x06isLive\x12\x14\n" +
-	"\x05title\x18\x06 \x01(\tR\x05title\x12\x12\n" +
-	"\x04icon\x18\a \x01(\tR\x04icon\"(\n" +
+	"version_id\x18\x06 \x01(\tR\tversionId\x12\x17\n" +
+	"\ais_live\x18\a \x01(\bR\x06isLive\"(\n" +
 	"\x12GetFileMenuRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"H\n" +
 	"\x13GetFileMenuResponse\x121\n" +
-	"\aentries\x18\x01 \x03(\v2\x17.numen.v1.FileMenuEntryR\aentries\"\x9b\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x17.numen.v1.FileMenuEntryR\aentries\"\x83\x01\n" +
 	"\x17RunFileMenuEntryRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\x06action\x18\x02 \x01(\x0e2\x18.numen.v1.FileMenuActionR\x06action\x12\x1b\n" +
-	"\tplugin_id\x18\x03 \x01(\tR\bpluginId\x12\x1d\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
+	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x18\n" +
+	"\acommand\x18\x03 \x01(\tR\acommand\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x04 \x01(\tR\tversionId\"\x1a\n" +
-	"\x18RunFileMenuEntryResponse*y\n" +
-	"\x0eFileMenuAction\x12 \n" +
-	"\x1cFILE_MENU_ACTION_UNSPECIFIED\x10\x00\x12 \n" +
-	"\x1cFILE_MENU_ACTION_CREATE_TEXT\x10\x01\x12#\n" +
-	"\x1fFILE_MENU_ACTION_DELETE_VERSION\x10\x022\xbb\x01\n" +
+	"\x18RunFileMenuEntryResponse2\xbb\x01\n" +
 	"\x12TextVersionService\x12J\n" +
 	"\vGetFileMenu\x12\x1c.numen.v1.GetFileMenuRequest\x1a\x1d.numen.v1.GetFileMenuResponse\x12Y\n" +
 	"\x10RunFileMenuEntry\x12!.numen.v1.RunFileMenuEntryRequest\x1a\".numen.v1.RunFileMenuEntryResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -410,29 +353,25 @@ func file_numen_v1_textversion_proto_rawDescGZIP() []byte {
 	return file_numen_v1_textversion_proto_rawDescData
 }
 
-var file_numen_v1_textversion_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_textversion_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_v1_textversion_proto_goTypes = []any{
-	(FileMenuAction)(0),              // 0: numen.v1.FileMenuAction
-	(*FileMenuEntry)(nil),            // 1: numen.v1.FileMenuEntry
-	(*GetFileMenuRequest)(nil),       // 2: numen.v1.GetFileMenuRequest
-	(*GetFileMenuResponse)(nil),      // 3: numen.v1.GetFileMenuResponse
-	(*RunFileMenuEntryRequest)(nil),  // 4: numen.v1.RunFileMenuEntryRequest
-	(*RunFileMenuEntryResponse)(nil), // 5: numen.v1.RunFileMenuEntryResponse
+	(*FileMenuEntry)(nil),            // 0: numen.v1.FileMenuEntry
+	(*GetFileMenuRequest)(nil),       // 1: numen.v1.GetFileMenuRequest
+	(*GetFileMenuResponse)(nil),      // 2: numen.v1.GetFileMenuResponse
+	(*RunFileMenuEntryRequest)(nil),  // 3: numen.v1.RunFileMenuEntryRequest
+	(*RunFileMenuEntryResponse)(nil), // 4: numen.v1.RunFileMenuEntryResponse
 }
 var file_numen_v1_textversion_proto_depIdxs = []int32{
-	0, // 0: numen.v1.FileMenuEntry.action:type_name -> numen.v1.FileMenuAction
-	1, // 1: numen.v1.GetFileMenuResponse.entries:type_name -> numen.v1.FileMenuEntry
-	0, // 2: numen.v1.RunFileMenuEntryRequest.action:type_name -> numen.v1.FileMenuAction
-	2, // 3: numen.v1.TextVersionService.GetFileMenu:input_type -> numen.v1.GetFileMenuRequest
-	4, // 4: numen.v1.TextVersionService.RunFileMenuEntry:input_type -> numen.v1.RunFileMenuEntryRequest
-	3, // 5: numen.v1.TextVersionService.GetFileMenu:output_type -> numen.v1.GetFileMenuResponse
-	5, // 6: numen.v1.TextVersionService.RunFileMenuEntry:output_type -> numen.v1.RunFileMenuEntryResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0, // 0: numen.v1.GetFileMenuResponse.entries:type_name -> numen.v1.FileMenuEntry
+	1, // 1: numen.v1.TextVersionService.GetFileMenu:input_type -> numen.v1.GetFileMenuRequest
+	3, // 2: numen.v1.TextVersionService.RunFileMenuEntry:input_type -> numen.v1.RunFileMenuEntryRequest
+	2, // 3: numen.v1.TextVersionService.GetFileMenu:output_type -> numen.v1.GetFileMenuResponse
+	4, // 4: numen.v1.TextVersionService.RunFileMenuEntry:output_type -> numen.v1.RunFileMenuEntryResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_textversion_proto_init() }
@@ -445,14 +384,13 @@ func file_numen_v1_textversion_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_textversion_proto_rawDesc), len(file_numen_v1_textversion_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_textversion_proto_goTypes,
 		DependencyIndexes: file_numen_v1_textversion_proto_depIdxs,
-		EnumInfos:         file_numen_v1_textversion_proto_enumTypes,
 		MessageInfos:      file_numen_v1_textversion_proto_msgTypes,
 	}.Build()
 	File_numen_v1_textversion_proto = out.File

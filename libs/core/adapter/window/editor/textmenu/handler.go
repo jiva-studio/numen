@@ -41,11 +41,6 @@ func NewHandler(vaults VaultProvider, menu Menu) *Handler {
 // errNoVault is a call while the window shows no vault.
 var errNoVault = errors.New("the window shows no vault")
 
-var actions = map[textversion.MenuAction]v1.FileMenuAction{
-	textversion.ActionCreateText:    v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT,
-	textversion.ActionDeleteVersion: v1.FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION,
-}
-
 // GetFileMenu lists the entries of the file's menu, for the file as it is now.
 func (h *Handler) GetFileMenu(
 	ctx context.Context, r *connect.Request[v1.GetFileMenuRequest],
@@ -64,15 +59,15 @@ func (h *Handler) GetFileMenu(
 	out := make([]*v1.FileMenuEntry, 0, len(entries))
 	for _, one := range entries {
 		out = append(out, &v1.FileMenuEntry{
-			Action: actions[one.Action], PluginId: one.PluginID, PluginName: one.PluginName, VersionId: string(one.Version),
-			IsLive: one.IsLive, Title: one.Item.Title, Icon: one.Item.Icon,
+			PluginId: one.PluginID, PluginName: one.PluginName, Command: one.Command, Title: one.Title, Icon: one.Icon,
+			VersionId: string(one.Version), IsLive: one.IsLive,
 		})
 	}
 	return connect.NewResponse(&v1.GetFileMenuResponse{Entries: out}), nil
 }
 
-// RunFileMenuEntry does what the entry offers. An entry that names no action, or a plugin or a
-// version the file's menu does not hold, is an invalid argument.
+// RunFileMenuEntry runs the command of the entry. An entry the file's menu does not offer is an
+// invalid argument.
 func (h *Handler) RunFileMenuEntry(
 	ctx context.Context, r *connect.Request[v1.RunFileMenuEntryRequest],
 ) (*connect.Response[v1.RunFileMenuEntryResponse], error) {
@@ -80,11 +75,8 @@ func (h *Handler) RunFileMenuEntry(
 	if h.menu == nil || v.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
-	entry := textversion.MenuEntry{PluginID: r.Msg.GetPluginId(), Version: domain.TextVersionID(r.Msg.GetVersionId())}
-	for action, wire := range actions {
-		if wire == r.Msg.GetAction() {
-			entry.Action = action
-		}
+	entry := textversion.MenuEntry{
+		PluginID: r.Msg.GetPluginId(), Command: r.Msg.GetCommand(), Version: domain.TextVersionID(r.Msg.GetVersionId()),
 	}
 	err := h.menu.RunMenuEntry(ctx, v, r.Msg.GetPath(), entry)
 	switch {

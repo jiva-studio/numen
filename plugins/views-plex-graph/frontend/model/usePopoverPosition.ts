@@ -1,7 +1,7 @@
 /**
  * Viewport positioning and resize tracking for link inspector popover.
  */
-import { hasWindow, measureRect, win } from '../dom'
+import { measureRect, measureWindow, win } from '../dom'
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { resolvePopoverPosition } from './linkInspector'
@@ -22,10 +22,8 @@ function getElementSize(el: HTMLElement): { width: number; height: number } {
 
 function getContainerSize(parent: HTMLElement | null): { width: number; height: number } {
   const rect = measureRect(parent)
-  return {
-    width: rect?.width || (hasWindow() ? win.innerWidth : 800),
-    height: rect?.height || (hasWindow() ? win.innerHeight : 600),
-  }
+  const inner = measureWindow()
+  return { width: rect?.width || inner.width, height: rect?.height || inner.height }
 }
 
 export function usePopoverPosition(options: PopoverPositionOptions) {
@@ -35,10 +33,7 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
     resolvePopoverPosition({
       at: getAnchor(),
       popoverSize: { width: 320, height: 160 },
-      containerSize: {
-        width: hasWindow() ? win.innerWidth : 800,
-        height: hasWindow() ? win.innerHeight : 600,
-      },
+      containerSize: measureWindow(),
     }),
   )
 

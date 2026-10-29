@@ -138,10 +138,10 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: openParakeet, current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
-	s.Register(host.NewTextProviderHandler(provider{transcriber: transcriber}, s.HandlerOptions()...))
 	commands := command.New()
 	// The registry is new, so the one id cannot be added twice.
 	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))
+	_ = commands.Add("delete-transcript", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID))
 	command.Mount(s, commands)
 	s.OnClose(func() {
 		transcriber.Close()

@@ -1,6 +1,1 @@
-export {
-  getFileMenu,
-  runFileMenuEntry,
-  type FileMenuActionName,
-  type FileMenuEntry,
-} from './api/fileMenu'
+export { getFileMenu, runFileMenuEntry, type FileMenuEntry } from './api/fileMenu'

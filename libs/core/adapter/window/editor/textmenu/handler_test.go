@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
@@ -42,26 +41,16 @@ func (m *menu) RunMenuEntry(_ context.Context, _ domain.Vault, _ string, entry t
 
 var vault = shown{ID: "v1", Name: "Physics"}
 
-func TestActionsCoverEveryFileMenuAction(t *testing.T) {
-	mapped := map[v1.FileMenuAction]bool{}
-	for _, wire := range actions {
-		mapped[wire] = true
-	}
-	for value := range v1.FileMenuAction_name {
-		action := v1.FileMenuAction(value)
-		if action != v1.FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED && !mapped[action] {
-			t.Errorf("%s is mapped for no entry of the menu", action)
-		}
-	}
-}
-
 func TestGetFileMenuReturnsEntries(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{
 		{
-			Action: textversion.ActionCreateText, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR",
-			Item: textport.MenuItem{Title: "Recognise text", Icon: "scan-text"},
+			PluginID: "md.numen.tools.proofreading", PluginName: "LLM Proofreading", Command: "proofread", Title: "Proofread",
+			Icon: "spell-check", Version: "md.numen.engines.ocr/recognition", IsLive: true,
 		},
-		{Action: textversion.ActionDeleteVersion, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Version: "md.numen.engines.ocr/recognition", IsLive: true},
+		{
+			PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Command: "delete-recognition",
+			Title: "Delete recognition", Version: "md.numen.engines.ocr/recognition",
+		},
 	}}
 	h := NewHandler(vault, m)
 
@@ -71,10 +60,9 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 	}
 	got := res.Msg.GetEntries()
 	if len(got) != 2 ||
-		got[0].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT || got[0].GetPluginName() != "Document OCR" ||
-		got[0].GetTitle() != "Recognise text" || got[0].GetIcon() != "scan-text" || got[1].GetTitle() != "" ||
-		got[1].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION || got[1].GetVersionId() != "md.numen.engines.ocr/recognition" ||
-		got[0].GetIsLive() || !got[1].GetIsLive() {
+		got[0].GetPluginName() != "LLM Proofreading" || got[0].GetCommand() != "proofread" || got[0].GetTitle() != "Proofread" ||
+		got[0].GetIcon() != "spell-check" || got[0].GetVersionId() != "md.numen.engines.ocr/recognition" || !got[0].GetIsLive() ||
+		got[1].GetCommand() != "delete-recognition" || got[1].GetTitle() != "Delete recognition" || got[1].GetIsLive() {
 		t.Fatalf("answered %v", got)
 	}
 	if _, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "gone.pdf"})); connect.CodeOf(err) != connect.CodeNotFound {
@@ -83,14 +71,14 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 }
 
 func TestFileMenuWithoutVaultIsEmpty(t *testing.T) {
-	m := &menu{entries: []textversion.MenuEntry{{Action: textversion.ActionCreateText, PluginID: "p"}}}
+	m := &menu{entries: []textversion.MenuEntry{{PluginID: "p", Command: "proofread"}}}
 	h := NewHandler(shown{}, m)
 
 	res, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "scan.pdf"}))
 	if err != nil || len(res.Msg.GetEntries()) != 0 {
 		t.Errorf("answered %v (%v), want nothing", res.Msg.GetEntries(), err)
 	}
-	_, err = h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf", Action: v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT, PluginId: "p"}))
+	_, err = h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf", PluginId: "p", Command: "proofread"}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition || len(m.ran) != 0 {
 		t.Errorf("a run was answered %v and ran %v", err, m.ran)
 	}
@@ -104,12 +92,12 @@ func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 	h := NewHandler(vault, m)
 
 	_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{
-		Path: "scan.pdf", Action: v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT, PluginId: "p", VersionId: "q/k",
+		Path: "scan.pdf", PluginId: "p", Command: "proofread", VersionId: "q/k",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := textversion.MenuEntry{Action: textversion.ActionCreateText, PluginID: "p", Version: "q/k"}
+	want := textversion.MenuEntry{PluginID: "p", Command: "proofread", Version: "q/k"}
 	if len(m.ran) != 1 || m.ran[0] != want {
 		t.Fatalf("ran %+v, want %+v", m.ran, want)
 	}

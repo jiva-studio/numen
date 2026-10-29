@@ -3,7 +3,6 @@
  * entry as the window passes it back to be run.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { FileMenuAction } from '@numen/protocol'
 
 vi.mock('@/shared/clients', () => ({ textVersions: request }))
 
@@ -14,22 +13,22 @@ const request = {
 
 const { getFileMenu, runFileMenuEntry } = await import('./fileMenu')
 
-const wire = (action: FileMenuAction, versionId: string, title = '', icon = '') => ({
-  action,
+const wire = (command: string, versionId: string, title: string, icon = '') => ({
   pluginId: 'fix',
   pluginName: 'Fix',
+  command,
   title,
   icon,
   versionId,
+  isLive: true,
 })
 
 describe('getFileMenu', () => {
-  it('keeps the title and icon the plugin declares', async () => {
+  it('keeps the command, title and icon the plugin declares', async () => {
     request.getFileMenu.mockResolvedValue({
       entries: [
-        wire(FileMenuAction.CREATE_TEXT, 'ocr/k', 'Proofread', 'spell-check'),
-        wire(FileMenuAction.DELETE_VERSION, 'fix/k'),
-        wire(FileMenuAction.UNSPECIFIED, ''),
+        wire('proofread', 'ocr/k', 'Proofread', 'spell-check'),
+        wire('delete-proofreading', 'fix/k', 'Delete proofreading'),
       ],
     })
 
@@ -38,18 +37,18 @@ describe('getFileMenu', () => {
     expect(request.getFileMenu).toHaveBeenCalledWith({ path: 'books/Scan.pdf' })
     expect(entries).toStrictEqual([
       {
-        action: 'create-text',
         pluginId: 'fix',
         pluginName: 'Fix',
+        command: 'proofread',
         title: 'Proofread',
         icon: 'spell-check',
         versionId: 'ocr/k',
       },
       {
-        action: 'delete-version',
         pluginId: 'fix',
         pluginName: 'Fix',
-        title: '',
+        command: 'delete-proofreading',
+        title: 'Delete proofreading',
         icon: '',
         versionId: 'fix/k',
       },
@@ -58,13 +57,13 @@ describe('getFileMenu', () => {
 })
 
 describe('runFileMenuEntry', () => {
-  it('sends the schema action of the entry and the plugin that runs it', async () => {
+  it('sends the plugin, the command and the version of the entry', async () => {
     request.runFileMenuEntry.mockResolvedValue({})
 
     await runFileMenuEntry('books/Scan.pdf', {
-      action: 'create-text',
       pluginId: 'fix',
       pluginName: 'Fix',
+      command: 'proofread',
       title: 'Proofread',
       icon: 'spell-check',
       versionId: 'ocr/k',
@@ -72,8 +71,8 @@ describe('runFileMenuEntry', () => {
 
     expect(request.runFileMenuEntry).toHaveBeenCalledWith({
       path: 'books/Scan.pdf',
-      action: FileMenuAction.CREATE_TEXT,
       pluginId: 'fix',
+      command: 'proofread',
       versionId: 'ocr/k',
     })
   })
