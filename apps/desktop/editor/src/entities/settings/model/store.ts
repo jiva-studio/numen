@@ -81,6 +81,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     path.value = answer.path
     models.value = answer.models
     plugins.value = answer.plugins ?? []
+    pending.prune(getCommittedSetting)
   }
 
   const getSetting = (path: readonly string[]): unknown => {
@@ -103,15 +104,18 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     say('')
 
     const token = pending.add(edits)
+    let isWritten = true
     try {
       await core.updateSettings(edits)
     } catch (caughtError) {
+      isWritten = false
       say(`${words.unturned} ${formatErrorMessage(caughtError)}`, 'error')
     }
     try {
       await start()
     } finally {
-      pending.release(edits, token)
+      if (isWritten) pending.release(edits, token, getCommittedSetting)
+      else pending.discard(edits, token)
     }
   }
 
