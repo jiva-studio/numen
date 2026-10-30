@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // errPlainToken is a tool server the token would reach unencrypted.
@@ -23,10 +23,10 @@ var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
 // toolbox is the vault's tool server as one run reaches it, and the tools of it the run may call.
 // A toolbox with no session offers nothing.
 type toolbox struct {
-	session *mcp.ClientSession
+	session *sdk.ClientSession
 	tools   []functionTool
 	// meta is the context of the task, sent as the `_meta` of every call.
-	meta mcp.Meta
+	meta sdk.Meta
 }
 
 // bearer presents the token on every request to the tool server.
@@ -52,12 +52,12 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 	if address, err := neturl.Parse(url); err != nil || !isPrivate(address) {
 		return nil, errPlainToken
 	}
-	transport := &mcp.StreamableClientTransport{
+	transport := &sdk.StreamableClientTransport{
 		Endpoint:             url,
 		HTTPClient:           &http.Client{Transport: bearer{token: task.GetToolsToken(), base: http.DefaultTransport}, CheckRedirect: refuseDowngrade},
 		DisableStandaloneSSE: true,
 	}
-	client := mcp.NewClient(&mcp.Implementation{Name: "numen-agent", Version: "1.0.0"}, nil)
+	client := sdk.NewClient(&sdk.Implementation{Name: "numen-agent", Version: "1.0.0"}, nil)
 	session, err := client.Connect(ctx, transport, nil)
 	if err != nil {
 		return nil, fmt.Errorf("connect to the vault's tools: %w", err)
@@ -66,8 +66,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 	box := &toolbox{session: session, meta: readMeta(task.GetContext())}
 	for tool, err := range session.Tools(ctx, nil) {
 		if err != nil {
-			_ = session.Close()
-			return nil, fmt.Errorf("list the vault's tools: %w", err)
+			return nil, errors.Join(fmt.Errorf("list the vault's tools: %w", err), session.Close())
 		}
 		if slices.Contains(named, tool.Name) {
 			box.tools = append(box.tools, readFunctionTool(tool))
@@ -77,7 +76,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 }
 
 // readFunctionTool is the tool as the chat API is offered it.
-func readFunctionTool(tool *mcp.Tool) functionTool {
+func readFunctionTool(tool *sdk.Tool) functionTool {
 	var proposed functionTool
 	proposed.Type = "function"
 	proposed.Function.Name = tool.Name
@@ -104,7 +103,7 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if !json.Valid(args) {
 		return "error: the arguments are not JSON"
 	}
-	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{Meta: b.meta, Name: name, Arguments: args})
+	result, err := b.session.CallTool(ctx, &sdk.CallToolParams{Meta: b.meta, Name: name, Arguments: args})
 	if err != nil {
 		return fmt.Sprintf("error: %v", err)
 	}
@@ -116,10 +115,10 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 }
 
 // readResultText is the text of what a tool returned, each content written out on its own line.
-func readResultText(result *mcp.CallToolResult) string {
+func readResultText(result *sdk.CallToolResult) string {
 	parts := make([]string, 0, len(result.Content))
 	for _, content := range result.Content {
-		if text, ok := content.(*mcp.TextContent); ok {
+		if text, ok := content.(*sdk.TextContent); ok {
 			parts = append(parts, text.Text)
 			continue
 		}
@@ -135,19 +134,20 @@ func readResultText(result *mcp.CallToolResult) string {
 	return strings.Join(parts, "\n")
 }
 
-// close lets go of the tool server.
-func (b *toolbox) close() {
-	if b.session != nil {
-		_ = b.session.Close()
+// close ends the session with the tool server.
+func (b *toolbox) close() error {
+	if b.session == nil {
+		return nil
 	}
+	return b.session.Close()
 }
 
 // readMeta is the context of a task as MCP `_meta`, nil for a task with none.
-func readMeta(values map[string]string) mcp.Meta {
+func readMeta(values map[string]string) sdk.Meta {
 	if len(values) == 0 {
 		return nil
 	}
-	meta := make(mcp.Meta, len(values))
+	meta := make(sdk.Meta, len(values))
 	for key, value := range values {
 		meta[key] = value
 	}

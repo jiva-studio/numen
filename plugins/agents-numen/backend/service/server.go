@@ -124,7 +124,7 @@ func (s *Server) AskAgent(
 }
 
 // Ask is AskAgent with the steps going to send.
-func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send func(*agentrun.AskAgentResponse) error) error {
+func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send func(*agentrun.AskAgentResponse) error) (err error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -145,7 +145,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 			Stopped: fmt.Sprintf("the agent could not reach this vault: %v", err),
 		}})
 	}
-	defer tools.close()
+	defer func() { err = errors.Join(err, tools.close()) }()
 
 	history := s.getConversation(conversation)
 	messages := make([]message, 0, len(history)+2)
@@ -303,7 +303,10 @@ func (s *Server) getEffort(ctx context.Context, name, level string) effort {
 	if level == "" {
 		return effort{}
 	}
-	models, _ := s.listModels(ctx)
+	models, err := s.listModels(ctx)
+	if err != nil {
+		return effort{}
+	}
 	for _, one := range models {
 		if one.Name == name {
 			return newEffort(one, level)
