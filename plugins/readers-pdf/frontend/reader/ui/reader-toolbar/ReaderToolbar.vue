@@ -2,8 +2,8 @@
 /**
  * Page navigation and zoom controls for a document.
  *
- * The toolbar floats over the page and does not take layout space from it. The
- * current page and the zoom level are state of the reader, kept here.
+ * The toolbar is a flat strip at the top of the reader, separated from the pages
+ * by a rule. The current page and the zoom level are state of the reader.
  */
 import { PageControls } from './page-controls'
 import { ZoomControls } from './zoom-controls'
@@ -30,14 +30,10 @@ const zoom = defineModel<number>('zoom', { default: 1, set: clampZoom })
 </script>
 
 <template>
-  <div class="bottom-inset pointer-events-none absolute inset-x-0 flex justify-center">
-    <!-- Standing over the page, so it carries a panel's own ground and lets
-         what is behind it through. -->
-    <div
-      class="rounded-pill border-panel-rule bg-panel shadow-panel backdrop-blur-panel pointer-events-auto flex items-center gap-1 border p-1"
-    >
-      <PageControls v-model:at="page" :page-count="pageCount" :words="words" />
-      <ZoomControls v-model:zoom="zoom" :words="words" />
-    </div>
+  <div
+    class="border-rule px-gutter min-h-action flex w-full flex-none items-center justify-center gap-2 border-b"
+  >
+    <PageControls v-model:at="page" :page-count="pageCount" :words="words" />
+    <ZoomControls v-model:zoom="zoom" :words="words" />
   </div>
 </template>

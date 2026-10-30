@@ -155,10 +155,19 @@ const getBoxStyle = (page: number) => ({
 </script>
 
 <template>
-  <div class="reader numen text-ink relative h-full min-h-0 font-sans text-base">
+  <div class="reader numen text-ink flex h-full min-h-0 flex-col font-sans text-base">
+    <ReaderToolbar
+      v-if="pages.length > 0"
+      v-model:zoom="zoom"
+      :page-count="pages.length"
+      :at="at"
+      :words="words"
+      @update:at="emit('go', $event)"
+    />
+
     <div
       ref="area"
-      class="reader__viewport h-full overflow-auto overscroll-x-contain"
+      class="reader__viewport min-h-0 flex-1 overflow-auto overscroll-x-contain"
       :class="isDragging ? 'reader__viewport--held' : 'reader__viewport--takeable'"
       tabindex="0"
       role="region"
@@ -187,15 +196,6 @@ const getBoxStyle = (page: number) => ({
         <slot name="silence" />
       </p>
     </div>
-
-    <ReaderToolbar
-      v-if="pages.length > 0"
-      v-model:zoom="zoom"
-      :page-count="pages.length"
-      :at="at"
-      :words="words"
-      @update:at="emit('go', $event)"
-    />
   </div>
 </template>
 
