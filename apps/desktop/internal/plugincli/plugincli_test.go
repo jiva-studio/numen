@@ -130,7 +130,11 @@ func TestPluginPackage_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open created zip: %v", err)
 	}
-	defer zipReader.Close()
+	t.Cleanup(func() {
+		if err := zipReader.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	var zippedFiles []string
 	for _, f := range zipReader.File {
@@ -174,7 +178,11 @@ func TestPluginPackage_ContainsOnlyShippedFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer zipReader.Close()
+	t.Cleanup(func() {
+		if err := zipReader.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	var zipped []string
 	for _, f := range zipReader.File {
 		zipped = append(zipped, f.Name)

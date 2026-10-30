@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	// The container package stays linked into the plugin tooling.
 	_ "github.com/jiva-studio/numen/libs/core/container"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )

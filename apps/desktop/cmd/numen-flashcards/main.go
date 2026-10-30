@@ -41,7 +41,10 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Println(version.GetVersionLine(appName))
+		if _, err := fmt.Fprintln(os.Stdout, version.GetVersionLine(appName)); err != nil {
+			fmt.Fprintln(os.Stderr, appName+":", err)
+			os.Exit(1)
+		}
 		return
 	}
 

@@ -1,3 +1,4 @@
+// Package clock provides the system clock.
 package clock
 
 import "time"
