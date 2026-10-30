@@ -46,15 +46,13 @@ export const getCodeFiles = (files) => files.filter((file) => !IGNORED_FILE.test
 export const checkVersion = ({ current, base, isChanged, today }) => {
   const parsed = parseVersion(current)
   if (!parsed) return `version "${current}" is not <year>.<month>.<build>`
-  const next = getNextVersion(base ?? '', today)
   const limit = parseVersion(getNextVersion('', today))
   if (compareVersions({ ...parsed, build: 1 }, limit) > 0) {
     return `version ${current} is later than the current month`
   }
-  if (!isChanged || base === null) return null
   const parsedBase = parseVersion(base)
-  if (parsedBase && compareVersions(parsed, parsedBase) <= 0) {
-    return `plugin changed, version ${current} was not raised (next: ${next})`
+  if (isChanged && parsedBase && compareVersions(parsed, parsedBase) <= 0) {
+    return `plugin changed, version ${current} was not raised (next: ${getNextVersion(base, today)})`
   }
   return null
 }
@@ -91,15 +89,21 @@ const main = () => {
     const changed = git('diff', '--name-only', mergeBase, '--', dir).split('\n').filter(Boolean)
     const isChanged = getCodeFiles(changed).length > 0
 
+    const packagePath = join(dir, 'package.json')
+    const packageText = existsSync(packagePath) ? readFileSync(packagePath, 'utf8') : null
+    const packageVersion = packageText === null ? current : JSON.parse(packageText).version
+
     const error = checkVersion({ current, base, isChanged, today })
-    if (!error) continue
-    if (isWrite && isChanged) {
+    if (isWrite && isChanged && error) {
       const next = getNextVersion(base ?? '', today)
       writeFileSync(manifestPath, text.replace(VERSION_FIELD, `$1${next}$2`))
+      if (packageText !== null) writeFileSync(packagePath, packageText.replace(VERSION_FIELD, `$1${next}$2`))
       console.log(`${name}: ${current} -> ${next}`)
-      continue
+    } else if (error) {
+      failures.push(`${name}: ${error}`)
+    } else if (packageVersion !== current) {
+      failures.push(`${name}: package.json version ${packageVersion} differs from manifest.json ${current}`)
     }
-    failures.push(`${name}: ${error}`)
   }
 
   if (failures.length > 0) {

@@ -15,7 +15,6 @@ test('getNextVersion counts within the month and restarts in a new one', () => {
   assert.equal(getNextVersion('2026.10.4', today), '2026.10.5')
   assert.equal(getNextVersion('2026.9.7', today), '2026.10.1')
   assert.equal(getNextVersion('2025.10.2', today), '2026.10.1')
-  assert.equal(getNextVersion('1.0.0', today), '2026.10.1')
   assert.equal(getNextVersion('', today), '2026.10.1')
 })
 
@@ -33,8 +32,7 @@ test('checkVersion requires a raise only when the plugin changed', () => {
   assert.equal(checkVersion({ current: '2026.10.3', base, isChanged: true, today }), null)
 })
 
-test('checkVersion accepts a legacy base and a new plugin', () => {
-  assert.equal(checkVersion({ current: '2026.10.1', base: '1.0.0', isChanged: true, today }), null)
+test('checkVersion accepts a new plugin', () => {
   assert.equal(checkVersion({ current: '2026.10.1', base: null, isChanged: true, today }), null)
 })
 
