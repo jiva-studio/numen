@@ -20,8 +20,26 @@ interface PendingEntry {
 
 export const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
 
-const isSameValue = (left: unknown, right: unknown): boolean =>
-  JSON.stringify(left) === JSON.stringify(right)
+/** Compares two values parsed from JSON: primitives, arrays and plain objects. */
+function isSameValue(left: unknown, right: unknown): boolean {
+  if (left === right) return true
+  if (typeof left !== 'object' || typeof right !== 'object' || left === null || right === null) {
+    return false
+  }
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((item, index) => isSameValue(item, right[index]))
+    )
+  }
+  const leftEntries = Object.entries(left)
+  return (
+    leftEntries.length === Object.keys(right).length &&
+    leftEntries.every(([key, item]) => key in right && isSameValue(item, (right as Record<string, unknown>)[key]))
+  )
+}
 
 export function createPendingWrites() {
   const values = shallowRef<ReadonlyMap<string, PendingEntry>>(new Map())
