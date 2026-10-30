@@ -91,12 +91,12 @@ type embedder struct{ seed byte }
 
 func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
 	saveSeededVectors(t, db, vault, e.seed)
-	return len(owing)
+	return len(unembedded)
 }
 
 // smallChunks is the chunks of one note that carry a vector, in the order they
@@ -179,7 +179,7 @@ func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
 	save(t, db, first, n)
 
 	if request := model.run(t, db, first); request != 5 {
-		t.Fatalf("a note of 200 words owes %d vectors, want 5", request)
+		t.Fatalf("a note of 200 words needs %d vectors, want 5", request)
 	}
 	was := smallChunks(t, db, first, n.FileStat.Path)
 	if len(was) != 5 {
@@ -278,7 +278,7 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 	save(t, db, first, n)
 
 	if request := model.run(t, db, first); request != 5 {
-		t.Fatalf("a note of 200 words owes %d vectors, want 5", request)
+		t.Fatalf("a note of 200 words needs %d vectors, want 5", request)
 	}
 	was := smallChunks(t, db, first, n.FileStat.Path)
 
@@ -329,7 +329,7 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 
 	save(t, db, first, before)
 	if request := model.run(t, db, first); request == 0 {
-		t.Fatal("the note owes no vector, so this measures nothing")
+		t.Fatal("the note needs no vector, so this measures nothing")
 	}
 	was := smallChunks(t, db, first, before.FileStat.Path)
 
@@ -413,7 +413,7 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 	save(t, db, first, n)
 
 	if request := model.run(t, db, first); request != 5 {
-		t.Fatalf("a note of 200 words owes %d vectors, want 5", request)
+		t.Fatalf("a note of 200 words needs %d vectors, want 5", request)
 	}
 	was := smallChunks(t, db, first, n.FileStat.Path)
 
@@ -687,7 +687,7 @@ func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
 	if got := chunksIn(t, db, second); got != was {
 		t.Errorf("the second vault holds %d chunks, and held %d before the first vault's note was cut", got, was)
 	}
-	// The section the word landed in is cut into two chunks, and both of them owe
+	// The section the word landed in is cut into two chunks, and both of them need
 	// a vector; the sections it did not reach keep theirs.
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
 		t.Errorf("%d vectors, want %d", got, vectors-1)

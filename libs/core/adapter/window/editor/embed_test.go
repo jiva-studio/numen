@@ -199,7 +199,7 @@ func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (t
 }
 
 // TestANoteSavedGetsItsVectorsBack. A save cuts the note again, and its chunks
-// owe their vectors from the moment they are written.
+// need their vectors from the moment they are written.
 func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	watcher := newManualWatcher()
 	readers := newWalking()
@@ -272,7 +272,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 // lists as missing.
 func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	// The first asking is turned down, so the note's chunks come out of the
-	// first reading still owing their vectors.
+	// first reading still unembedded their vectors.
 	model := newSulking(64, 1)
 
 	f := openingWith(t, map[string]string{

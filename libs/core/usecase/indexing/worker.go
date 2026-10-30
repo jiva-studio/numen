@@ -51,9 +51,9 @@ type OpenReading func(
 // ReadNotes is the first walk over a vault. It answers how many notes it read.
 type ReadNotes func(ctx context.Context, during func()) (int, error)
 
-// GetOwed answers how many chunks the vault holds that can carry a vector, and how
+// GetVectorCounts answers how many chunks the vault holds that can carry a vector, and how
 // many carry one.
-type GetOwed func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
+type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
 // Calibrate measures the similarity floor of a vault once all its vectors exist,
 // and does nothing where the floor is already measured or set.
@@ -63,9 +63,9 @@ type Calibrate func(ctx context.Context, v domain.Vault) error
 type Config struct {
 	Reading  OpenReading
 	Embedder embeddingport.Embedder
-	// Owed is nil when the number of pending vectors is unknown; every pass then
+	// VectorCounts is nil when the number of pending vectors is unknown; every pass then
 	// assumes some vectors are pending.
-	Owed GetOwed
+	VectorCounts GetVectorCounts
 	// Calibrate is nil where no floor is calibrated.
 	Calibrate Calibrate
 	Events    Events
@@ -82,13 +82,13 @@ type Config struct {
 // found and cut before anything is embedded; a note, which arrives already cut
 // and needs only its vectors; and a file a plugin extended with more text.
 type Worker struct {
-	reading   OpenReading
-	embedder  embeddingport.Embedder
-	owed      GetOwed
-	calibrate Calibrate
-	events    Events
-	debounce  time.Duration
-	after     func(time.Duration) <-chan time.Time
+	reading      OpenReading
+	embedder     embeddingport.Embedder
+	vectorCounts GetVectorCounts
+	calibrate    Calibrate
+	events       Events
+	debounce     time.Duration
+	after        func(time.Duration) <-chan time.Time
 
 	sources chan struct{}
 	notes   chan struct{}
@@ -97,16 +97,16 @@ type Worker struct {
 
 func NewWorker(cfg Config) *Worker {
 	return &Worker{
-		reading:   cfg.Reading,
-		embedder:  cfg.Embedder,
-		owed:      cfg.Owed,
-		calibrate: cfg.Calibrate,
-		events:    cfg.Events,
-		debounce:  cfg.Quiet,
-		after:     cfg.After,
-		sources:   make(chan struct{}, 1),
-		notes:     make(chan struct{}, 1),
-		read:      make(chan struct{}, 1),
+		reading:      cfg.Reading,
+		embedder:     cfg.Embedder,
+		vectorCounts: cfg.VectorCounts,
+		calibrate:    cfg.Calibrate,
+		events:       cfg.Events,
+		debounce:     cfg.Quiet,
+		after:        cfg.After,
+		sources:      make(chan struct{}, 1),
+		notes:        make(chan struct{}, 1),
+		read:         make(chan struct{}, 1),
 	}
 }
 
@@ -169,7 +169,7 @@ func (s *Session) drain() map[string]domain.Vault {
 // until ctx ends. rebuild indexes every file again in the first pass over the
 // file texts.
 func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read ReadNotes) {
-	p := &pass{worker: s.worker, session: s, v: v, owes: rebuild}
+	p := &pass{worker: s.worker, session: s, v: v, isRebuild: rebuild}
 	p.run(ctx, read)
 }
 
@@ -178,8 +178,8 @@ type pass struct {
 	worker  *Worker
 	session *Session
 	v       domain.Vault
-	// owes is true when the next pass over the file texts indexes every file again.
-	owes bool
+	// isRebuild is true when the next pass over the file texts indexes every file again.
+	isRebuild bool
 }
 
 func (p *pass) run(ctx context.Context, read ReadNotes) {
@@ -236,8 +236,8 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 
 // indexSources indexes the file texts, in full when the first launch requested it.
 func (p *pass) indexSources(ctx context.Context) {
-	request := p.owes
-	p.owes = false
+	request := p.isRebuild
+	p.isRebuild = false
 	p.indexTexts(ctx, request)
 }
 
@@ -327,8 +327,8 @@ func (p *pass) embed(ctx context.Context) {
 	if w.embedder == nil {
 		return
 	}
-	owing, owes := w.getOwedVectors(ctx, p.v)
-	if !owes {
+	pending, hasPending := w.getPendingVectors(ctx, p.v)
+	if !hasPending {
 		w.events.FinishTask(MakingVectors)
 		p.calibrateFloor(ctx)
 		return
@@ -337,13 +337,13 @@ func (p *pass) embed(ctx context.Context) {
 	limit, stop := stopOnWake(ctx, w.read, w.sources)
 	defer stop()
 
-	if p.makeVectors(ctx, limit, owing) {
+	if p.makeVectors(ctx, limit, pending) {
 		p.calibrateFloor(ctx)
 	}
 }
 
 // calibrateFloor measures the similarity floor of the vault once the pass has
-// left no vector owed. A failure is reported as a task and does not fail the pass.
+// left no vector pending. A failure is reported as a task and does not fail the pass.
 func (p *pass) calibrateFloor(ctx context.Context) {
 	w := p.worker
 	if w.calibrate == nil || ctx.Err() != nil {
@@ -358,19 +358,19 @@ func (p *pass) calibrateFloor(ctx context.Context) {
 	}
 }
 
-// getOwedVectors returns the number of vectors a pass must create, computed once
+// getPendingVectors returns the number of vectors a pass must create, computed once
 // before the pass starts. Chunks are discovered a few hundred at a time, so a
 // total derived during the pass would keep growing.
-func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int64, owes bool) {
-	if w.owed == nil {
+func (w *Worker) getPendingVectors(ctx context.Context, v domain.Vault) (pending int64, hasPending bool) {
+	if w.vectorCounts == nil {
 		return 0, true
 	}
-	target, embedded, err := w.owed(ctx, v)
+	target, embedded, err := w.vectorCounts(ctx, v)
 	if err != nil {
 		return 0, true
 	}
-	owing = max(0, target-embedded)
-	return owing, owing > 0
+	pending = max(0, target-embedded)
+	return pending, pending > 0
 }
 
 // stopOnWake returns the context a pass runs under, which is cancelled when a
@@ -402,7 +402,7 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 
 // makeVectors creates the pending vectors of a vault, reporting the source being
 // embedded. It reports whether the pass ended with no vector pending.
-func (p *pass) makeVectors(ctx, items context.Context, owing int64) bool {
+func (p *pass) makeVectors(ctx, items context.Context, pending int64) bool {
 	events := p.worker.events
 	failed := func(err error) {
 		events.ReportTask(vaultreading.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
@@ -419,7 +419,7 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) bool {
 	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
 		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
-			pos.Count, pos.Total = int64(res.Embedded), owing
+			pos.Count, pos.Total = int64(res.Embedded), pending
 		}
 		events.ReportTask(pos)
 	}

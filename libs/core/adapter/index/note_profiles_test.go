@@ -71,12 +71,12 @@ func TestATypeWithoutChunksContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, first, "samples/mammals.md"); got != 0 {
 		t.Errorf("a sample holds %d chunks, want none", got)
 	}
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 0 {
-		t.Errorf("a sample was offered for embedding: %v", owing)
+	if len(unembedded) != 0 {
+		t.Errorf("a sample was offered for embedding: %v", unembedded)
 	}
 }
 
@@ -91,12 +91,12 @@ func TestATypeKeepingNoHeadingsContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, first, "forms/term.md"); got != 0 {
 		t.Errorf("a form holds %d chunks, want none", got)
 	}
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 0 {
-		t.Errorf("a form was offered for embedding: %v", owing)
+	if len(unembedded) != 0 {
+		t.Errorf("a form was offered for embedding: %v", unembedded)
 	}
 }
 

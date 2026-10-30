@@ -138,12 +138,12 @@ func saveSeededVectors(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
 	ctx := t.Context()
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
 			Value: getPreciseBytes(getVectorForSeed(seed)), Coarse: bits(seed),
@@ -475,15 +475,15 @@ func TestANoteIsSplitIntoChunksThatCanCarryAVector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) < 2 {
-		t.Fatalf("%d chunks of a note owe a vector, so its text is one chunk", len(owing))
+	if len(unembedded) < 2 {
+		t.Fatalf("%d chunks of a note need a vector, so its text is one chunk", len(unembedded))
 	}
 	// Every offset is into the file, so the text of a passage can be read back.
-	for _, p := range owing {
+	for _, p := range unembedded {
 		if p.Start < 0 || p.Start+p.Length > int(note.FileStat.Size) {
 			t.Errorf("a chunk lies outside the file: %+v", p)
 		}
@@ -684,14 +684,14 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	}
 
 	// The model: chunks whose vectors were made by a different one.
-	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
+	unembedded, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 2 {
-		t.Errorf("%d chunks owe a vector from another model, want the two small chunks", len(owing))
+	if len(unembedded) != 2 {
+		t.Errorf("%d chunks need a vector from another model, want the two small chunks", len(unembedded))
 	}
-	for _, p := range owing {
+	for _, p := range unembedded {
 		if !strings.HasPrefix(p.Path, "library/cut") {
 			t.Errorf("the first vault answered with %s", p.Path)
 		}
@@ -699,7 +699,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	if isDone, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10); err != nil {
 		t.Fatal(err)
 	} else if len(isDone) != 0 {
-		t.Errorf("%d chunks owe a vector from the model that made theirs", len(isDone))
+		t.Errorf("%d chunks need a vector from the model that made theirs", len(isDone))
 	}
 }
 
@@ -798,7 +798,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -807,8 +807,8 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 		t.Errorf("nothing is embedded yet, and %d are counted", embedded)
 	}
 	// Invariant: every chunk either has a vector or is awaiting one.
-	if int(target) != int(embedded)+len(owing) {
-		t.Errorf("%d held is not %d embedded and %d owing", target, embedded, len(owing))
+	if int(target) != int(embedded)+len(unembedded) {
+		t.Errorf("%d held is not %d embedded and %d unembedded", target, embedded, len(unembedded))
 	}
 
 	saveSeededVectors(t, db, vault, 1)
@@ -817,12 +817,12 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	owing, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 0 {
-		t.Errorf("%d still owe a vector", len(owing))
+	if len(unembedded) != 0 {
+		t.Errorf("%d still need a vector", len(unembedded))
 	}
 	// The embedded count equals the total; a count that stays below it is the
 	// defect under test.
@@ -867,18 +867,18 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 	cutInto(t, db, first, "library/recut.epub", "the passage as it was")
 
 	// What a pass is given, before anything moves under it.
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector, want the two that were cut", len(owing))
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector, want the two that were cut", len(unembedded))
 	}
 
 	cutInto(t, db, first, "library/recut.epub", "the passage as it is now")
 
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
 			Value: bits(1), Coarse: bits(1),
@@ -891,7 +891,7 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 	// Both halves of a vector follow the chunk: the one still held carries
 	// both, the one that went carries neither.
 	var removed int
-	for _, p := range owing {
+	for _, p := range unembedded {
 		target := countRows(t, db, `SELECT count(*) FROM chunks WHERE id = ?`, p.Chunk)
 		if target == 0 {
 			removed++
@@ -949,14 +949,14 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
 	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector, want the two small chunks", len(unembedded))
 	}
-	for _, p := range owing {
+	for _, p := range unembedded {
 		var vec chunk.Vector
 		if p.Path == "library/coarse.epub" {
 			vec = chunk.Vector{
@@ -996,19 +996,19 @@ func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 	db := openDB(t)
 	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) == 0 {
-		t.Fatal("nothing owes a vector")
+	if len(unembedded) == 0 {
+		t.Fatal("nothing needs a vector")
 	}
 
 	text := "the passage that was paid for"
 	sum := sha256.Sum256([]byte(text))
 	value := getPreciseBytes(getVectorForSeed(0x11))
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Hash: sum[:], Recipe: "a recipe",
+		Chunk: unembedded[0].Chunk, Hash: sum[:], Recipe: "a recipe",
 		Coarse: bits(0x11), Value: value,
 	}}); err != nil {
 		t.Fatal(err)
@@ -1056,15 +1056,15 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	cutInto(t, db, first, "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
-	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
+	unembedded, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) == 0 {
-		t.Fatal("nothing owes a vector from the other model")
+	if len(unembedded) == 0 {
+		t.Fatal("nothing needs a vector from the other model")
 	}
-	made := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	made := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		made = append(made, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "another-model",
 			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
@@ -1106,15 +1106,15 @@ func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
 	cutInto(t, db, first, "library/gone.epub", "a passage in a book that goes")
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector, want the two small chunks", len(unembedded))
 	}
-	made := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	made := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		var hash string
 		if err := db.write.QueryRowContext(ctx,
 			`SELECT hash FROM chunks WHERE id = ?`, p.Chunk).Scan(&hash); err != nil {
@@ -1162,15 +1162,15 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	cutInto(t, db, first, "library/one.epub", shared)
 	cutInto(t, db, first, "library/two.epub", shared)
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector, want two", len(owing))
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector, want two", len(unembedded))
 	}
-	made := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	made := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		var hash string
 		if err := db.write.QueryRowContext(ctx,
 			`SELECT hash FROM chunks WHERE id = ?`, p.Chunk).Scan(&hash); err != nil {
@@ -1508,24 +1508,24 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 4 {
-		t.Fatalf("expected 4 chunks owing, got %d", len(owing))
+	if len(unembedded) != 4 {
+		t.Fatalf("expected 4 chunks unembedded, got %d", len(unembedded))
 	}
-	if owing[0].Path != "notes/recent.md" || owing[1].Path != "notes/recent.md" {
-		t.Errorf("expected recent note chunks first, got: %s, %s", owing[0].Path, owing[1].Path)
+	if unembedded[0].Path != "notes/recent.md" || unembedded[1].Path != "notes/recent.md" {
+		t.Errorf("expected recent note chunks first, got: %s, %s", unembedded[0].Path, unembedded[1].Path)
 	}
-	if owing[2].Path != "library/old.epub" || owing[3].Path != "library/old.epub" {
-		t.Errorf("expected old book chunks last, got: %s, %s", owing[2].Path, owing[3].Path)
+	if unembedded[2].Path != "library/old.epub" || unembedded[3].Path != "library/old.epub" {
+		t.Errorf("expected old book chunks last, got: %s, %s", unembedded[2].Path, unembedded[3].Path)
 	}
-	if owing[0].Chunk >= owing[1].Chunk {
-		t.Errorf("expected ascending chunk IDs within source, got %d and %d", owing[0].Chunk, owing[1].Chunk)
+	if unembedded[0].Chunk >= unembedded[1].Chunk {
+		t.Errorf("expected ascending chunk IDs within source, got %d and %d", unembedded[0].Chunk, unembedded[1].Chunk)
 	}
-	if owing[2].Chunk >= owing[3].Chunk {
-		t.Errorf("expected ascending chunk IDs within source, got %d and %d", owing[2].Chunk, owing[3].Chunk)
+	if unembedded[2].Chunk >= unembedded[3].Chunk {
+		t.Errorf("expected ascending chunk IDs within source, got %d and %d", unembedded[2].Chunk, unembedded[3].Chunk)
 	}
 
 	firstPage, cursor1, err := db.Sources().GetUnembeddedChunks(ctx, first.ID, benchModel, "", 2)

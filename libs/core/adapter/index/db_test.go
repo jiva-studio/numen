@@ -193,20 +193,20 @@ func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, narrowRecipe(dims), 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, narrowRecipe(dims), 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) == 0 {
-		t.Fatal("nothing owes a vector, so this proves nothing")
+	if len(unembedded) == 0 {
+		t.Fatal("nothing needs a vector, so this proves nothing")
 	}
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		// A vector is found by the address of the text the chunk holds, which
 		// is the chunk's own hash.
 		hash, err := hex.DecodeString(p.ChunkHash)
 		if err != nil || len(hash) == 0 {
-			t.Fatalf("chunk %d owes a vector under hash %q", p.Chunk, p.ChunkHash)
+			t.Fatalf("chunk %d needs a vector under hash %q", p.Chunk, p.ChunkHash)
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hash, Recipe: narrowRecipe(dims),

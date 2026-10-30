@@ -107,7 +107,7 @@ func (u Index) Execute(ctx context.Context, v domain.Vault) (IndexResult, error)
 
 // discover records every file of the vault that has text. Nothing is opened: a
 // file whose size and modification time are what the index believes is left
-// alone, and one that differs is recorded with no recipe, which is what owing
+// alone, and one that differs is recorded with no recipe, which is what unembedded
 // its text means.
 func (u Index) discover(
 	ctx context.Context,

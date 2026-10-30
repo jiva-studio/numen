@@ -176,7 +176,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
-	if result.Vectors.Owing == 0 {
+	if result.Vectors.Pending == 0 {
 		t.Error("the answer holds nothing of what the vectors pass had done")
 	}
 }

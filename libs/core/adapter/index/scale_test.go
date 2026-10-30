@@ -58,17 +58,17 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != 2 {
-		t.Fatalf("%d chunks owe a vector before any is made, want 2", len(owing))
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector before any is made, want 2", len(unembedded))
 	}
 
-	hashes := make([][]byte, 0, len(owing))
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	hashes := make([][]byte, 0, len(unembedded))
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		hash := hashOf(t, db, p.Chunk)
 		hashes = append(hashes, hash)
 		vectors = append(vectors, chunk.Vector{
@@ -80,18 +80,18 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if owed, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100); err != nil {
+	if atBefore, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100); err != nil {
 		t.Fatal(err)
-	} else if len(owed) != 0 {
-		t.Fatalf("%d chunks owe a vector under the scale they were made at, want none", len(owed))
+	} else if len(atBefore) != 0 {
+		t.Fatalf("%d chunks need a vector under the scale they were made at, want none", len(atBefore))
 	}
 
-	owed, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, quantising.Recipe(), 0, 0, 0, 100)
+	afterSwitch, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, quantising.Recipe(), 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owed) != 2 {
-		t.Errorf("%d chunks are asked for again after the scale moved, want 2", len(owed))
+	if len(afterSwitch) != 2 {
+		t.Errorf("%d chunks are asked for again after the scale moved, want 2", len(afterSwitch))
 	}
 
 	retained, err := db.ChunkQueries().GetKeptVectors(ctx, quantising.Recipe(), hashes)

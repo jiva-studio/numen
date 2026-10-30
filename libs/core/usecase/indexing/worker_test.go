@@ -80,7 +80,7 @@ func newPass(
 	worker := NewWorker(Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
-		Owed: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
+		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
 			return db.Progress().GetProgress(ctx, v.ID, recipe)
 		},
 		Events: events,
@@ -194,7 +194,7 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
 	if pos := findTask(t, events, MakingVectors); pos != nil {
-		t.Errorf("a pass that embedded what was owed is still being done: %+v", *pos)
+		t.Errorf("a pass that embedded what was unembedded is still being done: %+v", *pos)
 	}
 }
 
@@ -386,7 +386,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 		t.Fatal(err)
 	}
 	if target == 0 {
-		t.Fatal("the vault owed no vector, and the pass had nothing to stand aside from")
+		t.Fatal("the vault unembedded no vector, and the pass had nothing to stand aside from")
 	}
 	if embedded == target {
 		t.Error("the pass embedded the whole vault while a recognition waited to be cut")
@@ -516,12 +516,12 @@ func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	cut(t, made, db, v)
-	owed, _, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	unembedded, _, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if owed == 0 {
-		t.Fatal("the note was cut into no chunk that owes a vector")
+	if unembedded == 0 {
+		t.Fatal("the note was cut into no chunk that needs a vector")
 	}
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
@@ -533,8 +533,8 @@ func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target != owed || embedded != target {
+	if target != unembedded || embedded != target {
 		t.Errorf("after a version change of the note %d of %d chunks carry a vector, want %d of %d",
-			embedded, target, owed, owed)
+			embedded, target, unembedded, unembedded)
 	}
 }

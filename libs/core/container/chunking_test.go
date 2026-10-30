@@ -87,15 +87,15 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.GetModel(), "", 1000)
+	unembedded, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) == 0 {
-		t.Fatal("a note of a hundred lines owes no vector")
+	if len(unembedded) == 0 {
+		t.Fatal("a note of a hundred lines needs no vector")
 	}
 	limit := chunking.GetCharacterBound(cfg.MaxTokens)
-	for _, p := range owing {
+	for _, p := range unembedded {
 		if p.Length > limit {
 			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)
 		}

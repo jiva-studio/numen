@@ -32,16 +32,16 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, numChunks)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, numChunks)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) != numChunks {
-		t.Fatalf("expected %d chunks needing embedding, got %d", numChunks, len(owing))
+	if len(unembedded) != numChunks {
+		t.Fatalf("expected %d chunks needing embedding, got %d", numChunks, len(unembedded))
 	}
 
-	vectors := make([]chunk.Vector, len(owing))
-	for i, o := range owing {
+	vectors := make([]chunk.Vector, len(unembedded))
+	for i, o := range unembedded {
 		hash, _ := hex.DecodeString(o.ChunkHash)
 		vectors[i] = chunk.Vector{
 			Chunk:  o.Chunk,
@@ -62,11 +62,11 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 	}
 
 	// Verify all were written
-	owingAfter, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, numChunks)
+	unembeddedAfter, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, numChunks)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owingAfter) != 0 {
-		t.Errorf("expected 0 unembedded chunks after save, got %d", len(owingAfter))
+	if len(unembeddedAfter) != 0 {
+		t.Errorf("expected 0 unembedded chunks after save, got %d", len(unembeddedAfter))
 	}
 }

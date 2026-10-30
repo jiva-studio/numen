@@ -35,23 +35,23 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	hashes := make([][]byte, 0, len(owing))
-	for _, p := range owing {
+	hashes := make([][]byte, 0, len(unembedded))
+	for _, p := range unembedded {
 		hashes = append(hashes, hashOf(t, db, p.Chunk))
 	}
 	retained, err := db.ChunkQueries().GetKeptVectors(ctx, testRecipe, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for i, p := range owing {
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for i, p := range unembedded {
 		value, target := retained[hex.EncodeToString(hashes[i])]
 		if !target {
-			t.Errorf("chunk %d owes a vector nothing keeps", p.Chunk)
+			t.Errorf("chunk %d needs a vector nothing keeps", p.Chunk)
 			continue
 		}
 		vectors = append(vectors, chunk.Vector{
@@ -125,13 +125,13 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 				t.Errorf("progress counts %d of %d chunks still to do, want the %d of %s", target-isDone, target, small, path)
 			}
 			if wrote := embedFromKeptVectors(t, db, vault); wrote != small {
-				t.Errorf("%d of the %d small chunks of %s were owed", wrote, small, path)
+				t.Errorf("%d of the %d small chunks of %s were unembedded", wrote, small, path)
 			}
 			if reached, _ := coarseRows(t, db, vault, path); reached != small {
 				t.Errorf("the coarse pass reaches %d of the %d small chunks of %s", reached, small, path)
 			}
 			if again := embedFromKeptVectors(t, db, vault); again != 0 {
-				t.Errorf("%d chunks are still owed once every one was written", again)
+				t.Errorf("%d chunks are still unembedded once every one was written", again)
 			}
 		})
 	}

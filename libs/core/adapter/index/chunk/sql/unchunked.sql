@@ -1,7 +1,7 @@
 -- Sources of one kind with no small chunk: the file changed, or it has never
--- been cut. Both owe the same work.
+-- been cut. Both need the same work.
 --
--- A source that has only the chunk enclosing it owes the cut, because a small
+-- A source that has only the chunk enclosing it needs the cut, because a small
 -- chunk is what carries a vector.
 SELECT path
 FROM sources s

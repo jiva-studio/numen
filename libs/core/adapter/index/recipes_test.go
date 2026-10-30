@@ -34,14 +34,14 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	hashes := make([][]byte, 0, len(owing))
+	hashes := make([][]byte, 0, len(unembedded))
 	for _, recipe := range []string{before, now} {
-		vectors := make([]chunk.Vector, 0, len(owing))
-		for _, p := range owing {
+		vectors := make([]chunk.Vector, 0, len(unembedded))
+		for _, p := range unembedded {
 			hash := hashOf(t, db, p.Chunk)
 			if recipe == before {
 				hashes = append(hashes, hash)

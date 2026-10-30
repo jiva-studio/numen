@@ -302,13 +302,13 @@ func (s *store) insert(vaultID domain.VaultID, ref domain.FileStat, c domain.Chu
 
 // paths answers a question about sources as the paths that satisfy it, ordered
 // and bounded the way the index orders and bounds them.
-func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int, owing func(domain.Source) bool) ([]string, error) {
+func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int, unembedded func(domain.Source) bool) ([]string, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a question about sources needs a positive limit, got %d", limit)
 	}
 	var out []string
 	for _, src := range s.sources[vaultID] {
-		if src.FileStat.Kind == kind && owing(src) {
+		if src.FileStat.Kind == kind && unembedded(src) {
 			out = append(out, src.FileStat.Path)
 		}
 	}
