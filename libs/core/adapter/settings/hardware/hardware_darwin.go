@@ -36,9 +36,18 @@ func readPerfLevels() []perfLevel {
 	levels := make([]perfLevel, 0, count)
 	for i := 0; i < int(count); i++ {
 		prefix := fmt.Sprintf("hw.perflevel%d.", i)
-		name, _ := unix.Sysctl(prefix + "name")
-		physical, _ := unix.SysctlUint32(prefix + "physicalcpu")
-		logical, _ := unix.SysctlUint32(prefix + "logicalcpu")
+		name, err := unix.Sysctl(prefix + "name")
+		if err != nil {
+			continue
+		}
+		physical, err := unix.SysctlUint32(prefix + "physicalcpu")
+		if err != nil {
+			continue
+		}
+		logical, err := unix.SysctlUint32(prefix + "logicalcpu")
+		if err != nil {
+			continue
+		}
 		levels = append(levels, perfLevel{Name: name, PhysicalCPUs: int(physical), LogicalCPUs: int(logical)})
 	}
 	return levels
