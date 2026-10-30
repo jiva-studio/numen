@@ -35,6 +35,11 @@ export { clock } from './shared/lib/time/duration'
 
 /** A stream taken up again for as long as a window is open. */
 export { createFollower } from './shared/lib/async/stream'
+export {
+  createRequestGuard,
+  type InFlightRequest,
+  type RequestGuard,
+} from './shared/lib/async/requestGuard'
 
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
