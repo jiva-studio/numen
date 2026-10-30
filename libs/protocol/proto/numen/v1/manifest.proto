@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// Manifest is the schema of a plugin's manifest.json. The file is the proto3 JSON
+// form of this message: field names are the lowerCamelCase json_name of each field.
+// Keys the schema does not name are ignored. A message here only describes the
+// shape; the invariants between fields are checked by the manifest reader.
+message Manifest {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  // protocol is the plugin protocol the plugin speaks. Absent means 1.
+  int32 protocol = 4;
+  string description = 5;
+  repeated string capabilities = 6;
+  // targets are the application windows the plugin runs in. Empty means every target.
+  repeated string targets = 7;
+  repeated string activation_events = 8;
+  repeated string permissions = 9;
+  repeated string runtimes = 10;
+  repeated ManifestDependency dependencies = 11;
+  ManifestLifecycle lifecycle = 12;
+  ManifestBackend backend = 13;
+  ManifestFrontend frontend = 14;
+  repeated ManifestSetting settings = 15;
+  repeated ManifestSecret secrets = 16;
+  repeated string services = 17;
+  repeated ManifestNoteType note_types = 18;
+  repeated ManifestCommand commands = 19;
+  ManifestTexts texts = 20;
+  ManifestPlayback playback = 21;
+  repeated ManifestContentType content_types = 22;
+  repeated ManifestReader readers = 23;
+  repeated ManifestSettingsView settings_views = 24;
+  repeated string frames = 25;
+  // contributes is what the plugin adds to the application, known before its
+  // frontend is loaded.
+  ManifestContributes contributes = 26;
+  // app_version is the range of application versions the plugin runs in.
+  ManifestAppVersion app_version = 27;
+}
+
+// ManifestContributes lists the contributions a plugin makes to the application.
+message ManifestContributes {
+  // tab_kinds are the kinds of tab the plugin's frontend registers.
+  repeated ManifestTabKind tab_kinds = 1;
+  // feature names what the plugin provides, in words a person reads in a
+  // placeholder for an unavailable tab.
+  string feature = 2;
+  // category groups the plugin in lists.
+  string category = 3;
+}
+
+// ManifestTabKind is a kind of tab the plugin registers.
+message ManifestTabKind {
+  // kind is the id the frontend registers the kind under.
+  string kind = 1;
+  string title = 2;
+  // icon is the kebab-case name of an icon of the application's icon set.
+  string icon = 3;
+}
+
+// ManifestAppVersion bounds the application versions a plugin runs in. Both
+// bounds are inclusive; an empty bound is open.
+message ManifestAppVersion {
+  string min = 1;
+  string max = 2;
+}
+
+message ManifestDependency {
+  string id = 1;
+  // kind is one of runtime, model, binary and dataset.
+  string kind = 2;
+  string version = 3;
+  string source_url = 4;
+  string checksum_sha256 = 5;
+  map<string, string> metadata = 6;
+}
+
+message ManifestLifecycle {
+  int32 idle_timeout_seconds = 1;
+  bool keep_alive_while_visible = 2;
+  uint64 memory_limit_bytes = 3;
+  uint64 memory_limit_mb = 4 [json_name = "memoryLimitMB"];
+}
+
+message ManifestBackend {
+  string type = 1;
+  string entrypoint = 2;
+  string service_name = 3;
+}
+
+message ManifestFrontend {
+  string entrypoint = 1;
+  string styles = 2;
+}
+
+// ManifestSettingOption is one value an enum setting holds. A list of options
+// in a manifest holds each option as this message, or as a bare string that
+// stands for an option with that value.
+message ManifestSettingOption {
+  string value = 1;
+  string title = 2;
+  string detail = 3;
+  repeated string dependencies = 4;
+}
+
+message ManifestOptionsBy {
+  string setting = 1;
+  // options are the options under each value of the setting named. Each is a
+  // JSON list of options.
+  map<string, google.protobuf.ListValue> options = 2;
+}
+
+message ManifestCondition {
+  string setting = 1;
+  repeated string is = 2;
+}
+
+message ManifestSetting {
+  string key = 1;
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  google.protobuf.Value default = 5;
+  bool palette = 6;
+  string icon = 7;
+  // options is a JSON list of options.
+  google.protobuf.ListValue options = 8;
+  double min = 9;
+  double max = 10;
+  double step = 11;
+  string models_of = 12;
+  repeated string replaces = 13;
+  ManifestOptionsBy options_by = 14;
+  ManifestCondition when = 15;
+  repeated string accept = 16;
+}
+
+message ManifestSecret {
+  string name = 1;
+  string title = 2;
+  string description = 3;
+  ManifestCondition when = 4;
+}
+
+message ManifestNoteType {
+  string type = 1;
+  optional bool chunks = 2;
+  // headings is a JSON list of heading levels. Absent keeps every heading, and
+  // an empty list keeps none.
+  google.protobuf.ListValue headings = 3;
+  repeated int32 id_heading_levels = 4;
+  string id_pattern = 5;
+}
+
+message ManifestCommandArgument {
+  string name = 1;
+  string title = 2;
+  string type = 3;
+  bool is_required = 4 [json_name = "required"];
+  bool is_hidden_in_palette = 5 [json_name = "hiddenInPalette"];
+}
+
+message ManifestCommandWhen {
+  repeated string live_text_kinds = 1;
+  bool has_own_text = 2;
+}
+
+message ManifestCommand {
+  string id = 1;
+  string title = 2;
+  string icon = 3;
+  repeated string content_types = 4;
+  repeated string note_types = 5;
+  ManifestCommandWhen when = 6;
+  repeated ManifestCommandArgument arguments = 7;
+  bool is_hidden_in_palette = 8 [json_name = "hiddenInPalette"];
+}
+
+message ManifestTexts {
+  repeated string content_types = 1;
+}
+
+message ManifestPlayback {
+  repeated string content_types = 1;
+  repeated string note_types = 2;
+}
+
+message ManifestContentType {
+  string type = 1;
+  repeated string globs = 2;
+}
+
+message ManifestReader {
+  string id = 1;
+  repeated string content_types = 2;
+  string rank = 3;
+}
+
+message ManifestSettingsView {
+  string id = 1;
+  string title = 2;
+  string after = 3;
+}
