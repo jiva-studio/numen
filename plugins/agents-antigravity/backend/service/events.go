@@ -22,7 +22,7 @@ func newEventHandler(r *reader) func(map[string]any) {
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
-	if kind, _ := rawMap["event"].(string); kind != "" {
+	if kind := getString(rawMap, "event"); kind != "" {
 		r.handleCliEvent(kind, rawMap)
 		return
 	}
@@ -62,7 +62,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 	if !ok {
 		return
 	}
-	subType, _ := evObj["type"].(string)
+	subType := getString(evObj, "type")
 	switch subType {
 	case "content_block_start":
 		r.startBlock(evObj)
@@ -91,11 +91,12 @@ func (r *eventReader) startBlock(evObj map[string]any) {
 		return
 	}
 	if cb["type"] == "tool_use" {
-		r.currentTool, _ = cb["name"].(string)
+		r.currentTool = getString(cb, "name")
 		r.currentArgs.Reset()
 		if initInput, ok := cb["input"].(map[string]any); ok {
-			raw, _ := json.Marshal(initInput)
-			r.currentArgs.WriteString(string(raw))
+			if raw, err := json.Marshal(initInput); err == nil {
+				r.currentArgs.Write(raw)
+			}
 		}
 	}
 }
@@ -127,8 +128,11 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		if !ok {
 			continue
 		}
-		name, _ := tc["name"].(string)
-		args, _ := json.Marshal(tc["arguments"])
+		name := getString(tc, "name")
+		args, err := json.Marshal(tc["arguments"])
+		if err != nil {
+			args = nil
+		}
 		r.reader.Send(&agentrun.AskAgentResponse{
 			Step: &agentrun.AskAgentResponse_ToolCall{
 				ToolCall: &agentrun.ToolCall{
@@ -178,10 +182,10 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
 	switch kind {
 	case "step_update":
-		step, _ := rawMap["step_update"].(map[string]any)
+		step := getMap(rawMap, "step_update")
 		r.handleCliStep(step)
 	case "result":
-		result, _ := rawMap["result"].(map[string]any)
+		result := getMap(rawMap, "result")
 		r.handleCliResult(result)
 	default:
 		if session, ok := rawMap["conversation_id"].(string); ok {
@@ -194,8 +198,8 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 	if session, ok := step["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}
-	text, _ := step["text_delta"].(string)
-	if kind, _ := step["step_type"].(string); kind != "agent_response" || text == "" {
+	text := getString(step, "text_delta")
+	if kind := getString(step, "step_type"); kind != "agent_response" || text == "" {
 		return
 	}
 	r.isTextStreamed = true
@@ -209,15 +213,15 @@ func (r *eventReader) handleCliResult(result map[string]any) {
 	if session, ok := result["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}
-	if status, _ := result["status"].(string); status != "" && !strings.EqualFold(status, "success") {
-		reason, _ := result["error"].(string)
+	if status := getString(result, "status"); status != "" && !strings.EqualFold(status, "success") {
+		reason := getString(result, "error")
 		if reason == "" {
 			reason = "the run ended with status " + status
 		}
 		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
 		return
 	}
-	if response, _ := result["response"].(string); response != "" && !r.isTextStreamed {
+	if response := getString(result, "response"); response != "" && !r.isTextStreamed {
 		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: response}})
 	}
 }

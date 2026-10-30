@@ -95,18 +95,18 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 	}
 	w := agentrun.NewWork(s.Conversation, outputBuffer, stop)
 	if !reg.Add(w) {
-		_ = stdout.Close()
+		closeErr := stdout.Close()
 		cleanup()
 		stop()
-		return nil, errors.New("agent runner is terminating")
+		return nil, errors.Join(errors.New("agent runner is terminating"), closeErr)
 	}
 	if err := cmd.Start(); err != nil {
 		w.End()
 		reg.Remove(w)
-		_ = stdout.Close()
+		closeErr := stdout.Close()
 		cleanup()
 		stop()
-		return nil, fmt.Errorf("start %s: %w", cmd.Path, err)
+		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), closeErr)
 	}
 
 	go runReader(runCtx, stop, cmd, stdout, &stderr, w, reg, s, cleanup)
@@ -145,8 +145,7 @@ func runReader(
 	if scanErr != nil {
 		stop()
 	}
-	_ = stdout.Close()
-	waitErr := cmd.Wait()
+	waitErr := errors.Join(stdout.Close(), cmd.Wait())
 	if isEnded || isCancelled {
 		return
 	}
@@ -234,7 +233,7 @@ func makeAntigravityCommand(
 		"--output-format", "stream-json",
 		"--dangerously-skip-permissions",
 	)
-	if model := req.GetModel(); model != "" && model != "default" {
+	if model := req.GetModel(); model != "" && model != defaultModel {
 		args = append(args, "--model", model)
 	}
 	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {
@@ -274,7 +273,7 @@ func makeAnswerCommand(
 		"-p", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()),
 		"--output-format", "stream-json",
 	)
-	if model := req.GetModel(); model != "" && model != "default" {
+	if model := req.GetModel(); model != "" && model != defaultModel {
 		args = append(args, "--model", model)
 	}
 	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {

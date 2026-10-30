@@ -24,7 +24,10 @@ func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
 	var reg agentrun.Registry
 	reg.SetSession("c-1", "s-1")
 
-	cmd, _, _ := makeAntigravityCommand(t.Context(), &agentrun.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
+	cmd, _, err := makeAntigravityCommand(t.Context(), &agentrun.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !slices.Contains(cmd.Args, "--conversation") || !slices.Contains(cmd.Args, "s-1") {
 		t.Errorf("the arguments are %v", cmd.Args)
@@ -42,7 +45,11 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = w.Stop() }()
+	defer func() {
+		if err := w.Stop(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
@@ -127,7 +134,11 @@ func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentr
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = w.Stop() }()
+	defer func() {
+		if err := w.Stop(); err != nil {
+			t.Error(err)
+		}
+	}()
 	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
