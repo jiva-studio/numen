@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -37,8 +38,18 @@ func (breaking) WrapStreamingClient(next connect.StreamingClientFunc) connect.St
 }
 
 func (b breaking) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return func(_ context.Context, conn connect.StreamingHandlerConn) error {
-		err := next(b.ctx, &breakingConn{StreamingHandlerConn: conn, fails: b.fails}) //nolint:contextcheck // handler runs under ctx
+	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
+		// The handler runs with the values of the request and ends with b.ctx.
+		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+		defer cancel()
+		go func() {
+			select {
+			case <-b.ctx.Done():
+				cancel()
+			case <-runCtx.Done():
+			}
+		}()
+		err := next(runCtx, &breakingConn{StreamingHandlerConn: conn, fails: b.fails})
 		b.returned <- err
 		return err
 	}
@@ -101,7 +112,8 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		"repeating": {t.Context(), func(n int, _ any) bool { return n > 1 }, false},
 		// Something moved, and the page is gone by the time it is told.
 		"reloading": {t.Context(), func(_ int, msg any) bool {
-			return msg.(*flashcardsv1.WatchReloadsResponse).GetReload()
+			reply, isReply := msg.(*flashcardsv1.WatchReloadsResponse)
+			return isReply && reply.GetReload()
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -113,7 +125,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() { stream.Close() })
+			cleanup.CloseAfter(t, stream)
 			if one.moved {
 				if !stream.Receive() {
 					t.Fatalf("the stream said nothing: %v", stream.Err())
@@ -135,7 +147,8 @@ func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		"listing": func(n int, _ any) bool { return n == 1 },
 		// A count has come in.
 		"counting": func(_ int, msg any) bool {
-			return msg.(*flashcardsv1.WatchCardsDueResponse).GetCounted() != nil
+			reply, isReply := msg.(*flashcardsv1.WatchCardsDueResponse)
+			return isReply && reply.GetCounted() != nil
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -148,7 +161,7 @@ func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() { stream.Close() })
+			cleanup.CloseAfter(t, stream)
 
 			if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 				t.Errorf("the stream ended with %v, want the write's error", err)
@@ -177,7 +190,7 @@ func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 
 	if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 		t.Errorf("the stream ended with %v, want the write's error", err)
@@ -219,7 +232,7 @@ func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 	if !stream.Receive() {
 		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
@@ -268,7 +281,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 
 	running := map[domain.VaultID]bool{}
 	for len(running) < 4 {
@@ -325,7 +338,7 @@ func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 
 	running := map[domain.VaultID]bool{}
 	for len(running) < 4 {
@@ -339,8 +352,8 @@ func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
 
 	cancel()
 	select {
-	case <-returned:
-		t.Fatal("the stream ended while four counts were still running")
+	case err := <-returned:
+		t.Fatalf("the stream ended with %v while four counts were still running", err)
 	case <-time.After(300 * time.Millisecond):
 	}
 
@@ -356,7 +369,7 @@ func rooted(handler http.Handler, entered, returned chan<- struct{}) http.Handle
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entered <- struct{}{}
 		defer func() { returned <- struct{}{} }()
-		handler.ServeHTTP(w, r.WithContext(context.Background())) //nolint:contextcheck // request context ends with the process
+		handler.ServeHTTP(w, r.WithContext(context.WithoutCancel(r.Context())))
 	})
 }
 
@@ -412,7 +425,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer cleanup.Close(t, stream)
 
 	if !stream.Receive() {
 		t.Fatalf("overview stream never opened: %v", stream.Err())

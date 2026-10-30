@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -106,7 +107,7 @@ func readCardsDue(
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer cleanup.Close(t, stream)
 
 	out, pos, first := &flashcardsv1.WatchCardsDueResponse{}, map[string]int{}, true
 	for stream.Receive() {

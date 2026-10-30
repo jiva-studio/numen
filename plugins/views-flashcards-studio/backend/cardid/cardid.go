@@ -34,9 +34,7 @@ func createTable(characters string) (table [256]bool) {
 // New mints an identifier.
 func New() ID {
 	var b [Length]byte
-	// rand.Read aborts the program when the system has no randomness; it never
-	// returns an error.
-	_, _ = clock.ReadEntropy(b[:])
+	clock.ReadEntropy(b[:])
 	out := make([]byte, Length)
 	for i, v := range b {
 		// The alphabet is 32 characters and a byte holds eight of them evenly,

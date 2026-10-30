@@ -3,7 +3,9 @@ package flashcards
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
+	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -306,7 +308,8 @@ func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[st
 }
 
 // remember puts the counting where the next launch will find it. A cache that
-// could not be written is a launch that counts again, so nothing is reported.
+// could not be written is a launch that counts again, so the failure is written to the standard
+// error stream of the plugin process and the count goes on.
 func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCache) {
 	if u.Cache == nil {
 		return
@@ -315,7 +318,9 @@ func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCac
 	if err != nil {
 		return
 	}
-	_ = u.Cache.Write(ctx, v.ID, raw)
+	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
+		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the count of reviews of %s: %v\n", v.ID, err)
+	}
 }
 
 // GetReviewDays is the days of a vault that fall inside a stretch.

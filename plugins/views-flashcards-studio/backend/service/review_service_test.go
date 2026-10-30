@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"path/filepath"
 	"slices"
@@ -14,8 +15,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -164,7 +165,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 	if stream.Receive() {
 		t.Fatalf("a window that cannot read the vaults listed %+v", stream.Msg())
 	}
@@ -195,7 +196,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 
 	// The stream says it is listening before anything has moved.
 	if !stream.Receive() {
@@ -253,7 +254,7 @@ func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 	if !stream.Receive() {
 		t.Fatalf("the stream said nothing: %v", stream.Err())
 	}

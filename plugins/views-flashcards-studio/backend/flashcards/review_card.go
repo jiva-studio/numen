@@ -490,26 +490,11 @@ func (c *reviewCardCache) invalidateAll() {
 	c.total = 0
 }
 
-// getSize returns the number of review cards held.
-func (c *reviewCardCache) getSize() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.total
-}
-
-// hasDeck says whether the deck at key is held.
-func (c *reviewCardCache) hasDeck(key deckKey) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	_, target := c.decks[key]
-	return target
-}
-
 // getEntry returns the deck an element of the order stands for. Only decks are put in
 // it, so the zero entry is never seen.
 func getEntry(pos *list.Element) *cached {
-	one, _ := pos.Value.(*cached)
-	if one == nil {
+	one, isCached := pos.Value.(*cached)
+	if !isCached || one == nil {
 		return &cached{}
 	}
 	return one

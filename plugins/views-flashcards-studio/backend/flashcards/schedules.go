@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -383,5 +385,7 @@ func (u Schedules) remember(
 	if err != nil {
 		return
 	}
-	_ = u.Cache.Write(ctx, v.ID, raw)
+	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
+		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the schedules of %s: %v\n", v.ID, err)
+	}
 }

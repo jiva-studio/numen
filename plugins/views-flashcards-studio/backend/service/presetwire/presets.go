@@ -1,8 +1,3 @@
-// and the words the schema does.
-//
-// A preset is asked about from the editor's window and from the window a person
-// runs their cards in, and the two hand the same settings and the same curve
-// over.
 package presetwire
 
 import (

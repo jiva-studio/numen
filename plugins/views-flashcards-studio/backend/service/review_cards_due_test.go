@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -28,7 +29,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 	if !stream.Receive() {
 		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
@@ -68,7 +69,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	cleanup.CloseAfter(t, stream)
 	if !stream.Receive() {
 		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
@@ -240,7 +241,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 			if !stream.Receive() {
 				b.Fatal(stream.Err())
 			}
-			stream.Close()
+			cleanup.Close(b, stream)
 		}
 	})
 
@@ -256,7 +257,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 			if err := stream.Err(); err != nil {
 				b.Fatal(err)
 			}
-			stream.Close()
+			cleanup.Close(b, stream)
 		}
 	})
 

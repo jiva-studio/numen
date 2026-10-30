@@ -13,8 +13,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -67,12 +67,12 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 }
 
 // person's session is on.
-func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
-	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now())
+func (a *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
+	run, err := a.scenarios().flash.Log.Open(ctx, v, a.now())
 	if err != nil {
 		return nil, err
 	}
-	h.runs.store(v, run)
+	a.runs.store(v, run)
 	return run, nil
 }
 
