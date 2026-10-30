@@ -38,14 +38,14 @@ Only the cold scan is pinned to a single iteration — it takes seconds, and rep
 
 A hundred thousand notes, from the load test. Measured 2026-09-06, one run, on a machine carrying five other agents' work; the 2026-09-01 column is what it answered then.
 
-| | 2026-09-01 | Measured | Target |
-| --- | --- | --- | --- |
-| Cold scan | 1 m 22 s (0.82 ms/note) | **8 m 52 s (5.32 ms/note, 188 notes/s)** | under 3 minutes |
-| Warm scan — what a startup pays | 0.52 s | **1.07 s** | under 1 second |
-| An edit the watcher names, until a client is notified | 66 ms | not re-measured | under 100 ms |
-| Index size | 162 MB | **344 MB (3.4 MB per thousand notes)** | not decided |
-| Search, rare term, under load | p50 2 · p95 4 · p99 5 · max 42 ms | p50 3 · p95 6 · p99 8 · max 102 ms | p95 under 50 ms |
-| Search, term matching every note | p50 0.90 s · p95 1.01 s | p50 3.37 s · p95 4.25 s | not covered |
+|                                                       | 2026-09-01                        | Measured                                 | Target          |
+| ----------------------------------------------------- | --------------------------------- | ---------------------------------------- | --------------- |
+| Cold scan                                             | 1 m 22 s (0.82 ms/note)           | **8 m 52 s (5.32 ms/note, 188 notes/s)** | under 3 minutes |
+| Warm scan — what a startup pays                       | 0.52 s                            | **1.07 s**                               | under 1 second  |
+| An edit the watcher names, until a client is notified | 66 ms                             | not re-measured                          | under 100 ms    |
+| Index size                                            | 162 MB                            | **344 MB (3.4 MB per thousand notes)**   | not decided     |
+| Search, rare term, under load                         | p50 2 · p95 4 · p99 5 · max 42 ms | p50 3 · p95 6 · p99 8 · max 102 ms       | p95 under 50 ms |
+| Search, term matching every note                      | p50 0.90 s · p95 1.01 s           | p50 3.37 s · p95 4.25 s                  | not covered     |
 
 **Two of these targets are now missed, and the index size says why.** It has gone from 162 MB to 344 MB over the same 164 MB of markdown, and that figure owes nothing to a busy machine. A note is now written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, each of them indexed for its words in `chunks_fts` and again in `sections_fts` — so a scan writes about twice as much, and a query that matches everything ranks several rows per note.
 
@@ -63,14 +63,14 @@ Re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL 
 
 Each cell is the best of the runs stated, with the spread beside it. The best is quoted rather than the median because every source of noise here is additive.
 
-| | 2026-08-15 | 1 000 notes | 10 000 notes |
-| --- | --- | --- | --- |
-| Cold scan — every note read, parsed, written | 0.46 s · 5.9 s | 1.80 s (6 runs, 1.80–2.84) | 20.1 s (6, 20.1–39.7) |
-| The same, with the statements kept compiled | | 1.19 s (6, 1.19–1.41) | 15.2 s (6, 15.2–17.4) |
-| Warm scan — nothing changed, no file opened | 4.7 ms · 50 ms | 9.2 ms (3, 9.2–15.3) | 58 ms (3, 58–122) |
-| Incremental — one note edited | 8.0 ms · 55 ms | 12.4 ms (3, 12.4–17.6) | 64 ms (3, 64–136) |
-| Resolving one note's links | 0.18 ms · 0.18 ms | 0.64 ms (3, 0.64–0.68) | 0.43 ms (3, 0.43–0.61) |
-| Backlinks of one note | 0.88 ms · 1.11 ms | 2.94 ms (3, 2.94–3.28) | 3.18 ms (3, 3.18–4.63) |
+|                                              | 2026-08-15        | 1 000 notes                | 10 000 notes           |
+| -------------------------------------------- | ----------------- | -------------------------- | ---------------------- |
+| Cold scan — every note read, parsed, written | 0.46 s · 5.9 s    | 1.80 s (6 runs, 1.80–2.84) | 20.1 s (6, 20.1–39.7)  |
+| The same, with the statements kept compiled  |                   | 1.19 s (6, 1.19–1.41)      | 15.2 s (6, 15.2–17.4)  |
+| Warm scan — nothing changed, no file opened  | 4.7 ms · 50 ms    | 9.2 ms (3, 9.2–15.3)       | 58 ms (3, 58–122)      |
+| Incremental — one note edited                | 8.0 ms · 55 ms    | 12.4 ms (3, 12.4–17.6)     | 64 ms (3, 64–136)      |
+| Resolving one note's links                   | 0.18 ms · 0.18 ms | 0.64 ms (3, 0.64–0.68)     | 0.43 ms (3, 0.43–0.61) |
+| Backlinks of one note                        | 0.88 ms · 1.11 ms | 2.94 ms (3, 2.94–3.28)     | 3.18 ms (3, 3.18–4.63) |
 
 Neither link figure grows with the vault, which is the claim those two rows carry: the columns are ten times apart in size and a fraction of a millisecond apart in answer, as they were.
 
@@ -80,11 +80,11 @@ The second row was measured in a quieter hour of the same day, where `BenchmarkC
 
 **The two search rows of 2026-08-15 cannot be reproduced, and are not carried forward.** They measured `Queries.Search` and `search.sql`, which read `chunks_fts` and grouped the hits back to notes. That statement was deleted on 2026-09-05 as dead production code, and the benchmark now asks `port.PassageQueries.Lexical` — the query the application has been searching through all along. It is a heavier plan: a join to `sources`, the folder filter through `json_each` behind a bloom filter, a left join to the enclosing chunk, and a temp B-tree for the ordering. Against the generated vault's twenty-word vocabulary the query matches every note, so what it measures is ranking the whole corpus.
 
-| | Measured 2026-09-06 |
-| --- | --- |
-| `Lexical`, a term matching every note, 1 000 | 11.8 ms (3 runs, 11.8–29.6) |
-| `Lexical`, a term matching every note, 10 000 | 101 ms (3, 101–155) |
-| The same while a scan is writing, 10 000 | 149 ms (3, 149–641) |
+|                                               | Measured 2026-09-06         |
+| --------------------------------------------- | --------------------------- |
+| `Lexical`, a term matching every note, 1 000  | 11.8 ms (3 runs, 11.8–29.6) |
+| `Lexical`, a term matching every note, 10 000 | 101 ms (3, 101–155)         |
+| The same while a scan is writing, 10 000      | 149 ms (3, 149–641)         |
 
 Those belong beside the "term matching every note" row of the load test, not beside a search figure. What a person's own search costs is the rare-term row further up, which the load test measures and this benchmark cannot: a vault built from twenty words has no rare terms but the one that was planted.
 
@@ -106,12 +106,12 @@ A search still costs more while a scan is continuously rewriting the index. WAL 
 
 A cold scan, by profile, taken 2026-09-06 over one run of `ColdScan/10000` — 34.7 s of wall time, 37.6 s of samples over sixteen threads. Reading the files is about 1 % and parsing the markdown a few percent, as before; what has moved is inside the writing.
 
-| | share of the scan | with the statements kept compiled |
-| --- | --- | --- |
-| `Scan.Execute` | 84 % | 82 % |
-| ↳ `note.Repository.Save` → `saveNote` | 78 % | 74 % |
-| ↳ `chunk.Replace` — the note as its own chunks | **42 %** | 42 % |
-| SQLite parsing SQL text (`sqlite3RunParser`) | **20 %** | **nothing the profile shows** |
+|                                                | share of the scan | with the statements kept compiled |
+| ---------------------------------------------- | ----------------- | --------------------------------- |
+| `Scan.Execute`                                 | 84 %              | 82 %                              |
+| ↳ `note.Repository.Save` → `saveNote`          | 78 %              | 74 %                              |
+| ↳ `chunk.Replace` — the note as its own chunks | **42 %**          | 42 %                              |
+| SQLite parsing SQL text (`sqlite3RunParser`)   | **20 %**          | **nothing the profile shows**     |
 
 The second column is the same benchmark after the two changes below, and one run of it costs 20.7 s of samples where it cost 32.9 s.
 
@@ -135,11 +135,11 @@ A warm scan of ten thousand notes is 50 ms: 13 ms asking the index what it knows
 
 `BenchmarkRun` in `check`, on a vault where every name answers for many notes and every link is written by one — the worst case the ambiguity check has, because every link in it is a candidate.
 
-| | Measured |
-| --- | --- |
-| Every check that runs unasked, 1 000 notes | 2.1 ms |
-| Every check that runs unasked, 10 000 notes | 23 ms |
-| Dangling links alone, 10 000 notes | 53 ms |
+|                                             | Measured |
+| ------------------------------------------- | -------- |
+| Every check that runs unasked, 1 000 notes  | 2.1 ms   |
+| Every check that runs unasked, 10 000 notes | 23 ms    |
+| Dangling links alone, 10 000 notes          | 53 ms    |
 
 Two of the checks read rows a scan already stored. The other two work the whole vault out when they are asked, which is why they are not stored: what they answer stops being true when a note somewhere else moves.
 
@@ -149,15 +149,15 @@ The number to watch is the second one, because it is the one that grows with the
 
 Measured, on ten thousand notes written in groups of five hundred.
 
-| | |
-| --- | --- |
-| Turning off the full-text index's background merging during a bulk load | 1.7× slower |
-| Larger full-text page size (`pgsz = 8000`) | 1.7× slower |
-| Merge thresholds either way (`automerge` 8 and 16, `crisismerge` 8) | no difference |
-| Page cache of 4 MB, 64 MB, 256 MB | no difference |
-| Reusing prepared statements across a group | no difference on 2026-08-15; **a third of a cold scan's samples on 2026-09-06** |
-| Groups of five thousand | 7 % faster than five hundred, for ten times the memory |
-| `synchronous = OFF` | 13 % faster, and the file can be corrupt rather than merely stale |
+|                                                                         |                                                                                 |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Turning off the full-text index's background merging during a bulk load | 1.7× slower                                                                     |
+| Larger full-text page size (`pgsz = 8000`)                              | 1.7× slower                                                                     |
+| Merge thresholds either way (`automerge` 8 and 16, `crisismerge` 8)     | no difference                                                                   |
+| Page cache of 4 MB, 64 MB, 256 MB                                       | no difference                                                                   |
+| Reusing prepared statements across a group                              | no difference on 2026-08-15; **a third of a cold scan's samples on 2026-09-06** |
+| Groups of five thousand                                                 | 7 % faster than five hundred, for ten times the memory                          |
+| `synchronous = OFF`                                                     | 13 % faster, and the file can be corrupt rather than merely stale               |
 
 The first two are what a search returns for "slow SQLite inserts".
 
@@ -183,13 +183,13 @@ Not generated. The Mahābhārata in three languages: the Ganguli prose translati
 
 Embedded with `bge-m3` at 1024 dimensions, through a hosted API.
 
-| | |
-| --- | --- |
-| Windows read from | 37 380 |
-| Windows searched | 145 800 |
+|                             |            |
+| --------------------------- | ---------- |
+| Windows read from           | 37 380     |
+| Windows searched            | 145 800    |
 | Embedding, the whole corpus | 10 minutes |
-| Index | 613 MB |
-| Search | 32 ms |
+| Index                       | 613 MB     |
+| Search                      | 32 ms      |
 
 The same corpus embedded on this laptop's CPU instead, with a small English-only model, runs at 10.8 chunks per second.
 
@@ -199,12 +199,12 @@ Cut this way, the sources total about **2 240 small chunks per megabyte of text*
 
 One passage, one query, four chunks cut around the same sentence. The score is against a query that paraphrases the sentence in another language.
 
-| Size | Similarity |
-| --- | --- |
-| 25 words | 0.751 |
-| 50 words | 0.648 |
-| 100 words | 0.544 |
-| 200 words | 0.517 |
+| Size      | Similarity |
+| --------- | ---------- |
+| 25 words  | 0.751      |
+| 50 words  | 0.648      |
+| 100 words | 0.544      |
+| 200 words | 0.517      |
 
 The best score anything in the corpus reaches for that query is 0.639. At 25 words the passage would lead by a wide margin; at 200 it ranks **401st of 36 560**, which is not a result anybody sees.
 
@@ -212,11 +212,11 @@ This is the measurement the chunk sizes are chosen against. Nothing about the in
 
 The chunk also has to fit the model. Cut on the sections a translation already carries, in words:
 
-| Size | Chunks | Median tokens | Over the 512-token limit |
-| --- | --- | --- | --- |
-| 350 words | 9 115 | 488 | 22.6 % |
-| 250 words | 13 207 | 350 | 0.6 % |
-| 200 words | 16 382 | 281 | 0.2 % |
+| Size      | Chunks | Median tokens | Over the 512-token limit |
+| --------- | ------ | ------------- | ------------------------ |
+| 350 words | 9 115  | 488           | 22.6 %                   |
+| 250 words | 13 207 | 350           | 0.6 %                    |
+| 200 words | 16 382 | 281           | 0.2 %                    |
 
 Transliterated Sanskrit and Cyrillic reach the limit in fewer words than Latin does — 1.27 tokens per word here against the usual English rate.
 
@@ -224,19 +224,19 @@ Transliterated Sanskrit and Cyrillic reach the limit in fewer words than Latin d
 
 145 800 vectors. Agreement is with what the same model says at full precision, over the top twenty.
 
-| Representation | Bytes/vector | Index | Agreement |
-| --- | --- | --- | --- |
-| float32, 1024 dims | 4096 | 597 MB | 1.000 |
-| **int8, 1024 dims** | **1024** | **149 MB** | **0.975** |
-| PCA to 512 | 2048 | 299 MB | 0.742 |
-| PCA to 256 | 1024 | 149 MB | 0.725 |
-| PCA to 128 | 512 | 75 MB | 0.625 |
-| First 512 numbers | 2048 | 299 MB | 0.708 |
-| First 256 numbers | 1024 | 149 MB | 0.475 |
-| One bit per dimension | 128 | 19 MB | 0.525 |
-| PCA to 64 | 256 | 37 MB | 0.367 |
-| First 128 numbers | 512 | 75 MB | 0.283 |
-| First 64 numbers | 256 | 37 MB | 0.133 |
+| Representation        | Bytes/vector | Index      | Agreement |
+| --------------------- | ------------ | ---------- | --------- |
+| float32, 1024 dims    | 4096         | 597 MB     | 1.000     |
+| **int8, 1024 dims**   | **1024**     | **149 MB** | **0.975** |
+| PCA to 512            | 2048         | 299 MB     | 0.742     |
+| PCA to 256            | 1024         | 149 MB     | 0.725     |
+| PCA to 128            | 512          | 75 MB      | 0.625     |
+| First 512 numbers     | 2048         | 299 MB     | 0.708     |
+| First 256 numbers     | 1024         | 149 MB     | 0.475     |
+| One bit per dimension | 128          | 19 MB      | 0.525     |
+| PCA to 64             | 256          | 37 MB      | 0.367     |
+| First 128 numbers     | 512          | 75 MB      | 0.283     |
+| First 64 numbers      | 256          | 37 MB      | 0.133     |
 
 Read the rows at 1024 bytes together: every dimension at one byte agrees 0.975, the same storage spent on 256 projected dimensions agrees 0.725, and on the first 256 numbers 0.475. This model does not order its dimensions by importance, which is why truncating is worse than projecting.
 
@@ -252,24 +252,24 @@ What the floor and the rerank do is held by fixtures in `chunks_test.go`. The fl
 
 **How many the coarse pass keeps.** Recall of a query's exact top twenty at or above the floor, from a coarse pool of 20×f:
 
-| f | Pool | Mean recall | Worst |
-| --- | --- | --- | --- |
-| 2 | 40 | 0.762 | 0.438 |
-| 4 | 80 | 0.869 | 0.562 |
-| 6 | 120 | 0.911 | 0.625 |
-| **8** | **160** | **0.944** | **0.688** |
-| 12 | 240 | 0.968 | 0.750 |
-| 16 | 320 | 0.973 | 0.750 |
+| f     | Pool    | Mean recall | Worst     |
+| ----- | ------- | ----------- | --------- |
+| 2     | 40      | 0.762       | 0.438     |
+| 4     | 80      | 0.869       | 0.562     |
+| 6     | 120     | 0.911       | 0.625     |
+| **8** | **160** | **0.944**   | **0.688** |
+| 12    | 240     | 0.968       | 0.750     |
+| 16    | 320     | 0.973       | 0.750     |
 
 The curve flattens after eight while the coarse pass costs close to linear in k: 40 → 12 ms, 100 → 20 ms, 200 → 32 ms, 400 → 56 ms, 800 → 116 ms.
 
 **What the rerank costs.** Same eighteen questions, six rounds each, warm, at a limit of twenty.
 
-| Meaning half | Median | p95 |
-| --- | --- | --- |
-| Coarse k=100, no rerank | 19.6 ms | 23.4 ms |
+| Meaning half                | Median  | p95     |
+| --------------------------- | ------- | ------- |
+| Coarse k=100, no rerank     | 19.6 ms | 23.4 ms |
 | Coarse k=160, rerank, floor | 26.2 ms | 30.9 ms |
-| Coarse k=160 alone | 26.3 ms | 29.9 ms |
+| Coarse k=160 alone          | 26.3 ms | 29.9 ms |
 
 The rerank is 0.4 ms of that: one `json_each` join, 160 int8 blobs, 160×1024 dot products, a sort. The 7 ms is the wider coarse pass, less the 0.7 ms saved by resolving 20 enclosing chunks where there were 100.
 
@@ -279,24 +279,24 @@ The words half measures 1.1 ms median and about 39 ms p95 on a long natural lang
 
 The same 16 382 vectors, the same query, only the number of partitions changes. Nothing filters by the key.
 
-| Partitions | Vectors each | Build | Unfiltered search |
-| --- | --- | --- | --- |
-| none | 16 382 | 0.2 s | 1.93 ms |
-| 18 | 911 | 0.2 s | 2.10 ms |
-| 64 | 256 | 0.3 s | 6.12 ms |
-| 256 | 64 | 0.4 s | 23.93 ms |
-| 1 024 | 16 | 1.0 s | 92.45 ms |
-| 4 096 | 4 | 3.3 s | 275.64 ms |
-| 16 382 | 1 | 48.7 s | 1067.30 ms |
+| Partitions | Vectors each | Build  | Unfiltered search |
+| ---------- | ------------ | ------ | ----------------- |
+| none       | 16 382       | 0.2 s  | 1.93 ms           |
+| 18         | 911          | 0.2 s  | 2.10 ms           |
+| 64         | 256          | 0.3 s  | 6.12 ms           |
+| 256        | 64           | 0.4 s  | 23.93 ms          |
+| 1 024      | 16           | 1.0 s  | 92.45 ms          |
+| 4 096      | 4            | 3.3 s  | 275.64 ms         |
+| 16 382     | 1            | 48.7 s | 1067.30 ms        |
 
 About **65 µs per partition walked**, flat across the range, independent of what each holds. A partition per book over ten thousand books would spend two thirds of a second before comparing a single vector.
 
 A metadata column carries no such walk, and no narrowing either:
 
-| | Unfiltered | Narrowed to one cluster |
-| --- | --- | --- |
-| Cluster as partition key | 24.37 ms | 0.30 ms |
-| Cluster as metadata column | 1.82 ms | 1.45 ms |
+|                            | Unfiltered | Narrowed to one cluster |
+| -------------------------- | ---------- | ----------------------- |
+| Cluster as partition key   | 24.37 ms   | 0.30 ms                 |
+| Cluster as metadata column | 1.82 ms    | 1.45 ms                 |
 
 Both return the same rows. The partition key prunes; the column filters what it has already looked at.
 
@@ -304,12 +304,12 @@ Both return the same rows. The partition key prunes; the column filters what it 
 
 157 vectors from a vault against 145 800 from the sources — a thousand to one. Best rank reached, over six questions:
 
-| Indexed as | Ranks |
-| --- | --- |
-| A chunk of a source | 1, 1, 1, 8, 1, 1 |
-| A note cut the same way | 2, 7, 19, 1, 91, 7865 |
-| A whole note, 283–357 words | 2045, 4, 318, 3, 127, 14510 |
-| A note's title | 580, 4590, 5541, 2, 510, 23808 |
+| Indexed as                  | Ranks                          |
+| --------------------------- | ------------------------------ |
+| A chunk of a source         | 1, 1, 1, 8, 1, 1               |
+| A note cut the same way     | 2, 7, 19, 1, 91, 7865          |
+| A whole note, 283–357 words | 2045, 4, 318, 3, 127, 14510    |
+| A note's title              | 580, 4590, 5541, 2, 510, 23808 |
 
 Notes are not buried by the imbalance: ranking is by similarity and carries no prior. What does bury them is being indexed whole — the same dilution the chunk table shows, on a note instead of a book.
 
@@ -329,23 +329,23 @@ One question was answered by seven chunks of a single note taking the top seven 
 
 ### What does not work
 
-| | |
-| --- | --- |
-| Reducing dimensions instead of precision | Loses a quarter to a half at equal storage |
-| Truncating a vector this model produces | Worse than projecting, at every size tried |
-| Indexing a title | Ranks near-randomly; the lexical index already matches it |
-| Indexing a note whole beside sources cut into chunks | Erratic — 4th on one question, 14 510th on another |
-| Writing chunks scattered across partitions | 1 900 rows/s against 40 000 grouped |
-| Cutting a chunk by lines | One file put a book on four lines and produced a chunk of a million characters |
+|                                                      |                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Reducing dimensions instead of precision             | Loses a quarter to a half at equal storage                                     |
+| Truncating a vector this model produces              | Worse than projecting, at every size tried                                     |
+| Indexing a title                                     | Ranks near-randomly; the lexical index already matches it                      |
+| Indexing a note whole beside sources cut into chunks | Erratic — 4th on one question, 14 510th on another                             |
+| Writing chunks scattered across partitions           | 1 900 rows/s against 40 000 grouped                                            |
+| Cutting a chunk by lines                             | One file put a book on four lines and produced a chunk of a million characters |
 
 ### What a second engine would cost
 
 Nothing measured here argues for one. Two are reachable from Go if one is ever wanted, and the numbers above are what a candidate has to beat:
 
-| Candidate | Reached from Go by | What it would cost |
-| --- | --- | --- |
-| `usearch` | Official bindings; the index memory-maps from disk | cgo, and cross-compilation from one machine |
-| Qdrant Edge | A Rust crate, in-process, no bindings today | cgo, and bindings to write |
+| Candidate   | Reached from Go by                                 | What it would cost                          |
+| ----------- | -------------------------------------------------- | ------------------------------------------- |
+| `usearch`   | Official bindings; the index memory-maps from disk | cgo, and cross-compilation from one machine |
+| Qdrant Edge | A Rust crate, in-process, no bindings today        | cgo, and bindings to write                  |
 
 LanceDB has no Go bindings at all: reaching it means writing foreign-function bindings by hand, or running a second process beside the application.
 
@@ -377,30 +377,30 @@ Forty EPUBs from `resources/mahabharata`: 85.5 MB of archives, 59 MB of text onc
 
 The corpus is not in git. The test that measures it skips when the directory is absent.
 
-| | |
-| --- | --- |
-| Extraction, all forty | 2.4 s |
-| Per book | 59 ms |
-| Slowest book | 0.26 s |
+|                       |        |
+| --------------------- | ------ |
+| Extraction, all forty | 2.4 s  |
+| Per book              | 59 ms  |
+| Slowest book          | 0.26 s |
 
 Reading a passage back, which is what a result costs when the extracted text is not stored:
 
-| | |
-| --- | --- |
-| One book, extracted again | 42 ms |
-| One spine document of it | 5.9 ms |
+|                                            |        |
+| ------------------------------------------ | ------ |
+| One book, extracted again                  | 42 ms  |
+| One spine document of it                   | 5.9 ms |
 | Slicing out of a stored 1.5 MB text column | 0.9 ms |
-| Slicing out of a stored 60 MB text column | 66 ms |
+| Slicing out of a stored 60 MB text column  | 66 ms  |
 
 `substr` costs about 1.1 ms per megabyte of the value it reads, so the largest books are the ones a stored column serves worst. Re-reading one spine document beats both.
 
 What structure the forty carry, **measured with the Go extractor**:
 
-| Where it came from | Books |
-| --- | --- |
-| The navigation document | 16 |
-| Heading tags | 4 |
-| Nothing at all | 20 |
+| Where it came from      | Books |
+| ----------------------- | ----- |
+| The navigation document | 16    |
+| Heading tags            | 4     |
+| Nothing at all          | 20    |
 
 Half the corpus offers nothing to cut on, which is what extraction has to survive.
 
@@ -414,10 +414,10 @@ Five of the forty carry the page numbers of a print edition, 54 to 311 targets e
 
 Recorded 2026-08-17 on the same AMD Ryzen 7 6800U — 16 threads, AVX2 and no AVX-512 — with `CGO_ENABLED=0`, `intfloat/multilingual-e5-small`, real tokenisation and 256-token inputs.
 
-| Local, pure Go | Chunks/s | 400 000 chunks |
-| --- | --- | --- |
-| default build | 1.38 | about 80 hours |
-| `GOEXPERIMENT=simd` | 3.12 | about 36 hours |
+| Local, pure Go      | Chunks/s | 400 000 chunks |
+| ------------------- | -------- | -------------- |
+| default build       | 1.38     | about 80 hours |
+| `GOEXPERIMENT=simd` | 3.12     | about 36 hours |
 
 The flag is worth 2.2×, has to be set when the binary is built, and nothing in the repository records it. It belongs wherever releases are built.
 
@@ -431,11 +431,11 @@ What that means for the default: a personal vault of a few thousand notes is ten
 
 Recorded 2026-10-09 on AMD Ryzen 7 6800U (16 threads). Embedding batches of variable-length passages with ONNX Runtime:
 
-| Optimization | Batch Latency (p50) | Throughput (passages/s) | Speedup |
-| --- | --- | --- | --- |
-| Baseline (single session, naive padding) | 142 ms | 56.3 | 1.0× |
-| Multi-session parallel pool | 48 ms | 166.7 | 3.0× |
-| Pool + Sequence bucketing (length-sorted batches) | 31 ms | 258.1 | 4.6× |
+| Optimization                                      | Batch Latency (p50) | Throughput (passages/s) | Speedup |
+| ------------------------------------------------- | ------------------- | ----------------------- | ------- |
+| Baseline (single session, naive padding)          | 142 ms              | 56.3                    | 1.0×    |
+| Multi-session parallel pool                       | 48 ms               | 166.7                   | 3.0×    |
+| Pool + Sequence bucketing (length-sorted batches) | 31 ms               | 258.1                   | 4.6×    |
 
 Bucketing groups candidate chunks by token length into contiguous ranges before dispatching tensor tensors, minimizing tensor padding waste.
 
@@ -443,13 +443,11 @@ Bucketing groups candidate chunks by token length into contiguous ranges before 
 
 Recorded 2026-10-09 on AMD Ryzen 7 6800U:
 
-| Search Component | Baseline | With Deduplication & Cache | Speedup |
-| --- | --- | --- | --- |
-| Repeated query embedding | 18.2 ms | 0.04 ms (memory cache) | 455× |
-| Identical chunk indexing | Full embedding pass | Vector reused by SHA-256 content hash; the chunk still gets its own coarse row, written from that vector | No model call |
-| Hybrid search query execution | 32.4 ms (serial) | 12.1 ms (parallel lexical, named, dense) | 2.7× |
-
-
+| Search Component              | Baseline            | With Deduplication & Cache                                                                               | Speedup       |
+| ----------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- | ------------- |
+| Repeated query embedding      | 18.2 ms             | 0.04 ms (memory cache)                                                                                   | 455×          |
+| Identical chunk indexing      | Full embedding pass | Vector reused by SHA-256 content hash; the chunk still gets its own coarse row, written from that vector | No model call |
+| Hybrid search query execution | 32.4 ms (serial)    | 12.1 ms (parallel lexical, named, dense)                                                                 | 2.7×          |
 
 ### What naming a chunk costs the walk
 
@@ -457,13 +455,13 @@ The core addresses a chunk by an opaque `domain.ChunkID` and resumes the walk on
 
 Recorded 2026-09-05 on the same AMD Ryzen 7 6800U, from `BenchmarkUnembedded`, `BenchmarkSaveVectors` and `BenchmarkChunkIdentity` in `adapter/index`. Ten runs of each; the two conversions vary by under 10 % across them, and the pages by two- to fivefold, which is the shape of the answer.
 
-| | Measured |
-| --- | --- |
-| A row spelled as a `domain.ChunkID` | 25 ns |
-| A `port.ChunkCursor` read back as a row | 23 ns |
-| One chunk read out of the index, in a page of 200 | 3.9 µs |
-| A row turned into a `domain.Passage`, the whole of it | 0.67 µs |
-| One vector written, in a page of 200 | 200 µs |
+|                                                       | Measured |
+| ----------------------------------------------------- | -------- |
+| A row spelled as a `domain.ChunkID`                   | 25 ns    |
+| A `port.ChunkCursor` read back as a row               | 23 ns    |
+| One chunk read out of the index, in a page of 200     | 3.9 µs   |
+| A row turned into a `domain.Passage`, the whole of it | 0.67 µs  |
+| One vector written, in a page of 200                  | 200 µs   |
 
 **It is lost in the noise, and the numbers say so plainly.** Over 400 000 chunks — the vault a hundred thousand notes cut into — both conversions together total **19 ms**. Reading those rows out of SQLite is 1.6 s, writing their vectors is 80 s, and the embedding itself is 27 minutes through a service or 36 hours on this laptop's CPU. The conversion is a thousandth of the cheapest adjacent operation, and the row a walk resumes from is serialized once per page of 200, not on each row.
 
@@ -475,24 +473,24 @@ Recorded 2026-09-01 on the same AMD Ryzen 7 6800U — 8 threads of it — with t
 
 **The target: a recording is transcribed faster than it plays.** Anything slower and a vault of lectures never catches up with itself.
 
-| | ru | en | Peak RSS |
-| --- | --- | --- | --- |
-| parakeet-tdt-0.6b-v3 int8, ONNX | 0.08–0.15 | 0.08–0.11 | 1.2 GB |
-| whisper tiny, ggml | 0.08 | 0.06 | 0.3 GB |
-| whisper small, ggml | 0.33 | 0.22 | 0.9 GB |
-| whisper small int8, ONNX | 0.39 | 0.26 | 1.4 GB |
-| whisper large-v3-turbo int8, ONNX | 0.41 | 0.39 | 2.2 GB |
-| whisper large-v3-turbo, ggml | 0.92 | 0.84 | 1.9 GB |
+|                                   | ru        | en        | Peak RSS |
+| --------------------------------- | --------- | --------- | -------- |
+| parakeet-tdt-0.6b-v3 int8, ONNX   | 0.08–0.15 | 0.08–0.11 | 1.2 GB   |
+| whisper tiny, ggml                | 0.08      | 0.06      | 0.3 GB   |
+| whisper small, ggml               | 0.33      | 0.22      | 0.9 GB   |
+| whisper small int8, ONNX          | 0.39      | 0.26      | 1.4 GB   |
+| whisper large-v3-turbo int8, ONNX | 0.41      | 0.39      | 2.2 GB   |
+| whisper large-v3-turbo, ggml      | 0.92      | 0.84      | 1.9 GB   |
 
 Quantising is what makes the largest model usable: the same weights through ggml at fp16 take 0.92, and through ONNX Runtime at int8 take 0.41. The ggml build of `small` quantised to q5\_1 is **slower** than the same model unquantised — 0.73 against 0.38 — so quantisation is worth measuring per build and not assumed.
 
 Words wrong, against [FLEURS](https://huggingface.co/datasets/google/fleurs), 60 utterances a language, lowercased and stripped of punctuation:
 
-| | ru | en |
-| --- | --- | --- |
-| parakeet-tdt-0.6b-v3 int8 | 7.1% | 8.6% |
-| whisper large-v3-turbo, ggml | 4.6% | 9.2% |
-| whisper small, ggml | 10.3% | 19.7% |
+|                              | ru    | en    |
+| ---------------------------- | ----- | ----- |
+| parakeet-tdt-0.6b-v3 int8    | 7.1%  | 8.6%  |
+| whisper large-v3-turbo, ggml | 4.6%  | 9.2%  |
+| whisper small, ggml          | 10.3% | 19.7% |
 
 The two are not measured the same way and the numbers are not directly comparable: parakeet was given one utterance at a time, as a segmenter feeds it, and whisper was given the utterances joined into one file, which is how it does its best work. Read the table as two separate answers to "is this good enough", not as a race.
 
@@ -506,10 +504,10 @@ The weights are 641 MB, fetched when the first recording is transcribed.
 
 Recorded 2026-10-08 on AMD Ryzen 7 6800U (16 threads) and Apple M4 (10 cores), from `BenchmarkResampledAMinute` in `internal/adapter/transcription`. Resampling one minute of 44.1 kHz audio to 16 kHz:
 
-| Platform | Sequential | Parallel (`GOMAXPROCS`) | Speedup |
-| --- | --- | --- | --- |
-| Linux (x86_64) | 328 ms | 98 ms | 3.3× |
-| macOS (Apple Silicon M4 arm64) | 83.4 ms | 18.5 ms | 4.5× |
+| Platform                       | Sequential | Parallel (`GOMAXPROCS`) | Speedup |
+| ------------------------------ | ---------- | ----------------------- | ------- |
+| Linux (x86_64)                 | 328 ms     | 98 ms                   | 3.3×    |
+| macOS (Apple Silicon M4 arm64) | 83.4 ms    | 18.5 ms                 | 4.5×    |
 
 Each output sample is computed independently, so the samples are chunked across available worker goroutines.
 
@@ -517,10 +515,10 @@ Each output sample is computed independently, so the samples are chunked across 
 
 Recorded 2026-10-08 on AMD Ryzen 7 6800U (16 threads) and Apple M4 (10 cores), from `BenchmarkLogMel` in `internal/adapter/transcription`. Computing 128-band log-mel features for 10 seconds of 16 kHz audio:
 
-| Platform | Sequential STFT & dense bank | Parallel STFT & sparse bank | Speedup |
-| --- | --- | --- | --- |
-| Linux (x86_64) | 42.8 ms | 5.3 ms | 8.0× |
-| macOS (Apple Silicon M4 arm64) | 24.3 ms | 1.4 ms | 17.2× |
+| Platform                       | Sequential STFT & dense bank | Parallel STFT & sparse bank | Speedup |
+| ------------------------------ | ---------------------------- | --------------------------- | ------- |
+| Linux (x86_64)                 | 42.8 ms                      | 5.3 ms                      | 8.0×    |
+| macOS (Apple Silicon M4 arm64) | 24.3 ms                      | 1.4 ms                      | 17.2×   |
 
 Spectrogram FFTs and mel filter bands are chunked across available worker goroutines, and triangular filters evaluate only non-zero frequency bins.
 
@@ -538,12 +536,12 @@ go test ./usecase/note/ -run XXX -bench 'Read|Save' -benchtime 50x
 
 Taken 2026-08-17, AMD Ryzen 7 6800U, NVMe, `-benchtime 50x`.
 
-| | |
-|---|---|
-| Read a note, vault of 1 000 | 98 µs |
-| Read a note, vault of 100 000 | 99 µs |
-| Save, 500-word body | 10.06 ms |
-| Save, 5 000-word body | 10.07 ms |
+|                               |          |
+| ----------------------------- | -------- |
+| Read a note, vault of 1 000   | 98 µs    |
+| Read a note, vault of 100 000 | 99 µs    |
+| Save, 500-word body           | 10.06 ms |
+| Save, 5 000-word body         | 10.07 ms |
 
 **A read does not grow with the vault.** The two figures are within a percent of each other, which is what says the read addresses one file and looks at nothing else. This is the cost a window pays per clean tab per change that names its path: ten open tabs are about a millisecond of reading per change.
 
@@ -557,10 +555,10 @@ NUMEN_LOAD=1 go test ./adapter/window/editor/ -run TestEditLoad -v -timeout 30m
 
 Taken 2026-08-17, same machine. This is the path the application owns: the write, the watcher noticing it, the refresh, and the change reaching a client.
 
-| vault | save | until a client is notified |
-|---|---|---|
-| 10 000 notes | 22 ms | 65 ms |
-| 100 000 notes | 13 ms | 66 ms |
+| vault         | save  | until a client is notified |
+| ------------- | ----- | -------------------------- |
+| 10 000 notes  | 22 ms | 65 ms                      |
+| 100 000 notes | 13 ms | 66 ms                      |
 
 Neither figure grows with the vault. The watcher reports a path, the refresh reads that one note, and what is walked is nothing — which is what says an edit is answered by the size of the note and not the size of the library.
 
@@ -590,21 +588,21 @@ A note's headings are its parts. The chunks of one section are tiled inside that
 
 **A 200-word note under four headings**, one every 48 words. It holds five small chunks over the whole body and four with the headings naming the sections.
 
-| the edit is | no part named | the headings as parts |
-|---|---|---|
+| the edit is                     | no part named         | the headings as parts |
+| ------------------------------- | --------------------- | --------------------- |
 | a line added to the frontmatter | 0 asked · 5 of 5 kept | 0 asked · 4 of 4 kept |
-| at the end of the body | 1 · 4 of 5 | 1 · 4 of 4 |
-| in the middle of the body | 3 · 2 of 5 | 2 · 3 of 4 |
-| at the start of the body | 5 · 0 of 5 | 2 · 3 of 4 |
+| at the end of the body          | 1 · 4 of 5            | 1 · 4 of 4            |
+| in the middle of the body       | 3 · 2 of 5            | 2 · 3 of 4            |
+| at the start of the body        | 5 · 0 of 5            | 2 · 3 of 4            |
 
 **A 1000-word note under five headings**, one every 200 words. It holds 25 small chunks either way.
 
-| the edit is | no part named | the headings as parts |
-|---|---|---|
+| the edit is                     | no part named           | the headings as parts   |
+| ------------------------------- | ----------------------- | ----------------------- |
 | a line added to the frontmatter | 0 asked · 25 of 25 kept | 0 asked · 25 of 25 kept |
-| at the end of the body | 1 · 25 of 25 | 1 · 24 of 25 |
-| in the middle of the body | 14 · 12 of 25 | 3 · 22 of 25 |
-| at the start of the body | 26 · 0 of 25 | 5 · 20 of 25 |
+| at the end of the body          | 1 · 25 of 25            | 1 · 24 of 25            |
+| in the middle of the body       | 14 · 12 of 25           | 3 · 22 of 25            |
+| at the start of the body        | 26 · 0 of 25            | 5 · 20 of 25            |
 
 The counts are of the chunks that carry a vector. The chunk enclosing the note keeps its row in the frontmatter row alone: its text is the whole note, so any edit to the body replaces it, and the chunks that were kept are pointed at the row that is there now.
 
@@ -622,12 +620,12 @@ Recorded 2026-08-19 on the same AMD Ryzen 7 6800U, `CGO_ENABLED=0`, pdfium throu
 
 The document is 546 pages of a scan at 600 dpi, 233 MB, carrying a text layer somebody else's OCR left in it.
 
-| | |
-| --- | --- |
-| The library, compiled | 5.1 s, once for the life of the process |
-| Opening a document after that | 0.1–0.6 s |
-| Its text layer, all of it | 10–12 s (1 701 572 characters, about 45 pages a second) |
-| Naming every page | 4 ms |
+|                               |                                                         |
+| ----------------------------- | ------------------------------------------------------- |
+| The library, compiled         | 5.1 s, once for the life of the process                 |
+| Opening a document after that | 0.1–0.6 s                                               |
+| Its text layer, all of it     | 10–12 s (1 701 572 characters, about 45 pages a second) |
+| Naming every page             | 4 ms                                                    |
 
 The compile is the module, not the document, and it is paid by the first PDF a run reads and by no other. The text of a smaller document is proportionally quicker: 80 pages is under a second.
 
@@ -637,11 +635,11 @@ Recorded 2026-09-06 on the same AMD Ryzen 7 6800U. The corpus is not in the repo
 
 The book is the largest of the forty: 19.8 MB on disk, 4 032 243 bytes of text over 96 spine documents, naming 99 parts, and read in 2 177 pages. Its longest document is 88 707 bytes of text.
 
-| | |
-| --- | --- |
-| Reading the whole file | 105–122 ms (about 175 MB/s) |
-| Setting one document — the longest — as the markup a window draws | 1.5–2.0 ms |
-| Counting the pages of the book | 100–200 ns |
+|                                                                   |                             |
+| ----------------------------------------------------------------- | --------------------------- |
+| Reading the whole file                                            | 105–122 ms (about 175 MB/s) |
+| Setting one document — the longest — as the markup a window draws | 1.5–2.0 ms                  |
+| Counting the pages of the book                                    | 100–200 ns                  |
 
 Nothing is laid out to count the pages, which is why the last row is nanoseconds and not seconds: the count is arithmetic over the one text stream. A reader that paginated by laying every document out would pay for the whole book before showing any of it, and it is the engine the window runs in that this matters on — the pages are set by WebKit on two of the three platforms.
 
@@ -651,9 +649,9 @@ Reading the file is paid once when the book is opened and not again while it is 
 
 The same machine, ONNX Runtime through `purego`, one page at 300 dpi: layout by PP-DocLayoutV3, lines by PP-OCRv5 detection, text by PP-OCRv6 tiny.
 
-| | |
-| --- | --- |
-| One page, ten regions | 8.6 s |
+|                         |                  |
+| ----------------------- | ---------------- |
+| One page, ten regions   | 8.6 s            |
 | A document of 546 pages | about 75 minutes |
 
 Two settings are measured rather than guessed.
@@ -664,12 +662,12 @@ Two settings are measured rather than guessed.
 
 The recogniser is chosen for what it keeps rather than for its size. Measured over three pages of a book set in transliterated Sanskrit, against the document's own text layer with every mark folded away from both:
 
-| | size | a page | keeps the letter | marks |
-| --- | --- | --- | --- | --- |
-| PP-OCRv6 tiny | 4.5 MB | 1.2 s | 92.6% | 142 |
-| PP-OCRv6 small | 21 MB | 2.6 s | 81.5% | 156 |
-| PP-OCRv6 medium | 77 MB | 8.1 s | 81.5% | 157 |
-| PP-OCRv5 server | 85 MB | 7.9 s | 90.8% | 67 |
+|                 | size   | a page | keeps the letter | marks |
+| --------------- | ------ | ------ | ---------------- | ----- |
+| PP-OCRv6 tiny   | 4.5 MB | 1.2 s  | 92.6%            | 142   |
+| PP-OCRv6 small  | 21 MB  | 2.6 s  | 81.5%            | 156   |
+| PP-OCRv6 medium | 77 MB  | 8.1 s  | 81.5%            | 157   |
+| PP-OCRv5 server | 85 MB  | 7.9 s  | 90.8%            | 67    |
 
 No model in the family can write a consonant with a dot below it. Small and medium delete the letter they cannot spell — `ṭuṭaba hṛdayaka` becomes `uaba hdayaka` — and one Sanskrit word in five loses a letter. Tiny writes the plain letter instead, so the word keeps its length and a search still reaches it. The smallest is also the fastest and, on this book, the best.
 
@@ -679,12 +677,12 @@ A recogniser that cannot spell a script at all writes plausible nonsense: the sa
 
 Recorded 2026-08-20 on the same machine, over the 546-page scan and its text layer.
 
-| | |
-| --- | --- |
-| Reading the whole text | 9.5 s, 1 702 107 bytes over 546 pages |
-| The words of one page | 239 ms |
-| The words of three pages | 213 ms, 71 ms a page |
-| The words of ten pages | 403 ms, 40 ms a page |
+|                          |                                       |
+| ------------------------ | ------------------------------------- |
+| Reading the whole text   | 9.5 s, 1 702 107 bytes over 546 pages |
+| The words of one page    | 239 ms                                |
+| The words of three pages | 213 ms, 71 ms a page                  |
+| The words of ten pages   | 403 ms, 40 ms a page                  |
 
 **Almost all of it is opening the document.** Ten pages cost twice what one does, not ten times, because the 233 MB file is read and parsed once and the pages after the first are tens of milliseconds each. That is what a cache of open documents is for, and it is why the pages wanted are asked for together.
 
@@ -696,13 +694,13 @@ Recorded 2026-08-20 over the same scan: the four headings of pages 31 and 32, an
 
 The detector answers with the text's own outline drawn inside the letters, and the amount it falls short is a share of the line's height. What widens it again was a fixed number of pixels, measured on the part after it has been scaled — on a heading that is about four pixels of the page against fifteen to twenty of shrink. The top of every capital and the last letter of every line were cut off.
 
-| the line widened by | headings | body |
-| --- | --- | --- |
-| 10 pixels | 0.074 | 0.0644 |
-| 14 | 0.031 | 0.0633 |
-| 18 | 0.025 | 0.0639 |
-| 20 | 0.017 | 0.0648 |
-| 24 | 0.035 | 0.0667 |
+| the line widened by | headings | body   |
+| ------------------- | -------- | ------ |
+| 10 pixels           | 0.074    | 0.0644 |
+| 14                  | 0.031    | 0.0633 |
+| 18                  | 0.025    | 0.0639 |
+| 20                  | 0.017    | 0.0648 |
+| 24                  | 0.035    | 0.0667 |
 
 **Eighteen**, the midpoint where improvements plateau. The body is flat from ten to twenty and begins to degrade after that.
 
@@ -722,11 +720,11 @@ Recorded 2026-08-20 over the same scan, pages 44 to 73 of the file, which print 
 
 Nothing is read in it. The detector draws a boundary around dark pixels and shrinks it by a share of the line's height; a line filling the image it is looked for in leaves no boundary to draw, so the region comes back blank.
 
-| what was read | pages right of 30 |
-| --- | --- |
-| the unmodified region | 0 |
-| the region magnified 3× to 20× | 0 |
-| the crop widened to 150, 250, 400, 640, 960 pixels | 0 to 6 |
+| what was read                                      | pages right of 30 |
+| -------------------------------------------------- | ----------------- |
+| the unmodified region                              | 0                 |
+| the region magnified 3× to 20×                     | 0                 |
+| the crop widened to 150, 250, 400, 640, 960 pixels | 0 to 6            |
 
 Widening the crop takes in the ornaments either side, and what they read as is not a number. Keeping only the lines whose middle falls in the region gets 30 of 30 at a margin of 150 pixels and above — and that margin is a pixel count against one book at one dpi, so it is not a default anything can carry.
 
@@ -738,12 +736,12 @@ The margin that works is the measurement worth keeping here: it says the failure
 
 Recorded 2026-08-20 over the same 546-page scan, five pages averaged, on an idle machine. The recognition run competes for the same cores and for the same pool of pdfium workers; under one, every number below is roughly doubled.
 
-| width asked | pdfium | resample | jpeg | total | over the wire |
-| --- | --- | --- | --- | --- | --- |
-| 800 | 443 ms | 43 | 17 | **503 ms** | 234 kB |
-| 1200 | 498 | 95 | 34 | **628** | 417 kB |
-| 1600 | 553 | 163 | 52 | **768** | 625 kB |
-| 2400 | 616 | 377 | 107 | **1101** | 1094 kB |
+| width asked | pdfium | resample | jpeg | total      | over the wire |
+| ----------- | ------ | -------- | ---- | ---------- | ------------- |
+| 800         | 443 ms | 43       | 17   | **503 ms** | 234 kB        |
+| 1200        | 498    | 95       | 34   | **628**    | 417 kB        |
+| 1600        | 553    | 163      | 52   | **768**    | 625 kB        |
+| 2400        | 616    | 377      | 107  | **1101**   | 1094 kB       |
 
 **Drawing barely moves with the resolution** — 104 dpi costs 443 ms and 311 dpi costs 616. So the cost is not rasterising: each page of this book holds one large photograph, and the library decodes the whole of it whatever size is asked for. Half a second a page is what this document costs, and no setting here reaches it.
 
@@ -755,18 +753,18 @@ That leaves the half second, and it is the same half second every time a page is
 
 Recorded 2026-08-20 over the same 546-page scan. 700 questions drawn from the book's own parts: for each of 350 parts whose heading the recogniser read as words, one question is that heading — a person asking where the book speaks about a thing — and one is seven words from the middle of the part. The right answer is that part either way.
 
-| | right section | opened at its start |
-| --- | --- | --- |
-| the words half in original form | 307/350 | 298/350 |
-| the section's name in every chunk | 340/350 | 306/350 |
-| the sections findable by name | 346/350 | 346/350 |
-| both | 348/350 | 348/350 |
+|                                   | right section | opened at its start |
+| --------------------------------- | ------------- | ------------------- |
+| the words half in original form   | 307/350       | 298/350             |
+| the section's name in every chunk | 340/350       | 306/350             |
+| the sections findable by name     | 346/350       | 346/350             |
+| both                              | 348/350       | 348/350             |
 
 The questions quoting a phrase from the middle of a part moved by one either way — 331, 330, 331, 330 — so none of these costs anything on a question that names no section.
 
 **The second column is the one that decided it.** Putting the name into every chunk lifts the right chapter but still answers with whatever paragraph of it ranks best; making a section findable by its own name answers with the section, at its heading.
 
-What the words half was doing is visible in one query. Asked for `Madhavendra Puri`, BM25 scored the chapter that *is* about him at −12.74 and the subsections inside it between −17.8 and −19.7 — and lower is better. The chapter's opening says his name once, in its heading; a paragraph in the subsection after it says it four times.
+What the words half was doing is visible in one query. Asked for `Madhavendra Puri`, BM25 scored the chapter that _is_ about him at −12.74 and the subsections inside it between −17.8 and −19.7 — and lower is better. The chapter's opening says his name once, in its heading; a paragraph in the subsection after it says it four times.
 
 **The name in every chunk was left.** It is worth two points on top of the other, and it changes the text a vector is made from: the recipe changes, and every chunk of every recognised document is embedded again. Only the words half was measured here — what a vector that knows its chapter is worth cannot be known without buying those vectors. The number to beat is 346 and 346.
 
@@ -778,10 +776,10 @@ Recorded 2026-08-21 over the same 546-page scan, through a hosted model.
 
 **Two models, over 58 pages spread through the book.**
 
-| | pages rejected by gates | output tokens | a book |
-| --- | --- | --- | --- |
-| `gemini-2.5-flash-lite` | 67 % | 25 005 per 10 pages | $0.14 |
-| `gemini-2.5-flash` | 8.6 % | 6 919 per 20 pages | $0.29 |
+|                         | pages rejected by gates | output tokens       | a book |
+| ----------------------- | ----------------------- | ------------------- | ------ |
+| `gemini-2.5-flash-lite` | 67 %                    | 25 005 per 10 pages | $0.14  |
+| `gemini-2.5-flash`      | 8.6 %                   | 6 919 per 20 pages  | $0.29  |
 
 The cheap model reports lines it did not change, which is where its output goes. A chain running it first pays $0.14 for a reply it throws away and $0.29 for the good model after it. The good model alone is $0.29, about 1 165 000 tokens in and 194 000 out. A rejected page queried again answers the same.
 
@@ -797,19 +795,19 @@ Folding diacritics before embedding measures +0.08 to +0.11 of cosine for a pers
 
 Recorded 2026-08-25 in Chrome 149, over a window holding a 400-line editor and three thousand rows of chrome.
 
-| the multiplier changed | forced layout |
-| --- | --- |
-| `--numen-interface-scale` | 27–39 ms |
-| `--numen-text-scale` | 4–6 ms |
+| the multiplier changed    | forced layout |
+| ------------------------- | ------------- |
+| `--numen-interface-scale` | 27–39 ms      |
+| `--numen-text-scale`      | 4–6 ms        |
 
 The interface is the root's font size, so every length written in `rem` is measured again and the whole document is laid out. The reading size is written in `rem` as well, so the interface carries the editor and marked-up text along with everything else: what the reading size moves stands inside what the interface moves, and not beside it.
 
 The editor draws only the lines that are on screen — thirty-six of the four hundred — so what it adds to either is a screen of text, whatever the note is worth. Marked-up text draws all of it. The same window with four hundred blocks of a note on screen, over the whole stylesheet rather than the tokens alone:
 
-| the multiplier changed | with the note | without it |
-| --- | --- | --- |
-| `--numen-interface-scale` | 45–71 ms | 32–43 ms |
-| `--numen-text-scale` | 9–13 ms | 7–11 ms |
+| the multiplier changed    | with the note | without it |
+| ------------------------- | ------------- | ---------- |
+| `--numen-interface-scale` | 45–71 ms      | 32–43 ms   |
+| `--numen-text-scale`      | 9–13 ms       | 7–11 ms    |
 
 Those two columns are read against each other. A page carrying the whole stylesheet costs more to recalculate than one carrying the tokens, which is why neither column meets the table above.
 
@@ -819,9 +817,9 @@ A held arrow key crosses a row of the size list every 40 ms, and a size is worn 
 
 Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `internal/adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
 
-| | Before | After | 2026-09-06 | 2026-09-06, resolved once |
-| --- | --- | --- | --- | --- |
-| One name read | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs | 64.9 µs · 6496 B · **76 allocs** | 36.4 µs · 3584 B · **44 allocs** |
+|                   | Before                       | After                        | 2026-09-06                       | 2026-09-06, resolved once        |
+| ----------------- | ---------------------------- | ---------------------------- | -------------------------------- | -------------------------------- |
+| One name read     | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs | 64.9 µs · 6496 B · **76 allocs** | 36.4 µs · 3584 B · **44 allocs** |
 | One folder listed | 79.6 µs · 4895 B · 60 allocs | 66.9 µs · 3989 B · 51 allocs | 51.9 µs · 5672 B · **71 allocs** | 20.8 µs · 2745 B · **39 allocs** |
 | One line appended | 2.43 ms · 5334 B · 58 allocs | 2.24 ms · 4413 B · 49 allocs | 2.29 ms · 6400 B · **80 allocs** | 1.80 ms · 3355 B · **48 allocs** |
 
@@ -849,11 +847,11 @@ Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, fr
 
 Each row is one request through its use case. The first three are warm, which is a person's second question of an evening: the schedule cache and the day counts are filled before the clock starts. The fourth is the history screen on a build that keeps no counting, which is what the first question of a launch pays.
 
-| | Before | After | 2026-09-06 |
-| --- | --- | --- | --- |
-| Initial overview, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB | 1.06 s · 617 MB |
-| Starting a session | 1.25 s · 836 MB | 1.19 s · 793 MB | 1.46 s · 824 MB |
-| The history screen | 0.71 s · 536 MB | 0.71 s · 493 MB | 0.83 s · 502 MB |
+|                                         | Before          | After           | 2026-09-06      |
+| --------------------------------------- | --------------- | --------------- | --------------- |
+| Initial overview, one vault counted     | 0.82 s · 605 MB | 0.85 s · 605 MB | 1.06 s · 617 MB |
+| Starting a session                      | 1.25 s · 836 MB | 1.19 s · 793 MB | 1.46 s · 824 MB |
+| The history screen                      | 0.71 s · 536 MB | 0.71 s · 493 MB | 0.83 s · 502 MB |
 | The history screen, nothing counted yet | 0.78 s · 554 MB | 0.68 s · 490 MB | 0.82 s · 498 MB |
 
 Every column is the median of two runs of five. The memory column is what a request allocates, which is the steadier of the two: the times of repeated runs of one build spread by about 5 %, and the memory by under 0.1 %.
@@ -864,13 +862,13 @@ Every column is the median of two runs of five. The memory column is what a requ
 
 What was counted, per warm request:
 
-| | Before | After |
-| --- | --- | --- |
-| Starting a session: the schedule cache read | 0 | 1 |
-| Starting a session: the schedule cache written | 1 | 0 |
-| Opening the history: the schedule cache read | 0 | 1 |
-| Opening the history: the schedule cache written | 1 | 0 |
-| The history screen, nothing counted yet: run files opened | 360 | 180 |
+|                                                           | Before | After |
+| --------------------------------------------------------- | ------ | ----- |
+| Starting a session: the schedule cache read               | 0      | 1     |
+| Starting a session: the schedule cache written            | 1      | 0     |
+| Opening the history: the schedule cache read              | 0      | 1     |
+| Opening the history: the schedule cache written           | 1      | 0     |
+| The history screen, nothing counted yet: run files opened | 360    | 180   |
 
 A session and the history screen each recomputed the entire log and recorded the total, regardless of cache state; both now query the cache first. The history screen read the log twice — once for previous days and once for upcoming days — and now reads it once and forwards the data.
 
@@ -884,10 +882,10 @@ By profile, during initial overview on this vault: **57 % of the request is `Lis
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkPresetCurve` in `usecase/flashcards`. The vault is the one above — fifty thousand review cards over twenty decks, 27 000 answers in 180 run files — with its decks pointing at two presets: one deck points at the first and the other nineteen at the second. Each row is the curve of one of those presets, drawn under a goal of minutes, with the schedule cache filled before the clock starts: opening the window and then a preset tab.
 
-| | Before | After |
-| --- | --- | --- |
-| A preset holding one deck of the twenty | 2.84 s · 1.21 GB | 2.07 s · 0.83 GB |
-| A preset holding nineteen of them | 44.7 s · 13.31 GB | 42.4 s · 13.30 GB |
+|                                         | Before            | After             |
+| --------------------------------------- | ----------------- | ----------------- |
+| A preset holding one deck of the twenty | 2.84 s · 1.21 GB  | 2.07 s · 0.83 GB  |
+| A preset holding nineteen of them       | 44.7 s · 13.31 GB | 42.4 s · 13.30 GB |
 
 Both columns are the median of two runs of three. The memory column is the one these are read on: the times of the second row spread by a quarter between runs, and its memory by under 0.1 %.
 
@@ -903,12 +901,12 @@ Both columns are the median of two runs of three. The memory column is the one t
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`. Twenty decks with every one of them pointing at one preset, so the curve is drawn over the whole vault; the log grows with the vault at about half an answer a review card, in 180 run files. The schedule cache is filled before the clock starts.
 
-| review cards | Before | After |
-| --- | --- | --- |
-| 500 | 0.42 s · 158 MB | 0.31 s · 145 MB |
-| 5 000 | 3.90 s · 1.43 GB | 2.67 s · 1.29 GB |
-| 20 000 | 15.5 s · 5.51 GB | 9.9 s · 4.86 GB |
-| 50 000 | 40.4 s · 14.08 GB | 23.4 s · 11.68 GB |
+| review cards | Before            | After             |
+| ------------ | ----------------- | ----------------- |
+| 500          | 0.42 s · 158 MB   | 0.31 s · 145 MB   |
+| 5 000        | 3.90 s · 1.43 GB  | 2.67 s · 1.29 GB  |
+| 20 000       | 15.5 s · 5.51 GB  | 9.9 s · 4.86 GB   |
+| 50 000       | 40.4 s · 14.08 GB | 23.4 s · 11.68 GB |
 
 Both columns are the median of two runs of three on an idle machine, where the two runs of a row landed within 7 % of each other on the clock and within 0.01 % on the memory. The memory column is the one these are read on: on a vault where a change cannot help, a row's time moves by a quarter between runs while its memory moves by tenths of a per cent. The last row is 105.1 million allocations before and 92.2 million after.
 
@@ -928,12 +926,12 @@ Both columns are the median of two runs of three on an idle machine, where the t
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
 
-| review cards | Before | After |
-| --- | --- | --- |
-| 500 | 0.29 s · 145 MB | 0.23 s · 145 MB |
-| 5 000 | 2.59 s · 1.29 GB | 2.30 s · 1.29 GB |
-| 20 000 | 9.5 s · 4.86 GB | 6.6 s · 4.86 GB |
-| 50 000 | 24.4 s · 11.68 GB | 15.5 s · 11.68 GB |
+| review cards | Before            | After             |
+| ------------ | ----------------- | ----------------- |
+| 500          | 0.29 s · 145 MB   | 0.23 s · 145 MB   |
+| 5 000        | 2.59 s · 1.29 GB  | 2.30 s · 1.29 GB  |
+| 20 000       | 9.5 s · 4.86 GB   | 6.6 s · 4.86 GB   |
+| 50 000       | 24.4 s · 11.68 GB | 15.5 s · 11.68 GB |
 
 Both columns are the median of two runs of three on an idle machine. **The clock is the column these are read on**, which is the other way round from every row above: what is taken off is arithmetic over a slice that is already there, so it allocates nothing, and the memory of every row moved by under a hundredth of a per cent — 92.17 million allocations at fifty thousand review cards either way.
 
@@ -953,12 +951,12 @@ The two runs of a row landed within 8 % of each other on the clock, and the last
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
 
-| review cards | Before | After |
-| --- | --- | --- |
-| 500 | 0.27 s · 145 MB | 0.12 s · 19.6 MB |
-| 5 000 | 2.17 s · 1.29 GB | 1.01 s · 150 MB |
-| 20 000 | 7.4 s · 4.86 GB | 3.5 s · 592 MB |
-| 50 000 | 17.6 s · 11.68 GB | 8.8 s · 1.52 GB |
+| review cards | Before            | After            |
+| ------------ | ----------------- | ---------------- |
+| 500          | 0.27 s · 145 MB   | 0.12 s · 19.6 MB |
+| 5 000        | 2.17 s · 1.29 GB  | 1.01 s · 150 MB  |
+| 20 000       | 7.4 s · 4.86 GB   | 3.5 s · 592 MB   |
+| 50 000       | 17.6 s · 11.68 GB | 8.8 s · 1.52 GB  |
 
 Both columns are the median of two runs of three on an idle machine. **The allocation is the column these are read on.** It is what the change takes away, and it is steady: the two runs of a row are within 0.05 % of each other everywhere. The clock halves at every size, which is far outside the spread of the runs behind it — 3 % or less at every size but 5 000, whose two runs after the change are a sixth apart. **That row says nothing on the clock** and is here for its memory.
 
@@ -982,12 +980,12 @@ That is the one place the arithmetic here parts from the library, which counts t
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, which has eight cores and sixteen threads, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
 
-| review cards | Before | After |
-| --- | --- | --- |
-| 500 | 0.12 s · 19.6 MB | 0.08 s · 19.7 MB |
-| 5 000 | 1.01 s · 150 MB | 0.29 s · 150 MB |
-| 20 000 | 3.5 s · 592 MB | 1.06 s · 592 MB |
-| 50 000 | 8.8 s · 1.52 GB | 2.5 s · 1.52 GB |
+| review cards | Before           | After            |
+| ------------ | ---------------- | ---------------- |
+| 500          | 0.12 s · 19.6 MB | 0.08 s · 19.7 MB |
+| 5 000        | 1.01 s · 150 MB  | 0.29 s · 150 MB  |
+| 20 000       | 3.5 s · 592 MB   | 1.06 s · 592 MB  |
+| 50 000       | 8.8 s · 1.52 GB  | 2.5 s · 1.52 GB  |
 
 Both columns are the median of two runs of three on an idle machine. **The clock is the column these are read on, and the allocation is the control.** The same work on other cores allocates the same bytes, and three of the four rows moved by under 0.05 %; a memory figure that had moved would have said something changed that was not meant to. The 500 row's allocation is 0.4 % higher, which is the stacks of the goroutines a request of eighty milliseconds now starts.
 
@@ -1005,11 +1003,11 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/window/flashcards`. The installation is generated: four vaults, each of five thousand review cards over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
 
-| | Measured 2026-09-01 | Measured 2026-09-06 |
-| --- | --- | --- |
-| Every vault counted inside one answer — what the window opened on before | 0.52 s | 0.52 s (6, 0.52–0.66) |
-| The list of vaults on screen | 1.3 ms | 1.0 ms (6, 1.0–3.3) |
-| The last of the four counts landing | 0.21 s | 0.20 s (6, 0.20–0.29) |
+|                                                                          | Measured 2026-09-01 | Measured 2026-09-06   |
+| ------------------------------------------------------------------------ | ------------------- | --------------------- |
+| Every vault counted inside one answer — what the window opened on before | 0.52 s              | 0.52 s (6, 0.52–0.66) |
+| The list of vaults on screen                                             | 1.3 ms              | 1.0 ms (6, 1.0–3.3)   |
+| The last of the four counts landing                                      | 0.21 s              | 0.20 s (6, 0.20–0.29) |
 
 The first column is the median of two runs of five. The second is six runs of five taken on a machine carrying five other agents' work, quoted at the best of the six with the spread beside it.
 
@@ -1029,16 +1027,16 @@ Recorded 2026-09-06 on the same AMD Ryzen 7 6800U, over the flashcards window's 
 
 **A window is not measured here, and cannot be.** What a person waits for is the process starting, the Go side assembling, WebKit creating a webview, and the bundle being parsed and run — and the three that are not Go need a window on a screen. What is below is the Go side alone, which is the part a change to the composition root could move.
 
-| | Measured | Allocations |
-| --- | --- | --- |
-| The settings read | 0.13 ms (0.13–0.15) | 14.9 kB · 164 |
-| The registry opened | 50 ns (49–63) | 24 B · 1 |
-| The index opened, no file there yet | 13.7 ms (13.7–16.4) | 64 kB · 608 |
-| The index opened, the file already there | 1.07 ms (1.07–1.32) | 36 kB · 164 |
-| The themes read | 13.0 µs (13.0–18.3) | 3.0 kB · 20 |
-| The pages handler built | 0.55 µs (0.55–0.96) | 120 B · 6 |
-| The use cases assembled | 0.26 ms (0.26–0.44) | 19 kB · 270 |
-| The first page served | 0.73 ms (0.73–1.13) | 24 kB · 138 |
+|                                              | Measured                | Allocations    |
+| -------------------------------------------- | ----------------------- | -------------- |
+| The settings read                            | 0.13 ms (0.13–0.15)     | 14.9 kB · 164  |
+| The registry opened                          | 50 ns (49–63)           | 24 B · 1       |
+| The index opened, no file there yet          | 13.7 ms (13.7–16.4)     | 64 kB · 608    |
+| The index opened, the file already there     | 1.07 ms (1.07–1.32)     | 36 kB · 164    |
+| The themes read                              | 13.0 µs (13.0–18.3)     | 3.0 kB · 20    |
+| The pages handler built                      | 0.55 µs (0.55–0.96)     | 120 B · 6      |
+| The use cases assembled                      | 0.26 ms (0.26–0.44)     | 19 kB · 270    |
+| The first page served                        | 0.73 ms (0.73–1.13)     | 24 kB · 138    |
 | **All of it, first launch on a new machine** | **31.9 ms (31.9–41.0)** | 236 kB · 2 553 |
 
 **The Go side is thirty milliseconds and the schema is most of it.** Opening an index that is not there yet runs the migrations, and that is 14 ms of the 32; on every launch after the first it is one millisecond. Assembling every use case the window serves is a quarter of a millisecond, and building the handler that serves the pages is half a microsecond. Nothing the night's moves touched is measurable from here.
@@ -1051,10 +1049,10 @@ The harness for this is not in the tree. It was taken with a benchmark written a
 
 Recorded 2026-09-06, `vite build` in each window's own folder, into the Go package that embeds it. The figure is the one file the window loads.
 
-| | JavaScript | gzip | CSS | modules |
-| --- | --- | --- | --- | --- |
-| flashcards | 507 kB | 176 kB | 100 kB | 726 |
-| editor | 1 631 kB | 562 kB | 111 kB | 2 601 |
+|            | JavaScript | gzip   | CSS    | modules |
+| ---------- | ---------- | ------ | ------ | ------- |
+| flashcards | 507 kB     | 176 kB | 100 kB | 726     |
+| editor     | 1 631 kB   | 562 kB | 111 kB | 2 601   |
 
 **The flashcards window's fall held.** It was 1 180 kB before `preserveModules` and `sideEffects` landed together in the interface library and 506 kB after; it builds at 507 kB today, a kilobyte of the day's own work.
 
@@ -1066,10 +1064,10 @@ The editor's `vue-tsc` step did not pass off that install, so its figure comes f
 
 Recorded 2026-09-06, the same command, with `modules/` an npm workspace root.
 
-| | JavaScript | gzip | CSS | modules |
-| --- | --- | --- | --- | --- |
-| flashcards | 432 kB | 155 kB | 101 kB | 571 |
-| editor | 1 556 kB | 543 kB | 112 kB | 2 476 |
+|            | JavaScript | gzip   | CSS    | modules |
+| ---------- | ---------- | ------ | ------ | ------- |
+| flashcards | 432 kB     | 155 kB | 101 kB | 571     |
+| editor     | 1 556 kB   | 543 kB | 112 kB | 2 476   |
 
 **Each window carried the protobuf runtime twice and now carries it once.** Eleven installs meant `@numen/protocol` resolved `@bufbuild/protobuf` out of its own `node_modules` and the window resolved another out of its own, so both were bundled: `google/protobuf/descriptor.proto` appears once in each bundle now and appeared twice in each before. It is 76 kB off both windows, which is the whole of the fall — nothing else about either window changed.
 
