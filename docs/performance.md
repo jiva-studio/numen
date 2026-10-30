@@ -244,28 +244,11 @@ The binary row is the coarse pass. It is not accurate and is not meant to be: ha
 
 Replacing float32 with int8 in the working index: 1561 MB to 613 MB, load 10 s to 5 s, search 35.7 ms to 31.8 ms, and the top six identical on every question in the acceptance set.
 
-### The similarity floor, and what the coarse pass has to keep
+### What the coarse pass has to keep
 
-Taken once with a standalone program, against one index of 65 261 embedded chunks — `baai/bge-m3` at 1024 dimensions, int8, over the Ganguli Mahābhārata and a few hundred notes. Eighteen questions, ten the vault holds an answer to and eight it does not. Top-1 cosine, exhaustive over every stored vector.
+Taken once with a standalone program, against one index of 65 261 embedded chunks — `baai/bge-m3` at 1024 dimensions, int8, over the Ganguli Mahābhārata and a few hundred notes. Eighteen questions, ten the vault holds an answer to and eight it does not. Exhaustive over every stored vector.
 
-What the floor and the rerank do is held by fixtures in `chunks_test.go`. What the floor should be is this measurement, and a model changed is a measurement to take again.
-
-| Held | | Unheld | |
-| --- | --- | --- | --- |
-| game of dice / Draupadi | 0.716 | `SELECT * FROM users WHERE deleted_at IS NULL` | **0.521** |
-| amortised analysis of a dynamic array | 0.783 | semiconductor revenue guidance | 0.494 |
-| chicken | 0.781 | mating habits of emperor penguins | 0.489 |
-| death of Karna | 0.687 | changing a diesel oil filter | 0.475 |
-| a king who does not protect | 0.687 | Kubernetes ingress controller | 0.458 |
-| Krishna's counsel to Arjuna | 0.679 | `asdkjfh qwpoeiru zxcvbnm` | 0.443 |
-| house of lac | 0.637 | best pizza toppings in Naples | 0.432 |
-| dharma is subtle | 0.606 | sourdough hydration ratio | 0.413 |
-| Bhishma's silence | 0.593 | | |
-| Lagrangian in classical mechanics | **0.520** | | |
-
-The two columns overlap by 0.0012: the SQL string reaches higher than the Lagrangian note. **The floor is 0.50** — under every held question by 0.0199, over the second-highest unheld by 0.0056. Seven of the eight unheld questions then keep nothing at all and the eighth keeps 4 of 160; every held question keeps its answer, from 2 passages for the Lagrangian to 160 for the narrative ones.
-
-The offset is per query, not per corpus: the corpus median ran from 0.207 to 0.403 across the eighteen. A floor stated against each query's own distribution separates these two columns cleanly, and is a decision of its own.
+What the floor and the rerank do is held by fixtures in `chunks_test.go`. The floor in force is resolved for each model and vault (see `settings.md`).
 
 **How many the coarse pass keeps.** Recall of a query's exact top twenty at or above the floor, from a coarse pool of 20×f:
 
