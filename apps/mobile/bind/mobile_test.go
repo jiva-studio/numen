@@ -55,7 +55,11 @@ func TestStartAnswers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
-	t.Cleanup(func() { _ = bind.Stop() })
+	t.Cleanup(func() {
+		if err := bind.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	ask := func(service, method string, body any) map[string]any {
 		t.Helper()
@@ -64,7 +68,7 @@ func TestStartAnswers(t *testing.T) {
 			t.Fatalf("asking %s: %v", method, err)
 		}
 		url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.%s/%s", port, service, method)
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(text))
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, bytes.NewReader(text))
 		if err != nil {
 			t.Fatalf("asking %s: %v", method, err)
 		}
@@ -74,8 +78,15 @@ func TestStartAnswers(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", method, err)
 		}
-		defer res.Body.Close()
-		response, _ := io.ReadAll(res.Body)
+		defer func() {
+			if err := res.Body.Close(); err != nil {
+				t.Error(err)
+			}
+		}()
+		response, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("%s answered %s: %s", method, res.Status, response)
 		}
@@ -88,8 +99,8 @@ func TestStartAnswers(t *testing.T) {
 
 	names := func() []string {
 		var targetVal []string
-		for _, entry := range ask("FileService", "ListFiles", map[string]any{"folder": ""})["entries"].([]any) {
-			targetVal = append(targetVal, entry.(map[string]any)["name"].(string))
+		for _, entry := range asList(t, ask("FileService", "ListFiles", map[string]any{"folder": ""})["entries"]) {
+			targetVal = append(targetVal, asString(t, asMap(t, entry)["name"]))
 		}
 		return targetVal
 	}
@@ -103,10 +114,12 @@ func TestStartAnswers(t *testing.T) {
 	relations := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
 		relations = map[string]int{}
-		around, _ := ask("NoteService", "GetNeighbourhood",
-			map[string]any{"path": graphCentre})["related"].([]any)
+		var around []any
+		if related, hasRelated := ask("NoteService", "GetNeighbourhood", map[string]any{"path": graphCentre})["related"]; hasRelated && related != nil {
+			around = asList(t, related)
+		}
 		for _, one := range around {
-			relations[one.(map[string]any)["relation"].(string)]++
+			relations[asString(t, asMap(t, one)["relation"])]++
 		}
 		if len(relations) == len(wanted) {
 			break
@@ -166,12 +179,16 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
-	t.Cleanup(func() { _ = bind.Stop() })
+	t.Cleanup(func() {
+		if err := bind.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.NoteService/CreateNote", port)
 	for _, origin := range []string{page, "https://a-page-somebody-opened.example"} {
 		for _, method := range []string{http.MethodOptions, http.MethodPost} {
-			req, err := http.NewRequest(method, url, bytes.NewReader([]byte(`{"title":"Anemone"}`)))
+			req, err := http.NewRequestWithContext(t.Context(), method, url, bytes.NewReader([]byte(`{"title":"Anemone"}`)))
 			if err != nil {
 				t.Fatalf("asking as %s: %v", origin, err)
 			}
@@ -185,7 +202,9 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 			if err != nil {
 				t.Fatalf("asking as %s: %v", origin, err)
 			}
-			res.Body.Close()
+			if err := res.Body.Close(); err != nil {
+				t.Fatal(err)
+			}
 			if got := res.Header.Get("Access-Control-Allow-Origin"); got != page {
 				t.Errorf("a %s from %s is allowed %q", method, origin, got)
 			}
@@ -201,7 +220,11 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
-	t.Cleanup(func() { _ = bind.Stop() })
+	t.Cleanup(func() {
+		if err := bind.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	for _, item := range []string{
 		"/assets/Physics.md",
@@ -211,7 +234,7 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		"/numen.v1.TextService/CreateTextEdit",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"path":"Physics.md"}`)))
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, bytes.NewReader([]byte(`{"path":"Physics.md"}`)))
 		if err != nil {
 			t.Fatalf("asking %s: %v", item, err)
 		}
@@ -221,7 +244,9 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", item, err)
 		}
-		res.Body.Close()
+		if err := res.Body.Close(); err != nil {
+			t.Fatal(err)
+		}
 		if res.StatusCode != http.StatusNotFound {
 			t.Errorf("%s answered %s", item, res.Status)
 		}
@@ -278,14 +303,18 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
-	t.Cleanup(func() { _ = bind.Stop() })
+	t.Cleanup(func() {
+		if err := bind.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	for _, item := range []string{
 		"/numen.v1.SettingsService/GetSettings",
 		"/numen.v1.SettingsService/WriteSettings",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"written":"stolen: true\n"}`)))
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, bytes.NewReader([]byte(`{"written":"stolen: true\n"}`)))
 		if err != nil {
 			t.Fatalf("asking %s: %v", item, err)
 		}
@@ -295,8 +324,13 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", item, err)
 		}
-		response, _ := io.ReadAll(res.Body)
-		res.Body.Close()
+		response, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := res.Body.Close(); err != nil {
+			t.Fatal(err)
+		}
 		if res.StatusCode == http.StatusOK {
 			t.Errorf("%s answered %s: %s", item, res.Status, response)
 		}
@@ -312,4 +346,34 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	if !bytes.Contains(target, []byte(secret)) {
 		t.Errorf("the settings file was written over: %s", target)
 	}
+}
+
+// asList returns value as a JSON array and fails the test when it is another type.
+func asList(t *testing.T, value any) []any {
+	t.Helper()
+	list, isList := value.([]any)
+	if !isList {
+		t.Fatalf("%v is %T, want a JSON array", value, value)
+	}
+	return list
+}
+
+// asMap returns value as a JSON object and fails the test when it is another type.
+func asMap(t *testing.T, value any) map[string]any {
+	t.Helper()
+	object, isObject := value.(map[string]any)
+	if !isObject {
+		t.Fatalf("%v is %T, want a JSON object", value, value)
+	}
+	return object
+}
+
+// asString returns value as a JSON string and fails the test when it is another type.
+func asString(t *testing.T, value any) string {
+	t.Helper()
+	text, isString := value.(string)
+	if !isString {
+		t.Fatalf("%v is %T, want a JSON string", value, value)
+	}
+	return text
 }

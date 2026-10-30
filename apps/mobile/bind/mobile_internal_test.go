@@ -34,7 +34,11 @@ func startIn(t *testing.T, dir string) int {
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
-	t.Cleanup(func() { _ = Stop() })
+	t.Cleanup(func() {
+		if err := Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 	return port
 }
 
@@ -58,14 +62,20 @@ func captureStderr(t *testing.T) func() string {
 	var collected bytes.Buffer
 	isDone := make(chan struct{})
 	go func() {
-		_, _ = io.Copy(&collected, reader)
+		if _, err := io.Copy(&collected, reader); err != nil {
+			t.Error(err)
+		}
 		close(isDone)
 	}()
 	return func() string {
 		os.Stderr = previous
-		_ = writer.Close()
+		if err := writer.Close(); err != nil {
+			t.Error(err)
+		}
 		<-isDone
-		_ = reader.Close()
+		if err := reader.Close(); err != nil {
+			t.Error(err)
+		}
 		return collected.String()
 	}
 }
@@ -121,7 +131,9 @@ func TestStartAnswersTheErrorOfAFolderItCannotMakeAVaultIn(t *testing.T) {
 	port, err := Start(file)
 	var failed *fs.PathError
 	if !errors.As(err, &failed) || failed.Op != "mkdir" || port != 0 {
-		_ = Stop()
+		if err := Stop(); err != nil {
+			t.Error(err)
+		}
 		t.Fatalf("Start answered %d, %v for a folder that is a file, want 0 and the error of making the vault folder", port, err)
 	}
 }
@@ -159,11 +171,17 @@ func TestStartAnswersTheErrorOfAVaultFolderItCannotRead(t *testing.T) {
 	if err := os.Mkdir(root, 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
+	t.Cleanup(func() {
+		if err := os.Chmod(root, 0o700); err != nil {
+			t.Error(err)
+		}
+	})
 	port, err := Start(dir)
 	var failed *fs.PathError
 	if !errors.As(err, &failed) || failed.Op != "open" || !errors.Is(err, fs.ErrPermission) || port != 0 {
-		_ = Stop()
+		if err := Stop(); err != nil {
+			t.Error(err)
+		}
 		t.Fatalf("Start answered %d, %v for a vault folder it cannot read, want 0 and the error of reading it", port, err)
 	}
 	checkNoIndexOpened(t, dir)
@@ -178,7 +196,9 @@ func TestStartAnswersTheErrorOfAVaultListItCannotRead(t *testing.T) {
 	port, err := Start(dir)
 	var failed *json.SyntaxError
 	if !errors.As(err, &failed) || port != 0 {
-		_ = Stop()
+		if err := Stop(); err != nil {
+			t.Error(err)
+		}
 		t.Fatalf("Start answered %d, %v for a vault list that is not JSON, want 0 and the error of reading it", port, err)
 	}
 	checkNoIndexOpened(t, dir)
@@ -195,7 +215,9 @@ func TestStartAnswersTheErrorOfAnIndexItCannotOpen(t *testing.T) {
 	}
 	port, err := Start(dir)
 	if err == nil || !strings.Contains(err.Error(), "unable to open database file") || port != 0 {
-		_ = Stop()
+		if err := Stop(); err != nil {
+			t.Error(err)
+		}
 		t.Fatalf("Start answered %d, %v for an index that is a folder, want 0 and the error of opening it", port, err)
 	}
 }
@@ -245,8 +267,10 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 	if got := Port(); got != 0 {
 		t.Errorf("Port() = %d after stopping", got)
 	}
-	if conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", port), time.Second); err == nil {
-		_ = conn.Close()
+	if conn, err := (&net.Dialer{Timeout: time.Second}).DialContext(t.Context(), "tcp", fmt.Sprintf("127.0.0.1:%d", port)); err == nil {
+		if err := conn.Close(); err != nil {
+			t.Error(err)
+		}
 		t.Errorf("port %d still answers after stopping", port)
 	}
 	again, err := Start(dir)
@@ -361,7 +385,11 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotWrite(t *testing.T) {
 	if err := os.Chmod(tempDir, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(tempDir, 0o700) })
+	t.Cleanup(func() {
+		if err := os.Chmod(tempDir, 0o700); err != nil {
+			t.Error(err)
+		}
+	})
 	filed, err := registerVault(makeConfig(tempDir, io.Discard), t.TempDir())
 	if !errors.Is(err, fs.ErrPermission) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list it cannot write, want no path and the permission error", filed, err)
@@ -372,7 +400,7 @@ func TestAllowOriginAnswersAPreflightWithTheRulesAndNoBody(t *testing.T) {
 	reached := false
 	next := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached = true })
 	res := httptest.NewRecorder()
-	allowOrigin(next).ServeHTTP(res, httptest.NewRequest(http.MethodOptions, "/numen.v1.NoteService/CreateNote", nil))
+	allowOrigin(next).ServeHTTP(res, httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/numen.v1.NoteService/CreateNote", nil))
 
 	if res.Code != http.StatusNoContent {
 		t.Errorf("a preflight was answered %d, want %d", res.Code, http.StatusNoContent)
@@ -390,7 +418,7 @@ func TestAllowOrigin_ForwardsRequestsWithHeaders(t *testing.T) {
 		w.WriteHeader(http.StatusTeapot)
 	})
 	res := httptest.NewRecorder()
-	allowOrigin(next).ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/numen.v1.NoteService/CreateNote", nil))
+	allowOrigin(next).ServeHTTP(res, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/numen.v1.NoteService/CreateNote", nil))
 
 	if !reached || res.Code != http.StatusTeapot {
 		t.Errorf("the ask did not reach the service: reached %v, answered %d", reached, res.Code)
@@ -469,14 +497,24 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 			if _, err := os.Stat(index); err == nil {
 				body = []byte("{not json")
 			}
-			_, _ = pipe.Write(body)
-			_ = pipe.Close()
+			_, writeErr := pipe.Write(body)
+			closeErr := pipe.Close()
+			if err := errors.Join(writeErr, closeErr); err != nil {
+				select {
+				case <-isDone:
+				default:
+					t.Error(err)
+				}
+				return
+			}
 		}
 	}()
 	t.Cleanup(func() {
 		close(isDone)
 		if release, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0); err == nil {
-			_ = release.Close()
+			if err := release.Close(); err != nil {
+				t.Error(err)
+			}
 		}
 	})
 }
@@ -505,7 +543,9 @@ func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *t
 	port, err := Start(dir)
 	var failed *json.SyntaxError
 	if !errors.As(err, &failed) || port != 0 {
-		_ = Stop()
+		if err := Stop(); err != nil {
+			t.Error(err)
+		}
 		t.Fatalf("Start answered %d, %v for a vault list that stopped being JSON, want 0 and the error of reading it", port, err)
 	}
 	if Port() != 0 {
@@ -529,7 +569,11 @@ func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &before); err != nil {
 		t.Skipf("the open files limit cannot be read: %v", err)
 	}
-	restore := func() { _ = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &before) }
+	restore := func() {
+		if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &before); err != nil {
+			t.Error(err)
+		}
+	}
 	t.Cleanup(restore)
 	for extra := 0; extra < 200; extra++ {
 		dir := t.TempDir()
@@ -541,7 +585,9 @@ func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 		port, err := Start(dir)
 		restore()
 		if err == nil {
-			_ = Stop()
+			if err := Stop(); err != nil {
+				t.Error(err)
+			}
 			t.Fatalf("Start answered %d with %d files to spare, and was never denied a socket", port, extra)
 		}
 		var failed *net.OpError
@@ -592,27 +638,35 @@ func (l refusingListener) Accept() (net.Conn, error) {
 }
 
 func (l refusingListener) Close() error {
-	_ = l.Listener.Close()
-	return l.err
+	return errors.Join(l.err, l.Listener.Close())
 }
 
 func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	startIn(t, t.TempDir())
-	inner, err := net.Listen("tcp", "127.0.0.1:0")
+	var listenConfig net.ListenConfig
+	inner, err := listenConfig.Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	closeErr := errors.New("the listener will not close")
 	accepted := make(chan struct{})
 	stubborn := &http.Server{}
-	go func() { _ = stubborn.Serve(refusingListener{inner, closeErr, accepted, &sync.Once{}}) }()
+	go func() {
+		if err := stubborn.Serve(refusingListener{inner, closeErr, accepted, &sync.Once{}}); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			t.Error(err)
+		}
+	}()
 	<-accepted
 
 	mu.Lock()
 	live := running.server
 	running.server = stubborn
 	mu.Unlock()
-	t.Cleanup(func() { _ = live.Close() })
+	t.Cleanup(func() {
+		if err := live.Close(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			t.Error(err)
+		}
+	})
 
 	if err := Stop(); !errors.Is(err, closeErr) {
 		t.Errorf("Stop() = %v, want the error of closing the server", err)
@@ -672,10 +726,14 @@ func TestRegisterVaultAnswersTheErrorOfAMachineWithNoPlaceForTheList(t *testing.
 
 // getListenersOf is the listeners a server is accepting on. The server holds
 // them in an unexported set, under an unexported lock.
-func getListenersOf(server *http.Server) []net.Listener {
+func getListenersOf(t *testing.T, server *http.Server) []net.Listener {
+	t.Helper()
 	elem := reflect.ValueOf(server).Elem()
 	lockField := elem.FieldByName("mu")
-	lock := reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())).Interface().(*sync.Mutex)
+	lock, isMutex := reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())).Interface().(*sync.Mutex)
+	if !isMutex {
+		t.Fatal("the lock of the server is not a sync.Mutex")
+	}
 	setField := elem.FieldByName("listeners")
 	target := reflect.NewAt(setField.Type(), unsafe.Pointer(setField.UnsafeAddr())).Elem()
 	lock.Lock()
@@ -693,7 +751,7 @@ func closeListenersOf(t *testing.T, server *http.Server) {
 	t.Helper()
 	var found []net.Listener
 	for until := time.Now().Add(5 * time.Second); len(found) == 0 && time.Now().Before(until); {
-		found = getListenersOf(server)
+		found = getListenersOf(t, server)
 		time.Sleep(10 * time.Millisecond)
 	}
 	if len(found) == 0 {
