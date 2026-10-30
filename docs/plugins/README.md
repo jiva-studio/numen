@@ -69,7 +69,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 {
   "id": "md.numen.sample",
   "name": "Sample Reader",
-  "version": "0.1.0",
+  "version": "2026.10.1",
   "protocol": 1,
   "description": "Custom document viewer plugin for Numen",
   "capabilities": [],
@@ -113,7 +113,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 
 - **`id`**: Unique identifier of two or more dot-separated segments of letters, digits, `_` or `-`; reverse-DNS (`md.numen.<plugin-name>`).
 - **`name`**: User-facing display title.
-- **`version`**: Semantic versioning string (`X.Y.Z`, optional pre-release and build parts).
+- **`version`**: `<year>.<month>.<build>` (`2026.10.3`): the year and month of the change, and its number within that month, starting at 1. A change to a plugin raises its version: in the same month `build` goes up by one, in a new month the version starts at `<year>.<month>.1`. `make plugin_versions_bump` writes the next version and CI (`make plugin_versions_check`) fails a changed plugin that keeps its version; changes to markdown and test files do not count. The host reads the value as semver (`X.Y.Z`, optional pre-release and build parts).
 - **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
 - **`capabilities`**: Core capabilities provided (`embedding`, `tools`, `agent`, and the marker `ai.agent.provider`, which names an agent plugin that serves tasks and lists the programs it runs).
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).

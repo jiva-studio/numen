@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.tools.window",
   "name": "Window Interaction Tools",
-  "version": "1.0.0",
+  "version": "2026.10.1",
   "protocol": 1,
   "description": "Workspace context and interactive edit previews for AI assistants",
   "capabilities": ["tools"],
