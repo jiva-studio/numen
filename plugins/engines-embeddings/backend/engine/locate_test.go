@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
 )
@@ -137,22 +138,71 @@ func TestLocateCachedIgnoresAnIncompleteSnapshot(t *testing.T) {
 	}
 }
 
-func TestLocateCachedIgnoresAModelWithNoRevision(t *testing.T) {
+func TestLocateCachedReturnsTheSnapshotOfAModelWithNoRevision(t *testing.T) {
 	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
-	rootSnapshot := filepath.Join(cache, "snapshots")
-	if err := os.MkdirAll(filepath.Join(rootSnapshot, ModelFolder), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(rootSnapshot, ModelFolder, "model.onnx"), []byte("weights"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(rootSnapshot, TokenizerFile), []byte("tokens"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 
+	got, ok, err := locateCached(repo, pinnedModel(""), "model.onnx")
+	if err != nil || !ok {
+		t.Fatalf("locateCached() = %v, %v, want true, nil", ok, err)
+	}
+	if want := filepath.Join(cache, "snapshots", "abc", "onnx", "model.onnx"); got.Model != want {
+		t.Errorf("model = %q, want %q", got.Model, want)
+	}
+}
+
+func TestLocateCachedReturnsTheNewestSnapshotOfAModelWithNoRevision(t *testing.T) {
+	cache := cacheSnapshot(t, "old", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
+	for name, body := range map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"} {
+		pos := filepath.Join(cache, "snapshots", "new", filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(pos, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	older := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(filepath.Join(cache, "snapshots", "old", "onnx", "model.onnx"), older, older); err != nil {
+		t.Fatal(err)
+	}
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
+
+	got, ok, err := locateCached(repo, pinnedModel(""), "model.onnx")
+	if err != nil || !ok {
+		t.Fatalf("locateCached() = %v, %v, want true, nil", ok, err)
+	}
+	if want := filepath.Join(cache, "snapshots", "new", "onnx", "model.onnx"); got.Model != want {
+		t.Errorf("model = %q, want %q", got.Model, want)
+	}
+}
+
+func TestLocateCachedSkipsAnIncompleteSnapshotOfAModelWithNoRevision(t *testing.T) {
+	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	if _, ok, err := locateCached(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
 		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
+	}
+}
+
+func TestLocateCachedFindsNothingWhereTheCacheHasNoSnapshots(t *testing.T) {
+	t.Setenv(EnvDir, t.TempDir())
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
+	if _, ok, err := locateCached(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
+		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
+	}
+}
+
+func TestLocateUsesTheCachedSnapshotOfAModelWithNoRevisionWhileOffline(t *testing.T) {
+	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
+	t.Setenv(EnvOffline, "1")
+
+	got, err := Locate(context.Background(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(cache, "snapshots", "abc", "tokenizer.json"); got.Tokenizer != want {
+		t.Errorf("tokenizer = %q, want %q", got.Tokenizer, want)
 	}
 }
 

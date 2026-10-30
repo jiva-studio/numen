@@ -314,22 +314,20 @@ func checkPinned(sums map[string]string, name, path string) error {
 	return nil
 }
 
-// locateCached returns the files of a pinned snapshot that the cache already
-// holds, each checked against its pinned sum. A model with no revision is never
-// found here.
+// locateCached returns the files of a snapshot that the cache already holds. A
+// model pinned to a revision takes that snapshot, each file checked against its
+// pinned sum. A model with no revision takes the newest snapshot that holds both
+// the model and the tokenizer.
 func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, error) {
-	if cfg.Revision == "" {
-		return Paths{Model: "", Tokenizer: ""}, false, nil
-	}
 	cache, err := repo.CacheDir()
 	if err != nil {
 		return Paths{}, false, fmt.Errorf("cache folder of %s: %w", cfg.Name, err)
 	}
-	snapshot := filepath.Join(cache, "snapshots", cfg.Revision)
-	p := Paths{
-		Model:     filepath.Join(snapshot, ModelFolder, file),
-		Tokenizer: filepath.Join(snapshot, TokenizerFile),
+	if cfg.Revision == "" {
+		return locateNewestSnapshot(cache, cfg.Name, file)
 	}
+	snapshot := filepath.Join(cache, "snapshots", cfg.Revision)
+	p := snapshotPaths(snapshot, file)
 	if !hasFile(p.Model) || !hasFile(p.Tokenizer) {
 		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
@@ -340,6 +338,48 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 		return Paths{}, false, err
 	}
 	return p, true, nil
+}
+
+// locateNewestSnapshot returns the files of the most recently downloaded
+// snapshot in cache that holds both the model and the tokenizer. The downloader
+// links a file into a snapshot only after the download has finished.
+func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
+	snapshots := filepath.Join(cache, "snapshots")
+	entries, err := os.ReadDir(snapshots)
+	if errors.Is(err, fs.ErrNotExist) {
+		return Paths{Model: "", Tokenizer: ""}, false, nil
+	}
+	if err != nil {
+		return Paths{}, false, fmt.Errorf("snapshots of %s: %w", name, err)
+	}
+	var newest Paths
+	var newestTime time.Time
+	isFound := false
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		p := snapshotPaths(filepath.Join(snapshots, entry.Name()), file)
+		if !hasFile(p.Model) || !hasFile(p.Tokenizer) {
+			continue
+		}
+		info, err := os.Stat(p.Model)
+		if err != nil {
+			continue
+		}
+		if !isFound || info.ModTime().After(newestTime) {
+			newest, newestTime, isFound = p, info.ModTime(), true
+		}
+	}
+	return newest, isFound, nil
+}
+
+// snapshotPaths returns where the model and the tokenizer lie in a snapshot.
+func snapshotPaths(snapshot, file string) Paths {
+	return Paths{
+		Model:     filepath.Join(snapshot, ModelFolder, file),
+		Tokenizer: filepath.Join(snapshot, TokenizerFile),
+	}
 }
 
 func hasFile(name string) bool {
