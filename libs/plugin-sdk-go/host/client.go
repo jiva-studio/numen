@@ -95,6 +95,12 @@ func fail(code v1.HostVaultErrorCode) error {
 		return ErrLockedByAnother
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
 		return ErrNotANote
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION:
+		return ErrInvalidConnection
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:
+		return ErrHierarchyCycle
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:
+		return ErrNoFreeName
 	}
 	return fmt.Errorf("host: rejected with code %s", code)
 }
@@ -128,8 +134,11 @@ func readLink(l *v1.HostLink) ResolvedLink {
 	return ResolvedLink{
 		Link: Link{
 			Target: Address{Scheme: l.GetTargetScheme(), Value: l.GetTargetValue()},
+			Role:   readRole(l.GetRole()),
 			Type:   l.GetLinkType(),
+			Why:    l.GetNote(),
 			Label:  l.GetLabel(),
+			Marker: readMarker(l.GetMarker()),
 		},
 		From:        l.GetFrom(),
 		To:          l.GetTo(),
