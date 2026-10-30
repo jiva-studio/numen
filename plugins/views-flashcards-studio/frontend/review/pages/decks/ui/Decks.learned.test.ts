@@ -136,7 +136,7 @@ describe('how much of a deck remains learned', () => {
     expect(one.find('.decks__learned').text()).toBe('25% learned')
   })
 
-  it('remains along with what the deck owes and not in its place', () => {
+  it('remains along with what is due in the deck and not in its place', () => {
     const one = mountDecks(vault(), [preset()])
 
     expect(one.find('.decks__learned').exists()).toBe(true)

@@ -109,14 +109,14 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 			t.Errorf("a longer day answers %v, a shorter one %v",
 				got.Points[i].Reviews, got.Points[i-1].Reviews)
 		}
-		if got.Points[i].Owed > got.Points[i-1].Owed {
-			t.Errorf("a longer day leaves %d owed, a shorter one %d",
-				got.Points[i].Owed, got.Points[i-1].Owed)
+		if got.Points[i].Due > got.Points[i-1].Due {
+			t.Errorf("a longer day leaves %d due, a shorter one %d",
+				got.Points[i].Due, got.Points[i-1].Due)
 		}
 	}
 	inRange(t, got, "now", "suggested")
-	if got.Points[len(got.Points)-1].Owed != 0 {
-		t.Errorf("the longest day on the grid still leaves %d owed", got.Points[len(got.Points)-1].Owed)
+	if got.Points[len(got.Points)-1].Due != 0 {
+		t.Errorf("the longest day on the grid still leaves %d due", got.Points[len(got.Points)-1].Due)
 	}
 }
 
@@ -843,8 +843,8 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 	if currentPoint.Share < 1 {
 		t.Fatalf("got currentPoint.Share = %v, want >= 1", currentPoint.Share)
 	}
-	if currentPoint.Owed != 0 {
-		t.Errorf("got currentPoint.Owed = %d, want 0", currentPoint.Owed)
+	if currentPoint.Due != 0 {
+		t.Errorf("got currentPoint.Due = %d, want 0", currentPoint.Due)
 	}
 	if currentPoint.Retained < 0.5 {
 		t.Errorf("got currentPoint.Retained = %v, want >= 0.5", currentPoint.Retained)

@@ -60,7 +60,7 @@ const vault: VaultCardsDue = {
       title: 'Sanskrit',
       decks: 1,
       cards: 20,
-      owed: 16,
+      pending: 16,
       reviewed: 0,
       reviewedNew: 0,
       reviewedReviews: 0,
@@ -132,7 +132,7 @@ describe('a deck with nothing waiting', () => {
 
   // Something was answered under the preset today and nothing of this deck is
   // left, which is the day's work met.
-  it('says the day is done where the deck was answered and owes none', () => {
+  it('says the day is done where the deck was answered and has none due', () => {
     const one = mountDecks([preset({ cards: 0, reviewed: 6, took: 3 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__met').text()).toBe('Done today')

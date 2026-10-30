@@ -115,7 +115,7 @@ export interface Point {
   readonly reviews: number
   readonly minutes: number
   readonly retained: number
-  readonly owed: number
+  readonly due: number
   readonly through: number
   /** Whether the pace this place sets learns every review card it can. */
   readonly canLearnEveryCard: boolean

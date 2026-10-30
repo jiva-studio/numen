@@ -456,22 +456,22 @@ func TestCountCardsDue_UnansweredVaultIsAllNew(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	owing, err := s.newCountCardsDue(today).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDue(today).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if owing.ReviewCards != 5 || owing.New != 5 || owing.Due != 0 {
-		t.Errorf("owing = %+v, want five review cards and five of them new", owing)
+	if counts.ReviewCards != 5 || counts.New != 5 || counts.Due != 0 {
+		t.Errorf("counts = %+v, want five review cards and five of them new", counts)
 	}
-	if len(owing.Decks) != 2 {
-		t.Errorf("counted %d decks, want 2", len(owing.Decks))
+	if len(counts.Decks) != 2 {
+		t.Errorf("counted %d decks, want 2", len(counts.Decks))
 	}
 }
 
 // A card scheduled days ahead is not due until those days have passed. A card
 // is due on the day its schedule falls on, and a card answered easily is not due
 // that day.
-func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
+func TestACardInsertDaysAwayIsNotDueToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
@@ -479,14 +479,14 @@ func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := s.newCountCardsDue(today).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDue(today).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if owing.ReviewCards != 5 || owing.New != 4 || owing.Due != 0 {
-		t.Errorf("owing = %+v, want the answered review card counted as neither new nor due", owing)
+	if counts.ReviewCards != 5 || counts.New != 4 || counts.Due != 0 {
+		t.Errorf("counts = %+v, want the answered review card counted as neither new nor due", counts)
 	}
-	for _, deck := range owing.Decks {
+	for _, deck := range counts.Decks {
 		if deck.Deck == "decks/Mammals.md" && (deck.New != 3 || deck.Due != 0) {
 			t.Errorf("the deck it is in comes to %+v", deck)
 		}
@@ -523,23 +523,23 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// The count is taken on the day the card falls on, and the card is due.
-	owed := s.newCountCardsDueAt(today, func() time.Time { return due })
-	owing, err := owed.Execute(t.Context(), s.vault)
+	counter := s.newCountCardsDueAt(today, func() time.Time { return due })
+	counts, err := counter.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if owing.Due != 1 {
-		t.Errorf("owing = %+v on the day it falls on, want the card owed", owing)
+	if counts.Due != 1 {
+		t.Errorf("counts = %+v on the day it falls on, want the card counter", counts)
 	}
 
 	// And the day before it, it is not.
-	owedBefore := s.newCountCardsDueAt(today, func() time.Time { return due.AddDate(0, 0, -1) })
-	before, err := owedBefore.Execute(t.Context(), s.vault)
+	counterBefore := s.newCountCardsDueAt(today, func() time.Time { return due.AddDate(0, 0, -1) })
+	before, err := counterBefore.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if before.Due != 0 {
-		t.Errorf("owing = %+v the day before it falls on, want nothing owed", before)
+		t.Errorf("counts = %+v the day before it falls on, want nothing counter", before)
 	}
 }
 
@@ -611,7 +611,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 
 // A session orders cards that are due or already answered before new cards,
 // with the longest-waiting card first.
-func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
+func TestASessionAsksWhatIsDueBeforeWhatIsNew(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	long := time.Now().Add(-30 * 24 * time.Hour)

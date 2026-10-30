@@ -112,10 +112,10 @@ func (d Day) GetEndOfDate(named time.Time) time.Time {
 	return d.getStartTime(y, m, day+1)
 }
 
-// IsOwed reports whether a review card is due for answer in the day containing
+// IsDue reports whether a review card is due for answer in the day containing
 // now. A review card that has never been answered is due the first time it is
 // requested.
-func (d Day) IsOwed(s Schedule, now time.Time) bool {
+func (d Day) IsDue(s Schedule, now time.Time) bool {
 	return s.IsNew() || s.Due.Before(d.GetEnd(now))
 }
 

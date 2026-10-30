@@ -34,7 +34,7 @@ export interface PresetCardsDue {
   /**
    * The number of cards a session over this preset returns.
    */
-  readonly owed: number
+  readonly pending: number
   /**
    * Cards answered under it since the day opened, and the minutes they took.
    * The two beside the total divide it the way a budget does, so each is
@@ -77,7 +77,7 @@ export interface VaultCardsDue {
   readonly name: string
   readonly path: string
   /**
-   * until it has, and nothing under it is read as a vault owing nothing.
+   * until it has, and nothing under it is read as a vault with no cards due.
    */
   readonly isCounted: boolean
   readonly reviewCards: number

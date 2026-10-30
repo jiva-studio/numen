@@ -42,8 +42,8 @@ export interface VaultCounts {
     title: string
     decks: number
     cards: number
-    owedDue: number
-    owedNew: number
+    pendingReviews: number
+    pendingNew: number
     reviewed: number
     reviewedNew: number
     reviewedReviews: number
@@ -113,7 +113,7 @@ const createCountedVault = (one: VaultCounts): VaultCardsDue => ({
     title: preset.title,
     decks: preset.decks,
     cards: preset.cards,
-    owed: preset.owedDue + preset.owedNew,
+    pending: preset.pendingReviews + preset.pendingNew,
     reviewed: preset.reviewed,
     reviewedNew: preset.reviewedNew,
     reviewedReviews: preset.reviewedReviews,

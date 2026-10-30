@@ -61,7 +61,7 @@ const wire = vi.hoisted(() => {
   }
 })
 
-/** One vault owing something, so every screen has something to hold. */
+/** One vault with cards due, so every screen has something to hold. */
 const VAULT = {
   id: 'roots',
   name: 'Roots',

@@ -38,15 +38,15 @@ type DeckCardsDue struct {
 	Unbegun     int32  `json:"unbegun"`
 }
 
-// PresetCardsDue is what the decks of one preset owe for review and what the current day has used.
+// PresetCardsDue is the review count of the decks of one preset and what the current day has used.
 type PresetCardsDue struct {
-	Preset   string `json:"preset"`
-	Title    string `json:"title"`
-	Decks    int32  `json:"decks"`
-	Cards    int32  `json:"cards"`
-	OwedDue  int32  `json:"owedDue"`
-	OwedNew  int32  `json:"owedNew"`
-	Reviewed int32  `json:"reviewed"`
+	Preset         string `json:"preset"`
+	Title          string `json:"title"`
+	Decks          int32  `json:"decks"`
+	Cards          int32  `json:"cards"`
+	PendingReviews int32  `json:"pendingReviews"`
+	PendingNew     int32  `json:"pendingNew"`
+	Reviewed       int32  `json:"reviewed"`
 	// DurationMs is the time spent reviewing in the current day in milliseconds.
 	DurationMs      int64      `json:"durationMs"`
 	ReviewedNew     int32      `json:"reviewedNew"`

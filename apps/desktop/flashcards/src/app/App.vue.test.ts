@@ -69,7 +69,7 @@ const activateCards = (context: {
     component: defineComponent({
       props: { context: { type: Object, required: true } },
       setup: (props) => () =>
-        h('i', { class: 'summary' }, `owes ${(props.context as { vault: string }).vault}`),
+        h('i', { class: 'summary' }, `due ${(props.context as { vault: string }).vault}`),
     }),
   })
 }
@@ -148,8 +148,8 @@ describe('the window over a plugin that draws the review', () => {
 
     expect(window.findAll('.welcome-page__row--vault')).toHaveLength(2)
     expect(window.findAll('.summary').map((one) => one.text())).toStrictEqual([
-      'owes physics',
-      'owes words',
+      'due physics',
+      'due words',
     ])
     expect(window.find('link').attributes('href')).toBe('/plugin/md.numen.cards/dist/styles.css')
   })

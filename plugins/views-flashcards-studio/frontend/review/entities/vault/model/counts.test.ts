@@ -18,8 +18,8 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
       title: 'Sanskrit',
       decks: 1,
       cards: 3,
-      owedDue: 2,
-      owedNew: 1,
+      pendingReviews: 2,
+      pendingNew: 1,
       reviewed: 4,
       reviewedNew: 1,
       reviewedReviews: 3,
@@ -96,7 +96,7 @@ const createFeed = () => {
 /** What is on its way settles. */
 const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 
-describe('counting what every vault owes', () => {
+describe('counting what is due in every vault', () => {
   // The window opens counting, and has no day to stand in until the first
   // message names one.
   it('reads as counting, in no day yet, before the first count is requested for', () => {
@@ -128,7 +128,7 @@ describe('counting what every vault owes', () => {
     expect(one.day.value).toBe('2026-09-05')
     expect(one.vaults.value.map((target) => target.vault)).toStrictEqual(['01A', '01B'])
     // Nothing is known about what any of them holds, and none of them reads as
-    // a vault owing nothing.
+    // a vault with no cards due.
     for (const target of one.vaults.value) {
       expect(target.isCounted).toBe(false)
       expect(target.due + target.new).toBe(0)
@@ -158,7 +158,7 @@ describe('counting what every vault owes', () => {
       decks: 1,
       cards: 3,
       // What the day leaves is the two the count sends, added up once here.
-      owed: 3,
+      pending: 3,
       reviewed: 4,
       reviewedNew: 1,
       reviewedReviews: 3,

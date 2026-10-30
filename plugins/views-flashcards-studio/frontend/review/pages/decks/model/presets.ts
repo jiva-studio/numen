@@ -172,7 +172,7 @@ const getPresetFromDecks = (
     name: one.name,
     settings: one.settings,
     decks: one.decks,
-    ...getDayOwed(one, day),
+    ...getDayPending(one, day),
     ...getDayReviewed(day),
     budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
     paused: getStoppedWords(one.stopsOn, one.settings, today),
@@ -180,13 +180,13 @@ const getPresetFromDecks = (
   }
 }
 
-/** What is waiting under a preset today, and what its decks owe where the count answered nothing. */
-const getDayOwed = (one: PresetTally, day: PresetCardsDue | undefined) => ({
+/** What is waiting under a preset today, and what is due in its decks where the count answered nothing. */
+const getDayPending = (one: PresetTally, day: PresetCardsDue | undefined) => ({
   named: day?.decks ?? one.decks.length,
   reviewCards: day?.cards ?? 0,
   // The number of cards in a session is the count's own figure; a build whose
   // count returned none uses the sum of cards due across its decks.
-  cards: day?.owed ?? one.due + one.fresh,
+  cards: day?.pending ?? one.due + one.fresh,
   closes: day?.closes ?? CLOSES_NOTHING,
 })
 
@@ -208,7 +208,7 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
   reviewCards: one.cards,
   // The count answered for this preset with its own figures, and the day is
   // drawn from them.
-  cards: one.owed,
+  cards: one.pending,
   budget: { new: one.new, reviews: one.reviews, minutes: one.minutes },
   closes: one.closes,
   reviewed: one.reviewed,

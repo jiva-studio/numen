@@ -28,9 +28,9 @@ type Projection struct {
 	// many of them have been answered at least once by the last day.
 	ReviewCards int
 	Seen        int
-	// Owed is the number of review cards answered before and still due on the last
+	// Due is the number of review cards answered before and still due on the last
 	// day, which is the backlog the budget did not cover.
-	Owed int
+	Due int
 	// Clears is how many days of review it takes before nothing is overdue: no
 	// review card is left whose day has come and gone. A day that begins with
 	// nothing overdue clears in none, and a pace that never gets there is

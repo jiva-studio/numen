@@ -49,14 +49,14 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 }
 
 // A card due later today is due now: a card due today is due for the whole day.
-func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
+func TestACardDueLaterTodayIsDueNow(t *testing.T) {
 	in := london(t)
 	day := review.Day{Starts: review.DayStartTime, In: in}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, in)
 
 	for name, one := range map[string]struct {
-		due    time.Time
-		isOwed bool
+		due   time.Time
+		isDue bool
 	}{
 		"days ago":             {now.Add(-72 * time.Hour), true},
 		"this morning":         {now.Add(-time.Hour), true},
@@ -66,17 +66,17 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := review.Schedule{Due: one.due, Last: now.Add(-24 * time.Hour)}
-			if got := day.IsOwed(s, now); got != one.isOwed {
-				t.Errorf("a card due %v is owed = %v, want %v", one.due, got, one.isOwed)
+			if got := day.IsDue(s, now); got != one.isDue {
+				t.Errorf("a card due %v is due = %v, want %v", one.due, got, one.isDue)
 			}
 		})
 	}
 }
 
-func TestDayIsOwed_UnansweredCard(t *testing.T) {
+func TestDayIsDue_UnansweredCard(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
-	if !day.IsOwed(review.Schedule{}, time.Now()) {
-		t.Error("a card with no answers behind it is not owed")
+	if !day.IsDue(review.Schedule{}, time.Now()) {
+		t.Error("a card with no answers behind it is not due")
 	}
 }
 

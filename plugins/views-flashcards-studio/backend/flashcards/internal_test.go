@@ -188,8 +188,8 @@ func TestLogReadFile_CountsLockedRunAsSkipped(t *testing.T) {
 // deckLoad is one deck of a preset and its content: due cards and cards not yet
 // started.
 type deckLoad struct {
-	path          string
-	owed, unbegun int
+	path              string
+	dueCards, unbegun int
 }
 
 // newDeckLoads generates the decks of one preset, each under a path of its own.
@@ -198,9 +198,9 @@ func newDeckLoads(t *rapid.T) []deckLoad {
 	out := make([]deckLoad, decks)
 	for item := range out {
 		out[item] = deckLoad{
-			path:    fmt.Sprintf("decks/%c.md", 'A'+item),
-			owed:    rapid.IntRange(0, 8).Draw(t, "owed"),
-			unbegun: rapid.IntRange(0, 8).Draw(t, "fresh"),
+			path:     fmt.Sprintf("decks/%c.md", 'A'+item),
+			dueCards: rapid.IntRange(0, 8).Draw(t, "due"),
+			unbegun:  rapid.IntRange(0, 8).Draw(t, "fresh"),
 		}
 	}
 	return out
@@ -234,16 +234,16 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 		spentByDeck:   make(map[string]review.Spent),
 	}
 
-	var owed, newCards []ReviewCard
+	var dueCards, newCards []ReviewCard
 	for _, item := range order {
 		one := load[item]
 		day.decks[one.path] = "Preset.md"
-		for card := range one.owed {
+		for card := range one.dueCards {
 			reviewCard := ReviewCard{Deck: one.path, ID: review.CardID{
-				Card: fmt.Sprintf("%s/owed/%d", one.path, card),
+				Card: fmt.Sprintf("%s/dueCards/%d", one.path, card),
 			}}
 			day.reviewCardPresets[reviewCard.ID] = "Preset.md"
-			owed = append(owed, reviewCard)
+			dueCards = append(dueCards, reviewCard)
 		}
 		for card := range one.unbegun {
 			reviewCard := ReviewCard{Deck: one.path, ID: review.CardID{
@@ -254,10 +254,10 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 		}
 	}
 
-	took := day.spend(owed, newCards)
+	took := day.spend(dueCards, newCards)
 	out := make(map[review.CardID]bool)
-	for entry, one := range owed {
-		if took.owed[entry] {
+	for entry, one := range dueCards {
+		if took.dueCards[entry] {
 			out[one.ID] = true
 		}
 	}

@@ -194,7 +194,7 @@ func (a *allowance) spend(isNew, counted bool, cost time.Duration) {
 
 // asking holds due and new review cards selected for review.
 type asking struct {
-	owed     []ReviewCard
+	dueCards []ReviewCard
 	newCards []ReviewCard
 }
 
@@ -226,25 +226,25 @@ func (b *budgets) getAsking(
 	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 	day review.Day, now time.Time, scope Scope,
 ) asking {
-	var owed, newCards []ReviewCard
+	var dueCards, newCards []ReviewCard
 	for _, one := range reviewCards {
 		s, reply := schedules[one.ID]
 		switch {
 		case !reply:
 			newCards = append(newCards, one)
-		case day.IsOwed(s, now):
-			owed = append(owed, one)
+		case day.IsDue(s, now):
+			dueCards = append(dueCards, one)
 		}
 	}
-	slices.SortStableFunc(owed, func(a, b ReviewCard) int {
+	slices.SortStableFunc(dueCards, func(a, b ReviewCard) int {
 		return schedules[a.ID].Due.Compare(schedules[b.ID].Due)
 	})
 
-	allocations := b.spend(owed, newCards)
+	allocations := b.spend(dueCards, newCards)
 	var out asking
-	for item, one := range owed {
-		if allocations.owed[item] && b.isAllowed(one, scope) {
-			out.owed = append(out.owed, one)
+	for item, one := range dueCards {
+		if allocations.dueCards[item] && b.isAllowed(one, scope) {
+			out.dueCards = append(out.dueCards, one)
 		}
 	}
 	for entry, one := range newCards {
@@ -256,22 +256,22 @@ func (b *budgets) getAsking(
 }
 
 // budgetAllocation indicates which candidate cards were accepted by the budget.
-type budgetAllocation struct{ owed, newCards []bool }
+type budgetAllocation struct{ dueCards, newCards []bool }
 
 // deckShare tracks review card indices and budget consumption for a deck.
 type deckShare struct {
-	deck           string
-	owed, newCards []int
-	// owedIndex and newIndex are positions in the overdue and new card pools.
-	owedIndex, newIndex int
-	debt, begun         int
+	deck               string
+	dueCards, newCards []int
+	// dueIndex and newIndex are positions in the overdue and new card pools.
+	dueIndex, newIndex int
+	debt, begun        int
 }
 
 // countRemaining returns the number of unallocated cards remaining for this deck.
 func (q *deckShare) countRemaining(out budgetAllocation) int {
 	target := 0
-	for _, item := range q.owed {
-		if !out.owed[item] {
+	for _, item := range q.dueCards {
+		if !out.dueCards[item] {
 			target++
 		}
 	}
@@ -290,15 +290,15 @@ func (b *budgets) getTimeSpent(q *deckShare, cost review.AnswerCost) time.Durati
 }
 
 // spend allocates daily preset budgets across decks and card types.
-func (b *budgets) spend(owed, newCards []ReviewCard) budgetAllocation {
-	out := budgetAllocation{owed: make([]bool, len(owed)), newCards: make([]bool, len(newCards))}
-	shares := b.collectShares(owed, newCards)
+func (b *budgets) spend(dueCards, newCards []ReviewCard) budgetAllocation {
+	out := budgetAllocation{dueCards: make([]bool, len(dueCards)), newCards: make([]bool, len(newCards))}
+	shares := b.collectShares(dueCards, newCards)
 	for _, path := range shares.order {
 		one, target := b.allowances[path]
 		if !target || one.admits.IsPaused() {
 			continue
 		}
-		b.spendPreset(one, shares.getSorted(path), owed, newCards, &out)
+		b.spendPreset(one, shares.getSorted(path), dueCards, newCards, &out)
 	}
 	return out
 }
@@ -319,7 +319,7 @@ func (k *shareRegistry) getShare(path, deck string) *deckShare {
 	}
 	one, target := decks[deck]
 	if !target {
-		one = &deckShare{deck: deck, owed: nil, newCards: nil, owedIndex: 0, newIndex: 0, debt: 0, begun: 0}
+		one = &deckShare{deck: deck, dueCards: nil, newCards: nil, dueIndex: 0, newIndex: 0, debt: 0, begun: 0}
 		decks[deck] = one
 	}
 	return one
@@ -338,11 +338,11 @@ func (k *shareRegistry) getSorted(path string) []*deckShare {
 }
 
 // collectShares groups due and unreviewed cards into deck shares per preset.
-func (b *budgets) collectShares(owed, newCards []ReviewCard) *shareRegistry {
+func (b *budgets) collectShares(dueCards, newCards []ReviewCard) *shareRegistry {
 	shares := &shareRegistry{shares: make(map[string]map[string]*deckShare), order: nil}
-	for i, one := range owed {
+	for i, one := range dueCards {
 		q := shares.getShare(b.reviewCardPresets[one.ID], one.Deck)
-		q.owed = append(q.owed, i)
+		q.dueCards = append(q.dueCards, i)
 	}
 	for i, one := range newCards {
 		q := shares.getShare(b.reviewCardPresets[one.ID], one.Deck)
@@ -360,11 +360,11 @@ func (b *budgets) collectShares(owed, newCards []ReviewCard) *shareRegistry {
 
 // spendPreset distributes preset allowance to decks and reallocates unused capacity.
 func (b *budgets) spendPreset(
-	one *allowance, decks []*deckShare, owed, newCards []ReviewCard, out *budgetAllocation,
+	one *allowance, decks []*deckShare, dueCards, newCards []ReviewCard, out *budgetAllocation,
 ) {
 	shares := b.divide(one, decks)
 	for i, q := range decks {
-		b.deal(&shares[i], q, owed, newCards, out)
+		b.deal(&shares[i], q, dueCards, newCards, out)
 	}
 	remaining := make(map[string]int, len(decks))
 	for _, q := range decks {
@@ -377,9 +377,9 @@ func (b *budgets) spendPreset(
 		)
 	})
 	for _, q := range decks {
-		q.owedIndex, q.newIndex = 0, 0
+		q.dueIndex, q.newIndex = 0, 0
 		overVal := *one
-		b.deal(&overVal, q, owed, newCards, out)
+		b.deal(&overVal, q, dueCards, newCards, out)
 	}
 }
 
@@ -390,9 +390,9 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 	minutes := make([]int, len(decks))
 	for item, q := range decks {
 		elapsed := b.spentByDeck[q.deck]
-		reviews[item] = len(q.owed) + elapsed.Reviews
+		reviews[item] = len(q.dueCards) + elapsed.Reviews
 		begun[item] = len(q.newCards) + elapsed.New
-		minutes[item] = int(time.Duration(len(q.owed))*one.cost.Review +
+		minutes[item] = int(time.Duration(len(q.dueCards))*one.cost.Review +
 			time.Duration(len(q.newCards))*one.cost.New + elapsed.Took)
 	}
 	keeps := one.admits.Keeps
@@ -412,20 +412,20 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 }
 
 // deal allocates cards for a deck from review and new pools within the given allowance.
-func (b *budgets) deal(share *allowance, q *deckShare, owed, newCards []ReviewCard, out *budgetAllocation) {
+func (b *budgets) deal(share *allowance, q *deckShare, dueCards, newCards []ReviewCard, out *budgetAllocation) {
 	for {
 		q.advancePastOthers(*out)
-		debt, begun := q.owedIndex < len(q.owed), q.newIndex < len(q.newCards)
+		debt, begun := q.dueIndex < len(q.dueCards), q.newIndex < len(q.newCards)
 		if !debt && !begun {
 			return
 		}
 		// Prioritize debt or new cards according to preset ratio policy.
 		if share.admits.IsNextCardDebt(q.debt, q.begun, debt, begun) {
-			if card := owed[q.owed[q.owedIndex]]; b.charge(share, card.ID, false) {
-				out.owed[q.owed[q.owedIndex]] = true
+			if card := dueCards[q.dueCards[q.dueIndex]]; b.charge(share, card.ID, false) {
+				out.dueCards[q.dueCards[q.dueIndex]] = true
 				q.debt++
 			}
-			q.owedIndex++
+			q.dueIndex++
 			continue
 		}
 		if card := newCards[q.newCards[q.newIndex]]; b.charge(share, card.ID, true) {
@@ -438,8 +438,8 @@ func (b *budgets) deal(share *allowance, q *deckShare, owed, newCards []ReviewCa
 
 // advancePastOthers advances pointers past cards already claimed by other decks.
 func (q *deckShare) advancePastOthers(out budgetAllocation) {
-	for q.owedIndex < len(q.owed) && out.owed[q.owed[q.owedIndex]] {
-		q.owedIndex++
+	for q.dueIndex < len(q.dueCards) && out.dueCards[q.dueCards[q.dueIndex]] {
+		q.dueIndex++
 	}
 	for q.newIndex < len(q.newCards) && out.newCards[q.newCards[q.newIndex]] {
 		q.newIndex++

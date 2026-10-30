@@ -37,7 +37,7 @@ const point: Point = {
   reviews: 20,
   minutes: 10,
   retained: 0.9,
-  owed: 0,
+  due: 0,
   through: 1,
   canLearnEveryCard: true,
   closed: [],

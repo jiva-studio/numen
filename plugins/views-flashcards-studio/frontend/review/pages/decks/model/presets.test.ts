@@ -67,7 +67,7 @@ const presetDue = (fields: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   title: 'Sanskrit',
   decks: 1,
   cards: 30,
-  owed: 0,
+  pending: 0,
   reviewed: 0,
   reviewedNew: 0,
   reviewedReviews: 0,
@@ -312,12 +312,12 @@ describe('whether starting a session on a deck is offered', () => {
   })
   const createPresets = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
 
-  it('is offered where the deck owes and its preset schedules something', () => {
+  it('is offered where the deck has cards due and its preset schedules something', () => {
     expect(canStart(deck(3), createPresets(preset()))).toBe(true)
     expect(canStart(deck(0, 1), createPresets(preset()))).toBe(true)
   })
 
-  it('fails where the deck owes nothing', () => {
+  it('fails where the deck has no cards due', () => {
     expect(canStart(deck(0), createPresets(preset()))).toBe(false)
   })
 
@@ -398,7 +398,7 @@ describe('which preset schedules each deck', () => {
         [
           presetDue({
             cards: 49,
-            owed: 49,
+            pending: 49,
             reviewed: 6,
             took: 2.5,
             new: 5,
@@ -422,7 +422,7 @@ describe('which preset schedules each deck', () => {
 
   // The tile prints what pressing it will ask, so the count it is given is the
   // count it shows.
-  it('asks for exactly what its decks owe, over all of them', async () => {
+  it('asks for exactly what is due in its decks, over all of them', async () => {
     const one = useVaultPresets({
       presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
@@ -503,7 +503,7 @@ describe('which preset schedules each deck', () => {
       vault(
         [{ deck: 'decks/Words.md', due: 3, new: 1 }],
         [
-          presetDue({ cards: 4, owed: 4 }),
+          presetDue({ cards: 4, pending: 4 }),
           presetDue({
             preset: 'Empty.md',
             title: 'Empty',
@@ -628,7 +628,7 @@ describe('which preset schedules each deck', () => {
         [
           presetDue({
             cards: 40,
-            owed: 22,
+            pending: 22,
             reviewed: 6,
             took: 12,
             new: 0,

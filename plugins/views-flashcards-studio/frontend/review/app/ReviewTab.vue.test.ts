@@ -156,7 +156,7 @@ describe('the review of a vault whose count is not in', () => {
 
 // The letter drawn on a row and the row itself are one act, so a row that
 // cannot be pressed is a letter that does nothing. A session opened over a deck
-// owing nothing is an empty session, and it mints card ids in the vault to hold it.
+// with no cards due is an empty session, and it mints card ids in the vault to hold it.
 describe('a letter pressed on the decks', () => {
   it('opens review for target deck', async () => {
     const { state } = await mountReview('words')

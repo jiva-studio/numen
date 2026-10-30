@@ -75,7 +75,7 @@ describe('the keys of the decks screen', () => {
     expect(press.preventDefault).toHaveBeenCalled()
   })
 
-  it('does not sit down to a vault that owes nothing', () => {
+  it('does not sit down to a vault with no cards due', () => {
     const { onKeyDown, deps } = createKeys('decks', createVault({ due: 0, new: 0 }))
 
     onKeyDown(createPress('Enter'))

@@ -73,7 +73,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 
 	session := startSession(t, handler, v)
 	if len(session.Cards) == 0 {
-		t.Fatal("the vault owes nothing to answer")
+		t.Fatal("the vault has no cards due")
 	}
 	card := session.Cards[0]
 	if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{

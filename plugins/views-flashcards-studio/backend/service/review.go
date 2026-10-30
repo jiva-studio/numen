@@ -211,15 +211,15 @@ func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 	case host.Indexed:
 	}
 
-	owing, err := h.scenarios().flash.CardsDue.Execute(ctx, v)
+	counts, err := h.scenarios().flash.CardsDue.Execute(ctx, v)
 	if err != nil {
 		one.Unread = err.Error()
 		return one
 	}
-	one.ReviewCards = int32(owing.ReviewCards)
-	one.Due = int32(owing.Due)
-	one.New = int32(owing.New)
-	for _, deck := range owing.Decks {
+	one.ReviewCards = int32(counts.ReviewCards)
+	one.Due = int32(counts.Due)
+	one.New = int32(counts.New)
+	for _, deck := range counts.Decks {
 		one.Decks = append(one.Decks, &api.DeckCardsDue{
 			Deck:        deck.Deck,
 			ReviewCards: int32(deck.ReviewCards),
@@ -230,14 +230,14 @@ func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.Vau
 			Unbegun:     int32(deck.Unbegun),
 		})
 	}
-	for _, preset := range owing.Presets {
+	for _, preset := range counts.Presets {
 		one.Presets = append(one.Presets, &api.PresetCardsDue{
 			Preset:          preset.Preset,
 			Title:           h.getTitle(ctx, v, preset.Preset),
 			Decks:           int32(preset.Decks),
 			Cards:           int32(preset.Cards),
-			OwedDue:         int32(preset.Due),
-			OwedNew:         int32(preset.New),
+			PendingReviews:  int32(preset.Due),
+			PendingNew:      int32(preset.New),
 			Reviewed:        int32(preset.Answered),
 			ReviewedNew:     int32(preset.ReviewedNew),
 			ReviewedReviews: int32(preset.ReviewedReviews),

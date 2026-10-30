@@ -209,7 +209,7 @@ func (r deckRows) countDueAndNew(
 	day *budgets, holds asking, out *CardsDue,
 ) (due, newCards map[string]int) {
 	due, newCards = make(map[string]int), make(map[string]int)
-	for _, one := range holds.owed {
+	for _, one := range holds.dueCards {
 		out.Due++
 		r.get(one.Deck).Due++
 		due[day.reviewCardPresets[one.ID]]++

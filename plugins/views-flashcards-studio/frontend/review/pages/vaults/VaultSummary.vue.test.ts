@@ -24,7 +24,7 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 const mountSummary = (one: VaultCardsDue | null) => mount(VaultSummary, { props: { vault: one } })
 
 describe('the summary of a vault', () => {
-  it('prints what the vault owes', () => {
+  it('prints what is due in the vault', () => {
     expect(mountSummary(vault()).text()).toContain('10')
   })
 

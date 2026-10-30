@@ -102,7 +102,7 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
 const estimatePoint = (settings: Settings, value: number, grid: readonly number[]): Point => {
   const flat = {
     retained: 0,
-    owed: 0,
+    due: 0,
     through: 0,
     canLearnEveryCard: true,
     closed: [],

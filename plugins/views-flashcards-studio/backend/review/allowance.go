@@ -185,8 +185,8 @@ func (p Preset) GetAllowance(
 // debt.
 //
 // It is the one rule for how a day is spent.
-func (a Allowance) IsNextCardDebt(debt, begun int, owed, isNew bool) bool {
-	if !owed {
+func (a Allowance) IsNextCardDebt(debt, begun int, isDue, isNew bool) bool {
+	if !isDue {
 		return false
 	}
 	if !isNew {

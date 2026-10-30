@@ -208,7 +208,7 @@ func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 		first: firstAt, second: secondAt, third: thirdAt, fourth: fourthAt, fifth: fifthAt,
 	}, 0)
 	if want.Load[0] != 2 || want.Backlog[0] != 0 {
-		t.Fatalf("the day owed the two oldest answered %d and left %d standing",
+		t.Fatalf("the two oldest of the day answered %d and left %d standing",
 			want.Load[0], want.Backlog[0])
 	}
 	one, _ := got.Retained.GetShare(0)
@@ -408,21 +408,21 @@ func TestALongerDayAnswersMore(t *testing.T) {
 	pos := makeLearnedCards(delta, now, 60)
 	run := projection.Simulation{By: delta, Day: ahead, Cost: review.DefaultCost, Days: 45}
 
-	var reply, owed []int
+	var reply, due []int
 	for minutes := 2; minutes <= 40; minutes += 2 {
 		got := runProjection(t, run, now, review.Preset{
 			MinutesADay: minutes, ReviewsADay: 9999, NewADay: 5,
 		}, pos, 40)
 		reply = append(reply, got.Answered)
-		owed = append(owed, got.Owed)
+		due = append(due, got.Due)
 	}
 
 	for i := 1; i < len(reply); i++ {
 		if reply[i] < reply[i-1] {
 			t.Errorf("a longer day gave %d answers, a shorter one %d", reply[i], reply[i-1])
 		}
-		if owed[i] > owed[i-1] {
-			t.Errorf("a longer day left %d owed, a shorter one %d", owed[i], owed[i-1])
+		if due[i] > due[i-1] {
+			t.Errorf("a longer day left %d due, a shorter one %d", due[i], due[i-1])
 		}
 	}
 }
@@ -1194,7 +1194,7 @@ func makeOverdueCards(
 ) map[review.CardID]review.Schedule {
 	out := make(map[review.CardID]review.Schedule, reviewCards)
 	for i := range reviewCards {
-		out[review.CardID{Card: fmt.Sprintf("owed%06d", i), Template: "Recognise"}] =
+		out[review.CardID{Card: fmt.Sprintf("due%06d", i), Template: "Recognise"}] =
 			delta.Next(review.Schedule{}, pos.AddDate(0, 0, -60), review.Good)
 	}
 	return out
