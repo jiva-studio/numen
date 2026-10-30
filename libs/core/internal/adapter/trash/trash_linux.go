@@ -136,8 +136,7 @@ func moveIntoTrash(dir, path, from string) error {
 		err = os.Rename(path, filepath.Join(files, name))
 	}
 	if err != nil {
-		os.Remove(filepath.Join(info, name+suffix))
-		return err
+		return errors.Join(err, os.Remove(filepath.Join(info, name+suffix)))
 	}
 	return nil
 }

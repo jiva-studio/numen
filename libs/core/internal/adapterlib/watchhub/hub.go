@@ -8,6 +8,7 @@
 package watchhub
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -147,7 +148,7 @@ func (h *hub) place(dir string, isRecursive bool, one *follower) error {
 	next := &placed{dir: dir, isRecursive: isRecursive, followers: make(map[*follower]struct{})}
 	if err := h.start(next); err != nil {
 		for _, p := range inner {
-			_ = h.start(p)
+			err = errors.Join(err, h.start(p))
 		}
 		return err
 	}

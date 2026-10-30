@@ -218,7 +218,7 @@ type Starter interface {
 // tool endpoint and no conversation, so the agent answers on its own and is given nothing of the
 // vault. An agent that cannot be started, stops for a reason of its own or says nothing fails with
 // domain.ErrUnavailable. The end of the context stops the run and fails with the context's error.
-func Answer(ctx context.Context, agent Starter, task Task) (string, error) {
+func Answer(ctx context.Context, agent Starter, task Task) (_ string, err error) {
 	task.Tools = nil
 	task.ToolDeclarations = nil
 	task.Endpoint = ToolEndpoint{}
@@ -231,7 +231,7 @@ func Answer(ctx context.Context, agent Starter, task Task) (string, error) {
 		}
 		return "", fmt.Errorf("%w: %w", domain.ErrUnavailable, err)
 	}
-	defer func() { _ = run.Stop() }()
+	defer func() { err = errors.Join(err, run.Stop()) }()
 	return readAnswer(ctx, run.GetSteps())
 }
 

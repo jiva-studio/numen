@@ -64,7 +64,7 @@ func (t transfer) fetch(ctx context.Context) error {
 	err = retry(ctx, t.backoff, isTransient, func() error { return t.append(ctx, part) })
 	if err != nil {
 		if errors.Is(err, ErrChecksum) {
-			_ = os.Remove(part)
+			return errors.Join(err, os.Remove(part))
 		}
 		return err
 	}
@@ -98,7 +98,7 @@ func claimPartial(dir string) (string, error) {
 }
 
 // append continues the partial from where it ends, then checks the checksum.
-func (t transfer) append(ctx context.Context, part string) error {
+func (t transfer) append(ctx context.Context, part string) (err error) {
 	hasher := sha256.New()
 	offset, err := hashExisting(part, hasher)
 	if err != nil {
@@ -115,7 +115,7 @@ func (t transfer) append(ctx context.Context, part string) error {
 	if err != nil {
 		return fmt.Errorf("fetching %s: %w", t.address, err)
 	}
-	defer answer.Body.Close()
+	defer closeAndJoin(&err, answer.Body)
 
 	switch {
 	case answer.StatusCode == http.StatusRequestedRangeNotSatisfiable:
@@ -164,7 +164,7 @@ func (t transfer) finish(hasher hash.Hash, size int64) error {
 }
 
 // hashExisting feeds the bytes the file holds to the hash and returns how many there are.
-func hashExisting(path string, hasher hash.Hash) (int64, error) {
+func hashExisting(path string, hasher hash.Hash) (_ int64, err error) {
 	file, err := os.Open(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return 0, nil
@@ -172,7 +172,7 @@ func hashExisting(path string, hasher hash.Hash) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 	return io.Copy(hasher, file)
 }
 

@@ -7,8 +7,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sync"
+	"syscall"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -75,21 +77,23 @@ func (r *VaultRegistry) save(f registryFile) error {
 // rename and the folder after it, so a machine that loses power has either the
 // old file or the new one. The file in place carries privateFileMode, whatever
 // mode the one it replaced had.
-func replace(path string, content []byte) error {
+func replace(path string, content []byte) (err error) {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
+	defer func() {
+		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+			err = errors.Join(err, removeErr)
+		}
+	}()
 
 	if _, err := tmp.Write(content); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Close(); err != nil {
 		return err
@@ -106,15 +110,20 @@ func replace(path string, content []byte) error {
 // syncDirectory flushes the folder the rename was recorded in. Flushing the file is
 // what keeps its contents; flushing the folder is what keeps the rename.
 //
-// Not every filesystem lets a folder be opened for this, and the ones that
-// refuse are the ones that did not need it.
-func syncDirectory(dir string) error {
+// A folder that cannot be opened or flushed on this platform or filesystem is
+// not an error: the registry is written either way.
+func syncDirectory(dir string) (err error) {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
 	folder, err := os.Open(dir)
 	if err != nil {
 		return nil
 	}
-	defer folder.Close()
-	_ = folder.Sync()
+	defer func() { err = errors.Join(err, folder.Close()) }()
+	if err := folder.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) && !errors.Is(err, errors.ErrUnsupported) {
+		return err
+	}
 	return nil
 }
 
@@ -213,7 +222,10 @@ func (r *VaultRegistry) FindVault(nameOrPath string) (domain.Vault, bool, error)
 	if err != nil {
 		return domain.Vault{}, false, err
 	}
-	abs, _ := filepath.Abs(nameOrPath)
+	abs, err := filepath.Abs(nameOrPath)
+	if err != nil {
+		return domain.Vault{}, false, err
+	}
 	for _, v := range f.Vaults {
 		if string(v.ID) == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
 			return v, true, nil

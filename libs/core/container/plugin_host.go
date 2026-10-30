@@ -94,8 +94,7 @@ func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 		return plugincommand.Run{}, nil, err
 	}
 	if _, err := c.OpenPluginWork(ctx, db, v); err != nil {
-		_ = db.Close()
-		return plugincommand.Run{}, nil, err
+		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
 	return c.GetPluginCommands().Run, db.Close, nil
 }

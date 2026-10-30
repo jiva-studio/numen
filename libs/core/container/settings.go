@@ -3,6 +3,7 @@ package container
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"strings"
@@ -152,8 +153,9 @@ func (c Config) MigratePluginSettings() error {
 		return err
 	}
 	var file map[string]any
-	if json.Unmarshal(raw, &file) != nil {
-		return nil //nolint:nilerr // corrupt settings file is skipped
+	if err := json.Unmarshal(raw, &file); err != nil {
+		c.handleError(fmt.Errorf("skip plugin settings migration, parse %s: %w", path, err))
+		return nil
 	}
 
 	moved := collectPluginSettingsMigrations(c.PluginHost.GetPluginInfos(), file)

@@ -147,7 +147,7 @@ func resolvePath(name string) string {
 	}
 }
 
-func lockQuota(ctx context.Context, root string) (func(), error) {
+func lockQuota(ctx context.Context, root string) (func() error, error) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
 	}
@@ -155,13 +155,15 @@ func lockQuota(ctx context.Context, root string) (func(), error) {
 	for {
 		err := os.Mkdir(lock, 0o755)
 		if err == nil {
-			return func() { _ = os.Remove(lock) }, nil
+			return func() error { return os.Remove(lock) }, nil
 		}
 		if !errors.Is(err, fs.ErrExist) {
 			return nil, err
 		}
 		if info, statErr := os.Stat(lock); statErr == nil && time.Since(info.ModTime()) > staleLock {
-			_ = os.Remove(lock)
+			if err := os.Remove(lock); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 			continue
 		}
 		select {
@@ -179,6 +181,9 @@ type Reservation struct {
 	stop chan struct{}
 	wg   sync.WaitGroup
 	once sync.Once
+	// touchErr is the first error of refreshing the file; the keep-alive
+	// goroutine writes it and Release reads it after the goroutine ends.
+	touchErr error
 }
 
 // Reserve claims want bytes under root for a download.
@@ -186,12 +191,12 @@ func Reserve(ctx context.Context, root string, want int64, part string) (*Reserv
 	return reserve(ctx, root, want, part, touchInterval)
 }
 
-func reserve(ctx context.Context, root string, want int64, part string, touch time.Duration) (*Reservation, error) {
+func reserve(ctx context.Context, root string, want int64, part string, touch time.Duration) (_ *Reservation, err error) {
 	unlock, err := lockQuota(ctx, root)
 	if err != nil {
 		return nil, err
 	}
-	defer unlock()
+	defer func() { err = errors.Join(err, unlock()) }()
 
 	used, err := GetUsage(root)
 	if err != nil {
@@ -213,8 +218,7 @@ func reserve(ctx context.Context, root string, want int64, part string, touch ti
 		err = closeErr
 	}
 	if err != nil {
-		_ = os.Remove(file.Name())
-		return nil, err
+		return nil, errors.Join(err, os.Remove(file.Name()))
 	}
 	claim := &Reservation{Room: want, file: file.Name(), stop: make(chan struct{})}
 	claim.wg.Add(1)
@@ -231,16 +235,20 @@ func (r *Reservation) keepAlive(interval time.Duration) {
 		case <-r.stop:
 			return
 		case now := <-tick.C:
-			_ = os.Chtimes(r.file, now, now)
+			if err := os.Chtimes(r.file, now, now); err != nil && r.touchErr == nil {
+				r.touchErr = err
+			}
 		}
 	}
 }
 
-// Release surrenders the reservation claim.
-func (r *Reservation) Release() {
+// Release surrenders the reservation claim and returns the first error of
+// refreshing or removing its file. A second call returns nil.
+func (r *Reservation) Release() (err error) {
 	r.once.Do(func() {
 		close(r.stop)
 		r.wg.Wait()
-		_ = os.Remove(r.file)
+		err = errors.Join(r.touchErr, os.Remove(r.file))
 	})
+	return err
 }

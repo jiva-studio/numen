@@ -89,7 +89,7 @@ func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyReq
 // take turns.
 func (p *FileProvisioner) Provision(
 	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
-) (pluginport.ResolvedDependency, error) {
+) (_ pluginport.ResolvedDependency, err error) {
 	if onProgress == nil {
 		onProgress = func(pluginport.DependencyStatus) {}
 	}
@@ -110,7 +110,7 @@ func (p *FileProvisioner) Provision(
 	if err != nil {
 		return pluginport.ResolvedDependency{}, err
 	}
-	defer func() { _ = release() }()
+	defer func() { err = errors.Join(err, release()) }()
 
 	if resolved, ok := readCached(req, dir); ok {
 		return resolved, nil

@@ -1,11 +1,13 @@
 package wire
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"strconv"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -74,7 +76,7 @@ func WritePage(
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(text)))
 	w.Header().Set("Cache-Control", "no-store")
-	_, _ = w.Write(text)
+	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(text))
 }
 
 // readAppearanceSettings is what the settings say a window shows, and whether

@@ -379,7 +379,10 @@ func (t PluginNoteType) GetProfile() domain.NoteProfile {
 	}
 	profile.IDHeadingLevels = slices.Clone(t.IDHeadingLevels)
 	if t.IDPattern != "" {
-		profile.IDPattern, _ = regexp.Compile("^(?:" + t.IDPattern + ")$")
+		// listNoteTypeIssues rejects a pattern that does not compile.
+		if pattern, err := regexp.Compile("^(?:" + t.IDPattern + ")$"); err == nil {
+			profile.IDPattern = pattern
+		}
 	}
 	return profile
 }

@@ -1,8 +1,10 @@
 package wire
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -76,10 +78,14 @@ func ServePluginFile(w http.ResponseWriter, r *http.Request, getPluginDir func(i
 		}
 		return true
 	}
-	defer file.Close()
+	content, err := io.ReadAll(file)
+	if err = errors.Join(err, file.Close()); err != nil {
+		http.Error(w, "cannot read plugin file", http.StatusInternalServerError)
+		return true
+	}
 
 	setPluginAssetContentType(w, parts[1])
-	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+	http.ServeContent(w, r, info.Name(), info.ModTime(), bytes.NewReader(content))
 	return true
 }
 
@@ -88,7 +94,7 @@ var errPluginAssetEscapes = errors.New("plugin asset path escapes the plugin dir
 
 // openPluginAsset opens a regular file below pluginDir. The directory is opened once and
 // the name is resolved inside it, so no link can lead out of it.
-func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.FileInfo, error) {
+func openPluginAsset(ctx context.Context, pluginDir, name string) (_ *os.File, _ os.FileInfo, err error) {
 	if err := ctx.Err(); err != nil {
 		return nil, nil, err
 	}
@@ -96,19 +102,17 @@ func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.
 	if err != nil {
 		return nil, nil, err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	file, err := root.Open(name)
 	if err != nil {
 		return nil, nil, classifyPluginAssetError(root, name, err)
 	}
 	info, err := file.Stat()
 	if err != nil {
-		_ = file.Close()
-		return nil, nil, err
+		return nil, nil, errors.Join(err, file.Close())
 	}
 	if info.IsDir() {
-		_ = file.Close()
-		return nil, nil, os.ErrNotExist
+		return nil, nil, errors.Join(os.ErrNotExist, file.Close())
 	}
 	return file, info, nil
 }

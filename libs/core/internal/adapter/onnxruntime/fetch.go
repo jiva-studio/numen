@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,7 +37,7 @@ func newClient() *http.Client {
 }
 
 // verifyFile returns an error when the file at name does not hold the sha256 sum.
-func verifyFile(name, sum string) error {
+func verifyFile(name, sum string) (err error) {
 	info, err := os.Stat(name)
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func verifyFile(name, sum string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
 		return err
@@ -61,7 +62,7 @@ func verifyFile(name, sum string) error {
 
 // download writes the archive at the address to at. The bytes go through a file
 // beside at and are put in place only when they hold the pinned sum.
-func download(ctx context.Context, client *http.Client, r Release, pos string, onProgress func(count, total int64)) error {
+func download(ctx context.Context, client *http.Client, r Release, pos string, onProgress func(count, total int64)) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, downloadTimeout)
 	defer cancel()
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Address, nil)
@@ -72,7 +73,7 @@ func download(ctx context.Context, client *http.Client, r Release, pos string, o
 	if err != nil {
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
-	defer answer.Body.Close()
+	defer closeAndJoin(&err, answer.Body)
 	if answer.StatusCode != http.StatusOK {
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
@@ -94,12 +95,10 @@ func download(ctx context.Context, client *http.Client, r Release, pos string, o
 		err = fmt.Errorf("the download holds %s, and %s is pinned", found, r.Sum)
 	}
 	if err != nil {
-		os.Remove(part)
-		return fmt.Errorf("fetching %s: %w", r.Address, err)
+		return errors.Join(fmt.Errorf("fetching %s: %w", r.Address, err), os.Remove(part))
 	}
 	if err := os.Rename(part, pos); err != nil {
-		os.Remove(part)
-		return err
+		return errors.Join(err, os.Remove(part))
 	}
 	return nil
 }

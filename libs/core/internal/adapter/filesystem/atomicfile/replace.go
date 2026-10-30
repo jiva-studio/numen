@@ -13,8 +13,10 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -77,32 +79,32 @@ func CreateTempFile(root *os.Root, dir, pattern string) (*os.File, string, error
 // The file stat comes from the temporary file's own descriptor. The rename
 // carries the file across whole, so its size and its modification time are the
 // ones at the target from the moment the rename lands.
-func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.FileStat, error) {
+func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (content domain.FileStat, err error) {
 	dir := filepath.Dir(target)
 	tmp, pos, err := CreateTempFile(root, dir, GetTempPattern(filepath.Base(target)))
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	defer root.Remove(pos)
+	defer func() {
+		if removeErr := root.Remove(pos); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+			err = errors.Join(err, removeErr)
+		}
+	}()
 
 	if _, err := io.Copy(tmp, from); err != nil {
-		tmp.Close()
-		return domain.FileStat{}, err
+		return domain.FileStat{}, errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return domain.FileStat{}, err
+		return domain.FileStat{}, errors.Join(err, tmp.Close())
 	}
 	info, err := tmp.Stat()
 	if err != nil {
-		tmp.Close()
-		return domain.FileStat{}, err
+		return domain.FileStat{}, errors.Join(err, tmp.Close())
 	}
 	// Changing the mode moves no modification time. It is asked of the open
 	// file, which is this one and can be no other.
 	if err := tmp.Chmod(mode); err != nil {
-		tmp.Close()
-		return domain.FileStat{}, err
+		return domain.FileStat{}, errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Close(); err != nil {
 		return domain.FileStat{}, err
@@ -110,22 +112,26 @@ func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 	if err := Rename(ctx, root, pos, target); err != nil {
 		return domain.FileStat{}, err
 	}
-	content := domain.FileStat{Size: info.Size(), ModTime: info.ModTime()}
+	content = domain.FileStat{Size: info.Size(), ModTime: info.ModTime()}
 	return content, SyncDirectory(root, dir)
 }
 
 // SyncDirectory flushes the folder the rename was recorded in.
 //
 // Flushing the file is what keeps its contents whole; flushing the folder is
-// what keeps the rename itself.
-//
-// not an error to hand back: the note is written either way.
-func SyncDirectory(root *os.Root, dir string) error {
+// what keeps the rename itself. A folder that cannot be opened or flushed on
+// this platform or filesystem is not an error: the note is written either way.
+func SyncDirectory(root *os.Root, dir string) (err error) {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
 	folder, err := root.Open(dir)
 	if err != nil {
 		return nil
 	}
-	defer folder.Close()
-	_ = folder.Sync()
+	defer func() { err = errors.Join(err, folder.Close()) }()
+	if err := folder.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) && !errors.Is(err, errors.ErrUnsupported) {
+		return err
+	}
 	return nil
 }

@@ -110,8 +110,7 @@ type completedBatch struct {
 }
 
 // Execute embeds what one vault owes, in groups, until nothing owes anything.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error) {
-	var res EmbedResult
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, err error) {
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -124,7 +123,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if err != nil {
 		return res, err
 	}
-	defer func() { _ = release() }()
+	defer func() { err = errors.Join(err, release()) }()
 
 	model := u.Embedder.GetModel()
 	reader, err := u.readers.Open(v)

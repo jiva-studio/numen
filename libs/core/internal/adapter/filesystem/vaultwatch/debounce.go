@@ -78,7 +78,10 @@ func (s *debounceState) handleWaitingEvents(shape *vaultreader.Folders, waiting 
 	events, finished, isDone := waiting.take()
 	if finished {
 		s.rescan(dropped)
-		shape.ReloadShape()
+		if err := shape.ReloadShape(); err != nil {
+			// The shape lacks a folder the walk could not enter, so the vault is read again.
+			s.rescan(dropped)
+		}
 	}
 	for _, event := range events {
 		paths, whole, folder := shape.GetConcernedPaths(event.Path())

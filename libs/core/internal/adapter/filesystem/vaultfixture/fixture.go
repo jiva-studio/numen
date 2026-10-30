@@ -49,7 +49,10 @@ func CreateVault(t *testing.T, files map[string]string, ignore []string) string 
 			t.Fatal(err)
 		}
 		cfg.Ignore = ignore
-		raw, _ = json.MarshalIndent(cfg, "", "  ")
+		raw, err = json.MarshalIndent(cfg, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if err := os.WriteFile(config, raw, 0o644); err != nil {
 			t.Fatal(err)
 		}

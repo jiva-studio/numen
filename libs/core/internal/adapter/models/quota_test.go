@@ -24,12 +24,12 @@ func TestReserveQuotaRejectsWhatTheOtherReservationsLeaveNoRoomFor(t *testing.T)
 	if _, err := Reserve(t.Context(), root, 60, ""); err == nil || !strings.Contains(err.Error(), EnvQuota) {
 		t.Fatalf("second reservation error = %v", err)
 	}
-	first.Release()
+	release(t, first)
 	again, err := Reserve(t.Context(), root, 60, "")
 	if err != nil {
 		t.Fatalf("after release: %v", err)
 	}
-	again.Release()
+	release(t, again)
 }
 
 func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
@@ -42,7 +42,7 @@ func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer claim.Release()
+	defer release(t, claim)
 	if claim.Room != 60 {
 		t.Fatalf("room = %d, want 60", claim.Room)
 	}
@@ -110,7 +110,7 @@ func TestReservationPreservesItselfAlive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer claim.Release()
+	defer release(t, claim)
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(claim.file, old, old); err != nil {
 		t.Fatal(err)
@@ -137,8 +137,8 @@ func TestReservationReleaseIsIdempotentAndRemovesTheFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	claim.Release()
-	claim.Release()
+	release(t, claim)
+	release(t, claim)
 	if _, err := os.Stat(claim.file); !os.IsNotExist(err) {
 		t.Fatalf("reservation file remains: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestReservationDoesNotCountTheBytesOfItsPartTwice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer claim.Release()
+	defer release(t, claim)
 	used, err := GetUsage(root)
 	if err != nil {
 		t.Fatal(err)
@@ -336,5 +336,12 @@ func TestResolvePathFollowsALinkInTheExistingPart(t *testing.T) {
 	}
 	if got := resolvePath(link); got != target {
 		t.Fatalf("resolvePath(link) = %q", got)
+	}
+}
+
+func release(t *testing.T, claim *Reservation) {
+	t.Helper()
+	if err := claim.Release(); err != nil {
+		t.Error(err)
 	}
 }

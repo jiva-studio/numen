@@ -90,6 +90,9 @@ func parseGlob(line string) (glob, bool) {
 	if !isCaseSensitive {
 		pattern = strings.ToLower(pattern)
 	}
+	if _, err := path.Match(pattern, ""); err != nil {
+		return glob{}, false
+	}
 	return glob{weight: weight, contentType: contentType, pattern: pattern, isCaseSensitive: isCaseSensitive}, true
 }
 
@@ -119,7 +122,7 @@ func (t Table) GetContentType(name string) domain.ContentType {
 		if one.isCaseSensitive {
 			subject = name
 		}
-		if ok, _ := path.Match(one.pattern, subject); ok {
+		if matched, err := path.Match(one.pattern, subject); err == nil && matched {
 			return one.contentType
 		}
 	}
