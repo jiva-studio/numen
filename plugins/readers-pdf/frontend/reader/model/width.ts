@@ -5,7 +5,7 @@
  * rendered at it, and the width follows the row only once the row has stopped
  * changing.
  */
-import { hasWindow, win } from '../../dom'
+import { hasWindow, win } from '@numen/ui'
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 

@@ -1,7 +1,7 @@
 /**
  * Reactive CodeMirror editor instance management.
  */
-import { doc } from '../../dom'
+import { doc } from '@numen/ui'
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import type { LanguageSupport } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'

@@ -5,7 +5,7 @@
  * The plex measures its own text: the type a title is set in is the type it is
  * arranged from. The answer comes at once, while the arrangement is worked out.
  */
-import { doc, hasDocument } from '../../../dom'
+import { doc, hasDocument } from '@numen/ui'
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 import type { PlexNode } from '../../lib/node'
 

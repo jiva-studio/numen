@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { measureRect } from '../../dom'
 /* --------------------------------- Props ---------------------------------- */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Menu, type MenuItem } from '@numen/ui'
+import { Menu, type MenuItem, measureRect } from '@numen/ui'
 import type { Position } from '@numen/ui'
 
 export interface ReasoningLevelOption {

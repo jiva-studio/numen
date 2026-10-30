@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { measureRect } from '../../../../dom'
 /**
  * A label for the hovered item, displayed beside it. It follows the pointer and
  * never captures it.
@@ -10,7 +9,7 @@ import { measureRect } from '../../../../dom'
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { getAdjacentPlace, type Box } from '@numen/ui'
+import { getAdjacentPlace, type Box, measureRect } from '@numen/ui'
 import type { Size } from '@numen/ui'
 import { browserViewport, useFreeSpace, type Viewport } from '@numen/ui'
 

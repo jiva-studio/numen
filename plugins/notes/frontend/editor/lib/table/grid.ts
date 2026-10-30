@@ -3,7 +3,7 @@
  *
  * The grid's position is kept on its own element: a widget receives only what it draws.
  */
-import { doc } from '../../../dom'
+import { doc } from '@numen/ui'
 import type { ChangeDesc, EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'

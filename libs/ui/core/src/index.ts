@@ -73,6 +73,17 @@ export {
 } from './shared/lib/dom/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
 export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/time/clock'
+export {
+  doc,
+  getCurrentDate,
+  getNow,
+  hasDocument,
+  hasWindow,
+  measureRect,
+  measureWindow,
+  nav,
+  win,
+} from './shared/lib/dom'
 export { createRefRegistry } from './shared/lib/dom/refs'
 export { cn } from './shared/lib/dom/classes'
 

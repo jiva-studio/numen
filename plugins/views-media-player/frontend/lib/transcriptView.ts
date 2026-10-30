@@ -3,7 +3,7 @@
  * the extensions the caller adds, such as the time gutter. Transcript text is not Markdown, so the
  * view draws no syntax.
  */
-import { doc } from '../dom'
+import { doc } from '@numen/ui'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, drawSelection, keymap } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'

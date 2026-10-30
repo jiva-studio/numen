@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { win } from '../dom'
 /**
  * The contents of the book, standing over the page it is read on. A pointer
  * landing outside it and the Escape key both put it away.
  */
 import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
-import { useOutsidePress } from '@numen/ui'
+import { useOutsidePress, win } from '@numen/ui'
 import { BookContents, type ContentsEntry } from '../book'
 import { WORDS as words } from '../words'
 

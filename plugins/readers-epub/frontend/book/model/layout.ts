@@ -7,11 +7,10 @@
  * This module joins the two: it re-lays out the text, keeps one offset current,
  * and triggers that re-layout.
  */
-import { doc } from '../../dom'
 import { onMounted, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { onNextFrame } from '@numen/ui'
+import { onNextFrame, doc } from '@numen/ui'
 import { useBookColumns } from './columns'
 import { useBookTurns } from './turns'
 import type { BookLink } from '../lib/link'

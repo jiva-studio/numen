@@ -1,7 +1,7 @@
 /**
  * Viewport positioning and resize tracking for link inspector popover.
  */
-import { measureRect, measureWindow, win } from '../dom'
+import { measureRect, measureWindow, win } from '@numen/ui'
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { resolvePopoverPosition } from './linkInspector'
