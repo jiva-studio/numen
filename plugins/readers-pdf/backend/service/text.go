@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
@@ -138,10 +139,14 @@ func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	err := s.putLayer(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
 		task.Error = err.Error()
-		_ = s.queue.ReportTask(context.WithoutCancel(ctx), task)
+		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
+			fmt.Fprintf(os.Stderr, "readers-pdf: show the task %s: %v\n", task.ID, reportErr)
+		}
 		return
 	}
-	_ = s.queue.FinishTask(context.WithoutCancel(ctx), task.ID)
+	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: finish the task %s: %v\n", task.ID, finishErr)
+	}
 }
 
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,

@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"sync"
 	"testing"
@@ -64,12 +65,12 @@ func TestAnIdleWorkerIsReusedByTheNextDocument(t *testing.T) {
 		t.Fatal(err)
 	}
 	worker := first.worker.GetImplementation()
-	first.close()
+	cleanup.Close(t, first)
 	second, err := openPath("testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer second.close()
+	defer cleanup.Close(t, second)
 	if second.worker.GetImplementation() != worker {
 		t.Error("the second document started a new worker, want the first one's")
 	}
@@ -85,12 +86,12 @@ func TestWithNoIdleCountEveryDocumentStartsAWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	worker := first.worker.GetImplementation()
-	first.close()
+	cleanup.Close(t, first)
 	second, err := openPath("testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer second.close()
+	defer cleanup.Close(t, second)
 	if second.worker.GetImplementation() == worker {
 		t.Error("the second document reused a worker, want a new one")
 	}
@@ -112,7 +113,7 @@ func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
 	if !hasPool() {
 		t.Fatal("the pool was released while a document was open")
 	}
-	doc.close()
+	cleanup.Close(t, doc)
 	deadline := time.Now().Add(5 * time.Second)
 	for hasPool() && time.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
@@ -124,7 +125,7 @@ func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	again.close()
+	cleanup.Close(t, again)
 }
 
 func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
@@ -133,7 +134,7 @@ func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc.close()
+	cleanup.Close(t, doc)
 	releasePool()
 	if hasPool() {
 		t.Fatal("the pool is still held after it was released")
@@ -154,7 +155,7 @@ func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
 					errs <- err
 					return
 				}
-				doc.close()
+				cleanup.Close(t, doc)
 			}
 		}()
 	}
@@ -181,7 +182,9 @@ func TestAReleaseCannotCloseAPoolADocumentHasAcquired(t *testing.T) {
 		markDocumentClosed()
 		t.Fatal(err)
 	}
-	putWorker(worker)
+	if err := putWorker(worker); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func openPath(path string) (*document, error) {
@@ -213,7 +216,7 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc.close()
+	cleanup.Close(t, doc)
 
 	workers.Lock()
 	hasTimer := workers.release != nil
@@ -226,7 +229,7 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer again.close()
+	defer cleanup.Close(t, again)
 
 	workers.Lock()
 	timerStopped := workers.release == nil

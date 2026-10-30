@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,10 +19,10 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	})
 	vaultDir := files.Vault().Path
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
-	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
+	writeFile(t, outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
 	server := NewDocumentServer(files, hosttest.NewTexts("vault", pluginID))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. GetDocument outside vault -> PermissionDenied
 	_, err := server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
@@ -73,7 +72,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 
 func TestDocumentServerEmptyPath(t *testing.T) {
 	server := NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", pluginID))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. GetDocument with empty path
 	_, err := server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{Path: ""}))
@@ -85,5 +84,13 @@ func TestDocumentServerEmptyPath(t *testing.T) {
 	_, err = server.GetHighlights(ctx, connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: ""}))
 	if err == nil || connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("expected CodeInvalidArgument for GetHighlights with empty path, got %v", err)
+	}
+}
+
+// writeFile writes content to path and fails the test when writing fails.
+func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, content, perm); err != nil {
+		t.Fatal(err)
 	}
 }

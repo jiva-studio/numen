@@ -34,7 +34,8 @@ func OpenBytes(raw []byte) (*Scan, error) {
 	return &Scan{doc: doc}, nil
 }
 
-func (s *Scan) Close() { s.doc.close() }
+// Close gives the worker of the document back and releases its file.
+func (s *Scan) Close() error { return s.doc.Close() }
 
 // GetPageCount is how many pages the document has.
 func (s *Scan) GetPageCount() int { return s.doc.pages }

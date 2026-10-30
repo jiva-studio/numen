@@ -1,6 +1,7 @@
 package pdf
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"strings"
 	"testing"
@@ -34,7 +35,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer doc.close()
+			defer cleanup.Close(t, doc)
 
 			for i := 0; i < doc.pages; i++ {
 				response := doc.text(i)
@@ -343,7 +344,7 @@ func TestDocumentWordsInvalidPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer doc.close()
+	defer cleanup.Close(t, doc)
 
 	if boxes := doc.words(9999, 0); len(boxes) != 0 {
 		t.Errorf("doc.words(9999) returned %d boxes, want 0", len(boxes))

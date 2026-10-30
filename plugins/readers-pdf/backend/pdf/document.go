@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -162,9 +163,10 @@ func getWorker() (pdfium.Pdfium, error) {
 }
 
 // putWorker returns a worker to the pool.
-func putWorker(worker pdfium.Pdfium) {
-	worker.Close()
+func putWorker(worker pdfium.Pdfium) error {
+	err := worker.Close()
 	markDocumentClosed()
+	return err
 }
 
 // markDocumentClosed counts a document closed and, once none is open, schedules the
@@ -196,7 +198,9 @@ func releasePool() {
 		return
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="releasePool closes idle workers pool"
-	workers.pool.Close()
+	if err := workers.pool.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: close the worker pool: %v\n", err)
+	}
 	workers.pool = nil
 	// gomutants:disable-next-line BRANCH_IF,STATEMENT_REMOVE reason="releasePool cancels any pending timer when closing pool"
 	if workers.release != nil {
@@ -221,6 +225,15 @@ type source struct {
 	file   io.Closer
 }
 
+// withCloseError is err, joined with the error of closing what the failed operation had open. It is
+// err itself where closing succeeded.
+func withCloseError(err, closeErr error) error {
+	if closeErr == nil {
+		return err
+	}
+	return errors.Join(err, closeErr)
+}
+
 func openBytes(raw []byte) (*document, error) {
 	return open(source{reader: bytes.NewReader(raw), size: int64(len(raw))})
 }
@@ -234,8 +247,7 @@ func openReader(file io.ReadSeekCloser) (*document, error) {
 		_, err = file.Seek(0, io.SeekStart)
 	}
 	if err != nil {
-		file.Close()
-		return nil, fmt.Errorf("pdf: %w", err)
+		return nil, withCloseError(fmt.Errorf("pdf: %w", err), file.Close())
 	}
 	return open(source{reader: file, size: size, file: file})
 }
@@ -243,54 +255,52 @@ func openReader(file io.ReadSeekCloser) (*document, error) {
 // open takes ownership of the source's file and closes it when the document is
 // closed, or when opening fails.
 func open(src source) (*document, error) {
-	closeFile := func() {
+	closeFile := func() error {
 		if src.file != nil {
-			src.file.Close()
+			return src.file.Close()
 		}
+		return nil
 	}
 	if src.size == 0 {
-		closeFile()
-		return nil, fmt.Errorf("%w: the file is empty", ErrNotPDF)
+		return nil, withCloseError(fmt.Errorf("%w: the file is empty", ErrNotPDF), closeFile())
 	}
 	worker, err := getWorker()
 	// gomutants:disable-next-line BRANCH_IF reason="open releases source file when worker acquisition fails"
 	if err != nil {
-		closeFile()
-		return nil, fmt.Errorf("pdf: %w", err)
+		return nil, withCloseError(fmt.Errorf("pdf: %w", err), closeFile())
 	}
 
 	opened, err := worker.OpenDocument(&requests.OpenDocument{FileReader: src.reader, FileReaderSize: src.size})
 	if err != nil {
-		putWorker(worker)
-		closeFile()
+		closeErr := errors.Join(putWorker(worker), closeFile())
 		// A file that asks for a password is a file whose text nobody here can
 		// read, and it is worth saying so and not saying it is malformed.
 		// gomutants:disable-next-line EXPRESSION_REMOVE reason="password-protected PDFs return ErrEncrypted"
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
-			return nil, fmt.Errorf("%w: %w", ErrEncrypted, err)
+			return nil, withCloseError(fmt.Errorf("%w: %w", ErrEncrypted, err), closeErr)
 		}
 		// gomutants:disable-next-line ERRORF_WRAP reason="returns ErrNotPDF wrapping the underlying error"
-		return nil, fmt.Errorf("%w: %w", ErrNotPDF, err)
+		return nil, withCloseError(fmt.Errorf("%w: %w", ErrNotPDF, err), closeErr)
 	}
 
 	doc := &document{worker: worker, ref: opened.Document, file: src.file}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.ref})
 	// gomutants:disable-next-line BRANCH_IF reason="aborts when page count cannot be retrieved"
 	if err != nil {
-		doc.close()
-		return nil, fmt.Errorf("%w: %w", ErrNotPDF, err)
+		return nil, withCloseError(fmt.Errorf("%w: %w", ErrNotPDF, err), doc.Close())
 	}
 	doc.pages = count.PageCount
 	return doc, nil
 }
 
-// close gives the worker back and releases the file. Closing the instance
+// Close gives the worker back and releases the file. Closing the instance
 // closes the document with it.
-func (d *document) close() {
-	putWorker(d.worker)
+func (d *document) Close() error {
+	err := putWorker(d.worker)
 	if d.file != nil {
-		d.file.Close()
+		return errors.Join(err, d.file.Close())
 	}
+	return err
 }
 
 // title is what the document says it is called. Most say nothing, and a good
@@ -334,7 +344,10 @@ func Warmup() {
 	workers.isWarmed = true
 	workers.Unlock()
 	worker, err := getWorker()
-	if err == nil {
-		putWorker(worker)
+	if err != nil {
+		return
+	}
+	if err := putWorker(worker); err != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: release the warm-up worker: %v\n", err)
 	}
 }

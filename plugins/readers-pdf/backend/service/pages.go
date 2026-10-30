@@ -2,8 +2,11 @@ package service
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"image/jpeg"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -52,16 +55,18 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	_, _ = w.Write(image)
+	if _, err := w.Write(image); err != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: write the page %d of %s: %v\n", index, path, err)
+	}
 }
 
 // renderPage draws one page of the PDF bytes raw as JPEG bytes.
-func renderPage(raw []byte, index int) ([]byte, error) {
+func renderPage(raw []byte, index int) (encoded []byte, err error) {
 	scan, err := pdf.OpenBytes(raw)
 	if err != nil {
 		return nil, err
 	}
-	defer scan.Close()
+	defer func() { err = errors.Join(err, scan.Close()) }()
 	drawing, err := scan.RenderPage(index, pageDPI)
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package pdf
 
 import (
+	"errors"
 	"sort"
 	"strings"
 
@@ -42,7 +43,7 @@ const (
 //
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
-func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
+func (b *Book) Highlights(raw []byte, pages []int) (boxes []HighlightBox, err error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
@@ -52,9 +53,8 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]HighlightBox, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer doc.close()
+	defer func() { err = errors.Join(err, doc.Close()) }()
 
-	var boxes []HighlightBox
 	for _, page := range wanted {
 		boxes = append(boxes, doc.words(page, b.Pages[page].Offset)...)
 	}

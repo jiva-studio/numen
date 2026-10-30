@@ -53,7 +53,11 @@ func getPage(t *testing.T, web *httptest.Server, path string) page {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -119,11 +123,17 @@ func TestPageRouteRejectsABadRequest(t *testing.T) {
 func TestPageRouteRequiresTheHostToken(t *testing.T) {
 	web := newLinkedPages(t, newTestdataVault(t))
 
-	resp, err := web.Client().Get(web.URL + "/plugin/pages/0?path=tiny.pdf")
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, web.URL+"/plugin/pages/0?path=tiny.pdf", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	resp, err := web.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("answered %d", resp.StatusCode)

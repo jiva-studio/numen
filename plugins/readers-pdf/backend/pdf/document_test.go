@@ -3,6 +3,7 @@ package pdf
 import (
 	"bytes"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"io"
 	"os"
 	"testing"
@@ -64,7 +65,7 @@ func TestOpenReaderClosesFileOnSeekError(t *testing.T) {
 			doc, err := openReader(fc)
 			if err == nil {
 				if doc != nil {
-					doc.close()
+					cleanup.Close(t, doc)
 				}
 				t.Fatal("openReader succeeded, want seek error")
 			}
@@ -126,7 +127,7 @@ func TestDocumentCloseClosesFile(t *testing.T) {
 	if fc.isClosed {
 		t.Error("file should not be closed while document is open")
 	}
-	doc.close()
+	cleanup.Close(t, doc)
 	if !fc.isClosed {
 		t.Error("doc.close() did not close file")
 	}
@@ -141,7 +142,7 @@ func TestDocumentTextInvalidPageIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer doc.close()
+	defer cleanup.Close(t, doc)
 
 	if got := doc.text(-1); got != "" {
 		t.Errorf("doc.text(-1) = %q, want empty string", got)

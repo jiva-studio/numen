@@ -33,7 +33,10 @@ func newTwoVaults(t *testing.T) twoVaults {
 	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"tiny.pdf": string(raw)})
 	current.Beside(other)
 	texts := hosttest.NewTexts("Physics", pluginID)
-	chemistry := texts.With("Chemistry").(*hosttest.Texts)
+	chemistry, isTexts := texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	chemistry.File("tiny.pdf", raw)
 	chemistry.SetStore(pluginID, other.Store())
 	server := NewTextServer(current, texts, current.Store(), hosttest.NewQueue())
@@ -79,7 +82,7 @@ func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 
-	named := httptest.NewRequest(http.MethodGet, "/pages/0?path=tiny.pdf", nil)
+	named := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf", nil)
 	named.Header.Set("Numen-Vault", "Chemistry")
 	page := httptest.NewRecorder()
 	mux.ServeHTTP(page, named)
@@ -88,7 +91,7 @@ func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	}
 
 	current := httptest.NewRecorder()
-	mux.ServeHTTP(current, httptest.NewRequest(http.MethodGet, "/pages/0?path=tiny.pdf", nil))
+	mux.ServeHTTP(current, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf", nil))
 	if current.Code == http.StatusOK {
 		t.Error("a request naming no vault drew a file the current vault does not hold")
 	}
@@ -113,13 +116,21 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 	if err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
 		t.Fatalf("CreateText: %v", err)
 	}
-	if listing, _ := texts.ListVersions(t.Context(), "tiny.pdf"); len(listing.Versions) != 0 {
+	listing, err := texts.ListVersions(t.Context(), "tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Fatalf("versions %v while the queue is held, want none", listing.Versions)
 	}
 	held.Release()
 	server.Wait()
 
-	if listing, _ := texts.ListVersions(t.Context(), "tiny.pdf"); len(listing.Versions) != 1 {
+	listing, err = texts.ListVersions(t.Context(), "tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 1 {
 		t.Errorf("versions %v after the turn, want the text layer", listing.Versions)
 	}
 	if tasks := queue.ListTasks(); len(tasks) != 0 {

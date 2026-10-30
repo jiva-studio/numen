@@ -39,7 +39,7 @@ func NewDocumentServer(files host.Vault, texts host.Texts) *DocumentServer {
 func (s *DocumentServer) GetDocument(
 	ctx context.Context,
 	req *connect.Request[pdfv1.GetDocumentRequest],
-) (*connect.Response[pdfv1.GetDocumentResponse], error) {
+) (res *connect.Response[pdfv1.GetDocumentResponse], err error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
@@ -53,7 +53,11 @@ func (s *DocumentServer) GetDocument(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("read pdf: %w", err))
 	}
-	defer scan.Close()
+	defer func() {
+		if closeErr := scan.Close(); closeErr != nil {
+			err = errors.Join(err, connect.NewError(connect.CodeInternal, closeErr))
+		}
+	}()
 
 	pageCount := scan.GetPageCount()
 	pages := make([]*pdfv1.Page, 0, pageCount)

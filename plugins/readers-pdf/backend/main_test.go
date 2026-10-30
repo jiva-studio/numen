@@ -19,7 +19,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
 
 	server := service.NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", "md.numen.readers.pdf"))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. GetDocument outside vault -> PermissionDenied
 	_, err := server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
@@ -52,7 +52,7 @@ func TestPdfAuthCheckInterceptor(t *testing.T) {
 		return nil, nil
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Missing token -> unauthenticated
 	req := connect.NewRequest(&pdfv1.GetDocumentRequest{})
