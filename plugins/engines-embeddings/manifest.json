@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.embeddings",
   "name": "Vector Embeddings",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
