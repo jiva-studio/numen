@@ -9,7 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func newRegistry(t *testing.T) *command.Registry {
@@ -35,7 +35,7 @@ func newRegistry(t *testing.T) *command.Registry {
 	return registry
 }
 
-func run(t *testing.T, handler command.Handler, request *numenv1.RunCommandRequest) *numenv1.RunCommandResponse {
+func run(t *testing.T, handler command.Handler, request *v1.RunCommandRequest) *v1.RunCommandResponse {
 	t.Helper()
 	res, err := command.Service{Handler: handler}.RunCommand(t.Context(), connect.NewRequest(request))
 	if err != nil {
@@ -45,32 +45,32 @@ func run(t *testing.T, handler command.Handler, request *numenv1.RunCommandReque
 }
 
 func TestACommandRunsWithItsFileAndArgumentsAndAnswersWhatItSaid(t *testing.T) {
-	res := run(t, newRegistry(t), &numenv1.RunCommandRequest{
+	res := run(t, newRegistry(t), &v1.RunCommandRequest{
 		Command: "greet", Path: "a.md", Arguments: map[string]string{"name": "Ann", "loud": "true"},
 	})
 
-	if res.GetError() != numenv1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || res.GetMessage() != "HELLO Ann" || res.GetOpenedPath() != "a.md" {
+	if res.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || res.GetMessage() != "HELLO Ann" || res.GetOpenedPath() != "a.md" {
 		t.Errorf("the command answered %v", res)
 	}
 }
 
 func TestACommandThatDidNotSucceedIsAnsweredWithItsCodeAndItsWords(t *testing.T) {
 	cases := map[string]struct {
-		request *numenv1.RunCommandRequest
-		want    numenv1.CommandErrorCode
+		request *v1.RunCommandRequest
+		want    v1.CommandErrorCode
 		message string
 	}{
 		"a command not added": {
-			&numenv1.RunCommandRequest{Command: "shred"}, numenv1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND,
+			&v1.RunCommandRequest{Command: "shred"}, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND,
 			"no command of that id: shred",
 		},
 		"arguments it cannot run with": {
-			&numenv1.RunCommandRequest{Command: "greet", Arguments: map[string]string{"times": "-1"}},
-			numenv1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS,
+			&v1.RunCommandRequest{Command: "greet", Arguments: map[string]string{"times": "-1"}},
+			v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS,
 			"the arguments do not fit the command: times cannot be negative",
 		},
 		"a failure": {
-			&numenv1.RunCommandRequest{Command: "fail"}, numenv1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the disk is full",
+			&v1.RunCommandRequest{Command: "fail"}, v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the disk is full",
 		},
 	}
 	for name, one := range cases {

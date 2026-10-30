@@ -6,6 +6,8 @@ package hosttest
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -35,6 +37,8 @@ type Vault struct {
 	state      host.IndexState
 	moves      []chan struct{}
 	folder     *folder
+	// tb receives the failures of changes made to the files of a vault kept on disk.
+	tb testing.TB
 }
 
 var _ host.Vault = (*Vault)(nil)
@@ -59,6 +63,7 @@ func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 		}
 	}
 	v := newVault(host.VaultInfo{ID: host.VaultID(name), Name: name, Path: root}, disk{root: root})
+	v.tb = tb
 	v.Reindex()
 	return v
 }
@@ -181,7 +186,9 @@ func (v *Vault) Hide() {
 func (v *Vault) File(filePath string, content string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	_, _ = v.files.write(filePath, []byte(content))
+	if _, err := v.files.write(filePath, []byte(content)); err != nil {
+		v.report(fmt.Errorf("write %s: %w", filePath, err))
+	}
 	v.rescan(filePath)
 }
 
@@ -189,7 +196,9 @@ func (v *Vault) File(filePath string, content string) {
 func (v *Vault) Remove(filePath string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	_ = v.files.remove(filePath)
+	if err := v.files.remove(filePath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		v.report(fmt.Errorf("remove %s: %w", filePath, err))
+	}
 	v.rescan(filePath)
 }
 
@@ -593,4 +602,17 @@ func (v *Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 		}
 	}()
 	return out, nil
+}
+
+// report fails the test that owns the vault. A vault kept in memory has no test and its files cannot
+// fail, so an error there goes to standard error.
+func (v *Vault) report(err error) {
+	if v.tb != nil {
+		v.tb.Helper()
+		v.tb.Error(err)
+		return
+	}
+	if _, writeErr := fmt.Fprintln(os.Stderr, "hosttest:", err); writeErr != nil {
+		return
+	}
 }

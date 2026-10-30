@@ -24,7 +24,7 @@ type store interface {
 	create(filePath string, content []byte) (host.FileStat, error)
 	remove(filePath string) error
 	// paths lists every file, with forward slashes.
-	paths() []string
+	paths() ([]string, error)
 }
 
 // memory keeps the files in memory. Every write moves the modification time on by a second.
@@ -78,13 +78,13 @@ func (m *memory) remove(filePath string) error {
 	return nil
 }
 
-func (m *memory) paths() []string {
+func (m *memory) paths() ([]string, error) {
 	out := make([]string, 0, len(m.files))
 	for p := range m.files {
 		out = append(out, p)
 	}
 	sort.Strings(out)
-	return out
+	return out, nil
 }
 
 // disk keeps the files in a folder, so that a test can change them and read them as another program
@@ -118,16 +118,13 @@ func (d disk) write(filePath string, content []byte) (host.FileStat, error) {
 	_, werr := temp.Write(content)
 	cerr := temp.Close()
 	if err := errors.Join(werr, cerr); err != nil {
-		_ = os.Remove(temp.Name())
-		return host.FileStat{}, err
+		return host.FileStat{}, removeAfterFailure(temp.Name(), err)
 	}
 	if err := os.Chmod(temp.Name(), 0o644); err != nil {
-		_ = os.Remove(temp.Name())
-		return host.FileStat{}, err
+		return host.FileStat{}, removeAfterFailure(temp.Name(), err)
 	}
 	if err := os.Rename(temp.Name(), target); err != nil {
-		_ = os.Remove(temp.Name())
-		return host.FileStat{}, err
+		return host.FileStat{}, removeAfterFailure(temp.Name(), err)
 	}
 	return d.stat(filePath)
 }
@@ -151,13 +148,22 @@ func (d disk) create(filePath string, content []byte) (host.FileStat, error) {
 	return d.stat(filePath)
 }
 
+// removeAfterFailure removes the temporary file left by the failure cause and returns cause, joined
+// with the removal error when removing fails.
+func removeAfterFailure(name string, cause error) error {
+	if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return errors.Join(cause, err)
+	}
+	return cause
+}
+
 func (d disk) remove(filePath string) error { return os.Remove(d.at(filePath)) }
 
-func (d disk) paths() []string {
+func (d disk) paths() ([]string, error) {
 	var out []string
-	_ = filepath.WalkDir(d.root, func(p string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(d.root, func(p string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			return fs.SkipDir
+			return err
 		}
 		if entry.IsDir() {
 			return nil
@@ -173,5 +179,5 @@ func (d disk) paths() []string {
 		return nil
 	})
 	sort.Strings(out)
-	return out
+	return out, err
 }

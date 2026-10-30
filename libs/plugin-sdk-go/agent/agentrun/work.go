@@ -2,6 +2,7 @@ package agentrun
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
 
@@ -63,16 +64,22 @@ func ForwardResponses(ctx context.Context, work *Work, stream interface {
 	for {
 		select {
 		case <-ctx.Done():
-			_ = work.Stop()
-			return ctx.Err()
+			return joinStopError(ctx.Err(), work)
 		case resp, ok := <-work.Output:
 			if !ok {
 				return nil
 			}
 			if err := stream.Send(resp); err != nil {
-				_ = work.Stop()
-				return err
+				return joinStopError(err, work)
 			}
 		}
 	}
+}
+
+// joinStopError stops the work and returns cause, joined with the stop error when stopping fails.
+func joinStopError(cause error, work *Work) error {
+	if stopErr := work.Stop(); stopErr != nil {
+		return errors.Join(cause, stopErr)
+	}
+	return cause
 }

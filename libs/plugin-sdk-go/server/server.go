@@ -31,39 +31,46 @@ type defaultFlags struct {
 }
 
 var (
-	flags                defaultFlags
-	exitProcess                    = os.Exit
-	exitOutput io.Writer           = os.Stderr
+	flags       defaultFlags
+	exitProcess           = os.Exit
+	exitOutput  io.Writer = os.Stderr
 )
 
 func parseDefaultFlags() int {
 	flags.mu.Lock()
 	defer flags.mu.Unlock()
 
-	var port int
+	port := readFlagPort()
+	if port == 0 {
+		port = readEnvPort()
+	}
+	return port
+}
 
-	if flag.Parsed() {
-		if f := flag.CommandLine.Lookup("port"); f != nil {
-			if p, err := strconv.Atoi(f.Value.String()); err == nil {
-				port = p
-			}
-		}
-	} else {
-		if f := flag.CommandLine.Lookup("port"); f == nil {
+func readFlagPort() int {
+	if !flag.Parsed() {
+		if flag.CommandLine.Lookup("port") == nil {
 			flag.IntVar(&flags.port, "port", 0, "Port to listen on")
 		}
 		flag.Parse()
-		port = flags.port
+		return flags.port
 	}
-
-	if port == 0 {
-		if envPort := os.Getenv("NUMEN_PLUGIN_PORT"); envPort != "" {
-			if p, err := strconv.Atoi(envPort); err == nil {
-				port = p
-			}
-		}
+	f := flag.CommandLine.Lookup("port")
+	if f == nil {
+		return 0
 	}
+	port, err := strconv.Atoi(f.Value.String())
+	if err != nil {
+		return 0
+	}
+	return port
+}
 
+func readEnvPort() int {
+	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
+	if err != nil {
+		return 0
+	}
 	return port
 }
 
@@ -189,15 +196,22 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 func Run(mount func(*Server) error, opts ...Option) {
 	s := New(opts...)
 	if err := mount(s); err != nil {
-		fmt.Fprintf(exitOutput, "server error: %v\n", err)
-		exitProcess(1)
+		exitWithError(err)
 		return
 	}
 	if err := s.Serve(); err != nil {
-		fmt.Fprintf(exitOutput, "server error: %v\n", err)
-		exitProcess(1)
+		exitWithError(err)
 		return
 	}
+}
+
+// exitWithError writes err to the exit output and exits with code 1, or code 2 when the write fails.
+func exitWithError(err error) {
+	code := 1
+	if _, writeErr := fmt.Fprintf(exitOutput, "server error: %v\n", err); writeErr != nil {
+		code = 2
+	}
+	exitProcess(code)
 }
 
 func newServer(port int, token string, opts []Option, linked bool) *Server {
@@ -294,7 +308,8 @@ func (s *Server) Listen() (int, error) {
 	if s.listener != nil {
 		return s.actualPort, nil
 	}
-	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
+	var listenConfig net.ListenConfig
+	ln, err := listenConfig.Listen(context.Background(), "tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
 	if err != nil {
 		return 0, fmt.Errorf("listen on 127.0.0.1:%d: %w", s.port, err)
 	}
@@ -317,26 +332,20 @@ func (s *Server) Serve() error {
 }
 
 // ServeContext runs the HTTP/2 server until context cancellation or shutdown is triggered.
-func (s *Server) ServeContext(ctx context.Context) error {
+func (s *Server) ServeContext(ctx context.Context) (err error) {
 	defer s.Close()
 
-	if s.token == "" && s.stdin != nil {
-		line, err := readTokenLine(s.stdin)
-		if err != nil {
-			return fmt.Errorf("read auth token: %w", err)
-		}
-		s.token = line
-		s.interceptor.SetToken(s.token)
+	if err := s.authenticate(); err != nil {
+		return err
 	}
-	if s.token == "" {
-		return errors.New("empty auth token")
-	}
-	_ = os.Setenv(tokenVar, s.token)
-
 	if _, err := s.Listen(); err != nil {
 		return err
 	}
-	defer s.listener.Close()
+	defer func() {
+		if closeErr := s.listener.Close(); closeErr != nil && !errors.Is(closeErr, net.ErrClosed) {
+			err = errors.Join(err, fmt.Errorf("close listener: %w", closeErr))
+		}
+	}()
 
 	// plain TCP on loopback.
 	var protocols http.Protocols
@@ -356,26 +365,11 @@ func (s *Server) ServeContext(ctx context.Context) error {
 		close(serveErrCh)
 	}()
 
-	if s.stdout != nil {
-		fmt.Fprintf(s.stdout, "NUMEN_READY port=%d\n", s.actualPort)
-		if syncer, ok := s.stdout.(interface{ Sync() error }); ok {
-			_ = syncer.Sync()
-		}
+	if err := s.announceReady(); err != nil {
+		return err
 	}
 
-	stdinEOF := make(chan struct{})
-	if s.stdin != nil {
-		go func() {
-			buf := make([]byte, 1)
-			for {
-				n, err := s.stdin.Read(buf)
-				if err != nil || n == 0 {
-					close(stdinEOF)
-					return
-				}
-			}
-		}()
-	}
+	stdinEOF := s.watchStdin()
 
 	sigCh := make(chan os.Signal, 1)
 	if len(s.signals) > 0 {
@@ -402,6 +396,67 @@ func (s *Server) ServeContext(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// authenticate reads the token from standard input when none is configured and exports it.
+func (s *Server) authenticate() error {
+	if s.token == "" && s.stdin != nil {
+		line, err := readTokenLine(s.stdin)
+		if err != nil {
+			return fmt.Errorf("read auth token: %w", err)
+		}
+		s.token = line
+		s.interceptor.SetToken(s.token)
+	}
+	if s.token == "" {
+		return errors.New("empty auth token")
+	}
+	if err := os.Setenv(tokenVar, s.token); err != nil {
+		return fmt.Errorf("set %s: %w", tokenVar, err)
+	}
+	return nil
+}
+
+// announceReady writes the handshake line and flushes it when the output supports flushing.
+func (s *Server) announceReady() error {
+	if s.stdout == nil {
+		return nil
+	}
+	if _, err := fmt.Fprintf(s.stdout, "NUMEN_READY port=%d\n", s.actualPort); err != nil {
+		return fmt.Errorf("write ready line: %w", err)
+	}
+	syncer, ok := s.stdout.(interface{ Sync() error })
+	if !ok {
+		return nil
+	}
+	if err := syncer.Sync(); err != nil && !isSyncUnsupported(err) {
+		return fmt.Errorf("sync ready line: %w", err)
+	}
+	return nil
+}
+
+// isSyncUnsupported reports whether err says the output (a pipe or terminal) cannot be synced.
+func isSyncUnsupported(err error) bool {
+	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTTY) || errors.Is(err, errors.ErrUnsupported)
+}
+
+// watchStdin returns a channel closed when standard input reaches end of file.
+func (s *Server) watchStdin() <-chan struct{} {
+	stdinEOF := make(chan struct{})
+	if s.stdin == nil {
+		return stdinEOF
+	}
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := s.stdin.Read(buf)
+			if err != nil || n == 0 {
+				close(stdinEOF)
+				return
+			}
+		}
+	}()
+	return stdinEOF
 }
 
 func readTokenLine(r io.Reader) (string, error) {

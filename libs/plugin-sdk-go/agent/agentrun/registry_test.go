@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // start runs a child that waits until it is killed, and the reader that waits for it.
@@ -158,7 +158,7 @@ func TestFinishConversationEndsTheConversation(t *testing.T) {
 	var registry agentrun.Registry
 	registry.SetSession("c-1", "s-1")
 
-	res, err := registry.FinishConversation(t.Context(), connect.NewRequest(&numenv1.FinishConversationRequest{Conversation: "c-1"}))
+	res, err := registry.FinishConversation(t.Context(), connect.NewRequest(&v1.FinishConversationRequest{Conversation: "c-1"}))
 	if err != nil || res == nil {
 		t.Fatalf("got %v, %v", res, err)
 	}

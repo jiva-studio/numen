@@ -6,23 +6,23 @@ import (
 	"sync"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 const ProtocolVersion = 1
 
-type PingRequest = numenv1.PingRequest
+type PingRequest = v1.PingRequest
 
-type PingResponse = numenv1.PingResponse
+type PingResponse = v1.PingResponse
 
-type ConfigureRequest = numenv1.ConfigureRequest
+type ConfigureRequest = v1.ConfigureRequest
 
-type ConfigureResponse = numenv1.ConfigureResponse
+type ConfigureResponse = v1.ConfigureResponse
 
-type ShutdownRequest = numenv1.ShutdownRequest
+type ShutdownRequest = v1.ShutdownRequest
 
-type ShutdownResponse = numenv1.ShutdownResponse
+type ShutdownResponse = v1.ShutdownResponse
 
 type PluginLifecycleServiceHandler = numenv1connect.PluginLifecycleServiceHandler
 
@@ -94,9 +94,9 @@ func NewLifecycleServer(shutdownCh chan struct{}, opts ...LifecycleOption) *Life
 
 func (s *LifecycleServer) Ping(
 	_ context.Context,
-	_ *connect.Request[numenv1.PingRequest],
-) (*connect.Response[numenv1.PingResponse], error) {
-	return connect.NewResponse(&numenv1.PingResponse{
+	_ *connect.Request[v1.PingRequest],
+) (*connect.Response[v1.PingResponse], error) {
+	return connect.NewResponse(&v1.PingResponse{
 		Status:   "ok",
 		Protocol: ProtocolVersion,
 	}), nil
@@ -105,13 +105,13 @@ func (s *LifecycleServer) Ping(
 // Shutdown signals termination to the server runner without blocking.
 func (s *LifecycleServer) Shutdown(
 	_ context.Context,
-	_ *connect.Request[numenv1.ShutdownRequest],
-) (*connect.Response[numenv1.ShutdownResponse], error) {
+	_ *connect.Request[v1.ShutdownRequest],
+) (*connect.Response[v1.ShutdownResponse], error) {
 	if s.onShutdown != nil {
 		s.onShutdown()
 	}
 	s.TriggerShutdown()
-	return connect.NewResponse(&numenv1.ShutdownResponse{
+	return connect.NewResponse(&v1.ShutdownResponse{
 		Success: true,
 	}), nil
 }
@@ -119,8 +119,8 @@ func (s *LifecycleServer) Shutdown(
 // Configure persists configuration values and invokes the registered configure callback.
 func (s *LifecycleServer) Configure(
 	ctx context.Context,
-	req *connect.Request[numenv1.ConfigureRequest],
-) (*connect.Response[numenv1.ConfigureResponse], error) {
+	req *connect.Request[v1.ConfigureRequest],
+) (*connect.Response[v1.ConfigureResponse], error) {
 	values := req.Msg.GetValues()
 
 	s.mu.Lock()
@@ -139,7 +139,7 @@ func (s *LifecycleServer) Configure(
 		}
 	}
 
-	return connect.NewResponse(&numenv1.ConfigureResponse{
+	return connect.NewResponse(&v1.ConfigureResponse{
 		Success: true,
 	}), nil
 }
@@ -192,7 +192,7 @@ func (s *LifecycleServer) AllConfigs() map[string]string {
 
 // CheckStatus executes a Ping check and returns the status string.
 func (s *LifecycleServer) CheckStatus(ctx context.Context) (string, error) {
-	res, err := s.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	res, err := s.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
 		return "", err
 	}
@@ -201,7 +201,7 @@ func (s *LifecycleServer) CheckStatus(ctx context.Context) (string, error) {
 
 // ApplyConfig applies configuration values through Configure.
 func (s *LifecycleServer) ApplyConfig(ctx context.Context, values map[string]string) (bool, error) {
-	res, err := s.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{Values: values}))
+	res, err := s.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{Values: values}))
 	if err != nil {
 		return false, err
 	}
@@ -210,7 +210,7 @@ func (s *LifecycleServer) ApplyConfig(ctx context.Context, values map[string]str
 
 // RequestShutdown triggers shutdown through Shutdown.
 func (s *LifecycleServer) RequestShutdown(ctx context.Context) (bool, error) {
-	res, err := s.Shutdown(ctx, connect.NewRequest(&numenv1.ShutdownRequest{}))
+	res, err := s.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
 	if err != nil {
 		return false, err
 	}

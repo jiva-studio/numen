@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -210,9 +211,10 @@ func (c *Client) Lock(ctx context.Context) (func(), error) {
 	}
 	lock := res.Msg.GetLock()
 	return func() {
-		// The host lets a lock go by itself after a while, so a release that cannot reach it is not
-		// a failure the caller can act on.
-		_, _ = c.rpc.UnlockVault(context.WithoutCancel(ctx), request(c, &v1.UnlockVaultRequest{Lock: lock}))
+		// The host releases a lock by itself after a timeout; a failed release is reported, not returned.
+		if _, err := c.rpc.UnlockVault(context.WithoutCancel(ctx), request(c, &v1.UnlockVaultRequest{Lock: lock})); err != nil {
+			reportError(fmt.Errorf("release vault lock: %w", err))
+		}
 	}, nil
 }
 
@@ -353,16 +355,16 @@ func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
 		return nil, readError(err)
 	}
 	if !stream.Receive() {
-		_ = stream.Close()
+		closeErr := stream.Close()
 		if err := stream.Err(); err != nil {
-			return nil, readError(err)
+			return nil, errors.Join(readError(err), closeErr)
 		}
-		return nil, fmt.Errorf("host: the watch ended before it began")
+		return nil, errors.Join(fmt.Errorf("host: the watch ended before it began"), closeErr)
 	}
 	changes := make(chan Change)
 	go func() {
 		defer close(changes)
-		defer stream.Close()
+		defer closeStream(stream)
 		for stream.Receive() {
 			change := Change{Paths: stream.Msg().GetPaths(), IsVaultChanged: stream.Msg().GetIsVaultChanged()}
 			select {
@@ -423,16 +425,16 @@ func (c *Client) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 		return nil, readError(err)
 	}
 	if !stream.Receive() {
-		_ = stream.Close()
+		closeErr := stream.Close()
 		if err := stream.Err(); err != nil {
-			return nil, readError(err)
+			return nil, errors.Join(readError(err), closeErr)
 		}
-		return nil, fmt.Errorf("host: the watch ended before it began")
+		return nil, errors.Join(fmt.Errorf("host: the watch ended before it began"), closeErr)
 	}
 	moves := make(chan struct{})
 	go func() {
 		defer close(moves)
-		defer stream.Close()
+		defer closeStream(stream)
 		for stream.Receive() {
 			select {
 			case moves <- struct{}{}:

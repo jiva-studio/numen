@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Level is one depth of reasoning.
@@ -15,9 +15,9 @@ type Level struct {
 	Title string
 }
 
-type ReasoningLevel = numenv1.ReasoningLevel
+type ReasoningLevel = v1.ReasoningLevel
 
-type AgentModel = numenv1.AgentModel
+type AgentModel = v1.AgentModel
 
 // order lists the level names from the least reasoning to the most.
 var order = []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}

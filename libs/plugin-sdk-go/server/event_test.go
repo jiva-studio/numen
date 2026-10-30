@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -56,11 +56,11 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 		return nil
 	})), eventToken)
 
-	resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&numenv1.DeliverEventRequest{Event: "onFile:pdf"}))
+	resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
 	if err != nil {
 		t.Fatalf("DeliverEvent failed: %v", err)
 	}
-	if code := resp.Msg.GetError(); code != numenv1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
+	if code := resp.Msg.GetError(); code != v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("error = %v, want no error", code)
 	}
 
@@ -82,12 +82,12 @@ func TestAnEventTheHandlerRejectsIsAnsweredAsAError(t *testing.T) {
 				return caseErr
 			})), eventToken)
 
-			resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&numenv1.DeliverEventRequest{Event: "onFile:pdf"}))
+			resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
 			if err != nil {
 				t.Fatalf("DeliverEvent() = %v, want the call served", err)
 			}
-			if code := resp.Msg.GetError(); code != numenv1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED {
-				t.Fatalf("error = %v, want %v", code, numenv1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED)
+			if code := resp.Msg.GetError(); code != v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED {
+				t.Fatalf("error = %v, want %v", code, v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED)
 			}
 			if !strings.Contains(resp.Msg.GetReason(), "the index is closed") {
 				t.Fatalf("reason = %q, want the handler's error", resp.Msg.GetReason())
@@ -99,7 +99,7 @@ func TestAnEventTheHandlerRejectsIsAnsweredAsAError(t *testing.T) {
 func TestAServerWithoutAnEventHandlerDoesNotTakeEvents(t *testing.T) {
 	client := newEventClient(serveEvents(t), eventToken)
 
-	_, err := client.DeliverEvent(t.Context(), connect.NewRequest(&numenv1.DeliverEventRequest{Event: "onFile:pdf"}))
+	_, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Fatalf("DeliverEvent() = %v, want %v", err, connect.CodeUnimplemented)
 	}
@@ -112,7 +112,7 @@ func TestAnEventWithoutTheTokenIsRefused(t *testing.T) {
 		return nil
 	}))
 
-	_, err := newEventClient(baseURL, "wrong-token").DeliverEvent(t.Context(), connect.NewRequest(&numenv1.DeliverEventRequest{Event: "onFile:pdf"}))
+	_, err := newEventClient(baseURL, "wrong-token").DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("DeliverEvent() = %v, want %v", err, connect.CodeUnauthenticated)
 	}

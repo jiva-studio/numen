@@ -6,31 +6,31 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestToolboxPreservesTheToolsAndExtendsThePrompt(t *testing.T) {
 	var box agentrun.Toolbox
 	ctx := t.Context()
 
-	reg, err := box.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{
-		Tool: &numenv1.AgentToolDefinition{Name: "read_note"},
+	reg, err := box.RegisterTool(ctx, connect.NewRequest(&v1.RegisterToolRequest{
+		Tool: &v1.AgentToolDefinition{Name: "read_note"},
 	}))
 	if err != nil || !reg.Msg.GetSuccess() {
 		t.Fatalf("registration failed: %v", err)
 	}
-	if _, err := box.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{})); err != nil {
+	if _, err := box.RegisterTool(ctx, connect.NewRequest(&v1.RegisterToolRequest{})); err != nil {
 		t.Fatal(err)
 	}
-	first, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{Extension: "Be polite."}))
-	second, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{Extension: "Be brief."}))
-	same, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{}))
+	first, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be polite."}))
+	second, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be brief."}))
+	same, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{}))
 
 	if first.Msg.GetFullPrompt() != "Be polite." || second.Msg.GetFullPrompt() != "Be polite.\nBe brief." ||
 		same.Msg.GetFullPrompt() != "Be polite.\nBe brief." {
 		t.Errorf("the prompts are %q, %q, %q", first.Msg.GetFullPrompt(), second.Msg.GetFullPrompt(), same.Msg.GetFullPrompt())
 	}
-	got, err := box.GetAgentTools(ctx, connect.NewRequest(&numenv1.GetAgentToolsRequest{}))
+	got, err := box.GetAgentTools(ctx, connect.NewRequest(&v1.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

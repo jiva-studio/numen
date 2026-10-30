@@ -1,6 +1,7 @@
 package hosttest
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -63,7 +64,11 @@ func (v *Vault) Reindex() {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	v.indexed = map[string]host.Note{}
-	v.rescan(v.files.paths()...)
+	paths, err := v.files.paths()
+	if err != nil {
+		v.report(fmt.Errorf("list files: %w", err))
+	}
+	v.rescan(paths...)
 }
 
 func sortedPaths(notes map[string]host.Note) []string {

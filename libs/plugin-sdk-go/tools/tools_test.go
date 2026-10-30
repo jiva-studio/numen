@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 type greetIn struct {
@@ -39,9 +39,9 @@ func newRegistry(t *testing.T) *tools.Registry {
 	return registry
 }
 
-func call(t *testing.T, registry *tools.Registry, name, arguments string) *numenv1.CallToolResponse {
+func call(t *testing.T, registry *tools.Registry, name, arguments string) *v1.CallToolResponse {
 	t.Helper()
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{Name: name, Arguments: []byte(arguments)}))
+	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: []byte(arguments)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func call(t *testing.T, registry *tools.Registry, name, arguments string) *numen
 }
 
 func TestAToolIsListedWithTheSchemasOfItsStructsAndWhereItIsOffered(t *testing.T) {
-	res, err := newRegistry(t).ListTools(t.Context(), connect.NewRequest(&numenv1.ListToolsRequest{}))
+	res, err := newRegistry(t).ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestAToolIsListedWithTheSchemasOfItsStructsAndWhereItIsOffered(t *testing.T
 	if len(tool.GetOutputSchema()) == 0 {
 		t.Error("the result is a struct and lists no schema")
 	}
-	if tool.GetEffect() != numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY || tool.GetStep() != numenv1.ToolStep_TOOL_STEP_SEARCH ||
+	if tool.GetEffect() != v1.ToolEffect_TOOL_EFFECT_READ_ONLY || tool.GetStep() != v1.ToolStep_TOOL_STEP_SEARCH ||
 		len(tool.GetServers()) != 2 {
 		t.Errorf("the tool came out as %v", tool)
 	}
@@ -76,7 +76,7 @@ func TestAToolIsListedWithTheSchemasOfItsStructsAndWhereItIsOffered(t *testing.T
 func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":"Sita"}`)
 
-	if answer.GetError() != numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsRefusal() {
+	if answer.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsRefusal() {
 		t.Fatalf("the call was answered %v", answer)
 	}
 	if string(answer.GetResult().GetStructured()) != `{"greeting":"hello Sita"}` {
@@ -103,10 +103,10 @@ func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
 func TestANameNothingWasAddedBelowAndArgumentsThatAreNoObjectAreAnsweredWithAnErrorCode(t *testing.T) {
 	registry := newRegistry(t)
 
-	if got := call(t, registry, "other", `{}`).GetError(); got != numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
+	if got := call(t, registry, "other", `{}`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
 		t.Errorf("an unknown tool was answered %v", got)
 	}
-	if got := call(t, registry, "greet", `[1]`).GetError(); got != numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS {
+	if got := call(t, registry, "greet", `[1]`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS {
 		t.Errorf("arguments that are no object were answered %v", got)
 	}
 }
@@ -150,7 +150,7 @@ func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{
+	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
 		Name: "current", Arguments: []byte(`{}`), Context: map[string]string{"org.example.sample/item": "k7"},
 	}))
 
@@ -171,7 +171,7 @@ func TestACallKnowsTheVaultItWorks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{
+	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
 		Name: "current", Arguments: []byte(`{}`), VaultId: "v-garden",
 	}))
 

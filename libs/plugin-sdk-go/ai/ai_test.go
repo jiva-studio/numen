@@ -11,23 +11,23 @@ import (
 
 	"connectrpc.com/connect"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 type fakeHost struct {
 	numenv1connect.UnimplementedHostServiceHandler
-	code   numenv1.CompletionErrorCode
+	code   v1.CompletionErrorCode
 	detail string
-	answer *numenv1.CompletionAnswer
-	got    *numenv1.CompletionQuestion
+	answer *v1.CompletionAnswer
+	got    *v1.CompletionQuestion
 	auth   string
 }
 
-func (f *fakeHost) Complete(_ context.Context, req *connect.Request[numenv1.HostServiceCompleteRequest]) (*connect.Response[numenv1.HostServiceCompleteResponse], error) {
+func (f *fakeHost) Complete(_ context.Context, req *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error) {
 	f.got = req.Msg.GetQuestion()
 	f.auth = req.Header().Get("Authorization")
-	return connect.NewResponse(&numenv1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code, Detail: f.detail}), nil
+	return connect.NewResponse(&v1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code, Detail: f.detail}), nil
 }
 
 func startHost(t *testing.T, h *fakeHost) *httptest.Server {
@@ -49,7 +49,7 @@ func newQuestion() *Question {
 }
 
 func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "fixed"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
 	srv := startHost(t, host)
 
 	text, err := NewClient(srv.Client(), srv.URL, "secret").Complete(context.Background(), newQuestion())
@@ -69,7 +69,7 @@ func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
 }
 
 func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "ok"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "ok"}}
 	srv := startHost(t, host)
 
 	if _, err := NewClient(srv.Client(), srv.URL, "").Complete(context.Background(), newQuestion()); err != nil {
@@ -103,7 +103,7 @@ func TestClientCompleteReturnsTransportError(t *testing.T) {
 }
 
 func TestCompleteReadsHostFromEnvironment(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "env"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "env"}}
 	srv := startHost(t, host)
 	t.Setenv(HostPortEnv, strconv.Itoa(srv.Listener.Addr().(*net.TCPAddr).Port))
 	t.Setenv(PluginTokenEnv, "tok")
@@ -129,10 +129,10 @@ func TestCompleteFailsWithoutHostPort(t *testing.T) {
 }
 
 func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
-	cases := map[numenv1.CompletionErrorCode]error{
-		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
-		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
-		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:  ErrNoConsent,
+	cases := map[v1.CompletionErrorCode]error{
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:  ErrNoConsent,
 	}
 	for code, want := range cases {
 		srv := startHost(t, &fakeHost{code: code})
@@ -146,11 +146,11 @@ func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 }
 
 func TestReadErrorWalksEveryCode(t *testing.T) {
-	observed := map[error]numenv1.CompletionErrorCode{}
-	for value := range numenv1.CompletionErrorCode_name {
-		code := numenv1.CompletionErrorCode(value)
+	observed := map[error]v1.CompletionErrorCode{}
+	for value := range v1.CompletionErrorCode_name {
+		code := v1.CompletionErrorCode(value)
 		err := readRefusal(code, "")
-		if code == numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
+		if code == v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
 			if err != nil {
 				t.Errorf("unspecified must be no error, got %v", err)
 			}
@@ -164,7 +164,7 @@ func TestReadErrorWalksEveryCode(t *testing.T) {
 		}
 		observed[err] = code
 	}
-	if err := readRefusal(numenv1.CompletionErrorCode(99), ""); err == nil {
+	if err := readRefusal(v1.CompletionErrorCode(99), ""); err == nil {
 		t.Error("an unknown code must be an error")
 	}
 }
@@ -172,7 +172,7 @@ func TestReadErrorWalksEveryCode(t *testing.T) {
 // A client made from the variables of a linked plugin asks the host they name, and reads nothing
 // from the environment.
 func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "fixed"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
 	srv := startHost(t, host)
 	t.Setenv(HostPortEnv, "")
 	t.Setenv(PluginTokenEnv, "process-token")
@@ -202,7 +202,7 @@ func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
 // The detail the host gives stands after the rejection, and the error is still the one the code names.
 func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	srv := startHost(t, &fakeHost{
-		code:   numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,
+		code:   v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,
 		detail: "the agent stopped: invalid model selection",
 	})
 

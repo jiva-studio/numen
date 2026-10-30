@@ -1,6 +1,7 @@
 package onnx
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -74,7 +75,10 @@ func getVersion(path string) []int {
 	_, name, _ := strings.Cut(pkg, "-")
 	var out []int
 	for _, digits := range versionPart.FindAllString(name, -1) {
-		n, _ := strconv.Atoi(digits)
+		n, err := strconv.Atoi(digits)
+		if err != nil {
+			n = math.MaxInt
+		}
 		out = append(out, n)
 	}
 	return out

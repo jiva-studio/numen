@@ -194,7 +194,7 @@ func (t *clientTurn) closeWaiting() { t.waitingOnce.Do(func() { close(t.waiting)
 
 func (t *clientTurn) follow(stream *connect.ServerStreamForClient[v1.EnqueueWorkResponse]) {
 	defer close(t.ended)
-	defer func() { _ = stream.Close() }()
+	defer closeStream(stream)
 	for stream.Receive() {
 		if stream.Msg().GetState() == v1.WorkState_WORK_STATE_CONTENDED {
 			t.closeWaiting()

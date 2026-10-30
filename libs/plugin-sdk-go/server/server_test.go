@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -98,7 +98,7 @@ func TestServerLifecycleRPC(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Ping
-	pingResp, err := client.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	pingResp, err := client.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
 		t.Fatalf("Ping failed: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestServerLifecycleRPC(t *testing.T) {
 	}
 
 	// 2. Configure
-	confResp, err := client.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{
+	confResp, err := client.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
 		Values: map[string]string{"theme": "dark", "zoom": "120"},
 	}))
 	if err != nil {
@@ -144,7 +144,7 @@ func TestServerLifecycleRPC(t *testing.T) {
 	}
 
 	// 4. Shutdown
-	shutResp, err := client.Shutdown(ctx, connect.NewRequest(&numenv1.ShutdownRequest{}))
+	shutResp, err := client.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
 	if err != nil {
 		t.Fatalf("Shutdown failed: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestAuthInterceptor(t *testing.T) {
 
 	// Case 1: missing token -> unauthenticated
 	unauthClient := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, baseURL)
-	_, err = unauthClient.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	_, err = unauthClient.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("expected CodeUnauthenticated, got %v", err)
 	}
@@ -201,7 +201,7 @@ func TestAuthInterceptor(t *testing.T) {
 		baseURL,
 		connect.WithInterceptors(&bearerAuthInterceptor{token: "wrong-token"}),
 	)
-	_, err = wrongClient.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	_, err = wrongClient.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("expected CodeUnauthenticated, got %v", err)
 	}
@@ -212,7 +212,7 @@ func TestAuthInterceptor(t *testing.T) {
 		baseURL,
 		connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 	)
-	resp, err := validClient.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	resp, err := validClient.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -296,13 +296,13 @@ func TestLifecycleUnitMethods(t *testing.T) {
 	ctx := context.Background()
 
 	// Ping
-	pingResp, err := life.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	pingResp, err := life.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil || pingResp.Msg.GetStatus() != "ok" {
 		t.Fatalf("Ping failed: %v, %v", pingResp, err)
 	}
 
 	// Configure
-	confResp, err := life.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{
+	confResp, err := life.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
 		Values: map[string]string{"foo": "bar"},
 	}))
 	if err != nil || !confResp.Msg.GetSuccess() {
@@ -313,7 +313,7 @@ func TestLifecycleUnitMethods(t *testing.T) {
 	}
 
 	// Shutdown
-	shutResp, err := life.Shutdown(ctx, connect.NewRequest(&numenv1.ShutdownRequest{}))
+	shutResp, err := life.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
 	if err != nil || !shutResp.Msg.GetSuccess() {
 		t.Fatalf("Shutdown failed: %v, %v", shutResp, err)
 	}
@@ -439,7 +439,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 			fmt.Sprintf("http://127.0.0.1:%d", port),
 			connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 		)
-		resp, err := client.Ping(context.Background(), connect.NewRequest(&numenv1.PingRequest{}))
+		resp, err := client.Ping(context.Background(), connect.NewRequest(&v1.PingRequest{}))
 		if err != nil {
 			t.Fatalf("Ping over HTTP/%d failed: %v", want, err)
 		}
@@ -574,7 +574,7 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 		fmt.Sprintf("http://127.0.0.1:%d", port),
 		connect.WithInterceptors(&bearerAuthInterceptor{token: token}),
 	)
-	resp, err := client.Ping(t.Context(), connect.NewRequest(&numenv1.PingRequest{}))
+	resp, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
 		t.Fatalf("Ping: %v", err)
 	}

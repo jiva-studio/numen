@@ -135,8 +135,11 @@ type Selector struct {
 
 // Encode is the selector as the JSON a segment carries.
 func (s Selector) Encode() RawSelector {
-	// A struct of numbers, strings and slices of them always marshals.
-	raw, _ := json.Marshal(s)
+	raw, err := json.Marshal(s)
+	if err != nil {
+		reportError(fmt.Errorf("encode selector: %w", err))
+		return ""
+	}
 	return RawSelector(raw)
 }
 
