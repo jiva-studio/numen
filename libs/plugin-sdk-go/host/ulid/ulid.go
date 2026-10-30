@@ -1,3 +1,4 @@
+// Package ulid exposes the identifier generator of the notes library to plugins.
 package ulid
 
 import (

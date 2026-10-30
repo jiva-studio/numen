@@ -95,7 +95,7 @@ func TestServerLifecycleRPC(t *testing.T) {
 		connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. Ping
 	pingResp, err := client.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
@@ -182,11 +182,11 @@ func TestAuthInterceptor(t *testing.T) {
 	}()
 	defer func() {
 		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
+		waitServe(t, serveErrCh)
 	}()
 
 	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Case 1: missing token -> unauthenticated
 	unauthClient := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, baseURL)
@@ -244,7 +244,9 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 	}
 
 	// Closing writer sends EOF to stdin reader
-	_ = stdinWriter.Close()
+	if err := stdinWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	select {
 	case err := <-serveErrCh:
@@ -268,7 +270,7 @@ func TestServerContextCancellation(t *testing.T) {
 		t.Fatalf("Listen failed: %v", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	serveErrCh := make(chan error, 1)
 	go func() {
 		serveErrCh <- s.ServeContext(ctx)
@@ -293,7 +295,7 @@ func TestLifecycleUnitMethods(t *testing.T) {
 		updated = m
 	}))
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Ping
 	pingResp, err := life.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
@@ -352,7 +354,7 @@ func TestServerShutdownTimeoutError(t *testing.T) {
 		t.Fatalf("Listen failed: %v", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	serveErrCh := make(chan error, 1)
 	go func() {
 		serveErrCh <- s.ServeContext(ctx)
@@ -361,9 +363,16 @@ func TestServerShutdownTimeoutError(t *testing.T) {
 	reqDone := make(chan struct{})
 	go func() {
 		defer close(reqDone)
-		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/block", port))
-		if err == nil && resp != nil {
-			_ = resp.Body.Close()
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/block", port), nil)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err == nil {
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				t.Error(closeErr)
+			}
 		}
 	}()
 
@@ -421,12 +430,12 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Listen failed: %v", err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	serveErrCh := make(chan error, 1)
 	go func() { serveErrCh <- s.ServeContext(ctx) }()
 	t.Cleanup(func() {
 		cancel()
-		<-serveErrCh
+		waitServe(t, serveErrCh)
 	})
 
 	for _, want := range []int{1, 2} {
@@ -439,7 +448,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 			fmt.Sprintf("http://127.0.0.1:%d", port),
 			connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 		)
-		resp, err := client.Ping(context.Background(), connect.NewRequest(&v1.PingRequest{}))
+		resp, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
 		if err != nil {
 			t.Fatalf("Ping over HTTP/%d failed: %v", want, err)
 		}
@@ -462,7 +471,7 @@ func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
 	if _, err := s.Listen(); err != nil {
 		t.Fatalf("Listen failed: %v", err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	if err := s.ServeContext(ctx); err != nil {
@@ -564,9 +573,11 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 		t.Fatalf("write token: %v", err)
 	}
 	defer func() {
-		_ = stdinWriter.Close()
+		if err := stdinWriter.Close(); err != nil {
+			t.Error(err)
+		}
 		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
+		waitServe(t, serveErrCh)
 	}()
 
 	client := numenv1connect.NewPluginLifecycleServiceClient(
@@ -604,5 +615,13 @@ func TestServerRejectsEmptyToken(t *testing.T) {
 	)
 	if err := s2.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
 		t.Fatalf("Serve with whitespace stdin = %v, want empty auth token", err)
+	}
+}
+
+// waitServe waits for the server goroutine to finish and fails the test when Serve returned an error.
+func waitServe(t *testing.T, serveErrCh <-chan error) {
+	t.Helper()
+	if err := <-serveErrCh; err != nil {
+		t.Errorf("Serve returned error: %v", err)
 	}
 }

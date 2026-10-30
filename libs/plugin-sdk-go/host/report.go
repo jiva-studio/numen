@@ -5,8 +5,7 @@ import (
 	"os"
 )
 
-// reportError writes an error that has no caller to return to onto standard error, which the host
-// collects as the plugin's log.
+// reportError writes err to standard error. It serves code paths that have no caller to return err to.
 func reportError(err error) {
 	if _, writeErr := fmt.Fprintln(os.Stderr, "host:", err); writeErr != nil {
 		return

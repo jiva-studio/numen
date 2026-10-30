@@ -1,3 +1,4 @@
+// Package edit exposes the note editing types of the notes library to plugins.
 package edit
 
 import (

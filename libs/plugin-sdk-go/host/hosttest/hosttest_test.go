@@ -13,15 +13,18 @@ import (
 )
 
 func TestAWriteFromAnOldReadIsStale(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("a.md", "one")
-	_, old, _ := v.Read(ctx, "a.md")
+	_, old, err := v.Read(ctx, "a.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := v.Write(ctx, "a.md", []byte("two"), old); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := v.Write(ctx, "a.md", []byte("three"), old)
+	_, err = v.Write(ctx, "a.md", []byte("three"), old)
 
 	if !errors.Is(err, host.ErrStale) {
 		t.Errorf("got %v", err)
@@ -32,10 +35,10 @@ func TestACreateOverAFileIsOccupied(t *testing.T) {
 	v := hosttest.New("Physics")
 	v.File("a.md", "one")
 
-	if err := v.Create(context.Background(), "a.md", nil); !errors.Is(err, host.ErrAlreadyExists) {
+	if err := v.Create(t.Context(), "a.md", nil); !errors.Is(err, host.ErrAlreadyExists) {
 		t.Errorf("got %v", err)
 	}
-	if err := v.Create(context.Background(), "../a.md", nil); !errors.Is(err, host.ErrOutside) {
+	if err := v.Create(t.Context(), "../a.md", nil); !errors.Is(err, host.ErrOutside) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -44,18 +47,21 @@ func TestAHiddenVaultAnswersNoVault(t *testing.T) {
 	v := hosttest.New("Physics")
 	v.Hide()
 
-	if _, err := v.GetVault(context.Background()); !errors.Is(err, host.ErrNoVault) {
+	if _, err := v.GetVault(t.Context()); !errors.Is(err, host.ErrNoVault) {
 		t.Errorf("got %v", err)
 	}
 }
 
 func TestAnotherVaultIsWorkedByItsIdentity(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
 	chemistry.File("a.md", "x")
 	physics.Beside(chemistry)
 
-	recognized, _ := physics.GetVaults(ctx)
+	recognized, err := physics.GetVaults(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, _, readErr := physics.With("Chemistry").Read(ctx, "a.md")
 	_, _, unknown := physics.With("Biology").Read(ctx, "a.md")
 
@@ -65,7 +71,7 @@ func TestAnotherVaultIsWorkedByItsIdentity(t *testing.T) {
 }
 
 func TestAMoveIsReportedToTheWatch(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	v := hosttest.New("Physics")
 	moves, err := v.WatchMoves(ctx)
@@ -83,14 +89,23 @@ func TestAMoveIsReportedToTheWatch(t *testing.T) {
 const animal = "---\ntype: form\ntitle: The animal\ncolour: brown\n---\n\n## Layout\n\nname\n"
 
 func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("Animal.md", animal)
 	v.File("assets/picture.png", "x")
 
-	notes, _ := v.GetNotes(ctx, []string{"Animal.md", "assets/picture.png", "None.md"})
-	types, _ := v.GetTypes(ctx, []string{"Animal.md"})
-	forms, _ := v.GetPathsOfType(ctx, "form")
+	notes, err := v.GetNotes(ctx, []string{"Animal.md", "assets/picture.png", "None.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	types, err := v.GetTypes(ctx, []string{"Animal.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	forms, err := v.GetPathsOfType(ctx, "form")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if len(notes) != 1 || notes["Animal.md"].Title != "The animal" || types["Animal.md"] != "form" || len(forms) != 1 {
 		t.Errorf("got %v, %v and %v", notes, types, forms)
@@ -98,14 +113,20 @@ func TestANoteIsInTheIndexAsSoonAsItsFileIsThere(t *testing.T) {
 }
 
 func TestANameReachesTheNearestNoteAndReturnsWhenSeveralAnswer(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("a/Entropy.md", "# A\n")
 	v.File("b/Entropy.md", "# B\n")
 	v.File("c/Note.md", "---\nlinks:\n  - to: Entropy\n    role: ref\n---\n\nbody\n")
 
-	reached, _ := v.ResolveLinks(ctx, "c/Note.md", []string{"Entropy", "Missing"})
-	named, _ := v.GetNamedPaths(ctx, "entropy")
+	reached, err := v.ResolveLinks(ctx, "c/Note.md", []string{"Entropy", "Missing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	named, err := v.GetNamedPaths(ctx, "entropy")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	got := reached["Entropy"]
 	if got.To != "a/Entropy.md" || !got.IsAmbiguous || len(reached) != 1 || len(named) != 2 {
@@ -114,15 +135,24 @@ func TestANameReachesTheNearestNoteAndReturnsWhenSeveralAnswer(t *testing.T) {
 }
 
 func TestALinkIsABacklinkOnlyWhereItResolves(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("Target.md", "# Target\n")
 	v.File("Other/Target.md", "# Another target\n")
 	v.File("Source.md", "---\nlinks:\n  - to: Target\n    role: ref\n---\n\nbody\n")
 
-	backlinks, _ := v.GetBacklinks(ctx, "Target.md")
-	away, _ := v.GetBacklinks(ctx, "Other/Target.md")
-	forward, _ := v.GetLinks(ctx, "Source.md")
+	backlinks, err := v.GetBacklinks(ctx, "Target.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	away, err := v.GetBacklinks(ctx, "Other/Target.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	forward, err := v.GetLinks(ctx, "Source.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if len(backlinks) != 1 || backlinks[0].From != "Source.md" || len(away) != 0 || len(forward) != 1 || forward[0].To != "Target.md" {
 		t.Errorf("got %+v, %+v and %+v", backlinks, away, forward)
@@ -130,15 +160,21 @@ func TestALinkIsABacklinkOnlyWhereItResolves(t *testing.T) {
 }
 
 func TestAVaultOnDiskIsChangedByAProgramAdjacentIt(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"a/Note.md": "# One\n"})
-	_, before, _ := v.Read(ctx, "a/Note.md")
+	_, before, err := v.Read(ctx, "a/Note.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(v.Vault().Path, "a", "Note.md"), []byte("# Two, longer\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	_, writeErr := v.Write(ctx, "a/Note.md", []byte("# Three\n"), before)
-	notes, _ := v.GetNotes(ctx, []string{"a/Note.md"})
+	notes, err := v.GetNotes(ctx, []string{"a/Note.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !errors.Is(writeErr, host.ErrStale) || notes["a/Note.md"].Title != "Note" {
 		t.Errorf("the write gave %v and the notes %v", writeErr, notes)
@@ -146,7 +182,7 @@ func TestAVaultOnDiskIsChangedByAProgramAdjacentIt(t *testing.T) {
 }
 
 func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", nil)
 
 	first := v.Create(ctx, "samples/New.md", []byte("# New\n"))
@@ -159,7 +195,7 @@ func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
 }
 
 func TestAFileTheHostMayNotOpenFailsWithWhatItWasReportedToFailWith(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("a.md", "x")
 	testErr := errors.New("permission denied")
@@ -175,15 +211,21 @@ func TestAFileTheHostMayNotOpenFailsWithWhatItWasReportedToFailWith(t *testing.T
 }
 
 func TestTheIndexKnowsAFileChangedAdjacentItOnlyOnceItIsReported(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"A.md": "---\ntype: sample\n---\n"})
 	if err := os.WriteFile(filepath.Join(v.Vault().Path, "B.md"), []byte("---\ntype: sample\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	before, _ := v.GetPathsOfType(ctx, "sample")
+	before, err := v.GetPathsOfType(ctx, "sample")
+	if err != nil {
+		t.Fatal(err)
+	}
 	scanErr := v.Scan(ctx, []string{"B.md"})
-	after, _ := v.GetPathsOfType(ctx, "sample")
+	after, err := v.GetPathsOfType(ctx, "sample")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if len(before) != 1 || scanErr != nil || len(after) != 2 {
 		t.Errorf("the index held %v, then %v (%v)", before, after, scanErr)
@@ -191,12 +233,15 @@ func TestTheIndexKnowsAFileChangedAdjacentItOnlyOnceItIsReported(t *testing.T) {
 }
 
 func TestAFileInAHiddenFolderIsRemainingAloneByTheVault(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"samples/.Hidden.md": "---\ntype: sample\n---\n"})
 
 	_, statErr := v.StatFile(ctx, "samples/.Hidden.md")
 	_, missing := v.StatFile(ctx, "samples/Nothing.md")
-	samples, _ := v.GetPathsOfType(ctx, "sample")
+	samples, err := v.GetPathsOfType(ctx, "sample")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !errors.Is(statErr, host.ErrNotANote) || !errors.Is(missing, host.ErrNotExist) || len(samples) != 0 {
 		t.Errorf("got %v, %v and %v", statErr, missing, samples)
@@ -204,7 +249,7 @@ func TestAFileInAHiddenFolderIsRemainingAloneByTheVault(t *testing.T) {
 }
 
 func TestVaultsMadeKnownToOneAnotherAreKnownToAll(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	physics, chemistry, biology := hosttest.New("Physics"), hosttest.New("Chemistry"), hosttest.New("Biology")
 	biology.File("a.md", "x")
 	physics.Beside(chemistry)
@@ -219,7 +264,7 @@ func TestVaultsMadeKnownToOneAnotherAreKnownToAll(t *testing.T) {
 }
 
 func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"a.md": "x"})
 	if err := os.RemoveAll(v.Vault().Path); err != nil {
 		t.Fatal(err)
@@ -228,7 +273,10 @@ func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
 	_, _, readErr := v.Read(ctx, "a.md")
 	appendErr := v.Store().Append(ctx, "log", []byte("x"))
 	_, listErr := v.Store().List(ctx)
-	notes, _ := v.GetNotes(ctx, []string{"a.md"})
+	notes, err := v.GetNotes(ctx, []string{"a.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if readErr == nil || errors.Is(readErr, host.ErrNotExist) || appendErr == nil || listErr == nil || len(notes) != 1 {
 		t.Errorf("got %v, %v, %v and %v", readErr, appendErr, listErr, notes)
@@ -236,7 +284,7 @@ func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
 }
 
 func TestGetFingerprintNamesANoteByItsExtension(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("a.sample", "one")
 	v.File("b.MD", "two")
@@ -244,7 +292,7 @@ func TestGetFingerprintNamesANoteByItsExtension(t *testing.T) {
 	if stat, err := v.StatFile(ctx, "a.sample"); err != nil || stat.Kind != domain.KindFile {
 		t.Errorf("fingerprint = %+v, %v, want a file that is not a note", stat, err)
 	}
-	if stat, _ := v.StatFile(ctx, "b.MD"); stat.Kind != domain.KindNote {
-		t.Errorf("fingerprint = %+v, want a note", stat)
+	if stat, err := v.StatFile(ctx, "b.MD"); err != nil || stat.Kind != domain.KindNote {
+		t.Errorf("fingerprint = %+v, %v, want a note", stat, err)
 	}
 }

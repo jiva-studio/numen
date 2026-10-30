@@ -152,11 +152,21 @@ func TestATextClientOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
 	client := newTextClient(t, h)
 	chemistry := client.With("Chemistry")
 
-	_, _ = chemistry.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "transcript", File: "k.jsonl"})
-	_, _ = chemistry.ListVersions(ctx, "a.pdf")
-	_, _ = chemistry.ReadText(ctx, "a.pdf", "p/k", "")
-	_ = chemistry.RemoveVersion(ctx, "a.pdf", "k")
-	_, _ = client.ListVersions(ctx, "a.pdf")
+	if _, err := chemistry.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "transcript", File: "k.jsonl"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chemistry.ListVersions(ctx, "a.pdf"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chemistry.ReadText(ctx, "a.pdf", "p/k", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := chemistry.RemoveVersion(ctx, "a.pdf", "k"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListVersions(ctx, "a.pdf"); err != nil {
+		t.Fatal(err)
+	}
 
 	want := []string{"Chemistry", "Chemistry", "Chemistry", "Chemistry", ""}
 	if !slices.Equal(h.vaults, want) {

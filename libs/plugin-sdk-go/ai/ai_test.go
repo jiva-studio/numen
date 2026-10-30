@@ -52,7 +52,7 @@ func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
 	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
 	srv := startHost(t, host)
 
-	text, err := NewClient(srv.Client(), srv.URL, "secret").Complete(context.Background(), newQuestion())
+	text, err := NewClient(srv.Client(), srv.URL, "secret").Complete(t.Context(), newQuestion())
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -72,7 +72,7 @@ func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
 	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "ok"}}
 	srv := startHost(t, host)
 
-	if _, err := NewClient(srv.Client(), srv.URL, "").Complete(context.Background(), newQuestion()); err != nil {
+	if _, err := NewClient(srv.Client(), srv.URL, "").Complete(t.Context(), newQuestion()); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if host.auth != "" {
@@ -83,7 +83,7 @@ func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
 func TestClientCompleteReturnsErrNoAnswerWhenHostSendsNone(t *testing.T) {
 	srv := startHost(t, &fakeHost{})
 
-	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 	if !errors.Is(err, ErrNoAnswer) {
 		t.Fatalf("got %v, want ErrNoAnswer", err)
@@ -94,7 +94,7 @@ func TestClientCompleteReturnsTransportError(t *testing.T) {
 	srv := httptest.NewServer(http.NotFoundHandler())
 	t.Cleanup(srv.Close)
 
-	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 	var ce *connect.Error
 	if !errors.As(err, &ce) {
@@ -105,10 +105,10 @@ func TestClientCompleteReturnsTransportError(t *testing.T) {
 func TestCompleteReadsHostFromEnvironment(t *testing.T) {
 	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "env"}}
 	srv := startHost(t, host)
-	t.Setenv(HostPortEnv, strconv.Itoa(srv.Listener.Addr().(*net.TCPAddr).Port))
+	t.Setenv(HostPortEnv, strconv.Itoa(getPort(t, srv)))
 	t.Setenv(PluginTokenEnv, "tok")
 
-	text, err := Complete(context.Background(), newQuestion())
+	text, err := Complete(t.Context(), newQuestion())
 
 	if err != nil || text != "env" {
 		t.Fatalf("got %q, %v", text, err)
@@ -121,7 +121,7 @@ func TestCompleteReadsHostFromEnvironment(t *testing.T) {
 func TestCompleteFailsWithoutHostPort(t *testing.T) {
 	t.Setenv(HostPortEnv, "")
 
-	_, err := Complete(context.Background(), newQuestion())
+	_, err := Complete(t.Context(), newQuestion())
 
 	if !errors.Is(err, ErrNoHost) {
 		t.Fatalf("got %v, want ErrNoHost", err)
@@ -137,7 +137,7 @@ func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 	for code, want := range cases {
 		srv := startHost(t, &fakeHost{code: code})
 
-		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 		if !errors.Is(err, want) {
 			t.Errorf("%v: got %v, want %v", code, err, want)
@@ -178,7 +178,7 @@ func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
 	t.Setenv(PluginTokenEnv, "process-token")
 
 	client, err := NewClientFromVars(map[string]string{
-		HostPortEnv:    strconv.Itoa(srv.Listener.Addr().(*net.TCPAddr).Port),
+		HostPortEnv:    strconv.Itoa(getPort(t, srv)),
 		PluginTokenEnv: "linked-token",
 	})
 	if err != nil {
@@ -206,7 +206,7 @@ func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 		detail: "the agent stopped: invalid model selection",
 	})
 
-	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 	if !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("got %v, want ErrUnavailable", err)
@@ -214,4 +214,14 @@ func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	if want := "ai: routed agent did not answer: the agent stopped: invalid model selection"; err.Error() != want {
 		t.Errorf("got %q, want %q", err.Error(), want)
 	}
+}
+
+// getPort returns the TCP port the test server listens on.
+func getPort(t *testing.T, srv *httptest.Server) int {
+	t.Helper()
+	addr, isTCP := srv.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatalf("listener address %s is not a TCP address", srv.Listener.Addr())
+	}
+	return addr.Port
 }

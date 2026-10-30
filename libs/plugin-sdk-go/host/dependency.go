@@ -56,7 +56,7 @@ type DependencyStatus struct {
 	Error           string
 }
 
-func (s *DependencyStatus) GetId() string {
+func (s *DependencyStatus) GetID() string {
 	if s == nil {
 		return ""
 	}

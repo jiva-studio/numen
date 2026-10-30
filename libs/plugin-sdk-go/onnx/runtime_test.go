@@ -90,7 +90,7 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 
 	isDone := make(chan *fakeEngine)
 	go func() {
-		engine, _, err := r.Open(context.Background(), "/lib/one.so", load)
+		engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
 		if err != nil {
 			t.Errorf("first Open() = %v", err)
 		}

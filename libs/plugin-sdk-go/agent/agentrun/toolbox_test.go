@@ -22,9 +22,18 @@ func TestToolboxPreservesTheToolsAndExtendsThePrompt(t *testing.T) {
 	if _, err := box.RegisterTool(ctx, connect.NewRequest(&v1.RegisterToolRequest{})); err != nil {
 		t.Fatal(err)
 	}
-	first, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be polite."}))
-	second, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be brief."}))
-	same, _ := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{}))
+	first, err := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be polite."}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be brief."}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	same, err := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if first.Msg.GetFullPrompt() != "Be polite." || second.Msg.GetFullPrompt() != "Be polite.\nBe brief." ||
 		same.Msg.GetFullPrompt() != "Be polite.\nBe brief." {

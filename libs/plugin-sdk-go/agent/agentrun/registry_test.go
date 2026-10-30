@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
@@ -36,10 +37,14 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 		defer w.End()
 		defer registry.Remove(w)
 		defer close(w.Output)
-		_ = cmd.Wait()
+		cleanup.Wait(t, cmd)
 		close(doneCh)
 	}()
-	t.Cleanup(func() { _ = w.Stop() })
+	t.Cleanup(func() {
+		if err := w.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 	return w, doneCh
 }
 
@@ -134,7 +139,9 @@ func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 
 	closed := make(chan struct{})
 	go func() {
-		_ = registry.Close()
+		if err := registry.Close(); err != nil {
+			t.Error(err)
+		}
 		close(closed)
 	}()
 

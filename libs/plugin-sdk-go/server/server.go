@@ -305,16 +305,24 @@ func (s *Server) SetUpdateConfig(fn func(values map[string]string)) {
 
 // Listen binds the TCP listener and records the allocated port.
 func (s *Server) Listen() (int, error) {
+	return s.listen(context.Background())
+}
+
+func (s *Server) listen(ctx context.Context) (int, error) {
 	if s.listener != nil {
 		return s.actualPort, nil
 	}
 	var listenConfig net.ListenConfig
-	ln, err := listenConfig.Listen(context.Background(), "tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
+	ln, err := listenConfig.Listen(ctx, "tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
 	if err != nil {
 		return 0, fmt.Errorf("listen on 127.0.0.1:%d: %w", s.port, err)
 	}
+	addr, isTCP := ln.Addr().(*net.TCPAddr)
+	if !isTCP {
+		return 0, errors.Join(fmt.Errorf("listener address %s is not a TCP address", ln.Addr()), ln.Close())
+	}
 	s.listener = ln
-	s.actualPort = ln.Addr().(*net.TCPAddr).Port
+	s.actualPort = addr.Port
 	return s.actualPort, nil
 }
 
@@ -338,12 +346,12 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 	if err := s.authenticate(); err != nil {
 		return err
 	}
-	if _, err := s.Listen(); err != nil {
+	if _, err := s.listen(ctx); err != nil {
 		return err
 	}
 	defer func() {
-		if closeErr := s.listener.Close(); closeErr != nil && !errors.Is(closeErr, net.ErrClosed) {
-			err = errors.Join(err, fmt.Errorf("close listener: %w", closeErr))
+		if closeErr := s.closeListener(); closeErr != nil {
+			err = errors.Join(err, closeErr)
 		}
 	}()
 
@@ -358,12 +366,7 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 	}
 
 	serveErrCh := make(chan error, 1)
-	go func() {
-		if err := httpSrv.Serve(s.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serveErrCh <- err
-		}
-		close(serveErrCh)
-	}()
+	go serveHTTP(httpSrv, s.listener, serveErrCh)
 
 	if err := s.announceReady(); err != nil {
 		return err
@@ -395,6 +398,22 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 		return fmt.Errorf("shutdown: %w", err)
 	}
 
+	return nil
+}
+
+// serveHTTP serves on listener, sends a failure other than a shutdown to errs, and closes errs.
+func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
+	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		errs <- err
+	}
+	close(errs)
+}
+
+// closeListener closes the listener. A listener the HTTP server already closed is not an error.
+func (s *Server) closeListener() error {
+	if err := s.listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+		return fmt.Errorf("close listener: %w", err)
+	}
 	return nil
 }
 
