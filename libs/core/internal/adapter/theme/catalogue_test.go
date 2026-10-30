@@ -219,7 +219,11 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 	if err := os.Chmod(catalogue.Dir(), 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chmod(catalogue.Dir(), 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(catalogue.Dir(), 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	themes := catalogue.Themes()
 	if !hasTheme(themes, theme.Default) {

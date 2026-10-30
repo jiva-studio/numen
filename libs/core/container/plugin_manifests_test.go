@@ -76,8 +76,8 @@ func listLifecycleGaps(raw []byte) []string {
 	if _, declared := manifest.Lifecycle["idleTimeoutSeconds"].(float64); !declared {
 		gaps = append(gaps, "idleTimeoutSeconds is not declared")
 	}
-	bytes, _ := manifest.Lifecycle["memoryLimitBytes"].(float64)
-	megabytes, _ := manifest.Lifecycle["memoryLimitMB"].(float64)
+	bytes := getNumber(manifest.Lifecycle, "memoryLimitBytes")
+	megabytes := getNumber(manifest.Lifecycle, "memoryLimitMB")
 	if bytes <= 0 && megabytes <= 0 {
 		gaps = append(gaps, "memoryLimitBytes is not declared")
 	}
@@ -641,4 +641,13 @@ func TestWhatThePluginNamingRuleRefuses(t *testing.T) {
 			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)
 		}
 	}
+}
+
+// getNumber is the number at the key, and zero where the key holds none.
+func getNumber(values map[string]any, key string) float64 {
+	number, isNumber := values[key].(float64)
+	if !isNumber {
+		return 0
+	}
+	return number
 }

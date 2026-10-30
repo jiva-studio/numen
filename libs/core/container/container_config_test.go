@@ -186,7 +186,11 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	if !errors.As(err, &syntax) {
 		t.Errorf("what was wrong with it is not said: %v", err)
 	}
-	if got, _ := os.ReadFile(path); string(got) != `{}` {
+	got, gotErr := os.ReadFile(path)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != `{}` {
 		t.Errorf("the file holds %q", got)
 	}
 }

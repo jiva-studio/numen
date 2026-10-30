@@ -53,7 +53,9 @@ func (s *providerServer) AskAgent(
 	s.mu.Lock()
 	s.requested = append(s.requested, req.Msg)
 	s.mu.Unlock()
-	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "answer: " + req.Msg.GetPrompt()}})
+	if err := stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "answer: " + req.Msg.GetPrompt()}}); err != nil {
+		return err
+	}
 	return stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}})
 }
 
@@ -134,26 +136,27 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 		mux.Handle(numenv1connect.NewAgentServiceHandler(served))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
-		ports[id] = server.Listener.Addr().(*net.TCPAddr).Port
+		addr, isTCP := server.Listener.Addr().(*net.TCPAddr)
+		if !isTCP {
+			t.Fatalf("expected *net.TCPAddr, got %T", server.Listener.Addr())
+		}
+		ports[id] = addr.Port
 	}
 
 	host := plugin.NewHost("desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		serverPort, served := ports[p.Manifest.ID]
 		if !served {
 			return nil, nil, errors.New("this plugin cannot be started")
 		}
-		cmd := exec.Command("sleep", "10")
+		cmd := exec.CommandContext(context.WithoutCancel(ctx), "sleep", "10")
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
-		})
+		t.Cleanup(func() { testsupport.Kill(t, cmd) })
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))), nil
 	})
 	return host

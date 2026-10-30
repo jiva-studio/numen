@@ -269,7 +269,11 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.fileHash()); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("the live text of a replaced file: got %v, want ErrNoText", err)
 	}
-	if menu, _ := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash()); slices.ContainsFunc(menu, func(e textversion.MenuEntry) bool {
+	menu, menuErr := s.versions.GetMenu(t.Context(), s.vault, scanPath, s.fileHash())
+	if menuErr != nil {
+		t.Fatal(menuErr)
+	}
+	if slices.ContainsFunc(menu, func(e textversion.MenuEntry) bool {
 		return e.Action == textversion.ActionCreateText && e.PluginID == proofreader
 	}) {
 		t.Fatalf("the menu offers to proofread a file with no live version: %+v", menu)
@@ -313,7 +317,11 @@ func TestGetMenuOffersThePluginsThatTakeTheFile(t *testing.T) {
 	if !slices.Equal(menu, want) {
 		t.Fatalf("a file with no version: menu %+v, want %+v", menu, want)
 	}
-	if menu, _ := s.versions.GetMenu(t.Context(), s.vault, "notes/a.md", ""); len(menu) != 0 {
+	menu, menuErr := s.versions.GetMenu(t.Context(), s.vault, "notes/a.md", "")
+	if menuErr != nil {
+		t.Fatal(menuErr)
+	}
+	if len(menu) != 0 {
 		t.Fatalf("a note is offered %+v", menu)
 	}
 }

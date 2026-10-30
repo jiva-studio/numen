@@ -23,7 +23,7 @@ func makeIndex(t *testing.T) *container.Index {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 
@@ -203,7 +203,7 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { raw.Close() })
+	testsupport.CloseAfter(t, raw)
 	if _, err := raw.ExecContext(t.Context(),
 		`CREATE TRIGGER keep_vectors BEFORE DELETE ON vectors BEGIN SELECT RAISE(ABORT, 'kept'); END`); err != nil {
 		t.Fatal(err)

@@ -179,7 +179,11 @@ func TestAFolderThatIsNotThereIsUnreadable(t *testing.T) {
 	if !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("want ErrUnreadable, got %v", err)
 	}
-	if recognized, _ := registry.List(); len(recognized) != 0 {
+	recognized, recognizedErr := registry.List()
+	if recognizedErr != nil {
+		t.Fatal(recognizedErr)
+	}
+	if len(recognized) != 0 {
 		t.Errorf("the list holds %v", recognized)
 	}
 }
@@ -214,7 +218,11 @@ func TestAVaultTheMachineCannotBeAskedAboutIsNotAdded(t *testing.T) {
 			if !errors.Is(err, errRefused) {
 				t.Fatalf("want the rejection back, got %v", err)
 			}
-			if recognized, _ := inner.List(); len(recognized) != 0 {
+			recognized, recognizedErr := inner.List()
+			if recognizedErr != nil {
+				t.Fatal(recognizedErr)
+			}
+			if len(recognized) != 0 {
 				t.Errorf("the list holds %v", recognized)
 			}
 		})
@@ -239,7 +247,11 @@ func TestACopyOfAVaultIsRefusedAndAMoveIsFollowed(t *testing.T) {
 	if _, err := add.Execute(copied, ""); !errors.Is(err, vaults.ErrCopy) {
 		t.Fatalf("want ErrCopy, got %v", err)
 	}
-	if recognized, _ := registry.List(); len(recognized) != 1 || recognized[0].Path != first.Path {
+	recognized, recognizedErr := registry.List()
+	if recognizedErr != nil {
+		t.Fatal(recognizedErr)
+	}
+	if len(recognized) != 1 || recognized[0].Path != first.Path {
 		t.Errorf("the list holds %v, want the original only", recognized)
 	}
 

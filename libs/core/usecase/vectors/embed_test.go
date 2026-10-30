@@ -314,7 +314,9 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	}
 
 	// Once released, embedding proceeds and completes.
-	_ = claim.release()
+	if err := claim.release(); err != nil {
+		t.Fatal(err)
+	}
 	secondRes, err := embed.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)

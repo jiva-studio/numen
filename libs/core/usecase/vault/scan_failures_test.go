@@ -344,7 +344,12 @@ func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
 	if !target.hasWalkBegun() {
 		t.Fatal("the first walk never began")
 	}
-	t.Cleanup(func() { close(target.let); <-isDone })
+	t.Cleanup(func() {
+		close(target.let)
+		if err := <-isDone; err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	})
 
 	ctx, cancel := context.WithCancel(t.Context())
 	errCh := make(chan error, 1)

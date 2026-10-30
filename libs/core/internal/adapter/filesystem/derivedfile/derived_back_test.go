@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // The rollback of an append cuts what that append wrote and nothing before it.
@@ -19,7 +21,7 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer root.Close()
+	defer testsupport.Close(t, root)
 
 	file, err := root.OpenFile("run.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
@@ -27,7 +29,7 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 	}
 	other, err := os.OpenFile(pos, os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
-		file.Close()
+		testsupport.Close(t, file)
 		t.Fatal(err)
 	}
 	if _, err := other.Write([]byte("two\n")); err != nil {
@@ -65,7 +67,7 @@ func TestAnAppendThatLandedNothingSplitsNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer root.Close()
+	defer testsupport.Close(t, root)
 	file, err := root.OpenFile("run.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		t.Fatal(err)

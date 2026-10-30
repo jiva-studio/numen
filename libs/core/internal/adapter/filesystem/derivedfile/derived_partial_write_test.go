@@ -41,7 +41,9 @@ func capFileSize(t *testing.T, to int64) func() {
 			return
 		}
 		lifted = true
-		_ = syscall.Setrlimit(syscall.RLIMIT_FSIZE, &was)
+		if err := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &was); err != nil {
+			t.Error(err)
+		}
 		signal.Reset(syscall.SIGXFSZ)
 	}
 	t.Cleanup(lift)

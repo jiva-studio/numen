@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -72,7 +73,9 @@ func serve(t *testing.T, body []byte) (*httptest.Server, *atomic.Int32) {
 	var hits atomic.Int32
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits.Add(1)
-		_, _ = w.Write(body)
+		if _, err := w.Write(body); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	return server, &hits
@@ -160,7 +163,11 @@ func TestProvisionRefusesALibraryThatIsNotThePinnedOne(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "is pinned") {
 		t.Fatalf("Provision() = %v, want a pin mismatch", err)
 	}
-	if matches, _ := filepath.Glob(filepath.Join(cfg.Dir, "*", "*", "libonnxruntime.so")); len(matches) != 0 {
+	matches, matchesErr := filepath.Glob(filepath.Join(cfg.Dir, "*", "*", "libonnxruntime.so"))
+	if matchesErr != nil {
+		t.Fatal(matchesErr)
+	}
+	if len(matches) != 0 {
 		t.Errorf("a library that is not pinned was left at %v", matches)
 	}
 }
@@ -294,7 +301,9 @@ func TestProvisionAfterAFailureTriesAgain(t *testing.T) {
 			http.Error(w, "not yet", http.StatusServiceUnavailable)
 			return
 		}
-		_, _ = w.Write(archive)
+		if _, err := w.Write(archive); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	cfg := newConfig(server, archive)
@@ -317,7 +326,9 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		close(entered)
 		<-release
-		_, _ = w.Write(archive)
+		if _, err := w.Write(archive); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	cfg := newConfig(server, archive)
@@ -454,17 +465,23 @@ func TestGetHomeIsTheSharedModelsFolder(t *testing.T) {
 // assertNoFile fails when a file was left under dir.
 func assertNoFile(t *testing.T, dir string) {
 	t.Helper()
-	_ = filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
+	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
 		if err == nil && !entry.IsDir() {
 			t.Errorf("%s was retained", path)
 		}
 		return nil
 	})
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestMain(m *testing.M) {
 	for _, name := range []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME", "NUMEN_OCR_RUNTIME"} {
-		_ = os.Unsetenv(name)
+		if err := os.Unsetenv(name); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 	os.Exit(m.Run())
 }
@@ -608,7 +625,11 @@ func TestProvisionAsksForTheLibraryOncePerPluginFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	siblingPath := writeLibrary(t, filepath.Join(first, "bin"))
-	if got, _, _ := provisioner.Provision(t.Context(), first); got == siblingPath {
+	got, _, gotErr := provisioner.Provision(t.Context(), first)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if got == siblingPath {
 		t.Error("a folder was searched again after it was answered")
 	}
 }

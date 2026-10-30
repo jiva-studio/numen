@@ -28,7 +28,11 @@ func TestAShapeShortOfAFolderReachesBackAsAnError(t *testing.T) {
 	if err := os.Chmod(shutPath, 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(shutPath, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(shutPath, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	reader, err := vaultreader.Open(root, vaultconfig.Options{})
 	if err != nil {

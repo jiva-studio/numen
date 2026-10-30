@@ -53,7 +53,7 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{},

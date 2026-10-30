@@ -33,7 +33,10 @@ func (r *Reason) Store(why string) { r.why.Store(why) }
 
 // Why is what was last said, and empty while nothing is the matter.
 func (r *Reason) Why() string {
-	why, _ := r.why.Load().(string)
+	why, isText := r.why.Load().(string)
+	if !isText {
+		return ""
+	}
 	return why
 }
 

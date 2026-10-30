@@ -57,9 +57,16 @@ func ReadCompletionChoice(value any) CompletionChoice {
 	if !ok {
 		return CompletionChoice{}
 	}
-	agent, _ := fields["agent"].(string)
-	model, _ := fields["model"].(string)
-	return CompletionChoice{Agent: agent, Model: model}
+	return CompletionChoice{Agent: getText(fields, "agent"), Model: getText(fields, "model")}
+}
+
+// getText is the string at the key, and empty where the key holds none.
+func getText(fields map[string]any, key string) string {
+	text, isText := fields[key].(string)
+	if !isText {
+		return ""
+	}
+	return text
 }
 
 // Completer answers a question of a plugin with text, from the agent the

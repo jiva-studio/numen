@@ -306,7 +306,7 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, p.Floor)
 }
 
-// read fills in the text of each passage from the vault. A chunk is a place in a
+// readForQuery fills in the text of each passage from the vault. A chunk is a place in a
 // file, and the file is what holds the words.
 //
 // A passage naming a file the vault no longer holds is dropped: the file is what
@@ -317,10 +317,6 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 // sources are extracted at once, and each one's decoded text is released as soon
 // as its own passages are filled in. The first error, or the end of ctx, stops
 // the sources not yet started.
-func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
-	return u.readForQuery(ctx, v, "", found)
-}
-
 func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil

@@ -68,7 +68,7 @@ func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return container.NewEditorAssembly(cfg, nil, db), db
 }
 

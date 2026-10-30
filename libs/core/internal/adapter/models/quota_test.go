@@ -69,12 +69,16 @@ func TestLockQuotaWaitsForTheHolder(t *testing.T) {
 	if _, err := lockQuota(ctx, root); err == nil {
 		t.Fatal("lock was taken twice")
 	}
-	unlock()
+	if err := unlock(); err != nil {
+		t.Fatal(err)
+	}
 	again, err := lockQuota(t.Context(), root)
 	if err != nil {
 		t.Fatalf("after unlock: %v", err)
 	}
-	again()
+	if err := again(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestLockQuotaBreaksAStaleLock(t *testing.T) {
@@ -91,7 +95,9 @@ func TestLockQuotaBreaksAStaleLock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unlock()
+	if err := unlock(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
@@ -292,7 +298,11 @@ func TestGetUsageReportsAFolderItCannotRead(t *testing.T) {
 	if err := os.Chmod(locked, 0); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(locked, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(locked, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 	if _, err := GetUsage(dir); err == nil {
 		t.Fatal("an unreadable folder was counted as empty")
 	}

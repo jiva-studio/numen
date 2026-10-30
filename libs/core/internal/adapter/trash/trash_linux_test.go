@@ -152,7 +152,11 @@ func TestAVolumeThatConsumesNoTrash(t *testing.T) {
 	if err := os.Chmod(top, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chmod(top, 0o700) })
+	t.Cleanup(func() {
+		if err := os.Chmod(top, 0o700); err != nil {
+			t.Error(err)
+		}
+	})
 
 	if _, err := getVolumeTrashDir(top, os.Getuid()); !errors.Is(err, machineport.ErrNoTrash) {
 		t.Errorf("a volume root that takes no trash gave %v, want %v", err, machineport.ErrNoTrash)

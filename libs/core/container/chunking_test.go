@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
@@ -25,7 +26,7 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	cfg := container.DefaultEmbedding()
 	cfg.MaxTokens = 512
@@ -62,7 +63,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	cfg := container.DefaultEmbedding()
 	cfg.MaxTokens = 8
@@ -109,7 +110,7 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}

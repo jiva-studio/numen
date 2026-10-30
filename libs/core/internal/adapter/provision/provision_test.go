@@ -184,7 +184,10 @@ func TestDownloadVerifiesChecksumAndWritesToCachePath(t *testing.T) {
 	if resolved.EnvVars["NUMEN_DEPENDENCY_WHISPER"] != resolved.PrimaryPath {
 		t.Errorf("env = %v", resolved.EnvVars)
 	}
-	left, _ := filepath.Glob(filepath.Join(resolved.RootPath, tempPrefix+"*"))
+	left, leftErr := filepath.Glob(filepath.Join(resolved.RootPath, tempPrefix+"*"))
+	if leftErr != nil {
+		t.Fatal(leftErr)
+	}
 	if len(left) != 0 {
 		t.Errorf("temporary files remain: %v", left)
 	}
@@ -215,7 +218,10 @@ func TestADownloadResumesFromAPartialFile(t *testing.T) {
 	provisioner := newTestProvisioner(t, false)
 	provisioner.cfg.Client = server.Client()
 	req := newModelRequirement(server.URL+"/w.bin", data)
-	dir, _ := provisioner.getDir(req)
+	dir, dirErr := provisioner.getDir(req)
+	if dirErr != nil {
+		t.Fatal(dirErr)
+	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +233,10 @@ func TestADownloadResumesFromAPartialFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, _ := os.ReadFile(resolved.PrimaryPath)
+	got, gotErr := os.ReadFile(resolved.PrimaryPath)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
 	if !bytes.Equal(got, data) {
 		t.Error("the resumed file holds the wrong bytes")
 	}
@@ -239,7 +248,9 @@ func TestADownloadResumesFromAPartialFile(t *testing.T) {
 func TestDownloadWithChecksumMismatchKeepsFolderEmpty(t *testing.T) {
 	data := []byte("the real bytes")
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("tampered bytes"))
+		if _, err := w.Write([]byte("tampered bytes")); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer server.Close()
 	provisioner := newTestProvisioner(t, false)
@@ -250,12 +261,22 @@ func TestDownloadWithChecksumMismatchKeepsFolderEmpty(t *testing.T) {
 	if !errors.Is(err, ErrChecksum) {
 		t.Fatalf("err = %v, want ErrChecksum", err)
 	}
-	dir, _ := provisioner.getDir(req)
-	entries, _ := os.ReadDir(dir)
+	dir, dirErr := provisioner.getDir(req)
+	if dirErr != nil {
+		t.Fatal(dirErr)
+	}
+	entries, entriesErr := os.ReadDir(dir)
+	if entriesErr != nil {
+		t.Fatal(entriesErr)
+	}
 	for _, entry := range entries {
 		t.Errorf("%s was left in the folder", entry.Name())
 	}
-	if status, _ := provisioner.Status(t.Context(), req); status.State != pluginport.DependencyStateMissing {
+	status, statusErr := provisioner.Status(t.Context(), req)
+	if statusErr != nil {
+		t.Fatal(statusErr)
+	}
+	if status.State != pluginport.DependencyStateMissing {
 		t.Errorf("state = %s, want missing", status.State)
 	}
 }
@@ -314,7 +335,9 @@ func TestTheCacheLockExcludesAnotherHolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = again()
+	if err := again(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestARenameIsRetriedWhileAccessIsDenied(t *testing.T) {

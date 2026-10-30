@@ -83,12 +83,12 @@ func (a *toolAgent) AskAgent(
 }
 
 // callTools lists the tools at the url and makes the calls of the stand-in.
-func (a *toolAgent) callTools(ctx context.Context, url, token string) error {
+func (a *toolAgent) callTools(ctx context.Context, url, token string) (err error) {
 	session, err := connectTools(ctx, url, token)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = session.Close() }()
+	defer func() { err = errors.Join(err, session.Close()) }()
 
 	var names []string
 	for tool, err := range session.Tools(ctx, nil) {
@@ -218,8 +218,14 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
-		capabilities, _ := json.Marshal(one.capabilities)
-		permissions, _ := json.Marshal(one.permissions)
+		capabilities, err := json.Marshal(one.capabilities)
+		if err != nil {
+			t.Fatal(err)
+		}
+		permissions, err := json.Marshal(one.permissions)
+		if err != nil {
+			t.Fatal(err)
+		}
 		manifest := fmt.Sprintf(`{
 			"id": %q, "name": %q, "version": "1.0.0",
 			"capabilities": %s, "permissions": %s,
@@ -234,26 +240,27 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 		one.mount(mux)
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
-		ports[one.id] = server.Listener.Addr().(*net.TCPAddr).Port
+		addr, isTCP := server.Listener.Addr().(*net.TCPAddr)
+		if !isTCP {
+			t.Fatalf("expected *net.TCPAddr, got %T", server.Listener.Addr())
+		}
+		ports[one.id] = addr.Port
 	}
 
 	host := plugin.NewHost("desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		port, isServed := ports[p.Manifest.ID]
 		if !isServed {
 			return nil, nil, errors.New("this plugin cannot be started")
 		}
-		cmd := exec.Command("sleep", "10")
+		cmd := exec.CommandContext(context.WithoutCancel(ctx), "sleep", "10")
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
-		})
+		t.Cleanup(func() { testsupport.Kill(t, cmd) })
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 	return host
@@ -441,7 +448,11 @@ func TestTheEndpointRefusesAnotherToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = run.Stop() })
+	t.Cleanup(func() {
+		if err := run.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 	for range run.GetSteps() {
 	}
 
@@ -498,13 +509,21 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 		toolsAt(vaultPlugin, []string{"vault:read", "vault:write"}, vault),
 		testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}},
 	)
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	host.SetPluginVault(shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}})
 	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = served.Close(context.WithoutCancel(t.Context())) })
+	t.Cleanup(func() {
+		if err := served.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
 	caller, err := host.EnsureActive(t.Context(), mcpPlugin)
 	if err != nil {
 		t.Fatal(err)

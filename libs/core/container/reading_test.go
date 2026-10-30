@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -30,7 +31,7 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	if err := db.Vaults().Register(t.Context(), vault.ID); err != nil {
 		t.Fatal(err)
@@ -60,7 +61,7 @@ func read(t *testing.T, cfg container.Config) *container.Index {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 

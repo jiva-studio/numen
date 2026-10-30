@@ -14,7 +14,11 @@ import (
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	host := plugin.NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), 0) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+			t.Error(err)
+		}
+	})
 	registry := newDependencies()
 	host.SetDependencies(registry)
 	tasks := run.NewTasks()

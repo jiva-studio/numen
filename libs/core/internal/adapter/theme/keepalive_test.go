@@ -76,6 +76,6 @@ func wrapWithProcessContext(handler http.Handler, entered, returned chan<- struc
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entered <- struct{}{}
 		defer func() { returned <- struct{}{} }()
-		handler.ServeHTTP(w, r.WithContext(context.Background()))
+		handler.ServeHTTP(w, r.WithContext(context.WithoutCancel(r.Context())))
 	})
 }

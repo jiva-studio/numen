@@ -87,7 +87,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	versions, err := cfg.NewTextVersions(db)
 	if err != nil {
 		t.Fatal(err)
@@ -123,7 +123,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	versions, err := cfg.NewTextVersions(db)
 	if err != nil {
 		t.Fatal(err)
@@ -157,7 +157,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	versions, err := cfg.NewTextVersions(db)
 	if err != nil {
 		t.Fatal(err)
@@ -198,7 +198,7 @@ func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersio
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	versions, err := cfg.NewTextVersions(db)
 	if err != nil {
 		t.Fatal(err)
@@ -379,7 +379,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	if cfg.TextVersions, err = cfg.NewTextVersions(db); err != nil {
 		t.Fatal(err)
 	}

@@ -70,7 +70,7 @@ func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(b, db)
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{}, db.Vaults(), db.Notes(),

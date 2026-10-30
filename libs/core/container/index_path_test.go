@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestOpenIndexRefusesConfigWithoutIndexPath(t *testing.T) {
@@ -24,7 +25,7 @@ func TestOpenIndexOpensTheNamedDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 	if db.Path() != path {
 		t.Errorf("opened %q, want %q", db.Path(), path)
 	}

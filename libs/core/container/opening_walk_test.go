@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -114,7 +115,7 @@ func TestAnIndexPathBelowAFileCannotBeOpened(t *testing.T) {
 
 	db, err := container.Config{IndexPath: filepath.Join(file, "index.db")}.OpenIndex(t.Context())
 	if err == nil {
-		db.Close()
+		testsupport.Close(t, db)
 		t.Fatal("an index was opened below a file")
 	}
 	if db != nil {
@@ -127,7 +128,7 @@ func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 	isolate(t)
 	db, err := container.Config{IndexPath: t.TempDir()}.OpenIndex(t.Context())
 	if err == nil {
-		db.Close()
+		testsupport.Close(t, db)
 		t.Fatal("a folder was opened as an index")
 	}
 	if db != nil {
