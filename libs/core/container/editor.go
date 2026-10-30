@@ -103,6 +103,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		StartVaultFn:     cfg.startVault(db),
 		PluginServicesFn: cfg.GetPluginServices,
 		PluginCommandsFn: cfg.GetPluginCommands,
+		PluginCatalogFn:  cfg.getEditorCatalog,
 		AgentVal:         cfg.serveTools(provider),
 		SetTextVersionListenerFn: func(listener textport.VersionListener) {
 			if cfg.TextVersions != nil {

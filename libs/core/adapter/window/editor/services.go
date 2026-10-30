@@ -56,6 +56,10 @@ type Services struct {
 	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
 
+	// Catalog answers which plugins the application has, which it could have, and which provides a
+	// kind of tab. A build put together without a catalog serves no CatalogService.
+	Catalog numenv1connect.CatalogServiceHandler
+
 	// openChoosePath makes the use case that puts the picker for a plugin's path setting in front of the
 	// person. Nil is a build that serves none.
 	openChoosePath func(dialog machineport.PathDialog) *setting.ChoosePluginPath

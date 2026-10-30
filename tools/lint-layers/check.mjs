@@ -17,7 +17,7 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, protocol, kinds, ui, shell, host, wire, sdk, docs, plugins, boundary, desktop, editor, flashcards
+ *   core, libraries, notes, protocol, kinds, ui, shell, host, wire, sdk, docs, plugins, boundary, desktop, editor, flashcards
  */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
@@ -25,10 +25,12 @@ import { CORE_VERIFIERS } from "./checks/core.mjs";
 import { DOCS_VERIFIERS } from "./checks/docs.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
+import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 
 const VERIFIERS = [
   ...CORE_VERIFIERS,
+  ...LIBRARY_VERIFIERS,
   ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
@@ -102,6 +104,7 @@ function getChangedModules() {
   for (const file of files) {
     if (file.startsWith("libs/core/")) matched.add("core");
     if (file.startsWith("libs/notes/")) matched.add("notes");
+    if (file.startsWith("libs/")) matched.add("libraries");
     if (file.startsWith("libs/protocol/") || file.startsWith("tools/lint-layers/")) matched.add("protocol");
     if (/^(libs\/(core|notes|plugin-sdk-go|plugin-sdk-ts|ui)|apps\/desktop\/editor|tools\/lint-layers)\//.test(file)) matched.add("kinds");
     if (file.startsWith("tools/lint-layers/")) ["ui", "plugins"].forEach((one) => matched.add(one));
