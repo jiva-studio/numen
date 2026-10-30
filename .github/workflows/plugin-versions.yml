@@ -1,0 +1,41 @@
+name: Plugin versions
+
+# A plugin that changed carries a higher <year>.<month>.<build> version than on the base branch.
+on:
+  pull_request:
+    paths:
+      - "plugins/**"
+      - "tools/plugin-versions/**"
+      - ".github/workflows/plugin-versions.yml"
+  merge_group:
+    types: [checks_requested]
+
+concurrency:
+  group: plugin-versions-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    name: Plugin versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: Test the check
+        run: node --test tools/plugin-versions/check.test.mjs
+
+      - name: Check the versions of changed plugins
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node tools/plugin-versions/check.mjs --base "$BASE"

@@ -18,6 +18,7 @@ LANDING  := apps/landing
 ICON     := tools/build-icons
 STORIES  := tools/ci-stories
 COMMANDS := tools/ci-commands
+PLUGIN_VERSIONS := tools/plugin-versions
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
@@ -455,6 +456,18 @@ tool_stories_check: ## verify story references
 .PHONY: tool_commands_check
 tool_commands_check: ## verify how plugin commands are read for the manual
 	cd $(COMMANDS) && npm run check
+
+.PHONY: plugin_versions_check
+plugin_versions_check: ## verify every changed plugin raised its <year>.<month>.<build> version (usage: make plugin_versions_check [base=origin/main])
+	node $(PLUGIN_VERSIONS)/check.mjs --base $(or $(base),origin/main)
+
+.PHONY: plugin_versions_bump
+plugin_versions_bump: ## write the next version into every changed plugin (usage: make plugin_versions_bump [base=origin/main])
+	node $(PLUGIN_VERSIONS)/check.mjs --base $(or $(base),origin/main) --write
+
+.PHONY: plugin_versions_test
+plugin_versions_test: ## test the plugin version check
+	node --test $(PLUGIN_VERSIONS)/check.test.mjs
 
 .PHONY: check_layers tool_layers_check
 check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.readers.pdf",
   "name": "PDF Reader",
-  "version": "1.0.0",
+  "version": "2026.10.1",
   "protocol": 1,
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "1.0.0",
+  "version": "2026.10.1",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],

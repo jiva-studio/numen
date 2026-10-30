@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.media.player",
-  "version": "1.0.0",
+  "version": "2026.10.1",
   "private": true,
   "type": "module",
   "main": "./frontend/index.ts",

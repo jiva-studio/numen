@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.acp",
   "name": "ACP Agents",
-  "version": "1.0.0",
+  "version": "2026.10.1",
   "protocol": 1,
   "description": "External AI assistants via the Agent Client Protocol",
   "capabilities": ["agent", "ai.agent.provider"],

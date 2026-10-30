@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.file.tree",
   "name": "File Tree Explorer",
-  "version": "1.0.0",
+  "version": "2026.10.1",
   "protocol": 1,
   "description": "Sidebar file browser for managing notes, books, and recordings",
   "capabilities": [],
