@@ -7,8 +7,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 var (
@@ -239,7 +239,11 @@ func readLines(parts []domain.TextSegment) []Line {
 func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	var out []Batch
 	for _, line := range lines {
-		selector, _ := host.ParseSelector(parts[line.Number-1].Selector)
+		selector, err := host.ParseSelector(parts[line.Number-1].Selector)
+		if err != nil {
+			// A selector that does not parse names no page.
+			selector = host.Selector{}
+		}
 		page := selector.Page
 		if len(out) == 0 || out[len(out)-1].Number != page {
 			out = append(out, Batch{Number: page})

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
@@ -59,10 +60,13 @@ func (p *provider) CreateText(ctx context.Context, req host.TextCreation) error 
 	p.wg.Go(func() {
 		defer p.finish(key)
 		defer cancel()
-		// Proofread reports a failure as a task error.
-		_, _ = p.proofreading.Proofread(runCtx, Request{
+		// Proofread reports a failure as a task error. A proofreading ended by Close is not a failure.
+		_, err := p.proofreading.Proofread(runCtx, Request{
 			Vault: req.Vault, Path: req.Path, Source: req.Source, IsUserStarted: req.IsUserStarted,
 		})
+		if err != nil && runCtx.Err() == nil {
+			fmt.Fprintf(os.Stderr, "tools-proofreading: proofread %s: %v\n", req.Path, err)
+		}
 	})
 	return nil
 }

@@ -81,11 +81,17 @@ func TestTheEditLimitOfARequestIsHeld(t *testing.T) {
 	pages := []Batch{{Number: 1, Lines: []Line{{Number: 1, Text: "abcdefghij"}}}}
 	reply := newReplyModel("1|abcdeXYZ")
 
-	got, _ := proofreadScan(t.Context(), reply.ask, pages, 0)
+	got, err := proofreadScan(t.Context(), reply.ask, pages, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(got.corrections) != 0 {
 		t.Errorf("default limit kept %v", got.corrections)
 	}
-	got, _ = proofreadScan(t.Context(), reply.ask, pages, 0.9)
+	got, err = proofreadScan(t.Context(), reply.ask, pages, 0.9)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(got.corrections) != 1 {
 		t.Errorf("a limit of 0.9 kept %v", got.corrections)
 	}

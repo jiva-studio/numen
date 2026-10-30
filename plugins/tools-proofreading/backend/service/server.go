@@ -135,7 +135,7 @@ func (s *settings) getConfig() proofreadingConfig {
 // newAskModel returns the model as a system instruction and a prompt are put to it.
 func newAskModel(complete completer, getConfig ...func() proofreadingConfig) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != "true" {
+		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != mockEnabled {
 			cfg := getConfig[0]()
 			if cfg.provider == "openrouter" || cfg.provider == "openai" || cfg.provider == "custom" {
 				return askDirectAPI(ctx, cfg, instruction, prompt)
@@ -184,7 +184,7 @@ func resolveDirectBaseURL(cfg proofreadingConfig) string {
 	}
 }
 
-func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (string, error) {
+func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (answer string, err error) {
 	baseURL := strings.TrimSuffix(resolveDirectBaseURL(cfg), "/")
 	if baseURL == "" {
 		return "", errors.New("service URL is not configured")
@@ -216,7 +216,7 @@ func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prom
 	if err != nil {
 		return "", fmt.Errorf("send chat request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("read chat response: %w", err)
@@ -242,7 +242,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	complete := completer(ai.Complete)
-	if os.Getenv(EnvMockML) == "true" {
+	if os.Getenv(EnvMockML) == mockEnabled {
 		complete = completeMock
 	}
 	return mount(s, openHostAt(endpoint), complete, nil)
@@ -262,7 +262,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		}
 		return client.Complete(ctx, question)
 	}
-	if vars[EnvMockML] == "true" {
+	if vars[EnvMockML] == mockEnabled {
 		complete = completeMock
 	}
 	hosted := openHostAt(endpoint)
@@ -297,3 +297,6 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	s.OnClose(provider.Close)
 	return nil
 }
+
+// mockEnabled is the value of EnvMockML that has the plugin answer with the mock model.
+const mockEnabled = "true"
