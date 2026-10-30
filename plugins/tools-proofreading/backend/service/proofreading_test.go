@@ -96,7 +96,7 @@ func (s *scene) hold(t *testing.T, pluginID, path, key string, kind domain.TextK
 func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	t.Helper()
 	rect := [][4]float32{{0.1, 0.1, 0.9, 0.2}}
-	first, second := host.Selector{Page: 1, Boxes: rect}.Encode(), host.Selector{Page: 2, Boxes: rect}.Encode()
+	first, second := segmentSelector{Page: 1, Boxes: rect}.encode(), segmentSelector{Page: 2, Boxes: rect}.encode()
 	return s.hold(t, ocrID, scanPath, "recognition", kindRecognition, "the scan", []domain.TextSegment{
 		{Text: "A flywheel keeps energy ", Heading: "Storage", Selector: first},
 		{Text: "in a rotor spinnig in a vacum.\n\n", Selector: first},
@@ -108,7 +108,7 @@ func (s *scene) holdTalk(t *testing.T, lines ...string) domain.TextVersion {
 	t.Helper()
 	parts := make([]domain.TextSegment, len(lines))
 	for i, line := range lines {
-		parts[i] = domain.TextSegment{Text: line + "\n", Selector: host.Selector{T: []float64{float64(i), float64(i + 1)}}.Encode()}
+		parts[i] = domain.TextSegment{Text: line + "\n", Selector: segmentSelector{T: []float64{float64(i), float64(i + 1)}}.encode()}
 	}
 	return s.hold(t, speechID, talkPath, "heard", kindTranscript, "the recording", parts)
 }

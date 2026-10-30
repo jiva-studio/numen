@@ -32,8 +32,8 @@ flowchart TD
 ## Step 2: Codebase Reconnaissance (Anti-Hallucination Gate)
 
 Before proposing new files, types, or methods, search the codebase:
-1. Search existing domain models, ports, and DTOs across `modules/libs/core` and `modules/apps/desktop`.
-2. Check existing composables, components, and utilities in `modules/libs/ui/core`.
+1. Search existing domain models, ports, and DTOs across `libs/core` and `apps/desktop`.
+2. Check existing composables, components, and utilities in `libs/ui/core`.
 3. Check `AGENTS.md` and the rules in `.agents/rules/` governing the touched area.
 
 ---
@@ -47,7 +47,7 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 
 **Task Slug:** `<slug>`
 **Date:** `<YYYY-MM-DD>`
-**Intent:** [.agents/tasks/<slug>/intent.md](intent.md)
+**Intent:** `.agents/tasks/<slug>/intent.md`
 
 ## 1. Target Architecture & Interfaces
 - Type signatures, interface definitions, or component prop/event contracts.
@@ -56,8 +56,8 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 ## 2. Blast Radius Matrix
 | Package / Path | File | Action (Create/Modify) | Downstream Consumers |
 | :--- | :--- | :--- | :--- |
-| `modules/libs/core` | `domain/card.go` | Modify | `usecase/flashcards`, `adapter/sqlite` |
-| `modules/apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create | `pages/DeckPage.vue` |
+| `libs/core` | `domain/card.go` | Modify | `usecase/flashcards`, `adapter/sqlite` |
+| `apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create | `pages/DeckPage.vue` |
 
 ## 3. Negative Invariants (Architectural Prohibitions)
 - Explicit architectural constraints (e.g. No direct DB access from UI, no god objects, preserve layer arrows).
@@ -75,7 +75,7 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 - **Then**: <expected observable outcome>
 ```
 
-> **Important on Test Naming**: Acceptance Criteria (AC-1, AC-2) are requirements tracking identifiers in `spec.md`. When converting them to code, tests must use **pure behavioral sentences** (e.g. `it('rejects card with empty front')` or `TestPush_RejectBehindAck`) — never prefix test functions with `AC-1` or synthetic tags.
+> **Important on Test Naming**: Acceptance Criteria (AC-1, AC-2) are requirements tracking identifiers in `spec.md`. When converting them to code, tests must use **pure behavioral sentences** (e.g. `it('rejects card with empty front')` or a Go test named for the behaviour, as in "push rejects a client that is behind the ack") — never prefix test functions with `AC-1` or synthetic tags.
 
 ---
 

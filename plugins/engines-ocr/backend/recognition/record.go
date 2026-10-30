@@ -86,8 +86,8 @@ func (r *record) isFor(inputHash, recipe string) bool {
 func (r *record) getTextSegments(index int) []domain.TextSegment {
 	out := make([]domain.TextSegment, 0, len(r.Pages[index]))
 	for _, one := range r.Pages[index] {
-		selector := host.Selector{T: nil, Page: index + 1, CFI: "", Boxes: one.Rects}
-		out = append(out, domain.TextSegment{Text: one.Text, Heading: one.Section, Selector: selector.Encode()})
+		selector := pageSelector{Page: index + 1, Boxes: one.Rects}
+		out = append(out, domain.TextSegment{Text: one.Text, Heading: one.Section, Selector: selector.encode()})
 	}
 	return out
 }

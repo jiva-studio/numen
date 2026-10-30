@@ -32,7 +32,7 @@ export interface AgentQuery {
   // The depth of reasoning, by the name of one of the levels the model offers.
   readonly reasoning?: string | undefined
   // What the asking view shows, handed to every tool the agent calls. Each key starts with the id of
-  // the plugin that wrote it and a slash: "md.numen.views.flashcards.studio/card".
+  // the plugin that wrote it and a slash: "org.example.plugin/key".
   readonly context?: Readonly<Record<string, string>> | undefined
   // The vault the question is about, by identity, which every tool the agent calls works. Empty is
   // the vault the window shows.

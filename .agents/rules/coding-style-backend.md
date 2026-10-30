@@ -1,27 +1,26 @@
 # Backend (Go) Coding Style & Guidelines
 
-The standards for Go code in numen: `modules/libs/core`, `modules/libs/protocol`, `modules/apps/desktop`, `modules/apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
+The standards for Go code in numen: `libs/core`, `libs/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
 
 ---
 
 ## 1. Module structure
 
 ```text
-modules/
-├── libs/core/            # the hexagon — its own module
-│   ├── domain/           # entities, value objects, identifiers, invariants
-│   ├── port/             # the interfaces use cases require
-│   ├── usecase/          # one business scenario each
-│   ├── adapter/          # filesystem, index, agent, cli, mcp, webui, settings, flashcardsui
-│   ├── container/        # the composition root
-│   └── internal/         # not nameable from outside the module
-├── libs/protocol/        # generated from the schema — never hand-edited
-└── apps/desktop/         # the window's host: cmd/ and internal/
+libs/core/            # the hexagon — its own module
+├── port/             # the interfaces use cases require
+├── usecase/          # one business scenario each
+├── adapter/          # cli, index, settings, window
+├── container/        # the composition root
+└── internal/         # not nameable from outside the module
+libs/notes/           # the domain: entities, value objects, identifiers, invariants
+libs/protocol/        # generated from the schema — never hand-edited
+apps/desktop/         # the window's host: cmd/ and internal/
 ```
 
-There is no `go.work`. Each module is built and tested from its own directory.
+`go.work` joins the modules for development. Each module is built and tested from its own directory.
 
-**Identifiers live in `domain/`**: `NoteID`, `VaultID`, `CardFaceID`. Any field named `*Time` in `domain/` or `port/` is a `time.Time` — `MTime` on raw file metadata is the one unix-timestamp exception.
+**Identifiers live in `libs/notes/domain/`**: `NoteID`, `VaultID`, `CardFaceID`. Any field named `*Time` in `domain/` or `port/` is a `time.Time` — `MTime` on raw file metadata is the one unix-timestamp exception.
 
 ---
 
@@ -108,11 +107,10 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 Per module, from its own directory:
 
 ```bash
-cd modules/libs/core     && gofmt -l . && go vet ./... && go test ./... -race
-cd modules/apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./... -race
-cd modules/libs/protocol && buf lint && npm run generate
+cd libs/core     && gofmt -l . && go vet ./... && go test ./... -race
+cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./... -race
+cd libs/protocol && buf lint && npm run generate
 ```
 
-- `usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under `-race`. A timeout there is the machine's load — rerun before calling it a failure.
 - The schema is never hand-edited. Change the `.proto`, run `make generate`, commit what comes out; `make generate-check` fails when the two drift.
 - `node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout is parked on. A generated symbol missing there is that, not the branch under test.

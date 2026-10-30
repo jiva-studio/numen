@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
@@ -67,13 +66,13 @@ func getTrailingSpace(text string) string {
 // joinSelectors is the selector of a run of segments made one: the span of a recording from the
 // first segment's start to the last one's end, and the boxes of the segments on the first one's page.
 func joinSelectors(run []domain.TextSegment) domain.Selector {
-	first, err := host.ParseSelector(run[0].Selector)
+	first, err := readSegmentSelector(run[0].Selector)
 	if err != nil {
 		return run[0].Selector
 	}
-	joined := host.Selector{T: nil, Page: first.Page, CFI: first.CFI, Boxes: nil}
+	joined := segmentSelector{T: nil, Page: first.Page, CFI: first.CFI, Boxes: nil}
 	for _, one := range run {
-		selector, err := host.ParseSelector(one.Selector)
+		selector, err := readSegmentSelector(one.Selector)
 		if err != nil {
 			continue
 		}
@@ -87,5 +86,5 @@ func joinSelectors(run []domain.TextSegment) domain.Selector {
 			joined.Boxes = append(joined.Boxes, selector.Boxes...)
 		}
 	}
-	return joined.Encode()
+	return joined.encode()
 }

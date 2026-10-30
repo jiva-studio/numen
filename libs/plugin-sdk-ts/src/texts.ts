@@ -1,24 +1,13 @@
 import type { Result } from './types'
 
-// TextKind is what a text version is, as the plugin that makes it names it: 'transcript',
-// 'recognition'. The core compares it as an opaque string.
+// TextKind is what a text version is, as the plugin that makes it names it. The core
+// compares it as an opaque string.
 export type TextKind = string
 
 // Selector locates a segment in the file its text was made from (W3C Web Annotation selector). The
-// core stores it as is and returns it with search hits; the view that opens the file reads it. Each
-// key and its unit come from a standard:
-//   t      [start, end] in seconds from the start of a recording (W3C Media Fragments)
-//   page   a page of a document, counted from 1 (RFC 8118)
-//   cfi    an EPUB Canonical Fragment Identifier
-//   boxes  rectangles on the page, each [minX, minY, maxX, maxY] in fractions of the page
-// A plugin may add keys of its own, named with its plugin id as a prefix.
-export interface Selector {
-  readonly t?: readonly [number, number]
-  readonly page?: number
-  readonly cfi?: string
-  readonly boxes?: readonly (readonly [number, number, number, number])[]
-  readonly [key: string]: unknown
-}
+// core stores it as is and returns it with search hits; the plugin that made the text and the view
+// that opens the file agree on its keys.
+export type Selector = Readonly<Record<string, unknown>>
 
 // TextSegment is one segment of a version's text. `heading` is the heading the segment opens, and
 // absent for a segment inside one.

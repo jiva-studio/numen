@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"image"
 	"os"
@@ -139,7 +140,11 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 		t.Errorf("the text reads %q, want the pages in order with their blocks apart", text.Text)
 	}
 	offset := strings.LastIndex(text.Text, "page two")
-	selector, err := host.ParseSelector(text.GetSelector(offset))
+	var selector struct {
+		Page  int          `json:"page"`
+		Boxes [][4]float32 `json:"boxes"`
+	}
+	err = json.Unmarshal([]byte(text.GetSelector(offset)), &selector)
 	if err != nil || selector.Page != 2 || len(selector.Boxes) != 1 || selector.Boxes[0][1] != 0.5 || selector.Boxes[0][3] != 1 {
 		t.Errorf("selector of the last line: %+v (%v), want the bottom half of the second page", selector, err)
 	}

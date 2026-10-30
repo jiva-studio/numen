@@ -24,8 +24,6 @@ type TextSegment = notesdomain.TextSegment
 type Selector = notesdomain.Selector
 type VersionText = notesdomain.VersionText
 type ByteRange = notesdomain.ByteRange
-type Rect = notesdomain.Rect
-type HighlightBox = notesdomain.HighlightBox
 
 const (
 	KindFile      = notesdomain.KindFile

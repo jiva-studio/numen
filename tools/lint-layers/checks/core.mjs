@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   MODULES_DIR,
+  NOT_SHIPPED,
   REPO_ROOT,
   WINDOW_IDS,
   exec,
@@ -252,6 +253,59 @@ function findPluginProtoSymbols() {
 /** `numen.v1` holds the contracts of the core and its extension points, and nothing one plugin owns. */
 export function verifyProtocolHoldsNoPluginContract() {
   failOnFindings("numen.v1 holds what a plugin owns", findPluginProtoSymbols());
+}
+
+/** The shared contracts: what every plugin and the core are built against. */
+const CONTRACT_PATHS = [
+  "libs/protocol/proto",
+  "libs/protocol/capabilities.go",
+  "libs/protocol/capabilities.ts",
+  "libs/plugin-sdk-go",
+  "libs/plugin-sdk-ts/src",
+  "libs/plugin-host-ts/src",
+  "libs/notes",
+];
+
+/** The ids, products and formats of plugins, and the keys only one plugin writes. */
+const PLUGIN_TERMS = [
+  "md\\.numen\\.(?:views|readers|agents|engines|tools|notes)",
+  "flashcards?",
+  "epubs?",
+  "pdfs?",
+  "ocr",
+  "cfi",
+  "highlightbox",
+  "antigravity",
+  "codex",
+  "claude",
+  "gemini",
+  "sonnet",
+  "gpt-?[0-9][a-z0-9.-]*",
+  "proofread[a-z]*",
+  "transcri[a-z]+",
+  "recognition",
+].map((term) => new RegExp(`(?<![\\w-])(?:${term})(?![\\w-])`, "i"));
+
+/** Every line of a shared contract, comments and documents included, that names a plugin. */
+function findPluginNamesInContracts() {
+  const listed = spawnSync("git", ["ls-files", "--", ...CONTRACT_PATHS], { cwd: REPO_ROOT, encoding: "utf8" });
+  const found = [];
+  for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
+    if (NOT_SHIPPED.test(file) || /_pb\.ts$|(^|\/)go\.(mod|sum)$/.test(file)) continue;
+    if (!fs.existsSync(path.join(REPO_ROOT, file))) continue;
+    fs.readFileSync(path.join(REPO_ROOT, file), "utf8")
+      .split("\n")
+      .forEach((text, index) => {
+        const hit = PLUGIN_TERMS.map((term) => text.match(term)).find(Boolean);
+        if (hit) found.push({ file, line: index + 1, symbol: hit[0] });
+      });
+  }
+  return found;
+}
+
+/** The schema, the SDKs, the plugin host and the notes library name no plugin, and hold no model a plugin owns. Comments are read. */
+export function verifyContractsNameNoPlugin() {
+  failOnFindings("Shared contracts name a plugin or its model", findPluginNamesInContracts());
 }
 
 /** The code that knows no file format and no source kind. */
@@ -549,6 +603,13 @@ export const CORE_VERIFIERS = [
     module: "protocol",
     name: "numen.v1 Holds No Plugin Contract (transcript, article, book, document services, book and recording kinds, card fields)",
     run: verifyProtocolHoldsNoPluginContract,
+  },
+  {
+    id: "contracts-name-no-plugin",
+    scope: "libs",
+    module: "protocol",
+    name: "Shared Contracts Name No Plugin (schema, SDKs, plugin host, notes: comments and documents included)",
+    run: verifyContractsNameNoPlugin,
   },
   {
     id: "no-file-kind-outside-plugins",

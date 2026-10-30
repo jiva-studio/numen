@@ -124,11 +124,11 @@ type AskAgentRequest struct {
 	Conversation string `protobuf:"bytes,3,opt,name=conversation,proto3" json:"conversation,omitempty"`
 	// What the asking view shows, for the tools the agent calls: each one is given it as
 	// CallToolRequest.context. Each key starts with the id of the plugin that wrote it and a
-	// slash, as MCP `_meta` keys do: "md.numen.views.flashcards.studio/card".
+	// slash, as MCP `_meta` keys do: "org.example.plugin/key".
 	Context map[string]string `protobuf:"bytes,4,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
+	// Which agent answers (the id an agent plugin registers). Empty uses the installation default.
 	Agent string `protobuf:"bytes,6,opt,name=agent,proto3" json:"agent,omitempty"`
-	// Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
+	// Which model answers (a model id the chosen agent accepts). Empty uses default.
 	Model string `protobuf:"bytes,7,opt,name=model,proto3" json:"model,omitempty"`
 	// Instructions told about the task.
 	Instructions string `protobuf:"bytes,8,opt,name=instructions,proto3" json:"instructions,omitempty"`

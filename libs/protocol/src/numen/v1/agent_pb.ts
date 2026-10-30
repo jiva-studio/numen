@@ -86,21 +86,21 @@ export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
   /**
    * What the asking view shows, for the tools the agent calls: each one is given it as
    * CallToolRequest.context. Each key starts with the id of the plugin that wrote it and a
-   * slash, as MCP `_meta` keys do: "md.numen.views.flashcards.studio/card".
+   * slash, as MCP `_meta` keys do: "org.example.plugin/key".
    *
    * @generated from field: map<string, string> context = 4;
    */
   context: { [key: string]: string };
 
   /**
-   * Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
+   * Which agent answers (the id an agent plugin registers). Empty uses the installation default.
    *
    * @generated from field: string agent = 6;
    */
   agent: string;
 
   /**
-   * Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
+   * Which model answers (a model id the chosen agent accepts). Empty uses default.
    *
    * @generated from field: string model = 7;
    */

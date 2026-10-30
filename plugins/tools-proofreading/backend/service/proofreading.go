@@ -239,7 +239,7 @@ func readLines(parts []domain.TextSegment) []Line {
 func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	var out []Batch
 	for _, line := range lines {
-		selector, _ := host.ParseSelector(parts[line.Number-1].Selector)
+		selector, _ := readSegmentSelector(parts[line.Number-1].Selector)
 		page := selector.Page
 		if len(out) == 0 || out[len(out)-1].Number != page {
 			out = append(out, Batch{Number: page, Lines: nil, IsJoinable: false, Context: ""})
@@ -254,6 +254,6 @@ func isTimed(parts []domain.TextSegment) bool {
 	if len(parts) == 0 {
 		return false
 	}
-	selector, err := host.ParseSelector(parts[0].Selector)
+	selector, err := readSegmentSelector(parts[0].Selector)
 	return err == nil && len(selector.T) == 2
 }

@@ -301,7 +301,7 @@ type PluginCommand struct {
 	// What a person reads the command as.
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	// The content types of the files the command runs over, such as
-	// application/pdf or audio/*; */* is a file of any type. None is a command
+	// text/markdown or audio/*; */* is a file of any type. None is a command
 	// over no file.
 	ContentTypes []string `protobuf:"bytes,4,rep,name=content_types,json=contentTypes,proto3" json:"content_types,omitempty"`
 	// The extensions, lowercase and without the dot, that give a file one of

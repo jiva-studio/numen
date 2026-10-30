@@ -140,7 +140,7 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
 
   /**
    * The content types of the files the command runs over, such as
-   * application/pdf or audio/*; *\/* is a file of any type. None is a command
+   * text/markdown or audio/*; *\/* is a file of any type. None is a command
    * over no file.
    *
    * @generated from field: repeated string content_types = 4;

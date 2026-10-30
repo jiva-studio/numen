@@ -2,7 +2,6 @@ package host
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -22,7 +21,7 @@ var (
 // file into its folder first, with WriteText; File is that file's name. Source names the version the
 // text was made from, and is empty for the file itself. SourceHash is HashContent of the
 // file for the first, and the Hash of the source version for the second. Kind is what the text is,
-// as the plugin names it ("transcript", "recognition"). The host records the hash of the file.
+// as the plugin names it. The host records the hash of the file.
 type TextPut struct {
 	Path       string
 	Key        string
@@ -135,67 +134,4 @@ func ReadTextFile(ctx context.Context, store Store, name string) ([]TextSegment,
 		return nil, err
 	}
 	return textfile.Decode(raw)
-}
-
-// Selector is the keys of a segment's selector that the SDK documents. A selector is a JSON object
-// (W3C Web Annotation selector) that locates a segment in the file its text was made from. The
-// core stores it as is and returns it with search hits; the view that opens the file reads it.
-// Each key and its unit come from a standard:
-//
-//   - t: [start, end] in seconds from the start of a recording (W3C Media Fragments).
-//   - page: a page of a document, counted from 1 (RFC 8118).
-//   - cfi: an EPUB Canonical Fragment Identifier.
-//   - boxes: rectangles on the page, each [minX, minY, maxX, maxY] in fractions of the page.
-//
-// A plugin may add keys of its own, named with its plugin id as a prefix.
-type Selector struct {
-	T     []float64    `json:"t,omitempty"`
-	Page  int          `json:"page,omitempty"`
-	CFI   string       `json:"cfi,omitempty"`
-	Boxes [][4]float32 `json:"boxes,omitempty"`
-}
-
-// Encode is the selector as the JSON a segment carries.
-func (s Selector) Encode() RawSelector {
-	// A struct of numbers, strings and slices of them always marshals.
-	raw, _ := json.Marshal(s)
-	return RawSelector(raw)
-}
-
-// ParseSelector reads the documented keys of a segment's selector. An empty selector has none.
-func ParseSelector(selector RawSelector) (Selector, error) {
-	var out Selector
-	if selector == "" {
-		return out, nil
-	}
-	if err := json.Unmarshal([]byte(selector), &out); err != nil {
-		return Selector{}, fmt.Errorf("host: read selector: %w", err)
-	}
-	return out, nil
-}
-
-// GetBoxes returns the rectangles of the segments a run of a version's text overlaps, in the order
-// of the segments. Each box carries the page its selector names, counted from zero, and the run of
-// the segment it covers. A segment whose selector names no page has no boxes.
-func GetBoxes(text VersionText, run ByteRange) []HighlightBox {
-	if run.Empty() {
-		return nil
-	}
-	var boxes []HighlightBox
-	from := 0
-	for _, segment := range text.GetSegments() {
-		to := from + len(segment.Text)
-		if to > run.Start && from < run.End {
-			if selector, err := ParseSelector(segment.Selector); err == nil && selector.Page > 0 {
-				for _, box := range selector.Boxes {
-					boxes = append(boxes, HighlightBox{
-						Page: selector.Page - 1, ByteRange: ByteRange{Start: from, End: to},
-						Rect: Rect{MinX: box[0], MinY: box[1], MaxX: box[2], MaxY: box[3]},
-					})
-				}
-			}
-		}
-		from = to
-	}
-	return boxes
 }

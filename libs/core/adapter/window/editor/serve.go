@@ -61,8 +61,8 @@ type Installation struct {
 	out   io.Writer
 	// checkIdentity rejects a vault whose folder does not carry its identity.
 	checkIdentity vaults.CheckIdentity
-	// models is this machine's models and processor. Recognising a scan and
-	// listening to a recording each hold them, one run at a time.
+	// models is this machine's models and processor. Each task that
+	// needs them holds them, one run at a time.
 	models *run.Lock
 	// closing signals when the window root context ends.
 	closing <-chan struct{}
@@ -153,7 +153,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
-	// the player has no address and the transcript is still readable.
+	// the player has no address.
 	onStop := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
 	if playing, why := Listen(services.server, onStop); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)

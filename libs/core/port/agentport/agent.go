@@ -33,7 +33,7 @@ type Task struct {
 	// open conversations and is never reused during the lifetime of the process.
 	// Empty means no conversation: the question is answered on its own.
 	Conversation string
-	// Agent is which agent answers for this task (e.g. "antigravity", "codex", "claude").
+	// Agent is which agent answers for this task (the id an agent plugin registers).
 	// Empty falls back to the configured default agent.
 	Agent string
 	// Model is which model answers for this task. Empty uses default.

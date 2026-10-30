@@ -62,13 +62,13 @@ message AskAgentRequest {
   string conversation = 3;
   // What the asking view shows, for the tools the agent calls: each one is given it as
   // CallToolRequest.context. Each key starts with the id of the plugin that wrote it and a
-  // slash, as MCP `_meta` keys do: "md.numen.views.flashcards.studio/card".
+  // slash, as MCP `_meta` keys do: "org.example.plugin/key".
   map<string, string> context = 4;
   reserved 5;
 
-  // Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
+  // Which agent answers (the id an agent plugin registers). Empty uses the installation default.
   string agent = 6;
-  // Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
+  // Which model answers (a model id the chosen agent accepts). Empty uses default.
   string model = 7;
   // Instructions told about the task.
   string instructions = 8;

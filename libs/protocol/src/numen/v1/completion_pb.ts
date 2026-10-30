@@ -76,7 +76,7 @@ export type CompletionQuestion = Message<"numen.v1.CompletionQuestion"> & {
   messages: CompletionMessage[];
 
   /**
-   * What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+   * What the answer is for (e.g. "summary"). It routes nothing; a purpose
    * names neither a model, an agent nor a key.
    *
    * @generated from field: string purpose = 2;

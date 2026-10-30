@@ -33,7 +33,7 @@ message HostServiceCompleteResponse {
 message CompletionQuestion {
   // The conversation so far, oldest first.
   repeated CompletionMessage messages = 1;
-  // What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+  // What the answer is for (e.g. "summary"). It routes nothing; a purpose
   // names neither a model, an agent nor a key.
   string purpose = 2;
 

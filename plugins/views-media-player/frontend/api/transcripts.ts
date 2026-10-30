@@ -4,12 +4,13 @@
  */
 import type { LiveText, TextSegment, VaultTexts } from '@numen/plugin-sdk'
 import type { Cue } from '../lib/cues'
+import { getSelectorSpan } from '../lib/place'
 import type { Recordings, TextRange } from '../types'
 
 /** The cues of a live text: its segments that name a span of the recording. */
 export const getCues = (segments: readonly TextSegment[]): readonly Cue[] =>
   segments.flatMap((segment) => {
-    const t = segment.selector?.t
+    const t = getSelectorSpan(segment.selector)
     if (t === undefined) return []
     return [{ text: segment.text.replace(/\n+$/, ''), from: toMS(t[0]), to: toMS(t[1]) }]
   })
@@ -30,7 +31,7 @@ export const findSegmentTime = (
   for (const segment of segments) {
     const end = offset + segment.text.length
     if (span.start < end) {
-      const t = segment.selector?.t
+      const t = getSelectorSpan(segment.selector)
       return t === undefined ? null : toMS(t[0])
     }
     offset = end
@@ -42,7 +43,7 @@ const toMS = (seconds: number): number => Math.round(seconds * 1000)
 
 /** Whether a live text is a transcript: every segment with text has a time span. */
 const isTimed = (live: LiveText): boolean =>
-  live.segments.some((segment) => segment.selector?.t !== undefined)
+  live.segments.some((segment) => getSelectorSpan(segment.selector) !== undefined)
 
 /** The transcript calls of a recording tab, over the texts the plugin's context gives. */
 export const createTranscripts = (

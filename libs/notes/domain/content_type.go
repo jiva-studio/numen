@@ -12,7 +12,7 @@ import (
 // ErrInvalidContentType is text that is no MIME type and no mask of one.
 var ErrInvalidContentType = errors.New("invalid content type")
 
-// ContentType is a MIME type, such as `application/pdf`, or a mask of them: `audio/*` is every
+// ContentType is a MIME type, such as `text/markdown`, or a mask of them: `audio/*` is every
 // audio type and `*/*` every type. It is held in lowercase, as MIME types compare without regard
 // to case.
 type ContentType string
