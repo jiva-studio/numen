@@ -36,13 +36,13 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
       TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
     focus: 'left',
     minimum: 220,
-    choose: () => {},
-    close: () => {},
-    lift: () => {},
-    menu: () => {},
+    choose: vi.fn(),
+    close: vi.fn(),
+    lift: vi.fn(),
+    menu: vi.fn(),
     claim,
     resize,
-    show: () => {},
+    show: vi.fn(),
   }
 
   const wrapper = mount(WorkspaceBranch, {
@@ -69,8 +69,8 @@ const stubResizeObserver = (): ((length: number) => void) => {
       constructor(tell: ResizeObserverCallback) {
         callbacks.push(tell)
       }
-      observe(): void {}
-      disconnect(): void {}
+      observe = vi.fn()
+      disconnect = vi.fn()
     },
   )
 

@@ -5,7 +5,7 @@
  * provide that themselves and keep the shares a handle settles on.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, fn, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
@@ -88,13 +88,13 @@ const meta: Meta<Knobs> = {
             TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
           focus: 'left',
           minimum: args.minimum,
-          choose: () => {},
-          close: () => {},
-          lift: () => {},
-          menu: () => {},
-          claim: () => {},
+          choose: fn(),
+          close: fn(),
+          lift: fn(),
+          menu: fn(),
+          claim: fn(),
           resize,
-          show: () => {},
+          show: fn(),
         })),
       )
 

@@ -36,8 +36,11 @@ export { clock } from './shared/lib/time/duration'
 /** A stream taken up again for as long as a window is open. */
 export { createFollower } from './shared/lib/async/stream'
 
-/** A promise nobody awaits, with the receiver of its failure named. */
+/** Starts a promise without awaiting it and passes a rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
+
+/** Rethrows a rejection of a background task as an uncaught error. */
+export { reportFailure } from './shared/lib/async/report'
 
 export { Spinner } from './shared/ui/spinner'
 export { LoadingIndicator } from './shared/ui/loading-indicator'

@@ -520,7 +520,7 @@ export const Writing: Story = {
     // Writing means somewhere to type: the note in the pane is text a person may
     // put a caret in.
     const note = await waitFor(() => within(canvasElement).getByRole('textbox', { name: 'Note' }))
-    expect(note).not.toHaveAttribute('readonly')
+    await expect(note).not.toHaveAttribute('readonly')
   },
 }
 
@@ -542,10 +542,10 @@ export const Searching: Story = {
   play: async () => {
     // Searching means something to search with: the field carries what was
     // typed, and what it found is on offer under it.
-    await waitFor(() => {
+    await waitFor(async () => {
       const field = document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
-      expect(field?.value).toBe('entrop')
-      expect(
+      await expect(field?.value).toBe('entrop')
+      await expect(
         document.body.querySelectorAll('[data-palette="list"] [role="option"]').length,
       ).toBeGreaterThan(0)
     })
@@ -570,9 +570,13 @@ export const Commanding: Story = {
   play: async () => {
     // Commanding means the commands are there to be run, in the three groups
     // the window sorts them into.
-    await waitFor(() => {
+    await waitFor(async () => {
       const groups = [...document.body.querySelectorAll('[data-palette="title"]')]
-      expect(groups.map((group) => group.textContent?.trim())).toEqual(['Note', 'General', 'Vault'])
+      await expect(groups.map((group) => group.textContent?.trim())).toEqual([
+        'Note',
+        'General',
+        'Vault',
+      ])
     })
   },
 }
@@ -597,8 +601,8 @@ export const Asking: Story = {
     const aside = getPane(canvasElement, 'aside')
 
     // The three stand in the order they were divided in, the agent last.
-    expect(isPast(note, source)).toBe(true)
-    expect(isPast(aside, note)).toBe(true)
+    await expect(isPast(note, source)).toBe(true)
+    await expect(isPast(aside, note)).toBe(true)
 
     // The aside holds the agent's pane, which the views-agent-chat plugin draws.
     within(aside).getByRole('region', { name: 'Agent' })
@@ -627,10 +631,16 @@ export const Recognising: Story = {
   play: async () => {
     // The file in front is a scan, so the commands open on what can be made of
     // it, before the window's own and the vault's.
-    await waitFor(() => {
+    await waitFor(async () => {
       const groups = [...document.body.querySelectorAll('[data-palette="title"]')]
-      expect(groups.map((group) => group.textContent?.trim())).toEqual(['File', 'General', 'Vault'])
-      expect(within(document.body).getByText('Recognise the text with Document OCR')).toBeVisible()
+      await expect(groups.map((group) => group.textContent?.trim())).toEqual([
+        'File',
+        'General',
+        'Vault',
+      ])
+      await expect(
+        within(document.body).getByText('Recognise the text with Document OCR'),
+      ).toBeVisible()
     })
   },
 }
@@ -668,14 +678,14 @@ export const Filing: Story = {
 
     // The selection relies on two rows, and they are held in different
     // folders, which is the case a single run of rows would not cover.
-    expect(selected.map((row) => row.textContent?.trim())).toEqual([
+    await expect(selected.map((row) => row.textContent?.trim())).toEqual([
       'Entropy.md',
       "Landauer's principle.md",
     ])
     const folders = rows.filter((row) => within(row).queryByText(/^(Physics|Computation)$/))
-    expect(folders).toHaveLength(2)
+    await expect(folders).toHaveLength(2)
     for (const [at, folder] of folders.entries()) {
-      expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(selected[at]!))
+      await expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(selected[at]!))
     }
   },
 }

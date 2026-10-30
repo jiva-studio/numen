@@ -55,12 +55,14 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     if (regular.length) polite.value = regular.map(getWords).join('. ')
   }
 
-  watch(getNotices, (all) => void readOut(all))
+  watch(getNotices, async (all) => {
+    await readOut(all)
+  })
 
   onMounted(async () => {
     await nextTick()
     isListening = true
-    void readOut(getNotices())
+    await readOut(getNotices())
   })
 
   return { polite, assertive }

@@ -43,7 +43,10 @@ export function useActionPanel(options: ActionPanelOptions): ActionPanelState {
   }
 
   const onGround = (): void => {
-    if (open.value) return void (open.value = false)
+    if (open.value) {
+      open.value = false
+      return
+    }
     options.dismiss()
   }
 

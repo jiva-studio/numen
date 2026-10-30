@@ -52,7 +52,7 @@ export interface TreeGesturesState {
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
-/** Moves the keyboard to a row; a failure is reported as an uncaught error. */
+/** Moves the keyboard to a row; a rejection is rethrown as an uncaught error. */
 function focusInBackground(rows: DrawnRowsState, row: RowId | null): void {
   runInBackground(rows.focusRow(row), reportFailure)
 }

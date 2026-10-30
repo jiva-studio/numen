@@ -25,7 +25,7 @@ export interface Viewport {
   readonly watchWhole: (of: HTMLElement, took: (size: Size) => void) => () => void
 }
 
-/** The stop function of a watch that has nothing to observe. */
+/** Stop function returned when there is nothing to observe. */
 const stopNothing = (): void => undefined
 
 export const browserViewport: Viewport = {

@@ -12,6 +12,7 @@
  * its own.
  */
 import { computed, useId, useTemplateRef } from 'vue'
+import { reportFailure, runInBackground } from '@numen/ui'
 import { getUserAgent } from '@/shared/lib/dom'
 import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
@@ -131,7 +132,8 @@ const onOver = (pos: number, event: PointerEvent) => {
 /* --------------------------------- Helpers -------------------------------- */
 /** What is lit is brought into sight. */
 function reveal(): void {
-  void results.value?.reveal(selectedId.value)
+  const pending = results.value?.reveal(selectedId.value)
+  if (pending) runInBackground(pending, reportFailure)
 }
 </script>
 
