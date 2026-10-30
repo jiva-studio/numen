@@ -318,9 +318,10 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 // embed creates the vectors for the chunks of the vault that lack one, and
 // reads no file the index does not already hold a chunk of.
 //
-// A recognition batch of pages stops the pass at its current position. The
+// A recognition batch of pages, and a change of the sources (a book added, or
+// the embedding model changed), stop the pass at its current position. The
 // vectors already created are kept, and the resumed pass queries the index for
-// the chunks that still lack a vector.
+// the chunks that still lack a vector, under the recipe in force by then.
 func (p *pass) embed(ctx context.Context) {
 	w := p.worker
 	if w.embedder == nil {
@@ -333,7 +334,7 @@ func (p *pass) embed(ctx context.Context) {
 		return
 	}
 
-	limit, stop := stopOnWake(ctx, w.read)
+	limit, stop := stopOnWake(ctx, w.read, w.sources)
 	defer stop()
 
 	if p.makeVectors(ctx, limit, owing) {
@@ -373,26 +374,29 @@ func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int6
 }
 
 // stopOnWake returns the context a pass runs under, which is cancelled when a
-// wake signal is pending for the calling loop, and the function that ends the
-// pass.
+// wake signal is pending on any of the channels given, and the function that
+// ends the pass.
 //
-// The wake signal is restored after it is consumed, so the calling loop still
+// A wake signal is restored after it is consumed, so the calling loop still
 // receives it.
-func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func()) {
+func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, func()) {
 	underCtx, end := context.WithCancel(ctx)
-	awakened := make(chan struct{})
-	go func() {
-		defer close(awakened)
-		select {
-		case <-underCtx.Done():
-		case <-wake:
-			signal(wake)
-			end()
-		}
-	}()
+	var watchers sync.WaitGroup
+	for _, wake := range wakes {
+		watchers.Add(1)
+		go func() {
+			defer watchers.Done()
+			select {
+			case <-underCtx.Done():
+			case <-wake:
+				signal(wake)
+				end()
+			}
+		}()
+	}
 	return underCtx, func() {
 		end()
-		<-awakened
+		watchers.Wait()
 	}
 }
 
