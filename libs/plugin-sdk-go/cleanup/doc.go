@@ -1,3 +1,3 @@
-// Package cleanup closes, kills and waits for what a plugin test started, and fails the test when the
-// operation fails.
+// Package cleanup provides test helpers that close resources, kill processes and wait for them,
+// and report a failed operation through the test.
 package cleanup

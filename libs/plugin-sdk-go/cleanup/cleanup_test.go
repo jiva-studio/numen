@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// recorder is a test whose failures are counted and do not fail the test that holds it.
+// recorder counts calls to Errorf.
 type recorder struct {
 	testing.TB
 	failures int

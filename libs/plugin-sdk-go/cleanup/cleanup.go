@@ -23,7 +23,7 @@ func CloseAfter(tb testing.TB, c io.Closer) {
 }
 
 // Kill kills the process of cmd and fails the test when the kill fails.
-// A process that has already exited is not a failure.
+// A process that has already exited is ignored.
 func Kill(tb testing.TB, cmd *exec.Cmd) {
 	tb.Helper()
 	if cmd.Process == nil {
@@ -35,7 +35,7 @@ func Kill(tb testing.TB, cmd *exec.Cmd) {
 }
 
 // Wait waits for cmd to exit and fails the test when waiting itself fails.
-// A non-zero exit status is not a failure: it is what a killed process reports.
+// A non-zero exit status is ignored.
 func Wait(tb testing.TB, cmd *exec.Cmd) {
 	tb.Helper()
 	var exit *exec.ExitError
