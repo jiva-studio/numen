@@ -3,7 +3,7 @@
  * prompt, going back removes the last one, and what is chosen on a step is
  * carried out only for that step.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
 import { EXACT, YES, type PendingStep } from '../../lib/step/step'
@@ -42,13 +42,21 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
   const invoked: [string, CommandTarget, string | undefined][] = []
   const steps = createPaletteSteps({
     words,
-    lists: { getStepGroups: () => groups, previewItem: () => {} },
+    lists: { getStepGroups: () => groups, previewItem: vi.fn() },
     knows: { getTitle: () => '', getTabAt: () => null },
     text,
-    onDrop: () => void happened.push('drop'),
-    onLights: (item) => void happened.push(`lights ${item}`),
-    onLists: () => void happened.push('lists'),
-    onClose: () => void happened.push('close'),
+    onDrop: () => {
+      happened.push('drop')
+    },
+    onLights: (item) => {
+      happened.push(`lights ${item}`)
+    },
+    onLists: () => {
+      happened.push('lists')
+    },
+    onClose: () => {
+      happened.push('close')
+    },
     invocation: (id, target, name) => {
       invoked.push([id, target, name])
       return { id } as never

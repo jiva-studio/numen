@@ -1,5 +1,5 @@
 /** Command execution against a window double. */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
 import { createInvocation } from '../../lib/offers/invocation'
@@ -111,9 +111,15 @@ const window = (
       getTabAt: (path) => (path === targetPath ? 'active' : null),
       getPath: (id) => (id === 'active' || id === 'member' ? targetPath : id),
       asking: () => answers.isAsking === true,
-      flushPending: async (id) => void isDone.push(`flushPending ${id}`),
-      close: (id) => void isDone.push(`close ${id}`),
-      openFile: (path, title, showing) => void isDone.push(`openFile ${path} ${title} ${showing}`),
+      flushPending: async (id) => {
+        isDone.push(`flushPending ${id}`)
+      },
+      close: (id) => {
+        isDone.push(`close ${id}`)
+      },
+      openFile: (path, title, showing) => {
+        isDone.push(`openFile ${path} ${title} ${showing}`)
+      },
       openNewFile: (path, title, options) => {
         const type = typeof options === 'string' ? options : options.type
         const showing = typeof options === 'object' ? options.where : undefined
@@ -142,26 +148,49 @@ const window = (
         isDone.push(`opens vault ${id}`)
         return turnedDown
       },
-      setVaultName: (vault: VaultRef) => void isDone.push(`calls ${vault.id} ${vault.name}`),
-      reload: () => void isDone.push('reloads'),
+      setVaultName: (vault: VaultRef) => {
+        isDone.push(`calls ${vault.id} ${vault.name}`)
+      },
+      reload: () => {
+        isDone.push('reloads')
+      },
     },
     navigator: {
-      travel: async (path) => void isDone.push(`travel ${path}`),
-      leave: async (from, to) => void isDone.push(`leave ${from} ${to}`),
+      travel: async (path) => {
+        isDone.push(`travel ${path}`)
+      },
+      leave: async (from, to) => {
+        isDone.push(`leave ${from} ${to}`)
+      },
       getOpeningNote: () => 'Root.md',
-      openTab: (kind) => void isDone.push(`openTab ${kind}`),
-      closeTab: (tab) => void isDone.push(`closeTab ${tab}`),
-      search: () => void isDone.push('search'),
+      openTab: (kind) => {
+        isDone.push(`openTab ${kind}`)
+      },
+      closeTab: (tab) => {
+        isDone.push(`closeTab ${tab}`)
+      },
+      search: () => {
+        isDone.push('search')
+      },
     },
     settings: {
-      chooseAppearance: async (selected) => void isDone.push(`appearance ${selected}`),
-      chooseSync: async (selected) => void isDone.push(`syncing ${selected}`),
-      choosePerformance: async (selected) => void isDone.push(`performance ${selected}`),
-      choosePluginSetting: async (pluginId, key, selected) =>
-        void isDone.push(`plugin ${pluginId} ${key} ${selected}`),
+      chooseAppearance: async (selected) => {
+        isDone.push(`appearance ${selected}`)
+      },
+      chooseSync: async (selected) => {
+        isDone.push(`syncing ${selected}`)
+      },
+      choosePerformance: async (selected) => {
+        isDone.push(`performance ${selected}`)
+      },
+      choosePluginSetting: async (pluginId, key, selected) => {
+        isDone.push(`plugin ${pluginId} ${key} ${selected}`)
+      },
     },
     runSupport: runs,
-    copyPath: (path) => void isDone.push(`copies ${path}`),
+    copyPath: (path) => {
+      isDone.push(`copies ${path}`)
+    },
     writeMessage: (text, kind) => {
       calls.push([text, kind])
       if (!text) return
@@ -884,8 +913,12 @@ describe('the open files a command reaches', () => {
     getPath: (one) => (one === id ? path : one),
     getTitle: (one) => (one === id ? `${id} called` : ''),
     asking: () => false,
-    flushPending: async (one) => void steps.push(`flushPending ${one}`),
-    close: (one) => void steps.push(`close ${one}`),
+    flushPending: async (one) => {
+      steps.push(`flushPending ${one}`)
+    },
+    close: (one) => {
+      steps.push(`close ${one}`)
+    },
     getTabAt: (one) => (one === path ? id : null),
   })
 
@@ -895,7 +928,7 @@ describe('the open files a command reaches', () => {
     return {
       actions: isDone,
       done: isDone,
-      notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }),
+      notes: createNotes(stores, { openFile: vi.fn(), openNewFile: vi.fn() }),
     }
   }
 

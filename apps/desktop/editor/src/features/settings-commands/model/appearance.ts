@@ -6,6 +6,7 @@
  * is applied after the keyboard has rested on the row for HELD, and the
  * settings values are restored as soon as the keyboard leaves the list.
  */
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
 import { createRequestGuard } from '@/shared/requestGuard'
@@ -236,7 +237,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     chooseItem: choice.chooseItem,
     start: async () => {
       await loadAppearance()
-      void watcher.follow()
+      watcher.follow().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
     },
     close: () => {
       watcher.stop()

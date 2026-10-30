@@ -35,7 +35,7 @@ describe('createPluginHost', () => {
       ),
       openTab: vi.fn(async () => 'tab-1'),
       getSetting: vi.fn((_pluginId, key) => (key === 'fontSize' ? 14 : undefined)),
-      onSettingChange: vi.fn(() => () => {}),
+      onSettingChange: vi.fn(() => vi.fn()),
     }
 
     return { deps, registeredKinds, extensionReaders }
@@ -125,7 +125,7 @@ describe('createPluginHost', () => {
     ctx.registerCommand({
       id: 'cmd1',
       title: 'Cmd 1',
-      handler: async () => {},
+      handler: vi.fn(() => Promise.resolve()),
     })
 
     expect(extensionReaders.has('ext1')).toBe(true)
@@ -195,7 +195,7 @@ describe('createPluginHost', () => {
       id: 'menu-1',
       text: 'Action 1',
       target: 'note',
-      handler: async () => {},
+      handler: vi.fn(() => Promise.resolve()),
     })
 
     expect(
@@ -214,7 +214,7 @@ describe('createPluginHost', () => {
       id: 'menu-1',
       text: 'Action 1',
       target: 'note',
-      handler: async () => {},
+      handler: vi.fn(() => Promise.resolve()),
     })
     expect(
       host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),

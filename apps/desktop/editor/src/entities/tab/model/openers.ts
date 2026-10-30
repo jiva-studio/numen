@@ -139,7 +139,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
     const kind = await fetchFileKind(vault, path)
     if (kind?.isNote) {
       const { selector: _selector, ...rest } = placement ?? {}
-      return void openNewFile(path, title, { type: kind.type, ...rest })
+      openNewFile(path, title, { type: kind.type, ...rest })
+      return
     }
     readFile(path, placement?.selector ?? null)
   }
@@ -147,7 +148,10 @@ export function fileOpeners(vault: FileOpenerDeps) {
   /** Opens a file with ranges of a note's text marked. */
   const openFileAt = async (path: string, _spans: readonly TextRange[]): Promise<void> => {
     const kind = await fetchFileKind(vault, path)
-    if (kind?.isNote) return void openNewFile(path, '', kind.type)
+    if (kind?.isNote) {
+      openNewFile(path, '', kind.type)
+      return
+    }
     readFile(path, null)
   }
 

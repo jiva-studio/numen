@@ -95,7 +95,7 @@ describe('PluginContext', () => {
     const sub2 = ctx.registerCommand({
       id: 'cmd1',
       title: 'Command 1',
-      handler: async () => {},
+      handler: vi.fn(() => Promise.resolve()),
     })
     expect(ctx.subscriptions).toHaveLength(2)
     expect(host.registerCommand).toHaveBeenCalledWith(
@@ -127,7 +127,7 @@ describe('PluginContext', () => {
     expect(ctx.getSetting('enabled')).toBe(true)
     expect(host.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
 
-    const sub5 = ctx.onSettingChange('enabled', () => {})
+    const sub5 = ctx.onSettingChange('enabled', vi.fn())
     expect(ctx.subscriptions).toHaveLength(5)
     expect(host.onSettingChange).toHaveBeenCalledWith(
       'test.plugin',
@@ -135,10 +135,10 @@ describe('PluginContext', () => {
       expect.any(Function),
     )
 
-    const sub6 = ctx.onVaultChange(() => {})
+    const sub6 = ctx.onVaultChange(vi.fn())
     expect(ctx.subscriptions).toHaveLength(6)
 
-    const sub7 = ctx.onFileSelect(() => {})
+    const sub7 = ctx.onFileSelect(vi.fn())
     expect(ctx.subscriptions).toHaveLength(7)
 
     ctx.emitVaultChange({ vaultPath: '/path' })
@@ -169,8 +169,8 @@ describe('PluginContext', () => {
       permissions: [],
     })
 
-    expect(() => ctxNoPerms.onVaultChange(() => {})).toThrowError(/vault:read/)
-    expect(() => ctxNoPerms.onFileSelect(() => {})).toThrowError(/vault:read/)
+    expect(() => ctxNoPerms.onVaultChange(vi.fn())).toThrowError(/vault:read/)
+    expect(() => ctxNoPerms.onFileSelect(vi.fn())).toThrowError(/vault:read/)
     expect(() => ctxNoPerms.emitFileSelect({ path: '/test.md' })).toThrowError(/vault:read/)
 
     const ctxWithRead = createPluginContext('reader.plugin', host, {
@@ -180,8 +180,8 @@ describe('PluginContext', () => {
       permissions: ['vault:read'],
     })
 
-    expect(() => ctxWithRead.onVaultChange(() => {})).not.toThrow()
-    expect(() => ctxWithRead.onFileSelect(() => {})).not.toThrow()
+    expect(() => ctxWithRead.onVaultChange(vi.fn())).not.toThrow()
+    expect(() => ctxWithRead.onFileSelect(vi.fn())).not.toThrow()
     expect(() => ctxWithRead.emitFileSelect({ path: '/test.md' })).not.toThrow()
   })
 

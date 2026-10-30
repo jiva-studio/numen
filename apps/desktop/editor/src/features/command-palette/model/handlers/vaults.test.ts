@@ -63,7 +63,9 @@ const createWindow = (
       reload: calls.reload,
       setVaultName: calls.setVaultName,
     },
-    writeMessage: (text, kind) => void messages.push({ text, kind }),
+    writeMessage: (text, kind) => {
+      messages.push({ text, kind })
+    },
   }
   return { on, calls, messages }
 }

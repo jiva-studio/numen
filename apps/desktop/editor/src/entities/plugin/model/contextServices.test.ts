@@ -114,7 +114,7 @@ describe('a note a plugin writes', () => {
 
 const BUFFER_WRITES: Record<string, Call> = {
   track: (c) => c.buffers!.track({} as never),
-  addFlushHandler: (c) => c.buffers!.addFlushHandler(async () => {}),
+  addFlushHandler: (c) => c.buffers!.addFlushHandler(vi.fn(() => Promise.resolve())),
 }
 
 describe('the open files a plugin passes the window', () => {
@@ -154,7 +154,7 @@ describe('the registrations of a plugin in the open files', () => {
     vi.mocked(buffers.addFlushHandler).mockReturnValue({ dispose: released })
 
     context.buffers!.track({} as never)
-    context.buffers!.addFlushHandler(async () => {})
+    context.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
     expect(context.subscriptions).toHaveLength(2)
     for (const one of [...context.subscriptions]) one.dispose()
 

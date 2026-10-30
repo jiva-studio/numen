@@ -4,11 +4,7 @@
  */
 import { computed } from 'vue'
 import type { UpdateInfo } from '../model/types'
-import {
-  formatReleaseDate,
-  getPlatformUpdateMessage,
-  type ClientPlatform,
-} from '../lib/release'
+import { formatReleaseDate, getPlatformUpdateMessage, type ClientPlatform } from '../lib/release'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

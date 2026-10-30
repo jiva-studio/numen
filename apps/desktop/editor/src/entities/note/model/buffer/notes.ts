@@ -27,6 +27,7 @@ interface NoteStoreContext {
   closeCallbacks: Map<string, (removed: boolean) => void>
   queue: ReturnType<typeof createNoteQueue>
   onReplaced: (path: string) => void
+  dispatch: (id: string, event: Event) => void
 }
 
 function discardTab(context: NoteStoreContext, id: string): void {
@@ -39,13 +40,24 @@ function discardTab(context: NoteStoreContext, id: string): void {
 }
 
 // Stryker disable next-line all: effects handled by queue do not overlap with outer effect switch.
-function executeQueueEffect(queue: NoteStoreContext['queue'], id: string, effect: Effect): boolean {
+function executeQueueEffect(context: NoteStoreContext, id: string, effect: Effect): boolean {
+  const { queue, dispatch } = context
   switch (effect.kind) {
     case 'read':
-      void queue.read(id, effect.path, effect.generation)
+      queue.read(id, effect.path, effect.generation).catch(() =>
+        dispatch(id, {
+          kind: 'read',
+          generation: effect.generation,
+          answer: { kind: 'error', error: 'unreachable' },
+        }),
+      )
       return true
     case 'write':
-      void queue.write(id, { path: effect.path, body: effect.body, baseline: effect.baseline })
+      queue
+        .write(id, { path: effect.path, body: effect.body, baseline: effect.baseline })
+        .catch(() =>
+          dispatch(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } }),
+        )
       return true
     case 'startTimer':
       queue.startTimer(id, effect.after)
@@ -59,7 +71,7 @@ function executeQueueEffect(queue: NoteStoreContext['queue'], id: string, effect
 }
 
 function executeEffect(context: NoteStoreContext, id: string, effect: Effect): void {
-  if (executeQueueEffect(context.queue, id, effect)) return
+  if (executeQueueEffect(context, id, effect)) return
   switch (effect.kind) {
     case 'replace':
       context.bodies.set(id, effect.body)
@@ -116,6 +128,7 @@ function createNoteStoreContext(
       },
     }),
     onReplaced,
+    dispatch: (id, event) => dispatch(id, event),
   }
 
   function dispatch(id: string, event: Event): void {
@@ -129,7 +142,8 @@ function createNoteStoreContext(
 
 export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const limits = how.limits ?? DEFAULT_WRITE_LIMITS
-  const onReplaced = how.onReplaced ?? (() => {})
+  // Without a listener, a replaced body needs no notification.
+  const onReplaced = how.onReplaced ?? (() => undefined)
   const now = how.now ?? (() => performance.now())
 
   const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)

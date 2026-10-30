@@ -26,12 +26,12 @@ const props = defineProps<{
 // --- State ---
 
 // --- Handlers ---
-function onKeep(conflict: ConflictPrompt) {
-  void conflict.keep()
+async function onKeep(conflict: ConflictPrompt) {
+  await conflict.keep()
 }
 
-function onTake(conflict: ConflictPrompt) {
-  void conflict.take()
+async function onTake(conflict: ConflictPrompt) {
+  await conflict.take()
 }
 
 function onLater(conflict: ConflictPrompt) {

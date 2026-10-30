@@ -149,10 +149,13 @@ describe('the rest of what is requested', () => {
   })
 
   it('is requested for under the signal it was given', async () => {
-    request.watchThemes.mockImplementation(async function* () {})
+    request.watchThemes.mockImplementation(async function* () {
+      yield* [] as string[][]
+    })
     const controller = new AbortController()
 
-    for await (const names of themes.watchThemes(controller.signal)) void names
+    const receivedThemes: (readonly string[])[] = []
+    for await (const names of themes.watchThemes(controller.signal)) receivedThemes.push(names)
 
     expect(request.watchThemes).toHaveBeenLastCalledWith({}, { signal: controller.signal })
   })

@@ -4,7 +4,7 @@
  * A note opens in the editor of its type; any other file in the reader
  * registered for its extension, at the selector given.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
@@ -220,7 +220,7 @@ describe('the icon of a file', () => {
   it('is the icon of the reader of its extension, and nothing where none reads it', () => {
     const tabOpeners = fileOpeners(vault().core)
     const icon = { name: 'Icon' }
-    tabOpeners.registerExtensionReader('.bin', () => {}, icon)
+    tabOpeners.registerExtensionReader('.bin', vi.fn(), icon)
 
     expect(tabOpeners.findFileIcon('a/b.BIN')).toBe(icon)
     expect(tabOpeners.findFileIcon('a/b.png')).toBeUndefined()

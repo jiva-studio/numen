@@ -33,13 +33,17 @@ const wails =
     : Promise.resolve(undefined)
 
 function openExternalUrl(url: string): void {
-  void wails.then((it) => {
-    if (it?.Browser?.OpenURL) {
-      it.Browser.OpenURL(url)
-    } else if (typeof window !== 'undefined') {
-      window.open(url, '_blank')
-    }
-  })
+  wails
+    .then((it) => {
+      if (it?.Browser?.OpenURL) {
+        it.Browser.OpenURL(url)
+      } else if (typeof window !== 'undefined') {
+        window.open(url, '_blank')
+      }
+    })
+    .catch(() => {
+      if (typeof window !== 'undefined') window.open(url, '_blank')
+    })
 }
 
 export function useAppUpdate(options: UpdateOptions = {}) {
@@ -82,12 +86,18 @@ export function useAppUpdate(options: UpdateOptions = {}) {
     openExternal(updateInfo.value?.notesUrl ?? DEFAULT_DOWNLOAD_URL)
   }
 
+  function startCheck() {
+    checkUpdate().catch(() => {
+      updateInfo.value = null
+      hasUpdate.value = false
+      isChecking.value = false
+    })
+  }
+
   onMounted(() => {
-    void checkUpdate()
+    startCheck()
     if (checkIntervalMs > 0) {
-      timerId = setInterval(() => {
-        void checkUpdate()
-      }, checkIntervalMs)
+      timerId = setInterval(startCheck, checkIntervalMs)
     }
   })
 

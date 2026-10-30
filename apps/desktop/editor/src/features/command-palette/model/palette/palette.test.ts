@@ -14,6 +14,11 @@ import type { NameMatch } from '../search/search'
 import { WORDS as words } from '@/shared/words'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
+
 /** What is in front, which a test moves under the commands. */
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
@@ -88,7 +93,9 @@ const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const displayedItems: string[] = []
   const paletteLists: PaletteLists = {
     getStepGroups: (command) => lists.value[command] ?? [],
-    previewItem: (command, item) => void displayedItems.push(`${command} ${item}`),
+    previewItem: (command, item) => {
+      displayedItems.push(`${command} ${item}`)
+    },
   }
   return { paletteLists, lists, displayedLists: displayedItems }
 }
@@ -119,7 +126,7 @@ const createPalette = (
     window.knows,
     retainedItem.paletteLists,
     runs,
-    async () => {},
+    vi.fn(() => Promise.resolve()),
   )
   commands.setOpen(true)
   return {
@@ -193,7 +200,7 @@ describe('the commands as they open', () => {
   it('keeps the commands the words typed leave, and lights where they stand', () => {
     const { commands } = createPalette()
 
-    void commands.setTyped('child')
+    commands.setTyped('child').catch(rethrow)
 
     expect(getItemIds(commands.groups)).toStrictEqual({ note: ['child'] })
     expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 4, end: 9 }])
@@ -307,7 +314,7 @@ describe('a command that asks for a name', () => {
 
     expect(commands.groups.value[0]?.items).toStrictEqual([])
 
-    void commands.setTyped('  Entropy  ')
+    commands.setTyped('  Entropy  ').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Name it “Entropy”')
   })
@@ -315,7 +322,7 @@ describe('a command that asks for a name', () => {
   it('carries the name to the note it was requested over', () => {
     const { commands } = createPalette()
     commands.startCommand('child', front())
-    void commands.setTyped('Entropy')
+    commands.setTyped('Entropy').catch(rethrow)
 
     expect(commands.chooseItem('name', 'name')).toStrictEqual({
       id: 'child',
@@ -394,7 +401,7 @@ describe('destroying a note', () => {
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
 
-    void commands.setTyped('Ontolog')
+    commands.setTyped('Ontolog').catch(rethrow)
 
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
   })
@@ -402,7 +409,7 @@ describe('destroying a note', () => {
   it('submits once the name of the note is what was typed', () => {
     const { commands } = createPalette()
     commands.startCommand('destroy', front())
-    void commands.setTyped('Ontology')
+    commands.setTyped('Ontology').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(commands.chooseItem('exactly', 'exactly')?.id).toBe('destroy')
@@ -420,7 +427,7 @@ describe('a note that moves under an open step', () => {
     moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
     commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
 
-    void commands.setTyped('Substance')
+    commands.setTyped('Substance').catch(rethrow)
 
     expect(commands.chooseItem('name', 'name')?.path).toBe('physics/Being.md')
   })
@@ -431,12 +438,12 @@ describe('a note that moves under an open step', () => {
     moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
     commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
 
-    void commands.setTyped('Ontology')
+    commands.setTyped('Ontology').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
 
-    void commands.setTyped('Being')
+    commands.setTyped('Being').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Destroy “Being”')
     expect(commands.chooseItem('exactly', 'exactly')?.path).toBe('physics/Being.md')
@@ -447,7 +454,7 @@ describe('a note that moves under an open step', () => {
     openNote('physics/Ontology.md', 'active')
     commands.startCommand('title', front())
 
-    void commands.setTyped('Substance')
+    commands.setTyped('Substance').catch(rethrow)
 
     expect(commands.chooseItem('name', 'name')?.note).toBe('active')
   })
@@ -458,7 +465,7 @@ describe('a note that moves under an open step', () => {
 
     commands.applyRenames([{ from: 'Elsewhere.md', to: 'Moved.md' }])
 
-    void commands.setTyped('Substance')
+    commands.setTyped('Substance').catch(rethrow)
 
     expect(commands.chooseItem('name', 'name')?.path).toBe('physics/Ontology.md')
   })
@@ -525,7 +532,7 @@ describe('a command that asks for a note', () => {
   })
 
   it('says the vault could not answer, in the window’s own words', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const activeTarget = ref(front())
     const commands = useCommandPalette(
       {
@@ -535,9 +542,9 @@ describe('a command that asks for a note', () => {
       words,
       () => activeTarget.value,
       { getTitle: () => '', getTabAt: () => null },
-      { getStepGroups: () => [], previewItem: () => {} },
+      { getStepGroups: () => [], previewItem: vi.fn() },
       runSupport(),
-      async () => {},
+      vi.fn(() => Promise.resolve()),
     )
     commands.setOpen(true)
     commands.startCommand('goto', front())
@@ -847,7 +854,7 @@ describe('a command that asks for a vault', () => {
   })
 
   it('says the list could not be requested, in the window’s own words', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const activeTarget = ref(front())
     const commands = useCommandPalette(
       {
@@ -857,9 +864,9 @@ describe('a command that asks for a vault', () => {
       words,
       () => activeTarget.value,
       { getTitle: () => '', getTabAt: () => null },
-      { getStepGroups: () => [], previewItem: () => {} },
+      { getStepGroups: () => [], previewItem: vi.fn() },
       runSupport(),
-      async () => {},
+      vi.fn(() => Promise.resolve()),
     )
     commands.setOpen(true)
 
@@ -883,7 +890,7 @@ describe('renaming the vault in front', () => {
   it('passes name to active vault', () => {
     const { commands } = createPalette()
     commands.startCommand('renameVault', front())
-    void commands.setTyped('Heat')
+    commands.setTyped('Heat').catch(rethrow)
 
     expect(commands.chooseItem('name', 'name')).toMatchObject({
       id: 'renameVault',
@@ -957,7 +964,7 @@ describe('a vault taken off the list', () => {
   it('submits once the name of that vault is what was typed', async () => {
     const commands = await chooseVault('eraseVault')
 
-    void commands.setTyped('Heat')
+    commands.setTyped('Heat').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(commands.chooseItem('exactly', 'exactly')).toMatchObject({
@@ -969,7 +976,7 @@ describe('a vault taken off the list', () => {
   it('ignores active vault name', async () => {
     const commands = await chooseVault('eraseVault')
 
-    void commands.setTyped('Physics')
+    commands.setTyped('Physics').catch(rethrow)
 
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
   })
@@ -1063,7 +1070,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     const { commands } = createSlowPalette()
     commands.startCommand('goto', front())
 
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     expect(describeGroup(commands.groups)).toStrictEqual({
@@ -1076,7 +1083,7 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('stops working once the vault answers', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
@@ -1093,7 +1100,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     const { commands, requests } = createSlowPalette()
     commands.startCommand('goto', front())
 
-    void commands.setTyped('  en  ')
+    commands.setTyped('  en  ').catch(rethrow)
     await settle()
 
     expect(requests).toStrictEqual(['en'])
@@ -1102,12 +1109,12 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('asks nothing once what was typed is taken back, and draws nothing found', async () => {
     const { commands, names, requests } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
     names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
     await settle()
 
-    void commands.setTyped('')
+    commands.setTyped('').catch(rethrow)
     await settle()
 
     expect(requests).toStrictEqual(['en'])
@@ -1123,8 +1130,8 @@ describe('a step that asks for a note, as the vault answers', () => {
     commands.startCommand('goto', front())
     hold.isOn = true
 
-    void commands.setTyped('e')
-    void commands.setTyped('en')
+    commands.setTyped('e').catch(rethrow)
+    commands.setTyped('en').catch(rethrow)
     holds[0]?.answer()
     await settle()
 
@@ -1139,9 +1146,9 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('draws the answer to the question requested last, whatever lands after it', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('e')
+    commands.setTyped('e').catch(rethrow)
     await settle()
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     names[1]?.answer([name('physics/Entropy.md', 'Entropy')])
@@ -1155,9 +1162,9 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('draws no failure of a question nobody is asking any more', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('e')
+    commands.setTyped('e').catch(rethrow)
     await settle()
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     names[1]?.answer([name('physics/Entropy.md', 'Entropy')])
@@ -1175,9 +1182,9 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('keeps working where only a question nobody is asking has answered', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('e')
+    commands.setTyped('e').catch(rethrow)
     await settle()
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     names[0]?.answer([name('Ether.md', 'Ether')])
@@ -1189,7 +1196,7 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('holds nothing where the vault could not answer', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     names[0]?.fail('no model is set')
@@ -1205,12 +1212,12 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('says nothing of a failure while the next question is out', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('e')
+    commands.setTyped('e').catch(rethrow)
     await settle()
     names[0]?.fail('no model is set')
     await settle()
 
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     expect(getEmptyMessage(commands.groups, 'picking')).toBe(words.noneFound)
@@ -1219,7 +1226,7 @@ describe('a step that asks for a note, as the vault answers', () => {
   it('draws no answer to a question requested at a step that was left', async () => {
     const { commands, names } = createSlowPalette()
     commands.startCommand('goto', front())
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
     commands.leaveStep()
     commands.startCommand('goto', front())
@@ -1234,7 +1241,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     const { commands, names } = createSlowPalette()
     commands.setOpen(true)
     commands.startCommand('goto', front())
-    void commands.setTyped('en')
+    commands.setTyped('en').catch(rethrow)
     await settle()
 
     commands.setOpen(false)
@@ -1248,7 +1255,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     const { commands, requests } = createSlowPalette()
     commands.startCommand('child', front())
 
-    void commands.setTyped('Entropy')
+    commands.setTyped('Entropy').catch(rethrow)
     await settle()
 
     expect(requests).toStrictEqual([])
@@ -1424,7 +1431,7 @@ describe('what a step draws', () => {
       [{ id: 'yes', text: words.removeVaultAction }],
     ])
 
-    void commands.setTyped('  remo  ')
+    commands.setTyped('  remo  ').catch(rethrow)
 
     expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['yes'])
   })
@@ -1433,7 +1440,7 @@ describe('what a step draws', () => {
     const { commands } = createPalette()
     commands.startCommand('destroy', front())
 
-    void commands.setTyped('  Ontology  ')
+    commands.setTyped('  Ontology  ').catch(rethrow)
 
     expect(commands.groups.value[0]?.id).toBe('exactly')
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
@@ -1507,7 +1514,7 @@ describe('the icon of a command', () => {
       createLookup().knows,
       createLists({}).paletteLists,
       runSupport(),
-      async () => {},
+      vi.fn(() => Promise.resolve()),
       () => [
         { id: 'plugin:graph', text: 'New graph', icon, group: 'window', isAvailable: () => true },
       ],
