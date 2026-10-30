@@ -88,8 +88,11 @@ func Ask(t *testing.T, client agentrun.AgentServiceClient, req *agentrun.AskAgen
 
 // IsDir reports whether got names the folder want, resolving links.
 func IsDir(got, want string) bool {
-	resolved, _ := filepath.EvalSymlinks(want)
-	return got == want || got == resolved
+	if got == want {
+		return true
+	}
+	resolved, err := filepath.EvalSymlinks(want)
+	return err == nil && got == resolved
 }
 
 // CheckLinkedHandler serves the handler a host that links the plugin in

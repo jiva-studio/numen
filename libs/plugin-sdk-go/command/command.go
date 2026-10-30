@@ -15,7 +15,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -119,27 +119,27 @@ type Service struct {
 // RunCommand runs the command and returns the handler's result. A failure is
 // returned as an error code with the handler's message.
 func (s Service) RunCommand(
-	ctx context.Context, req *connect.Request[numenv1.RunCommandRequest],
-) (*connect.Response[numenv1.RunCommandResponse], error) {
+	ctx context.Context, req *connect.Request[v1.RunCommandRequest],
+) (*connect.Response[v1.RunCommandResponse], error) {
 	result, err := s.Handler.RunCommand(ctx, Request{
 		Command:   req.Msg.GetCommand(),
 		Path:      req.Msg.GetPath(),
 		Arguments: Arguments(req.Msg.GetArguments()),
 	})
 	if err == nil {
-		return connect.NewResponse(&numenv1.RunCommandResponse{
+		return connect.NewResponse(&v1.RunCommandResponse{
 			Message: result.Message, OpenedPath: result.OpenedPath,
 		}), nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	code := numenv1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
+	code := v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 	switch {
 	case errors.Is(err, ErrUnknownCommand):
-		code = numenv1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
+		code = v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
 	case errors.Is(err, ErrBadArguments):
-		code = numenv1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
+		code = v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
 	}
-	return connect.NewResponse(&numenv1.RunCommandResponse{Error: code, Message: err.Error()}), nil
+	return connect.NewResponse(&v1.RunCommandResponse{Error: code, Message: err.Error()}), nil
 }

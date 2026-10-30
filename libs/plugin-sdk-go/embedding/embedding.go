@@ -8,7 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -44,13 +44,13 @@ type adapter struct {
 
 func (a *adapter) GetEmbeddingModel(
 	ctx context.Context,
-	_ *connect.Request[numenv1.GetEmbeddingModelRequest],
-) (*connect.Response[numenv1.GetEmbeddingModelResponse], error) {
+	_ *connect.Request[v1.GetEmbeddingModelRequest],
+) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
 	info, err := a.h.GetModelInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&numenv1.GetEmbeddingModelResponse{
+	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
 		Name:        info.Name,
 		Dimensions:  info.Dimensions,
 		MaxTokens:   info.MaxTokens,
@@ -63,17 +63,17 @@ func (a *adapter) GetEmbeddingModel(
 
 func (a *adapter) EmbedBatch(
 	ctx context.Context,
-	req *connect.Request[numenv1.EmbedBatchRequest],
-) (*connect.Response[numenv1.EmbedBatchResponse], error) {
+	req *connect.Request[v1.EmbedBatchRequest],
+) (*connect.Response[v1.EmbedBatchResponse], error) {
 	dense, err := a.h.EmbedTexts(ctx, req.Msg.GetTexts())
 	if err != nil {
 		return nil, err
 	}
-	vectors := make([]*numenv1.FloatVector, len(dense))
+	vectors := make([]*v1.FloatVector, len(dense))
 	for i, v := range dense {
-		vectors[i] = &numenv1.FloatVector{Values: v}
+		vectors[i] = &v1.FloatVector{Values: v}
 	}
-	return connect.NewResponse(&numenv1.EmbedBatchResponse{Vectors: vectors}), nil
+	return connect.NewResponse(&v1.EmbedBatchResponse{Vectors: vectors}), nil
 }
 
 // NewHandler creates the Connect-RPC handler for an embedding Handler.
@@ -86,9 +86,9 @@ func Mount(s *server.Server, h Handler) {
 	s.Register(NewHandler(h, s.HandlerOptions()...))
 }
 
-type EmbedBatchRequest = numenv1.EmbedBatchRequest
+type EmbedBatchRequest = v1.EmbedBatchRequest
 
-type EmbedBatchResponse = numenv1.EmbedBatchResponse
+type EmbedBatchResponse = v1.EmbedBatchResponse
 
 type EmbeddingServiceClient = numenv1connect.EmbeddingServiceClient
 

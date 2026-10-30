@@ -11,23 +11,23 @@ import (
 
 	"connectrpc.com/connect"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 type fakeHost struct {
 	numenv1connect.UnimplementedHostServiceHandler
-	code   numenv1.CompletionErrorCode
+	code   v1.CompletionErrorCode
 	detail string
-	answer *numenv1.CompletionAnswer
-	got    *numenv1.CompletionQuestion
+	answer *v1.CompletionAnswer
+	got    *v1.CompletionQuestion
 	auth   string
 }
 
-func (f *fakeHost) Complete(_ context.Context, req *connect.Request[numenv1.HostServiceCompleteRequest]) (*connect.Response[numenv1.HostServiceCompleteResponse], error) {
+func (f *fakeHost) Complete(_ context.Context, req *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error) {
 	f.got = req.Msg.GetQuestion()
 	f.auth = req.Header().Get("Authorization")
-	return connect.NewResponse(&numenv1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code, Detail: f.detail}), nil
+	return connect.NewResponse(&v1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code, Detail: f.detail}), nil
 }
 
 func startHost(t *testing.T, h *fakeHost) *httptest.Server {
@@ -49,10 +49,10 @@ func newQuestion() *Question {
 }
 
 func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "fixed"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
 	srv := startHost(t, host)
 
-	text, err := NewClient(srv.Client(), srv.URL, "secret").Complete(context.Background(), newQuestion())
+	text, err := NewClient(srv.Client(), srv.URL, "secret").Complete(t.Context(), newQuestion())
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -69,10 +69,10 @@ func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
 }
 
 func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "ok"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "ok"}}
 	srv := startHost(t, host)
 
-	if _, err := NewClient(srv.Client(), srv.URL, "").Complete(context.Background(), newQuestion()); err != nil {
+	if _, err := NewClient(srv.Client(), srv.URL, "").Complete(t.Context(), newQuestion()); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if host.auth != "" {
@@ -83,7 +83,7 @@ func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
 func TestClientCompleteReturnsErrNoAnswerWhenHostSendsNone(t *testing.T) {
 	srv := startHost(t, &fakeHost{})
 
-	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 	if !errors.Is(err, ErrNoAnswer) {
 		t.Fatalf("got %v, want ErrNoAnswer", err)
@@ -94,7 +94,7 @@ func TestClientCompleteReturnsTransportError(t *testing.T) {
 	srv := httptest.NewServer(http.NotFoundHandler())
 	t.Cleanup(srv.Close)
 
-	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 	var ce *connect.Error
 	if !errors.As(err, &ce) {
@@ -103,12 +103,12 @@ func TestClientCompleteReturnsTransportError(t *testing.T) {
 }
 
 func TestCompleteReadsHostFromEnvironment(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "env"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "env"}}
 	srv := startHost(t, host)
-	t.Setenv(HostPortEnv, strconv.Itoa(srv.Listener.Addr().(*net.TCPAddr).Port))
+	t.Setenv(HostPortEnv, strconv.Itoa(getPort(t, srv)))
 	t.Setenv(PluginTokenEnv, "tok")
 
-	text, err := Complete(context.Background(), newQuestion())
+	text, err := Complete(t.Context(), newQuestion())
 
 	if err != nil || text != "env" {
 		t.Fatalf("got %q, %v", text, err)
@@ -121,7 +121,7 @@ func TestCompleteReadsHostFromEnvironment(t *testing.T) {
 func TestCompleteFailsWithoutHostPort(t *testing.T) {
 	t.Setenv(HostPortEnv, "")
 
-	_, err := Complete(context.Background(), newQuestion())
+	_, err := Complete(t.Context(), newQuestion())
 
 	if !errors.Is(err, ErrNoHost) {
 		t.Fatalf("got %v, want ErrNoHost", err)
@@ -129,15 +129,15 @@ func TestCompleteFailsWithoutHostPort(t *testing.T) {
 }
 
 func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
-	cases := map[numenv1.CompletionErrorCode]error{
-		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
-		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
-		numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:  ErrNoConsent,
+	cases := map[v1.CompletionErrorCode]error{
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:  ErrNoConsent,
 	}
 	for code, want := range cases {
 		srv := startHost(t, &fakeHost{code: code})
 
-		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 		if !errors.Is(err, want) {
 			t.Errorf("%v: got %v, want %v", code, err, want)
@@ -146,11 +146,11 @@ func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 }
 
 func TestReadErrorWalksEveryCode(t *testing.T) {
-	observed := map[error]numenv1.CompletionErrorCode{}
-	for value := range numenv1.CompletionErrorCode_name {
-		code := numenv1.CompletionErrorCode(value)
+	observed := map[error]v1.CompletionErrorCode{}
+	for value := range v1.CompletionErrorCode_name {
+		code := v1.CompletionErrorCode(value)
 		err := readRefusal(code, "")
-		if code == numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
+		if code == v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
 			if err != nil {
 				t.Errorf("unspecified must be no error, got %v", err)
 			}
@@ -164,7 +164,7 @@ func TestReadErrorWalksEveryCode(t *testing.T) {
 		}
 		observed[err] = code
 	}
-	if err := readRefusal(numenv1.CompletionErrorCode(99), ""); err == nil {
+	if err := readRefusal(v1.CompletionErrorCode(99), ""); err == nil {
 		t.Error("an unknown code must be an error")
 	}
 }
@@ -172,13 +172,13 @@ func TestReadErrorWalksEveryCode(t *testing.T) {
 // A client created from the variables of a linked plugin queries the host they
 // name, and reads nothing from the environment.
 func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
-	host := &fakeHost{answer: &numenv1.CompletionAnswer{Text: "fixed"}}
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
 	srv := startHost(t, host)
 	t.Setenv(HostPortEnv, "")
 	t.Setenv(PluginTokenEnv, "process-token")
 
 	client, err := NewClientFromVars(map[string]string{
-		HostPortEnv:    strconv.Itoa(srv.Listener.Addr().(*net.TCPAddr).Port),
+		HostPortEnv:    strconv.Itoa(getPort(t, srv)),
 		PluginTokenEnv: "linked-token",
 	})
 	if err != nil {
@@ -203,11 +203,11 @@ func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
 // is still the one the code names.
 func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	srv := startHost(t, &fakeHost{
-		code:   numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,
+		code:   v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,
 		detail: "the agent stopped: invalid model selection",
 	})
 
-	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(context.Background(), newQuestion())
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
 	if !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("got %v, want ErrUnavailable", err)
@@ -215,4 +215,14 @@ func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
 	if want := "ai: routed agent did not answer: the agent stopped: invalid model selection"; err.Error() != want {
 		t.Errorf("got %q, want %q", err.Error(), want)
 	}
+}
+
+// getPort returns the TCP port the test server listens on.
+func getPort(t *testing.T, srv *httptest.Server) int {
+	t.Helper()
+	addr, isTCP := srv.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatalf("listener address %s is not a TCP address", srv.Listener.Addr())
+	}
+	return addr.Port
 }

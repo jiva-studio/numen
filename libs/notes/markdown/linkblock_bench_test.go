@@ -25,29 +25,49 @@ func BenchmarkLinkBlock(b *testing.B) {
 		b.Run(fmt.Sprintf("Add/%d", count), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				doc, _ := Open(raw)
-				_ = doc.AddLink(domain.Link{Target: domain.ParseAddress("[[Fresh]]"), Role: domain.LinkRole("parent")})
+				doc, err := Open(raw)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if err := doc.AddLink(domain.Link{Target: domain.ParseAddress("[[Fresh]]"), Role: domain.LinkRole("parent")}); err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 		b.Run(fmt.Sprintf("Update/%d", count), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				doc, _ := Open(raw)
-				_, _ = doc.UpdateLink(target, domain.Link{Role: domain.LinkRole("parent"), Why: "changed"})
+				doc, err := Open(raw)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if _, err := doc.UpdateLink(target, domain.Link{Role: domain.LinkRole("parent"), Why: "changed"}); err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 		b.Run(fmt.Sprintf("Remove/%d", count), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				doc, _ := Open(raw)
-				_, _ = doc.RemoveLink(target, "")
+				doc, err := Open(raw)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if _, err := doc.RemoveLink(target, ""); err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 		b.Run(fmt.Sprintf("Read/%d", count), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				doc, _ := Open(raw)
-				_, _ = readLinks(doc)
+				doc, err := Open(raw)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if _, err := readLinks(doc); err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 	}

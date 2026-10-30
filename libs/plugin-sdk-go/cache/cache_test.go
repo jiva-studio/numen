@@ -3,6 +3,8 @@ package cache_test
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -116,7 +118,10 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 	close(firstGate)
 	<-firstDone
 	waitForCondition(t, func() bool {
-		v, ok, _ := c.Get(t.Context(), "k1", nil)
+		v, ok, err := c.Get(t.Context(), "k1", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return ok && slices.Equal(v, []string{"v1"})
 	})
 
@@ -132,7 +137,10 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 
 	close(secondGate)
 	waitForCondition(t, func() bool {
-		v, ok, _ := c.Get(t.Context(), "k1", nil)
+		v, ok, err := c.Get(t.Context(), "k1", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return ok && slices.Equal(v, []string{"v2"})
 	})
 }
@@ -177,7 +185,10 @@ func TestDiskPersistenceAcrossTwoCacheInstances(t *testing.T) {
 	}
 	close(refreshGate)
 	waitForCondition(t, func() bool {
-		v, ok, _ := c2.Get(t.Context(), "agent-a", nil)
+		v, ok, err := c2.Get(t.Context(), "agent-a", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return ok && slices.Equal(v, []string{"gamma"})
 	})
 }
@@ -240,4 +251,27 @@ func waitForCondition(t *testing.T, check func() bool) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	t.Fatal("condition was not met before deadline")
+}
+
+func TestErrorHandlerReceivesDiskWriteError(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var reported []error
+	c := cache.New[[]string](
+		"models",
+		cache.WithDir(filepath.Join(blocker, "sub")),
+		cache.WithDisk(true),
+		cache.WithErrorHandler(func(err error) { reported = append(reported, err) }),
+	)
+
+	c.Put("k1", []string{"m1"})
+
+	if len(reported) != 1 {
+		t.Fatalf("reported %d errors, want 1: %v", len(reported), reported)
+	}
+	if v, ok, err := c.Get(t.Context(), "k1", nil); err != nil || !ok || !slices.Equal(v, []string{"m1"}) {
+		t.Errorf("the memory entry = %v, %v, %v, want it kept", v, ok, err)
+	}
 }

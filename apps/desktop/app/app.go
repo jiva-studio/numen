@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -57,12 +58,16 @@ func Run(opts ...*Options) error {
 	if len(opts) > 0 && opts[0] != nil {
 		opt = opts[0]
 	} else {
-		opt = parseFlags()
+		parsed, err := parseFlags()
+		if err != nil {
+			return err
+		}
+		opt = parsed
 	}
 
 	if opt.ShowVersion {
-		fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
-		return nil
+		_, err := fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
+		return err
 	}
 
 	cfg := makeConfig(os.Stderr)
@@ -82,14 +87,16 @@ func Run(opts ...*Options) error {
 
 	if err := run(cfg, opt.Vault, scaleFlags, &opt.Debug); err != nil {
 		if !opt.Debug.isServingHTTP() {
-			failWithDialog(cfg, err)
+			if dialogErr := failWithDialog(cfg, err); dialogErr != nil {
+				return errors.Join(err, dialogErr)
+			}
 		}
 		return err
 	}
 	return nil
 }
 
-func parseFlags() *Options {
+func parseFlags() (*Options, error) {
 	opts := NewOptions()
 	fs := flag.CommandLine
 	if !fs.Parsed() {
@@ -109,14 +116,20 @@ func parseFlags() *Options {
 		fs.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
 		fs.BoolVar(&opts.ShowVersion, "version", false, "say what this build is and stop")
 		RegisterDebugFlags(fs, opts)
-		_ = fs.Parse(os.Args[1:])
+		if err := fs.Parse(os.Args[1:]); err != nil {
+			return nil, err
+		}
 	}
-	return opts
+	return opts, nil
 }
 
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfig()
-	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
+	cfg.ErrorHandler = func(err error) {
+		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
+			return
+		}
+	}
 	return cfg
 }
 
@@ -148,7 +161,9 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 
-	setSchemasDir()
+	if err := setSchemasDir(); err != nil {
+		return err
+	}
 
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
@@ -183,7 +198,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	)
 
 	defer func() {
-		going.flushVault()
+		going.flushVault(ctx)
 		shutdownSeq.Run()
 	}()
 
@@ -234,8 +249,7 @@ func openInstallation(
 	}
 	versions, err := cfg.NewTextVersions(db)
 	if err != nil {
-		_ = db.Close()
-		return shownInstallation{}, err
+		return shownInstallation{}, errors.Join(err, db.Close())
 	}
 	cfg.TextVersions = versions
 	made := container.NewEditorAssembly(cfg, registry, db)

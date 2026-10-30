@@ -49,7 +49,9 @@ func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 		return "", err
 	}
 
-	fmt.Fprintf(stdout, "Bundled %d files into %s\n", fileCount, destination)
+	if _, err := fmt.Fprintf(stdout, "Bundled %d files into %s\n", fileCount, destination); err != nil {
+		return "", fmt.Errorf("report bundle: %w", err)
+	}
 	return destination, nil
 }
 
@@ -103,7 +105,7 @@ func (w *archiveWalker) Walk(path string, entry fs.DirEntry, walkErr error) erro
 	return nil
 }
 
-func createArchive(pluginDir, destPath string) (int, error) {
+func createArchive(pluginDir, destPath string) (count int, err error) {
 	absDest, err := filepath.Abs(destPath)
 	if err != nil {
 		absDest = destPath
@@ -113,10 +115,18 @@ func createArchive(pluginDir, destPath string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("create archive file: %w", err)
 	}
-	defer zipFile.Close()
+	defer func() {
+		if closeErr := zipFile.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close archive file: %w", closeErr))
+		}
+	}()
 
 	archive := zip.NewWriter(zipFile)
-	defer archive.Close()
+	defer func() {
+		if closeErr := archive.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("finish archive: %w", closeErr))
+		}
+	}()
 
 	walker := archiveWalker{
 		archive:   archive,
@@ -137,12 +147,16 @@ func createArchive(pluginDir, destPath string) (int, error) {
 	return walker.count, nil
 }
 
-func addFileToZip(archive *zip.Writer, srcPath, zipPath string) error {
+func addFileToZip(archive *zip.Writer, srcPath, zipPath string) (err error) {
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() {
+		if closeErr := srcFile.Close(); closeErr != nil {
+			err = errors.Join(err, closeErr)
+		}
+	}()
 
 	info, err := srcFile.Stat()
 	if err != nil {

@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-var testWords = IndexDeclarations([]*numenv1.ToolDeclaration{
+var testWords = IndexDeclarations([]*v1.ToolDeclaration{
 	{Name: "note_edit", Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
 	{Name: "note_read", Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
 	{Name: "vault_list", Title: "List the vault", Kind: "read"},

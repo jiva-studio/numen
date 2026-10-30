@@ -1,3 +1,4 @@
+// Package domain exposes the note domain types of the notes library to plugins.
 package domain
 
 import (

@@ -89,7 +89,11 @@ func getStoppings(t *testing.T) []stopping {
 	if err := os.Mkdir(noWrite, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chmod(noWrite, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(noWrite, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	unreadable := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(unreadable, []byte("{ this is not JSON"), 0o644); err != nil {
@@ -135,7 +139,9 @@ func openIndex(t *testing.T, path string) error {
 	t.Helper()
 	db, err := index.Open(t.Context(), path)
 	if err == nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
 		t.Fatalf("%s opened as an index", path)
 	}
 	return err

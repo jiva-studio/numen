@@ -35,7 +35,11 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { opened.Close() })
+	t.Cleanup(func() {
+		if err := opened.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	return opened, cfg
 }
 

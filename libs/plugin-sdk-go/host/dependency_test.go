@@ -30,7 +30,9 @@ func (p *provisioning) ProvisionDependency(_ context.Context, req *connect.Reque
 	if id == "broken" {
 		return connect.NewError(connect.CodeInternal, errors.New("disk"))
 	}
-	_ = stream.Send(&v1.ProvisionDependencyResponse{Status: &v1.DependencyStatus{Id: id, State: v1.DependencyState_DEPENDENCY_STATE_PROVISIONING, ProgressPercent: 50}})
+	if err := stream.Send(&v1.ProvisionDependencyResponse{Status: &v1.DependencyStatus{Id: id, State: v1.DependencyState_DEPENDENCY_STATE_PROVISIONING, ProgressPercent: 50}}); err != nil {
+		return err
+	}
 	return stream.Send(&v1.ProvisionDependencyResponse{Status: &v1.DependencyStatus{Id: id, State: v1.DependencyState_DEPENDENCY_STATE_READY}})
 }
 
@@ -49,11 +51,11 @@ func newDependencyClient(t *testing.T, p *provisioning) *host.DependencyClient {
 
 func TestDependencyClientGetStatusAndList(t *testing.T) {
 	c := newDependencyClient(t, &provisioning{})
-	st, err := c.GetStatus(context.Background(), "whisper")
-	if err != nil || st.GetId() != "whisper" || st.GetState() != host.DependencyStateMissing {
+	st, err := c.GetStatus(t.Context(), "whisper")
+	if err != nil || st.GetID() != "whisper" || st.GetState() != host.DependencyStateMissing {
 		t.Fatalf("GetStatus = %v, %v", st, err)
 	}
-	list, err := c.List(context.Background())
+	list, err := c.List(t.Context())
 	if err != nil || len(list) != 2 {
 		t.Fatalf("List = %v, %v", list, err)
 	}
@@ -63,7 +65,7 @@ func TestDependencyClientProvisionStreamsUntilReady(t *testing.T) {
 	p := &provisioning{}
 	c := newDependencyClient(t, p)
 	var states []host.DependencyState
-	for st, err := range c.Provision(context.Background(), &host.DependencyRequirement{ID: "whisper"}) {
+	for st, err := range c.Provision(t.Context(), &host.DependencyRequirement{ID: "whisper"}) {
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +79,7 @@ func TestDependencyClientProvisionStreamsUntilReady(t *testing.T) {
 func TestDependencyClientProvisionYieldsStreamError(t *testing.T) {
 	c := newDependencyClient(t, &provisioning{})
 	var got error
-	for _, err := range c.Provision(context.Background(), &host.DependencyRequirement{ID: "broken"}) {
+	for _, err := range c.Provision(t.Context(), &host.DependencyRequirement{ID: "broken"}) {
 		got = err
 	}
 	if connect.CodeOf(got) != connect.CodeInternal {

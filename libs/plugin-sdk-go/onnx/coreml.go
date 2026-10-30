@@ -28,8 +28,10 @@ func GetCoreMLCacheDir() (string, error) {
 // DeleteCoreMLCache empties the CoreML cache directory and reports whether it
 // held anything.
 func DeleteCoreMLCache() bool {
-	// dir is empty when the folder cannot be made, and reading it finds nothing.
-	dir, _ := GetCoreMLCacheDir()
+	dir, dirErr := GetCoreMLCacheDir()
+	if dirErr != nil {
+		return false
+	}
 	entries, err := os.ReadDir(dir)
 	if err != nil || len(entries) == 0 {
 		return false

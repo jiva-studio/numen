@@ -119,7 +119,11 @@ func TestNewDeleteTextRunDeletesTheVersionTheHostNames(t *testing.T) {
 	if _, err := run(ctx, command.Request{Command: "delete", Path: "a.pdf", Arguments: arguments}); err != nil {
 		t.Fatal(err)
 	}
-	if listing, _ := texts.ListVersions(ctx, "a.pdf"); len(listing.Versions) != 0 {
+	listing, err := texts.ListVersions(ctx, "a.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Fatalf("the versions after the deletion: %+v", listing.Versions)
 	}
 }

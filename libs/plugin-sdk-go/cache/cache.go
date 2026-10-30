@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -25,6 +26,12 @@ type config struct {
 	isAsync        bool
 	isDiskEnabled  bool
 	now            func() time.Time
+	onError        func(error)
+}
+
+// WithErrorHandler sets the function that receives background and disk persistence errors.
+func WithErrorHandler(handler func(error)) Option {
+	return func(c *config) { c.onError = handler }
 }
 
 // WithPluginID sets the plugin identifier that locates the disk cache directory.
@@ -91,6 +98,7 @@ type Cache[V any] struct {
 	isAsync        bool
 	isDiskEnabled  bool
 	now            func() time.Time
+	onError        func(error)
 	entries        map[string]entry[V]
 	failed         map[string]bool
 	failedAt       map[string]time.Time
@@ -115,6 +123,7 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 		isAsync:        cfg.isAsync,
 		isDiskEnabled:  cfg.isDiskEnabled,
 		now:            cfg.now,
+		onError:        cfg.onError,
 		entries:        make(map[string]entry[V]),
 		failed:         make(map[string]bool),
 		failedAt:       make(map[string]time.Time),
@@ -297,7 +306,9 @@ func (c *Cache[V]) enqueueAsyncLoadLocked(key string, load func(context.Context)
 	go func() {
 		bgCtx := context.Background()
 		val, err := c.executeLoad(bgCtx, load)
-		_, _, _ = c.finishLoad(bgCtx, key, inflight, val, err)
+		if _, _, loadErr := c.finishLoad(bgCtx, key, inflight, val, err); loadErr != nil {
+			c.reportError(fmt.Errorf("load %q: %w", key, loadErr))
+		}
 	}()
 }
 
@@ -450,48 +461,63 @@ func (c *Cache[V]) readDiskEntry(key string) (V, bool) {
 	return val, true
 }
 
+func (c *Cache[V]) reportError(err error) {
+	if c.onError != nil {
+		c.onError(err)
+	}
+}
+
 func (c *Cache[V]) writeDiskEntry(key string, val V) {
 	if !isPersistable(val) {
 		return
 	}
+	if err := c.storeDiskEntry(key, val); err != nil {
+		c.reportError(fmt.Errorf("write cache entry %q: %w", key, err))
+	}
+}
+
+func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 	path, err := c.cachePath()
 	if err != nil {
-		return
+		return err
 	}
 	c.diskMu.Lock()
 	defer c.diskMu.Unlock()
 
 	all := make(map[string]V)
-	if existing, err := os.ReadFile(path); err == nil {
-		_ = json.Unmarshal(existing, &all)
+	if existing, readErr := os.ReadFile(path); readErr == nil {
+		if unmarshalErr := json.Unmarshal(existing, &all); unmarshalErr != nil {
+			c.reportError(fmt.Errorf("read cache file %s: %w", path, unmarshalErr))
+			all = make(map[string]V)
+		}
 	}
 	all[key] = val
 	data, err := json.Marshal(all)
 	if err != nil {
-		return
+		return err
 	}
 	dir := filepath.Dir(path)
-	if os.MkdirAll(dir, 0o700) != nil {
-		return
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
 	}
-	writeFileAtomic(dir, path, data)
+	return writeFileAtomic(dir, path, data)
 }
 
-func writeFileAtomic(dir, path string, data []byte) {
+func writeFileAtomic(dir, path string, data []byte) error {
 	tmp, err := os.CreateTemp(dir, ".cache-*.tmp")
 	if err != nil {
-		return
+		return err
 	}
 	tmpName := tmp.Name()
 	_, writeErr := tmp.Write(data)
 	closeErr := tmp.Close()
-	if writeErr != nil || closeErr != nil {
-		_ = os.Remove(tmpName)
-		return
+	if err := errors.Join(writeErr, closeErr); err != nil {
+		return errors.Join(err, os.Remove(tmpName))
 	}
-	if os.Rename(tmpName, path) != nil {
-		_ = os.Remove(tmpName)
+	if err := os.Rename(tmpName, path); err != nil {
+		return errors.Join(err, os.Remove(tmpName))
 	}
+	return nil
 }
 
 func isPersistable[V any](val V) bool {

@@ -56,7 +56,7 @@ type DependencyStatus struct {
 	Error           string
 }
 
-func (s *DependencyStatus) GetId() string {
+func (s *DependencyStatus) GetID() string {
 	if s == nil {
 		return ""
 	}
@@ -113,7 +113,7 @@ func (c *DependencyClient) Provision(ctx context.Context, requirement *Dependenc
 			yield(nil, err)
 			return
 		}
-		defer func() { _ = stream.Close() }()
+		defer closeStream(stream)
 		for stream.Receive() {
 			if !yield(readDependencyStatus(stream.Msg().GetStatus()), nil) {
 				return

@@ -42,12 +42,16 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if listing, _ := fixer.ListVersions(ctx, "a.pdf"); listing.Live != b.GetID() {
+	if listing, err := fixer.ListVersions(ctx, "a.pdf"); err != nil || listing.Live != b.GetID() {
 		t.Fatalf("live %q, want the proofreading", listing.Live)
 	}
 
-	ocr.GetStore("org.example.fixer").(*hosttest.Store).File("b.jsonl", []byte(`{"text":"changed"}`+"\n"))
-	if listing, _ := fixer.ListVersions(ctx, "a.pdf"); listing.Live != a.GetID() {
+	fixerStore, isStore := ocr.GetStore("org.example.fixer").(*hosttest.Store)
+	if !isStore {
+		t.Fatal("the store is not a hosttest.Store")
+	}
+	fixerStore.File("b.jsonl", []byte(`{"text":"changed"}`+"\n"))
+	if listing, err := fixer.ListVersions(ctx, "a.pdf"); err != nil || listing.Live != a.GetID() {
 		t.Fatalf("live %q with the proofreading's file changed, want the recognition", listing.Live)
 	}
 	if got := ocr.TakeChanges(); !slices.Equal(got, []string{"a.pdf", "a.pdf"}) {
@@ -79,7 +83,10 @@ func TestAVersionThatIsNotOneIsRefused(t *testing.T) {
 func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
 	ctx := t.Context()
 	physics := hosttest.NewTexts("v1", "org.example.ocr")
-	other := physics.With("v2").(*hosttest.Texts)
+	other, isTexts := physics.With("v2").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of another vault are not hosttest.Texts")
+	}
 	if err := host.WriteText(ctx, other.GetStore("org.example.ocr"), "k.jsonl", []domain.TextSegment{{Text: "x"}}); err != nil {
 		t.Fatal(err)
 	}
@@ -87,8 +94,14 @@ func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	inOther, _ := physics.With("v2").ListVersions(ctx, "a.pdf")
-	inShown, _ := physics.ListVersions(ctx, "a.pdf")
+	inOther, err := physics.With("v2").ListVersions(ctx, "a.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	inShown, err := physics.ListVersions(ctx, "a.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(inOther.Versions) != 1 || len(inShown.Versions) != 0 {
 		t.Errorf("v2 holds %d versions and v1 %d, want 1 and 0", len(inOther.Versions), len(inShown.Versions))
 	}
@@ -114,7 +127,11 @@ func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
 	if err := host.DeleteText(ctx, ocr, store, "org.example.ocr", "a.pdf", a.GetID()); err != nil {
 		t.Fatal(err)
 	}
-	if listing, _ := ocr.ListVersions(ctx, "a.pdf"); len(listing.Versions) != 0 {
+	listing, err := ocr.ListVersions(ctx, "a.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Fatalf("the versions after the deletion: %+v", listing.Versions)
 	}
 	if _, err := store.Read(ctx, "k.jsonl"); !errors.Is(err, host.ErrNotExist) {

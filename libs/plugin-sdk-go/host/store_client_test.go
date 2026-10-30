@@ -94,7 +94,7 @@ func dialStore(t *testing.T, h *storeHost) *host.StoreClient {
 }
 
 func TestAStoreClientAppendsReadsAndLists(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := dialStore(t, newStoreHost())
 
 	first := c.Append(ctx, "a", []byte("one\n"))
@@ -124,21 +124,29 @@ func TestEachCodeOfTheStoreIsItsOwnError(t *testing.T) {
 	for code, want := range cases {
 		h := newStoreHost()
 		h.code = code
-		if _, err := dialStore(t, h).Read(context.Background(), "a"); !errors.Is(err, want) {
+		if _, err := dialStore(t, h).Read(t.Context(), "a"); !errors.Is(err, want) {
 			t.Errorf("code %s: got %v, want %v", code, err, want)
 		}
 	}
 }
 
 func TestAStoreOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	h := newStoreHost()
 	c := dialStore(t, h)
 
-	_, _ = c.With("Chemistry").Read(ctx, "a")
-	_ = c.With("Chemistry").Append(ctx, "a", []byte("x"))
-	_, _ = c.With("Chemistry").List(ctx)
-	_, _ = c.Read(ctx, "a")
+	if _, err := c.With("Chemistry").Read(ctx, "a"); err != nil && !errors.Is(err, host.ErrNotExist) {
+		t.Fatal(err)
+	}
+	if err := c.With("Chemistry").Append(ctx, "a", []byte("x")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.With("Chemistry").List(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Read(ctx, "a"); err != nil && !errors.Is(err, host.ErrNotExist) {
+		t.Fatal(err)
+	}
 
 	want := []string{"Chemistry", "Chemistry", "Chemistry", ""}
 	if len(h.vaults) != len(want) {

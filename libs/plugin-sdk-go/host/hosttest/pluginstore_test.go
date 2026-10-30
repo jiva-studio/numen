@@ -1,7 +1,6 @@
 package hosttest_test
 
 import (
-	"context"
 	"errors"
 	"io/fs"
 	"slices"
@@ -12,12 +11,18 @@ import (
 )
 
 func TestAStoreKeepsWhatIsAppendedAndListsIt(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	s := hosttest.New("Physics").Store()
 
-	_ = s.Append(ctx, "log", []byte("a"))
-	_ = s.Append(ctx, "log", []byte("b"))
-	_ = s.Append(ctx, "first", []byte("x"))
+	if err := s.Append(ctx, "log", []byte("a")); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Append(ctx, "log", []byte("b")); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Append(ctx, "first", []byte("x")); err != nil {
+		t.Fatal(err)
+	}
 	got, err := s.Read(ctx, "log")
 	files, listErr := s.List(ctx)
 	_, missing := s.Read(ctx, "none")
@@ -34,14 +39,19 @@ func TestAStoreKeepsWhatIsAppendedAndListsIt(t *testing.T) {
 }
 
 func TestPluginStore_RejectsWhatHostRejects(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	s := v.Store()
-	_ = s.Append(ctx, "locked", []byte("x"))
+	if err := s.Append(ctx, "locked", []byte("x")); err != nil {
+		t.Fatal(err)
+	}
 	s.Refuse("locked", fs.ErrPermission)
 
 	_, readErr := s.Read(ctx, "locked")
-	files, _ := s.List(ctx)
+	files, err := s.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, name := range []string{"", "../a", "/a", ".hidden", "a/b", `a\b`} {
 		if err := s.Append(ctx, name, nil); !errors.Is(err, host.ErrOutside) {
 			t.Errorf("%q was appended to with %v", name, err)
@@ -60,10 +70,12 @@ func TestPluginStore_RejectsWhatHostRejects(t *testing.T) {
 }
 
 func TestEachVaultHasAStoreOfItsOwn(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
 	physics.Beside(chemistry)
-	_ = physics.Store().Append(ctx, "a", []byte("p"))
+	if err := physics.Store().Append(ctx, "a", []byte("p")); err != nil {
+		t.Fatal(err)
+	}
 
 	_, missing := chemistry.Store().Read(ctx, "a")
 	got, err := chemistry.Store().With("Physics").Read(ctx, "a")
@@ -74,14 +86,22 @@ func TestEachVaultHasAStoreOfItsOwn(t *testing.T) {
 }
 
 func TestStoreReadsAndListsExternalFile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	s := hosttest.New("Physics").Store()
-	_ = s.Append(ctx, "log", []byte("abc"))
+	if err := s.Append(ctx, "log", []byte("abc")); err != nil {
+		t.Fatal(err)
+	}
 
 	s.File("log", []byte("   "))
 	s.File("copy", []byte("x"))
-	got, _ := s.Read(ctx, "log")
-	files, _ := s.List(ctx)
+	got, err := s.Read(ctx, "log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := s.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if string(got) != "   " || len(files) != 2 {
 		t.Errorf("read %q, listed %v", got, files)
@@ -89,10 +109,12 @@ func TestStoreReadsAndListsExternalFile(t *testing.T) {
 }
 
 func TestStoreWriteAndDelete(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	s := hosttest.New("Physics").Store()
 
-	_ = s.Append(ctx, "a", []byte("first and longer"))
+	if err := s.Append(ctx, "a", []byte("first and longer")); err != nil {
+		t.Fatal(err)
+	}
 	if err := s.Write(ctx, "a", []byte("second")); err != nil {
 		t.Fatal(err)
 	}

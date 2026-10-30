@@ -66,7 +66,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: entry is not a mapping")
 			continue
 		}
-		to, _ := fields["to"].(string)
+		to := readText(fields["to"])
 		if strings.TrimSpace(to) == "" {
 			problems = append(problems, "links: an entry has no target")
 			continue
@@ -94,8 +94,16 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 }
 
 func str(v any) string {
-	s, _ := v.(string)
-	return strings.TrimSpace(s)
+	return strings.TrimSpace(readText(v))
+}
+
+// readText returns v when it is a string, or "" otherwise.
+func readText(v any) string {
+	s, isString := v.(string)
+	if !isString {
+		return ""
+	}
+	return s
 }
 
 // mergeLinks puts the two sources together. The same target written in both

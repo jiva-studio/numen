@@ -80,7 +80,9 @@ func TestEnvironmentSettings_Retained(t *testing.T) {
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
 	t.Setenv("GSETTINGS_SCHEMA_DIR", theirs)
 
-	setSchemasDir()
+	if err := setSchemasDir(); err != nil {
+		t.Fatal(err)
+	}
 
 	if got := os.Getenv("GSETTINGS_SCHEMA_DIR"); got != theirs {
 		t.Errorf("the folder the machine named became %q", got)

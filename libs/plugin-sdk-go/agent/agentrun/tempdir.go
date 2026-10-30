@@ -18,24 +18,43 @@ func CreateTempDir(pattern string) (string, func(), error) {
 	if err != nil {
 		return "", func() {}, err
 	}
-	return dir, func() { _ = os.RemoveAll(dir) }, nil
+	return dir, func() {
+		if err := os.RemoveAll(dir); err != nil {
+			reportFileError("remove", dir, err)
+		}
+	}, nil
+}
+
+// reportFileError writes a failed file operation to standard error.
+func reportFileError(operation, path string, err error) {
+	if _, writeErr := fmt.Fprintf(os.Stderr, "%s %s: %v\n", operation, path, err); writeErr != nil {
+		return
+	}
 }
 
 // WriteTempFile creates a mode-0600 temporary file matching pattern, writes data to it, and returns
 // its path.
-func WriteTempFile(pattern string, data []byte) (string, error) {
+func WriteTempFile(pattern string, data []byte) (path string, err error) {
 	file, err := os.CreateTemp("", pattern)
 	if err != nil {
 		return "", fmt.Errorf("create temp config: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close config: %w", closeErr))
+		}
+		if err != nil {
+			if removeErr := os.Remove(file.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+				err = errors.Join(err, fmt.Errorf("remove config: %w", removeErr))
+			}
+			path = ""
+		}
+	}()
 
 	if err := file.Chmod(0o600); err != nil {
-		_ = os.Remove(file.Name())
 		return "", fmt.Errorf("chmod config: %w", err)
 	}
 	if _, err := file.Write(data); err != nil {
-		_ = os.Remove(file.Name())
 		return "", fmt.Errorf("write config: %w", err)
 	}
 	return file.Name(), nil
@@ -48,7 +67,7 @@ func RemoveFile(path string) {
 		return
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		fmt.Fprintf(os.Stderr, "remove %s: %v\n", path, err)
+		reportFileError("remove", path, err)
 	}
 }
 
@@ -80,16 +99,23 @@ func CreateDir(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
-// LinkEntries symlinks each entry in from into into, skipping except.
+// LinkEntries symlinks each entry in from into into, skipping except. A failure is written to
+// standard error and the remaining entries are still linked.
 func LinkEntries(from, into, except string) {
 	entries, err := os.ReadDir(from)
 	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			reportFileError("read", from, err)
+		}
 		return
 	}
 	for _, entry := range entries {
 		name := entry.Name()
-		if name != except {
-			_ = os.Symlink(filepath.Join(from, name), filepath.Join(into, name))
+		if name == except {
+			continue
+		}
+		if err := os.Symlink(filepath.Join(from, name), filepath.Join(into, name)); err != nil && !errors.Is(err, fs.ErrExist) {
+			reportFileError("link", filepath.Join(into, name), err)
 		}
 	}
 }

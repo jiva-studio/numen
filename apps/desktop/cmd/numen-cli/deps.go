@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -94,15 +96,12 @@ func createScan(
 	}
 	indexing, err = indexing.OpenPluginWork(ctx, db, v)
 	if err != nil {
-		_ = db.Close()
-		return cli.Scan{}, err
+		return cli.Scan{}, errors.Join(err, db.Close())
 	}
 	embedder, closeEmbedder, why := indexing.Embedder(ctx)
 	read, err := indexing.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
-		closeIfOpen(closeEmbedder)
-		_ = db.Close()
-		return cli.Scan{}, err
+		return cli.Scan{}, errors.Join(err, closeIfOpen(closeEmbedder), db.Close())
 	}
 	return cli.Scan{
 		Read: read,
@@ -111,17 +110,17 @@ func createScan(
 		},
 		Unembedded: why,
 		Close: func() error {
-			closeIfOpen(closeEmbedder)
-			return db.Close()
+			return errors.Join(closeIfOpen(closeEmbedder), db.Close())
 		},
 	}, nil
 }
 
 // closeIfOpen closes what a function returned to close, when it returned one.
-func closeIfOpen(closeFn func() error) {
-	if closeFn != nil {
-		_ = closeFn()
+func closeIfOpen(closeFn func() error) error {
+	if closeFn == nil {
+		return nil
 	}
+	return closeFn()
 }
 
 // createSearch is the search over the index, reading the text of a passage through the text
@@ -136,16 +135,14 @@ func createSearch(
 	}
 	asking, err := cfg.OpenPluginWork(ctx, db, v)
 	if err != nil {
-		_ = db.Close()
-		return cli.Search{}, err
+		return cli.Search{}, errors.Join(err, db.Close())
 	}
 	embedder, closeEmbedder, why := asking.Embedder(ctx)
 	return cli.Search{
 		Search: asking.NewSearch(db, embedder, errorHandler),
 		Words:  why,
 		Close: func() error {
-			closeIfOpen(closeEmbedder)
-			return db.Close()
+			return errors.Join(closeIfOpen(closeEmbedder), db.Close())
 		},
 	}, nil
 }

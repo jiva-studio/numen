@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -28,14 +28,14 @@ func TestALinkedHandlerAnswersWithTheTokenOfItsVariables(t *testing.T) {
 
 	unauthClient := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL,
 		connect.WithInterceptors(&bearerAuthInterceptor{token: "another-token"}))
-	_, err = unauthClient.Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{}))
+	_, err = unauthClient.Configure(t.Context(), connect.NewRequest(&v1.ConfigureRequest{}))
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("Configure with another token = %v, want unauthenticated", err)
 	}
 
 	client := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL,
 		connect.WithInterceptors(&bearerAuthInterceptor{token: "linked-token"}))
-	_, err = client.Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{
+	_, err = client.Configure(t.Context(), connect.NewRequest(&v1.ConfigureRequest{
 		Values: map[string]string{"model": "small-model"},
 	}))
 	if err != nil {
@@ -84,7 +84,7 @@ func TestALinkedHandlerRunsItsClosersWhenTheHostShutsItDown(t *testing.T) {
 		connect.WithInterceptors(&bearerAuthInterceptor{token: "linked-token"}))
 
 	for range 2 {
-		if _, err := client.Shutdown(t.Context(), connect.NewRequest(&numenv1.ShutdownRequest{})); err != nil {
+		if _, err := client.Shutdown(t.Context(), connect.NewRequest(&v1.ShutdownRequest{})); err != nil {
 			t.Fatalf("Shutdown: %v", err)
 		}
 	}

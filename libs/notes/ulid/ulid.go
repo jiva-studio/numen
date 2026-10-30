@@ -44,7 +44,9 @@ func New(t time.Time, entropy ...io.Reader) string {
 		source = entropy[0]
 	}
 	if source != nil {
-		_, _ = io.ReadFull(source, b[6:])
+		if _, err := io.ReadFull(source, b[6:]); err != nil {
+			clear(b[6:])
+		}
 	}
 
 	out := make([]byte, 26)

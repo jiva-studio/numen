@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -110,15 +110,15 @@ func (q *Question) GetMessages() []Message {
 	return q.Messages
 }
 
-func toProtoQuestion(q *Question) *numenv1.CompletionQuestion {
+func toProtoQuestion(q *Question) *v1.CompletionQuestion {
 	if q == nil {
 		return nil
 	}
-	msgs := make([]*numenv1.CompletionMessage, len(q.Messages))
+	msgs := make([]*v1.CompletionMessage, len(q.Messages))
 	for i, m := range q.Messages {
-		msgs[i] = &numenv1.CompletionMessage{Role: m.Role, Text: m.Text}
+		msgs[i] = &v1.CompletionMessage{Role: m.Role, Text: m.Text}
 	}
-	return &numenv1.CompletionQuestion{
+	return &v1.CompletionQuestion{
 		Purpose:  q.Purpose,
 		Messages: msgs,
 	}
@@ -126,7 +126,7 @@ func toProtoQuestion(q *Question) *numenv1.CompletionQuestion {
 
 // Complete sends the question to the host and returns the answer text.
 func (c *Client) Complete(ctx context.Context, question *Question) (string, error) {
-	res, err := c.host.Complete(ctx, connect.NewRequest(&numenv1.HostServiceCompleteRequest{Question: toProtoQuestion(question)}))
+	res, err := c.host.Complete(ctx, connect.NewRequest(&v1.HostServiceCompleteRequest{Question: toProtoQuestion(question)}))
 	if err != nil {
 		return "", fmt.Errorf("ai: complete: %w", err)
 	}
@@ -140,15 +140,15 @@ func (c *Client) Complete(ctx context.Context, question *Question) (string, erro
 	return answer.GetText(), nil
 }
 
-func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
+func readRefusal(code v1.CompletionErrorCode, detail string) error {
 	switch code {
-	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED:
+	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:
+	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:
 		return addDetail(ErrNoRoute, detail)
-	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE:
+	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE:
 		return addDetail(ErrUnavailable, detail)
-	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:
+	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:
 		return addDetail(ErrNoConsent, detail)
 	}
 	return fmt.Errorf("ai: unknown error code %d", code)

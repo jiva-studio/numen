@@ -82,16 +82,16 @@ func TestVaultFlush_RetriesAfterCancelledClose(t *testing.T) {
 	vault := newSettler(false, false, true)
 	g := &vaultFlush{flush: vault.settle}
 
-	if g.flushVault() {
+	if g.flushVault(t.Context()) {
 		t.Fatal("a question standing let the window go")
 	}
 	if g.isFlushed() {
 		t.Error("a called-off close left the vault settled")
 	}
-	if g.flushVault() {
+	if g.flushVault(t.Context()) {
 		t.Fatal("the second ask let the window go with a question standing")
 	}
-	if !g.flushVault() {
+	if !g.flushVault(t.Context()) {
 		t.Fatal("the ask after the question was answered did not let the window go")
 	}
 	if !g.isFlushed() {
@@ -108,8 +108,8 @@ func TestASecondQuitStillFlushes(t *testing.T) {
 	vault := newSettler(false, true)
 	g := &vaultFlush{flush: vault.settle}
 
-	g.flushVault()
-	if !g.flushVault() {
+	g.flushVault(t.Context())
+	if !g.flushVault(t.Context()) {
 		t.Fatal("the second quit did not settle the vault")
 	}
 	if vault.getSettledCount() != 2 {
@@ -117,7 +117,7 @@ func TestASecondQuitStillFlushes(t *testing.T) {
 	}
 
 	// Settled, and asking again costs nothing.
-	if !g.flushVault() {
+	if !g.flushVault(t.Context()) {
 		t.Error("a settled vault answered that it had not")
 	}
 	if vault.getSettledCount() != 2 {
@@ -134,7 +134,7 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 
 	answers := make(chan bool, 2)
 	for range 2 {
-		go func() { answers <- g.flushVault() }()
+		go func() { answers <- g.flushVault(t.Context()) }()
 	}
 
 	select {

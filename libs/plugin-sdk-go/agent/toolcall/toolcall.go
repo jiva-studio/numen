@@ -69,8 +69,7 @@ func readRange(args string) *numenv1.Range {
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return nil
 	}
-	start, _ := parsed["start"].(float64)
-	length, _ := parsed["length"].(float64)
+	start, length := readNumber(parsed, "start"), readNumber(parsed, "length")
 	if length <= 0 || start < 0 || start > math.MaxInt32-length {
 		return nil
 	}
@@ -109,7 +108,7 @@ func describeCollection(value []any, inside string) string {
 		if inside == "" {
 			return ""
 		}
-		first, _ = element[inside].(string)
+		first = readText(element[inside])
 	}
 	if first == "" {
 		return ""
@@ -169,17 +168,34 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 		}
 	}
 
-	startVal, hasStart := parsed["start"]
-	lenVal, hasLen := parsed["length"]
+	_, hasStart := parsed["start"]
+	_, hasLen := parsed["length"]
 	if !hasStart || !hasLen {
 		return about, path, nil
 	}
-	from, _ := startVal.(float64)
-	length, _ := lenVal.(float64)
+	from, length := readNumber(parsed, "start"), readNumber(parsed, "length")
 	if from < 0 || length < 0 || from > math.MaxInt32-length {
 		return about, path, nil
 	}
 	return about, path, &numenv1.Range{Start: int32(from), End: int32(from + length)}
+}
+
+// readNumber returns the number under key, or 0 when the key is absent or not a number.
+func readNumber(values map[string]any, key string) float64 {
+	number, isNumber := values[key].(float64)
+	if !isNumber {
+		return 0
+	}
+	return number
+}
+
+// readText returns value when it is a string, or "" otherwise.
+func readText(value any) string {
+	text, isString := value.(string)
+	if !isString {
+		return ""
+	}
+	return text
 }
 
 // readFirstString returns the first of keys whose value in parsed is a string.

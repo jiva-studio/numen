@@ -1,3 +1,4 @@
+// Package markdown exposes the note parsing types of the notes library to plugins.
 package markdown
 
 import (

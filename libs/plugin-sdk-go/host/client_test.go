@@ -52,8 +52,11 @@ func (a *answering) EnsureVaultIndexed(context.Context, *connect.Request[v1.Ensu
 }
 
 func (a *answering) WatchMoves(ctx context.Context, _ *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse]) error {
-	_ = stream.Send(&v1.WatchMovesResponse{})
-	_ = stream.Send(&v1.WatchMovesResponse{})
+	for range 2 {
+		if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
+			return err
+		}
+	}
 	<-ctx.Done()
 	return nil
 }
@@ -79,9 +82,11 @@ func (a *answering) UnlockVault(_ context.Context, req *connect.Request[v1.Unloc
 }
 
 func (a *answering) WatchVault(ctx context.Context, _ *connect.Request[v1.WatchVaultRequest], stream *connect.ServerStream[v1.WatchVaultResponse]) error {
-	_ = stream.Send(&v1.WatchVaultResponse{})
-	_ = stream.Send(&v1.WatchVaultResponse{Paths: []string{"x.md"}})
-	_ = stream.Send(&v1.WatchVaultResponse{IsVaultChanged: true})
+	for _, response := range []*v1.WatchVaultResponse{{}, {Paths: []string{"x.md"}}, {IsVaultChanged: true}} {
+		if err := stream.Send(response); err != nil {
+			return err
+		}
+	}
 	<-ctx.Done()
 	return nil
 }
@@ -96,7 +101,7 @@ func clientTo(t *testing.T, a *answering) *host.Client {
 func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 	a := &answering{}
 
-	fp, err := clientTo(t, a).StatFile(context.Background(), "n.md")
+	fp, err := clientTo(t, a).StatFile(t.Context(), "n.md")
 
 	want := domain.FileStat{Path: "n.md", Kind: domain.KindFile, Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
 	if err != nil || fp != want || a.authHeader != "Bearer tok" {
@@ -115,7 +120,7 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:        host.ErrNotANote,
 	}
 	for code, want := range cases {
-		_, err := clientTo(t, &answering{code: code}).StatFile(context.Background(), "n.md")
+		_, err := clientTo(t, &answering{code: code}).StatFile(t.Context(), "n.md")
 		if !errors.Is(err, want) {
 			t.Errorf("code %s: got %v, want %v", code, err, want)
 		}
@@ -126,7 +131,7 @@ func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE}
 	baseline := domain.FileStat{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
 
-	_, err := clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
+	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline)
 
 	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetModTime() != baseline.ModTime.UnixNano() {
 		t.Errorf("got %v and %v", err, a.baselines)
@@ -151,7 +156,7 @@ func TestGetLink_PreservesHostFields(t *testing.T) {
 func TestReleasingTheLockPassesItBack(t *testing.T) {
 	a := &answering{}
 
-	release, err := clientTo(t, a).Lock(context.Background())
+	release, err := clientTo(t, a).Lock(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +168,7 @@ func TestReleasingTheLockPassesItBack(t *testing.T) {
 }
 
 func TestAWatchBeginsAfterTheFirstMessageAndTellsTheChanges(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	changes, err := clientTo(t, &answering{}).Watch(ctx)
@@ -185,8 +190,8 @@ func TestClient_SendsVaultIdentityHeader(t *testing.T) {
 	a := &answering{}
 	client := clientTo(t, a)
 
-	got, err := client.With("v2").GetVault(context.Background())
-	_, unknown := client.With("nobody").GetVault(context.Background())
+	got, err := client.With("v2").GetVault(t.Context())
+	_, unknown := client.With("nobody").GetVault(t.Context())
 
 	if err != nil || got.ID != "v2" || a.named != "nobody" {
 		t.Errorf("got %+v (%v), the header was %q", got, err, a.named)
@@ -194,14 +199,14 @@ func TestClient_SendsVaultIdentityHeader(t *testing.T) {
 	if !errors.Is(unknown, host.ErrUnknownVault) {
 		t.Errorf("an unknown vault was answered %v", unknown)
 	}
-	displayed, err := client.GetVault(context.Background())
+	displayed, err := client.GetVault(t.Context())
 	if err != nil || a.named != "" || displayed.ID != "" {
 		t.Errorf("the shown vault was asked for with the header %q (%+v, %v)", a.named, displayed, err)
 	}
 }
 
 func TestEveryKnownVaultIsListed(t *testing.T) {
-	vaults, err := clientTo(t, &answering{}).GetVaults(context.Background())
+	vaults, err := clientTo(t, &answering{}).GetVaults(t.Context())
 
 	if err != nil || len(vaults) != 2 || vaults[1] != (domain.Vault{ID: "b", Name: "B", Path: "/b"}) {
 		t.Errorf("got %+v (%v)", vaults, err)
@@ -209,7 +214,7 @@ func TestEveryKnownVaultIsListed(t *testing.T) {
 }
 
 func TestWhereTheIndexExistsReachesWithItsReason(t *testing.T) {
-	state, err := clientTo(t, &answering{}).EnsureIndexed(context.Background())
+	state, err := clientTo(t, &answering{}).EnsureIndexed(t.Context())
 
 	if err != nil || state != (host.IndexState{Status: host.IndexFailed, Reason: "disk"}) {
 		t.Errorf("got %+v (%v)", state, err)
@@ -217,7 +222,7 @@ func TestWhereTheIndexExistsReachesWithItsReason(t *testing.T) {
 }
 
 func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	moves, err := clientTo(t, &answering{}).WatchMoves(ctx)
@@ -237,7 +242,9 @@ func TestAFingerprintPreservesWhatSortOfSourceTheFileIs(t *testing.T) {
 	a := &answering{}
 	baseline := domain.FileStat{Path: "n.md", Kind: domain.KindNote, Size: 3, ModTime: time.Unix(5, 6)}
 
-	_, _ = clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
+	if _, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline); err != nil {
+		t.Fatal(err)
+	}
 
 	if len(a.baselines) != 1 || !a.baselines[0].GetIsNote() {
 		t.Errorf("the host was sent %v", a.baselines)

@@ -22,18 +22,25 @@ import (
 // A user who launched numen from a dock has no terminal, and a message written
 // to one is never seen. Whatever this build could not do is reported here,
 // with the state of the installation it found.
-func failWithDialog(cfg container.Config, why error) {
+func failWithDialog(cfg container.Config, why error) error {
 	page, err := fatalReport{}.page(cfg, why)
 	if err != nil {
-		return
+		return err
 	}
+
+	writeErrs := make(chan error, 1)
 
 	app := application.New(application.Options{
 		Name: appName,
 		Assets: application.AssetOptions{
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				_, _ = w.Write(page)
+				if _, err := w.Write(page); err != nil {
+					select {
+					case writeErrs <- err:
+					default:
+					}
+				}
 			}),
 		},
 		// The application ends when its last window closes, and an error ends it
@@ -48,7 +55,13 @@ func failWithDialog(cfg container.Config, why error) {
 		Height: 520,
 		URL:    "/",
 	})
-	_ = app.Run()
+	runErr := app.Run()
+	select {
+	case writeErr := <-writeErrs:
+		return errors.Join(runErr, writeErr)
+	default:
+		return runErr
+	}
 }
 
 // fatalReport is the start failure page: a heading, a one-line reason, the

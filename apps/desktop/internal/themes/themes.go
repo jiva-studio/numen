@@ -11,7 +11,9 @@ import (
 func Load[S any](get func(say func(string)) (S, error), say func(string), out io.Writer) S {
 	loaded, err := get(say)
 	if err != nil {
-		fmt.Fprintf(out, "themes: %v\n", err)
+		if _, writeErr := fmt.Fprintf(out, "themes: %v\n", err); writeErr != nil {
+			return loaded
+		}
 	}
 	return loaded
 }

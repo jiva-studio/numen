@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -121,7 +122,7 @@ func Handle[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(res)
+		logWriteError(json.NewEncoder(w).Encode(res))
 	}))
 }
 
@@ -139,18 +140,18 @@ func Stream[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.WriteHeader(http.StatusOK)
-		_ = flusher.Flush()
+		logWriteError(flusher.Flush())
 
 		send := func(res Res) error {
 			return writeEvent(w, flusher, "", res)
 		}
 		if err := fn(withHeader(r.Context(), r.Header), req, send); err != nil {
 			if r.Context().Err() == nil {
-				_ = writeEvent(w, flusher, "error", toAPIError(err))
+				logWriteError(writeEvent(w, flusher, "error", toAPIError(err)))
 			}
 			return
 		}
-		_ = writeEvent(w, flusher, "end", struct{}{})
+		logWriteError(writeEvent(w, flusher, "end", struct{}{}))
 	}))
 }
 
@@ -165,7 +166,14 @@ func readRequest(body io.Reader, req any) error {
 func writeFailure(w http.ResponseWriter, failure *APIError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(failure.Code.getStatus())
-	_ = json.NewEncoder(w).Encode(failure)
+	logWriteError(json.NewEncoder(w).Encode(failure))
+}
+
+// logWriteError records a failed response write; the client has usually disconnected.
+func logWriteError(err error) {
+	if err != nil {
+		slog.Debug("server: write response", "error", err)
+	}
 }
 
 func writeEvent(w http.ResponseWriter, flusher *http.ResponseController, name string, payload any) error {

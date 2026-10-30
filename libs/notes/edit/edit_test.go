@@ -121,7 +121,10 @@ func TestAReadReturnsWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 
 func TestApply_StampsIDAndLocksWrite(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.StatFile(t.Context(), "A.md")
+	read, err := f.StatFile(t.Context(), "A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
@@ -138,12 +141,15 @@ func TestApply_StampsIDAndLocksWrite(t *testing.T) {
 
 func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.StatFile(t.Context(), "A.md")
+	read, err := f.StatFile(t.Context(), "A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	f.put("A.md", "# A, edited by somebody\n")
 	e := editing(f)
 	e.FileStat = read
 
-	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	_, err = e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
 	if !errors.Is(err, edit.ErrStale) || f.content["A.md"] != "# A, edited by somebody\n" {
 		t.Errorf("got %v and the note %q", err, f.content["A.md"])
@@ -152,13 +158,16 @@ func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 
 func TestABaselineOfTheSameProseLandsWhateverTheFileReturns(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.StatFile(t.Context(), "A.md")
+	read, err := f.StatFile(t.Context(), "A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	f.put("A.md", "# A\n")
 	e := editing(f)
 	e.ShouldOverwrite = true
 	e.Baseline = &edit.Baseline{Prose: "# A\n", FileStat: read}
 
-	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	_, err = e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
 	if err != nil || f.content["A.md"] != "# B\n" {
 		t.Errorf("got %v and the note %q", err, f.content["A.md"])
@@ -237,8 +246,14 @@ func (n names) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) (
 func TestANoteIsAddressedByItsNameUnlessAnotherSharesIt(t *testing.T) {
 	shared := names{"Slow": {"a/Slow.md", "b/Slow.md"}, "Fast": {"Fast.md"}}
 
-	byName, _ := edit.GetAddress(t.Context(), shared, "v1", "Fast.md")
-	byPath, _ := edit.GetAddress(t.Context(), shared, "v1", "a/Slow.md")
+	byName, err := edit.GetAddress(t.Context(), shared, "v1", "Fast.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byPath, err := edit.GetAddress(t.Context(), shared, "v1", "a/Slow.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, unreachable := edit.GetAddress(t.Context(), shared, "v1", "a/C#.md")
 
 	if byName.Value != "Fast" || byPath.Value != "a/Slow" || !errors.Is(unreachable, edit.ErrUnaddressable) {

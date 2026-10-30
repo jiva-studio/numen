@@ -92,11 +92,10 @@ func Start(dir string) (int, error) {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	opened.Services.Themes = themes
-	listener, err := listenLocal()
+	listener, err := listenLocal(ctx)
 	if err != nil {
 		stop()
-		_ = opened.Close()
-		return 0, err
+		return 0, errors.Join(err, opened.Close())
 	}
 
 	// The phone shows the vault, its notes and the tree they are filed in, and
@@ -151,15 +150,15 @@ type localListener struct {
 }
 
 // listenLocal is a listener on a free loopback port.
-func listenLocal() (localListener, error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+func listenLocal(ctx context.Context) (localListener, error) {
+	var listenConfig net.ListenConfig
+	listener, err := listenConfig.Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return localListener{}, err
 	}
 	addr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
-		_ = listener.Close()
-		return localListener{}, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
+		return localListener{}, errors.Join(fmt.Errorf("listening on %s, which is no TCP address", listener.Addr()), listener.Close())
 	}
 	return localListener{Listener: listener, port: addr.Port}, nil
 }
@@ -200,7 +199,11 @@ func makeConfig(dir string, out io.Writer) container.Config {
 		IndexPath:    filepath.Join(dir, "index.db"),
 		RegistryPath: filepath.Join(dir, "vaults.json"),
 		ThemesPath:   filepath.Join(dir, "themes"),
-		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen:", err) },
+		ErrorHandler: func(err error) {
+			if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
+				return
+			}
+		},
 	}
 }
 

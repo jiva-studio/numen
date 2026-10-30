@@ -43,7 +43,10 @@ func main() {
 	flag.Parse()
 
 	if opts.ShowVersion {
-		fmt.Println(version.GetVersionLine("numen"))
+		if _, err := fmt.Fprintln(os.Stdout, version.GetVersionLine("numen")); err != nil {
+			fmt.Fprintln(os.Stderr, "numen:", err)
+			os.Exit(1)
+		}
 		return
 	}
 

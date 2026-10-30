@@ -4,71 +4,71 @@ import (
 	"net/http"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-type AgentModel = numenv1.AgentModel
+type AgentModel = v1.AgentModel
 
-type AgentProgram = numenv1.AgentProgram
+type AgentProgram = v1.AgentProgram
 
-type AgentProgramCommand = numenv1.AgentProgramCommand
+type AgentProgramCommand = v1.AgentProgramCommand
 
-type AgentToolDefinition = numenv1.AgentToolDefinition
+type AgentToolDefinition = v1.AgentToolDefinition
 
-type AskAgentRequest = numenv1.AskAgentRequest
+type AskAgentRequest = v1.AskAgentRequest
 
-type AskAgentResponse = numenv1.AskAgentResponse
+type AskAgentResponse = v1.AskAgentResponse
 
-type AskAgentResponse_EditProgress = numenv1.AskAgentResponse_EditProgress
+type AskAgentResponse_EditProgress = v1.AskAgentResponse_EditProgress
 
-type AskAgentResponse_ModelStarted = numenv1.AskAgentResponse_ModelStarted
+type AskAgentResponse_ModelStarted = v1.AskAgentResponse_ModelStarted
 
-type AskAgentResponse_Stopped = numenv1.AskAgentResponse_Stopped
+type AskAgentResponse_Stopped = v1.AskAgentResponse_Stopped
 
-type AskAgentResponse_Text = numenv1.AskAgentResponse_Text
+type AskAgentResponse_Text = v1.AskAgentResponse_Text
 
-type AskAgentResponse_ToolCall = numenv1.AskAgentResponse_ToolCall
+type AskAgentResponse_ToolCall = v1.AskAgentResponse_ToolCall
 
-type AskAgentResponse_ToolFinished = numenv1.AskAgentResponse_ToolFinished
+type AskAgentResponse_ToolFinished = v1.AskAgentResponse_ToolFinished
 
-type EditProgress = numenv1.EditProgress
+type EditProgress = v1.EditProgress
 
-type ExtendSystemPromptRequest = numenv1.ExtendSystemPromptRequest
+type ExtendSystemPromptRequest = v1.ExtendSystemPromptRequest
 
-type ExtendSystemPromptResponse = numenv1.ExtendSystemPromptResponse
+type ExtendSystemPromptResponse = v1.ExtendSystemPromptResponse
 
-type FinishConversationRequest = numenv1.FinishConversationRequest
+type FinishConversationRequest = v1.FinishConversationRequest
 
-type FinishConversationResponse = numenv1.FinishConversationResponse
+type FinishConversationResponse = v1.FinishConversationResponse
 
-type GetAgentProgramsRequest = numenv1.GetAgentProgramsRequest
+type GetAgentProgramsRequest = v1.GetAgentProgramsRequest
 
-type GetAgentProgramsResponse = numenv1.GetAgentProgramsResponse
+type GetAgentProgramsResponse = v1.GetAgentProgramsResponse
 
-type GetAgentStateRequest = numenv1.GetAgentStateRequest
+type GetAgentStateRequest = v1.GetAgentStateRequest
 
-type GetAgentStateResponse = numenv1.GetAgentStateResponse
+type GetAgentStateResponse = v1.GetAgentStateResponse
 
-type GetAgentToolsRequest = numenv1.GetAgentToolsRequest
+type GetAgentToolsRequest = v1.GetAgentToolsRequest
 
-type GetAgentToolsResponse = numenv1.GetAgentToolsResponse
+type GetAgentToolsResponse = v1.GetAgentToolsResponse
 
-type ModelStarted = numenv1.ModelStarted
+type ModelStarted = v1.ModelStarted
 
-type Range = numenv1.Range
+type Range = v1.Range
 
-type ReasoningLevel = numenv1.ReasoningLevel
+type ReasoningLevel = v1.ReasoningLevel
 
-type RegisterToolRequest = numenv1.RegisterToolRequest
+type RegisterToolRequest = v1.RegisterToolRequest
 
-type RegisterToolResponse = numenv1.RegisterToolResponse
+type RegisterToolResponse = v1.RegisterToolResponse
 
-type ToolCall = numenv1.ToolCall
+type ToolCall = v1.ToolCall
 
-type ToolDeclaration = numenv1.ToolDeclaration
+type ToolDeclaration = v1.ToolDeclaration
 
-type ToolFinished = numenv1.ToolFinished
+type ToolFinished = v1.ToolFinished
 
 type AgentServiceHandler = numenv1connect.AgentServiceHandler
 
