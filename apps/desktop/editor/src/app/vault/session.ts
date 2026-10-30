@@ -104,11 +104,11 @@ export const sessionCore: SessionCore = {
     }
   },
   watchQuit: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
-  reportFlush: async (token, owed) => {
+  reportFlush: async (token, outcome) => {
     await windowService.reportFlush({
       window: WINDOW,
       token,
-      result: flushResults[owed ?? 'nothing'],
+      result: flushResults[outcome ?? 'nothing'],
     })
   },
   detachTab: async (tabId, position) => {

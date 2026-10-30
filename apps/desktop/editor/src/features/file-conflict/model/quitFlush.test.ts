@@ -111,7 +111,7 @@ const settle = async () => {
   for (let i = 0; i < 20; i++) await delay()
 }
 
-describe('a page requested to write what it owes', () => {
+describe('a page requested to write its unsaved changes', () => {
   it('writes an unsaved tab and only then says it has', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
@@ -136,7 +136,7 @@ describe('a page requested to write what it owes', () => {
     expect(fakeCore.reportedResults).toEqual([{ token: '7', result: 'written' }])
   })
 
-  it('does not answer while the write it owes is still in the air', async () => {
+  it('does not answer while its pending write is still in the air', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const notes = openNotes(fakeCore.core)
@@ -211,7 +211,7 @@ describe('a page holding text the file changed under', () => {
     expect(going.conflicts.value.map((one) => one.note)).toEqual(['Note.md'])
   })
 
-  it('says so before the writes it owes have landed', async () => {
+  it('says so before its pending writes have landed', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const notes = openNotes(fakeCore.core)
@@ -425,7 +425,7 @@ describe('the handlers of a page', () => {
   })
 })
 
-describe('writes owed at an earlier ask', () => {
+describe('writes pending at an earlier request', () => {
   it('do not answer for the ask that came after them', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)

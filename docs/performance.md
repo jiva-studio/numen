@@ -47,7 +47,7 @@ A hundred thousand notes, from the load test. Measured 2026-09-06, one run, on a
 | Search, rare term, under load                         | p50 2 · p95 4 · p99 5 · max 42 ms | p50 3 · p95 6 · p99 8 · max 102 ms       | p95 under 50 ms |
 | Search, term matching every note                      | p50 0.90 s · p95 1.01 s           | p50 3.37 s · p95 4.25 s                  | not covered     |
 
-**Two of these targets are now missed, and the index size says why.** It has gone from 162 MB to 344 MB over the same 164 MB of markdown, and that figure owes nothing to a busy machine. A note is now written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, each of them indexed for its words in `chunks_fts` and again in `sections_fts` — so a scan writes about twice as much, and a query that matches everything ranks several rows per note.
+**Two of these targets are now missed, and the index size says why.** It has gone from 162 MB to 344 MB over the same 164 MB of markdown, and that figure does not depend on a busy machine. A note is now written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, each of them indexed for its words in `chunks_fts` and again in `sections_fts` — so a scan writes about twice as much, and a query that matches everything ranks several rows per note.
 
 **What a person's own search costs has held.** The rare-term row is 3 ms at the median and 6 at the ninety-fifth, well inside a target of fifty, against 2 and 4 on a quieter machine. The read side did not move; the write side and the size did.
 
@@ -610,7 +610,7 @@ The frontmatter row is the one that says the hash is over the text and not over 
 
 **What a heading buys is the last two rows of the second table.** With the note as one span, an edit re-cuts every chunk after it and the worst case grows with the note: 5 vectors at 200 words, 26 at a thousand. With a heading opening each section the worst case is the chunks of that section at any length — 5 at a thousand words, and 3 for an edit half way down.
 
-**What it costs is chunk count on a note that is mostly headings.** A chunk is never cut across a heading, so a section shorter than fifty words is a chunk of its own. A 200-word note with a heading every five words is cut into 40 chunks where the same words with no place named are cut into 7, and each of the 40 owes a vector of its own. An edit anywhere in that note asks for one.
+**What it costs is chunk count on a note that is mostly headings.** A chunk is never cut across a heading, so a section shorter than fifty words is a chunk of its own. A 200-word note with a heading every five words is cut into 40 chunks where the same words with no place named are cut into 7, and each of the 40 needs a vector of its own. An edit anywhere in that note asks for one.
 
 The first cut of the 200-word note asks for four vectors where one span asks for five: a section of 48 words is one chunk, and nothing overlaps across a heading. Every small chunk carries the name of the section it was cut inside; the chunk enclosing the note carries the note's title, so a note is still answered by the name it was given.
 
@@ -827,7 +827,7 @@ Each column is the median of three runs; the last two name the best of three on 
 
 **The allocations have gone past where the change above started, and the reason is a containment fix.** On 2026-09-04 a path was constrained to its declared directory, because a link written into an area — by a sync client, by another tool — pointed back at the vault's identity and a transcript appended down it landed on `config.json`. The check is right and the hole was real.
 
-**What was not owed was doing it three times.** `DerivedStore.at` resolved symlinks on the target, then on the store's area, then on the store's own root. The last two are paths fixed for the life of the store, and `deepest` is a `filepath.EvalSymlinks` walk — one `lstat` per segment of an absolute path, every time. By allocation profile **60.5 % of one `Read` was inside `EvalSymlinks`**, which was the whole of the difference between 48 allocations and 76.
+**Resolving the path three times was not required.** `DerivedStore.at` resolved symlinks on the target, then on the store's area, then on the store's own root. The last two are paths fixed for the life of the store, and `deepest` is a `filepath.EvalSymlinks` walk — one `lstat` per segment of an absolute path, every time. By allocation profile **60.5 % of one `Read` was inside `EvalSymlinks`**, which was the whole of the difference between 48 allocations and 76.
 
 **The store's folder is resolved when it is opened, and each area is placed inside it**, and the last column is what that is worth: a read is 44 allocations against 76 and 36.4 µs against 64.9, and a listing 39 against 71 and 20.8 µs against 51.9 — both below the row the containment fix started from. The check itself is unchanged, and a name still lands inside its area or is refused.
 
@@ -1075,7 +1075,7 @@ The two copies of `@vue/runtime-core` went the same way, and the editor's `vue-t
 
 ## A recipe that moved, and whether it settles
 
-The quantisation scale now stands in the recipe a vector is kept under, so every vector made before it is owed again. Read 2026-09-06, from the code rather than the clock.
+The quantisation scale now stands in the recipe a vector is kept under, so every vector made before it is made again. Read 2026-09-06, from the code rather than the clock.
 
 **It settles.** `port.EmbeddingModel.Recipe` is a `Sprintf` over the model's five fields, the name of the quantisation and `port.Int8Scale`. The five fields come from the settings file; the other two are constants. Nothing in it is read from the clock, from a random source, or from a path that differs between launches, so two runs of one installation ask for the same recipe and the second finds every vector the first bought. The cost is once, and `TestAScaleThatMovedBuysTheVectorsAgain` is what holds it there.
 

@@ -59,7 +59,7 @@ export interface VaultPort {
    */
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   /** Reports that this client has written all pending data. */
-  reportFlush(token: string, owed?: 'written' | 'asking'): Promise<void>
+  reportFlush(token: string, outcome?: 'written' | 'asking'): Promise<void>
   /** Detach a tab into a new window at the given screen coordinates. */
   detachTab(tabId: string, position: { x: number; y: number }): Promise<void>
 }

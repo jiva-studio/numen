@@ -55,7 +55,7 @@ An installation keeps a list of vaults and shows one at a time. Moving to anothe
 window you already have: **Vaults** in the commands lists them, and choosing one puts it in front
 of you.
 
-Before the swap, every open tab writes what it owes. A tab holding a question you have not
+Before the swap, every open tab writes its unsaved changes. A tab holding a question you have not
 answered — a note whose file changed underneath it — calls the swap off and stays where it is,
 so nothing is left half-written.
 
