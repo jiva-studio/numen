@@ -102,8 +102,9 @@ func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
 	seq = roundUpToBucket(getLongest(batch), limit)
 
-	in, _ = paddings.Get().(*padding)
-	if in == nil {
+	var isPadding bool
+	in, isPadding = paddings.Get().(*padding)
+	if !isPadding {
 		in = &padding{}
 	}
 	size := rows * seq

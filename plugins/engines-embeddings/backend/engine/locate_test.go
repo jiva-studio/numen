@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -20,14 +19,14 @@ import (
 func TestLocateRefusesToFetchWhileOffline(t *testing.T) {
 	t.Setenv(EnvOffline, "1")
 	t.Setenv(EnvDir, t.TempDir())
-	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
+	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err == nil || !strings.Contains(err.Error(), EnvOffline) {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }
 
 func TestLocateRefusesToFetchWhenDownloadIsOff(t *testing.T) {
-	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo"}, nil)
+	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo"}, nil)
 	if err == nil || !strings.Contains(err.Error(), "enable download") {
 		t.Fatalf("Locate() error = %v", err)
 	}
@@ -103,7 +102,7 @@ func TestLocateUsesAPinnedSnapshotWhileOffline(t *testing.T) {
 	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
 	t.Setenv(EnvOffline, "1")
 
-	got, err := Locate(context.Background(), pinnedModel("abc"), nil)
+	got, err := Locate(t.Context(), pinnedModel("abc"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,14 +116,14 @@ func TestLocateUsesAPinnedSnapshotWhileOffline(t *testing.T) {
 
 func TestLocateRefusesACachedModelWithAnotherSum(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "corrupt", "tokenizer.json": "tokens"})
-	if _, err := Locate(context.Background(), pinnedModel("abc"), nil); err == nil || !strings.Contains(err.Error(), "pinned") {
+	if _, err := Locate(t.Context(), pinnedModel("abc"), nil); err == nil || !strings.Contains(err.Error(), "pinned") {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }
 
 func TestLocateRefusesACachedTokenizerWithAnotherSum(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "corrupt"})
-	if _, err := Locate(context.Background(), pinnedModel("abc"), nil); err == nil || !strings.Contains(err.Error(), "pinned") {
+	if _, err := Locate(t.Context(), pinnedModel("abc"), nil); err == nil || !strings.Contains(err.Error(), "pinned") {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }
@@ -167,7 +166,7 @@ func TestLocateFromDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := Locate(context.Background(), LocalModel{Dir: dir}, nil)
+	got, err := Locate(t.Context(), LocalModel{Dir: dir}, nil)
 	if err != nil {
 		t.Fatalf("Locate() error = %v", err)
 	}
@@ -185,7 +184,7 @@ func TestLocateErrorsWhenModelsHomeFails(t *testing.T) {
 	t.Setenv("HOME", "")
 	t.Setenv("APPDATA", "")
 	t.Setenv("LOCALAPPDATA", "")
-	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
+	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err == nil || !strings.Contains(err.Error(), "models folder") {
 		t.Fatalf("Locate() error = %v, want models folder error", err)
 	}
@@ -261,14 +260,18 @@ func TestLocatePassesRevision(t *testing.T) {
 		Revision:       "custom-rev",
 		ShouldDownload: true,
 	}
-	_, _ = Locate(context.Background(), cfg, nil)
+	if _, err := Locate(t.Context(), cfg, nil); err == nil {
+		t.Fatal("Locate succeeded against a server that answers 404")
+	}
 	if !strings.Contains(getPath(), "/revision/custom-rev") {
 		t.Fatalf("requested path = %q, want revision custom-rev", getPath())
 	}
 
 	resetPath()
 	cfg.Revision = ""
-	_, _ = Locate(context.Background(), cfg, nil)
+	if _, err := Locate(t.Context(), cfg, nil); err == nil {
+		t.Fatal("Locate succeeded against a server that answers 404")
+	}
 	if !strings.Contains(getPath(), "/revision/main") {
 		t.Fatalf("requested path = %q, want default revision main", getPath())
 	}

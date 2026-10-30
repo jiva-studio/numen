@@ -104,7 +104,7 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 
 func isLocalPresetModel(model string) bool {
 	switch model {
-	case "Xenova/bge-m3", "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "bge-m3", "bge-m3-int8":
+	case "Xenova/bge-m3", "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", bgeM3Model, bgeM3Int8Model:
 		return true
 	default:
 		return false
@@ -113,16 +113,16 @@ func isLocalPresetModel(model string) bool {
 
 func getDefaultRemoteModel(provider string) string {
 	if provider == "openrouter" {
-		return "openai/text-embedding-3-small"
+		return openRouterSmallModel
 	}
-	return "text-embedding-3-small"
+	return openAISmallModel
 }
 
 func resolveModelDimensions(model string) int {
 	switch model {
 	case "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", "Xenova/all-MiniLM-L6-v2", "Xenova/all-MiniLM-L12-v2":
 		return 384
-	case "openai/text-embedding-3-small", "text-embedding-3-small", "openai/text-embedding-ada-002", "text-embedding-ada-002":
+	case openRouterSmallModel, openAISmallModel, "openai/text-embedding-ada-002", "text-embedding-ada-002":
 		return 1536
 	case "openai/text-embedding-3-large", "text-embedding-3-large":
 		return 3072
@@ -140,8 +140,8 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 	prevRepo := s.localModel.Name
 	prevName := s.localName
 	switch model {
-	case "", "Xenova/bge-m3", "bge-m3", "bge-m3-int8",
-		"openai/text-embedding-3-small", "text-embedding-3-small",
+	case "", "Xenova/bge-m3", bgeM3Model, bgeM3Int8Model,
+		openRouterSmallModel, openAISmallModel,
 		"openai/text-embedding-3-large", "text-embedding-3-large",
 		"openai/text-embedding-ada-002", "text-embedding-ada-002",
 		"baai/bge-m3", "qwen/qwen3-embedding-8b":
@@ -156,7 +156,9 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 		s.localName = model
 	}
 	if (s.localModel.Name != prevRepo || s.localName != prevName) && s.embedder != nil {
-		_ = s.embedder.Close()
+		if err := s.embedder.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
+		}
 		s.embedder = nil
 	}
 }
@@ -182,7 +184,7 @@ func newEmbeddingServer() *embeddingServer {
 func applyModelOverrides(info *engine.ModelInfo, local *engine.LocalModel) {
 	if name := os.Getenv("NUMEN_EMBEDDING_MODEL"); name != "" {
 		info.Name = name
-		if name != "bge-m3" && name != "bge-m3-int8" {
+		if name != bgeM3Model && name != bgeM3Int8Model {
 			*local = local.WithRepository(name)
 		}
 	}
@@ -387,7 +389,14 @@ func (s *embeddingServer) getModelName() string {
 	return s.modelInfo.Name
 }
 
-func computeServiceVector(ctx context.Context, key, baseURL, model, text string) ([]float32, error) {
+const (
+	bgeM3Model           = "bge-m3"
+	bgeM3Int8Model       = "bge-m3-int8"
+	openAISmallModel     = "text-embedding-3-small"
+	openRouterSmallModel = "openai/" + openAISmallModel
+)
+
+func computeServiceVector(ctx context.Context, key, baseURL, model, text string) (vector []float32, err error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
 	reqBody, err := json.Marshal(openAIEmbeddingRequest{
@@ -409,7 +418,7 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -436,7 +445,11 @@ func Mount(s *server.Server) error {
 	embedSrv := newEmbeddingServer()
 	s.SetUpdateConfig(embedSrv.updateConfig)
 	embedding.Mount(s, embedSrv)
-	s.OnClose(func() { _ = embedSrv.Close() })
+	s.OnClose(func() {
+		if err := embedSrv.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
+		}
+	})
 	return nil
 }
 
