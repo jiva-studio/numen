@@ -2,6 +2,7 @@ package toolserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -75,12 +76,12 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 }
 
 // listPluginTools lists the tools of one plugin, holding its reference for the length of the call.
-func (p plugins) listPluginTools(ctx context.Context, pluginID string) ([]*v1.PluginTool, error) {
+func (p plugins) listPluginTools(ctx context.Context, pluginID string) (tools []*v1.PluginTool, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = lease.Close() }()
+	defer func() { err = errors.Join(err, lease.Close()) }()
 
 	res, err := client.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
@@ -90,12 +91,12 @@ func (p plugins) listPluginTools(ctx context.Context, pluginID string) ([]*v1.Pl
 }
 
 // callTool runs the tool on the plugin that listed it, in the scope of the run.
-func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope callScope) (*v1.CallToolResponse, error) {
+func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope callScope) (response *v1.CallToolResponse, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, one.pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = lease.Close() }()
+	defer func() { err = errors.Join(err, lease.Close()) }()
 
 	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
 		Name: one.spec.GetName(), Arguments: arguments, Context: scope.context, VaultId: string(scope.vault),

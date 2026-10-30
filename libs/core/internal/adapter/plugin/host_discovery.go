@@ -92,6 +92,7 @@ func (h *Host) registerSupervisorLocked(p plugindir.DiscoveredPlugin) {
 	if !exists {
 		sup = lifecycle.New()
 		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
+		sup.SetOnError(h.reportError)
 		h.supervisors[id] = sup
 	}
 	sup.SetPermissions(p.Manifest.Permissions)

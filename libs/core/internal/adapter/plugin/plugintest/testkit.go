@@ -144,14 +144,9 @@ func (s *MockAgentServer) AskAgent(
 	req *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_ModelStarted{
-			ModelStarted: &v1.ModelStarted{},
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_ToolCall{
+	steps := []*v1.AskAgentResponse{
+		{Step: &v1.AskAgentResponse_ModelStarted{ModelStarted: &v1.ModelStarted{}}},
+		{Step: &v1.AskAgentResponse_ToolCall{
 			ToolCall: &v1.ToolCall{
 				Tool:   "note_search",
 				About:  "query",
@@ -159,26 +154,16 @@ func (s *MockAgentServer) AskAgent(
 				Path:   "notes/test.md",
 				Range:  &v1.Range{Start: 0, End: 100},
 			},
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_ToolFinished{
-			ToolFinished: &v1.ToolFinished{},
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_Text{
-			Text: "answer: " + req.Msg.GetPrompt(),
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_Stopped{
-			Stopped: "done",
-		},
-	})
+		}},
+		{Step: &v1.AskAgentResponse_ToolFinished{ToolFinished: &v1.ToolFinished{}}},
+		{Step: &v1.AskAgentResponse_Text{Text: "answer: " + req.Msg.GetPrompt()}},
+		{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}},
+	}
+	for _, step := range steps {
+		if err := stream.Send(step); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

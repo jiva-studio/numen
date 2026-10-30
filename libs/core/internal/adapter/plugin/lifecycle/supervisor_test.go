@@ -20,7 +20,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 
-	err := sup.Attach(nil, time.Now())
+	err := sup.Attach(t.Context(), nil, time.Now())
 	if err == nil {
 		t.Fatal("expected error attaching nil process, got nil")
 	}
@@ -31,7 +31,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 	}
 
 	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach process: %v", err)
 	}
 	if sup.GetState() != StateActive {
@@ -83,7 +83,7 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 	}
 
 	sup := New()
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -131,7 +131,7 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 	}
 
 	sup := New()
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -177,7 +177,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 		close(onExitCh)
 	})
 
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
 		t.Fatalf("attach process: %v", err)
 	}
 
@@ -288,7 +288,7 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 		t.Fatalf("got memory limit %d, want %d", sup.GetMemoryLimit(), 100*1024*1024)
 	}
 
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
 		t.Fatalf("failed to attach process: %v", err)
 	}
 
@@ -370,7 +370,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 	sup.SetMemoryLimit(100)
 
 	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -394,7 +394,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 	}
 
 	// Second eviction reaches MaxFailures
-	sup.evictForMemory(nil, 10*time.Millisecond, nil)
+	sup.evictForMemory(t.Context(), nil, 10*time.Millisecond, nil)
 	failed, cause := sup.GetActivationFailure()
 	if !failed {
 		t.Fatal("expected plugin to be marked permanently failed after MaxFailures")
@@ -414,7 +414,7 @@ func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
 	}()
 	sup := New()
 	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 	sup.Release(now)
@@ -440,7 +440,7 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 	}()
 	sup := New()
 	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 	sup.Acquire(now)

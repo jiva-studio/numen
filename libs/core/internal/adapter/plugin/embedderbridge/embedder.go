@@ -2,6 +2,7 @@ package embedderbridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -47,8 +48,7 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 
 	model, concurrency, err := readClientModel(ctx, plugin.Manifest.ID, client)
 	if err != nil {
-		_ = lease.Close()
-		return nil, err
+		return nil, errors.Join(err, lease.Close())
 	}
 
 	return &Embedder{
@@ -90,8 +90,7 @@ func readClientModel(
 func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
 	if client, call, err := b.service.Open(context.Background()); err == nil {
 		model, concurrency, readErr := readClientModel(context.Background(), b.pluginID, client)
-		_ = call.Close()
-		if readErr == nil {
+		if errors.Join(readErr, call.Close()) == nil {
 			b.mu.Lock()
 			b.model = model
 			b.concurrency = concurrency
@@ -105,7 +104,7 @@ func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
 }
 
 // Embed sends texts to the embedding plugin process and decodes returned vectors.
-func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (b *Embedder) Embed(ctx context.Context, texts []string) (vectors [][]float32, err error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
@@ -117,7 +116,7 @@ func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	resp, err := client.EmbedBatch(ctx, req)
 	if err != nil {
@@ -125,7 +124,7 @@ func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 
 	protoVectors := resp.Msg.GetVectors()
-	vectors := make([][]float32, len(protoVectors))
+	vectors = make([][]float32, len(protoVectors))
 	for i, pv := range protoVectors {
 		vectors[i] = pv.GetValues()
 	}

@@ -920,7 +920,7 @@ func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
 
 	host.mu.Lock()
 	sup := host.supervisors["org.example.sample"]
-	_ = sup.Attach(cmd.Process, now)
+	_ = sup.Attach(t.Context(), cmd.Process, now)
 	host.endpoints["org.example.sample"] = transport.Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
 	host.mu.Unlock()
 

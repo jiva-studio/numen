@@ -110,6 +110,13 @@ func (s *Supervisor) GetActivationFailure() (bool, error) {
 	return s.failed, s.failure
 }
 
+// IsActivationFailed reports whether the plugin has failed activation for good.
+func (s *Supervisor) IsActivationFailed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.failed
+}
+
 // DescribeFailure returns a short UI label for why a plugin failed to start. The error itself is the detail.
 func DescribeFailure(cause error) string {
 	switch {

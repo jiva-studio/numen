@@ -300,7 +300,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	}
 	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
 	sup := lifecycle.New()
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
 	sup.BeginTeardown()

@@ -41,7 +41,7 @@ func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 		return a.agent.StartRun(ctx, task)
 	}
 
-	served, err := serveEndpoint(available, callScope{context: maps.Clone(task.Context), vault: task.Vault}, a.plugins)
+	served, err := serveEndpoint(ctx, available, callScope{context: maps.Clone(task.Context), vault: task.Vault}, a.plugins)
 	if err != nil {
 		return nil, err
 	}

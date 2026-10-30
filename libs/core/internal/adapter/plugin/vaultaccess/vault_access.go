@@ -153,10 +153,13 @@ func (a Vault) Write(
 		return domain.FileStat{}, err
 	}
 	pos, err := writer.Write(ctx, path, content, baseline)
-	if err == nil {
-		_ = a.Scan(ctx, []string{path})
+	if err != nil {
+		return pos, err
 	}
-	return pos, err
+	if err := a.Scan(ctx, []string{path}); err != nil {
+		return pos, fmt.Errorf("index %s after write: %w", path, err)
+	}
+	return pos, nil
 }
 
 func (a Vault) notifyFileWritten() {
@@ -173,7 +176,9 @@ func (a Vault) Create(ctx context.Context, path string, content []byte) error {
 	if err := writer.Create(ctx, path, content); err != nil {
 		return err
 	}
-	_ = a.Scan(ctx, []string{path})
+	if err := a.Scan(ctx, []string{path}); err != nil {
+		return fmt.Errorf("index %s after create: %w", path, err)
+	}
 	return nil
 }
 
