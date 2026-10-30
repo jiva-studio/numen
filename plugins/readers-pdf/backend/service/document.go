@@ -31,10 +31,11 @@ func NewDocumentServer(files host.Vault, texts host.Texts) *DocumentServer {
 	return &DocumentServer{files: files, texts: texts}
 }
 
-// Mount registers the document methods on api.
-func (s *DocumentServer) Mount(api *server.API) {
+// Mount registers the document methods on api and returns the first failure to mount one.
+func (s *DocumentServer) Mount(api *server.API) error {
 	server.Handle(api, "GetDocument", s.GetDocument)
 	server.Handle(api, "GetHighlights", s.GetHighlights)
+	return api.Err()
 }
 
 // GetDocument returns the size of each page of the PDF.

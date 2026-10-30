@@ -29,12 +29,12 @@ func openEngine(libPath string) (*ort.Engine, error) {
 
 // Register registers a library that creates an engine of its own, created where this
 // process initializes its runtime and passed the library it opened. It must be called
-// from an init, before anything opens an engine.
+// from an init, before anything opens an engine. A hook that returns an error fails the open.
 //
 // The binding gives every tensor to the engine made last and stamps it on for
 // that tensor's life, so one made on a library's first use moves what everything
 // already running was building its tensors through.
-func Register(also func(libPath string)) {
+func Register(also func(libPath string) error) {
 	runtimeState.Register(also)
 }
 

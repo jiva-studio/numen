@@ -464,11 +464,7 @@ func Mount(s *server.Server) error {
 	embedSrv := newEmbeddingServer()
 	s.SetUpdateConfig(embedSrv.updateConfig)
 	embedding.Mount(s, embedSrv)
-	s.OnClose(func() {
-		if err := embedSrv.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
-		}
-	})
+	s.OnClose(embedSrv.Close)
 	return nil
 }
 

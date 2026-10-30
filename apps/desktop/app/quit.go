@@ -57,27 +57,6 @@ func (t *windowTracker) addWindow() {
 	t.count++
 }
 
-func (t *windowTracker) removeWindow() bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.count > 0 {
-		t.count--
-	}
-	return t.count == 0
-}
-
-func (t *windowTracker) isLast() bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.count <= 1
-}
-
-func (t *windowTracker) countWindows() int {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.count
-}
-
 // closeSecondaryWindow decrements the window count if there is more than one window.
 // It reports true if this was a secondary window (count > 1) and count was decremented,
 // or false if this is the final window and closing must flush the vault.

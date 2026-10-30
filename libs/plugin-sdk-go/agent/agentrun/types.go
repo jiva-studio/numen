@@ -20,17 +20,17 @@ type AskAgentRequest = v1.AskAgentRequest
 
 type AskAgentResponse = v1.AskAgentResponse
 
-type AskAgentResponse_EditProgress = v1.AskAgentResponse_EditProgress
+type AskAgentResponseEditProgress = v1.AskAgentResponse_EditProgress
 
-type AskAgentResponse_ModelStarted = v1.AskAgentResponse_ModelStarted
+type AskAgentResponseModelStarted = v1.AskAgentResponse_ModelStarted
 
-type AskAgentResponse_Stopped = v1.AskAgentResponse_Stopped
+type AskAgentResponseStopped = v1.AskAgentResponse_Stopped
 
-type AskAgentResponse_Text = v1.AskAgentResponse_Text
+type AskAgentResponseText = v1.AskAgentResponse_Text
 
-type AskAgentResponse_ToolCall = v1.AskAgentResponse_ToolCall
+type AskAgentResponseToolCall = v1.AskAgentResponse_ToolCall
 
-type AskAgentResponse_ToolFinished = v1.AskAgentResponse_ToolFinished
+type AskAgentResponseToolFinished = v1.AskAgentResponse_ToolFinished
 
 type EditProgress = v1.EditProgress
 

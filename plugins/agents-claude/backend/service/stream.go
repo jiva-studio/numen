@@ -179,7 +179,7 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 	case "user":
 		if response.hasToolAnswer() {
 			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ToolFinished{
+				Step: &agentrun.AskAgentResponseToolFinished{
 					ToolFinished: &agentrun.ToolFinished{},
 				},
 			})
@@ -207,7 +207,7 @@ func (p *streamParser) parseSystemEvent(response event) {
 	case "status":
 		if response.Status == "requesting" {
 			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ModelStarted{
+				Step: &agentrun.AskAgentResponseModelStarted{
 					ModelStarted: &agentrun.ModelStarted{},
 				},
 			})
@@ -235,7 +235,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			}
 			p.isStreaming = true
 			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_Text{
+				Step: &agentrun.AskAgentResponseText{
 					Text: ev.Delta.Text,
 				},
 			})
@@ -280,7 +280,7 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, response event) 
 		case "text":
 			if block.Text != "" {
 				p.emit(&agentrun.AskAgentResponse{
-					Step: &agentrun.AskAgentResponse_Text{
+					Step: &agentrun.AskAgentResponseText{
 						Text: block.Text,
 					},
 				})
@@ -311,7 +311,7 @@ func stripServerPrefix(tool string) string {
 
 func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.AskAgentResponse {
 	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
-	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{ToolCall: call}}
+	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseToolCall{ToolCall: call}}
 }
 
 // reportEdit reports the change a call is writing, once the text that replaces the match has
@@ -334,7 +334,7 @@ func (p *streamParser) reportEdit() {
 		return
 	}
 	p.last = now
-	p.emit(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_EditProgress{
+	p.emit(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseEditProgress{
 		EditProgress: &agentrun.EditProgress{
 			Call:  p.callID,
 			Path:  path,

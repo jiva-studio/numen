@@ -50,13 +50,12 @@ func newTwoVaults(t *testing.T) twoVaults {
 func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string, response any) int {
 	t.Helper()
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "token"}, func(s *server.Server) error {
-		documents.Mount(s.NewAPI(APIService))
-		return nil
+		return documents.Mount(s.NewAPI(APIService))
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/"+APIService+"/"+method, strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+APIService+"/"+method, strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer token")
 	if vault != "" {
 		req.Header.Set("Numen-Vault", vault)

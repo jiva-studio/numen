@@ -285,9 +285,34 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 	}
 	// A server closed by Stop did not fail, so no failure is reported.
 	time.Sleep(300 * time.Millisecond)
-	if response := read(); strings.Contains(response, "numen:") {
-		t.Errorf("stopping was reported as a failure: %q", response)
+	if failure := getFailureLines(read()); len(failure) > 0 {
+		t.Errorf("stopping was reported as a failure: %q", failure)
 	}
+}
+
+// getFailureLines returns the lines of the core's standard error output that report a failure. The
+// progress line the opening prints, "numen: <count> notes", is not one.
+func getFailureLines(output string) []string {
+	var failure []string
+	for _, line := range strings.Split(output, "\n") {
+		if strings.HasPrefix(line, "numen:") && !isProgressLine(line) {
+			failure = append(failure, line)
+		}
+	}
+	return failure
+}
+
+// isProgressLine reports whether line is the note count the opening prints.
+func isProgressLine(line string) bool {
+	count, found := strings.CutPrefix(line, "numen: ")
+	if !found {
+		return false
+	}
+	digits, found := strings.CutSuffix(count, " notes")
+	if !found || digits == "" {
+		return false
+	}
+	return strings.Trim(digits, "0123456789") == ""
 }
 
 func TestPortIsZeroOnceTheServerEndedOnItsOwn(t *testing.T) {
@@ -499,6 +524,10 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 			}
 			_, writeErr := pipe.Write(body)
 			closeErr := pipe.Close()
+			if errors.Is(writeErr, syscall.EPIPE) {
+				// The reader closed the pipe before this write; the next read gets the next write.
+				writeErr = nil
+			}
 			if err := errors.Join(writeErr, closeErr); err != nil {
 				select {
 				case <-isDone:

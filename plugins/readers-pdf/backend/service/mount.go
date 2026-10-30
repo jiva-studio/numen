@@ -30,10 +30,15 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, files host.Vault, texts host.Texts, provider *TextServer) error {
-	NewDocumentServer(files, texts).Mount(s.NewAPI(APIService))
+	if err := NewDocumentServer(files, texts).Mount(s.NewAPI(APIService)); err != nil {
+		return err
+	}
 	s.RegisterRoute(pagesPattern, NewPageServer(files))
 	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
-	s.OnClose(provider.Close)
+	s.OnClose(func() error {
+		provider.Close()
+		return nil
+	})
 	return nil
 }
 

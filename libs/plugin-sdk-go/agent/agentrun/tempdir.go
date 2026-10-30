@@ -99,23 +99,27 @@ func CreateDir(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
-// LinkEntries symlinks each entry in from into into, skipping except. A failure is written to
-// standard error and the remaining entries are still linked.
-func LinkEntries(from, into, except string) {
+// LinkEntries symlinks each entry in from into into, skipping except. A missing from folder and an
+// entry already present in into are not errors. A failing entry does not stop the remaining ones;
+// the failures are returned joined.
+func LinkEntries(from, into, except string) error {
 	entries, err := os.ReadDir(from)
 	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			reportFileError("read", from, err)
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
 		}
-		return
+		return fmt.Errorf("read %s: %w", from, err)
 	}
+	var failures []error
 	for _, entry := range entries {
 		name := entry.Name()
 		if name == except {
 			continue
 		}
-		if err := os.Symlink(filepath.Join(from, name), filepath.Join(into, name)); err != nil && !errors.Is(err, fs.ErrExist) {
-			reportFileError("link", filepath.Join(into, name), err)
+		target := filepath.Join(into, name)
+		if err := os.Symlink(filepath.Join(from, name), target); err != nil && !errors.Is(err, fs.ErrExist) {
+			failures = append(failures, fmt.Errorf("link %s: %w", target, err))
 		}
 	}
+	return errors.Join(failures...)
 }

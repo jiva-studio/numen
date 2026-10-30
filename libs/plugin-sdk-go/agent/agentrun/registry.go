@@ -42,6 +42,7 @@ func (r *Registry) Remove(w *Work) {
 	delete(r.running, w)
 }
 
+// Close stops the registered work, refuses further work, and returns the joined stop errors.
 func (r *Registry) Close() error {
 	r.mu.Lock()
 	r.isClosed = true
@@ -52,8 +53,7 @@ func (r *Registry) Close() error {
 	r.running = nil
 	r.mu.Unlock()
 
-	stopAll(running)
-	return nil
+	return stopAll(running)
 }
 
 // EndConversation stops everything still answered in the conversation, then lets go of its
@@ -72,12 +72,12 @@ func (r *Registry) EndConversation(_ context.Context, conversation string) error
 	}
 	r.mu.Unlock()
 
-	stopAll(answering)
+	stopErr := stopAll(answering)
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.sessions, conversation)
-	return nil
+	return stopErr
 }
 
 // GetSession returns the session in which the next task of the conversation runs, empty when

@@ -54,9 +54,9 @@ func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.AskAgentResp
 	}
 	if reported.Status != nil && (*reported.Status == "completed" || *reported.Status == "failed") {
 		call.isFinished = true
-		return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolFinished{ToolFinished: &agentrun.ToolFinished{}}}
+		return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseToolFinished{ToolFinished: &agentrun.ToolFinished{}}}
 	}
-	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{
+	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseToolCall{
 		ToolCall: toolcall.Describe(s.words, call.getShownName(), reported.ToolCallID, call.arguments),
 	}}
 }
