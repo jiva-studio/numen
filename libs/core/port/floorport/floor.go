@@ -27,7 +27,7 @@ type Calibration struct {
 
 // Setting is the floor state kept for one vault under one recipe.
 type Setting struct {
-	// IsManual is whether the person set the floor, and ManualFloor the value
+	// IsManual is whether the user set the floor, and ManualFloor the value
 	// they set.
 	IsManual    bool
 	ManualFloor float64
@@ -72,7 +72,7 @@ type Samples interface {
 	GetPassages(ctx context.Context, v domain.Vault, recipe string, limit int) ([]Passage, error)
 }
 
-// Nearest reads how near the best passage of a vault stands to a vector.
+// Nearest reads the similarity of the best passage of a vault to a vector.
 type Nearest interface {
 	// GetBestSimilarity returns the cosine similarity of the passage of the vault
 	// nearest the query vector under the recipe, and zero where there is none.

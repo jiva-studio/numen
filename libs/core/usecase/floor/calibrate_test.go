@@ -48,7 +48,7 @@ func TestCalibrateMeasuresTheNoiseAndKeepsTheFloor(t *testing.T) {
 		t.Fatalf("got %v, %v", outcome, err)
 	}
 
-	// Every pair sits at 0.5, so the median is 0.5 and the spread is the minimum.
+	// Every pair has similarity 0.5, so the median is 0.5 and the spread is the minimum.
 	if abs(got.Median-0.5) > 1e-6 || abs(got.Spread-0.01) > 1e-9 || abs(got.Floor-0.52) > 1e-6 {
 		t.Errorf("median %v spread %v floor %v, want 0.5, 0.01 and 0.52", got.Median, got.Spread, got.Floor)
 	}

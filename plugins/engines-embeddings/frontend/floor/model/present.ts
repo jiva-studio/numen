@@ -46,7 +46,7 @@ export function getCalibrationNote(state: FloorState, isTooFew: boolean): string
 export interface HistogramBar {
   /** Height as a share of the tallest bin, from 0 to 100. */
   heightPercent: number
-  /** Whether the bin lies at or above the threshold. */
+  /** Whether the bin is at or above the threshold. */
   isAbove: boolean
 }
 
@@ -59,7 +59,7 @@ export function getHistogramBars(histogram: readonly number[], floor: number): H
   }))
 }
 
-/** Where a similarity sits along a track from zero to one, as a percentage. */
+/** The position of a similarity along a track from zero to one, as a percentage. */
 export function getMarkerPercent(value: number): number {
   return Math.min(100, Math.max(0, value * 100))
 }
@@ -69,7 +69,7 @@ export function describeHistogram(calibration: FloorCalibration, floor: number):
   return `${WORDS.histogramAlt}: ${formatNoise(calibration)}; ${WORDS.histogramMarker.toLowerCase()} ${formatFloor(floor)}`
 }
 
-/** The value the slider starts at when the person turns to the manual mode. */
+/** The value the slider starts at when the user switches to the manual mode. */
 export function getInitialManual(state: FloorState): number {
   const start = state.manualFloor > 0 ? state.manualFloor : state.floor
   return Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, start))

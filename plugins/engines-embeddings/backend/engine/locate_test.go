@@ -151,7 +151,7 @@ func TestLocateCachedReturnsTheSnapshotOfAModelWithNoRevision(t *testing.T) {
 	}
 }
 
-func TestLocateCachedReturnsTheNewestSnapshotOfAModelWithNoRevision(t *testing.T) {
+func TestLocateCachedReturnsNewestSnapshotWithoutRevision(t *testing.T) {
 	cache := cacheSnapshot(t, "old", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
 	for name, body := range map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"} {
 		pos := filepath.Join(cache, "snapshots", "new", filepath.FromSlash(name))
@@ -177,7 +177,7 @@ func TestLocateCachedReturnsTheNewestSnapshotOfAModelWithNoRevision(t *testing.T
 	}
 }
 
-func TestLocateCachedSkipsAnIncompleteSnapshotOfAModelWithNoRevision(t *testing.T) {
+func TestLocateCachedSkipsIncompleteSnapshotWithoutRevision(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	if _, ok, err := locateCached(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
@@ -193,7 +193,7 @@ func TestLocateCachedFindsNothingWhereTheCacheHasNoSnapshots(t *testing.T) {
 	}
 }
 
-func TestLocateUsesTheCachedSnapshotOfAModelWithNoRevisionWhileOffline(t *testing.T) {
+func TestLocateUsesCachedSnapshotWithoutRevisionOffline(t *testing.T) {
 	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
 	t.Setenv(EnvOffline, "1")
 

@@ -19,13 +19,13 @@ const (
 	passageSample = 500
 
 	// minQueries, minPassages and minSources are what a vault has to hold before a
-	// measurement says anything.
+	// measurement is meaningful.
 	minQueries  = 20
 	minPassages = 50
 	minSources  = 2
 )
 
-// ErrNoModel is a floor asked for where the installation has no embedding model.
+// ErrNoModel is returned by a floor request where the installation has no embedding model.
 var ErrNoModel = errors.New("no embedding model")
 
 // ErrEmbedding is an embedding model that could not answer: a plugin that is

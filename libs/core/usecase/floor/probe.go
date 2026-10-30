@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Probe is how near the best passage of a vault stands to a query, to be compared
+// Probe is the similarity of the best passage of a vault to a query, compared
 // with the floor in force.
 type Probe struct {
 	nearest  floorport.Nearest
@@ -23,7 +23,7 @@ type ProbeResult struct {
 	// BestSimilarity is the similarity of the nearest passage, zero where the
 	// vault has none.
 	BestSimilarity float64
-	// Floor is the floor in force, and DoesPass whether the nearest passage reaches it.
+	// Floor is the floor in force, and DoesPass whether the nearest passage meets it.
 	Floor    float64
 	DoesPass bool
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// floorSpy records the floor and recipe each search by meaning asks for.
+// floorSpy records the floor and recipe each search by meaning requests.
 type floorSpy struct {
 	mu      sync.Mutex
 	floors  []float64

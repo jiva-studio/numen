@@ -23,7 +23,7 @@ func NewAutoCalibrate(store floorport.Store, calibrate Calibrate, embedder embed
 
 // Execute calibrates the vault under the model in use when nothing is kept for
 // the pair: no calibration and no manual floor. A vault with too few notes to
-// measure is left as it is and is asked again at the next pass.
+// measure is unchanged and is calibrated again at the next pass.
 func (u AutoCalibrate) Execute(ctx context.Context, v domain.Vault) error {
 	if u.embedder == nil {
 		return nil

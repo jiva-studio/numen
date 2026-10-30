@@ -3,7 +3,7 @@ import { CALIBRATION_OUTCOME, FLOOR_SOURCE } from './codes'
 import { createFakeClient, createState } from './fixtures'
 import { useFloor } from './useFloor'
 
-/** A Wait the test releases by hand. */
+/** A Wait that the test releases explicitly. */
 function createGate() {
   const pendingResolvers: Array<() => void> = []
   return {

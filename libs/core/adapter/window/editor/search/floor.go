@@ -15,7 +15,7 @@ import (
 // errNoFloors is a window that was put together without the floor use cases.
 var errNoFloors = errors.New("this window has no search floor")
 
-// errNoVault is a floor asked for on a window with no vault open.
+// errNoVault is returned by a floor request on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
 // GetFloor returns the floor in force for the vault in the window.
@@ -46,7 +46,7 @@ func (h *Handler) CalibrateFloor(
 	}), nil
 }
 
-// SetFloor puts the floor the person chose in force, or returns to the
+// SetFloor puts the user's manual floor in force, or reverts to the
 // automatic one.
 func (h *Handler) SetFloor(
 	ctx context.Context, r *connect.Request[v1.SetFloorRequest],
@@ -63,7 +63,7 @@ func (h *Handler) SetFloor(
 	}), nil
 }
 
-// ProbeFloor measures how near the best passage of the vault stands to a query.
+// ProbeFloor measures the similarity of the best passage of the vault to a query.
 func (h *Handler) ProbeFloor(
 	ctx context.Context, r *connect.Request[v1.ProbeFloorRequest],
 ) (*connect.Response[v1.ProbeFloorResponse], error) {

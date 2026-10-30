@@ -418,8 +418,8 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 }
 
 // A change of the embedding model wakes the sources while a pass embeds under
-// the previous model, and the pass would otherwise send batches the new model
-// answers with another width.
+// the previous model. The pass stops before sending batches that the new model
+// embeds at another width.
 func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
@@ -438,7 +438,7 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 		t.Fatal(err)
 	}
 	if target == 0 {
-		t.Fatal("the vault owed no vector, and the pass had nothing to stop")
+		t.Fatal("the vault had no pending vector, and the pass had nothing to stop")
 	}
 	if embedded == target {
 		t.Error("the pass embedded the whole vault while the sources were woken")

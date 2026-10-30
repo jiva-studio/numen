@@ -30,7 +30,7 @@ const defaultExtractors = 4
 const lexicalCandidates = 5
 
 // DefaultFloor is the minimum cosine similarity at which a passage counts as
-// an answer where neither the settings, a person, a calibration nor the model
+// an answer where neither the settings, the user, a calibration nor the model
 // names one.
 //
 // The similarity that a model assigns to texts about different subjects is

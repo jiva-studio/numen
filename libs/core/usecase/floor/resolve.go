@@ -16,7 +16,7 @@ const (
 	SourceDefault Source = iota
 	// SourceFile: the settings file names one floor for every model.
 	SourceFile
-	// SourceManual: the person set the floor for the model in use.
+	// SourceManual: the user set the floor for the model in use.
 	SourceManual
 	// SourceCalibrated: measured on the vault with the model in use.
 	SourceCalibrated
@@ -27,13 +27,13 @@ const (
 // State is the floor in force for one vault under one recipe, and what it was
 // derived from.
 type State struct {
-	// Floor is the floor in force and Source says where it comes from.
+	// Floor is the floor in force and Source is where it comes from.
 	Floor  float64
 	Source Source
 	// AutomaticFloor is the floor in force when the manual one is ignored. A floor
 	// from the settings file is not automatic, so it does not appear here.
 	AutomaticFloor float64
-	// IsManual is whether the person set a floor, and ManualFloor its value.
+	// IsManual is whether the user set a floor, and ManualFloor its value.
 	IsManual    bool
 	ManualFloor float64
 	// Calibration is nil before the first measurement.
@@ -49,7 +49,7 @@ type Hint func(ctx context.Context) float64
 // answer wins:
 //
 //  1. the settings file, where it names a floor above zero
-//  2. the floor the person set
+//  2. the floor the user set
 //  3. the floor a calibration measured
 //  4. the model's hint
 //  5. the default floor

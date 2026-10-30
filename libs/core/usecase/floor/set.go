@@ -12,7 +12,7 @@ import (
 // ErrInvalidFloor is a manual floor outside the range above zero and up to one.
 var ErrInvalidFloor = errors.New("a floor is a cosine similarity above 0 and at most 1")
 
-// Set chooses between the calibrated floor and one the person sets, for the model
+// Set chooses between the calibrated floor and one the user sets, for the model
 // in use.
 type Set struct {
 	store    floorport.Store

@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-// calibrationLog records the vaults a worker asked to have calibrated.
+// calibrationLog records the vaults a worker requested calibration for.
 type calibrationLog struct {
 	vaults []domain.VaultID
 	err    error
@@ -23,7 +23,7 @@ func (l *calibrationLog) calibrate(_ context.Context, v domain.Vault) error {
 }
 
 // calibratingPass is a pass over a vault of one note that reports into events
-// and asks log to calibrate.
+// and requests calibration through log.
 func calibratingPass(t *testing.T, model embeddingport.Embedder, log *calibrationLog) (*pass, *recorder) {
 	t.Helper()
 	made, db := reading(t)
@@ -52,7 +52,7 @@ func TestAPassThatEmbeddedEverythingCalibratesTheFloorOfItsVault(t *testing.T) {
 	}
 }
 
-func TestAPassWithNothingOwedAsksForTheCalibrationAgain(t *testing.T) {
+func TestAPassWithNothingPendingCalibratesAgain(t *testing.T) {
 	log := &calibrationLog{}
 	p, _ := calibratingPass(t, &fakeEmbedder{dims: 64}, log)
 
@@ -60,9 +60,9 @@ func TestAPassWithNothingOwedAsksForTheCalibrationAgain(t *testing.T) {
 	p.embed(t.Context())
 
 	// The callback decides whether a vault already has a floor, so every pass that
-	// leaves nothing owed asks.
+	// leaves nothing pending requests it.
 	if len(log.vaults) != 2 {
-		t.Errorf("the worker asked %d times, want once for each pass", len(log.vaults))
+		t.Errorf("the worker requested calibration %d times, want once for each pass", len(log.vaults))
 	}
 }
 

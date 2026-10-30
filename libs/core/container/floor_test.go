@@ -57,7 +57,7 @@ func (s *nearestSpy) FindNearest(_ context.Context, _ domain.VaultID, _ string, 
 	return nil, nil
 }
 
-func TestSearchOverPassagesResolvesFloorFromSettingsThenModelThenDefault(t *testing.T) {
+func TestSearchResolvesFloorFromSettingsModelDefault(t *testing.T) {
 	vault := domain.Vault{ID: "01VAULT"}
 	for _, tc := range []struct {
 		name     string

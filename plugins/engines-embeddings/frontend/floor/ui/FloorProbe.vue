@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A query typed by the person, checked against the threshold in force.
+ * A query typed by the user, checked against the threshold in force.
  */
 import { computed, ref } from 'vue'
 import { Button } from '@numen/ui'

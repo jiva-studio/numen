@@ -17,7 +17,7 @@ const (
 	// distribution in standard deviations.
 	iqrPerSigma = 1.349
 
-	// spreadsInFloor is how many spreads above the median the floor lies.
+	// spreadsInFloor is how many spreads above the median the floor is placed.
 	spreadsInFloor = 2
 
 	// histogramBins is the number of equal bins from zero to one.
