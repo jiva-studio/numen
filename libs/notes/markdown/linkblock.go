@@ -3,6 +3,7 @@ package markdown
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -15,9 +16,10 @@ import (
 // in the error and left as written.
 var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
-// owned is every key an entry of the `links:` block may carry. Anything else
+// owned is every key an entry of the `links:` block may carry. Anything else is
+// content the application does not own.
 var owned = map[string]bool{
-	"to": true, "role": true, "type": true, "note": true, "label": true,
+	"to": true, "role": true, "type": true, "note": true, "label": true, "marker": true,
 }
 
 // entry is one record of the `links:` block: its content and the bytes it occupies.
@@ -114,25 +116,27 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 // AddLink writes one relationship into the block and leaves every other entry
 // byte-for-byte unchanged.
 //
-// A note names another in one role: an existing entry for the same target takes
-// the new role, and the text the user wrote on that entry is kept.
+// An entry is addressed by its target and its type. The entry of the same target
+// and type takes the role, label and marker given, and keeps the reason the user
+// wrote on it unless a reason is given.
 func (d *Document) AddLink(add domain.Link) error {
 	b, err := d.block()
 	if err != nil {
 		return err
 	}
 	for _, e := range b.entries {
-		if e.link.Target != add.Target {
+		if e.link.Target != add.Target || e.link.Type != add.Type {
 			continue
-		}
-		if e.link.Role == add.Role && e.link.Label == add.Label && e.link.Type == add.Type {
-			return nil
 		}
 		next := e.link
 		next.Role = add.Role
 		next.Label = add.Label
-		if add.Type != "" {
-			next.Type = add.Type
+		next.Marker = add.Marker
+		if add.Why != "" {
+			next.Why = add.Why
+		}
+		if next == e.link {
+			return nil
 		}
 		rendered, err := renderEntry(next, b.indent, d.eol)
 		if err != nil {
@@ -142,20 +146,64 @@ func (d *Document) AddLink(add domain.Link) error {
 		return nil
 	}
 
-	rendered, err := renderEntry(add, b.indent, d.eol)
+	return d.appendEntry(b, add)
+}
+
+// SetLink makes the block hold exactly the record given for its target and type:
+// the entry that goes to the target, or to any of the addresses also given, with
+// the same type is replaced whole, and a block with none gains the record.
+// Another entry of the same target and type is removed, so a note holds one record
+// per target and type.
+func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
+	b, err := d.block()
 	if err != nil {
 		return err
 	}
-	if !b.isFound {
-		return d.set("links", append([]byte("links:"+d.eol), rendered...))
+	found, err := findRecords(b.entries, link, also)
+	if err != nil {
+		return err
 	}
-	d.splice(b.end, b.end, rendered)
+	if len(found) == 0 {
+		return d.appendEntry(b, link)
+	}
+	for i := len(found) - 1; i >= 0; i-- {
+		e := found[i]
+		if i > 0 {
+			d.splice(e.start, e.end, nil)
+			continue
+		}
+		next := link
+		next.Target = e.link.Target
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+	}
 	return nil
 }
 
-// RemoveLink takes out every entry that goes to one place, or only the one
-// carrying a role when a role is named. An empty block goes with them.
-func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, error) {
+// findRecords returns the entries that go to the target of the link, or to one of
+// the addresses also given, under the type of the link. An entry the application
+// cannot rewrite is reported as ErrNotOwned.
+func findRecords(entries []entry, link domain.Link, also []domain.Address) ([]entry, error) {
+	var found []entry
+	for _, e := range entries {
+		isTarget := e.link.Target == link.Target || slices.Contains(also, e.link.Target)
+		if !isTarget || e.link.Type != link.Type {
+			continue
+		}
+		if !e.isOwned || !e.isReadable {
+			return nil, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
+		}
+		found = append(found, e)
+	}
+	return found, nil
+}
+
+// RemoveLink takes out every entry that matches the key: the target, the type,
+// and the role when one is named. An empty block goes with them.
+func (d *Document) RemoveLink(key domain.LinkKey) (int, error) {
 	b, err := d.block()
 	if err != nil {
 		return 0, err
@@ -164,7 +212,8 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 	removed, keptCount := 0, 0
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
-		if e.link.Target != to || (role != "" && e.link.Role != role) {
+		if e.link.Target != key.Target || e.link.Type != key.Type ||
+			(key.Role != "" && e.link.Role != key.Role) {
 			keptCount++
 			continue
 		}
@@ -282,6 +331,9 @@ func applyLinkChange(orig, change domain.Link) domain.Link {
 	if change.Label != "" {
 		next.Label = change.Label
 	}
+	if change.Marker != "" {
+		next.Marker = change.Marker
+	}
 	return next
 }
 
@@ -370,11 +422,12 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	enc := yaml.NewEncoder(&out)
 	enc.SetIndent(2)
 	if err := enc.Encode([]linkEntry{{
-		To:    l.Target.GetWritten(),
-		Role:  string(l.Role),
-		Type:  l.Type,
-		Note:  l.Why,
-		Label: l.Label,
+		To:     l.Target.GetWritten(),
+		Role:   string(l.Role),
+		Type:   l.Type,
+		Note:   l.Why,
+		Label:  l.Label,
+		Marker: string(l.Marker),
 	}}); err != nil {
 		return nil, err
 	}
@@ -415,19 +468,21 @@ func linkOf(item *yaml.Node) domain.Link {
 			l.Why = value
 		case "label":
 			l.Label = value
+		case "marker":
+			l.Marker = domain.LinkMarker(value)
 		}
 	}
 	return l
 }
 
 // isReadable is whether the application can act on an entry at all: somewhere to
-// go, and a role it has decided on.
+// go, a role it has decided on, and a marker that is absent or one it draws.
 func isReadable(item *yaml.Node) bool {
 	if item.Kind != yaml.MappingNode {
 		return false
 	}
 	l := linkOf(item)
-	return l.Target.Value != "" && domain.IsKnownRole(l.Role)
+	return l.Target.Value != "" && domain.IsKnownRole(l.Role) && domain.IsWritableMarker(l.Marker)
 }
 
 // hasOnlyOwnedKeys is whether every key in an entry is one the application owns.
@@ -456,9 +511,10 @@ func keepLinkNotation(was, to string) string {
 // linkEntry is one record of the `links:` block, in the order the format
 // specification lists the fields.
 type linkEntry struct {
-	To    string `yaml:"to"`
-	Role  string `yaml:"role"`
-	Type  string `yaml:"type,omitempty"`
-	Note  string `yaml:"note,omitempty"`
-	Label string `yaml:"label,omitempty"`
+	To     string `yaml:"to"`
+	Role   string `yaml:"role"`
+	Type   string `yaml:"type,omitempty"`
+	Note   string `yaml:"note,omitempty"`
+	Label  string `yaml:"label,omitempty"`
+	Marker string `yaml:"marker,omitempty"`
 }
