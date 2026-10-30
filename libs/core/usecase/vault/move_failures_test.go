@@ -92,8 +92,9 @@ func (f filing) moveOver(w wiring) vaults.Move {
 		w.links, f.db.Queries(), f.db.Sources(), w.index, time.Now,
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return true }
-	notes.Drawing = func(_ context.Context, went domain.Move) {
+	notes.Drawing = func(_ context.Context, went domain.Move) error {
 		*f.went = append(*f.went, went)
+		return nil
 	}
 	return vaults.NewMove(w.writers, w.links, w.queries, w.sources, notes)
 }

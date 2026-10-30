@@ -220,7 +220,10 @@ func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	c := openLinked(t)
 	var notified []domain.Move
 	mover := c.move()
-	mover.Drawing = func(_ context.Context, went domain.Move) { notified = append(notified, went) }
+	mover.Drawing = func(_ context.Context, went domain.Move) error {
+		notified = append(notified, went)
+		return nil
+	}
 
 	if _, err := mover.Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md"); err != nil {
 		t.Fatal(err)

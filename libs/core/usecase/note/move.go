@@ -139,7 +139,9 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 	// The file is where it now is and the index is level with it. Whoever is
 	// reading this note at the name it had is reading a name with no file.
 	if u.Drawing != nil {
-		u.Drawing(ctx, domain.Move{From: from, To: to})
+		if err := u.Drawing(ctx, domain.Move{From: from, To: to}); err != nil {
+			return res, fmt.Errorf("tell the move of %s to %s: %w", from, to, err)
+		}
 	}
 
 	// What a repaired link is pointed at: the name the note is filed under, or
