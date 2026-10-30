@@ -105,12 +105,16 @@ describe('a document that will not be read', () => {
     const { doc, pending, messages } = create()
 
     const older = doc.draw(FIRST)
-    void doc.draw(SECOND)
+    const failures: unknown[] = []
+    doc.draw(SECOND).catch((error: unknown) => {
+      failures.push(error)
+    })
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await older
     await settle()
 
     expect(messages).toStrictEqual([])
+    expect(failures).toStrictEqual([])
   })
 
   it('is not returned once the tab is closed', async () => {

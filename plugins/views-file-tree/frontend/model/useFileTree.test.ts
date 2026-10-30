@@ -549,8 +549,7 @@ describe('a folder toggled', () => {
     const { core, requests } = vault()
     const list = useFileTree(core)
 
-    list.toggleFolder('physics')
-    await Promise.resolve()
+    await list.toggleFolder('physics')
 
     expect(list.isFolderOpen('physics')).toBe(true)
     expect(requests).toContain('physics')
@@ -561,7 +560,7 @@ describe('a folder toggled', () => {
     const list = useFileTree(core)
     await list.openFolder('physics')
 
-    list.toggleFolder('physics')
+    await list.toggleFolder('physics')
 
     expect(list.isFolderOpen('physics')).toBe(false)
   })

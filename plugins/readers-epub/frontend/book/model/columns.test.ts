@@ -34,9 +34,8 @@ const createArea = (width: number, height: number): HTMLElement => {
 }
 
 /** The columns of a book mounted over an area of a size. */
-const setUp = (width: number, height: number, textSize = 1) => {
-  const area = createArea(width, height)
-  const paper = document.createElement('div')
+/** Mounts a component that runs the composable over the area and the paper. */
+const mountColumns = (area: HTMLElement, paper: HTMLElement, textSize: number) => {
   let columns!: ReturnType<typeof useBookColumns>
   mount(
     defineComponent({
@@ -53,6 +52,9 @@ const setUp = (width: number, height: number, textSize = 1) => {
   )
   return columns
 }
+
+const setUp = (width: number, height: number, textSize = 1) =>
+  mountColumns(createArea(width, height), document.createElement('div'), textSize)
 
 describe('whether the reading area has been measured', () => {
   it('is so once it has a width and a height', () => {
@@ -131,20 +133,7 @@ describe('how tall a column is once the text is drawn', () => {
     run.dataset['offset'] = '0'
     Object.defineProperty(run, 'getClientRects', { value: () => [{ left: 0 }] })
     paper.append(run)
-    let columns!: ReturnType<typeof useBookColumns>
-    mount(
-      defineComponent({
-        setup() {
-          columns = useBookColumns({
-            area: shallowRef(area),
-            paper: shallowRef(paper),
-            props: props(1),
-            getEdge: () => 0,
-          })
-          return () => null
-        },
-      }),
-    )
+    const columns = mountColumns(area, paper, 1)
     const box = createArea(420, 600)
     const text = createText('20px')
     Object.defineProperty(text, 'clientWidth', { value: 840 })

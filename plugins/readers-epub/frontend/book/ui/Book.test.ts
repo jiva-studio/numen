@@ -21,7 +21,7 @@ const reader = async (book = BOOK) => {
     attachTo: document.body,
   })
   const area = wrapper.find('.book__area').element as HTMLElement
-  area.scrollTo = () => {}
+  area.scrollTo = () => undefined
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -143,7 +143,7 @@ const mountPointing = async () => {
     attachTo: document.body,
   })
   const area = wrapper.find('.book__area').element as HTMLElement
-  area.scrollTo = () => {}
+  area.scrollTo = () => undefined
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -239,7 +239,7 @@ const mountBook = async () => {
     attachTo: document.body,
   })
   const area = wrapper.find('.book__area').element as HTMLElement
-  area.scrollTo = () => {}
+  area.scrollTo = () => undefined
   setSize(area, 1100, 600)
   setLayout(wrapper.find('.book__paper').element as HTMLElement, 3300, [10, 1150, 580])
 

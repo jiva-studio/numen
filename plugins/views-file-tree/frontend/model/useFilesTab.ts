@@ -2,7 +2,7 @@
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
 import { ref } from 'vue'
-import { getFileName, NOTE_TYPE, type MenuEntry } from '@numen/plugin-sdk'
+import { formatErrorMessage, getFileName, NOTE_TYPE, type MenuEntry } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME } from '../lib/menu'
 import { resolveRenamePath } from './rename'
@@ -18,6 +18,11 @@ import type {
 import * as create from './create'
 
 export type { DropPosition, FilesTabDeps, FilesTabState, MenuRequest }
+
+/** Reports a failed background operation of the tab through the window's error display. */
+const createFailureReporter = (deps: FilesTabDeps) => (error: unknown) => {
+  deps.showError(formatErrorMessage(error))
+}
 
 function createFileCreation(
   list: FileTree,
@@ -125,8 +130,14 @@ function useFileMenu(options: FileMenuDeps) {
     const items = getMenuItems(request.path)
     if (!OWN_IDS.has(id) && !hasMenuId(items, id)) return
     if (hasSubmenuChildren(items, id)) return
-    if (id === NEW_NOTE) return void creators.createNote(request.path)
-    if (id === NEW_FOLDER) return void creators.createFolder(request.path)
+    if (id === NEW_NOTE) {
+      creators.createNote(request.path).catch(createFailureReporter(deps))
+      return
+    }
+    if (id === NEW_FOLDER) {
+      creators.createFolder(request.path).catch(createFailureReporter(deps))
+      return
+    }
 
     const path = request.path
     if (path === null) return
@@ -202,15 +213,20 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     isNoteAt: actions.isNoteAt,
   })
 
+  const reportFailure = createFailureReporter(deps)
+
   const tabState: FilesTabState = {
     ...actions,
+    reportFailure,
     list,
     menu: fileMenu.menu,
     renamingPath,
     setRenamingPath,
     getOverPaths: fileMenu.getOverPaths,
     getFolderFor: (path) => create.getFolderFor(list, path),
-    open: (path) => void list.openFolder(path),
+    open: (path) => {
+      list.openFolder(path).catch(reportFailure)
+    },
     close: (path) => list.closeFolder(path),
     select: (paths) => list.selectPaths(paths),
     move,

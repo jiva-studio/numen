@@ -29,7 +29,9 @@ function onTogglePreviewPlay() {
     previewAudioElement.value.pause()
     isPreviewPlaying.value = false
   } else {
-    void previewAudioElement.value.play()
+    previewAudioElement.value.play().catch(() => {
+      isPreviewPlaying.value = false
+    })
     isPreviewPlaying.value = true
   }
 }

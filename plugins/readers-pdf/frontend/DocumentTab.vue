@@ -79,10 +79,10 @@ watch(
         maxX,
         maxY,
       }))
-      void activeState.value.applyHighlights([[{ page, rects }]])
+      activeState.value.applyHighlights([[{ page, rects }]]).catch(activeState.value.reportFailure)
       return
     }
-    void activeState.value.goToPage(page)
+    activeState.value.goToPage(page).catch(activeState.value.reportFailure)
   },
   { immediate: true },
 )
@@ -102,7 +102,7 @@ onUnmounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGoToPage(page: number) {
-  if (activeState.value) void activeState.value.goToPage(page)
+  if (activeState.value) activeState.value.goToPage(page).catch(activeState.value.reportFailure)
 }
 
 function onWiden(width: number) {

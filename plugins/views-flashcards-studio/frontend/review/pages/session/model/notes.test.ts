@@ -114,7 +114,7 @@ describe('what is read belongs to the deck', () => {
         new Promise((then) =>
           pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
-      showNotice: () => {},
+      showNotice: () => undefined,
       resolveLinks: async () => [],
     })
 
@@ -147,7 +147,7 @@ describe('what is read belongs to the deck', () => {
         new Promise((then) =>
           pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
-      showNotice: () => {},
+      showNotice: () => undefined,
       resolveLinks: async () => [],
     })
 
@@ -215,7 +215,7 @@ describe('the asking', () => {
     const notices: string[] = []
     const target = useNotesPanel({
       open: () => true,
-      showPanel: () => {},
+      showPanel: () => undefined,
       vault: () => 'one',
       deck: () => deck.value,
       getDeckNeighbourhood: (_vault, of) =>
@@ -295,11 +295,11 @@ describe('the links of a note read in the panel', () => {
     const body = 'Made like [[Compost|compost]], unlike [[Peat]].'
     const target = useNotesPanel({
       open: () => true,
-      showPanel: () => {},
+      showPanel: () => undefined,
       vault: () => 'one',
       deck: () => 'decks/Words.md',
       getDeckNeighbourhood: async () => ({ notes: [createNeighbour({ body })], unread: 0 }),
-      showNotice: () => {},
+      showNotice: () => undefined,
       resolveLinks: async (text) => {
         bodies.push(text)
         return [
@@ -330,11 +330,11 @@ describe('the links of a note read in the panel', () => {
   it('are dropped with the deck they were read for', async () => {
     const target = useNotesPanel({
       open: () => true,
-      showPanel: () => {},
+      showPanel: () => undefined,
       vault: () => 'one',
       deck: () => 'decks/Words.md',
       getDeckNeighbourhood: async () => ({ notes: [createNeighbour()], unread: 0 }),
-      showNotice: () => {},
+      showNotice: () => undefined,
       resolveLinks: async () => [{ raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' }],
     })
     await target.openPanel()

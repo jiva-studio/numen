@@ -363,8 +363,8 @@ export const FencedInEveryLanguage: Story = {
   play: async ({ canvasElement }) => {
     const found = (text: string) => {
       const line = codeLine(canvasElement, text)
-      expect(line, text).toBeDefined()
-      return line as HTMLElement
+      if (!line) throw new Error(`no code line holds ${text}`)
+      return line
     }
 
     // The pack lands and paints the block it was fetched for.

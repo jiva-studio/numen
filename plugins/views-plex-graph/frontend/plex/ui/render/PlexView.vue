@@ -173,12 +173,12 @@ const getRole = (node: PlacedNode): GestureRole => {
     <PlexNodeView
       v-for="node in renderedNodes"
       :key="node.id"
+      :ref="holdNode(node.id)"
       :node="node"
       :gesture-role="getRole(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :behaviour="behaviour"
-      :ref="holdNode(node.id)"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"

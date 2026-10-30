@@ -21,7 +21,7 @@ const reader = async (width: number, high: number) => {
 const room = async (wrapper: ReturnType<typeof mount>, width: number, height: number) => {
   const area = wrapper.find('.reader__viewport').element as HTMLElement
   // jsdom lays nothing out and scrolls nothing.
-  area.scrollTo = () => {}
+  area.scrollTo = () => undefined
   Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: height, configurable: true })
   ;(wrapper.vm as unknown as { measure: () => void }).measure()

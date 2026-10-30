@@ -107,7 +107,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   const finish = () => {
     stop()
-    void closeAgentConversation(agent, conversation)
+    closeAgentConversation(agent, conversation)
   }
 
   return {
@@ -120,12 +120,9 @@ export function useConversation(options: ConversationOptions): Conversation {
   }
 }
 
-async function closeAgentConversation(agent: AgentPort, conversation: string): Promise<void> {
-  try {
-    await agent.finish(conversation)
-  } catch {
-    // The tab closes whether the agent heard or not.
-  }
+/** Tells the agent the conversation is over; the tab closes whether the agent is told or not. */
+function closeAgentConversation(agent: AgentPort, conversation: string): void {
+  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch(() => undefined)
 }
 
 interface SettleTurnOptions {

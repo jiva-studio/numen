@@ -48,24 +48,36 @@ export function createHost({
     WorkspaceHost,
     'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask'
   > = {
-    openFile: (path, options) => void recorded.opened.push([path, options]),
-    ask: (text) => void recorded.questions.push(text),
-    openFileAt: (path, spans) => void recorded.openedAt.push([path, spans]),
+    openFile: (path, options) => {
+      recorded.opened.push([path, options])
+    },
+    ask: (text) => {
+      recorded.questions.push(text)
+    },
+    openFileAt: (path, spans) => {
+      recorded.openedAt.push([path, spans])
+    },
     getNoteInFocus: () => focus,
     isReady: ref(true),
   }
   const workspace = request as WorkspaceHost
 
   const agent: AgentHost = {
-    ask: async function* () {},
-    finish: async (conversation) => void recorded.finished.push(conversation),
+    ask: async function* () {
+      yield* []
+    },
+    finish: async (conversation) => {
+      recorded.finished.push(conversation)
+    },
     resolveLinks: async (text) => {
       recorded.resolved.push(text)
       return createLinkResolver(notes)(text)
     },
     getUnreachable: () => unreachable,
     getSetting: (path) => settings[path.join('.')],
-    writeSetting: async (path, value) => void recorded.settings.push([path, value]),
+    writeSetting: async (path, value) => {
+      recorded.settings.push([path, value])
+    },
     getModelsAt: (path) => models[path.join('.')] ?? [],
   }
 

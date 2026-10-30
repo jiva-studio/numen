@@ -36,7 +36,9 @@ const renamingPath = computed({
 const items = computed(() => props.state.getMenuItems(props.state.menu.value?.path ?? null))
 
 /* --------------------------------- Hooks ---------------------------------- */
-const refreshTree = () => void props.state.list.refresh()
+const refreshTree = () => {
+  props.state.list.refresh().catch(props.state.reportFailure)
+}
 onMounted(() => globalThis.addEventListener('focus', refreshTree))
 onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 
@@ -49,7 +51,7 @@ function onDrop(event: DragEvent) {
   const types = getDragTypes(event.dataTransfer)
   if (!props.state.canDropData(types)) return
   event.preventDefault()
-  void props.state.dropData(readDroppedData(event.dataTransfer))
+  props.state.dropData(readDroppedData(event.dataTransfer)).catch(props.state.reportFailure)
 }
 
 function onOpenEntry(row: string) {
@@ -69,11 +71,11 @@ function onActivateEntry(row: string) {
 }
 
 function onRenameEntry(row: string, name: string) {
-  void props.state.rename(row, name)
+  props.state.rename(row, name).catch(props.state.reportFailure)
 }
 
 function onMoveEntries(targetRows: readonly string[], target: DropPosition) {
-  void props.state.move(targetRows, target)
+  props.state.move(targetRows, target).catch(props.state.reportFailure)
 }
 
 function onDragEntries(rows: readonly string[]) {

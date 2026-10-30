@@ -27,7 +27,7 @@ describe('the media importer frontend', () => {
     const tasks = {
       watch: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {
         onTasks([{ about: 'links/a.md' }])
-        return { dispose: () => {} }
+        return { dispose: () => undefined }
       }),
       watchAll: vi.fn(),
     }

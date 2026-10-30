@@ -6,7 +6,7 @@
  * it only from the node it was created from.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { ref, type Component } from 'vue'
 import { usePlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
 import { ITEMS, NEW_NOTE, NONE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
@@ -16,8 +16,8 @@ import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
-const SHARE_ICON = defineComponent({ name: 'ShareIcon', render: () => null })
-const SAMPLE_ICON = defineComponent({ name: 'SampleIcon', render: () => null })
+const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
+const SAMPLE_ICON: Component = { name: 'SampleIcon', render: () => null }
 
 /** A plex tab with the window it is drawn in written down. */
 const tab = (
@@ -229,25 +229,25 @@ describe('a plex drawing nothing', () => {
       neighbourhood: ref(null),
       here: ref(''),
       error: ref(''),
-      go: async () => {},
-      followMoves: () => {},
-      close: () => {},
+      go: async () => undefined,
+      followMoves: () => undefined,
+      close: () => undefined,
     }
     return usePlexTab(view as unknown as PlexView, {
       editor: createVault().editor,
       isReady: ref(true),
       isNesting: ref(true),
       headings: ref(6),
-      openNote: () => {},
+      openNote: () => undefined,
       readHeadings: async () => new Map(),
       getNoteCommands: () => [],
       getCommandIcon: () => null,
       getNoteIcon: () => null,
-      runCommand: () => {},
+      runCommand: () => undefined,
       openingPath: ref(''),
       readOpeningPath: async () => '',
       dragged: ref([]),
-      showMessage: () => {},
+      showMessage: () => undefined,
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
       ...overrides,
@@ -338,16 +338,16 @@ describe('the picture', () => {
       isReady: ref(false),
       isNesting: ref(true),
       headings: ref(6),
-      openNote: () => {},
+      openNote: () => undefined,
       readHeadings: async () => new Map(),
       getNoteCommands: () => [],
       getCommandIcon: () => null,
       getNoteIcon: () => null,
-      runCommand: () => {},
+      runCommand: () => undefined,
       openingPath: ref(''),
       readOpeningPath: async () => '',
       dragged: ref(['Entropy.md']),
-      showMessage: () => {},
+      showMessage: () => undefined,
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
@@ -514,16 +514,16 @@ describe('the headings a node nests', () => {
       isReady: ref(true),
       isNesting: ref(true),
       headings: ref(6),
-      openNote: () => {},
+      openNote: () => undefined,
       readHeadings: () => new Promise((isDone) => answers.push(isDone)),
       getNoteCommands: () => [],
       getCommandIcon: () => null,
       getNoteIcon: () => null,
-      runCommand: () => {},
+      runCommand: () => undefined,
       openingPath: ref('Root.md'),
       readOpeningPath: async () => 'Root.md',
       dragged: ref([]),
-      showMessage: () => {},
+      showMessage: () => undefined,
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
@@ -531,10 +531,10 @@ describe('the headings a node nests', () => {
 
     // The graph queries once when built, and that response stays pending.
     const request = answers.length
-    void plex.readHeadings()
-    void plex.readHeadings()
+    const reads = [plex.readHeadings(), plex.readHeadings()]
     answers[request + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
     answers[request]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
+    await Promise.all(reads)
     await settle()
 
     expect(plex.getHeadings(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
@@ -683,7 +683,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   }))
   /** An answer the vault is holding back, and what lets it go. */
   let pendingGate: Promise<void> | null = null
-  let release = () => {}
+  let release: () => void = () => undefined
   /** Every note the vault was queried about, in query order. */
   const request: string[] = []
   const vault = createVault()
@@ -724,7 +724,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     openingPath: ref(''),
     readOpeningPath: async () => '',
     dragged: ref([]),
-    showMessage: () => {},
+    showMessage: () => undefined,
     createUntitledNote: async () => '',
     creatable: ['parent', 'child', 'jump'],
   })
@@ -1134,16 +1134,16 @@ describe('quick-link popover from a node handle', () => {
       isReady: ref(true),
       isNesting: ref(true),
       headings: ref(6),
-      openNote: () => {},
+      openNote: () => undefined,
       readHeadings: async () => new Map(),
       getNoteCommands: () => [],
       getCommandIcon: () => null,
       getNoteIcon: () => null,
-      runCommand: () => {},
+      runCommand: () => undefined,
       openingPath: ref('Opening.md'),
       readOpeningPath: async () => 'Opening.md',
       dragged: ref([]),
-      showMessage: () => {},
+      showMessage: () => undefined,
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
       searchNames: searchMock,
@@ -1158,16 +1158,16 @@ describe('quick-link popover from a node handle', () => {
       isReady: ref(true),
       isNesting: ref(true),
       headings: ref(6),
-      openNote: () => {},
+      openNote: () => undefined,
       readHeadings: async () => new Map(),
       getNoteCommands: () => [],
       getCommandIcon: () => null,
       getNoteIcon: () => null,
-      runCommand: () => {},
+      runCommand: () => undefined,
       openingPath: ref('Opening.md'),
       readOpeningPath: async () => 'Opening.md',
       dragged: ref([]),
-      showMessage: () => {},
+      showMessage: () => undefined,
       createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })

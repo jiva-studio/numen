@@ -130,7 +130,7 @@ describe('a session', () => {
 
   it('answers a card once, whatever a second press says', async () => {
     // The first answer is still being written when the second is pressed.
-    let settle = (_: { answer: string }) => {}
+    let settle: (_: { answer: string }) => void = (_: { answer: string }) => undefined
     const answering = new Promise<{ answer: string }>((then) => {
       settle = then
     })
@@ -270,7 +270,7 @@ describe('a session', () => {
         return {}
       },
     }
-    const one = useReviewSession({ cards, reportError: () => {}, now: () => clock })
+    const one = useReviewSession({ cards, reportError: () => undefined, now: () => clock })
 
     clock += 1000
     await one.start('01VAULT', '')
@@ -336,7 +336,7 @@ describe('an answer taken back', () => {
 
   // The answer is withdrawn from the vault once, regardless of a second press.
   it('is taken back once, whatever a second press says', async () => {
-    let settle = () => {}
+    let settle: () => void = () => undefined
     const asks: string[] = []
     const cards: SessionClient = {
       async startSession() {
@@ -352,7 +352,7 @@ describe('an answer taken back', () => {
         })
       },
     }
-    const one = useReviewSession({ cards, reportError: () => {}, now: () => 1000 })
+    const one = useReviewSession({ cards, reportError: () => undefined, now: () => 1000 })
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
@@ -424,7 +424,7 @@ describe('the cards a session opens on', () => {
       recordReview: () => Promise.reject(new Error('no')),
       undoReview: () => Promise.reject(new Error('no')),
     }
-    const one = useReviewSession({ cards, reportError: () => {} })
+    const one = useReviewSession({ cards, reportError: () => undefined })
 
     await one.start('01VAULT', '')
 
@@ -465,7 +465,7 @@ describe('a session keeping its own time', () => {
         return {}
       },
     }
-    const one = useReviewSession({ cards, reportError: () => {} })
+    const one = useReviewSession({ cards, reportError: () => undefined })
 
     await one.start('01VAULT', '')
     vi.setSystemTime(new Date('2026-03-01T09:00:03Z'))

@@ -280,31 +280,31 @@ export const ACardModel: Story = {
 
     // neither.
     const renderedStyle = getComputedStyle(row)
-    expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
-    expect(renderedStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    await expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
+    await expect(renderedStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
     const inside = getComputedStyle(box)
-    expect(Number.parseFloat(inside.borderTopWidth)).toBe(0)
-    expect(inside.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(Number.parseFloat(inside.borderTopWidth)).toBe(0)
+    await expect(inside.backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
     // And all three stand within the row's own bounds.
     const bounds = row.getBoundingClientRect()
     for (const part of [grip, box, away]) {
       const rect = part.getBoundingClientRect()
-      expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1)
-      expect(rect.right).toBeLessThanOrEqual(bounds.right + 1)
+      await expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1)
+      await expect(rect.right).toBeLessThanOrEqual(bounds.right + 1)
     }
 
     // The first field stays first, and its row lines up with every other.
     const first = found(canvasElement, '[data-field="Name"]')
     const second = found(canvasElement, '[data-field="Height"]')
-    expect(first.getAttribute('data-names')).toBe('true')
-    expect(first.querySelector('[data-grip]')?.getAttribute('draggable')).toBe('false')
-    expect(first.querySelector('button')?.disabled).toBe(true)
-    expect(second.querySelector('[data-grip]')?.getAttribute('draggable')).toBe('true')
-    expect(second.querySelector('button')?.disabled).toBe(false)
+    await expect(first.getAttribute('data-names')).toBe('true')
+    await expect(first.querySelector('[data-grip]')?.getAttribute('draggable')).toBe('false')
+    await expect(first.querySelector('button')?.disabled).toBe(true)
+    await expect(second.querySelector('[data-grip]')?.getAttribute('draggable')).toBe('true')
+    await expect(second.querySelector('button')?.disabled).toBe(false)
     const edge = (each: HTMLElement): number =>
       each.querySelector('input')?.getBoundingClientRect().left ?? 0
-    expect(Math.round(edge(first))).toBe(Math.round(edge(second)))
+    await expect(Math.round(edge(first))).toBe(Math.round(edge(second)))
 
     // Letting a field go on the first row lands it nowhere.
     second
@@ -315,23 +315,23 @@ export const ACardModel: Story = {
     await new Promise((resolved) => {
       setTimeout(resolved, 0)
     })
-    expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
+    await expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
     // the list, and the line gives way to it either side.
     const divider = found(canvasElement, '.card-model__part .divider')
     const list = found(canvasElement, '.card-model__fields')
     const adding = found(canvasElement, '.card-model__part .divider button')
     const axisRect = divider.getBoundingClientRect()
-    expect(Math.round(axisRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
+    await expect(Math.round(axisRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
     const addingRect = adding.getBoundingClientRect()
-    expect(addingRect.left + addingRect.width / 2).toBeCloseTo(
+    await expect(addingRect.left + addingRect.width / 2).toBeCloseTo(
       axisRect.left + axisRect.width / 2,
       0,
     )
     for (const side of ['::before', '::after']) {
-      expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
+      await expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
     }
-    expect(canvasElement.querySelectorAll('.divider')).toHaveLength(2)
+    await expect(canvasElement.querySelectorAll('.divider')).toHaveLength(2)
   },
 }
 
@@ -351,12 +351,12 @@ export const WhatAPersonDoesToIt: Story = {
     await userEvent.click(
       found(canvasElement, '[data-template="recognise"] [data-insert="Weight"]'),
     )
-    expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
-    expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
+    await expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
+    await expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
     // An added field is named with an unused name and placed after the last field.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
-    expect(getDrawnFields(canvasElement)).toEqual([
+    await expect(getDrawnFields(canvasElement)).toEqual([
       'Name',
       'Height',
       'Weight',
@@ -369,19 +369,21 @@ export const WhatAPersonDoesToIt: Story = {
       [...canvasElement.querySelectorAll('[data-template]')].map((each) =>
         each.getAttribute('data-template'),
       )
-    expect(getDrawnTemplates()).toEqual(['recognise', 'name-it'])
+    await expect(getDrawnTemplates()).toEqual(['recognise', 'name-it'])
 
     const header = found(canvasElement, '[data-template="name-it"] .card-header')
-    expect(header.getAttribute('draggable')).toBe('true')
+    await expect(header.getAttribute('draggable')).toBe('true')
     header.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
     const onto = found(canvasElement, '[data-template="recognise"]')
     onto.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
 
     // The one on its way is quiet, and the line it would land on is drawn.
     const dragged = found(canvasElement, '[data-template="name-it"]')
-    await waitFor(() => {
-      expect(Number.parseFloat(getComputedStyle(dragged).opacity)).toBeLessThan(1)
-      expect(Number.parseFloat(getComputedStyle(onto, '::before').blockSize)).toBeGreaterThan(0)
+    await waitFor(async () => {
+      await expect(Number.parseFloat(getComputedStyle(dragged).opacity)).toBeLessThan(1)
+      await expect(Number.parseFloat(getComputedStyle(onto, '::before').blockSize)).toBeGreaterThan(
+        0,
+      )
     })
 
     onto.dispatchEvent(new DragEvent('drop', { bubbles: true }))
@@ -397,11 +399,11 @@ export const WhatAPersonDoesToIt: Story = {
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
   play: async ({ canvasElement }) => {
-    expect(getDrawnFields(canvasElement)).toHaveLength(40)
-    expect(canvasElement.querySelectorAll('[data-template]')).toHaveLength(12)
+    await expect(getDrawnFields(canvasElement)).toHaveLength(40)
+    await expect(canvasElement.querySelectorAll('[data-template]')).toHaveLength(12)
 
     const editor = found(canvasElement, '.cardModel')
-    expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
+    await expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }
 
@@ -422,20 +424,20 @@ export const WhatIsWrong: Story = {
   play: async ({ canvasElement }) => {
     // The first of two fields with one name is used, so there is no second row and
     // no second chip with no target.
-    expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height'])
-    expect(canvasElement.querySelectorAll('.card-model__field input')).toHaveLength(2)
+    await expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height'])
+    await expect(canvasElement.querySelectorAll('.card-model__field input')).toHaveLength(2)
     const chips = [...canvasElement.querySelectorAll('[data-template="stray"] [data-insert]')]
-    expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
+    await expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
 
     // What the caller found wrong with one template is placed under that template's name,
     // and under no other's.
-    expect(
+    await expect(
       found(
         canvasElement,
         '[data-template="stray"] [data-pane="front-written"]',
       ).textContent?.trim(),
     ).toContain('Not a field: Colour')
-    expect(
+    await expect(
       canvasElement.querySelector('[data-template="tagged"] [data-pane] [role="alert"]'),
     ).toBeNull()
   },
@@ -449,6 +451,6 @@ export const Narrow: Story = {
   args: { width: '22rem' },
   play: async ({ canvasElement }) => {
     const editor = found(canvasElement, '.cardModel')
-    expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
+    await expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }

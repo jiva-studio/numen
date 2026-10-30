@@ -209,43 +209,53 @@ const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview']
 export const ATemplate: Story = {
   play: async ({ canvasElement }) => {
     const body = found(canvasElement, '.template__body')
-    expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(2)
+    await expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(2)
 
     const getPaneBox = (pane: string): DOMRect =>
       getPane(canvasElement, pane).getBoundingClientRect()
 
     // The writing is stored alongside its preview, on one line.
-    expect(Math.round(getPaneBox('front-written').top)).toBe(
+    await expect(Math.round(getPaneBox('front-written').top)).toBe(
       Math.round(getPaneBox('front-preview').top),
     )
-    expect(getPaneBox('front-written').right).toBeLessThanOrEqual(getPaneBox('front-preview').left)
+    await expect(getPaneBox('front-written').right).toBeLessThanOrEqual(
+      getPaneBox('front-preview').left,
+    )
 
     // The front is above the back, and both halves are split the same way.
-    expect(getPaneBox('front-written').bottom).toBeLessThanOrEqual(getPaneBox('back-written').top)
-    expect(Math.round(getPaneBox('back-written').top)).toBe(
+    await expect(getPaneBox('front-written').bottom).toBeLessThanOrEqual(
+      getPaneBox('back-written').top,
+    )
+    await expect(Math.round(getPaneBox('back-written').top)).toBe(
       Math.round(getPaneBox('back-preview').top),
     )
 
     // What divides them is one line, shared by the two it divides.
     const line = Number.parseFloat(getComputedStyle(body).columnGap)
-    expect(line).toBeGreaterThan(0)
-    expect(getPaneBox('front-preview').left - getPaneBox('front-written').right).toBeCloseTo(
+    await expect(line).toBeGreaterThan(0)
+    await expect(getPaneBox('front-preview').left - getPaneBox('front-written').right).toBeCloseTo(
       line,
       0,
     )
-    expect(getPaneBox('back-written').top - getPaneBox('front-written').bottom).toBeCloseTo(line, 0)
+    await expect(getPaneBox('back-written').top - getPaneBox('front-written').bottom).toBeCloseTo(
+      line,
+      0,
+    )
 
     // A part is a box to type in, not a line: the box fills the part, so every
     // point of the part focuses the box.
     const part = getPane(canvasElement, 'front-written')
     const box = getBox(canvasElement, 'front')
     const deep = Number.parseFloat(getComputedStyle(box).lineHeight)
-    expect(box.getBoundingClientRect().height).toBeGreaterThan(deep * 4)
-    expect(box.getBoundingClientRect().height).toBeCloseTo(part.getBoundingClientRect().height, 0)
+    await expect(box.getBoundingClientRect().height).toBeGreaterThan(deep * 4)
+    await expect(box.getBoundingClientRect().height).toBeCloseTo(
+      part.getBoundingClientRect().height,
+      0,
+    )
 
     // The template is framed and the parts inside it are not.
     const template = found(canvasElement, '[data-template]')
-    expect(Number.parseFloat(getComputedStyle(template).borderTopWidth)).toBeGreaterThan(0)
+    await expect(Number.parseFloat(getComputedStyle(template).borderTopWidth)).toBeGreaterThan(0)
     for (const pane of PANES) {
       const viewElement = getComputedStyle(getPane(canvasElement, pane))
       for (const side of [
@@ -254,31 +264,31 @@ export const ATemplate: Story = {
         'borderBottomWidth',
         'borderInlineEndWidth',
       ] as const) {
-        expect(Number.parseFloat(viewElement[side])).toBe(0)
+        await expect(Number.parseFloat(viewElement[side])).toBe(0)
       }
-      expect(viewElement.outlineStyle).toBe('none')
+      await expect(viewElement.outlineStyle).toBe('none')
     }
-    expect(body.querySelectorAll('fieldset, legend')).toHaveLength(0)
+    await expect(body.querySelectorAll('fieldset, legend')).toHaveLength(0)
 
     // The preview shows the card with the slots filled, without the braces of the
     // markup it came from.
     const preview = found(canvasElement, '[data-preview="back"]')
-    expect(preview.textContent).toContain('about 45" at the shoulder')
-    expect(preview.textContent).not.toContain('{{')
-    expect(preview.querySelector('b')?.textContent).toBe('Height:')
+    await expect(preview.textContent).toContain('about 45" at the shoulder')
+    await expect(preview.textContent).not.toContain('{{')
+    await expect(preview.querySelector('b')?.textContent).toBe('Height:')
 
     // A template is HTML, so each of its three bare lines reads as a line of its
     // own: three lines of type, and not one line running into the next.
     const answer = found(canvasElement, '[data-preview="back"] .prose')
     const tall = Number.parseFloat(getComputedStyle(answer).lineHeight)
-    expect(tall).toBeGreaterThan(0)
-    expect(answer.getBoundingClientRect().height).toBeCloseTo(tall * 3, 0)
+    await expect(tall).toBeGreaterThan(0)
+    await expect(answer.getBoundingClientRect().height).toBeCloseTo(tall * 3, 0)
 
     // A field to insert into a half is a small, muted chip with its own background.
     const chip = found(canvasElement, '[data-insert="Height"]')
     const title = found(canvasElement, '.template__title')
-    expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-    expect(Number.parseFloat(getComputedStyle(chip).fontSize)).toBeLessThan(
+    await expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    await expect(Number.parseFloat(getComputedStyle(chip).fontSize)).toBeLessThan(
       Number.parseFloat(getComputedStyle(title).fontSize),
     )
 
@@ -314,8 +324,8 @@ export const ATemplate: Story = {
     const before = look()
     const content = getBox(canvasElement, 'front')
     content.focus()
-    expect(document.activeElement).toBe(content)
-    expect(look()).toEqual(before)
+    await expect(document.activeElement).toBe(content)
+    await expect(look()).toEqual(before)
   },
 }
 
@@ -324,13 +334,13 @@ export const Narrow: Story = {
   args: { width: '22rem' },
   play: async ({ canvasElement }) => {
     const body = found(canvasElement, '.template__body')
-    expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(1)
+    await expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(1)
 
     const tops = PANES.map((pane) =>
       Math.round(getPane(canvasElement, pane).getBoundingClientRect().top),
     )
-    expect([...tops].sort((first, second) => first - second)).toEqual(tops)
-    expect(new Set(tops).size).toBe(4)
+    await expect([...tops].sort((first, second) => first - second)).toEqual(tops)
+    await expect(new Set(tops).size).toBe(4)
   },
 }
 
@@ -339,29 +349,29 @@ export const AStraySlot: Story = {
   args: { corpus: 'a stray slot' },
   play: async ({ canvasElement }) => {
     // The error is shown at the slot itself, and under that half only.
-    expect(found(canvasElement, '[data-preview="front"] mark').textContent).toBe('{{Colour}}')
-    expect(found(canvasElement, '[data-preview="back"] mark').textContent).toBe('{{Weight}}')
-    expect(
+    await expect(found(canvasElement, '[data-preview="front"] mark').textContent).toBe('{{Colour}}')
+    await expect(found(canvasElement, '[data-preview="back"] mark').textContent).toBe('{{Weight}}')
+    await expect(
       found(canvasElement, '[data-pane="front-written"] .template__objections').textContent?.trim(),
     ).toBe('Not a field: Colour')
-    expect(
+    await expect(
       found(canvasElement, '[data-pane="back-written"] .template__objections').textContent?.trim(),
     ).toBe('Not a field: Weight')
-    expect(canvasElement.querySelector('header .template__objections')).toBeNull()
+    await expect(canvasElement.querySelector('header .template__objections')).toBeNull()
 
     // The box still fills the part, and a click on the part targets the box.
     const pane = getPane(canvasElement, 'front-written').getBoundingClientRect()
     const box = getBox(canvasElement, 'front').getBoundingClientRect()
-    expect(box.height).toBeCloseTo(pane.height, 0)
+    await expect(box.height).toBeCloseTo(pane.height, 0)
 
     const layer = found(canvasElement, '[data-pane="front-written"] .template__amiss')
-    expect(getComputedStyle(layer).pointerEvents).toBe('none')
+    await expect(getComputedStyle(layer).pointerEvents).toBe('none')
 
     const response = found(canvasElement, '[data-pane="front-written"] .template__objections')
     const overRect = response.getBoundingClientRect()
-    expect(overRect.bottom).toBeLessThanOrEqual(pane.bottom + 1)
-    expect(overRect.right).toBeLessThanOrEqual(pane.right + 1)
-    expect(getComputedStyle(response).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    await expect(overRect.bottom).toBeLessThanOrEqual(pane.bottom + 1)
+    await expect(overRect.right).toBeLessThanOrEqual(pane.right + 1)
+    await expect(getComputedStyle(response).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   },
 }
 
@@ -379,24 +389,31 @@ export const NothingInIt: Story = {
 
       const box = element.getBoundingClientRect()
       const middle = ghost.getBoundingClientRect()
-      expect(middle.left + middle.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
-      expect(middle.top + middle.height / 2).toBeCloseTo(box.top + box.height / 2, 0)
+      await expect(middle.left + middle.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
+      await expect(middle.top + middle.height / 2).toBeCloseTo(box.top + box.height / 2, 0)
     }
-    expect(placeholders).toEqual(['Front', 'Preview', 'Back', 'Preview'])
+    await expect(placeholders).toEqual(['Front', 'Preview', 'Back', 'Preview'])
 
     // What is written into a part takes that place, and the part then draws the
     // box alone.
     const content = getBox(canvasElement, 'front')
     await userEvent.type(content, 'a word')
-    await waitFor(() => {
-      expect(getPane(canvasElement, 'front-written').querySelector('.template__ghost')).toBeNull()
-      expect(getPane(canvasElement, 'front-preview').querySelector('.template__ghost')).toBeNull()
+    await waitFor(async () => {
+      await expect(
+        getPane(canvasElement, 'front-written').querySelector('.template__ghost'),
+      ).toBeNull()
+      await expect(
+        getPane(canvasElement, 'front-preview').querySelector('.template__ghost'),
+      ).toBeNull()
     })
     const pane = getPane(canvasElement, 'front-written')
-    expect(content.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
+    await expect(content.getBoundingClientRect().top).toBeCloseTo(
+      pane.getBoundingClientRect().top,
+      0,
+    )
 
     // The half with no text still shows its placeholder.
-    expect(
+    await expect(
       getPane(canvasElement, 'back-written').querySelector('.template__ghost')?.textContent,
     ).toBe('Back')
   },
@@ -409,17 +426,17 @@ export const NothingInIt: Story = {
 export const MarksAPersonWrote: Story = {
   args: { corpus: 'marks a person wrote' },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelector('script')).toBeNull()
-    expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
+    await expect(canvasElement.querySelector('script')).toBeNull()
+    await expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
 
     // The tag is drawn; the asterisks around the same value are four characters
     // of the answer, and nothing about them is bold.
     const front = found(canvasElement, '[data-preview="front"]')
-    expect(front.textContent).toBe('**Name** and Name')
-    expect(front.querySelectorAll('b, strong')).toHaveLength(1)
+    await expect(front.textContent).toBe('**Name** and Name')
+    await expect(front.querySelectorAll('b, strong')).toHaveLength(1)
 
     // The user's text is editable and shown as the text of a box.
-    expect(getBox(canvasElement, 'back').value).toContain('<script>')
+    await expect(getBox(canvasElement, 'back').value).toContain('<script>')
   },
 }
 
@@ -435,11 +452,11 @@ export const FarTooManyFields: Story = {
     const slots = found(canvasElement, '.template__slots')
 
     // Forty fields do not push the heading out of its own strip.
-    expect(title.getBoundingClientRect().width).toBeGreaterThan(60)
+    await expect(title.getBoundingClientRect().width).toBeGreaterThan(60)
 
-    expect(slots.scrollWidth).toBeGreaterThan(slots.clientWidth)
-    expect(header.getBoundingClientRect().height).toBeLessThan(40)
-    expect(slots.getBoundingClientRect().right).toBeLessThanOrEqual(
+    await expect(slots.scrollWidth).toBeGreaterThan(slots.clientWidth)
+    await expect(header.getBoundingClientRect().height).toBeLessThan(40)
+    await expect(slots.getBoundingClientRect().right).toBeLessThanOrEqual(
       header.getBoundingClientRect().right + 1,
     )
   },
@@ -456,8 +473,8 @@ export const WhatIsWrongWithIt: Story = {
   args: { corpus: 'something wrong with it' },
   play: async ({ canvasElement }) => {
     const response = found(canvasElement, '[data-wrong]')
-    expect(response.textContent).toContain('this template has no back')
-    expect(response.querySelectorAll('li')).toHaveLength(2)
+    await expect(response.textContent).toContain('this template has no back')
+    await expect(response.querySelectorAll('li')).toHaveLength(2)
 
     // The strip is one row high with all items rendered, and the editor begins
     // where the strip ends: the error overlays the editor and takes no space from
@@ -466,27 +483,27 @@ export const WhatIsWrongWithIt: Story = {
     const head = found(canvasElement, '.template__head').getBoundingClientRect()
     const body = found(canvasElement, '.template__body').getBoundingClientRect()
     const overRect = response.getBoundingClientRect()
-    expect(header.height).toBeLessThan(40)
-    expect(body.top).toBeCloseTo(header.bottom, 0)
-    expect(overRect.top).toBeGreaterThanOrEqual(head.bottom - 1)
-    expect(overRect.bottom).toBeGreaterThan(body.top)
+    await expect(header.height).toBeLessThan(40)
+    await expect(body.top).toBeCloseTo(header.bottom, 0)
+    await expect(overRect.top).toBeGreaterThanOrEqual(head.bottom - 1)
+    await expect(overRect.bottom).toBeGreaterThan(body.top)
 
     // It stays inside the template, and a click meant for the editor is received by it.
     const template = found(canvasElement, '[data-template]').getBoundingClientRect()
-    expect(overRect.right).toBeLessThanOrEqual(template.right + 1)
-    expect(getComputedStyle(found(canvasElement, 'header .template__amiss')).pointerEvents).toBe(
-      'none',
-    )
-    expect(getComputedStyle(response).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    await expect(overRect.right).toBeLessThanOrEqual(template.right + 1)
+    await expect(
+      getComputedStyle(found(canvasElement, 'header .template__amiss')).pointerEvents,
+    ).toBe('none')
+    await expect(getComputedStyle(response).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // A name that another template uses is rejected, and the box shows the error.
     const name = found(canvasElement, '.template__title') as HTMLInputElement
     await userEvent.clear(name)
     await userEvent.type(name, 'Recognise')
-    await waitFor(() => {
+    await waitFor(async () => {
       const objections = found(canvasElement, 'header [role="alert"]')
-      expect(objections.textContent?.trim()).toBe('That name is taken')
-      expect(name.getAttribute('aria-describedby')).toBe(objections.id)
+      await expect(objections.textContent?.trim()).toBe('That name is taken')
+      await expect(name.getAttribute('aria-describedby')).toBe(objections.id)
     })
   },
 }
@@ -508,7 +525,7 @@ export const Dark: Story = {
     // them.
     const ink = lightness(getComputedStyle(chip).color)
     const restingLightness = lightness(getComputedStyle(chip).backgroundColor)
-    expect(ink).toBeGreaterThan(restingLightness)
+    await expect(ink).toBeGreaterThan(restingLightness)
 
     await hoverOver(chip)
     await waitFor(() =>
@@ -518,6 +535,6 @@ export const Dark: Story = {
     )
 
     // The hovered chip is lighter than at rest, and still darker than its text.
-    expect(lightness(getComputedStyle(chip).backgroundColor)).toBeLessThan(ink)
+    await expect(lightness(getComputedStyle(chip).backgroundColor)).toBeLessThan(ink)
   },
 }

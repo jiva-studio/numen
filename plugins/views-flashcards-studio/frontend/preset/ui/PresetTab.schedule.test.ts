@@ -103,13 +103,13 @@ describe('a goal with nothing to work on', () => {
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)
   })
 
-  it('leaves its settings there to be set up before a deck points here', () => {
+  it('leaves its settings there to be set up before a deck points here', async () => {
     const { tab, recorded } = mountPresetTab(nothing)
     expect(tab.findAll('[data-preset-row]')).toHaveLength(6)
     const minutes = tab
       .findAll('[data-preset-row]')
       .find((one) => one.get('[data-preset="name"]').text() === words.fieldName('minutesADay'))
-    minutes?.get('input').setValue('7')
+    await minutes?.get('input').setValue('7')
     expect(recorded).toStrictEqual(['type minutesADay 7'])
   })
 })

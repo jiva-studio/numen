@@ -35,19 +35,30 @@ const mountFiles = async (open: readonly string[] = []) => {
   const list = useFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
     ...renderDeps,
-    openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
-    runCommand: (id, paths, details) =>
-      void isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
-    movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
-    setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
-    createFolder: async (path) => void isDone.push(`makes ${path}`),
+    openEntry: (entry) => {
+      isDone.push(`lands file ${entry.path}`)
+    },
+    runCommand: (id, paths, details) => {
+      isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`)
+    },
+    movePath: async (from, to) => {
+      isDone.push(`moves ${from} ${to}`)
+    },
+    setDraggedPaths: (paths) => {
+      isDone.push(`drags ${paths.join(' ') || '—'}`)
+    },
+    createFolder: async (path) => {
+      isDone.push(`makes ${path}`)
+    },
     createNote: async (folderPath) => `${folderPath}Untitled note.md`,
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
       isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
       return []
     },
-    showError: (text) => void isDone.push(`says ${text}`),
+    showError: (text) => {
+      isDone.push(`says ${text}`)
+    },
   })
   await list.openFolder(ROOT)
   for (const folderPath of open) await list.openFolder(folderPath)
@@ -256,15 +267,15 @@ describe('a folder that could not be read', () => {
     })
     const tab: FilesTabState = useFilesTab(list, {
       ...renderDeps,
-      openEntry: () => {},
-      runCommand: () => {},
-      movePath: async () => {},
-      setDraggedPaths: () => {},
-      createFolder: async () => {},
+      openEntry: () => undefined,
+      runCommand: () => undefined,
+      movePath: async () => undefined,
+      setDraggedPaths: () => undefined,
+      createFolder: async () => undefined,
       createNote: async () => '',
       canDropData: () => false,
       dropData: async () => [],
-      showError: () => {},
+      showError: () => undefined,
     })
     await list.openFolder(ROOT)
 

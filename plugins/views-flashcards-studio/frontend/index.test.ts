@@ -16,7 +16,7 @@ const createContext = () => {
   const workspace = {
     getMessageWriter: (name: string) => {
       writers.push(name)
-      return () => {}
+      return () => undefined
     },
     getToday: () => '2026-09-04',
   } as unknown as WorkspaceHost
@@ -130,7 +130,7 @@ describe('flashcards-studio plugin', () => {
     const { ctx, writers } = createContext()
     activate(ctx)
 
-    expect(writers).toStrictEqual(['card-model', 'preset'])
+    expect(writers).toStrictEqual(['deck', 'card-model', 'preset'])
   })
 
   it('makes each kind able to make the file it edits', () => {

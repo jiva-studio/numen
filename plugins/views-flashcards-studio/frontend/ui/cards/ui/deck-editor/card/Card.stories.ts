@@ -272,45 +272,47 @@ export const ACard: Story = {
     if (!rule || !label) throw new Error('no rule and no name on it')
 
     // One name, and it relies on the rule, so the two share a middle.
-    expect(value.querySelectorAll('label')).toHaveLength(1)
-    expect(label.closest('.divider')).toBe(rule)
+    await expect(value.querySelectorAll('label')).toHaveLength(1)
+    await expect(label.closest('.divider')).toBe(rule)
     const line = rule.getBoundingClientRect()
     const name = label.getBoundingClientRect()
-    expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
+    await expect(
+      Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2),
+    ).toBeLessThan(2)
 
     // The rule spans both edges of the card, past the area of the values.
     const edges = tile.getBoundingClientRect()
-    expect(line.left - edges.left).toBeLessThan(2)
-    expect(edges.right - line.right).toBeLessThan(2)
+    await expect(line.left - edges.left).toBeLessThan(2)
+    await expect(edges.right - line.right).toBeLessThan(2)
 
     const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
-    expect(boxes).toHaveLength(4)
+    await expect(boxes).toHaveLength(4)
     for (const box of boxes) {
       const underElement = box.closest('.card__value')?.querySelector('.divider')
       if (!underElement) throw new Error('a box under no rule')
-      expect(box.getBoundingClientRect().top).toBeCloseTo(
+      await expect(box.getBoundingClientRect().top).toBeCloseTo(
         underElement.getBoundingClientRect().bottom,
         0,
       )
-      expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()
+      await expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()
     }
 
     // Empty and one-line boxes stand to one height.
     const heights = boxes.map((box) => Math.round(box.getBoundingClientRect().height))
-    expect(new Set(heights).size).toBe(1)
+    await expect(new Set(heights).size).toBe(1)
 
     // The card keeps the surface that both the rules and the boxes are drawn on.
     const cell = found(canvasElement, '.autosize')
     const ground = getComputedStyle(cell).backgroundColor
-    expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
-    expect(getComputedStyle(cell).borderTopWidth).toBe('0px')
-    expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    await expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
+    await expect(getComputedStyle(cell).borderTopWidth).toBe('0px')
+    await expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // The strip shows the card model of the card and holds the one control to remove it.
     const header = found(canvasElement, '.card-header')
-    expect(found(canvasElement, '[data-cut-of]').textContent?.trim()).toBe('Animal')
-    expect(tile.querySelector('[aria-expanded]')).toBeNull()
-    expect(header.querySelectorAll('button')).toHaveLength(1)
+    await expect(found(canvasElement, '[data-cut-of]').textContent?.trim()).toBe('Animal')
+    await expect(tile.querySelector('[aria-expanded]')).toBeNull()
+    await expect(header.querySelectorAll('button')).toHaveLength(1)
 
     // the card holds.
     const cutElement = found(canvasElement, '[data-cut-of]')
@@ -318,25 +320,25 @@ export const ACard: Story = {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + box.width / 2)
     }
-    expect(middle(cutElement)).toBe(middle(header))
+    await expect(middle(cutElement)).toBe(middle(header))
 
     const response = Number.parseFloat(getComputedStyle(cutElement).fontSize)
     const content = Number.parseFloat(
       getComputedStyle(found(canvasElement, '[data-value="Height"]')).fontSize,
     )
-    expect(response).toBeLessThan(content)
+    await expect(response).toBeLessThan(content)
 
     const box = found(canvasElement, '[data-value="Height"]')
     await userEvent.click(box)
     await userEvent.type(box, '!')
-    expect((box as HTMLTextAreaElement).value).toContain('!')
+    await expect((box as HTMLTextAreaElement).value).toContain('!')
 
     // Every box keeps what was typed, including line breaks and the first field: a
     // field holds as many lines as are written.
     const first = found(canvasElement, '[data-value="Name"]') as HTMLTextAreaElement
     await userEvent.click(first)
     await userEvent.type(first, '{Enter}b')
-    expect(first.value).toContain('\n')
+    await expect(first.value).toContain('\n')
   },
 }
 
@@ -348,8 +350,8 @@ export const AFirstFieldOfManyLines: Story = {
   play: async ({ canvasElement }) => {
     const box = found(canvasElement, '[data-value="Question"]')
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
-    expect(box.clientHeight).toBeGreaterThan(line * 2)
-    expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
+    await expect(box.clientHeight).toBeGreaterThan(line * 2)
+    await expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
   },
 }
 
@@ -363,8 +365,8 @@ export const AValueThatWraps: Story = {
     const box = found(canvasElement, '[data-value="Answer"]')
 
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
-    expect(box.clientHeight).toBeGreaterThan(line * 2)
-    expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
+    await expect(box.clientHeight).toBeGreaterThan(line * 2)
+    await expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
   },
 }
 
@@ -382,22 +384,22 @@ export const NoCardModel: Story = {
 
     // The card model is unknown, so no boxes are drawn and the missing card model
     // is named.
-    expect(tile.textContent).toContain('No card model called Gone')
-    expect(tile.querySelectorAll('textarea')).toHaveLength(0)
+    await expect(tile.textContent).toContain('No card model called Gone')
+    await expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
     // the body keeps, in from the tile's own stroke.
     const body = found(canvasElement, '.card__body')
     const clearance = Number.parseFloat(getComputedStyle(body).paddingInlineStart)
     const stroke = Number.parseFloat(getComputedStyle(tile).borderInlineStartWidth)
     const objections = found(canvasElement, '.card__objections').getBoundingClientRect()
-    expect(Math.round(objections.left)).toBe(
+    await expect(Math.round(objections.left)).toBe(
       Math.round(tile.getBoundingClientRect().left + stroke + clearance),
     )
 
     // over.
     const gap = found(canvasElement, '.card__silence').getBoundingClientRect()
     const middle = (box: DOMRect): number => Math.round(box.left + box.width / 2)
-    expect(middle(gap)).toBe(middle(body.getBoundingClientRect()))
+    await expect(middle(gap)).toBe(middle(body.getBoundingClientRect()))
   },
 }
 
@@ -416,31 +418,34 @@ export const CutByNothing: Story = {
 
     // The strip carries it, in the voice it names a card model in.
     const cutElement = found(canvasElement, '[data-cut-of]')
-    expect(cutElement.textContent?.trim()).toBe('Cut by no card model')
+    await expect(cutElement.textContent?.trim()).toBe('Cut by no card model')
     const label = found(canvasElement, '.card__field')
-    expect(getComputedStyle(cutElement).color).toBe(getComputedStyle(label).color)
+    await expect(getComputedStyle(cutElement).color).toBe(getComputedStyle(label).color)
 
     // The problem is reported once: the body shows what the vault found and nothing else.
     const response = [...tile.querySelectorAll('.card__objections')]
-    expect(response).toHaveLength(1)
-    expect(response[0]?.textContent).toContain('not a lone wikilink')
-    expect(getComputedStyle(cutElement).color).not.toBe(
+    await expect(response).toHaveLength(1)
+    await expect(response[0]?.textContent).toContain('not a lone wikilink')
+    await expect(getComputedStyle(cutElement).color).not.toBe(
       getComputedStyle(response[0] as Element).color,
     )
 
-    expect(tile.querySelector('.card__silence')).toBeNull()
+    await expect(tile.querySelector('.card__silence')).toBeNull()
 
     // What the card wrote is read, breaks and all, and typed into nothing.
-    expect(tile.querySelectorAll('textarea')).toHaveLength(0)
+    await expect(tile.querySelectorAll('textarea')).toHaveLength(0)
     const wrote = [...tile.querySelectorAll<HTMLElement>('[data-wrote]')]
-    expect(wrote.map((each) => each.getAttribute('data-wrote'))).toEqual(['Question', 'Answer'])
-    expect(wrote[1]?.textContent).toContain('\n')
+    await expect(wrote.map((each) => each.getAttribute('data-wrote'))).toEqual([
+      'Question',
+      'Answer',
+    ])
+    await expect(wrote[1]?.textContent).toContain('\n')
 
     const edge = (each: Element): number => {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + Number.parseFloat(getComputedStyle(each).paddingInlineStart))
     }
-    expect(edge(wrote[0] as Element)).toBe(edge(label))
+    await expect(edge(wrote[0] as Element)).toBe(edge(label))
   },
 }
 
@@ -456,20 +461,20 @@ export const WhatIsWrongWithIt: Story = {
   play: async ({ canvasElement }) => {
     // Both values are kept, each in a box of its own.
     const boxes = [...canvasElement.querySelectorAll<HTMLTextAreaElement>('[data-value="Name"]')]
-    expect(boxes.map((box) => box.value)).toEqual(['Llama', 'Alpaca'])
+    await expect(boxes.map((box) => box.value)).toEqual(['Llama', 'Alpaca'])
 
     const response = found(canvasElement, '[data-wrong]')
-    expect(response.textContent).toContain('writes one field twice')
+    await expect(response.textContent).toContain('writes one field twice')
     const first = found(canvasElement, '.card__value')
-    expect(response.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+    await expect(response.getBoundingClientRect().bottom).toBeLessThanOrEqual(
       first.getBoundingClientRect().top + 1,
     )
 
     // It is reported once, under the second of the two boxes for Name.
     const underCards = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
-    expect(underCards).toHaveLength(1)
-    expect(underCards[0]?.textContent).toContain('this card writes Name twice')
-    expect(underCards[0]?.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    await expect(underCards).toHaveLength(1)
+    await expect(underCards[0]?.textContent).toContain('this card writes Name twice')
+    await expect(underCards[0]?.getBoundingClientRect().top).toBeGreaterThanOrEqual(
       boxes[1]?.getBoundingClientRect().bottom ?? 0,
     )
 
@@ -482,9 +487,9 @@ export const WhatIsWrongWithIt: Story = {
       return box.left + Number.parseFloat(renderedStyle.paddingInlineStart)
     }
     const label = found(canvasElement, '.card__value label')
-    expect(Math.round(edge(underCards[0]))).toBe(Math.round(edge(boxes[1])))
-    expect(Math.round(edge(label))).toBe(Math.round(edge(boxes[1])))
-    expect(Math.round(edge(response))).toBe(Math.round(edge(boxes[0])))
+    await expect(Math.round(edge(underCards[0]))).toBe(Math.round(edge(boxes[1])))
+    await expect(Math.round(edge(label))).toBe(Math.round(edge(boxes[1])))
+    await expect(Math.round(edge(response))).toBe(Math.round(edge(boxes[0])))
   },
 }
 
@@ -492,13 +497,13 @@ export const WhatIsWrongWithIt: Story = {
 export const TagsThatMustNotSurvive: Story = {
   args: { corpus: 'tags that must not survive' },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelector('script')).toBeNull()
-    expect(canvasElement.querySelector('img')).toBeNull()
-    expect(canvasElement.querySelector('[onerror]')).toBeNull()
-    expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
+    await expect(canvasElement.querySelector('script')).toBeNull()
+    await expect(canvasElement.querySelector('img')).toBeNull()
+    await expect(canvasElement.querySelector('[onerror]')).toBeNull()
+    await expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
 
     // The content the user wrote is readable and editable as the text of a box.
     const box = canvasElement.querySelector<HTMLTextAreaElement>('[data-value="Answer"]')
-    expect(box?.value).toContain('<script>')
+    await expect(box?.value).toContain('<script>')
   },
 }

@@ -41,15 +41,15 @@ function onActivateNode(node: string) {
 }
 
 function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
-  void props.state.createNode(from, relation, at ?? lastPointer.value)
+  props.state.createNode(from, relation, at ?? lastPointer.value).catch(props.state.reportFailure)
 }
 
 function onLinkNodes(from: string, to: string, relation: PlexRelation) {
-  void props.state.joinNodes(from, to, relation)
+  props.state.joinNodes(from, to, relation).catch(props.state.reportFailure)
 }
 
 function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
-  void props.state.dropNodes(nodes, relation)
+  props.state.dropNodes(nodes, relation).catch(props.state.reportFailure)
 }
 
 function onOpenMenu(node: string, position: { x: number; y: number }, opening: MenuTrigger) {
@@ -77,11 +77,11 @@ function onDismissMenu() {
 }
 
 function onSelectQuickLinkNote(path: string) {
-  void props.state.confirmQuickLink(path, true)
+  props.state.confirmQuickLink(path, true).catch(props.state.reportFailure)
 }
 
 function onCreateQuickLinkNote(title: string) {
-  void props.state.confirmQuickLink(title, false)
+  props.state.confirmQuickLink(title, false).catch(props.state.reportFailure)
 }
 
 function onDismissQuickLink() {
@@ -89,7 +89,7 @@ function onDismissQuickLink() {
 }
 
 function onSaveLinkInspector(rows: readonly DirectionalLinkItem[]) {
-  void props.state.saveLinkInspector(rows)
+  props.state.saveLinkInspector(rows).catch(props.state.reportFailure)
 }
 
 function onDismissLinkInspector() {

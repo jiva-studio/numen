@@ -220,8 +220,8 @@ export const TheRowsShareTheirColumns: Story = {
     // one line. Were each row measuring its own grid, the widest control in
     // that row alone would decide where its name stopped, and the six would
     // stop in six places.
-    expect(new Set(names.map((box) => Math.round(box.left))).size).toBe(1)
-    expect(new Set(names.map((box) => Math.round(box.right))).size).toBe(1)
+    await expect(new Set(names.map((box) => Math.round(box.left))).size).toBe(1)
+    await expect(new Set(names.map((box) => Math.round(box.right))).size).toBe(1)
 
     // The controls stand in the second column, past the line every name stops
     // on, and inside the section and not spilling out of it.
@@ -229,16 +229,16 @@ export const TheRowsShareTheirColumns: Story = {
     const room = settings.getBoundingClientRect()
     for (const control of controls) {
       const box = control.getBoundingClientRect()
-      expect(box.width).toBeGreaterThan(0)
-      expect(box.left).toBeGreaterThanOrEqual(edge)
-      expect(box.right).toBeLessThanOrEqual(Math.ceil(room.right))
+      await expect(box.width).toBeGreaterThan(0)
+      await expect(box.left).toBeGreaterThanOrEqual(edge)
+      await expect(box.right).toBeLessThanOrEqual(Math.ceil(room.right))
     }
 
     // The widest of them is what the column is as wide as, so the column is a
     // real one and not each row's own guess.
     const widths = controls.map((one) => one.getBoundingClientRect().width)
-    expect(Math.max(...widths)).toBeGreaterThan(Math.min(...widths))
-    expect(room.right - edge).toBeGreaterThanOrEqual(Math.max(...widths))
+    await expect(Math.max(...widths)).toBeGreaterThan(Math.min(...widths))
+    await expect(room.right - edge).toBeGreaterThanOrEqual(Math.max(...widths))
   },
 }
 
@@ -254,7 +254,7 @@ export const TheReadoutStaysBelowThePlot: Story = {
     const picture = getImage(canvasElement)
     const frame = picture.getBoundingClientRect()
     picture.focus()
-    expect(picture).toHaveFocus()
+    await expect(picture).toHaveFocus()
 
     const getValueElement = (value: number) =>
       within(canvasElement).getByText(words.formatGoalValue('minutes', value))
@@ -269,9 +269,9 @@ export const TheReadoutStaysBelowThePlot: Story = {
       await waitFor(() => expect(picture).toHaveAttribute('aria-valuenow', String(value)))
 
       const box = getValueElement(value).getBoundingClientRect()
-      expect(box.width).toBeGreaterThan(0)
-      expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
-      expect(box.right).toBeLessThanOrEqual(frame.right + 1)
+      await expect(box.width).toBeGreaterThan(0)
+      await expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
+      await expect(box.right).toBeLessThanOrEqual(frame.right + 1)
     }
   },
 }
@@ -299,9 +299,9 @@ export const TheBubbleIsAboveTheKnob: Story = {
 
       const bubble = within(canvasElement).getByText(getBubbleLine(value)).parentElement!
       const box = bubble.getBoundingClientRect()
-      expect(box.width).toBeGreaterThan(0)
-      expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
-      expect(box.right).toBeLessThanOrEqual(frame.right + 1)
+      await expect(box.width).toBeGreaterThan(0)
+      await expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
+      await expect(box.right).toBeLessThanOrEqual(frame.right + 1)
     }
   },
 }
@@ -326,8 +326,8 @@ export const TheBacklogKeepsItsSpace: Story = {
     const backlog = canvas.getByText(words.backlogY)
     const axisLabel = canvas.getByText(words.backlogX)
     const picture = getImage(answered!).getBoundingClientRect()
-    expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    expect(axisLabel.getBoundingClientRect().top).toBeGreaterThan(
+    await expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
+    await expect(axisLabel.getBoundingClientRect().top).toBeGreaterThan(
       backlog.getBoundingClientRect().top,
     )
 
@@ -335,20 +335,23 @@ export const TheBacklogKeepsItsSpace: Story = {
     // two ends stand at the two ends of it.
     const first = canvas.getByText(words.formatBacklogDays(1))
     const last = canvas.getByText(words.formatBacklogDays(7))
-    expect(first.getBoundingClientRect().left).toBeLessThan(last.getBoundingClientRect().left)
+    await expect(first.getBoundingClientRect().left).toBeLessThan(last.getBoundingClientRect().left)
 
     // One tab has a backlog drawn in the backlog and the other has none, which is
     // what makes the two rooms worth comparing.
-    expect(answered!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(1)
-    expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
+    await expect(answered!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(1)
+    await expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
     // The height is the same in both cases, with the backlog's own aspect ratio.
     const backlogBox = getBacklogRect(answered!)
     const empty = getBacklogRect(waiting!)
-    expect(backlogBox.width).toBeGreaterThan(0)
-    expect(empty.width).toBeCloseTo(backlogBox.width, 0)
-    expect(empty.height).toBeCloseTo(backlogBox.height, 0)
-    expect(backlogBox.width / backlogBox.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
+    await expect(backlogBox.width).toBeGreaterThan(0)
+    await expect(empty.width).toBeCloseTo(backlogBox.width, 0)
+    await expect(empty.height).toBeCloseTo(backlogBox.height, 0)
+    await expect(backlogBox.width / backlogBox.height).toBeCloseTo(
+      PLOT_WIDTH / BACKLOG_PLOT_HEIGHT,
+      1,
+    )
   },
 }
 
@@ -363,18 +366,18 @@ export const WaitingForAnAnswer: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     canvas.getByText(words.waiting)
-    expect(canvas.queryByRole('slider', { name: words.knob })).toBeNull()
+    await expect(canvas.queryByRole('slider', { name: words.knob })).toBeNull()
 
     // The container for the plot is present and empty, with the plot's aspect ratio,
     // so nothing below it moves when the curve arrives.
     const empty = getRooms(canvasElement)[0]!.getBoundingClientRect()
-    expect(empty.width).toBeGreaterThan(0)
-    expect(empty.width / empty.height).toBeCloseTo(PLOT_WIDTH / PLOT_HEIGHT, 1)
+    await expect(empty.width).toBeGreaterThan(0)
+    await expect(empty.width / empty.height).toBeCloseTo(PLOT_WIDTH / PLOT_HEIGHT, 1)
 
     // The settings under it are still there, and still on their own columns.
     const room = canvas.getByRole('region', { name: words.settings }).getBoundingClientRect()
-    expect(room.height).toBeGreaterThan(0)
-    expect(room.top).toBeGreaterThanOrEqual(empty.bottom)
+    await expect(room.height).toBeGreaterThan(0)
+    await expect(room.top).toBeGreaterThanOrEqual(empty.bottom)
   },
 }
 
@@ -401,11 +404,13 @@ export const TheRingIsOnTheKnob: Story = {
 
     // The knob has the ring: its stroke has another colour and a greater width.
     const target = getComputedStyle(knob)
-    expect(target.stroke).not.toBe(before.stroke)
-    expect(Number.parseFloat(target.strokeWidth)).toBeGreaterThan(Number.parseFloat(before.width))
+    await expect(target.stroke).not.toBe(before.stroke)
+    await expect(Number.parseFloat(target.strokeWidth)).toBeGreaterThan(
+      Number.parseFloat(before.width),
+    )
 
     // The plot itself has no outline.
-    expect(getComputedStyle(picture).outlineStyle).toBe('none')
+    await expect(getComputedStyle(picture).outlineStyle).toBe('none')
   },
 }
 
@@ -426,7 +431,7 @@ export const TheKnobFollowsThePointer: Story = {
     // The element answers for the pointer: without a screen matrix nothing can
     // be read off it, and without capture the drag is lost the moment the
     // pointer leaves the knob.
-    expect(picture.getScreenCTM?.()).not.toBeNull()
+    await expect(picture.getScreenCTM?.()).not.toBeNull()
 
     const coords = (share: number) => ({
       clientX: box.left + box.width * share,

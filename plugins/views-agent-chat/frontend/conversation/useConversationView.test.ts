@@ -117,7 +117,7 @@ describe('the conversation view', () => {
 describe('a question in flight', () => {
   /** A port whose answer does not arrive until the test lets it. */
   const createSlowAgent = () => {
-    let answer = () => {}
+    let answer: () => void = () => undefined
     const agent: AgentPort = {
       async *ask(query) {
         await new Promise<void>((then) => {
@@ -126,7 +126,7 @@ describe('a question in flight', () => {
         })
         yield { kind: 'text', text: 'Because of the leaves.' }
       },
-      async finish() {},
+      finish: async () => undefined,
     }
     return { agent, answer: () => answer() }
   }

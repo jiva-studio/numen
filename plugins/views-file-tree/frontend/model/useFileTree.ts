@@ -154,7 +154,10 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
       )
     }
     const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
-    if (named.length === 0) return void (await refresh())
+    if (named.length === 0) {
+      await refresh()
+      return
+    }
     const folders = new Set(
       named
         .map((p) => findDrawnInFolder(p, isFolderOpen, getEntryAt))
@@ -186,8 +189,10 @@ function createFolderOperations(
     open.value = rest
   }
 
-  const toggleFolder = (folder: string) =>
-    void (isFolderOpen(folder) ? closeFolder(folder) : openFolder(folder))
+  const toggleFolder = async (folder: string): Promise<void> => {
+    if (isFolderOpen(folder)) closeFolder(folder)
+    else await openFolder(folder)
+  }
 
   return { isFolderOpen, openFolder, closeFolder, toggleFolder }
 }

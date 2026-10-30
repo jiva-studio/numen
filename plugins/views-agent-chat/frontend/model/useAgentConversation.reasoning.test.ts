@@ -52,12 +52,12 @@ function open(settings: Record<string, string> = {}) {
       request.push(options ?? {})
     },
     getSourceLocation: () => null,
-    stop: () => {},
-    finish: () => {},
+    stop: () => undefined,
+    finish: () => undefined,
   }
   const state = useAgentConversation(conversation, {
-    openFileAt: () => {},
-    openFileAdjacent: () => {},
+    openFileAt: () => undefined,
+    openFileAdjacent: () => undefined,
     resolveLinks: async () => [],
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],

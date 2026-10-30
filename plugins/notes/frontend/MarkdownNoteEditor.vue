@@ -6,11 +6,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from './editor'
 import type { Extension } from '@codemirror/state'
 import { editorPreferences } from './preferences'
-import {
-  getEditorLanguage,
-  useMarkdownDocument,
-  type EditorHandle,
-} from './useMarkdownDocument'
+import { getEditorLanguage, useMarkdownDocument, type EditorHandle } from './useMarkdownDocument'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -19,8 +15,8 @@ interface Props {
   readonly filePath?: string
   readonly errorMessage?: string
   readonly isReadOnly?: boolean
-  readonly extensions?: Extension | readonly Extension[]
-  readonly state?: Record<string, unknown>
+  readonly extensions?: Extension | readonly Extension[] | undefined
+  readonly state?: Record<string, unknown> | undefined
   readonly softWrap?: boolean | undefined
   readonly lineNumbers?: boolean | undefined
   readonly tabSize?: number | undefined
@@ -35,6 +31,8 @@ const props = withDefaults(defineProps<Props>(), {
   softWrap: undefined,
   lineNumbers: undefined,
   tabSize: undefined,
+  extensions: undefined,
+  state: undefined,
 })
 
 /* --------------------------------- Events --------------------------------- */

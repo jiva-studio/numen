@@ -57,7 +57,7 @@ describe('media-player plugin', () => {
       watch: vi.fn(),
       watchAll: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {
         onTasks([{ about: 'talks/a.mp3' }])
-        return { dispose: () => {} }
+        return { dispose: () => undefined }
       }),
     }
     activate(Object.assign(context, { tasks }))

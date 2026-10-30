@@ -22,6 +22,10 @@ export function useLink(links: Links | undefined, path: string) {
   let turn = 0
   let isFetchRequested = false
 
+  const reportFailure = (failure: unknown): void => {
+    error.value = describeFailure(failure)
+  }
+
   const load = async (): Promise<void> => {
     const mine = ++turn
     try {
@@ -65,9 +69,9 @@ export function useLink(links: Links | undefined, path: string) {
 
   const stop = activeLinks.watchWork(path, (working) => {
     isWorking.value = working
-    if (!working) void load()
+    if (!working) load().catch(reportFailure)
   })
-  void load()
+  load().catch(reportFailure)
 
   return {
     url,
@@ -76,6 +80,7 @@ export function useLink(links: Links | undefined, path: string) {
     /** Where the page that frames the video's player is loaded from, while no copy is kept. */
     embedSource,
     status: { isCopyable, isTextDeleted, isWorking, isLoaded },
+    reportFailure,
     error,
     actions: {
       fetchText: () => run(() => activeLinks.fetchText(path, true)),

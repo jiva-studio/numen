@@ -42,22 +42,30 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       return openingPath.value
     },
     draggedPaths: ref([]),
-    setDraggedPaths: () => {},
-    openFile: (path, options) => void recorded.opened.push([path, options]),
-    openFileAt: () => {},
+    setDraggedPaths: () => undefined,
+    openFile: (path, options) => {
+      recorded.opened.push([path, options])
+    },
+    openFileAt: () => undefined,
     getNoteInFocus: () => ({ path: '', title: '' }),
     syncPath: (tabId, path, title) => {
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    runCommand: (id, target) => void recorded.commands.push([id, target]),
+    runCommand: (id, target) => {
+      recorded.commands.push([id, target])
+    },
     getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note', group: NOTE_TYPE }],
-    ask: (text) => void recorded.questions.push(text),
-    showError: (text) => void recorded.errors.push(text),
-    getMessageWriter: () => () => {},
+    ask: (text) => {
+      recorded.questions.push(text)
+    },
+    showError: (text) => {
+      recorded.errors.push(text)
+    },
+    getMessageWriter: () => () => undefined,
     getToday: () => '2026-01-01',
     getPathCommands: () => [],
-    runPathCommand: () => {},
+    runPathCommand: () => undefined,
     getCommandIcon: () => null,
     getEntryIcon: () => ({}),
   }
@@ -88,7 +96,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     },
     replaceLinks: async () => true,
     read: async () => ({ body: '' }),
-    write: async () => {},
+    write: async () => undefined,
     creatableRelations: ['parent', 'child', 'jump'],
   }
 

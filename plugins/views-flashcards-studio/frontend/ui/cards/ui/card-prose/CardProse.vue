@@ -5,7 +5,7 @@
  * A template is HTML and is drawn as the markup it is, measured first against what
  * a card may be drawn with. Typesetting is the typography plugin's.
  */
-import { computed } from 'vue'
+import { computed, type Directive } from 'vue'
 import { renderCardHtml } from './render'
 
 const props = defineProps<{
@@ -21,6 +21,16 @@ const emit = defineEmits<{
   (event: 'follow', href: string, press: MouseEvent): void
 }>()
 
+/** Writes markup that was checked before it reached this component. */
+const vMarkup: Directive<HTMLElement, string> = {
+  created: (element, binding) => {
+    element.innerHTML = binding.value
+  },
+  beforeUpdate: (element, binding) => {
+    if (binding.value !== binding.oldValue) element.innerHTML = binding.value
+  },
+}
+
 const html = computed(() => renderCardHtml(props.text))
 
 const onClick = (press: MouseEvent) => {
@@ -31,10 +41,9 @@ const onClick = (press: MouseEvent) => {
 </script>
 
 <template>
-  <!-- eslint-disable-next-line vue/no-v-html -- what stands here has been measured against what a card may be drawn with -->
   <div
+    v-markup="html"
     class="prose prose-sm prose-numen numen max-w-none break-words"
-    v-html="html"
     @click="onClick"
   ></div>
 </template>

@@ -35,15 +35,15 @@ export function createVaultCounts(deps: VaultCountsDeps) {
   const start = () => {
     if (isStarted || !isOpen) return
     isStarted = true
-    void counter.count()
-    void follow(
+    counter.count().catch(deps.reportError)
+    follow(
       () => cards.watchReloads({}, { signal: abortController.signal }),
       async (response) => {
         // A message carrying no reload keeps the stream open and moves nothing.
         if (!response.reload) return
         await refresh()
       },
-    )
+    ).catch(deps.reportError)
   }
 
   /** What a reload does while a review is open; nothing restores counting again. */

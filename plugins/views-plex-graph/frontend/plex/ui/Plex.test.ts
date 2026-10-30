@@ -18,15 +18,15 @@ const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   })
 
 describe('choosing a node', () => {
-  it('returns the identifier it was given, untouched', () => {
+  it('returns the identifier it was given, untouched', async () => {
     const plex = mountPlex()
-    plex.get('[aria-label^="Domain"]').trigger('click')
+    await plex.get('[aria-label^="Domain"]').trigger('click')
     expect(plex.emitted('activate')).toStrictEqual([['child-0']])
   })
 
-  it('says nothing when the focus itself is clicked', () => {
+  it('says nothing when the focus itself is clicked', async () => {
     const plex = mountPlex()
-    plex.get('[aria-label^="Hexagonal architecture"]').trigger('click')
+    await plex.get('[aria-label^="Hexagonal architecture"]').trigger('click')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
@@ -173,7 +173,7 @@ describe('how wide a box is drawn', () => {
 
   /** A canvas that measures by the character. jsdom has none of its own. */
   const stubCanvas = () => {
-    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       font: '',
       measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
@@ -213,7 +213,7 @@ describe('how wide a box is drawn', () => {
         observe() {
           rings.push(() => this.ring([], this as unknown as ResizeObserver))
         }
-        disconnect() {}
+        disconnect = vi.fn()
       },
     )
 
@@ -332,13 +332,13 @@ describe('how much room the plex has', () => {
   const createViewport = (size: Size): Viewport => ({
     watch: (_of, took) => {
       took(size)
-      return () => {}
+      return () => undefined
     },
     watchFreeSpace: (took) => {
       took(size)
-      return () => {}
+      return () => undefined
     },
-    watchWhole: () => () => {},
+    watchWhole: () => () => undefined,
   })
 
   it('draws to the size it is handed', async () => {
@@ -350,7 +350,11 @@ describe('how much room the plex has', () => {
   it('lets go of the watching when it is taken down', () => {
     const stop = vi.fn()
     const plex = mountPlex({
-      viewport: { watch: () => stop, watchFreeSpace: () => () => {}, watchWhole: () => () => {} },
+      viewport: {
+        watch: () => stop,
+        watchFreeSpace: () => () => undefined,
+        watchWhole: () => () => undefined,
+      },
     })
     plex.unmount()
     expect(stop).toHaveBeenCalledOnce()

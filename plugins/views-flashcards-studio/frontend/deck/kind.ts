@@ -27,6 +27,8 @@ export interface DeckTabsInside {
   listCardModelsAgain(): void
   listPresetsAgain(): void
   refreshDeckPreset(path: string): Promise<void>
+  /** Shows the failure of an operation that runs in the background. */
+  reportFailure(error: unknown): void
   createDeckTabState(id: string): DeckTabState
 }
 
@@ -39,6 +41,7 @@ export function createDeckKind({
   listCardModelsAgain,
   listPresetsAgain,
   refreshDeckPreset,
+  reportFailure,
   createDeckTabState,
 }: DeckTabsInside) {
   const kind: TabKindRegistration<DeckTabState> = {
@@ -47,9 +50,9 @@ export function createDeckKind({
     icon: Layers,
     open: (path, id) => {
       store.open(id, path)
-      void listCardModels()
-      void listPresets()
-      void refreshDeckPreset(path)
+      listCardModels().catch(reportFailure)
+      listPresets().catch(reportFailure)
+      refreshDeckPreset(path).catch(reportFailure)
       return createDeckTabState(id)
     },
     // A deck already open under the path is the tab of that path, wherever the file has since moved.
@@ -72,7 +75,8 @@ export function createDeckKind({
       one.close(id)
       return false
     },
-    onDestroy: () => {},
+    // The tab state holds no resource beyond the buffer store.
+    onDestroy: () => undefined,
     isAsking: (one) => store.stale(one.id) !== null,
     flushPending: (one) => store.flushPending(one.id),
     createFile: (folder, name) => createDeck(name, folder),

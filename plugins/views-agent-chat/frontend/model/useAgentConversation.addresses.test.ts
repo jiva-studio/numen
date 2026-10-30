@@ -18,10 +18,10 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
   const conversation: Conversation = {
     turns,
     isWorking: ref(false),
-    ask: async () => {},
+    ask: async () => undefined,
     getSourceLocation: () => null,
-    stop: () => {},
-    finish: () => {},
+    stop: () => undefined,
+    finish: () => undefined,
   }
   const requests: string[] = []
   const openedCalls: [string, readonly TextRange[]][] = []
@@ -66,8 +66,7 @@ describe('the notes an answer names', () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     one.turns.value = [...one.turns.value, turn('b', 'And [[Entropy]] with [[Order]].')]
     await settle()
-    void one.state.turns.value
-
+    expect(one.state.turns.value).toHaveLength(2)
     expect(one.requests).toEqual(['See [[Entropy]].', 'And [[Entropy]] with [[Order]].'])
   })
 

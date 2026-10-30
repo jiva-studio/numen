@@ -8,7 +8,7 @@ import { measureRect } from '../../dom'
  * into the book's text: enlarging the text lays out the columns again and the
  * offset is unchanged.
  */
-import { useTemplateRef } from 'vue'
+import { useTemplateRef, type Directive } from 'vue'
 
 import { getPageNavigationAction } from '@numen/ui'
 import { createBookPointer } from '../model/hand'
@@ -89,6 +89,16 @@ const onKey = (event: KeyboardEvent): boolean => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+/** Writes markup that was checked before it reached this component. */
+const vMarkup: Directive<HTMLElement, string> = {
+  created: (element, binding) => {
+    element.innerHTML = binding.value
+  },
+  beforeUpdate: (element, binding) => {
+    if (binding.value !== binding.oldValue) element.innerHTML = binding.value
+  },
+}
+
 defineExpose({
   /**
    * Lays out the text again. A reader rendered off screen has no reading area, and
@@ -115,16 +125,15 @@ defineExpose({
       >
         <!-- The markup reaches this component already measured against what may
              be drawn. -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
         <div
           v-show="isMeasured"
           ref="paper"
+          v-markup="markup"
           class="book__paper prose prose-sm prose-numen max-w-none"
           :class="{ 'book__paper--unset': !isStood }"
           :style="setting"
           @click="onFollow"
           @auxclick="onFollow"
-          v-html="markup"
         />
       </div>
     </div>

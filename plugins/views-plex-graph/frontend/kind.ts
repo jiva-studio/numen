@@ -36,8 +36,12 @@ function createPlexTabs() {
   const tabs = new Map<string, PlexTabState>()
   const getLast = (): PlexTabState | null => [...tabs.values()].at(-1) ?? null
   return {
-    add: (id: string, state: PlexTabState) => void tabs.set(id, state),
-    remove: (id: string) => void tabs.delete(id),
+    add: (id: string, state: PlexTabState) => {
+      tabs.set(id, state)
+    },
+    remove: (id: string) => {
+      tabs.delete(id)
+    },
     show: (id: string) => {
       const state = tabs.get(id)
       if (!state) return
@@ -98,7 +102,7 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
         host.workspace.openingPath.value
       const state = usePlexTab(createView(), createPlexTabDeps(host, id))
       tabs.add(id, state)
-      if (from) void state.view.go(from)
+      if (from) state.view.go(from).catch(state.reportFailure)
       watch(state.view.here, (path) => {
         if (path) host.workspace.syncPath(id, path, state.getName(path))
       })

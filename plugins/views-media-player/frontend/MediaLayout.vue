@@ -18,10 +18,10 @@ const props = withDefaults(
   defineProps<{
     state: TranscriptState
     /** What the menu at the end of the strip offers, and nothing where it offers none. */
-    menuItems?: readonly MenuItem[]
+    menuItems?: readonly MenuItem[] | undefined
     isPlaying?: boolean | undefined
   }>(),
-  { isPlaying: undefined },
+  { isPlaying: undefined, menuItems: undefined },
 )
 
 const emit = defineEmits<{ choose: [id: string] }>()

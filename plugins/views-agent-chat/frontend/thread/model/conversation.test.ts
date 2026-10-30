@@ -40,7 +40,7 @@ const createPort = (steps: readonly AgentStep[], hold?: Promise<void>): AgentPor
     }
     if (hold) await hold
   },
-  finish: async () => {},
+  finish: async () => undefined,
 })
 
 const createTranscriptStep = (text: string): AgentStep => ({ kind: 'text', text })
@@ -136,7 +136,7 @@ describe('the line about work', () => {
           yield createTranscriptStep('Two notes.')
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -183,7 +183,7 @@ describe('the line about work', () => {
 
 describe('giving up', () => {
   it('keeps what arrived and says nothing about failing', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((isDone) => {
       release = isDone
     })
@@ -215,7 +215,7 @@ describe('a tool nobody titled', () => {
           observed = conversation.turns.value.at(-1)?.text ?? ''
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -229,7 +229,7 @@ describe('a tool nobody titled', () => {
 
 describe('a wait that explains itself', () => {
   it('shows which note is being written while it is being written', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -255,7 +255,7 @@ describe('a wait that explains itself', () => {
   })
 
   it('stops claiming a tool is running once it has answered', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -282,7 +282,7 @@ describe('a wait that explains itself', () => {
   })
 
   it('says the model is working when the model is requested, and not before', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -317,7 +317,7 @@ describe('a wait that explains itself', () => {
    * and a user watching cannot tell that apart from an agent that died.
    */
   it('says it is working while a tool that answered leads nowhere yet', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -344,7 +344,7 @@ describe('a wait that explains itself', () => {
   })
 
   it('says it is working before anything at all has come back', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -368,7 +368,7 @@ describe('a call that was working on a place', () => {
   }
 
   it('makes the line about it one a person can press, and says where it goes', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -390,7 +390,7 @@ describe('a call that was working on a place', () => {
   })
 
   it('leaves the line alone where the call named a source and no place in it', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -413,7 +413,7 @@ describe('a call that was working on a place', () => {
   })
 
   it('leaves the line alone where the call was working on nothing', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -442,7 +442,7 @@ describe('where the line about work remains', () => {
   }) => conversation.turns.value.map((turn) => `${turn.voice}: ${turn.text}`)
 
   it('stays down once the answer has begun, whatever a tool answers after it', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -475,7 +475,7 @@ describe('where the line about work remains', () => {
   })
 
   it('goes back up under the answer when the model is requested again', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -502,7 +502,7 @@ describe('where the line about work remains', () => {
   })
 
   it('leaves no empty answer behind when the model returned nothing before it stopped', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -535,7 +535,7 @@ describe('a conversation', () => {
         carried.push(query.conversation)
         yield createStopped()
       },
-      finish: async () => {},
+      finish: async () => undefined,
     }
     const one = useConversation(agent, words, 'conversation:one', now)
     const two = useConversation(agent, words, 'conversation:two', now)
@@ -552,7 +552,12 @@ describe('a conversation that is over', () => {
   it('notifies the agent, under the name it answers by', () => {
     const overKeys: string[] = []
     const conversation = useConversation(
-      { ...createPort([createStopped()]), finish: async (named) => void overKeys.push(named) },
+      {
+        ...createPort([createStopped()]),
+        finish: async (named) => {
+          overKeys.push(named)
+        },
+      },
       words,
       called,
       now,
@@ -564,7 +569,7 @@ describe('a conversation that is over', () => {
   })
 
   it('lets go of the answer on its way, and keeps what arrived', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((isDone) => {
       release = isDone
     })
@@ -622,10 +627,10 @@ describe('a conversation that is over', () => {
 
 describe('a window nobody is looking at', () => {
   /** A screen that never draws a frame, which is what a hidden window is. */
-  const never = () => {}
+  const never = () => undefined
 
   it('shows the answer as it arrives, and takes the wait down with it', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -651,7 +656,7 @@ describe('a window nobody is looking at', () => {
 
 describe('giving up on an answer', () => {
   it('takes down the transcript about working on it', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -676,7 +681,7 @@ describe('giving up on an answer', () => {
 
 describe('two tools in hand at once', () => {
   it('says nothing about either when one of them answers', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -723,7 +728,7 @@ describe('an exchange that is over', () => {
     const conversation = useConversation(
       createPort(
         [createTranscriptStep('Hey! How can I help you today?'), createStopped()],
-        new Promise(() => {}),
+        new Promise(() => undefined),
       ),
       words,
       called,
@@ -767,7 +772,7 @@ describe('an exchange that is over', () => {
           yield createToolStep('Search notes')
           throw new Error('no agent')
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -782,7 +787,7 @@ describe('an exchange that is over', () => {
 
 describe('words with none in them', () => {
   it('leave the wait standing, and put no empty turn under the question', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     const target = new Promise<void>((go) => {
       release = go
     })
@@ -807,7 +812,7 @@ describe('words with none in them', () => {
 
 /** A promise that stays open until the test lets it go. */
 const createHold = () => {
-  let release = () => {}
+  let release: () => void = () => undefined
   const target = new Promise<void>((go) => {
     release = go
   })
@@ -928,7 +933,7 @@ describe('a question that cannot be requested', () => {
           request++
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -950,7 +955,7 @@ describe('a question that cannot be requested', () => {
           request++
           await target
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -998,7 +1003,7 @@ describe('the names of the turns', () => {
           if (calls++ === 0) throw new Error('no agent')
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1020,7 +1025,7 @@ describe('the names of the turns', () => {
           observed.push(conversation.turns.value.map((turn) => turn.id))
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1045,7 +1050,7 @@ describe('the names of the turns', () => {
           observed = conversation.turns.value.map((turn) => turn.text)
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1066,7 +1071,7 @@ describe('while an answer is on its way', () => {
           working = conversation.isWorking.value
           yield createStopped()
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1178,7 +1183,7 @@ describe('giving up on an answer in the middle', () => {
           await target
           yield createTranscriptStep('more')
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1216,7 +1221,7 @@ describe('giving up on an answer in the middle', () => {
           await target
           throw new Error('cut off')
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1238,7 +1243,7 @@ describe('giving up on an answer in the middle', () => {
         async *ask() {
           await new Promise<void>((go) => holds.push(go))
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1268,7 +1273,7 @@ describe('an agent that cannot be reached', () => {
           yield createTranscriptStep('Two ')
           throw new Error('no agent')
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,
@@ -1295,7 +1300,7 @@ describe('a conversation that is over, while an answer is on its way', () => {
           yield createToolStep('Search notes')
           await target
         },
-        finish: async () => {},
+        finish: async () => undefined,
       },
       words,
       called,

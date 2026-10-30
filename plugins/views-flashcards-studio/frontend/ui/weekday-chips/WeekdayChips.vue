@@ -24,7 +24,7 @@ const props = withDefaults(
     isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { isDisabled: false },
+  { isDisabled: false, class: undefined },
 )
 
 /* --------------------------------- Events --------------------------------- */

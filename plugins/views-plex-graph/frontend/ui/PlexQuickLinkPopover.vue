@@ -50,8 +50,8 @@ const positionStyle = computed(() => ({
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  void nextTick(() => {
+onMounted(async () => {
+  await nextTick(() => {
     input.value?.focus()
   })
 })
@@ -60,7 +60,7 @@ useOutsidePress(popover, () => emit('dismiss'))
 
 watch(query, (text) => {
   highlightedIndex.value = 0
-  void setQuery(text)
+  return setQuery(text)
 })
 
 /* -------------------------------- Handlers -------------------------------- */

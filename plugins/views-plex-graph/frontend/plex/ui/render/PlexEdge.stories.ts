@@ -117,8 +117,8 @@ export const Playground: Story = {}
 export const NoTitle: Story = {
   args: { words: '' },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelectorAll('text')).toHaveLength(0)
-    expect(canvasElement.querySelectorAll('[data-edge] path')).toHaveLength(4)
+    await expect(canvasElement.querySelectorAll('text')).toHaveLength(0)
+    await expect(canvasElement.querySelectorAll('[data-edge] path')).toHaveLength(4)
   },
 }
 
@@ -129,8 +129,8 @@ export const PartWayThere: Story = {
     const viewElement = canvasElement.querySelectorAll(
       '[data-edge="resting"] path, [data-edge="resting"] text',
     )
-    expect(viewElement).toHaveLength(4)
-    for (const one of viewElement) expect(one.getAttribute('opacity')).toBe('0.3')
+    await expect(viewElement).toHaveLength(4)
+    for (const one of viewElement) await expect(one.getAttribute('opacity')).toBe('0.3')
   },
 }
 

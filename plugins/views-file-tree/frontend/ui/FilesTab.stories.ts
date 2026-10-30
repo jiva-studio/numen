@@ -39,21 +39,22 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = useFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
     ...renderDeps,
-    openEntry: () => {},
-    runCommand: () => {},
-    movePath: async () => {},
-    setDraggedPaths: () => {},
-    createFolder: async () => {},
+    openEntry: () => undefined,
+    runCommand: () => undefined,
+    movePath: async () => undefined,
+    setDraggedPaths: () => undefined,
+    createFolder: async () => undefined,
     createNote: async (folder) => `${folder}Untitled note.md`,
     canDropData: () => false,
     dropData: async () => [],
-    showError: () => {},
+    showError: () => undefined,
   })
 
-  void (async () => {
+  const openFolders = async () => {
     await list.openFolder(ROOT)
     for (const folderPath of open) await list.openFolder(folderPath)
-  })()
+  }
+  openFolders().catch(state.reportFailure)
 
   return state
 }

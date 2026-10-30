@@ -344,14 +344,14 @@ type Story = StoryObj
  * has not been measured against anything.
  */
 export const Arrangements: Story = {
-  play: ({ canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const transcriptText = canvasElement.querySelector('[data-tally]')?.textContent ?? ''
-    expect(transcriptText).toContain(`${ARRANGEMENTS} arrangements`)
+    await expect(transcriptText).toContain(`${ARRANGEMENTS} arrangements`)
 
     const drawnCount = Number(/, (\d+) of them drawn/.exec(transcriptText)?.[1] ?? 0)
     const elements = Number(/drawn as (\d+) elements/.exec(transcriptText)?.[1] ?? 0)
-    expect(drawnCount).toBeGreaterThan(ARRANGEMENTS / 4)
-    expect(elements).toBeGreaterThan(ARRANGEMENTS)
+    await expect(drawnCount).toBeGreaterThan(ARRANGEMENTS / 4)
+    await expect(elements).toBeGreaterThan(ARRANGEMENTS)
   },
 }
 
@@ -375,7 +375,7 @@ export const NothingRuns: Story = {
     }
     await new Promise((settle) => view.requestAnimationFrame(() => view.setTimeout(settle, 0)))
 
-    expect(view.ran).toBe(0)
+    await expect(view.ran).toBe(0)
     element.remove()
   },
 }

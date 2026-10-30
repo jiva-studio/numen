@@ -38,8 +38,8 @@ describe('a watcher of work', () => {
   it('opens one subscription for every listener, and closes it when the last stops listening', () => {
     const { source, counts } = createSource()
     const watcher = createWorkWatcher(source)
-    const stopA = watcher.watch('a.wav', () => {})
-    const stopB = watcher.watch('b.wav', () => {})
+    const stopA = watcher.watch('a.wav', () => undefined)
+    const stopB = watcher.watch('b.wav', () => undefined)
     stopA()
     expect(counts.disposed).toBe(0)
     stopB()
@@ -51,7 +51,7 @@ describe('a watcher of work', () => {
   it('reports existing work on the file to a new listener', () => {
     const { source, push } = createSource()
     const watcher = createWorkWatcher(source)
-    watcher.watch('b.wav', () => {})
+    watcher.watch('b.wav', () => undefined)
     push([{ about: 'a.wav' }])
     const changes: boolean[] = []
 

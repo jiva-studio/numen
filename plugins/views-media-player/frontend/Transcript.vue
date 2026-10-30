@@ -55,7 +55,7 @@ watch(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onTranscribe() {
-  void props.state.offers.start()
+  props.state.offers.start().catch(props.state.reportFailure)
 }
 
 function onUpdateModelValue(text: string) {
@@ -63,7 +63,7 @@ function onUpdateModelValue(text: string) {
 }
 
 function onSave() {
-  void props.state.draft.keep()
+  props.state.draft.keep().catch(props.state.reportFailure)
 }
 </script>
 

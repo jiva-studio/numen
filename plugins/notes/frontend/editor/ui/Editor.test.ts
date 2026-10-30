@@ -96,12 +96,21 @@ describe('the text', () => {
 })
 
 describe('the echo of what was typed', () => {
+  const echoFailures: unknown[] = []
+
+  afterEach(() => {
+    expect(echoFailures).toEqual([])
+    echoFailures.length = 0
+  })
+
   /** A parent that hands every emitted value straight back as the prop. */
   const echoing = (modelValue: string, normalise = (value: string) => value) => {
     const handle = editor({
       modelValue,
       'onUpdate:modelValue': (value: string) => {
-        void handle.wrapper.setProps({ modelValue: normalise(value) })
+        handle.wrapper.setProps({ modelValue: normalise(value) }).catch((error: unknown) => {
+          echoFailures.push(error)
+        })
       },
     } as Partial<Props>)
     return handle

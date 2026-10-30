@@ -22,8 +22,10 @@ const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
 
 /** A port that answers nothing, one to each card it was made for. */
 const createAgent = (): AgentPort => ({
-  async *ask() {},
-  async finish() {},
+  async *ask() {
+    yield* []
+  },
+  finish: async () => undefined,
 })
 
 /**
@@ -122,8 +124,8 @@ describe('the context of the conversation about a card', () => {
       card: () => card(),
       unreachable: () => unreachable,
       open: () => false,
-      showPanel: () => {},
-      showNotice: () => {},
+      showPanel: () => undefined,
+      showNotice: () => undefined,
     })
     target.openPanel()
 

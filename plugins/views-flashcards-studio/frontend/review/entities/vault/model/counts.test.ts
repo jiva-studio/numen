@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '../../../../api/types.js'
 
 import { useReviewCounter } from './counts'
@@ -96,11 +96,25 @@ const createFeed = () => {
 /** What is on its way settles. */
 const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 
+const countFailures: unknown[] = []
+
+/** Starts counting without waiting for it; a failure is collected for the assertions of the test. */
+const countInBackground = (counter: ReturnType<typeof useReviewCounter>): void => {
+  counter.count().catch((error: unknown) => {
+    countFailures.push(error)
+  })
+}
+
+afterEach(() => {
+  expect(countFailures).toStrictEqual([])
+  countFailures.length = 0
+})
+
 describe('counting what is due in every vault', () => {
   // The window opens counting, and has no day to stand in until the first
   // message names one.
   it('reads as counting, in no day yet, before the first count is requested for', () => {
-    const one = useReviewCounter({ cards: createFeed().cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: createFeed().cards, reportError: () => undefined })
 
     expect(one.isCounting.value).toBe(true)
     expect(one.day.value).toBe('')
@@ -109,9 +123,9 @@ describe('counting what is due in every vault', () => {
 
   it('holds no decks or goals for a vault before its own count arrives', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount({ day: '2026-09-05', vaults: [vault('01A')] })
     await flushPromises()
 
@@ -119,9 +133,9 @@ describe('counting what is due in every vault', () => {
   })
   it('holds the vaults before any of them is counted', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
     await flushPromises()
 
@@ -137,9 +151,9 @@ describe('counting what is due in every vault', () => {
 
   it('fills each count into its own vault as it lands', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
     await flushPromises()
     front.sendCount(count(vault('01B', { due: 4, new: 1 })))
@@ -173,9 +187,9 @@ describe('counting what is due in every vault', () => {
 
   it('carries what a vault that could not be counted says, and counts the rest', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
     front.sendCount(count(vault('01A', { unread: 'this folder cannot be read as a vault' })))
     front.sendCount(count(vault('01B', { due: 6, new: 0 })))
@@ -191,9 +205,9 @@ describe('counting what is due in every vault', () => {
   // waiting for them and not standing at nothing.
   it('leaves a vault being read uncounted, and says it is being read', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A', { isIndexing: true, reviewCards: 0, due: 0, new: 0 })))
     front.endCounts()
@@ -204,9 +218,9 @@ describe('counting what is due in every vault', () => {
 
   it('no longer says a vault is being read once its count has arrived', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A', { isIndexing: true })))
     front.sendCount(count(vault('01A', { due: 5 })))
@@ -218,9 +232,9 @@ describe('counting what is due in every vault', () => {
 
   it('is still counting until the last of them has arrived', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A')))
     await flushPromises()
     expect(one.isCounting.value).toBe(true)
@@ -242,7 +256,7 @@ describe('counting what is due in every vault', () => {
         return front.cards.watchCardsDue(response, how)
       },
     }
-    const one = useReviewCounter({ cards, reportError: () => {} })
+    const one = useReviewCounter({ cards, reportError: () => undefined })
 
     const three = [one.count(), one.count(), one.count()]
     expect(request).toBe(1)
@@ -254,7 +268,7 @@ describe('counting what is due in every vault', () => {
     expect(one.vaults.value).toHaveLength(1)
 
     // And the next ask is a count of its own, because the vaults have moved on.
-    void one.count()
+    countInBackground(one)
     expect(request).toBe(2)
   })
 
@@ -269,7 +283,7 @@ describe('counting what is due in every vault', () => {
         return front.cards.watchCardsDue(response, how)
       },
     }
-    const one = useReviewCounter({ cards, reportError: () => {} })
+    const one = useReviewCounter({ cards, reportError: () => undefined })
 
     const first = one.count()
     front.sendCount(createVaultList(vault('01A')))
@@ -277,7 +291,7 @@ describe('counting what is due in every vault', () => {
     await flushPromises()
 
     // The indexing finished and woke the counting while the first was still on.
-    void one.count()
+    countInBackground(one)
     front.endCounts()
     await flushPromises()
 
@@ -292,15 +306,15 @@ describe('counting what is due in every vault', () => {
   // while the next one runs.
   it('leaves a vault at its last count while it is being counted again', async () => {
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+    const one = useReviewCounter({ cards: front.cards, reportError: () => undefined })
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A', { due: 9, new: 0 })))
     front.endCounts()
     await flushPromises()
 
-    void one.count()
+    countInBackground(one)
     front.sendCount(createVaultList(vault('01A')))
     await flushPromises()
 

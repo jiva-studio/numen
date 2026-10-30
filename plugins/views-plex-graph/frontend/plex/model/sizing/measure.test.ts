@@ -27,7 +27,7 @@ function stubCanvas() {
     },
   }
 
-  vi.stubGlobal('CanvasRenderingContext2D', function () {})
+  vi.stubGlobal('CanvasRenderingContext2D', class {})
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     context as unknown as CanvasRenderingContext2D,
   )
@@ -94,8 +94,8 @@ function stubObserver(): (() => void)[] {
       constructor(ring: () => void) {
         observers.push(ring)
       }
-      observe() {}
-      disconnect() {}
+      observe = vi.fn()
+      disconnect = vi.fn()
     },
   )
 
@@ -394,7 +394,7 @@ describe('the box a plex measures its type against', () => {
     stubStyles()
     setTheme()
     stubWatching()
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 
     widths()
 
@@ -472,7 +472,7 @@ describe('type the document leaves unsaid or a window refuses', () => {
   })
 
   it('gives nothing where the window throws on making a canvas context', () => {
-    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => {
       throw new Error('no canvas')
     })
@@ -485,7 +485,7 @@ describe('type the document leaves unsaid or a window refuses', () => {
 
 describe('a canvas the page cannot make', () => {
   it('gives nothing where the canvas has no 2d context to give', () => {
-    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => {
       throw new Error('no 2d context')
     })

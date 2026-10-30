@@ -29,9 +29,9 @@ defineExpose({ scrollPage })
 // rendered.
 watch(
   () => [props.panel.open.value, props.panel.col.value, props.panel.notes.value] as const,
-  ([open, col, notes]) => {
+  async ([open, col, notes]) => {
     if (!open || !col || !notes.length) return
-    void nextTick(() => {
+    await nextTick(() => {
       const found = notes.find((one: Neighbour) => one.written === col || one.path === col)
       if (found)
         noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })

@@ -153,7 +153,7 @@ const isSameList = (a: readonly string[], b: readonly string[]) =>
 
 function openResolvedOrDirect(deps: AgentTabDeps, vaultPath: string): void {
   const linkName = vaultPath.replace(/\.md$/i, '')
-  void deps
+  deps
     .resolveLinks(`[[${linkName}]]`)
     .then((found) => {
       const resolvedPath = found[0]?.path || vaultPath
@@ -224,7 +224,7 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
     }
     pendingTurns.add(turn.id)
     const { id, text } = turn
-    void deps
+    deps
       .resolveLinks(text)
       .then((found) => {
         resolvedAddresses.value = new Map([
@@ -232,6 +232,9 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
           ...found.map((one) => [one.address, one.path] as const),
         ])
         linksByTurn.value = new Map(linksByTurn.value).set(id, { text, links: found })
+      })
+      .catch(() => {
+        linksByTurn.value = new Map(linksByTurn.value).set(id, { text, links: NO_TEXT_LINKS })
       })
       .finally(() => {
         pendingTurns.delete(id)
@@ -295,11 +298,15 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
 
   const send = (text: string) => {
     userQuestion.value = ''
-    void conversation.ask(text, '', {
-      agentId: selection.selectedAgentId.value,
-      modelId: selection.selectedModelId.value,
-      reasoning: selection.selectedReasoningId.value,
-    })
+    conversation
+      .ask(text, '', {
+        agentId: selection.selectedAgentId.value,
+        modelId: selection.selectedModelId.value,
+        reasoning: selection.selectedReasoningId.value,
+      })
+      .catch(() => {
+        userQuestion.value = text
+      })
   }
 
   /** Shows the question and the turns a tab saved before a restart. */

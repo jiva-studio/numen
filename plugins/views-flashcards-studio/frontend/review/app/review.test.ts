@@ -16,7 +16,7 @@ import { ApiFailure } from '../../api/failure'
 const wire = vi.hoisted(() => {
   /** A stream that stays open, so nothing the window follows ever ends. */
   async function* waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    await new Promise<never>(() => undefined)
   }
 
   /** A stream that delivers what the test sends it, and stays open between sends. */

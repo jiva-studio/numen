@@ -192,12 +192,12 @@ export const Mapping: Story = {
       name: 'What can be done to this note',
     })
     const box = menu.getBoundingClientRect()
-    expect(box.width).toBeGreaterThan(0)
-    expect(box.left).toBeGreaterThanOrEqual(0)
-    expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
-    expect(box.top).toBeGreaterThanOrEqual(0)
-    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
-    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
+    await expect(box.width).toBeGreaterThan(0)
+    await expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
+    await expect(box.top).toBeGreaterThanOrEqual(0)
+    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
+    await expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
   },
 }
 
@@ -221,13 +221,13 @@ export const Nesting: Story = {
     // The headings shown are the leading ones of the note, as many as fit; the
     // remainder is truncated at the end, not dropped from the middle.
     const suspendedView = suspended()
-    expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
+    await expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
 
     // The headings are under the box, in note order. The box is the node's own
     // rectangle; the surrounding group has grown to contain them.
     const box = focus.querySelector('rect')!.getBoundingClientRect()
     const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
-    expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
-    expect([...tops].sort((one, other) => one - other)).toEqual(tops)
+    await expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
+    await expect([...tops].sort((one, other) => one - other)).toEqual(tops)
   },
 }

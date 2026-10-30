@@ -176,7 +176,8 @@ export function useBookReader(
   const path = typeof booksOrPath === 'string' ? booksOrPath : (pathOrOptions as string)
   const options =
     typeof booksOrPath === 'string' ? (pathOrOptions as BookReaderOptions) : maybeOptions!
-  const { words, writeMessage = () => {} } = options
+  // Messages are dropped when the caller supplies no writer.
+  const { words, writeMessage = () => undefined } = options
   const state = useBookState()
   let isOpen = true
 
@@ -226,8 +227,11 @@ export function useBookReader(
     isOpen = false
   })
 
+  const reportFailure = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
+
   const reader = {
     path,
+    reportFailure,
     ...state,
     page,
     chapter,

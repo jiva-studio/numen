@@ -57,7 +57,7 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const card = useReviewCounter({ cards, reportError: () => {} })
+    const card = useReviewCounter({ cards, reportError: () => undefined })
 
     await card.count()
 
@@ -76,7 +76,7 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const card = useReviewCounter({ cards, reportError: () => {} })
+    const card = useReviewCounter({ cards, reportError: () => undefined })
     await card.count()
 
     const one = useVaultPresets({ presets: createPresets(createSettings('2026-09-04')) })

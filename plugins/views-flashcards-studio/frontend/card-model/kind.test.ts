@@ -109,7 +109,9 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const cardModels = createCardModelTabs(one.core, {
     buffers,
     closeTab: windowTabs.finishClose,
-    writeMessage: (text) => void messages.push(text),
+    writeMessage: (text) => {
+      messages.push(text)
+    },
   })
   windowTabs.register(cardModels.kind)
   const id = await windowTabs.openTab(CARD_MODEL, path)

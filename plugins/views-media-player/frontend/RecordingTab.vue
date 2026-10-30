@@ -70,7 +70,7 @@ onUnmounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
-  void tab.offers.run(id)
+  tab.offers.run(id).catch(tab.reportFailure)
 }
 
 function onPlay() {

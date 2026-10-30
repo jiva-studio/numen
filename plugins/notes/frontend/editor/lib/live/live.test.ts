@@ -26,11 +26,9 @@ const ELSEWHERE = '\n\nelsewhere'
 const collectDrawn = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
   const collect = (activeSet: ReturnType<typeof getMarks>) =>
-    activeSet.between(
-      0,
-      state.doc.length,
-      (from, to, deco) => void found.push({ from, to, spec: deco.spec ?? {} }),
-    )
+    activeSet.between(0, state.doc.length, (from, to, deco) => {
+      found.push({ from, to, spec: deco.spec ?? {} })
+    })
 
   collect(getMarks(state, 0, state.doc.length))
   collect(blockMarks(state))
@@ -309,9 +307,9 @@ interface Standing {
 
 const getStanding = (state: EditorState): Standing[] => {
   const found: Standing[] = []
-  state
-    .field(wholeLines)
-    .marks.between(0, state.doc.length, (from, to, deco) => void found.push({ from, to, deco }))
+  state.field(wholeLines).marks.between(0, state.doc.length, (from, to, deco) => {
+    found.push({ from, to, deco })
+  })
   return found
 }
 

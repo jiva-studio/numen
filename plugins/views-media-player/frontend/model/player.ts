@@ -129,8 +129,12 @@ function bindAudioListeners(
     state.isPlaying.value = true
     readDuration()
   })
-  audio.addEventListener('pause', () => void (state.isPlaying.value = false))
-  audio.addEventListener('ended', () => void (state.isPlaying.value = false))
+  audio.addEventListener('pause', () => {
+    state.isPlaying.value = false
+  })
+  audio.addEventListener('ended', () => {
+    state.isPlaying.value = false
+  })
   audio.addEventListener('error', () => {
     state.error.value = FAILED[audio.error?.code ?? 0] ?? WORDS.unreadable
   })
@@ -215,9 +219,12 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     if (cached) return cached
     const length = readLength(next)
     lengths.set(next, length)
-    void length.then((ms) => {
-      if (ms === 0) lengths.delete(next)
-    })
+    length.then(
+      (ms) => {
+        if (ms === 0) lengths.delete(next)
+      },
+      () => lengths.delete(next),
+    )
     return length
   }
 
@@ -228,12 +235,14 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     isPlaying: readonly(isPlaying),
     error: readonly(error),
 
-    load: (url) => void load(url),
+    load: (url) => {
+      load(url)
+    },
 
     play: (url) => {
       const audio = load(url)
       if (!audio) return
-      void audio.play().catch((thrown: unknown) => {
+      audio.play().catch((thrown: unknown) => {
         isPlaying.value = false
         // An AbortError from a play interrupted by the window is not a failure. Any other
         // rejection is a play request with no effect and fires no `error` event, so the

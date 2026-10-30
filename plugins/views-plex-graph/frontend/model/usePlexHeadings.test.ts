@@ -25,15 +25,15 @@ const createDeps = (
   isReady: ref(true),
   isNesting: ref(true),
   headings: ref(6),
-  openNote: () => {},
+  openNote: () => undefined,
   readHeadings,
   getNoteCommands: () => [],
   getCommandIcon: () => null,
   getNoteIcon: () => null,
-  runCommand: () => {},
+  runCommand: () => undefined,
   openingPath: ref(''),
   dragged: ref([]),
-  showMessage: () => {},
+  showMessage: () => undefined,
   createUntitledNote: async () => '',
   readOpeningPath: async () => '',
   creatable: [],
@@ -102,7 +102,7 @@ describe('the headings of a node', () => {
   it('are left alone by a read that failed after a newer one was requested', async () => {
     const map = createNodeIdMap()
     const node = map.getNodeId('A.md')
-    let fail = () => {}
+    let fail: () => void = () => undefined
     let calls = 0
     const plex = usePlexHeadings(
       ref(['A.md']),

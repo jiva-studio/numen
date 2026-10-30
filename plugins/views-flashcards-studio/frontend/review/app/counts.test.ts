@@ -13,7 +13,7 @@ import { createVaultCounts } from './counts'
 const wire = vi.hoisted(() => {
   /** A stream that stays open, so nothing ends on its own. */
   async function* waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    await new Promise<never>(() => undefined)
   }
   return {
     waits,
@@ -49,7 +49,7 @@ async function* failsOnAbort(signal?: AbortSignal): AsyncGenerator<never> {
 /** A stream that yields the items it is given, and then stays open. */
 async function* sends(...items: unknown[]): AsyncGenerator<unknown> {
   yield* items
-  await new Promise<never>(() => {})
+  await new Promise<never>(() => undefined)
 }
 
 /** A stream that ends in a fault as it opens. */
@@ -161,12 +161,12 @@ describe('a deck written underneath the window', () => {
   })
 
   it('is answered by the refresh the open review sets, and by counting once it is unset', async () => {
-    let send: (item: unknown) => void = () => {}
+    let send: (item: unknown) => void = () => undefined
     wire.reloads = async function* () {
       for (;;) yield await new Promise((then) => (send = then))
     }
     const counts = createVaultCounts({ reportError: vi.fn() })
-    const refresh = vi.fn(async () => {})
+    const refresh = vi.fn(async () => undefined)
     counts.start()
     await settle()
 

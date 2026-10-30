@@ -1,5 +1,11 @@
 import { Waypoints } from '@lucide/vue'
-import { definePlugin, NOTE_SCOPE, NOTE_TARGET, type PluginContext } from '@numen/plugin-sdk'
+import {
+  definePlugin,
+  formatErrorMessage,
+  NOTE_SCOPE,
+  NOTE_TARGET,
+  type PluginContext,
+} from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind, PLEX } from './kind'
 import { usePlexView } from './model/usePlexView'
@@ -24,6 +30,8 @@ export function activate(context: PluginContext): void {
   )
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
+
+  const reportFailure = (error: unknown): void => workspace.showError(formatErrorMessage(error))
 
   /** Opens the note in the plex that was last active, or in a new plex when none is open. */
   const travel = async (path: string): Promise<void> => {
@@ -63,7 +71,7 @@ export function activate(context: PluginContext): void {
     parentId: 'relation',
     target: NOTE_TARGET,
     handler: (target) => {
-      void notes.createInRelation(target.path, 'child')
+      notes.createInRelation(target.path, 'child').catch(reportFailure)
     },
   })
   context.registerContextMenu({
@@ -72,7 +80,7 @@ export function activate(context: PluginContext): void {
     parentId: 'relation',
     target: NOTE_TARGET,
     handler: (target) => {
-      void notes.createInRelation(target.path, 'parent')
+      notes.createInRelation(target.path, 'parent').catch(reportFailure)
     },
   })
   context.registerContextMenu({
@@ -81,7 +89,7 @@ export function activate(context: PluginContext): void {
     parentId: 'relation',
     target: NOTE_TARGET,
     handler: (target) => {
-      void notes.createInRelation(target.path, 'jump')
+      notes.createInRelation(target.path, 'jump').catch(reportFailure)
     },
   })
 }

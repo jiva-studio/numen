@@ -24,8 +24,10 @@ const card: ReviewCard = {
 }
 
 const agent: AgentPort = {
-  async *ask() {},
-  async finish() {},
+  async *ask() {
+    yield* []
+  },
+  finish: async () => undefined,
 }
 
 /** The panel over one card, with the session around it standing in for it. */
@@ -39,7 +41,7 @@ const createPanel = (): AgentPanelState => {
     showPanel: (isOpen) => {
       open.value = isOpen
     },
-    showNotice: () => {},
+    showNotice: () => undefined,
   })
 }
 

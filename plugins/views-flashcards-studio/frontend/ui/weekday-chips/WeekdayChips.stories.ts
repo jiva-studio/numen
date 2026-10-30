@@ -129,8 +129,8 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 export const LevelOutsideMenu: Story = {
   args: { levelOf: { sat: 0.37, sun: 4 } },
   play: async ({ canvasElement }) => {
-    expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 37%')
-    expect(getChipLabels(canvasElement)[6]).toBe('Sunday, 100%')
+    await expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 37%')
+    await expect(getChipLabels(canvasElement)[6]).toBe('Sunday, 100%')
 
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() =>
@@ -149,9 +149,9 @@ export const NoDaysAtAll: Story = {
   args: { named: [] },
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>('[data-slot="weekday-chips"]')
-    expect(row).not.toBeNull()
-    expect(chips(canvasElement)).toHaveLength(0)
-    expect(row?.tabIndex).toBe(-1)
+    await expect(row).not.toBeNull()
+    await expect(chips(canvasElement)).toHaveLength(0)
+    await expect(row?.tabIndex).toBe(-1)
   },
 }
 
@@ -159,11 +159,11 @@ export const NoDaysAtAll: Story = {
 export const OneDay: Story = {
   args: { named: [{ id: 'wed', short: 'W', long: 'Wednesday' }], levelOf: { wed: 0.25 } },
   play: async ({ canvasElement }) => {
-    expect(getChipLabels(canvasElement)).toEqual(['Wednesday, 25%'])
+    await expect(getChipLabels(canvasElement)).toEqual(['Wednesday, 25%'])
 
     await userEvent.tab()
     await userEvent.keyboard('{ArrowRight}')
-    expect(document.activeElement).toBe(chips(canvasElement)[0])
+    await expect(document.activeElement).toBe(chips(canvasElement)[0])
   },
 }
 
@@ -188,14 +188,14 @@ export const FarTooMany: Story = {
   },
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
-    expect(all).toHaveLength(31)
+    await expect(all).toHaveLength(31)
 
     // No chip shrinks to make space: every chip has the size of the first.
     const first = all[0]?.getBoundingClientRect()
     for (const chip of all) {
       const box = chip.getBoundingClientRect()
-      expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
-      expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
+      await expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
+      await expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
     }
   },
 }
@@ -216,14 +216,14 @@ export const AwkwardNames: Story = {
   },
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
-    expect(all.map((chip) => chip.textContent?.trim())).toEqual(['', 'Tues', 'W', 'Четв'])
-    expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
+    await expect(all.map((chip) => chip.textContent?.trim())).toEqual(['', 'Tues', 'W', 'Четв'])
+    await expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
 
     const first = all[0]?.getBoundingClientRect()
     for (const chip of all) {
       const box = chip.getBoundingClientRect()
-      expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
-      expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
+      await expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
+      await expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
     }
   },
 }
@@ -239,22 +239,22 @@ export const DisabledOpensNoMenu: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     const chip = chips(canvasElement)[2] as HTMLElement
-    expect(chip.getAttribute('aria-disabled')).toBe('true')
+    await expect(chip.getAttribute('aria-disabled')).toBe('true')
 
     await userEvent.tab()
-    expect(chips(canvasElement)).toContain(document.activeElement)
+    await expect(chips(canvasElement)).toContain(document.activeElement)
 
     await userEvent.click(chip)
     await userEvent.keyboard(' ')
-    expect(getMenuLabels()).toEqual([])
+    await expect(getMenuLabels()).toEqual([])
   },
 }
 
 export const EachChipShowsItsState: Story = {
   play: async ({ canvasElement }) => {
-    expect(chips(canvasElement)).toHaveLength(7)
-    expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
-    expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 50%')
+    await expect(chips(canvasElement)).toHaveLength(7)
+    await expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
+    await expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 50%')
   },
 }
 
@@ -283,11 +283,13 @@ export const PressingDayOpensLevelMenu: Story = {
 export const OneStopForTheWholeRow: Story = {
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>('[data-slot="weekday-chips"]')
-    expect(row?.tabIndex).toBe(0)
-    expect(chips(canvasElement).map((chip) => chip.tabIndex)).toEqual([-1, -1, -1, -1, -1, -1, -1])
+    await expect(row?.tabIndex).toBe(0)
+    await expect(chips(canvasElement).map((chip) => chip.tabIndex)).toEqual([
+      -1, -1, -1, -1, -1, -1, -1,
+    ])
 
     await userEvent.tab()
-    expect(chips(canvasElement)).toContain(document.activeElement)
+    await expect(chips(canvasElement)).toContain(document.activeElement)
   },
 }
 
@@ -299,25 +301,25 @@ export const TheKeyboardComesBack: Story = {
     await userEvent.tab()
     await userEvent.keyboard('{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}')
     const chip = chips(canvasElement)[5] as HTMLElement
-    expect(document.activeElement).toBe(chip)
+    await expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
     const getMenuItems = () =>
       Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
     await waitFor(() => expect(getMenuItems()).toHaveLength(7))
-    expect(document.activeElement).toBe(getMenuItems()[3])
-    expect(getMenuItems()[3]?.getAttribute('aria-checked')).toBe('true')
+    await expect(document.activeElement).toBe(getMenuItems()[3])
+    await expect(getMenuItems()[3]?.getAttribute('aria-checked')).toBe('true')
 
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(getMenuLabels()).toEqual([]))
-    expect(document.activeElement).toBe(chip)
+    await expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
     await waitFor(() => expect(getMenuLabels()).toHaveLength(7))
     await userEvent.keyboard('{ArrowUp}{Enter}')
     await waitFor(() => expect(getMenuLabels()).toEqual([]))
-    expect(document.activeElement).toBe(chip)
-    expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%')
+    await expect(document.activeElement).toBe(chip)
+    await expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%')
   },
 }
 
@@ -336,7 +338,7 @@ export const Dark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     const all = chips(canvasElement)
-    expect(all).toHaveLength(7)
+    await expect(all).toHaveLength(7)
 
     // Saturday, at level zero, is the base the others are blended from; Friday,
     // Thursday, Wednesday, Tuesday and Monday follow in that order, each further
@@ -344,13 +346,13 @@ export const Dark: Story = {
     const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)
     const rising = [5, 4, 3, 2, 1, 0].map((idx) => ground(all[idx] as HTMLElement))
     for (const [at, chip] of rising.slice(1).entries()) {
-      expect(chip).toBeGreaterThan((rising[at] as number) + 1)
+      await expect(chip).toBeGreaterThan((rising[at] as number) + 1)
     }
 
     // A day filled above half uses the accent's own text color, which on the dark
     // set is darker than the background it is written on.
     const heavy = getComputedStyle(all[0] as HTMLElement)
-    expect(lightness(heavy.color)).toBeLessThan(lightness(heavy.backgroundColor))
+    await expect(lightness(heavy.color)).toBeLessThan(lightness(heavy.backgroundColor))
   },
 }
 
@@ -359,10 +361,10 @@ export const KeyboardNavigatesAndOpensMenu: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.tab()
-    expect(document.activeElement).toBe(chips(canvasElement)[0])
+    await expect(document.activeElement).toBe(chips(canvasElement)[0])
 
     await userEvent.keyboard('{ArrowRight}{ArrowRight}')
-    expect(document.activeElement).toBe(chips(canvasElement)[2])
+    await expect(document.activeElement).toBe(chips(canvasElement)[2])
 
     await userEvent.keyboard(' ')
     await waitFor(() => expect(getMenuLabels()).toHaveLength(7))

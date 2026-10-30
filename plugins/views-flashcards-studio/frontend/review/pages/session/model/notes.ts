@@ -95,7 +95,7 @@ function useDeckNotes(
       unread.value = neighbourhood.unread
       activeDeck = deck
       for (const one of neighbourhood.notes) {
-        if (one.body) void fetchLinks(deck, one)
+        if (one.body) fetchLinks(deck, one).catch(() => showNotice(words.unreached))
       }
     } catch {
       if (pendingDeck !== deck) return

@@ -80,7 +80,8 @@ function watchBookLayout(
 
   onMounted(() => {
     context.settle(props.at)
-    void doc.fonts?.ready.then(() => context.settle(context.getKeptOffset()))
+    const settleKept = () => context.settle(context.getKeptOffset())
+    doc.fonts?.ready.then(settleKept, settleKept)
   })
 }
 

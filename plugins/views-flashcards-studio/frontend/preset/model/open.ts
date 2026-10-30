@@ -3,7 +3,7 @@
  */
 import { StopReason } from '../../api/types.js'
 import { ref, shallowRef, type Ref } from 'vue'
-import type { MessageWriter } from '@numen/plugin-sdk'
+import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
 import {
   DEFAULTS,
   type Field,
@@ -111,19 +111,26 @@ export interface PresetStateContext {
   titles: Map<string, string>
 }
 
+/** Shows the failure of an operation that runs in the background. */
+export const createFailureReporter =
+  (context: { readonly writeMessage: MessageWriter }) =>
+  (error: unknown): void => {
+    context.writeMessage(formatErrorMessage(error), 'error')
+  }
+
 const createGoalChooser = (one: OpenPreset, context: PresetStateContext) => (goal: Goal) => {
   const was = one.settings.value
   if (goal === was.goal) return
   one.settings.value = applyGoal(was, goal, context.today())
   one.writeQueue.dirtyFields.add('goal')
   if (one.settings.value.byDate !== was.byDate) one.writeQueue.dirtyFields.add('byDate')
-  void requestWrite(one.writeQueue, {
+  requestWrite(one.writeQueue, {
     path: one.path.value,
     settings: one.settings.value,
     core: context.core,
     writeMessage: context.writeMessage,
-  })
-  void updateCurves(one.curves, {
+  }).catch(createFailureReporter(context))
+  updateCurves(one.curves, {
     path: one.path.value,
     getSettings: () => one.settings.value,
     core: context.core,
@@ -132,7 +139,7 @@ const createGoalChooser = (one: OpenPreset, context: PresetStateContext) => (goa
     setErrorMessage: (msg) => {
       one.writeQueue.errorMessage.value = msg
     },
-  })
+  }).catch(createFailureReporter(context))
 }
 
 const createSettingUpdater =
@@ -146,7 +153,7 @@ const createSettingUpdater =
       if (place >= 0) one.curves.place.value = place
     }
     if (getShapeKey(one.settings.value) !== one.curves.shape) {
-      void updateCurves(one.curves, {
+      updateCurves(one.curves, {
         path: one.path.value,
         getSettings: () => one.settings.value,
         core: context.core,
@@ -155,7 +162,7 @@ const createSettingUpdater =
         setErrorMessage: (msg) => {
           one.writeQueue.errorMessage.value = msg
         },
-      })
+      }).catch(createFailureReporter(context))
     }
   }
 
@@ -171,16 +178,18 @@ const createSliderMover = (one: OpenPreset, context: PresetStateContext) => (pla
 }
 
 const createTabCloser = (one: OpenPreset, context: PresetStateContext) => (tab: string) => {
-  void canCloseTab(one.writeQueue, {
+  canCloseTab(one.writeQueue, {
     path: one.path.value,
     settings: one.settings.value,
     core: context.core,
     writeMessage: context.writeMessage,
-  }).then((removed) => {
-    if (!removed) return
-    context.onClosed(one.path.value)
-    context.closeTab(tab)
   })
+    .then((removed) => {
+      if (!removed) return
+      context.onClosed(one.path.value)
+      context.closeTab(tab)
+    })
+    .catch(createFailureReporter(context))
 }
 
 /** Creates the public tab state interface for an open preset. */
@@ -200,22 +209,24 @@ export const createPresetState = (
   stopped: one.stopped,
   errorMessage: one.writeQueue.errorMessage,
   hasExternalChange: one.writeQueue.hasExternalChange,
-  reload: () =>
-    void readPreset(one, {
+  reload: () => {
+    readPreset(one, {
       core: context.core,
       bounds: context.bounds,
       titles: context.titles,
       today: context.today(),
-    }),
+    }).catch(createFailureReporter(context))
+  },
   chooseGoal: createGoalChooser(one, context),
   moveSlider: createSliderMover(one, context),
-  flushPending: () =>
-    void requestWrite(one.writeQueue, {
+  flushPending: () => {
+    requestWrite(one.writeQueue, {
       path: one.path.value,
       settings: one.settings.value,
       core: context.core,
       writeMessage: context.writeMessage,
-    }),
+    }).catch(createFailureReporter(context))
+  },
   updateSetting: createSettingUpdater(one, context),
   close: createTabCloser(one, context),
 })

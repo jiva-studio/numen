@@ -20,10 +20,14 @@ const window = (options: HostOptions = {}) => {
     const conversation: Conversation = {
       turns: turn,
       isWorking: ref(false),
-      ask: async () => {},
+      ask: async () => undefined,
       getSourceLocation: () => null,
-      stop: () => void stopCalls.push('stop'),
-      finish: () => void stopCalls.push('finish'),
+      stop: () => {
+        stopCalls.push('stop')
+      },
+      finish: () => {
+        stopCalls.push('finish')
+      },
     }
     conversations.push({ said: turn, stopped: stopCalls })
     return useAgentConversation(conversation, deps)

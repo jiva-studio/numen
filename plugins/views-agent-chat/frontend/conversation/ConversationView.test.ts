@@ -5,8 +5,10 @@ import type { AgentPort } from '@numen/plugin-sdk'
 import ConversationView from './ConversationView.vue'
 
 const agent: AgentPort = {
-  async *ask() {},
-  async finish() {},
+  async *ask() {
+    yield* []
+  },
+  finish: async () => undefined,
 }
 
 describe('ConversationView', () => {

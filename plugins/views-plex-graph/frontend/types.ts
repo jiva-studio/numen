@@ -183,6 +183,11 @@ export interface PlexHeadingsState {
   openHeading(node: string, heading: string): void
 }
 
+/** Shows the failure of an operation that runs in the background. */
+export interface PlexFailureReporter {
+  reportFailure(error: unknown): void
+}
+
 export interface PlexNodeActions {
   activate(node: string): void
   createNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
@@ -215,6 +220,7 @@ export type PlexTabState = PlexViewState &
   PlexMenuState &
   PlexHeadingsState &
   PlexNodeActions &
+  PlexFailureReporter &
   PlexQuickLinkState &
   PlexLinkInspectorState & {
     readonly pluginId?: string

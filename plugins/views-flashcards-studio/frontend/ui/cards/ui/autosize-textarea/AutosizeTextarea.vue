@@ -44,8 +44,8 @@ defineExpose({
 <template>
   <div class="autosize" :class="attrs.class" :style="attrs.style" :data-autosize="text">
     <textarea
-      ref="box"
       :id="id ?? ownId"
+      ref="box"
       class="autosize__box"
       rows="1"
       :value="text"

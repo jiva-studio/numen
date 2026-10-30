@@ -97,13 +97,13 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     },
     // A curve that is never answered keeps the local estimate, which is what the
     // arithmetic here is read from.
-    curve: async () => answer ?? new Promise<Curve>(() => {}),
+    curve: async () => answer ?? new Promise<Curve>(() => undefined),
   }
   const kind = usePresetTab({
     core,
     buffers: createMockBufferHost(),
-    closeTab: () => {},
-    writeMessage: () => {},
+    closeTab: () => undefined,
+    writeMessage: () => undefined,
     today: () => DAY,
   })
   const state = kind.kind.open?.('Sanskrit.md', 'preset:Sanskrit.md') as PresetTabState

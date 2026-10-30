@@ -30,7 +30,7 @@ const fields = computed(() => getGoalFields(settings.value.goal, settings.value.
   <section class="preset-settings" :aria-label="words.settings">
     <div v-for="field in fields" :key="field" class="preset-settings__row" :data-preset-row="field">
       <span class="preset-settings__label">
-        <span class="preset-settings__name" :id="`preset-${field}`" data-preset="name">
+        <span :id="`preset-${field}`" class="preset-settings__name" data-preset="name">
           {{ words.fieldName(field) }}
         </span>
         <span class="preset-settings__detail" data-preset="detail">

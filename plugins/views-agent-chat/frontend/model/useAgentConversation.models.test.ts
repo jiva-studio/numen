@@ -10,10 +10,10 @@ import { useAgentConversation } from './useAgentConversation'
 const createConversation = (): Conversation => ({
   turns: ref([]),
   isWorking: ref(false),
-  ask: async () => {},
+  ask: async () => undefined,
   getSourceLocation: () => null,
-  stop: () => {},
-  finish: () => {},
+  stop: () => undefined,
+  finish: () => undefined,
 })
 
 type Model = AgentModel & { readonly nameAt: readonly string[] }
@@ -34,8 +34,8 @@ const model = (
 /** An agent tab over the models listed and the settings kept. */
 const open = (models: readonly Model[] = [], settings: Record<string, string> = {}) =>
   useAgentConversation(createConversation(), {
-    openFileAt: () => {},
-    openFileAdjacent: () => {},
+    openFileAt: () => undefined,
+    openFileAdjacent: () => undefined,
     resolveLinks: async () => [],
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],

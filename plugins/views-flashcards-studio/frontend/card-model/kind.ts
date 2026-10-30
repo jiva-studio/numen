@@ -4,6 +4,7 @@
 import { computed } from 'vue'
 import { LayoutTemplate } from '@lucide/vue'
 import {
+  formatErrorMessage,
   getFileName,
   type BufferHost,
   type MessageWriter,
@@ -40,20 +41,24 @@ function createCardModelTabItem(
     fields: CardModelFields
     wire: CardModelWire
     closeTab: (id: string) => void
+    reportFailure: (error: unknown) => void
   },
 ): CardModelTabState {
-  const { store, fields, wire, closeTab } = deps
+  const { store, fields, wire, closeTab, reportFailure } = deps
   const close = (tab: string) => {
     const path = store.getPath(id)
-    void store.close(id).then((removed) => {
-      if (!removed) return
-      fields.forget(id)
-      wire.forget(
-        path,
-        store.getOpenIds().some((one) => store.getPath(one) === path),
-      )
-      closeTab(tab)
-    })
+    store
+      .close(id)
+      .then((removed) => {
+        if (!removed) return
+        fields.forget(id)
+        wire.forget(
+          path,
+          store.getOpenIds().some((one) => store.getPath(one) === path),
+        )
+        closeTab(tab)
+      })
+      .catch(reportFailure)
   }
 
   return {
@@ -103,7 +108,8 @@ function createCardModelKindDefinition(deps: {
       one.close(id)
       return false
     },
-    onDestroy: () => {},
+    // The tab state holds no resource beyond the buffer store.
+    onDestroy: () => undefined,
     isAsking: (one) => store.stale(one.id) !== null,
     flushPending: (one) => store.flushPending(one.id),
     createFile: (folder, name) => cards.createCardModel(name, folder, [words.newField]),
@@ -111,7 +117,9 @@ function createCardModelKindDefinition(deps: {
 }
 
 export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions) {
-  const { buffers, closeTab, writeMessage = () => {} } = options
+  // Messages are dropped when the caller supplies no writer.
+  const { buffers, closeTab, writeMessage = () => undefined } = options
+  const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
   const wire = createCardModelWire(cards, writeMessage)
   const store = openNotes({ read: wire.read, write: wire.write })
   buffers.track(store)
@@ -119,12 +127,15 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
     (id) => store.getOpenNote(id).body,
     (id, body) => store.setBody(id, body),
     (id) => wire.getProblems(store.getPath(id)),
-    (id, field, name) =>
-      void wire.renameField(store.getPath(id), { from: field, to: name }, store.applyPathChanges),
+    (id, field, name) => {
+      wire
+        .renameField(store.getPath(id), { from: field, to: name }, store.applyPathChanges)
+        .catch(reportFailure)
+    },
   )
 
   const createCardModelTabState = (id: string): CardModelTabState =>
-    createCardModelTabItem(id, { store, fields, wire, closeTab })
+    createCardModelTabItem(id, { store, fields, wire, closeTab, reportFailure })
   const kind = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState })
 
   return {

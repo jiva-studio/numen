@@ -22,6 +22,7 @@ import {
 import { WORDS as words } from './words'
 import {
   createOpenPreset,
+  createFailureReporter,
   createPresetState,
   readPreset,
   type OpenPreset,
@@ -95,7 +96,9 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
     open: (path) => {
       const one = createOpenPreset(path, today(), bounds.value)
       open.set(path, one)
-      void readPreset(one, { core, bounds, titles, today: today() })
+      readPreset(one, { core, bounds, titles, today: today() }).catch(
+        createFailureReporter(context),
+      )
       const state = createPresetState(one, path, context)
       states.set(state, one)
       return state
@@ -108,7 +111,8 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
       one.close(id)
       return false
     },
-    onDestroy: () => {},
+    // The tab state holds no resource beyond the buffer store.
+    onDestroy: () => undefined,
     flushPending: (one) => flush(one),
     createFile: (folder, name) => core.createPreset(name, folder),
   }
@@ -182,7 +186,7 @@ export function usePresetTab(deps: PresetTabDeps) {
     applyPathRenames(open, titles, renames)
     for (const path of paths) {
       const one = open.get(path)
-      if (one) void readOne(one)
+      if (one) readOne(one).catch(createFailureReporter({ writeMessage }))
     }
   }
 

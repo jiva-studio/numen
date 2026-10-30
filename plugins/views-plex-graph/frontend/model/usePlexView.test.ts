@@ -55,7 +55,7 @@ describe('a plex still being read', () => {
 
 describe('a plex whose first answer is stale', () => {
   it('goes on loading until the answer to the last question lands', async () => {
-    let releaseSecond = () => {}
+    let releaseSecond: () => void = () => undefined
     const plex = usePlexView(
       fake(async (path) => {
         if (path === 'Second') await new Promise<void>((resolve) => (releaseSecond = resolve))
@@ -97,7 +97,7 @@ describe('two questions in flight', () => {
 
 describe('a question in flight', () => {
   it('names its note until the answer lands', async () => {
-    let release: () => void = () => {}
+    let release: () => void = () => undefined
     const plex = usePlexView(
       fake(async (path) => {
         await new Promise<void>((resolve) => (release = resolve))
@@ -118,7 +118,7 @@ describe('a question in flight', () => {
 
 describe('a note that moved while a question was in flight', () => {
   it('lets go of the answer about where it was', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     let pendingGate: Promise<void> | null = null
     const plex = usePlexView(
       fake(async (path) => {
@@ -139,7 +139,7 @@ describe('a note that moved while a question was in flight', () => {
   })
 
   it('holds on to an answer about a note nothing moved', async () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     let pendingGate: Promise<void> | null = null
     const plex = usePlexView(
       fake(async (path) => {
@@ -284,7 +284,7 @@ describe('a plex whose vault failed to answer', () => {
   })
 
   it('says nothing of a failure that a newer question has overtaken', async () => {
-    let fail = () => {}
+    let fail: () => void = () => undefined
     const plex = usePlexView(
       fake(async (path) => {
         if (path === 'First')

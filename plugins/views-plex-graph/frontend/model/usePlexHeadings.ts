@@ -36,8 +36,8 @@ export function usePlexHeadings(
     }
   }
 
-  watch(paths, () => void readHeadings(), { immediate: true })
-  watch(deps.isNesting, () => void readHeadings())
+  watch(paths, () => readHeadings(), { immediate: true })
+  watch(deps.isNesting, () => readHeadings())
 
   const getHeadings = (node: string): readonly PlexHeading[] =>
     deps.isNesting.value ? (headings.value.get(nodeIdMap.getNodePath(node)) ?? []) : []

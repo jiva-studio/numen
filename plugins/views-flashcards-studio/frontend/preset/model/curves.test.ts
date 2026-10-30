@@ -67,8 +67,8 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
 
 /** An answer the test gives when it chooses. */
 const createGate = () => {
-  let open: (answer: Curve) => void = () => {}
-  let fail: (error: Error) => void = () => {}
+  let open: (answer: Curve) => void = () => undefined
+  let fail: (error: Error) => void = () => undefined
   const reply = new Promise<Curve>((resolve, reject) => {
     open = resolve
     fail = reject
@@ -160,7 +160,7 @@ describe('asking for a curve', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     await flushPromises()
 
@@ -184,7 +184,7 @@ describe('asking for a curve', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     await flushPromises()
 
@@ -206,7 +206,7 @@ describe('asking for a curve', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     await flushPromises()
 
@@ -230,7 +230,7 @@ describe('asking for a curve', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
 
     expect(requests).toStrictEqual([])
@@ -252,7 +252,7 @@ describe('asking for a curve', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     now = settings({ minutesADay: 30 })
     await updateCurves(
@@ -262,7 +262,7 @@ describe('asking for a curve', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     gate.open(curve())
     await picture
@@ -289,7 +289,7 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     now = other
     await updateCurves(
@@ -299,7 +299,7 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     gate.open(curve({ cards: 1 }))
     await picture
@@ -323,7 +323,9 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      (one: string) => void response.push(one),
+      (one: string) => {
+        response.push(one)
+      },
     )
     now = other
     await updateCurves(
@@ -333,7 +335,7 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      () => {},
+      () => undefined,
     )
     gate.fail(new Error('gone'))
     await picture
@@ -354,7 +356,9 @@ describe('an answer nobody is waiting for any more', () => {
       core,
       BOUNDS,
       today,
-      (one: string) => void response.push(one),
+      (one: string) => {
+        response.push(one)
+      },
     )
     gate.fail(new Error('gone'))
     await picture

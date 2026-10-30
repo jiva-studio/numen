@@ -92,7 +92,11 @@ describe('the markdown the editor is written in', () => {
 
   const getNames = (tree: Tree) => {
     const found = new Set<string>()
-    tree.iterate({ enter: (node) => void found.add(node.name) })
+    tree.iterate({
+      enter: (node) => {
+        found.add(node.name)
+      },
+    })
     return found
   }
 

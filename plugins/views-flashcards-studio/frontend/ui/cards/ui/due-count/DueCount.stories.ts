@@ -72,10 +72,10 @@ export const Bare: Story = {
   args: { isBare: true },
   play: async ({ canvasElement }) => {
     const [pill] = within(canvasElement).getAllByRole('status')
-    expect(pill?.textContent?.trim()).toBe('12')
+    await expect(pill?.textContent?.trim()).toBe('12')
 
     // Drawn as the figure alone, and still read out as what it counts.
-    expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.formatDue(12))
+    await expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.formatDue(12))
   },
 }
 
@@ -87,8 +87,8 @@ export const StillCounting: Story = {
   args: { due: null },
   play: async ({ canvasElement }) => {
     const [pill] = within(canvasElement).getAllByRole('status')
-    expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.counting)
-    expect(pill?.textContent?.trim()).toBe('')
+    await expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.counting)
+    await expect(pill?.textContent?.trim()).toBe('')
   },
 }
 
@@ -106,8 +106,8 @@ export const Dark: Story = {
     const canvas = within(canvasElement)
     const [plain, overflow] = canvas.getAllByRole('status')
     const button = canvas.getByRole('button')
-    expect(plain).toBeDefined()
-    expect(overflow).toBeDefined()
+    await expect(plain).toBeDefined()
+    await expect(overflow).toBeDefined()
 
     // On its own the pill carries both of its own colours, and they differ:
     // its background is thin, so it is read over the surface behind it, and
@@ -116,7 +116,7 @@ export const Dark: Story = {
     const backdropColor = getComputedStyle(
       canvasElement.querySelector('.numen') as HTMLElement,
     ).backgroundColor
-    expect(lightness(alone.color)).toBeGreaterThan(
+    await expect(lightness(alone.color)).toBeGreaterThan(
       lightness(alone.backgroundColor, backdropColor) + 24,
     )
 
@@ -125,12 +125,12 @@ export const Dark: Story = {
     const filled = getComputedStyle(button)
     const ink = lightness(filled.color)
     const ground = lightness(filled.backgroundColor)
-    expect(Math.abs(ink - ground)).toBeGreaterThan(24)
+    await expect(Math.abs(ink - ground)).toBeGreaterThan(24)
 
     const pill = lightness(getComputedStyle(overflow!).backgroundColor, filled.backgroundColor)
-    expect(pill).toBeGreaterThan(Math.min(ink, ground))
-    expect(pill).toBeLessThan(Math.max(ink, ground))
-    expect(Math.abs(pill - ground)).toBeGreaterThan(2)
+    await expect(pill).toBeGreaterThan(Math.min(ink, ground))
+    await expect(pill).toBeLessThan(Math.max(ink, ground))
+    await expect(Math.abs(pill - ground)).toBeGreaterThan(2)
   },
 }
 
@@ -148,8 +148,8 @@ const drawAgainstSystem =
       const ground = canvasElement.querySelector('.numen')
       if (!ground) throw new Error('no ground drawn')
       const shade = lightness(getComputedStyle(ground).backgroundColor)
-      if (isDark) expect(shade).toBeLessThan(64)
-      else expect(shade).toBeGreaterThan(192)
+      if (isDark) await expect(shade).toBeLessThan(64)
+      else await expect(shade).toBeGreaterThan(192)
     } finally {
       await commands.setSystemScheme(null)
     }

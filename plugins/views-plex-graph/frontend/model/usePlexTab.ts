@@ -3,7 +3,7 @@
  */
 import { computed, ref, watch, type Component } from 'vue'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
-import { getFileName, NOTE_TYPE } from '@numen/plugin-sdk'
+import { formatErrorMessage, getFileName, NOTE_TYPE } from '@numen/plugin-sdk'
 import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
@@ -101,7 +101,7 @@ function createPlexNodeActions(options: {
   const activate = (node: string) => {
     const path = map.getNodePath(node)
     if (path) {
-      void view.go(path)
+      view.go(path).catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
       deps.onSelectPath?.(path, getName(path))
     }
   }
@@ -183,7 +183,9 @@ function usePlexMenu(options: {
     menu.value = null
     if (!on) return
     if (on.node === null) {
-      if (id === NEW_NOTE) void createNote()
+      if (id === NEW_NOTE) {
+        createNote().catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
+      }
       return
     }
     if (!OFFERED.has(id) && !declared.value.some((one) => one.id === id)) return
@@ -234,8 +236,11 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     createNote: nodeActions.createNote,
   })
 
+  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+
   const tabState: PlexTabState = {
     view,
+    reportFailure,
     picture,
     empty,
     dragged,

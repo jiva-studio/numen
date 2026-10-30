@@ -241,6 +241,7 @@ export function useMarkdownDocument(
 
   const isDirty = computed(() => docContent.value !== initialContent.value)
   const frontmatter = computed<FrontmatterResult>(() => parseFrontmatter(docContent.value))
+  const loadError = ref('')
   const frontmatterError = computed(() => checkFrontmatterError(docContent.value))
 
   const isLoading = computed(() => {
@@ -258,7 +259,7 @@ export function useMarkdownDocument(
     if (stateErr) return stateErr
     const fmErr = frontmatterError.value
     if (typeof fmErr === 'string' && fmErr.trim()) return fmErr.trim()
-    return ''
+    return loadError.value
   })
 
   watch(
@@ -286,7 +287,7 @@ export function useMarkdownDocument(
     }
   }
 
-  async function loadContentFromPath(filePath: string): Promise<void> {
+  async function readContentFromPath(filePath: string): Promise<void> {
     if (!filePath) return
     try {
       const res = await fetch(getAssetUrl(filePath))
@@ -302,12 +303,19 @@ export function useMarkdownDocument(
     }
   }
 
+  /** Starts reading the file; a failure outside the fetch is shown as the document error. */
+  function loadContentFromPath(filePath: string): void {
+    readContentFromPath(filePath).catch((error: unknown) => {
+      loadError.value = error instanceof Error ? error.message : String(error)
+    })
+  }
+
   watch(editorRef, (val) => syncEditorState(val), { immediate: true })
 
   onMounted(() => {
     syncEditorState(editorRef.value)
     if (!docContent.value && activePath.value) {
-      void loadContentFromPath(activePath.value)
+      loadContentFromPath(activePath.value)
     }
   })
 
@@ -318,7 +326,7 @@ export function useMarkdownDocument(
       initialContent.value = nextBody
     }
     if (newPath && !docContent.value) {
-      void loadContentFromPath(newPath)
+      loadContentFromPath(newPath)
     }
   })
 

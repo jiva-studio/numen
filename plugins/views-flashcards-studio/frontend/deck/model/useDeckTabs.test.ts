@@ -1038,7 +1038,7 @@ describe('a deck tab closed', () => {
     expect(one.tab.scheduled.value.path).toBe('Sanskrit.md')
     one.tab.close(one.id)
     await settle()
-    one.presets.getDeckPreset = () => new Promise(() => {})
+    one.presets.getDeckPreset = () => new Promise(() => undefined)
 
     const again = await one.windowTabs.openTab(DECK, 'Animals.md')
 

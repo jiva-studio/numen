@@ -15,7 +15,7 @@ const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting chang
 
 const TIMED: TimeGutterState = { times: ['0:01', '0:03', '0:06'], current: -1, isFollowing: false }
 
-const editor = (goToLine: (line: number) => void = () => {}) => {
+const editor = (goToLine: (line: number) => void = () => undefined) => {
   const times = createTimeGutter(goToLine)
   return { times, view: drawGutter(times) }
 }
@@ -156,7 +156,7 @@ describe('an editor these are shown in', () => {
 
 describe('an editor drawn a second time', () => {
   it('is shown what the one before it was shown', async () => {
-    const times = createTimeGutter(() => {})
+    const times = createTimeGutter(() => undefined)
     const first = drawGutter(times)
     times.show({ ...TIMED, current: 1 })
     first.destroy()
@@ -169,7 +169,7 @@ describe('an editor drawn a second time', () => {
   })
 
   it('is shown them where nothing was drawn when they were given', async () => {
-    const times = createTimeGutter(() => {})
+    const times = createTimeGutter(() => undefined)
     times.show(TIMED)
 
     const view = drawGutter(times)
@@ -179,7 +179,7 @@ describe('an editor drawn a second time', () => {
   })
 
   it('is the one shown what arrives next, and the one before it is left alone', async () => {
-    const times = createTimeGutter(() => {})
+    const times = createTimeGutter(() => undefined)
     const first = drawGutter(times)
     times.show(TIMED)
     const again = drawGutter(times)
@@ -192,7 +192,7 @@ describe('an editor drawn a second time', () => {
   })
 
   it('goes on being shown them once the one before it is destroyed', () => {
-    const times = createTimeGutter(() => {})
+    const times = createTimeGutter(() => undefined)
     const first = drawGutter(times)
     const again = drawGutter(times)
 
@@ -287,7 +287,7 @@ describe('an editor drawn a second time', () => {
 
 describe('an editor drawn again while the recording remains still', () => {
   it('is not moved by the words being requested for again', async () => {
-    const times = createTimeGutter(() => {})
+    const times = createTimeGutter(() => undefined)
     const first = drawGutter(times)
     times.show({ ...TIMED, current: 2, isFollowing: true })
     first.destroy()
@@ -577,7 +577,7 @@ describe('an editor destroyed', () => {
   })
 
   it('before it was shown what the one before it was, leaves the later times to the next editor', async () => {
-    const times = createTimeGutter(() => {})
+    const times = createTimeGutter(() => undefined)
     const first = drawGutter(times)
     times.show(TIMED)
     first.destroy()

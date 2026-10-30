@@ -76,7 +76,7 @@ export const viewOn = (
       const one = renamed.find((item) => item.from === view.here.value)
       if (one) view.here.value = one.to
     },
-    close: () => {},
+    close: () => undefined,
   }
   return { view, went }
 }

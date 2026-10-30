@@ -28,7 +28,10 @@ export const bindTexts = (texts: VaultTexts | undefined): void => {
   vaultTexts = texts
 }
 
-const work = createWorkWatcher((onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => {} })
+// Without a task host there is nothing to unsubscribe.
+const work = createWorkWatcher(
+  (onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => undefined },
+)
 
 export const recordings: Recordings = {
   getSource: (path) => getMediaSource(path),

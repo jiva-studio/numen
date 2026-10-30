@@ -67,14 +67,20 @@ export function createRecordings(
       if (state.readError) throw state.readError
       return state.cues
     },
-    writeTranscript: async (_, next) => void state.writes.push(next),
+    writeTranscript: async (_, next) => {
+      state.writes.push(next)
+    },
     findCueTime: async (_, span) => state.cueTimes.get(span.start) ?? null,
     getMenu: async () => state.menu,
-    runMenuEntry: async (_, entry) => void state.runs.push(entry),
+    runMenuEntry: async (_, entry) => {
+      state.runs.push(entry)
+    },
     watchWork: (_, onChange) => {
       state.onWork = onChange
       state.isWatched = true
-      return () => void (state.isWatched = false)
+      return () => {
+        state.isWatched = false
+      }
     },
   }
   return { recordings, state }
@@ -91,9 +97,13 @@ export function createPlayer() {
     duration: ref(0),
     isPlaying: ref(false),
     error: ref(''),
-    load: (next) => void (url.value = next),
-    play: (next) => void (url.value = next),
-    pause: () => {},
+    load: (next) => {
+      url.value = next
+    },
+    play: (next) => {
+      url.value = next
+    },
+    pause: () => undefined,
     seek: (next, ms) => {
       url.value = next
       position.value = ms

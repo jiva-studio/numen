@@ -3,6 +3,7 @@
  */
 import { doc } from '../../dom'
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
+import type { LanguageSupport } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -84,10 +85,18 @@ export function useEditor(options: EditorStateOptions) {
     options.lineNumbers ? options.lineNumbers() : options.props.lineNumbers
   const readTabSize = () => (options.tabSize ? options.tabSize() : options.props.tabSize)
 
-  async function applyLanguage(name: string): Promise<void> {
-    const support = name ? await loadLanguage(name) : null
+  function setLanguage(name: string, support: LanguageSupport | null): void {
     if (!view || name !== options.props.language) return
     view.dispatch({ effects: languageCompartment.reconfigure(support ? code(support) : prose()) })
+  }
+
+  /** Loads the language pack of the name; a pack that fails to load leaves the document plain. */
+  function applyLanguage(name: string): void {
+    const loading = name ? loadLanguage(name) : Promise.resolve(null)
+    loading.then(
+      (support) => setLanguage(name, support),
+      () => setLanguage(name, null),
+    )
   }
 
   onMounted(() => {
@@ -127,7 +136,7 @@ export function useEditor(options: EditorStateOptions) {
         ],
       }),
     })
-    if (options.props.language) void applyLanguage(options.props.language)
+    if (options.props.language) applyLanguage(options.props.language)
   })
 
   onBeforeUnmount(() => {
@@ -148,7 +157,7 @@ export function useEditor(options: EditorStateOptions) {
   watch(
     () => options.props.language,
     (name) => {
-      void applyLanguage(name ?? '')
+      applyLanguage(name ?? '')
     },
   )
 

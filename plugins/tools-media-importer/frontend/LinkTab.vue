@@ -27,15 +27,15 @@ onUnmounted(() => tab.close())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onFetchText() {
-  void tab.actions.fetchText()
+  tab.actions.fetchText().catch(tab.reportFailure)
 }
 
 function onCopyVideo() {
-  void tab.actions.copyVideo()
+  tab.actions.copyVideo().catch(tab.reportFailure)
 }
 
 function onDeleteCopy() {
-  void tab.actions.deleteCopy()
+  tab.actions.deleteCopy().catch(tab.reportFailure)
 }
 </script>
 

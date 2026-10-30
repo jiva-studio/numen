@@ -55,9 +55,9 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
 
   let resizeObserver: ResizeObserver | null = null
 
-  onMounted(() => {
+  onMounted(async () => {
     win.addEventListener('resize', updatePosition)
-    void nextTick(() => {
+    await nextTick(() => {
       updatePosition()
       if (typeof ResizeObserver !== 'undefined' && target.value) {
         resizeObserver = new ResizeObserver(() => {

@@ -18,10 +18,12 @@ export const addressResolver = Facet.define<Resolve, Resolve>({
 
 /** Where a drawn link goes when it is clicked. */
 export const addressOpener = Facet.define<Open, Open>({
-  combine: (all) => all[0] ?? (() => {}),
+  // A link click does nothing until an opener is configured.
+  combine: (all) => all[0] ?? (() => undefined),
 })
 
 /** Who is notified that the user requested the text to be saved now. */
 export const saveHandler = Facet.define<Save, Save>({
-  combine: (all) => all[0] ?? (() => {}),
+  // A save request does nothing until a handler is configured.
+  combine: (all) => all[0] ?? (() => undefined),
 })

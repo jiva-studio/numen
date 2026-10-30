@@ -62,13 +62,13 @@ const TRANSCRIBED: MenuEntry = {
 const createRecordings = (cues: readonly Cue[], menu: readonly MenuEntry[]): Recordings => ({
   getSource: async () => ({ mediaUrl: MEDIA, mediaType: 'audio/mpeg' }),
   readTranscript: async () => cues,
-  writeTranscript: async () => {},
+  writeTranscript: async () => undefined,
   findCueTime: async () => null,
   getMenu: async () => menu,
-  runMenuEntry: async () => {},
+  runMenuEntry: async () => undefined,
   watchWork: (_, onChange) => {
     onChange(false)
-    return () => {}
+    return () => undefined
   },
 })
 
@@ -79,10 +79,10 @@ const createPlayer = (isPlaying: boolean): Player => ({
   duration: ref(RUNS),
   isPlaying: ref(isPlaying),
   error: ref(''),
-  load: () => {},
-  play: () => {},
-  pause: () => {},
-  seek: () => {},
+  load: () => undefined,
+  play: () => undefined,
+  pause: () => undefined,
+  seek: () => undefined,
   getDuration: async () => RUNS,
 })
 

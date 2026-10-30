@@ -721,7 +721,7 @@ describe('which preset schedules each deck', () => {
   // A user who navigates away while the presets of the previous vault are still
   // being requested receives nothing from that vault.
   it('holds no preset of a vault left while its presets were being requested', async () => {
-    let answer = () => {}
+    let answer: () => void = () => undefined
     const request = new Promise<void>((then) => {
       answer = then
     })
@@ -958,7 +958,7 @@ describe('what is wrong with a preset no deck answered for', () => {
 describe('what is known of the presets of a vault', () => {
   /** An application that answers only once it is let go, with the same preset for every deck. */
   const createBlockedPresets = () => {
-    let release = () => {}
+    let release: () => void = () => undefined
     let gate = Promise.resolve()
     const client: PresetsClient = {
       async getVaultDeckPreset() {

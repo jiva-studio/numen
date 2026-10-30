@@ -31,8 +31,8 @@ export function useMountedConversation(deps: MountedConversationDeps): void {
   )
 
   // A panel opened is a panel opened to write in, so the field takes the keyboard as it arrives.
-  watch(deps.open, (isOpen) => {
-    if (isOpen) void nextTick(() => view?.focus())
+  watch(deps.open, async (isOpen) => {
+    if (isOpen) await nextTick(() => view?.focus())
   })
 
   onScopeDispose(unmount)

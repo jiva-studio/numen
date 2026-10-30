@@ -166,13 +166,14 @@ describe('a question about the card', () => {
     toggleAgent()
     const signal = new AbortController().signal
 
-    for await (const step of agentPanel.context.value!.agent.ask({
+    for await (const _ of agentPanel.context.value!.agent.ask({
       question: 'where does the word come from',
       focus: 'decks/Words.md',
       conversation: 'card-0',
       signal,
-    }))
-      void step
+    })) {
+      // The agent is read to the end; the query it received is checked below.
+    }
 
     expect(agent.getQueries()[0]?.context).toEqual({
       'md.numen.views.flashcards.studio/deck': 'decks/Words.md',

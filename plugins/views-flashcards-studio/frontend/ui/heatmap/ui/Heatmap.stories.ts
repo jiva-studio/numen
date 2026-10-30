@@ -340,20 +340,20 @@ export const AtEveryEdge: Story = {
       const cell = viewElement[corner.cell(viewElement.length)] as Element
       await userEvent.hover(cell)
 
-      await waitFor(() => {
+      await waitFor(async () => {
         const response = canvasElement.querySelector('[role="tooltip"]')
-        expect(response, corner.name).not.toBeNull()
+        await expect(response, corner.name).not.toBeNull()
 
         // The whole of it is on the screen, on every side.
         const box = (response as HTMLElement).getBoundingClientRect()
-        expect(box.left, corner.name).toBeGreaterThanOrEqual(0)
-        expect(box.top, corner.name).toBeGreaterThanOrEqual(0)
-        expect(box.right, corner.name).toBeLessThanOrEqual(window.innerWidth)
-        expect(box.bottom, corner.name).toBeLessThanOrEqual(window.innerHeight)
+        await expect(box.left, corner.name).toBeGreaterThanOrEqual(0)
+        await expect(box.top, corner.name).toBeGreaterThanOrEqual(0)
+        await expect(box.right, corner.name).toBeLessThanOrEqual(window.innerWidth)
+        await expect(box.bottom, corner.name).toBeLessThanOrEqual(window.innerHeight)
 
         // And beside the day it is about, on one side of it or the other.
         const day = cell.getBoundingClientRect()
-        expect(box.right <= day.left || box.left >= day.right, corner.name).toBe(true)
+        await expect(box.right <= day.left || box.left >= day.right, corner.name).toBe(true)
       })
     }
   },

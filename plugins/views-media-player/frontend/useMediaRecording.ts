@@ -161,7 +161,9 @@ export function useMediaRecording(emit: MediaRecordingEmit) {
 
   function onRecordAction(action: RecordAction) {
     if (action === 'start') {
-      void onStartRecording()
+      onStartRecording().catch((err: unknown) => {
+        errorMessage.value = err instanceof Error ? err.message : 'Could not access microphone'
+      })
     } else if (action === 'pause') {
       onPauseRecording()
     } else if (action === 'resume') {

@@ -20,6 +20,11 @@ import type { PageNavigationAction } from '@numen/ui'
 import { goToPage } from '../lib/pageStep'
 import type { SettledBookProps } from '../lib/props'
 
+/** Reading the width forces a layout pass, so the style written before it is applied first. */
+function flushLayout(element: HTMLElement): number {
+  return element.offsetWidth
+}
+
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
   if (how === 'smooth') {
     text.style.translate = to
@@ -27,7 +32,7 @@ function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): 
   }
   text.style.transition = 'none'
   text.style.translate = to
-  void text.offsetWidth
+  flushLayout(text)
   text.style.transition = ''
 }
 

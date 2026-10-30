@@ -458,10 +458,10 @@ type Story = StoryObj<Knobs>
  */
 export const ADeck: Story = {
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(0)
+    await expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(0)
 
     await userEvent.click(found(canvasElement, '[data-plus] button'))
-    expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(2)
+    await expect(canvasElement.querySelectorAll('[data-cut]')).toHaveLength(2)
 
     await userEvent.click(found(canvasElement, '[data-cut="Word"]'))
 
@@ -471,12 +471,12 @@ export const ADeck: Story = {
     // Every field the card model declares is placed under its own name, the first
     // included, and all of them stand empty.
     const boxes = [...(createdItem?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
-    expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
+    await expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
       'Word',
       'Meaning',
       'Example',
     ])
-    expect(boxes.every((box) => box.value === '')).toBe(true)
+    await expect(boxes.every((box) => box.value === '')).toBe(true)
   },
 }
 
@@ -490,31 +490,34 @@ export const InSections: Story = {
   args: { corpus: 'a deck in sections' },
   play: async ({ canvasElement }) => {
     const heads = [...canvasElement.querySelectorAll('[data-section-head]')]
-    expect(heads.map((head) => head.getAttribute('data-section-head'))).toEqual(['roots', 'leaves'])
+    await expect(heads.map((head) => head.getAttribute('data-section-head'))).toEqual([
+      'roots',
+      'leaves',
+    ])
 
     // A section holding no card keeps its heading, which spans the grid width.
     const leaves = found(canvasElement, '[data-section-head="leaves"]')
-    expect(canvasElement.querySelectorAll('[data-section="leaves"]')).toHaveLength(0)
-    expect(leaves.getBoundingClientRect().width).toBeGreaterThan(240)
+    await expect(canvasElement.querySelectorAll('[data-section="leaves"]')).toHaveLength(0)
+    await expect(leaves.getBoundingClientRect().width).toBeGreaterThan(240)
 
     // The heading is a rule with the name typed on it, and the way to be rid of
     // it at the end.
-    expect(found(canvasElement, '[data-section-head="roots"] .divider')).toBeTruthy()
-    expect(found(canvasElement, '[data-section-head="roots"] input').getAttribute('value')).toBe(
-      'Roots',
-    )
+    await expect(found(canvasElement, '[data-section-head="roots"] .divider')).toBeTruthy()
+    await expect(
+      found(canvasElement, '[data-section-head="roots"] input').getAttribute('value'),
+    ).toBe('Roots')
 
     // The interactive part of the heading is the name and the remove button. It is
     // as wide as the two of them, and the line either side belongs to the rule.
     const element = found(canvasElement, '[data-section-head="roots"] .section-heading__content')
-    expect(element.getBoundingClientRect().width).toBeLessThan(
+    await expect(element.getBoundingClientRect().width).toBeLessThan(
       leaves.getBoundingClientRect().width / 3,
     )
 
     // The remove button takes no width until the name is focused, so the rule ends
     // at the heading's edge and nothing overhangs it.
     const actions = found(canvasElement, '[data-section-head="roots"] .section-heading__actions')
-    expect(actions.getBoundingClientRect().width).toBe(0)
+    await expect(actions.getBoundingClientRect().width).toBe(0)
 
     found(canvasElement, '[data-section-head="roots"] input').focus()
     const renderedElement = found(
@@ -525,27 +528,31 @@ export const InSections: Story = {
       canvasElement,
       '[data-section-head="roots"] .divider__pending',
     ).getBoundingClientRect()
-    expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
-    expect(renderedElement.right).toBeLessThanOrEqual(Math.ceil(rule.right))
-    expect(renderedElement.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
+    await expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
+    await expect(renderedElement.right).toBeLessThanOrEqual(Math.ceil(rule.right))
+    await expect(renderedElement.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
 
     // Each card is placed under the section it is in, and the ones before the
     // first stand under none.
-    expect(canvasElement.querySelectorAll('[data-section="roots"]')).toHaveLength(2)
-    expect(found(canvasElement, '[data-card="p4h6c8vzn2"]').getAttribute('data-section')).toBeNull()
+    await expect(canvasElement.querySelectorAll('[data-section="roots"]')).toHaveLength(2)
+    await expect(
+      found(canvasElement, '[data-card="p4h6c8vzn2"]').getAttribute('data-section'),
+    ).toBeNull()
 
     // A section made at the end, under a name nothing has taken.
     await userEvent.click(found(canvasElement, '[data-add-section]'))
     const createdItem = [...canvasElement.querySelectorAll('[data-section-head]')]
-    expect(createdItem).toHaveLength(3)
-    expect(createdItem[2]?.querySelector('input')?.value).toBe('Section 1')
+    await expect(createdItem).toHaveLength(3)
+    await expect(createdItem[2]?.querySelector('input')?.value).toBe('Section 1')
 
     // Taking a section away takes away its heading and nothing else: its cards
     // stand under the heading above them now.
     await userEvent.click(found(canvasElement, '[data-section-head="roots"] .remove-button'))
-    expect(canvasElement.querySelectorAll('[data-section-head="roots"]')).toHaveLength(0)
-    expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(3)
-    expect(found(canvasElement, '[data-card="z3f1m6b4dt"]').getAttribute('data-section')).toBeNull()
+    await expect(canvasElement.querySelectorAll('[data-section-head="roots"]')).toHaveLength(0)
+    await expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(3)
+    await expect(
+      found(canvasElement, '[data-card="z3f1m6b4dt"]').getAttribute('data-section'),
+    ).toBeNull()
   },
 }
 
@@ -561,9 +568,9 @@ export const FarTooMany: Story = {
 
     // The window a story is drawn in is wide, so the tiles stand in more than
     // two columns.
-    expect(getComputedStyle(grid).gridTemplateColumns.split(' ').length).toBeGreaterThan(2)
+    await expect(getComputedStyle(grid).gridTemplateColumns.split(' ').length).toBeGreaterThan(2)
 
-    measure(canvasElement)
+    await measure(canvasElement)
   },
 }
 
@@ -577,35 +584,39 @@ export const NothingAtAll: Story = {
     const plus = found(canvasElement, '[data-plus]')
     const button = found(canvasElement, '[data-plus] button')
 
-    expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(0)
+    await expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(0)
 
     // It is named for assistive technology and has no visible text.
-    expect(button.getAttribute('aria-label')).toBe('Add a card')
-    expect(button.textContent?.trim()).toBe('')
-    expect(button.querySelector('svg')?.getBoundingClientRect().width).toBeGreaterThan(24)
+    await expect(button.getAttribute('aria-label')).toBe('Add a card')
+    await expect(button.textContent?.trim()).toBe('')
+    await expect(button.querySelector('svg')?.getBoundingClientRect().width).toBeGreaterThan(24)
 
     const middle = (box: DOMRect): readonly number[] => [
       Math.round(box.left + box.width / 2),
       Math.round(box.top + box.height / 2),
     ]
-    expect(middle(button.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
+    await expect(middle(button.getBoundingClientRect())).toEqual(
+      middle(plus.getBoundingClientRect()),
+    )
 
     // It is a tile like the cards are: a dashed outline, drawn no smaller than
     const renderedElement = getComputedStyle(plus)
-    expect(renderedElement.borderTopStyle).toBe('dashed')
-    expect(Number.parseFloat(renderedElement.borderTopWidth)).toBeGreaterThan(0)
+    await expect(renderedElement.borderTopStyle).toBe('dashed')
+    await expect(Number.parseFloat(renderedElement.borderTopWidth)).toBeGreaterThan(0)
 
     const rect = plus.getBoundingClientRect()
-    expect(rect.height).toBeGreaterThan(64)
-    expect(rect.width).toBeGreaterThan(240)
+    await expect(rect.height).toBeGreaterThan(64)
+    await expect(rect.width).toBeGreaterThan(240)
 
     // The opened prompt appears at the pressed button, inside the same outline.
     await userEvent.click(button)
     const promptElement = found(canvasElement, '[data-plus] .deck__asking')
-    expect(middle(promptElement.getBoundingClientRect())).toEqual(
+    await expect(middle(promptElement.getBoundingClientRect())).toEqual(
       middle(plus.getBoundingClientRect()),
     )
-    expect(getComputedStyle(found(canvasElement, '[data-plus]')).borderTopStyle).toBe('dashed')
+    await expect(getComputedStyle(found(canvasElement, '[data-plus]')).borderTopStyle).toBe(
+      'dashed',
+    )
   },
 }
 
@@ -620,27 +631,29 @@ export const WhatIsWrongWithACard: Story = {
     const getText = (card: string, selector: string): string =>
       found(canvasElement, `[data-card="${card}"] ${selector}`).textContent ?? ''
 
-    expect(getText('b8k4n2vqz6', '[data-wrong]')).toContain('not a lone wikilink')
-    expect(getText('d6q2z8hn4v', '[data-wrong]')).toContain('writes one field twice')
-    expect(getText('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
-    expect(getText('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the card model')
+    await expect(getText('b8k4n2vqz6', '[data-wrong]')).toContain('not a lone wikilink')
+    await expect(getText('d6q2z8hn4v', '[data-wrong]')).toContain('writes one field twice')
+    await expect(getText('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
+    await expect(getText('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain(
+      'not in the card model',
+    )
 
     // The card with no problems has no mark.
-    expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
-    expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(4)
+    await expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
+    await expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(4)
 
     // Two cards of one card id stand as two tiles, each carrying what is wrong
     // with it and each typed into on its own.
-    expect(getText('copied-one', '[data-wrong]')).toContain('carry the mark')
-    expect(getText('copied-again', '[data-wrong]')).toContain('carry the mark')
+    await expect(getText('copied-one', '[data-wrong]')).toContain('carry the mark')
+    await expect(getText('copied-again', '[data-wrong]')).toContain('carry the mark')
 
     const box = (card: string): HTMLTextAreaElement =>
       found(canvasElement, `[data-card="${card}"] [data-value="Answer"]`) as HTMLTextAreaElement
 
     await userEvent.type(box('copied-one'), ' and left to rot down')
 
-    expect(box('copied-one').value).toBe('Leaves and peelings and left to rot down')
-    expect(box('copied-again').value).toBe('Leaves and peelings, turned')
+    await expect(box('copied-one').value).toBe('Leaves and peelings and left to rot down')
+    await expect(box('copied-again').value).toBe('Leaves and peelings, turned')
   },
 }
 
@@ -651,21 +664,21 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
 }
 
 /** Every tile is the size of the fullest of them, and nothing inside one scrolls. */
-const measure = (canvasElement: HTMLElement, least = 3): void => {
+const measure = async (canvasElement: HTMLElement, least = 3): Promise<void> => {
   const tiles = [...canvasElement.querySelectorAll<HTMLElement>('[data-card]')]
-  expect(tiles.length).toBeGreaterThanOrEqual(least)
+  await expect(tiles.length).toBeGreaterThanOrEqual(least)
 
   const sizes = tiles.map((tile) => {
     const box = tile.getBoundingClientRect()
     return `${Math.round(box.width)}x${Math.round(box.height)}`
   })
-  expect(new Set(sizes).size).toBe(1)
+  await expect(new Set(sizes).size).toBe(1)
 
   // Nothing inside a tile is read by scrolling: not the tile, not a value.
   for (const tile of tiles) {
-    expect(tile.scrollHeight).toBeLessThanOrEqual(tile.clientHeight + 1)
+    await expect(tile.scrollHeight).toBeLessThanOrEqual(tile.clientHeight + 1)
     for (const box of tile.querySelectorAll<HTMLElement>('textarea')) {
-      expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
+      await expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
     }
   }
 }
@@ -680,15 +693,15 @@ export const Narrow: Story = {
     const deck = found(canvasElement, '.deck')
     const grid = found(canvasElement, '.deck__grid')
 
-    expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(1)
-    expect(deck.scrollWidth).toBeLessThanOrEqual(deck.clientWidth + 1)
+    await expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(1)
+    await expect(deck.scrollWidth).toBeLessThanOrEqual(deck.clientWidth + 1)
 
     const box = found(canvasElement, '[data-card="c5n8q2wxjb"] [data-value="Answer"]')
 
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
-    expect(box.clientHeight).toBeGreaterThan(line * 2)
+    await expect(box.clientHeight).toBeGreaterThan(line * 2)
 
-    expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
-    measure(canvasElement, 2)
+    await expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
+    await measure(canvasElement, 2)
   },
 }

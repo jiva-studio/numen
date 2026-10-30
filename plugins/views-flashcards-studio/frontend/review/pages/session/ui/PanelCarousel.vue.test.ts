@@ -13,9 +13,9 @@ import type { PanelPlace } from '../model/carousel'
  */
 const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
-    //     // The parent handles the event by setting the prop, so the parent owns
-    //     // the position. A strip without a listener keeps its own position.
-    props: { at: place, 'onUpdate:at': () => {} },
+    // The parent handles the event by setting the prop, so the parent owns
+    // the position. A strip without a listener keeps its own position.
+    props: { at: place, 'onUpdate:at': () => undefined },
     slots: {
       before: '<p>the reading</p>',
       default: '<p>the card</p>',
@@ -29,9 +29,9 @@ const strip = (place: PanelPlace = 'here') => {
     value: 220,
     configurable: true,
   })
-  window_.setPointerCapture = () => {}
-  //   // The widths are only known now, so the strip is snapped to its stop the way a
-  //   // resize snaps it.
+  window_.setPointerCapture = () => undefined
+  // The widths are only known now, so the strip is snapped to its stop the way a
+  // resize snaps it.
   window.dispatchEvent(new Event('resize'))
   return { one, window_ }
 }
