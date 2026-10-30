@@ -29,7 +29,7 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	var loads atomic.Int32
 	var received []string
-	r.Register(func(libPath string) { received = append(received, libPath) })
+	r.Register(func(libPath string) error { received = append(received, libPath); return nil })
 	load := func(libPath string) (*fakeEngine, error) {
 		loads.Add(1)
 		return &fakeEngine{libPath: libPath}, nil
@@ -134,8 +134,27 @@ func TestHasRegistrationIsTrueOnceAHookIsRegistered(t *testing.T) {
 	if r.HasRegistration() {
 		t.Error("a new runtime has a registration")
 	}
-	r.Register(func(string) {})
+	r.Register(func(string) error { return nil })
 	if !r.HasRegistration() {
 		t.Error("a registered hook is not seen")
+	}
+}
+
+func TestOpenFailsAndRecordsNothingWhenAHookFails(t *testing.T) {
+	var r Runtime[*fakeEngine]
+	hookErr := errors.New("bind failed")
+	r.Register(func(string) error { return hookErr })
+	load := func(libPath string) (*fakeEngine, error) { return &fakeEngine{libPath: libPath}, nil }
+
+	_, _, err := r.Open(t.Context(), "lib", load)
+
+	if !errors.Is(err, hookErr) {
+		t.Fatalf("Open error = %v, want %v", err, hookErr)
+	}
+	if r.IsAvailable("") {
+		t.Error("the runtime is available after a failed hook")
+	}
+	if engine, path := r.GetLoaded(); engine != nil || path != "" {
+		t.Errorf("GetLoaded = %v, %q after a failed hook", engine, path)
 	}
 }

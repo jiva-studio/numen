@@ -10,12 +10,7 @@ import (
 )
 
 func init() {
-	Register(func(libPath string) {
-		if err := initGraphOptimization(libPath); err != nil {
-			// setGraphOptimizationLevel repeats the initialization and returns its error to the caller.
-			return
-		}
-	})
+	Register(initGraphOptimization)
 }
 
 type graphOptimization struct {

@@ -3,6 +3,7 @@ package onnx
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -20,14 +21,15 @@ type Runtime[E any] struct {
 	mu      sync.Mutex
 	engine  E
 	libPath string
-	hooks   []func(libPath string)
+	hooks   []func(libPath string) error
 	opening chan struct{}
 	loaded  atomic.Bool
 }
 
 // Open returns the engine of this process, made from the library at by load
 // the first time it succeeds. Every hook registered runs once, with the
-// library, in the same step that records the engine.
+// library, in the same step that records the engine. A hook that fails fails
+// the open with the error of every failing hook, and nothing is recorded.
 func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath string) (E, error)) (E, string, error) {
 	var none E
 	for {
@@ -54,7 +56,7 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 
 		r.mu.Lock()
 		if err == nil {
-			r.record(engine, libPath)
+			err = r.record(engine, libPath)
 		}
 		r.opening = nil
 		r.mu.Unlock()
@@ -75,13 +77,20 @@ func (r *Runtime[E]) load(libPath string, load func(libPath string) (E, error)) 
 	return load(libPath)
 }
 
-// record keeps the engine and runs every hook. The lock is the caller's.
-func (r *Runtime[E]) record(engine E, libPath string) {
-	r.engine, r.libPath = engine, libPath
+// record runs every hook and keeps the engine when none fails. The lock is the caller's.
+func (r *Runtime[E]) record(engine E, libPath string) error {
+	var failures []error
 	for _, hook := range r.hooks {
-		hook(libPath)
+		if err := hook(libPath); err != nil {
+			failures = append(failures, err)
+		}
 	}
+	if err := errors.Join(failures...); err != nil {
+		return fmt.Errorf("bind the onnx runtime %s: %w", libPath, err)
+	}
+	r.engine, r.libPath = engine, libPath
 	r.loaded.Store(true)
+	return nil
 }
 
 // Register adds a hook that runs once with the library the runtime is opened
@@ -89,7 +98,7 @@ func (r *Runtime[E]) record(engine E, libPath string) {
 //
 // A hook runs under the runtime's lock and works only with the path it is
 // given; it calls no method of this Runtime.
-func (r *Runtime[E]) Register(hook func(libPath string)) {
+func (r *Runtime[E]) Register(hook func(libPath string) error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.hooks = append(r.hooks, hook)

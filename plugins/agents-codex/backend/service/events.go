@@ -20,11 +20,11 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 	switch {
 	case evType == "item.completed" && item["type"] == "agent_message":
 		if text := getString(item, "text"); text != "" {
-			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
+			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text}})
 		}
 	case evType == "item.started" && item["type"] == "mcp_tool_call":
 		r.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ToolCall{
+			Step: &agentrun.AskAgentResponseToolCall{
 				ToolCall: &agentrun.ToolCall{
 					Tool:   getToolName(item),
 					About:  getToolArguments(item),
@@ -38,7 +38,7 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 		})
 	case evType == "item.completed" && item["type"] == "mcp_tool_call":
 		r.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ToolFinished{
+			Step: &agentrun.AskAgentResponseToolFinished{
 				ToolFinished: &agentrun.ToolFinished{},
 			},
 		})

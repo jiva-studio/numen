@@ -11,13 +11,14 @@ import (
 
 // mountMethods mounts the methods of the numen.epub service on s. A method works the vault the
 // Numen-Vault header of its request names.
-func mountMethods(s *server.Server, books *BookServer) {
+func mountMethods(s *server.Server, books *BookServer) error {
 	a := s.NewAPI(api.Service)
 	server.Handle(a, "GetBook", withVault(books.GetBook))
 	server.Handle(a, "ReadBookMarkup", withVault(books.ReadBookMarkup))
 	server.Handle(a, "ReadBookEntry", withVault(books.ReadBookEntry))
 	server.Handle(a, "GetCfi", withVault(books.GetCfi))
 	server.Handle(a, "FindOffset", withVault(books.FindOffset))
+	return a.Err()
 }
 
 // withVault returns fn with the vault of the request header in its context and its failures as API

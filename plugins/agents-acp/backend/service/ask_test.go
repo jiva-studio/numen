@@ -124,12 +124,12 @@ func TestAskAgentReportsTheToolCallsOfTheAgent(t *testing.T) {
 	var steps []string
 	for stream.Receive() {
 		switch step := stream.Msg().GetStep().(type) {
-		case *agentrun.AskAgentResponse_ToolCall:
+		case *agentrun.AskAgentResponseToolCall:
 			call := step.ToolCall
 			steps = append(steps, fmt.Sprintf("call %s %s %s %s %s", call.GetCall(), call.GetTool(), call.GetKind(), call.GetAbout(), call.GetPath()))
-		case *agentrun.AskAgentResponse_ToolFinished:
+		case *agentrun.AskAgentResponseToolFinished:
 			steps = append(steps, "finished")
-		case *agentrun.AskAgentResponse_Text:
+		case *agentrun.AskAgentResponseText:
 			steps = append(steps, "text")
 		}
 	}

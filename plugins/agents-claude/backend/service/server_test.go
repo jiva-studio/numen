@@ -178,15 +178,15 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 // wordStep words one step of a run.
 func wordStep(msg *agentrun.AskAgentResponse) string {
 	switch s := msg.GetStep().(type) {
-	case *agentrun.AskAgentResponse_ModelStarted:
+	case *agentrun.AskAgentResponseModelStarted:
 		return "model_started"
-	case *agentrun.AskAgentResponse_ToolCall:
+	case *agentrun.AskAgentResponseToolCall:
 		return "tool_call:" + s.ToolCall.GetTool()
-	case *agentrun.AskAgentResponse_ToolFinished:
+	case *agentrun.AskAgentResponseToolFinished:
 		return "tool_finished"
-	case *agentrun.AskAgentResponse_Text:
+	case *agentrun.AskAgentResponseText:
 		return "said:" + s.Text
-	case *agentrun.AskAgentResponse_Stopped:
+	case *agentrun.AskAgentResponseStopped:
 		return "stopped:" + s.Stopped
 	}
 	return ""

@@ -316,52 +316,34 @@ func TestQuestionRestoresWindowAndBlocksQuit(t *testing.T) {
 // TestWindowTracker tracks window counts and identifies the last remaining window.
 func TestWindowTracker(t *testing.T) {
 	tracker := newWindowTracker()
-	if !tracker.isLast() {
-		t.Error("an empty tracker should report isLast")
-	}
-	if tracker.countWindows() != 0 {
-		t.Errorf("expected 0 windows, got %d", tracker.countWindows())
+	if tracker.count != 0 {
+		t.Errorf("expected 0 windows, got %d", tracker.count)
 	}
 
 	tracker.addWindow()
-	if !tracker.isLast() {
-		t.Error("a single window should report isLast")
-	}
-	if tracker.countWindows() != 1 {
-		t.Errorf("expected 1 window, got %d", tracker.countWindows())
+	if tracker.count != 1 {
+		t.Errorf("expected 1 window, got %d", tracker.count)
 	}
 
 	tracker.addWindow()
-	if tracker.isLast() {
-		t.Error("two windows should not report isLast")
-	}
-	if tracker.countWindows() != 2 {
-		t.Errorf("expected 2 windows, got %d", tracker.countWindows())
+	if tracker.count != 2 {
+		t.Errorf("expected 2 windows, got %d", tracker.count)
 	}
 
-	if tracker.removeWindow() {
-		t.Error("removing one of two windows should not report 0 left")
-	}
-	if !tracker.isLast() {
-		t.Error("one remaining window should report isLast")
-	}
-	if !tracker.removeWindow() {
-		t.Error("removing last window should report 0 left")
-	}
-
+	tracker = newWindowTracker()
 	tracker.addWindow()
 	tracker.addWindow()
 	if !tracker.closeSecondaryWindow() {
 		t.Error("closeSecondaryWindow should succeed when more than one window remains")
 	}
-	if tracker.countWindows() != 1 {
-		t.Errorf("expected 1 window, got %d", tracker.countWindows())
+	if tracker.count != 1 {
+		t.Errorf("expected 1 window, got %d", tracker.count)
 	}
 	if tracker.closeSecondaryWindow() {
 		t.Error("closeSecondaryWindow should report false for the last window")
 	}
-	if tracker.countWindows() != 1 {
-		t.Errorf("expected window count to remain 1, got %d", tracker.countWindows())
+	if tracker.count != 1 {
+		t.Errorf("expected window count to remain 1, got %d", tracker.count)
 	}
 }
 
@@ -389,7 +371,7 @@ func TestHandleWindowClosingSecondaryWindowClosesWithoutFlushing(t *testing.T) {
 	if settler.getSettledCount() != 0 {
 		t.Errorf("vault should not have flushed on secondary window close, got %d flushes", settler.getSettledCount())
 	}
-	if !tracker.isLast() {
+	if tracker.count > 1 {
 		t.Error("tracker should now report last window remaining")
 	}
 

@@ -15,7 +15,7 @@ func dialEndpoint(t *testing.T, served *endpoint) net.Conn {
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn, err := net.Dial("tcp", address.Host)
+	conn, err := (&net.Dialer{}).DialContext(t.Context(), "tcp", address.Host)
 	if err != nil {
 		t.Fatal(err)
 	}

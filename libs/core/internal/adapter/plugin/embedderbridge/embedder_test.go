@@ -44,7 +44,10 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	if d := s.dimensions.Load(); d > 0 {
 		dims = d
 	}
-	hint, _ := s.floorHint.Load().(float64)
+	hint := 0.0
+	if v, ok := s.floorHint.Load().(float64); ok {
+		hint = v
+	}
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
 		Name:        name,
 		Dimensions:  dims,

@@ -73,7 +73,9 @@ const ServiceName = "numen.flashcards"
 
 // Mount registers the API, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
-	mountAPI(s.NewAPI(ServiceName), b.Cards(), b.Presets(), b.Review())
+	if err := mountAPI(s.NewAPI(ServiceName), b.Cards(), b.Presets(), b.Review()); err != nil {
+		return err
+	}
 	registry, err := b.Tools()
 	if err != nil {
 		return err
@@ -157,8 +159,9 @@ type ReviewAPI interface {
 	ReviewStatsAPI
 }
 
-// mountAPI mounts every method of the three groups on the API.
-func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI ReviewAPI) {
+// mountAPI mounts every method of the three groups on the API and returns the first failure to
+// mount one.
+func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI ReviewAPI) error {
 	handle(a, "ListCardModels", cardsAPI.ListCardModels)
 	handle(a, "CreateCardModel", cardsAPI.CreateCardModel)
 	handle(a, "ReadCardModel", cardsAPI.ReadCardModel)
@@ -184,6 +187,7 @@ func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI
 	handle(a, "ListReviewDays", reviewAPI.ListReviewDays)
 	handle(a, "GetDeckNeighbourhood", reviewAPI.GetDeckNeighbourhood)
 	handle(a, "GetVaultDeckPreset", reviewAPI.GetVaultDeckPreset)
+	return a.Err()
 }
 
 // handle mounts a unary method. A body that decodes to null is an empty request, and every

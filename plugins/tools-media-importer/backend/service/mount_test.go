@@ -3,13 +3,13 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
@@ -28,7 +28,7 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 	defer web.Close()
 	url := web.URL + "/" + api.Service + "/" + api.MethodGetLink
 
-	post := func(token string) *http.Response {
+	post := func(token string) (int, []byte) {
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, strings.NewReader(`{"path":"notes/plain.txt"}`))
 		if err != nil {
 			t.Fatal(err)
@@ -40,20 +40,28 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cleanup.CloseAfter(t, res.Body)
-		return res
+		defer func() {
+			if closeErr := res.Body.Close(); closeErr != nil {
+				t.Error(closeErr)
+			}
+		}()
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res.StatusCode, data
 	}
 
-	if res := post(""); res.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("GetLink without the token = %d, want 401", res.StatusCode)
+	if status, _ := post(""); status != http.StatusUnauthorized {
+		t.Fatalf("GetLink without the token = %d, want 401", status)
 	}
-	res := post("linked-token")
+	status, data := post("linked-token")
 	var failure server.APIError
-	if err := json.NewDecoder(res.Body).Decode(&failure); err != nil {
+	if err := json.Unmarshal(data, &failure); err != nil {
 		t.Fatal(err)
 	}
-	if res.StatusCode != http.StatusNotFound || failure.Code != server.CodeNotFound {
-		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", res.StatusCode, failure)
+	if status != http.StatusNotFound || failure.Code != server.CodeNotFound {
+		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", status, failure)
 	}
 }
 
