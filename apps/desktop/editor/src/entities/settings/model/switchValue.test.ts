@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { createSettingsStore } from './store'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -21,7 +22,7 @@ describe('settings store', () => {
         await sleep(100) // the plugin host applies the change
       },
     }
-    const store = createSettingsStore(core, { unturned: 'u', unreadSettings: 'r' }, () => {})
+    const store = createSettingsStore(core, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
     await store.start()
     const values: unknown[] = []
     watch(
@@ -29,10 +30,15 @@ describe('settings store', () => {
       (v) => values.push(v),
       { flush: 'sync' },
     )
-    const poll = setInterval(() => void store.start(), 20)
+    const failures: unknown[] = []
+    const poll = setInterval(
+      () => runInBackground(store.start(), (error) => failures.push(error)),
+      20,
+    )
     await store.writeSetting(AT, false)
     await sleep(300)
     clearInterval(poll)
     expect(values).toEqual([false])
+    expect(failures).toEqual([])
   })
 })
