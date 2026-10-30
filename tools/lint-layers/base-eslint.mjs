@@ -765,6 +765,10 @@ export function createBaseConfig(dirname, options = {}) {
               '@typescript-eslint/no-floating-promises': 'error',
               '@typescript-eslint/no-misused-promises': 'error',
               '@typescript-eslint/await-thenable': 'error',
+              '@typescript-eslint/switch-exhaustiveness-check': [
+                'error',
+                { considerDefaultExhaustiveForUnions: true },
+              ],
             }
           : {}),
         '@typescript-eslint/no-unused-vars': [
