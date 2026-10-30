@@ -145,6 +145,7 @@ var (
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
 	ErrInvalidPlayback        = pluginport.ErrInvalidPlayback
 	ErrInvalidReader          = pluginport.ErrInvalidReader
+	ErrInvalidSettingsView    = pluginport.ErrInvalidSettingsView
 	ErrInvalidRuntime         = pluginport.ErrInvalidRuntime
 	ErrInvalidSecret          = pluginport.ErrInvalidSecret
 	ErrInvalidService         = pluginport.ErrInvalidService
@@ -169,6 +170,4 @@ var (
 	PluginActivationEvents    = pluginport.PluginActivationEvents
 	PluginCapabilities        = pluginport.PluginCapabilities
 	PluginPermissions         = pluginport.PluginPermissions
-	ReadManifest              = pluginport.ReadManifest
-	SetManifestDecoder        = pluginport.SetManifestDecoder
 )

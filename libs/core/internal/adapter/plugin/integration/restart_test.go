@@ -20,9 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // restartedPlugin responds to every service a bridge calls, and counts the
@@ -81,7 +81,7 @@ type restartingLauncher struct {
 	servers []*httptest.Server
 }
 
-func (l *restartingLauncher) launch(ctx context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+func (l *restartingLauncher) launch(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 	cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err

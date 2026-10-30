@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // contentTypeTable gives a file the type of its name where no plugin brings one.
@@ -35,7 +35,7 @@ type contentTypeCache struct {
 
 // contentTypeLookup is the types the enabled plugins bring, over the table.
 type contentTypeLookup struct {
-	plugins []manifestfile.DiscoveredPlugin
+	plugins []manifest.Discovered
 	// brought is the type each extension an enabled plugin brings gives a file, by the plugin of the
 	// lowest id.
 	brought map[string]domain.ContentType
@@ -72,7 +72,7 @@ func (h *Host) ListExtensions(mask domain.ContentType) []string {
 func (h *Host) getLookupLocked() contentTypeLookup {
 	lookup := contentTypeLookup{brought: map[string]domain.ContentType{}, table: h.contentTypes}
 	if !h.safeMode {
-		lookup.plugins = slices.DeleteFunc(h.getPluginsInOrderLocked(), func(p manifestfile.DiscoveredPlugin) bool {
+		lookup.plugins = slices.DeleteFunc(h.getPluginsInOrderLocked(), func(p manifest.Discovered) bool {
 			return !h.isPluginEnabledLocked(p.Manifest.ID)
 		})
 	}
@@ -194,7 +194,7 @@ func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []plugi
 
 // isOpeningFileLocked reports whether the event is a window opening a file whose type a reader or
 // the text input of the plugin takes, and the plugin has a backend to start.
-func (h *Host) isOpeningFileLocked(p manifestfile.DiscoveredPlugin, event string) bool {
+func (h *Host) isOpeningFileLocked(p manifest.Discovered, event string) bool {
 	extension, ok := strings.CutPrefix(event, eventFilePrefix)
 	if !ok || extension == "" {
 		return false

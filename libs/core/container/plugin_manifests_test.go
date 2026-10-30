@@ -3,6 +3,7 @@ package container
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -50,7 +51,7 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 		if err != nil {
 			t.Fatal(err)
 		}
-		parsed, err := pluginport.ReadManifest(strings.NewReader(string(raw)))
+		parsed, err := manifestjson.Read(strings.NewReader(string(raw)))
 		if err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}

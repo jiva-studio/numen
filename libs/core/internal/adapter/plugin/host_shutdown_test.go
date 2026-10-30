@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -149,7 +148,7 @@ func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 	manifest := pluginport.PluginManifest{ID: "org.example.samples", ContentTypes: []pluginport.PluginContentType{
 		{Type: "application/x-example-sample", Globs: []string{"*.sample"}},
 	}}
-	host.plugins[manifest.ID] = manifestfile.DiscoveredPlugin{Manifest: manifest}
+	host.plugins[manifest.ID] = pluginport.DiscoveredPlugin{Manifest: manifest}
 
 	if got := host.GetContentType("samples/Verbs.SAMPLE"); got != "application/x-example-sample" {
 		t.Fatalf("GetContentType = %q; want the type the enabled plugin brings", got)
@@ -174,7 +173,7 @@ func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
+		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
 	getReason := func(capability string) pluginport.UnavailableReason {
 		t.Helper()
@@ -222,7 +221,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost("desktop.editor")
-	host.plugins["md.numen.a"] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
+	host.plugins["md.numen.a"] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
@@ -241,11 +240,11 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
+		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
-	host.SetLauncher(func(ctx context.Context, p manifestfile.DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p pluginport.DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "a.failing" {
 			return nil, nil, errors.New("exec format error")
 		}

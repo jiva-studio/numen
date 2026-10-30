@@ -19,9 +19,9 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 type mockEmbeddingServer struct {
@@ -105,7 +105,7 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatalf("mkdir failed: %v", err)
 	}
 
-	manifest := `{
+	manifestText := `{
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
@@ -117,7 +117,7 @@ func TestEmbedderBridge(t *testing.T) {
 			"serviceName": "numen.v1.EmbeddingService"
 		}
 	}`
-	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -135,7 +135,7 @@ func TestEmbedderBridge(t *testing.T) {
 		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
