@@ -68,7 +68,7 @@ async function activateEntry(
     }
 
     const lifecycle: PluginLifecycle = {
-      activate: activate ?? (() => {}),
+      activate: activate ?? (() => undefined),
       ...(deactivate ? { deactivate } : {}),
     }
 
@@ -172,7 +172,8 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
       deps.fetch ??
       ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),
     importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
-    reportError: deps.onError ?? (() => {}),
+    // Without a reporter the failure is already recorded in the failures map.
+    reportError: deps.onError ?? (() => undefined),
   }
 }
 
@@ -245,12 +246,18 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
       id,
     )
 
+  const activateInBackground = (id: string): void => {
+    activatePlugin(id).catch((error: unknown) => {
+      deps.onError?.(id, error)
+    })
+  }
+
   return {
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
       if (hasStarted) {
         listen(id)
-        if (isEnabled(id)) void activatePlugin(id)
+        if (isEnabled(id)) activateInBackground(id)
       }
     },
     trackPlugins: async (ids: readonly string[]): Promise<void> => {

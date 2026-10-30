@@ -15,7 +15,7 @@ function registerModules(
 
 describe('createPluginLoader', () => {
   function createMockHost(): LoaderHost & {
-    triggerSettingChange: (pluginId: string, key: string, value: unknown) => void
+    triggerSettingChange: (pluginId: string, key: string, value: unknown) => Promise<void>
     settings: Map<string, unknown>
   } {
     const contexts = new Map<string, PluginContext>()
@@ -315,7 +315,7 @@ describe('createPluginLoader catalog manifests', () => {
     } as unknown as LoaderHost
     const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
     const loader = registerModules(createPluginLoader({ host }), {
-      'cat.plugin': async () => ({ activate: () => {} }),
+      'cat.plugin': async () => ({ activate: () => undefined }),
     })
     loader.registerPluginManifest('cat.plugin', manifest)
     await loader.activatePlugin('cat.plugin')
@@ -334,7 +334,11 @@ describe('createPluginLoader failures, order and toggles', () => {
       onSettingChange: vi.fn(
         (id: string, _key: string, handler: (value: unknown) => void | Promise<void>) => {
           listeners.set(id, handler)
-          return { dispose: () => void listeners.delete(id) }
+          return {
+            dispose: () => {
+              listeners.delete(id)
+            },
+          }
         },
       ),
     } as unknown as LoaderHost
@@ -477,7 +481,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       createPluginLoader({
         host,
       }),
-      { p: async () => ({ activate: () => {} }) },
+      { p: async () => ({ activate: () => undefined }) },
     )
     await loader.start()
     await loader.trackPlugins(['p'])
@@ -501,7 +505,7 @@ describe('createPluginLoader failures, order and toggles', () => {
         }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
-        return { activate: () => {} }
+        return { activate: () => undefined }
       },
     })
     await loader.start()
@@ -523,7 +527,7 @@ describe('createPluginLoader failures, order and toggles', () => {
         }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
-        return { activate: () => {} }
+        return { activate: () => undefined }
       },
     })
     await loader.activatePlugin('dyn')

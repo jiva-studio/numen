@@ -130,7 +130,8 @@ describe('createAgentPort', () => {
       async *askAgent() {
         yield create(AskAgentResponseSchema, { step: { case: 'text', value: 'Hey!' } })
         yield create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'done' } })
-        await new Promise<void>(() => {})
+        // A step that never settles: the port must end the stream at the stopped step.
+        await new Promise<void>(() => undefined)
       },
       async finishConversation() {
         return {}
@@ -166,7 +167,7 @@ describe('the depth of reasoning', () => {
   const ask = async (reasoning?: string) => {
     const { agent, requests } = service([])
     const port = createAgentPort(agent)
-    for await (const step of port.ask({
+    for await (const _ of port.ask({
       question: 'why?',
       focus: '',
       conversation: 'one',
@@ -174,8 +175,9 @@ describe('the depth of reasoning', () => {
       agentId: 'alpha',
       modelId: 'deep',
       ...(reasoning === undefined ? {} : { reasoning }),
-    }))
-      void step
+    })) {
+      // The port is read to the end; the request is checked by the caller.
+    }
     return requests[0]?.request
   }
 
@@ -193,14 +195,15 @@ describe('the context of a question', () => {
   const ask = async (context?: Record<string, string>) => {
     const { agent, requests } = service([])
     const port = createAgentPort(agent)
-    for await (const step of port.ask({
+    for await (const _ of port.ask({
       question: 'what is this card?',
       focus: '',
       conversation: 'one',
       signal: new AbortController().signal,
       ...(context === undefined ? {} : { context }),
-    }))
-      void step
+    })) {
+      // The port is read to the end; the request is checked by the caller.
+    }
     return requests[0]?.request
   }
 
@@ -220,14 +223,15 @@ describe('the vault of a question', () => {
   const ask = async (vault?: string) => {
     const { agent, requests } = service([])
     const port = createAgentPort(agent)
-    for await (const step of port.ask({
+    for await (const _ of port.ask({
       question: 'what is this card?',
       focus: '',
       conversation: 'one',
       signal: new AbortController().signal,
       ...(vault === undefined ? {} : { vault }),
-    }))
-      void step
+    })) {
+      // The port is read to the end; the request is checked by the caller.
+    }
     return requests[0]?.request
   }
 

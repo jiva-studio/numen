@@ -43,7 +43,7 @@ export function getCandidates(files: readonly string[]): string[] {
 export async function getUtilityCss(candidates: readonly string[]): Promise<string> {
   const compiler = await compile(`@import ${JSON.stringify(THEME)};`, {
     base: dirname(THEME),
-    onDependency: () => {},
+    onDependency: () => undefined,
   })
   return getNormalCss(compiler.build([...candidates]))
 }

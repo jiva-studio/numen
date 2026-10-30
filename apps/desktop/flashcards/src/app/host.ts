@@ -35,7 +35,8 @@ export interface WindowTab {
   readonly scope: EffectScope
 }
 
-const NOTHING: Disposable = { dispose: () => {} }
+// The disposable of a subscription that holds no resource.
+const NOTHING: Disposable = { dispose: () => undefined }
 
 /** The notices of one plugin, in the window's one list. */
 export const createPluginNotices = (queue: NoticeQueue, pluginId: string): NoticeHost => ({
@@ -127,6 +128,7 @@ export function createShellHost(agent?: AgentHost) {
       registerCommand: () => NOTHING,
       registerContextMenu: () => NOTHING,
       registerAgentProvider: () => NOTHING,
+      registerSettingsView: () => NOTHING,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)
@@ -138,8 +140,9 @@ export function createShellHost(agent?: AgentHost) {
       onSettingChange: () => NOTHING,
       onVaultChange: () => NOTHING,
       onFileSelect: () => NOTHING,
-      emitVaultChange: () => {},
-      emitFileSelect: () => {},
+      // The window raises no vault or file events of its own.
+      emitVaultChange: () => undefined,
+      emitFileSelect: () => undefined,
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
       ...(agent ? { agent } : {}),

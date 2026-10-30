@@ -65,6 +65,15 @@ function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposa
   })
 }
 
+// Calls the listener and rethrows a rejection as an uncaught error, so a failing handler stays visible.
+function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
+  Promise.resolve(listener(event)).catch((error: unknown) => {
+    queueMicrotask(() => {
+      throw error
+    })
+  })
+}
+
 const OPTIONAL_SERVICE_KEYS = [
   'workspace',
   'notes',
@@ -200,13 +209,13 @@ export function createMockPluginContext(
 
     emitVaultChange(event: VaultChangeEvent): void {
       for (const listener of vaultListeners) {
-        void listener(event)
+        notifyListener(listener, event)
       }
     },
 
     emitFileSelect(event: FileSelectEvent): void {
       for (const listener of fileSelectListeners) {
-        void listener(event)
+        notifyListener(listener, event)
       }
     },
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
 import type { PluginContext } from '../src/types'
 import { CONVERSATION } from '../src/views'
@@ -35,7 +35,7 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
   })
 
-  it('keeps a kind that says what its tabs hold, with the hooks it declares', () => {
+  it('keeps a kind that says what its tabs hold, with the hooks it declares', async () => {
     const ctx = createMockPluginContext({ pluginId: 'graph-plugin' })
     const navigated: string[] = []
     ctx.registerTabKind<{ here: string }>({
@@ -51,7 +51,7 @@ describe('mock plugin context', () => {
 
     const [kind] = ctx.getRegisteredTabKinds()
     const state = kind?.open?.('Start.md', 'graph:1')
-    void kind?.navigate?.(state, 'Next.md', 'Next')
+    await kind?.navigate?.(state, 'Next.md', 'Next')
 
     expect(state).toStrictEqual({ here: 'Start.md' })
     expect(navigated).toStrictEqual(['Start.md -> Next.md'])
@@ -165,7 +165,7 @@ describe('mock plugin context', () => {
 
   it('cleans up all subscriptions on dispose', () => {
     const ctx = createMockPluginContext()
-    ctx.registerCommand({ id: 'c1', title: 'C1', handler: () => {} })
+    ctx.registerCommand({ id: 'c1', title: 'C1', handler: vi.fn() })
     ctx.registerReader({ id: 'r1', component: {} })
 
     expect(ctx.subscriptions.length).toBe(2)
@@ -187,10 +187,10 @@ describe('mock plugin context', () => {
   })
 
   it('forwards the provided buffers and closeTab and omits them when not provided', () => {
-    const buffers = { track: () => ({ dispose: () => {} }) } as unknown as NonNullable<
+    const buffers = { track: () => ({ dispose: vi.fn() }) } as unknown as NonNullable<
       PluginContext['buffers']
     >
-    const closeTab = () => {}
+    const closeTab = vi.fn()
 
     const ctx = createMockPluginContext({ buffers, closeTab })
 

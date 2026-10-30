@@ -41,14 +41,15 @@ describe('createWindowAgent', () => {
     const { client, requests } = createClient(async () => ({ unreachable: '' }))
     const { agent } = createWindowAgent(client, links)
 
-    for await (const step of agent.ask({
+    for await (const _ of agent.ask({
       question: 'what is this?',
       focus: 'decks/Words.md',
       conversation: 'card-0',
       signal: new AbortController().signal,
       context: { 'md.example.cards/card': 'k7' },
-    }))
-      void step
+    })) {
+      // The port is read to the end; the request is checked below.
+    }
 
     expect(requests).toMatchObject([{ context: { 'md.example.cards/card': 'k7' } }])
   })
@@ -75,7 +76,7 @@ describe('createWindowAgent', () => {
   })
 
   it('aborts the state request on dispose', () => {
-    const { client, signals } = createClient(() => new Promise<never>(() => {}))
+    const { client, signals } = createClient(() => new Promise<never>(() => undefined))
     const { dispose } = createWindowAgent(client, links)
 
     dispose()
