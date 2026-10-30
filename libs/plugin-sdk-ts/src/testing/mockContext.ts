@@ -54,16 +54,21 @@ function registerInList<T>(list: T[], item: T, subscriptions: Disposable[]): Dis
   })
 }
 
-function addSetListener<T>(
-  listeners: Set<T>,
-  handler: T,
-  subscriptions: Disposable[],
-): Disposable {
+function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposable[]): Disposable {
   listeners.add(handler)
   return addDisposable(subscriptions, {
     dispose: () => {
       listeners.delete(handler)
     },
+  })
+}
+
+// Calls the listener and rethrows a rejection as an uncaught error, so a failing handler stays visible.
+function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
+  Promise.resolve(listener(event)).catch((error: unknown) => {
+    queueMicrotask(() => {
+      throw error
+    })
   })
 }
 
@@ -197,13 +202,13 @@ export function createMockPluginContext(
 
     emitVaultChange(event: VaultChangeEvent): void {
       for (const listener of vaultListeners) {
-        void listener(event)
+        notifyListener(listener, event)
       }
     },
 
     emitFileSelect(event: FileSelectEvent): void {
       for (const listener of fileSelectListeners) {
-        void listener(event)
+        notifyListener(listener, event)
       }
     },
 

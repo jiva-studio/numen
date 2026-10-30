@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { definePlugin } from '../src/plugin'
 import { createMockPluginContext } from '../src/testing/mockContext'
 
@@ -11,7 +11,7 @@ describe('plugin lifecycle', () => {
         ctx.registerCommand({
           id: 'test.hello',
           title: 'Hello',
-          handler: () => {},
+          handler: vi.fn(),
         })
       },
       deactivate() {

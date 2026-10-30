@@ -3,7 +3,7 @@ import type { FileBuffers } from '../src/buffers'
 import { createMockBufferHost } from '../src/testing/mockBuffers'
 
 const createBuffers = (): FileBuffers => ({
-  flush: vi.fn(async () => {}),
+  flush: vi.fn(async () => undefined),
 })
 
 describe('the mock buffer host', () => {
@@ -22,7 +22,7 @@ describe('the mock buffer host', () => {
     const host = createMockBufferHost()
     const buffers = createBuffers()
     const flushed = vi.spyOn(buffers, 'flush')
-    const handler = vi.fn(async () => {})
+    const handler = vi.fn(async () => undefined)
     host.track(buffers)
     host.addFlushHandler(handler)
 
@@ -34,7 +34,7 @@ describe('the mock buffer host', () => {
 
   it('writes out no handler that was release', async () => {
     const host = createMockBufferHost()
-    const handler = vi.fn(async () => {})
+    const handler = vi.fn(async () => undefined)
     host.addFlushHandler(handler).dispose()
 
     await host.flush()
