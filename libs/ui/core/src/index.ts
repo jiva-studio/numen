@@ -35,6 +35,11 @@ export { clock } from './shared/lib/time/duration'
 
 /** A stream taken up again for as long as a window is open. */
 export { createFollower } from './shared/lib/async/stream'
+export {
+  createRequestGuard,
+  type InFlightRequest,
+  type RequestGuard,
+} from './shared/lib/async/requestGuard'
 
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
@@ -73,6 +78,17 @@ export {
 } from './shared/lib/dom/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
 export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/time/clock'
+export {
+  doc,
+  getCurrentDate,
+  getNow,
+  hasDocument,
+  hasWindow,
+  measureRect,
+  measureWindow,
+  nav,
+  win,
+} from './shared/lib/dom'
 export { createRefRegistry } from './shared/lib/dom/refs'
 export { cn } from './shared/lib/dom/classes'
 

@@ -481,8 +481,13 @@ check_quality: ## validate code quality metrics (usage: make check_quality [chec
 lint_narrative: ## reject narrative identifiers, test names and comments across the repository
 	node $(NARRATIVE)/scan.mjs . --check
 
+.PHONY: check_typecheck
+check_typecheck: lib_ui_build ## typecheck every frontend package and plugin with vue-tsc
+	npm run typecheck --workspaces --if-present
+	for dir in plugins/*/; do if [ -f "$$dir/package.json" ] && grep -q '"typecheck"' "$$dir/package.json"; then (cd "$$dir" && npm run typecheck) || exit 1; fi; done
+
 .PHONY: check_gate
-check_gate: ## run architectural and quality gates on changed files (fast pre-push gate)
+check_gate: lib_protocol_generate_check check_typecheck ## run architectural and quality gates on changed files (fast pre-push gate)
 	node $(LAYERS)/check.mjs --changed-only
 	node $(QUALITY)/check.mjs --changed-only $(opts)
 

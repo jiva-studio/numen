@@ -22,7 +22,7 @@ import (
 // numenRoot is what every module of this repository is named under.
 const numenRoot = "github.com/jiva-studio/numen/"
 
-// notesModule is the module of the note model, which plugins may name.
+// notesModule is the module of the note model, which plugins do not name.
 const notesModule = numenRoot + "libs/notes"
 
 // numenModulesDir is the folder the modules live in, relative to this package.
@@ -30,7 +30,7 @@ var numenModulesDir = filepath.Join("..", "..", "..")
 
 // getPluginDependencyRefusal returns why the plugin module mod may not depend on dep, in
 // a requirement or in an import, or "" when it may. A plugin may depend on the plugin
-// SDK, the protocol, third-party code, and its own packages.
+// SDK, the protocol, third-party code, and its own packages. It reaches notes through the SDK.
 func getPluginDependencyRefusal(mod, dep string) string {
 	switch {
 	case !strings.HasPrefix(dep, numenRoot), dep == mod, strings.HasPrefix(dep, mod+"/"):
@@ -38,13 +38,13 @@ func getPluginDependencyRefusal(mod, dep string) string {
 	case isSDK(dep), dep == wire, strings.HasPrefix(dep, wire+"/"):
 		return ""
 	case dep == notesModule, strings.HasPrefix(dep, notesModule+"/"):
-		return ""
+		return "a plugin names no package of the notes library; it reaches notes through the plugin SDK"
 	case isPlugin(dep):
 		return "a plugin names no other plugin"
 	case dep == strings.TrimSuffix(module, "/"), strings.HasPrefix(dep, module):
 		return "a plugin names no package of the core"
 	}
-	return "a plugin names only the plugin SDK, the protocol, the notes and third-party code"
+	return "a plugin names only the plugin SDK, the protocol and third-party code"
 }
 
 // getPluginDependencyRefusal defines the whole rule, so it is tested directly.
@@ -65,8 +65,11 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{sdkModule + "/vault", false},
 		{sdkModule + "/server", false},
 		{wire, false},
-		{notesModule, false},
-		{notesModule + "/domain", false},
+		{notesModule, true},
+		{notesModule + "/domain", true},
+		{notesModule + "/edit", true},
+		{numenRoot + "libs/ui/shell", true},
+		{numenRoot + "tools/lint-layers", true},
 		{wire + "/gen/numen/v1", false},
 		{"connectrpc.com/connect", false},
 		{"github.com/jiva-studio/other", false},

@@ -2,7 +2,7 @@
  * The pointer. All event and screen-pixel handling is here; what a gesture
  * *means* is computed in `arrange/drop.ts`, as a value.
  */
-import { win } from '../../../dom'
+import { win } from '@numen/ui'
 import { computed, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
 import { resolveDrop, getRelationWithoutDirection, type Drop } from '../../lib/arrange'
 import type { PlexOptions } from '../../lib/arrange'

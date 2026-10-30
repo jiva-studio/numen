@@ -19,7 +19,8 @@ const fake = vi.hoisted(() => ({
   turns: {} as Record<string, unknown>,
 }))
 
-vi.mock('@numen/ui', () => ({
+vi.mock('@numen/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@numen/ui')>()),
   onNextFrame: (run: () => void) => {
     fake.frames.push(run)
   },

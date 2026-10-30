@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { nav } from '../../../../dom'
 /**
  * The session: one card, and the four ways of answering it.
  *
@@ -7,7 +6,7 @@ import { nav } from '../../../../dom'
  * what has been written belong to the session model, and this component renders
  * them.
  */
-import { Button, KeyCap, keyChord } from '@numen/ui'
+import { Button, KeyCap, keyChord, nav } from '@numen/ui'
 
 import PanelCarousel from './PanelCarousel.vue'
 import Card from './Card.vue'

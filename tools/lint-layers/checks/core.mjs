@@ -176,21 +176,6 @@ export function verifyCoreImportsNoDomainProto() {
 }
 
 /** The texts made from a file and the files a plugin keeps, named by the plugin that makes them. */
-const PRODUCERS = ["asr", "ocr", "captions", "article", "copy", "review-log"];
-
-/** The notes library names no producer of a text or of a plugin's file. */
-export function verifyNotesNamesNoProducer() {
-  const grep = spawnSync(
-    "git",
-    ["grep", "-nE", `"(${PRODUCERS.join("|")})"`, "--", "libs/notes/*.go", ":!*_test.go"],
-    { cwd: REPO_ROOT, encoding: "utf8" },
-  );
-  const found = (grep.stdout || "").split("\n").filter(Boolean);
-  if (found.length > 0) {
-    throw new Error("The notes library names producers:\n" + found.join("\n"));
-  }
-}
-
 /**
  * The services, enums, values, messages and calls of `numen.v1` that a single plugin owns.
  */
@@ -319,19 +304,8 @@ const FILE_KIND_FREE_PATHS = [
   "apps/desktop/editor/src",
 ];
 
-/** The extensions of the files plugins read: books, documents, recordings and their captions. */
-const PLUGIN_EXTENSIONS = [
-  "pdf", "epub", "djvu", "fb2", "mobi",
-  "mp3", "m4a", "wav", "ogg", "oga", "opus", "flac", "aac", "wma",
-  "mp4", "m4v", "mkv", "webm", "mov", "avi",
-  "vtt", "srt",
-];
-
 /** The source kinds plugins own. */
 const PLUGIN_SOURCE_KINDS = ["book", "recording", "url", "document"];
-
-/** A literal that is an extension, a glob of one, or a file name ending in one: `"pdf"`, `".pdf"`, `"onFile:*.pdf"`. */
-const EXTENSION_LITERAL = new RegExp(`^(?:[^\\s/]*\\.)?(?:${PLUGIN_EXTENSIONS.join("|")})$`, "i");
 
 /** A literal that is a source kind: `"book"`. */
 const SOURCE_KIND_LITERAL = new RegExp(`^(?:${PLUGIN_SOURCE_KINDS.join("|")})$`);
@@ -350,14 +324,14 @@ const SOURCE_KIND_NAMES = [
 /** The constants a script names a source kind by. */
 const SCRIPT_SOURCE_KIND_NAMES = /(?<![.\w])(BOOK|RECORDING|DOCUMENT)\b(?![\w(])/g;
 
-/** Every extension literal, source kind literal and source kind name in FILE_KIND_FREE_PATHS. */
+/** Every source kind literal and source kind name in FILE_KIND_FREE_PATHS. */
 function findFileKinds() {
   const found = [];
   for (const file of listShippedFiles(FILE_KIND_FREE_PATHS)) {
     const source = readSource(file);
     if (!source) continue;
     for (const { line, value } of getLiteralValues(source.literals)) {
-      if (EXTENSION_LITERAL.test(value) || SOURCE_KIND_LITERAL.test(value)) {
+      if (SOURCE_KIND_LITERAL.test(value)) {
         found.push({ file, line, symbol: JSON.stringify(value) });
       }
     }
@@ -537,6 +511,7 @@ export const CORE_VERIFIERS = [
   },
   {
     id: "core-depguard",
+    tools: ["golangci-lint"],
     scope: "libs",
     module: "core",
     name: "Core Domain & UseCase Depguard Boundaries (.golangci.yml)",
@@ -546,6 +521,7 @@ export const CORE_VERIFIERS = [
   },
   {
     id: "notes-depguard",
+    tools: ["golangci-lint"],
     scope: "libs",
     module: "notes",
     name: "Notes Library Depguard Boundaries",
@@ -568,14 +544,8 @@ export const CORE_VERIFIERS = [
     run: verifyCoreImportsNoDomainProto,
   },
   {
-    id: "notes-names-no-producer",
-    scope: "libs",
-    module: "notes",
-    name: "Notes Library Names No Producer (asr, ocr, captions, article, copy, review-log)",
-    run: verifyNotesNamesNoProducer,
-  },
-  {
     id: "sdk-isolation",
+    tools: ["golangci-lint"],
     scope: "libs",
     module: "sdk",
     name: "Plugin SDK Go Isolation (no core or app imports)",

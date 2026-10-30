@@ -4,7 +4,7 @@
 import { shallowRef, watch, type Ref } from 'vue'
 import { NOTE_TYPE } from '@numen/plugin-sdk'
 import type { PlexHeading } from '../plex'
-import { createRequestGuard } from '../lib/requestGuard'
+import { createRequestGuard } from '@numen/ui'
 import { convertHeadings } from '../lib/picture'
 import type { PlexTabDeps, NoteType } from '../types'
 import type { NodeIdMap } from '../lib/nodeIdMap'

@@ -4,7 +4,7 @@
  *
  * One recording plays at a time: starting a recording replaces the one playing.
  */
-import { doc } from '../dom'
+import { doc } from '@numen/ui'
 import { readonly, ref, type Ref } from 'vue'
 import { WORDS } from '../words'
 

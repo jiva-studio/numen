@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getCurrentDate, measureRect } from '../../../dom'
+import { getCurrentDate, measureRect } from '@numen/ui'
 /**
  * Per-day review activity and the cards due on coming days, as a grid of weeks.
  *

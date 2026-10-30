@@ -3,7 +3,7 @@
  * and screen pixels is here; the relation a position evaluates to is computed
  * in `arrange/drop.ts`, as a value.
  */
-import { win } from '../../../dom'
+import { win } from '@numen/ui'
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { getDropRelation, type PlexOptions, type Size } from '../../lib/arrange'
 import { getPosition } from './gesture'

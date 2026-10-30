@@ -19,7 +19,7 @@ numen/
 │   │   ├── adapter/              # cli, index, settings, window: the adapters the core exposes
 │   │   ├── container/            # the composition root
 │   │   └── internal/             # what nothing outside core may name; adapter/plugin is the plugin adapter
-│   ├── notes/                    # Go: what a note is and how it is written, shared with the plugins
+│   ├── notes/                    # Go: what a note is and how it is written; plugins reach it through the plugin SDK
 │   │   ├── domain/               # entities, value objects, identifiers, invariants
 │   │   ├── markdown/             # reading and editing a note's file
 │   │   ├── textfile/             # the format of a text version's file
@@ -62,29 +62,30 @@ numen/
 
 ## 4. The interface hexagon & Feature-Sliced Design (FSD)
 
-The frontend is structured into **six FSD layers**:
+The window frontends (`apps/desktop/editor`, `apps/desktop/flashcards`) are structured into **five FSD layers**. There is no `widgets` layer; a part that two pages use is a feature or an entity.
 
-$$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{widgets (3)} \longrightarrow \text{pages / screens (4)} \longrightarrow \text{app (5)}$$
+$$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{pages (3)} \longrightarrow \text{app (4)}$$
 
-- **Directionality**: A module may only import from lower architectural layers and never from higher layers.
-- **Slice isolation**: A slice must not import directly from sibling slices on the same layer. Shared code must reside in a lower layer or be exposed via an explicit `@x` public interface.
+- **Directionality**: A module may only import from lower architectural layers and never from higher layers (`desktop-editor-fsd`, `desktop-flashcards-fsd`).
+- **Slice isolation**: A slice does not import from a sibling slice on the same layer. Shared code resides in a lower layer. There is no `@x` cross-import; `frontend-segments-and-entities` fails on one. A slice is reached from above through its `index.ts` alone.
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
+- **Segments**: Inside a slice the direction is `ui` → `model` → `api` → `lib`.
 
 Component architecture enforces separation of concerns:
 
 - **Pure logic**: Pure functions compute rendering data (coordinates, states, flags) with no dependencies on DOM, Vue, clock, randomness, or text measurement.
 - **Presentational views**: Views receive precomputed data and render elements without executing business calculations in templates.
-- **Platform capabilities as ports**: Clocks, `requestAnimationFrame`, viewport geometry, and media preferences must be passed as parameters with browser defaults.
+- **Platform capabilities as ports**: Clocks, `requestAnimationFrame`, viewport geometry, and media preferences are taken as parameters (§5), with browser defaults supplied by the caller.
 - **Design tokens**: Styling is exclusively driven by design tokens defined in `src/tokens/`.
 
 ## 5. Determinism
 
 In anything pure — `domain/`, the model and arithmetic modules beside a component, the text cutting and chunking:
 
-- **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected, never reached for. Time has a lifetime a test must control.
+- **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected as a clock the caller supplies, and the module that wraps the real one is the only place they appear. Time has a lifetime a test must control.
 - **Randomness is a port.** `math/rand` and `Math.random()` are passed in or seeded.
 - **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform.
-- **No error is swallowed.** An empty `catch {}` and a discarded `_ = fn()` are both forbidden. An error is handled, returned, wrapped, or ignored with a statement saying it is.
+- **No error is swallowed.** An empty `catch {}`, a discarded `_ = fn()` and a floating `void promise` are all forbidden. An error is handled, returned or wrapped.
 
 ## 6. One name for one thing
 
@@ -98,4 +99,21 @@ Equally: do not abstract before there is a second case, and do not leave a genui
 
 ## 8. Size is not a rule
 
-A file is split when it holds a second responsibility — a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. Line counts, import counts and block sizes are not limits here and are never a review finding. What is a finding is a folder that collects a kind rather than a thing: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
+File length, import counts and block sizes are not limits here and are never a review finding. The limits lint enforces measure branching, not size: cyclomatic complexity (12), nesting depth (3), parameter count (4) and the properties a composable returns (8). A function over one of them is split by responsibility.
+
+A file is split when it holds a second responsibility — a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. What is a finding is a folder that collects a kind rather than a thing: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
+
+## 9. Zero exceptions
+
+A rule has no exception. There is no `nolint`, `eslint-disable`, `@ts-ignore`, `@ts-expect-error` or `@ts-nocheck` comment, no `exclusions` or `exclude-functions` in a linter configuration, no file named in an `ignores` or `files` entry, and no list of files in a check. What a rule rejects is fixed. A scope that differs is stated by a shared property: `_test.go` files are in scope, and generated code is found by its `Code generated ... DO NOT EDIT` header. `no-suppressions` in `tools/lint-layers` fails on each marker.
+
+## 10. Rules that hold the boundaries
+
+`tools/lint-layers` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has a violation fixture in `tools/lint-layers/checks.test.mjs`.
+
+- **Plugins** (`plugins-isolation-capture`, `plugins-leakage`, `plugins-no-protocol-or-wire`, `plugins-standalone-repo`, `plugins-reach-no-app`, `plugins-reach-no-shell`, `plugins-share-no-frontend-file`): a file under `plugins/(X)/` references no other plugin; a plugin depends on the plugin SDKs, the UI library, the Go protocol module and third-party code, never on `libs/core`, `libs/notes`, the shell, the plugin host or an application, and reaches notes through the SDK. `libs/core/container/plugin_independence_test.go` states the Go dependency rule and `plugin_isolation_packages_test.go` applies it to the type-checked import graph. No file repeats a file of another plugin; shared code lives in `@numen/ui` or the plugin SDK.
+- **Permissions** (`host_permission_test.go`): the core refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
+- **Notes** (`notes-hexagon`, `notes-depguard`, `notes-names-no-producer`): `libs/notes` depends on nothing of this repository and states no word a plugin manifest states.
+- **UI** (`ui-isolation`, `ui-holds-no-plugin-view`, `ui-holds-no-shell-part`, `ui-exports-no-editor`, `shell-isolation`, `plugin-host-isolation`): `libs/ui/core` knows no domain, protocol or application; the shell reaches components through `@numen/ui`; the plugin host knows Vue and the plugin SDK only.
+- **Applications** (`apps-reach-no-plugin`, `window-names-no-plugin-kind`): an application reaches no plugin and states no plugin word.
+- **Fail-closed**: `every-path-has-a-layer` and `workspace-lists-every-module` fail on a module no layer owns and on a `go.mod` that `go.work` omits.

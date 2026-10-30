@@ -1,7 +1,7 @@
 /**
  * The links between two notes as the link inspector shows them, and the user's edits to its rows.
  */
-import { measureWindow } from '../dom'
+import { measureWindow } from '@numen/ui'
 import type { PlexRelation } from '../plex'
 import type { Neighbourhood, DirectionalLinkItem } from '../types'
 

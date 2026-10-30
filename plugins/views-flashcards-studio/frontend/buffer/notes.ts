@@ -1,7 +1,7 @@
 /**
  * Open deck and card model buffer store for flashcards studio.
  */
-import { getNow } from '../dom'
+import { getNow } from '@numen/ui'
 import { shallowReactive } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'
 import type {
