@@ -6,14 +6,18 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// Relations reads and writes the relationships between the notes of the vault.
-// The host enforces the rules of a connection: the inverse role of the record in
-// the other note, a hierarchy without cycles, and an atomic write of both notes.
-type Relations interface {
+// ConnectionReader reads the relationships between the notes of the vault.
+type ConnectionReader interface {
 	// GetConnection returns the records two notes write about each other. A note
 	// that writes none has a nil side. The empty type selects the records that
 	// carry none.
 	GetConnection(ctx context.Context, first, second, kind string) (Connection, error)
+	// ListBacklinks lists the links written in other notes that point at a note.
+	ListBacklinks(ctx context.Context, to string) ([]Backlink, error)
+}
+
+// ConnectionWriter writes the relationships between the notes of the vault.
+type ConnectionWriter interface {
 	// SaveConnection makes the records between two notes exactly the ones given,
 	// in both notes or in neither.
 	SaveConnection(ctx context.Context, c Connection) error
@@ -25,10 +29,16 @@ type Relations interface {
 	// Join makes one note write a record about another and keeps the record the
 	// other note already writes.
 	Join(ctx context.Context, from, to string, side Side) error
+}
+
+// Relations reads and writes the relationships between the notes of the vault.
+// The host enforces the rules of a connection: the inverse role of the record in
+// the other note, a hierarchy without cycles, and an atomic write of both notes.
+type Relations interface {
+	ConnectionReader
+	ConnectionWriter
 	// CreateInRelation creates a note joined to an existing one and returns its path.
 	CreateInRelation(ctx context.Context, in RelatedNote) (string, error)
-	// ListBacklinks lists the links written in other notes that point at a note.
-	ListBacklinks(ctx context.Context, to string) ([]Backlink, error)
 }
 
 var _ Relations = (*Client)(nil)

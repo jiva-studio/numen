@@ -1,17 +1,18 @@
-package note
+package query
 
 import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/edit"
 )
 
 // GetLinkAddress finds how a link names the note at a path.
 type GetLinkAddress struct {
-	names NameQueries
+	names edit.NameQueries
 }
 
-func NewGetLinkAddress(names NameQueries) *GetLinkAddress {
+func NewGetLinkAddress(names edit.NameQueries) *GetLinkAddress {
 	return &GetLinkAddress{names: names}
 }
 
@@ -21,5 +22,5 @@ func (u *GetLinkAddress) Execute(ctx context.Context, v domain.Vault, path strin
 	if u == nil || u.names == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(path)}, nil
 	}
-	return GetAddress(ctx, u.names, v.ID, path)
+	return edit.GetAddress(ctx, u.names, v.ID, path)
 }
