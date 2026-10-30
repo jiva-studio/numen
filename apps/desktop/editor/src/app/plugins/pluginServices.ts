@@ -35,7 +35,7 @@ export interface PluginServices {
 }
 
 /** What the window hands a plugin's tabs. */
-export interface WorkspaceHostDeps extends PathCommandDeps {
+export interface WorkspaceHostDeps extends Omit<PathCommandDeps, 'reportError'> {
   readonly window: {
     readonly failure: Readonly<Ref<string>>
     readonly opening: Readonly<Ref<string>>
@@ -88,7 +88,11 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),
     getToday: () => deps.today(),
-    ...createPathCommandHost({ ...deps, findFileIcon: tabOpeners.findFileIcon }),
+    ...createPathCommandHost({
+      ...deps,
+      findFileIcon: tabOpeners.findFileIcon,
+      reportError: (error) => writeMessage(formatErrorMessage(error), 'error'),
+    }),
   }
 }
 

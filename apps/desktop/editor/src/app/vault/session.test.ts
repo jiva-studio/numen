@@ -115,7 +115,9 @@ describe('the streams a window follows', () => {
   })
 
   it('follows the focus, and lets go of it on the signal', () => {
-    const focus = (async function* () {})()
+    const focus = (async function* () {
+      yield* []
+    })()
     request.watchFocus.mockReturnValue(focus)
 
     expect(sessionCore.watchFocus(signal)).toBe(focus)
@@ -123,7 +125,9 @@ describe('the streams a window follows', () => {
   })
 
   it('follows a quit requested of this window', () => {
-    const quit = (async function* () {})()
+    const quit = (async function* () {
+      yield* []
+    })()
     request.watchQuit.mockReturnValue(quit)
 
     expect(sessionCore.watchQuit(signal)).toBe(quit)

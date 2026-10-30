@@ -31,7 +31,7 @@ const setup = (load: () => Promise<void>) => {
 describe('the declared commands', () => {
   it('are read as the window starts and each time the palette opens, and not as it closes', async () => {
     isOpen.value = false
-    const load = vi.fn(async () => {})
+    const load = vi.fn(() => Promise.resolve())
     setup(load)
 
     isOpen.value = true

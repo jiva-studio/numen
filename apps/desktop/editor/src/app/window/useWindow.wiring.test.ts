@@ -96,7 +96,7 @@ beforeEach(() => {
     writer,
     log: { getWriter: vi.fn(() => writer) },
     tabLinks: { removeClosedTab: vi.fn() },
-    tabOpeners: { openFileAt: vi.fn() },
+    tabOpeners: { openFileAt: vi.fn(() => Promise.resolve()) },
     windowTabs: {
       layout: ref(null),
       tabs: ref<{ id: string; title: string }[]>([]),
@@ -116,7 +116,7 @@ beforeEach(() => {
       reached: { getTabAt: vi.fn(() => null) },
       getTitle: vi.fn(() => 'a title'),
       making: {},
-      fileFlush: { start: vi.fn() },
+      fileFlush: { start: vi.fn(() => Promise.resolve()) },
       close: vi.fn(),
     },
     display: {

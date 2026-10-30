@@ -6,6 +6,7 @@ import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import { createWindowStreams } from './useWindowStreams'
 
 /**
@@ -75,6 +76,16 @@ interface StartDisplayDeps {
   isOpen: () => boolean
 }
 
+function startStreams(streams: ReturnType<typeof createWindowStreams>, state: DisplayState): void {
+  const onError = (error: unknown) => {
+    state.failure.value = formatErrorMessage(error)
+  }
+  runInBackground(streams.follow(), onError)
+  runInBackground(streams.watch(), onError)
+  runInBackground(streams.draw(), onError)
+  runInBackground(streams.followTasks(), onError)
+}
+
 async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   const { state, ask, readInitialNote, onVaultChanged, streams, wait, isOpen } = deps
   try {
@@ -85,18 +96,12 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
       if (note) {
         state.isIndexing.value = false
         await onVaultChanged([], [])
-        void streams.follow()
-        void streams.watch()
-        void streams.draw()
-        void streams.followTasks()
+        startStreams(streams, state)
         return
       }
       if (vault.scan.error || vault.scan.isReady) {
         state.isIndexing.value = false
-        void streams.follow()
-        void streams.watch()
-        void streams.draw()
-        void streams.followTasks()
+        startStreams(streams, state)
         return
       }
       await wait(100)
@@ -142,8 +147,9 @@ export function useWindowDisplay(
   how: DisplayOptions = {},
 ) {
   const wait = how.wait ?? sleep
-  const onVaultChanged = how.onVaultChanged ?? (() => {})
-  const reload = how.reload ?? (() => {})
+  // No listener is attached by default; each callback does nothing.
+  const onVaultChanged = how.onVaultChanged ?? (() => undefined)
+  const reload = how.reload ?? (() => undefined)
   const display = useDisplayState()
   let open = true
   const abortController = new AbortController()
@@ -167,9 +173,9 @@ export function useWindowDisplay(
     onVaultChanged,
     readInitialNote,
     ask,
-    reportChange: how.reportChange ?? (() => {}),
-    travelTo: how.travelTo ?? (() => {}),
-    openFileAt: how.openFileAt ?? (() => {}),
+    reportChange: how.reportChange ?? (() => undefined),
+    travelTo: how.travelTo ?? (() => undefined),
+    openFileAt: how.openFileAt ?? (() => undefined),
   })
 
   return {

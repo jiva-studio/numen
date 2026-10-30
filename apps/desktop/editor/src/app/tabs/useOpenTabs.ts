@@ -2,6 +2,7 @@
  * What is currently open, reported to the application, and the icon each tab carries.
  */
 import { computed, ref, watch, type Component, type Ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { findTabKindIcon } from '@/entities/tab'
 import type { OpenTabs } from '@/entities/tab'
 import type { VaultPort } from '@/app/ports/vault'
@@ -16,13 +17,20 @@ export interface OpenTabsDeps {
    * and stays false in a window a tab was detached into.
    */
   isWriting?: Readonly<Ref<boolean>>
+  /** Receives a failure of the background write that the write itself did not handle. */
+  reportError: (error: unknown) => void
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
 const formatSavedState = (saved: unknown): string =>
   saved === undefined || saved === null ? '' : JSON.stringify(saved)
 
-export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTabsDeps) {
+export function useOpenTabs({
+  core,
+  windowTabs,
+  isWriting = ref(true),
+  reportError,
+}: OpenTabsDeps) {
   /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
   const isTakingText = (id: string): boolean =>
     windowTabs.getTab(id)?.kind.receiveText !== undefined
@@ -73,7 +81,7 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
     [open, isWriting],
     ([now, isOn]) => {
       if (!isOn) return
-      void flushOpenTabs(now)
+      runInBackground(flushOpenTabs(now), reportError)
     },
     { immediate: true },
   )

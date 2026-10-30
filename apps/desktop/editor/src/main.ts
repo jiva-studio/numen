@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { interceptExternalLinks } from '@numen/ui'
+import { interceptExternalLinks, runInBackground } from '@numen/ui'
 import App from './app/shell/App.vue'
 
 // The window draws its own menus. The one the webview draws carries a browser's
@@ -17,13 +17,17 @@ const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
 // current location. Links stay inside the served pages, and an external
 // address opens in the system browser.
 interceptExternalLinks((href) => {
-  void wails.then((it) => {
-    if (it?.Browser?.OpenURL) {
-      it.Browser.OpenURL(href)
-    } else {
-      window.open(href, '_blank')
-    }
-  })
+  const openInBrowser = () => window.open(href, '_blank')
+  runInBackground(
+    wails.then((it) => {
+      if (it?.Browser?.OpenURL) {
+        it.Browser.OpenURL(href)
+      } else {
+        openInBrowser()
+      }
+    }),
+    openInBrowser,
+  )
 })
 
 createApp(App).mount('#app')

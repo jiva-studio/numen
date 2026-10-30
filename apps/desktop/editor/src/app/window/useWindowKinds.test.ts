@@ -33,7 +33,7 @@ interface Graph {
 }
 
 /** A tab kind that accepts text. */
-const CHAT = { kind: 'chat', isTool: true, receiveText: () => {} }
+const CHAT = { kind: 'chat', isTool: true, receiveText: vi.fn() }
 
 const create = ({
   graph,
@@ -44,7 +44,7 @@ const create = ({
   const graphKind = {
     kind: 'graph',
     isTool: true,
-    navigate: () => {},
+    navigate: vi.fn(),
     getTarget: () => graph?.target,
   }
   const open = new Map<string, { kind: object; state: string }>([

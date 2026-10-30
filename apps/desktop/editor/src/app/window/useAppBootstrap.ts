@@ -2,6 +2,7 @@
  * Bootstraps and disposes window background processes and streams.
  */
 import { onMounted, onUnmounted } from 'vue'
+import { runInBackground } from '@numen/ui'
 
 export interface BootstrapDeps {
   loadVaults(): Promise<void>
@@ -15,6 +16,8 @@ export interface BootstrapDeps {
   closeTabs(): void
   closeSettings(): void
   closePlugins?(): void | Promise<void>
+  /** Receives the failure of a start or a close that is not awaited. */
+  reportError(error: unknown): void
 }
 
 export function useAppBootstrap(deps: BootstrapDeps) {
@@ -23,12 +26,12 @@ export function useAppBootstrap(deps: BootstrapDeps) {
     await deps.startSettings()
     await deps.startPlugins?.()
     await deps.startLayout()
-    void deps.startWindow()
+    runInBackground(deps.startWindow(), deps.reportError)
     deps.startEditing()
   })
 
   onUnmounted(() => {
-    void deps.closePlugins?.()
+    runInBackground(Promise.resolve(deps.closePlugins?.()), deps.reportError)
     deps.closeWindow()
     deps.closeEditing()
     deps.closeTabs()

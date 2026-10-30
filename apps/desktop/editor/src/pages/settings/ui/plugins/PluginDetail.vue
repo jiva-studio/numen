@@ -6,13 +6,14 @@
  */
 import { computed, ref, watch } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-import { Button, Prose, Switch } from '@numen/ui'
+import { formatErrorMessage } from '@numen/plugin-sdk'
+import { Button, Prose, runInBackground, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, isShown, write, type PluginInfo } from '@/entities/settings'
 import { formatFailedAt } from '../../lib/failures'
-import { parsePluginReadme } from '../../lib/readme'
+import { fetchPluginReadme, parsePluginReadme } from '../../lib/readme'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -99,19 +100,8 @@ async function readFileCount(): Promise<void> {
 }
 
 async function readReadme(pluginId: string): Promise<void> {
-  try {
-    if (typeof fetch !== 'function') return
-    const response = await fetch(`/plugin/${pluginId}/README.md`)
-    if (!response.ok) return
-    const contentType = response.headers?.get?.('content-type') ?? ''
-    if (contentType.includes('text/html')) return
-    const text = await response.text()
-    if (props.plugin.id === pluginId) {
-      readmeText.value = text
-    }
-  } catch {
-    // Fallback to manifest description when README cannot be fetched.
-  }
+  const text = await fetchPluginReadme(pluginId)
+  if (text !== '' && props.plugin.id === pluginId) readmeText.value = text
 }
 
 watch(
@@ -121,8 +111,10 @@ watch(
     deleteProblem.value = ''
     readmeText.value = ''
     isExpanded.value = false
-    void readFileCount()
-    void readReadme(pluginId)
+    runInBackground(
+      Promise.all([readFileCount(), readReadme(pluginId)]),
+      (error) => (deleteProblem.value = formatErrorMessage(error)),
+    )
   },
   { immediate: true },
 )

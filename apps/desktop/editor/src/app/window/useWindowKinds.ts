@@ -3,6 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { DestinationDeps } from '@/features/command-palette'
 import { agentPort } from '../plugins/agentPort'
@@ -77,7 +78,10 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),
     openFile: (path, title, line, selector) =>
-      void tabOpeners.openFile(path, title, { where: 'current', line, selector }),
+      runInBackground(
+        tabOpeners.openFile(path, title, { where: 'current', line, selector }),
+        (error) => writeMessage(formatErrorMessage(error), 'error'),
+      ),
     findFileIcon: (path) => tabOpeners.findFileIcon(path),
   }
 

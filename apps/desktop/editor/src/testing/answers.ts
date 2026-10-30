@@ -104,7 +104,7 @@ export const getFileKind = (path: string) => {
 
 /** A stream that stays open, so nothing the window follows ever ends. */
 export async function* pendingStream(): AsyncGenerator<never> {
-  yield await new Promise<never>(() => {})
+  yield await new Promise<never>(() => undefined)
 }
 
 /**

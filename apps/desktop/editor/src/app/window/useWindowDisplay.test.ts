@@ -19,6 +19,11 @@ const answer = (path: string): Neighbourhood => ({
 })
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
+/** A stream that ends without an item. */
+async function* emptyStream(): AsyncGenerator<never> {
+  yield* []
+}
+
 const waitForever = () => new Promise<never>(vi.fn())
 
 const resolved = {
@@ -45,11 +50,11 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => resolved,
     agentUnreachable: async () => '',
-    watchVaultChanges: async function* () {},
-    watchFocus: async function* () {},
+    watchVaultChanges: emptyStream,
+    watchFocus: emptyStream,
     writeOpenTabs: vi.fn(() => Promise.resolve()),
     readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
-    watchEdits: async function* () {},
+    watchEdits: emptyStream,
     watchTasks: async function* () {
       await waitForever()
     },
@@ -74,7 +79,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     choosePluginPath: vi.fn(() => Promise.resolve({ path: '', isChosen: false, problem: '' })),
     getPluginData: vi.fn(() => Promise.resolve(0)),
     deletePluginData: vi.fn(() => Promise.resolve()),
-    watchQuit: async function* () {},
+    watchQuit: emptyStream,
     reportFlush: vi.fn(() => Promise.resolve()),
     detachTab: vi.fn(() => Promise.resolve()),
     ...overrides,
@@ -767,11 +772,13 @@ describe('a vault still being read', () => {
       }),
     )
 
-    void window.start()
+    const started = window.start()
     await vi.advanceTimersByTimeAsync(0)
     expect(reads).toBe(1)
     await vi.advanceTimersByTimeAsync(100)
     window.close()
+    await vi.advanceTimersByTimeAsync(100)
+    await started
     vi.useRealTimers()
 
     expect(reads).toBe(2)

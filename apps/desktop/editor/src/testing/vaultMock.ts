@@ -92,7 +92,7 @@ vi.mock('@/app/vault', () => ({
     },
     readOpenTabs: async () => mockVaultState.savedTabs,
     watchQuit: pendingStream,
-    reportFlush: async () => {},
+    reportFlush: () => Promise.resolve(),
     detachTab: async () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
     },

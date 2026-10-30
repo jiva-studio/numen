@@ -5,6 +5,7 @@
 import { computed, watch, type Component } from 'vue'
 import { formatErrorMessage, type CommandNote, type MenuEntry } from '@numen/plugin-sdk'
 import type { WelcomeAction } from '@numen/shell'
+import { runInBackground } from '@numen/ui'
 import {
   isChord,
   findChordCommand,
@@ -185,17 +186,28 @@ export function useCommands(options: CommandsDepsOptions) {
     },
   })
 
+  const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
+
   const runCommand = (id: string, target: CommandTarget) => {
     if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
-      void getCommandNote(target.path, target.title).then((note) =>
-        pluginHost.executeCommand(id, note),
+      runInBackground(
+        getCommandNote(target.path, target.title).then((note) =>
+          pluginHost.executeCommand(id, note),
+        ),
+        reportError,
       )
       return
     }
     const invocation = commands.startCommand(id, target)
-    if (invocation) return void runInvocation(invocation, commandDeps, ANSWER_WORDS)
-    if (commands.open.value) return void palette.setOpen(false)
+    if (invocation) {
+      runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), reportError)
+      return
+    }
+    if (commands.open.value) {
+      palette.setOpen(false)
+      return
+    }
     writeMessage(commands.getObjection(id, target), 'error')
   }
 
