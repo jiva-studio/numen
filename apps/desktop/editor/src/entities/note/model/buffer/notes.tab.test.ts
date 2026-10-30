@@ -320,7 +320,7 @@ describe('the interval fires', () => {
     ])
   })
 
-  it('owes a write while one is in the air', () => {
+  it('has a write pending while one is in the air', () => {
     const next = transitionTab(tab({ editorText: 'three', pendingWrite: 'two', since: 10 }), {
       kind: 'timerFired',
     })
@@ -394,7 +394,7 @@ describe('a write answers ok', () => {
     expect(getState(next.tab)).toBe('unsaved')
   })
 
-  it('begins the write it owed', () => {
+  it('begins the pending write', () => {
     const next = transitionTab(
       tab({ editorText: 'three', pendingWrite: 'two', hasPendingWrite: true, since: 10 }),
       {
@@ -474,7 +474,7 @@ describe('a write answers changed', () => {
     expect(next.effects).toEqual([])
   })
 
-  it('drops the write that was owed', () => {
+  it('drops the pending write', () => {
     const next = transitionTab(
       tab({ editorText: 'mine', pendingWrite: 'was', hasPendingWrite: true, since: 10 }),
       { kind: 'written', answer: { kind: 'changed' } },
@@ -654,7 +654,7 @@ describe('a save is requested for', () => {
     expect(getState(next.tab)).toBe('saving')
   })
 
-  it('owes one while a write is in the air', () => {
+  it('has one pending while a write is in the air', () => {
     const next = transitionTab(tab({ editorText: 'three', pendingWrite: 'two', since: 10 }), {
       kind: 'save',
     })
@@ -713,7 +713,7 @@ describe('a file about to be renamed or removed', () => {
     expect(getState(next.tab)).toBe('saving')
   })
 
-  it('owes a write for what is unsaved behind one already in the air', () => {
+  it('has a write pending for what is unsaved behind one already in the air', () => {
     const next = transitionTab(tab({ editorText: 'three', pendingWrite: 'two', since: 10 }), {
       kind: 'flush',
     })
@@ -722,7 +722,7 @@ describe('a file about to be renamed or removed', () => {
     expect(kinds(next.effects)).toEqual(['cancelTimer'])
   })
 
-  it('owes nothing behind a write that carries everything typed', () => {
+  it('has nothing pending behind a write that carries everything typed', () => {
     const next = transitionTab(tab({ pendingWrite: 'one' }), { kind: 'flush' })
 
     expect(next.tab.hasPendingWrite).toBe(false)
@@ -762,7 +762,7 @@ describe('a file about to be renamed or removed', () => {
 })
 
 describe('a write answers an error', () => {
-  it('sticks the tab, drops what was owed, and leaves the buffer editable', () => {
+  it('sticks the tab, drops what was pending, and leaves the buffer editable', () => {
     const next = transitionTab(
       tab({ editorText: 'two', pendingWrite: 'two', hasPendingWrite: true, since: 10 }),
       {
@@ -866,7 +866,7 @@ describe('a close is requested for', () => {
     expect(getState(next.tab)).toBe('saving')
   })
 
-  it('holds a tab with a write in the air, and owes it what was typed since', () => {
+  it('holds a tab with a write in the air, and keeps what was typed since pending', () => {
     const next = transitionTab(tab({ editorText: 'three', pendingWrite: 'two', since: 10 }), {
       kind: 'close',
     })
@@ -881,7 +881,7 @@ describe('a close is requested for', () => {
     expect(next.effects).toEqual([{ kind: 'close' }])
   })
 
-  it('closes a tab that has not read its note, which owes nothing', () => {
+  it('closes a tab that has not read its note, which has nothing pending', () => {
     const next = transitionTab(tab({ savedText: null, editorText: '' }), { kind: 'close' })
 
     expect(next.effects).toEqual([{ kind: 'close' }])

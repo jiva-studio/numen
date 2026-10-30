@@ -193,7 +193,7 @@ describe('a change in the vault', () => {
 })
 
 describe('closing', () => {
-  it('writes what is owed before the note goes', async () => {
+  it('writes the unsaved changes before the note goes', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -253,7 +253,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     expect(notes.getOpenNote('Heat.md').state).toBe('clean')
   })
 
-  it('answers what a write in the air still owes before it says it has flushed', async () => {
+  it('answers the changes a write in the air still has pending before it says it has flushed', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: { quiet: 10_000, bound: 10_000 } })

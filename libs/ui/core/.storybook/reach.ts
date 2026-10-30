@@ -1,5 +1,5 @@
 /**
- * What the keyboard is owed wherever it stops, and what a stop is described
+ * What the keyboard needs wherever it stops, and what a stop is described
  * by. The walk that finds the stops is `keyboard.ts`, and needs a browser;
  * this half decides, and decides from four words.
  */

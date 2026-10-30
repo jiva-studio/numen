@@ -93,7 +93,7 @@ describe('what a deck tab notifies whoever answers for the person', () => {
   })
 })
 
-describe('what a deck tab owes the file', () => {
+describe('what a deck tab has unwritten for the file', () => {
   it('is an answer while the store holds a question for the person', () => {
     const { inside, state, kind } = createInside()
     expect(kind.isAsking?.(state)).toBe(false)

@@ -11,9 +11,9 @@ Every change puts the write off again. Two things bring one on:
 - the text has been still for 800 milliseconds;
 - the oldest unwritten change is five seconds old.
 
-Nothing changed is nothing written. `Ctrl+S` writes what is owed at the moment it is pressed, under every rule below.
+Nothing changed is nothing written. `Ctrl+S` writes the unsaved changes at the moment it is pressed, under every rule below.
 
-Closing a tab and quitting the window write what is owed and wait for it. Renaming or removing the file does the same, and that write reaches the path the tab still stands at.
+Closing a tab and quitting the window write the unsaved changes and wait for them. Renaming or removing the file does the same, and that write reaches the path the tab still stands at.
 
 A save reaches the index at once: the note is parsed again, cut again, and found by word. Its vectors are asked for once the vault has been quiet for eight seconds, and every write puts that pass off again. The cooldown is longer than the bound above, so one session at one note is embedded once.
 
@@ -173,13 +173,13 @@ A picture or an archive is reported to nobody by the watcher, so what arrived is
 
 ## Quitting with work in hand
 
-The window is asked for everything it still holds, and it answers once every tab has written what it owes.
+The window is asked for everything it still holds, and it answers once every tab has written its unsaved changes.
 
 **A tab whose save stopped is answered first.** The quit lists every stale tab and waits for the person to answer each one, with no bound. Each stands with three ways out: **keep mine**, **take the file's**, and **later**.
 
 **Later calls the quit off.** The tab leaves the list, stays `stale`, and the window stays as it was, so the next close stops on it again. What ends a question is one of the two answers and nothing else. Every asking is put to the person whole, so a note put off is drawn again the next time the window is asked to go.
 
-A page that goes with a question standing is still owed. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
+A page that goes with a question standing still has unsaved changes. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
 
 The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way.
 

@@ -544,7 +544,7 @@ describe('a curve nobody answers', () => {
 
 // A typed setting is written when the control is released. Until then the tab
 // holds the pending value and the position of the control.
-describe('what a tab still owes the file', () => {
+describe('what a tab still has unwritten for the file', () => {
   it('is written before the tab goes', async () => {
     const { state, writtenFiles, closed } = await openPresetTab()
     state.updateSetting('newADay', 4)
@@ -1238,7 +1238,7 @@ describe('a preset made', () => {
 })
 
 describe('the presets written out when the window quits', () => {
-  it('are the ones the tabs owe, written by the buffers of the window', async () => {
+  it('are the ones the tabs hold unwritten, written by the buffers of the window', async () => {
     const { state, writtenFiles, buffers } = await openPresetTab()
     state.updateSetting('newADay', 4)
 
@@ -1249,7 +1249,7 @@ describe('the presets written out when the window quits', () => {
 })
 
 describe('what the window asks of a preset tab', () => {
-  it('is to write what it owes out, and answer once it is', async () => {
+  it('is to write its unsaved changes out, and answer once they are', async () => {
     const { state, writtenFiles, kind } = await openPresetTab()
     state.updateSetting('newADay', 4)
 
@@ -1258,7 +1258,7 @@ describe('what the window asks of a preset tab', () => {
     expect(writtenFiles.at(-1)?.newADay).toBe(4)
   })
 
-  it('is to write what a preset owes out wherever its file went since the tab opened', async () => {
+  it('is to write the unsaved changes of a preset out wherever its file went since the tab opened', async () => {
     const { state, writtenFiles, kind } = await openPresetTab()
     state.updateSetting('newADay', 4)
     kind.applyPathChanges(['Beside.md'], [{ from: 'Steady.md', to: 'Beside.md' }])
@@ -1278,7 +1278,7 @@ describe('what the window asks of a preset tab', () => {
 })
 
 describe('the tab closed by the window', () => {
-  it('is left to the preset, which writes what it owes and then closes it', async () => {
+  it('is left to the preset, which writes its unsaved changes and then closes it', async () => {
     const { state, kind, closed } = await openPresetTab()
     expect(kind.kind.onClose?.(state, 'Steady.md')).toBe(false)
     await flushPromises()

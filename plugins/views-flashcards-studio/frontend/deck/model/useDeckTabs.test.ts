@@ -899,7 +899,7 @@ describe('the preset a deck is scheduled by', () => {
     expect(attached).toStrictEqual([{ deck: 'Animals.md', preset: 'Sanskrit.md', seen: 'read 1' }])
   })
 
-  it('writes what the deck owes before it writes the preset', async () => {
+  it('writes the unsaved deck changes before it writes the preset', async () => {
     const { tab, attached, written: savedFiles } = await open()
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 

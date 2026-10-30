@@ -72,7 +72,7 @@ describe('the tabs a window holds open', () => {
 })
 
 describe('a flush reported', () => {
-  it('says nothing was left where the window owed nothing', async () => {
+  it('says nothing was left where the window had nothing unsaved', async () => {
     await sessionCore.reportFlush('token-1')
 
     expect(request.reportFlush).toHaveBeenCalledWith({
