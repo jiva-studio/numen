@@ -73,7 +73,7 @@ describe('the span the sketch of a target is drawn across', () => {
 /** A place of the sketch with nothing on it but what the test names. */
 const flat = {
   retained: 0,
-  owed: 0,
+  due: 0,
   through: 0,
   canLearnEveryCard: true,
   closed: [],

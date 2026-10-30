@@ -520,12 +520,12 @@ func TestCountCardsDue_UsesScheduleCache(t *testing.T) {
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
-	first := l.countLoads(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
+	first := l.countLoads(t, func() error { _, err := l.counter.Execute(ctx, l.vault); return err })
 	if first.Rewritten != 1 {
 		t.Errorf("the first request wrote the cache %d times, want 1", first.Rewritten)
 	}
 
-	cached := l.countLoads(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
+	cached := l.countLoads(t, func() error { _, err := l.counter.Execute(ctx, l.vault); return err })
 	if cached.Consulted == 0 {
 		t.Error("a warm request never consulted the cache")
 	}
@@ -540,7 +540,7 @@ func TestStartingASessionConsultsTheScheduleCache(t *testing.T) {
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
-	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
+	if _, err := l.counter.Execute(ctx, l.vault); err != nil {
 		t.Fatal(err)
 	}
 	cached := l.countLoads(t, func() error {
@@ -561,7 +561,7 @@ func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
-	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
+	if _, err := l.counter.Execute(ctx, l.vault); err != nil {
 		t.Fatal(err)
 	}
 	cached := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
@@ -693,7 +693,7 @@ type loaded struct {
 	on          *loadCounts
 	schedules   flashcards.Schedules
 	logs        ports.LogStores
-	owed        flashcards.CountCardsDue
+	counter     flashcards.CountCardsDue
 	sat         flashcards.Session
 	review      flashcards.CountReviews
 	reviewCards int
@@ -729,7 +729,7 @@ func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 		on:        on,
 		schedules: schedules,
 		logs:      logs,
-		owed: flashcards.NewCountCardsDue(
+		counter: flashcards.NewCountCardsDue(
 			s.standings, schedules, s.presets,
 			today, now,
 		),
@@ -842,7 +842,7 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 func BenchmarkVault(b *testing.B) {
 	l := load(b, 50000, 180, 150)
 	ctx := b.Context()
-	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
+	if _, err := l.counter.Execute(ctx, l.vault); err != nil {
 		b.Fatal(err)
 	}
 	if _, err := l.review.Execute(ctx, l.vault); err != nil {
@@ -851,7 +851,7 @@ func BenchmarkVault(b *testing.B) {
 
 	b.Run("FrontDoor", func(b *testing.B) {
 		for b.Loop() {
-			if _, err := l.owed.Execute(ctx, l.vault); err != nil {
+			if _, err := l.counter.Execute(ctx, l.vault); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -967,9 +967,9 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	)
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), today, standings, presets)
-	owed := flashcards.NewCountCardsDue(standings, schedules, presets, today, func() time.Time { return saturday })
+	counter := flashcards.NewCountCardsDue(standings, schedules, presets, today, func() time.Time { return saturday })
 
-	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1000,9 +1000,9 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 		s.env.Ports.Writers, s.links, s.notes, s.scan, review.Day{}, time.Now,
 	)
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), today, s.standings, presets)
-	owed := flashcards.NewCountCardsDue(s.standings, schedules, presets, today, func() time.Time { return saturday })
+	counter := flashcards.NewCountCardsDue(s.standings, schedules, presets, today, func() time.Time { return saturday })
 
-	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	if reads["Sanskrit.md"] != 1 {
@@ -1025,9 +1025,9 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 		tallied{LogStores: s.logs, reads: reads},
 		review.NewFSRS(), today, s.standings, s.presets,
 	)
-	owed := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, today, func() time.Time { return saturday })
+	counter := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, today, func() time.Time { return saturday })
 
-	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	for name, times := range reads {

@@ -123,23 +123,23 @@ func getMedian(took []time.Duration) (time.Duration, bool) {
 // The proportion is computed in floating point: a budget in nanoseconds times
 // one deck's due count overflows an integer. Every returned share is a whole
 // number.
-func DivideBudget(budget int, owes []int) []int {
-	out := make([]int, len(owes))
+func DivideBudget(budget int, demands []int) []int {
+	out := make([]int, len(demands))
 	total := 0
-	for _, one := range owes {
+	for _, one := range demands {
 		total += one
 	}
 	if total <= 0 {
 		return out
 	}
 	if budget >= total {
-		copy(out, owes)
+		copy(out, demands)
 		return out
 	}
-	shares := make([]int, len(owes))
-	parts := make([]float64, len(owes))
+	shares := make([]int, len(demands))
+	parts := make([]float64, len(demands))
 	remaining := budget
-	for item, one := range owes {
+	for item, one := range demands {
 		exact := float64(budget) * float64(one) / float64(total)
 		out[item] = int(math.Floor(exact))
 		parts[item] = exact - float64(out[item])
@@ -149,7 +149,7 @@ func DivideBudget(budget int, owes []int) []int {
 	slices.SortStableFunc(shares, func(a, b int) int {
 		return cmp.Or(
 			cmp.Compare(parts[b], parts[a]),
-			cmp.Compare(owes[b], owes[a]),
+			cmp.Compare(demands[b], demands[a]),
 		)
 	})
 	for _, entry := range shares[:min(len(shares), remaining)] {

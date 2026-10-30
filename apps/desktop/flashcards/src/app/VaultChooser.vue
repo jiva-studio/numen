@@ -31,7 +31,7 @@ defineEmits<{ (event: 'open', vault: string): void }>()
     :version="VERSION"
     @open="$emit('open', $event)"
   >
-    <!-- What a plugin says of each vault, such as what it owes today. -->
+    <!-- What a plugin says of each vault, such as what is due in it today. -->
     <template #vault="{ vault }">
       <MountedView
         :capability="VAULT_SUMMARY"

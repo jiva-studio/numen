@@ -159,26 +159,26 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		day := drawAllowance(t)
-		owed := rapid.IntRange(0, 30).Draw(t, "owed")
+		dueCount := rapid.IntRange(0, 30).Draw(t, "dueCount")
 		unbegun := rapid.IntRange(0, 30).Draw(t, "unbegun")
 		admits := rapid.IntRange(0, 60).Draw(t, "admits")
 
 		var debt, begun int
-		for debt+begun < admits && (debt < owed || begun < unbegun) {
-			if day.IsNextCardDebt(debt, begun, debt < owed, begun < unbegun) {
+		for debt+begun < admits && (debt < dueCount || begun < unbegun) {
+			if day.IsNextCardDebt(debt, begun, debt < dueCount, begun < unbegun) {
 				debt++
 			} else {
 				begun++
 			}
 		}
-		if got, want := debt+begun, min(admits, owed+unbegun); got != want {
-			t.Fatalf("a day of %d admitting %d over %d owed and %d unbegun "+
+		if got, want := debt+begun, min(admits, dueCount+unbegun); got != want {
+			t.Fatalf("a day of %d admitting %d over %d dueCount and %d unbegun "+
 				"spent %d of itself, want %d",
-				day.Backlog, admits, owed, unbegun, got, want)
+				day.Backlog, admits, dueCount, unbegun, got, want)
 		}
-		if debt > owed || begun > unbegun {
-			t.Fatalf("a day took %d of %d owed and %d of %d unbegun",
-				debt, owed, begun, unbegun)
+		if debt > dueCount || begun > unbegun {
+			t.Fatalf("a day took %d of %d dueCount and %d of %d unbegun",
+				debt, dueCount, begun, unbegun)
 		}
 	})
 }

@@ -68,7 +68,7 @@ const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
-  owed: 0,
+  due: 0,
   through: 0,
   canLearnEveryCard: true,
   closed: [],

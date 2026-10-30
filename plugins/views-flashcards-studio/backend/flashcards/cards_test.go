@@ -448,7 +448,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	answer(t, evening, "zpqrstvwxy", 9*time.Second)
 	answer(t, evening, "3f4g5h6j7k", 4*time.Second)
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(10 * time.Hour) }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(10 * time.Hour) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -472,12 +472,12 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 			},
 		},
 	}
-	if len(owing.Presets) != len(want) {
-		t.Fatalf("the day came to %+v, want %+v", owing.Presets, want)
+	if len(counts.Presets) != len(want) {
+		t.Fatalf("the day came to %+v, want %+v", counts.Presets, want)
 	}
 	for item, one := range want {
-		if owing.Presets[item] != one {
-			t.Errorf("%q came to %+v, want %+v", one.Preset, owing.Presets[item], one)
+		if counts.Presets[item] != one {
+			t.Errorf("%q came to %+v, want %+v", one.Preset, counts.Presets[item], one)
 		}
 	}
 }
@@ -492,7 +492,7 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 		"decks/Two.md": deckOf("", 20, 100),
 	})
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,11 +502,11 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 		Budget: review.Defaults().GetAllowance(today, saturday, review.Spent{}, 0, 0).Keeps,
 		Limits: review.Defaults().GetAllowance(today, saturday, review.Spent{}, 0, 0).Limits,
 	}
-	if len(owing.Presets) != 1 {
-		t.Fatalf("the vault came to %+v, want the defaults alone", owing.Presets)
+	if len(counts.Presets) != 1 {
+		t.Fatalf("the vault came to %+v, want the defaults alone", counts.Presets)
 	}
-	if owing.Presets[0] != want {
-		t.Errorf("the defaults came to %+v, want %+v", owing.Presets[0], want)
+	if counts.Presets[0] != want {
+		t.Errorf("the defaults came to %+v, want %+v", counts.Presets[0], want)
 	}
 }
 
@@ -521,20 +521,20 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	files["Empty.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 137\n---\n\n# Empty\n"
 	s := openVault(t, files)
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var target *flashcards.PresetCardsDue
-	for item, one := range owing.Presets {
+	for item, one := range counts.Presets {
 		if one.Preset == "Empty.md" {
-			target = &owing.Presets[item]
+			target = &counts.Presets[item]
 		}
 	}
 	if target == nil {
-		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
+		t.Fatalf("the preset nothing points at is not in the count: %+v", counts.Presets)
 	}
 	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
 		t.Errorf("it came to %+v, want a preset nothing is under", *target)
@@ -556,12 +556,12 @@ func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range owing.Presets {
+	for _, one := range counts.Presets {
 		if one.Answered != 0 || one.Took != 0 {
 			t.Errorf("%q came to %+v, want a day nothing is on", one.Preset, one)
 		}
@@ -577,19 +577,19 @@ func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	// One card of one of the two decks the Sanskrit preset schedules.
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := map[string]int{"decks/Roots.md": 1, "decks/Mantras.md": 0, "decks/Terms.md": 0}
-	for _, one := range owing.Decks {
+	for _, one := range counts.Decks {
 		if one.Answered != want[one.Deck] {
 			t.Errorf("%s was answered %d today, want %d", one.Deck, one.Answered, want[one.Deck])
 		}
 	}
-	for _, one := range owing.Presets {
+	for _, one := range counts.Presets {
 		if one.Preset == "Sanskrit.md" && one.Answered != 1 {
 			t.Errorf("the preset of the two decks was answered %d today, want 1", one.Answered)
 		}
@@ -608,16 +608,16 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	s.schedules.At = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
-	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) })
+	counter := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) })
 
-	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	first := replayed
 	if first == 0 {
 		t.Fatal("the first count replayed nothing, and there is no cache to have filled")
 	}
-	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
+	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	if replayed != first {
@@ -677,13 +677,13 @@ func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 		"decks/Full.md":  deckOf("Empty", 3, 0),
 	})
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got := make(map[string][2]int, len(owing.Presets))
-	for _, one := range owing.Presets {
+	got := make(map[string][2]int, len(counts.Presets))
+	for _, one := range counts.Presets {
 		got[one.Preset] = [2]int{one.Decks, one.Cards}
 	}
 	want := map[string][2]int{"Empty.md": {2, 3}, "Unnamed.md": {0, 0}}
@@ -704,11 +704,11 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 		"decks/Empty.md": deckOf("Empty", 0, 0),
 	})
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range owing.Presets {
+	for _, one := range counts.Presets {
 		if one.Preset != "Empty.md" {
 			continue
 		}
@@ -768,7 +768,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 	answer(t, run, "card000010", 5*time.Second)
 	answer(t, run, "card000020", 5*time.Second)
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -783,15 +783,15 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 		// answered once is nowhere near.
 		"decks/Three.md": {Deck: "decks/Three.md", ReviewCards: 2, Learned: 0},
 	}
-	for _, one := range owing.Decks {
+	for _, one := range counts.Decks {
 		if one.Learned != want[one.Deck].Learned || one.ReviewCards != want[one.Deck].ReviewCards {
 			t.Errorf("%s has %d learned of %d, want %d of %d",
 				one.Deck, one.Learned, one.ReviewCards,
 				want[one.Deck].Learned, want[one.Deck].ReviewCards)
 		}
 	}
-	if len(owing.Decks) != len(want) {
-		t.Errorf("the vault came to %d decks, want %d", len(owing.Decks), len(want))
+	if len(counts.Decks) != len(want) {
+		t.Errorf("the vault came to %d decks, want %d", len(counts.Decks), len(want))
 	}
 }
 
@@ -799,13 +799,13 @@ func TestCountCardsDue_UnansweredDeckHasZeroLearned(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, one := range owing.Decks {
+	for _, one := range counts.Decks {
 		if one.Learned != 0 {
 			t.Errorf("%s has %d learned before review",
 				one.Deck, one.Learned)
@@ -824,13 +824,13 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 		"decks/One.md":   deckOf("Recall", 1, 0),
 	})
 
-	owing, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
+	counts, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, one := range owing.Decks {
+	for _, one := range counts.Decks {
 		if one.Deck == "decks/Empty.md" {
 			t.Errorf("a deck of no cards came to %+v", one)
 		}
@@ -1239,7 +1239,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 }
 
 // A card due today is not counted as upcoming, however it was answered.
-func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
+func TestACardDueTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
@@ -1254,7 +1254,7 @@ func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(got.Due) != 0 {
-		t.Errorf("a card owed today is counted as still to come: %v", got.Due)
+		t.Errorf("a card counter today is counted as still to come: %v", got.Due)
 	}
 }
 

@@ -112,7 +112,7 @@ func (u Session) Execute(
 		return SessionResult{}, err
 	}
 	holds := day.getAsking(reviewCards, schedules, u.day, now, scope)
-	if scope.IsNamed && len(holds.owed)+len(holds.newCards) == 0 {
+	if scope.IsNamed && len(holds.dueCards)+len(holds.newCards) == 0 {
 		return SessionResult{}, day.getStopError(scope.Preset)
 	}
 
@@ -122,8 +122,8 @@ func (u Session) Execute(
 	}
 
 	out := SessionResult{Queue: nil, Unwritten: assigned.Unwritten, Skipped: target.Skipped}
-	out.Queue = make([]QueuedReviewCard, 0, len(holds.owed)+len(holds.newCards))
-	for _, one := range holds.owed {
+	out.Queue = make([]QueuedReviewCard, 0, len(holds.dueCards)+len(holds.newCards))
+	for _, one := range holds.dueCards {
 		s := schedules[one.ID]
 		out.Queue = append(out.Queue, QueuedReviewCard{
 			ReviewCard: one, Schedule: s, Ahead: getIntervals(asks.policy, dueTable, one.ID, s, now),

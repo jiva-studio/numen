@@ -64,7 +64,7 @@ type Point struct {
 	// The number of review cards due on the last day the projection ran:
 	// Ahead days off under a goal of minutes or of retention, and the day the
 	// place names under a goal of a date.
-	Owed int
+	Due int
 	// Share is the fraction of cards learned by this day.
 	// IsEnough reports whether all learnable cards are learned.
 	Share    float64
@@ -273,7 +273,7 @@ func createDatePoint(ran Projection, day int) Point {
 	one := Point{
 		Reviews:  0,
 		Minutes:  ran.minutesADay(day),
-		Owed:     ran.Backlog[day],
+		Due:      ran.Backlog[day],
 		Retained: back,
 		Share:    ran.Through[day],
 		IsEnough: ran.isAllLearned(day),
@@ -400,7 +400,7 @@ func point(p Projection) Point {
 		// place of theirs falls short of one.
 		IsEnough: true,
 		Retained: back,
-		Owed:     p.Owed,
+		Due:      p.Due,
 		Share:    p.Through[len(p.Through)-1],
 		Closed:   getSessionClosed(p),
 		Short:    p.Short,

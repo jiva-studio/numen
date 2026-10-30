@@ -348,7 +348,7 @@ export interface Point {
   reviews: number
   minutes: number
   retained: number
-  owed: number
+  due: number
   through: number
   isEnough: boolean
   closed: BudgetName[]
@@ -504,14 +504,14 @@ export interface DeckCardsDue {
   unbegun: number
 }
 
-/** PresetCardsDue is what the decks of one preset owe for review and what the current day has used. */
+/** PresetCardsDue is the review count of the decks of one preset and what the current day has used. */
 export interface PresetCardsDue {
   preset: string
   title: string
   decks: number
   cards: number
-  owedDue: number
-  owedNew: number
+  pendingReviews: number
+  pendingNew: number
   reviewed: number
   /** DurationMs is the time spent reviewing in the current day in milliseconds. */
   durationMs: number

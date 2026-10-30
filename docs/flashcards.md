@@ -28,19 +28,19 @@ A card whose first field is empty is asked like any other. Its heading is empty,
 
 ## What is due
 
-A card is owed when the day holding now reaches the day its schedule falls on. **A card owed today is owed for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
+A card is due when the day holding now reaches the day its schedule falls on. **A card due today is due for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
 
 A day begins four hours past midnight, and that is `review.day_start_time` in [Settings](settings.md). Reviewing cards at one in the morning finishes the day before, not starting the next, and a boundary at midnight would split one session in two. The hour uses local time, so the review day begins and ends according to the user's schedule.
 
-A card nobody has answered is owed the first time it is asked about.
+A card nobody has answered is due the first time it is asked about.
 
-How much of what is owed a day holds — how many new cards, how many returning ones, and how long the day runs — is the preset the card's deck points at, and a deck pointing at none is held to the defaults — [Cards](cards.md).
+How much of what is due a day holds — how many new cards, how many returning ones, and how long the day runs — is the preset the card's deck points at, and a deck pointing at none is held to the defaults — [Cards](cards.md).
 
 ## The order
 
 A session runs over **the whole vault** by default, and a deck is a filter inside it. Cards due across the entire vault are reviewed together, regardless of which file each card was written in.
 
-Cards owed and answered before come first, the one waiting longest at the front, because a card left late is the one closest to being forgotten. Cards nobody has answered come after them, in the order they stand in their decks.
+Cards due and answered before come first, the one waiting longest at the front, because a card left late is the one closest to being forgotten. Cards nobody has answered come after them, in the order they stand in their decks.
 
 ## The four answers
 

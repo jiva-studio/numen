@@ -847,8 +847,8 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 		t.Errorf("the preset of no reviews was asked %d cards, want its 20",
 			got["decks/Steady.md"])
 	}
-	if owed := countQueue(sat) - unseen(sat); owed != 6 {
-		t.Errorf("the day was asked %d cards it owed, want 6", owed)
+	if dueCount := countQueue(sat) - unseen(sat); dueCount != 6 {
+		t.Errorf("the day was asked %d cards it dueCount, want 6", dueCount)
 	}
 	if got["decks/Loose.md"] != 20 {
 		t.Errorf("the deck naming no preset was asked %d cards, want its 20",
@@ -876,7 +876,7 @@ func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 }
 
 // The due count is the count the session returns: the same numbers, deck by deck.
-func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
+func TestWhatIsDueIsWhatTheSessionAsks(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md":        term,
@@ -887,18 +887,18 @@ func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
 	now := func() time.Time { return saturday }
 
 	sat := byDeck(s.sessionAt(t, today, saturday))
-	owing, err := s.newCountCardsDueAt(today, now).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, now).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Two cards under the preset that keeps two, and the ten the defaults keep.
-	if owing.New != 12 || owing.Due != 0 {
-		t.Errorf("the vault owes %d new and %d due, want 12 and 0", owing.New, owing.Due)
+	if counts.New != 12 || counts.Due != 0 {
+		t.Errorf("the vault has %d new and %d due, want 12 and 0", counts.New, counts.Due)
 	}
-	for _, one := range owing.Decks {
+	for _, one := range counts.Decks {
 		if one.New+one.Due != sat[one.Deck] {
-			t.Errorf("%s owes %d and is asked %d", one.Deck, one.New+one.Due, sat[one.Deck])
+			t.Errorf("%s has %d due and is asked %d", one.Deck, one.New+one.Due, sat[one.Deck])
 		}
 	}
 }
@@ -1266,7 +1266,7 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 // A retention edited in the middle of a day applies to the cards from that
 // moment. The cached cards from before the edit are discarded, so a session
 // returns the cards at the target retention now in force.
-func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
+func TestARetentionEditedInTheMiddleOfADayChangesWhatIsDue(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Term.md": term,
@@ -1289,7 +1289,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := countQueue(s.sessionAt(t, today, saturday)); got != 0 {
-		t.Fatalf("asking for 0.7 of the cards back, %d were owed today", got)
+		t.Fatalf("asking for 0.7 of the cards back, %d were dueCount today", got)
 	}
 
 	write(t, s, "On.md", preset("retention: 0.99\nnew_a_day: 0\nreviews_a_day: 50\n"+
@@ -1304,7 +1304,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 		t.Errorf("the target moved and the card still comes round at %v", now[on].Due)
 	}
 	if got := countQueue(s.sessionAt(t, today, saturday)); got != 3 {
-		t.Errorf("asking for 0.99 of the cards back, %d were owed today, want 3", got)
+		t.Errorf("asking for 0.99 of the cards back, %d were dueCount today, want 3", got)
 	}
 }
 
@@ -1529,22 +1529,22 @@ func TestTheBacklogShareReturnsWhatTheDayIsSpentOn(t *testing.T) {
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
 	all := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
-	if all.owed != 20 || all.newCount == 0 {
-		t.Errorf("giving the debt all of the day asked %+v, want every card owed and "+
+	if all.dueCount != 20 || all.newCount == 0 {
+		t.Errorf("giving the debt all of the day asked %+v, want every card dueCount and "+
 			"the rest of the day on new ones", all)
 	}
 	none := s0(t, newBacklogVault(t, day+"backlog: 0\n"))
-	if none.newCount != 20 || none.owed == 0 {
+	if none.newCount != 20 || none.dueCount == 0 {
 		t.Errorf("giving the debt none of the day asked %+v, want every new card and "+
-			"the rest of the day on owed ones", none)
+			"the rest of the day on dueCount ones", none)
 	}
 	// An odd day gives the extra card to the debt, so the two are never more
 	// than one apart.
 	half := s0(t, newBacklogVault(t, day+"backlog: 50\n"))
-	if half.owed-half.newCount < 0 || half.owed-half.newCount > 1 {
+	if half.dueCount-half.newCount < 0 || half.dueCount-half.newCount > 1 {
 		t.Errorf("splitting the day evenly asked %+v", half)
 	}
-	if half.owed == 0 || half.newCount == 0 {
+	if half.dueCount == 0 || half.newCount == 0 {
 		t.Errorf("splitting the day evenly left one side of it unspent: %+v", half)
 	}
 }
@@ -1559,7 +1559,7 @@ func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
 	if got := s0(t, newBacklogVault(t, day)); got != was {
 		t.Errorf("a preset naming no share asked %+v, and one naming a hundred %+v", got, was)
 	}
-	if was.owed != 20 {
+	if was.dueCount != 20 {
 		t.Errorf("the debt was not paid first: %+v", was)
 	}
 }
@@ -1582,9 +1582,9 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 
 	sat := s.sessionAt(t, today, saturday)
 	newCards := unseen(sat)
-	if owed := countQueue(sat) - newCards; owed != 2 || newCards != 20 {
-		t.Errorf("the day asked %d owed and %d new, want the two owed and its twenty new",
-			owed, newCards)
+	if dueCount := countQueue(sat) - newCards; dueCount != 2 || newCards != 20 {
+		t.Errorf("the day asked %d dueCount and %d new, want the two dueCount and its twenty new",
+			dueCount, newCards)
 	}
 }
 
@@ -1599,21 +1599,21 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 		newCards := unseen(sat)
 		// Twenty due and twenty new cards over the ten days to the target day, which is
 		// two new cards a day.
-		if owed := countQueue(sat) - newCards; owed != 20 || newCards != 2 {
-			t.Errorf("under %q the day asked %d owed and %d new, want 20 and 2",
-				share, owed, newCards)
+		if dueCount := countQueue(sat) - newCards; dueCount != 20 || newCards != 2 {
+			t.Errorf("under %q the day asked %d dueCount and %d new, want 20 and 2",
+				share, dueCount, newCards)
 		}
 	}
 }
 
 // what a session came to, of each kind.
-type session struct{ owed, newCount int }
+type session struct{ dueCount, newCount int }
 
 func s0(t *testing.T, s vaulted) session {
 	t.Helper()
 	sat := s.sessionAt(t, today, saturday)
 	newCards := unseen(sat)
-	return session{owed: countQueue(sat) - newCards, newCount: newCards}
+	return session{dueCount: countQueue(sat) - newCards, newCount: newCards}
 }
 
 // The share of the day that goes to the due cards changes the day's content only
@@ -1634,7 +1634,7 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 		elapsed[name] = make(map[int]int)
 		for _, share := range []int{100, 50, 0} {
 			one := s0(t, newBacklogVault(t, fmt.Sprintf("%sbacklog: %d\n", day, share)))
-			elapsed[name][share] = one.owed
+			elapsed[name][share] = one.dueCount
 		}
 	}
 	if elapsed["minutes"][100] == elapsed["minutes"][0] {
@@ -1951,11 +1951,11 @@ func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int
 	return 0
 }
 
-// Decks owing the same take the day in equal parts.
+// Decks counts the same take the day in equal parts.
 //
 // Adding a deck does not add to the day's work; it spreads the same work over
 // more decks.
-func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
+func TestDecksWithTheSameDueDivideTheDayEqually(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 40, 40, 40)
 	got := s.rows(t, when)
@@ -1967,13 +1967,13 @@ func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
 	}
 }
 
-// A deck owing nine times another's takes nine times the share.
-func TestADeckOwingMoreConsumesTheLargerShare(t *testing.T) {
+// A deck counts nine times another's takes nine times the share.
+func TestADeckWithMoreDueConsumesTheLargerShare(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 90, 10)
 	got := s.rows(t, when)
 	if got[deckAt(0)] != 27 || got[deckAt(1)] != 3 {
-		t.Errorf("a deck owing 90 beside one owing 10 holds %d and %d of a day of 30, and nine times the share is 27 and 3",
+		t.Errorf("a deck counts 90 beside one counts 10 holds %d and %d of a day of 30, and nine times the share is 27 and 3",
 			got[deckAt(0)], got[deckAt(1)])
 	}
 }

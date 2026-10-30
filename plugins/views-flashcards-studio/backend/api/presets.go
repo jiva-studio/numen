@@ -105,7 +105,7 @@ type Point struct {
 	Reviews  float64      `json:"reviews"`
 	Minutes  float64      `json:"minutes"`
 	Retained float64      `json:"retained"`
-	Owed     int32        `json:"owed"`
+	Due      int32        `json:"due"`
 	Through  float64      `json:"through"`
 	IsEnough bool         `json:"isEnough"`
 	Closed   []BudgetName `json:"closed"`

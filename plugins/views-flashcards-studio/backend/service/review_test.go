@@ -146,7 +146,7 @@ func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
 
 	session := startSession(t, handler, one)
 	if len(session.Cards) == 0 {
-		t.Fatal("the vault owes nothing to answer")
+		t.Fatal("the vault dueTotal nothing to answer")
 	}
 	card := session.Cards[0]
 
@@ -215,7 +215,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // A vault is answered on its own. Work done in one vault does not count toward
 // another: the two vaults share no card id, no review card and no word, so nothing
 // can pass between them by similarity.
-func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
+func TestAnAnswerInOneVaultPreservesTheOtherVaultDueCards(t *testing.T) {
 	handler, target, installation := newAPIOn(t, deck, other)
 	one, two := target[0], target[1]
 
@@ -238,7 +238,7 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 		t.Errorf("the other vault came to %+v, having come to %+v", now, was)
 	}
 	if now := findVaultCount(t, after, string(one.ID)); now.New != 0 || now.Due != 0 {
-		t.Errorf("the answered vault still owes %+v", now)
+		t.Errorf("the answered vault still dueTotal %+v", now)
 	}
 	// Nothing was written into the other vault's folder either.
 	if names := getRunFiles(t, installation.Host.Store().With(two.ID)); len(names) != 0 {
@@ -495,7 +495,7 @@ func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
 
 	session := startSession(t, handler, v)
 	if len(session.Cards) == 0 {
-		t.Fatal("the vault owes nothing to answer")
+		t.Fatal("the vault dueTotal nothing to answer")
 	}
 	card := session.Cards[0]
 	if _, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
@@ -776,11 +776,11 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 	runDays(t, handler, v, 14)
 	setNow(handler, firstMorning.AddDate(0, 0, 14))
 
-	owes := 0
+	dueTotal := 0
 	for _, one := range getVaultCount(t, handler, v).Decks {
 		for _, deck := range underSanskrit {
 			if one.Deck == deck {
-				owes += int(one.Due)
+				dueTotal += int(one.Due)
 			}
 		}
 	}
@@ -794,8 +794,8 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 	if overdue == 0 {
 		t.Fatal("got overdue == 0, want overdue > 0 for abandoned vault")
 	}
-	if overdue > owes {
-		t.Errorf("got overdue = %d, want <= %d (deck due count)", overdue, owes)
+	if overdue > dueTotal {
+		t.Errorf("got overdue = %d, want <= %d (deck due count)", overdue, dueTotal)
 	}
 
 	// The same vault under another goal is the same backlog.
@@ -883,7 +883,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 			continue
 		}
 		scopes++
-		want := int(one.OwedDue + one.OwedNew)
+		want := int(one.PendingReviews + one.PendingNew)
 		if want == 0 {
 			t.Errorf("the tile over %q offers nothing to compare", one.Preset)
 		}
@@ -906,9 +906,9 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 			due += int(rows[deck].Due)
 			newCards += int(rows[deck].New)
 		}
-		if due != int(one.OwedDue) || newCards != int(one.OwedNew) {
-			t.Errorf("deck %q: got due=%d, new=%d; want preset OwedDue=%d, OwedNew=%d",
-				one.Preset, due, newCards, one.OwedDue, one.OwedNew)
+		if due != int(one.PendingReviews) || newCards != int(one.PendingNew) {
+			t.Errorf("deck %q: got due=%d, new=%d; want preset PendingReviews=%d, PendingNew=%d",
+				one.Preset, due, newCards, one.PendingReviews, one.PendingNew)
 		}
 
 		// Budget allocation restricts counts when configured.
@@ -944,11 +944,11 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 				if response.Cards == 0 {
 					continue
 				}
-				due, newCards := int(response.OwedDue), int(response.OwedNew)
+				due, newCards := int(response.PendingReviews), int(response.PendingNew)
 				keptReviews, keptNew := int(response.Reviews), int(response.New)
 
 				if response.ClosesReviews != "" && due > keptReviews {
-					t.Errorf("%q allocated %d owed against the %d reviews it keeps",
+					t.Errorf("%q allocated %d due against the %d reviews it keeps",
 						response.Preset, due, keptReviews)
 				}
 				if response.ClosesNew != "" && newCards > keptNew {

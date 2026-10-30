@@ -161,7 +161,7 @@ func ConvertCurveToWire(c flashcards.Curve) *api.Curve {
 			Reviews:  one.Reviews,
 			Minutes:  one.Minutes,
 			Retained: one.Retained,
-			Owed:     int32(one.Owed),
+			Due:      int32(one.Due),
 			Through:  one.Share,
 			IsEnough: one.IsEnough,
 			Closed:   ConvertBudgetsToWire(one.Closed),

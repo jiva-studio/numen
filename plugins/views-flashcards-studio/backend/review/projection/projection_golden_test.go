@@ -117,8 +117,8 @@ func goldenDays(days int) []int {
 // writeProjection puts one projection down, every scalar and every series of
 // it.
 func writeProjection(out *strings.Builder, p projection.Projection) {
-	fmt.Fprintf(out, "days %d cards %d seen %d owed %d clears %d learned %d learns %d short %d\n",
-		p.Days, p.ReviewCards, p.Seen, p.Owed, p.Clears, p.Learned, p.Learns, p.Short)
+	fmt.Fprintf(out, "days %d cards %d seen %d due %d clears %d learned %d learns %d short %d\n",
+		p.Days, p.ReviewCards, p.Seen, p.Due, p.Clears, p.Learned, p.Learns, p.Short)
 	fmt.Fprintf(out, "answered %d reviews %.6f minutes %.6f admits %d\n",
 		p.Answered, p.ReviewsADay, p.MinutesADay, p.CountAdmitted())
 	fmt.Fprintf(out, "load %s\n", numbers(p.Load))

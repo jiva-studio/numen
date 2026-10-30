@@ -143,7 +143,7 @@ func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p 
 // a review card is counted.
 func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
-		if !c.IsNew() && !s.Day.IsOwed(c, open) {
+		if !c.IsNew() && !s.Day.IsDue(c, open) {
 			break
 		}
 		c = s.step(c, open, p, nil)
@@ -317,7 +317,7 @@ func (s Simulation) createProjection(
 		Answered:    0,
 		ReviewCards: len(schedules) + unreviewed,
 		Seen:        len(schedules),
-		Owed:        0,
+		Due:         0,
 		Clears:      NeverClears,
 		Learned:     0,
 		Learns:      learns,
@@ -448,8 +448,8 @@ func (d *simulationDay) startDay(today int) {
 	d.again = d.again[:0]
 }
 
-// isOwed reports whether unreviewed debt cards remain for the day.
-func (d *simulationDay) isOwed() bool {
+// isDue reports whether unreviewed debt cards remain for the day.
+func (d *simulationDay) isDue() bool {
 	return !d.isDebtDone && d.take < len(d.due)
 }
 
@@ -465,20 +465,20 @@ func (d *simulationDay) isBacklog() bool {
 
 // hasPendingCards reports whether any cards remain to review or introduce.
 func (d *simulationDay) hasPendingCards() bool {
-	return d.isOwed() || d.hasNew() || d.isBacklog()
+	return d.isDue() || d.hasNew() || d.isBacklog()
 }
 
 // isDebtNext reports whether the next step should review an existing card.
 func (d *simulationDay) isDebtNext() bool {
-	owed := d.isOwed()
+	hasDue := d.isDue()
 	hasNew := d.hasNew()
-	repeat := !owed && !hasNew
-	return repeat || d.admits.IsNextCardDebt(d.observed, d.begun, owed, hasNew)
+	repeat := !hasDue && !hasNew
+	return repeat || d.admits.IsNextCardDebt(d.observed, d.begun, hasDue, hasNew)
 }
 
 // isRepeat reports whether all initial debt and new cards are exhausted.
 func (d *simulationDay) isRepeat() bool {
-	return !d.isOwed() && !d.hasNew()
+	return !d.isDue() && !d.hasNew()
 }
 
 // getCardIndex returns the card index for the next review step.
@@ -500,7 +500,7 @@ func (d *simulationDay) stopDebt(repeat bool) {
 
 // queueNextShowing places a reviewed card in the repeat queue or future bucket.
 func (d *simulationDay) queueNextShowing(c Schedule, pos int) {
-	if d.sim.Day.IsOwed(c, d.open) && d.showings[pos] < MostShowings {
+	if d.sim.Day.IsDue(c, d.open) && d.showings[pos] < MostShowings {
 		d.again = append(d.again, pos)
 		return
 	}
@@ -614,7 +614,7 @@ func (s Simulation) finalizeProjection(
 	}
 	for _, c := range cards {
 		if c.Due.Before(open) {
-			out.Owed++
+			out.Due++
 		}
 	}
 }

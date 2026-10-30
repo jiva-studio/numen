@@ -25,7 +25,7 @@ import (
 func recordReview(t *testing.T, handler *API, vault string, session *api.StartSessionResponse) string {
 	t.Helper()
 	if len(session.Cards) == 0 {
-		t.Fatal("the vault owes nothing to answer")
+		t.Fatal("the vault has no cards due")
 	}
 	card := session.Cards[0]
 	out, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{

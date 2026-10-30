@@ -8,7 +8,7 @@
         "reviews": 45,
         "minutes": 20.5,
         "retained": 0.9,
-        "owed": 12,
+        "due": 12,
         "through": 0.5,
         "isEnough": true,
         "closed": ["minutes_a_day"],

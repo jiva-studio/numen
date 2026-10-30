@@ -325,7 +325,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		}
 	}
 	if due != int(response.Due) || newCards != int(response.New) {
-		t.Errorf("the decks come to %d owed and %d new, the vault to %d and %d",
+		t.Errorf("the decks come to %d due and %d new, the vault to %d and %d",
 			due, newCards, response.Due, response.New)
 	}
 }

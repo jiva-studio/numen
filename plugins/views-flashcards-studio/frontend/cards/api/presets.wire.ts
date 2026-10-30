@@ -116,7 +116,7 @@ const parsePoint = (one: PointMessage): Point => ({
   reviews: one.reviews,
   minutes: one.minutes,
   retained: one.retained,
-  owed: one.owed,
+  due: one.due,
   through: one.through,
   canLearnEveryCard: one.isEnough,
   closed: one.closed,
