@@ -6,10 +6,12 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { defineComponent, h, nextTick, onMounted, onUnmounted } from 'vue'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import { WorkspacePane } from './pane'
 import { type Tab, type Workspace as State } from '../lib/node'
 import { oneStack, sideBySide, stack, createWorkspace } from '../fixtures/build'
+import { dropTab } from '../lib/edit'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },
@@ -202,5 +204,41 @@ describe('a tab dragged out of the workspace', () => {
     window.dispatchEvent(new PointerEvent('pointerup', { clientX: 10, clientY: 10, bubbles: true }))
 
     expect(target.emitted('tear-off')).toStrictEqual([['plex', { x: 10, y: 10 }]])
+  })
+})
+
+describe('a tab moved to another pane', () => {
+  it('keeps the content it was rendered with', async () => {
+    const lifecycle = { mounted: 0, unmounted: 0 }
+    const Content = defineComponent({
+      setup() {
+        onMounted(() => lifecycle.mounted++)
+        onUnmounted(() => lifecycle.unmounted++)
+        return () => h('p', { 'data-content': 'plex' }, 'plex')
+      },
+    })
+    const target = mount(WorkspaceLayout, {
+      attachTo: document.body,
+      props: { modelValue: sideBySide(), tabs: TABS },
+      slots: { tab: ({ id }: { id: string }) => (id === 'plex' ? h(Content) : h('div')) },
+    })
+    await nextTick()
+    const element = target.element.querySelector('[data-content="plex"]')
+
+    const moved = dropTab(
+      target.props('modelValue') as State,
+      { tab: 'plex', onto: 'aside', side: 'center' },
+      () => 'made',
+    )
+    await target.setProps({ modelValue: moved })
+    await nextTick()
+    await nextTick()
+
+    expect(target.element.querySelector('[data-content="plex"]')).toBe(element)
+    expect(target.element.querySelector('[data-workspace-pane="aside"]')?.contains(element)).toBe(
+      true,
+    )
+    expect(lifecycle).toStrictEqual({ mounted: 1, unmounted: 0 })
+    target.unmount()
   })
 })

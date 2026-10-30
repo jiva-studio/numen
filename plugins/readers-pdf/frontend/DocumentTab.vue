@@ -57,7 +57,6 @@ onMounted(() => {
   if (props.state && typeof props.state === 'object' && !isDocumentTabState(props.state)) {
     const s = props.state as Record<string, unknown>
     s.focusTab = () => rootElement.value?.focus()
-    s.handleKeyPress = (e: KeyboardEvent) => activeState.value?.handleKeyPress(e) ?? false
     s.focusSpans = (...spans: readonly TextRange[]) => activeState.value?.focusSpans(...spans)
   }
 })
