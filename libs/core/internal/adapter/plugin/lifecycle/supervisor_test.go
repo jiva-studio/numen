@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -25,7 +26,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatal("expected error attaching nil process, got nil")
 	}
 
-	cmd := exec.Command("sleep", "1")
+	cmd := exec.CommandContext(t.Context(), "sleep", "1")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
@@ -64,8 +65,8 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatal("expected IsIdle to be false when ref count > 0")
 	}
 
-	_ = cmd.Process.Kill()
-	_, _ = cmd.Process.Wait()
+	testsupport.Kill(t, cmd)
+	plugintest.ReapProcess(t, cmd.Process)
 }
 
 func TestSupervisorTeardownNotRunning(t *testing.T) {
@@ -77,7 +78,7 @@ func TestSupervisorTeardownNotRunning(t *testing.T) {
 }
 
 func TestSupervisorTeardownGraceful(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
@@ -125,7 +126,7 @@ func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 }
 
 func TestSupervisorTeardownForceKill(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
@@ -166,7 +167,7 @@ func TestSupervisorPermissionNormalization(t *testing.T) {
 }
 
 func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
-	cmd := exec.Command("sleep", "1")
+	cmd := exec.CommandContext(t.Context(), "sleep", "1")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start process: %v", err)
 	}
@@ -181,7 +182,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 		t.Fatalf("attach process: %v", err)
 	}
 
-	_ = cmd.Process.Kill()
+	testsupport.Kill(t, cmd)
 
 	select {
 	case <-onExitCh:
@@ -273,13 +274,13 @@ func TestSupervisorTeardownWhileActivating(t *testing.T) {
 }
 
 func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	sup := New()
@@ -315,7 +316,7 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 	rpcCalled := make(chan struct{})
 	sup.SetRPCShutdown(func(_ context.Context) error {
 		close(rpcCalled)
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 		return nil
 	})
 	sup.SetMemoryGracePeriod(100 * time.Millisecond)
@@ -340,7 +341,7 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 }
 
 func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
@@ -359,7 +360,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 		onExceededCalled = true
 	})
 	sup.SetRPCShutdown(func(_ context.Context) error {
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 		return nil
 	})
 	sup.SetMemoryGracePeriod(50 * time.Millisecond)
@@ -388,8 +389,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 		t.Fatal("expected activation to be blocked by backoff")
 	}
 
-	failed, _ := sup.GetActivationFailure()
-	if failed {
+	if sup.IsActivationFailed() {
 		t.Fatal("expected plugin not yet marked permanently failed after 1 failure")
 	}
 
@@ -405,7 +405,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 }
 
 func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
@@ -431,7 +431,7 @@ func TestAcquireRefusesAPluginThatIsDeactivating(t *testing.T) {
 }
 
 func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}

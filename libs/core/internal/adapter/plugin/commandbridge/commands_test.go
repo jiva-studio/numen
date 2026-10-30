@@ -187,14 +187,20 @@ func TestACommandOfAPluginThatCannotStartIsUnavailable(t *testing.T) {
 func TestACommandOfAPluginThatServesNoCommandsIsUnavailable(t *testing.T) {
 	server := httptest.NewServer(http.NewServeMux())
 	t.Cleanup(server.Close)
-	address, rawPort, _ := net.SplitHostPort(server.Listener.Addr().String())
-	port, _ := strconv.Atoi(rawPort)
+	address, rawPort, err := net.SplitHostPort(server.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(rawPort)
+	if err != nil {
+		t.Fatal(err)
+	}
 	host := &commandHost{
 		plugins:   []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")},
 		endpoints: map[string]pluginport.Endpoint{"md.numen.a": {Host: address, Port: port}},
 	}
 
-	_, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
+	_, err = Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
 
 	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("a plugin that serves no commands is %v, want it unavailable", err)

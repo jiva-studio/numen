@@ -26,8 +26,8 @@ import (
 func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) plugin.Launcher {
 	t.Helper()
 	pingPort := plugintest.ServePing(t, protocol)
-	return func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand()
+	return func(ctx context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}

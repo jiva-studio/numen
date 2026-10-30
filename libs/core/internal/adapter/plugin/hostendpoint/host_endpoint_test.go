@@ -307,7 +307,11 @@ func TestTheHostEndpointListensOnLoopbackAndServes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = endpoint.Close(context.WithoutCancel(t.Context())) })
+	t.Cleanup(func() {
+		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
 	if endpoint.GetPort() <= 0 {
 		t.Fatalf("port = %d", endpoint.GetPort())
 	}

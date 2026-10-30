@@ -93,12 +93,20 @@ func TestDiscoverPluginsDuplicateID(t *testing.T) {
 	}`
 
 	p1 := filepath.Join(tempDir1, "p1")
-	_ = os.Mkdir(p1, 0o755)
-	_ = os.WriteFile(filepath.Join(p1, "manifest.json"), []byte(manifest), 0o644)
+	if err := os.Mkdir(p1, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(p1, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	p2 := filepath.Join(tempDir2, "p2")
-	_ = os.Mkdir(p2, 0o755)
-	_ = os.WriteFile(filepath.Join(p2, "manifest.json"), []byte(manifest), 0o644)
+	if err := os.Mkdir(p2, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(p2, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	found, problems := DiscoverPlugins([]string{tempDir1, tempDir2})
 	if len(found) != 1 {
@@ -112,7 +120,9 @@ func TestDiscoverPluginsDuplicateID(t *testing.T) {
 func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
 	tempDir := t.TempDir()
 	p := filepath.Join(tempDir, "p1")
-	_ = os.Mkdir(p, 0o755)
+	if err := os.Mkdir(p, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	manifest := `{
 		"id": "single.id",
 		"name": "Single",
@@ -127,7 +137,9 @@ func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
 	}`
-	_ = os.WriteFile(filepath.Join(p, "manifest.json"), []byte(manifest), 0o644)
+	if err := os.WriteFile(filepath.Join(p, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Passing same directory twice (e.g. from NUMEN_PLUGINS_PATH and executable relative path)
 	found, problems := DiscoverPlugins([]string{tempDir, tempDir})

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -125,7 +124,7 @@ func TestAgentBridge(t *testing.T) {
 		t.Errorf("promptExt = %q", promptExt)
 	}
 
-	_ = bridge.Close()
+	testsupport.Close(t, bridge)
 }
 
 type floodAgentServer struct {
@@ -143,11 +142,13 @@ func (s *floodAgentServer) AskAgent(
 			return ctx.Err()
 		default:
 		}
-		_ = stream.Send(&v1.AskAgentResponse{
+		if err := stream.Send(&v1.AskAgentResponse{
 			Step: &v1.AskAgentResponse_Text{
 				Text: fmt.Sprintf("msg %d", i),
 			},
-		})
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -163,7 +164,9 @@ func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
 
 	stopCh := make(chan struct{})
 	go func() {
-		_ = run.Stop()
+		if err := run.Stop(); err != nil {
+			t.Error(err)
+		}
 		close(stopCh)
 	}()
 
@@ -203,7 +206,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 	mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := plugintest.GetPort(t, server)
 
 	tmp := t.TempDir()
 	createTestAgentPluginTree(t, tmp)
@@ -212,13 +215,13 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	t.Cleanup(func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	})
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
@@ -229,7 +232,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 	if err != nil {
 		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
 	}
-	t.Cleanup(func() { _ = bridge.Close() })
+	testsupport.CloseAfter(t, bridge)
 	return bridge
 }
 
@@ -376,7 +379,9 @@ func (s *failingAgentServer) AskAgent(
 	_ *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "partial"}})
+	if err := stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "partial"}}); err != nil {
+		return err
+	}
 	return connect.NewError(connect.CodeInternal, fmt.Errorf("the program crashed"))
 }
 
@@ -388,7 +393,11 @@ func TestARunWhoseStreamFailsStopsWithTheError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = run.Stop() }()
+	defer func() {
+		if err := run.Stop(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var steps []agentport.Step
 	for step := range run.GetSteps() {

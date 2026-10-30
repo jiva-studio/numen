@@ -2,7 +2,9 @@ package process
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -235,15 +237,15 @@ func TestProcessLimits(t *testing.T) {
 		t.Error("expected non-zero default memory limit")
 	}
 
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	ConfigureSysProcAttr(cmd)
 
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start sleep: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	t.Run("apply valid limits", func(t *testing.T) {

@@ -2,7 +2,6 @@ package integration
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -35,7 +35,7 @@ func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return &plugintest.LeaseHost{Endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
+	return &plugintest.LeaseHost{Endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
 }
 
 func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
@@ -53,8 +53,11 @@ func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
 		}
 		for range run.GetSteps() {
 		}
-		_ = run.Stop()
-		_ = run.Stop()
+		for range 2 {
+			if err := run.Stop(); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 	if got := host.Acquired.Load(); got != 1+runs {
 		t.Errorf("acquired %d times, want %d", got, 1+runs)
@@ -63,8 +66,8 @@ func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
 		t.Errorf("gave back %d before Close, want %d", got, runs)
 	}
 
-	_ = bridge.Close()
-	_ = bridge.Close()
+	testsupport.Close(t, bridge)
+	testsupport.Close(t, bridge)
 	if got := host.Released.Load(); got != 1+runs {
 		t.Errorf("gave back %d after Close, want %d", got, 1+runs)
 	}

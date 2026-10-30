@@ -25,11 +25,13 @@ func TestServeRouteForwardsBelowThePluginRoute(t *testing.T) {
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Header().Set("Content-Security-Policy", "default-src *")
 		w.Header().Set("Set-Cookie", "plugin=1")
-		_, _ = io.WriteString(w, "page bytes")
+		if _, err := io.WriteString(w, "page bytes"); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(plugin.Close)
 	host := newRouteHost(t, plugin)
-	req := httptest.NewRequest(http.MethodGet, "/plugin/org.example.reader/pages/2?path=Books%2Fa.pdf&wide=800", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/org.example.reader/pages/2?path=Books%2Fa.pdf&wide=800", nil)
 	req.Header.Set("Cookie", "session=1")
 	recorded := httptest.NewRecorder()
 
@@ -68,7 +70,7 @@ func TestServeRouteRejectsAPathOutsideTheRoute(t *testing.T) {
 		"/plugin/org.example.reader",
 		"/plugin//pages/1",
 	} {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		req.URL.Path = path
 		recorded := httptest.NewRecorder()
 		proxy.ServeRoute(recorded, req)
@@ -84,7 +86,7 @@ func TestServeRouteRejectsAPathOutsideTheRoute(t *testing.T) {
 func TestServeRouteAnswersNotFoundForAPluginThatIsNotEnabled(t *testing.T) {
 	recorded := httptest.NewRecorder()
 
-	Open(&servingHost{}).ServeRoute(recorded, httptest.NewRequest(http.MethodGet, "/plugin/org.example.reader/pages/1", nil))
+	Open(&servingHost{}).ServeRoute(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/org.example.reader/pages/1", nil))
 
 	if recorded.Code != http.StatusNotFound {
 		t.Errorf("answered %d", recorded.Code)
@@ -94,7 +96,7 @@ func TestServeRouteAnswersNotFoundForAPluginThatIsNotEnabled(t *testing.T) {
 func TestServeRouteRejectsAMethodThatWrites(t *testing.T) {
 	recorded := httptest.NewRecorder()
 
-	Open(&servingHost{}).ServeRoute(recorded, httptest.NewRequest(http.MethodPost, "/plugin/org.example.reader/pages/1", nil))
+	Open(&servingHost{}).ServeRoute(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/plugin/org.example.reader/pages/1", nil))
 
 	if recorded.Code != http.StatusMethodNotAllowed {
 		t.Errorf("answered %d", recorded.Code)

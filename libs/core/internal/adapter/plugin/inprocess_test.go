@@ -100,7 +100,11 @@ func newBuiltInBackend() *builtInBackend {
 func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 	t.Helper()
 	host := NewHost("desktop.editor", dirs...)
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	return host
 }
 
@@ -219,7 +223,11 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 		t.Errorf("second registration = %v, want errBuiltInRegistered", err)
 	}
 	other := NewHost("mobile.reader")
-	t.Cleanup(func() { _ = other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	if err := other.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errNotForTarget) {
 		t.Errorf("registration for another target = %v, want errNotForTarget", err)
 	}
@@ -387,7 +395,9 @@ func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 	release := make(chan struct{})
 	defer close(release)
 	transport := NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.(http.Flusher).Flush()
+		if err := http.NewResponseController(w).Flush(); err != nil {
+			t.Error(err)
+		}
 		<-release
 	}))
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://inprocess/", nil)
@@ -399,7 +409,9 @@ func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RoundTrip: %v", err)
 	}
-	_ = resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
 }
 
 // A call whose context ends after the header has been written ends with the error of the context.
@@ -417,7 +429,11 @@ func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RoundTrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	cancel()
 	read := make(chan error, 1)

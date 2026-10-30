@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -462,7 +463,7 @@ func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer testsupport.Close(t, stream)
 
 	if !stream.Receive() || len(stream.Msg().GetPaths()) != 0 {
 		t.Fatalf("the watch did not begin: %v", stream.Err())
@@ -483,7 +484,7 @@ func TestAWatchReturnsWhenTheWindowShowsAnotherVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer testsupport.Close(t, stream)
 	if !stream.Receive() {
 		t.Fatal(stream.Err())
 	}
@@ -592,7 +593,7 @@ func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer testsupport.Close(t, stream)
 	if !stream.Receive() {
 		t.Fatalf("the watch began with %v", stream.Err())
 	}

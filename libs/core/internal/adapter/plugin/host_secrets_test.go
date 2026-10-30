@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -142,7 +142,11 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	t.Cleanup(server.Close)
 
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	host.plugins[secretPluginID] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
 		Secrets: []pluginport.PluginSecret{{Name: "apiKey", Title: "API key"}},
@@ -154,7 +158,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	sup.ActivateInProcess(time.Now())
 	host.supervisors[secretPluginID] = sup
 	host.endpoints[secretPluginID] = transport.Endpoint{
-		Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port, Token: "launch-name",
+		Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "launch-name",
 	}
 	if store != nil {
 		host.SetKeyStore(store)

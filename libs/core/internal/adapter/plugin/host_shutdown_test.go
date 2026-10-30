@@ -294,7 +294,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	host := NewHost("desktop.editor")
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
-	cmd := plugintest.NewIdleCommand()
+	cmd := plugintest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start process: %v", err)
 	}

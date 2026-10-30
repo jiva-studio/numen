@@ -108,13 +108,13 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -238,13 +238,13 @@ func TestHostEmitEventActivation(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -266,7 +266,9 @@ func TestHostEmitEventActivation(t *testing.T) {
 
 	// Emit onFile event via debounced event bus
 	host.EmitEvent("onFile:document.sample")
-	host.GetEventBus().Flush(ctx)
+	if err := host.GetEventBus().Flush(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	// Plugin should now be activated
 	if sup.GetState() != lifecycle.StateActive && sup.GetState() != lifecycle.StateIdle {
@@ -289,13 +291,13 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	pr, pw, err := os.Pipe()
@@ -309,7 +311,7 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 
 	writeDone := make(chan error, 1)
 	go func() {
-		defer pw.Close()
+		defer testsupport.Close(t, pw)
 		if _, err := pw.Write([]byte(fmt.Sprintf("NUMEN_READY port=%d\n", pingPort))); err != nil {
 			writeDone <- err
 			return
@@ -357,13 +359,13 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	var launchCount atomic.Int32
@@ -445,22 +447,22 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmdSlow := exec.Command("sleep", "10")
+	cmdSlow := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmdSlow.Start(); err != nil {
 		t.Fatalf("start slow proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmdSlow.Process.Kill()
-		_, _ = cmdSlow.Process.Wait()
+		testsupport.Kill(t, cmdSlow)
+		plugintest.ReapProcess(t, cmdSlow.Process)
 	}()
 
-	cmdFast := exec.Command("sleep", "10")
+	cmdFast := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmdFast.Start(); err != nil {
 		t.Fatalf("start fast proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmdFast.Process.Kill()
-		_, _ = cmdFast.Process.Wait()
+		testsupport.Kill(t, cmdFast)
+		plugintest.ReapProcess(t, cmdFast.Process)
 	}()
 
 	slowStarted := make(chan struct{})
@@ -599,13 +601,13 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	launchStarted := make(chan struct{})
@@ -735,19 +737,19 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 	serverPort := tcpAddr.Port
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
+			testsupport.Kill(t, cmd)
+			plugintest.ReapProcess(t, cmd.Process)
 		}
 	}()
 
 	handler.onShutdown = func() {
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -830,17 +832,17 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 		t.Fatalf("parse port: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start sleep: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	handler.onShutdown = func() {
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -906,13 +908,13 @@ func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "60")
+	cmd := exec.CommandContext(t.Context(), "sleep", "60")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	now := time.Now()
@@ -920,7 +922,10 @@ func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
 
 	host.mu.Lock()
 	sup := host.supervisors["org.example.sample"]
-	_ = sup.Attach(t.Context(), cmd.Process, now)
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
+		host.mu.Unlock()
+		t.Fatal(err)
+	}
 	host.endpoints["org.example.sample"] = transport.Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
 	host.mu.Unlock()
 
@@ -972,19 +977,19 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 	serverPort := tcpAddr.Port
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
+			testsupport.Kill(t, cmd)
+			plugintest.ReapProcess(t, cmd.Process)
 		}
 	}()
 
 	handler.onShutdown = func() {
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -1043,14 +1048,14 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	}
 	serverPort := tcpAddr.Port
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
+			testsupport.Kill(t, cmd)
+			plugintest.ReapProcess(t, cmd.Process)
 		}
 	}()
 
@@ -1059,7 +1064,7 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	handler.onShutdown = func() {
 		close(rpcReceived)
 		<-releaseShutdown
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
 	host.SetLauncher(func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -1104,8 +1109,8 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 	t.Helper()
 	pingPort := plugintest.ServeHostPing(t)
 	var mu sync.Mutex
-	return func(_ context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand()
+	return func(ctx context.Context, _ plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
@@ -1401,7 +1406,11 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 func newHostOfProviders(t *testing.T) *Host {
 	t.Helper()
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Second) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Second); err != nil {
+			t.Error(err)
+		}
+	})
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
 		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: plugindir.Manifest{
 			ID:           id,
@@ -1511,7 +1520,11 @@ type runningPlugin struct {
 func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 	t.Helper()
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	for id, one := range plugins {
 		sup := lifecycle.New()
 		sup.SetPermissions(one.perms)
@@ -1560,15 +1573,16 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 	if err != nil || first <= 0 {
 		t.Fatalf("with a completer: port %d, %v", first, err)
 	}
-	if again, _ := host.openHostEndpoint(t.Context()); again != first {
-		t.Errorf("a second call opened port %d, want %d", again, first)
+	again, err := host.openHostEndpoint(t.Context())
+	if err != nil || again != first {
+		t.Errorf("a second call opened port %d, %v, want %d", again, err, first)
 	}
 
 	if err := host.TeardownAll(t.Context(), time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := host.openHostEndpoint(t.Context()); got != 0 {
-		t.Errorf("a closed host opened port %d", got)
+	if got, err := host.openHostEndpoint(t.Context()); got != 0 {
+		t.Errorf("a closed host opened port %d, %v", got, err)
 	}
 }
 
@@ -1590,14 +1604,21 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 // A plugin process launched while the host endpoint serves is told its port.
 func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 
 	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	served, _ := host.openHostEndpoint(t.Context())
+	served, err := host.openHostEndpoint(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if want := fmt.Sprintf("NUMEN_HOST_PORT=%d", served); served == 0 || !slices.Contains(vars, want) {
 		t.Errorf("environment %v lacks %s", vars, want)
 	}
@@ -1606,7 +1627,11 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 // An endpoint that cannot start is reported and does not stop a plugin from launching.
 func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	host.hostAddress = "127.0.0.1:-1"
 	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 	var reported []error
@@ -1630,15 +1655,25 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 // would bind more.
 func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {
 		endpoint, err := hostendpoint.Open(t.Context(), address, host)
 		if err == nil {
-			_ = endpoint.Close(t.Context())
+			if closeErr := endpoint.Close(t.Context()); closeErr != nil {
+				t.Error(closeErr)
+			}
 			t.Errorf("address %q was bound", address)
 		}
 	}
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	if host.hostAddress != "127.0.0.1:0" {
 		t.Errorf("a host listens on %q by default", host.hostAddress)
 	}
@@ -1646,7 +1681,9 @@ func TestTheHostEndpointListensOnLoopbackOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = endpoint.Close(t.Context())
+	if err := endpoint.Close(t.Context()); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestHostProcessLimitsConfig(t *testing.T) {
