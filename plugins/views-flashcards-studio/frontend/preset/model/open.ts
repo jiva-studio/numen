@@ -52,6 +52,9 @@ export interface ReadPresetContext {
 /** Reads the preset settings and curve from the vault. */
 export const readPreset = async (one: OpenPreset, context: ReadPresetContext): Promise<void> => {
   const { core, bounds, titles, today } = context
+  const queue = one.writeQueue
+  const finishedWrites = queue.finishedWrites
+  const wasWriting = queue.isWriting
   let answer
   try {
     answer = await core.read(one.path.value)
@@ -61,6 +64,9 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
     one.curves.isWaiting.value = false
     return
   }
+  // A read that overlapped a write may predate it; the file change the write
+  // makes starts a read that does not.
+  if (wasWriting || queue.isWriting || queue.finishedWrites !== finishedWrites) return
   one.writeQueue.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.writeQueue.hasExternalChange.value = false
   one.curves.answers.clear()
