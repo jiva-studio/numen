@@ -11,7 +11,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
 import { createPendingWrites } from './pending'
 
-/** Every label shown in the window. */
+/** Everything this says in the window's voice. */
 export interface Words {
   /** The setting could not be written. */
   readonly unturned: string
@@ -19,7 +19,7 @@ export interface Words {
   readonly unreadSettings: string
 }
 
-/** What this requests from the vault. */
+/** What this asks of the vault. */
 export interface SettingsStoreDeps {
   /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<{
@@ -57,15 +57,15 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const plugins = shallowRef<readonly PluginInfo[]>([])
 
   const pending = createPendingWrites()
-  /** The settings values, requested once the window is up. */
+  /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     const place = pending.beginRead()
     let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
     try {
       answer = await core.getSettings()
     } catch {
-      // A vault that cannot be queried leaves the settings unchanged, and the
-      // window already reports the lost connection to the vault.
+      // A vault that cannot be asked leaves the settings where they stand, and
+      // the window already says it lost touch with the vault.
       return
     }
     if (!pending.takeRead(place)) return
@@ -81,7 +81,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     path.value = answer.path
     models.value = answer.models
     plugins.value = answer.plugins ?? []
-    pending.prune(getCommittedSetting)
   }
 
   const getSetting = (path: readonly string[]): unknown => {
@@ -104,18 +103,15 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     say('')
 
     const token = pending.add(edits)
-    let isWritten = true
     try {
       await core.updateSettings(edits)
     } catch (caughtError) {
-      isWritten = false
       say(`${words.unturned} ${formatErrorMessage(caughtError)}`, 'error')
     }
     try {
       await start()
     } finally {
-      if (isWritten) pending.release(edits, token, getCommittedSetting)
-      else pending.discard(edits, token)
+      pending.release(edits, token)
     }
   }
 
