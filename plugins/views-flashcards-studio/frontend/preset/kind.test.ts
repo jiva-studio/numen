@@ -966,6 +966,9 @@ const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   },
 })
 
+/** A write the file rejects, so the choice stays unwritten once no write is in flight. */
+const rejectedWrite = (): WriteOver => ({ error: 'changed' })
+
 /** A write that never resolves, so the pending write stays pending. */
 const neverWritten = () => new Promise<WriteOver>(() => undefined)
 
@@ -1055,8 +1058,9 @@ describe('a tab read again', () => {
 // not overwrite it.
 describe('a choice not yet written, across a read', () => {
   it('keeps the goal chosen', async () => {
-    const { state, applyPathChanges } = await openPresetTab({}, curve, () => ({}), neverWritten)
+    const { state, applyPathChanges } = await openPresetTab({}, curve, () => ({}), rejectedWrite)
     state.chooseGoal('retention')
+    await flushPromises()
     applyPathChanges(['Steady.md'])
     await flushPromises()
     expect(state.settings.value.goal).toBe('retention')
@@ -1067,9 +1071,10 @@ describe('a choice not yet written, across a read', () => {
       { byDate: '' },
       dated,
       () => ({}),
-      neverWritten,
+      rejectedWrite,
     )
     state.chooseGoal('date')
+    await flushPromises()
     applyPathChanges(['Steady.md'])
     await flushPromises()
     expect(state.settings.value.byDate).toBe('2026-09-29')
@@ -1080,9 +1085,10 @@ describe('a choice not yet written, across a read', () => {
       { byDate: '2026-12-25' },
       dated,
       (time) => (time === 0 ? {} : createPresetRead({ ...STEADY, byDate: '2027-01-01' })),
-      neverWritten,
+      rejectedWrite,
     )
     state.chooseGoal('date')
+    await flushPromises()
     applyPathChanges(['Steady.md'])
     await flushPromises()
     expect(state.settings.value.goal).toBe('date')
