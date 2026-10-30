@@ -254,7 +254,11 @@ function createPaletteStepsAndSearch(
     text: state.typed,
     onDrop: state.drop,
     onLights: previewItem,
-    onLists: () => void loadVaults(),
+    onLists: () => {
+      loadVaults().catch(() => {
+        state.failureMessage.value = deps.words.notAsked
+      })
+    },
     onClose: () => setOpen(false),
     invocation,
   })

@@ -6,6 +6,7 @@
  * worn once the keyboard has stood on it for HELD, and what the settings name
  * is put back the moment the keyboard leaves the list.
  */
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { isInBounds } from '@/entities/settings'
@@ -82,7 +83,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
       return
     }
     heldItem.value = null
-    void applyAppearance()
+    applyAppearance().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
   }
 
   const chooseSize = (choice: ScaleChoice) =>

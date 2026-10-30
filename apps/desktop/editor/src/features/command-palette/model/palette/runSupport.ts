@@ -12,6 +12,8 @@ export const runSupport = (): RunSupport => {
   const completedRuns = shallowRef<ReadonlySet<string>>(new Set())
   return {
     canRun: (run) => !completedRuns.value.has(run),
-    cannotRun: (run) => void (completedRuns.value = new Set(completedRuns.value).add(run)),
+    cannotRun: (run) => {
+      completedRuns.value = new Set(completedRuns.value).add(run)
+    },
   }
 }

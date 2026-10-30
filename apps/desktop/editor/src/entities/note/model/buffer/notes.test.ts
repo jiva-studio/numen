@@ -4,6 +4,11 @@ import { computed, watch } from 'vue'
 
 import { openNotes, type Notes } from './notes'
 
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
+
 /** A file's file stat, which follows what the file holds. */
 const statFile = (body: string): string => `at:${body}`
 
@@ -822,7 +827,7 @@ describe('closing a note', () => {
   it('is not answered while a write in the air is still being waited on', async () => {
     const base = fake()
     base.files.set('Heat.md', 'one')
-    let release: () => void = () => {}
+    let release: () => void = vi.fn()
     const gate = new Promise<void>((done) => {
       release = done
     })
@@ -841,7 +846,10 @@ describe('closing a note', () => {
     await settle()
     notes.setBody('Heat.md', 'one two')
     const answers: boolean[] = []
-    void notes.close('Heat.md').then((closedResult) => answers.push(closedResult))
+    notes
+      .close('Heat.md')
+      .then((closedResult) => answers.push(closedResult))
+      .catch(rethrow)
 
     notes.setBody('Heat.md', 'one two three')
     await settle()

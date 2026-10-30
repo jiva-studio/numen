@@ -154,8 +154,8 @@ describe('createCustomTabKind', () => {
         title: 'Markdown Note',
       },
       {
-        registerKind: () => () => {},
-        registerExtensionReader: () => () => {},
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
         readNote: async (path: string) => (path === 'notes/test.md' ? '# Test Content' : undefined),
         writeNote: async (_path: string, body: string) => {
@@ -348,8 +348,8 @@ describe('createCustomTabKind (actions)', () => {
         },
       },
       {
-        registerKind: vi.fn(() => () => {}),
-        registerExtensionReader: vi.fn(() => () => {}),
+        registerKind: vi.fn(() => vi.fn()),
+        registerExtensionReader: vi.fn(() => vi.fn()),
         openTab: vi.fn(async () => 'tab-1'),
         tabActionHandlers: {
           syncSample: hostAction,
@@ -382,8 +382,8 @@ describe('createCustomTabKind (actions)', () => {
         },
       },
       {
-        registerKind: vi.fn(() => () => {}),
-        registerExtensionReader: vi.fn(() => () => {}),
+        registerKind: vi.fn(() => vi.fn()),
+        registerExtensionReader: vi.fn(() => vi.fn()),
         openTab: vi.fn(async () => 'tab-1'),
         tabActionHandlers: {
           file: collidingAction,
@@ -408,8 +408,8 @@ describe('createCustomTabKind (actions)', () => {
         title: 'Note',
       },
       {
-        registerKind: () => () => {},
-        registerExtensionReader: () => () => {},
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
         readNote: async (path: string) =>
           path === 'notes/first.md' ? '# First' : path === 'notes/second.md' ? '# Second' : '',
@@ -433,7 +433,7 @@ describe('createCustomTabKind (actions)', () => {
     expect(state.body.value).toBe('# First')
     expect(kind.getTitle!(state)).toBe('first')
 
-    kind.navigate!(state, 'notes/second.md', 'Second Note')
+    await kind.navigate!(state, 'notes/second.md', 'Second Note')
     await new Promise((resolve) => setTimeout(resolve, 10))
 
     expect(state.path).toBe('notes/second.md')

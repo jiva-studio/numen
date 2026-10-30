@@ -101,7 +101,7 @@ describe('the hooks a registration passes over', () => {
     const hooks = {
       getMark: () => 'unsaved',
       isAsking: () => true,
-      flushPending: async () => {},
+      flushPending: vi.fn(() => Promise.resolve()),
       createFile: async () => ({ ok: true as const, value: { path: 'a.md' } }),
     }
 

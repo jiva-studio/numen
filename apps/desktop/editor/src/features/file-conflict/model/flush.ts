@@ -114,17 +114,28 @@ function createFlushReporter(
     await core.reportFlush(token, result)
   }
 
+  /** A report that failed was not received, so the next one is sent again. */
+  function forgetResult() {
+    lastResult = null
+  }
+
+  function reportInBackground() {
+    report().catch(forgetResult)
+  }
+
   async function answer(token: string) {
     underVal = token
     lastResult = null
     registry.clearPut()
     const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
     writing = pendingWrites
-    void pendingWrites.then(() => {
-      if (writing !== pendingWrites) return
-      writing = null
-      void report()
-    })
+    pendingWrites
+      .then(() => {
+        if (writing !== pendingWrites) return
+        writing = null
+        reportInBackground()
+      })
+      .catch(forgetResult)
     await report()
   }
 
@@ -134,7 +145,7 @@ function createFlushReporter(
     writing = null
   }
 
-  return { answer, report, reset }
+  return { answer, report, reportInBackground, reset }
 }
 
 export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
@@ -144,7 +155,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<u
 
   const reporterHolder: { current?: ReturnType<typeof createFlushReporter> } = {}
   // Stryker disable next-line OptionalChaining: Assigned synchronously before conflict callbacks run.
-  const registry = createConflictRegistry(() => void reporterHolder.current?.report())
+  const registry = createConflictRegistry(() => reporterHolder.current?.reportInBackground())
   const reporter = createFlushReporter(core, registry, handlers)
   reporterHolder.current = reporter
 
@@ -155,7 +166,8 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<u
 
   const follows = createFollower({
     isOpen: () => open,
-    setLost: () => {},
+    // The quit stream reports no connection status.
+    setLost: () => undefined,
     wait,
     reset: reporter.reset,
   })

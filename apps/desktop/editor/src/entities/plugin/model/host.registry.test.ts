@@ -9,8 +9,8 @@ import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
 
 const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
-  registerKind: vi.fn(() => () => {}),
-  registerExtensionReader: vi.fn(() => () => {}),
+  registerKind: vi.fn(() => vi.fn()),
+  registerExtensionReader: vi.fn(() => vi.fn()),
   openTab: vi.fn(async () => 'tab-1'),
   ...more,
 })
@@ -138,12 +138,12 @@ describe('a registration replaced under the same id', () => {
 
 describe('a tab kind opened as the editor of a path', () => {
   const registerKind = (deps: PluginHostDeps) => {
-    let open: (path: string, title?: string, options?: unknown) => void = () => {}
+    let open: (path: string, title?: string, options?: unknown) => void = vi.fn()
     const host = createPluginHost({
       ...deps,
       registerEditor: vi.fn((_kind, opener) => {
         open = opener
-        return () => {}
+        return vi.fn()
       }),
     })
     const sub = host
@@ -207,7 +207,7 @@ describe('a reader opened at a selector', () => {
     const icon = { name: 'Icon' }
     const registerExtensionReader = vi.fn((ext: string, reader: unknown, _icon?: unknown) => {
       readers.set(ext, reader as (path: string, selector: unknown) => void)
-      return () => {}
+      return vi.fn()
     })
     const host = createPluginHost(
       createDeps({

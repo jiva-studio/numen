@@ -2,7 +2,7 @@
  * What making a file of a kind asks of the vault, and what it says when the vault
  * refuses or cannot be asked at all.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
@@ -36,7 +36,7 @@ const MAKING = { errors: ERRORS }
 const createCreators = (
   vault: VaultCreator,
   tabOpeners = fileOpeners({ fileKinds: async () => new Map() }),
-  write: MessageWriter = () => {},
+  write: MessageWriter = vi.fn(),
 ) => createFileCreators(vault, tabOpeners, { words: MAKING, write })
 
 describe('a file of a kind made', () => {

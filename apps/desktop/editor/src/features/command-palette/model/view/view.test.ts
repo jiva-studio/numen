@@ -3,7 +3,7 @@
  * words typed leave in, where they are lit, and what a group says while it
  * holds nothing.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../../lib/commands/commands'
@@ -25,7 +25,7 @@ const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
 
 const lists: PaletteLists = {
   getStepGroups: () => [],
-  previewItem: () => {},
+  previewItem: vi.fn(),
 }
 
 /** The view over a set of commands, with every list empty. */

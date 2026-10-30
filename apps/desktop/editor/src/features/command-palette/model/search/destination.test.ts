@@ -15,9 +15,14 @@ const window = () => {
   const openedTab: string[] = []
   const displayedItems: string[] = []
   const places: DestinationDeps = {
-    travel: async (path) => void travelled.push(path),
+    travel: async (path) => {
+      travelled.push(path)
+    },
     openFile: (path, title, line, selector) => {
-      if (selector) return void openedTab.push(`${path} ${JSON.stringify(selector)}`)
+      if (selector) {
+        openedTab.push(`${path} ${JSON.stringify(selector)}`)
+        return
+      }
       displayedItems.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`)
     },
   }

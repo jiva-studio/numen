@@ -24,8 +24,8 @@ const UNBROKEN = `${'A note whose name nobody shortened and which runs on past '
 /** One note standing, with the three answers written down as they are given. */
 const conflict = (path: string): ConflictPrompt => ({
   note: path,
-  keep: fn(async () => {}),
-  take: fn(async () => {}),
+  keep: fn(() => Promise.resolve()),
+  take: fn(() => Promise.resolve()),
   later: fn(),
 })
 

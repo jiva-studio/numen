@@ -139,7 +139,9 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
     worn: createWindowAppearance({
       core,
       words,
-      write: (text, kind = 'info') => void notifiedCalls.push({ text, kind }),
+      write: (text, kind = 'info') => {
+        notifiedCalls.push({ text, kind })
+      },
       sheet,
     }),
     sheet,
@@ -210,11 +212,11 @@ describe('the page as it was served', () => {
         readTheme: async (name) => `:root { --numen-surface: ${name} }`,
         writeAppearance: async () => '',
         watchThemes: async function* (): AsyncIterable<readonly string[]> {
-          await new Promise<never>(() => {})
+          await new Promise<never>(vi.fn())
         },
       },
       words,
-      write: () => {},
+      write: vi.fn(),
       sheet,
     })
     await bareAppearance.start()
@@ -264,7 +266,7 @@ describe('the theme the keyboard is standing on', () => {
   })
 
   it('is returned to be unreadable where its file is, and the window keeps what it wears', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const one = await startWindow()
     one.failsText('the file is gone')
 
@@ -815,10 +817,12 @@ const createManual = (waits = Infinity) => {
   const aged = createWindowAppearance({
     core,
     words,
-    write: (text) => void notifiedCalls.push(text),
+    write: (text) => {
+      notifiedCalls.push(text)
+    },
     sheet,
     wait: () =>
-      waited++ < waits ? new Promise((isDone) => setTimeout(isDone, 0)) : new Promise(() => {}),
+      waited++ < waits ? new Promise((isDone) => setTimeout(isDone, 0)) : new Promise(vi.fn()),
   })
   return {
     worn: aged,
@@ -983,7 +987,9 @@ describe('the application that cannot list the themes', () => {
         },
       },
       words,
-      write: (text, kind = 'info') => void notifiedCalls.push({ text, kind }),
+      write: (text, kind = 'info') => {
+        notifiedCalls.push({ text, kind })
+      },
       sheet,
     })
 
@@ -1013,7 +1019,7 @@ describe('a folder stream that ended', () => {
         },
       },
       words,
-      write: () => {},
+      write: vi.fn(),
       sheet: page(),
     })
     await aged.start()

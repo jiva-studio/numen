@@ -6,7 +6,7 @@
  * nobody is asking any more must not fill a list a person is reading, and a
  * group that failed must not take the other two down with it.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   useSearch,
   type SearchDeps,
@@ -16,6 +16,11 @@ import {
   type Words,
 } from './search'
 import { createDeferred, type Deferred } from '@/testing/deferred'
+
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
 
 const WORDS: Words = {
   names: 'Names',
@@ -56,7 +61,7 @@ function createVault() {
 }
 
 /** Nothing waits in a test; the hold is a clock and the clock is handed in. */
-const now = async () => {}
+const now = vi.fn(() => Promise.resolve())
 
 /** Let everything already resolved run before the assertion. */
 const flushPromises = async () => {
@@ -117,7 +122,7 @@ describe('asking', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     expect(vault.names).toHaveLength(1)
@@ -132,7 +137,7 @@ describe('asking', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('  ent  ')
+    palette.setTyped('  ent  ').catch(rethrow)
     await flushPromises()
 
     expect(vault.queries).toEqual(['ent', 'ent', 'ent'])
@@ -145,9 +150,9 @@ describe('asking', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
-    void palette.setTyped('')
+    palette.setTyped('').catch(rethrow)
     await flushPromises()
 
     expect(vault.names).toHaveLength(1)
@@ -163,7 +168,7 @@ describe('answers arriving', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([createNameMatch()])
@@ -182,9 +187,9 @@ describe('answers arriving', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
-    void palette.setTyped('entr')
+    palette.setTyped('entr').catch(rethrow)
     await flushPromises()
 
     // The first question answers late, and with something else entirely.
@@ -204,7 +209,7 @@ describe('answers arriving', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.mode('meaning')?.fail('no model is set')
@@ -223,7 +228,7 @@ describe('answers arriving', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.names[0]?.answer([])
     await flushPromises()
@@ -238,7 +243,7 @@ describe('answers arriving', () => {
     const readItem = { chunks: 4, embedded: 0, isEmbedding: true }
     const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.mode('meaning')?.answer([])
     vault.names[0]?.answer([])
@@ -255,7 +260,7 @@ describe('answers arriving', () => {
     const readItem = { chunks: 4, embedded: 0, isEmbedding: false }
     const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.mode('meaning')?.answer([])
     await flushPromises()
@@ -270,7 +275,7 @@ describe('answers arriving', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.mode('meaning')?.answer([
       {
@@ -300,7 +305,7 @@ describe('answers arriving', () => {
     })
 
     palette.setOpen(true)
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     palette.setOpen(false)
 
@@ -320,7 +325,7 @@ describe('where a thing found takes the person', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([
@@ -377,7 +382,7 @@ describe('where a thing found takes the person', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([createNameMatch()])
@@ -406,7 +411,7 @@ describe('what a key reaches, per kind of thing found', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([
@@ -434,7 +439,7 @@ describe('a passage from something that is not a note', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('war')
+    palette.setTyped('war').catch(rethrow)
     await flushPromises()
 
     vault.mode('words')?.answer([
@@ -477,7 +482,7 @@ describe('what a row is drawn as', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([
@@ -503,7 +508,7 @@ describe('what a row is drawn as', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([
@@ -527,7 +532,7 @@ describe('what a row is drawn as', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.mode('words')?.answer([
@@ -552,7 +557,7 @@ describe('what a row is drawn as', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault
@@ -578,7 +583,7 @@ describe('what a row is drawn as', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([
@@ -609,7 +614,7 @@ describe('a group landing under the keyboard', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('war')
+    palette.setTyped('war').catch(rethrow)
     await flushPromises()
 
     vault.mode('words')?.answer([passage({ path: 'notes/heat.md' })])
@@ -617,7 +622,7 @@ describe('a group landing under the keyboard', () => {
     const before = getGroup(palette.groups.value, 'text')!.items[0]!.id
 
     // The same passage, now second in its group because a better one arrived.
-    void palette.setTyped('war ')
+    palette.setTyped('war ').catch(rethrow)
     await flushPromises()
     vault.searched
       .filter((one) => one.mode === 'words')
@@ -669,7 +674,7 @@ describe('the hold before a question', () => {
     const { wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
@@ -682,7 +687,7 @@ describe('the hold before a question', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(true)
@@ -695,8 +700,8 @@ describe('the hold before a question', () => {
     const { holds, wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
 
-    void palette.setTyped('e')
-    void palette.setTyped('en')
+    palette.setTyped('e').catch(rethrow)
+    palette.setTyped('en').catch(rethrow)
     holds[0]?.answer()
     await flushPromises()
 
@@ -714,7 +719,7 @@ describe('what was typed taken back', () => {
     const vault = createVault()
     const { holds, wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     holds[0]?.answer()
     await flushPromises()
     vault.names[0]?.answer([createNameMatch()])
@@ -722,8 +727,8 @@ describe('what was typed taken back', () => {
     vault.mode('meaning')?.fail('no model is set')
     await flushPromises()
 
-    void palette.setTyped('')
-    void palette.setTyped('heat')
+    palette.setTyped('').catch(rethrow)
+    palette.setTyped('heat').catch(rethrow)
     await flushPromises()
 
     expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
@@ -736,7 +741,7 @@ describe('what was typed taken back', () => {
       getTravel: () => 'Show in the graph',
     })
 
-    void palette.setTyped('   ')
+    palette.setTyped('   ').catch(rethrow)
     await flushPromises()
 
     expect(palette.groups.value).toHaveLength(0)
@@ -750,9 +755,9 @@ describe('answers to a question overtaken', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
-    void palette.setTyped('entr')
+    palette.setTyped('entr').catch(rethrow)
     await flushPromises()
 
     vault.names[1]?.answer([createNameMatch()])
@@ -769,9 +774,9 @@ describe('answers to a question overtaken', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
-    void palette.setTyped('entr')
+    palette.setTyped('entr').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.answer([createNameMatch()])
@@ -786,7 +791,7 @@ describe('answers to a question overtaken', () => {
       wait: now,
       getTravel: () => 'Show in the graph',
     })
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     vault.names[0]?.fail('the vault went away')
@@ -804,7 +809,7 @@ describe('the palette opened and put away', () => {
       getTravel: () => 'Show in the graph',
     })
     palette.setOpen(true)
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
     palette.setOpen(true)
@@ -820,7 +825,7 @@ describe('the palette opened and put away', () => {
     const { holds, wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
     palette.setOpen(true)
-    void palette.setTyped('ent')
+    palette.setTyped('ent').catch(rethrow)
     holds[0]?.answer()
     await flushPromises()
     vault.names[0]?.answer([createNameMatch()])
@@ -830,7 +835,7 @@ describe('the palette opened and put away', () => {
     vault.mode('words')?.answer([passage()])
     await flushPromises()
     palette.setOpen(true)
-    void palette.setTyped('heat')
+    palette.setTyped('heat').catch(rethrow)
     await flushPromises()
 
     expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)

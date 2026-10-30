@@ -69,9 +69,10 @@ const field = computed(() =>
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-function onTyping(text: string) {
-  if (props.commands.open.value) return void props.commands.setTyped(text)
-  if (!isCommandPrefixTyped(props.search.typed.value, text)) return void props.search.setTyped(text)
+async function onTyping(text: string) {
+  if (props.commands.open.value) return await props.commands.setTyped(text)
+  if (!isCommandPrefixTyped(props.search.typed.value, text))
+    return await props.search.setTyped(text)
   const setSearchOpen = props.search.setOpen
   const setCommandsOpen = props.commands.setOpen
   setSearchOpen(false)

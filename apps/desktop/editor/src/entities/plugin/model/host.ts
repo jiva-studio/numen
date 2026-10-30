@@ -19,7 +19,13 @@ import type {
 import { createDropRegistry, createViewRegistry, type ViewRegistry } from '@numen/plugin-host'
 import type { DropRegistry } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
-import { addListener, notifyListeners, runCommand, type PluginListener } from './events'
+import {
+  addListener,
+  notifyListeners,
+  reportError,
+  runCommand,
+  type PluginListener,
+} from './events'
 import { extractPaletteCommands } from './palette'
 import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper, createReaderTabKind, createCustomTabKind } from './customTabKind'
@@ -148,12 +154,15 @@ function registerReaderEntry(
       deps.registerExtensionReader(
         ext,
         (path, selector) => {
-          void deps.openTab(kindId, path).then((tabId) => {
-            if (!selector || !deps.getTabState) return
-            const state = deps.getTabState(tabId) as { selector?: unknown } | undefined
-            // A new object each time, so a reader watching it moves to the same place again.
-            if (state) state.selector = { ...selector }
-          })
+          deps
+            .openTab(kindId, path)
+            .then((tabId) => {
+              if (!selector || !deps.getTabState) return
+              const state = deps.getTabState(tabId) as { selector?: unknown } | undefined
+              // A new object each time, so a reader watching it moves to the same place again.
+              if (state) state.selector = { ...selector }
+            })
+            .catch((error: unknown) => reportError(deps, pluginId, error))
         },
         registration.icon as Component | undefined,
       ),
@@ -198,9 +207,13 @@ function registerTabKindEntry(
       (path: string, _title?: string, options?: unknown) => {
         const where = extractWhere(options)
         if (where === 'split' && deps.openTabBeside) {
-          void deps.openTabBeside(registration.kind, path)
+          deps
+            .openTabBeside(registration.kind, path)
+            .catch((error: unknown) => reportError(deps, pluginId, error))
         } else {
-          void deps.openTab(registration.kind, path)
+          deps
+            .openTab(registration.kind, path)
+            .catch((error: unknown) => reportError(deps, pluginId, error))
         }
       },
     )
@@ -301,7 +314,8 @@ function createHostContextBridge(
       key: string,
       handler: (value: T) => void | Promise<void>,
     ) => {
-      if (!deps.onSettingChange) return { dispose: () => {} }
+      // Without a host subscription there is nothing to unsubscribe.
+      if (!deps.onSettingChange) return { dispose: () => undefined }
       return {
         dispose: deps.onSettingChange(
           pluginId,
@@ -443,10 +457,12 @@ export function createPluginHost(deps: PluginHostDeps) {
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
       for (const { pluginId, reg } of registry.commands.value.values()) {
         if (matchesShortcut(event, reg.shortcut)) {
-          void getNote().then((note) => {
-            if (reg.scope === 'note' && note.path === '') return
-            return runCommand(deps, pluginId, reg, note)
-          })
+          getNote()
+            .then((note) => {
+              if (reg.scope === 'note' && note.path === '') return
+              return runCommand(deps, pluginId, reg, note)
+            })
+            .catch((error: unknown) => reportError(deps, pluginId, error))
           return true
         }
       }

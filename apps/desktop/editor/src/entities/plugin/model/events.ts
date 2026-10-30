@@ -11,7 +11,11 @@ export function addListener<E>(
   listener: PluginListener<E>,
 ): Disposable {
   listeners.add(listener)
-  return { dispose: () => void listeners.delete(listener) }
+  return {
+    dispose: () => {
+      listeners.delete(listener)
+    },
+  }
 }
 
 /** Hands a plugin's failure to the host's reporter, under the id of the plugin. */
@@ -26,7 +30,7 @@ export function notifyListeners<E>(
   deps: PluginHostDeps,
 ): void {
   for (const { pluginId, handler } of [...listeners]) {
-    void Promise.resolve()
+    Promise.resolve()
       .then(() => handler(event))
       .catch((error: unknown) => reportError(deps, pluginId, error))
   }

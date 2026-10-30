@@ -4,7 +4,7 @@
  * Everything asked here is asked of a kind made up for the test: what the
  * window does with a kind is the whole of what a real one can count on.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
 import { openTab, getPanes, paneById } from '@numen/shell'
 import type { Workspace } from '@numen/shell'
@@ -12,6 +12,11 @@ import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from './kinds'
 import { fileOpeners } from './openers'
 import { useWindowTabs } from './windowTabs'
+
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
 
 /**
  * A kind that records what it was asked to do, under the names it opened on. A
@@ -444,8 +449,12 @@ describe('reconciling tabs for a path', () => {
       fileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
       reconcileTab: window.reconcileTab,
     })
-    openers.registerEditor('note', (path) => void window.openTabOfKind('note', path))
-    openers.registerEditor('sample', (path) => void window.openTabOfKind('sample', path))
+    openers.registerEditor('note', (path) => {
+      window.openTabOfKind('note', path).catch(rethrow)
+    })
+    openers.registerEditor('sample', (path) => {
+      window.openTabOfKind('sample', path).catch(rethrow)
+    })
 
     await openers.openFile('Animals.md')
     expect(window.tabs.value).toHaveLength(1)
@@ -883,7 +892,7 @@ describe('the kinds the window holds', () => {
   it('finds the first registered that answers, and none where none does', () => {
     const window = useWindowTabs()
     window.registerKind(kind().one)
-    window.registerKind(kind({ kind: 'chat', receiveText: () => {} }).one)
+    window.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
     expect(window.findKind((one) => one.receiveText !== undefined)?.kind).toBe('chat')
     expect(window.findKind((one) => one.isTool === true)).toBeUndefined()

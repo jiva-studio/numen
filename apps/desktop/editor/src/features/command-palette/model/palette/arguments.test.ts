@@ -2,12 +2,17 @@
  * A command that asks for its arguments one step each: what each step draws,
  * what it goes on with, and the values the invocation carries.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
 import { useCommandPalette } from './palette'
 import type { Command, CommandTarget } from '../../types'
 import { WORDS as words } from '@/shared/words'
+
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
 
 const front: CommandTarget = {
   tab: 'tab',
@@ -38,7 +43,7 @@ const createPalette = () => {
     words,
     at: () => front,
     knows: { getTitle: () => '', getTabAt: () => null },
-    lists: { getStepGroups: () => [], previewItem: () => {} },
+    lists: { getStepGroups: () => [], previewItem: vi.fn() },
     runs: runSupport(),
     getExtraCommands: () => [createSample],
   })
@@ -69,7 +74,7 @@ describe('a command that asks for its arguments', () => {
   it('goes on to the next argument with what was typed, and offers to leave an optional one out', () => {
     const commands = createPalette()
     commands.startCommand('create-sample', front)
-    void commands.setTyped('  Verbs ')
+    commands.setTyped('  Verbs ').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Title: “Verbs”')
     expect(commands.chooseItem('name', 'name')).toBeNull()
@@ -82,10 +87,10 @@ describe('a command that asks for its arguments', () => {
   it('carries every value typed, by name, and leaves out the optional ones left blank', () => {
     const commands = createPalette()
     commands.startCommand('create-sample', front)
-    void commands.setTyped('Verbs')
+    commands.setTyped('Verbs').catch(rethrow)
     commands.chooseItem('name', 'name')
     commands.chooseItem('name', 'name')
-    void commands.setTyped('Spanish')
+    commands.setTyped('Spanish').catch(rethrow)
 
     const invocation = commands.chooseItem('name', 'name')
 
@@ -97,7 +102,7 @@ describe('a command that asks for its arguments', () => {
   it('goes back to the argument before', () => {
     const commands = createPalette()
     commands.startCommand('create-sample', front)
-    void commands.setTyped('Verbs')
+    commands.setTyped('Verbs').catch(rethrow)
     commands.chooseItem('name', 'name')
 
     expect(commands.goBack()).toBe(false)
@@ -114,12 +119,12 @@ describe('a command that arrives after the palette is made', () => {
       words,
       at: () => front,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: () => {} },
+      lists: { getStepGroups: () => [], previewItem: vi.fn() },
       runs: runSupport(),
       getExtraCommands: () => extra.value,
     })
     commands.setOpen(true)
-    void commands.setTyped('a sample')
+    commands.setTyped('a sample').catch(rethrow)
     expect(commands.groups.value).toStrictEqual([])
 
     extra.value = [createSample]

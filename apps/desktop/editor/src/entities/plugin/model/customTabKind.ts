@@ -301,11 +301,7 @@ function measureCustomTab(state: unknown): void {
   s?.editor?.measure?.()
 }
 
-function notifyCustomTabShown(
-  state: unknown,
-  id: string | undefined,
-  deps?: PluginHostDeps,
-): void {
+function notifyCustomTabShown(state: unknown, id: string | undefined, deps?: PluginHostDeps): void {
   measureCustomTab(state)
   if (!id || !deps?.getWorkspace) return
   const s = state as { path?: string; at?: string; title?: unknown } | undefined

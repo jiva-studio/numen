@@ -6,8 +6,8 @@ import type { PluginHostDeps } from './types'
 
 function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
   return {
-    registerKind: vi.fn(() => () => {}),
-    registerExtensionReader: vi.fn(() => () => {}),
+    registerKind: vi.fn(() => vi.fn()),
+    registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
     ...extra,
   }
@@ -168,7 +168,7 @@ describe('a tab kind component', () => {
     const deps = createDeps({
       registerKind: vi.fn((registered) => {
         kind = registered as { pane?: unknown }
-        return () => {}
+        return vi.fn()
       }),
     })
     const host = createPluginHost(deps)
