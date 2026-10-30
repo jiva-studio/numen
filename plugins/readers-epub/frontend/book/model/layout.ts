@@ -37,6 +37,7 @@ interface BookWatchContext {
   readonly takeLed: () => BookLink | undefined
   readonly standing: { value: number }
   readonly getSpreadOf: (pos: number) => number
+  readonly isEcho: (pos: number) => boolean
   readonly stand: (spread: number, how: 'smooth' | 'auto') => void
   readonly isStood: { value: boolean }
 }
@@ -70,6 +71,7 @@ function watchBookLayout(
   watch(
     () => props.at,
     (pos) => {
+      if (context.isEcho(pos)) return
       if (pos < props.span.start || pos >= props.span.end) return
       const want = context.getSpreadOf(pos)
       if (want !== context.standing.value) context.stand(want, 'smooth')
@@ -100,6 +102,7 @@ export interface BookSettlingOptions {
     readonly stand: (spread: number, how: 'smooth' | 'auto') => void
     readonly getKeptOffset: () => number
     readonly getSpreadOf: (pos: number) => number
+    readonly isEcho: (pos: number) => boolean
     readonly standing: { value: number }
   }
   readonly signals: {
@@ -135,6 +138,7 @@ export function createBookSettling(options: BookSettlingOptions) {
     takeLed: options.takeLed,
     standing: options.turns.standing,
     getSpreadOf: options.turns.getSpreadOf,
+    isEcho: options.turns.isEcho,
     stand: options.turns.stand,
     isStood: options.column.isStood,
   })
@@ -151,14 +155,15 @@ export function useBookLayout(options: BookLayoutOptions) {
   const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
     useBookColumns(options)
 
-  const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, turn, standing } = useBookTurns({
-    paper: options.paper,
-    props: options.props,
-    flow,
-    spreadCount,
-    marks,
-    onMove: options.onMove,
-  })
+  const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, isEcho, turn, standing } =
+    useBookTurns({
+      paper: options.paper,
+      props: options.props,
+      flow,
+      spreadCount,
+      marks,
+      onMove: options.onMove,
+    })
 
   const { settle } = createBookSettling({
     area: options.area,
@@ -174,7 +179,7 @@ export function useBookLayout(options: BookLayoutOptions) {
       markRuns: column.markRuns,
       isStood: column.isStood,
     },
-    turns: { stand, getKeptOffset, getSpreadOf, standing },
+    turns: { stand, getKeptOffset, getSpreadOf, isEcho, standing },
     signals: { viewport, textSize },
   })
 

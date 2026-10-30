@@ -73,9 +73,25 @@ export function useBookTurns(options: BookTurnsOptions) {
     translatePaper(options.paper.value, to, how)
   }
 
+  /** Offsets reported through `onMove` and not yet passed back as `at`. */
+  const announced = new Set<number>()
+
+  /**
+   * Whether `pos` is a reported offset passed back as `at`. It describes a
+   * spread this module has already stood on, possibly before a newer turn.
+   * Any other value is a move from outside and clears the pending reports.
+   */
+  const isEcho = (pos: number): boolean => {
+    if (announced.delete(pos)) return true
+    announced.clear()
+    return false
+  }
+
   const announce = () => {
     const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
-    if (now !== undefined && now !== options.props.at) options.onMove(now)
+    if (now === undefined || now === options.props.at) return
+    announced.add(now)
+    options.onMove(now)
   }
 
   const goTo = (spread: number) => {
@@ -110,6 +126,7 @@ export function useBookTurns(options: BookTurnsOptions) {
     goTo,
     getKeptOffset,
     getSpreadOf,
+    isEcho,
     turn,
   }
 }
