@@ -82,7 +82,9 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) { return cli.Search{}, errRefused },
+			Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) {
+				return cli.Search{}, errRefused
+			},
 		},
 		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
 	} {

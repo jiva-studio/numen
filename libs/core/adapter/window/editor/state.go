@@ -17,9 +17,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/broadcast"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 

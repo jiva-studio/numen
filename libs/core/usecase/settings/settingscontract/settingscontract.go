@@ -4,15 +4,15 @@ package settingscontract
 import "github.com/jiva-studio/numen/libs/core/port/settingsport"
 
 type (
-	Model = settingsport.Model
+	Model    = settingsport.Model
 	Presence = settingsport.Presence
-	Setting = settingsport.Setting
+	Setting  = settingsport.Setting
 )
 
 const (
-	NotFetched = settingsport.NotFetched
+	NotFetched     = settingsport.NotFetched
 	NothingToFetch = settingsport.NothingToFetch
-	Present = settingsport.Present
+	Present        = settingsport.Present
 )
 
 var (

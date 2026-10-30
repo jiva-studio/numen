@@ -96,4 +96,3 @@ func (c Config) IndexTexts(sources sourceport.SourceRepository, queries sourcepo
 	index.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return index, nil
 }
-

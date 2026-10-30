@@ -1,10 +1,10 @@
 package assembly
 
 import (
+	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
-	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 )
 
