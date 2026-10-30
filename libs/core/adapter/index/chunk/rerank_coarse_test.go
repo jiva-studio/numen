@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -39,7 +40,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	const vault domain.VaultID = "01RANKS"
 	if err := db.Vaults().Register(ctx, vault); err != nil {

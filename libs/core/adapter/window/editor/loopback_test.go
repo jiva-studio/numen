@@ -3,7 +3,6 @@ package editor
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -60,17 +59,17 @@ func (lockedVaults) RecordOpened(domain.VaultID) error { return nil }
 // openLoopback opens the socket a player uses to reach this API, closed with the test.
 func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	t.Helper()
-	back, err := Listen(api.server, nil)
+	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { back.Close() })
+	testsupport.CloseAfter(t, back)
 	return back, back.getHandler()
 }
 
-func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
+func ask(t testing.TB, handler http.Handler, url string) *httptest.ResponseRecorder {
 	out := httptest.NewRecorder()
-	handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, url, nil))
+	handler.ServeHTTP(out, httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil))
 	return out
 }
 
@@ -110,7 +109,7 @@ func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 
 	select {
 	case res := <-response:
@@ -132,7 +131,7 @@ func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	right := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
-	if out := ask(handler, right); out.Code != http.StatusOK {
+	if out := ask(t, handler, right); out.Code != http.StatusOK {
 		t.Fatalf("the address this run gave out was answered %d", out.Code)
 	}
 
@@ -141,7 +140,7 @@ func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 		"/" + strings.Repeat("a", 32) + "/" + talk,
 		"/",
 	} {
-		if out := ask(handler, wrong); out.Code != http.StatusForbidden {
+		if out := ask(t, handler, wrong); out.Code != http.StatusForbidden {
 			t.Errorf("%s was answered %d, want %d", wrong, out.Code, http.StatusForbidden)
 		}
 	}
@@ -159,7 +158,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	// The window moves to a vault holding nothing of the kind.
 	api.state.setVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
-	if out := ask(handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
+	if out := ask(t, handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
 			out.Code, out.Body)
 	}
@@ -173,7 +172,7 @@ func TestAFileOfAVaultNobodyContainsIsRefused(t *testing.T) {
 	elsewhere := api.state.GetCurrentVault()
 	ref := statOf(t, api, elsewhere, talk)
 	elsewhere.ID = "01ANOTHERVAULTALTOGETHER00"
-	if out := ask(handler, back.Address(elsewhere, ref)); out.Code != http.StatusNotFound {
+	if out := ask(t, handler, back.Address(elsewhere, ref)); out.Code != http.StatusNotFound {
 		t.Errorf("a vault nobody holds was answered %d", out.Code)
 	}
 }
@@ -189,12 +188,12 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	api.state.setVault(vault)
 	back, handler := openLoopback(t, api)
 
-	if out := ask(handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
+	if out := ask(t, handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
 		t.Errorf("a note of the vault was answered %d", out.Code)
 	}
 	for _, outside := range []string{"../secrets", "/etc/passwd"} {
 		pos := back.Address(vault, statOf(t, api, vault, outside))
-		if out := ask(handler, pos); out.Code == http.StatusOK {
+		if out := ask(t, handler, pos); out.Code == http.StatusOK {
 			t.Errorf("%s was served", outside)
 		}
 	}
@@ -206,7 +205,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)), nil)
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -225,7 +224,7 @@ func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	back, handler := openLoopback(t, api)
 	address := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
 
-	whole := ask(handler, address)
+	whole := ask(t, handler, address)
 	if got := whole.Header().Get("Accept-Ranges"); got != "bytes" {
 		t.Errorf("Accept-Ranges is %q", got)
 	}
@@ -234,7 +233,7 @@ func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 	}
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, address, nil)
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, address, nil)
 	r.Header.Set("Range", "bytes=-4")
 	handler.ServeHTTP(out, r)
 
@@ -254,43 +253,35 @@ func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
 // covers the whole path.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(api.server, nil)
+	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 
-	out, err := http.Get(back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
-	if err != nil {
-		t.Fatalf("the socket answered nothing: %v", err)
-	}
-	defer out.Body.Close()
+	out := fetch(t, http.DefaultClient, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
 	if out.StatusCode != http.StatusOK {
 		t.Fatalf("the socket answered %d", out.StatusCode)
 	}
 	if got := out.Header.Get("Content-Type"); got != "audio/mpeg" {
 		t.Errorf("it came back as %q", got)
 	}
-	response, err := io.ReadAll(out.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(response) != sound {
-		t.Errorf("it came back as %q", response)
+	if string(out.Body) != sound {
+		t.Errorf("it came back as %q", out.Body)
 	}
 }
 
 // socket a recording is played from is the one thing named beside it.
 func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(api.server, nil)
+	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 	api.Playing = back
 
-	response := getResponse(api.NewHandler(http.NotFoundHandler()), "/").
+	response := getResponse(t, api.NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
 	if !strings.Contains(response, "media-src 'self' "+back.address) {
 		t.Errorf("the socket is not what a recording may be played from: %q", response)

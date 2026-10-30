@@ -90,7 +90,9 @@ func OpenAt(path string, into Document) error {
 		// the size the desktop requests. A machine that cannot write the file runs with
 		// the same settings.
 		into.GetAppearance().InterfaceScale = getDesktopScale()
-		_ = write(path, into)
+		if err := write(path, into); err != nil {
+			warn(into, "the settings could not be written to %s: %v", path, err)
+		}
 		return nil
 	}
 	if err != nil {
@@ -162,7 +164,9 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 		into.GetAppearance().InterfaceScale = getDesktopScale()
 	case InterfaceScaleBounds.Contains(zoom):
 		into.GetAppearance().InterfaceScale = zoom
-		_ = renameField(path, []string{"appearance", "zoom"}, "interface_scale")
+		if err := renameField(path, []string{"appearance", "zoom"}, "interface_scale"); err != nil {
+			warn(into, "appearance.zoom could not be renamed to interface_scale in %s: %v", path, err)
+		}
 	default:
 		// Warns with the setting the number maps to and its bounds. The number remains
 		// in the file.

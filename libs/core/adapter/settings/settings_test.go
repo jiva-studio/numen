@@ -3,6 +3,7 @@ package settings_test
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,9 @@ import (
 // A file without a size uses the desktop's scale; unsetting GDK_DPI_SCALE keeps
 // the tests independent of the session environment.
 func TestMain(m *testing.M) {
-	os.Unsetenv("GDK_DPI_SCALE")
+	if err := os.Unsetenv("GDK_DPI_SCALE"); err != nil {
+		log.Fatal(err)
+	}
 	os.Exit(m.Run())
 }
 

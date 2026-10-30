@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -19,7 +20,7 @@ func openRepository(t *testing.T) *version.Repository {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db.TextVersions()
 }
 

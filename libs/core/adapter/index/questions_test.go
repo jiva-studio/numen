@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -22,12 +24,12 @@ var ran atomic.Int64
 // tallyingDriver registers the driver the index opens, wrapped to count every
 // statement executed through it. It is registered once, because a driver name
 // is registered for the life of the process.
-var tallyingDriver = sync.OnceValue(func() error {
+var tallyingDriver = sync.OnceValue(func() (err error) {
 	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		return err
 	}
-	defer base.Close()
+	defer func() { err = errors.Join(err, base.Close()) }()
 	sql.Register("sqlite-tallying", tallying{base.Driver()})
 	return nil
 })
@@ -101,7 +103,7 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	for _, v := range []domain.Vault{first, second} {
 		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 			t.Fatal(err)
@@ -112,7 +114,7 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { pool.Close() })
+	testsupport.CloseAfter(t, pool)
 	return db, note.NewQueries(pool)
 }
 

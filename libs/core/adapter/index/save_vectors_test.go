@@ -42,7 +42,10 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 
 	vectors := make([]chunk.Vector, len(unembedded))
 	for i, o := range unembedded {
-		hash, _ := hex.DecodeString(o.ChunkHash)
+		hash, err := hex.DecodeString(o.ChunkHash)
+		if err != nil {
+			t.Fatal(err)
+		}
 		vectors[i] = chunk.Vector{
 			Chunk:  o.Chunk,
 			Hash:   hash,

@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 )
@@ -30,7 +31,9 @@ func (m DatabaseMaintenance) ReportChanges(ctx context.Context) error {
 		return err
 	}
 	for _, fts := range []string{"chunks_fts", "sections_fts", "titles_fts", "headings_fts"} {
-		_, _ = sqlwrite.Exec(ctx, m.db, "INSERT INTO "+fts+"("+fts+") VALUES('optimize')")
+		if _, err := sqlwrite.Exec(ctx, m.db, "INSERT INTO "+fts+"("+fts+") VALUES('optimize')"); err != nil {
+			return fmt.Errorf("optimize %s: %w", fts, err)
+		}
 	}
 	return nil
 }

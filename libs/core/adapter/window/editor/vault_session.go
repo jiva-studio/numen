@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -94,7 +93,7 @@ func (o *Installation) startVault(ctx context.Context, v domain.Vault, rebuild b
 	// Recorded before the vault is built, so the next window opens on it. A failure
 	// to write the list is reported and does not stop the vault from opening.
 	if err := o.vaults.RecordOpen.Execute(v.ID); err != nil {
-		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
+		writeDiagnostic(o.State.reportTask, o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	on := o.buildSession(ctx, v, rebuild)
 	// Last, so a request that reads a run reads the one belonging to the vault

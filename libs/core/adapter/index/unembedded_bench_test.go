@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -40,7 +41,7 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	tb.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(tb, db)
 	if err := db.Vaults().Register(ctx, benchVault.ID); err != nil {
 		tb.Fatal(err)
 	}

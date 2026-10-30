@@ -44,7 +44,7 @@ func (h *mediaHandler) GetMediaSource(
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		if found {
-			_ = played.Body.Close()
+			closeAndReport(h.state.reportTask, played.Body)
 			return connect.NewResponse(&v1.GetMediaSourceResponse{
 				Src:       h.playing.Address(showing, getCopyFileStat(ref.Path, played.Size)),
 				MediaType: played.MediaType,

@@ -44,7 +44,9 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 	open func(Locations) Deps,
 ) int {
 	if err := Run(ctx, out, errOut, args, open); err != nil {
-		fmt.Fprintln(errOut, "numen-cli:", err)
+		if _, writeErr := fmt.Fprintln(errOut, "numen-cli:", err); writeErr != nil {
+			return 2
+		}
 		return 1
 	}
 	return 0
@@ -75,8 +77,9 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 
 	rest := fs.Args()
 	if len(rest) == 0 {
-		fmt.Fprint(out, usage)
-		writePluginCommandUsage(out, deps)
+		if err := writeUsage(out, deps); err != nil {
+			return err
+		}
 		return errors.New("no command given")
 	}
 
@@ -92,15 +95,21 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "problems":
 		return runProblemsCommand(ctx, out, deps, rest[1:])
 	case "help", "-h", "--help":
-		fmt.Fprint(out, usage)
-		writePluginCommandUsage(out, deps)
-		return nil
+		return writeUsage(out, deps)
 	default:
 		if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
 			return runPluginCommand(ctx, out, deps, entry, rest[1:])
 		}
 		return fmt.Errorf("unknown command %q", rest[0])
 	}
+}
+
+// writeUsage writes the usage text and the commands the enabled plugins declare.
+func writeUsage(out io.Writer, deps Deps) error {
+	r := newReporter(out)
+	r.Print(usage)
+	writePluginCommandUsage(r, deps)
+	return r.Err()
 }
 
 // parseInterspersed collects positional arguments wherever they appear.

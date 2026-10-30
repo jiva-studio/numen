@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -134,7 +135,8 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	}
 	was := os.Stderr
 	os.Stderr = file
-	t.Cleanup(func() { os.Stderr = was; file.Close() })
+	t.Cleanup(func() { os.Stderr = was })
+	testsupport.CloseAfter(t, file)
 
 	wasOpened := false
 	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { wasOpened = true; return cli.Vaults{}, errRefused }}
@@ -152,7 +154,11 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	if wasOpened {
 		t.Error("the list was opened for a command line that did not parse")
 	}
-	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {
+	response, readErr := os.ReadFile(file.Name())
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if len(response) != 0 {
 		t.Errorf("the flag package wrote to the terminal:\n%s", response)
 	}
 }

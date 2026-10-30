@@ -137,7 +137,11 @@ func rowsOf(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var out []int64
 	for rows.Next() {
@@ -589,7 +593,11 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var out []string
 	for rows.Next() {

@@ -30,7 +30,7 @@ func findPluginCommand(deps Deps, name string) (plugincommand.Entry, bool) {
 }
 
 // writePluginCommandUsage writes a line for each command the enabled plugins declare.
-func writePluginCommandUsage(out io.Writer, deps Deps) {
+func writePluginCommandUsage(r *reporter, deps Deps) {
 	if deps.PluginCommands == nil {
 		return
 	}
@@ -38,9 +38,9 @@ func writePluginCommandUsage(out io.Writer, deps Deps) {
 	if len(entries) == 0 {
 		return
 	}
-	fmt.Fprintln(out, "\ncommands of the plugins:")
+	r.Println("\ncommands of the plugins:")
 	for _, entry := range entries {
-		fmt.Fprintf(out, "  numen-cli %s\n      %s\n", getPluginCommandSynopsis(entry.Command), entry.Command.Title)
+		r.Printf("  numen-cli %s\n      %s\n", getPluginCommandSynopsis(entry.Command), entry.Command.Title)
 	}
 }
 
@@ -68,7 +68,7 @@ func getPluginCommandSynopsis(command plugincommand.Command) string {
 // arguments given as flags, and writes the plugin's output.
 func runPluginCommand(
 	ctx context.Context, out io.Writer, deps Deps, entry plugincommand.Entry, args []string,
-) error {
+) (err error) {
 	declared := entry.Command
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(declared))
 	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
@@ -104,7 +104,7 @@ func runPluginCommand(
 	if err != nil {
 		return err
 	}
-	defer closeIfOpen(closeRun)
+	defer closeInto(&err, closeRun)
 
 	call := plugincommand.Call{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
 	if declared.HasFiles() {
@@ -114,11 +114,12 @@ func runPluginCommand(
 	if err != nil {
 		return err
 	}
+	r := newReporter(out)
 	if result.Message != "" {
-		fmt.Fprintln(out, result.Message)
+		r.Println(result.Message)
 	}
 	if result.OpenedPath != "" {
-		fmt.Fprintln(out, result.OpenedPath)
+		r.Println(result.OpenedPath)
 	}
-	return nil
+	return r.Err()
 }

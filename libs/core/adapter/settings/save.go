@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
@@ -205,7 +206,7 @@ func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]
 		return splice(object, one.from, one.to, section), nil
 	}
 
-	return target.appendMember(object, pos, value, outer), nil
+	return target.appendMember(object, pos, value, outer)
 }
 
 // member is one member of an object: its name, where that name is written, and
@@ -305,37 +306,54 @@ func (s shape) hasKey(key string) bool {
 // appendMember appends a member at the end of the object, using the object's
 // existing layout. A new name goes last because the order of existing members is
 // preserved.
-func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) []byte {
-	name, _ := json.Marshal(pos[0])
+func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) ([]byte, error) {
+	name, err := json.Marshal(pos[0])
+	if err != nil {
+		return nil, fmt.Errorf("encode the name %q: %w", pos[0], err)
+	}
 
 	if len(s.pairs) == 0 {
 		// An empty object has no layout to follow, so the member is placed on its
 		// own line, indented one step deeper than the key the object belongs to.
 		indent := outer + "  "
-		body := string(name) + ": " + string(wrapInSections(pos[1:], value, indent))
-		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer))
+		wrapped, err := wrapInSections(pos[1:], value, indent)
+		if err != nil {
+			return nil, err
+		}
+		body := string(name) + ": " + string(wrapped)
+		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer)), nil
 	}
 
-	body := string(name) + ": " + string(wrapInSections(pos[1:], value, s.indent))
-	if s.indent == "" {
-		return splice(object, s.last, s.last, []byte(", "+body))
+	wrapped, err := wrapInSections(pos[1:], value, s.indent)
+	if err != nil {
+		return nil, err
 	}
-	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body))
+	body := string(name) + ": " + string(wrapped)
+	if s.indent == "" {
+		return splice(object, s.last, s.last, []byte(", "+body)), nil
+	}
+	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body)), nil
 }
 
 // wrapInSections is the value a name is given, wrapped in the sections between
 // it and the field it names. A section made for a one-line object is written on
 // one line too.
-func wrapInSections(pos []string, value []byte, indent string) []byte {
+func wrapInSections(pos []string, value []byte, indent string) ([]byte, error) {
 	if len(pos) == 0 {
-		return value
+		return value, nil
 	}
-	name, _ := json.Marshal(pos[0])
-	inside := wrapInSections(pos[1:], value, indent+"  ")
+	name, err := json.Marshal(pos[0])
+	if err != nil {
+		return nil, fmt.Errorf("encode the name %q: %w", pos[0], err)
+	}
+	inside, err := wrapInSections(pos[1:], value, indent+"  ")
+	if err != nil {
+		return nil, err
+	}
 	if indent == "" {
-		return []byte("{" + string(name) + ": " + string(inside) + "}")
+		return []byte("{" + string(name) + ": " + string(inside) + "}"), nil
 	}
-	return []byte("{\n" + indent + "  " + string(name) + ": " + string(inside) + "\n" + indent + "}")
+	return []byte("{\n" + indent + "  " + string(name) + ": " + string(inside) + "\n" + indent + "}"), nil
 }
 
 // getIndent is the whitespace an object's members are laid out with, taken from
@@ -416,20 +434,23 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 //
 // The path is the one runOnFile hands its work: the file itself, with every link
 // on the way to it already followed.
-func writeFileAtomically(path string, content []byte) error {
+func writeFileAtomically(path string, content []byte) (err error) {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
+	// After a successful rename the temporary name no longer exists.
+	defer func() {
+		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+			err = errors.Join(err, removeErr)
+		}
+	}()
 
 	if _, err := tmp.Write(content); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Close(); err != nil {
 		return err
@@ -451,9 +472,19 @@ func writeFileAtomically(path string, content []byte) error {
 func syncDirectory(dir string) error {
 	folder, err := os.Open(dir)
 	if err != nil {
-		return nil
+		if isSyncUnsupported(err) {
+			return nil
+		}
+		return err
 	}
-	defer folder.Close()
-	_ = folder.Sync()
-	return nil
+	if err := folder.Sync(); err != nil && !isSyncUnsupported(err) {
+		return errors.Join(err, folder.Close())
+	}
+	return folder.Close()
+}
+
+// isSyncUnsupported is whether the filesystem refuses to flush a folder.
+func isSyncUnsupported(err error) bool {
+	return errors.Is(err, errors.ErrUnsupported) || errors.Is(err, fs.ErrPermission) ||
+		errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP)
 }

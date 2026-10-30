@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/floorport"
 )
 
@@ -24,7 +25,11 @@ func TestMigrationEightCreatesTheFloorsTable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	t.Cleanup(func() {
+		if err := rows.Close(); err != nil {
+			t.Errorf("close rows: %v", err)
+		}
+	})
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
@@ -137,7 +142,7 @@ func TestFloorsSurviveReopeningTheIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer two.Close()
+	testsupport.CloseAfter(t, two)
 	got, found, err := two.Floors().ReadFloor(ctx, first, testRecipe)
 	if err != nil || !found || !got.IsManual || got.ManualFloor != 0.5 {
 		t.Errorf("after reopening: %+v, %v, %v", got, found, err)

@@ -79,8 +79,8 @@ func size(response float64) *float64 { return &response }
 
 // getResponse is what comes back at exactly this path. The page is handed over as
 // the empty path as well, which no URL parses to.
-func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
-	r := httptest.NewRequest(http.MethodGet, "/", nil)
+func getResponse(t testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	r.URL.Path = path
 	out := httptest.NewRecorder()
 	handler.ServeHTTP(out, r)
@@ -99,7 +99,7 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css"} {
-		if response := getResponse(handler, path).Header().Get("Content-Security-Policy"); response != target {
+		if response := getResponse(t, handler, path).Header().Get("Content-Security-Policy"); response != target {
 			t.Errorf("%q is bound to %q", path, response)
 		}
 	}
@@ -108,7 +108,7 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 // The window frames no host. A frame runs that host's own scripts and calls
 // that host's own machines, so any added host must appear in a reviewed diff.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
-	response := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
+	response := getResponse(t, newBareServices().NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
 	if !strings.Contains(response, "frame-src 'self';") {
 		t.Errorf("the policy reads %q", response)
@@ -136,7 +136,7 @@ func TestHandler_MountsEveryVaultService(t *testing.T) {
 		numenv1connect.NoteServiceReadNoteProcedure,
 		numenv1connect.SearchServiceSearchNamesProcedure,
 	} {
-		if code := getResponse(handler, route).Code; code != http.StatusMethodNotAllowed {
+		if code := getResponse(t, handler, route).Code; code != http.StatusMethodNotAllowed {
 			t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)
 		}
 	}
@@ -147,7 +147,7 @@ func TestHandler_MountsEveryVaultService(t *testing.T) {
 func TestPluginServiceIsMounted(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	route := numenv1connect.PluginServiceGetPluginsProcedure
-	if code := getResponse(handler, route).Code; code != http.StatusMethodNotAllowed {
+	if code := getResponse(t, handler, route).Code; code != http.StatusMethodNotAllowed {
 		t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)
 	}
 }
@@ -162,7 +162,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	request := []string{"", "/", "/index.html", questions + "Find"}
 
 	for _, path := range request {
-		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
+		if code := getResponse(t, handler, path).Code; code == http.StatusServiceUnavailable {
 			t.Errorf("%q failed at %d with the window still open", path, code)
 		}
 	}
@@ -170,7 +170,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	services.state.Close()
 
 	for _, path := range request {
-		if code := getResponse(handler, path).Code; code != http.StatusServiceUnavailable {
+		if code := getResponse(t, handler, path).Code; code != http.StatusServiceUnavailable {
 			t.Errorf("%q was answered %d by a window being taken away", path, code)
 		}
 	}
@@ -185,7 +185,7 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 
 	for _, path := range []string{"", "/", "/index.html"} {
 		t.Run(strconv.Quote(path), func(t *testing.T) {
-			out := getResponse(handler, path)
+			out := getResponse(t, handler, path)
 			if out.Code != http.StatusOK {
 				t.Fatalf("answered %d", out.Code)
 			}
@@ -222,7 +222,7 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 		TextScale:      size(1.5),
 	})
 
-	head, _, found := strings.Cut(getResponse(handler, "/").Body.String(), appearance.HeadEnd)
+	head, _, found := strings.Cut(getResponse(t, handler, "/").Body.String(), appearance.HeadEnd)
 	if !found {
 		t.Fatal("the page has no head")
 	}
@@ -256,7 +256,7 @@ func TestAFileNamingTheZoomOpensTheWindowGeneratedAtIt(t *testing.T) {
 	}
 	handler, _ := newPageHandler(t, cfg)
 
-	if !strings.Contains(getResponse(handler, "/").Body.String(), "--numen-interface-scale: 1.5") {
+	if !strings.Contains(getResponse(t, handler, "/").Body.String(), "--numen-interface-scale: 1.5") {
 		t.Error("the page is not drawn at what the file says")
 	}
 }
@@ -298,17 +298,17 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	handler, themes := newPageHandler(t, cfg)
 	writeTheme(t, cfg, "sea.css", mine)
 
-	if strings.Contains(getResponse(handler, "/").Body.String(), mine) {
+	if strings.Contains(getResponse(t, handler, "/").Body.String(), mine) {
 		t.Fatal("the page is wearing a theme nobody chose")
 	}
 	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
-	if !strings.Contains(getResponse(handler, "/").Body.String(), mine) {
+	if !strings.Contains(getResponse(t, handler, "/").Body.String(), mine) {
 		t.Error("the page is still wearing what it opened in")
 	}
 
 	// The file behind the name is read again as well.
 	writeTheme(t, cfg, "sea.css", ":root{--numen-surface:#040506}")
-	if !strings.Contains(getResponse(handler, "/").Body.String(), "#040506") {
+	if !strings.Contains(getResponse(t, handler, "/").Body.String(), "#040506") {
 		t.Error("the page is wearing the file as it was")
 	}
 }
@@ -321,7 +321,7 @@ func TestPages_ServesUnthemedPageUnchanged(t *testing.T) {
 		t.Skipf("no interface in this binary: %v", err)
 	}
 
-	out := getResponse(newBareServices().NewHandler(files), "/")
+	out := getResponse(t, newBareServices().NewHandler(files), "/")
 	if out.Code != http.StatusOK {
 		t.Fatalf("answered %d", out.Code)
 	}
@@ -337,7 +337,7 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	writeTheme(t, cfg, "loud.css", ":root{--numen-surface:#010203}</STYLE><b>out here</b>")
 	choose(t, themes, "mine:loud", v1.Mode_MODE_SYSTEM)
 
-	body := getResponse(handler, "/").Body.String()
+	body := getResponse(t, handler, "/").Body.String()
 	head, rest, found := strings.Cut(body, appearance.HeadEnd)
 	if !found {
 		t.Fatal("the page has no head")
@@ -394,7 +394,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	go func() {
 		defer close(reply)
 		path, _ := numenv1connect.NewVaultsServiceHandler(api.Vaults)
-		req := httptest.NewRequest(http.MethodPost, path+"ListVaults", strings.NewReader("{}"))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path+"ListVaults", strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		handler.ServeHTTP(httptest.NewRecorder(), req)
 	}()
@@ -425,17 +425,17 @@ func TestPluginAssetsAreServed(t *testing.T) {
 	fixture := makePluginFixture(t)
 
 	t.Run("serves javascript module with correct mime", func(t *testing.T) {
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/dist/index.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/dist/index.js")
 		verifyAssetResponse(t, w, http.StatusOK, "application/javascript", string(fixture.jsContent))
 	})
 
 	t.Run("serves css stylesheet with correct mime", func(t *testing.T) {
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/dist/styles.css")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/dist/styles.css")
 		verifyAssetResponse(t, w, http.StatusOK, "text/css", string(fixture.cssContent))
 	})
 
 	t.Run("rejects path traversal", func(t *testing.T) {
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/../../secret")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/../../secret")
 		if w.Code != http.StatusForbidden && w.Code != http.StatusBadRequest {
 			t.Fatalf("expected 403 or 400, got %d", w.Code)
 		}
@@ -443,51 +443,51 @@ func TestPluginAssetsAreServed(t *testing.T) {
 
 	t.Run("rejects symlink escape", func(t *testing.T) {
 		fixture.createSymlinkEscape(t)
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/dist/symlink.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/dist/symlink.js")
 		verifyAssetResponse(t, w, http.StatusForbidden, "", "")
 	})
 
 	t.Run("rejects an escaping directory symlink", func(t *testing.T) {
 		fixture.createDirSymlinkEscape(t)
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/linkdir/secret.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/linkdir/secret.js")
 		verifyAssetResponse(t, w, http.StatusForbidden, "", "")
 	})
 
 	t.Run("does not report a contained symlink to a file as an escape", func(t *testing.T) {
 		fixture.createContainedSymlink(t)
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/dist/alias.js/child")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/dist/alias.js/child")
 		if w.Code == http.StatusForbidden {
 			t.Fatalf("contained symlink reported as an escape: %d", w.Code)
 		}
 
-		w = fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/dist/alias.js")
+		w = fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/dist/alias.js")
 		verifyAssetResponse(t, w, http.StatusOK, "", "")
 	})
 
 	t.Run("rejects a contained symlink that points at an escaping symlink", func(t *testing.T) {
 		fixture.createChainedSymlinkEscape(t)
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/inner/secret.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/inner/secret.js")
 		verifyAssetResponse(t, w, http.StatusForbidden, "", "")
 	})
 
 	t.Run("answers 500 for a symlink loop", func(t *testing.T) {
 		fixture.createSymlinkLoop(t)
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/loopa/x.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/loopa/x.js")
 		verifyAssetResponse(t, w, http.StatusInternalServerError, "", "")
 	})
 
 	t.Run("returns 404 for unknown plugin", func(t *testing.T) {
-		w := fixture.serveRequest(http.MethodGet, "/plugin/unknown.plugin/dist/index.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/unknown.plugin/dist/index.js")
 		verifyAssetResponse(t, w, http.StatusNotFound, "", "")
 	})
 
 	t.Run("returns 404 for nonexistent asset", func(t *testing.T) {
-		w := fixture.serveRequest(http.MethodGet, "/plugin/sample.plugin/dist/missing.js")
+		w := fixture.serveRequest(t, http.MethodGet, "/plugin/sample.plugin/dist/missing.js")
 		verifyAssetResponse(t, w, http.StatusNotFound, "", "")
 	})
 
 	t.Run("returns 405 for POST method", func(t *testing.T) {
-		w := fixture.serveRequest(http.MethodPost, "/plugin/sample.plugin/dist/index.js")
+		w := fixture.serveRequest(t, http.MethodPost, "/plugin/sample.plugin/dist/index.js")
 		verifyAssetResponse(t, w, http.StatusMethodNotAllowed, "", "")
 	})
 }
@@ -536,8 +536,8 @@ func makePluginFixture(t *testing.T) *pluginFixture {
 	}
 }
 
-func (f *pluginFixture) serveRequest(method, path string) *httptest.ResponseRecorder {
-	r := httptest.NewRequest(method, path, nil)
+func (f *pluginFixture) serveRequest(t testing.TB, method, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRequestWithContext(t.Context(), method, path, nil)
 	w := httptest.NewRecorder()
 	f.handler.ServeHTTP(w, r)
 	return w

@@ -354,7 +354,8 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	}
 	was := os.Stderr
 	os.Stderr = file
-	t.Cleanup(func() { os.Stderr = was; file.Close() })
+	t.Cleanup(func() { os.Stderr = was })
+	testsupport.CloseAfter(t, file)
 
 	wasOpened := false
 	var out bytes.Buffer
@@ -367,7 +368,11 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	if wasOpened {
 		t.Error("an installation was opened for a command line that did not parse")
 	}
-	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {
+	response, readErr := os.ReadFile(file.Name())
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if len(response) != 0 {
 		t.Errorf("the flag package wrote to the terminal:\n%s", response)
 	}
 }
@@ -471,7 +476,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
-					_ = db.Close()
+					testsupport.Close(t, db)
 					return cli.Scan{}, err
 				}
 				embed.Embedder = s.embedder

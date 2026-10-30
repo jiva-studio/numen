@@ -16,6 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -82,7 +82,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
@@ -133,7 +133,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 
 	// The first message reports that the stream is open and that nothing has
 	// changed.
@@ -193,7 +193,7 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 
 	if !changes.Receive() {
 		t.Fatalf("the stream never opened: %v", changes.Err())
@@ -346,7 +346,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	}
 	// Closing joins the passes still running and lets go of the index, and the
 	// folder the index is in is taken away after this.
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	recorded := &order{}
 	// What this watches is the order the writes and the closing land in, so
@@ -533,7 +533,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer testsupport.Close(t, stream)
 
 	// The stream opens by delivering the token.
 	if !stream.Receive() {
@@ -602,7 +602,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 // go gets it.
 func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
@@ -611,7 +611,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	defer testsupport.Close(t, stream)
 
 	if !stream.Receive() {
 		t.Fatalf("the stream never opened: %v", stream.Err())
@@ -649,6 +649,10 @@ type speaking struct {
 	token    string
 	question chan string
 	hangUp   context.CancelFunc
+
+	mu sync.Mutex
+	// failures are the errors of the flush reports, read when the test ends.
+	failures []error
 }
 
 // openQuitStream opens the quit stream and takes the token it opens with.
@@ -673,13 +677,20 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	p := &speaking{f: f, token: stream.Msg().GetToken(), question: make(chan string, 8), hangUp: hangUp}
 	go func() {
 		defer close(p.question)
-		defer stream.Close()
+		defer testsupport.Close(t, stream)
 		for stream.Receive() {
 			if stream.Msg().GetFlush() {
 				p.question <- stream.Msg().GetToken()
 			}
 		}
 	}()
+	t.Cleanup(func() {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		for _, err := range p.failures {
+			t.Errorf("report flush: %v", err)
+		}
+	})
 	t.Cleanup(hangUp)
 	return p
 }
@@ -696,11 +707,16 @@ func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 
 // sendFlush is the page telling the application what it has left.
 func (p *speaking) sendFlush(token string, response v1.FlushResult) {
-	_, _ = p.f.canvas.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
+	_, err := p.f.canvas.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
 		Token:  token,
 		Result: response,
 	}))
+	if err != nil {
+		p.mu.Lock()
+		p.failures = append(p.failures, err)
+		p.mu.Unlock()
+	}
 }
 
 // endStream is the page's stream ending, and waits for the application to have
@@ -724,7 +740,7 @@ func (p *speaking) endStream(t *testing.T) {
 // decides where it goes.
 func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
 	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
@@ -760,7 +776,7 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 // TestFlushPending_ClosesAfterPromptsResolved.
 func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
 	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
@@ -799,7 +815,7 @@ func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 // the page holds is written for it.
 func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
 	asks := 0
@@ -847,7 +863,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 // answer, so the window waits for the page up to the timeout and then proceeds.
 func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
 	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
@@ -881,7 +897,7 @@ func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 // second under a token of its own, and the text it holds is still its own.
 func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	first := openQuitStream(t, f)
 	first.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })

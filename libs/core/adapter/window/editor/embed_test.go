@@ -16,11 +16,13 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -29,7 +31,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -392,20 +393,27 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(&mockEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	serverAddress, ok := server.Listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("the test server listens on %T, want *net.TCPAddr", server.Listener.Addr())
+	}
+	serverPort := serverAddress.Port
 
 	host := plugin.NewHost("desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		// The plugin host may have reaped the process already.
+		if _, err := cmd.Process.Wait(); err != nil && !errors.Is(err, syscall.ECHILD) && !errors.Is(err, os.ErrProcessDone) {
+			t.Errorf("wait: %v", err)
+		}
 	}()
 
 	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -421,7 +429,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	if installation.Embedder == nil {
 		t.Fatal("the vault opened with no embedder on hand")
@@ -438,7 +446,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	if installation.Embedder != nil {
 		t.Errorf("got an embedder: %v", installation.Embedder.GetModel())
@@ -455,7 +463,7 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	// Reported before the reading goroutine starts, so a window opening on a new
 	// vault shows the walk from its start.

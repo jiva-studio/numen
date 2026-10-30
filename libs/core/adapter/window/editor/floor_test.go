@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // A window opened with no model answers the floor requests it can: the floor is
@@ -20,7 +21,7 @@ func TestAWindowWithNoModelAnswersFloorRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 	search := installation.Services.Search
 
 	got, err := search.GetFloor(t.Context(), connect.NewRequest(&v1.GetFloorRequest{}))
@@ -45,7 +46,7 @@ func TestTheFloorOfTheSettingsFileIsInForceInAWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	got, err := installation.Services.Search.GetFloor(t.Context(), connect.NewRequest(&v1.GetFloorRequest{}))
 	if err != nil {

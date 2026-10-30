@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/internal/csp"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -76,7 +77,7 @@ func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a window with no themes answers nothing: %v", err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	testsupport.CloseAfter(t, stream)
 	if !stream.Receive() {
 		t.Fatalf("a window with no themes answers nothing: %v", stream.Err())
 	}
@@ -91,14 +92,16 @@ func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 // interface serves them with the files the window was given.
 func TestHandler_ServesPageAtRootAndIndex(t *testing.T) {
 	files := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte("the files"))
+		if _, err := w.Write([]byte("the files")); err != nil {
+			t.Error(err)
+		}
 	})
 	handler := (&API{}).NewHandler(files)
 
 	_, err := wire.GetInterface(pages)
 	for _, item := range []string{"/", "/index.html"} {
 		out := httptest.NewRecorder()
-		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, item, nil))
+		handler.ServeHTTP(out, httptest.NewRequestWithContext(t.Context(), http.MethodGet, item, nil))
 		if err == nil {
 			if !strings.Contains(out.Body.String(), "<!doctype html>") {
 				t.Errorf("%s answered %q", item, out.Body.String())
@@ -121,7 +124,7 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 
 	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css"} {
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 		r.URL.Path = path
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, r)
@@ -137,7 +140,9 @@ func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
 	forwarded := &forwarding{serves: map[string]bool{"/numen.epub/GetBook": true}}
 	api := &API{PluginServices: forwarded}
 	handler := api.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte("the files"))
+		if _, err := w.Write([]byte("the files")); err != nil {
+			t.Error(err)
+		}
 	}))
 
 	for path, want := range map[string]string{
@@ -145,7 +150,7 @@ func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
 		"/built/index.css":    "the files",
 	} {
 		out := httptest.NewRecorder()
-		handler.ServeHTTP(out, httptest.NewRequest(http.MethodPost, path, nil))
+		handler.ServeHTTP(out, httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil))
 		if got := out.Body.String(); got != want {
 			t.Errorf("%s answered %q, want %q", path, got, want)
 		}
@@ -158,7 +163,9 @@ type forwarding struct{ serves map[string]bool }
 func (f *forwarding) Serves(path string) bool { return f.serves[path] }
 
 func (f *forwarding) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	_, _ = w.Write([]byte("a plugin"))
+	if _, err := w.Write([]byte("a plugin")); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // The window lists the plugins of its target and serves the files of their frontends from the folder
@@ -191,11 +198,7 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 		"/plugin/md.numen.example/dist/missing.js": http.StatusNotFound,
 		"/plugin/md.numen.other/dist/index.js":     http.StatusNotFound,
 	} {
-		response, err := server.Client().Get(server.URL + path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_ = response.Body.Close()
+		response := fetch(t, server.Client(), server.URL+path)
 		if response.StatusCode != want {
 			t.Errorf("%s answered %d, want %d", path, response.StatusCode, want)
 		}

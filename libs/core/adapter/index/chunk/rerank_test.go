@@ -1,27 +1,30 @@
 package chunk
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	_ "modernc.org/sqlite"
 )
 
-func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float32) {
+func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queries, []int64, []float32) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "rerank_test.db")
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	schema := `
 	CREATE TABLE chunks (
@@ -52,7 +55,7 @@ func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float3
 		embedding BLOB,
 		PRIMARY KEY (hash, recipe)
 	);`
-	if _, err := db.Exec(schema); err != nil {
+	if _, err := db.ExecContext(ctx, schema); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,29 +64,45 @@ func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float3
 		query[i] = 1.0
 	}
 
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			t.Error(err)
+		}
+	}()
 
-	stmtSource, err := tx.Prepare(`INSERT INTO sources (id, vault_id, path, kind, size, mtime, hash, recipe, producer) VALUES (?, 1, ?, ?, 1000, 1, ?, 'epub', '')`)
+	stmtSource, err := tx.PrepareContext(ctx, `INSERT INTO sources (id, vault_id, path, kind, size, mtime, hash, recipe, producer) VALUES (?, 1, ?, ?, 1000, 1, ?, 'epub', '')`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stmtSource.Close()
+	defer func() {
+		if err := stmtSource.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
-	stmtChunk, err := tx.Prepare(`INSERT INTO chunks (id, vault_id, source_id, start, length, location, text, hash, parent) VALUES (?, 1, ?, ?, ?, 'loc', 'text', ?, 0)`)
+	stmtChunk, err := tx.PrepareContext(ctx, `INSERT INTO chunks (id, vault_id, source_id, start, length, location, text, hash, parent) VALUES (?, 1, ?, ?, ?, 'loc', 'text', ?, 0)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stmtChunk.Close()
+	defer func() {
+		if err := stmtChunk.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
-	stmtVector, err := tx.Prepare(`INSERT INTO vectors (hash, recipe, embedding) VALUES (?, 'recipe1', ?)`)
+	stmtVector, err := tx.PrepareContext(ctx, `INSERT INTO vectors (hash, recipe, embedding) VALUES (?, 'recipe1', ?)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stmtVector.Close()
+	defer func() {
+		if err := stmtVector.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	candidates := make([]int64, 0, count)
 	for i := 1; i <= count; i++ {
@@ -92,14 +111,14 @@ func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float3
 			sourceKind = "note"
 		}
 		sourceHash := fmt.Sprintf("src-%04d", i)
-		if _, err := stmtSource.Exec(i, fmt.Sprintf("path/%d", i), sourceKind, sourceHash); err != nil {
+		if _, err := stmtSource.ExecContext(ctx, i, fmt.Sprintf("path/%d", i), sourceKind, sourceHash); err != nil {
 			t.Fatal(err)
 		}
 
 		chunkHashBytes := sha256.Sum256([]byte(fmt.Sprintf("chunk-%d", i)))
 		chunkHashHex := hex.EncodeToString(chunkHashBytes[:])
 
-		if _, err := stmtChunk.Exec(i, i, 0, 100, chunkHashHex); err != nil {
+		if _, err := stmtChunk.ExecContext(ctx, i, i, 0, 100, chunkHashHex); err != nil {
 			t.Fatal(err)
 		}
 
@@ -118,7 +137,7 @@ func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float3
 			stored[d] = byte(v)
 		}
 
-		if _, err := stmtVector.Exec(chunkHashBytes[:], stored); err != nil {
+		if _, err := stmtVector.ExecContext(ctx, chunkHashBytes[:], stored); err != nil {
 			t.Fatal(err)
 		}
 		candidates = append(candidates, int64(i))
@@ -133,7 +152,7 @@ func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float3
 
 func TestRerank(t *testing.T) {
 	ctx := t.Context()
-	queries, candidates, query := setupTestDB(t, 20, 1024)
+	queries, candidates, query := setupTestDB(t.Context(), t, 20, 1024)
 
 	t.Run("basic ranking and floor", func(t *testing.T) {
 		ranked, err := queries.rerank(ctx, "recipe1", query, candidates, nil, -1.0)
@@ -194,7 +213,7 @@ func BenchmarkRerank(b *testing.B) {
 	ctx := b.Context()
 	for _, size := range []int{10, 50, 100, 200} {
 		b.Run(fmt.Sprintf("Candidates_%d", size), func(b *testing.B) {
-			queries, candidates, query := setupTestDB(b, size, 1024)
+			queries, candidates, query := setupTestDB(ctx, b, size, 1024)
 			b.ResetTimer()
 			b.ReportAllocs()
 			for b.Loop() {

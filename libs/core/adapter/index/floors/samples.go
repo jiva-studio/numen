@@ -3,6 +3,7 @@ package floors
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/port/floorport"
@@ -25,13 +26,12 @@ func (s *Samples) GetTitles(ctx context.Context, v domain.Vault, limit int) ([]f
 	return out, nil
 }
 
-func (s *Samples) readTitles(ctx context.Context, v domain.Vault, limit int) ([]floorport.Title, error) {
-	rows, err := s.db.QueryContext(ctx, stmt["titles"], string(v.ID), limit)
+func (s *Samples) readTitles(ctx context.Context, v domain.Vault, limit int) (out []floorport.Title, err error) {
+	rows, err := s.db.QueryContext(ctx, stmt.Get("titles"), string(v.ID), limit)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var out []floorport.Title
+	defer func() { err = errors.Join(err, rows.Close()) }()
 	for rows.Next() {
 		var title floorport.Title
 		if err := rows.Scan(&title.Source, &title.Text); err != nil {
@@ -52,13 +52,12 @@ func (s *Samples) GetPassages(ctx context.Context, v domain.Vault, recipe string
 	return out, nil
 }
 
-func (s *Samples) readPassages(ctx context.Context, v domain.Vault, recipe string, limit int) ([]floorport.Passage, error) {
-	rows, err := s.db.QueryContext(ctx, stmt["passages"], string(v.ID), recipe, limit)
+func (s *Samples) readPassages(ctx context.Context, v domain.Vault, recipe string, limit int) (out []floorport.Passage, err error) {
+	rows, err := s.db.QueryContext(ctx, stmt.Get("passages"), string(v.ID), recipe, limit)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var out []floorport.Passage
+	defer func() { err = errors.Join(err, rows.Close()) }()
 	for rows.Next() {
 		var passage floorport.Passage
 		if err := rows.Scan(&passage.Source, &passage.Vector); err != nil {

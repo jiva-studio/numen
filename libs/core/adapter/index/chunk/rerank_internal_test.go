@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -58,7 +59,7 @@ func (d scriptedDriver) Driver() driver.Driver                        { return d
 func scripted(t *testing.T, data [][]driver.Value, fail error) *Queries {
 	t.Helper()
 	db := sql.OpenDB(scriptedDriver{conn: &scriptedConn{data: data, fail: fail}})
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return NewQueries(db)
 }
 
@@ -199,7 +200,7 @@ func TestRerankReportsARowSetThatEndsInFailure(t *testing.T) {
 }
 
 func TestRerankReportsAFailedQuery(t *testing.T) {
-	q, _, query := setupTestDB(t, 3, 8)
+	q, _, query := setupTestDB(t.Context(), t, 3, 8)
 	if err := q.db.Close(); err != nil {
 		t.Fatal(err)
 	}

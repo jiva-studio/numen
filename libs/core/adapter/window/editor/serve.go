@@ -86,8 +86,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 
 	first, err := vaults.NewGetVaultToShow(registry).Execute(targetVault)
 	if err != nil {
-		_ = made.CloseIndex()
-		return nil, err
+		return nil, errors.Join(err, made.CloseIndex())
 	}
 
 	// One task list serves every operation and the window that displays it.
@@ -102,7 +101,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := made.OpenEmbedders(ctx, tasks)
 	if why != nil {
-		fmt.Fprintf(out, "not embedding: %v\n", why)
+		writeDiagnostic(tasks.Set, out, "not embedding: %v\n", why)
 		// Record indexing task failure when embedding provider initialization fails.
 		tasks.Set(run.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
@@ -146,17 +145,17 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// Reindexing every file applies to this launch only; it is not carried to a
 	// vault opened later.
 	if err := pool.startVault(ctx, first, made.IsRebuildingIndex()); err != nil {
-		_ = closeEmbedder()
-		_ = made.CloseIndex()
-		return nil, err
+		return nil, errors.Join(err, closeEmbedder(), made.CloseIndex())
 	}
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
-	onStop := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
-	if playing, why := Listen(services.server, onStop); why != nil {
-		fmt.Fprintf(out, "recordings will not play: %v\n", why)
+	onStop := func(why error) {
+		writeDiagnostic(state.reportTask, out, "recordings will no longer play: %v\n", why)
+	}
+	if playing, why := Listen(ctx, services.server, onStop); why != nil {
+		writeDiagnostic(state.reportTask, out, "recordings will not play: %v\n", why)
 	} else {
 		services.openPlaying(playing)
 	}
@@ -172,14 +171,10 @@ func (o *Installation) Close() error {
 	o.stopVault()
 	// The socket a recording was played over answers with the vault's files, so
 	// it stops before the vault does.
-	_ = o.Services.Playing.Close()
+	playingErr := o.Services.Playing.Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
-	err := o.stopEmbedder()
-	if closed := o.made.CloseIndex(); err == nil {
-		err = closed
-	}
-	return err
+	return errors.Join(playingErr, o.stopEmbedder(), o.made.CloseIndex())
 }
 
 // Queries returns the window's index cache as a port; Problems, Passages and

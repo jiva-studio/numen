@@ -17,6 +17,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -201,7 +201,7 @@ func openingWith(
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
@@ -523,7 +523,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	readers := vaultreader.Readers{}
 	watcher := newManualWatcher()
@@ -1047,7 +1047,9 @@ func (p *routedPlugins) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	p.routed = append(p.routed, r.URL.RequestURI())
 	p.vaults = append(p.vaults, r.Header.Get("Numen-Vault"))
 	w.Header().Set("Content-Type", "image/jpeg")
-	_, _ = io.WriteString(w, "page bytes")
+	if _, err := io.WriteString(w, "page bytes"); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func TestPluginRouteReachesThePluginServices(t *testing.T) {
@@ -1057,12 +1059,8 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2?path=a.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	resp := fetch(t, server.Client(), server.URL+"/plugin/org.example.reader/pages/2?path=a.pdf")
+	body := resp.Body
 
 	if resp.StatusCode != http.StatusOK || string(body) != "page bytes" {
 		t.Fatalf("answered %d %q", resp.StatusCode, body)
@@ -1081,11 +1079,7 @@ func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2?path=a.sample")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
+	fetch(t, server.Client(), server.URL+"/plugin/org.example.reader/pages/2?path=a.sample")
 
 	if !slices.Equal(plugins.vaults, []string{"v-garden"}) {
 		t.Errorf("forwarded with the vaults %q, want v-garden", plugins.vaults)
@@ -1099,11 +1093,7 @@ func TestPluginRouteIsNotServedByANarrowBuild(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
+	resp := fetch(t, server.Client(), server.URL+"/plugin/org.example.reader/pages/2")
 
 	if resp.StatusCode != http.StatusNotFound || len(plugins.routed) != 0 {
 		t.Errorf("answered %d, forwarded %q", resp.StatusCode, plugins.routed)
@@ -1116,7 +1106,9 @@ func TestServeUpdateAsksTheEndpointTheServicesName(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		_, _ = io.WriteString(w, `{"version":"9.9.9"}`)
+		if _, err := io.WriteString(w, `{"version":"9.9.9"}`); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}))
 	t.Cleanup(release.Close)
 
@@ -1125,12 +1117,8 @@ func TestServeUpdateAsksTheEndpointTheServicesName(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + updateRoute)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	resp := fetch(t, server.Client(), server.URL+updateRoute)
+	body := resp.Body
 	if resp.StatusCode != http.StatusOK || string(body) != `{"version":"9.9.9"}` {
 		t.Errorf("answered %d %q, want 200 and the manifest of the endpoint", resp.StatusCode, body)
 	}
@@ -1152,12 +1140,8 @@ func TestPluginRouteServesAFolderFileAndForwardsTheRest(t *testing.T) {
 		"/plugin/org.example.reader/manifest.json": `{"id":"org.example.reader"}`,
 		"/plugin/org.example.reader/pages/2":       "page bytes",
 	} {
-		resp, err := server.Client().Get(server.URL + path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		resp := fetch(t, server.Client(), server.URL+path)
+		body := resp.Body
 		if resp.StatusCode != http.StatusOK || string(body) != want {
 			t.Errorf("%s answered %d %q, want %q", path, resp.StatusCode, body, want)
 		}

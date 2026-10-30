@@ -84,7 +84,7 @@ func openIndexAt(t *testing.T) (*index.DB, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	for _, v := range []domain.VaultID{vaultA, vaultB} {
 		if err := db.Vaults().Register(t.Context(), v); err != nil {
 			t.Fatal(err)
@@ -205,7 +205,7 @@ func broken(t *testing.T, seed func(db *index.DB), statements ...string) *chunk.
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { raw.Close() })
+	testsupport.CloseAfter(t, raw)
 	for _, statement := range statements {
 		if _, err := raw.ExecContext(t.Context(), statement); err != nil {
 			t.Fatalf("%s: %v", statement, err)

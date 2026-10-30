@@ -43,7 +43,7 @@ func (r *Repository) ReadFloor(ctx context.Context, v domain.Vault, recipe strin
 		histogram                  sql.NullString
 		queries, passages, instant sql.NullInt64
 	)
-	err := r.read.QueryRowContext(ctx, stmt["read"], string(v.ID), recipe).Scan(
+	err := r.read.QueryRowContext(ctx, stmt.Get("read"), string(v.ID), recipe).Scan(
 		&setting.IsManual, &setting.ManualFloor, &floor, &median, &spread, &histogram, &queries, &passages, &instant)
 	if errors.Is(err, sql.ErrNoRows) {
 		return floorport.Setting{}, false, nil
@@ -77,7 +77,7 @@ func (r *Repository) WriteCalibration(ctx context.Context, v domain.Vault, recip
 	if err != nil {
 		return fmt.Errorf("write the floor of %s: %w", v.ID, err)
 	}
-	if _, err := sqlwrite.Exec(ctx, r.write, stmt["save_calibration"],
+	if _, err := sqlwrite.Exec(ctx, r.write, stmt.Get("save_calibration"),
 		string(v.ID), recipe, c.Floor, c.Median, c.Spread, string(histogram),
 		c.QueryCount, c.PassageCount, c.CalibratedTime.Unix()); err != nil {
 		return fmt.Errorf("write the floor of %s: %w", v.ID, err)
@@ -88,7 +88,7 @@ func (r *Repository) WriteCalibration(ctx context.Context, v domain.Vault, recip
 // WriteManualFloor sets or clears the manual floor and leaves the measurement as
 // it is.
 func (r *Repository) WriteManualFloor(ctx context.Context, v domain.Vault, recipe string, isManual bool, floor float64) error {
-	if _, err := sqlwrite.Exec(ctx, r.write, stmt["save_manual"], string(v.ID), recipe, isManual, floor); err != nil {
+	if _, err := sqlwrite.Exec(ctx, r.write, stmt.Get("save_manual"), string(v.ID), recipe, isManual, floor); err != nil {
 		return fmt.Errorf("write the manual floor of %s: %w", v.ID, err)
 	}
 	return nil

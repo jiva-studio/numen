@@ -70,8 +70,9 @@ func addVault(out io.Writer, deps Deps, args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(out, "added %s\n  path %s\n  id   %s\n", v.Name, v.Path, v.ID)
-	return nil
+	r := newReporter(out)
+	r.Printf("added %s\n  path %s\n  id   %s\n", v.Name, v.Path, v.ID)
+	return r.Err()
 }
 
 func listVaults(out io.Writer, deps Deps) error {
@@ -85,9 +86,10 @@ func listVaults(out io.Writer, deps Deps) error {
 	if err != nil {
 		return err
 	}
+	r := newReporter(out)
 	if len(recognized) == 0 {
-		fmt.Fprintln(out, "no vaults yet — add one with: numen-cli vault add <path>")
-		return nil
+		r.Println("no vaults yet — add one with: numen-cli vault add <path>")
+		return r.Err()
 	}
 	for _, one := range recognized {
 		last := " "
@@ -98,13 +100,13 @@ func listVaults(out io.Writer, deps Deps) error {
 		if one.IsMissing {
 			there = "?"
 		}
-		fmt.Fprintf(out, "%s%s %-20s %s\n  %s\n",
+		r.Printf("%s%s %-20s %s\n  %s\n",
 			last, there, one.Vault.Name, one.Vault.ID, one.Vault.Path)
 	}
-	return nil
+	return r.Err()
 }
 
-func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli vault rename <vault> <new name>")
 	}
@@ -120,17 +122,18 @@ func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	defer closeIfOpen(rows.Close)
+	defer closeInto(&err, rows.Close)
 
 	renamed, err := vault.NewRename(vaults.Registry, rows.Vaults).Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "renamed %s to %s\n  the folder is still %s\n", v.Name, renamed.Name, renamed.Path)
-	return nil
+	r := newReporter(out)
+	r.Printf("renamed %s to %s\n  the folder is still %s\n", v.Name, renamed.Name, renamed.Path)
+	return r.Err()
 }
 
-func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault remove <vault>")
 	}
@@ -146,18 +149,19 @@ func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []s
 	if err != nil {
 		return err
 	}
-	defer closeIfOpen(rows.Close)
+	defer closeInto(&err, rows.Close)
 
 	forget := vault.NewUnregister(vaults.Registry, rows.Vaults)
 	if err := forget.Execute(ctx, v); err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
+	r := newReporter(out)
+	r.Printf("forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
 		v.Name, v.Path)
-	return nil
+	return r.Err()
 }
 
-func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
 	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	yes := fs.Bool("yes", false, "erase without asking")
@@ -176,15 +180,21 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	if err != nil {
 		return err
 	}
-	if !*yes && !confirmErase(out, v) {
-		return fmt.Errorf("%s was not erased", v.Name)
+	if !*yes {
+		isConfirmed, confirmErr := confirmErase(out, v)
+		if confirmErr != nil {
+			return confirmErr
+		}
+		if !isConfirmed {
+			return fmt.Errorf("%s was not erased", v.Name)
+		}
 	}
 
 	rows, err := vaults.Rows(ctx)
 	if err != nil {
 		return err
 	}
-	defer closeIfOpen(rows.Close)
+	defer closeInto(&err, rows.Close)
 
 	erase := vault.NewErase(
 		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry, rows.Vaults),
@@ -201,17 +211,25 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	if res.IsTrashed {
 		went = fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
 	}
-	fmt.Fprintf(out, "erased %s\n  %s\n", v.Name, went)
-	return nil
+	r := newReporter(out)
+	r.Printf("erased %s\n  %s\n", v.Name, went)
+	return r.Err()
 }
 
 // confirmErase describes what erasing does and reads the reply from the
 // terminal it was invoked on. Only "yes" confirms.
-func confirmErase(out io.Writer, v domain.Vault) bool {
-	fmt.Fprintf(out, "erase %s?\n  %s goes to the trash this machine keeps\n"+
+func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
+	r := newReporter(out)
+	r.Printf("erase %s?\n  %s goes to the trash this machine keeps\n"+
 		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
-	answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-	return strings.EqualFold(strings.TrimSpace(answer), "yes")
+	if err := r.Err(); err != nil {
+		return false, err
+	}
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return false, fmt.Errorf("read confirmation: %w", err)
+	}
+	return strings.EqualFold(strings.TrimSpace(answer), "yes"), nil
 }
 
 func openVault(out io.Writer, deps Deps, args []string) error {
@@ -229,8 +247,9 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	if err := vault.NewRecordOpen(vaults.Registry).Execute(v.ID); err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "the next window opens %s\n  path %s\n", v.Name, v.Path)
-	return nil
+	r := newReporter(out)
+	r.Printf("the next window opens %s\n  path %s\n", v.Name, v.Path)
+	return r.Err()
 }
 
 // findVault resolves the user's input against the list opened for it.

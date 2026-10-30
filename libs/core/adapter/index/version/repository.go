@@ -63,20 +63,20 @@ func (r *Repository) RemoveVersion(ctx context.Context, vaultID domain.VaultID, 
 // RemovePluginVersions removes every version a plugin made in a vault, and
 // returns the records it removed.
 func (r *Repository) RemovePluginVersions(ctx context.Context, vaultID domain.VaultID, pluginID string) ([]domain.TextVersion, error) {
-	tx, err := sqlwrite.Begin(ctx, r.write)
-	if err != nil {
-		return nil, fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-	removed, err := scan(tx.QueryContext(ctx, stmt.Get("list_plugin"), string(vaultID), pluginID))
+	var removed []domain.TextVersion
+	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+		listed, err := scan(tx.QueryContext(ctx, stmt.Get("list_plugin"), string(vaultID), pluginID))
+		if err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, stmt.Get("remove_plugin"), string(vaultID), pluginID); err != nil {
+			return fmt.Errorf("remove the versions of %s: %w", pluginID, err)
+		}
+		removed = listed
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("remove_plugin"), string(vaultID), pluginID); err != nil {
-		return nil, fmt.Errorf("remove the versions of %s: %w", pluginID, err)
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("commit: %w", err)
 	}
 	return removed, nil
 }
@@ -88,27 +88,21 @@ func (r *Repository) MoveVersions(ctx context.Context, vaultID domain.VaultID, f
 	if from == to {
 		return nil
 	}
-	tx, err := sqlwrite.Begin(ctx, r.write)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-	toFirst, toPast := getRangeUnder(to)
-	fromFirst, fromPast := getRangeUnder(from)
-	if _, err := tx.ExecContext(ctx, stmt.Get("clear_target"),
-		string(vaultID), to, toFirst, toPast, from, fromFirst, fromPast); err != nil {
-		return fmt.Errorf("clear the versions at %s: %w", to, err)
-	}
-	// substr counts characters from one.
-	fromLen := utf8.RuneCountInString(from) + 1
-	if _, err := tx.ExecContext(ctx, stmt.Get("move"),
-		to, fromLen, string(vaultID), from, fromFirst, fromPast); err != nil {
-		return fmt.Errorf("move the versions of %s to %s: %w", from, to, err)
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+	return sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
+		toFirst, toPast := getRangeUnder(to)
+		fromFirst, fromPast := getRangeUnder(from)
+		if _, err := tx.ExecContext(ctx, stmt.Get("clear_target"),
+			string(vaultID), to, toFirst, toPast, from, fromFirst, fromPast); err != nil {
+			return fmt.Errorf("clear the versions at %s: %w", to, err)
+		}
+		// substr counts characters from one.
+		fromLen := utf8.RuneCountInString(from) + 1
+		if _, err := tx.ExecContext(ctx, stmt.Get("move"),
+			to, fromLen, string(vaultID), from, fromFirst, fromPast); err != nil {
+			return fmt.Errorf("move the versions of %s to %s: %w", from, to, err)
+		}
+		return nil
+	})
 }
 
 // getRangeUnder is the range of paths under a folder: from its slash to the
@@ -121,12 +115,11 @@ func (r *Repository) query(ctx context.Context, name string, args ...any) ([]dom
 	return scan(r.read.QueryContext(ctx, stmt.Get(name), args...))
 }
 
-func scan(rows *sql.Rows, err error) ([]domain.TextVersion, error) {
-	if err != nil {
-		return nil, fmt.Errorf("read versions: %w", err)
+func scan(rows *sql.Rows, queryErr error) (out []domain.TextVersion, err error) {
+	if queryErr != nil {
+		return nil, fmt.Errorf("read versions: %w", queryErr)
 	}
-	defer rows.Close()
-	var out []domain.TextVersion
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 	for rows.Next() {
 		var v domain.TextVersion
 		var source, kind string

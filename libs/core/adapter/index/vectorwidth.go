@@ -41,33 +41,29 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 		return nil
 	}
 
-	tx, err := sqlwrite.Begin(ctx, d.write)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	for _, statement := range []string{
-		`DROP TABLE IF EXISTS chunks_vec`,
-		fmt.Sprintf(`CREATE VIRTUAL TABLE chunks_vec USING vec0 (
+	return sqlwrite.InTransaction(ctx, d.write, func(tx *sqlwrite.Transaction) error {
+		for _, statement := range []string{
+			`DROP TABLE IF EXISTS chunks_vec`,
+			fmt.Sprintf(`CREATE VIRTUAL TABLE chunks_vec USING vec0 (
 			chunk_id integer primary key,
 			vault_id integer,
 			coarse   bit[%d]
 		)`, dims),
-	} {
-		if _, err := tx.ExecContext(ctx, statement); err != nil {
-			return fmt.Errorf("fit the vector index to %d dimensions: %w", dims, err)
+		} {
+			if _, err := tx.ExecContext(ctx, statement); err != nil {
+				return fmt.Errorf("fit the vector index to %d dimensions: %w", dims, err)
+			}
 		}
-	}
-	if err := fillCoarse(ctx, tx, dims, recipe); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO coarse_recipe (id, recipe) VALUES (1, ?)
+		if err := fillCoarse(ctx, tx, dims, recipe); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO coarse_recipe (id, recipe) VALUES (1, ?)
 		 ON CONFLICT (id) DO UPDATE SET recipe = excluded.recipe`, recipe); err != nil {
-		return fmt.Errorf("record the recipe that filled the vector index: %w", err)
-	}
-	return tx.Commit()
+			return fmt.Errorf("record the recipe that filled the vector index: %w", err)
+		}
+		return nil
+	})
 }
 
 // coarseRecipe is the recipe that filled the coarse index, and whether any is
@@ -87,7 +83,7 @@ func coarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
 // fillCoarse writes a coarse row for every vector the recipe holds of the width
 // given. A vector of another width belongs to another model and is left where
 // it is.
-func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe string) error {
+func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe string) (err error) {
 	rows, err := tx.QueryContext(ctx,
 		`SELECT c.id, c.vault_id, v.embedding
 		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.hash
@@ -95,7 +91,7 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 	if err != nil {
 		return fmt.Errorf("the vectors the recipe holds: %w", err)
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	type coarse struct {
 		chunk, vault int64
