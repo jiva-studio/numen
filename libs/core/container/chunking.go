@@ -69,7 +69,7 @@ func (c Config) FitIndex(db *Index) vectors.FitIndex {
 	return fit
 }
 
-// Embed gives a vault's chunks the vectors they owe.
+// Embed gives a vault's chunks the vectors they need.
 func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectors.Embed, error) {
 	store, err := derivedfile.OpenDerived(v.Path, c.vaultOptions(), coreFolder)
 	if err != nil {
@@ -96,4 +96,3 @@ func (c Config) IndexTexts(sources sourceport.SourceRepository, queries sourcepo
 	index.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return index, nil
 }
-

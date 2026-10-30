@@ -17,12 +17,12 @@ func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe str
 	t.Helper()
 	ctx := t.Context()
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, recipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, recipe, 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: recipe,
 			Value: getPreciseBytes(getVectorForSeed(seed)), Coarse: bits(seed),
@@ -72,7 +72,7 @@ func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 
 	fit(t, db, otherRecipe)
 	if got := saveSeededVectorsUnder(t, db, first, otherRecipe, 0xf0); got != small {
-		t.Fatalf("%d of %d chunks were owed under the other recipe", got, small)
+		t.Fatalf("%d of %d chunks were unembedded under the other recipe", got, small)
 	}
 	for id, got := range storedBits(t, db) {
 		if !bytes.Equal(got, bits(0xf0)) {
@@ -90,8 +90,8 @@ func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 			t.Errorf("chunk %d holds %x, want the bits of the recipe in use", id, got[:2])
 		}
 	}
-	if owed := saveSeededVectorsUnder(t, db, first, testRecipe, 0xaa); owed != 0 {
-		t.Errorf("%d chunks are owed under a recipe that holds every vector", owed)
+	if unembedded := saveSeededVectorsUnder(t, db, first, testRecipe, 0xaa); unembedded != 0 {
+		t.Errorf("%d chunks are unembedded under a recipe that holds every vector", unembedded)
 	}
 }
 
@@ -158,12 +158,12 @@ func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	if rows := len(storedBits(t, db)); rows != 0 {
 		t.Errorf("%d coarse rows hold another recipe's bits", rows)
 	}
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, otherRecipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, otherRecipe, 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) == 0 {
-		t.Error("no chunk is owed under a recipe that holds no vector")
+	if len(unembedded) == 0 {
+		t.Error("no chunk is unembedded under a recipe that holds no vector")
 	}
 }
 

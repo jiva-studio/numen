@@ -23,7 +23,7 @@ func TestFlushCoordinator_NoPagesNeedsNoFlush(t *testing.T) {
 
 	request := pages.startRequest()
 	if !isClosed(request.allWritten) {
-		t.Error("a vault with no page open was owed something")
+		t.Error("a vault with no page open was unembedded something")
 	}
 	if request.isPending() {
 		t.Error("a vault with no page open raised a question")
@@ -58,10 +58,10 @@ func TestFlushCoordinator_PageIdleUntilFlushRequested(t *testing.T) {
 
 	pages.recordFlush(token, flushWritten)
 	if !isClosed(request.allWritten) {
-		t.Error("a page that wrote what it owed is still owed")
+		t.Error("a page that wrote what it unembedded is still unembedded")
 	}
 	if request.isPending() {
-		t.Error("a page that wrote what it owed raised a question")
+		t.Error("a page that wrote what it unembedded raised a question")
 	}
 }
 
@@ -87,7 +87,7 @@ func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
 
 	pages.recordFlush(token, flushWritten)
 	if !isClosed(request.allWritten) {
-		t.Error("the question was answered and the request is still owed something")
+		t.Error("the question was answered and the request is still unembedded something")
 	}
 }
 
@@ -115,7 +115,7 @@ func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 
 	pages.recordFlush(second, flushWritten)
 	if !isClosed(request.allWritten) {
-		t.Error("every page has written and the request is still owed something")
+		t.Error("every page has written and the request is still unembedded something")
 	}
 }
 
@@ -131,7 +131,7 @@ func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 	<-notified
 	pages.recordFlush(token, flushWritten)
 	if !isClosed(first.allWritten) {
-		t.Fatal("the page wrote what it owed and the request is still owed something")
+		t.Fatal("the page wrote what it unembedded and the request is still unembedded something")
 	}
 
 	second := pages.startRequest()
@@ -152,7 +152,7 @@ func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 
 	pages.recordFlush(token, flushWritten)
 	if !isClosed(second.allWritten) {
-		t.Error("the page wrote what it owed and the second request is still owed it")
+		t.Error("the page wrote what it unembedded and the second request is still unembedded it")
 	}
 }
 
@@ -162,7 +162,7 @@ func TestFlushCoordinator_PageRegisteredDuringCloseReceivesFlush(t *testing.T) {
 
 	request := pages.startRequest()
 	if !isClosed(request.allWritten) {
-		t.Fatal("a vault with no page open was owed something")
+		t.Fatal("a vault with no page open was unembedded something")
 	}
 
 	token, notified, isDone := pages.registerClient()
@@ -191,7 +191,7 @@ func TestAPageThatGoesWithNothingActiveStopsBeingOwed(t *testing.T) {
 
 	isDone()
 	if !isClosed(request.allWritten) {
-		t.Error("a page that stopped listening is still owed")
+		t.Error("a page that stopped listening is still unembedded")
 	}
 }
 
@@ -215,7 +215,7 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	// The client reconnects under a token of its own, and is queried anew.
 	second := pages.startRequest()
 	if isClosed(second.allWritten) {
-		t.Fatal("a request with the question still standing was owed nothing")
+		t.Fatal("a request with the question still standing was unembedded nothing")
 	}
 	again, notifiedAgain, doneAgain := pages.registerClient()
 	defer doneAgain()
@@ -237,7 +237,7 @@ func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
 	}
 	pages.recordFlush(again, flushWritten)
 	if !isClosed(second.allWritten) {
-		t.Error("the question was answered and the request is still owed something")
+		t.Error("the question was answered and the request is still unembedded something")
 	}
 }
 
@@ -272,7 +272,7 @@ func TestFlushCoordinator_DepartedPageWithQuestionIsNotPending(t *testing.T) {
 // TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
 func TestAPageWithNothingLeftAndOneThatHasSavedBothLetTheWindowGo(t *testing.T) {
 	for name, response := range map[string]flushState{
-		"nothing owed":       parseFlushResult(v1.FlushResult_FLUSH_RESULT_NOTHING),
+		"nothing unembedded": parseFlushResult(v1.FlushResult_FLUSH_RESULT_NOTHING),
 		"everything written": parseFlushResult(v1.FlushResult_FLUSH_RESULT_WRITTEN),
 	} {
 		t.Run(name, func(t *testing.T) {

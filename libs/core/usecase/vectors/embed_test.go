@@ -15,7 +15,7 @@ import (
 // written in the place of the other is visible.
 const dimensions = 32
 
-// cutBooks extracts one vault's books and answers with the chunks that owe a vector.
+// cutBooks extracts one vault's books and answers with the chunks that need a vector.
 func cutBooks(t testing.TB, index *store, shelf *library, v domain.Vault) []storedChunk {
 	t.Helper()
 	if _, err := (newExtract(vaults{v.ID: shelf}, index, index)).Execute(t.Context(), v); err != nil {
@@ -38,7 +38,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 
 	small := cutBooks(t, index, shelf, first)
 	if len(small) <= chunksPerQuery {
-		t.Fatalf("%d chunks owe a vector, which one question answers with: the run would never resume", len(small))
+		t.Fatalf("%d chunks need a vector, which one question answers with: the run would never resume", len(small))
 	}
 
 	stopCtx, cancel := context.WithCancel(ctx)
@@ -84,7 +84,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 		}
 	}
 	if len(index.vectors) != len(small) {
-		t.Errorf("%d chunks carry a vector, want the %d that owed one", len(index.vectors), len(small))
+		t.Errorf("%d chunks carry a vector, want the %d that unembedded one", len(index.vectors), len(small))
 	}
 
 	// No chunk needs a vector, so a third run does no work.
@@ -92,7 +92,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if third.Owing != 0 || third.Embedded != 0 {
+	if third.Pending != 0 || third.Embedded != 0 {
 		t.Errorf("a run after everything was embedded reports %+v", third)
 	}
 }
@@ -114,7 +114,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.Embedded != len(small) {
-		t.Errorf("embedded = %d, want the %d chunks that owed a vector", res.Embedded, len(small))
+		t.Errorf("embedded = %d, want the %d chunks that unembedded a vector", res.Embedded, len(small))
 	}
 
 	if len(index.groups) < 2 {
@@ -179,14 +179,14 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 	cases := []struct {
 		name    string
 		replace func(t *testing.T, shelf *library)
-		want    func(t *testing.T, res EmbedResult, owed int)
+		want    func(t *testing.T, res EmbedResult, unembedded int)
 	}{
 		{
 			name:    "the file is gone",
 			replace: func(_ *testing.T, shelf *library) { delete(shelf.files, bookPath) },
-			want: func(t *testing.T, res EmbedResult, owed int) {
-				if res.Vanished != owed || res.Embedded != 0 {
-					t.Errorf("the run reports %+v, want all %d chunks left alone", res, owed)
+			want: func(t *testing.T, res EmbedResult, unembedded int) {
+				if res.Vanished != unembedded || res.Embedded != 0 {
+					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
 				}
 			},
 		},
@@ -195,9 +195,9 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			replace: func(_ *testing.T, shelf *library) {
 				shelf.hold(bookPath, domain.KindFile, []byte("not an archive"), 2)
 			},
-			want: func(t *testing.T, res EmbedResult, owed int) {
-				if res.Vanished != owed || res.Embedded != 0 {
-					t.Errorf("the run reports %+v, want all %d chunks left alone", res, owed)
+			want: func(t *testing.T, res EmbedResult, unembedded int) {
+				if res.Vanished != unembedded || res.Embedded != 0 {
+					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
 				}
 			},
 		},
@@ -206,9 +206,9 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			replace: func(t *testing.T, shelf *library) {
 				shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 20)), 2)
 			},
-			want: func(t *testing.T, res EmbedResult, owed int) {
-				if res.Vanished != owed || res.Embedded != 0 {
-					t.Errorf("the run reports %+v, want all %d chunks left alone", res, owed)
+			want: func(t *testing.T, res EmbedResult, unembedded int) {
+				if res.Vanished != unembedded || res.Embedded != 0 {
+					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
 				}
 			},
 		},
@@ -227,10 +227,10 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("a source that moved on is not an error: %v", err)
 			}
-			if res.Owing != len(small) {
-				t.Errorf("owing = %d, want the %d chunks with no vector", res.Owing, len(small))
+			if res.Pending != len(small) {
+				t.Errorf("unembedded = %d, want the %d chunks with no vector", res.Pending, len(small))
 			}
-			if res.Embedded+res.Vanished+res.Displaced != res.Owing {
+			if res.Embedded+res.Vanished+res.Displaced != res.Pending {
 				t.Errorf("the run reports %+v, and every chunk it was given is embedded or accounted for", res)
 			}
 			c.want(t, res, len(small))

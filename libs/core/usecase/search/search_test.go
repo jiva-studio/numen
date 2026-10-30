@@ -104,15 +104,15 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	owing, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, model.Recipe(), 0, 0, 0, 1000)
+	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, model.Recipe(), 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(owing) == 0 {
+	if len(unembedded) == 0 {
 		t.Fatal("nothing to embed, so a dense half would answer nothing either way")
 	}
-	vectors := make([]chunk.Vector, 0, len(owing))
-	for _, p := range owing {
+	vectors := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		raw, err := hex.DecodeString(p.ChunkHash)
 		if err != nil {
 			t.Fatal(err)

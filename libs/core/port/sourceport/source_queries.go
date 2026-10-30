@@ -12,7 +12,7 @@ type sourceTextQueries interface {
 }
 
 // SourceQueries answers what the index holds about sources, in shapes that are
-// not sources: what it believes each file was, and which of them owe their text.
+// not sources: what it believes each file was, and which of them need their text.
 type SourceQueries interface {
 	sourceTextQueries
 	GetFileStats(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error)

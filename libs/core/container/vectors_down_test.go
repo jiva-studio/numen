@@ -79,7 +79,7 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 	if _, err := whole.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	if got := owingTo(t, db, v, unit{"first"}); got != 0 {
+	if got := unembeddedTo(t, db, v, unit{"first"}); got != 0 {
 		t.Errorf("%d chunks lost the vector of the first model", got)
 	}
 }

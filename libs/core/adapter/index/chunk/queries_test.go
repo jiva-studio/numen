@@ -146,20 +146,20 @@ func (s source) save(t *testing.T, db *index.DB) {
 	}
 }
 
-func getOwed(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
+func getUnembedded(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
 	t.Helper()
-	owed, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault, recipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault, recipe, 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return owed
+	return unembedded
 }
 
 // embed assigns a vector at the seed to every small chunk of the path that lacks one.
 func embed(t *testing.T, db *index.DB, vault domain.VaultID, path string, seed byte) {
 	t.Helper()
 	var vectors []chunk.Vector
-	for _, p := range getOwed(t, db, vault) {
+	for _, p := range getUnembedded(t, db, vault) {
 		if p.Path != path {
 			continue
 		}
@@ -777,11 +777,11 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 	source{vault: vaultB, path: "lib/b.epub", large: "other", smalls: []string{"x"}}.save(t, db)
 	queries := db.ChunkQueries()
 
-	owed := getOwed(t, db, vaultA)
-	if len(owed) != 2 {
-		t.Fatalf("got %d small chunks, want 2", len(owed))
+	unembedded := getUnembedded(t, db, vaultA)
+	if len(unembedded) != 2 {
+		t.Fatalf("got %d small chunks, want 2", len(unembedded))
 	}
-	small := owed[1]
+	small := unembedded[1]
 	got, found, err := queries.Passage(t.Context(), vaultA, small.Chunk)
 	if err != nil || !found {
 		t.Fatalf("the small chunk is not found: %v", err)
@@ -854,7 +854,7 @@ func TestSourcesWithNoSmallChunkOweTheSplit(t *testing.T) {
 	}
 	none, err := queries.GetUnchunkedSources(t.Context(), nobody, "book", 10)
 	if err != nil || none != nil {
-		t.Errorf("an unknown vault owes %v, %v", none, err)
+		t.Errorf("an unknown vault needs %v, %v", none, err)
 	}
 	for _, limit := range []int{0, -1} {
 		if _, err := queries.GetUnchunkedSources(t.Context(), vaultA, "book", limit); err == nil || !strings.Contains(err.Error(), "unchunked") {
@@ -910,24 +910,24 @@ func TestOwedChunksAreTheSmallOnesWithNoVectorNewestSourceFirst(t *testing.T) {
 	source{vault: vaultB, path: "lib/b.epub", mtime: century + 9, large: "l", smalls: []string{"b1"}}.save(t, db)
 	embed(t, db, vaultA, "lib/done.epub", 0xF0)
 
-	got := getOwed(t, db, vaultA)
+	got := getUnembedded(t, db, vaultA)
 	var paths []string
 	for _, p := range got {
 		paths = append(paths, p.Path)
 	}
 	if want := []string{"lib/new.epub", "lib/new.epub", "lib/old.epub", "lib/old.epub"}; !slices.Equal(paths, want) {
-		t.Fatalf("owed %v, want %v", paths, want)
+		t.Fatalf("unembedded %v, want %v", paths, want)
 	}
 	first, last := got[0], got[3]
 	if first.Start != 100 || first.Length != 50 || first.Location != "" || first.Parent == 0 || first.MTime != century+5 ||
 		first.Source == 0 || first.ChunkHash == "" || first.Hash == "" || first.Chunk == 0 {
-		t.Errorf("the first owed chunk is %+v", first)
+		t.Errorf("the first unembedded chunk is %+v", first)
 	}
 	if got[1].Start != 150 || got[1].Chunk <= first.Chunk {
 		t.Errorf("the second chunk of a source follows the first: %+v after %+v", got[1], first)
 	}
 	if last.Producer != "ocr" || last.Hash != "h-old" || last.MTime != century+1 || last.Source >= first.Source {
-		t.Errorf("the last owed chunk is %+v", last)
+		t.Errorf("the last unembedded chunk is %+v", last)
 	}
 }
 
@@ -938,11 +938,11 @@ func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 
 	same, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
 	if err != nil || len(same) != 0 {
-		t.Errorf("the recipe the vectors were made under still owes %d, %v", len(same), err)
+		t.Errorf("the recipe the vectors were made under still needs %d, %v", len(same), err)
 	}
 	other, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, "another model", 0, 0, 0, 10)
 	if err != nil || len(other) != 2 {
-		t.Errorf("another recipe owes %d, %v", len(other), err)
+		t.Errorf("another recipe needs %d, %v", len(other), err)
 	}
 }
 
@@ -952,7 +952,7 @@ func TestAWalkOfOwedChunksInPagesVisitsEachOnce(t *testing.T) {
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 	source{path: "lib/c.epub", mtime: century + 2, large: "l", smalls: []string{"c1", "c2"}}.save(t, db)
 	queries := db.ChunkQueries()
-	all := getOwed(t, db, vaultA)
+	all := getUnembedded(t, db, vaultA)
 
 	for _, limit := range []int{1, 2, 3} {
 		var visited []int64
@@ -992,12 +992,12 @@ func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 	for _, cursor := range [][3]int64{{0, 0, 5}, {0, 5, 0}, {0, 5, 5}, {5, 0, 0}, {5, 0, 5}, {5, 5, 0}} {
 		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, cursor[0], cursor[1], cursor[2], 10)
 		if err != nil || len(got) != 0 {
-			t.Errorf("cursor %v owes %d, %v", cursor, len(got), err)
+			t.Errorf("cursor %v needs %d, %v", cursor, len(got), err)
 		}
 	}
 	start, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
 	if err != nil || len(start) != 1 {
-		t.Errorf("a walk from the start owes %d, %v", len(start), err)
+		t.Errorf("a walk from the start needs %d, %v", len(start), err)
 	}
 }
 
@@ -1011,7 +1011,7 @@ func TestOwedChunksNeedAPositiveLimitAndAKnownVault(t *testing.T) {
 	}
 	got, err := queries.GetUnembeddedChunks(t.Context(), nobody, recipe, 0, 0, 0, 10)
 	if err != nil || got != nil {
-		t.Errorf("an unknown vault owes %v, %v", got, err)
+		t.Errorf("an unknown vault needs %v, %v", got, err)
 	}
 }
 
@@ -1066,7 +1066,7 @@ func TestProgressFailsOnAClosedOrBrokenIndex(t *testing.T) {
 func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
-	chunks := getOwed(t, db, vaultA)
+	chunks := getUnembedded(t, db, vaultA)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	var hashes [][]byte
 	for _, p := range chunks {
@@ -1264,7 +1264,7 @@ func TestACursorOfOneIsAPositionAndNotTheStart(t *testing.T) {
 	for _, cursor := range [][3]int64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}} {
 		got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, cursor[0], cursor[1], cursor[2], 10)
 		if err != nil || len(got) != 0 {
-			t.Errorf("cursor %v owes %d, %v", cursor, len(got), err)
+			t.Errorf("cursor %v needs %d, %v", cursor, len(got), err)
 		}
 	}
 }
@@ -1274,7 +1274,7 @@ func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
 	source{path: "lib/last.epub", mtime: math.MaxInt64, large: "l", smalls: []string{"x"}}.save(t, db)
 	got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
 	if err != nil || len(got) != 1 {
-		t.Errorf("a walk from the start owes %d, %v", len(got), err)
+		t.Errorf("a walk from the start needs %d, %v", len(got), err)
 	}
 }
 

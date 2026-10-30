@@ -1,8 +1,8 @@
--- Small chunks of a vault that owe work under the recipe in use, ordered so
+-- Small chunks of a vault that need work under the recipe in use, ordered so
 -- recently modified sources are embedded first.
 --
 -- A large chunk carries no vector, and is left out by asking for the ones that
--- sit inside something. A chunk owes when the recipe holds no vector for its
+-- sit inside something. A chunk needs when the recipe holds no vector for its
 -- text or the coarse pass holds no row for the chunk: a vector is kept by text
 -- and a coarse row by chunk, so two chunks of one text share the first and each
 -- need the second.

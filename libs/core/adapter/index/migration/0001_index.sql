@@ -190,7 +190,7 @@ CREATE INDEX chunks_by_source ON chunks (source_id, vault_id);
 -- whole table without it.
 CREATE INDEX chunks_by_parent ON chunks (parent_id);
 
--- Which chunks of a vault still owe work, asked from an id onwards so that the
+-- Which chunks of a vault still need work, asked from an id onwards so that the
 -- answer resumes.
 CREATE INDEX chunks_by_vault ON chunks (vault_id, id);
 

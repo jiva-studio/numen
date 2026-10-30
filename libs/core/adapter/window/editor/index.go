@@ -59,7 +59,7 @@ func newIndexWorker(
 	return indexing.NewWorker(indexing.Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
-		Owed: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
+		VectorCounts: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
 			if state.Indexing.Progress == nil {
 				return 0, 0, errNoProgress
 			}

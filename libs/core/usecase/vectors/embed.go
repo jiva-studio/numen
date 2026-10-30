@@ -34,7 +34,7 @@ type Embed struct {
 	vectors embeddingport.VectorRepository
 
 	// Texts is optional. A chunk of a source cut from a text version is re-sliced
-	// out of that version; without it such a chunk is left owing its vector.
+	// out of that version; without it such a chunk is left pending its vector.
 	Texts textport.TextReaders
 	// Claim is optional. It keeps a second process from embedding the vault at
 	// once; without it nothing is claimed.
@@ -92,7 +92,7 @@ const pipelineBufferSize = 4
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
 type preparedBatch struct {
 	model       embeddingport.EmbeddingModel
-	owing       []domain.Passage
+	pending     []domain.Passage
 	hashes      [][]byte
 	reused      map[int]embeddingport.Vector
 	reusedCount int
@@ -191,7 +191,7 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	return release, false, nil
 }
 
-// produceBatches reads every owing chunk of the vault and sends them on out as
+// produceBatches reads every pending chunk of the vault and sends them on out as
 // prepared batches.
 func (u Embed) produceBatches(
 	ctx context.Context,
@@ -207,22 +207,22 @@ func (u Embed) produceBatches(
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		owing, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
+		pending, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return fmt.Errorf("pending vectors from %s: %w", model, err)
 		}
-		if len(owing) == 0 {
+		if len(pending) == 0 {
 			return nil
 		}
 		if next == after {
-			return fmt.Errorf("pending vectors from %s do not continue past %d chunks", model, len(owing))
+			return fmt.Errorf("pending vectors from %s do not continue past %d chunks", model, len(pending))
 		}
 		mu.Lock()
-		res.Owing += len(owing)
+		res.Pending += len(pending)
 		mu.Unlock()
 		after = next
 
-		chunks, texts, err := u.read(ctx, source, owing, res, mu)
+		chunks, texts, err := u.read(ctx, source, pending, res, mu)
 		if err != nil {
 			return err
 		}
@@ -364,14 +364,14 @@ func (u Embed) storeBatches(
 func (u Embed) read(
 	ctx context.Context,
 	source *extracted,
-	owing []domain.Passage,
+	pending []domain.Passage,
 	res *EmbedResult,
 	mu *sync.Mutex,
 ) ([]domain.Passage, []string, error) {
-	chunks := make([]domain.Passage, 0, len(owing))
-	texts := make([]string, 0, len(owing))
+	chunks := make([]domain.Passage, 0, len(pending))
+	texts := make([]string, 0, len(pending))
 
-	for _, p := range owing {
+	for _, p := range pending {
 		mu.Lock()
 		if p.Source != res.CurrentSource {
 			res.CurrentSource = p.Source
@@ -407,7 +407,7 @@ func (u Embed) read(
 func (u Embed) prepareBatch(
 	ctx context.Context,
 	model embeddingport.EmbeddingModel,
-	owing []domain.Passage,
+	pending []domain.Passage,
 	texts []string,
 ) (preparedBatch, error) {
 	if len(texts) == 0 {
@@ -417,7 +417,7 @@ func (u Embed) prepareBatch(
 
 	hashes := make([][]byte, len(texts))
 	for i := range texts {
-		raw, err := hex.DecodeString(owing[i].ChunkHash)
+		raw, err := hex.DecodeString(pending[i].ChunkHash)
 		if err != nil || len(raw) == 0 {
 			continue
 		}
@@ -430,12 +430,12 @@ func (u Embed) prepareBatch(
 
 	prep := preparedBatch{
 		model:     model,
-		owing:     owing,
+		pending:   pending,
 		hashes:    hashes,
 		reused:    make(map[int]embeddingport.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
-		source:    owing[len(owing)-1].Source,
+		source:    pending[len(pending)-1].Source,
 	}
 	var deduplicated map[string]int
 	if len(texts) > 1 {
@@ -444,7 +444,7 @@ func (u Embed) prepareBatch(
 	for i := range texts {
 		value, exists := retained[hex.EncodeToString(hashes[i])]
 		if !exists || len(hashes[i]) == 0 {
-			key := owing[i].ChunkHash
+			key := pending[i].ChunkHash
 			if key == "" {
 				key = texts[i]
 			}
@@ -453,7 +453,7 @@ func (u Embed) prepareBatch(
 		}
 		prep.askingMap[i] = -1
 		prep.reused[i] = embeddingport.Vector{
-			ChunkID: owing[i].ChunkID,
+			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
 			Kind:    embeddingport.QuantisedInt8,
@@ -485,9 +485,9 @@ type uniqueVector struct {
 	coarse []byte
 }
 
-// inferBatch embeds texts that owe vectors and normalises/quantises the output.
+// inferBatch embeds texts that need vectors and normalises/quantises the output.
 func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBatch, error) {
-	if len(prep.owing) == 0 {
+	if len(prep.pending) == 0 {
 		return completedBatch{}, nil
 	}
 	var unique []uniqueVector
@@ -513,11 +513,11 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 		}
 	}
 
-	out := make([]embeddingport.Vector, len(prep.owing))
-	for i := range prep.owing {
+	out := make([]embeddingport.Vector, len(prep.pending))
+	for i := range prep.pending {
 		if pos := prep.askingMap[i]; pos >= 0 {
 			out[i] = embeddingport.Vector{
-				ChunkID: prep.owing[i].ChunkID,
+				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
 				Kind:    embeddingport.QuantisedInt8,

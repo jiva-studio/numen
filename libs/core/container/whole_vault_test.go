@@ -122,20 +122,20 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	}
 }
 
-// owingTo is how many small chunks of the vault the model has no vector for.
-func owingTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
+// unembeddedTo is how many small chunks of the vault the model has no vector for.
+func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
 	t.Helper()
-	owing, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
+	unembedded, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return len(owing)
+	return len(unembedded)
 }
 
-// owingAfterAModelSwitch returns the number of chunks that still need a vector
+// unembeddedAfterAModelSwitch returns the number of chunks that still need a vector
 // from the first model after the vault was indexed by a second model and then
 // by the first model again.
-func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
+func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
@@ -149,10 +149,10 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	if _, err := whole.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	if owingTo(t, db, v, first) != 0 {
+	if unembeddedTo(t, db, v, first) != 0 {
 		t.Fatal("the first model left chunks without a vector")
 	}
-	if owingTo(t, db, v, second) == 0 {
+	if unembeddedTo(t, db, v, second) == 0 {
 		t.Fatal("the vault holds no chunk to be embedded")
 	}
 
@@ -164,17 +164,17 @@ func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	if _, err := target.ReadWholeVault(t.Context(), db, first, v); err != nil {
 		t.Fatal(err)
 	}
-	return owingTo(t, db, v, first)
+	return unembeddedTo(t, db, v, first)
 }
 
 // Only an index rebuild deletes the vectors of a model that is not
 // selected; every other run keeps them, so switching back to a model finds all
 // of its vectors present.
 func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
-	if got := owingAfterAModelSwitch(t, false); got != 0 {
-		t.Errorf("a run that was not a rebuild forgot the vectors of the first model: %d chunks owe one", got)
+	if got := unembeddedAfterAModelSwitch(t, false); got != 0 {
+		t.Errorf("a run that was not a rebuild forgot the vectors of the first model: %d chunks need one", got)
 	}
-	if got := owingAfterAModelSwitch(t, true); got == 0 {
+	if got := unembeddedAfterAModelSwitch(t, true); got == 0 {
 		t.Error("a rebuild kept the vectors of a model unrequested for")
 	}
 }

@@ -69,7 +69,7 @@ type ScanResult struct {
 // IndexResult reports what indexing did.
 type IndexResult struct {
 	Seen          int    // files with text found in the vault
-	Recorded      int    // new or changed, so owing their text
+	Recorded      int    // new or changed, so unembedded their text
 	Unchanged     int    // skipped on size and modification time alone
 	Extracted     int    // read, chunked and written
 	Chunks        int    // chunks written, of both sizes
@@ -82,7 +82,7 @@ type IndexResult struct {
 
 // EmbedResult reports what embedding did.
 type EmbedResult struct {
-	Owing         int    // chunks found with no vector from the model in use
+	Pending       int    // chunks found with no vector from the model in use
 	Embedded      int    // chunks that now carry one
 	Reused        int    // chunks whose cached vector was claimed
 	Vanished      int    // whose source the vault no longer holds

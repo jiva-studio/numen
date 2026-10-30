@@ -63,11 +63,11 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 // getUnembeddedPassages returns every chunk of a vault that needs a vector, fetched in one page.
 func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	t.Helper()
-	owed, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, benchModel, "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, benchModel, "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return owed
+	return unembedded
 }
 
 // getUnembeddedPassagesPaged returns every chunk of a vault that needs a vector, fetched in pages
@@ -120,7 +120,7 @@ func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
 	saveThroughPort(t, db, first, "library/old.epub", longAgo, "glaciers carve", "moraines remain")
 	saveThroughPort(t, db, second, "library/second.epub", thisYear, "violins tune", "cellos answer")
 
-	owed := getUnembeddedPassages(t, db, first)
+	unembedded := getUnembeddedPassages(t, db, first)
 	want := []string{
 		"library/last.epub", "library/last.epub",
 		"library/far.epub", "library/far.epub",
@@ -128,14 +128,14 @@ func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
 		"library/a.epub", "library/a.epub", "library/a.epub",
 		"library/old.epub", "library/old.epub",
 	}
-	if got := getSourcePaths(owed); !slices.Equal(got, want) {
-		t.Fatalf("the first vault owes chunks of %v, want %v", got, want)
+	if got := getSourcePaths(unembedded); !slices.Equal(got, want) {
+		t.Fatalf("the first vault needs chunks of %v, want %v", got, want)
 	}
 
 	for _, limit := range []int{1, 2, 5} {
 		visited := getUnembeddedPassagesPaged(t, db, first, limit)
-		if got := getChunkIDs(visited); !slices.Equal(got, getChunkIDs(owed)) {
-			t.Errorf("a walk in pages of %d visited %v, want %v", limit, got, getChunkIDs(owed))
+		if got := getChunkIDs(visited); !slices.Equal(got, getChunkIDs(unembedded)) {
+			t.Errorf("a walk in pages of %d visited %v, want %v", limit, got, getChunkIDs(unembedded))
 		}
 	}
 
@@ -198,7 +198,7 @@ func TestAWalkOverAClosedIndexFails(t *testing.T) {
 	}
 
 	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), first.ID, benchModel, "", 10); err == nil {
-		t.Error("a walk over a closed index reported nothing owed")
+		t.Error("a walk over a closed index reported nothing unembedded")
 	}
 }
 
@@ -256,12 +256,12 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
 
-	owed := getUnembeddedPassages(t, db, first)
-	if len(owed) != 2 {
-		t.Fatalf("%d chunks owe a vector, want 2", len(owed))
+	unembedded := getUnembeddedPassages(t, db, first)
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector, want 2", len(unembedded))
 	}
-	vectors := make([]embeddingport.Vector, 0, len(owed))
-	for _, p := range owed {
+	vectors := make([]embeddingport.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
 		row, err := strconv.ParseInt(string(p.ChunkID), 10, 64)
 		if err != nil {
 			t.Fatal(err)
@@ -275,7 +275,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 		t.Fatal(err)
 	}
 	if remaining := getUnembeddedPassages(t, db, first); len(remaining) != 0 {
-		t.Errorf("%d chunks still owe a vector", len(remaining))
+		t.Errorf("%d chunks still need a vector", len(remaining))
 	}
 
 	stranger := embeddingport.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}

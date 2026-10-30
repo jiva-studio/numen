@@ -70,12 +70,12 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 		}
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var vectors []chunk.Vector
-	for _, p := range owing {
+	for _, p := range unembedded {
 		if p.Length != 10 {
 			continue
 		}

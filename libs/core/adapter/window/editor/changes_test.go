@@ -629,7 +629,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	took := time.Since(began)
 
 	if took < linked {
-		t.Errorf("the quit gave the page %v of the %v it is owed", took, linked)
+		t.Errorf("the quit gave the page %v of the %v it is unembedded", took, linked)
 	}
 	if took > 3*linked {
 		t.Errorf("a page that never answered held the quit for %v", took)
@@ -870,7 +870,7 @@ func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	took := time.Since(began)
 
 	if took < linked {
-		t.Errorf("the quit gave the page %v of the %v it is owed", took, linked)
+		t.Errorf("the quit gave the page %v of the %v it is unembedded", took, linked)
 	}
 	if took > 3*linked {
 		t.Errorf("a page that went held the quit for %v", took)
