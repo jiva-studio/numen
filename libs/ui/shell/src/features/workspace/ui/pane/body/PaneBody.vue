@@ -3,8 +3,12 @@
  * What the tabs of a pane hold, and what is shown there while it holds none.
  *
  * Every tab is rendered; the ones not shown are hidden, so what a tab
- * holds stays alive for as long as the tab does.
+ * holds stays alive for as long as the tab does. Inside a workspace the content
+ * of a tab is drawn into a host element here and belongs to the workspace, so a
+ * tab moved to another pane is not rendered again.
  */
+import { inject } from 'vue'
+import { TAB_HOSTS } from '../../../model/hosts'
 import { getPanelName, getTabName } from '../names'
 import type { Pane, TabId } from '../../../lib/node'
 
@@ -24,6 +28,9 @@ defineSlots<{
   silence(): unknown
 }>()
 
+/* ---------------------------------- State --------------------------------- */
+const hosts = inject(TAB_HOSTS, null)
+
 /* -------------------------------- Handlers -------------------------------- */
 /**
  * The way out of what a tab holds, back to the tab itself. A panel that acts
@@ -40,6 +47,22 @@ function onPanelEscape(event: KeyboardEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+/** One function per tab, so a render does not detach and attach the same host. */
+const hostRefs = new Map<TabId, (element: unknown) => void>()
+
+function createHostRef(tab: TabId): (element: unknown) => void {
+  let ref = hostRefs.get(tab)
+  if (!ref) {
+    ref = (element) => {
+      if (!hosts) return
+      if (element instanceof HTMLElement) hosts.attach(tab, props.pane.id, element)
+      else hosts.detach(tab, props.pane.id)
+    }
+    hostRefs.set(tab, ref)
+  }
+  return ref
+}
+
 const tabName = (pos: number): string => getTabName(props.pane.id, pos)
 const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 </script>
@@ -57,7 +80,8 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
       :data-showing="tab === pane.active || undefined"
       @keydown.escape="onPanelEscape"
     >
-      <slot name="tab" :id="tab" />
+      <div v-if="hosts" :ref="createHostRef(tab)" class="pane__host" />
+      <slot v-else name="tab" :id="tab" />
     </div>
     <div v-if="pane.tabs.length === 0" class="pane__silence">
       <slot name="silence">
@@ -86,6 +110,12 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 
 .pane__pending[data-showing] {
   display: block;
+}
+
+.pane__host {
+  block-size: 100%;
+  min-block-size: 0;
+  min-inline-size: 0;
 }
 
 /* Drawn inside, because what a pane holds fills it to its edges. */

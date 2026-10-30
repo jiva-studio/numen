@@ -14,6 +14,7 @@ import { WorkspacePane } from './pane'
 import WorkspaceOverlay from './WorkspaceOverlay.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
 import { useTabDrag } from '../model/drag'
+import { TAB_HOSTS, createTabHosts } from '../model/hosts'
 import { createNodeIdFactory } from '../lib/identity'
 import { activateTab, closeTab, focusPane, resizeBranch, type NodeIdFactory } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
@@ -76,6 +77,10 @@ const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
+
+/** Where each tab is drawn: the host element of the pane that holds it. */
+const hosts = createTabHosts()
+provide(TAB_HOSTS, hosts)
 
 /** The ids this layout creates when the caller supplies no factory. */
 const createNodeId = createNodeIdFactory()
@@ -167,6 +172,19 @@ provide(
         <slot :name="name" v-bind="getSlotProps(slotProps)" />
       </template>
     </WorkspacePane>
+
+    <!-- Tab content is rendered here once per tab and placed into the pane that
+         holds it; a tab with no pane stays here, hidden. -->
+    <div class="workspace__stage" hidden>
+      <Teleport
+        v-for="tab in tabs"
+        :key="tab.id"
+        :to="hosts.getElement(tab.id)"
+        :disabled="!hosts.getElement(tab.id)"
+      >
+        <slot name="tab" :id="tab.id" />
+      </Teleport>
+    </div>
 
     <WorkspaceOverlay v-if="overlay" :box="overlay" :has-caret="dropTarget?.kind === 'strip'" />
 
