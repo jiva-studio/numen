@@ -11,6 +11,10 @@ export interface WriteQueue {
   revision: string
   isWriting: boolean
   isWriteQueued: boolean
+  /** The options of the newest request made while a write was in flight. */
+  queuedOptions: WriteOptions | null
+  /** The number of writes that have finished, whatever their answer. */
+  finishedWrites: number
   activeWrite: Promise<void> | null
   hasWarned: boolean
   readonly dirtyFields: Set<keyof Settings>
@@ -23,6 +27,8 @@ export function createWriteQueue(): WriteQueue {
     revision: '',
     isWriting: false,
     isWriteQueued: false,
+    queuedOptions: null,
+    finishedWrites: 0,
     activeWrite: null,
     hasWarned: false,
     dirtyFields: new Set<keyof Settings>(),
@@ -68,10 +74,13 @@ export const sendWrite = async (queue: WriteQueue, options: WriteOptions): Promi
 const runWrite = async (queue: WriteQueue, options: WriteOptions): Promise<void> => {
   await sendWrite(queue, options)
   queue.isWriting = false
+  queue.finishedWrites += 1
   const again = queue.isWriteQueued && !queue.hasExternalChange.value
+  const next = queue.queuedOptions ?? options
   queue.isWriteQueued = false
+  queue.queuedOptions = null
   if (again) {
-    await requestWrite(queue, options)
+    await requestWrite(queue, next)
     return
   }
   queue.activeWrite = null
@@ -81,6 +90,7 @@ const runWrite = async (queue: WriteQueue, options: WriteOptions): Promise<void>
 export const requestWrite = (queue: WriteQueue, options: WriteOptions): Promise<void> => {
   if (queue.isWriting) {
     queue.isWriteQueued = true
+    queue.queuedOptions = options
     return queue.activeWrite ?? Promise.resolve()
   }
   queue.isWriting = true

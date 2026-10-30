@@ -28,7 +28,7 @@ const model = defineModel<boolean>({ default: false })
     :disabled="isDisabled"
     :class="
       cn(
-        'rounded-pill inline-flex h-5 w-9 shrink-0 items-center p-px',
+        'rounded-pill inline-flex h-5 w-9 shrink-0 items-center p-0.5',
         'duration-hover ease-numen cursor-pointer transition-colors',
         'bg-hushed data-[state=checked]:bg-accent',
         'ring-numen outline-none',
