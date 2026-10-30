@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func dialEndpoint(t *testing.T, served *endpoint) net.Conn {
@@ -17,7 +19,7 @@ func dialEndpoint(t *testing.T, served *endpoint) net.Conn {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = conn.Close() })
+	testsupport.CloseAfter(t, conn)
 	return conn
 }
 

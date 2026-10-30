@@ -62,7 +62,10 @@ func TestCalibrateMeasuresTheNoiseAndKeepsTheFloor(t *testing.T) {
 		t.Errorf("calibrated at %v, want the injected clock's %v", got.CalibratedTime, calibratedAt)
 	}
 
-	entry, found, _ := store.ReadFloor(t.Context(), vault, model.Recipe())
+	entry, found, err := store.ReadFloor(t.Context(), vault, model.Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !found || entry.Calibration == nil || entry.Calibration.Floor != got.Floor {
 		t.Errorf("stored %+v, want the calibration under the recipe of the model", entry)
 	}

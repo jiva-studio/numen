@@ -148,6 +148,7 @@ func parseStreamWithClock(
 		arguments:    strings.Builder{},
 		offset:       0,
 		reason:       "",
+		sendErr:      nil,
 	}
 	scanner := bufio.NewReader(r)
 	for {

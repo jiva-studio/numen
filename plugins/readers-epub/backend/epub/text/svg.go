@@ -35,6 +35,3 @@ func FindSVGImage(base string, raw []byte, has func(string) bool) (string, bool)
 		}
 	}
 }
-
-// attrHref is the attribute that names the target of a link, and of an image in an SVG.
-const attrHref = "href"

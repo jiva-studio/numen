@@ -74,6 +74,7 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 		actualAddr: "",
 		isClosed:   false,
 		mu:         sync.Mutex{},
+		serveErr:   nil,
 	}
 	authHandler := srv.createHTTPHandler(mcpServer)
 	srv.handler = authHandler

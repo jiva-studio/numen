@@ -66,12 +66,12 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 }
 
 // person's session is on.
-func (a *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
-	run, err := a.scenarios().flash.Log.Open(ctx, v, a.now())
+func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
+	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now())
 	if err != nil {
 		return nil, err
 	}
-	a.runs.store(v, run)
+	h.runs.store(v, run)
 	return run, nil
 }
 

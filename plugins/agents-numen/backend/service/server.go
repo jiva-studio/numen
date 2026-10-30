@@ -309,7 +309,7 @@ func (s *Server) getEffort(ctx context.Context, name, level string) effort {
 	}
 	models, err := s.listModels(ctx)
 	if err != nil {
-		return effort{}
+		return effort{field: "", level: ""}
 	}
 	for _, one := range models {
 		if one.Name == name {

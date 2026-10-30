@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -93,7 +94,7 @@ func TestFloorsOverTheIndexFollowTheOrderOfSources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	embedder := floorHintEmbedder{hint: 0.4}
 	floors := cfg.NewFloors(db, embedder, nil)
