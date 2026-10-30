@@ -2,7 +2,7 @@
  * What the keyboard asks of a row whose place on screen is not known.
  */
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flatten, type Row } from '../lib/row'
 import type { RowDragState } from './drag'
 import { createTreeGestures, type TreeGesturesTell } from './gestures'
@@ -28,7 +28,7 @@ const create = (
   const selection = useRowSelection(
     () => visibleRows,
     () => [],
-    () => {},
+    vi.fn(),
   )
   const drag: RowDragState = {
     into: computed(() => null),
@@ -37,7 +37,7 @@ const create = (
     label: computed(() => null),
     hasMoved: computed(() => false),
     at: computed(() => null),
-    lift: () => {},
+    lift: vi.fn(),
   }
   const gestures = createTreeGestures({
     getShownRows: () => visibleRows,

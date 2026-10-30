@@ -9,6 +9,8 @@ import { getDraggedRows } from '../lib/drag'
 import type { RowId, ShownRow } from '../lib/row'
 import { PLAIN, type Press } from '../lib/select'
 import { isTreeKey, stepTo, type Step } from '../lib/step'
+import { runInBackground } from '@/shared/lib/async/background'
+import { reportFailure } from '@/shared/lib/async/report'
 import type { Position } from '@/shared/lib/math/geometry'
 import type { RowDragState } from './drag'
 import type { DrawnRowsState } from './rows'
@@ -50,6 +52,11 @@ export interface TreeGesturesState {
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
+/** Moves the keyboard to a row; a failure is reported as an uncaught error. */
+function focusInBackground(rows: DrawnRowsState, row: RowId | null): void {
+  runInBackground(rows.focusRow(row), reportFailure)
+}
+
 function createTreeRenaming(
   renamingPath: Ref<RowId | null>,
   rows: DrawnRowsState,
@@ -58,12 +65,12 @@ function createTreeRenaming(
   function onRename(row: RowId, name: string): void {
     renamingPath.value = null
     tell('rename', row, name)
-    void rows.focusRow(row)
+    focusInBackground(rows, row)
   }
 
   function onAbandon(row: RowId): void {
     renamingPath.value = null
-    void rows.focusRow(row)
+    focusInBackground(rows, row)
   }
 
   function onFieldBlur(): void {
@@ -110,7 +117,7 @@ function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardH
     if (step.turn?.isOpen) tell('open', step.turn.row)
     else if (step.turn) tell('close', step.turn.row)
     if (step.at !== null) selection.selectRow(step.at, press)
-    void rows.focusRow(step.at)
+    focusInBackground(rows, step.at)
   }
 
   function onKeyDown(event: KeyboardEvent): void {

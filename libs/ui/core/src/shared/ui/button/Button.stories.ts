@@ -77,9 +77,9 @@ export const Disabled: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     for (const button of within(canvasElement).getAllByRole('button')) {
-      expect(button).toBeDisabled()
-      expect(Number.parseFloat(getComputedStyle(button).opacity)).toBeLessThan(1)
-      expect(getComputedStyle(button).pointerEvents).toBe('none')
+      await expect(button).toBeDisabled()
+      await expect(Number.parseFloat(getComputedStyle(button).opacity)).toBeLessThan(1)
+      await expect(getComputedStyle(button).pointerEvents).toBe('none')
     }
   },
 }
@@ -101,9 +101,9 @@ export const Dark: Story = {
     // The way round the dark set is written: a filled button is dark on light
     // and an outlined one is light on dark.
     const solid = getComputedStyle(canvas.getByRole('button', { name: 'solid' }))
-    expect(lightness(solid.color)).toBeLessThan(lightness(solid.backgroundColor))
+    await expect(lightness(solid.color)).toBeLessThan(lightness(solid.backgroundColor))
     const outline = getComputedStyle(canvas.getByRole('button', { name: 'outline' }))
-    expect(lightness(outline.color)).toBeGreaterThan(lightness(outline.backgroundColor))
+    await expect(lightness(outline.color)).toBeGreaterThan(lightness(outline.backgroundColor))
 
     for (const name of ['solid', 'outline'] as const) {
       const button = canvas.getByRole('button', { name })
@@ -112,20 +112,20 @@ export const Dark: Story = {
 
       // The two are told apart, which is what makes the direction below mean
       // anything.
-      expect(Math.abs(ink - restingLightness)).toBeGreaterThan(24)
+      await expect(Math.abs(ink - restingLightness)).toBeGreaterThan(24)
 
       await hoverOver(button)
-      await waitFor(() => {
+      await waitFor(async () => {
         const moved = lightness(getComputedStyle(button).backgroundColor) - restingLightness
-        expect(Math.abs(moved)).toBeGreaterThan(2)
-        expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
+        await expect(Math.abs(moved)).toBeGreaterThan(2)
+        await expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
       })
     }
 
     // A button that is only text has no ground at rest, and gains one under
     // the hand.
     const ghost = canvas.getByRole('button', { name: 'ghost' })
-    expect(getComputedStyle(ghost).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(getComputedStyle(ghost).backgroundColor).toBe('rgba(0, 0, 0, 0)')
     await hoverOver(ghost)
     await waitFor(() =>
       expect(getComputedStyle(ghost).backgroundColor).not.toBe('rgba(0, 0, 0, 0)'),

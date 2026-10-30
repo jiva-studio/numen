@@ -58,8 +58,8 @@ export const OneSizeInEveryRoom: Story = {
     const getWord = (element: HTMLElement) =>
       getComputedStyle(element.querySelector<HTMLElement>('span')!).fontSize
 
-    expect(getRing(wide!)).toBeCloseTo(getRing(narrow!), 1)
-    expect(getWord(wide!)).toBe(getWord(narrow!))
+    await expect(getRing(wide!)).toBeCloseTo(getRing(narrow!), 1)
+    await expect(getWord(wide!)).toBe(getWord(narrow!))
   },
 }
 
@@ -79,10 +79,10 @@ export const EmptyWithinItsDelay: Story = {
   play: async ({ canvasElement }) => {
     const pane = within(canvasElement).getByRole('status')
 
-    expect(pane.querySelector('.spinner')).toBeNull()
-    expect(pane).toHaveTextContent('')
+    await expect(pane.querySelector('.spinner')).toBeNull()
+    await expect(pane).toHaveTextContent('')
     await new Promise((resolve) => setTimeout(resolve, 400))
-    expect(pane.querySelector('.spinner')).not.toBeNull()
-    expect(pane).toHaveTextContent('Loading…')
+    await expect(pane.querySelector('.spinner')).not.toBeNull()
+    await expect(pane).toHaveTextContent('Loading…')
   },
 }

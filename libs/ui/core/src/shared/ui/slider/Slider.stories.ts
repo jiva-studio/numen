@@ -105,7 +105,7 @@ export const PastTheEnd: Story = {
   args: { value: 90, max: 50 },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(getValueNow(canvasElement)).toBe('50'))
-    expect(canvasElement.textContent).toContain('50%')
+    await expect(canvasElement.textContent).toContain('50%')
   },
 }
 
@@ -114,7 +114,7 @@ export const UnderTheFloor: Story = {
   args: { value: -20 },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(getValueNow(canvasElement)).toBe('0'))
-    expect(canvasElement.textContent).toContain('0%')
+    await expect(canvasElement.textContent).toContain('0%')
   },
 }
 
@@ -152,11 +152,11 @@ export const Disabled: Story = { args: { isDisabled: true } }
 export const AnnouncedAsASlider: Story = {
   play: async ({ canvasElement }) => {
     const control = handle(canvasElement)
-    expect(control.getAttribute('role')).toBe('slider')
-    expect(control.getAttribute('aria-labelledby')).toBe('slider-label')
-    expect(control.getAttribute('aria-orientation')).toBe('horizontal')
-    expect(control.getAttribute('aria-valuemin')).toBe('0')
-    expect(control.getAttribute('aria-valuemax')).toBe('100')
+    await expect(control.getAttribute('role')).toBe('slider')
+    await expect(control.getAttribute('aria-labelledby')).toBe('slider-label')
+    await expect(control.getAttribute('aria-orientation')).toBe('horizontal')
+    await expect(control.getAttribute('aria-valuemin')).toBe('0')
+    await expect(control.getAttribute('aria-valuemax')).toBe('100')
     await waitFor(() => expect(getValueNow(canvasElement)).toBe('40'))
   },
 }
@@ -167,7 +167,7 @@ export const TheKeyboardMovesIt: Story = {
     const control = handle(canvasElement)
 
     await userEvent.tab()
-    expect(document.activeElement).toBe(control)
+    await expect(document.activeElement).toBe(control)
 
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(() => expect(getValueNow(canvasElement)).toBe('41'))
@@ -185,8 +185,8 @@ export const TheKeyboardMovesIt: Story = {
 
 export const TheFigureIsReadOutBesideIt: Story = {
   play: async ({ canvasElement }) => {
-    expect(handle(canvasElement).textContent).toBe('')
-    expect(canvasElement.textContent).toContain('40%')
+    await expect(handle(canvasElement).textContent).toBe('')
+    await expect(canvasElement.textContent).toContain('40%')
 
     await userEvent.tab()
     await userEvent.keyboard('{End}')
@@ -242,6 +242,6 @@ export const DisabledTakesNoKeyboard: Story = {
   play: async ({ canvasElement }) => {
     const control = handle(canvasElement)
     await userEvent.tab()
-    expect(document.activeElement).not.toBe(control)
+    await expect(document.activeElement).not.toBe(control)
   },
 }

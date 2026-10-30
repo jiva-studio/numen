@@ -82,7 +82,7 @@ const getChosen = (canvas: HTMLElement): string | undefined =>
  * One press of an arrow key: the choice follows the keyboard while the key is
  * down, so it is held until it has.
  */
-const press = async (key: string, until: () => void) => {
+const press = async (key: string, until: () => void | Promise<void>) => {
   await userEvent.keyboard(`{${key}>}`)
   await waitFor(until)
   await userEvent.keyboard(`{/${key}}`)
@@ -125,9 +125,9 @@ export const NoChoicesAtAll: Story = {
   args: { words: '', chosen: '' },
   play: async ({ canvasElement }) => {
     const control = canvasElement.querySelector<HTMLElement>('[data-slot="segmented"]')
-    expect(control).not.toBeNull()
-    expect(segments(canvasElement)).toHaveLength(0)
-    expect(control?.tabIndex).toBe(-1)
+    await expect(control).not.toBeNull()
+    await expect(segments(canvasElement)).toHaveLength(0)
+    await expect(control?.tabIndex).toBe(-1)
   },
 }
 
@@ -135,8 +135,8 @@ export const NoChoicesAtAll: Story = {
 export const OneChoice: Story = {
   args: { words: 'Only this', chosen: 'only-this' },
   play: async ({ canvasElement }) => {
-    expect(segments(canvasElement)).toHaveLength(1)
-    expect(getChosen(canvasElement)).toBe('Only this')
+    await expect(segments(canvasElement)).toHaveLength(1)
+    await expect(getChosen(canvasElement)).toBe('Only this')
 
     await userEvent.tab()
     await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Only this'))
@@ -151,14 +151,14 @@ export const FarTooMany: Story = {
     width: '30rem',
   },
   play: async ({ canvasElement }) => {
-    expect(segments(canvasElement)).toHaveLength(12)
-    expect(getChosen(canvasElement)).toBe('Choice 1')
+    await expect(segments(canvasElement)).toHaveLength(12)
+    await expect(getChosen(canvasElement)).toBe('Choice 1')
 
     // One of them is in force, and only one.
     const checked = segments(canvasElement).filter(
       (one) => one.getAttribute('aria-checked') === 'true',
     )
-    expect(checked).toHaveLength(1)
+    await expect(checked).toHaveLength(1)
   },
 }
 
@@ -169,15 +169,15 @@ export const FarTooMany: Story = {
 export const AValueNotAmongThem: Story = {
   args: { chosen: 'something-else' },
   play: async ({ canvasElement }) => {
-    expect(getChosen(canvasElement)).toBeUndefined()
-    expect(segments(canvasElement).map((one) => one.getAttribute('aria-checked'))).toEqual([
+    await expect(getChosen(canvasElement)).toBeUndefined()
+    await expect(segments(canvasElement).map((one) => one.getAttribute('aria-checked'))).toEqual([
       'false',
       'false',
       'false',
     ])
 
     await userEvent.tab()
-    expect(document.activeElement).toBe(segments(canvasElement)[0])
+    await expect(document.activeElement).toBe(segments(canvasElement)[0])
     await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Medium'))
   },
 }
@@ -207,8 +207,8 @@ export const Dark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     const [small, medium, large] = segments(canvasElement)
-    expect(segments(canvasElement)).toHaveLength(3)
-    expect(getChosen(canvasElement)).toBe('Medium')
+    await expect(segments(canvasElement)).toHaveLength(3)
+    await expect(getChosen(canvasElement)).toBe('Medium')
 
     // A quiet segment keeps no ground of its own, so both are read over the
     // ground the control itself lays down.
@@ -221,8 +221,8 @@ export const Dark: Story = {
 
     for (const other of [small, large]) {
       const unchosen = getComputedStyle(other as HTMLElement)
-      expect(ground).toBeGreaterThan(lightness(unchosen.backgroundColor, slotBg) + 24)
-      expect(ink).toBeLessThan(lightness(unchosen.color, slotBg) - 24)
+      await expect(ground).toBeGreaterThan(lightness(unchosen.backgroundColor, slotBg) + 24)
+      await expect(ink).toBeLessThan(lightness(unchosen.color, slotBg) - 24)
     }
   },
 }
@@ -231,9 +231,9 @@ export const Dark: Story = {
 export const AnnouncedAsChoices: Story = {
   play: async ({ canvasElement }) => {
     const group = canvasElement.querySelector('[role="radiogroup"]')
-    expect(group).not.toBeNull()
-    expect(segments(canvasElement)).toHaveLength(3)
-    expect(getChosen(canvasElement)).toBe('Small')
+    await expect(group).not.toBeNull()
+    await expect(segments(canvasElement)).toHaveLength(3)
+    await expect(getChosen(canvasElement)).toBe('Small')
   },
 }
 
@@ -241,7 +241,7 @@ export const AnnouncedAsChoices: Story = {
 export const ArrowKeysMoveBetweenThem: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()
-    expect(document.activeElement).toBe(segments(canvasElement)[0])
+    await expect(document.activeElement).toBe(segments(canvasElement)[0])
 
     await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Medium'))
     await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Large'))
@@ -260,10 +260,10 @@ export const OneStopForTheWholeControl: Story = {
   args: { chosen: 'large' },
   play: async ({ canvasElement }) => {
     const control = canvasElement.querySelector<HTMLElement>('[data-slot="segmented"]')
-    expect(control?.tabIndex).toBe(0)
-    expect(segments(canvasElement).map((one) => one.tabIndex)).toEqual([-1, -1, -1])
+    await expect(control?.tabIndex).toBe(0)
+    await expect(segments(canvasElement).map((one) => one.tabIndex)).toEqual([-1, -1, -1])
 
     await userEvent.tab()
-    expect((document.activeElement as HTMLElement | null)?.textContent?.trim()).toBe('Large')
+    await expect((document.activeElement as HTMLElement | null)?.textContent?.trim()).toBe('Large')
   },
 }

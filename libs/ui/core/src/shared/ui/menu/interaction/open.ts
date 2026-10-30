@@ -50,8 +50,8 @@ export const useMenuOpen = (options: MenuOpenOptions): void => {
 
   watch(
     options.isOpen,
-    (now) => {
-      if (now) void enter()
+    async (now) => {
+      if (now) await enter()
       else leave()
     },
     { immediate: true },

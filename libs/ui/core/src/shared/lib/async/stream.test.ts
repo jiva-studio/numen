@@ -4,7 +4,7 @@
  * The failure here looks like nothing at all: a window that stopped following
  * shows what the vault held a moment ago, with no error and no way back.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createFollower, AGAIN, LOST } from './stream'
 
 /** A window that is open for as many streams as the test allows it. */
@@ -34,7 +34,9 @@ describe('a stream that ends', () => {
     const one = window(2)
     const received: string[] = []
 
-    await one.follows(createStream('a change'), (response) => void received.push(response))
+    await one.follows(createStream('a change'), (response) => {
+      received.push(response)
+    })
 
     expect(received.length).toBeGreaterThanOrEqual(2)
     expect(one.waits).toStrictEqual([AGAIN, AGAIN, AGAIN])
@@ -43,7 +45,7 @@ describe('a stream that ends', () => {
   it('waits as long as it was told to', async () => {
     const one = window(1)
 
-    await one.follows(createStream('a change'), () => {}, 50)
+    await one.follows(createStream('a change'), vi.fn(), 50)
 
     expect(one.waits).toStrictEqual([50, 50])
   })
@@ -53,12 +55,9 @@ describe('a stream that fails', () => {
   it('says what it lost touch with, and takes it up again', async () => {
     const one = window(1)
 
-    await one.follows(
-      () => {
-        throw new Error('connection lost')
-      },
-      () => {},
-    )
+    await one.follows(() => {
+      throw new Error('connection lost')
+    }, vi.fn())
 
     expect(one.lost[0]).toBe(LOST)
   })
@@ -66,12 +65,9 @@ describe('a stream that fails', () => {
   it('says nothing about it once it has it back', async () => {
     const one = window(1)
 
-    await one.follows(
-      () => {
-        throw new Error('connection lost')
-      },
-      () => {},
-    )
+    await one.follows(() => {
+      throw new Error('connection lost')
+    }, vi.fn())
 
     expect(one.lost[1]).toBe('')
   })
@@ -92,10 +88,16 @@ describe('a stream that fails', () => {
 
 describe('a window that has closed', () => {
   it('follows nothing, and waits for nothing', async () => {
-    const closed = createFollower({ isOpen: () => false, setLost: () => {}, wait: async () => {} })
+    const closed = createFollower({
+      isOpen: () => false,
+      setLost: vi.fn(),
+      wait: () => Promise.resolve(),
+    })
     const received: string[] = []
 
-    await closed(createStream('a change'), (response) => void received.push(response))
+    await closed(createStream('a change'), (response) => {
+      received.push(response)
+    })
 
     expect(received).toStrictEqual([])
   })
@@ -103,7 +105,11 @@ describe('a window that has closed', () => {
   it('drops what arrives after it closed', async () => {
     let open = true
     const received: string[] = []
-    const follows = createFollower({ isOpen: () => open, setLost: () => {}, wait: async () => {} })
+    const follows = createFollower({
+      isOpen: () => open,
+      setLost: vi.fn(),
+      wait: () => Promise.resolve(),
+    })
 
     await follows(createStream('one', 'two'), (response) => {
       received.push(response)
@@ -120,15 +126,17 @@ describe('what a follower holds for one reading of a stream', () => {
     let acquiredCount = 0
     const follows = createFollower({
       isOpen: () => acquiredCount <= 2,
-      setLost: () => {},
+      setLost: vi.fn(),
       wait: async () => {
         acquiredCount++
         order.push('waits')
       },
-      reset: () => void order.push('resets'),
+      reset: () => {
+        order.push('resets')
+      },
     })
 
-    await follows(createStream('a change'), () => {})
+    await follows(createStream('a change'), vi.fn())
 
     expect(order).toStrictEqual(['resets', 'waits', 'resets', 'waits', 'resets', 'waits'])
   })
@@ -138,19 +146,20 @@ describe('what a follower holds for one reading of a stream', () => {
     let acquiredCount = 0
     const follows = createFollower({
       isOpen: () => acquiredCount < 1,
-      setLost: () => void order.push('lost'),
+      setLost: () => {
+        order.push('lost')
+      },
       wait: async () => {
         acquiredCount++
       },
-      reset: () => void order.push('resets'),
+      reset: () => {
+        order.push('resets')
+      },
     })
 
-    await follows(
-      async function* (): AsyncIterable<string> {
-        throw new Error('the connection went')
-      },
-      () => {},
-    )
+    await follows(async function* (): AsyncIterable<string> {
+      throw new Error('the connection went')
+    }, vi.fn())
 
     expect(order).toStrictEqual(['lost', 'resets'])
   })
@@ -163,9 +172,14 @@ describe('a window that closes while a stream is read', () => {
     const resets: number[] = []
     const follows = createFollower({
       isOpen: () => open,
-      setLost: () => {},
-      wait: async (ms) => void waits.push(ms),
-      reset: () => void resets.push(1),
+      setLost: vi.fn(),
+      wait: (ms) => {
+        waits.push(ms)
+        return Promise.resolve()
+      },
+      reset: () => {
+        resets.push(1)
+      },
     })
 
     await follows(createStream('one', 'two'), () => {
@@ -184,17 +198,19 @@ describe('a window that closes while a stream is read', () => {
     const follows = createFollower({
       isOpen: () => open,
       setLost: (response) => missing.push(response),
-      wait: async (ms) => void waits.push(ms),
-      reset: () => void resets.push(1),
+      wait: (ms) => {
+        waits.push(ms)
+        return Promise.resolve()
+      },
+      reset: () => {
+        resets.push(1)
+      },
     })
 
-    await follows(
-      async function* (): AsyncIterable<string> {
-        open = false
-        throw new Error('the connection went')
-      },
-      () => {},
-    )
+    await follows(async function* (): AsyncIterable<string> {
+      open = false
+      throw new Error('the connection went')
+    }, vi.fn())
 
     expect(missing).toStrictEqual([])
     expect(waits).toStrictEqual([])

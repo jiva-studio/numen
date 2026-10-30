@@ -7,6 +7,8 @@
  * once the field is left. Bounds that move under the number bring it in.
  */
 import { computed, useId, useTemplateRef } from 'vue'
+import { runInBackground } from '@/shared/lib/async/background'
+import { reportFailure } from '@/shared/lib/async/report'
 import { cn } from '@/shared/lib/dom/classes'
 import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 import type { NumberFieldProps } from './NumberField.types'
@@ -58,7 +60,7 @@ const onInput = (event: Event) => setText((event.target as HTMLInputElement).val
  */
 const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    void commit()
+    runInBackground(commit(), reportFailure)
     return
   }
   if (applyKey(event.key, props.isDisabled)) event.preventDefault()
