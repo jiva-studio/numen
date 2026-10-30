@@ -10,7 +10,6 @@ export const WORDS = {
   /** Group headings, in display order. */
   window: 'Window',
   naming: 'Note names',
-  ocr: 'OCR',
   performance: 'Performance',
   agent: 'Agent',
   ai: 'AI',
