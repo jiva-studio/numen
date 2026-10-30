@@ -13,6 +13,7 @@ import (
 	"errors"
 	"io/fs"
 
+	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	notesedit "github.com/jiva-studio/numen/libs/notes/edit"
 )
 
@@ -29,6 +30,13 @@ var (
 	ErrLockedByAnother = errors.New("host: the file is held by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
+	// ErrInvalidConnection is what a connection gets that is not one: a role no connection
+	// carries, roles that are not inverse of each other, or a note joined to itself.
+	ErrInvalidConnection = notesdomain.ErrInvalidConnection
+	// ErrHierarchyCycle is what a connection gets that would put a note above itself.
+	ErrHierarchyCycle = notesdomain.ErrHierarchyCycle
+	// ErrNoFreeName is what a new untitled note gets when every numbered name is taken.
+	ErrNoFreeName = notesdomain.ErrNoFreeName
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
 	ErrUnknownVault = errors.New("host: no such vault")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.

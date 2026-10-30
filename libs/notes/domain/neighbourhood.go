@@ -58,6 +58,14 @@ type Neighbour struct {
 	// words. Label is then the word the note in focus wrote for it.
 	IsMutual bool
 
+	// Marker is what the record written in the note in focus draws at this
+	// neighbour. It is absent when that note writes no record.
+	Marker LinkMarker
+
+	// ReverseMarker is what the record written in this neighbour draws at the
+	// note in focus. It is absent when the neighbour writes no record.
+	ReverseMarker LinkMarker
+
 	// Parent is the note the relationship runs from, when that is not the one
 	// in focus. A sibling is another child of a shared parent, and which parent
 	// is a fact about the vault.

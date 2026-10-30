@@ -60,6 +60,21 @@ Ordinary text with an [[ordinary link]], which is a ref.
 two notes in the plex. `note` is why the link exists, for you to read later. Both are optional,
 and neither is read by anything but you.
 
+## Arrows
+
+`marker: arrow` draws an arrowhead at the end of the line that points at the link's target:
+
+```yaml
+links:
+  - to: "[[Entropy as disorder]]"
+    role: jump
+    marker: arrow
+```
+
+Without `marker` nothing is drawn at that end. Each note decides about its own end, so a line
+can have no arrow, one arrow, or an arrow at each end, and the arrow does not change what kind
+of link it is. A `marker` numen does not know is reported on the note, as an unknown role is.
+
 ## One edge, either end
 
 Writing `parent: B` in note A and writing `child: A` in note B are the same edge. Whichever end

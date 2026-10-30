@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/note.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // HostVaultService is what the host answers for a plugin that works the vault
@@ -77,6 +79,30 @@ service HostVaultService {
   // ResolveLinks says what each link written in a note reaches now.
   rpc ResolveLinks(ResolveLinksRequest) returns (ResolveLinksResponse);
 
+  // GetConnection is the relationship between two notes as a whole: the record
+  // each note writes about the other.
+  rpc GetConnection(HostVaultServiceGetConnectionRequest) returns (HostVaultServiceGetConnectionResponse);
+
+  // SaveConnection makes the records between two notes exactly the ones given,
+  // in both notes or in neither. It needs vault:write.
+  rpc SaveConnection(HostVaultServiceSaveConnectionRequest) returns (HostVaultServiceSaveConnectionResponse);
+
+  // RemoveSide removes the record one note writes about another and leaves the
+  // other note alone. It needs vault:write.
+  rpc RemoveSide(HostVaultServiceRemoveSideRequest) returns (HostVaultServiceRemoveSideResponse);
+
+  // RemoveConnection removes the records two notes write about each other. It
+  // needs vault:write.
+  rpc RemoveConnection(HostVaultServiceRemoveConnectionRequest) returns (HostVaultServiceRemoveConnectionResponse);
+
+  // JoinNotes makes one note write a record about another and keeps the record
+  // the other note already writes. It needs vault:write.
+  rpc JoinNotes(HostVaultServiceJoinNotesRequest) returns (HostVaultServiceJoinNotesResponse);
+
+  // CreateRelatedNote makes a note joined to an existing one, with the inverse
+  // role, in the folder of the existing note. It needs vault:write.
+  rpc CreateRelatedNote(HostVaultServiceCreateRelatedNoteRequest) returns (HostVaultServiceCreateRelatedNoteResponse);
+
   // GetParseProblems lists what parsing each file of the vault turned up.
   rpc GetParseProblems(GetParseProblemsRequest) returns (GetParseProblemsResponse);
 
@@ -122,6 +148,16 @@ enum HostVaultErrorCode {
 
   // The path is not a note this vault holds.
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
+
+  // The connection is not one: a role no connection carries, roles that are not
+  // inverse of each other, or a note joined to itself.
+  HOST_VAULT_ERROR_CODE_INVALID_CONNECTION = 9;
+
+  // The connection would put a note above itself in the hierarchy.
+  HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE = 10;
+
+  // Every numbered "Untitled note N" name is taken.
+  HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED = 11;
 }
 
 // HostFileStat is what a file was at a moment: at its current position, how large it
@@ -304,6 +340,16 @@ message HostLink {
   string label = 7;
   // Set when several notes answer to the name.
   bool is_ambiguous = 8;
+  // What kind of relationship the link is, as written in the note it is written
+  // in.
+  Role role = 9;
+  // Why the link exists, in the author's words.
+  string note = 10;
+  // What the link draws at the end that points at its target.
+  Marker marker = 11;
+  // For a backlink, the role of the note the link is written in, relative to the
+  // note asked about. ROLE_UNSPECIFIED where the role has no counterpart.
+  Role role_from_here = 12;
 }
 
 message GetLinksRequest {
@@ -335,6 +381,78 @@ message ResolveLinksResponse {
   HostVaultErrorCode error = 1;
   // What each link reaches, by how it was written.
   map<string, HostLink> links = 2;
+}
+
+message HostVaultServiceGetConnectionRequest {
+  string first = 1;
+  string second = 2;
+  // Only the records of this type. Empty names the records that carry none.
+  string type = 3;
+}
+
+message HostVaultServiceGetConnectionResponse {
+  HostVaultErrorCode error = 1;
+  Connection connection = 2;
+}
+
+message HostVaultServiceSaveConnectionRequest {
+  Connection connection = 1;
+}
+
+message HostVaultServiceSaveConnectionResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message HostVaultServiceRemoveSideRequest {
+  // The note the record is written in.
+  string path = 1;
+  // The note the record is about.
+  string to = 2;
+  // The records removed carry this type. Empty names the records that carry none.
+  string type = 3;
+}
+
+message HostVaultServiceRemoveSideResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message HostVaultServiceRemoveConnectionRequest {
+  string first = 1;
+  string second = 2;
+  string type = 3;
+}
+
+message HostVaultServiceRemoveConnectionResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message HostVaultServiceJoinNotesRequest {
+  // The note that writes the record.
+  string from = 1;
+  // The note the record is about.
+  string to = 2;
+  ConnectionSide side = 3;
+}
+
+message HostVaultServiceJoinNotesResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message HostVaultServiceCreateRelatedNoteRequest {
+  // The existing note the new one is joined to.
+  string from = 1;
+  // What the new note is to the existing one: its parent, its child, or a jump.
+  Role role = 2;
+  // What the note is called. Empty takes the lowest free "Untitled note N".
+  string title = 3;
+  // The type of the record the new note writes. Empty for an ordinary link.
+  string type = 4;
+}
+
+message HostVaultServiceCreateRelatedNoteResponse {
+  HostVaultErrorCode error = 1;
+  // Where the note is filed. Empty when nothing was made.
+  string path = 2;
 }
 
 message GetParseProblemsRequest {}

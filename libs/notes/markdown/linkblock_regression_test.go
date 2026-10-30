@@ -87,7 +87,7 @@ func TestAddAndUpdateLinkWithLabelAndRole(t *testing.T) {
 	}
 
 	// 3. Remove link
-	if _, err := doc.RemoveLink(domain.ParseAddress("Q"), domain.RoleJump); err != nil {
+	if _, err := doc.RemoveLink(domain.LinkKey{Target: domain.ParseAddress("Q"), Role: domain.RoleJump}); err != nil {
 		t.Fatalf("remove link: %v", err)
 	}
 	parsed = Parse(domain.FileStat{Path: "Bhagavad-gita.md"}, doc.Bytes())

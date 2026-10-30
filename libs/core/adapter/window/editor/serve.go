@@ -331,6 +331,7 @@ func (o *Installation) wireUseCases() {
 	services.Note.rename = &notes.Rename
 	services.Note.showNeighbourhood = &notes.Neighbourhood
 	services.Note.getLinkAddress = notes.GetLinkAddress
+	services.Note.bindConnections(notes)
 	services.File.remove = &notes.Remove
 
 	services.Settings.Get = made.OpenGetSettings()

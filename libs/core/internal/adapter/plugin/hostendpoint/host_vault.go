@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
@@ -94,6 +95,12 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, nil
 	case errors.Is(err, vaultport.ErrOutside):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE, nil
+	case errors.Is(err, domain.ErrHierarchyCycle):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE, nil
+	case errors.Is(err, domain.ErrInvalidConnection), errors.Is(err, domain.ErrNotCreatable):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION, nil
+	case errors.Is(err, domain.ErrNoFreeName):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED, nil
 	case errors.Is(err, fs.ErrNotExist):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING, nil
 	}
@@ -138,6 +145,9 @@ func writeLink(l domain.ResolvedLink) *v1.HostLink {
 		TargetValue:  l.Target.Value,
 		Label:        l.Label,
 		IsAmbiguous:  l.IsAmbiguous,
+		Role:         wire.ConvertRoleToWire(l.Role),
+		Note:         l.Why,
+		Marker:       wire.ConvertMarkerToWire(l.Marker),
 	}
 }
 
@@ -488,7 +498,12 @@ func (e *vaultEndpoint) GetBacklinks(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetBacklinksResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetBacklinksResponse{Links: writeLinks(links)}), nil
+	withRoles := writeLinks(links)
+	for i, l := range links {
+		inverse, _ := domain.GetInverseRole(l.Role)
+		withRoles[i].RoleFromHere = wire.ConvertRoleToWire(inverse)
+	}
+	return connect.NewResponse(&v1.GetBacklinksResponse{Links: withRoles}), nil
 }
 
 func (e *vaultEndpoint) ResolveLinks(

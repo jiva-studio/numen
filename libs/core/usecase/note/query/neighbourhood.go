@@ -126,6 +126,7 @@ func (u ShowNeighbourhood) getNeighbours(ctx context.Context, v domain.Vault, pa
 				NoteRef:  domain.NoteRef{Path: l.To},
 				Relation: relation,
 				Label:    l.Label,
+				Marker:   l.Marker,
 			})
 		}
 	}
@@ -142,9 +143,10 @@ func (u ShowNeighbourhood) getNeighbours(ctx context.Context, v domain.Vault, pa
 			continue
 		}
 		neighbour := domain.Neighbour{
-			NoteRef:  domain.NoteRef{Path: l.From},
-			Relation: relation,
-			Label:    l.Label,
+			NoteRef:       domain.NoteRef{Path: l.From},
+			Relation:      relation,
+			Label:         l.Label,
+			ReverseMarker: l.Marker,
 		}
 		if named[l.From] {
 			found.addMutual(neighbour)
@@ -220,6 +222,7 @@ func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
 	}
 	current.IsMutual = true
 	current.ReverseLabel = neighbour.Label
+	current.ReverseMarker = neighbour.ReverseMarker
 	if current.Label == "" {
 		current.Label = neighbour.Label
 	}

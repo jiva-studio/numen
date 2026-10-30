@@ -129,6 +129,14 @@ type noteHandler struct {
 	rename            *note.Rename
 	showNeighbourhood *note.ShowNeighbourhood
 	getLinkAddress    *note.GetLinkAddress
+
+	getConnection    *note.GetConnection
+	saveConnection   *note.SaveConnection
+	removeSide       *note.RemoveSide
+	removeConnection *note.RemoveConnection
+	join             *note.Join
+	createInRelation *note.CreateInRelation
+	getBacklinks     *note.GetBacklinks
 }
 
 // SetFolderDialog sets the native file and folder dialog used when a client
