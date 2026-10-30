@@ -233,7 +233,7 @@ func endsWithin(t *testing.T, what string, limit time.Duration, run func()) {
 // Finishing one conversation ends what is answering in it and leaves another answering.
 func TestFinish_ConcurrentConversations(t *testing.T) {
 	fifo := filepath.Join(t.TempDir(), "go")
-	if err := exec.Command("mkfifo", fifo).Run(); err != nil {
+	if err := exec.CommandContext(t.Context(), "mkfifo", fifo).Run(); err != nil {
 		t.Skipf("no named pipe to wait on: %v", err)
 	}
 	// Each program says it runs, waits to be let go on, says so again, and then waits for good.
@@ -263,7 +263,7 @@ func TestFinish_ConcurrentConversations(t *testing.T) {
 	// Finishing returns once the run of the conversation has ended, so the other is still there to be
 	// finished and nothing more of it is read before that.
 	finish("one")
-	endsWithin(t, "the finished conversation", 30*time.Second, func() { _, _ = readSteps(streams["one"]) })
+	endsWithin(t, "the finished conversation", 30*time.Second, func() { drainSteps(t, streams["one"]) })
 
 	// Only the program that still runs reads the pipe, and it says so again.
 	if err := os.WriteFile(fifo, []byte("go\n"), 0o600); err != nil {
@@ -273,7 +273,7 @@ func TestFinish_ConcurrentConversations(t *testing.T) {
 
 	second := make(chan struct{})
 	go func() {
-		_, _ = readSteps(streams["two"])
+		drainSteps(t, streams["two"])
 		close(second)
 	}()
 	finish("two")
@@ -299,9 +299,13 @@ func TestClosingEndsEveryRunStillAnswering(t *testing.T) {
 		streams = append(streams, stream)
 	}
 
-	endsWithin(t, "closing", 30*time.Second, func() { _ = agentSvc.registry.Close() })
+	endsWithin(t, "closing", 30*time.Second, func() {
+		if err := agentSvc.registry.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	for _, stream := range streams {
-		endsWithin(t, "a run", 30*time.Second, func() { _, _ = readSteps(stream) })
+		endsWithin(t, "a run", 30*time.Second, func() { drainSteps(t, stream) })
 	}
 }
 
@@ -324,7 +328,11 @@ func TestAskAgent_StreamInitialization(t *testing.T) {
 		&agentrun.FinishConversationRequest{Conversation: "c-1"})); err != nil {
 		t.Fatal(err)
 	}
-	_, _ = readSteps(stream)
+	// The run is finished while the program may not have started, which ends the stream with the
+	// cancellation of the start.
+	if _, err := readSteps(stream); err != nil && !strings.Contains(err.Error(), "context canceled") {
+		t.Errorf("stream error: %v", err)
+	}
 }
 
 // The command the environment names comes first, then Claude Code on the path, then in a place it

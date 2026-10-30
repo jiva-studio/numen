@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"slices"
 	"strings"
@@ -24,7 +23,7 @@ func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...st
 		return nil
 	}
 	tick := time.Unix(0, 0)
-	reason := parseStreamWithClock(context.Background(), strings.NewReader(strings.Join(lines, "\n")+"\n"), send, words, nil,
+	reason := parseStreamWithClock(t.Context(), strings.NewReader(strings.Join(lines, "\n")+"\n"), send, words, nil,
 		func() time.Time { tick = tick.Add(time.Second); return tick })
 	return got, reason
 }
@@ -170,7 +169,7 @@ func TestParseLines_VaultMcpFailure(t *testing.T) {
 
 func TestParseLines_NoVaultExpected(t *testing.T) {
 	line := `{"type":"system","subtype":"init","mcp_servers":[]}`
-	reason := parseStreamWithClock(context.Background(), strings.NewReader(line+"\n"), func(*agentrun.AskAgentResponse) error { return nil }, nil, nil, time.Now, false)
+	reason := parseStreamWithClock(t.Context(), strings.NewReader(line+"\n"), func(*agentrun.AskAgentResponse) error { return nil }, nil, nil, time.Now, false)
 	if reason != "" {
 		t.Fatalf("expected empty reason when no vault is expected, got %q", reason)
 	}
@@ -272,7 +271,7 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, words, nil, func() time.Time {
+	parseStreamWithClock(t.Context(), r, send, words, nil, func() time.Time {
 		tick = tick.Add(50 * time.Millisecond)
 		return tick
 	})
@@ -291,13 +290,13 @@ func TestStreamParserInitSessionRecord(t *testing.T) {
 	record := func(sess string) { recorded = append(recorded, sess) }
 
 	r := strings.NewReader(`{"type":"system","subtype":"init","session_id":"sess-123"}` + "\n")
-	parseStreamWithClock(context.Background(), r, send, nil, record, time.Now)
+	parseStreamWithClock(t.Context(), r, send, nil, record, time.Now)
 	if len(recorded) != 1 || recorded[0] != "sess-123" {
 		t.Fatalf("expected one recorded session %q, got %v", "sess-123", recorded)
 	}
 
 	r2 := strings.NewReader(`{"type":"system","subtype":"init","session_id":""}` + "\n")
-	parseStreamWithClock(context.Background(), r2, send, nil, record, time.Now)
+	parseStreamWithClock(t.Context(), r2, send, nil, record, time.Now)
 	if len(recorded) != 1 {
 		t.Fatalf("expected empty session to not be recorded, got %v", recorded)
 	}
@@ -322,7 +321,7 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
+	parseStreamWithClock(t.Context(), r, send, nil, nil, time.Now)
 
 	calls := toolCalls(got)
 	var t2Calls []*agentrun.ToolCall
@@ -359,7 +358,7 @@ func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"hello"}]}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
+	parseStreamWithClock(t.Context(), r, send, nil, nil, time.Now)
 
 	saids := 0
 	for _, s := range got {
@@ -387,7 +386,7 @@ func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, words, nil, time.Now)
+	parseStreamWithClock(t.Context(), r, send, words, nil, time.Now)
 
 	for _, s := range got {
 		if ep := s.GetEditProgress(); ep != nil {

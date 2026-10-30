@@ -65,8 +65,8 @@ func buildClaudeArguments(in claudeArguments) []string {
 
 	args := []string{
 		"-p",
-		"--output-format", "stream-json",
-		"--verbose",
+		flagOutputFormat, formatStreamJSON,
+		flagVerbose,
 		"--include-partial-messages",
 		"--strict-mcp-config",
 		"--permission-mode", "dontAsk",
@@ -119,8 +119,8 @@ func buildClaudeArguments(in claudeArguments) []string {
 func buildAnswerArguments(in claudeArguments) []string {
 	args := []string{
 		"-p",
-		"--output-format", "stream-json",
-		"--verbose",
+		flagOutputFormat, formatStreamJSON,
+		flagVerbose,
 		"--include-partial-messages",
 		"--strict-mcp-config",
 		"--permission-mode", "dontAsk",
