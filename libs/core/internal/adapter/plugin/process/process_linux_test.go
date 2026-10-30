@@ -11,10 +11,13 @@ import (
 	"testing"
 
 	"golang.org/x/sys/unix"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestConfigureSysProcAttrOnLinux(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	ConfigureSysProcAttr(cmd)
 	if cmd.SysProcAttr == nil {
 		t.Fatal("expected non-nil SysProcAttr on linux")
@@ -28,13 +31,13 @@ func TestConfigureSysProcAttrOnLinux(t *testing.T) {
 }
 
 func TestLinuxProcessLimitsRLIMIT_ASNotSet(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	limits := Limits{
@@ -55,13 +58,13 @@ func TestLinuxProcessLimitsRLIMIT_ASNotSet(t *testing.T) {
 }
 
 func TestLinuxReadRSS(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	rss, err := ReadRSS(cmd.Process.Pid)
@@ -74,13 +77,13 @@ func TestLinuxReadRSS(t *testing.T) {
 }
 
 func TestLinuxProcessLimitsProcessAliveAfterMemoryLimit(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	limits := Limits{
@@ -107,7 +110,7 @@ func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
 		{"a limit of ten seconds", Limits{CPULimitSeconds: 10}, 10},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := exec.Command("sleep", "5")
+			cmd := exec.CommandContext(t.Context(), "sleep", "5")
 			if err := cmd.Start(); err != nil {
 				t.Fatalf("failed to start mock process: %v", err)
 			}

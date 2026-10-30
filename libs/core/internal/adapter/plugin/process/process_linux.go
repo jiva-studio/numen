@@ -82,8 +82,7 @@ func applyCgroupMemoryLimit(pid int, limitBytes uint64) error {
 		return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
 	}
 	if err := os.WriteFile(filepath.Join(pluginDir, "cgroup.procs"), []byte(strconv.Itoa(pid)), 0o600); err != nil {
-		_ = os.Remove(pluginDir)
-		return fmt.Errorf("%w: %w", errCgroupUnavailable, err)
+		return fmt.Errorf("%w: %w", errCgroupUnavailable, errors.Join(err, os.Remove(pluginDir)))
 	}
 	limitStr := strconv.FormatUint(limitBytes, 10)
 	if err := os.WriteFile(filepath.Join(pluginDir, "memory.high"), []byte(limitStr), 0o600); err != nil {
@@ -136,19 +135,29 @@ func readCgroupAnon(cgroupDir string) (uint64, error) {
 	return 0, errors.New("anon memory stat not found")
 }
 
-func terminateCgroupProcs(pluginDir string) {
-	_ = os.WriteFile(filepath.Join(pluginDir, "cgroup.kill"), []byte("1"), 0o600)
+// terminateCgroupProcs kills every process of the plugin cgroup. A cgroup or process that is already gone is not an error.
+func terminateCgroupProcs(pluginDir string) error {
+	var failed []error
+	if err := os.WriteFile(filepath.Join(pluginDir, "cgroup.kill"), []byte("1"), 0o600); err != nil && !errors.Is(err, os.ErrNotExist) {
+		failed = append(failed, fmt.Errorf("write cgroup.kill: %w", err))
+	}
 	data, err := os.ReadFile(filepath.Join(pluginDir, "cgroup.procs"))
 	if err != nil {
-		return
+		if !errors.Is(err, os.ErrNotExist) {
+			failed = append(failed, fmt.Errorf("read cgroup.procs: %w", err))
+		}
+		return errors.Join(failed...)
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if childPid, err := strconv.Atoi(line); err == nil && childPid > 0 {
-			_ = syscall.Kill(childPid, syscall.SIGKILL)
+			if err := syscall.Kill(childPid, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
+				failed = append(failed, fmt.Errorf("kill process %d: %w", childPid, err))
+			}
 		}
 	}
+	return errors.Join(failed...)
 }
 
 func CleanupCgroup(pid int) error {
@@ -157,19 +166,16 @@ func CleanupCgroup(pid int) error {
 		return err
 	}
 	pluginDir := filepath.Join(baseDir, fmt.Sprintf("numen-plugin-%d", pid))
-	terminateCgroupProcs(pluginDir)
+	terminateErr := terminateCgroupProcs(pluginDir)
 	var removeErr error
 	for attempt := 0; attempt < 5; attempt++ {
 		removeErr = os.Remove(pluginDir)
 		if removeErr == nil || errors.Is(removeErr, os.ErrNotExist) {
 			return nil
 		}
-		terminateCgroupProcs(pluginDir)
+		terminateErr = terminateCgroupProcs(pluginDir)
 	}
-	if removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
-		return fmt.Errorf("remove plugin cgroup %s: %w", pluginDir, removeErr)
-	}
-	return nil
+	return fmt.Errorf("remove plugin cgroup %s: %w", pluginDir, errors.Join(removeErr, terminateErr))
 }
 
 func ReadRSS(pid int) (uint64, error) {

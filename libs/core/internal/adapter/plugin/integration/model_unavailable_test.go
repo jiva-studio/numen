@@ -3,7 +3,6 @@ package integration
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -13,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -49,7 +49,7 @@ func (h *stubModelHost) GetVaultPath() string                    { return "" }
 func newDownModelHost(t *testing.T) *stubModelHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := plugintest.GetPort(t, server)
 	server.Close()
 	return &stubModelHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
@@ -61,7 +61,7 @@ func newSilentModelHost(t *testing.T) *stubModelHost {
 		<-r.Context().Done()
 	}))
 	t.Cleanup(server.Close)
-	return &stubModelHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
+	return &stubModelHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
 }
 
 type modelOpener struct {

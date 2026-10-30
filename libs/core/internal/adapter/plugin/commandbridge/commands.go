@@ -58,12 +58,12 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 // its reference for the length of the call.
 func (c Commands) RunCommand(
 	ctx context.Context, call pluginport.PluginCommandCall,
-) (pluginport.PluginCommandResult, error) {
+) (result pluginport.PluginCommandResult, err error) {
 	client, lease, err := bridge.Open(ctx, c.host, call.PluginID, numenv1connect.NewPluginCommandServiceClient)
 	if err != nil {
 		return pluginport.PluginCommandResult{}, err
 	}
-	defer func() { _ = lease.Close() }()
+	defer func() { err = errors.Join(err, lease.Close()) }()
 
 	res, err := client.RunCommand(ctx, connect.NewRequest(&v1.RunCommandRequest{
 		Command: call.Command, Path: call.Path, Arguments: call.Arguments,

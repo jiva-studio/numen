@@ -2,6 +2,7 @@ package textbridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -80,12 +81,12 @@ type provider struct {
 	service bridge.Service[numenv1connect.TextProviderServiceClient]
 }
 
-func (p provider) CreateText(ctx context.Context, req textport.TextCreation) error {
+func (p provider) CreateText(ctx context.Context, req textport.TextCreation) (err error) {
 	client, lease, err := p.service.Open(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = lease.Close() }()
+	defer func() { err = errors.Join(err, lease.Close()) }()
 	res, err := client.CreateText(ctx, connect.NewRequest(&v1.TextProviderServiceCreateTextRequest{
 		VaultId: string(req.Vault), Path: req.Path,
 	}))

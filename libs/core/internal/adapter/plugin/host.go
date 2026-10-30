@@ -555,7 +555,7 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *lifecyc
 	sup.SetDormant(cause)
 	failedNow := false
 	if ctx.Err() == nil {
-		wasFailed, _ := sup.GetActivationFailure()
+		wasFailed := sup.IsActivationFailed()
 		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
 	}
 	if failedNow {
@@ -675,25 +675,44 @@ func (h *Host) runActivation(ctx context.Context, p manifestfile.DiscoveredPlugi
 	sup.RecordActivationSuccess()
 
 	// The plugin also receives its settings on the next change, so a failed push leaves it running.
-	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
+	if err := h.NotifyPluginConfig(ctx, p.Manifest.ID); err != nil {
+		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
+	}
 	return endpoint, nil
 }
 
 func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginID string) {
-	_ = proc.Kill()
-	_, _ = proc.Wait()
-	_ = stdout.Close()
+	h.killProcess(proc, pluginID)
+	h.closeResource("stdout of plugin "+pluginID, stdout)
 	h.closeStdin(pluginID, proc.Pid)
+}
+
+// killProcess kills a process and collects its exit status. A process that has already exited is not an error.
+func (h *Host) killProcess(proc *os.Process, pluginID string) {
+	if err := proc.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		h.reportError(fmt.Errorf("kill plugin %s: %w", pluginID, err))
+	}
+	if _, err := proc.Wait(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		h.reportError(fmt.Errorf("wait for plugin %s: %w", pluginID, err))
+	}
+}
+
+// closeResource closes c and reports a failure to the error handler. A resource that is already closed is not an error.
+func (h *Host) closeResource(name string, c io.Closer) {
+	if err := c.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+		h.reportError(fmt.Errorf("close %s: %w", name, err))
+	}
 }
 
 // closeStdin closes and forgets the stdin pipe of one process generation of a plugin.
 func (h *Host) closeStdin(pluginID string, pid int) {
 	key := stdinKey{pluginID: pluginID, pid: pid}
 	h.stdinsMu.Lock()
-	defer h.stdinsMu.Unlock()
-	if c, ok := h.stdins[key]; ok {
-		_ = c.Close()
-		delete(h.stdins, key)
+	c, ok := h.stdins[key]
+	delete(h.stdins, key)
+	h.stdinsMu.Unlock()
+	if ok {
+		h.closeResource("stdin of plugin "+pluginID, c)
 	}
 }
 
@@ -710,7 +729,6 @@ func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) 
 	return transport.WaitForHandshake(ctx, stdout)
 }
 
-//nolint:contextcheck // background supervisor outlives request
 func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
@@ -739,8 +757,10 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.Discovered
 	}
 
 	go func() {
-		defer stdout.Close()
-		_, _ = io.Copy(io.Discard, stdout)
+		if _, err := io.Copy(io.Discard, stdout); err != nil && !errors.Is(err, os.ErrClosed) {
+			h.reportError(fmt.Errorf("read output of plugin %s: %w", p.Manifest.ID, err))
+		}
+		h.closeResource("stdout of plugin "+p.Manifest.ID, stdout)
 	}()
 
 	endpoint := transport.Endpoint{
@@ -761,7 +781,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.Discovered
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, lifecycle.ErrActivationAborted
 	}
 
-	if err := sup.Attach(proc, now); err != nil {
+	if err := sup.Attach(ctx, proc, now); err != nil {
 		h.mu.Unlock()
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
@@ -840,30 +860,21 @@ func (h *Host) defaultLauncher(
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		_ = stdin.Close()
-		return nil, nil, fmt.Errorf("pipe stdout: %w", err)
+		return nil, nil, errors.Join(fmt.Errorf("pipe stdout: %w", err), stdin.Close())
 	}
 
 	if err := cmd.Start(); err != nil {
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
+		return nil, nil, errors.Join(fmt.Errorf("start %s: %w", binPath, err), stdin.Close(), stdout.Close())
 	}
 
 	if _, err := io.WriteString(stdin, token+"\n"); err != nil {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("write token: %w", err)
+		h.killProcess(cmd.Process, p.Manifest.ID)
+		return nil, nil, errors.Join(fmt.Errorf("write token: %w", err), stdin.Close(), stdout.Close())
 	}
 
 	if err := process.ApplyLimits(cmd.Process.Pid, limits); err != nil {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("apply process limits: %w", err)
+		h.killProcess(cmd.Process, p.Manifest.ID)
+		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
 	}
 
 	h.stdinsMu.Lock()
@@ -1058,20 +1069,33 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	h.mu.Unlock()
 
 	for _, target := range targets {
-		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && firstErr == nil {
+		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && firstErr == nil &&
+			!errors.Is(err, lifecycle.ErrProcessNotRunning) {
 			firstErr = err
 		}
 	}
-	h.stdinsMu.Lock()
-	for key, c := range h.stdins {
-		_ = c.Close()
-		delete(h.stdins, key)
+	if err := h.closeAllStdins(); err != nil && firstErr == nil {
+		firstErr = err
 	}
-	h.stdinsMu.Unlock()
 	if err := h.closeHostEndpoint(ctx); err != nil && firstErr == nil {
 		firstErr = err
 	}
 	return firstErr
+}
+
+// closeAllStdins closes the stdin pipes of every plugin process generation and forgets them.
+func (h *Host) closeAllStdins() error {
+	h.stdinsMu.Lock()
+	stdins := h.stdins
+	h.stdins = nil
+	h.stdinsMu.Unlock()
+	var failed []error
+	for key, c := range stdins {
+		if err := c.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+			failed = append(failed, fmt.Errorf("close stdin of plugin %s: %w", key.pluginID, err))
+		}
+	}
+	return errors.Join(failed...)
 }
 
 func (h *Host) createRPCShutdown(endpoint transport.Endpoint, gracePeriod time.Duration) func(context.Context) error {
@@ -1377,7 +1401,10 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 		return false, errors.New("setting is not a boolean")
 	}
 	current := h.getPluginSettingsLocked(pluginID)
-	curVal, _ := current[key].(bool)
+	curVal := false
+	if value, isCurrentBool := current[key].(bool); isCurrentBool {
+		curVal = value
+	}
 	newVal := !curVal
 	h.mu.RUnlock()
 
@@ -1639,7 +1666,7 @@ func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 // clearFailure removes the recorded activation failures of a plugin and passes
 // the cleared callback the place where the plugin had been suspended.
 func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
-	wasFailed, _ := sup.GetActivationFailure()
+	wasFailed := sup.IsActivationFailed()
 	sup.ResetActivationFailures()
 	if !wasFailed {
 		return

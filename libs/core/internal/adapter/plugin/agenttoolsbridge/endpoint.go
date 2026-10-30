@@ -43,6 +43,8 @@ type endpoint struct {
 	states   map[net.Conn]http.ConnState
 	once     sync.Once
 	err      error
+	// serveErr is the error that ended the server other than a close. It is set before stopped is closed.
+	serveErr error
 }
 
 // trackConnection records the state of a connection of the server.
@@ -76,7 +78,7 @@ type toolCaller interface {
 
 // serveEndpoint serves the tools on a loopback port the machine picks, under a new token. Every call
 // is made in the scope given, whatever `_meta` the agent sends.
-func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint, error) {
+func serveEndpoint(ctx context.Context, tools []tool, scope callScope, caller toolCaller) (*endpoint, error) {
 	token, err := createToken()
 	if err != nil {
 		return nil, err
@@ -96,7 +98,7 @@ func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint,
 		})
 	}
 
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("listen for the agent's tools: %w", err)
 	}
@@ -114,7 +116,9 @@ func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint,
 	go func() {
 		defer close(served.stopped)
 		// Serve returns http.ErrServerClosed once close is called, which is how it is meant to end.
-		_ = served.server.Serve(listener)
+		if err := served.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+			served.serveErr = err
+		}
 	}()
 	return served, nil
 }
@@ -128,6 +132,7 @@ func (e *endpoint) close(ctx context.Context) error {
 		defer cancel()
 		e.err = e.shutdown(ctx)
 		<-e.stopped
+		e.err = errors.Join(e.err, e.serveErr)
 	})
 	return e.err
 }

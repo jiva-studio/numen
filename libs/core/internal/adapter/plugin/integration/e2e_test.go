@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
@@ -37,8 +38,10 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		t.Fatalf("OpenEmbedderBridge with real binary failed: %v", err)
 	}
 	defer func() {
-		_ = bridge.Close()
-		_ = host.TeardownAll(ctx, 1*time.Second)
+		testsupport.Close(t, bridge)
+		if err := host.TeardownAll(ctx, 1*time.Second); err != nil {
+			t.Error(err)
+		}
 	}()
 
 	model := bridge.GetModel()

@@ -11,7 +11,11 @@ import (
 
 func TestEventBusDebounceTyping(t *testing.T) {
 	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("onTyping", func(_ context.Context, _ string) error {
@@ -34,7 +38,11 @@ func TestEventBusDebounceTyping(t *testing.T) {
 
 func TestEventBusThrottle(t *testing.T) {
 	bus := New(nil, 40*time.Millisecond, 100*time.Millisecond)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("onVaultModify", func(_ context.Context, _ string) error {
@@ -59,7 +67,11 @@ func TestEventBusThrottle(t *testing.T) {
 
 func TestEventBusNonBlocking(t *testing.T) {
 	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	start := time.Now()
 	for i := 0; i < 100; i++ {
@@ -74,7 +86,11 @@ func TestEventBusNonBlocking(t *testing.T) {
 
 func TestEventBusFlush(t *testing.T) {
 	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -88,7 +104,9 @@ func TestEventBusFlush(t *testing.T) {
 	defer unsub()
 
 	bus.Publish("onFile:notes/test.md")
-	bus.Flush(t.Context())
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 
 	wg.Wait()
 
@@ -99,7 +117,11 @@ func TestEventBusFlush(t *testing.T) {
 
 func TestEventBusUnsubscribe(t *testing.T) {
 	bus := New(nil, 10*time.Millisecond, 50*time.Millisecond)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("testEvent", func(_ context.Context, _ string) error {
@@ -108,7 +130,9 @@ func TestEventBusUnsubscribe(t *testing.T) {
 	})
 
 	bus.Publish("testEvent:1")
-	bus.Flush(t.Context())
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	if got := count.Load(); got != 1 {
 		t.Fatalf("expected 1 call before unsubscribe, got %d", got)
 	}
@@ -116,7 +140,9 @@ func TestEventBusUnsubscribe(t *testing.T) {
 	unsub()
 
 	bus.Publish("testEvent:2")
-	bus.Flush(t.Context())
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	if got := count.Load(); got != 1 {
 		t.Fatalf("expected 1 call after unsubscribe, got %d", got)
 	}
@@ -190,7 +216,11 @@ func TestEventBusDeterministicDebounce(t *testing.T) {
 		WithClock(sched.getClock),
 		WithDelay(sched.scheduleDelay),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("onTyping", func(_ context.Context, _ string) error {
@@ -224,7 +254,11 @@ func TestEventBusConfigurableKeyExtractor(t *testing.T) {
 			return event
 		}),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var received []string
 	var mu sync.Mutex
@@ -258,7 +292,11 @@ func TestEventBusDebounceRule(t *testing.T) {
 			return "", false
 		}),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var received []string
 	var mu sync.Mutex
@@ -292,7 +330,11 @@ func TestEventBusErrorHandling(t *testing.T) {
 			asyncErr.Store(&err)
 		}),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	unsub := bus.Subscribe("failing", func(_ context.Context, _ string) error {
 		return expectedErr

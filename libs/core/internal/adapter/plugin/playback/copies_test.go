@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/playbackport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -151,7 +152,7 @@ func TestTheCopyIsTheFileNamedByTheHashInAContainerThatPlays(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer found.Body.Close()
+	defer testsupport.Close(t, found.Body)
 	body, err := io.ReadAll(found.Body)
 	if err != nil {
 		t.Fatal(err)

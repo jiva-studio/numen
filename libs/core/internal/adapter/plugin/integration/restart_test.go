@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -82,8 +81,8 @@ type restartingLauncher struct {
 	servers []*httptest.Server
 }
 
-func (l *restartingLauncher) launch(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-	cmd := plugintest.NewIdleCommand()
+func (l *restartingLauncher) launch(ctx context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err
 	}
@@ -94,7 +93,7 @@ func (l *restartingLauncher) launch(_ context.Context, _ manifestfile.Discovered
 	l.plugins = append(l.plugins, plugin)
 	l.servers = append(l.servers, server)
 	l.mu.Unlock()
-	ready := fmt.Sprintf("NUMEN_READY port=%d\n", server.Listener.Addr().(*net.TCPAddr).Port)
+	ready := fmt.Sprintf("NUMEN_READY port=%d\n", plugintest.GetPort(l.t, server))
 	return cmd.Process, io.NopCloser(strings.NewReader(ready)), nil
 }
 
@@ -149,7 +148,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			defer func() { _ = bridge.Close() }()
+			defer testsupport.Close(t, bridge)
 			if _, err := call(t.Context()); err != nil {
 				t.Fatalf("the first call failed: %v", err)
 			}

@@ -70,6 +70,8 @@ type Endpoint struct {
 	callers Callers
 	server  *http.Server
 	port    int
+	// serveResult receives the error that ended the server other than a close, and is closed once the server no longer serves.
+	serveResult chan error
 }
 
 // Open starts serving the host service on the address, which is a
@@ -84,10 +86,9 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	}
 	linked, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
-		_ = listener.Close()
-		return nil, fmt.Errorf("%w: %s", errNotTCP, listener.Addr())
+		return nil, errors.Join(fmt.Errorf("%w: %s", errNotTCP, listener.Addr()), listener.Close())
 	}
-	endpoint := &Endpoint{callers: callers, port: linked.Port}
+	endpoint := &Endpoint{callers: callers, port: linked.Port, serveResult: make(chan error, 1)}
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
@@ -99,8 +100,11 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
+		defer close(endpoint.serveResult)
 		// Serve returns http.ErrServerClosed after Close.
-		_ = endpoint.server.Serve(listener)
+		if err := endpoint.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+			endpoint.serveResult <- err
+		}
 	}()
 	return endpoint, nil
 }
@@ -116,8 +120,10 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, hostEndpointShutdownTolerance)
 	defer cancel()
 	if err := e.server.Shutdown(ctx); err != nil {
-		_ = e.server.Close()
-		return fmt.Errorf("close host endpoint: %w", err)
+		return fmt.Errorf("close host endpoint: %w", errors.Join(err, e.server.Close()))
+	}
+	if err := <-e.serveResult; err != nil {
+		return fmt.Errorf("serve host endpoint: %w", err)
 	}
 	return nil
 }

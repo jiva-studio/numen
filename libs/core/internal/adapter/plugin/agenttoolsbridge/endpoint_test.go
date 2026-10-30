@@ -32,7 +32,7 @@ func waitFor(t *testing.T, isReady func() bool) {
 }
 
 func TestCloseDoesNotWaitForAConnectionThatSentNoRequest(t *testing.T) {
-	served, err := serveEndpoint(nil, callScope{}, nil)
+	served, err := serveEndpoint(t.Context(), nil, callScope{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestCloseDoesNotWaitForAConnectionThatSentNoRequest(t *testing.T) {
 }
 
 func TestCloseReportsAnInterruptedRequest(t *testing.T) {
-	served, err := serveEndpoint(nil, callScope{}, nil)
+	served, err := serveEndpoint(t.Context(), nil, callScope{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -32,7 +32,9 @@ func TestListVersionsReturnsTheReaderFailure(t *testing.T) {
 func TestListVersionsReadsTheVaultItIsGiven(t *testing.T) {
 	var opened []domain.VaultID
 	texts := hosttext.NewTexts(nil, openFailure{opened: &opened})
-	_, _ = texts.ListVersions(t.Context(), domain.Vault{ID: "v2"}, "talk.mp3")
+	if _, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v2"}, "talk.mp3"); err == nil {
+		t.Error("expected the reader's failure")
+	}
 	if len(opened) != 1 || opened[0] != "v2" {
 		t.Errorf("opened %v, want v2", opened)
 	}

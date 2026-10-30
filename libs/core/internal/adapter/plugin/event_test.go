@@ -101,8 +101,8 @@ func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, 
 			plugintest.KillProcess(t, proc)
 		}
 	})
-	host.SetLauncher(func(_ context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand()
+	host.SetLauncher(func(ctx context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}

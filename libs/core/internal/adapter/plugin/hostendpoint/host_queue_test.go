@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
@@ -43,7 +44,7 @@ func openWork(
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	testsupport.CloseAfter(t, stream)
 	readState(t, stream, want)
 	return stream
 }

@@ -2,6 +2,7 @@ package agentbridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -93,24 +94,21 @@ func (b *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 	stream, err := client.AskAgent(runCtx, req)
 	if err != nil {
 		cancel()
-		_ = lease.Close()
-		return nil, fmt.Errorf("rpc ask agent: %w", err)
+		return nil, errors.Join(fmt.Errorf("rpc ask agent: %w", err), lease.Close())
 	}
 
 	run := &pluginRun{
-		stream: stream,
-		cancel: cancel,
-		steps:  make(chan agentport.Step, 16),
-		onClose: func() {
-			_ = lease.Close()
-		},
+		stream:  stream,
+		cancel:  cancel,
+		steps:   make(chan agentport.Step, 16),
+		onClose: lease.Close,
 	}
 	go run.readSteps(runCtx)
 	return run, nil
 }
 
 // EndConversation notifies the agent that the conversation has ended.
-func (b *Agent) EndConversation(ctx context.Context, conversation string) error {
+func (b *Agent) EndConversation(ctx context.Context, conversation string) (err error) {
 	req := connect.NewRequest(&v1.FinishConversationRequest{
 		Conversation: conversation,
 	})
@@ -118,7 +116,7 @@ func (b *Agent) EndConversation(ctx context.Context, conversation string) error 
 	if err != nil {
 		return err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	_, err = client.FinishConversation(ctx, req)
 	if err != nil {
@@ -129,7 +127,7 @@ func (b *Agent) EndConversation(ctx context.Context, conversation string) error 
 
 // GetPrograms lists the programs the plugin runs, with the models each offers. Commands are the
 // command lines the installation set, by program.
-func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) ([]agentport.AgentProgram, error) {
+func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) (programs []agentport.AgentProgram, err error) {
 	request := make([]*v1.AgentProgramCommand, 0, len(commands))
 	for program, command := range commands {
 		request = append(request, &v1.AgentProgramCommand{Program: program, Command: command})
@@ -138,14 +136,14 @@ func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) (
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	resp, err := client.GetAgentPrograms(ctx, connect.NewRequest(&v1.GetAgentProgramsRequest{Commands: request}))
 	if err != nil {
 		return nil, fmt.Errorf("rpc get agent programs: %w", err)
 	}
 
-	programs := make([]agentport.AgentProgram, 0, len(resp.Msg.GetPrograms()))
+	programs = make([]agentport.AgentProgram, 0, len(resp.Msg.GetPrograms()))
 	for _, one := range resp.Msg.GetPrograms() {
 		models := make([]agentport.AgentModel, 0, len(one.GetModels()))
 		for _, model := range one.GetModels() {
@@ -168,7 +166,7 @@ func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) (
 }
 
 // RegisterTool registers a custom agent tool with the running agent plugin.
-func (b *Agent) RegisterTool(ctx context.Context, name, description, schema string) error {
+func (b *Agent) RegisterTool(ctx context.Context, name, description, schema string) (err error) {
 	req := connect.NewRequest(&v1.RegisterToolRequest{
 		Tool: &v1.AgentToolDefinition{
 			Name:                 name,
@@ -180,7 +178,7 @@ func (b *Agent) RegisterTool(ctx context.Context, name, description, schema stri
 	if err != nil {
 		return err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	_, err = client.RegisterTool(ctx, req)
 	if err != nil {
@@ -190,7 +188,7 @@ func (b *Agent) RegisterTool(ctx context.Context, name, description, schema stri
 }
 
 // ExtendSystemPrompt extends the system prompt instructions of the agent plugin.
-func (b *Agent) ExtendSystemPrompt(ctx context.Context, extension string) (string, error) {
+func (b *Agent) ExtendSystemPrompt(ctx context.Context, extension string) (prompt string, err error) {
 	req := connect.NewRequest(&v1.ExtendSystemPromptRequest{
 		Extension: extension,
 	})
@@ -198,7 +196,7 @@ func (b *Agent) ExtendSystemPrompt(ctx context.Context, extension string) (strin
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	resp, err := client.ExtendSystemPrompt(ctx, req)
 	if err != nil {
@@ -208,13 +206,13 @@ func (b *Agent) ExtendSystemPrompt(ctx context.Context, extension string) (strin
 }
 
 // GetAgentTools retrieves the current tools and prompt extension from the agent plugin.
-func (b *Agent) GetAgentTools(ctx context.Context) ([]*v1.AgentToolDefinition, string, error) {
+func (b *Agent) GetAgentTools(ctx context.Context) (tools []*v1.AgentToolDefinition, extension string, err error) {
 	req := connect.NewRequest(&v1.GetAgentToolsRequest{})
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
 		return nil, "", err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	resp, err := client.GetAgentTools(ctx, req)
 	if err != nil {
@@ -233,30 +231,38 @@ type pluginRun struct {
 	cancel    context.CancelFunc
 	steps     chan agentport.Step
 	closeOnce sync.Once
-	onClose   func()
+	onClose   func() error
 }
 
 func (r *pluginRun) GetSteps() <-chan agentport.Step {
 	return r.steps
 }
 
+// Stop cancels the run and releases its stream and plugin reference. Only the first call reports
+// the release error.
 func (r *pluginRun) Stop() error {
+	var err error
 	r.closeOnce.Do(func() {
 		r.cancel()
 		if r.stream != nil {
-			_ = r.stream.Close()
+			err = errors.Join(err, r.stream.Close())
 		}
 		if r.onClose != nil {
-			r.onClose()
+			err = errors.Join(err, r.onClose())
 		}
 	})
-	return nil
+	return err
 }
 
 func (r *pluginRun) readSteps(ctx context.Context) {
 	defer close(r.steps)
 	defer func() {
-		_ = r.Stop()
+		if err := r.Stop(); err != nil {
+			select {
+			case r.steps <- agentport.Step{Kind: domain.StepStop, Detail: err.Error()}:
+			default:
+			}
+		}
 	}()
 
 	for r.stream.Receive() {

@@ -44,7 +44,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	policy.Timeout = 50 * time.Millisecond
 	host.SetActivationPolicy(policy)
 
-	cmd := plugintest.NewIdleCommand()
+	cmd := plugintest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}

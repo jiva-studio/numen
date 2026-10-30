@@ -1,6 +1,7 @@
 package manifestfile
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -100,12 +101,12 @@ func scanPluginDir(pluginDir string, seenCount map[string]string) (DiscoveredPlu
 	}, true, nil
 }
 
-func readManifestPath(path string) (Manifest, error) {
+func readManifestPath(path string) (manifest Manifest, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return Manifest{}, err
 	}
-	defer file.Close()
+	defer func() { err = errors.Join(err, file.Close()) }()
 	return ReadManifest(file)
 }
 

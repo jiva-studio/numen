@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -28,6 +29,36 @@ type Plugins interface {
 // call to the last, so a stream cannot outlive its plugin.
 type Proxy struct {
 	host Plugins
+	// onError receives the errors that cannot reach the caller, such as a failed release or a
+	// response that ended early. It is set before the proxy serves.
+	onError func(error)
+}
+
+// SetErrorHandler sets the callback that receives errors the proxy meets after a response has begun.
+// It must be called before the proxy serves.
+func (p *Proxy) SetErrorHandler(handler func(error)) {
+	p.onError = handler
+}
+
+// reportError passes a non-nil err to the error handler.
+func (p *Proxy) reportError(err error) {
+	if err != nil && p.onError != nil {
+		p.onError(err)
+	}
+}
+
+// closeResponse closes the body of a forwarded response.
+func (p *Proxy) closeResponse(res *http.Response) {
+	if err := res.Body.Close(); err != nil {
+		p.reportError(fmt.Errorf("close plugin response: %w", err))
+	}
+}
+
+// releasePlugin releases the reference a call holds on its plugin.
+func (p *Proxy) releasePlugin(lease *bridge.Lease) {
+	if err := lease.Close(); err != nil {
+		p.reportError(fmt.Errorf("release plugin %s: %w", lease.PluginID, err))
+	}
 }
 
 // Open makes the proxy for the plugins the host runs. It starts none.
@@ -61,7 +92,7 @@ var hopHeaders = []string{
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	found, serves := p.host.ResolveService(GetService(r.URL.Path))
 	if !serves {
-		writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service")
+		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service"))
 		return
 	}
 	endpoint, err := p.host.EnsureActive(r.Context(), found.Manifest.ID)
@@ -70,15 +101,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, context.Canceled) {
 			code = connect.CodeCanceled
 		}
-		writeConnectError(w, http.StatusServiceUnavailable, code, bridge.ConvertActivationError(found.Manifest.ID, err).Error())
+		p.reportError(writeConnectError(w, http.StatusServiceUnavailable, code, bridge.ConvertActivationError(found.Manifest.ID, err).Error()))
 		return
 	}
 	lease := &bridge.Lease{Host: p.host, PluginID: found.Manifest.ID}
-	defer func() { _ = lease.Close() }()
+	defer p.releasePlugin(lease)
 
 	out, err := http.NewRequestWithContext(r.Context(), r.Method, endpoint.BaseURL()+r.URL.RequestURI(), r.Body)
 	if err != nil {
-		writeConnectError(w, http.StatusBadRequest, connect.CodeInvalidArgument, err.Error())
+		p.reportError(writeConnectError(w, http.StatusBadRequest, connect.CodeInvalidArgument, err.Error()))
 		return
 	}
 	copyHeaders(out.Header, r.Header)
@@ -89,13 +120,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	res, err := transport.EndpointClient(endpoint).Do(out)
 	if err != nil {
-		writeConnectError(w, http.StatusBadGateway, connect.CodeUnavailable, err.Error())
+		p.reportError(writeConnectError(w, http.StatusBadGateway, connect.CodeUnavailable, err.Error()))
 		return
 	}
-	defer res.Body.Close()
+	defer p.closeResponse(res)
 	copyHeaders(w.Header(), res.Header)
 	w.WriteHeader(res.StatusCode)
-	streamBody(w, res.Body)
+	p.reportError(streamBody(w, res.Body))
 }
 
 func copyHeaders(to, from http.Header) {
@@ -109,28 +140,36 @@ func copyHeaders(to, from http.Header) {
 
 // streamBody copies the body as it arrives and flushes after each read, so a
 // stream is delivered to the window message by message.
-func streamBody(w http.ResponseWriter, body io.Reader) {
+func streamBody(w http.ResponseWriter, body io.Reader) error {
 	flusher := http.NewResponseController(w)
 	buf := make([]byte, 32*1024)
 	for {
 		n, err := body.Read(buf)
 		if n > 0 {
 			if _, werr := w.Write(buf[:n]); werr != nil {
-				return
+				return fmt.Errorf("write response: %w", werr)
 			}
-			_ = flusher.Flush()
+			if ferr := flusher.Flush(); ferr != nil {
+				return fmt.Errorf("flush response: %w", ferr)
+			}
+		}
+		if errors.Is(err, io.EOF) {
+			return nil
 		}
 		if err != nil {
-			return
+			return fmt.Errorf("read plugin response: %w", err)
 		}
 	}
 }
 
 // writeConnectError answers a call that did not reach a plugin as Connect clients read an error.
-func writeConnectError(w http.ResponseWriter, status int, code connect.Code, message string) {
+func writeConnectError(w http.ResponseWriter, status int, code connect.Code, message string) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"code": code.String(), "message": message})
+	if err := json.NewEncoder(w).Encode(map[string]string{"code": code.String(), "message": message}); err != nil {
+		return fmt.Errorf("write error response: %w", err)
+	}
+	return nil
 }
 
 // NoServices is the forwarding of an installation with no plugin host.

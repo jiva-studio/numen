@@ -66,6 +66,7 @@ type Supervisor struct {
 	memoryGracePeriod time.Duration
 	rpcShutdown       func(ctx context.Context) error
 	onMemoryExceeded  func()
+	onError           func(error)
 	monitorStopCh     chan struct{}
 	rssReader         func(pid int) (uint64, error)
 }
@@ -97,6 +98,7 @@ func New() *Supervisor {
 		memoryGracePeriod: 2 * time.Second,
 		rpcShutdown:       nil,
 		onMemoryExceeded:  nil,
+		onError:           nil,
 		monitorStopCh:     nil,
 		rssReader:         process.ReadRSS,
 	}
@@ -121,6 +123,23 @@ func (s *Supervisor) SetOnExit(fn func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onExit = fn
+}
+
+// SetOnError sets the callback that receives errors the supervisor meets outside a call, such as a failed kill.
+func (s *Supervisor) SetOnError(fn func(error)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onError = fn
+}
+
+// reportError passes err to the error callback. The caller must not hold s.mu.
+func (s *Supervisor) reportError(err error) {
+	s.mu.Lock()
+	fn := s.onError
+	s.mu.Unlock()
+	if fn != nil {
+		fn(err)
+	}
 }
 
 // GetState returns the current lifecycle state of the supervised plugin.
@@ -230,7 +249,7 @@ func (s *Supervisor) ValidatePath(vaultRoot, targetPath string) (string, error) 
 }
 
 // Attach registers a newly started OS process under this supervisor.
-func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
+func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) error {
 	if p == nil {
 		return errNilProcess
 	}
@@ -248,11 +267,14 @@ func (s *Supervisor) Attach(p *os.Process, now time.Time) error {
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
 
-	s.startMemoryMonitorLocked(p)
+	s.startMemoryMonitorLocked(context.WithoutCancel(ctx), p)
 
 	go func() {
-		_, _ = p.Wait()
+		_, waitErr := p.Wait()
 		close(exitCh)
+		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) {
+			s.reportError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
+		}
 		cleanupErr := process.CleanupCgroup(p.Pid)
 		s.mu.Lock()
 		s.cleanupErr = cleanupErr
@@ -401,7 +423,10 @@ func (s *Supervisor) Teardown(
 	}
 	s.mu.Unlock()
 
-	_ = s.requestGracefulShutdown(ctx, rpcShutdown)
+	if err := s.requestGracefulShutdown(ctx, rpcShutdown); err != nil {
+		// A plugin that cannot be asked to stop is killed without waiting out the grace period.
+		return s.forceKill(proc, exitCh)
+	}
 
 	select {
 	case <-exitCh:
@@ -413,6 +438,12 @@ func (s *Supervisor) Teardown(
 }
 
 func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ctx context.Context) error) error {
+	var shutdownErr error
+	defer func() {
+		if shutdownErr != nil {
+			s.reportError(fmt.Errorf("request plugin shutdown: %w", shutdownErr))
+		}
+	}()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.state == StateDormant {
@@ -427,7 +458,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 		s.activatingCh = nil
 	}
 	if rpcShutdown != nil {
-		_ = rpcShutdown(ctx)
+		shutdownErr = rpcShutdown(ctx)
 	}
 	return nil
 }
@@ -453,7 +484,9 @@ func (s *Supervisor) requestGracefulShutdown(ctx context.Context, rpcShutdown fu
 
 func (s *Supervisor) forceKill(proc *os.Process, exitCh chan struct{}) error {
 	if proc != nil {
-		_ = proc.Kill()
+		if err := proc.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+			return fmt.Errorf("kill plugin process %d: %w", proc.Pid, err)
+		}
 	}
 	if exitCh != nil {
 		<-exitCh
@@ -487,7 +520,7 @@ func (s *Supervisor) stopMemoryMonitorLocked() {
 	}
 }
 
-func (s *Supervisor) startMemoryMonitorLocked(p *os.Process) {
+func (s *Supervisor) startMemoryMonitorLocked(ctx context.Context, p *os.Process) {
 	if s.memoryLimitBytes == 0 || p == nil {
 		return
 	}
@@ -498,7 +531,7 @@ func (s *Supervisor) startMemoryMonitorLocked(p *os.Process) {
 	if interval <= 0 {
 		interval = 500 * time.Millisecond
 	}
-	go s.runMemoryMonitor(p, stopCh, interval)
+	go s.runMemoryMonitor(ctx, p, stopCh, interval)
 }
 
 func (s *Supervisor) inspectMemoryExceeded(proc *os.Process) (func(context.Context) error, time.Duration, func(), bool) {
@@ -518,17 +551,19 @@ func (s *Supervisor) inspectMemoryExceeded(proc *os.Process) (func(context.Conte
 	return s.rpcShutdown, s.memoryGracePeriod, s.onMemoryExceeded, true
 }
 
-func (s *Supervisor) evictForMemory(rpc func(context.Context) error, gracePeriod time.Duration, onExceeded func()) {
+func (s *Supervisor) evictForMemory(ctx context.Context, rpc func(context.Context) error, gracePeriod time.Duration, onExceeded func()) {
 	s.RecordActivationFailure(time.Now(), s.activationPolicy, fmt.Errorf("%w: %d bytes", ErrMemoryExceeded, s.memoryLimitBytes))
 	if onExceeded != nil {
 		onExceeded()
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), gracePeriod+3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, gracePeriod+3*time.Second)
 	defer cancel()
-	_ = s.Teardown(ctx, gracePeriod, rpc)
+	if err := s.Teardown(ctx, gracePeriod, rpc); err != nil {
+		s.reportError(fmt.Errorf("evict plugin for memory: %w", err))
+	}
 }
 
-func (s *Supervisor) runMemoryMonitor(proc *os.Process, stopCh <-chan struct{}, interval time.Duration) {
+func (s *Supervisor) runMemoryMonitor(ctx context.Context, proc *os.Process, stopCh <-chan struct{}, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -539,7 +574,7 @@ func (s *Supervisor) runMemoryMonitor(proc *os.Process, stopCh <-chan struct{}, 
 		case <-ticker.C:
 			rpc, gracePeriod, onExceeded, shouldEvict := s.inspectMemoryExceeded(proc)
 			if shouldEvict {
-				s.evictForMemory(rpc, gracePeriod, onExceeded)
+				s.evictForMemory(ctx, rpc, gracePeriod, onExceeded)
 				return
 			}
 		}

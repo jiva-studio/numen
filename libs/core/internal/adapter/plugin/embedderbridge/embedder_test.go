@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
@@ -74,7 +74,9 @@ func (s *mockEmbeddingServer) EmbedBatch(
 
 func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 	host := plugin.NewHost("desktop.editor", t.TempDir())
-	_ = host.Discover()
+	if err := host.Discover(); err != nil {
+		t.Fatal(err)
+	}
 
 	bridge, err := Open(t.Context(), host)
 	if err == nil {
@@ -95,7 +97,7 @@ func TestEmbedderBridge(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := plugintest.GetPort(t, server)
 
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
@@ -124,13 +126,13 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
@@ -143,7 +145,7 @@ func TestEmbedderBridge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge failed: %v", err)
 	}
-	defer bridge.Close()
+	defer testsupport.Close(t, bridge)
 
 	model := bridge.GetModel()
 	if model.Name != "test-model" {
