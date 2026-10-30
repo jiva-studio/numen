@@ -37,12 +37,15 @@ func (s *Sequence) Run() {
 func Report(name string, out io.Writer, label string, fn func() error) func() {
 	return func() {
 		err := fn()
-		switch {
-		case err == nil:
-		case label == "":
-			fmt.Fprintf(out, "%s: %v\n", name, err)
-		default:
-			fmt.Fprintf(out, "%s: %s: %v\n", name, label, err)
+		if err == nil {
+			return
+		}
+		message := fmt.Sprintf("%s: %v", name, err)
+		if label != "" {
+			message = fmt.Sprintf("%s: %s: %v", name, label, err)
+		}
+		if _, writeErr := fmt.Fprintln(out, message); writeErr != nil {
+			return
 		}
 	}
 }

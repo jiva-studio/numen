@@ -55,7 +55,11 @@ func main() {
 // the core carried on past to out.
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
-	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, appName+":", err) }
+	cfg.ErrorHandler = func(err error) {
+		if _, writeErr := fmt.Fprintln(out, appName+":", err); writeErr != nil {
+			return
+		}
+	}
 	return cfg
 }
 

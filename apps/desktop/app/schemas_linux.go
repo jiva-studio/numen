@@ -16,18 +16,18 @@ import (
 //
 // It is called before anything draws: the search path is read once, the first
 // time something asks for a setting.
-func setSchemasDir() {
+func setSchemasDir() error {
 	if hasSchemas() {
-		return
+		return nil
 	}
 	found := getSchemasDir(getToolkitDir())
 	if found == "" {
-		return
+		return nil
 	}
 	if named := os.Getenv("GSETTINGS_SCHEMA_DIR"); named != "" {
 		found += string(filepath.ListSeparator) + named
 	}
-	os.Setenv("GSETTINGS_SCHEMA_DIR", found)
+	return os.Setenv("GSETTINGS_SCHEMA_DIR", found)
 }
 
 // getToolkitDir is where the drawing library this process runs on lives: the path it

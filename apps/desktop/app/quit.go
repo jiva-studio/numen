@@ -29,8 +29,7 @@ func closeWindow(
 	retry func(),
 ) bool {
 	s.hide()
-	//nolint:contextcheck // the settling runs when the caller's context is already over, under a bound of its own
-	if g.flushVault() {
+	if g.flushVault(ctx) {
 		return true
 	}
 	s.show()
@@ -121,7 +120,7 @@ func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 	}
 	go func() {
 		s.hide()
-		if g.flushVault() {
+		if g.flushVault(context.Background()) {
 			quit()
 			return
 		}
@@ -153,8 +152,9 @@ type flushAttempt struct {
 }
 
 // flushVault settles the vault and answers with whether it did. A settling already
-// running is joined and its answer shared.
-func (g *vaultFlush) flushVault() bool {
+// running is joined and its answer shared. The settling keeps the values of ctx and runs under
+// quitBound, whether or not ctx is cancelled.
+func (g *vaultFlush) flushVault(ctx context.Context) bool {
 	g.mu.Lock()
 	if g.isDone {
 		g.mu.Unlock()
@@ -164,7 +164,7 @@ func (g *vaultFlush) flushVault() bool {
 	if this == nil {
 		this = &flushAttempt{ready: make(chan struct{})}
 		g.turn = this
-		go g.run(this)
+		go g.run(ctx, this)
 	}
 	g.mu.Unlock()
 
@@ -179,10 +179,10 @@ func (g *vaultFlush) isFlushed() bool {
 	return g.isDone
 }
 
-func (g *vaultFlush) run(this *flushAttempt) {
+func (g *vaultFlush) run(parent context.Context, this *flushAttempt) {
 	defer close(this.ready)
 
-	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(parent), quitBound)
 	defer cancel()
 	resolved := g.flush(ctx)
 
