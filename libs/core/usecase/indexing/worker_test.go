@@ -418,6 +418,40 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	}
 }
 
+// A change of the embedding model wakes the sources while a pass embeds under
+// the previous model, and the pass would otherwise send batches the new model
+// answers with another width.
+func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
+	events := newRecorder()
+	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	cut(t, made, db, v)
+
+	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
+	p.worker.sources = model.wake
+	p.embed(t.Context())
+
+	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target == 0 {
+		t.Fatal("the vault owed no vector, and the pass had nothing to stop")
+	}
+	if embedded == target {
+		t.Error("the pass embedded the whole vault while the sources were woken")
+	}
+
+	select {
+	case <-model.wake:
+	default:
+		t.Error("the wake of the sources was taken and not put back")
+	}
+}
+
 // The pass for a note written waits for the quiet period, and a second write
 // puts it off again.
 func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
