@@ -331,7 +331,7 @@ func openVault(t *testing.T, notes map[string]string) (container.Config, *contai
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	return cfg, db, testsupport.NewVault(t, notes)
 }

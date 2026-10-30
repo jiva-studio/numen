@@ -69,7 +69,10 @@ func (c Config) newCompletionRouter() (*completion.Router, error) {
 	if provider == nil {
 		return nil, errNoCompletionProvider
 	}
-	choices, _ := c.PluginHost.(completionport.CompletionChoices)
+	var choices completionport.CompletionChoices
+	if host, isChoices := c.PluginHost.(completionport.CompletionChoices); isChoices {
+		choices = host
+	}
 	return completion.NewRouter(
 		func() completion.Config {
 			return completion.Config{Default: completion.Route(c.getSettingsOrDefaults().AI.Default)}

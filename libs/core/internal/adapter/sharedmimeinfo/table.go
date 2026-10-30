@@ -69,6 +69,12 @@ func parseTable(text string) Table {
 	return table
 }
 
+// matches says whether the subject fits the glob pattern. A pattern that does not parse matches nothing.
+func (g glob) matches(subject string) bool {
+	matched, err := path.Match(g.pattern, subject)
+	return err == nil && matched
+}
+
 func parseGlob(line string) (glob, bool) {
 	if strings.HasPrefix(line, "#") {
 		return glob{}, false
@@ -89,6 +95,9 @@ func parseGlob(line string) (glob, bool) {
 	pattern := fields[2]
 	if !isCaseSensitive {
 		pattern = strings.ToLower(pattern)
+	}
+	if _, err := path.Match(pattern, ""); err != nil {
+		return glob{}, false
 	}
 	return glob{weight: weight, contentType: contentType, pattern: pattern, isCaseSensitive: isCaseSensitive}, true
 }
@@ -119,7 +128,7 @@ func (t Table) GetContentType(name string) domain.ContentType {
 		if one.isCaseSensitive {
 			subject = name
 		}
-		if ok, _ := path.Match(one.pattern, subject); ok {
+		if one.matches(subject) {
 			return one.contentType
 		}
 	}

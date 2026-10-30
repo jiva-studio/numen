@@ -148,7 +148,10 @@ func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
 	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
 
-	brought, _ := bring.Execute(ctx, v, "", []string{"content://held/1"})
+	brought, broughtErr := bring.Execute(ctx, v, "", []string{"content://held/1"})
+	if broughtErr != nil {
+		t.Fatal(broughtErr)
+	}
 
 	if len(brought.Landed) != 1 || brought.Landed[0] != "scans" {
 		t.Errorf("what landed: %v", brought.Landed)
@@ -296,7 +299,10 @@ func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
 	bring := vaults.NewImport(ignoringContext{vaultwriter.VaultWriters{}}, machine)
 
-	brought, _ := bring.Execute(ctx, v, "", []string{"content://held/1"})
+	brought, broughtErr := bring.Execute(ctx, v, "", []string{"content://held/1"})
+	if broughtErr != nil {
+		t.Fatal(broughtErr)
+	}
 
 	if len(brought.Landed) != 1 {
 		t.Errorf("what landed: %v", brought.Landed)

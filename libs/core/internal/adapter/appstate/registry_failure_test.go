@@ -179,7 +179,11 @@ func TestSavingIntoAFolderThatCannotBeCreatedIsReported(t *testing.T) {
 	if err := os.Chmod(parent, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(parent, 0o700) })
+	t.Cleanup(func() {
+		if err := os.Chmod(parent, 0o700); err != nil {
+			t.Error(err)
+		}
+	})
 	if err := os.Mkdir(filepath.Join(parent, "probe"), 0o755); err == nil {
 		t.Skip("this account creates folders where it has no leave to")
 	}

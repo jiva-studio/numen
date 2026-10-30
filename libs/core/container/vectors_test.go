@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -85,7 +86,7 @@ func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	cfg := container.Config{}
 	var lastErr error
@@ -163,7 +164,11 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 	if why != nil || embedder != nil {
 		t.Fatalf("got embedder %v, error %v; want neither", embedder, why)
 	}
-	defer closer()
+	defer func() {
+		if err := closer(); err != nil {
+			t.Error(err)
+		}
+	}()
 	db := read(t, cfg)
 	if _, err := cfg.ReadWholeVault(t.Context(), db, embedder, vault); err != nil {
 		t.Fatal(err)

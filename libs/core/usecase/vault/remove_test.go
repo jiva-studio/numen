@@ -63,7 +63,11 @@ func TestRemoveKeepsTheVaultInFrontOfThePerson(t *testing.T) {
 	if len(trash.moved) != 0 || len(index.unregistered) != 0 {
 		t.Errorf("something went: %v, %v", trash.moved, index.unregistered)
 	}
-	if _, found, _ := registry.FindVault(string(showing.ID)); !found {
+	_, found, findErr := registry.FindVault(string(showing.ID))
+	if findErr != nil {
+		t.Fatal(findErr)
+	}
+	if !found {
 		t.Error("the vault in front of the person left the list")
 	}
 }

@@ -2,6 +2,7 @@ package onnxruntime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -118,12 +119,14 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 		return location{library: named}, nil
 	}
 	release := p.cfg.Release
+	var releaseErr error
 	if release == (Release{}) {
-		release, _ = getRelease(runtime.GOOS, runtime.GOARCH)
+		release, releaseErr = getRelease(runtime.GOOS, runtime.GOARCH)
 	}
 	home := p.cfg.Dir
+	var homeErr error
 	if home == "" {
-		home, _ = GetHome()
+		home, homeErr = GetHome()
 	}
 	check := p.cfg.Check
 	if check == nil {
@@ -138,8 +141,12 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 		found.library = item
 		return found, nil
 	}
+	found.isPinned = true
+	if err := errors.Join(releaseErr, homeErr); err != nil {
+		return found, err
+	}
 	library, err := p.acquire(ctx, release, home)
-	found.library, found.isPinned = library, true
+	found.library = library
 	return found, err
 }
 
@@ -169,8 +176,7 @@ func (p *Provisioner) acquire(ctx context.Context, release Release, home string)
 		return "", err
 	}
 	if err := verifyFile(library, release.LibrarySum); err != nil {
-		os.Remove(library)
-		return "", err
+		return "", errors.Join(err, os.Remove(library))
 	}
 	return library, nil
 }

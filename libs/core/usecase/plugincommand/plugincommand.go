@@ -165,8 +165,8 @@ func normalizeArguments(declared Command, arguments map[string]string) map[strin
 	normalized := make(map[string]string, len(arguments))
 	for name, value := range arguments {
 		if argument, _ := declared.GetArgument(name); argument.Type == ArgumentBoolean {
-			parsed, _ := strconv.ParseBool(value)
-			value = strconv.FormatBool(parsed)
+			parsed, err := strconv.ParseBool(value)
+			value = strconv.FormatBool(err == nil && parsed)
 		}
 		normalized[name] = value
 	}

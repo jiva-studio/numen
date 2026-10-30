@@ -216,12 +216,12 @@ func isPlainName(title string) bool {
 }
 
 // read is a theme's file, bounded.
-func read(path string) (string, error) {
+func read(path string) (_ string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 
 	text, err := io.ReadAll(io.LimitReader(file, MaxSize+1))
 	if err != nil {

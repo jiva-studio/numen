@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/edit"
@@ -94,7 +95,7 @@ func (u Write) WithIndex(index Levels) Write {
 // caller presents at its next write.
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
-) (domain.FileStat, error) {
+) (result domain.FileStat, err error) {
 	if markdown.IsFrontmatterStart(body) {
 		return domain.FileStat{}, ErrBodyUnwritable
 	}
@@ -102,8 +103,8 @@ func (u Write) Execute(
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat = stat
 	e.Bound = u.maxBound()
-	ends := func() {}
-	defer func() { ends() }()
+	ends := func() error { return nil }
+	defer func() { err = errors.Join(err, ends()) }()
 
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// A note rewritten whole is rendered as the changed range, so an
@@ -115,12 +116,16 @@ func (u Write) Execute(
 			return err
 		}
 		if pos.Start != pos.End || insert != "" {
-			ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
+			var tellErr error
+			ends, tellErr = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 				Path: path,
 				From: markdown.CountUTF16(was, pos.Start),
 				To:   markdown.CountUTF16(was, pos.End),
 				Text: insert,
 			})
+			if tellErr != nil {
+				return tellErr
+			}
 		}
 		return nil
 	})

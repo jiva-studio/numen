@@ -24,12 +24,12 @@ func TestReserveQuota_RejectsOverCommit(t *testing.T) {
 	if _, err := Reserve(t.Context(), root, 60, ""); err == nil || !strings.Contains(err.Error(), EnvQuota) {
 		t.Fatalf("second reservation error = %v", err)
 	}
-	first.Release()
+	release(t, first)
 	again, err := Reserve(t.Context(), root, 60, "")
 	if err != nil {
 		t.Fatalf("after release: %v", err)
 	}
-	again.Release()
+	release(t, again)
 }
 
 func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
@@ -42,7 +42,7 @@ func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer claim.Release()
+	defer release(t, claim)
 	if claim.Room != 60 {
 		t.Fatalf("room = %d, want 60", claim.Room)
 	}
@@ -69,12 +69,16 @@ func TestLockQuotaWaitsForTheHolder(t *testing.T) {
 	if _, err := lockQuota(ctx, root); err == nil {
 		t.Fatal("lock was taken twice")
 	}
-	unlock()
+	if err := unlock(); err != nil {
+		t.Fatal(err)
+	}
 	again, err := lockQuota(t.Context(), root)
 	if err != nil {
 		t.Fatalf("after unlock: %v", err)
 	}
-	again()
+	if err := again(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestLockQuotaBreaksAStaleLock(t *testing.T) {
@@ -91,7 +95,9 @@ func TestLockQuotaBreaksAStaleLock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unlock()
+	if err := unlock(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
@@ -110,7 +116,7 @@ func TestReservationPreservesItselfAlive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer claim.Release()
+	defer release(t, claim)
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(claim.file, old, old); err != nil {
 		t.Fatal(err)
@@ -137,8 +143,8 @@ func TestReservationReleaseIsIdempotentAndRemovesTheFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	claim.Release()
-	claim.Release()
+	release(t, claim)
+	release(t, claim)
 	if _, err := os.Stat(claim.file); !os.IsNotExist(err) {
 		t.Fatalf("reservation file remains: %v", err)
 	}
@@ -155,7 +161,7 @@ func TestReservationDoesNotCountTheBytesOfItsPartTwice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer claim.Release()
+	defer release(t, claim)
 	used, err := GetUsage(root)
 	if err != nil {
 		t.Fatal(err)
@@ -292,7 +298,11 @@ func TestGetUsageReportsAFolderItCannotRead(t *testing.T) {
 	if err := os.Chmod(locked, 0); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(locked, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(locked, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 	if _, err := GetUsage(dir); err == nil {
 		t.Fatal("an unreadable folder was counted as empty")
 	}
@@ -336,5 +346,12 @@ func TestResolvePathFollowsALinkInTheExistingPart(t *testing.T) {
 	}
 	if got := resolvePath(link); got != target {
 		t.Fatalf("resolvePath(link) = %q", got)
+	}
+}
+
+func release(t *testing.T, claim *Reservation) {
+	t.Helper()
+	if err := claim.Release(); err != nil {
+		t.Error(err)
 	}
 }

@@ -44,7 +44,11 @@ func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	addr, isTCP := server.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatalf("expected *net.TCPAddr, got %T", server.Listener.Addr())
+	}
+	serverPort := addr.Port
 	server.Close()
 	return &downEmbeddingHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }

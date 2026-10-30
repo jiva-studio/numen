@@ -36,7 +36,9 @@ func TestACallerJoiningARunEveryCallerLeftStartsAFreshRun(t *testing.T) {
 	first, leave := context.WithCancel(t.Context())
 	exit := make(chan struct{})
 	go func() {
-		_, _ = group.do(first, "k", nil, run)
+		if _, err := group.do(first, "k", nil, run); !errors.Is(err, context.Canceled) {
+			t.Errorf("a run whose context was cancelled gave %v, want context.Canceled", err)
+		}
 		close(exit)
 	}()
 	<-started
@@ -67,7 +69,9 @@ func TestACallerJoiningARunEveryCallerLeftStartsAFreshRun(t *testing.T) {
 func TestProvision_RejectsReservedFileNames(t *testing.T) {
 	data := []byte("model-bytes")
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(data)
+		if _, err := w.Write(data); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer server.Close()
 	for _, name := range []string{".ready", ".ready.tmp", ".tmp.abc"} {
@@ -113,7 +117,9 @@ func TestADiscoveredNameCannotLeaveTheSearchedFolders(t *testing.T) {
 func TestProvision_CachedDependencyRequiresMatchingChecksum(t *testing.T) {
 	data := []byte("model-bytes")
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(data)
+		if _, err := w.Write(data); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer server.Close()
 	provisioner := newTestProvisioner(t, false)

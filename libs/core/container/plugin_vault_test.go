@@ -23,7 +23,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	v := testsupport.NewVault(t, notes)
 	if err := registry.Save(v); err != nil {
 		t.Fatal(err)

@@ -156,3 +156,8 @@ func TestReadDropsAPassageOfASourceTheVaultNoLongerContains(t *testing.T) {
 		t.Fatalf("got %+v, want the one passage of the source still there", out)
 	}
 }
+
+// read fills in the passages without a query.
+func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
+	return u.readForQuery(ctx, v, "", found)
+}

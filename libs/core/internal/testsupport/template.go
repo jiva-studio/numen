@@ -2,6 +2,7 @@ package testsupport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -54,7 +55,7 @@ func (t *Template) make() {
 		t.err = err
 		return
 	}
-	defer os.RemoveAll(dir)
+	defer func() { t.err = errors.Join(t.err, os.RemoveAll(dir)) }()
 
 	path := filepath.Join(dir, "template.db")
 	if err := t.build(context.Background(), path); err != nil {

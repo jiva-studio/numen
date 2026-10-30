@@ -56,7 +56,7 @@ func newCorpus(t *testing.T) corpus {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	readers := vaultreader.Readers{}
 	scan := vaults.NewScan(

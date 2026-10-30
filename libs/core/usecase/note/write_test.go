@@ -92,7 +92,10 @@ func TestWrite_EnforcesWriterLimit(t *testing.T) {
 // newDrawingWrite is a writer that records what it receives while a note is being rendered.
 func (c changing) newDrawingWrite(callback *[]domain.Edit) note.Write {
 	w := c.newWrite()
-	w.Drawing = func(_ context.Context, response domain.Edit) { *callback = append(*callback, response) }
+	w.Drawing = func(_ context.Context, response domain.Edit) error {
+		*callback = append(*callback, response)
+		return nil
+	}
 	return w
 }
 

@@ -10,22 +10,25 @@ import (
 )
 
 // TellEdit reports what a write is doing while it runs, to viewers of the note.
-// Nothing is reported when no viewer is drawing.
-type TellEdit func(ctx context.Context, edit domain.Edit)
+// Nothing is reported when no viewer is drawing. The returned error is the
+// failure to report.
+type TellEdit func(ctx context.Context, edit domain.Edit) error
 
 // beginChange names one change and reports its start. It returns the function
 // that reports its end.
 //
 // The name is a ULID, so the change is named on the same clock the write is
 // stamped from.
-func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, response domain.Edit) func() {
+func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, response domain.Edit) (func() error, error) {
 	if tell == nil {
-		return func() {}
+		return func() error { return nil }, nil
 	}
 	name := ulid.New(now())
 	response.Change = name
-	tell(ctx, response)
-	return func() {
-		tell(ctx, domain.Edit{Change: name, Path: response.Path, IsDone: true})
+	if err := tell(ctx, response); err != nil {
+		return nil, err
 	}
+	return func() error {
+		return tell(ctx, domain.Edit{Change: name, Path: response.Path, IsDone: true})
+	}, nil
 }

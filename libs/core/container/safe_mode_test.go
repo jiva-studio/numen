@@ -55,7 +55,9 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		if indexing != nil || asking != nil {
 			t.Fatal("expected nil embedders from Embedders in safe mode")
 		}
-		_ = closer()
+		if err := closer(); err != nil {
+			t.Fatal(err)
+		}
 
 		embedder, closer, err := cfg.Embedder(ctx)
 		if err != nil {
@@ -64,7 +66,9 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		if embedder != nil {
 			t.Fatal("expected nil embedder from Embedder in safe mode")
 		}
-		_ = closer()
+		if err := closer(); err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	t.Run("plugin processes were never started", func(t *testing.T) {

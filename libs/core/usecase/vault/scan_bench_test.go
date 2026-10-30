@@ -29,7 +29,7 @@ func openIndexFor(b *testing.B) *container.Index {
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(b, db)
 	return db
 }
 

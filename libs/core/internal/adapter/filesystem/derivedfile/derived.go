@@ -144,7 +144,7 @@ func OpenDerived(vaultRoot string, opts vaultconfig.Options, areas ...string) (*
 // is the first part of every name the index records.
 func (d *DerivedStore) Area() string { return d.areas[0] }
 
-func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
+func (d *DerivedStore) Read(_ context.Context, name string) (_ []byte, err error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	raw, err := root.ReadFile(pos)
 	if err != nil {
 		return nil, wrapLockedByAnother(err)
@@ -164,7 +164,7 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 // Open is one file of the store to read a part of, and how many bytes it holds.
 // A copy of a video is played from the middle, and holding an hour of it in
 // memory to answer for a second is what this is not.
-func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+func (d *DerivedStore) Open(_ context.Context, name string) (_ io.ReadSeekCloser, _ int64, err error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return nil, 0, err
@@ -173,15 +173,14 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 	if err != nil {
 		return nil, 0, err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	file, err := root.Open(pos)
 	if err != nil {
 		return nil, 0, err
 	}
 	about, err := file.Stat()
 	if err != nil {
-		file.Close()
-		return nil, 0, err
+		return nil, 0, errors.Join(err, file.Close())
 	}
 	return file, about.Size(), nil
 }
@@ -189,7 +188,7 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 // WriteStream puts what a reader gives under a name, through the same rename every
 // other write here lands by: what a fetch was still writing when a machine
 // stopped is not a file anything reads afterwards.
-func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Reader) (int64, error) {
+func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Reader) (_ int64, err error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return 0, err
@@ -198,7 +197,7 @@ func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Rea
 	if err != nil {
 		return 0, err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	if err := root.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		return 0, err
 	}
@@ -209,7 +208,7 @@ func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Rea
 	return content.Size, atomicfile.SyncDirectory(root, filepath.Dir(pos))
 }
 
-func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
+func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) (err error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return err
@@ -218,7 +217,7 @@ func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) e
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	if err := root.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		return err
 	}
@@ -237,7 +236,7 @@ func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) e
 //
 // A crash during a write can still leave a torn tail. Readers keep the
 // complete pages and drop the remainder.
-func (d *DerivedStore) Append(_ context.Context, name string, content []byte) error {
+func (d *DerivedStore) Append(_ context.Context, name string, content []byte) (err error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return err
@@ -246,7 +245,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	if err := root.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		return err
 	}
@@ -258,8 +257,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 		return errors.Join(newShortAppendError(name, n, len(content), err), closeAndTruncate(root, file, pos, n))
 	}
 	if err := file.Sync(); err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 	return file.Close()
 }
@@ -381,8 +379,10 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 			return err
 		}
 		err = root.Remove(pos)
-		root.Close()
-		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if errors.Is(err, fs.ErrNotExist) {
+			err = nil
+		}
+		if err := errors.Join(err, root.Close()); err != nil {
 			return err
 		}
 	}
@@ -391,7 +391,7 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 
 // RemoveAll takes a name out of the store with everything under it. A name
 // that is not there is removed.
-func (d *DerivedStore) RemoveAll(_ context.Context, name string) error {
+func (d *DerivedStore) RemoveAll(_ context.Context, name string) (err error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return err
@@ -403,7 +403,7 @@ func (d *DerivedStore) RemoveAll(_ context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	return root.RemoveAll(pos)
 }
 
@@ -566,7 +566,7 @@ type Listed struct {
 
 // Rename moves what is under one name to another, replacing what the other held. Both names are
 // in the store, and the file lands under the new name whole.
-func (d *DerivedStore) Rename(_ context.Context, from, to string) error {
+func (d *DerivedStore) Rename(_ context.Context, from, to string) (err error) {
 	source, err := d.getPath(from)
 	if err != nil {
 		return err
@@ -579,7 +579,7 @@ func (d *DerivedStore) Rename(_ context.Context, from, to string) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	newPos, err := filepath.Rel(d.root, target)
 	if err != nil {
 		return err

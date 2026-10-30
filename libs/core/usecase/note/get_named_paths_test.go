@@ -20,10 +20,18 @@ func TestGetNamedPathsAnswersEveryNoteFiledBelowAName(t *testing.T) {
 	if want := []string{"a/Heat.md", "b/Heat.md"}; !slices.Equal(got, want) {
 		t.Errorf("Heat reaches %v, want %v", got, want)
 	}
-	if got, _ := u.Execute(t.Context(), c.vault, "Gone"); len(got) != 0 {
+	got, gotErr := u.Execute(t.Context(), c.vault, "Gone")
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if len(got) != 0 {
 		t.Errorf("a name no note answers to reaches %v", got)
 	}
-	if got, _ := u.Execute(t.Context(), c.vault, ""); len(got) != 0 {
+	got, gotErr = u.Execute(t.Context(), c.vault, "")
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if len(got) != 0 {
 		t.Errorf("no name reaches %v", got)
 	}
 }

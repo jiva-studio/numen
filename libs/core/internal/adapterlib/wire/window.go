@@ -34,7 +34,10 @@ func (r *Reason) Store(why string) { r.why.Store(why) }
 
 // Why returns the last stored reason, or the empty string when there is no problem.
 func (r *Reason) Why() string {
-	why, _ := r.why.Load().(string)
+	why, isText := r.why.Load().(string)
+	if !isText {
+		return ""
+	}
 	return why
 }
 

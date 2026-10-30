@@ -135,12 +135,12 @@ func (u Import) importFolder(
 // importFile copies the file at from to a path in the vault.
 func (u Import) importFile(
 	ctx context.Context, writer vaultport.VaultWriter, from, to string, result *ImportResult,
-) error {
+) (err error) {
 	file, err := u.files.Open(ctx, from)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 	if err := writer.Import(ctx, to, file); err != nil {
 		return err
 	}

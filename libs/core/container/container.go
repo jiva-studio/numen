@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
@@ -135,7 +136,10 @@ func (c Config) handleError(err error) {
 // SyncSetting returns whether note title and filename synchronization is enabled.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
-		target, _ := c.Settings()
+		target, err := c.Settings()
+		if err != nil {
+			c.handleError(fmt.Errorf("read settings: %w", err))
+		}
 		return note.SyncTitleAndFilename(target.Sync())
 	}
 }
@@ -181,7 +185,7 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	if err := settings.Save(path, &into, target...); err != nil {
 		return err
 	}
-	notifyPluginSettings(c.PluginHost, entries)
+	notifyPluginSettings(c.PluginHost, entries, c.handleError)
 	return nil
 }
 
@@ -207,7 +211,8 @@ func checkPluginSettings(host pluginport.PluginConfigurator, entries []settingsp
 	return nil
 }
 
-func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) {
+// notifyPluginSettings tells the host each plugin setting among the entries and passes the failure to report.
+func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting, report func(error)) {
 	if host == nil {
 		return
 	}
@@ -217,7 +222,9 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 		}
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
-			_ = host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val)
+			if err := host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val); err != nil {
+				report(fmt.Errorf("update plugin setting %s: %w", strings.Join(one.Path, "."), err))
+			}
 		}
 	}
 }

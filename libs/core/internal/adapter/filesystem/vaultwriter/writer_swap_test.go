@@ -36,6 +36,7 @@ func TestAFolderSwappedForALinkConsumesNothingOutOfTheVault(t *testing.T) {
 	stop := make(chan struct{})
 	var swapping sync.WaitGroup
 	swapping.Add(1)
+	var swapFailures int
 	go func() {
 		defer swapping.Done()
 		for {
@@ -44,26 +45,41 @@ func TestAFolderSwappedForALinkConsumesNothingOutOfTheVault(t *testing.T) {
 				return
 			default:
 			}
-			_ = os.RemoveAll(notes)
-			_ = os.Symlink(elsewhere, notes)
-			_ = os.Remove(notes)
-			_ = os.Mkdir(notes, 0o755)
+			for _, err := range []error{
+				os.RemoveAll(notes),
+				os.Symlink(elsewhere, notes),
+				os.Remove(notes),
+				os.Mkdir(notes, 0o755),
+			} {
+				if err != nil {
+					swapFailures++
+				}
+			}
 		}
 	}()
 
 	ctx := t.Context()
+	var writeFailures int
 	// Enough turns that the swap lands between a rule and the write it was read
 	// for, many times over.
 	for range 800 {
-		_ = writer.MakeFolder(ctx, "notes/inside")
-		_ = writer.Import(ctx, "notes/landed.md", strings.NewReader("bytes"))
-		_ = writer.Create(ctx, "notes/created.md", []byte("bytes"))
-		_, _ = writer.Write(ctx, "notes/written.md", []byte("bytes"), domain.FileStat{})
-		_ = writer.Move(ctx, "notes/landed.md", "notes/moved.md")
-		_ = writer.Remove(ctx, "notes/moved.md")
+		_, writeErr := writer.Write(ctx, "notes/written.md", []byte("bytes"), domain.FileStat{})
+		for _, err := range []error{
+			writer.MakeFolder(ctx, "notes/inside"),
+			writer.Import(ctx, "notes/landed.md", strings.NewReader("bytes")),
+			writer.Create(ctx, "notes/created.md", []byte("bytes")),
+			writeErr,
+			writer.Move(ctx, "notes/landed.md", "notes/moved.md"),
+			writer.Remove(ctx, "notes/moved.md"),
+		} {
+			if err != nil {
+				writeFailures++
+			}
+		}
 	}
 	close(stop)
 	swapping.Wait()
+	t.Logf("%d writes failed and %d swap steps failed while the folder was swapped", writeFailures, swapFailures)
 
 	remaining, err := os.ReadDir(elsewhere)
 	if err != nil {

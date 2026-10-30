@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -92,14 +93,14 @@ var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 // since it was read is left alone and port.ErrStale comes back.
 func (u Replace) Execute(
 	ctx context.Context, v domain.Vault, path, current, becomes string, stat domain.FileStat,
-) (ReplaceResult, error) {
+) (result ReplaceResult, err error) {
 	if current == "" {
 		return ReplaceResult{}, fmt.Errorf("name the text to replace")
 	}
 
 	isDone := ReplaceResult{}
-	ends := func() {}
-	defer func() { ends() }()
+	ends := func() error { return nil }
+	defer func() { err = errors.Join(err, ends()) }()
 
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat = stat
@@ -126,12 +127,16 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
+		var tellErr error
+		ends, err = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 			Path: path,
 			From: markdown.CountUTF16(body, span.Start),
 			To:   markdown.CountUTF16(body, span.End),
 			Text: becomes,
 		})
+		if tellErr != nil {
+			return tellErr
+		}
 
 		isDone.Range = markdown.Range{Start: span.Start, End: span.Start + len(becomes)}
 		isDone.Matched = body[span.Start:span.End]

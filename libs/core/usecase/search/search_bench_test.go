@@ -107,7 +107,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Cleanup(func() { _ = db.Close() })
+	testsupport.CloseAfter(b, db)
 
 	if err := db.Vaults().Register(ctx, v.ID); err != nil {
 		b.Fatal(err)

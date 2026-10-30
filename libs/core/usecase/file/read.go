@@ -66,8 +66,8 @@ type Read struct {
 // inside it. A problem with the file itself is reported as an outcome.
 func (u Read) Execute(
 	ctx context.Context, v domain.Vault, path string, start, length int,
-) (ReadResult, error) {
-	length, err := checkRange(path, start, length)
+) (_ ReadResult, err error) {
+	length, err = checkRange(path, start, length)
 	if err != nil {
 		return ReadResult{}, err
 	}
@@ -85,7 +85,7 @@ func (u Read) Execute(
 	case err != nil:
 		return ReadResult{}, err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 
 	// A listing of the folder above is the vault saying what it holds there.
 	target, err := getReadOutcome(ctx, reader, path)

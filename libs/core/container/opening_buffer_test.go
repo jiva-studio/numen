@@ -118,7 +118,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() { db.Close() })
+		testsupport.CloseAfter(t, db)
 		v := testsupport.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
 		opening := cfg.VaultOpener(db)
@@ -161,7 +161,7 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	v := testsupport.NewVault(t, map[string]string{
 		"One.md": "---\ntitle: One\n---\n\n# One\n",
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",

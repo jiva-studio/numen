@@ -25,7 +25,7 @@ func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vaul
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{}, db.Vaults(), db.Notes(),

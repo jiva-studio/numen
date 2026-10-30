@@ -29,7 +29,11 @@ func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
 	if err := os.Chmod(shutPath, 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(shutPath, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(shutPath, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	if _, whole := shape.GetPathsUnder(t.Context(), pos); !whole {
 		t.Fatal("a folder the walk could not enter was not answered as the whole vault")

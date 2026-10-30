@@ -137,7 +137,9 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 	// The file is at its new path and the index is in sync. A view still showing
 	// the old name refers to a path with no file.
 	if u.Drawing != nil {
-		u.Drawing(ctx, domain.Move{From: from, To: to})
+		if err := u.Drawing(ctx, domain.Move{From: from, To: to}); err != nil {
+			return res, fmt.Errorf("tell the move of %s to %s: %w", from, to, err)
+		}
 	}
 
 	// What a repaired link is pointed at: the name the note is filed under, or

@@ -31,6 +31,7 @@ type OpenVaults[C OpenerFactory[I], I any] struct {
 	isClosing bool
 	cancels   []context.CancelFunc
 	opened    map[domain.VaultID]*openedVault
+	outputErr error
 }
 
 type openedVault struct {
@@ -85,7 +86,7 @@ func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *o
 	opening.Told = func(VaultChanges) { o.RecordVault(v) }
 	opening.ErrorHandler = func(err error) {
 		if err != nil {
-			fmt.Fprintf(o.Out, "%s: %s: %v\n", o.Label, v.Name, err)
+			o.writeOutput("%s: %s: %v\n", o.Label, v.Name, err)
 		}
 	}
 
@@ -100,7 +101,7 @@ func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *o
 
 	open := opening.Begin(lifetime, v)
 	if why := open.GetUnwatchedReason(); why != nil {
-		fmt.Fprintf(o.Out, "%s: %s is not being followed: %v\n", o.Label, v.Name, why)
+		o.writeOutput("%s: %s is not being followed: %v\n", o.Label, v.Name, why)
 	}
 	one.opening, one.open = opening, open
 
@@ -112,6 +113,25 @@ func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *o
 	}
 }
 
+// writeOutput writes a line to Out. A failed write is kept and returned by the next
+// IndexVault or UpdateIndex.
+func (o *OpenVaults[C, I]) writeOutput(format string, args ...any) {
+	if _, err := fmt.Fprintf(o.Out, format, args...); err != nil {
+		o.mu.Lock()
+		o.outputErr = errors.Join(o.outputErr, err)
+		o.mu.Unlock()
+	}
+}
+
+// takeOutputError returns the errors of failed writes to Out and clears them.
+func (o *OpenVaults[C, I]) takeOutputError() error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	err := o.outputErr
+	o.outputErr = nil
+	return err
+}
+
 // IndexVault scans a vault and adds its files to the index.
 func (o *OpenVaults[C, I]) IndexVault(ctx context.Context, v domain.Vault) error {
 	if !o.tryBeginWork() {
@@ -120,7 +140,7 @@ func (o *OpenVaults[C, I]) IndexVault(ctx context.Context, v domain.Vault) error
 	defer o.running.Done()
 
 	_, err := o.getOpenedVault(ctx, v).open.Read(ctx, nil)
-	return err
+	return errors.Join(err, o.takeOutputError())
 }
 
 // UpdateIndex brings the paths a write touched up to date, through the opening of the vault they are in.
@@ -130,7 +150,8 @@ func (o *OpenVaults[C, I]) UpdateIndex(ctx context.Context, v domain.Vault, path
 	}
 	defer o.running.Done()
 
-	return o.getOpenedVault(ctx, v).opening.Level(ctx, v, paths)
+	err := o.getOpenedVault(ctx, v).opening.Level(ctx, v, paths)
+	return errors.Join(err, o.takeOutputError())
 }
 
 // OpenedCount returns the number of opened vaults.

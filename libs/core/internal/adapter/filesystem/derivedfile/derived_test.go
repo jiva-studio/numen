@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -153,14 +154,22 @@ func TestWhatIsSavedIsRead(t *testing.T) {
 	if err := derived.Write(ctx, "area/abc.txt", []byte("second")); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := derived.Read(ctx, "area/abc.txt"); string(got) != "second" {
+	got, gotErr := derived.Read(ctx, "area/abc.txt")
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != "second" {
 		t.Errorf("read %q after replacing", got)
 	}
 
 	if err := derived.Append(ctx, "area/abc.txt", []byte(" and more")); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := derived.Read(ctx, "area/abc.txt"); string(got) != "second and more" {
+	got, gotErr = derived.Read(ctx, "area/abc.txt")
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != "second and more" {
 		t.Errorf("read %q after appending", got)
 	}
 
@@ -176,7 +185,11 @@ func TestAppendingToNothingBeginsIt(t *testing.T) {
 	if err := derived.Append(t.Context(), "area/part.txt", []byte("one")); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := derived.Read(t.Context(), "area/part.txt"); string(got) != "one" {
+	got, gotErr := derived.Read(t.Context(), "area/part.txt")
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != "one" {
 		t.Errorf("read %q", got)
 	}
 }
@@ -244,7 +257,11 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItself(t *testing.T) {
 	if _, err := derived.Read(t.Context(), "area/linked.txt"); err == nil {
 		t.Error("the store read through a link out of itself")
 	}
-	if got, _ := os.ReadFile(note); string(got) != "# Note\n" {
+	got, gotErr := os.ReadFile(note)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != "# Note\n" {
 		t.Errorf("the note is now %q", got)
 	}
 }
@@ -276,7 +293,11 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItsArea(t *testing.T) {
 	if _, err := derived.Read(t.Context(), "area/run.txt"); err == nil {
 		t.Error("the store read the vault's identity back as a recognition")
 	}
-	if got, _ := os.ReadFile(identity); string(got) != string(before) {
+	got, gotErr := os.ReadFile(identity)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != string(before) {
 		t.Errorf("the vault's identity is now %q", got)
 	}
 }
@@ -323,7 +344,11 @@ func TestTwoNamesAreClaimedTogether(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer first()
+	defer func() {
+		if err := first(); err != nil {
+			t.Error(err)
+		}
+	}()
 	second, err := derived.ClaimName(t.Context(), "area/two.txt")
 	if err != nil {
 		t.Fatalf("claiming another name gave %v", err)
@@ -378,8 +403,8 @@ func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		stdin.Close()
-		child.Wait()
+		testsupport.Close(t, stdin)
+		testsupport.Wait(t, child)
 	}()
 
 	// The child may print other lines first; the loop waits for the claim line.
@@ -414,10 +439,16 @@ func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer release()
+	defer func() {
+		if err := release(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	fmt.Println(claimLocked)
-	io.ReadAll(os.Stdin)
+	if _, err := io.ReadAll(os.Stdin); err != nil {
+		t.Error(err)
+	}
 }
 
 // A store lists the names it holds, because a record that is a folder of files
@@ -574,7 +605,11 @@ func TestAnAreaThatIsALinkContainsNothing(t *testing.T) {
 	if _, err := derived.List(ctx, testArea); err == nil {
 		t.Error("the store listed the service folder as its area")
 	}
-	if got, _ := os.ReadFile(identity); string(got) != string(before) {
+	got, gotErr := os.ReadFile(identity)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != string(before) {
 		t.Errorf("the vault's identity is now %q", got)
 	}
 }

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // A vault is walked once however many counts ask for it at the same moment.
@@ -101,7 +103,7 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	target := []domain.Vault{
 		{ID: "one", Name: "One", Path: makeSampleVault(t, cfg)},

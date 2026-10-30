@@ -606,7 +606,11 @@ func TestOnlyANoteIsSavedTo(t *testing.T) {
 		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}
-		if retained, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path))); string(retained) != "theirs" {
+		retained, retainedErr := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+		if retainedErr != nil {
+			t.Fatal(retainedErr)
+		}
+		if string(retained) != "theirs" {
 			t.Errorf("%s was written to anyway", path)
 		}
 	}
@@ -635,7 +639,11 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrOutside) {
 		t.Errorf("want ErrOutside, got %v", err)
 	}
-	if retained, _ := os.ReadFile(filepath.Join(outside, "secret.md")); string(retained) != "not yours" {
+	retained, retainedErr := os.ReadFile(filepath.Join(outside, "secret.md"))
+	if retainedErr != nil {
+		t.Fatal(retainedErr)
+	}
+	if string(retained) != "not yours" {
 		t.Error("a file outside the vault was written")
 	}
 }

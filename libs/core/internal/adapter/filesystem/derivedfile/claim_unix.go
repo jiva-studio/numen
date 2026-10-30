@@ -22,16 +22,15 @@ func acquireFileLock(path string) (func() error, error) {
 		return nil, err
 	}
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		file.Close()
+		closeErr := file.Close()
 		if errors.Is(err, syscall.EWOULDBLOCK) {
-			return nil, fmt.Errorf("%s: %w", path, vaultport.ErrClaimed)
+			return nil, errors.Join(fmt.Errorf("%s: %w", path, vaultport.ErrClaimed), closeErr)
 		}
-		return nil, err
+		return nil, errors.Join(err, closeErr)
 	}
 	return func() error {
 		if err := syscall.Flock(int(file.Fd()), syscall.LOCK_UN); err != nil {
-			file.Close()
-			return err
+			return errors.Join(err, file.Close())
 		}
 		return file.Close()
 	}, nil

@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -32,7 +33,7 @@ func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClie
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	testsupport.CloseAfter(t, stream)
 	return stream
 }
 
@@ -89,7 +90,7 @@ func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	testsupport.CloseAfter(t, stream)
 	if stream.Receive() {
 		t.Fatalf("another window answered for the editor: %v", stream.Msg().GetTasks())
 	}

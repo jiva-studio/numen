@@ -319,8 +319,8 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 	}
 }
 
-// read fills in the text of each passage from the vault. A chunk is a position
-// in a file; the file holds the text.
+// readForQuery fills in the text of each passage from the vault. A chunk is a
+// position in a file; the file holds the text.
 //
 // A passage whose file is missing from the vault is dropped: the file is
 // authoritative and the index follows it.
@@ -330,10 +330,6 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 // concurrently, and each source's decoded text is released once its passages
 // are filled in. The first error, or cancellation of ctx, stops the sources not
 // yet started.
-func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
-	return u.readForQuery(ctx, v, "", found)
-}
-
 func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
