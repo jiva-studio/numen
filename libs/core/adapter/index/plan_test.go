@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // coarse is a vector of the shape the vector index holds: one bit per dimension
@@ -133,13 +135,17 @@ func openPopulatedDB(t *testing.T) *DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	tx, err := db.write.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			t.Error(err)
+		}
+	}()
 
 	exec := func(statement string, args ...any) {
 		if _, err := tx.ExecContext(ctx, statement, args...); err != nil {
@@ -248,7 +254,11 @@ func planFor(ctx context.Context, t *testing.T, db *DB, statement string, args [
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var plan []string
 	for rows.Next() {

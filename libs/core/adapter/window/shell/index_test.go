@@ -141,7 +141,7 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	testsupport.CloseAfter(t, stream)
 
 	if !stream.Receive() {
 		t.Fatalf("nothing was said: %v", stream.Err())

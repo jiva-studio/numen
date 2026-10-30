@@ -84,10 +84,11 @@ func (s *session) types(answer string) {
 	if _, err := io.WriteString(write, answer); err != nil {
 		s.t.Fatal(err)
 	}
-	write.Close()
+	testsupport.Close(s.t, write)
 	was := os.Stdin
 	os.Stdin = read
-	s.t.Cleanup(func() { os.Stdin = was; read.Close() })
+	s.t.Cleanup(func() { os.Stdin = was })
+	testsupport.CloseAfter(s.t, read)
 }
 
 // fakeTrash is a trash of this test's own: it moves what it is given into a folder the

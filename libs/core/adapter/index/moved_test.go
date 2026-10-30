@@ -20,7 +20,11 @@ func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var out []int64
 	for rows.Next() {

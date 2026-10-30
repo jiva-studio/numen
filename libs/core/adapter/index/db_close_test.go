@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // refusingToClose is a pool whose connection answers a close with the error
@@ -61,8 +63,11 @@ func TestClosingAnIndexReturnsWhatEitherPoolRefused(t *testing.T) {
 
 func TestClosingAnIndexClosesTheReadPoolWhenTheWritePoolRefuses(t *testing.T) {
 	read := poolRefusing(t, nil)
-	db := &DB{write: poolRefusing(t, errors.New("stuck")), read: read}
-	_ = db.Close()
+	errStuck := errors.New("stuck")
+	db := &DB{write: poolRefusing(t, errStuck), read: read}
+	if err := db.Close(); !errors.Is(err, errStuck) {
+		t.Errorf("Close returned %v, want the error of the write pool", err)
+	}
 	if _, err := read.Conn(t.Context()); err == nil {
 		t.Error("the read pool is still open")
 	}
@@ -84,7 +89,7 @@ func TestAnIndexThatCannotBeMigratedPreservesNoConnectionOpen(t *testing.T) {
 	}
 
 	if db, err := Open(t.Context(), path); err == nil {
-		db.Close()
+		testsupport.Close(t, db)
 		t.Fatal("an index whose first migration cannot run was opened")
 	}
 	// The write-ahead log goes with the last connection to close.

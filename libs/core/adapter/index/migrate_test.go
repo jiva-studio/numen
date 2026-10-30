@@ -11,6 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
@@ -58,7 +60,7 @@ func TestFreshDatabaseIsAtTheNewestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	available, err := loadMigrations()
 	if err != nil {
@@ -97,7 +99,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reopen: %v", err)
 	}
-	defer second.Close()
+	defer testsupport.Close(t, second)
 
 	var count int
 	if err := second.write.QueryRowContext(ctx, `SELECT COUNT(*) FROM vaults`).Scan(&count); err != nil {
@@ -116,7 +118,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	// A statement that cannot apply must leave the version where it was, so the
 	// next start retries the whole migration and not resuming half-way.
@@ -179,7 +181,7 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer raw.Close()
+	defer testsupport.Close(t, raw)
 
 	// the later build left is in it.
 	var pos int
@@ -227,7 +229,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 
 	db, err := Open(ctx, path)
 	if err == nil {
-		db.Close()
+		testsupport.Close(t, db)
 		t.Fatal("an index whose schema does not match its number was opened")
 	}
 	t.Logf("failed with: %v", err)
@@ -237,7 +239,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 	var strangers int
 	if err := back.QueryRowContext(ctx,
 		`SELECT count(*) FROM sqlite_master WHERE type='table' AND name='strangers'`).Scan(&strangers); err != nil {
@@ -268,7 +270,7 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { again.Close() })
+	testsupport.CloseAfter(t, again)
 
 	var vaults int
 	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
@@ -300,7 +302,7 @@ func TestPragmaUserVersionRollsBackWithItsTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -336,12 +338,12 @@ var errBroken = errors.New("broken for the test")
 // breakingDriver registers a driver that fails the statements breaksOn names and
 // runs every other statement unchanged. A transaction's BEGIN is the statement
 // "BEGIN".
-var breakingDriver = sync.OnceValue(func() error {
+var breakingDriver = sync.OnceValue(func() (err error) {
 	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		return err
 	}
-	defer base.Close()
+	defer func() { err = errors.Join(err, base.Close()) }()
 	sql.Register("sqlite-breaking", breaking{base.Driver()})
 	return nil
 })
@@ -371,7 +373,7 @@ func openBreaking(t *testing.T, path string) *sql.DB {
 		t.Fatal(err)
 	}
 	db.SetMaxOpenConns(1)
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 
@@ -417,7 +419,11 @@ func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (drive
 	if isBroken("BEGIN") {
 		return nil, fmt.Errorf("%w: BEGIN", errBroken)
 	}
-	tx, err := c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	begin, ok := c.Conn.(driver.ConnBeginTx)
+	if !ok {
+		return nil, errors.New("the wrapped connection cannot begin a transaction with options")
+	}
+	tx, err := begin.BeginTx(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +436,9 @@ type breakingTx struct{ driver.Tx }
 
 func (t breakingTx) Commit() error {
 	if isBroken("COMMIT") {
-		_ = t.Tx.Rollback()
+		if err := t.Tx.Rollback(); err != nil {
+			return errors.Join(fmt.Errorf("%w: COMMIT", errBroken), err)
+		}
 		return fmt.Errorf("%w: COMMIT", errBroken)
 	}
 	return t.Tx.Commit()
@@ -448,14 +456,22 @@ func (s breakingStmt) ExecContext(ctx context.Context, args []driver.NamedValue)
 	if isBroken(s.query) {
 		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
 	}
-	return s.Stmt.(driver.StmtExecContext).ExecContext(ctx, args)
+	exec, ok := s.Stmt.(driver.StmtExecContext)
+	if !ok {
+		return nil, errors.New("the wrapped statement cannot execute with a context")
+	}
+	return exec.ExecContext(ctx, args)
 }
 
 func (s breakingStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	if isBroken(s.query) {
 		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
 	}
-	rows, err := s.Stmt.(driver.StmtQueryContext).QueryContext(ctx, args)
+	query, ok := s.Stmt.(driver.StmtQueryContext)
+	if !ok {
+		return nil, errors.New("the wrapped statement cannot query with a context")
+	}
+	rows, err := query.QueryContext(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +549,7 @@ func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 
 	var name string
 	if err := back.QueryRowContext(ctx,
@@ -597,7 +613,7 @@ func TestMigrationToPrefixIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	matches, err := db.NoteQueries().GetNameMatches(ctx, "01TEST", "thermo", 10)
 	if err != nil {

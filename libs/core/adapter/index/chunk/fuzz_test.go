@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	_ "modernc.org/sqlite"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // typedSeeds are the things a person types into a search box: words, the
@@ -48,11 +50,11 @@ func FuzzExpression(f *testing.F) {
 	if err != nil {
 		f.Fatal(err)
 	}
-	f.Cleanup(func() { db.Close() })
-	if _, err := db.Exec(`CREATE VIRTUAL TABLE said USING fts5(text)`); err != nil {
+	testsupport.CloseAfter(f, db)
+	if _, err := db.ExecContext(f.Context(), `CREATE VIRTUAL TABLE said USING fts5(text)`); err != nil {
 		f.Skipf("this build of SQLite has no FTS5: %v", err)
 	}
-	if _, err := db.Exec(`INSERT INTO said(text) VALUES ('entropy is a state function')`); err != nil {
+	if _, err := db.ExecContext(f.Context(), `INSERT INTO said(text) VALUES ('entropy is a state function')`); err != nil {
 		f.Fatal(err)
 	}
 
@@ -72,7 +74,7 @@ func FuzzExpression(f *testing.F) {
 		expression := Expression(typed, growing)
 		if len(typed) <= mostAsked && !strings.ContainsRune(expression, 0) {
 			var count int
-			row := db.QueryRow(`SELECT count(*) FROM said WHERE text MATCH ?`, expression)
+			row := db.QueryRowContext(t.Context(), `SELECT count(*) FROM said WHERE text MATCH ?`, expression)
 			// An empty expression is not a query, and no search is made.
 			if expression != "" {
 				if err := row.Scan(&count); err != nil {

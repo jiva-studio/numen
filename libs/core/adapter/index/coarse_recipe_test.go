@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -41,7 +42,11 @@ func storedBits(t *testing.T, db *DB) map[int64][]byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	target := map[int64][]byte{}
 	for rows.Next() {
 		var id int64
@@ -194,7 +199,7 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer again.Close()
+	defer testsupport.Close(t, again)
 	if got := getNewestVersion(t); got < 4 {
 		t.Fatalf("newest version = %d", got)
 	}

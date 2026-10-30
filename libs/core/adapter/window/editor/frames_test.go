@@ -1,7 +1,6 @@
 package editor
 
 import (
-	"io"
 	"net/http"
 	"slices"
 	"strings"
@@ -9,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
@@ -16,7 +16,7 @@ func TestTheWindowFramesTheOriginsOfTheEnabledPlugins(t *testing.T) {
 	services := newBareServices()
 	services.PluginServices = &routedPlugins{frames: map[string][]string{"org.example.player": {"https://player.example"}}}
 
-	response := getResponse(services.NewHandler(http.NotFoundHandler()), "/").Header().Get("Content-Security-Policy")
+	response := getResponse(t, services.NewHandler(http.NotFoundHandler()), "/").Header().Get("Content-Security-Policy")
 	if !strings.Contains(response, "frame-src 'self' https://player.example;") {
 		t.Errorf("the policy reads %q", response)
 	}
@@ -28,16 +28,12 @@ func TestAPluginPageOnTheLoopbackSocketSendsItsOriginAndFramesThePluginsOrigins(
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { back.Close() })
+	testsupport.CloseAfter(t, back)
 	back.setPluginServices(plugins)
 
 	address := back.PageAddress("org.example.player", "embed?address=https%3A%2F%2Fvideo.example%2Fclip")
-	resp, err := http.Get(address)
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	resp := fetch(t, http.DefaultClient, address)
+	body := resp.Body
 
 	if resp.StatusCode != http.StatusOK || string(body) != "page bytes" {
 		t.Fatalf("answered %d %q", resp.StatusCode, body)
@@ -59,14 +55,10 @@ func TestAPluginPageIsRefusedWithoutTheToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { back.Close() })
+	testsupport.CloseAfter(t, back)
 	back.setPluginServices(plugins)
 
-	resp, err := http.Get(back.address + "/" + pluginPageSegment + "/org.example.player/embed")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
+	resp := fetch(t, http.DefaultClient, back.address+"/"+pluginPageSegment+"/org.example.player/embed")
 	if resp.StatusCode != http.StatusForbidden || len(plugins.routed) != 0 {
 		t.Errorf("answered %d, forwarded %q", resp.StatusCode, plugins.routed)
 	}
@@ -78,7 +70,7 @@ func TestGetPageSourceIsThePageOnTheLoopbackSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { back.Close() })
+	testsupport.CloseAfter(t, back)
 	api.openPlaying(back)
 
 	answer, err := api.Media.GetPageSource(t.Context(), connect.NewRequest(&v1.GetPageSourceRequest{

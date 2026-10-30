@@ -3,6 +3,7 @@ package settings_test
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,9 @@ import (
 // A file naming no size is drawn at what the desktop asks for, so the session
 // these tests run in is asked nothing.
 func TestMain(m *testing.M) {
-	os.Unsetenv("GDK_DPI_SCALE")
+	if err := os.Unsetenv("GDK_DPI_SCALE"); err != nil {
+		log.Fatal(err)
+	}
 	os.Exit(m.Run())
 }
 

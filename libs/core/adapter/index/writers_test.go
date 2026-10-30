@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	notecase "github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -55,7 +56,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { two.Close() })
+	testsupport.CloseAfter(t, two)
 
 	if err := saveNote(t, one, first, "notes/entropy.md", "Entropy"); err != nil {
 		t.Fatal(err)
@@ -80,7 +81,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { two.Close() })
+	testsupport.CloseAfter(t, two)
 
 	const each = 20
 	var wg sync.WaitGroup

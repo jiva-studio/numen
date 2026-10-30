@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/internal/testonly"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -29,7 +30,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	const conns = 8
 	db.read.SetMaxOpenConns(conns)
@@ -49,7 +50,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			defer conn.Close()
+			defer testsupport.Close(t, conn)
 			if err := conn.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&foreignKeys[i]); err != nil {
 				t.Error(err)
 				return
@@ -109,7 +110,7 @@ func TestVectorSearchIsInTheBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	var version string
 	if err := db.read.QueryRowContext(t.Context(), "SELECT vec_version()").Scan(&version); err != nil {
@@ -227,7 +228,7 @@ func TestAnIndexOpenedToSkipTheFlushDoesNotWaitForTheDisk(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	for name, pool := range map[string]*sql.DB{"write": db.write, "read": db.read} {
 		var synchronous, foreignKeys int

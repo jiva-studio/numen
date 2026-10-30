@@ -13,11 +13,11 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -442,7 +442,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 	if !changes.Receive() {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
@@ -484,7 +484,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 // what would reach the vault after the writes already taken have landed.
 func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
-	t.Cleanup(func() { f.installation.Close() })
+	testsupport.CloseAfter(t, f.installation)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -1646,7 +1646,7 @@ func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 	if !changes.Receive() {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
@@ -1706,7 +1706,7 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer answer.Close()
+	defer testsupport.Close(t, answer)
 	if !answer.Receive() {
 		t.Fatalf("nothing said what the window is doing: %v", answer.Err())
 	}

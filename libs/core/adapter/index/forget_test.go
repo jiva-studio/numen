@@ -130,7 +130,11 @@ func numbers(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer found.Close()
+	defer func() {
+		if err := found.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var out []int64
 	for found.Next() {

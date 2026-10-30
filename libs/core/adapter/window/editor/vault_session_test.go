@@ -15,6 +15,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -71,7 +72,7 @@ func openTwoVaults(t *testing.T) *showing {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
@@ -218,7 +219,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 	if !changes.Receive() {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
@@ -292,7 +293,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { again.Close() })
+	testsupport.CloseAfter(t, again)
 
 	if got := again.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window opened on %s, want the vault it showed last", got.Name)
@@ -316,7 +317,7 @@ func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 	if !changes.Receive() {
 		t.Fatalf("the stream never opened: %v", changes.Err())
 	}
@@ -430,7 +431,7 @@ func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.Wat
 		t.Fatalf("the stream never opened: %v", stream.Err())
 	}
 	return stream, func() {
-		stream.Close()
+		testsupport.Close(t, stream)
 		hangUp()
 	}
 }
@@ -685,7 +686,7 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tasks.Close()
+	defer testsupport.Close(t, tasks)
 	if !tasks.Receive() {
 		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
 	}
@@ -773,7 +774,7 @@ func openInstallation(t *testing.T) *editor.Installation {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 	return installation
 }
 
@@ -842,7 +843,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}
-	t.Cleanup(func() { installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	// The welcome screen's way into a vault: the list opens one in this window.
 	installation.State.OpenVault = installation.Show
@@ -960,7 +961,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer changes.Close()
+	defer testsupport.Close(t, changes)
 	if !changes.Receive() {
 		t.Fatalf("the changes stream never opened: %v", changes.Err())
 	}
@@ -969,7 +970,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer editing.Close()
+	defer testsupport.Close(t, editing)
 	if !editing.Receive() {
 		t.Fatalf("the editing stream never opened: %v", editing.Err())
 	}
@@ -978,7 +979,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tasks.Close()
+	defer testsupport.Close(t, tasks)
 	if !tasks.Receive() {
 		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
 	}
@@ -997,7 +998,9 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				_ = f.installation.State.GetWindow().FocusPlace(asking, domain.Place{Path: "Somewhere.md"})
+				if err := f.installation.State.GetWindow().FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
+					t.Error(err)
+				}
 			}
 		}
 	}()
@@ -1009,7 +1012,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the focus stream never opened: %v", err)
 	}
-	defer focus.Close()
+	defer testsupport.Close(t, focus)
 	if !focus.Receive() {
 		t.Fatalf("the focus stream said nothing: %v", focus.Err())
 	}

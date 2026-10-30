@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/vault"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // openWithShortBusyTimeout is a write pool that waits a fifth of a second for the lock instead
@@ -21,7 +22,7 @@ func openWithShortBusyTimeout(t *testing.T, path string) *sql.DB {
 		t.Fatal(err)
 	}
 	db.SetMaxOpenConns(1)
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 
@@ -48,7 +49,11 @@ func TestAWriteWaitsOutAWriterInAnotherProcess(t *testing.T) {
 
 	// Longer than one wait for the lock and shorter than the three a write is
 	// given, so the write lands on an ask after the first.
-	let := time.AfterFunc(350*time.Millisecond, func() { tx.Rollback() })
+	let := time.AfterFunc(350*time.Millisecond, func() {
+		if err := tx.Rollback(); err != nil {
+			t.Error(err)
+		}
+	})
 	defer let.Stop()
 
 	if err := vault.NewRepository(openWithShortBusyTimeout(t, path)).Register(ctx, "01WAITED"); err != nil {

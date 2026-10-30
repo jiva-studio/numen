@@ -29,7 +29,7 @@ func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { back.Close() })
+	testsupport.CloseAfter(t, back)
 	api.openPlaying(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
@@ -46,14 +46,9 @@ func TestGetMediaSourceReturnsLoopbackAddress(t *testing.T) {
 	if answer.Msg.GetMediaType() != "audio/mpeg" {
 		t.Errorf("a recording is played as %q, want audio/mpeg", answer.Msg.GetMediaType())
 	}
-	played, err := http.Get(answer.Msg.GetSrc())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer played.Body.Close()
-	body, err := io.ReadAll(played.Body)
-	if err != nil || string(body) != sound {
-		t.Errorf("the address served %q (%v), want the recording's bytes", body, err)
+	played := fetch(t, http.DefaultClient, answer.Msg.GetSrc())
+	if string(played.Body) != sound {
+		t.Errorf("the address served %q, want the recording's bytes", played.Body)
 	}
 }
 
@@ -105,7 +100,7 @@ func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceC
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { back.Close() })
+	testsupport.CloseAfter(t, back)
 	api.openPlaying(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
@@ -123,19 +118,14 @@ func TestGetMediaSourcePlaysTheCopyAPluginKeepsOfTheFile(t *testing.T) {
 	if answer.Msg.GetMediaType() != "video/mp4" {
 		t.Errorf("the copy is played as %q, want video/mp4", answer.Msg.GetMediaType())
 	}
-	asked, err := http.NewRequest(http.MethodGet, answer.Msg.GetSrc(), nil)
+	asked, err := http.NewRequestWithContext(t.Context(), http.MethodGet, answer.Msg.GetSrc(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	asked.Header.Set("Range", "bytes=4-12")
-	played, err := http.DefaultClient.Do(asked)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer played.Body.Close()
-	body, err := io.ReadAll(played.Body)
-	if err != nil || played.StatusCode != http.StatusPartialContent || string(body) != clipBytes[4:13] {
-		t.Errorf("the address answered %d with %q (%v), want a piece of the copy", played.StatusCode, body, err)
+	played := send(t, http.DefaultClient, asked)
+	if played.StatusCode != http.StatusPartialContent || string(played.Body) != clipBytes[4:13] {
+		t.Errorf("the address answered %d with %q, want a piece of the copy", played.StatusCode, played.Body)
 	}
 }
 
@@ -149,11 +139,7 @@ func TestAnAddressOfACopyMadeAgainIsRefused(t *testing.T) {
 	}
 
 	copies[hash] = []byte("a shorter copy")
-	played, err := http.Get(answer.Msg.GetSrc())
-	if err != nil {
-		t.Fatal(err)
-	}
-	played.Body.Close()
+	played := fetch(t, http.DefaultClient, answer.Msg.GetSrc())
 	if played.StatusCode != http.StatusNotFound {
 		t.Errorf("an address of the copy before was answered %d", played.StatusCode)
 	}

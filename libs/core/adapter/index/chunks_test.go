@@ -84,7 +84,7 @@ func openDBAt(t *testing.T, path string) *DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	for _, v := range []domain.Vault{first, second} {
 		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
@@ -757,7 +757,11 @@ func hasLeadingColumn(ctx context.Context, t *testing.T, db *DB, table, column s
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	found := rows.Next()
 	if err := rows.Err(); err != nil {
 		t.Fatal(err)

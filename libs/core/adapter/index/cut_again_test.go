@@ -79,7 +79,11 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cursor.Close()
+	defer func() {
+		if err := cursor.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	out := map[textOf][]int64{}
 	for cursor.Next() {
