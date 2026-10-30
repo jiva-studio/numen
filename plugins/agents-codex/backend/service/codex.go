@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
@@ -92,6 +93,12 @@ type codexModelCache struct {
 	now func() time.Time
 }
 
+// keyMethod is the field of a JSON-RPC request that names the method.
+const (
+	keyMethod = "method"
+	keyParams = "params"
+)
+
 // getNow is the time by the clock of the cache.
 func (c *codexModelCache) getNow() time.Time {
 	if c.now == nil {
@@ -120,7 +127,7 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 			}
 			c.inFlight[key] = true
 			cmdCopy := slices.Clone(command)
-			go c.fetchInBackground(key, cmdCopy)
+			go c.fetchInBackground(context.WithoutCancel(ctx), key, cmdCopy)
 		}
 		c.mu.Unlock()
 		return readCodexCache()
@@ -129,13 +136,13 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 	return c.fetchAndStore(ctx, key, command)
 }
 
-func (c *codexModelCache) fetchInBackground(key string, command []string) {
+func (c *codexModelCache) fetchInBackground(ctx context.Context, key string, command []string) {
 	defer func() {
 		c.mu.Lock()
 		delete(c.inFlight, key)
 		c.mu.Unlock()
 	}()
-	c.fetchAndStore(context.Background(), key, command)
+	c.fetchAndStore(ctx, key, command)
 }
 
 func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command []string) []AgentModel {
@@ -155,6 +162,14 @@ func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command
 	return models
 }
 
+// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
+// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
+}
+
 // GetCodexModels returns models reported by codex app-server or its cache.
 func GetCodexModels(ctx context.Context, command []string) ([]AgentModel, error) {
 	models, err := askCodexModels(ctx, command)
@@ -167,7 +182,7 @@ func GetCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 	return nil, err
 }
 
-func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error) {
+func askCodexModels(ctx context.Context, command []string) (models []AgentModel, err error) {
 	name, args := FindCodex(), []string(nil)
 	if len(command) > 0 {
 		name, args = command[0], command[1:]
@@ -189,10 +204,13 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 		return nil, err
 	}
 	defer func() {
-		_ = in.Close()
-		_ = out.Close()
+		closeErr := errors.Join(in.Close(), out.Close())
 		stop()
-		_ = cmd.Wait()
+		waitErr := cmd.Wait()
+		if isStopped(waitErr) {
+			waitErr = nil
+		}
+		err = errors.Join(err, closeErr, waitErr)
 	}()
 	return listCodexModels(in, out)
 }
@@ -200,7 +218,7 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 	lines := bufio.NewScanner(out)
 	lines.Buffer(nil, 4<<20)
-	hello := map[string]any{"id": 1, "method": "initialize", "params": map[string]any{
+	hello := map[string]any{"id": 1, keyMethod: "initialize", keyParams: map[string]any{
 		"clientInfo": map[string]any{"name": "numen", "title": "Numen", "version": "1.0.0"},
 	}}
 	if err := writeCodexLine(in, hello); err != nil {
@@ -209,10 +227,10 @@ func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 	if _, err := readCodexAnswer(lines, 1); err != nil {
 		return nil, err
 	}
-	if err := writeCodexLine(in, map[string]any{"method": "initialized", "params": map[string]any{}}); err != nil {
+	if err := writeCodexLine(in, map[string]any{keyMethod: "initialized", keyParams: map[string]any{}}); err != nil {
 		return nil, err
 	}
-	if err := writeCodexLine(in, map[string]any{"id": 2, "method": "model/list", "params": map[string]any{}}); err != nil {
+	if err := writeCodexLine(in, map[string]any{"id": 2, keyMethod: "model/list", keyParams: map[string]any{}}); err != nil {
 		return nil, err
 	}
 	result, err := readCodexAnswer(lines, 2)

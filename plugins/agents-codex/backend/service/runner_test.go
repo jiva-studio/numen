@@ -30,7 +30,11 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = w.Stop() }()
+	defer func() {
+		if err := w.Stop(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
