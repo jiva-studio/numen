@@ -110,7 +110,7 @@ func getSourcePaths(passages []domain.Passage) []string {
 // A paged walk over the chunks that need a vector visits each such chunk of its
 // own vault once, newest source first, regardless of page size, source
 // timestamp, or row numbering.
-func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
+func TestAWalkInPagesVisitsEveryUnembeddedChunkOfItsVaultOnce(t *testing.T) {
 	db := openDB(t)
 	numberRowsPast2To62(t, db)
 	saveThroughPort(t, db, first, "library/last.epub", lastInstant, "anchors weigh", "chains rattle")
@@ -251,7 +251,7 @@ func TestGetSourceText_UnknownPathReturnsNotFound(t *testing.T) {
 
 // Vectors saved through the port clear the chunks that needed them, and a
 // vector for a chunk this index did not issue is rejected.
-func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
+func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")

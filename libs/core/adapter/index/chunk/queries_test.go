@@ -902,7 +902,7 @@ func TestListsOfPathsFailOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestOwedChunksAreTheSmallOnesWithNoVectorNewestSourceFirst(t *testing.T) {
+func TestUnembeddedChunksAreSmallOnesNewestSourceFirst(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/old.epub", mtime: century + 1, producer: "ocr", hash: "h-old", large: "l", smalls: []string{"o1", "o2"}}.save(t, db)
 	source{path: "lib/new.epub", mtime: century + 5, large: "l", smalls: []string{"n1", "n2"}}.save(t, db)
@@ -946,7 +946,7 @@ func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 	}
 }
 
-func TestAWalkOfOwedChunksInPagesVisitsEachOnce(t *testing.T) {
+func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century + 1, large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
@@ -1001,7 +1001,7 @@ func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 	}
 }
 
-func TestOwedChunksNeedAPositiveLimitAndAKnownVault(t *testing.T) {
+func TestUnembeddedChunksNeedAPositiveLimitAndAKnownVault(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
 	for _, limit := range []int{0, -1} {
 		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, limit)
@@ -1015,7 +1015,7 @@ func TestOwedChunksNeedAPositiveLimitAndAKnownVault(t *testing.T) {
 	}
 }
 
-func TestOwedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
+func TestUnembeddedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
 	if _, err := closed(t).GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 5); err == nil {
 		t.Error("a closed index answered")
 	}
