@@ -56,25 +56,18 @@ func (r *Repository) Save(
 	if len(notes) == 0 {
 		return nil
 	}
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if err != nil {
-		return err
-	}
-	for _, one := range notes {
-		if err := saveNote(ctx, tx, vault, one); err != nil {
-			return fmt.Errorf("%s: %w", one.Note.FileStat.Path, err)
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
+		if err != nil {
+			return err
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+		for _, one := range notes {
+			if err := saveNote(ctx, tx, vault, one); err != nil {
+				return fmt.Errorf("%s: %w", one.Note.FileStat.Path, err)
+			}
+		}
+		return nil
+	})
 }
 
 func saveNote(
@@ -171,25 +164,18 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if err != nil {
-		return err
-	}
-	for _, path := range paths {
-		if err := removeNote(ctx, tx, vault, path); err != nil {
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
+		if err != nil {
 			return err
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+		for _, path := range paths {
+			if err := removeNote(ctx, tx, vault, path); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // removeNote deletes the note at a path, and its rows in the virtual tables.

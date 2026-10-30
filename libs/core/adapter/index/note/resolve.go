@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // GetLinks returns the links written in one note, resolved.
-func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) (_ []domain.ResolvedLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -31,7 +32,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.ResolvedLink
 	for rows.Next() {
@@ -152,7 +153,7 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.Vault
 	}
 }
 
-func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]string, error) {
+func (q *Queries) candidates(ctx context.Context, vault int64, name string) (_ []string, err error) {
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
 	withExt := name + domain.NoteExtension
@@ -163,7 +164,7 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []string
 	for rows.Next() {
@@ -184,7 +185,7 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 // written as a bare name may resolve to a nearer note of the same name. So
 // every candidate goes through the same resolution the forward direction uses,
 // and only the ones that land here are kept.
-func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) (_ []domain.ResolvedLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -209,7 +210,7 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var candidates []domain.ResolvedLink
 	for rows.Next() {

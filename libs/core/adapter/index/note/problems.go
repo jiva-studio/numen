@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -22,7 +23,7 @@ func (q *Queries) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]
 // getProblems reads the two questions that come back as a path and a line of
 // text. What the line means is the caller's to say: a query answers what is
 // stored and does not compose sentences about it.
-func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, statement string) ([]domain.VaultProblem, error) {
+func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, statement string) (_ []domain.VaultProblem, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -35,7 +36,7 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, state
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.VaultProblem
 	for rows.Next() {
@@ -52,7 +53,7 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, state
 //
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
-func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error) {
+func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.ResolvedLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -65,7 +66,7 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.ResolvedLink
 	for rows.Next() {
@@ -84,7 +85,7 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 // really ambiguous is settled by the same resolution a link goes through
 // anywhere else. Writing that rule a second time in SQL is how two answers to
 // one question start disagreeing.
-func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error) {
+func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.AmbiguousLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -97,7 +98,7 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var candidates []domain.ResolvedLink
 	for rows.Next() {

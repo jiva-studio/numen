@@ -58,29 +58,22 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 }
 
 func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	for _, v := range vectors {
-		// The coarse index takes no conflict clause, so a row that is being
-		// replaced is removed first.
-		if err := exec(ctx, tx, "delete_vec", v.Chunk); err != nil {
-			return err
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		for _, v := range vectors {
+			// The coarse index takes no conflict clause, so a row that is being
+			// replaced is removed first.
+			if err := exec(ctx, tx, "delete_vec", v.Chunk); err != nil {
+				return err
+			}
+			if err := exec(ctx, tx, "insert_vec", v.Coarse, v.Chunk); err != nil {
+				return err
+			}
+			if err := exec(ctx, tx, "keep_vector", v.Hash, v.Recipe, v.Value); err != nil {
+				return err
+			}
 		}
-		if err := exec(ctx, tx, "insert_vec", v.Coarse, v.Chunk); err != nil {
-			return err
-		}
-		if err := exec(ctx, tx, "keep_vector", v.Hash, v.Recipe, v.Value); err != nil {
-			return err
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+		return nil
+	})
 }
 
 // deleteOrphanVectors takes out the vectors made for text no chunk holds.

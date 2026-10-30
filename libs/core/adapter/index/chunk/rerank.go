@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 	"slices"
 	"strconv"
 
@@ -32,7 +33,7 @@ type candidate struct {
 // A candidate the index holds no comparable vector for cannot be compared and
 // is not an answer. A vector that is read and does not compare is a corrupt
 // row, and says so.
-func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
+func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []int64, err error) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}
@@ -43,7 +44,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	keptCandidates := make([]candidate, 0, len(candidates))
 	var stored []byte

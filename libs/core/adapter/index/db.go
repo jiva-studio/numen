@@ -9,6 +9,8 @@ package index
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"net/url"
 	"runtime"
 	"slices"
@@ -95,19 +97,23 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		one(&pos)
 	}
 
-	// The sqlite driver is registered by import, so sql.Open has no error to
-	// report; the first connection reports an unusable path.
-	write, _ := sql.Open("sqlite", writeDSN(path, pos))
+	// The first connection reports an unusable path.
+	write, err := sql.Open("sqlite", writeDSN(path, pos))
+	if err != nil {
+		return nil, fmt.Errorf("open the index at %s: %w", path, err)
+	}
 	// One writer. More connections would only mean more of them failing on a
 	// busy lock.
 	write.SetMaxOpenConns(1)
 
 	if err := migrate(ctx, write); err != nil {
-		write.Close()
-		return nil, err
+		return nil, errors.Join(err, write.Close())
 	}
 
-	read, _ := sql.Open("sqlite", dsn(path, pos))
+	read, err := sql.Open("sqlite", dsn(path, pos))
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("open the index at %s: %w", path, err), write.Close())
+	}
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
 	return &DB{write: write, read: read}, nil

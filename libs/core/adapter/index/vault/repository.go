@@ -44,27 +44,20 @@ var forgetting = []string{
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
 func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) error {
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	var row int64
-	err = tx.QueryRowContext(ctx, stmt.Get("vault_row"), string(vaultID)).Scan(&row)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("which row this vault is filed under: %w", err)
-	}
-	for _, name := range forgetting {
-		if _, err := tx.ExecContext(ctx, stmt.Get(name), row); err != nil {
-			return fmt.Errorf("%s: %w", name, err)
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		var row int64
+		err := tx.QueryRowContext(ctx, stmt.Get("vault_row"), string(vaultID)).Scan(&row)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+		if err != nil {
+			return fmt.Errorf("which row this vault is filed under: %w", err)
+		}
+		for _, name := range forgetting {
+			if _, err := tx.ExecContext(ctx, stmt.Get(name), row); err != nil {
+				return fmt.Errorf("%s: %w", name, err)
+			}
+		}
+		return nil
+	})
 }
