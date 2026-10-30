@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"bytes"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"math"
 	"os"
 	"testing"
@@ -16,7 +17,7 @@ func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer scan.Close()
+	defer cleanup.Close(t, scan)
 
 	width, height, err := scan.GetPageSize(0)
 	if err != nil {
@@ -58,7 +59,7 @@ func TestRenderPageScanDefaultDPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer scan.Close()
+	defer cleanup.Close(t, scan)
 
 	drawnDefault, err := scan.RenderPage(0, 0)
 	if err != nil {

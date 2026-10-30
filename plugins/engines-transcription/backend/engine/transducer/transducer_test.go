@@ -299,7 +299,7 @@ func BenchmarkTransducerDecode(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for b.Loop() {
-		_, _ = Decoder{
+		_, err := Decoder{
 			Frames:  frames,
 			Blank:   blank,
 			Encoded: encoded,
@@ -316,5 +316,8 @@ func BenchmarkTransducerDecode(b *testing.B) {
 				return scores, nil
 			},
 		}.Decode(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }

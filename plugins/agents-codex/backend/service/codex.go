@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
@@ -162,6 +163,14 @@ func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command
 	return models
 }
 
+// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
+// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
+}
+
 // GetCodexModels returns models reported by codex app-server or its cache.
 func GetCodexModels(ctx context.Context, command []string) ([]AgentModel, error) {
 	models, err := askCodexModels(ctx, command)
@@ -174,7 +183,7 @@ func GetCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 	return nil, err
 }
 
-func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error) {
+func askCodexModels(ctx context.Context, command []string) (models []AgentModel, err error) {
 	name, args := FindCodex(), []string(nil)
 	if len(command) > 0 {
 		name, args = command[0], command[1:]
@@ -196,10 +205,13 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 		return nil, err
 	}
 	defer func() {
-		_ = in.Close()
-		_ = out.Close()
+		closeErr := errors.Join(in.Close(), out.Close())
 		stop()
-		_ = cmd.Wait()
+		waitErr := cmd.Wait()
+		if isStopped(waitErr) {
+			waitErr = nil
+		}
+		err = errors.Join(err, closeErr, waitErr)
 	}()
 	return listCodexModels(in, out)
 }

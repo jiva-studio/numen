@@ -12,7 +12,7 @@ import (
 
 func TestEmbeddingServerGetModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	msg, err := srv.GetModelInfo(context.Background())
+	msg, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_POOLING", "mean")
 
 	srv := newEmbeddingServer()
-	msg, err := srv.GetModelInfo(context.Background())
+	msg, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestLifecycleConfigure(t *testing.T) {
 	emb := newEmbeddingServer()
 	life := server.NewLifecycleServer(make(chan struct{}), server.WithLifecycleUpdateConfig(emb.updateConfig))
 
-	success, err := life.ApplyConfig(context.Background(), map[string]string{
+	success, err := life.ApplyConfig(t.Context(), map[string]string{
 		"model": "text-embedding-3-small",
 	})
 	if err != nil {

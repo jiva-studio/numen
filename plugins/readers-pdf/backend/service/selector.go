@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -17,10 +18,12 @@ type pageSelector struct {
 }
 
 // encode returns the selector as the JSON a segment carries.
-func (s pageSelector) encode() domain.Selector {
-	// A struct of numbers and slices of them always marshals.
-	raw, _ := json.Marshal(s)
-	return domain.Selector(raw)
+func (s pageSelector) encode() (domain.Selector, error) {
+	raw, err := json.Marshal(s)
+	if err != nil {
+		return "", fmt.Errorf("encode page selector: %w", err)
+	}
+	return domain.Selector(raw), nil
 }
 
 // readPageSelector reads the page keys of a segment's selector. An empty selector has none.

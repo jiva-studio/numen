@@ -3,6 +3,7 @@ package pdf_test
 import (
 	"bytes"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
 	"os"
 	"strings"
@@ -286,7 +287,7 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer target.Close()
+	defer cleanup.Close(t, target)
 
 	if _, err := target.RenderPage(0, 300); err == nil {
 		t.Error("a page of 3.6 billion pixels was drawn")
@@ -310,7 +311,7 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer target.Close()
+			defer cleanup.Close(t, target)
 
 			for page := range target.GetPageCount() {
 				width, height, err := target.GetPageSize(page)

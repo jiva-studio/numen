@@ -2,6 +2,8 @@ package recognition
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -60,8 +62,11 @@ func (p *Provider) CreateText(ctx context.Context, req host.TextCreation) error 
 	p.wg.Go(func() {
 		defer p.finish(key)
 		defer cancel()
-		// Recognise reports a failure as a task error.
-		_, _ = p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: false})
+		// Recognise reports a failure as a task error. A recognition ended by Close is not a failure.
+		_, err := p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: false})
+		if err != nil && runCtx.Err() == nil {
+			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)
+		}
 	})
 	return nil
 }

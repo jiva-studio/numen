@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +16,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 	var auth []string
 	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth = append(auth, r.Header.Get("Authorization"))
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]any{{"embedding": []float32{0.5, 0.25}, "index": 0}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]any{{"embedding": []float32{0.5, 0.25}, "index": 0}}})
 	}))
 	defer service.Close()
 

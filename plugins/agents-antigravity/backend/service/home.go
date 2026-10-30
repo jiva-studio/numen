@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -33,7 +34,10 @@ func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 	tempGemini := filepath.Join(tempHome, ".gemini")
 	realConfig := filepath.Join(realGemini, "config")
 	tempConfig := filepath.Join(tempGemini, "config")
-	_ = agentrun.CreateDir(tempConfig, 0o700)
+	if err := agentrun.CreateDir(tempConfig, 0o700); err != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("create %s: %w", tempConfig, err)
+	}
 	agentrun.LinkEntries(realGemini, tempGemini, "config")
 	agentrun.LinkEntries(realConfig, tempConfig, "mcp_config.json")
 
@@ -41,8 +45,15 @@ func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 	if tools != nil {
 		mcpConfig = makeMCPConfig(*tools, filepath.Join(realConfig, "mcp_config.json"))
 	}
-	if encoded, err := json.MarshalIndent(mcpConfig, "", "  "); err == nil {
-		_ = agentrun.WriteFile(filepath.Join(tempConfig, "mcp_config.json"), append(encoded, '\n'), 0o600)
+	encoded, err := json.MarshalIndent(mcpConfig, "", "  ")
+	if err != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("encode the MCP configuration: %w", err)
+	}
+	configPath := filepath.Join(tempConfig, "mcp_config.json")
+	if err := agentrun.WriteFile(configPath, append(encoded, '\n'), 0o600); err != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("write %s: %w", configPath, err)
 	}
 
 	return tempHome, cleanup, nil

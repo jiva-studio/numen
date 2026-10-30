@@ -276,10 +276,18 @@ func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	if err != nil || !res.IsEmpty {
 		t.Fatalf("recognised %+v (%v), want nothing", res, err)
 	}
-	if listing, _ := s.texts.ListVersions(t.Context(), "books/scan.pdf"); len(listing.Versions) != 0 {
+	listing, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("a scan that says nothing has versions %+v", listing.Versions)
 	}
-	if files, _ := s.store.List(t.Context()); len(files) != 0 {
+	files, err := s.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 0 {
 		t.Errorf("a scan that says nothing keeps %+v", files)
 	}
 }
@@ -337,7 +345,10 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s.vault.Beside(chemistry)
 	raw := readFixture(t, "scan.pdf")
 	chemistry.File("books/scan.pdf", raw)
-	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of Chemistry are not hosttest texts")
+	}
 	other.SetStore(pluginID, chemistry.Store())
 	other.File("books/scan.pdf", []byte(raw))
 
@@ -349,10 +360,18 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	if err != nil || inChemistry.Live == "" {
 		t.Fatalf("Chemistry lists %+v (%v), want the recognition live", inChemistry, err)
 	}
-	if inPhysics, _ := s.texts.ListVersions(t.Context(), "books/scan.pdf"); len(inPhysics.Versions) != 0 {
+	inPhysics, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inPhysics.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inPhysics.Versions)
 	}
-	if names, _ := s.store.List(t.Context()); len(names) != 0 {
+	names, err := s.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
 	}
 }

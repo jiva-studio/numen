@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/draw"
@@ -55,8 +56,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
 	if err != nil {
-		layout.Close()
-		return nil, err
+		return nil, errors.Join(err, layout.Close())
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
 		OnnxRuntimeLibPath:  pos,
@@ -73,8 +73,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		UseCuda:             false,
 	})
 	if err != nil {
-		layout.Close()
-		return nil, fmt.Errorf("the recogniser: %w", err)
+		return nil, errors.Join(fmt.Errorf("the recogniser: %w", err), layout.Close())
 	}
 
 	return &Recogniser{

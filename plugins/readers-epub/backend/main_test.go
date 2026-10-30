@@ -20,7 +20,7 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 	shutdownTrigger := make(chan struct{}, 1)
 	life := server.NewLifecycleServer(shutdownTrigger)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	status, err := life.CheckStatus(ctx)
 	if err != nil {
 		t.Fatalf("unexpected ping error: %v", err)
@@ -74,7 +74,9 @@ func createMinimalEpub(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = w.Write([]byte(containerXML))
+	if _, err := w.Write([]byte(containerXML)); err != nil {
+		t.Fatal(err)
+	}
 
 	contentOPF := `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id">
@@ -93,7 +95,9 @@ func createMinimalEpub(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = w.Write([]byte(contentOPF))
+	if _, err := w.Write([]byte(contentOPF)); err != nil {
+		t.Fatal(err)
+	}
 
 	docHTML := `<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -107,7 +111,9 @@ func createMinimalEpub(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = w.Write([]byte(docHTML))
+	if _, err := w.Write([]byte(docHTML)); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)
@@ -121,7 +127,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	files.File("test.epub", string(epubBytes))
 
 	books := service.NewBookServer(files)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Test GetBook
 	resp, err := books.GetBook(ctx, api.GetBookRequest{
@@ -174,7 +180,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("inside.epub", string(epubBytes))
 	books := service.NewBookServer(files)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. Path outside vault should fail with permission denied
 	_, err := books.GetBook(ctx, api.GetBookRequest{

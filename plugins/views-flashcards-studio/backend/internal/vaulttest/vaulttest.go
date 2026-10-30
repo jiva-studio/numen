@@ -56,7 +56,7 @@ func Of(host *hosttest.Vault) Env {
 		Store:   host.Store(),
 		Vault:   host.Vault(),
 		Ports:   ports,
-		Queries: Queries{Notes: ports.Notes.(hostports.Notes), Links: ports.Links.(hostports.Links), Problems: ports.Problems.(hostports.Problems)},
+		Queries: Queries{Notes: hostports.Notes{Vault: host}, Links: hostports.Links{Vault: host}, Problems: hostports.Problems{Vault: host}},
 	}
 }
 
@@ -81,7 +81,7 @@ func NewInstallation() Installation {
 		vaults:  map[domain.VaultID]*hosttest.Vault{},
 		Host:    host,
 		Ports:   ports,
-		Queries: Queries{Notes: ports.Notes.(hostports.Notes), Links: ports.Links.(hostports.Links), Problems: ports.Problems.(hostports.Problems)},
+		Queries: Queries{Notes: hostports.Notes{Vault: host}, Links: hostports.Links{Vault: host}, Problems: hostports.Problems{Vault: host}},
 	}
 }
 

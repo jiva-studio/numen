@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
 func postDocument(t *testing.T, baseURL, token, body string) *http.Response {
@@ -21,7 +23,7 @@ func postDocument(t *testing.T, baseURL, token, body string) *http.Response {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = res.Body.Close() })
+	cleanup.CloseAfter(t, res.Body)
 	return res
 }
 

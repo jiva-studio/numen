@@ -36,6 +36,22 @@ type streamParser struct {
 	offset       int
 	reason       string
 	expectsVault bool
+	// sendErr is the first error send returned. Later reports are not sent.
+	sendErr error
+}
+
+func (p *streamParser) emit(resp *agentrun.AskAgentResponse) {
+	if p.sendErr == nil {
+		p.sendErr = p.send(resp)
+	}
+}
+
+// getReason returns why the stream ended: the reason the program gave, else the failure to send.
+func (p *streamParser) getReason() string {
+	if p.reason == "" && p.sendErr != nil {
+		return p.sendErr.Error()
+	}
+	return p.reason
 }
 
 type event struct {
@@ -143,7 +159,7 @@ func parseStreamWithClock(
 			p.parseLine(ctx, content)
 		}
 		if err != nil {
-			return p.reason
+			return p.getReason()
 		}
 	}
 }
@@ -161,7 +177,7 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 		p.parseAssistantMessage(ctx, response)
 	case "user":
 		if response.hasToolAnswer() {
-			_ = p.send(&agentrun.AskAgentResponse{
+			p.emit(&agentrun.AskAgentResponse{
 				Step: &agentrun.AskAgentResponse_ToolFinished{
 					ToolFinished: &agentrun.ToolFinished{},
 				},
@@ -189,7 +205,7 @@ func (p *streamParser) parseSystemEvent(response event) {
 		}
 	case "status":
 		if response.Status == "requesting" {
-			_ = p.send(&agentrun.AskAgentResponse{
+			p.emit(&agentrun.AskAgentResponse{
 				Step: &agentrun.AskAgentResponse_ModelStarted{
 					ModelStarted: &agentrun.ModelStarted{},
 				},
@@ -208,7 +224,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			p.arguments.Reset()
 			p.offset = 0
 			p.last = time.Time{}
-			_ = p.send(p.buildCallStep(p.callID, p.tool, ""))
+			p.emit(p.buildCallStep(p.callID, p.tool, ""))
 		}
 	case "content_block_delta":
 		switch ev.Delta.Type {
@@ -217,7 +233,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 				return
 			}
 			p.isStreaming = true
-			_ = p.send(&agentrun.AskAgentResponse{
+			p.emit(&agentrun.AskAgentResponse{
 				Step: &agentrun.AskAgentResponse_Text{
 					Text: ev.Delta.Text,
 				},
@@ -226,7 +242,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			p.arguments.WriteString(ev.Delta.Partial)
 			if p.arguments.Len()-p.offset >= reportChunk {
 				p.offset = p.arguments.Len()
-				_ = p.send(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
+				p.emit(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
 			}
 			p.reportEdit()
 		}
@@ -234,7 +250,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 		if p.tool == "" {
 			return
 		}
-		_ = p.send(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
+		p.emit(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
 		p.callID = ""
 		p.tool = ""
 		p.arguments.Reset()
@@ -262,14 +278,14 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, response event) 
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				_ = p.send(&agentrun.AskAgentResponse{
+				p.emit(&agentrun.AskAgentResponse{
 					Step: &agentrun.AskAgentResponse_Text{
 						Text: block.Text,
 					},
 				})
 			}
 		case "tool_use":
-			_ = p.send(p.buildCallStep(block.ID, block.Name, string(block.Input)))
+			p.emit(p.buildCallStep(block.ID, block.Name, string(block.Input)))
 		}
 	}
 }
@@ -317,7 +333,7 @@ func (p *streamParser) reportEdit() {
 		return
 	}
 	p.last = now
-	_ = p.send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_EditProgress{
+	p.emit(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_EditProgress{
 		EditProgress: &agentrun.EditProgress{
 			Call:  p.callID,
 			Path:  path,

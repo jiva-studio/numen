@@ -3,7 +3,6 @@ package review
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"hash"
 	"math"
 	"strconv"
@@ -83,7 +82,7 @@ func hashParameters(p fsrs.Parameters) string {
 // writeNumber writes one number of the parameters into the name being worked
 // out.
 func writeNumber(sum hash.Hash, name string, value float64) {
-	fmt.Fprintf(sum, "%s=%s\n", name, strconv.FormatFloat(value, 'x', -1, 64))
+	sum.Write([]byte(name + "=" + strconv.FormatFloat(value, 'x', -1, 64) + "\n"))
 }
 
 // IsSpaced reports whether this scheduler has put a review card into review: it

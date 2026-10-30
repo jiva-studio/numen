@@ -66,14 +66,14 @@ func TestLocateModelErrorsWhenNotFound(t *testing.T) {
 func TestLocateModelPrecedence(t *testing.T) {
 	dir := t.TempDir()
 	explicit := filepath.Join(dir, "explicit.onnx")
-	_ = os.WriteFile(explicit, []byte("explicit"), 0o644)
+	writeFile(t, explicit, []byte("explicit"), 0o644)
 
 	envPath := filepath.Join(dir, "env.onnx")
-	_ = os.WriteFile(envPath, []byte("env"), 0o644)
+	writeFile(t, envPath, []byte("env"), 0o644)
 	t.Setenv("NUMEN_DEPENDENCY_PP_DOCLAYOUT", envPath)
 
 	dirPath := filepath.Join(dir, "pp-doclayout.onnx")
-	_ = os.WriteFile(dirPath, []byte("dir"), 0o644)
+	writeFile(t, dirPath, []byte("dir"), 0o644)
 
 	// 1. Explicit beats env and dir
 	got, err := locateModel(explicit, "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx", dir)
@@ -109,5 +109,13 @@ func TestIsFetchedWithConfiguredOrEnvPath(t *testing.T) {
 	t.Setenv("NUMEN_DEPENDENCY_PP_OCR_REC", recPath)
 	if !IsFetched(Config{}, RecogniserModel{}) {
 		t.Fatal("expected IsFetched to be true with env var set")
+	}
+}
+
+// writeFile writes content to path and fails the test when writing fails.
+func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, content, perm); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -221,7 +221,11 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	if len(tasks) != 1 || tasks[0].About != lecture || !strings.Contains(tasks[0].Error, "cannot be opened") {
 		t.Errorf("the tasks are %+v, want one saying the recording cannot be opened", tasks)
 	}
-	if listing, _ := s.texts.ListVersions(t.Context(), lecture); len(listing.Versions) != 0 {
+	listing, err := s.texts.ListVersions(t.Context(), lecture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("a recording that could not be opened has versions %+v", listing.Versions)
 	}
 }
@@ -293,7 +297,10 @@ func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
 	chemistry.File(lecture, lectureSound)
-	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of Chemistry are not hosttest texts")
+	}
 	other.SetStore(PluginID, chemistry.Store())
 	other.File(lecture, []byte(lectureSound))
 
@@ -305,7 +312,11 @@ func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	if err != nil || inChemistry.Live == "" {
 		t.Fatalf("Chemistry lists %+v (%v), want the transcript live", inChemistry, err)
 	}
-	if inShown, _ := s.texts.ListVersions(t.Context(), lecture); len(inShown.Versions) != 0 {
+	inShown, err := s.texts.ListVersions(t.Context(), lecture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }

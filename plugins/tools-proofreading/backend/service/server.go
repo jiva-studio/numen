@@ -190,7 +190,7 @@ func resolveDirectBaseURL(cfg proofreadingConfig) string {
 	}
 }
 
-func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (string, error) {
+func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (answer string, err error) {
 	baseURL := strings.TrimSuffix(resolveDirectBaseURL(cfg), "/")
 	if baseURL == "" {
 		return "", errors.New("service URL is not configured")
@@ -224,7 +224,7 @@ func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prom
 	if err != nil {
 		return "", fmt.Errorf("send chat request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("read chat response: %w", err)

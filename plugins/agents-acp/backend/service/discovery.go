@@ -43,25 +43,6 @@ var knownACPAgents = []knownACPAgent{
 	{program: "qwen", title: "Qwen Code", binary: "qwen", args: []string{"--acp"}},
 }
 
-func discoverACPAgentsWithLookup(lookup func(binary string) (string, bool)) []acpAgent {
-	var agents []acpAgent
-	for _, candidate := range knownACPAgents {
-		binaryPath, ok := lookup(candidate.binary)
-		if !ok || binaryPath == "" {
-			continue
-		}
-		command := make([]string, 0, 1+len(candidate.args))
-		command = append(command, binaryPath)
-		command = append(command, candidate.args...)
-		agents = append(agents, acpAgent{
-			Program: candidate.program,
-			Title:   candidate.title,
-			Command: command,
-		})
-	}
-	return agents
-}
-
 func getExecutableProgramName(path string) string {
 	base := filepath.Base(path)
 	ext := filepath.Ext(base)

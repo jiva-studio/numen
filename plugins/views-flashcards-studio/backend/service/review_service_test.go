@@ -163,7 +163,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if stream.Receive() {
 		t.Fatalf("a window that cannot read the vaults listed %+v", stream.Msg())
 	}
@@ -194,7 +194,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	// The stream sends an initial message before any change.
 	if !stream.Receive() {
@@ -252,7 +252,7 @@ func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("the stream said nothing: %v", stream.Err())
 	}

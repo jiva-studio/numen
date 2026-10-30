@@ -38,7 +38,7 @@ func (s *DocumentServer) Mount(api *server.API) {
 }
 
 // GetDocument returns the size of each page of the PDF.
-func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest) (GetDocumentResponse, error) {
+func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest) (res GetDocumentResponse, err error) {
 	if req.Path == "" {
 		return GetDocumentResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
@@ -51,7 +51,11 @@ func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest
 	if err != nil {
 		return GetDocumentResponse{}, server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read pdf: %v", err))
 	}
-	defer scan.Close()
+	defer func() {
+		if closeErr := scan.Close(); closeErr != nil {
+			err = errors.Join(err, server.NewAPIError(server.CodeInternal, fmt.Sprintf("close pdf: %v", closeErr)))
+		}
+	}()
 
 	pageCount := scan.GetPageCount()
 	pages := make([]Page, 0, pageCount)

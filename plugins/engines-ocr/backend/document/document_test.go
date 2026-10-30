@@ -3,6 +3,7 @@ package document_test
 import (
 	"bytes"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
 	"image/png"
 	"os"
@@ -17,7 +18,7 @@ func open(t *testing.T, path string, raw []byte) document.Document {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(doc.Close)
+	cleanup.CloseAfter(t, doc)
 	return doc
 }
 

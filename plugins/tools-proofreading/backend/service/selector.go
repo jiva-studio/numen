@@ -18,10 +18,12 @@ type segmentSelector struct {
 }
 
 // encode returns the selector as the JSON a segment carries.
-func (s segmentSelector) encode() domain.Selector {
-	// A struct of numbers, strings and slices of them always marshals.
-	raw, _ := json.Marshal(s)
-	return domain.Selector(raw)
+func (s segmentSelector) encode() (domain.Selector, error) {
+	raw, err := json.Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	return domain.Selector(raw), nil
 }
 
 // readSegmentSelector reads the keys of a segment's selector. An empty selector has none.

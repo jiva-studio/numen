@@ -40,7 +40,10 @@ func FindAntigravity(customPath ...string) string {
 			return found
 		}
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
+	}
 	for _, p := range antigravityPlaces {
 		resolved := p
 		if strings.HasPrefix(p, "~/") && home != "" {

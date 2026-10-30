@@ -178,7 +178,10 @@ func ReadCardModel(n domain.Note) CardModel {
 // An entry that is not a name is not a field, and every template that places it
 // reports a problem. A card model with no field cuts nothing, and reports that.
 func fields(frontmatter map[string]any) ([]string, []Problem) {
-	list, _ := frontmatter[fieldsKey].([]any)
+	var list []any
+	if declared, isList := frontmatter[fieldsKey].([]any); isList {
+		list = declared
+	}
 
 	var out []string
 	var problems []Problem

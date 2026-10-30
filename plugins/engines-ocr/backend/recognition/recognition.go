@@ -131,7 +131,7 @@ type reach struct {
 	texts host.Texts
 }
 
-func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (Result, error) {
+func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (res Result, err error) {
 	raw, _, err := on.vault.Read(ctx, req.Path)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
@@ -151,7 +151,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
-	defer doc.Close()
+	defer func() { err = errors.Join(err, doc.Close()) }()
 	if !req.IsUserStarted && doc.HasTextLayer() {
 		return Result{Pages: doc.GetPageCount(), IsSkipped: true, IsEmpty: false}, nil
 	}
@@ -221,7 +221,10 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 // reported as no version.
 func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	store := on.store
-	text := rec.getText()
+	text, err := rec.getText()
+	if err != nil {
+		return Result{}, err
+	}
 	if strings.TrimSpace(text.Text) == "" {
 		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 			return Result{}, err
@@ -232,7 +235,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
 		return Result{}, err
 	}
-	_, err := on.texts.PutVersion(ctx, host.TextPut{
+	_, err = on.texts.PutVersion(ctx, host.TextPut{
 		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, SourceHash: rec.InputHash, File: file,
 	})
 	if err != nil {

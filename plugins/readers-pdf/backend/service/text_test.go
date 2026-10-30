@@ -146,7 +146,11 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	var joined strings.Builder
 	sections := 0
 	for page := range book.Pages {
-		for _, part := range getLayerParts(book, page, page+1, boxes) {
+		layerParts, err := getLayerParts(book, page, page+1, boxes)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, part := range layerParts {
 			if selector, err := readPageSelector(part.Selector); err != nil || selector.Page != page+1 {
 				t.Errorf("a segment of page %d has selector %s", page, part.Selector)
 			}
@@ -257,7 +261,10 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	physics.Beside(chemistry)
 	chemistry.File("tiny.pdf", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
-	other := texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
 	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
@@ -268,7 +275,11 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	if text := readLive(t, other, "tiny.pdf"); text.Version().Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
-	if inShown, _ := texts.ListVersions(t.Context(), "tiny.pdf"); len(inShown.Versions) != 0 {
+	inShown, err := texts.ListVersions(t.Context(), "tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }

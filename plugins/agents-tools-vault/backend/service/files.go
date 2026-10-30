@@ -109,7 +109,9 @@ func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateO
 		return FileCreateOutput{}, fmt.Errorf("create file %s: %w", in.Path, err)
 	}
 
-	_ = t.vault.Scan(ctx, []string{in.Path})
+	if err := t.vault.Scan(ctx, []string{in.Path}); err != nil {
+		return FileCreateOutput{}, fmt.Errorf("scan file %s: %w", in.Path, err)
+	}
 
 	return FileCreateOutput{
 		Path:    in.Path,

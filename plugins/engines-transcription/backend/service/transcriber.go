@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -147,7 +148,7 @@ type job struct {
 	turn     host.Turn
 }
 
-func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string) error {
+func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string) (err error) {
 	raw, err := t.files.ReadFile(ctx, vault, path)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", path, err)
@@ -185,7 +186,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err != nil {
 		return fmt.Errorf("%s cannot be opened: %w", path, err)
 	}
-	defer func() { _ = recording.Close() }()
+	defer func() { err = errors.Join(err, recording.Close()) }()
 
 	if err := t.hearSegments(ctx, j, model, recording); err != nil {
 		return err
@@ -311,11 +312,15 @@ func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, le
 
 // reportTask publishes the task. A task the host could not be notified of is published by the next report.
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
-	_ = t.queue.ReportTask(context.WithoutCancel(ctx), task)
+	if err := t.queue.ReportTask(context.WithoutCancel(ctx), task); err != nil {
+		fmt.Fprintf(os.Stderr, "engines-transcription: show the task %s: %v\n", task.ID, err)
+	}
 }
 
 // finishTask removes the recording's task from the list. If the host could not be notified, the
 // task is removed when the plugin stops.
 func (t *Transcriber) finishTask(ctx context.Context, path string) {
-	_ = t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path))
+	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path)); err != nil {
+		fmt.Fprintf(os.Stderr, "engines-transcription: finish the task of %s: %v\n", path, err)
+	}
 }

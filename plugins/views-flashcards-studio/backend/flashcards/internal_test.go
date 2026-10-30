@@ -339,3 +339,18 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 		}
 	})
 }
+
+// getSize returns the number of review cards held.
+func (c *reviewCardCache) getSize() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.total
+}
+
+// hasDeck says whether the deck at key is held.
+func (c *reviewCardCache) hasDeck(key deckKey) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, target := c.decks[key]
+	return target
+}

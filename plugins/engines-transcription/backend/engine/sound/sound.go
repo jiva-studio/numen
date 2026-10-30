@@ -4,6 +4,7 @@ package sound
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -24,7 +25,7 @@ var (
 
 // GetDuration is how long a recording is, in milliseconds, out of its header
 // alone.
-func GetDuration(raw []byte) (int, error) {
+func GetDuration(raw []byte) (ms int, err error) {
 	switch {
 	case isWav(raw):
 		found, err := parseWav(raw)
@@ -38,7 +39,7 @@ func GetDuration(raw []byte) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("the flac recording: %w", err)
 		}
-		defer stream.Close()
+		defer func() { err = errors.Join(err, stream.Close()) }()
 		return signal.GetMillis(int(stream.Info.NSamples), int(stream.Info.SampleRate)), nil
 
 	case isMP3(raw):
@@ -261,12 +262,12 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 }
 
 // fromFlac decodes a flac, frame by frame, one subframe to a channel.
-func fromFlac(raw []byte) ([]float32, int, error) {
+func fromFlac(raw []byte) (samples []float32, rate int, err error) {
 	stream, err := flac.New(bytes.NewReader(raw))
 	if err != nil {
 		return nil, 0, fmt.Errorf("the flac recording: %w", err)
 	}
-	defer stream.Close()
+	defer func() { err = errors.Join(err, stream.Close()) }()
 
 	channels := int(stream.Info.NChannels)
 	full := float32(int64(1) << (stream.Info.BitsPerSample - 1))

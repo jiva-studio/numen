@@ -16,7 +16,7 @@ func TestSessionPool(t *testing.T) {
 	sessions := []int{10, 20}
 	pool := newSessionPool(sessions, 2, destroy)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	s1, err := pool.acquire(ctx)
 	if err != nil {
 		t.Fatalf("acquire s1 failed: %v", err)
@@ -58,7 +58,7 @@ func TestSessionPoolLanesFloor(t *testing.T) {
 	if pool.lanes != 1 {
 		t.Errorf("expected lanes clamped to 1, got %d", pool.lanes)
 	}
-	s, err := pool.acquire(context.Background())
+	s, err := pool.acquire(t.Context())
 	if err != nil || s != 42 {
 		t.Errorf("acquire failed: %v, session: %d", err, s)
 	}
@@ -70,12 +70,12 @@ func TestSessionPoolContextCancellation(t *testing.T) {
 	sessions := []int{1}
 	pool := newSessionPool(sessions, 1, func(int) {})
 
-	s, err := pool.acquire(context.Background())
+	s, err := pool.acquire(t.Context())
 	if err != nil {
 		t.Fatalf("acquire failed: %v", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	_, err = pool.acquire(ctx)
 	if !errors.Is(err, context.Canceled) {

@@ -55,7 +55,7 @@ func TestLifecycleServer(t *testing.T) {
 	defer testServer.Close()
 
 	client := server.NewPluginLifecycleServiceClient(http.DefaultClient, testServer.URL)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	pingResp, err := client.Ping(ctx, connect.NewRequest(&server.PingRequest{}))
 	if err != nil {
@@ -83,7 +83,7 @@ func TestAgentServiceRPC(t *testing.T) {
 			{Name: "search_tool", Description: "Search notes"},
 		},
 	})
-	ctx := context.Background()
+	ctx := t.Context()
 
 	regResp, err := client.RegisterTool(ctx, connect.NewRequest(&agentrun.RegisterToolRequest{
 		Tool: &agentrun.AgentToolDefinition{Name: "new_tool", Description: "New tool"},
@@ -203,6 +203,16 @@ func readSteps(stream *connect.ServerStreamForClient[agentrun.AskAgentResponse])
 	return steps, stream.Err()
 }
 
+// drainSteps is readSteps, reporting an error to the test without ending the calling goroutine.
+func drainSteps(t *testing.T, stream *connect.ServerStreamForClient[agentrun.AskAgentResponse]) []string {
+	t.Helper()
+	steps, err := readSteps(stream)
+	if err != nil {
+		t.Errorf("stream error: %v", err)
+	}
+	return steps
+}
+
 // collectSteps is readSteps, failing the test on an error.
 func collectSteps(t *testing.T, stream *connect.ServerStreamForClient[agentrun.AskAgentResponse]) []string {
 	t.Helper()
@@ -300,7 +310,10 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 		return string(raw)
 	}
 	if got := strings.TrimSpace(read(".dir")); got != root {
-		resolved, _ := filepath.EvalSymlinks(root)
+		resolved, err := filepath.EvalSymlinks(root)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if got != resolved {
 			t.Errorf("started in %q, want %q", got, root)
 		}
@@ -378,8 +391,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	endsWithin(t, "the finished conversation", 30*time.Second, func() {
-		steps, _ := readSteps(stream)
-		for _, step := range steps {
+		for _, step := range drainSteps(t, stream) {
 			if strings.HasPrefix(step, "stopped:") {
 				t.Errorf("a stopped run reported %q", step)
 			}
@@ -405,7 +417,9 @@ func TestAskAgent_NotInstalled(t *testing.T) {
 // A closed agent takes no task.
 func TestAskAgent_ClosedAgent(t *testing.T) {
 	agentSvc := &agentServer{}
-	_ = agentSvc.registry.Close()
+	if err := agentSvc.registry.Close(); err != nil {
+		t.Fatal(err)
+	}
 	client := startAgent(t, agentSvc)
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +25,8 @@ type Server struct {
 	actualAddr string
 	isClosed   bool
 	mu         sync.Mutex
+	// serveErr holds the errors of the HTTP servers other than their shutdown. Close returns it.
+	serveErr error
 }
 
 // NewServer creates an MCP server with the provided configuration and host tool client.
@@ -53,13 +56,13 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	mcpServer.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
 		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
 			if method == "tools/list" {
-				_ = aggregator.SyncTools(ctx)
+				reportSyncError(aggregator.SyncTools(ctx))
 			}
 			return next(ctx, method, req)
 		}
 	})
 
-	_ = aggregator.SyncTools(context.Background())
+	reportSyncError(aggregator.SyncTools(context.Background()))
 
 	srv := &Server{
 		config:     cfg,
@@ -92,6 +95,14 @@ func newHTTPServer(handler http.Handler) *http.Server {
 	httpSrv.Handler = handler
 	httpSrv.ReadHeaderTimeout = 10 * time.Second
 	return httpSrv
+}
+
+// reportSyncError writes a failure to sync the host tools to the standard error stream of the
+// plugin process. The tools are synced again on the next listing and on the next configuration.
+func reportSyncError(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "sync the host tools: %v\n", err)
+	}
 }
 
 // createHTTPHandler sets up HTTP routes and token authentication.
@@ -155,7 +166,9 @@ func (s *Server) Rebind(ctx context.Context, cfg Config) error {
 	s.mu.Unlock()
 
 	if oldListener != nil {
-		_ = oldListener.Close()
+		if err := oldListener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			return fmt.Errorf("close the listener on %s: %w", oldListener.Addr(), err)
+		}
 	}
 	ln, err := new(net.ListenConfig).Listen(context.WithoutCancel(ctx), "tcp", cfg.Addr)
 	if err != nil {
@@ -164,8 +177,7 @@ func (s *Server) Rebind(ctx context.Context, cfg Config) error {
 	s.mu.Lock()
 	if s.isClosed {
 		s.mu.Unlock()
-		_ = ln.Close()
-		return nil
+		return ln.Close()
 	}
 	s.listener = ln
 	s.actualAddr = ln.Addr().String()
@@ -173,10 +185,20 @@ func (s *Server) Rebind(ctx context.Context, cfg Config) error {
 	httpSrv := s.httpServer
 	s.mu.Unlock()
 
-	go func() {
-		_ = httpSrv.Serve(ln)
-	}()
+	go s.serveHTTP(httpSrv, ln)
 	return nil
+}
+
+// serveHTTP serves srv on ln until it is shut down or ln is closed, and keeps any other error for
+// Close to return.
+func (s *Server) serveHTTP(srv *http.Server, ln net.Listener) {
+	err := srv.Serve(ln)
+	if err == nil || errors.Is(err, http.ErrServerClosed) || errors.Is(err, net.ErrClosed) {
+		return
+	}
+	s.mu.Lock()
+	s.serveErr = errors.Join(s.serveErr, err)
+	s.mu.Unlock()
 }
 
 // Start opens the network listener and begins serving requests.
@@ -205,9 +227,7 @@ func (s *Server) Serve(ln net.Listener) error {
 	s.actualAddr = ln.Addr().String()
 	s.mu.Unlock()
 
-	go func() {
-		_ = s.httpServer.Serve(ln)
-	}()
+	go s.serveHTTP(s.httpServer, ln)
 
 	return nil
 }
@@ -228,7 +248,10 @@ func (s *Server) Close(ctx context.Context) error {
 		defer cancel()
 	}
 
-	return s.httpServer.Shutdown(ctx)
+	shutdownErr := s.httpServer.Shutdown(ctx)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return errors.Join(shutdownErr, s.serveErr)
 }
 
 // Handler returns the HTTP handler of the server.

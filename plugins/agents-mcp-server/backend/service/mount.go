@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
@@ -23,7 +25,9 @@ func Mount(s *server.Server) error {
 	}
 
 	s.OnClose(func() {
-		_ = srv.Close(context.Background())
+		if err := srv.Close(context.Background()); err != nil {
+			fmt.Fprintf(os.Stderr, "close the MCP server: %v\n", err)
+		}
 	})
 
 	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
@@ -36,10 +40,9 @@ func Mount(s *server.Server) error {
 		}
 
 		newCfg := readConfig(values)
-		_ = srv.Rebind(ctx, newCfg)
-
-		_ = srv.aggregator.SyncTools(ctx)
-		return nil
+		err := srv.Rebind(ctx, newCfg)
+		reportSyncError(srv.aggregator.SyncTools(ctx))
+		return err
 	})
 
 	s.Register("/sse", srv.Handler())

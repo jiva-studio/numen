@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
@@ -93,8 +95,16 @@ func parseModels(lines io.Reader, requestID string) ([]claudeModel, error) {
 	return nil, errors.New("the program ended without listing its models")
 }
 
+// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
+// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
+}
+
 // fetchModels queries the program, started as command with env, for the models it offers.
-func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, error) {
+func fetchModels(ctx context.Context, command, env []string) (models []claudeModel, err error) {
 	ctx, cancel := context.WithTimeout(ctx, modelsTimeout)
 	defer cancel()
 	args := slices.Concat(command[1:], []string{
@@ -117,7 +127,9 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 	}
 	defer func() {
 		cancel()
-		_ = cmd.Wait()
+		if waitErr := cmd.Wait(); !isStopped(waitErr) {
+			err = errors.Join(err, waitErr)
+		}
 	}()
 	const requestID = "numen-models"
 	request := `{"type":"control_request","request_id":"` + requestID + `","request":{"subtype":"initialize"}}` + "\n"

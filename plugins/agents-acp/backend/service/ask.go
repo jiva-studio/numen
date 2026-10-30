@@ -35,12 +35,12 @@ type question struct {
 // answer poses one question to the agent in a new session, using the model the
 // agent reports for the id and the tools of the question. It reports each tool
 // call as it happens and returns the text of the answer.
-func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (string, error) {
+func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (text string, err error) {
 	session, err := openACPSession(ctx, agent, q.tools)
 	if err != nil {
 		return "", err
 	}
-	defer session.close()
+	defer func() { err = errors.Join(err, session.close()) }()
 	session.words, session.report = q.words, q.report
 	if err := session.setModel(q.model); err != nil {
 		return "", err

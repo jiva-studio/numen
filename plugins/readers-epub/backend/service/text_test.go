@@ -114,7 +114,10 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 	text := strings.Repeat("ж", partBytes) + "end"
 	sections := []epub.Part{{Title: "One", Offset: 0}, {Title: "Inner", Offset: 0}, {Title: "Two", Offset: 2 * partBytes}}
 
-	parts := getSegments(text, sections, epub.Places{})
+	parts, err := getSegments(text, sections, epub.Places{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var joined strings.Builder
 	var named []string
@@ -152,7 +155,10 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	physics.Beside(chemistry)
 	chemistry.File("book.epub", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
-	other := texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	other.File("book.epub", raw)
 	other.SetStore(pluginID, chemistry.Store())
 	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
@@ -163,7 +169,11 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	if text := readLive(t, other, "book.epub"); text.Version().Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
-	if inShown, _ := texts.ListVersions(t.Context(), "book.epub"); len(inShown.Versions) != 0 {
+	inShown, err := texts.ListVersions(t.Context(), "book.epub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }
@@ -174,7 +184,10 @@ func TestEachSegmentIsSelectedByTheCFIOfItsFirstCharacter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	segments := getSegments(book.Text, book.Parts, book.ReadPlaces())
+	segments, err := getSegments(book.Text, book.Parts, book.ReadPlaces())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var got []string
 	for _, segment := range segments {

@@ -23,7 +23,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
@@ -63,7 +63,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("overview stream empty: %v", stream.Err())
 	}

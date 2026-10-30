@@ -1,9 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
@@ -46,8 +48,11 @@ func serveEmbed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = embedTemplate.Execute(w, struct {
+	err = embedTemplate.Execute(w, struct {
 		Address string
 		Player  template.URL
 	}{Address: string(parsed), Player: template.URL(player)})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: write the embed page: %v\n", err)
+	}
 }

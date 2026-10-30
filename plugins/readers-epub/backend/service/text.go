@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -102,7 +103,11 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 	if err != nil {
 		return bookText{}, err
 	}
-	read := bookText{hash: hash, text: book.Text, segments: getSegments(book.Text, book.Parts, book.ReadPlaces())}
+	segments, err := getSegments(book.Text, book.Parts, book.ReadPlaces())
+	if err != nil {
+		return bookText{}, err
+	}
+	read := bookText{hash: hash, text: book.Text, segments: segments}
 	s.mu.Lock()
 	s.last = read
 	s.mu.Unlock()
@@ -144,10 +149,14 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	err := s.putText(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
 		task.Error = err.Error()
-		_ = s.queue.ReportTask(context.WithoutCancel(ctx), task)
+		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
+			fmt.Fprintf(os.Stderr, "readers-epub: show the task %s: %v\n", task.ID, reportErr)
+		}
 		return
 	}
-	_ = s.queue.FinishTask(context.WithoutCancel(ctx), task.ID)
+	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
+		fmt.Fprintf(os.Stderr, "readers-epub: finish the task %s: %v\n", task.ID, finishErr)
+	}
 }
 
 // putText reports the text of a book as a version made from the file. A file that is no book, a
@@ -189,17 +198,20 @@ func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task ho
 // partBytes on whole characters, with an empty segment opening each named section where it begins.
 // The selector of each segment names the CFI of the character it begins at. The sections ascend by
 // offset.
-func getSegments(text string, sections []epub.Part, places epub.Places) []domain.TextSegment {
+func getSegments(text string, sections []epub.Part, places epub.Places) ([]domain.TextSegment, error) {
 	cutter := segmentCut{text: text, sections: sections, blocks: places.Blocks}
 	var segments []domain.TextSegment
 	from := 0
 	for {
-		selector := getSelector(places, from)
+		selector, err := getSelector(places, from)
+		if err != nil {
+			return nil, err
+		}
 		for _, title := range cutter.openAt(from) {
 			segments = append(segments, domain.TextSegment{Text: "", Heading: title, Selector: selector})
 		}
 		if from >= len(text) {
-			return segments
+			return segments, nil
 		}
 		to := cutter.getEnd(from)
 		segments = append(segments, domain.TextSegment{Text: text[from:to], Heading: "", Selector: selector})
@@ -209,10 +221,10 @@ func getSegments(text string, sections []epub.Part, places epub.Places) []domain
 
 // getSelector is the selector of the CFI of the character at an offset, and none where the book has
 // no text node.
-func getSelector(places epub.Places, offset int) domain.Selector {
+func getSelector(places epub.Places, offset int) (domain.Selector, error) {
 	place, ok := places.GetCFI(offset)
 	if !ok {
-		return ""
+		return "", nil
 	}
 	return cfiSelector{CFI: place.String()}.encode()
 }

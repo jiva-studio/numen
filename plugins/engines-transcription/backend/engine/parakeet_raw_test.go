@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"math"
 	"os"
 	"runtime"
@@ -26,7 +27,7 @@ func openCachedTranscriber(t testing.TB) *Transcriber {
 	if err != nil {
 		t.Skipf("parakeet models not available: %v", err)
 	}
-	t.Cleanup(func() { delta.Close() })
+	cleanup.CloseAfter(t, delta)
 	return delta
 }
 

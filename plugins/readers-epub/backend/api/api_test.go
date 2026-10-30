@@ -32,8 +32,14 @@ func assertFixture[T any](t *testing.T, name string) {
 	if err := json.Unmarshal(encoded, &got); err != nil {
 		t.Fatal(err)
 	}
-	wantText, _ := json.Marshal(want)
-	gotText, _ := json.Marshal(got)
+	wantText, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotText, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if string(wantText) != string(gotText) {
 		t.Errorf("%s\nfixture: %s\nencoded: %s", name, wantText, gotText)
 	}

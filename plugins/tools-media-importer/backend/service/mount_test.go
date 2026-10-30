@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
@@ -39,7 +40,7 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() { _ = res.Body.Close() })
+		cleanup.CloseAfter(t, res.Body)
 		return res
 	}
 

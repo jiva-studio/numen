@@ -3,6 +3,7 @@ package tokens
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -21,12 +22,12 @@ type Pieces []string
 // Read reads a model's pieces from the file published alongside it. Each line
 // is a piece and the number that identifies it, and a number the file skips
 // has no piece.
-func Read(path string) (Pieces, error) {
+func Read(path string) (pieces Pieces, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { err = errors.Join(err, file.Close()) }()
 
 	var out Pieces
 	lines := bufio.NewScanner(file)

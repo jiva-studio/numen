@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
@@ -26,6 +27,8 @@ const (
 	stderrTailBytes = 8 << 10
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
+	// methodSessionClose is the JSON-RPC method that ends a session.
+	methodSessionClose = "session/close"
 
 	// JSON object keys and values of the protocol that more than one message uses.
 	keyName      = "name"
@@ -114,16 +117,13 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	s.cmd.Stderr = s.stderr
 	supervise(s.cmd)
 	if err := s.start(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	if err := s.initialize(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	if err := s.create(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	return s, nil
 }
@@ -301,21 +301,34 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	return strings.TrimSpace(s.answer.String()), nil
 }
 
-// close ends the session where the agent can, then the agent, and removes the session folder.
-func (s *acpSession) close() {
+// close ends the session where the agent can, then the agent, and removes the session folder. A
+// stopped agent is not an error.
+func (s *acpSession) close() error {
+	var err error
 	if s.canClose && s.id != "" {
-		_, _ = s.call("session/close", map[string]any{keySessionID: s.id})
+		_, err = s.call(methodSessionClose, map[string]any{keySessionID: s.id})
 	}
 	if s.stdin != nil {
-		_ = s.stdin.Close()
+		err = errors.Join(err, s.stdin.Close())
 	}
 	s.stop()
 	if s.cmd.Process != nil {
-		_ = s.cmd.Wait()
+		if waitErr := s.cmd.Wait(); !isStopped(waitErr) {
+			err = errors.Join(err, waitErr)
+		}
 	}
 	if s.cleanDir != nil {
 		s.cleanDir()
 	}
+	return err
+}
+
+// isStopped reports whether err is what Wait returns for an agent that was stopped: no error, a
+// non-zero exit status, the cancellation of the agent's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
 }
 
 // rpcRequest is a JSON-RPC 2.0 request or response the client sends.

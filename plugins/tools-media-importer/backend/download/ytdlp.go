@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -78,19 +79,27 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 		return nil, err
 	}
 
-	if tempFile, err := os.CreateTemp("", "numen-info-*.json"); err == nil {
-		if _, writeErr := tempFile.Write(output); writeErr == nil {
-			_ = tempFile.Close()
-			v.infoMu.Lock()
-			v.infoCache[pos] = tempFile.Name()
-			v.infoMu.Unlock()
-		} else {
-			_ = tempFile.Close()
-			_ = os.Remove(tempFile.Name())
-		}
+	if err := v.cacheInfo(pos, output); err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: keep the info of %s: %v\n", pos, err)
 	}
 
 	return output, nil
+}
+
+// cacheInfo writes the output of the probe of pos to a file. Later runs of getTarget load that file.
+func (v *ytDLP) cacheInfo(pos string, output []byte) error {
+	tempFile, err := os.CreateTemp("", "numen-info-*.json")
+	if err != nil {
+		return err
+	}
+	_, writeErr := tempFile.Write(output)
+	if err := errors.Join(writeErr, tempFile.Close()); err != nil {
+		return errors.Join(err, os.Remove(tempFile.Name()))
+	}
+	v.infoMu.Lock()
+	v.infoCache[pos] = tempFile.Name()
+	v.infoMu.Unlock()
+	return nil
 }
 
 func (v *ytDLP) getTarget(pos string) []string {
@@ -159,7 +168,7 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptio
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]Cue, error) {
+func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) (cues []Cue, err error) {
 	if language == "" {
 		return nil, ErrNothingDownloaded
 	}
@@ -167,7 +176,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = os.RemoveAll(into) }()
+	defer func() { err = errors.Join(err, os.RemoveAll(into)) }()
 
 	arguments := append([]string{
 		"--skip-download", "--write-subs", "--write-auto-subs",
@@ -185,7 +194,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 	if err != nil {
 		return nil, err
 	}
-	cues, err := parseCues(raw)
+	cues, err = parseCues(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -198,12 +207,12 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Copy, error) {
+func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (result Copy, err error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
 		return Copy{}, err
 	}
-	defer os.RemoveAll(folder)
+	defer func() { err = errors.Join(err, os.RemoveAll(folder)) }()
 
 	arguments := []string{
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
@@ -236,7 +245,7 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Co
 	if err != nil {
 		return Copy{}, err
 	}
-	defer copied.Close()
+	defer func() { err = errors.Join(err, copied.Close()) }()
 	if _, err := io.Copy(into, copied); err != nil {
 		return Copy{}, err
 	}

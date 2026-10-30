@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +22,7 @@ func TestMountAndConfigure(t *testing.T) {
 		t.Fatalf("Mount failed: %v", err)
 	}
 
-	_, err := s.Lifecycle().ApplyConfig(context.Background(), map[string]string{
+	_, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
 		"token":           "configured-token",
 		"NUMEN_HOST_PORT": "12345",
 	})
@@ -48,7 +49,7 @@ func TestNewHandler(t *testing.T) {
 
 	// Request to /sse without token returns 401
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/sse", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/sse", nil)
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", rec.Code)
@@ -88,7 +89,9 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 		t.Fatalf("srv.Start failed: %v", err)
 	}
 	defer func() {
-		_ = srv.Close(context.Background())
+		if err := srv.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
 	}()
 
 	httpURL := srv.GetHTTPURL()
@@ -110,14 +113,14 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 	}
 
 	mcpClient := sdk.NewClient(&sdk.Implementation{Name: "stream-client", Version: "1.0.0"}, nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
 	session, err := mcpClient.Connect(ctx, clientTransport, nil)
 	if err != nil {
 		t.Fatalf("mcpClient.Connect over Streamable HTTP failed: %v", err)
 	}
-	defer session.Close()
+	defer cleanup.Close(t, session)
 
 	verifyStreamableToolCall(ctx, t, session)
 }

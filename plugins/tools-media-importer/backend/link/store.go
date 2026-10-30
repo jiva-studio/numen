@@ -63,19 +63,19 @@ func getKind(fetched download.Text) domain.TextKind {
 
 // getSegments is what was fetched as the segments of a text version: one segment to a caption, with
 // its span in seconds as its selector, or the prose whole.
-func getSegments(fetched download.Text) []domain.TextSegment {
+func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	if len(fetched.Cues) == 0 {
-		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}
+		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}, nil
 	}
 	segments := make([]domain.TextSegment, len(fetched.Cues))
 	for i, cue := range fetched.Cues {
-		segments[i] = domain.TextSegment{
-			Text:     cue.Text + "\n",
-			Heading:  "",
-			Selector: timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode(),
+		selector, err := timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode()
+		if err != nil {
+			return nil, err
 		}
+		segments[i] = domain.TextSegment{Text: cue.Text + "\n", Heading: "", Selector: selector}
 	}
-	return segments
+	return segments, nil
 }
 
 // writeText keeps the text under the key with its record, and clears the mark of an address that

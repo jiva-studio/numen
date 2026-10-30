@@ -239,7 +239,11 @@ func readLines(parts []domain.TextSegment) []Line {
 func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	var out []Batch
 	for _, line := range lines {
-		selector, _ := readSegmentSelector(parts[line.Number-1].Selector)
+		selector, err := readSegmentSelector(parts[line.Number-1].Selector)
+		if err != nil {
+			// A selector that does not parse names no page.
+			selector = segmentSelector{T: nil, Page: 0, CFI: "", Boxes: nil}
+		}
 		page := selector.Page
 		if len(out) == 0 || out[len(out)-1].Number != page {
 			out = append(out, Batch{Number: page, Lines: nil, IsJoinable: false, Context: ""})

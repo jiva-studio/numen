@@ -130,11 +130,13 @@ func (s *agentServer) AskAgent(
 
 	cmdName, cmdArgs := s.getCommand(msg.GetCommand())
 	if cmdName == "" {
-		_ = stream.Send(&agentrun.AskAgentResponse{
+		if err := stream.Send(&agentrun.AskAgentResponse{
 			Step: &agentrun.AskAgentResponse_Text{
 				Text: "Claude Code CLI is not installed or not found on PATH.",
 			},
-		})
+		}); err != nil {
+			return err
+		}
 		return stream.Send(&agentrun.AskAgentResponse{
 			Step: &agentrun.AskAgentResponse_Stopped{
 				Stopped: "claude not installed",
@@ -225,14 +227,15 @@ func waitAgentCompletion(
 	reasons <-chan string,
 ) (string, bool) {
 	var failedReason string
+	var closeErr error
 	select {
 	case failedReason = <-reasons:
 	case <-runCtx.Done():
-		_ = out.Close()
+		closeErr = out.Close()
 		failedReason = <-reasons
 	}
 
-	waitErr := cmd.Wait()
+	waitErr := errors.Join(closeErr, cmd.Wait())
 	if runCtx.Err() != nil {
 		return "", false
 	}
@@ -358,7 +361,11 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(agentSvc.applyConfig)
 	s.Register(agentrun.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
-	s.OnClose(func() { _ = agentSvc.registry.Close() })
+	s.OnClose(func() {
+		if err := agentSvc.registry.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "close the agent: %v\n", err)
+		}
+	})
 	return nil
 }
 

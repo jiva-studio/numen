@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -67,7 +68,10 @@ func (t *Tools) searchNotes(ctx context.Context, in NoteSearchInput) (NoteSearch
 		return NoteSearchOutput{}, err
 	}
 
-	noteRefs, _ := t.vault.GetNotes(ctx, candidatePaths)
+	noteRefs, err := t.vault.GetNotes(ctx, candidatePaths)
+	if err != nil {
+		return NoteSearchOutput{}, fmt.Errorf("get notes: %w", err)
+	}
 	queryLower := strings.ToLower(q)
 	words := strings.Fields(queryLower)
 

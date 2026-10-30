@@ -96,7 +96,7 @@ func (s *scene) hold(t *testing.T, pluginID, path, key string, kind domain.TextK
 func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	t.Helper()
 	rect := [][4]float32{{0.1, 0.1, 0.9, 0.2}}
-	first, second := segmentSelector{Page: 1, Boxes: rect}.encode(), segmentSelector{Page: 2, Boxes: rect}.encode()
+	first, second := encodeSelector(t, segmentSelector{Page: 1, Boxes: rect}), encodeSelector(t, segmentSelector{Page: 2, Boxes: rect})
 	return s.hold(t, ocrID, scanPath, "recognition", kindRecognition, "the scan", []domain.TextSegment{
 		{Text: "A flywheel keeps energy ", Heading: "Storage", Selector: first},
 		{Text: "in a rotor spinnig in a vacum.\n\n", Selector: first},
@@ -108,7 +108,7 @@ func (s *scene) holdTalk(t *testing.T, lines ...string) domain.TextVersion {
 	t.Helper()
 	parts := make([]domain.TextSegment, len(lines))
 	for i, line := range lines {
-		parts[i] = domain.TextSegment{Text: line + "\n", Selector: segmentSelector{T: []float64{float64(i), float64(i + 1)}}.encode()}
+		parts[i] = domain.TextSegment{Text: line + "\n", Selector: encodeSelector(t, segmentSelector{T: []float64{float64(i), float64(i + 1)}})}
 	}
 	return s.hold(t, speechID, talkPath, "heard", kindTranscript, "the recording", parts)
 }
@@ -355,7 +355,10 @@ func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, _ := completeMock(t.Context(), question)
+	second, err := completeMock(t.Context(), question)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if want := "4|one " + MockMark + "\n5|two " + MockMark; first != want || second != want {
 		t.Errorf("the mock answered %q and %q, want %q", first, second, want)
@@ -366,7 +369,10 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
-	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	other.File(scanPath, []byte("the scan"))
 	other.SetStore(PluginID, chemistry.Store())
 	if err := host.WriteText(t.Context(), other.GetStore(ocrID), "recognition.jsonl", []domain.TextSegment{{Text: "A rotor spinnig.\n\n"}}); err != nil {
@@ -387,10 +393,18 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	if err != nil || len(inChemistry.Versions) != 2 || !strings.HasPrefix(string(inChemistry.Live), PluginID+"/") {
 		t.Fatalf("Chemistry lists %+v (%v), want the proofreading live beside the scan", inChemistry, err)
 	}
-	if inShown, _ := s.texts.ListVersions(t.Context(), scanPath); len(inShown.Versions) != 0 {
+	inShown, err := s.texts.ListVersions(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
-	if names, _ := s.store.List(t.Context()); len(names) != 0 {
+	names, err := s.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
 	}
 }
@@ -416,11 +430,13 @@ func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
 		reply := getRows(gotPrompt, func(_, text string) string {
 			return strings.NewReplacer("spinnig", "spinning", "vacum", "vacuum").Replace(text)
 		})
-		_ = json.NewEncoder(w).Encode(map[string]any{
+		if err := json.NewEncoder(w).Encode(map[string]any{
 			"choices": []map[string]any{
 				{"message": map[string]any{"role": "assistant", "content": reply}},
 			},
-		})
+		}); err != nil {
+			t.Errorf("encode the response: %v", err)
+		}
 	}))
 	defer srv.Close()
 

@@ -62,8 +62,14 @@ func assertSameJSON(t *testing.T, want, got []byte) {
 	if err := json.Unmarshal(got, &gotValue); err != nil {
 		t.Fatal(err)
 	}
-	wantText, _ := json.Marshal(wantValue)
-	gotText, _ := json.Marshal(gotValue)
+	wantText, err := json.Marshal(wantValue)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotText, err := json.Marshal(gotValue)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !bytes.Equal(wantText, gotText) {
 		t.Errorf("encoded %s, fixture %s", gotText, wantText)
 	}

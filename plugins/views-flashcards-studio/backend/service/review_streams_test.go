@@ -101,10 +101,10 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		moved      bool
 	}{
 		"opening": {fixedContext(cancelled), func(n int, _ any) bool { return n == 1 }, false},
-		// 		// Nothing changed, and the stream repeats the message until the page is
-		// 		// found gone.
+		// Nothing changed, and the stream repeats the message until the page is
+		// found gone.
 		"repeating": {fixedContext(t.Context()), func(n int, _ any) bool { return n > 1 }, false},
-		// 		// Something changed, and the page is gone by the time it is sent.
+		// Something changed, and the page is gone by the time it is sent.
 		"reloading": {fixedContext(t.Context()), func(_ int, msg any) bool {
 			return msg.(*api.WatchReloadsResponse).Reload
 		}, true},
@@ -118,7 +118,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() { stream.Close() })
+			t.Cleanup(stream.Close)
 			if one.moved {
 				if !stream.Receive() {
 					t.Fatalf("the stream said nothing: %v", stream.Err())
@@ -153,7 +153,7 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() { stream.Close() })
+			t.Cleanup(stream.Close)
 
 			if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 				t.Errorf("the stream ended with %v, want the write's error", err)
@@ -182,7 +182,7 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 		t.Errorf("the stream ended with %v, want the write's error", err)
@@ -224,7 +224,7 @@ func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
@@ -273,7 +273,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	running := map[domain.VaultID]bool{}
 	for len(running) < 4 {
@@ -330,7 +330,7 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	running := map[domain.VaultID]bool{}
 	for len(running) < 4 {
@@ -344,8 +344,8 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 
 	cancel()
 	select {
-	case <-returned:
-		t.Fatal("the stream ended while four counts were still running")
+	case err := <-returned:
+		t.Fatalf("the stream ended with %v while four counts were still running", err)
 	case <-time.After(300 * time.Millisecond):
 	}
 

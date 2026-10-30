@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"slices"
@@ -136,7 +135,7 @@ func TestModels_DepthLimitedToModelLevels(t *testing.T) {
 func TestModels_CachedListIsNotRequeried(t *testing.T) {
 	s := &agentServer{}
 	s.getModelCache().Put("x", []claudeModel{{Value: "m"}})
-	got, err := s.getModels(context.Background(), []string{"x"}, nil)
+	got, err := s.getModels(t.Context(), []string{"x"}, nil)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got %v, %v", got, err)
 	}
@@ -148,7 +147,7 @@ func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	gate := t.TempDir() + "/gate"
 	script := writeScript(t, "claude", "while [ ! -f "+gate+" ]; do sleep 0.01; done\nexit 1\n")
 	s := &agentServer{models: newModelCache(true)}
-	got, err := s.getModels(context.Background(), []string{script}, nil)
+	got, err := s.getModels(t.Context(), []string{script}, nil)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("in-flight async cache returned %v, %v", got, err)
 	}
@@ -159,7 +158,7 @@ func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	for time.Now().Before(deadline) && !s.getModelCache().HasFailed(script) {
 		time.Sleep(5 * time.Millisecond)
 	}
-	got, err = s.getModels(context.Background(), []string{script}, nil)
+	got, err = s.getModels(t.Context(), []string{script}, nil)
 	if err != nil || len(got) != len(fallbackModels) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
 	}

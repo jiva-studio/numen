@@ -1,8 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
+	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -11,7 +13,11 @@ import (
 func Mount(s *server.Server) error {
 	agent := new(agentServer)
 	agent.codexModels.isAsync = true
-	s.OnClose(func() { _ = agent.Close() })
+	s.OnClose(func() {
+		if err := agent.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "close the agent: %v\n", err)
+		}
+	})
 	s.SetUpdateConfig(agent.applyConfig)
 	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	return nil

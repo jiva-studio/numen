@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	pathpkg "path"
 	"strings"
 	"sync"
@@ -274,9 +275,10 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_ = l.FetchText(runCtx, link, true)
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, true))
 		if l.IsCopyable(link.Address) {
-			_, _ = l.Copy(runCtx, link)
+			_, err := l.Copy(runCtx, link)
+			reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
 }
@@ -286,7 +288,7 @@ func (l *Links) StartFetchText(ctx context.Context, link Link, isUserStarted boo
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_ = l.FetchText(runCtx, link, isUserStarted)
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, isUserStarted))
 	})
 }
 
@@ -295,8 +297,19 @@ func (l *Links) StartCopy(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_, _ = l.Copy(runCtx, link)
+		_, err := l.Copy(runCtx, link)
+		reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
+}
+
+// reportBackgroundError writes the failure of background work on a link to the standard error
+// stream of the plugin process. The failure is also shown as the task of the work. A work ended by
+// Close, and a work another run has, are not failures.
+func reportBackgroundError(ctx context.Context, work string, link Link, err error) {
+	if err == nil || ctx.Err() != nil || errors.Is(err, ErrBeingFetched) {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "tools-media-importer: %s %s: %v\n", work, link.Path, err)
 }
 
 // taskTitles are the names of each type of work on a link in the task list.
@@ -372,7 +385,11 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	rec.Address, rec.Title, rec.Producer = string(link.Address), fetched.Title, fetched.Producer
 	rec.Downloader = model.Tool + " " + model.Version
 	rec.Kind = getKind(fetched)
-	if err := folder.writeText(ctx, link.Key, getSegments(fetched), rec); err != nil {
+	segments, err := getSegments(fetched)
+	if err != nil {
+		return err
+	}
+	if err := folder.writeText(ctx, link.Key, segments, rec); err != nil {
 		return err
 	}
 	return l.putVersion(ctx, link, rec.Kind)
@@ -541,14 +558,18 @@ func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
-	_ = l.host.Queue.ReportTask(ctx, task)
+	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: show the task %s: %v\n", task.ID, err)
+	}
 }
 
 // endTask takes a task out of the list, or leaves it shown with the error that ended the work.
 func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	ctx = context.WithoutCancel(ctx)
 	if err == nil || errors.Is(err, context.Canceled) {
-		_ = l.host.Queue.FinishTask(ctx, task.ID)
+		if finishErr := l.host.Queue.FinishTask(ctx, task.ID); finishErr != nil {
+			fmt.Fprintf(os.Stderr, "tools-media-importer: finish the task %s: %v\n", task.ID, finishErr)
+		}
 		return
 	}
 	task.Error = err.Error()

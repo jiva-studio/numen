@@ -87,12 +87,12 @@ func IsOffline() bool {
 	return false
 }
 
-func verifyFile(path, wantSum string) error {
+func verifyFile(path, wantSum string) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { err = errors.Join(err, f.Close()) }()
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
@@ -256,7 +256,7 @@ func sumBytes(dir string, files []string, sizes map[string]int64) int64 {
 		wanted[name] = sizes[name]
 	}
 	var sum int64
-	_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return fs.SkipDir
 		}
@@ -272,6 +272,9 @@ func sumBytes(dir string, files []string, sizes map[string]int64) int64 {
 		}
 		return nil
 	})
+	if err != nil {
+		return 0
+	}
 	return sum
 }
 

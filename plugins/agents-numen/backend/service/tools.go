@@ -76,8 +76,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 	box := &toolbox{session: session, tools: nil, meta: readMeta(task.GetContext())}
 	for tool, err := range session.Tools(ctx, nil) {
 		if err != nil {
-			_ = session.Close()
-			return nil, fmt.Errorf("list the vault's tools: %w", err)
+			return nil, errors.Join(fmt.Errorf("list the vault's tools: %w", err), session.Close())
 		}
 		if slices.Contains(named, tool.Name) {
 			box.tools = append(box.tools, readFunctionTool(tool))
@@ -147,11 +146,12 @@ func readResultText(result *mcp.CallToolResult) string {
 	return strings.Join(parts, "\n")
 }
 
-// close lets go of the tool server.
-func (b *toolbox) close() {
-	if b.session != nil {
-		_ = b.session.Close()
+// close ends the session with the tool server.
+func (b *toolbox) close() error {
+	if b.session == nil {
+		return nil
 	}
+	return b.session.Close()
 }
 
 // readMeta is the context of a task as MCP `_meta`, nil for a task with none.

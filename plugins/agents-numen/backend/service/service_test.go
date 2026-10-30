@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +21,7 @@ const testToken = "plugin-token"
 func startPlugin(t *testing.T) string {
 	t.Helper()
 	stdin, hold := io.Pipe()
-	t.Cleanup(func() { _ = hold.Close() })
+	cleanup.CloseAfter(t, hold)
 	s := server.New(server.WithPort(0), server.WithToken(testToken), server.WithStdin(stdin), server.WithStdout(io.Discard), server.WithSignals())
 	if err := Mount(s); err != nil {
 		t.Fatal(err)
@@ -30,10 +30,15 @@ func startPlugin(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	isDone := make(chan error, 1)
 	go func() { isDone <- s.ServeContext(ctx) }()
-	t.Cleanup(func() { stop(); <-isDone })
+	t.Cleanup(func() {
+		stop()
+		if err := <-isDone; err != nil {
+			t.Error(err)
+		}
+	})
 	return "http://127.0.0.1:" + strconv.Itoa(port)
 }
 
@@ -65,7 +70,7 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 			http.Error(w, "no key", http.StatusUnauthorized)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
 	pos := startPlugin(t)
@@ -91,7 +96,7 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 			http.Error(w, "no key", http.StatusUnauthorized)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken})
@@ -119,15 +124,15 @@ func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
 	var receivedBody map[string]any
 	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/chat/completions" {
-			_ = json.NewDecoder(r.Body).Decode(&receivedBody)
-			_ = json.NewEncoder(w).Encode(map[string]any{
+			decodeJSON(t, r.Body, &receivedBody)
+			encodeJSON(t, w, map[string]any{
 				"choices": []map[string]any{
 					{"message": map[string]any{"role": "assistant", "content": "hi"}},
 				},
 			})
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
 

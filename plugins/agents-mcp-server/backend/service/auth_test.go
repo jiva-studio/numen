@@ -71,7 +71,7 @@ func TestHasValidToken(t *testing.T) {
 			if tc.queryToken != "" {
 				url += "?token=" + tc.queryToken
 			}
-			req := httptest.NewRequest(http.MethodGet, url, nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 			if tc.authHeader != "" {
 				req.Header.Set("Authorization", tc.authHeader)
 			}
@@ -83,7 +83,7 @@ func TestHasValidToken(t *testing.T) {
 	}
 
 	// Empty configured token allows everything.
-	req := httptest.NewRequest(http.MethodGet, "http://localhost/mcp", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/mcp", nil)
 	if !hasValidToken("", req) {
 		t.Fatal("expected empty token to allow access")
 	}
@@ -102,7 +102,7 @@ func TestRequireToken(t *testing.T) {
 	handler := requireToken(token, inner)
 
 	// Options preflight
-	reqOpts := httptest.NewRequest(http.MethodOptions, "/mcp", nil)
+	reqOpts := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/mcp", nil)
 	recOpts := httptest.NewRecorder()
 	handler.ServeHTTP(recOpts, reqOpts)
 	if recOpts.Code != http.StatusOK {
@@ -110,7 +110,7 @@ func TestRequireToken(t *testing.T) {
 	}
 
 	// Unauthorized request
-	reqUnauth := httptest.NewRequest(http.MethodGet, "/mcp", nil)
+	reqUnauth := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/mcp", nil)
 	recUnauth := httptest.NewRecorder()
 	handler.ServeHTTP(recUnauth, reqUnauth)
 	if recUnauth.Code != http.StatusUnauthorized {
@@ -121,7 +121,7 @@ func TestRequireToken(t *testing.T) {
 	}
 
 	// Authorized request
-	reqAuth := httptest.NewRequest(http.MethodGet, "/mcp", nil)
+	reqAuth := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/mcp", nil)
 	reqAuth.Header.Set("Authorization", "Bearer secret")
 	recAuth := httptest.NewRecorder()
 	handler.ServeHTTP(recAuth, reqAuth)

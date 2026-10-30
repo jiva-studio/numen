@@ -158,7 +158,9 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 		s.localName = model
 	}
 	if (s.localModel.Name != prevRepo || s.localName != prevName) && s.embedder != nil {
-		_ = s.embedder.Close()
+		if err := s.embedder.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
+		}
 		s.embedder = nil
 	}
 }
@@ -413,7 +415,7 @@ func (s *embeddingServer) getModelName() string {
 	return s.modelInfo.Name
 }
 
-func computeServiceVector(ctx context.Context, key, baseURL, model, text string) ([]float32, error) {
+func computeServiceVector(ctx context.Context, key, baseURL, model, text string) (vector []float32, err error) {
 	client := &http.Client{Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 30 * time.Second}
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
 	reqBody, err := json.Marshal(openAIEmbeddingRequest{
@@ -435,7 +437,7 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -462,7 +464,11 @@ func Mount(s *server.Server) error {
 	embedSrv := newEmbeddingServer()
 	s.SetUpdateConfig(embedSrv.updateConfig)
 	embedding.Mount(s, embedSrv)
-	s.OnClose(func() { _ = embedSrv.Close() })
+	s.OnClose(func() {
+		if err := embedSrv.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
+		}
+	})
 	return nil
 }
 

@@ -30,10 +30,19 @@ func TestReadKindsRejectsAManifestWithoutKinds(t *testing.T) {
 	}
 }
 
+func encodeSelector(t *testing.T, selector segmentSelector) domain.Selector {
+	t.Helper()
+	encoded, err := selector.encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return encoded
+}
+
 func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	s := newScene(t)
 	s.run.kinds = map[domain.TextKind]bool{"subtitle": true}
-	cue := segmentSelector{T: []float64{0, 1}}.encode()
+	cue := encodeSelector(t, segmentSelector{T: []float64{0, 1}})
 	subtitle := s.hold(t, speechID, talkPath, "subtitle", "subtitle", "the recording", []domain.TextSegment{
 		{Text: "a flywheel spinnig\n", Selector: cue},
 	})

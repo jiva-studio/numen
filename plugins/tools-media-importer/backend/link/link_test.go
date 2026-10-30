@@ -191,7 +191,11 @@ func TestFetchText_SkipsEmptyAddressUnlessUserStarted(t *testing.T) {
 	if err := w.links.FetchText(t.Context(), made, true); err != nil || w.sites.texts.Load() != 2 {
 		t.Errorf("a person asking again asked the address %d times in all (%v)", w.sites.texts.Load(), err)
 	}
-	if listing, _ := w.texts.ListVersions(t.Context(), made.Path); len(listing.Versions) != 0 {
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("an address that publishes nothing has versions %+v", listing.Versions)
 	}
 }
@@ -294,7 +298,11 @@ func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
 	if count := w.sites.texts.Load(); count != 1 {
 		t.Errorf("a deleted text was fetched again: the address was asked %d times", count)
 	}
-	if listing, _ := w.texts.ListVersions(t.Context(), made.Path); len(listing.Versions) != 0 {
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("a deleted text has versions %+v", listing.Versions)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || !isDeleted {

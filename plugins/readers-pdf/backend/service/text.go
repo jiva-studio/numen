@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -135,10 +136,14 @@ func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	err := s.putLayer(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
 		task.Error = err.Error()
-		_ = s.queue.ReportTask(context.WithoutCancel(ctx), task)
+		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
+			fmt.Fprintf(os.Stderr, "readers-pdf: show the task %s: %v\n", task.ID, reportErr)
+		}
 		return
 	}
-	_ = s.queue.FinishTask(context.WithoutCancel(ctx), task.ID)
+	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: finish the task %s: %v\n", task.ID, finishErr)
+	}
 }
 
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
@@ -194,7 +199,11 @@ func (l layer) getSegments() ([]domain.TextSegment, error) {
 		if err != nil {
 			return nil, err
 		}
-		segments = append(segments, getLayerParts(l.book, first, last, boxes)...)
+		parts, err := getLayerParts(l.book, first, last, boxes)
+		if err != nil {
+			return nil, err
+		}
+		segments = append(segments, parts...)
 	}
 	return segments, nil
 }
@@ -202,7 +211,7 @@ func (l layer) getSegments() ([]domain.TextSegment, error) {
 // getLayerParts is the text of pages [first, last) as parts: each word with the rectangle it covers,
 // the runs between words with none, and an empty part opening each outline entry where it begins.
 // The boxes are the words of those pages, ascending by offset.
-func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []domain.TextSegment {
+func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) ([]domain.TextSegment, error) {
 	end := len(book.Text)
 	if last < len(book.Pages) {
 		end = book.Pages[last].Offset
@@ -218,9 +227,13 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []
 		if page+1 < len(book.Pages) {
 			pageEnd = book.Pages[page+1].Offset
 		}
-		boxes = layers.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
+		var err error
+		boxes, err = layers.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return layers.parts
+	return layers.parts, nil
 }
 
 // layerCut is the parts of a text layer cut so far, and the outline entries still to open.
@@ -232,7 +245,7 @@ type layerCut struct {
 
 // addPage cuts the text of one page, [from, to), at the words of the boxes on it, and returns the
 // boxes of the pages after it.
-func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.HighlightBox {
+func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) ([]pdf.HighlightBox, error) {
 	pos := from
 	for len(boxes) > 0 && boxes[0].Page <= page {
 		box := boxes[0]
@@ -241,26 +254,41 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 		if box.Page < page || start >= end {
 			continue
 		}
-		c.add(pos, start, page, nil)
-		c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}})
+		if err := c.add(pos, start, page, nil); err != nil {
+			return nil, err
+		}
+		if err := c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}}); err != nil {
+			return nil, err
+		}
 		pos = end
 	}
-	c.add(pos, to, page, nil)
-	return boxes
+	if err := c.add(pos, to, page, nil); err != nil {
+		return nil, err
+	}
+	return boxes, nil
 }
 
 // add is the text [from, to) on a page, split where an outline entry begins inside it.
-func (c *layerCut) add(from, to, page int, boxes [][4]float32) {
+func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
-			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: pageSelector{Page: page + 1, Boxes: nil}.encode()})
+			selector, err := pageSelector{Page: page + 1, Boxes: nil}.encode()
+			if err != nil {
+				return err
+			}
+			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: selector})
 			c.sections = c.sections[1:]
 		}
 		end := to
 		if len(c.sections) > 0 && c.sections[0].Offset < to {
 			end = c.sections[0].Offset
 		}
-		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Heading: "", Selector: pageSelector{Page: page + 1, Boxes: boxes}.encode()})
+		selector, err := pageSelector{Page: page + 1, Boxes: boxes}.encode()
+		if err != nil {
+			return err
+		}
+		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Heading: "", Selector: selector})
 		from = end
 	}
+	return nil
 }

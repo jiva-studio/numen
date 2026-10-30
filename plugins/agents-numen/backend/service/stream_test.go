@@ -135,7 +135,7 @@ func TestAStreamCompletedWithNoReasonToStopStopsTheRun(t *testing.T) {
 func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 	released := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeEvents(w, []string{`{"choices":[{"delta":{"content":"The plan "}}]}`})
+		writeEvents(t, w, []string{`{"choices":[{"delta":{"content":"The plan "}}]}`})
 		<-r.Context().Done()
 		close(released)
 	}))

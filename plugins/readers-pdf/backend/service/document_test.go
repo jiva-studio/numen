@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -20,10 +19,10 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	})
 	vaultDir := files.Vault().Path
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
-	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
+	writeFile(t, outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
 	documents := NewDocumentServer(files, hosttest.NewTexts("vault", pluginID))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. GetDocument outside vault -> PermissionDenied
 	_, err := documents.GetDocument(ctx, GetDocumentRequest{
@@ -73,7 +72,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 
 func TestDocumentServerEmptyPath(t *testing.T) {
 	documents := NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", pluginID))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. GetDocument with empty path
 	_, err := documents.GetDocument(ctx, GetDocumentRequest{Path: ""})
@@ -95,4 +94,12 @@ func codeOf(err error) server.ErrorCode {
 		return failure.Code
 	}
 	return ""
+}
+
+// writeFile writes content to path and fails the test when writing fails.
+func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, content, perm); err != nil {
+		t.Fatal(err)
+	}
 }
