@@ -84,7 +84,7 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 	return output, nil
 }
 
-// cacheInfo keeps the output of the probe of pos in a file, which later runs load instead of probing.
+// cacheInfo writes the output of the probe of pos to a file. Later runs of getTarget load that file.
 func (v *ytDLP) cacheInfo(pos string, output []byte) error {
 	tempFile, err := os.CreateTemp("", "numen-info-*.json")
 	if err != nil {
