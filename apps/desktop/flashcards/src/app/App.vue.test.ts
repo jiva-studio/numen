@@ -6,7 +6,7 @@ import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
   async function* waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    await new Promise<never>(() => undefined)
   }
   return {
     waits,
@@ -179,7 +179,7 @@ describe('the window over a plugin that draws the review', () => {
   })
 
   it('says the list is being read until it is', async () => {
-    let answer: (vaults: readonly VaultRow[]) => void = () => {}
+    let answer: (vaults: readonly VaultRow[]) => void = vi.fn()
     const { window } = await mountWindow(() => new Promise((then) => (answer = then)))
 
     expect(window.find('[role="status"]').text()).toBe('Loading vaults…')
@@ -213,7 +213,7 @@ describe('the work behind the window', () => {
           },
         ],
       }
-      await new Promise<never>(() => {})
+      await new Promise<never>(() => undefined)
     }
     let shell: ReturnType<typeof useShell> | undefined
     mounted.push(

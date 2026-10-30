@@ -10,6 +10,7 @@ import { agentService, noteService, pluginService, vaultsService } from '@/share
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'
 import { createWindowKeys } from './windowKeys'
+import { useExternalLinks } from './useExternalLinks'
 import { useWindowTasks, WINDOW_SOURCE } from './useWindowTasks'
 
 /** What the shell is given: the plugins it loads, how a module is fetched, and the vaults. */
@@ -72,6 +73,7 @@ export function useShell(deps: ShellDeps = {}) {
     openVault: openTab,
   })
   useWindowTasks(notices)
+  useExternalLinks(notices)
 
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
@@ -86,7 +88,9 @@ export function useShell(deps: ShellDeps = {}) {
   })
   onUnmounted(() => {
     window.removeEventListener('keydown', onKeyDown)
-    void loader.close()
+    loader.close().catch((error: unknown) => {
+      listError.value = formatErrorMessage(error)
+    })
     windowAgent.dispose()
   })
 

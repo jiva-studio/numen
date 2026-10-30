@@ -4,6 +4,7 @@
  * begins without the page asking for one.
  */
 import { onMounted, onUnmounted } from 'vue'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { createFollower } from '@numen/ui'
 import type { NoticeQueue } from '@numen/shell'
 import { windowService } from '@/shared/clients'
@@ -22,7 +23,7 @@ export function useWindowTasks(notices: NoticeQueue) {
   })
 
   onMounted(() => {
-    void follow(
+    follow(
       () => windowService.watchTasks({ window: TARGET }, { signal: abortController.signal }),
       (response) => {
         notices.setTasks(
@@ -36,7 +37,9 @@ export function useWindowTasks(notices: NoticeQueue) {
           })),
         )
       },
-    )
+    ).catch((error: unknown) => {
+      notices.show(WINDOW_SOURCE, formatErrorMessage(error), 'error')
+    })
   })
   onUnmounted(() => {
     isOpen = false

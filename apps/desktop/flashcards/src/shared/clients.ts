@@ -1,11 +1,5 @@
 /** The services the shell asks of the window it is the page of. */
-import {
-  agentService,
-  notes,
-  pluginService,
-  vaultsService,
-  windowService,
-} from '@numen/plugin-sdk'
+import { agentService, notes, pluginService, vaultsService, windowService } from '@numen/plugin-sdk'
 
 export { agentService, pluginService, vaultsService, windowService }
 
