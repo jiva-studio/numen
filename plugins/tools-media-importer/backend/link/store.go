@@ -70,11 +70,9 @@ func getSegments(fetched download.Text) []domain.TextSegment {
 	segments := make([]domain.TextSegment, len(fetched.Cues))
 	for i, cue := range fetched.Cues {
 		segments[i] = domain.TextSegment{
-			Text:    cue.Text + "\n",
-			Heading: "",
-			Selector: host.Selector{
-				T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}, Page: 0, CFI: "", Boxes: nil,
-			}.Encode(),
+			Text:     cue.Text + "\n",
+			Heading:  "",
+			Selector: timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode(),
 		}
 	}
 	return segments

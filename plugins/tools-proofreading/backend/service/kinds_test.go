@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
@@ -34,7 +33,7 @@ func TestReadKindsRejectsAManifestWithoutKinds(t *testing.T) {
 func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	s := newScene(t)
 	s.run.kinds = map[domain.TextKind]bool{"subtitle": true}
-	cue := host.Selector{T: []float64{0, 1}}.Encode()
+	cue := segmentSelector{T: []float64{0, 1}}.encode()
 	subtitle := s.hold(t, speechID, talkPath, "subtitle", "subtitle", "the recording", []domain.TextSegment{
 		{Text: "a flywheel spinnig\n", Selector: cue},
 	})

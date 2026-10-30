@@ -90,7 +90,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 	text := readLive(t, texts, "tiny.pdf")
 
 	from := strings.Index(text.Text, "Delta")
-	boxes := host.GetBoxes(text, domain.ByteRange{Start: from, End: from + len("Delta epsilon")})
+	boxes := getBoxes(text, pdf.ByteRange{Start: from, End: from + len("Delta epsilon")})
 
 	if len(boxes) != 2 {
 		t.Fatalf("%d boxes, want one a word of the two: %+v", len(boxes), boxes)
@@ -147,7 +147,7 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	sections := 0
 	for page := range book.Pages {
 		for _, part := range getLayerParts(book, page, page+1, boxes) {
-			if selector, err := host.ParseSelector(part.Selector); err != nil || selector.Page != page+1 {
+			if selector, err := readPageSelector(part.Selector); err != nil || selector.Page != page+1 {
 				t.Errorf("a segment of page %d has selector %s", page, part.Selector)
 			}
 			if part.Heading != "" {

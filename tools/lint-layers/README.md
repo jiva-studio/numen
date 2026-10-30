@@ -21,9 +21,21 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `no-file-kind-outside-plugins`: the shipped code of `libs/core`, `libs/notes`, `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/ui/core`, `libs/ui/shell` and `apps/desktop/editor/src` holds no literal of a plugin's file extension (`"pdf"`, `".epub"`, `"onFile:*.pdf"`, `".mp3"`, … in `PLUGIN_EXTENSIONS`), no literal `"book"`, `"recording"`, `"url"` or `"document"`, and no name of those kinds (`KindBook`, `TabRecording`, `CapabilityDocument`, `SOURCE_KIND_URL`, `SourceKind.BOOK`, `BookFormat`, `DefaultBookExtensions`, `BookProgress`, `ReadBooks`, `BookServiceName`, and the script constants `BOOK`, `RECORDING`, `DOCUMENT`). A double-quoted string inside a literal, such as a manifest in a Go raw string, is read too. Tests, stories, `testing/`, `testdata/`, `e2e/` and generated code are not read. The core finds a plugin by content type instead.
    - `shell-isolation`: `libs/ui/shell/src` names no `@numen/protocol`, `@numen/wire` or `apps`, and `npm run lint` passes in `libs/ui/shell`; the shell reaches the components through `@numen/ui` alone.
    - `plugin-host-isolation`: `libs/plugin-host-ts/src` imports only `vue` and `@numen/plugin-sdk` besides its own files (its tests also `vitest`, its `vite.ts` also `vite`), so the plugin loader knows nothing of `@numen/ui`, `@numen/shell`, the protocol, the wire or an application; and `npm run lint` passes in `libs/plugin-host-ts`.
+   - `notes-hexagon`: Notes Library Internal Hexagonal Layers (layers_test.go).
+   - `sdk-consumers`: Plugin SDK Imported Only By Plugins and Applications.
+   - `go-no-mutable-globals`: Go No Package-Level Mutable Singletons or os.Exit Outside cmd/.
+   - `notes-depguard`: Notes Library Depguard Boundaries.
+   - `sdk-isolation`: Plugin SDK Go Isolation (no core or app imports).
+   - `sdk-encapsulates-protocol`: Plugin SDK Encapsulates Protocol (no numenv1.* or window IDs in public SDK API).
+   - `no-wire-library`: No @numen/wire Library (libs/wire removed; utilities in @numen/plugin-sdk, protocol adapters in host).
+   - `contracts-name-no-plugin`: Shared Contracts Name No Plugin (schema, SDKs, plugin host, notes: comments and documents included).
+   - `docs-name-existing-paths`: Rule Documents Name Existing Paths (AGENTS.md, .agents/rules, lint-layers README).
+   - `docs-name-existing-tests`: Rule Documents Name Declared Go Tests.
+   - `docs-list-verifiers`: Layer Validator README Lists Every Registered Verifier.
+   - `all-ts-packages-eslint`: Every TypeScript Package Has ESLint Configured.
 2. **Plugins (`plugins`)**:
    - `plugins-independence`: the `Plugin` tests of `libs/core/container`.
-   - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no `plugins/shared`; no plugin imports `libs/core`; no plugin imports another, by a Go import, by a relative TypeScript or Vue import that resolves into another plugin's directory, or by another plugin's package name.
+   - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no shared plugin folder; no plugin imports `libs/core`; no plugin imports another, by a Go import, by a relative TypeScript or Vue import that resolves into another plugin's directory, or by another plugin's package name.
    - `plugins-reach-no-app`: no plugin reaches `apps/` by a relative path, an alias or a Go import.
    - `plugins-reach-no-shell`: no plugin names `@numen/shell` or `@numen/plugin-host`, or reaches `libs/ui/shell` or `libs/plugin-host-ts` by a relative path; a plugin takes components from `@numen/ui` and is loaded by the host, never loads itself.
    - `plugins-draw-no-notices`: no plugin imports `Notices`, `Notice`, `createNotice`, `createNoticeQueue` or `NoticeQueue` from a package; a plugin shows notices through `ctx.notices` and the window draws them in one list.
@@ -31,10 +43,19 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `plugins-write-data-through-host`: a shipped Go file of a plugin that names the `.numen` folder calls no `os` function that changes the file system (`os.WriteFile`, `os.MkdirAll`, `os.Rename`, `os.Remove`, …); a plugin writes its data through the host store.
    - `apps-plugins-boundary`: an application compiles nothing from `plugins/`, and a plugin nothing from `apps/`.
    - `plugins-frontend`: ESLint over `plugins/`: no `@/**` or `@plugins/**` import.
+   - `plugin-config-golden-parity`: Plugin Configs Match Golden Example plugins/.example/ & Root .golangci.yml.
+   - `plugin-backend-layers`: Plugin Backend Internal Hexagonal Layer Direction.
+   - `plugins-no-protocol-or-wire`: Plugins Depend Only on SDK (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire).
+   - `plugins-no-cross-plugin-knowledge`: Plugins Know Nothing of Other Plugins (no cross-plugin IDs, tab kinds, text kinds or command IDs).
+   - `plugins-standalone-repo`: Plugins Are Standalone-Repo Ready (no ../ escapes, no vite.shared, no go.mod replace ../, no libs/notes, no plugin .proto).
 3. **Applications (`apps`)**:
    - `apps-reach-no-plugin`: no application reaches `plugins/` by a relative path, an alias, an `import.meta.glob`, a tsconfig path or a Go import. A path is resolved from the file and from every package root above it.
    - `window-names-no-plugin-kind`: the editor window's sources name no plugin kind (`deck`, `card-model`, `preset`, `plex`, `agent`, `files`) as a literal, outside its tests and stories and the files listed in `CORE_NAME_FILES` (the settings entity and page and the plugin context).
    - `desktop-editor-fsd`, `desktop-flashcards-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), by `npm run lint` in each window.
+   - `frontend-segments-and-entities`: Frontend Segment Direction (ui -> model -> api -> lib) & No @x Entity Cross-Imports.
+   - `vue-style-and-template`: Vue <style> Tokens & <template> Purity.
+   - `apps-no-direct-protocol`: Applications Talk to Core Through SDK (no direct @numen/protocol in apps/*/src).
+   - `desktop-flashcards-fsd`: Desktop Flashcards FSD Layer Hierarchy.
 
 ## Usage
 

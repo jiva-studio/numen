@@ -200,7 +200,7 @@ service PluginEventService {
 }
 
 message DeliverEventRequest {
-  // The event as the host names it, such as onFile:pdf or onCommand:proofread.
+  // The event as the host names it, such as onFile:<extension> or onCommand:<id>.
   string event = 1;
 }
 

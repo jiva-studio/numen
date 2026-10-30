@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// TextKind is what a text version is, as the plugin that makes it names it:
-// "transcript", "recognition". The core compares it as an opaque string.
+// TextKind is what a text version is, as the plugin that makes it names it.
+// The core compares it as an opaque string.
 type TextKind string
 
 // TextVersionID names a text version among the versions of one file. It is the

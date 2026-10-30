@@ -1,6 +1,6 @@
 # Frontend Coding Style & Component Guidelines
 
-The conventions for Vue 3 and TypeScript in numen: `modules/libs/ui/core` and the windows under `modules/apps/desktop/editor` and `modules/apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), *How an interface component is built*, *The component library is shadcn-vue* and *How this application is tested*.
+The conventions for Vue 3 and TypeScript in numen: `libs/ui/core` and the windows under `apps/desktop/editor` and `apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), *How an interface component is built*, *The component library is shadcn-vue* and *How this application is tested*.
 
 TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`. A component's props are a contract with another module, and an unchecked one is not a contract.
 
@@ -8,11 +8,11 @@ TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedA
 
 ## 1. The domain boundary
 
-Nothing in `modules/libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**` — not the components, not the stories, not the fixtures.
+Nothing in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**` — not the components, not the stories, not the fixtures.
 
 A component takes props it defines itself, in a **vocabulary about drawing**, and emits **opaque identifiers**. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. Whoever renders the component translates the domain into that shape and translates the identifier back.
 
-The dependency runs `modules/apps/*` → `modules/libs/ui/core`. Never back, never sideways.
+The dependency runs `apps/*` → `libs/ui/core`. Never back, never sideways.
 
 ---
 
@@ -151,7 +151,7 @@ function formatValue(val: string) { ... }
 
 ## 10. Code formatting (Prettier & gofmt)
 
-*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `modules/prettier.config.mjs`. Format with `npm run format` in `modules/`; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand and through the pre-commit hook, which runs `npx prettier --check` on the staged files; no CI workflow and no make target runs it.
+*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `prettier.config.mjs`. Format with `npm run format` at the repository root; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand and through the pre-commit hook, which runs `npx prettier --check` on the staged files; no CI workflow and no make target runs it.
 
 Go code is formatted with `gofmt` (`gofmt -l .`).
 
@@ -168,7 +168,7 @@ A comment describes the active behavior or invariant. It does not argue, justify
 ## 12. Verification
 
 ```bash
-cd modules/libs/ui/core
+cd libs/ui/core
 npm run typecheck
 npm run test:unit
 npm run build                                   # the windows reach @numen/ui through its build
@@ -176,11 +176,11 @@ npx vitest run --project 'stories (chromium)'
 npx vitest run --project 'stories (webkit)'
 ```
 
-Take the `modules/libs/ui/core` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.
+Take the `libs/ui/core` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.
 
 Then the windows, which need the library built first:
 
 ```bash
-cd modules/apps/desktop/editor         && npm run typecheck && npm test
-cd modules/apps/desktop/flashcards && npm run typecheck && npm test
+cd apps/desktop/editor         && npm run typecheck && npm test
+cd apps/desktop/flashcards && npm run typecheck && npm test
 ```

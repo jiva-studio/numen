@@ -327,7 +327,7 @@ export interface PluginManifest {
     styles?: string
   }
   /** What the plugin declares of the text it makes; a plugin that makes no text declares none. */
-  /** The types of file the plugin brings, each with the globs of its names, such as `*.deck`. */
+  /** The types of file the plugin brings, each with the globs of its names, such as `*.txt`. */
   contentTypes?: { type: string; globs: string[] }[]
   /** The readers of the frontend, by registered id, with the content types each opens and its rank. */
   readers?: { id: string; contentTypes: string[]; rank: 'default' | 'alternate' }[]

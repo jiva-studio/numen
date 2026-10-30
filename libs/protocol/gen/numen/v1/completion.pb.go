@@ -195,7 +195,7 @@ type CompletionQuestion struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The conversation so far, oldest first.
 	Messages []*CompletionMessage `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
-	// What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+	// What the answer is for (e.g. "summary"). It routes nothing; a purpose
 	// names neither a model, an agent nor a key.
 	Purpose       string `protobuf:"bytes,2,opt,name=purpose,proto3" json:"purpose,omitempty"`
 	unknownFields protoimpl.UnknownFields

@@ -45,7 +45,7 @@ Resolve the repository root and determine the target:
    ```bash
    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || readlink -f .agents/.. 2>/dev/null || echo "$PWD/../source/numen")
    ```
-2. **Explicit target**: a path (`/review modules/libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/review origin/main...HEAD`, a SHA) reviews that range.
+2. **Explicit target**: a path (`/review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/review origin/main...HEAD`, a SHA) reviews that range.
 3. **Auto-detection (default)**:
    - `git -C "$REPO_ROOT" status --short` and `git -C "$REPO_ROOT" diff HEAD`.
    - Dirty tree: audit the uncommitted diff.

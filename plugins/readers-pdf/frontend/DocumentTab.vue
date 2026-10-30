@@ -71,8 +71,10 @@ watch(
   (selector: Selector | null | undefined) => {
     if (!activeState.value || typeof selector?.page !== 'number') return
     const page = Math.max(0, selector.page - 1)
-    if (Array.isArray(selector.boxes) && selector.boxes.length > 0) {
-      const rects = selector.boxes.map(([minX, minY, maxX, maxY]) => ({
+    const boxes = selector.boxes as
+      readonly (readonly [number, number, number, number])[] | undefined
+    if (Array.isArray(boxes) && boxes.length > 0) {
+      const rects = boxes.map(([minX, minY, maxX, maxY]) => ({
         minX,
         minY,
         maxX,

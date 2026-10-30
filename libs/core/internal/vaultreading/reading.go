@@ -19,7 +19,7 @@ type Task struct {
 	// the earlier one.
 	ID string
 
-	// Title is the work, in the words to show: "Recognising a scan".
+	// Title is the work, in the words to show: "Indexing a file".
 	Title string
 	// About is what it is on, and is empty for work that is on nothing in
 	// particular.

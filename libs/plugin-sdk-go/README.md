@@ -6,12 +6,12 @@ Backend server lifecycle SDK for native Numen plugins.
 
 The SDK is a base module and a feature module in each folder that has a `go.mod`. A plugin requires the base module and the feature modules it imports, each with a `replace` to its folder. A feature module requires the base module at most and no other feature module.
 
-| Module | Packages | Used by |
+| Module | Packages | Provides |
 |---|---|---|
-| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall`, `vault` | every native plugin; `ai` by proofreading; `tools` by a plugin that offers an agent tools; `hostcall` by the clients of the host; `vault` by readers and transcription |
-| `plugin-sdk-go/host` | `host`, `host/hosttest` | a plugin that works the vault through the host |
-| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/reasoning`, `agent/toolcall` | agent, agent-acp, agent-antigravity, agent-claude, agent-codex |
-| `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
+| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall`, `vault` | the server lifecycle every native plugin runs under; `ai` model completions; `tools` agent tools; `hostcall` the clients of the host; `vault` the plugin's reads of the vault |
+| `plugin-sdk-go/host` | `host`, `host/hosttest` | working the vault through the host |
+| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/reasoning`, `agent/toolcall` | running an external agent program |
+| `plugin-sdk-go/onnx` | `onnx` | running an ONNX model |
 
 `make lib_plugin_sdk_go_lint`, `lib_plugin_sdk_go_build` and `lib_plugin_sdk_go_test` run over every module.
 

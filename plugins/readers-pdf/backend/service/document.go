@@ -101,7 +101,7 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 	}
 	out := GetHighlightsResponse{Runs: make([]DocumentRun, 0, len(runs))}
 	for _, run := range runs {
-		out.Runs = append(out.Runs, DocumentRun{Places: writePlaces(host.GetBoxes(text, run))})
+		out.Runs = append(out.Runs, DocumentRun{Places: writePlaces(getBoxes(text, pdf.ByteRange{Start: run.Start, End: run.End}))})
 	}
 	return out, nil
 }
@@ -140,7 +140,7 @@ func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (
 }
 
 // writePlaces groups the boxes of a run by page, in page order of appearance.
-func writePlaces(boxes []domain.HighlightBox) []DocumentPlace {
+func writePlaces(boxes []pdf.HighlightBox) []DocumentPlace {
 	places := []DocumentPlace{}
 	for _, box := range boxes {
 		rect := DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}

@@ -178,7 +178,7 @@ func TestEachSegmentIsSelectedByTheCFIOfItsFirstCharacter(t *testing.T) {
 
 	var got []string
 	for _, segment := range segments {
-		selector, err := host.ParseSelector(segment.Selector)
+		selector, err := readCFISelector(segment.Selector)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -210,7 +210,7 @@ func TestTheTextOfABookCarriesTheCFIOfItsCharacters(t *testing.T) {
 	createText(t, server, host.TextCreation{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
-	selector, err := host.ParseSelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
+	selector, err := readCFISelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
 	if err != nil || selector.CFI != "epubcfi(/6/4!/4/4/1:0)" {
 		t.Errorf("the selector of Goodbye is %+v (%v), want epubcfi(/6/4!/4/4/1:0)", selector, err)
 	}

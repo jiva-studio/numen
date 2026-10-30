@@ -33,7 +33,7 @@ make app_mobile_lint app_mobile_test
 When the change touches TypeScript, Vue, JSON or CSS, also run the formatter check, which no make target covers:
 
 ```bash
-cd modules && npm run format:check
+npm run format:check
 ```
 
 Never run blanket checks over untouched parts of the monorepo.
@@ -44,7 +44,7 @@ Never run blanket checks over untouched parts of the monorepo.
 - `gofmt -l` prints a file → **REJECT** (unformatted Go).
 - `go vet`, `golangci-lint` or `govulncheck` fails → **REJECT**.
 - `npm run lint` fails → **REJECT**. A house rule refuses a thing a reader would trip over, and it is never a preference about where a line breaks.
-- `npm run format:check` in `modules/` reports a file → **REJECT** (not Prettier-clean). TypeScript, Vue, JSON and CSS are formatted with Prettier (`npm run format`), and its use is mandatory.
+- `npm run format:check` at the repository root reports a file → **REJECT** (not Prettier-clean). TypeScript, Vue, JSON and CSS are formatted with Prettier (`npm run format`), and its use is mandatory.
 - A formatter or a linter has touched generated output — anything under `protocol/gen`, `protocol/src` or another generator's target → **REJECT.** A generated file is whatever generated it: not hand-formatted, not linted for layout, not read for style.
 - `go test -race` fails → **REJECT** (a broken test or a data race).
 - `buf lint` fails → **REJECT** (schema violation).
@@ -80,7 +80,7 @@ Read `AGENTS.md` at the root and in the touched module, and the rules distilled 
 
 ### Vue and TypeScript — the library and the windows
 
-- **`@numen/ui` knows nothing about the domain.** No component, story or fixture in `modules/libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests". A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `modules/apps/*` → `modules/libs/ui/core`; never back, never sideways.
+- **`@numen/ui` knows nothing about the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests". A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/core`; never back, never sideways.
 - **The core is pure and the view is humble.** What is drawn is computed from the props as plain values — every coordinate, state and derived flag — with no DOM, no Vue, no clock, no randomness and no measurement of text. A number in a template that the pure part did not produce is a broken split, and so is a `computed` reaching for `window` or `Date.now`.
 - **Anything with a lifetime is a port**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a browser-shaped default.
 - **A concept is declared once.** The type union, the layout, the wording and the colour of a role or a variant all read from one declaration.

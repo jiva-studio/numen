@@ -64,8 +64,8 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 2. **Craft.** An adjacent test file: `[name]_test.go` beside the Go code, `[name].spec.ts` beside the TypeScript. Minimal fixtures, the boundary or the race injected, the assertion explicit. `t.TempDir`, `t.Context`, `t.Cleanup` — never the machine's real home, config or cache directory, and never the network.
 3. **Run.**
    ```bash
-   cd modules/libs/core && go test -race -run TestName ./path/...
-   cd modules/apps/desktop/editor && npx vitest run --project unit <path>.spec.ts
+   cd libs/core && go test -race -run TestName ./path/...
+   cd apps/desktop/editor && npx vitest run --project unit <path>.spec.ts
    ```
    For a story, render it in both engines: `npx vitest run --project 'stories (chromium)'` and `npx vitest run --project 'stories (webkit)'`, one at a time.
 4. **Evaluate.**

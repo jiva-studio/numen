@@ -344,9 +344,6 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
   `@numen/protocol` to whatever branch that checkout is parked on.** A
   generated symbol missing there is that, not the branch under test. Install
   for real when the answer matters.
-- **`usecase/flashcards` and `adapter/flashcardsui` run close to the 10-minute
-  per-package limit under `-race`.** A timeout there is the machine's load, not
-  the code.
 - **`npm test` in `libs/ui/core` starts both story instances at once**, and
   the run dies before any test executes. Take them one at a time:
   `npm run test:unit`,

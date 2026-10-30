@@ -18,8 +18,8 @@ Each test verifies adherence to structural rules.
 | Nothing the core is compiled from reaches an adapter | `TestNothingTheCoreIsCompiledFromReachesOutward` |
 | A use case builds only on the use cases `useCaseEdges` declares for it | `TestUseCaseImportsFollowDeclaredEdges` |
 | An adapter does not name the port it answers | `TestNoAdapterNamesThePortItSatisfies` |
-| The composition root hands out no adapter type | `TestTheRootHandsOutNoAdapterTheCompilerHolds` |
-| A package is imported under the name its layer gives it | `TestNoPackageIsImportedUnderItsLayer` |
+| The composition root hands out no adapter type | `TestTheRootPassesOutNoAdapterTheCompilerContains` |
+| A package is imported under the name its layer gives it | `TestNoPackageIsImportedBelowItsLayer` |
 
 ## What the core may not do
 
@@ -36,7 +36,7 @@ outside `port/`.
 
 | The rule | The test |
 |---|---|
-| Every port is asked for somewhere else | `TestEveryPortIsAskedForSomewhereElse` |
+| Every port is asked for somewhere else | `TestPorts_EveryPortTypeIsReferenced` |
 | Every type a port declares is named somewhere else | `TestEveryTypePortDeclaresIsNamedSomewhereElse` |
 | Every port method is called from outside `port/` | `TestEveryPortMethodIsCalledSomewhereElse` |
 | Every adapter serving the schema is a driving one | `TestEveryAdapterServingTheSchemaIsDriving` |

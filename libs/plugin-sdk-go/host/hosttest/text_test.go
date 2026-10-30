@@ -17,7 +17,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	ocr := hosttest.NewTexts("v1", "org.example.ocr")
 	ocr.File("a.pdf", file)
 	if err := host.WriteText(ctx, ocr.GetStore("org.example.ocr"), "k.jsonl", []domain.TextSegment{
-		{Text: "teh "}, {Text: "end", Selector: host.Selector{Page: 2}.Encode()},
+		{Text: "teh "}, {Text: "end", Selector: domain.Selector(`{"page":2}`)},
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -17,17 +17,19 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, protocol, kinds, ui, shell, host, wire, sdk, plugins, boundary, desktop, editor, flashcards
+ *   core, notes, protocol, kinds, ui, shell, host, wire, sdk, docs, plugins, boundary, desktop, editor, flashcards
  */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 import { CORE_VERIFIERS } from "./checks/core.mjs";
+import { DOCS_VERIFIERS } from "./checks/docs.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 
 const VERIFIERS = [
   ...CORE_VERIFIERS,
+  ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "apps"),

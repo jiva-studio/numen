@@ -36,7 +36,8 @@ type Passage struct {
 	// in. Empty for a note.
 	Selector Selector
 
-	// SourceHash addresses the content of the source, and is what the 	// recognition of it are kept under. Reading a passage back composes the name
+	// SourceHash addresses the content of the source, and is what the
+	// text made from it is kept under. Reading a passage back composes the name
 	// from this and Producer.
 	SourceHash string
 

@@ -21,7 +21,7 @@ export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
  * the SHA-256, in hex, of the file's bytes for such a version, and the hash of
  * the source version otherwise. file is the name of the version's file in the
  * folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
- * kind is what the text is, as plugins name it ("transcript", "recognition");
+ * kind is what the text is, as the plugin that made it names it;
  * the host compares it as an opaque string.
  *
  * @generated from message numen.v1.TextVersion
