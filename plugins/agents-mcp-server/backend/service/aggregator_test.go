@@ -72,7 +72,7 @@ func TestToolAggregatorSyncTools(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	if err := agg.SyncTools(context.Background()); err != nil {
+	if err := agg.SyncTools(t.Context()); err != nil {
 		t.Fatalf("SyncTools failed: %v", err)
 	}
 
@@ -95,7 +95,7 @@ func TestToolAggregatorSyncTools(t *testing.T) {
 	}
 	client.mu.Unlock()
 
-	if err := agg.SyncTools(context.Background()); err != nil {
+	if err := agg.SyncTools(t.Context()); err != nil {
 		t.Fatalf("second SyncTools failed: %v", err)
 	}
 
@@ -118,7 +118,7 @@ func TestToolAggregatorExecuteSuccess(t *testing.T) {
 	}
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
-	result, err := agg.ExecuteTool(context.Background(), "note_read", json.RawMessage(`{"path":"a.md"}`))
+	result, err := agg.ExecuteTool(t.Context(), "note_read", json.RawMessage(`{"path":"a.md"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestToolAggregatorExecuteMarksDeniedResultAsError(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	result, err := agg.ExecuteTool(context.Background(), "note_read", nil)
+	result, err := agg.ExecuteTool(t.Context(), "note_read", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestToolAggregatorExecuteToolErrors(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	result, err := agg.ExecuteTool(context.Background(), "unknown_tool", nil)
+	result, err := agg.ExecuteTool(t.Context(), "unknown_tool", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestToolAggregatorExecuteToolErrors(t *testing.T) {
 	client.callResp = &tools.CallResponse{
 		Error: tools.ErrorCodeBadArguments,
 	}
-	result, err = agg.ExecuteTool(context.Background(), "note_read", []byte(`invalid-json`))
+	result, err = agg.ExecuteTool(t.Context(), "note_read", []byte(`invalid-json`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestToolAggregatorExecuteTransportFailure(t *testing.T) {
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewToolAggregator(client, mcpServer)
 
-	_, err := agg.ExecuteTool(context.Background(), "note_read", nil)
+	_, err := agg.ExecuteTool(t.Context(), "note_read", nil)
 	if err == nil {
 		t.Fatal("expected error on transport failure")
 	}

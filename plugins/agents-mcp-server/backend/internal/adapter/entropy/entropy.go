@@ -1,3 +1,4 @@
+// Package entropy reads random bytes.
 package entropy
 
 import "crypto/rand"
