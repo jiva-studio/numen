@@ -6,6 +6,11 @@
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [{ "kind": "reader:reader-pdf", "title": "PDF Reader", "icon": "file-text" }],
+    "feature": "PDF documents",
+    "category": "readers"
+  },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }],

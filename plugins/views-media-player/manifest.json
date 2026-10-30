@@ -6,6 +6,14 @@
   "description": "Audio and video player with interactive transcripts and voice recording",
   "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [
+      { "kind": "recording", "title": "Record Audio", "icon": "mic" },
+      { "kind": "reader:media-player", "title": "Audio Player", "icon": "audio-lines" }
+    ],
+    "feature": "audio playback and recording",
+    "category": "views"
+  },
   "permissions": ["vault:read", "vault:write"],
   "readers": [
     {

@@ -6,6 +6,16 @@
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": {
+    "tabKinds": [
+      { "kind": "deck", "title": "Deck", "icon": "layers" },
+      { "kind": "card-model", "title": "Card Model", "icon": "layout-template" },
+      { "kind": "preset", "title": "Preset", "icon": "gauge" },
+      { "kind": "flashcards.review", "title": "Flashcards" }
+    ],
+    "feature": "flashcards",
+    "category": "views"
+  },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {
