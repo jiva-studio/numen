@@ -21,7 +21,7 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 	shutdownTrigger := make(chan struct{}, 1)
 	life := server.NewLifecycleServer(shutdownTrigger)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	status, err := life.CheckStatus(ctx)
 	if err != nil {
 		t.Fatalf("unexpected ping error: %v", err)
@@ -48,7 +48,7 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 func timeAfter(t *testing.T) <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*testingTimeout())
+		ctx, cancel := context.WithTimeout(t.Context(), 2*testingTimeout())
 		defer cancel()
 		<-ctx.Done()
 		close(ch)
@@ -75,7 +75,9 @@ func createMinimalEpub(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = w.Write([]byte(containerXML))
+	if _, err := w.Write([]byte(containerXML)); err != nil {
+		t.Fatal(err)
+	}
 
 	contentOPF := `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id">
@@ -94,7 +96,9 @@ func createMinimalEpub(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = w.Write([]byte(contentOPF))
+	if _, err := w.Write([]byte(contentOPF)); err != nil {
+		t.Fatal(err)
+	}
 
 	docHTML := `<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -108,7 +112,9 @@ func createMinimalEpub(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = w.Write([]byte(docHTML))
+	if _, err := w.Write([]byte(docHTML)); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)
@@ -122,7 +128,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	files.File("test.epub", string(epubBytes))
 
 	server := service.NewBookServer(files)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Test GetBook
 	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
@@ -175,7 +181,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("inside.epub", string(epubBytes))
 	server := service.NewBookServer(files)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. Path outside vault should fail with permission denied
 	_, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
@@ -217,7 +223,7 @@ func TestAuthCheckInterceptor(t *testing.T) {
 		return nil, nil
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Missing token -> unauthenticated
 	req := connect.NewRequest(&epubv1.GetBookRequest{})

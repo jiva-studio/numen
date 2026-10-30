@@ -6,6 +6,7 @@ package cfi
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -92,7 +93,7 @@ type path struct {
 // mergeRange appends the local path of a range's start to its parent path.
 func mergeRange(parent, start path) path {
 	if start.hasBang {
-		parent.indirected = append(parent.steps, start.indirected...)
+		parent.indirected = slices.Concat(parent.steps, start.indirected)
 		parent.steps = start.steps
 		parent.hasBang = true
 	} else {

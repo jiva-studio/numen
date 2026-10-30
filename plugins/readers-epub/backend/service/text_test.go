@@ -6,8 +6,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
@@ -163,7 +163,10 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	physics.Beside(chemistry)
 	chemistry.File("book.epub", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
-	other := texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	other.File("book.epub", raw)
 	other.SetStore(pluginID, chemistry.Store())
 	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
@@ -174,7 +177,11 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	if text := readLive(t, other, "book.epub"); text.Version().Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
-	if inShown, _ := texts.ListVersions(t.Context(), "book.epub"); len(inShown.Versions) != 0 {
+	inShown, err := texts.ListVersions(t.Context(), "book.epub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }

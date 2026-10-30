@@ -3,7 +3,6 @@ package service
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"errors"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
@@ -82,7 +81,7 @@ func readEntry(t *testing.T, files *hosttest.Vault, path, entry string, baseline
 	t.Helper()
 	server := NewBookServer(files)
 	t.Cleanup(server.Close)
-	return server.ReadBookEntry(context.Background(),
+	return server.ReadBookEntry(t.Context(),
 		connect.NewRequest(&epubv1.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline}))
 }
 

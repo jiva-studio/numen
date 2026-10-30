@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"connectrpc.com/connect"
@@ -42,7 +44,9 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	_, _ = w.Write(res.Msg.GetBody())
+	if _, err := w.Write(res.Msg.GetBody()); err != nil {
+		fmt.Fprintf(os.Stderr, "readers-epub: write the entry %s: %v\n", r.PathValue("entry"), err)
+	}
 }
 
 // vaultHeader names the vault a request works.
@@ -55,7 +59,10 @@ func parseBytesQuery(query url.Values) *epubv1.FileStat {
 	if err != nil {
 		return nil
 	}
-	stamp, _ := strconv.ParseInt(query.Get("mtime"), 10, 64)
+	stamp, err := strconv.ParseInt(query.Get("mtime"), 10, 64)
+	if err != nil {
+		stamp = 0
+	}
 	return &epubv1.FileStat{Size: size, Mtime: stamp}
 }
 

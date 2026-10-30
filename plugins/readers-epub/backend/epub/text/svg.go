@@ -24,7 +24,7 @@ func FindSVGImage(base string, raw []byte, has func(string) bool) (string, bool)
 		for _, a := range start.Attr {
 			// An SVG names what it draws with href, and with xlink:href in the
 			// version most books are written in.
-			if a.Name.Local != "href" {
+			if a.Name.Local != attrHref {
 				continue
 			}
 			switch pos := resolveImageSource(base, a.Value); {
@@ -35,3 +35,6 @@ func FindSVGImage(base string, raw []byte, has func(string) bool) (string, bool)
 		}
 	}
 }
+
+// attrHref is the attribute that names the target of a link, and of an image in an SVG.
+const attrHref = "href"

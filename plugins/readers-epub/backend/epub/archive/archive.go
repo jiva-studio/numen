@@ -35,7 +35,7 @@ const (
 )
 
 // ReadBounded is the contents of one entry, up to the bound given.
-func ReadBounded(f *zip.File, most int64) ([]byte, bool) {
+func ReadBounded(f *zip.File, most int64) (raw []byte, ok bool) {
 	if f == nil {
 		return nil, false
 	}
@@ -46,10 +46,14 @@ func ReadBounded(f *zip.File, most int64) ([]byte, bool) {
 	if err != nil {
 		return nil, false
 	}
-	defer r.Close()
+	defer func() {
+		if closeErr := r.Close(); closeErr != nil {
+			raw, ok = nil, false
+		}
+	}()
 	// The archive reader refuses an entry whose bytes differ in number from the
 	// size it declares.
-	raw, err := io.ReadAll(r)
+	raw, err = io.ReadAll(r)
 	if err != nil {
 		return nil, false
 	}

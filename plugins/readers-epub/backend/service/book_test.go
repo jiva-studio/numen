@@ -3,7 +3,6 @@ package service
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 	"os"
@@ -63,7 +62,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	outsideDir := t.TempDir()
 	outsidePath := filepath.Join(outsideDir, "outside.epub")
 	data := createMinimalEpub(t)
-	_ = os.WriteFile(outsidePath, data, 0o644)
+	writeFile(t, outsidePath, data, 0o644)
 
 	files := hosttest.OnDisk(t, "vault", map[string]string{
 		"inside.epub": string(data),
@@ -72,7 +71,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	vaultDir := files.Vault().Path
 
 	server := NewBookServer(files)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 1. GetBook outside vault -> PermissionDenied
 	_, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
@@ -151,5 +150,13 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for hidden vault, got %v", err)
+	}
+}
+
+// writeFile writes content to path and fails the test when writing fails.
+func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, content, perm); err != nil {
+		t.Fatal(err)
 	}
 }

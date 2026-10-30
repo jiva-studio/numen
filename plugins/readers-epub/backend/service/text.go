@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 	"sync"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
@@ -144,10 +145,14 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	err := s.putText(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
 		task.Error = err.Error()
-		_ = s.queue.ReportTask(context.WithoutCancel(ctx), task)
+		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
+			fmt.Fprintf(os.Stderr, "readers-epub: show the task %s: %v\n", task.ID, reportErr)
+		}
 		return
 	}
-	_ = s.queue.FinishTask(context.WithoutCancel(ctx), task.ID)
+	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
+		fmt.Fprintf(os.Stderr, "readers-epub: finish the task %s: %v\n", task.ID, finishErr)
+	}
 }
 
 // putText reports the text of a book as a version made from the file. A file that is no book, a

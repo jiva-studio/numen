@@ -157,7 +157,7 @@ func (b *builder) convertAttributes(n *html.Node) []markup.Attribute {
 		}
 		value := a.Val
 		switch name {
-		case "href":
+		case attrHref:
 			if value = resolveLinkAddress(b.base, value); value == "" {
 				continue
 			}
