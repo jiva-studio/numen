@@ -31,9 +31,9 @@ type defaultFlags struct {
 }
 
 var (
-	flags                defaultFlags
-	exitProcess                    = os.Exit
-	exitOutput io.Writer           = os.Stderr
+	flags       defaultFlags
+	exitProcess           = os.Exit
+	exitOutput  io.Writer = os.Stderr
 )
 
 func parseDefaultFlags() int {

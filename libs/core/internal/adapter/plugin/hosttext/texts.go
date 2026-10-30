@@ -7,9 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
-	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
 // Texts is the text versions of the vaults, for the plugins that call the host. Each call works

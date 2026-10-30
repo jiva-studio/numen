@@ -15,7 +15,7 @@ func TestTheFolderOfTheIndexIsOpenToEveryoneTheUmaskAllows(t *testing.T) {
 	syscall.Umask(umask)
 
 	for name, cfg := range map[string]Config{
-		"named":   {IndexPath: filepath.Join(t.TempDir(), "named", "index.db")},
+		"named": {IndexPath: filepath.Join(t.TempDir(), "named", "index.db")},
 	} {
 		got, err := cfg.indexPath()
 		if err != nil {

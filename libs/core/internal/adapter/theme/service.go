@@ -241,7 +241,6 @@ func encodeOrigin(origin Origin) v1.Origin {
 	return v1.Origin_ORIGIN_UNSPECIFIED
 }
 
-
 // NewAppearances adapts read, write, and warn callbacks into Appearances.
 func NewAppearances(read func() (Appearance, error), write func(Appearance) error, warn func(string)) Appearances {
 	return callbackAppearances{read: read, write: write, warn: warn}
@@ -253,7 +252,7 @@ type callbackAppearances struct {
 	warn  func(string)
 }
 
-func (a callbackAppearances) Read() (Appearance, error) { return a.read() }
+func (a callbackAppearances) Read() (Appearance, error)     { return a.read() }
 func (a callbackAppearances) Write(choice Appearance) error { return a.write(choice) }
 func (a callbackAppearances) Warn(why string) {
 	if a.warn != nil {
