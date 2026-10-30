@@ -260,6 +260,44 @@ describe('where the person is standing', () => {
     expect(readItem.offset.value).toBe(8_999)
   })
 
+  it('names each jump with a new target, so that a jump to the same offset is seen', async () => {
+    const { books } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    await readItem.goToOffset(100)
+    const first = readItem.target.value
+    await readItem.goToOffset(100)
+
+    expect(first).toStrictEqual({ offset: 100 })
+    expect(readItem.target.value).toStrictEqual({ offset: 100 })
+    expect(readItem.target.value).not.toBe(first)
+  })
+
+  it('records an offset reported inside the drawn document without a jump', async () => {
+    const { books, markupCalls } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await readItem.goToOffset(100)
+    const jump = readItem.target.value
+
+    await readItem.moveTo(2_500)
+
+    expect(readItem.offset.value).toBe(2_500)
+    expect(readItem.target.value).toBe(jump)
+    expect(markupCalls).toHaveLength(1)
+  })
+
+  it('jumps to an offset reported past the end of the drawn document', async () => {
+    const { books } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await readItem.goToOffset(100)
+
+    await readItem.moveTo(3_000)
+
+    expect(readItem.offset.value).toBe(3_000)
+    expect(readItem.target.value).toStrictEqual({ offset: 3_000 })
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+  })
+
   it('draws nothing again where the offset stays in the document on screen', async () => {
     const { books, markupCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)

@@ -26,6 +26,7 @@ const props = withDefaults(defineProps<BookProps>(), {
   span: () => ({ start: 0, end: 0 }),
   book: () => ({ start: 0, end: 0 }),
   at: 0,
+  target: null,
   highlights: () => [],
   otherHighlights: () => [],
   textSize: 1,

@@ -68,8 +68,10 @@ function watchBookLayout(
   )
 
   watch(
-    () => props.at,
-    (pos) => {
+    () => props.target,
+    (jump) => {
+      if (!jump) return
+      const pos = jump.offset
       if (pos < props.span.start || pos >= props.span.end) return
       const want = context.getSpreadOf(pos)
       if (want !== context.standing.value) context.stand(want, 'smooth')

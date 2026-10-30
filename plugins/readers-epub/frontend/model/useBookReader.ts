@@ -50,14 +50,32 @@ interface BookNavigationDeps {
 
 function useBookNavigation(deps: BookNavigationDeps) {
   const offset = ref(0)
+  /** The latest jump. Each jump is a new object, so a repeated offset still changes the value. */
+  const target = shallowRef<{ readonly offset: number } | null>(null)
 
+  /** Jumps to an offset, drawing the document it falls in. */
   const goToOffset = async (targetOffset: number) => {
     await deps.getShape()
     if (!deps.isOpen() || deps.documents.value.length === 0) return
     const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
     offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.start), last)
+    target.value = { offset: offset.value }
     const doc = getDocumentAtOffset(deps.documents.value, offset.value)
     if (doc) await deps.bookDocument.draw(doc)
+  }
+
+  /**
+   * Records the offset the book reports after a page turn. An offset inside the
+   * drawn document is already showing, so it sets no target.
+   */
+  const moveTo = async (reported: number) => {
+    await deps.getShape()
+    const { start, end } = deps.bookDocument.documentSpan.value
+    if (reported >= start && reported < end) {
+      offset.value = Math.trunc(reported)
+      return
+    }
+    await goToOffset(reported)
   }
 
   const followLink = async (target: string) => {
@@ -67,7 +85,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
     await goToOffset(targetDoc.span.start)
   }
 
-  return { offset, goToOffset, followLink }
+  return { offset, target, goToOffset, moveTo, followLink }
 }
 
 async function loadBookData(
@@ -214,12 +232,14 @@ export function useBookReader(
     page,
     chapter,
     offset: nav.offset,
+    target: nav.target,
     documentSpan: bookDocument.documentSpan,
     renderedChapter: bookDocument.renderedChapter,
     markup: bookDocument.markup,
     highlights: marks.highlights,
     otherHighlights: marks.otherHighlights,
     goToOffset: nav.goToOffset,
+    moveTo: nav.moveTo,
     goToCfi,
     getCfi,
     followLink: nav.followLink,

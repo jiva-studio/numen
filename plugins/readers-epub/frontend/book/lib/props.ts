@@ -16,6 +16,8 @@ export interface BookProps {
   book?: TextRange
   /** The offset in front, in bytes of the book's text. */
   at?: number
+  /** A jump to an offset. A page turn is not a jump. */
+  target?: { readonly offset: number } | null
   /** The runs highlighted where they stand, in bytes of the book's text. */
   highlights?: readonly TextRange[]
   /** The other runs named, apart from the one the reader was opened at. */
@@ -34,6 +36,7 @@ export interface SettledBookProps {
   readonly span: TextRange
   readonly book: TextRange
   readonly at: number
+  readonly target: { readonly offset: number } | null
   readonly highlights: readonly TextRange[]
   readonly otherHighlights: readonly TextRange[]
   readonly textSize: number

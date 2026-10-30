@@ -96,12 +96,17 @@ const room = (options: Options = {}) => {
     span: { start: 100, end: 200 },
     book: { start: 0, end: 500 },
     at: 120,
+    target: null,
     highlights: [],
     otherHighlights: [],
     textSize: 1,
     chapter: '',
     words: {},
-  }) as unknown as SettledBookProps & { markup: string; at: number }
+  }) as unknown as SettledBookProps & {
+    markup: string
+    at: number
+    target: { offset: number } | null
+  }
   const area = shallowRef<HTMLElement | null>(options.hasArea === false ? null : box)
   const paper = shallowRef<HTMLElement | null>(options.hasPaper === false ? null : text)
   const onMove = vi.fn()
@@ -363,7 +368,7 @@ describe('an offset requested for from outside', () => {
     turns().standing.value = standing
     turns().stand.mockClear()
     turns().getSpreadOf.mockClear()
-    props.at = pos
+    props.target = { offset: pos }
     await nextTick()
   }
 
@@ -404,6 +409,30 @@ describe('an offset requested for from outside', () => {
     await request(350)
 
     expect(turns().stand).not.toHaveBeenCalled()
+  })
+
+  it('is not turned to by a change of the offset in front', async () => {
+    const { props } = room()
+    turns().standing.value = 0
+    turns().stand.mockClear()
+
+    props.at = 150
+    await nextTick()
+
+    expect(turns().stand).not.toHaveBeenCalled()
+  })
+
+  it('is turned to again when the same offset is requested twice', async () => {
+    const { props } = room()
+    turns().stand.mockClear()
+
+    props.target = { offset: 150 }
+    await nextTick()
+    turns().standing.value = SPREAD_OF(150) + 1
+    props.target = { offset: 150 }
+    await nextTick()
+
+    expect(turns().stand).toHaveBeenCalledTimes(2)
   })
 
   it('is not turned to when its spread is the one in front', async () => {

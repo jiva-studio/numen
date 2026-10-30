@@ -69,7 +69,7 @@ function onToggleListing() {
 }
 
 function onMove(offset: number) {
-  void tabState.goToOffset(offset)
+  void tabState.moveTo(offset)
 }
 
 function onFollow(destPath: string) {
@@ -105,6 +105,7 @@ function onFollow(destPath: string) {
         :document-span="tabState.documentSpan.value"
         :book-span="tabState.span.value"
         :offset="tabState.offset.value"
+        :target="tabState.target.value"
         :highlights="tabState.highlights.value"
         :other-highlights="tabState.otherHighlights.value"
         :chapter="tabState.chapter.value"
