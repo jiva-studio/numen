@@ -253,7 +253,7 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 func (c *layerCut) add(from, to, page int, boxes [][4]float32) {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
-			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: pageSelector{Page: page + 1}.encode()})
+			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: pageSelector{Page: page + 1, Boxes: nil}.encode()})
 			c.sections = c.sections[1:]
 		}
 		end := to

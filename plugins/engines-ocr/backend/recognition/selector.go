@@ -20,13 +20,3 @@ func (s pageSelector) encode() domain.Selector {
 	raw, _ := json.Marshal(s)
 	return domain.Selector(raw)
 }
-
-// readPageSelector reads the page keys of a segment's selector. An empty selector has none.
-func readPageSelector(raw domain.Selector) (pageSelector, error) {
-	var out pageSelector
-	if raw == "" {
-		return out, nil
-	}
-	err := json.Unmarshal([]byte(raw), &out)
-	return out, err
-}

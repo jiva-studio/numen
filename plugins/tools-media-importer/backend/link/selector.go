@@ -18,13 +18,3 @@ func (s timeSelector) encode() domain.Selector {
 	raw, _ := json.Marshal(s)
 	return domain.Selector(raw)
 }
-
-// readTimeSelector reads the span of a segment's selector. An empty selector has none.
-func readTimeSelector(raw domain.Selector) (timeSelector, error) {
-	var out timeSelector
-	if raw == "" {
-		return out, nil
-	}
-	err := json.Unmarshal([]byte(raw), &out)
-	return out, err
-}
