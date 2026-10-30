@@ -128,7 +128,7 @@ type reach struct {
 	texts host.Texts
 }
 
-func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (Result, error) {
+func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (res Result, err error) {
 	raw, _, err := on.vault.Read(ctx, req.Path)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
@@ -148,7 +148,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
-	defer doc.Close()
+	defer func() { err = errors.Join(err, doc.Close()) }()
 	if !req.IsUserStarted && doc.HasTextLayer() {
 		return Result{Pages: doc.GetPageCount(), IsSkipped: true}, nil
 	}

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/draw"
@@ -53,8 +54,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
 	if err != nil {
-		layout.Close()
-		return nil, err
+		return nil, errors.Join(err, layout.Close())
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
 		OnnxRuntimeLibPath:  pos,
@@ -70,8 +70,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		ThreadCount:         cfg.jobs(),
 	})
 	if err != nil {
-		layout.Close()
-		return nil, fmt.Errorf("the recogniser: %w", err)
+		return nil, errors.Join(fmt.Errorf("the recogniser: %w", err), layout.Close())
 	}
 
 	return &Recogniser{
@@ -245,8 +244,8 @@ func NewTestRecogniser(
 	return &Recogniser{
 		layout: layout,
 		read:   read,
-		body:   map[string]bool{"text": true, "paragraph": true, "paragraph_title": true},
-		head:   map[string]int{"paragraph_title": 1},
+		body:   map[string]bool{labelText: true, "paragraph": true, labelParagraphTitle: true},
+		head:   map[string]int{labelParagraphTitle: 1},
 		margin: 10,
 		jobs:   1,
 		model:  model,

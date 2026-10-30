@@ -35,7 +35,7 @@ type Document interface {
 	HasTextLayer() bool
 	// RenderPage draws one page, counted from zero, at the resolution given.
 	RenderPage(index, dpi int) (image.Image, error)
-	Close()
+	Close() error
 }
 
 // Open opens the bytes of the file at the path, by its extension.
@@ -57,7 +57,7 @@ type picture struct {
 
 func (picture) GetPageCount() int  { return 1 }
 func (picture) HasTextLayer() bool { return false }
-func (picture) Close()             {}
+func (picture) Close() error       { return nil }
 
 func (p picture) RenderPage(index, _ int) (image.Image, error) {
 	if index != 0 {
@@ -105,13 +105,11 @@ func openPDF(raw []byte) (*pdf, error) {
 	}
 	opened, err := worker.OpenDocument(&requests.OpenDocument{File: &raw})
 	if err != nil {
-		worker.Close()
-		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return nil, errors.Join(fmt.Errorf("%w: %w", ErrUnreadable, err), worker.Close())
 	}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: opened.Document})
 	if err != nil {
-		worker.Close()
-		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return nil, errors.Join(fmt.Errorf("%w: %w", ErrUnreadable, err), worker.Close())
 	}
 	return &pdf{worker: worker, ref: opened.Document, pages: count.PageCount}, nil
 }
@@ -119,7 +117,7 @@ func openPDF(raw []byte) (*pdf, error) {
 func (d *pdf) GetPageCount() int { return d.pages }
 
 // Close gives the worker back. Closing the instance closes the document with it.
-func (d *pdf) Close() { d.worker.Close() }
+func (d *pdf) Close() error { return d.worker.Close() }
 
 // HasTextLayer reports whether any page carries text that is not blank. A page whose layer cannot be
 // read carries none.

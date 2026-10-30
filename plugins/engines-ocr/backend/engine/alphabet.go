@@ -2,6 +2,7 @@ package engine
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -35,8 +36,10 @@ func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	defer file.Close()
 	if _, err := file.WriteString(strings.Join(lines, "\n") + "\n"); err != nil {
+		return 0, "", errors.Join(err, file.Close())
+	}
+	if err := file.Close(); err != nil {
 		return 0, "", err
 	}
 	return classes, file.Name(), nil

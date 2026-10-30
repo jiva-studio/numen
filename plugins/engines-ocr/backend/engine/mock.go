@@ -16,7 +16,7 @@ type MockRecogniser struct{}
 
 // GetRecognitionModel names the mock, drawn at the resolution of a screen.
 func (MockRecogniser) GetRecognitionModel() Model {
-	return Model{Layout: "mock", Recogniser: "mock", DPI: 72, From: "mock"}
+	return Model{Layout: mockName, Recogniser: mockName, DPI: 72, From: mockName}
 }
 
 // Recognise reads MockText in a box across the top tenth of the page.
@@ -30,7 +30,7 @@ func (MockRecogniser) Recognise(ctx context.Context, page image.Image) ([]Block,
 		bounds.Max.X-bounds.Dx()/10, bounds.Min.Y+bounds.Dy()/5,
 	)
 	return []Block{{
-		Label: "text",
+		Label: labelText,
 		Text:  MockText,
 		Boxes: []Box{{Rect: rect, Range: ByteRange{End: len(MockText)}}},
 	}}, nil
@@ -38,3 +38,6 @@ func (MockRecogniser) Recognise(ctx context.Context, page image.Image) ([]Block,
 
 // Close releases nothing.
 func (MockRecogniser) Close() error { return nil }
+
+// mockName names the layout, the recogniser and the source of the mock model.
+const mockName = "mock"

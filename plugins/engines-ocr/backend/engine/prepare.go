@@ -2,6 +2,8 @@ package engine
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/getcharzp/go-ocr/paddle"
 
@@ -10,7 +12,9 @@ import (
 
 func init() {
 	onnx.Register(func(pos string) {
-		_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: pos})
+		if _, err := paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: pos}); err != nil {
+			fmt.Fprintf(os.Stderr, "engines-ocr: bind the runtime at %s: %v\n", pos, err)
+		}
 	})
 }
 

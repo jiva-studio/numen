@@ -18,7 +18,11 @@ func TestCreateTextRecognisesInBackground(t *testing.T) {
 	}
 	provider.Wait()
 
-	if listing, _ := s.texts.ListVersions(t.Context(), "books/scan.pdf"); listing.Live == "" {
+	listing, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Live == "" {
 		t.Fatalf("the file has no live version after its recognition: %+v", listing)
 	}
 }

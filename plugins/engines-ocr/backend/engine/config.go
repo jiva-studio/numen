@@ -98,11 +98,11 @@ func (l LayoutModel) labels() []string {
 	}
 	return []string{
 		"abstract", "algorithm", "aside_text", "chart", "content",
-		"display_formula", "doc_title", "figure_title", "footer",
+		"display_formula", labelDocTitle, "figure_title", "footer",
 		"footer_image", "footnote", "formula_number", "header",
 		"header_image", "image", "inline_formula", "number",
-		"paragraph_title", "reference", "reference_content", "seal",
-		"table", "text", "vertical_text", "vision_footnote",
+		labelParagraphTitle, "reference", "reference_content", "seal",
+		"table", labelText, "vertical_text", "vision_footnote",
 	}
 }
 
@@ -146,7 +146,7 @@ func (r RegionKinds) body() []string {
 		return r.Body
 	}
 	return []string{
-		"text", "paragraph_title", "doc_title", "abstract", "content",
+		labelText, labelParagraphTitle, labelDocTitle, "abstract", "content",
 		"reference", "reference_content", "footnote", "figure_title",
 	}
 }
@@ -155,7 +155,7 @@ func (r RegionKinds) head() []string {
 	if len(r.Head) > 0 {
 		return r.Head
 	}
-	return []string{"doc_title", "paragraph_title"}
+	return []string{labelDocTitle, labelParagraphTitle}
 }
 
 // Compute configures thread counts and session concurrency.
@@ -188,3 +188,10 @@ func (c Config) threads() int {
 	}
 	return min(fallbackThreads, onnx.GetDefaultThreads())
 }
+
+// The labels of the layout model that the recogniser reads regions by.
+const (
+	labelDocTitle       = "doc_title"
+	labelParagraphTitle = "paragraph_title"
+	labelText           = "text"
+)
