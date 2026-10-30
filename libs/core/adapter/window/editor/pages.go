@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"io"
 	"net/http"
 	"net/url"
@@ -231,11 +232,13 @@ func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	defer resp.Body.Close()
+	defer closeAndReport(s.state.reportTask, resp.Body)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	_, _ = io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		s.state.reportTask(run.Task{ID: relayingResponse, Title: "Relaying the update check", Error: err.Error()})
+	}
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is

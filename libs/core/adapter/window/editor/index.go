@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"slices"
 	"sync"
@@ -39,12 +38,12 @@ func (e indexEvents) FinishTask(id string) { e.state.finishTask(id) }
 func (e indexEvents) ReportError(err error) { e.state.Error.Store(err.Error()) }
 
 func (e indexEvents) ReportNotes(v domain.Vault, notes int) {
-	fmt.Fprintf(e.out, "%s: %d notes\n", v.Name, notes)
+	writeDiagnostic(e.state.reportTask, e.out, "%s: %d notes\n", v.Name, notes)
 	e.state.Ready.Store(true)
 }
 
 func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
-	fmt.Fprintf(e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
+	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
 // errNoProgress is a window with nothing that says how far the vectors have got.
@@ -103,7 +102,7 @@ func startIndexing(
 	read, run, refresh, unwatched := made.StartVault(
 		ctx, v, rebuild, newChangeReporter(state, worker), newErrorReporter(state))
 	if unwatched != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
+		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
 	}
 	running.Add(1)

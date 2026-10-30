@@ -25,7 +25,7 @@ import (
 func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	t.Helper()
 	api, _ := openRecordingWindow(t, nil)
-	back, err := Listen(api.server, nil)
+	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceC
 	readers := vaultreader.Readers{}
 	api.readFiles(readers, file.NewOpenProxy(readers, copies), file.NewGetMediaType(sharedmimeinfo.Open()))
 	api.state.setVault(vault)
-	back, err := Listen(api.server, nil)
+	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

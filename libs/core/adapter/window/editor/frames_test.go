@@ -24,7 +24,7 @@ func TestTheWindowFramesTheOriginsOfTheEnabledPlugins(t *testing.T) {
 
 func TestAPluginPageOnTheLoopbackSocketSendsItsOriginAndFramesThePluginsOrigins(t *testing.T) {
 	plugins := &routedPlugins{frames: map[string][]string{"org.example.player": {"https://player.example"}}}
-	back, err := Listen(newBareServices().server, nil)
+	back, err := Listen(t.Context(), newBareServices().server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestAPluginPageOnTheLoopbackSocketSendsItsOriginAndFramesThePluginsOrigins(
 
 func TestAPluginPageIsRefusedWithoutTheToken(t *testing.T) {
 	plugins := &routedPlugins{}
-	back, err := Listen(newBareServices().server, nil)
+	back, err := Listen(t.Context(), newBareServices().server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestAPluginPageIsRefusedWithoutTheToken(t *testing.T) {
 
 func TestGetPageSourceIsThePageOnTheLoopbackSocket(t *testing.T) {
 	api := newBareServices()
-	back, err := Listen(api.server, nil)
+	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

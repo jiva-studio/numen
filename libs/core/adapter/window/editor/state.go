@@ -203,7 +203,10 @@ func (s *State) getCurrentVault() (domain.Vault, error) {
 }
 
 func text(v *atomic.Value) string {
-	s, _ := v.Load().(string)
+	s, isString := v.Load().(string)
+	if !isString {
+		return ""
+	}
 	return s
 }
 

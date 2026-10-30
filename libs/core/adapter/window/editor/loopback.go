@@ -59,15 +59,14 @@ type Loopback struct {
 //
 // stopped is told where the socket stops answering under the window, which is
 // nobody's doing and nothing anybody asked for.
-func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
-	target, err := net.Listen("tcp", "127.0.0.1:0")
+func Listen(ctx context.Context, files *fileServer, stopped func(error)) (*Loopback, error) {
+	target, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
 	back, err := newLoopback(target, files, stopped)
 	if err != nil {
-		target.Close()
-		return nil, err
+		return nil, errors.Join(err, target.Close())
 	}
 	return back, nil
 }
@@ -194,7 +193,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		refuse(w, err)
 		return
 	}
-	defer opened.Body.Close()
+	defer closeAndReport(h.state.reportTask, opened.Body)
 
 	w.Header().Set("Cache-Control", immutable)
 	if named := getMediaType(h.mediaTypes, opened.Path); named != "" {
@@ -221,7 +220,7 @@ func (h *fileServer) serveCopy(
 	if !found {
 		return false
 	}
-	defer played.Body.Close()
+	defer closeAndReport(h.state.reportTask, played.Body)
 	if named.Size != played.Size {
 		refuse(w, file.ErrChanged)
 		return true
