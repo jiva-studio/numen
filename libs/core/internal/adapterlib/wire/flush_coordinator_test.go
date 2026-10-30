@@ -179,7 +179,7 @@ func TestFlushCoordinator_PageRegisteredDuringCloseReceivesFlush(t *testing.T) {
 }
 
 // TestAPageThatGoesWithNothingStandingStopsBeingOwed.
-func TestAPageThatGoesWithNothingActiveStopsBeingOwed(t *testing.T) {
+func TestAPageThatGoesWithNothingActiveStopsBeingPending(t *testing.T) {
 	var pages flushCoordinator
 
 	_, _, isDone := pages.registerClient()
@@ -198,7 +198,7 @@ func TestAPageThatGoesWithNothingActiveStopsBeingOwed(t *testing.T) {
 // TestAPageThatGoesWithAQuestionStandingIsStillOwed. The text is in that
 // webview's buffer and nowhere else, and the stream ending gives no information
 // about where it should end up.
-func TestAPageThatGoesWithAQuestionActiveIsStillOwed(t *testing.T) {
+func TestAPageThatGoesWithAQuestionActiveIsStillPending(t *testing.T) {
 	var pages flushCoordinator
 
 	token, notified, isDone := pages.registerClient()
