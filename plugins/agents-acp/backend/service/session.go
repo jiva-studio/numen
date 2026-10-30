@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
@@ -26,6 +27,14 @@ const (
 	stderrTailBytes = 8 << 10
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
+
+	methodSessionClose = "session/close"
+	keyName            = "name"
+	keySessionID       = "sessionId"
+	keyText            = "text"
+	keyValue           = "value"
+	keyOutcome         = "outcome"
+	programACP         = "acp"
 )
 
 var (
@@ -100,16 +109,13 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	s.cmd.Stderr = s.stderr
 	supervise(s.cmd)
 	if err := s.start(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	if err := s.initialize(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	if err := s.create(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	return s, nil
 }
@@ -139,7 +145,7 @@ func (s *acpSession) initialize() error {
 			"fs":       map[string]any{"readTextFile": false, "writeTextFile": false},
 			"terminal": false,
 		},
-		"clientInfo": map[string]any{"name": "numen", "title": "Numen", "version": "1.0.0"},
+		"clientInfo": map[string]any{keyName: "numen", "title": "Numen", "version": "1.0.0"},
 	})
 	if err != nil {
 		return err
@@ -222,10 +228,10 @@ func (s *acpSession) setModel(model string) error {
 	var err error
 	if s.modelOption != "" {
 		_, err = s.call("session/set_config_option", map[string]any{
-			"sessionId": s.id, "configId": s.modelOption, "value": model,
+			keySessionID: s.id, "configId": s.modelOption, keyValue: model,
 		})
 	} else {
-		_, err = s.call("session/set_model", map[string]any{"sessionId": s.id, "modelId": model})
+		_, err = s.call("session/set_model", map[string]any{keySessionID: s.id, "modelId": model})
 	}
 	if err != nil {
 		return err
@@ -241,7 +247,7 @@ func (s *acpSession) setReasoning(level string) error {
 		return nil
 	}
 	if _, err := s.call("session/set_config_option", map[string]any{
-		"sessionId": s.id, "configId": s.thoughtOption, "value": level,
+		keySessionID: s.id, "configId": s.thoughtOption, keyValue: level,
 	}); err != nil {
 		return err
 	}
@@ -264,11 +270,11 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	var blocks []map[string]any
 	for _, text := range []string{system, prompt} {
 		if text != "" {
-			blocks = append(blocks, map[string]any{"type": "text", "text": text})
+			blocks = append(blocks, map[string]any{"type": keyText, keyText: text})
 		}
 	}
 	s.answer.Reset()
-	result, err := s.call("session/prompt", map[string]any{"sessionId": s.id, "prompt": blocks})
+	result, err := s.call("session/prompt", map[string]any{keySessionID: s.id, "prompt": blocks})
 	if err != nil {
 		return "", err
 	}
@@ -287,21 +293,34 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	return strings.TrimSpace(s.answer.String()), nil
 }
 
-// close ends the session where the agent can, then the agent, and removes the session folder.
-func (s *acpSession) close() {
+// close ends the session where the agent can, then the agent, and removes the session folder. A
+// stopped agent is not an error.
+func (s *acpSession) close() error {
+	var err error
 	if s.canClose && s.id != "" {
-		_, _ = s.call("session/close", map[string]any{"sessionId": s.id})
+		_, err = s.call(methodSessionClose, map[string]any{keySessionID: s.id})
 	}
 	if s.stdin != nil {
-		_ = s.stdin.Close()
+		err = errors.Join(err, s.stdin.Close())
 	}
 	s.stop()
 	if s.cmd.Process != nil {
-		_ = s.cmd.Wait()
+		if waitErr := s.cmd.Wait(); !isStopped(waitErr) {
+			err = errors.Join(err, waitErr)
+		}
 	}
 	if s.cleanDir != nil {
 		s.cleanDir()
 	}
+	return err
+}
+
+// isStopped reports whether err is what Wait returns for an agent that was stopped: no error, a
+// non-zero exit status, the cancellation of the agent's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
 }
 
 // rpcRequest is a JSON-RPC 2.0 request or response the client sends.
@@ -420,7 +439,7 @@ func (s *acpSession) readChunk(params json.RawMessage) (string, bool) {
 	if json.Unmarshal(params, &update) != nil || update.SessionID != s.id {
 		return "", false
 	}
-	if update.Update.SessionUpdate != "agent_message_chunk" || update.Update.Content.Type != "text" {
+	if update.Update.SessionUpdate != "agent_message_chunk" || update.Update.Content.Type != keyText {
 		return "", false
 	}
 	return update.Update.Content.Text, true

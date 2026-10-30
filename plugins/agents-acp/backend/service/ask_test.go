@@ -50,8 +50,8 @@ func TestAskAgent_ResponseSuccess(t *testing.T) {
 		t.Fatalf("the agent was prompted %d times, want 1", len(prompts))
 	}
 	var texts []string
-	for _, block := range prompts[0]["params"].(map[string]any)["prompt"].([]any) {
-		texts = append(texts, block.(map[string]any)["text"].(string))
+	for _, block := range getField[[]any](t, getField[map[string]any](t, prompts[0], "params"), "prompt") {
+		texts = append(texts, getField[string](t, block, "text"))
 	}
 	if strings.Join(texts, "|") != "be brief|why?" {
 		t.Errorf("the prompt held %q, want the instructions and then the question", texts)
@@ -72,7 +72,10 @@ func TestAskAgentOpensTheSessionWithTheRunEndpoint(t *testing.T) {
 		t.Errorf("said %q, stopReason %q", response, stopReason)
 	}
 	observed := readRecord(t, record)
-	servers, _ := json.Marshal(observed["session/new"][0]["params"].(map[string]any)["mcpServers"])
+	servers, err := json.Marshal(getField[[]any](t, getField[map[string]any](t, observed["session/new"][0], "params"), "mcpServers"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := `[{"headers":[{"name":"Authorization","value":"Bearer secret"}],"name":"numen","type":"http","url":"http://127.0.0.1:1/mcp"}]`
 	if string(servers) != want {
 		t.Errorf("the session was given MCP servers %s, want %s", servers, want)
@@ -96,7 +99,11 @@ func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
 	}
 	allowed, denied := `{"outcome":{"optionId":"once","outcome":"selected"}}`, `{"outcome":{"outcome":"cancelled"}}`
 	for i, want := range []string{allowed, denied, denied, allowed} {
-		if outcome, _ := json.Marshal(replies[i]["result"]); string(outcome) != want {
+		outcome, err := json.Marshal(replies[i]["result"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(outcome) != want {
 			t.Errorf("permission %d was answered %s, want %s", i, outcome, want)
 		}
 	}
@@ -148,8 +155,8 @@ func TestAskAgentOpensASessionWithNoServerForATaskWithNoTool(t *testing.T) {
 		Agent: "acp:fake", Prompt: "why?", ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
 
-	session := readRecord(t, record)["session/new"][0]["params"].(map[string]any)
-	if servers := session["mcpServers"].([]any); len(servers) != 0 {
+	session := getField[map[string]any](t, readRecord(t, record)["session/new"][0], "params")
+	if servers := getField[[]any](t, session, "mcpServers"); len(servers) != 0 {
 		t.Errorf("the session was given MCP servers %v", servers)
 	}
 }
@@ -178,7 +185,7 @@ func TestAskAgentChoosesTheModelTheTaskNames(t *testing.T) {
 	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
 
 	set := readRecord(t, record)["session/set_config_option"]
-	if len(set) != 1 || set[0]["params"].(map[string]any)["value"] != "m2" {
+	if len(set) != 1 || getField[string](t, getField[map[string]any](t, set[0], "params"), "value") != "m2" {
 		t.Errorf("the agent was sent %v, want m2", set)
 	}
 }
@@ -256,15 +263,15 @@ func TestAskAgentRefusesEveryRequestOfTheAgent(t *testing.T) {
 	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"})
 
 	observed := readRecord(t, record)
-	session := observed["session/new"][0]["params"].(map[string]any)
-	if cwd, _ := session["cwd"].(string); cwd == "" || !filepath.IsAbs(cwd) {
+	session := getField[map[string]any](t, observed["session/new"][0], "params")
+	if cwd, ok := session["cwd"].(string); !ok || cwd == "" || !filepath.IsAbs(cwd) {
 		t.Errorf("the session was opened in %q", cwd)
 	}
-	capabilities := observed["initialize"][0]["params"].(map[string]any)["clientCapabilities"].(map[string]any)
+	capabilities := getField[map[string]any](t, getField[map[string]any](t, observed["initialize"][0], "params"), "clientCapabilities")
 	if capabilities["terminal"] != false {
 		t.Errorf("the client offered a terminal: %v", capabilities)
 	}
-	for name, proposed := range capabilities["fs"].(map[string]any) {
+	for name, proposed := range getField[map[string]any](t, capabilities, "fs") {
 		if proposed != false {
 			t.Errorf("the client offered %s", name)
 		}
@@ -273,7 +280,7 @@ func TestAskAgentRefusesEveryRequestOfTheAgent(t *testing.T) {
 	if len(replies) != 2 {
 		t.Fatalf("the agent had %d replies, want 2", len(replies))
 	}
-	if outcome := replies[0]["result"].(map[string]any)["outcome"].(map[string]any)["outcome"]; outcome != "cancelled" {
+	if outcome := getField[map[string]any](t, getField[map[string]any](t, replies[0], "result"), "outcome")["outcome"]; outcome != "cancelled" {
 		t.Errorf("the permission was answered %v, want cancelled", outcome)
 	}
 	if replies[1]["error"] == nil || replies[1]["result"] != nil {
@@ -290,7 +297,7 @@ func TestAskAgentChoosesTheModelTheAgentOffersTheOlderWay(t *testing.T) {
 	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
 
 	set := readRecord(t, record)["session/set_model"]
-	if len(set) != 1 || set[0]["params"].(map[string]any)["modelId"] != "m2" {
+	if len(set) != 1 || getField[string](t, getField[map[string]any](t, set[0], "params"), "modelId") != "m2" {
 		t.Errorf("the agent was sent %v, want m2", set)
 	}
 }
@@ -455,8 +462,8 @@ func TestAskAgentSetsTheDepthTheTaskNamesWhereTheAgentReportsIt(t *testing.T) {
 	})
 
 	set := readRecord(t, record)["session/set_config_option"]
-	if len(set) != 1 || set[0]["params"].(map[string]any)["configId"] != "effort" ||
-		set[0]["params"].(map[string]any)["value"] != "high" {
+	if len(set) != 1 || getField[string](t, getField[map[string]any](t, set[0], "params"), "configId") != "effort" ||
+		getField[string](t, getField[map[string]any](t, set[0], "params"), "value") != "high" {
 		t.Errorf("the agent was sent %v, want high", set)
 	}
 

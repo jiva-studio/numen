@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -13,7 +12,7 @@ func TestLifecycleServer(t *testing.T) {
 	ch := make(chan struct{})
 	srv := server.NewLifecycleServer(ch)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	pingResp, err := srv.Ping(ctx, connect.NewRequest(&server.PingRequest{}))
 	if err != nil {
 		t.Fatal(err)
