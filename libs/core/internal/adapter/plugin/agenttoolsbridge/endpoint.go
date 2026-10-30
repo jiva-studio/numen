@@ -146,9 +146,7 @@ func (e *endpoint) shutdown(ctx context.Context) error {
 			return nil
 		case <-poll.C:
 			if e.getActiveCount() == 0 {
-				closed := e.server.Close()
-				<-result
-				return closed
+				return errors.Join(e.server.Close(), <-result)
 			}
 		}
 	}
