@@ -107,6 +107,7 @@ describe('the window’s commands over a row', () => {
     const host = createPathCommandHost({
       getTarget: () => target as never,
       runCommand,
+      reportError: vi.fn(),
     })
     return { host, runCommand }
   }
@@ -144,6 +145,7 @@ describe('the window’s commands over a row', () => {
     const host = createPathCommandHost({
       getTarget: () => target as never,
       runCommand: vi.fn(),
+      reportError: vi.fn(),
       getFileMenuItems,
     })
 

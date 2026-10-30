@@ -5,6 +5,7 @@
  */
 import { computed, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getFileMenu, runFileMenuEntry, type FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'
@@ -37,6 +38,8 @@ export interface FileMenuCommandsDeps {
   readonly get?: typeof getFileMenu
   readonly run?: typeof runFileMenuEntry
   readonly onRun?: (file: string) => void
+  /** Receives the failure of a menu read that is not awaited. */
+  readonly onError?: (error: unknown) => void
 }
 
 /**
@@ -83,7 +86,7 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   const getForFile = (file: string): readonly Command[] => {
     const current = menu.value
     if (file && loadingFile !== file && loadedFile !== file) {
-      void load(file).catch(() => {})
+      runInBackground(load(file), (error) => deps.onError?.(error))
     }
     return current.file === file ? createFileMenuPaletteCommands(current.file, current.entries) : []
   }

@@ -23,7 +23,7 @@ const open = () =>
   useVaults({
     core: { vaults: async () => TWO } as never,
     words: WORDS,
-    log: { getWriter: () => () => {} } as never,
+    log: { getWriter: () => vi.fn() } as never,
     chunks: ref(0),
     embedded: ref(0),
     isEmbedding: ref(false),

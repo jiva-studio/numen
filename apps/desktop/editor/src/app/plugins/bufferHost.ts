@@ -17,7 +17,9 @@ export function createBufferHost({ fileFlush }: BufferHostDeps): BufferHost {
   return {
     track: (buffers) => {
       const removeHandler = fileFlush.addHandler(buffers.flush)
-      const stopRaising = hasNoteConflicts(buffers) ? raiseConflicts(buffers, fileFlush) : () => {}
+      const stopRaising = hasNoteConflicts(buffers)
+        ? raiseConflicts(buffers, fileFlush)
+        : () => undefined // Buffers without note conflicts have nothing to stop raising.
       return {
         dispose: () => {
           removeHandler()

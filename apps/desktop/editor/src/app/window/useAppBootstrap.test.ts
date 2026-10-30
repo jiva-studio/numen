@@ -1,5 +1,5 @@
 /** What a window starts when it mounts and closes when it unmounts. */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
@@ -23,6 +23,7 @@ const setup = () => {
     closeEditing: note('closeEditing'),
     closeTabs: note('closeTabs'),
     closeSettings: note('closeSettings'),
+    reportError: vi.fn(),
   }
   const view = mount(
     defineComponent({

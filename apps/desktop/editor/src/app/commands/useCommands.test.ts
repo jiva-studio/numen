@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
   setCommandsOpen: vi.fn(),
   setPaletteOpen: vi.fn(),
   isCommandsOpen: { value: false },
-  runInvocation: vi.fn(),
+  runInvocation: vi.fn(() => Promise.resolve()),
   isChord: vi.fn(),
   findChordCommand: vi.fn(),
   depsOptions: null as unknown,

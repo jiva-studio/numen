@@ -24,6 +24,7 @@ import {
   type SettingEdit,
 } from '@/entities/settings'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import type { Command, PaletteLists } from '@/features/command-palette'
@@ -160,10 +161,11 @@ interface SettingsTabConfigDeps {
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
   scheduleRefresh: () => void
+  reportError: (error: unknown) => void
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, rest, secrets, retry, core, scheduleRefresh } = deps
+  const { appearance, sync, rest, secrets, retry, core, scheduleRefresh, reportError } = deps
   return {
     themes: appearance.list,
     applied: appearance.applied,
@@ -174,13 +176,13 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     choose: (item: string) => appearance.chooseItem(item),
     isSyncing: computed({
       get: () => sync.isEnabled.value,
-      set: (on: boolean) => void sync.choose(on ? ON : OFF),
+      set: (on: boolean) => runInBackground(sync.choose(on ? ON : OFF), reportError),
     }),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
-      void promise.then(scheduleRefresh)
+      runInBackground(promise.then(scheduleRefresh), reportError)
       return promise
     },
     writeSecret: (pluginId: string, name: string, key: string) =>
@@ -252,8 +254,10 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
   const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
-  const rest = createSettingsStore(core, words, log.getWriter('configured'))
+  const writeSettingsMessage = log.getWriter('configured')
+  const rest = createSettingsStore(core, words, writeSettingsMessage)
   const refreshTimers: ReturnType<typeof setTimeout>[] = []
+  const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
 
   const clearRefreshTimers = () => {
     while (refreshTimers.length > 0) {
@@ -266,7 +270,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     for (const delayMs of [1500, 3500, 7000, 11000, 16000]) {
       refreshTimers.push(
         setTimeout(() => {
-          void rest.start()
+          runInBackground(rest.start(), reportError)
         }, delayMs),
       )
     }
@@ -291,7 +295,17 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ appearance, sync, rest, secrets, retry, core, scheduleRefresh }),
+    createSettingsTabConfig({
+      appearance,
+      sync,
+      rest,
+      secrets,
+      retry,
+      core,
+      scheduleRefresh,
+      reportError,
+    }),
+    reportError,
   )
 
   watch(appearance.sized, () => onSizeChanged())
@@ -301,8 +315,8 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
   const kinds = [configured.kind]
 
   const start = async () => {
-    void appearance.start()
-    void sync.start()
+    runInBackground(appearance.start(), reportError)
+    runInBackground(sync.start(), reportError)
     // The plugins the window starts are named by what this read answers.
     await rest.start()
     scheduleRefresh()

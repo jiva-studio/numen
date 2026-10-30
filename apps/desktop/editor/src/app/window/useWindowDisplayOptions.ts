@@ -1,6 +1,8 @@
-import type { VaultChangeEvent } from '@numen/plugin-sdk'
+import { formatErrorMessage, type VaultChangeEvent } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { CommandTarget } from '@/features/command-palette'
+import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 import type { useCommands } from '../commands/useCommands'
@@ -16,10 +18,12 @@ export interface DisplayWiring {
   tabOpeners: ReturnType<typeof fileOpeners>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
+  writeMessage: MessageWriter
 }
 
 export function createDisplayOptions(deps: DisplayWiring) {
-  const { editing, getCommands, getKinds, tabOpeners, getVaults, notifyPlugins } = deps
+  const { editing, getCommands, getKinds, tabOpeners, getVaults, notifyPlugins, writeMessage } =
+    deps
   return {
     onVaultChanged: (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
@@ -29,7 +33,9 @@ export function createDisplayOptions(deps: DisplayWiring) {
     reportChange: editing.changes.reportChange,
     travelTo: (path: string) => getKinds().travel(path),
     openFileAt: (path: string, spans: readonly TextRange[]) =>
-      void tabOpeners.openFileAt(path, spans),
+      runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
+        writeMessage(formatErrorMessage(error), 'error'),
+      ),
     reload: () => getVaults().reload(),
   }
 }

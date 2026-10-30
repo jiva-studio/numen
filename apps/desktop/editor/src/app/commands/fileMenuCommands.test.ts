@@ -56,7 +56,7 @@ const invoke = (entry: FileMenuEntry, file: string) => ({
   tab: 'tab',
 })
 
-const runs = { canRun: () => true, cannotRun: () => {} }
+const runs = { canRun: () => true, cannotRun: vi.fn() }
 
 describe('file menu palette commands', () => {
   it('shows the title the plugin declares, with the plugin name in detail', () => {

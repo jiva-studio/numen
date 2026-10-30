@@ -4,6 +4,7 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
@@ -64,6 +65,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
       deps.fileMenuCommands ??
       useFileMenuCommands({
         onRun: (file) => deps.pluginHost?.notifyVaultChange({ paths: [file] }),
+        onError: (error) => writeMessage(formatErrorMessage(error), 'error'),
       }),
     core,
     words,
@@ -153,7 +155,10 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
       await deps.pluginLoader?.start()
     },
     startWindow: () => window.start(),
-    startEditing: () => void editing.fileFlush.start(),
+    startEditing: () =>
+      runInBackground(editing.fileFlush.start(), (error) =>
+        deps.writeMessage(`Saving on quit stopped: ${formatErrorMessage(error)}`, 'error'),
+      ),
     closeWindow: () => window.close(),
     closeEditing: () => editing.close(),
     closeTabs: () => windowTabs.close(),
@@ -161,6 +166,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     closePlugins: async () => {
       await deps.pluginLoader?.close()
     },
+    reportError: (error) =>
+      deps.writeMessage(`The window did not start cleanly: ${formatErrorMessage(error)}`, 'error'),
   })
 }
 
@@ -189,10 +196,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
         'error',
       ),
     reportLoadError: (pluginId, error) => {
-      // eslint-disable-next-line no-console -- the full error stays available in the devtools console
-      console.error(`plugin ${pluginId} failed to load`, error)
       log.getWriter(`plugin:${pluginId}`)(
-        words.pluginStopped(getPluginName(pluginId), words.pluginLoadFailed),
+        words.pluginStopped(
+          getPluginName(pluginId),
+          `${words.pluginLoadFailed}: ${formatErrorMessage(error)}`,
+        ),
         'error',
       )
     },
@@ -263,6 +271,7 @@ function initWindowServices(
       tabOpeners: base.tabOpeners,
       getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
+      writeMessage: base.writeMessage,
     }),
   )
 
@@ -300,6 +309,7 @@ function initWindowKindsAndCommands(
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
   const fileMenuCommands = useFileMenuCommands({
     onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
+    onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
   })
 
   ctx.kinds = useWindowKinds({
@@ -364,7 +374,9 @@ export const useWindow = () => {
   const services = initWindowServices(base, ctx, settingsHolder)
   const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
-  watchPluginSettings(settings, base.pluginLoader)
+  watchPluginSettings(settings, base.pluginLoader, (error) =>
+    base.writeMessage(`Plugins were not tracked: ${formatErrorMessage(error)}`, 'error'),
+  )
 
   const notices = useWindowNotices({
     log: base.log,
@@ -380,7 +392,13 @@ export const useWindow = () => {
   })
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
-  const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs, isWriting: isWritingTabs })
+  const openTabs = useOpenTabs({
+    core,
+    windowTabs: base.windowTabs,
+    isWriting: isWritingTabs,
+    reportError: (error) =>
+      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
+  })
 
   const closeTab = (id: string, hold?: () => void) => {
     base.tabLinks.removeClosedTab(id)
@@ -409,8 +427,12 @@ export const useWindow = () => {
   const api = {
     runCommand,
     openCurrentVault: () =>
-      void base.windowTabs.openPlacedTabs((kind, error) =>
-        base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+      runInBackground(
+        base.windowTabs.openPlacedTabs((kind, error) =>
+          base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+        ),
+        (error) =>
+          base.writeMessage(`The tabs did not open: ${formatErrorMessage(error)}`, 'error'),
       ),
     isLayoutReady,
     openSettings: (pluginId?: string, filter?: string) =>

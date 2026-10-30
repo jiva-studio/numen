@@ -7,7 +7,9 @@
  * standing at it, which is the letter drawn on that row.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { getVaultForKey, WelcomePage } from '@numen/shell'
+import { runInBackground } from '@numen/ui'
 import {
   runInvocation,
   createInvocation,
@@ -75,10 +77,13 @@ function onOpen(id: string) {
     return
   }
   const vault: VaultRef = { id: one.id, name: one.name }
-  void runInvocation(
-    createInvocation('openVault', { ...props.getTarget(), vault }),
-    props.doing,
-    ANSWER_WORDS,
+  runInBackground(
+    runInvocation(
+      createInvocation('openVault', { ...props.getTarget(), vault }),
+      props.doing,
+      ANSWER_WORDS,
+    ),
+    (error) => props.doing.writeMessage(formatErrorMessage(error), 'error'),
   )
 }
 

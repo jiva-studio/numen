@@ -20,7 +20,10 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
       createFolder: record('createFolder', 'folded'),
     } as never,
     windowTabs: {
-      openTabOfKind: record('openTabOfKind'),
+      openTabOfKind: (...args: unknown[]) => {
+        record('openTabOfKind')(...args)
+        return Promise.resolve()
+      },
       requestClose: record('requestClose'),
     } as never,
     making: { createWithTitle: record('createWithTitle', 'created') } as never,
@@ -137,7 +140,12 @@ describe('the commands reach the window', () => {
   it('passes each choice of a setting to the setting it is for', async () => {
     const selected: string[] = []
     const { deps } = createOptions({
-      oneName: { choose: async (item) => void selected.push(`sync ${item}`) },
+      oneName: {
+        choose: (item) => {
+          selected.push(`sync ${item}`)
+          return Promise.resolve()
+        },
+      },
     })
 
     await deps.settings.chooseSync('on')
@@ -159,7 +167,7 @@ describe('the commands reach the window', () => {
   })
 
   it('copies a path to the clipboard', () => {
-    const writeText = vi.fn(async () => {})
+    const writeText = vi.fn(() => Promise.resolve())
     vi.stubGlobal('navigator', { clipboard: { writeText } })
 
     createOptions().deps.copyPath('zoo/Llama.md')
@@ -171,20 +179,20 @@ describe('useSettings step groups', () => {
   it('returns step groups for performanceProfile', () => {
     const core = {
       fileKinds: async () => new Map(),
-      fileChanges: () => () => {},
+      fileChanges: () => vi.fn(),
       fileList: async () => [],
       read: async () => '',
-      write: async () => {},
-      appState: () => {},
+      write: () => Promise.resolve(),
+      appState: vi.fn(),
     } as never
     const log = {
-      getWriter: () => () => {},
+      getWriter: () => vi.fn(),
     } as never
     const windowTabs = {
       handle: {
         front: () => null,
-        open: () => {},
-        close: () => {},
+        open: vi.fn(),
+        close: vi.fn(),
       },
     } as never
 
@@ -193,7 +201,7 @@ describe('useSettings step groups', () => {
       words: WORDS,
       log,
       windowTabs,
-      onSizeChanged: () => {},
+      onSizeChanged: vi.fn(),
     })
 
     const perfGroups = settings.paletteLists.getStepGroups('performanceProfile', '')
