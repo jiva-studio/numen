@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"testing"
 )
@@ -40,7 +39,7 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 	mgr.SetOpenTabs(initial, "t1")
 
 	// Focus by ID
-	ctx := context.Background()
+	ctx := t.Context()
 	focused, err := mgr.FocusTab(ctx, WindowFocusTabInput{TabID: "t2"})
 	if err != nil {
 		t.Fatalf("FocusTab: %v", err)
@@ -74,7 +73,7 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 
 func TestWindowManagerFocusTabNewPath(t *testing.T) {
 	mgr := NewManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	focused, err := mgr.FocusTab(ctx, WindowFocusTabInput{Path: "notes/new.md"})
 	if err != nil {
@@ -95,7 +94,7 @@ func TestWindowManagerFocusTabNewPath(t *testing.T) {
 
 func TestWindowManagerFocusTabValidation(t *testing.T) {
 	mgr := NewManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := mgr.FocusTab(ctx, WindowFocusTabInput{})
 	if !errors.Is(err, errMissingFocusTarget) {

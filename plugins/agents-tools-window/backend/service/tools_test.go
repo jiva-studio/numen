@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"slices"
 	"strings"
@@ -18,7 +17,7 @@ func TestRegisterTools(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	listed, err := registry.ListToolInfos(context.Background())
+	listed, err := registry.ListToolInfos(t.Context())
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
@@ -42,7 +41,7 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	resp, err := registry.InvokeTool(context.Background(), tools.Call{
+	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "window_tabs_get",
 		Arguments: []byte(`{}`),
 	})
@@ -78,7 +77,7 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	resp, err := registry.InvokeTool(context.Background(), tools.Call{
+	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "window_tabs_get",
 		Arguments: []byte(`{}`),
 	})
@@ -108,7 +107,7 @@ func TestWindowTabsGetWithAskedFocus(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	resp, err := registry.InvokeTool(context.Background(), tools.Call{
+	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "window_tabs_get",
 		Arguments: []byte(`{}`),
 		Context:   map[string]string{"focus": "notes/inferred.md"},
@@ -145,8 +144,8 @@ func TestWindowFocusTab(t *testing.T) {
 	}
 
 	// Focus existing tab by ID
-	args, _ := json.Marshal(WindowFocusTabInput{TabID: "t2"})
-	resp, err := registry.InvokeTool(context.Background(), tools.Call{
+	args := marshalJSON(t, WindowFocusTabInput{TabID: "t2"})
+	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "window_focus_tab",
 		Arguments: args,
 	})
@@ -162,8 +161,8 @@ func TestWindowFocusTab(t *testing.T) {
 	}
 
 	// Focus new note by Path
-	args, _ = json.Marshal(WindowFocusTabInput{Path: "notes/c.md"})
-	resp, err = registry.InvokeTool(context.Background(), tools.Call{
+	args = marshalJSON(t, WindowFocusTabInput{Path: "notes/c.md"})
+	resp, err = registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "window_focus_tab",
 		Arguments: args,
 	})
@@ -178,8 +177,8 @@ func TestWindowFocusTab(t *testing.T) {
 	}
 
 	// Focus with empty arguments produces refusal
-	args, _ = json.Marshal(WindowFocusTabInput{})
-	resp, err = registry.InvokeTool(context.Background(), tools.Call{
+	args = marshalJSON(t, WindowFocusTabInput{})
+	resp, err = registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "window_focus_tab",
 		Arguments: args,
 	})
@@ -194,7 +193,7 @@ func TestWindowFocusTab(t *testing.T) {
 func TestEditPreviewFromVault(t *testing.T) {
 	mgr := NewManager()
 	vault := hosttest.New("test-vault")
-	ctx := context.Background()
+	ctx := t.Context()
 	if err := vault.Create(ctx, "notes/sample.md", []byte("hello world\nline 2\n")); err != nil {
 		t.Fatalf("create vault file: %v", err)
 	}
@@ -208,7 +207,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 		Path:            "notes/sample.md",
 		ProposedContent: "hello world\nline 2 modified\nnew line\n",
 	}
-	args, _ := json.Marshal(input)
+	args := marshalJSON(t, input)
 	resp, err := registry.InvokeTool(ctx, tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
@@ -248,11 +247,11 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 	}
 
 	customDiff := "--- a/notes/custom.md\n+++ b/notes/custom.md\n@@ -1 +1 @@\n-old\n+new\n"
-	args, _ := json.Marshal(EditPreviewInput{
+	args := marshalJSON(t, EditPreviewInput{
 		Path: "notes/custom.md",
 		Diff: customDiff,
 	})
-	resp, err := registry.InvokeTool(context.Background(), tools.Call{
+	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
@@ -277,8 +276,8 @@ func TestEditPreviewValidation(t *testing.T) {
 	}
 
 	// Missing path
-	args, _ := json.Marshal(EditPreviewInput{ProposedContent: "abc"})
-	resp, err := registry.InvokeTool(context.Background(), tools.Call{
+	args := marshalJSON(t, EditPreviewInput{ProposedContent: "abc"})
+	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
@@ -290,8 +289,8 @@ func TestEditPreviewValidation(t *testing.T) {
 	}
 
 	// Missing content and diff
-	args, _ = json.Marshal(EditPreviewInput{Path: "notes/a.md"})
-	resp, err = registry.InvokeTool(context.Background(), tools.Call{
+	args = marshalJSON(t, EditPreviewInput{Path: "notes/a.md"})
+	resp, err = registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
@@ -301,4 +300,14 @@ func TestEditPreviewValidation(t *testing.T) {
 	if !resp.GetResult().GetIsRefusal() {
 		t.Errorf("expected refusal for missing content and diff")
 	}
+}
+
+// marshalJSON encodes value as JSON and fails the test when encoding fails.
+func marshalJSON(t *testing.T, value any) []byte {
+	t.Helper()
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return encoded
 }

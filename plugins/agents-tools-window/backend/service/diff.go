@@ -86,6 +86,7 @@ func countScriptChanges(script []editItem) (int, int) {
 			additions++
 		case opDelete:
 			deletions++
+		case opEqual:
 		}
 	}
 	return additions, deletions
@@ -133,14 +134,15 @@ func backtrackEditScript(orig, prop []string, table [][]int) []editItem {
 	i, j := 0, 0
 
 	for i < origLen && j < propLen {
-		if orig[i] == prop[j] {
+		switch {
+		case orig[i] == prop[j]:
 			script = append(script, editItem{kind: opEqual, text: orig[i]})
 			i++
 			j++
-		} else if table[i+1][j] >= table[i][j+1] {
+		case table[i+1][j] >= table[i][j+1]:
 			script = append(script, editItem{kind: opDelete, text: orig[i]})
 			i++
-		} else {
+		default:
 			script = append(script, editItem{kind: opInsert, text: prop[j]})
 			j++
 		}
@@ -216,6 +218,7 @@ func (c *hunkCollector) handleDifference(script []editItem, idx int) {
 		c.currentLines = append(c.currentLines, "+"+item.text)
 		c.propLen++
 		c.propLine++
+	case opEqual:
 	}
 }
 
