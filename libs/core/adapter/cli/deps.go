@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
@@ -123,10 +124,12 @@ type Problems struct {
 	Close    func() error
 }
 
-// closeIfOpen gives back what an opener opened, and does nothing where it
-// opened nothing.
-func closeIfOpen(closer func() error) {
-	if closer != nil {
-		_ = closer()
+// closeInto calls closer when it is set and joins its error into *err.
+func closeInto(err *error, closer func() error) {
+	if closer == nil {
+		return
+	}
+	if closeErr := closer(); closeErr != nil {
+		*err = errors.Join(*err, closeErr)
 	}
 }
