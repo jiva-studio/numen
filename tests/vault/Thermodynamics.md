@@ -5,6 +5,7 @@ author: Jaynes
 links:
   - to: "[[notes/Entropy]]"
     role: child
+    marker: arrow
   - to: "[[Linear algebra]]"
     role: parent
     type: requires

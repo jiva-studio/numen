@@ -12,6 +12,7 @@ A link that carries a role is written in the `links:` block of the frontmatter �
 | `role` | yes | what kind of relationship it is, from the closed list of five |
 | `type` | no | what the link is for, as a feature reads it |
 | `label` | no | the few words the person calls this relationship, drawn along the line between the two notes |
+| `marker` | no | what is drawn at the end of the line that points at `to`, from the closed list below |
 | `note` | no | why the link exists, in the person's words |
 
 `label` and `type` answer different questions. A type is a category code reads; a label is the person's own words, read by nobody but them. A link may carry either, both or neither. No field carries a copy of the target's name.
@@ -34,7 +35,18 @@ links:
 Ordinary text with an [[ordinary link]], which is a `ref`.
 ```
 
-An entry with no `to`, an entry with no `role`, and an entry the application cannot read are each a problem against the note that wrote them; the rest of the note is read as usual.
+An entry with no `to`, an entry with no `role`, an entry with a role or a marker nobody decided on, and an entry the application cannot read are each a problem against the note that wrote them; the rest of the note is read as usual.
+
+## Markers
+
+`marker` is drawn at the end of the line that points at the record's target. The list is closed, as the list of roles is. A value is introduced together with the code that draws it.
+
+| | |
+| --- | --- |
+| *(absent)* | nothing is drawn at that end. |
+| `arrow` | an arrowhead at the `to` end. |
+
+The marker belongs to the record, so each note decides about its own end: `marker: arrow` written in A puts an arrowhead at B, and the same key written in B puts one at A. A line whose two records carry no marker is a plain line; a line whose records both carry `arrow` has an arrowhead at each end. A marker says nothing about the role: `jump` with an arrow and `jump` without one are the same kind of link, drawn differently, and a record with a marker and no `label` is complete as it is.
 
 ## Roles
 
@@ -58,6 +70,14 @@ Multiple parents are ordinary: the hierarchy is a directed acyclic graph, not a 
 
 `sibling` is not stored. Siblings are the children of a shared parent, which is a query.
 
+## A connection
+
+A connection is the relationship between two notes as a whole: up to two records, one written in each note, each with its own `label` and `marker`. There is no field for a reverse label; it is the `label` of the record in the other note. The roles of the two records are inverse of each other (`parent` and `child`, `jump` and `jump`), and the hierarchy built from them contains no cycle: a connection that would make a note its own ancestor is refused. Saving a connection writes both notes or neither.
+
+Only `parent`, `child` and `jump` records are part of a connection. A `ref` is the body wikilink and an `attachment` points at no note.
+
+A record is addressed by its target and its `type`. A note holds one record per target and type, and a record of another type to the same target belongs to a different connection.
+
 ## Interactive links in the Plex graph
 
 The Plex graph allows authoring and managing relationships directly on canvas:
@@ -67,9 +87,8 @@ The Plex graph allows authoring and managing relationships directly on canvas:
 - Releasing on open canvas presents an autocomplete search popover to pick a target note or create a new note on the fly.
 - Right-clicking an edge opens the link inspector popover to view and modify connections between two notes.
 - The link inspector supports:
-  - Cycling directions on a single link: forward (`→`), reverse (`←`), or undirected (`—`).
-  - Adding a reverse direction (`+ Reverse` or Ctrl+Enter) with its own distinct label for bidirectional relationships.
-  - Deleting individual directional links or the entire connection.
+  - The kind of link between the two notes, and for each of the two ends whether the note writes a record, the label of that record, and whether it carries an arrow.
+  - Deleting one end or the entire connection.
 - Editing a link from the graph updates the frontmatter `links:` block of the note directly.
 
 ## The same link written twice

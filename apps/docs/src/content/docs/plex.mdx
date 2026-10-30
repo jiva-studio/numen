@@ -102,14 +102,16 @@ drop them into a relation and they are linked to the note that relation belongs 
 
 A line between two nodes is a link. Where you gave the link a
 [label](/links/#what-it-looks-like-in-the-file), the label is written along the line, so the map
-says *why* two notes are connected and not only *that* they are.
+says *why* two notes are connected and not only *that* they are. An arrowhead at an end of the
+line is the [marker](/links/#markers) the note at the other end wrote on its link; a link with no
+marker is drawn without one.
 
 ## Inspecting and changing links
 
 Right-clicking any connection line between two nodes opens the link inspector:
 
-- **Change direction**: Cycle single link arrows between forward (`→`), reverse (`←`), and undirected (`—`).
-- **Add dual labels**: Click **+ Reverse** (or press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>Enter</kbd>) to give the reverse direction its own distinct description.
-- **Delete links**: Remove individual directions or remove the entire connection between the notes.
+- **Arrow**: Each end of the connection can carry an arrow, independently of the other. A line with no arrow is plain, and a line with an arrow at both ends has a head at each note.
+- **Labels**: Each end has its own label, so the two notes can describe the same connection in their own words. An end with an arrow and no label is kept.
+- **Delete links**: Remove one end or the entire connection between the notes.
 
 Saving the inspector updates the frontmatter `links:` block in the notes.
