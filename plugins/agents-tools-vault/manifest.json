@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.tools.vault",
   "name": "Vault Knowledge Tools",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "Library search, reading, and note editing tools for AI assistants",
   "capabilities": ["tools"],

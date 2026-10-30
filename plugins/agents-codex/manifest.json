@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.codex",
   "name": "OpenAI Codex Agent",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "OpenAI Codex assistant for chat and note editing",
   "capabilities": ["agent", "ai.agent.provider"],

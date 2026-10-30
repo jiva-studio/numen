@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.media.player",
   "name": "Audio Player & Recorder",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "Audio and video player with interactive transcripts and voice recording",
   "capabilities": ["audio", "recording"],

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.readers.epub",
   "name": "EPUB Book Reader",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],

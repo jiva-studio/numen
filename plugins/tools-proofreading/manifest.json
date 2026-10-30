@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
