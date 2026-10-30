@@ -7,6 +7,7 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/edit"
 
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
@@ -17,6 +18,10 @@ import (
 
 var ErrNoVault = errors.New("the host is showing no vault")
 
+// ErrNoConnections is returned when the host was built without the operations on
+// connections.
+var ErrNoConnections = errors.New("the host has no operations on connections")
+
 // Vault is port.PluginVault over the ports of the installation.
 type Vault struct {
 	Current func() (domain.Vault, bool)
@@ -24,6 +29,9 @@ type Vault struct {
 	Writers vaultport.VaultWriters
 	Notes   noteport.NoteQueries
 	Links   noteport.LinkQueries
+	// Connections reads and writes the relationships between notes. Without it
+	// every call about a connection fails with ErrNoConnections.
+	Connections noteport.ConnectionOperations
 	// Problems answers what parsing turned up. Without it nothing is.
 	Problems problemport.ProblemQueries
 	Stores   pluginport.PluginStores
@@ -301,4 +309,76 @@ func (a Vault) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, err
 		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, completionport.ErrUnavailable)
 	}
 	return a.Watcher.WatchVault(ctx, v)
+}
+
+func (a Vault) openConnections() (domain.Vault, noteport.ConnectionOperations, error) {
+	v, err := a.open()
+	if err != nil {
+		return domain.Vault{}, nil, err
+	}
+	if a.Connections == nil {
+		return domain.Vault{}, nil, ErrNoConnections
+	}
+	return v, a.Connections, nil
+}
+
+func (a Vault) GetConnection(ctx context.Context, first, second, kind string) (domain.Connection, error) {
+	v, ops, err := a.openConnections()
+	if err != nil {
+		return domain.Connection{}, err
+	}
+	return ops.GetConnection(ctx, v, first, second, kind)
+}
+
+func (a Vault) SaveConnection(ctx context.Context, c domain.Connection) error {
+	v, ops, err := a.openConnections()
+	if err != nil {
+		return err
+	}
+	return a.notifyAfterWrite(ops.SaveConnection(ctx, v, c))
+}
+
+func (a Vault) RemoveSide(ctx context.Context, from, to, kind string) error {
+	v, ops, err := a.openConnections()
+	if err != nil {
+		return err
+	}
+	return a.notifyAfterWrite(ops.RemoveSide(ctx, v, from, to, kind))
+}
+
+func (a Vault) RemoveConnection(ctx context.Context, first, second, kind string) error {
+	v, ops, err := a.openConnections()
+	if err != nil {
+		return err
+	}
+	return a.notifyAfterWrite(ops.RemoveConnection(ctx, v, first, second, kind))
+}
+
+func (a Vault) Join(ctx context.Context, from, to string, side domain.Side) error {
+	v, ops, err := a.openConnections()
+	if err != nil {
+		return err
+	}
+	return a.notifyAfterWrite(ops.Join(ctx, v, from, to, side))
+}
+
+func (a Vault) CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error) {
+	v, ops, err := a.openConnections()
+	if err != nil {
+		return "", err
+	}
+	path, err := ops.CreateInRelation(ctx, v, in)
+	if path != "" {
+		a.notifyFileWritten()
+	}
+	return path, err
+}
+
+// notifyAfterWrite tells the host a plugin changed the vault when the write reached it.
+// An index that could not follow a write that landed is still a write.
+func (a Vault) notifyAfterWrite(err error) error {
+	if err == nil || errors.Is(err, edit.ErrUnlevelled) {
+		a.notifyFileWritten()
+	}
+	return err
 }

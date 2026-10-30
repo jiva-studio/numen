@@ -136,19 +136,21 @@ func (u EditLinks) PointAt(
 // Remove takes a relationship out. The note at the other end is untouched: what
 // is removed is one end's account of the relationship, which is all a link ever
 // was.
+//
+// The record is addressed by the key: its target, its type (the empty type names
+// the records that carry none), and its role when one is given.
 func (u EditLinks) Remove(
-	ctx context.Context, v domain.Vault, from string, to domain.Address,
-	role domain.LinkRole, stat domain.FileStat,
+	ctx context.Context, v domain.Vault, from string, key domain.LinkKey, stat domain.FileStat,
 ) (domain.FileStat, error) {
 	e := u.newEdit()
 	e.FileStat = stat
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
-		removed, err := doc.RemoveLink(to, role)
+		removed, err := doc.RemoveLink(key)
 		if err != nil {
 			return err
 		}
 		if removed == 0 {
-			return fmt.Errorf("no link to %s is written here", to)
+			return fmt.Errorf("no link to %s is written here", key.Target)
 		}
 		return nil
 	})
@@ -158,6 +160,9 @@ func (u EditLinks) Remove(
 func CheckWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", link.Role)
+	}
+	if !domain.IsWritableMarker(link.Marker) {
+		return fmt.Errorf("%q is not a marker a link can carry", link.Marker)
 	}
 	if link.Target.Value == "" {
 		return errors.New("a link needs somewhere to go")

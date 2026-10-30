@@ -42,6 +42,12 @@ type memoryVault struct {
 	moves  chan struct{}
 	// storeRoot is the folder the plugins' folders of the store are kept under.
 	storeRoot string
+
+	connection    domain.Connection
+	connectionErr error
+	joined        []domain.Side
+	removedSides  []string
+	created       []domain.RelatedNote
 }
 
 func newMemoryVault(files map[string]string) *memoryVault {
@@ -225,7 +231,40 @@ func (m *memoryVault) GetLinks(_ context.Context, from string) ([]domain.Resolve
 }
 
 func (m *memoryVault) GetBacklinks(_ context.Context, to string) ([]domain.ResolvedLink, error) {
-	return []domain.ResolvedLink{m.link("samples/" + to)}, nil
+	back := m.link("samples/" + to)
+	back.Role = domain.RoleParent
+	back.Why = "because"
+	back.Marker = domain.MarkerArrow
+	return []domain.ResolvedLink{back}, nil
+}
+
+func (m *memoryVault) GetConnection(context.Context, string, string, string) (domain.Connection, error) {
+	return m.connection, m.connectionErr
+}
+
+func (m *memoryVault) SaveConnection(_ context.Context, c domain.Connection) error {
+	m.connection = c
+	return m.connectionErr
+}
+
+func (m *memoryVault) RemoveSide(_ context.Context, from, to, kind string) error {
+	m.removedSides = append(m.removedSides, from+">"+to+":"+kind)
+	return m.connectionErr
+}
+
+func (m *memoryVault) RemoveConnection(_ context.Context, a, b, kind string) error {
+	m.removedSides = append(m.removedSides, a+"<>"+b+":"+kind)
+	return m.connectionErr
+}
+
+func (m *memoryVault) Join(_ context.Context, _, _ string, side domain.Side) error {
+	m.joined = append(m.joined, side)
+	return m.connectionErr
+}
+
+func (m *memoryVault) CreateInRelation(_ context.Context, in domain.RelatedNote) (string, error) {
+	m.created = append(m.created, in)
+	return "samples/Untitled note.md", m.connectionErr
 }
 
 func (m *memoryVault) ResolveLinks(_ context.Context, from string, output []string) (map[string]domain.ResolvedLink, error) {
@@ -625,5 +664,145 @@ func TestAFingerprintCarriesWhetherTheFileIsANote(t *testing.T) {
 	}
 	if got := readFileStat(&v1.HostFileStat{}); got.Kind != "" {
 		t.Errorf("got %+v, want a fingerprint naming no file to have no kind", got)
+	}
+}
+
+func TestAConnectionIsReadWithBothSides(t *testing.T) {
+	client, vault := newVaultFixture(t)
+	vault.connection = domain.Connection{
+		A: "a.md", B: "b.md",
+		AB: &domain.Side{Role: domain.RoleParent, Type: "requires", Why: "why", Label: "l", Marker: domain.MarkerArrow},
+	}
+
+	res, err := client.GetConnection(t.Context(), connect.NewRequest(&v1.HostVaultServiceGetConnectionRequest{
+		First: "a.md", Second: "b.md",
+	}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := res.Msg.GetConnection()
+	side := got.GetFirstSide()
+	if got.GetFirst() != "a.md" || side.GetRole() != v1.Role_ROLE_PARENT || side.GetMarker() != v1.Marker_MARKER_ARROW ||
+		side.GetType() != "requires" || side.GetNote() != "why" || side.GetLabel() != "l" || got.GetSecondSide() != nil {
+		t.Errorf("the connection came out as %v", got)
+	}
+}
+
+func TestAConnectionIsSavedAsTheCoreReadsIt(t *testing.T) {
+	client, vault := newVaultFixture(t)
+
+	res, err := client.SaveConnection(t.Context(), connect.NewRequest(&v1.HostVaultServiceSaveConnectionRequest{
+		Connection: &v1.Connection{
+			First: "a.md", Second: "b.md",
+			FirstSide: &v1.ConnectionSide{Role: v1.Role_ROLE_JUMP, Marker: v1.Marker_MARKER_ARROW},
+		},
+	}))
+
+	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the answer was %v (%v)", res.Msg, err)
+	}
+	if vault.connection.AB == nil || vault.connection.AB.Marker != domain.MarkerArrow || vault.connection.AB.Label != "" {
+		t.Errorf("the host saved %+v", vault.connection)
+	}
+}
+
+func TestAConnectionThatCannotBeSavedAnswersWithItsReason(t *testing.T) {
+	for name, tc := range map[string]struct {
+		err  error
+		want v1.HostVaultErrorCode
+	}{
+		"a cycle":          {domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},
+		"an invalid one":   {domain.ErrInvalidConnection, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
+		"a stale note":     {vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE},
+		"an exhausted set": {domain.ErrNoFreeName, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED},
+	} {
+		t.Run(name, func(t *testing.T) {
+			client, vault := newVaultFixture(t)
+			vault.connectionErr = tc.err
+
+			res, err := client.SaveConnection(t.Context(), connect.NewRequest(&v1.HostVaultServiceSaveConnectionRequest{
+				Connection: &v1.Connection{
+					First: "a.md", Second: "b.md", FirstSide: &v1.ConnectionSide{Role: v1.Role_ROLE_JUMP},
+				},
+			}))
+
+			if err != nil || res.Msg.GetError() != tc.want {
+				t.Errorf("the answer was %v (%v), want %v", res.Msg, err, tc.want)
+			}
+		})
+	}
+}
+
+func TestASideWithoutARoleIsNotSaved(t *testing.T) {
+	client, vault := newVaultFixture(t)
+
+	res, err := client.SaveConnection(t.Context(), connect.NewRequest(&v1.HostVaultServiceSaveConnectionRequest{
+		Connection: &v1.Connection{First: "a.md", Second: "b.md", FirstSide: &v1.ConnectionSide{}},
+	}))
+
+	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION {
+		t.Errorf("the answer was %v (%v)", res.Msg, err)
+	}
+	if vault.connection.A != "" {
+		t.Errorf("the host saved %+v", vault.connection)
+	}
+}
+
+func TestANoteIsCreatedInARelationAndItsPathReturned(t *testing.T) {
+	client, vault := newVaultFixture(t)
+
+	res, err := client.CreateRelatedNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceCreateRelatedNoteRequest{
+		From: "samples/A.md", Role: v1.Role_ROLE_CHILD, Type: "series",
+	}))
+
+	if err != nil || res.Msg.GetPath() != "samples/Untitled note.md" {
+		t.Fatalf("the answer was %v (%v)", res.Msg, err)
+	}
+	if len(vault.created) != 1 || vault.created[0].Role != domain.RoleChild || vault.created[0].Type != "series" {
+		t.Errorf("the host created %+v", vault.created)
+	}
+}
+
+func TestSidesAreRemovedAndJoined(t *testing.T) {
+	client, vault := newVaultFixture(t)
+	ctx := t.Context()
+
+	if _, err := client.RemoveSide(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveSideRequest{
+		Path: "a.md", To: "b.md", Type: "x",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.RemoveConnection(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveConnectionRequest{
+		First: "a.md", Second: "b.md",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.JoinNotes(ctx, connect.NewRequest(&v1.HostVaultServiceJoinNotesRequest{
+		From: "a.md", To: "b.md", Side: &v1.ConnectionSide{Role: v1.Role_ROLE_PARENT},
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(vault.removedSides, []string{"a.md>b.md:x", "a.md<>b.md:"}) {
+		t.Errorf("removed %v", vault.removedSides)
+	}
+	if len(vault.joined) != 1 || vault.joined[0].Role != domain.RoleParent {
+		t.Errorf("joined %+v", vault.joined)
+	}
+}
+
+func TestABacklinkCarriesItsRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
+	client, _ := newVaultFixture(t)
+
+	res, err := client.GetBacklinks(t.Context(), connect.NewRequest(&v1.GetBacklinksRequest{Path: "Animal.md"}))
+
+	if err != nil || len(res.Msg.GetLinks()) != 1 {
+		t.Fatalf("the answer was %v (%v)", res.Msg, err)
+	}
+	link := res.Msg.GetLinks()[0]
+	if link.GetRole() != v1.Role_ROLE_PARENT || link.GetRoleFromHere() != v1.Role_ROLE_CHILD ||
+		link.GetMarker() != v1.Marker_MARKER_ARROW || link.GetNote() != "because" {
+		t.Errorf("the backlink came out as %v", link)
 	}
 }

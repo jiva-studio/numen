@@ -140,11 +140,12 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 // currently goes.
 func scanLinkAsWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
 	var l domain.ResolvedLink
-	var role string
+	var role, marker string
 	if err := rows.Scan(&l.From, &l.Target.Scheme, &l.Target.Value, &role,
-		&l.Type, &l.Why, &l.Label); err != nil {
+		&l.Type, &l.Why, &l.Label, &marker); err != nil {
 		return domain.ResolvedLink{}, err
 	}
 	l.Role = domain.LinkRole(role)
+	l.Marker = domain.LinkMarker(marker)
 	return l, nil
 }

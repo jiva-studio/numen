@@ -17,7 +17,15 @@ type Scenarios struct {
 	Rename       Rename
 	Remove       Remove
 
+	SaveConnection   SaveConnection
+	RemoveSide       RemoveSide
+	RemoveConnection RemoveConnection
+	Join             Join
+	CreateInRelation CreateInRelation
+
 	Links         ShowLinks
+	Connection    GetConnection
+	Backlinks     GetBacklinks
 	Neighbourhood ShowNeighbourhood
 	ResolveLinks  *ResolveLinks
 

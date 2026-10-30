@@ -540,7 +540,7 @@ func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 	before := c.read(t, "Entropy.md")
 
 	if _, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, "",
+		domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}},
 		domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}

@@ -71,7 +71,7 @@ func TestEditLinks_ChecksCallerFingerprint(t *testing.T) {
 		},
 		"removing": func(c changing, targetItem domain.FileStat) error {
 			_, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-				domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, domain.RoleParent, targetItem)
+				domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, Role: domain.RoleParent, Type: "series"}, targetItem)
 			return err
 		},
 	}
@@ -100,7 +100,7 @@ func TestEditingLinksInABlockSavedOnOneLineChangesNothing(t *testing.T) {
 
 	_, added := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.FileStat{}, toEntropy(domain.RoleRef))
 	_, removed := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, domain.RoleParent, domain.FileStat{})
+		domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, Role: domain.RoleParent, Type: "series"}, domain.FileStat{})
 
 	if !errors.Is(added, markdown.ErrInline) {
 		t.Errorf("adding: want ErrInline, got %v", added)
@@ -118,7 +118,7 @@ func TestRemovingALinkThatIsNotThereIsRefused(t *testing.T) {
 	c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
 
 	_, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Order"}, domain.RoleParent, domain.FileStat{})
+		domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Order"}, Role: domain.RoleParent, Type: "series"}, domain.FileStat{})
 
 	if err == nil || !strings.Contains(err.Error(), "no link to") {
 		t.Errorf("want an error naming the missing link, got %v", err)

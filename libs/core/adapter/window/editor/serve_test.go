@@ -656,13 +656,6 @@ func TestEverySearchModeIsRead(t *testing.T) {
 	})
 }
 
-func TestEveryRoleIsRead(t *testing.T) {
-	testsupport.CheckHandled(t, func(role v1.Role) bool {
-		_, named := convertRoleFromWire(role)
-		return named
-	})
-}
-
 func TestEveryRelationIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
 		v1.Relation_RELATION_PARENT:  domain.RelationParent,

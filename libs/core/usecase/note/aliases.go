@@ -9,6 +9,8 @@ const (
 
 type (
 	FocusNote            = query.FocusNote
+	GetBacklinks         = query.GetBacklinks
+	GetConnection        = query.GetConnection
 	GetHeadings          = query.GetHeadings
 	GetNamedPaths        = query.GetNamedPaths
 	GetOpeningNote       = query.GetOpeningNote
@@ -29,6 +31,8 @@ type (
 var (
 	NewCutNotes          = query.NewCutNotes
 	NewFocusNote         = query.NewFocusNote
+	NewGetBacklinks      = query.NewGetBacklinks
+	NewGetConnection     = query.NewGetConnection
 	NewGetHeadings       = query.NewGetHeadings
 	NewGetNamedPaths     = query.NewGetNamedPaths
 	NewGetOpeningNote    = query.NewGetOpeningNote
