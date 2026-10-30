@@ -31,6 +31,6 @@ func (p Provider) CreateText(ctx context.Context, req host.TextCreation) error {
 	if err != nil {
 		return err
 	}
-	p.links.StartFetchText(link, req.IsUserStarted)
+	p.links.StartFetchText(ctx, link, req.IsUserStarted)
 	return nil
 }

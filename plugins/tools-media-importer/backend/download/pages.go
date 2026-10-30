@@ -68,7 +68,7 @@ func (p *PageProvider) GetMetadata(ctx context.Context, target string) (Metadata
 	return Metadata{Title: article.Title}, nil
 }
 
-func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCaptions) (Text, error) {
+func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCaptions) (text Text, err error) {
 	address, err := url.Parse(target)
 	if err != nil {
 		return Text{}, err
@@ -83,7 +83,7 @@ func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCa
 	if err != nil {
 		return Text{}, err
 	}
-	defer func() { _ = answer.Body.Close() }()
+	defer func() { err = errors.Join(err, answer.Body.Close()) }()
 	if answer.StatusCode != http.StatusOK {
 		return Text{}, fmt.Errorf("%s answered %s", target, answer.Status)
 	}

@@ -10,15 +10,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	pathpkg "path"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/ulid"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 )
@@ -147,8 +148,8 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 		return Link{}, err
 	}
 	note := markdown.Parse(domain.FileStat{Path: path}, raw)
-	value, _ := note.Frontmatter[urlKey].(string)
-	if note.Type != NoteType || value == "" {
+	value, isString := note.Frontmatter[urlKey].(string)
+	if note.Type != NoteType || !isString || value == "" {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
 	}
 	parsed, err := address.Parse(value)
@@ -266,33 +267,48 @@ func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
 
 // StartFetch fetches the text of a link in the background, and a copy of the video where one is
 // published. A failure is shown as the task of the work that failed.
-func (l *Links) StartFetch(link Link) {
+func (l *Links) StartFetch(ctx context.Context, link Link) {
+	background := context.WithoutCancel(ctx)
 	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.Background())
+		runCtx, cancel := l.withClosing(background)
 		defer cancel()
-		_ = l.FetchText(runCtx, link, true)
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, true))
 		if l.IsCopyable(link.Address) {
-			_, _ = l.Copy(runCtx, link)
+			_, err := l.Copy(runCtx, link)
+			reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
 }
 
 // StartFetchText fetches the text of a link in the background. A failure is shown as its task.
-func (l *Links) StartFetchText(link Link, isUserStarted bool) {
+func (l *Links) StartFetchText(ctx context.Context, link Link, isUserStarted bool) {
+	background := context.WithoutCancel(ctx)
 	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.Background())
+		runCtx, cancel := l.withClosing(background)
 		defer cancel()
-		_ = l.FetchText(runCtx, link, isUserStarted)
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, isUserStarted))
 	})
 }
 
 // StartCopy copies the video of a link in the background. A failure is shown as its task.
-func (l *Links) StartCopy(link Link) {
+func (l *Links) StartCopy(ctx context.Context, link Link) {
+	background := context.WithoutCancel(ctx)
 	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.Background())
+		runCtx, cancel := l.withClosing(background)
 		defer cancel()
-		_, _ = l.Copy(runCtx, link)
+		_, err := l.Copy(runCtx, link)
+		reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
+}
+
+// reportBackgroundError writes the failure of background work on a link to the standard error
+// stream of the plugin process. The failure is also shown as the task of the work. A work ended by
+// Close, and a work another run has, are not failures.
+func reportBackgroundError(ctx context.Context, work string, link Link, err error) {
+	if err == nil || ctx.Err() != nil || errors.Is(err, ErrBeingFetched) {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "tools-media-importer: %s %s: %v\n", work, link.Path, err)
 }
 
 // taskTitles are what each kind of work on a link is called in the list of tasks.
@@ -526,14 +542,18 @@ func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
-	_ = l.host.Queue.ReportTask(ctx, task)
+	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: show the task %s: %v\n", task.ID, err)
+	}
 }
 
 // endTask takes a task out of the list, or leaves it shown with the error that ended the work.
 func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	ctx = context.WithoutCancel(ctx)
 	if err == nil || errors.Is(err, context.Canceled) {
-		_ = l.host.Queue.FinishTask(ctx, task.ID)
+		if finishErr := l.host.Queue.FinishTask(ctx, task.ID); finishErr != nil {
+			fmt.Fprintf(os.Stderr, "tools-media-importer: finish the task %s: %v\n", task.ID, finishErr)
+		}
 		return
 	}
 	task.Error = err.Error()

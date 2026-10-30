@@ -1,3 +1,4 @@
+// Package clock reads the current time.
 package clock
 
 import "time"

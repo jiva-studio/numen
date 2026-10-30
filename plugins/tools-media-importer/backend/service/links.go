@@ -87,7 +87,7 @@ func (s linkServer) FetchText(
 	if err != nil || isRefused(code) {
 		return connect.NewResponse(&linksv1.FetchTextResponse{Error: code}), err
 	}
-	s.links.StartFetchText(found, req.Msg.GetIsUserStarted())
+	s.links.StartFetchText(ctx, found, req.Msg.GetIsUserStarted())
 	return connect.NewResponse(&linksv1.FetchTextResponse{}), nil
 }
 
@@ -98,7 +98,7 @@ func (s linkServer) CopyVideo(
 	if err != nil || isRefused(code) {
 		return connect.NewResponse(&linksv1.CopyVideoResponse{Error: code}), err
 	}
-	s.links.StartCopy(found)
+	s.links.StartCopy(ctx, found)
 	return connect.NewResponse(&linksv1.CopyVideoResponse{}), nil
 }
 
@@ -133,7 +133,7 @@ func (s linkServer) CreateLinks(
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		s.links.StartFetch(made)
+		s.links.StartFetch(ctx, made)
 		out.Paths = append(out.Paths, made.Path)
 	}
 	return connect.NewResponse(out), nil

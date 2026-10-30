@@ -29,7 +29,7 @@ var mockCues = []Cue{
 func (mockVideo) CanHandle(address string) bool { return isVideoSite(address) }
 
 func (mockVideo) GetDownloadModel(string) DownloadModel {
-	return DownloadModel{Tool: "mock", Producer: "captions"}
+	return DownloadModel{Tool: "mock", Producer: producerCaptions}
 }
 
 func (mockVideo) GetMetadata(context.Context, string) (Metadata, error) {
@@ -41,7 +41,7 @@ func (mockVideo) GetMetadata(context.Context, string) (Metadata, error) {
 
 func (mockVideo) GetText(context.Context, string, PreferredCaptions) (Text, error) {
 	return Text{
-		Producer: "captions", Title: "Tidal mill at work", Length: mockSeconds * 1000,
+		Producer: producerCaptions, Title: "Tidal mill at work", Length: mockSeconds * 1000,
 		Cues: append([]Cue(nil), mockCues...),
 	}, nil
 }

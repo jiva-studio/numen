@@ -132,7 +132,7 @@ func MountFromEnv(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return Mount(s, openHostAt(endpoint), os.Getenv(EnvMockML) == "true")
+	return Mount(s, openHostAt(endpoint), os.Getenv(EnvMockML) == waitTrue)
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -144,6 +144,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return Mount(s, hosted, vars[EnvMockML] == "true")
+		return Mount(s, hosted, vars[EnvMockML] == waitTrue)
 	})
 }

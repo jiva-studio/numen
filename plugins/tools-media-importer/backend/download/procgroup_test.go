@@ -99,7 +99,9 @@ func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 	isDone := make(chan struct{})
 	go func() {
 		defer close(isDone)
-		_, _ = run(ctx, spawningScript(t), nil, folder)
+		if _, err := run(ctx, spawningScript(t), nil, folder); err == nil {
+			t.Error("a cancelled run reported no error")
+		}
 	}()
 	waitFor(t, "the tool starting its child", func() bool {
 		_, ok := readPID(filepath.Join(folder, "child"))
@@ -139,7 +141,7 @@ func TestARunThatEndsByItselfAnswersAsBefore(t *testing.T) {
 
 // A process group gives the command a wait delay of stopGrace.
 func TestSetProcessGroupSetsWaitDelay(t *testing.T) {
-	cmd := exec.Command("true")
+	cmd := exec.CommandContext(t.Context(), "true")
 	setProcessGroup(cmd)
 	if cmd.WaitDelay != 5*time.Second {
 		t.Errorf("WaitDelay is %v, want %v", cmd.WaitDelay, 5*time.Second)

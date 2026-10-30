@@ -41,8 +41,8 @@ func newImportCommand(links *link.Links) command.Run {
 		if !links.IsCopyable(made.Address) {
 			return command.Result{Message: message, OpenedPath: made.Path}, nil
 		}
-		if req.Arguments.GetString("wait") != "true" {
-			links.StartCopy(made)
+		if req.Arguments.GetString("wait") != waitTrue {
+			links.StartCopy(ctx, made)
 			return command.Result{Message: message + "; the video is being copied", OpenedPath: made.Path}, nil
 		}
 		size, err := links.Copy(ctx, made)
@@ -107,3 +107,6 @@ func describeSize(bytes int64) string {
 	}
 	return fmt.Sprintf("%d MB", bytes>>20)
 }
+
+// waitTrue is the value of the argument wait that has the command answer after the copy is made.
+const waitTrue = "true"

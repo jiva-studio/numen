@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -42,7 +43,7 @@ func newYtDLP(c Config) *ytDLP {
 func (v *ytDLP) CanHandle(target string) bool { return isVideoSite(target) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(string) DownloadModel {
-	return DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: "captions"}
+	return DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: producerCaptions}
 }
 
 func (v *ytDLP) readVersion() string {
@@ -76,19 +77,27 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 		return nil, err
 	}
 
-	if tempFile, err := os.CreateTemp("", "numen-info-*.json"); err == nil {
-		if _, writeErr := tempFile.Write(output); writeErr == nil {
-			_ = tempFile.Close()
-			v.infoMu.Lock()
-			v.infoCache[pos] = tempFile.Name()
-			v.infoMu.Unlock()
-		} else {
-			_ = tempFile.Close()
-			_ = os.Remove(tempFile.Name())
-		}
+	if err := v.cacheInfo(pos, output); err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: keep the info of %s: %v\n", pos, err)
 	}
 
 	return output, nil
+}
+
+// cacheInfo keeps the output of the probe of pos in a file, which later runs load instead of probing.
+func (v *ytDLP) cacheInfo(pos string, output []byte) error {
+	tempFile, err := os.CreateTemp("", "numen-info-*.json")
+	if err != nil {
+		return err
+	}
+	_, writeErr := tempFile.Write(output)
+	if err := errors.Join(writeErr, tempFile.Close()); err != nil {
+		return errors.Join(err, os.Remove(tempFile.Name()))
+	}
+	v.infoMu.Lock()
+	v.infoCache[pos] = tempFile.Name()
+	v.infoMu.Unlock()
+	return nil
 }
 
 func (v *ytDLP) getTarget(pos string) []string {
@@ -149,14 +158,14 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptio
 		return Text{}, err
 	}
 	return Text{
-		Producer: "captions",
+		Producer: producerCaptions,
 		Cues:     cues,
 		Title:    meta.Title,
 		Length:   meta.Length,
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]Cue, error) {
+func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) (cues []Cue, err error) {
 	if language == "" {
 		return nil, ErrNothingDownloaded
 	}
@@ -164,7 +173,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = os.RemoveAll(into) }()
+	defer func() { err = errors.Join(err, os.RemoveAll(into)) }()
 
 	arguments := append([]string{
 		"--skip-download", "--write-subs", "--write-auto-subs",
@@ -182,7 +191,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 	if err != nil {
 		return nil, err
 	}
-	cues, err := parseCues(raw)
+	cues, err = parseCues(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -195,12 +204,12 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Copy, error) {
+func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (result Copy, err error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
 		return Copy{}, err
 	}
-	defer os.RemoveAll(folder)
+	defer func() { err = errors.Join(err, os.RemoveAll(folder)) }()
 
 	arguments := []string{
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
@@ -233,7 +242,7 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Co
 	if err != nil {
 		return Copy{}, err
 	}
-	defer copied.Close()
+	defer func() { err = errors.Join(err, copied.Close()) }()
 	if _, err := io.Copy(into, copied); err != nil {
 		return Copy{}, err
 	}
@@ -247,9 +256,9 @@ var mediaTypes = map[string]string{
 	".aiff": "audio/aiff",
 	".alac": "audio/alac",
 	".flac": "audio/flac",
-	".m4a":  "audio/mp4",
-	".m4b":  "audio/mp4",
-	".m4p":  "audio/mp4",
+	".m4a":  mediaMP4Audio,
+	".m4b":  mediaMP4Audio,
+	".m4p":  mediaMP4Audio,
 	".mp3":  "audio/mpeg",
 	".mp4":  "video/mp4",
 	".oga":  "audio/ogg",
@@ -308,3 +317,9 @@ func isVideoSite(pos string) bool {
 	}
 	return videoSites[strings.TrimPrefix(address.Hostname(), "www.")]
 }
+
+// The producer a text published as captions is credited to, and the media type of MPEG-4 audio.
+const (
+	producerCaptions = "captions"
+	mediaMP4Audio    = "audio/mp4"
+)

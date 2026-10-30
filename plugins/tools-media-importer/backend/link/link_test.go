@@ -191,7 +191,11 @@ func TestAnAddressThatPublishesNothingIsNotAskedAgainUnlessAPersonAsks(t *testin
 	if err := w.links.FetchText(t.Context(), made, true); err != nil || w.sites.texts.Load() != 2 {
 		t.Errorf("a person asking again asked the address %d times in all (%v)", w.sites.texts.Load(), err)
 	}
-	if listing, _ := w.texts.ListVersions(t.Context(), made.Path); len(listing.Versions) != 0 {
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("an address that publishes nothing has versions %+v", listing.Versions)
 	}
 }
@@ -311,7 +315,11 @@ func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
 	if count := w.sites.texts.Load(); count != 1 {
 		t.Errorf("a deleted text was fetched again: the address was asked %d times", count)
 	}
-	if listing, _ := w.texts.ListVersions(t.Context(), made.Path); len(listing.Versions) != 0 {
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("a deleted text has versions %+v", listing.Versions)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || !isDeleted {
@@ -412,7 +420,10 @@ func TestTheTextOfALinkIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	w.vault.Beside(chemistry)
 	note := "---\ntype: link\nurl: " + articleAddress + "\n---\n"
 	chemistry.File("links/rance.md", note)
-	other := w.texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := w.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	other.File("links/rance.md", []byte(note))
 	other.SetStore(pluginID, chemistry.Store())
 
@@ -425,10 +436,18 @@ func TestTheTextOfALinkIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	if err != nil || inChemistry.Live == "" {
 		t.Fatalf("Chemistry lists %+v (%v), want the article live", inChemistry, err)
 	}
-	if inShown, _ := w.texts.ListVersions(t.Context(), "links/rance.md"); len(inShown.Versions) != 0 {
+	inShown, err := w.texts.ListVersions(t.Context(), "links/rance.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
-	if names, _ := w.store.List(t.Context()); len(names) != 0 {
+	names, err := w.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
 	}
 	read, err := w.links.ReadArticle(t.Context(), link.Link{Vault: "Chemistry", Path: "links/rance.md"})
