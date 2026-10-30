@@ -1,4 +1,4 @@
-// Package transcription turns a recording into words with models running on
+// Package engine turns a recording into words with models running on
 // this machine.
 //
 // A recording goes through two of them: one finds the stretches that carry
@@ -13,6 +13,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
 	"sync"
@@ -127,8 +128,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	} {
 		session, err := openSession(engine, one.path, one.threads)
 		if err != nil {
-			out.Close()
-			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.path, err)
+			return nil, errors.Join(fmt.Errorf("the %s %s: %w", one.kind, one.path, err), out.Close())
 		}
 		*one.dst = session
 	}

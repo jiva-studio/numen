@@ -2,6 +2,7 @@ package features
 
 import (
 	"bufio"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"math"
 	"os"
 	"slices"
@@ -116,7 +117,7 @@ func reference(t *testing.T, path string) ([]float32, int, int) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer file.Close()
+	defer cleanup.Close(t, file)
 
 	lines := bufio.NewScanner(file)
 	lines.Buffer(make([]byte, 1<<20), 1<<20)
@@ -124,8 +125,14 @@ func reference(t *testing.T, path string) ([]float32, int, int) {
 		t.Fatalf("%s says nothing", path)
 	}
 	shape := strings.Fields(lines.Text())
-	bands, _ := strconv.Atoi(shape[0])
-	frames, _ := strconv.Atoi(shape[1])
+	bands, err := strconv.Atoi(shape[0])
+	if err != nil {
+		t.Fatalf("%s: %v", path, err)
+	}
+	frames, err := strconv.Atoi(shape[1])
+	if err != nil {
+		t.Fatalf("%s: %v", path, err)
+	}
 
 	out := make([]float32, 0, bands*frames)
 	for lines.Scan() {

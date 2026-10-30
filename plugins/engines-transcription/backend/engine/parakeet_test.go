@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"strings"
 	"testing"
@@ -34,7 +35,7 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	if err != nil {
 		t.Skipf("the models in %s: %v", dir, err)
 	}
-	t.Cleanup(func() { delta.Close() })
+	cleanup.CloseAfter(t, delta)
 
 	raw, err := os.ReadFile(recorded)
 	if err != nil {
@@ -53,7 +54,7 @@ func TestHearingARecording(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer sound.Close()
+	defer cleanup.Close(t, sound)
 	t.Logf("%s is %d ms", recorded, sound.GetDuration())
 
 	found, err := sound.GetSegments(t.Context(), 0, 0)

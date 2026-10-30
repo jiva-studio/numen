@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
@@ -94,7 +95,10 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 		defer t.clearRunning(key)
 		runCtx, cancel := t.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_ = t.transcribe(runCtx, vault, path)
+		// transcribe shows a failure as a task error. A run ended by Close is not a failure.
+		if err := t.transcribe(runCtx, vault, path); err != nil && runCtx.Err() == nil {
+			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
+		}
 	})
 	return nil
 }
@@ -163,7 +167,7 @@ type job struct {
 	turn     host.Turn
 }
 
-func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string) error {
+func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string) (err error) {
 	raw, err := t.files.ReadFile(ctx, vault, path)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", path, err)
@@ -198,7 +202,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err != nil {
 		return fmt.Errorf("%s cannot be opened: %w", path, err)
 	}
-	defer func() { _ = recording.Close() }()
+	defer func() { err = errors.Join(err, recording.Close()) }()
 
 	if err := t.hearSegments(ctx, j, model, recording); err != nil {
 		return err
@@ -319,13 +323,18 @@ func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, le
 	})
 }
 
-// reportTask shows the task. A task the host could not be told of is shown by the next report.
+// reportTask shows the task. A task the host could not be told of is shown by the next report, and
+// the failure is written to the standard error stream of the plugin process.
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
-	_ = t.queue.ReportTask(context.WithoutCancel(ctx), task)
+	if err := t.queue.ReportTask(context.WithoutCancel(ctx), task); err != nil {
+		fmt.Fprintf(os.Stderr, "engines-transcription: show the task %s: %v\n", task.ID, err)
+	}
 }
 
 // finishTask takes the recording's task out of the list. One the host could not be told to take out
 // goes when the plugin stops.
 func (t *Transcriber) finishTask(ctx context.Context, path string) {
-	_ = t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path))
+	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path)); err != nil {
+		fmt.Fprintf(os.Stderr, "engines-transcription: finish the task of %s: %v\n", path, err)
+	}
 }

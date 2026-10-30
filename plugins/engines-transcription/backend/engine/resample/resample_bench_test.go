@@ -14,6 +14,8 @@ func BenchmarkResampledAMinute(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		_, _ = Convert(b.Context(), in, 44100, signal.SampleRate, 0)
+		if _, err := Convert(b.Context(), in, 44100, signal.SampleRate, 0); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

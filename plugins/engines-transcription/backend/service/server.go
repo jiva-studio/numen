@@ -5,13 +5,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
@@ -134,20 +135,23 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 
 // Mount registers the text provider on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
-func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
+func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
 	model := &models{cfg: cfg, isMock: isMock, open: openParakeet}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider{transcriber: transcriber}, s.HandlerOptions()...))
 	commands := command.New()
-	// The registry is new, so the one id cannot be added twice.
-	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))
+	if err := commands.Add("transcribe", newTranscribeCommand(transcriber)); err != nil {
+		return err
+	}
 	command.Mount(s, commands)
 	s.OnClose(func() {
 		transcriber.Close()
-		// The plugin is stopping, and a model that will not close leaves nothing to retry.
-		_ = model.close()
+		if err := model.close(); err != nil {
+			fmt.Fprintln(os.Stderr, "engines-transcription: close the model:", err)
+		}
 	})
+	return nil
 }
 
 // newTranscribeCommand transcribes the recording a person named, in the vault the host shows, and
@@ -168,8 +172,7 @@ func MountFromEnv(s *server.Server, cfg engine.Config) error {
 		return err
 	}
 	hosted := openHostAt(endpoint)
-	Mount(s, hosted, cfg, os.Getenv(EnvMockML) == "true")
-	return nil
+	return Mount(s, hosted, cfg, os.Getenv(EnvMockML) == "true")
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -181,7 +184,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		Mount(s, hosted, NewConfig("", ""), vars[EnvMockML] == "true")
-		return nil
+		return Mount(s, hosted, NewConfig("", ""), vars[EnvMockML] == "true")
 	})
 }

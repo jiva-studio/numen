@@ -2,6 +2,7 @@ package ortraw
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"unsafe"
 
@@ -45,7 +46,9 @@ type ortAPITable struct {
 
 func init() {
 	onnx.Register(func(pos string) {
-		_ = initRunner(pos)
+		if err := initRunner(pos); err != nil {
+			fmt.Fprintf(os.Stderr, "engines-transcription: bind the runtime at %s: %v\n", pos, err)
+		}
 	})
 }
 

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
@@ -84,8 +84,10 @@ func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcr
 	if err != nil {
 		return err
 	}
-	// A struct of two numbers always marshals.
-	raw, _ := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
+	raw, err := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
+	if err != nil {
+		return err
+	}
 	return t.store.Write(ctx, getReachedName(key), raw)
 }
 
