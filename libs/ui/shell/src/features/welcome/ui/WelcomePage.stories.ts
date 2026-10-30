@@ -104,21 +104,21 @@ export default meta
 type Story = StoryObj<Knobs>
 
 /** The element the selector names, or the story fails saying which is missing. */
-function found(canvas: HTMLElement, selector: string): HTMLElement {
+async function found(canvas: HTMLElement, selector: string): Promise<HTMLElement> {
   const el = canvas.querySelector<HTMLElement>(selector)
-  expect(el, `nothing here is ${selector}`).not.toBeNull()
+  await expect(el, `nothing here is ${selector}`).not.toBeNull()
   return el as HTMLElement
 }
 
 /** A window with the height for all of it: one column in the middle. */
 export const Opening: Story = {
   play: async ({ canvasElement }) => {
-    const page = found(canvasElement, '.welcome-page')
-    const mark = found(canvasElement, '.welcome-page__glyph')
+    const page = await found(canvasElement, '.welcome-page')
+    const mark = await found(canvasElement, '.welcome-page__glyph')
 
     // declares. A page that stops declaring one draws the whole file, which is
-    expect(getComputedStyle(page).getPropertyValue('--glyph').trim()).not.toBe('')
-    expect(mark.getBoundingClientRect().height).toBeLessThan(
+    await expect(getComputedStyle(page).getPropertyValue('--glyph').trim()).not.toBe('')
+    await expect(mark.getBoundingClientRect().height).toBeLessThan(
       page.getBoundingClientRect().height / 2,
     )
   },

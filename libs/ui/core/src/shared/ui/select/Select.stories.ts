@@ -100,7 +100,7 @@ export const OnShelves: Story = {
   },
   play: async ({ canvasElement }) => {
     await openSelect(canvasElement)
-    expect(groups()).toEqual(['Ships with numen', 'Yours'])
+    await expect(groups()).toEqual(['Ships with numen', 'Yours'])
   },
 }
 
@@ -128,8 +128,8 @@ export const NoChoicesAtAll: Story = {
   args: { words: '', chosen: '' },
   play: async ({ canvasElement }) => {
     await openSelect(canvasElement)
-    expect(rows()).toHaveLength(0)
-    expect(document.body.querySelector('.menu__silence')).not.toBeNull()
+    await expect(rows()).toHaveLength(0)
+    await expect(document.body.querySelector('.menu__silence')).not.toBeNull()
   },
 }
 
@@ -141,7 +141,7 @@ export const FarTooMany: Story = {
   },
   play: async ({ canvasElement }) => {
     await openSelect(canvasElement)
-    expect(rows()).toHaveLength(40)
+    await expect(rows()).toHaveLength(40)
   },
 }
 
@@ -149,7 +149,7 @@ export const FarTooMany: Story = {
 export const AValueNotAmongThem: Story = {
   args: { chosen: 'enormous' },
   play: async ({ canvasElement }) => {
-    expect(control(canvasElement).textContent).toContain('enormous')
+    await expect(control(canvasElement).textContent).toContain('enormous')
   },
 }
 
@@ -160,15 +160,15 @@ export const Disabled: Story = { args: { isDisabled: true } }
 export const OneStopOnTheWayRound: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()
-    expect(document.activeElement).toBe(control(canvasElement))
+    await expect(document.activeElement).toBe(control(canvasElement))
 
     await userEvent.keyboard('{ArrowDown}')
-    expect(words()).toEqual(['Small', 'Medium', 'Large'])
-    expect(document.activeElement).toBe(rows()[0])
+    await expect(words()).toEqual(['Small', 'Medium', 'Large'])
+    await expect(document.activeElement).toBe(rows()[0])
 
     await userEvent.keyboard('{ArrowDown}{Enter}')
-    expect(control(canvasElement).textContent).toContain('Medium')
-    expect(document.activeElement).toBe(control(canvasElement))
+    await expect(control(canvasElement).textContent).toContain('Medium')
+    await expect(document.activeElement).toBe(control(canvasElement))
   },
 }
 
@@ -177,7 +177,7 @@ export const TypingToJump: Story = {
   play: async ({ canvasElement }) => {
     await openSelect(canvasElement)
     await userEvent.keyboard('l')
-    expect(document.activeElement).toBe(rows()[2])
+    await expect(document.activeElement).toBe(rows()[2])
   },
 }
 
@@ -186,7 +186,7 @@ export const EscapePutsItAway: Story = {
   play: async ({ canvasElement }) => {
     await openSelect(canvasElement)
     await userEvent.keyboard('{Escape}')
-    expect(rows()).toHaveLength(0)
-    expect(control(canvasElement).textContent).toContain('Small')
+    await expect(rows()).toHaveLength(0)
+    await expect(control(canvasElement).textContent).toContain('Small')
   },
 }

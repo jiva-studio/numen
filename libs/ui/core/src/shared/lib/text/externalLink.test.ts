@@ -58,7 +58,9 @@ describe('a press on a link', () => {
 
   it('leaves an href that is no address to the page', () => {
     const faults: unknown[] = []
-    const onError = (event: ErrorEvent) => void faults.push(event.error)
+    const onError = (event: ErrorEvent) => {
+      faults.push(event.error)
+    }
     window.addEventListener('error', onError)
     const { openLink, prevented } = pressLink('http://')
     window.removeEventListener('error', onError)

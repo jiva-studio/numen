@@ -404,16 +404,18 @@ export const RequestedAtTheEdge: Story = {
   },
   play: async ({ canvasElement }) => {
     const menu = document.body.querySelector<HTMLElement>('.menu')
-    expect(menu).not.toBeNull()
+    await expect(menu).not.toBeNull()
     const lines = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__text'))
-    expect(lines).toHaveLength(2)
+    await expect(lines).toHaveLength(2)
     for (const line of lines) {
       // Nothing is truncated: the line content fits its width.
-      expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
+      await expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
     }
     const box = menu!.getBoundingClientRect()
-    expect(box.right).toBeLessThanOrEqual(canvasElement.ownerDocument.documentElement.clientWidth)
-    expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(box.right).toBeLessThanOrEqual(
+      canvasElement.ownerDocument.documentElement.clientWidth,
+    )
+    await expect(box.left).toBeGreaterThanOrEqual(0)
   },
 }
 

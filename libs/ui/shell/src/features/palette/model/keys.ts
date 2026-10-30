@@ -142,17 +142,17 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
     if (back?.isConnected) back.focus()
   }
 
-  watch(options.isOpen, (now) => {
-    if (now) void enter()
+  watch(options.isOpen, async (now) => {
+    if (now) await enter()
     else leave()
   })
 
-  watch(options.getStep, () => {
-    if (options.isOpen()) void enter()
+  watch(options.getStep, async () => {
+    if (options.isOpen()) await enter()
   })
 
-  onMounted(() => {
-    if (options.isOpen()) void enter()
+  onMounted(async () => {
+    if (options.isOpen()) await enter()
   })
 
   // A palette can go while it is still open, and the keyboard goes back with it.

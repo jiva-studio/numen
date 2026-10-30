@@ -39,6 +39,9 @@ export { createFollower } from './shared/lib/async/stream'
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
 
+/** Rethrows a rejection of a background task as an uncaught error. */
+export { reportFailure } from './shared/lib/async/report'
+
 export { Spinner } from './shared/ui/spinner'
 
 /** A Lucide icon drawn by the name a manifest gives it. */

@@ -10,6 +10,7 @@
  * and `search`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
+import { reportFailure, runInBackground } from '@numen/ui'
 import ActionRow from './ActionRow.vue'
 import { findKeptAction, placeActions, type ActionWords } from '../../lib/actions'
 import { getSteppedIndex, type PaletteAction } from '../../lib/item'
@@ -103,7 +104,7 @@ const onKey = (event: KeyboardEvent) => {
   const onStep = (delta: number, from = here.value) => {
     event.preventDefault()
     goTo(getSteppedIndex(actions.value.length, from, delta))
-    void reveal()
+    runInBackground(reveal(), reportFailure)
   }
   if (isActionsChord(event) || event.key === 'Escape') {
     event.preventDefault()

@@ -110,8 +110,8 @@ export const Dark: Story = {
 export const AnnouncedAsASwitch: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
-    expect(control.getAttribute('role')).toBe('switch')
-    expect(control.getAttribute('aria-checked')).toBe('true')
+    await expect(control.getAttribute('role')).toBe('switch')
+    await expect(control.getAttribute('aria-checked')).toBe('true')
   },
 }
 
@@ -138,8 +138,8 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
     await waitFor(() => expect(getAcross()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
     const track = control.getBoundingClientRect()
     const box = thumb.getBoundingClientRect()
-    expect(box.right).toBeLessThanOrEqual(track.right + 1)
-    expect(box.left).toBeGreaterThanOrEqual(track.left - 1)
+    await expect(box.right).toBeLessThanOrEqual(track.right + 1)
+    await expect(box.left).toBeGreaterThanOrEqual(track.left - 1)
 
     // And the track behind it is not the colour it was.
     await waitFor(() => expect(getFill()).not.toBe(wasFilling))
@@ -157,13 +157,13 @@ export const TheSpaceBarTurnsIt: Story = {
     const control = getSwitch(canvasElement)
 
     await userEvent.tab()
-    expect(document.activeElement).toBe(control)
+    await expect(document.activeElement).toBe(control)
 
     await userEvent.keyboard(' ')
-    expect(control.getAttribute('aria-checked')).toBe('true')
+    await expect(control.getAttribute('aria-checked')).toBe('true')
 
     await userEvent.keyboard(' ')
-    expect(control.getAttribute('aria-checked')).toBe('false')
+    await expect(control.getAttribute('aria-checked')).toBe('false')
   },
 }
 
@@ -173,6 +173,6 @@ export const DisabledTakesNoKeyboard: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     await userEvent.tab()
-    expect(document.activeElement).not.toBe(control)
+    await expect(document.activeElement).not.toBe(control)
   },
 }

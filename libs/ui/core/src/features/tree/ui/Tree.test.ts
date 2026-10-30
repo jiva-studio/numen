@@ -34,7 +34,7 @@ const atOnce: Clock = {
     run(0)
     return 0
   },
-  cancel: () => {},
+  cancel: vi.fn(),
 }
 
 const mountTree = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>

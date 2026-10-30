@@ -1,7 +1,7 @@
 /** Keyboard behavior of a pane, and what it announces to a screen reader. */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { pane, type Tab } from '../../lib/node'
@@ -17,13 +17,13 @@ const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceC
       : { id, title: TITLES[id], ...(marks[id] === undefined ? {} : { mark: marks[id] }) },
   focus: 'main',
   minimum: 220,
-  choose: () => {},
-  close: () => {},
-  lift: () => {},
-  menu: () => {},
-  claim: () => {},
-  resize: () => {},
-  show: () => {},
+  choose: vi.fn(),
+  close: vi.fn(),
+  lift: vi.fn(),
+  menu: vi.fn(),
+  claim: vi.fn(),
+  resize: vi.fn(),
+  show: vi.fn(),
 })
 
 const mountPane = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) => {

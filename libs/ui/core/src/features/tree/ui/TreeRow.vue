@@ -36,9 +36,10 @@ const rowStyle = computed(() => ({ '--level': props.row.level }))
 /** The keyboard into the field once it is drawn. */
 watch(
   () => props.isRenaming,
-  (on) => {
+  async (on) => {
     if (!on) return
-    void nextTick(() => field.value?.focus())
+    await nextTick()
+    field.value?.focus()
   },
 )
 </script>
