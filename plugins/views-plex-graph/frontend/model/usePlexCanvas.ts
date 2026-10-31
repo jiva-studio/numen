@@ -39,8 +39,8 @@ export function usePlexCanvas(options: PlexCanvasOptions) {
 
   function onEdgeMenu(pair: string, position: { x: number; y: number }) {
     const rect = measureRect(rootElement.value)
-    const at = rect ? { x: position.x - rect.left, y: position.y - rect.top } : position
-    state.openLinkInspector(pair, at).catch(state.reportFailure)
+    const anchor = rect ? { x: position.x - rect.left, y: position.y - rect.top } : position
+    state.openLinkInspector(pair, anchor).catch(state.reportFailure)
   }
 
   function closeMenu(id?: string) {

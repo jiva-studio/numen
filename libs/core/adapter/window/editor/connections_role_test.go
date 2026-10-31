@@ -41,7 +41,7 @@ func TestAConnectionRoleFillsTheRecordsThatCarryNone(t *testing.T) {
 	}
 }
 
-func TestANoteWithoutATitleTakesTheLowestFreeUntitledName(t *testing.T) {
+func TestANoteWithoutATitleIsNumberedFromTheLowestFreeUntitledName(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Untitled note.md": windowHeat})
 	waitForScan(t, f)
 

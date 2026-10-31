@@ -112,7 +112,7 @@ describe('making a note under a name a person gave it', () => {
     })
   })
 
-  it('says a related note the core could not be asked for', async () => {
+  it('fails with a message when the core cannot be reached for a related note', async () => {
     const core: NoteMaker = {
       create: async () => ({ ok: true, value: { path: '' } }),
       relations: {

@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestFillRolesGivesTheOtherRecordTheInverseRole(t *testing.T) {
+func TestFillRolesSetsTheInverseRoleOnTheOtherRecord(t *testing.T) {
 	c := domain.Connection{A: "a", B: "b", AB: &domain.Side{}, BA: &domain.Side{}}.FillRoles(domain.RoleParent)
 
 	if c.AB.Role != domain.RoleParent || c.BA.Role != domain.RoleChild {
@@ -17,7 +17,7 @@ func TestFillRolesGivesTheOtherRecordTheInverseRole(t *testing.T) {
 	}
 }
 
-func TestFillRolesTakesTheRoleFromTheRecordThatHasOne(t *testing.T) {
+func TestFillRolesReadsTheRoleFromTheRecordThatHasOne(t *testing.T) {
 	c := domain.Connection{A: "a", B: "b", AB: &domain.Side{}, BA: &domain.Side{Role: domain.RoleChild}}.FillRoles("")
 
 	if c.AB.Role != domain.RoleParent {
