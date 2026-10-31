@@ -4,6 +4,7 @@
 import type {
   AgentHost,
   AgentProviderRegistration,
+  AppInfo,
   BufferHost,
   CommandRegistration,
   ContextMenuRegistration,
@@ -18,6 +19,7 @@ import type {
   PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
+  StatusViewRegistration,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -42,6 +44,7 @@ export type {
   PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
+  StatusViewRegistration,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -113,11 +116,18 @@ export interface PluginHostDeps {
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   /** Everything a plugin showed, taken away with the plugin. */
   readonly clearNotices?: (pluginId: string) => void
+  /** The build the window is, as plugins read it from their context. */
+  readonly app?: AppInfo
+  /** Opens an address in the system browser. */
+  readonly openExternal?: (url: string) => Promise<void>
 }
 
 export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
+  registerStatusView(pluginId: string, registration: StatusViewRegistration): Disposable
+  readonly app: AppInfo
+  openExternal(url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
   registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable

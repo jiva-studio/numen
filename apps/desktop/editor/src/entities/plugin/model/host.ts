@@ -17,7 +17,14 @@ import type {
   TabKindRegistration,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
-import { createDropRegistry, createViewRegistry, type ViewRegistry } from '@numen/plugin-host'
+import {
+  createAppInfo,
+  createDropRegistry,
+  createStatusViewRegistry,
+  createViewRegistry,
+  type StatusViewRegistry,
+  type ViewRegistry,
+} from '@numen/plugin-host'
 import type { DropRegistry } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
 import {
@@ -109,7 +116,12 @@ function cleanupProviderItems(items: Map<string, { pluginId: string }>, pluginId
   }
 }
 
-function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: PluginHostDeps): void {
+function disposePluginEntry(
+  pluginId: string,
+  registry: HostRegistry,
+  statusViews: StatusViewRegistry,
+  deps?: PluginHostDeps,
+): void {
   deps?.closeTabsForPlugin?.(pluginId)
   deps?.clearNotices?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
@@ -136,6 +148,7 @@ function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: Plu
     if (item.pluginId === pluginId) nextSettingsViews.delete(key)
   }
   registry.settingsViews.value = nextSettingsViews
+  statusViews.disposePlugin(pluginId)
 }
 
 function resolveCommand(
@@ -266,13 +279,25 @@ function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventB
   }
 }
 
+/** The registries other than the host's own, which the context bridge delegates to. */
+interface SharedRegistries {
+  readonly views: ViewRegistry
+  readonly drops: DropRegistry
+  readonly statusViews: StatusViewRegistry
+}
+
 function createHostContextBridge(
   deps: PluginHostDeps,
   registry: HostRegistry,
-  views: ViewRegistry,
-  drops: DropRegistry,
+  { views, drops, statusViews }: SharedRegistries,
 ): PluginContextHost {
   return {
+    app: deps.app ?? createAppInfo({ userAgent: '' }),
+    openExternal: (url) =>
+      deps.openExternal
+        ? deps.openExternal(url)
+        : Promise.reject(new Error('the window opens no addresses')),
+    registerStatusView: statusViews.registerStatusView,
     registerReader: (pluginId, registration) =>
       registerReaderEntry(deps, registry.readers, {
         pluginId,
@@ -410,7 +435,11 @@ function matchesContextMenuTarget(
   return targetPattern.some((p) => matchesSingleTarget(p, actual))
 }
 
-function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
+function disposeAllEntries(
+  registry: HostRegistry,
+  statusViews: StatusViewRegistry,
+  deps: PluginHostDeps,
+) {
   const allPluginIds = new Set<string>([
     ...registry.contexts.keys(),
     ...[...registry.readers.values()].map((r) => r.pluginId),
@@ -419,8 +448,9 @@ function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
     ...[...registry.contextMenus.value.values()].map((c) => c.pluginId),
     ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
     ...[...registry.agentProviders.values()].map((p) => p.pluginId),
+    ...statusViews.views.value.map((v) => v.pluginId),
   ])
-  for (const pluginId of allPluginIds) disposePluginEntry(pluginId, registry, deps)
+  for (const pluginId of allPluginIds) disposePluginEntry(pluginId, registry, statusViews, deps)
 }
 
 export function createPluginHost(deps: PluginHostDeps) {
@@ -437,13 +467,14 @@ export function createPluginHost(deps: PluginHostDeps) {
     fileListeners: new Set(),
   }
 
-  const contextHost = createHostContextBridge(
-    deps,
-    registry,
-    createViewRegistry(),
-    createDropRegistry(),
-  )
-  const disposePlugin = (pluginId: string) => disposePluginEntry(pluginId, registry, deps)
+  const statusViews = createStatusViewRegistry()
+  const contextHost = createHostContextBridge(deps, registry, {
+    views: createViewRegistry(),
+    drops: createDropRegistry(),
+    statusViews,
+  })
+  const disposePlugin = (pluginId: string) =>
+    disposePluginEntry(pluginId, registry, statusViews, deps)
 
   return {
     contextHost,
@@ -518,7 +549,9 @@ export function createPluginHost(deps: PluginHostDeps) {
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
     disposePlugin,
-    disposeAll: () => disposeAllEntries(registry, deps),
+    disposeAll: () => disposeAllEntries(registry, statusViews, deps),
+    /** The status bar views the plugins registered, in order of registration; reactive. */
+    statusViews: statusViews.views,
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),

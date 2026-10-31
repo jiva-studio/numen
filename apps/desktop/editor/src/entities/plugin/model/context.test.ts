@@ -23,6 +23,9 @@ describe('PluginContext', () => {
         return { dispose: vi.fn() }
       }),
       registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+      registerStatusView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+      app: { version: '2026.10.1', build: 884, platform: 'linux' },
+      openExternal: vi.fn(async (_url: string) => undefined),
       registerTabKind: vi.fn((_id, _reg) => {
         calls.registerTabKind++
         return { dispose: vi.fn() }
@@ -205,5 +208,38 @@ describe('PluginContext', () => {
 
     expect(() => ctxWrite.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
     expect(host.emitVaultChange).toHaveBeenCalledWith('writer.plugin', { vaultPath: '/test' })
+  })
+
+  it('tracks the status views a plugin registers', () => {
+    const { host } = createMockHost()
+    const ctx = createPluginContext('test.plugin', host)
+
+    ctx.registerStatusView({ id: 'update', component: null })
+
+    expect(ctx.subscriptions).toHaveLength(1)
+    expect(host.registerStatusView).toHaveBeenCalledWith(
+      'test.plugin',
+      expect.objectContaining({ id: 'update' }),
+    )
+  })
+
+  it('reports the application build the host runs', () => {
+    const { host } = createMockHost()
+
+    expect(createPluginContext('test.plugin', host).app).toEqual({
+      version: '2026.10.1',
+      build: 884,
+      platform: 'linux',
+    })
+  })
+
+  it('opens a web address through the host and refuses any other', async () => {
+    const { host } = createMockHost()
+    const ctx = createPluginContext('test.plugin', host)
+
+    expect(await ctx.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect((await ctx.openExternal('file:///etc/passwd')).ok).toBe(false)
+    expect(host.openExternal).toHaveBeenCalledTimes(1)
+    expect(host.openExternal).toHaveBeenCalledWith('https://numen.md/')
   })
 })

@@ -462,6 +462,7 @@ export const useWindow = () => {
       base.pluginNotices.dismiss(id)
     },
     statusBar,
+    statusViews: base.pluginHost.statusViews,
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,
     closeTab,
