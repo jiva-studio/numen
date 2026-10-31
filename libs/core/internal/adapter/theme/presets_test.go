@@ -2,11 +2,14 @@ package theme_test
 
 import (
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 // contract defines the design token stylesheet required for theme presets.
@@ -29,7 +32,7 @@ type declaration struct {
 	value    string
 }
 
-// A preset sets tokens and states which half the palette is published in. It
+// A theme of the presets plugin and the default theme set tokens and states which half the palette is published in. It
 // contains nothing else.
 func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 	sets := getThemeFields(t)
@@ -68,7 +71,11 @@ func TestAPresetProducesEachTokenTheShapeItConsumes(t *testing.T) {
 	}
 }
 
-// readPresets returns every preset's text, keyed by name.
+// presetsPlugin is the plugin that holds the preset themes the application does not ship.
+const presetsPlugin = "../../../../../plugins/themes-presets"
+
+// readPresets returns the text of the default theme and of every theme of the presets plugin, keyed
+// by name.
 func readPresets(t *testing.T) map[string]string {
 	t.Helper()
 	catalogue := createThemeFolder(t)
@@ -83,8 +90,19 @@ func readPresets(t *testing.T) map[string]string {
 		}
 		texts[one.Name] = text
 	}
-	if len(texts) == 0 {
-		t.Fatal("this build ships no preset")
+	declared, err := manifestjson.ReadFile(filepath.Join(presetsPlugin, manifest.FileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range declared.Contributes.Themes {
+		text, err := manifest.ReadThemeFile(presetsPlugin, one.File)
+		if err != nil {
+			t.Fatal(err)
+		}
+		texts[one.ID] = text
+	}
+	if len(texts) <= 1 {
+		t.Fatal("the presets plugin declares no theme")
 	}
 	return texts
 }

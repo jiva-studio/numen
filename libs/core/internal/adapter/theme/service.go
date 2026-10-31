@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"connectrpc.com/connect"
@@ -79,10 +80,12 @@ func (s *Service) ListThemes(
 	items := make([]*v1.Theme, 0, len(themes))
 	for _, one := range themes {
 		items = append(items, &v1.Theme{
-			Name:     one.Name,
-			Title:    one.Title,
-			Origin:   encodeOrigin(one.Origin),
-			IsPinned: one.IsPinned,
+			Name:       one.Name,
+			Title:      one.Title,
+			Origin:     encodeOrigin(one.Origin),
+			IsPinned:   one.IsPinned,
+			PluginId:   one.PluginID,
+			Appearance: one.Appearance,
 		})
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{
@@ -149,8 +152,12 @@ func (s *Service) WriteAppearance(
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-// WatchThemes notifies the client when the themes folder changes, until the
-// client disconnects.
+// WatchThemes notifies the client when the themes folder changes or when the
+// set of plugin themes changes, until the client disconnects.
+//
+// The set of plugin themes changes with the plugins that are enabled. It is
+// compared on each keepalive tick, and the names added or removed are reported
+// in place of the empty keepalive.
 func (s *Service) WatchThemes(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchThemesRequest],
@@ -161,9 +168,14 @@ func (s *Service) WatchThemes(
 	defer stop()
 
 	changed, err := s.Catalogue.Watch(watching, s.DebounceDelay)
+	if errors.Is(err, ErrNoFolder) && s.Catalogue.HasPlugins() {
+		changed, err = nil, nil
+	}
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
+
+	previous := s.Catalogue.ListPluginThemeNames()
 
 	// Empty keepalive responses make a write to a disconnected client fail. The
 	// request context belongs to the process and does not reflect whether the page
@@ -176,7 +188,10 @@ func (s *Service) WatchThemes(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			if err := stream.Send(&v1.WatchThemesResponse{}); err != nil {
+			current := s.Catalogue.ListPluginThemeNames()
+			response := &v1.WatchThemesResponse{Names: listDifference(previous, current)}
+			previous = current
+			if err := stream.Send(response); err != nil {
 				return err
 			}
 		case names, open := <-changed:
@@ -188,6 +203,23 @@ func (s *Service) WatchThemes(
 			}
 		}
 	}
+}
+
+// listDifference returns the names present in only one of the two lists, in
+// the order the lists give them.
+func listDifference(before, after []string) []string {
+	var different []string
+	for _, name := range before {
+		if !slices.Contains(after, name) {
+			different = append(different, name)
+		}
+	}
+	for _, name := range after {
+		if !slices.Contains(before, name) {
+			different = append(different, name)
+		}
+	}
+	return different
 }
 
 // keepaliveInterval is the interval between keepalive responses. A failed write
@@ -237,6 +269,8 @@ func encodeOrigin(origin Origin) v1.Origin {
 		return v1.Origin_ORIGIN_PRESET
 	case Mine:
 		return v1.Origin_ORIGIN_MINE
+	case Plugin:
+		return v1.Origin_ORIGIN_PLUGIN
 	}
 	return v1.Origin_ORIGIN_UNSPECIFIED
 }

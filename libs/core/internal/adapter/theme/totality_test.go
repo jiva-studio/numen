@@ -15,5 +15,6 @@ func TestEveryOriginIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Origin]Origin{
 		v1.Origin_ORIGIN_PRESET: Preset,
 		v1.Origin_ORIGIN_MINE:   Mine,
+		v1.Origin_ORIGIN_PLUGIN: Plugin,
 	}, encodeOrigin)
 }

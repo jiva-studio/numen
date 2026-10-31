@@ -54,6 +54,21 @@ message ManifestContributes {
   string feature = 2;
   // category groups the plugin in lists.
   string category = 3;
+  // themes are the stylesheets the plugin adds to the list of themes.
+  repeated ManifestTheme themes = 5;
+}
+
+// ManifestTheme is a theme a plugin adds to the list of themes.
+message ManifestTheme {
+  // id is the slug the theme is named by inside the plugin.
+  string id = 1;
+  // name is the title the theme is listed with.
+  string name = 2;
+  // appearance is light or dark when the theme sets one color scheme, and empty when it
+  // follows the mode.
+  string appearance = 3;
+  // file is the path of the stylesheet relative to the plugin folder.
+  string file = 4;
 }
 
 // ManifestTabKind is a kind of tab the plugin registers.

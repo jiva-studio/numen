@@ -775,8 +775,9 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	}
 
 	client := newThemeClient(t, cfg)
+	writeTheme(t, cfg, "nord.css", ":root{--numen-surface:#2e3440}")
 	selected, err := client.WriteAppearance(t.Context(),
-		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "mine:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -788,7 +789,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err := adapterSettings.OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
+	if response.Appearance.Theme != "mine:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
 		t.Errorf("the file says %+v", response.Appearance)
 	}
 	// The stored API key is preserved.
@@ -804,7 +805,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetApplied() != "preset:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
+	if answer.Msg.GetApplied() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
 		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
 	}
 }

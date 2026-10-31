@@ -34,6 +34,8 @@ type Contributes struct {
 	Feature string
 	// Category groups the plugin in lists. Empty is a plugin in no category.
 	Category string
+	// Themes are the stylesheets the plugin adds to the list of themes.
+	Themes []Theme
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -92,5 +94,5 @@ func (m Manifest) listContributionIssues() []error {
 	if c.Feature != strings.TrimSpace(c.Feature) {
 		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
 	}
-	return issues
+	return append(issues, c.listThemeIssues()...)
 }

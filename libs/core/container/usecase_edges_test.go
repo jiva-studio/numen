@@ -27,6 +27,7 @@ var useCaseEdges = map[string][]string{
 	"indexing":      nil,
 	"completion":    nil,
 	"plugincommand": nil,
+	"plugintheme":   nil,
 	"textversion":   nil,
 }
 

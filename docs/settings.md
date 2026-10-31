@@ -23,12 +23,12 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 }
 ```
 
-| | |
-| --- | --- |
-| `interface_scale` | how large the interface is drawn — its chrome, its controls, the spacing between them and the type in them. 1 is as designed, and it goes from 0.8 to 2. |
-| `text_scale` | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75. |
-| `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
-| `theme` | the stylesheet the window wears, named by its origin and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
+|                   |                                                                                                                                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interface_scale` | how large the interface is drawn — its chrome, its controls, the spacing between them and the type in them. 1 is as designed, and it goes from 0.8 to 2.                                                                                 |
+| `text_scale`      | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75.                                                                                                         |
+| `mode`            | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`.                                                                                                                                    |
+| `theme`           | the stylesheet the window wears, named by its origin and its identifier: `preset:numen` ships inside the application, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 
@@ -64,8 +64,8 @@ Whether a node in the plex nests the headings of its note, and how many, are set
 }
 ```
 
-| | |
-| --- | --- |
+|                  |                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------- |
 | `day_start_time` | the hour a day of review begins at, in local time (`04:00`, between `00:00` and `12:00`). |
 
 An answer given before that hour is recorded in the previous day: a user reviewing cards at one in the morning is finishing the previous evening's session, and a boundary at midnight would split one session in two. The hour uses local time — [Flashcards](flashcards.md).
@@ -84,8 +84,8 @@ Anything that is not an hour of the day is said, and `04:00` stands. The file is
 }
 ```
 
-| | |
-| --- | --- |
+|                           |                                                                    |
+| ------------------------- | ------------------------------------------------------------------ |
 | `sync_title_and_filename` | whether renaming either of the two brings the other into line. On. |
 
 A note is shown by its `title`, else by its filename — [Note format](note-format.md). On, giving a note a different name renames its file after that name, and renaming its file writes the new name into the key where the note carries one. Off, the two are told apart in both directions: a new name is written into the note and the file stays where it is, and a renamed file leaves the note as it was written.
@@ -110,8 +110,8 @@ Typing a new `# Heading` into a note does not rename its file. A save puts down 
 }
 ```
 
-| | |
-| --- | --- |
+|           |                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------- |
 | `profile` | the workload profile: `eco`, `balanced` (default) or `maximum`. Any other word is read as `balanced`. |
 
 ### Hardware adaptation
@@ -120,11 +120,11 @@ numen reads the machine and resolves every pool from it. The machine is describe
 
 The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core.
 
-| | Eco | Balanced *(default)* | Maximum |
-| --- | --- | --- | --- |
-| Core budget | 1 | 50% of the performance threads, at least 1 | 100% of the performance threads |
-| Workers (general CPU-bound pool) | 1 | half the budget, at least 1 | the budget |
-| Memory limit (soft) | 25% of installed memory | 50% of installed memory | 75% of installed memory |
+|                                  | Eco                     | Balanced _(default)_                       | Maximum                         |
+| -------------------------------- | ----------------------- | ------------------------------------------ | ------------------------------- |
+| Core budget                      | 1                       | 50% of the performance threads, at least 1 | 100% of the performance threads |
+| Workers (general CPU-bound pool) | 1                       | half the budget, at least 1                | the budget                      |
+| Memory limit (soft)              | 25% of installed memory | 50% of installed memory                    | 75% of installed memory         |
 
 The core reads the workers as the number of sources a search extracts at once; a search built without a plan extracts 4.
 
@@ -151,10 +151,10 @@ The Vector Embeddings plugin makes the vectors: which model, where it runs, and 
 }
 ```
 
-| | |
-| --- | --- |
-| `max_tokens` | the input bound, in tokens, a chunk that carries a vector is cut below. A chunk cut longer than the model reads is a chunk whose vector describes text it does not hold. Zero cuts at the chunking defaults. |
-| `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero leaves the floor to the search: the one a person set for the model in use, else the one measured on the vault, else the one the model's plugin reports, else 0.30. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
+|              |                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `max_tokens` | the input bound, in tokens, a chunk that carries a vector is cut below. A chunk cut longer than the model reads is a chunk whose vector describes text it does not hold. Zero cuts at the chunking defaults.                                                                                                                                                                               |
+| `floor`      | how near a question a passage stands to be an answer, in cosine similarity. Zero leaves the floor to the search: the one a person set for the model in use, else the one measured on the vault, else the one the model's plugin reports, else 0.30. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
 
 A vector is kept under the model the plugin answers with: its name, width, input bound and pooling, and where it was made. A model changed in the plugin makes every stored vector again, and going back finds the old vectors where they were. A vault with the plugin disabled is searched by its words alone.
 
@@ -175,17 +175,17 @@ Which model answers is not the plugin's to say: it asks the host, and the host a
       "batch_size": 40,
       "overlap": 4,
       "in_flight": 4,
-      "max_edit_distance": 0.30
+      "max_edit_distance": 0.3
     }
   }
 }
 ```
 
-| | |
-| --- | --- |
-| `batch_size` | how many lines of a transcript one request carries. 40. A recognition is asked about a page a request. |
-| `overlap` | how many lines neighbouring batches of a transcript share, so a phrase torn at a batch boundary is still seen whole by one of them. 4. |
-| `in_flight` | how many batches of a transcript one window carries; the task shows the lines done after each window. 4. |
+|                     |                                                                                                                                                                                                                                                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `batch_size`        | how many lines of a transcript one request carries. 40. A recognition is asked about a page a request.                                                                                                                                                                                                                                      |
+| `overlap`           | how many lines neighbouring batches of a transcript share, so a phrase torn at a batch boundary is still seen whole by one of them. 4.                                                                                                                                                                                                      |
+| `in_flight`         | how many batches of a transcript one window carries; the task shows the lines done after each window. 4.                                                                                                                                                                                                                                    |
 | `max_edit_distance` | how far a correction of a recognised line may move the line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. |
 
 `max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
@@ -213,23 +213,22 @@ How a link's address is reached is the Media Importer plugin's settings, under `
 }
 ```
 
-| | |
-| --- | --- |
-| `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin asks an OpenAI-compatible chat API and calls this vault's tools for the model. Empty answers with none, and the panel says so. |
-| `serve_tools` | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it. |
-| `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
-| `claude.model` | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
-| `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
+|                                 |                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `use`                           | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin asks an OpenAI-compatible chat API and calls this vault's tools for the model. Empty answers with none, and the panel says so.                                                                       |
+| `serve_tools`                   | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it.                                                                                                                                                                   |
+| `claude.command`                | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several.                                                                                                                                |
+| `claude.model`                  | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits.                                                                                                                                                                                      |
+| `claude.max_steps`              | how many times it may go to the model before it is stopped. 30.                                                                                                                                                                                                                                                                                                               |
 | `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is rejected either way, since a vault arrives from elsewhere. |
-| `numen.model` | which model of the chat API answers. Empty takes the plugin's own `model` setting. |
-| `numen.max_steps` | how many requests it may make to the model before it is stopped. 25. |
+| `numen.model`                   | which model of the chat API answers. Empty takes the plugin's own `model` setting.                                                                                                                                                                                                                                                                                            |
+| `numen.max_steps`               | how many requests it may make to the model before it is stopped. 25.                                                                                                                                                                                                                                                                                                          |
 
 Which chat API Numen Agent asks is the plugin's own setting, `plugins.md.numen.agents.numen.baseUrl`: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
 
 A section is kept whether it is the one in use or not, so trying another agent for an afternoon costs nothing.
 
 An installation naming no agent and asking for no tools opens no port and writes no token file: a person who never asked for an agent is running a window and nothing else. Where the port is open, `-mcp-addr` says which address it answers on for a single launch and `-no-mcp` shuts it for one, whatever this file says.
-
 
 ## Where a plugin's questions to a model are answered
 
@@ -249,13 +248,13 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 }
 ```
 
-| | |
-| --- | --- |
-| `ai.default.agent` | the name of the agent program that answers a plugin whose own setting names none (`claude`, `codex`, `antigravity`, `acp:<name>`, the names the AI section lists). Empty is the program `agent.use` names, else the default of the plugins. |
-| `ai.default.model` | the model that program answers with. Empty is the model `agent.<program>.model` names, else the program's own. It goes with the default agent alone. |
-| `ai.default.concurrency` | how many questions one agent answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one. |
-| `plugins.<id>.<key>` | a plugin's own choice, under the key of the setting of type `agent` its manifest declares: `agent` and `model`. An empty `agent` is `ai.default`, agent and model both; an empty `model` is the chosen agent's own. |
-| `plugins.<id>.aiConsent` | whether the person lets the plugin ask a model: `true` or `false`. Left out, the person has not answered. |
+|                          |                                                                                                                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai.default.agent`       | the name of the agent program that answers a plugin whose own setting names none (`claude`, `codex`, `antigravity`, `acp:<name>`, the names the AI section lists). Empty is the program `agent.use` names, else the default of the plugins. |
+| `ai.default.model`       | the model that program answers with. Empty is the model `agent.<program>.model` names, else the program's own. It goes with the default agent alone.                                                                                        |
+| `ai.default.concurrency` | how many questions one agent answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one.                                                                                           |
+| `plugins.<id>.<key>`     | a plugin's own choice, under the key of the setting of type `agent` its manifest declares: `agent` and `model`. An empty `agent` is `ai.default`, agent and model both; an empty `model` is the chosen agent's own.                         |
+| `plugins.<id>.aiConsent` | whether the person lets the plugin ask a model: `true` or `false`. Left out, the person has not answered.                                                                                                                                   |
 
 A program that is not installed or that no plugin lists is answered `NO_ROUTE`, and so is a question when `agent.use` is empty or no program is installed; no other program answers in its place. A program whose plugin cannot be reached, that stops without an answer or that says nothing is answered `UNAVAILABLE`, with the reason it stopped for in the log. The command line, the options and the model of the program's section under `agent` apply to the task as they do to the panel's. A model the program does not offer is the program's own error.
 

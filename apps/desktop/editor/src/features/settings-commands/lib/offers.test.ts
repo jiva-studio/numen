@@ -5,10 +5,31 @@ import { INTERFACE_SCALE, TEXT_SCALE } from './appearanceValues'
 import { getModeGroups, getSizeGroups, getThemeGroups } from './offers'
 
 const THEMES: readonly Theme[] = [
-  { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
-  { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, isPinned: true },
-  { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
+  { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+  { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, pluginId: '', isPinned: true },
+  { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
 ]
+
+const PLUGIN_THEMES: readonly Theme[] = [
+  ...THEMES,
+  {
+    name: 'plugin:org.example.themes/night',
+    title: 'Night',
+    isBuiltIn: false,
+    pluginId: 'org.example.themes',
+    isPinned: true,
+  },
+  {
+    name: 'plugin:org.example.themes/day',
+    title: 'Day',
+    isBuiltIn: false,
+    pluginId: 'org.example.themes',
+    isPinned: false,
+  },
+]
+
+const getPluginName = (pluginId: string) =>
+  pluginId === 'org.example.themes' ? 'Sample Themes' : pluginId
 
 const SIZES: Sizes = { interfaceScale: 1, textScale: 1 }
 const BOUNDS: Ranges = {
@@ -41,6 +62,47 @@ describe('the themes offered', () => {
     expect(owned?.items[0]?.title).toBe('sea')
     expect(owned?.items[0]?.isCurrent).toBe(true)
     expect(owned?.items[0]?.detail).toBe(words.current)
+  })
+})
+
+describe('the themes a plugin contributes', () => {
+  it('stand in one group titled with the name of the plugin, between the shipped and the own', () => {
+    const groups = getThemeGroups(PLUGIN_THEMES, 'preset:numen', words, getPluginName)
+
+    expect(groups.map((one) => one.id)).toStrictEqual([
+      'shipping',
+      'plugin:org.example.themes',
+      'owned',
+    ])
+    expect(groups[1]?.title).toBe('Sample Themes')
+    expect(groups[1]?.items.map((one) => one.title)).toStrictEqual(['Night', 'Day'])
+  })
+
+  it('open first when the theme in force is theirs, on the theme in force', () => {
+    const groups = getThemeGroups(
+      PLUGIN_THEMES,
+      'plugin:org.example.themes/day',
+      words,
+      getPluginName,
+    )
+
+    expect(groups[0]?.id).toBe('plugin:org.example.themes')
+    expect(groups[0]?.items[0]?.title).toBe('Day')
+    expect(groups[0]?.items[0]?.isCurrent).toBe(true)
+  })
+
+  it('are titled with the id of the plugin where no name is known', () => {
+    const groups = getThemeGroups(PLUGIN_THEMES, 'preset:numen', words)
+
+    expect(groups[1]?.title).toBe('org.example.themes')
+  })
+
+  it('are left out of the owned group', () => {
+    const owned = getThemeGroups(PLUGIN_THEMES, 'preset:numen', words).find(
+      (one) => one.id === 'owned',
+    )
+
+    expect(owned?.items.map((one) => one.title)).toStrictEqual(['sea'])
   })
 })
 

@@ -34,7 +34,7 @@ on:
       - "apps/docs/tools/**"
       - "apps/docs/src/content/**"
       - "apps/landing/tools/**"
-      - "libs/core/internal/adapter/theme/presets/**"
+      - "plugins/themes-presets/themes/**"
       - ".github/workflows/stories.yml"
 
 concurrency:

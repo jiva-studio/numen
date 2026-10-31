@@ -34,20 +34,46 @@ const createAnswer = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe('every theme there is', () => {
-  it('says which ship inside the application and which are the person’s own', async () => {
+  it('says which ship inside the application, which a plugin contributes and which are the person’s own', async () => {
     request.listThemes.mockResolvedValue(
       createAnswer({
         themes: [
-          { name: 'preset/Numen.css', title: 'Numen', origin: Origin.PRESET, isPinned: false },
-          { name: 'own/Dusk.css', title: 'Dusk', origin: Origin.MINE, isPinned: true },
+          {
+            name: 'preset/Numen.css',
+            title: 'Numen',
+            origin: Origin.PRESET,
+            isPinned: false,
+            pluginId: '',
+          },
+          {
+            name: 'own/Dusk.css',
+            title: 'Dusk',
+            origin: Origin.MINE,
+            isPinned: true,
+            pluginId: '',
+          },
+          {
+            name: 'plugin:org.example.themes/night',
+            title: 'Night',
+            origin: Origin.PLUGIN,
+            isPinned: true,
+            pluginId: 'org.example.themes',
+          },
         ],
       }),
     )
 
     const { themes: every } = await themes.getAppearance()
     expect(every).toEqual([
-      { name: 'preset/Numen.css', title: 'Numen', isBuiltIn: true, isPinned: false },
-      { name: 'own/Dusk.css', title: 'Dusk', isBuiltIn: false, isPinned: true },
+      { name: 'preset/Numen.css', title: 'Numen', isBuiltIn: true, pluginId: '', isPinned: false },
+      { name: 'own/Dusk.css', title: 'Dusk', isBuiltIn: false, pluginId: '', isPinned: true },
+      {
+        name: 'plugin:org.example.themes/night',
+        title: 'Night',
+        isBuiltIn: false,
+        pluginId: 'org.example.themes',
+        isPinned: true,
+      },
     ])
   })
 })

@@ -1,0 +1,237 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { THEME_MODE, THEME_ORIGIN } from '@numen/plugin-sdk'
+import { WORDS } from '@/shared/words'
+import { createAppearance, type ThemeClient, type ThemeEntry, type ThemeList } from './appearance'
+
+const NUMEN: ThemeEntry = {
+  name: 'preset:numen',
+  title: 'numen',
+  origin: THEME_ORIGIN.PRESET,
+  pluginId: '',
+  isPinned: false,
+}
+const NIGHT: ThemeEntry = {
+  name: 'plugin:org.example.themes/night',
+  title: 'Night',
+  origin: THEME_ORIGIN.PLUGIN,
+  pluginId: 'org.example.themes',
+  isPinned: true,
+}
+const DAY: ThemeEntry = {
+  name: 'plugin:org.example.themes/day',
+  title: 'Day',
+  origin: THEME_ORIGIN.PLUGIN,
+  pluginId: 'org.example.themes',
+  isPinned: false,
+}
+const SEA: ThemeEntry = {
+  name: 'mine:sea',
+  title: 'sea',
+  origin: THEME_ORIGIN.MINE,
+  pluginId: '',
+  isPinned: false,
+}
+
+const LIST: ThemeList = {
+  themes: [NUMEN, NIGHT, DAY, SEA],
+  applied: NUMEN.name,
+  mode: THEME_MODE.SYSTEM,
+}
+
+/** A stream that reports nothing and does not end. */
+async function* waits(): AsyncGenerator<readonly string[]> {
+  await new Promise<never>(() => undefined)
+}
+
+const createClient = (list: ThemeList = LIST) => {
+  const state = { list }
+  const client: ThemeClient = {
+    listThemes: vi.fn(async () => state.list),
+    readTheme: vi.fn(async (name: string) => `:root { --theme: "${name}" }`),
+    writeAppearance: vi.fn(async () => ''),
+    watchThemes: () => waits(),
+  }
+  return { client, state }
+}
+
+const open = (client: ThemeClient, errors: string[] = []) => {
+  const page = document.implementation.createHTMLDocument('')
+  const appearance = createAppearance({
+    client,
+    getPluginName: (id) => (id === 'org.example.themes' ? 'Sample Themes' : id),
+    onError: (text) => errors.push(text),
+    document: page,
+  })
+  return { appearance, page, errors }
+}
+
+const style = (page: Document, is: string) =>
+  page.head.querySelector(`style[data-appearance="${is}"]`)?.textContent
+
+describe('the themes the palette offers', () => {
+  let setup: ReturnType<typeof createClient>
+
+  beforeEach(() => {
+    setup = createClient()
+  })
+
+  it('stand in the shipped group, one group for each plugin under its name, and the own group', async () => {
+    const { appearance } = open(setup.client)
+    await appearance.refresh()
+
+    const groups = appearance.getGroups('')
+
+    expect(groups.map((one) => one.title)).toStrictEqual([
+      WORDS.shipping,
+      'Sample Themes',
+      WORDS.owned,
+      WORDS.half,
+    ])
+    expect(groups[1]?.items.map((one) => one.title)).toStrictEqual(['Night', 'Day'])
+  })
+
+  it('mark the one worn', async () => {
+    const { appearance } = open(setup.client)
+    await appearance.refresh()
+
+    const first = appearance.getGroups('')[0]?.items[0]
+
+    expect(first?.detail).toBe(WORDS.current)
+  })
+
+  it('are narrowed by the text typed, whatever its case', async () => {
+    const { appearance } = open(setup.client)
+    await appearance.refresh()
+
+    const titles = appearance
+      .getGroups('NIG')
+      .flatMap((group) => group.items)
+      .map((one) => one.title)
+
+    expect(titles).toStrictEqual(['Night'])
+  })
+})
+
+describe('choosing a theme', () => {
+  it('writes the name with the mode in force and dresses the page in it', async () => {
+    const { client } = createClient()
+    const { appearance, page } = open(client)
+    await appearance.refresh()
+
+    await appearance.chooseItem(`theme:${DAY.name}`)
+
+    expect(client.writeAppearance).toHaveBeenCalledWith(DAY.name, THEME_MODE.SYSTEM)
+    expect(style(page, 'theme')).toBe(`:root { --theme: "${DAY.name}" }`)
+    expect(style(page, 'mode')).toBe(':root { color-scheme: light dark; }')
+    expect(appearance.applied.value).toBe(DAY.name)
+  })
+
+  it('reports why the choice was not written and leaves the page as it is', async () => {
+    const { client } = createClient()
+    vi.mocked(client.writeAppearance).mockResolvedValue('the settings are read-only')
+    const { appearance, page, errors } = open(client)
+    await appearance.refresh()
+
+    await appearance.chooseItem(`theme:${DAY.name}`)
+
+    expect(errors).toStrictEqual(['the settings are read-only'])
+    expect(style(page, 'theme')).toBeUndefined()
+    expect(appearance.applied.value).toBe(NUMEN.name)
+  })
+
+  it('reports a failing service', async () => {
+    const { client } = createClient()
+    vi.mocked(client.writeAppearance).mockRejectedValue(new Error('offline'))
+    const { appearance, errors } = open(client)
+    await appearance.refresh()
+
+    await appearance.chooseItem(`theme:${DAY.name}`)
+
+    expect(errors).toHaveLength(1)
+  })
+})
+
+describe('choosing a mode', () => {
+  it('writes the theme worn with the mode and writes the color scheme of the mode', async () => {
+    const { client } = createClient()
+    const { appearance, page } = open(client)
+    await appearance.refresh()
+
+    await appearance.chooseItem('mode:dark')
+
+    expect(client.writeAppearance).toHaveBeenCalledWith(NUMEN.name, THEME_MODE.DARK)
+    expect(style(page, 'mode')).toBe(':root { color-scheme: dark; }')
+    expect(appearance.mode.value).toBe('dark')
+  })
+
+  it('cannot be done while the theme worn sets light or dark itself', async () => {
+    const { client } = createClient({ ...LIST, applied: NIGHT.name })
+    const { appearance } = open(client)
+    await appearance.refresh()
+
+    const modes = appearance
+      .getGroups('')
+      .flatMap((group) => group.items.filter((one) => one.id.startsWith('mode:')))
+
+    expect(modes).toHaveLength(3)
+    expect(modes.every((one) => one.isDisabled === true && one.detail === WORDS.pinned)).toBe(true)
+  })
+
+  it('marks the one in force', async () => {
+    const { client } = createClient({ ...LIST, mode: THEME_MODE.LIGHT })
+    const { appearance } = open(client)
+    await appearance.refresh()
+
+    const current = appearance
+      .getGroups('')
+      .flatMap((group) => group.items)
+      .filter((one) => one.id.startsWith('mode:') && one.detail === WORDS.current)
+
+    expect(current.map((one) => one.id)).toStrictEqual(['mode:light'])
+  })
+
+  it('ignores an item that is neither a theme nor a mode', async () => {
+    const { client } = createClient()
+    const { appearance } = open(client)
+    await appearance.refresh()
+
+    await appearance.chooseItem('other:thing')
+
+    expect(client.writeAppearance).not.toHaveBeenCalled()
+  })
+})
+
+describe('reading the themes again', () => {
+  it('leaves the page as the application served it on the first read', async () => {
+    const { client } = createClient()
+    const { appearance, page } = open(client)
+
+    await appearance.refresh()
+
+    expect(client.readTheme).not.toHaveBeenCalled()
+    expect(style(page, 'theme')).toBeUndefined()
+  })
+
+  it('dresses the page in the default theme when the theme worn is gone', async () => {
+    const { client, state } = createClient({ ...LIST, applied: DAY.name })
+    const { appearance, page } = open(client)
+    await appearance.refresh()
+
+    state.list = { themes: [NUMEN, SEA], applied: NUMEN.name, mode: THEME_MODE.SYSTEM }
+    await appearance.refresh()
+
+    expect(appearance.applied.value).toBe(NUMEN.name)
+    expect(style(page, 'theme')).toBe(`:root { --theme: "${NUMEN.name}" }`)
+  })
+
+  it('reports themes that cannot be listed', async () => {
+    const { client } = createClient()
+    vi.mocked(client.listThemes).mockRejectedValue(new Error('offline'))
+    const { appearance, errors } = open(client)
+
+    await appearance.refresh()
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain(WORDS.themesUnlisted)
+  })
+})

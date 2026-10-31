@@ -15,13 +15,15 @@ import { DESIGNED, EMPTY_RANGE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
 import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
-import { getModeGroups, getSizeGroups, getThemeGroups } from '../lib/offers'
+import { getModeGroups, getSizeGroups, getThemeGroups, type PluginNamer } from '../lib/offers'
 import { useAppearanceChoice } from './choice'
 
 export interface WindowAppearanceDeps {
   core: Themes
   words: AppearanceWords
   write: MessageWriter
+  /** The name a plugin is listed under, given its id. */
+  getPluginName?: PluginNamer
   sheet?: Document
   wait?: (ms: number) => Promise<unknown>
 }
@@ -162,9 +164,11 @@ function createAppearanceGroups(
   state: ReturnType<typeof initAppearanceState>,
   choice: ReturnType<typeof useAppearanceChoice>,
   words: WindowAppearanceDeps['words'],
+  getPluginName: PluginNamer | undefined,
 ) {
   return {
-    getThemeGroups: () => getThemeGroups(state.list.value, state.applied.value, words),
+    getThemeGroups: () =>
+      getThemeGroups(state.list.value, state.applied.value, words, getPluginName),
     getModeGroups: () => getModeGroups(state.mode.value, choice.isPinned.value, words),
     // Stryker disable next-line StringLiteral: Default empty text evaluates to null in parseSize.
     getSizeGroups: (command: string, text = '') =>
@@ -177,7 +181,7 @@ function createAppearanceGroups(
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, sheet = document, wait = sleep } = deps
+  const { core, words, write, getPluginName, sheet = document, wait = sleep } = deps
   const styleElements = getStyleElements(sheet)
   const served = styleElements.theme.textContent ?? ''
   const state = initAppearanceState()
@@ -232,7 +236,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     sized: choice.sized,
     isPinned: choice.isPinned,
     pinned: choice.isPinned,
-    ...createAppearanceGroups(state, choice, words),
+    ...createAppearanceGroups(state, choice, words, getPluginName),
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
     start: async () => {

@@ -2,11 +2,13 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
 )
 
 // Themes provides the themes the window can use: the catalogue of themes, and
-// the settings file that stores the selection.
+// the settings file that stores the selection. The catalogue offers the themes
+// of the enabled plugins of the plugin host, when the config has one.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.getCatalogue()
 	scales := theme.NewScales(c.InterfaceScale, c.TextScale)
@@ -38,6 +40,14 @@ func CheckTextScale(name string, scale float64) error {
 }
 
 func (c Config) getCatalogue() (theme.Catalogue, error) {
+	catalogue, err := c.openCatalogue()
+	if c.PluginHost != nil {
+		catalogue = catalogue.WithPlugins(themebridge.Open(c.PluginHost))
+	}
+	return catalogue, err
+}
+
+func (c Config) openCatalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
 		return theme.OpenAt(c.ThemesPath)
 	}

@@ -55,9 +55,9 @@ const sizes = (sheet: Document) => getHeadStyles(sheet)[2]
 
 const APPEARANCE: Appearance = {
   themes: [
-    { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
-    { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, isPinned: true },
-    { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
+    { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+    { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, pluginId: '', isPinned: true },
+    { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
   ],
   applied: 'preset:numen',
   mode: 'system',

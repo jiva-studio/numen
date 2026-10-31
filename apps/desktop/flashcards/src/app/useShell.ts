@@ -13,6 +13,7 @@ import { createShellHost } from './host'
 import { createWindowKeys } from './windowKeys'
 import { useExternalLinks } from './useExternalLinks'
 import { useWindowTasks, WINDOW_SOURCE } from './useWindowTasks'
+import { useAppearance, type AppearanceServices } from './useAppearance'
 
 /** What the shell is given: the plugins it loads, how a module is fetched, and the vaults. */
 export interface ShellDeps {
@@ -22,6 +23,8 @@ export interface ShellDeps {
   readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
   readonly agentClient?: WindowAgentClient
   readonly linkClient?: LinkClient
+  /** The theme service and the plugin names the appearance commands are given. */
+  readonly appearance?: AppearanceServices
 }
 
 const listPlugins = async (): Promise<readonly string[]> =>
@@ -75,6 +78,7 @@ export function useShell(deps: ShellDeps = {}) {
   })
   useWindowTasks(notices)
   useExternalLinks(notices)
+  const appearance = useAppearance(notices, deps.appearance)
 
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
@@ -111,5 +115,6 @@ export function useShell(deps: ShellDeps = {}) {
     plugins: { style, failures, isLoading },
     notices,
     mountView,
+    appearance,
   }
 }

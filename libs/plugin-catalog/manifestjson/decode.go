@@ -140,7 +140,11 @@ func newContributes(wire *v1.ManifestContributes) manifest.Contributes {
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
 	}
-	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory()}
+	var themes []manifest.Theme
+	for _, one := range wire.GetThemes() {
+		themes = append(themes, manifest.Theme{ID: one.GetId(), Name: one.GetName(), Appearance: one.GetAppearance(), File: one.GetFile()})
+	}
+	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory(), Themes: themes}
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {

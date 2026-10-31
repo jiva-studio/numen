@@ -24,9 +24,10 @@ export function listManifestFiles() {
 
 /**
  * The manifest fields that hold presentation or configuration values, which name no plugin. A category
- * groups the plugins of a list under a word several plugins share.
+ * groups the plugins of a list under a word several plugins share. The themes a plugin contributes
+ * are palettes: their ids, titles and files name colour schemes, not plugins.
  */
-const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name", "category"]);
+const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name", "category", "themes"]);
 
 /** The manifest fields that name the windows a plugin runs in; the host defines them. */
 const HOST_KEYS = new Set(["targets"]);

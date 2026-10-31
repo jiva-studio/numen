@@ -33,7 +33,18 @@ func Validate(targetPath string) ([]string, error) {
 	}
 	issues = append(issues, listBackendFileIssues(m.Backend, pluginDir)...)
 	issues = append(issues, listFrontendFileIssues(m.Frontend, pluginDir)...)
+	issues = append(issues, listThemeFileIssues(m.Contributes.Themes, pluginDir)...)
 	return issues, nil
+}
+
+func listThemeFileIssues(themes []manifest.Theme, pluginDir string) []string {
+	var issues []string
+	for _, theme := range themes {
+		if _, err := manifest.ReadThemeFile(pluginDir, theme.File); err != nil {
+			issues = append(issues, fmt.Sprintf("theme %q: %v", theme.ID, err))
+		}
+	}
+	return issues
 }
 
 func resolveManifestPath(targetPath string) (manifestPath, pluginDir string, err error) {

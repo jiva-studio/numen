@@ -34,18 +34,39 @@ export function toSelectChoices(options: readonly PluginSettingOption[]): readon
   }))
 }
 
-/** Sorts themes with built-in themes first and maps them into grouped select choices. */
+/** The labels the themes are grouped under, and the name of each plugin that contributes themes. */
+export interface ThemeLabels {
+  readonly shipped: string
+  readonly owned: string
+  /** The name a plugin is listed under, given its id. */
+  readonly getPluginName: (pluginId: string) => string
+}
+
+/**
+ * Maps themes into grouped select choices: the ones that ship first, then the
+ * themes of each plugin under the plugin's name, then the person's own.
+ */
 export function toThemeChoices(
-  themes: readonly { readonly name: string; readonly title: string; readonly isBuiltIn: boolean }[],
-  shippedLabel: string,
-  ownedLabel: string,
+  themes: readonly {
+    readonly name: string
+    readonly title: string
+    readonly isBuiltIn: boolean
+    readonly pluginId: string
+  }[],
+  labels: ThemeLabels,
 ): readonly SelectChoice[] {
+  const rank = (one: { readonly isBuiltIn: boolean; readonly pluginId: string }) =>
+    one.isBuiltIn ? 0 : one.pluginId === '' ? 2 : 1
   return [...themes]
-    .sort((one, other) => Number(other.isBuiltIn) - Number(one.isBuiltIn))
+    .sort((one, other) => rank(one) - rank(other))
     .map((one) => ({
       id: one.name,
       text: one.title,
-      group: one.isBuiltIn ? shippedLabel : ownedLabel,
+      group: one.isBuiltIn
+        ? labels.shipped
+        : one.pluginId === ''
+          ? labels.owned
+          : labels.getPluginName(one.pluginId),
     }))
 }
 
@@ -60,10 +81,7 @@ function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>):
 }
 
 /** The plugin is requested on every call, so a changed plugin is picked up. */
-export function createEnumFields(
-  getPlugin: () => PluginInfo,
-  read: ReadPluginSetting,
-): EnumFields {
+export function createEnumFields(getPlugin: () => PluginInfo, read: ReadPluginSetting): EnumFields {
   const getEnumOptions = (setting: PluginSettingInfo) => getOptions(getPlugin(), setting, read)
   const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting))
   const getEnumValue = (setting: PluginSettingInfo) =>

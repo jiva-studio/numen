@@ -1,6 +1,6 @@
 # Themes
 
-A theme is one CSS file that redeclares the tokens the interface draws with. Some ship inside the application and the rest are files in a folder of the person's; they are one list, one format, and one line applies either.
+A theme is one CSS file that redeclares the tokens the interface draws with. The default theme ships inside the application, plugins contribute more, and the rest are files in a folder of the person's; they are one list, one format, and one line applies any of them.
 
 Every token a theme leaves out keeps the value `tokens.css` holds. A file naming one token is a theme.
 
@@ -39,7 +39,7 @@ A palette published in one half writes flat colours and pins the half it is:
 }
 ```
 
-Such a theme is listed as pinned, and the mode has nothing left to choose. What counts as pinning is the property with a colon after it, anywhere in the file; the comments are cut away first, so a comment saying `color-scheme` pins nothing.
+Such a theme is listed as pinned, and the mode has nothing left to choose. For a theme in the person's folder, what counts as pinning is the property with a colon after it, anywhere in the file; the comments are cut away first, so a comment saying `color-scheme` pins nothing. A theme a plugin contributes is pinned when its manifest declares an `appearance` of `light` or `dark`; its file is not read to find out.
 
 ## The window opens wearing it
 
@@ -58,17 +58,41 @@ The themes folder is `numen/themes/` in the folder this desktop keeps a person's
 | 262144 bytes | a file past that is neither offered nor read. Every shipped palette is under two kilobytes.                  |
 | Readable     | a link to nothing, a file the disk refuses: not in the list. A name in the list is a theme that can be worn. |
 
-A folder that is not there or cannot be read leaves the list holding what ships.
+A folder that is not there or cannot be read leaves the list holding the default theme and the themes of the plugins.
 
 The folder is watched at that one level: a theme written, saved over or taken out of it is noticed by name as it happens.
 
 ## What a theme is called
 
-`preset:dracula` ships inside the application; `mine:dracula` is the file `dracula.css` in the themes folder. Both origins may carry one filename, and neither hides the other.
+`preset:numen` ships inside the application; `mine:dracula` is the file `dracula.css` in the themes folder; `plugin:md.numen.themes.presets/dracula` is the theme `dracula` of the plugin `md.numen.themes.presets`. Two origins may carry one title, and neither hides the other.
 
-The half after the origin is one filename in that folder. `mine:../../../.ssh/id_rsa`, `mine:..`, `dracula` and `originless:dracula` name no theme.
+The half after `mine:` is one filename in that folder. `mine:../../../.ssh/id_rsa`, `mine:..`, `dracula` and `originless:dracula` name no theme. The half after `plugin:` is a plugin id and a theme id; the theme is looked up in the manifests of the enabled plugins and no path is built from the name.
 
-A name matching nothing wears `preset:numen`, and the name that was not found is said. The settings are left as they are: putting the file back is all it takes.
+A name matching nothing wears `preset:numen`, and the name that was not found is said. The settings are left as they are: putting the file back, or enabling the plugin again, is all it takes. A name from an earlier release, such as `preset:dracula`, matches nothing; choose the theme again.
+
+## Themes from a plugin
+
+A plugin lists its themes in `contributes.themes` of its manifest:
+
+```json
+{
+  "id": "org.example.themes",
+  "name": "Example Themes",
+  "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": {
+    "themes": [{ "id": "night", "name": "Night", "appearance": "dark", "file": "themes/night.css" }]
+  }
+}
+```
+
+|              |                                                                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `id`         | a lowercase slug, listed once in the plugin.                                                                                      |
+| `name`       | the title the theme is listed under.                                                                                              |
+| `appearance` | `light` or `dark` for a palette published in one half, and left out for a palette in two halves.                                  |
+| `file`       | a `.css` file inside the plugin folder: a relative path, no `..`, at most 262144 bytes. A file that is not there fails discovery. |
+
+A plugin of themes has no backend and no frontend; the manifest and the stylesheets are all of it. The list is read from the manifests discovered at start, so the themes are there before any plugin process starts, and the page is served wearing the theme from the first frame. Only the enabled plugins whose `targets` name the window offer their themes: disabling the plugin takes its themes out of the list, the window that wears one falls back to `preset:numen`, and a window open at the time is told which themes came or went. A file is read through the plugin folder only; a link that leaves the folder is not followed. The editor lists a plugin's themes under the plugin's name. The mobile app has no plugins and offers the default theme and the person's own.
 
 ## The tokens a theme sets
 
@@ -157,25 +181,30 @@ The two multipliers are what a theme does not reach. `--numen-interface-scale` a
 
 ## What ships
 
-|                      |                                                             |
-| -------------------- | ----------------------------------------------------------- |
-| `preset:numen`       | this product's own palette, in two halves.                  |
-| `preset:catppuccin`  | Latte in the light, Mocha in the dark.                      |
-| `preset:github`      | Light Default in the light, Dark Default in the dark.       |
-| `preset:gruvbox`     | two halves, orange the accent.                              |
-| `preset:solarized`   | two halves, one set of accents across both.                 |
-| `preset:ayu`         | two halves, yellow the accent across both.                  |
-| `preset:tokyo-night` | Tokyo Night in the dark, Tokyo Night Light in the light.    |
-| `preset:dracula`     | dark, pinned.                                               |
-| `preset:nord`        | dark, pinned.                                               |
-| `preset:one-dark`    | dark, pinned: Atom's hues on One Dark Pro's grounds.        |
-| `preset:monokai`     | dark, pinned: the original, as Visual Studio Code sets it.  |
-| `preset:cobalt2`     | dark, pinned: yellow on navy.                               |
-| `preset:amber`       | dark, pinned: four colours, and the rest derived from them. |
+The application ships `preset:numen`, this product's own palette in two halves. The plugin `md.numen.themes.presets` (Preset Themes) holds the others, for the editor and the flashcards window:
+
+|               | Name in the plugin                                          |
+| ------------- | ----------------------------------------------------------- |
+| `catppuccin`  | Latte in the light, Mocha in the dark.                      |
+| `github`      | Light Default in the light, Dark Default in the dark.       |
+| `gruvbox`     | two halves, orange the accent.                              |
+| `solarized`   | two halves, one set of accents across both.                 |
+| `ayu`         | two halves, yellow the accent across both.                  |
+| `tokyo-night` | Tokyo Night in the dark, Tokyo Night Light in the light.    |
+| `dracula`     | dark, pinned.                                               |
+| `nord`        | dark, pinned.                                               |
+| `one-dark`    | dark, pinned: Atom's hues on One Dark Pro's grounds.        |
+| `monokai`     | dark, pinned: the original, as Visual Studio Code sets it.  |
+| `cobalt2`     | dark, pinned: yellow on navy.                               |
+| `amber`       | dark, pinned: four colours, and the rest derived from them. |
 
 Each is its publisher's palette from that publisher's own source; what a palette does not name is derived from what it does, and the file says which. Each names the colours its publisher names and leaves the rest — marked-up text among them — as `tokens.css` has it.
 
-The files are in `libs/core/internal/adapter/theme/presets/`. A first theme is one of them copied into the themes folder under a name of its own: `mine:dracula` stands in the list beside `preset:dracula`.
+The files are in `plugins/themes-presets/themes/`. A first theme is one of them copied into the themes folder under a name of its own: `mine:dracula` stands in the list beside `plugin:md.numen.themes.presets/dracula`.
+
+## Choosing one
+
+The editor offers the theme and the mode in the settings and in the command palette (Change theme, Light or dark). The flashcards window has the same two choices in its command palette, opened with Ctrl+P (Cmd+P): the themes grouped by origin, with a plugin's themes under the plugin's name, and the three modes, which are not offered while the theme worn is pinned.
 
 ## What is written down
 
@@ -183,7 +212,7 @@ The files are in `libs/core/internal/adapter/theme/presets/`. A first theme is o
 {
   "appearance": {
     "mode": "system",
-    "theme": "preset:numen"
+    "theme": "plugin:md.numen.themes.presets/dracula"
   }
 }
 ```
