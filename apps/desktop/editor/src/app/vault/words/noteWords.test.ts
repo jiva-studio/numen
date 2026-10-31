@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { ErrorCode, GetNeighbourhoodResponseSchema, Relation } from '@numen/protocol'
+import { NOTE_ERROR_CODE, NOTE_RELATION, GetNeighbourhoodResponseSchema } from '@numen/core-client'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
 
@@ -19,7 +19,7 @@ describe('mapNoteResult', () => {
   })
 
   it('fails with the error the answer names', () => {
-    expect(mapNoteResult({ error: ErrorCode.TOO_LARGE, body: 'text' })).toEqual(
+    expect(mapNoteResult({ error: NOTE_ERROR_CODE.TOO_LARGE, body: 'text' })).toEqual(
       asFailure('tooLarge'),
     )
   })
@@ -27,7 +27,7 @@ describe('mapNoteResult', () => {
 
 describe('mapWriteResult', () => {
   it('calls a file that moved past the caller changed', () => {
-    expect(mapWriteResult({ error: ErrorCode.STALE })).toEqual(asFailure('changed'))
+    expect(mapWriteResult({ error: NOTE_ERROR_CODE.STALE })).toEqual(asFailure('changed'))
   })
 
   it('maps any other answer as a note result', () => {
@@ -52,14 +52,17 @@ describe('mapNeighbourhood', () => {
         {
           note: { path: 'Up.md', title: 'Up' },
           type: 'sheet',
-          relation: Relation.PARENT,
+          relation: NOTE_RELATION.PARENT,
           label: 'part of',
           reverseLabel: 'holds',
           through: 'Mid.md',
           isMutual: true,
         },
-        { note: { path: 'NoRelation.md', title: 'NoRelation' }, relation: Relation.UNSPECIFIED },
-        { relation: Relation.CHILD },
+        {
+          note: { path: 'NoRelation.md', title: 'NoRelation' },
+          relation: NOTE_RELATION.UNSPECIFIED,
+        },
+        { relation: NOTE_RELATION.CHILD },
       ],
     })
 

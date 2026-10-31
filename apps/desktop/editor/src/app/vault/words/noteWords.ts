@@ -1,11 +1,9 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
+import { asFailure, asValue, formatFingerprint } from '@numen/plugin-sdk'
 import {
-  asFailure,
-  asValue,
   findErrorCode,
-  formatFingerprint,
   isStaleAnswer,
   NAME_SOURCE,
   NOTE_RELATION,
@@ -14,7 +12,7 @@ import {
   type NoteErrorCodeValue,
   type NoteMarkerCode,
   type NoteRelationCode,
-} from '@numen/plugin-sdk'
+} from '@numen/core-client'
 import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 import { readMarker } from './relationWords'

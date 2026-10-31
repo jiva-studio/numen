@@ -23,7 +23,7 @@ import type {
   ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
-import type { Manifest } from '@numen/plugin-host'
+import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '@numen/plugin-host'
 import type { PluginContextHost } from './types'
 

@@ -6,15 +6,17 @@ import {
   NOTE_ROLE,
   findErrorCode,
   getNames,
-  type Backlink,
-  type Connection,
-  type ConnectionRole,
-  type ConnectionSide,
-  type LinkMarker,
-  type LinkRole,
   type NoteMarkerCode,
   type NoteRoleCode,
-  type RelationError,
+} from '@numen/core-client'
+import type {
+  Backlink,
+  Connection,
+  ConnectionRole,
+  ConnectionSide,
+  LinkMarker,
+  LinkRole,
+  RelationError,
 } from '@numen/plugin-sdk'
 
 /** The role of a link, as named in the window. */

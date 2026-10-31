@@ -6,7 +6,7 @@
  * applied once the keyboard has stayed on it for HELD, and what the settings
  * name is restored as soon as the keyboard leaves the list.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { isInBounds } from '@/entities/settings'

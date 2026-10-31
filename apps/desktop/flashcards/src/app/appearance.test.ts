@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { THEME_MODE, THEME_ORIGIN } from '@numen/plugin-sdk'
+import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { WORDS } from '@/shared/words'
 import { createAppearance, type ThemeClient, type ThemeEntry, type ThemeList } from './appearance'
 

@@ -1,7 +1,7 @@
 /**
  * The keys of the secrets plugins declare, stored and removed through the
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 /** The messages this module shows in the window. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { joinTextSegments, type TextVersion } from '../src/texts'
+import type { TextVersion } from '../src/texts'
 import { createMockVaultTexts } from '../src/testing/mockTexts'
 
 function createVersion(id: string): TextVersion {
@@ -17,10 +17,6 @@ function createVersion(id: string): TextVersion {
 }
 
 describe('the text versions of a vault', () => {
-  it('joins the segments of a text', () => {
-    expect(joinTextSegments([{ text: 'one ', heading: 'Intro' }, { text: 'two' }])).toBe('one two')
-  })
-
   it('reads the live text and records an edit as the new live version', async () => {
     const texts = createMockVaultTexts('org.example.player')
     texts.setLive(createVersion('org.example.transcription/k'), [

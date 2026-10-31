@@ -7,6 +7,7 @@ import {
   DEFAULT_PLUGIN_ENABLED,
   createAppInfo,
   createPluginLoader,
+  createPluginTexts,
   openExternalUrl,
   type PluginLoader,
 } from '@numen/plugin-host'
@@ -16,7 +17,6 @@ import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
 import { createPluginNotices } from './pluginNotices'
 import { createPluginTasks } from './pluginTasks'
-import { createPluginTexts } from './pluginTexts'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {

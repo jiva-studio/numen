@@ -3,15 +3,15 @@
  * handed: the reads are open, the writes need `vault:write`.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asValue } from '@numen/plugin-sdk'
-import type {
-  AgentHost,
-  BufferHost,
-  PluginContext,
-  VaultFiles,
-  VaultNotes,
-  VaultRelations,
-  WorkspaceHost,
+import {
+  asValue,
+  type AgentHost,
+  type BufferHost,
+  type PluginContext,
+  type VaultFiles,
+  type VaultNotes,
+  type VaultRelations,
+  type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'

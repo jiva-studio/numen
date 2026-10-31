@@ -4,7 +4,7 @@
  * data of the plugin read here, and the declarative settings and secrets drawn in its slot.
  */
 import { computed, ref, watch } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import { createManagedFromEntries } from '@/shared/pluginListing'
 import { runInBackground } from '@numen/ui'

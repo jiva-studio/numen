@@ -5,10 +5,12 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { CATALOG_STATE } from '@/shared/pluginCatalog'
-import { type Manifest } from '@numen/plugin-host'
-import { createMockCatalogEntry, createMockPluginCatalog } from '@/testing/pluginCatalog'
-import { createMockManifest } from '@numen/plugin-host/testing'
+import { CATALOG_STATE, type Manifest } from '@numen/core-client'
+import {
+  createMockCatalogEntry,
+  createMockPluginCatalog,
+  createMockManifest,
+} from '@numen/core-client/testing'
 import { useWindowTabs } from '@/entities/tab'
 import { createPluginSupport } from './useWindowPlugins'
 

@@ -5,6 +5,8 @@
     "types": ["vite/client"],
     "paths": {
       "@/*": ["./src/*"],
+      "@numen/core-client": ["../../../libs/core-client/src/index.ts"],
+      "@numen/core-client/*": ["../../../libs/core-client/src/*"],
       "@numen/plugin-sdk": ["../../../libs/plugin-sdk-ts/src/index.ts"],
       "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk-ts/src/*"]
     }

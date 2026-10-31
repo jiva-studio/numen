@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { create } from '@bufbuild/protobuf'
-import { AskAgentResponseSchema, ToolCallSchema } from '@numen/protocol'
-import type { AskAgentResponse } from '@numen/protocol'
-import type { AgentStep } from '../agent'
+import {
+  AskAgentResponseSchema,
+  ToolCallSchema,
+  create,
+  type AskAgentResponse,
+} from '@numen/core-client'
+import type { AgentStep } from '@numen/plugin-sdk'
 
-import { createAgentPort } from './agent'
-import type { AgentClient } from './agent'
+import { createAgentPort } from './agentPort'
+import type { AgentClient } from './agentPort'
 
 /** A tool call as the service sends one, working on a place or on none. */
 const call = (place?: { path: string; range: { start: number; end: number } }): AskAgentResponse =>

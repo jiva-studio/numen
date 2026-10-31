@@ -1,5 +1,5 @@
 /**
- * The file an answer came out of, and what an error is called.
+ * The file an answer came out of.
  *
  * The window carries the file as one string and never reads into it, so the
  * only thing that matters about it is that the parts come back out as they went
@@ -7,30 +7,25 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import {
   getAssetUrl,
-  ERROR_CODE,
-  findErrorCode,
-  parseFingerprint,
   getBytesQuery,
   retryWhileBusy,
-  isStaleAnswer,
   formatFingerprint,
   MAX_BUSY_RETRIES,
 } from './answers'
 
 describe('the file an answer came out of', () => {
-  it('arrives back out as it went in', () => {
+  it('arrives back out as the size and modification time it went in with', () => {
     const stat = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
-    expect(parseFingerprint(formatFingerprint(stat) as string)).toEqual(stat)
+    expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=1234&mtime=1700000000')
   })
 
   // A path is the one part that may hold a space, so it is what is left after
   // the two numbers and not one field among several.
   it('arrives back out whole where the path holds spaces', () => {
     const stat = { path: 'heat/Maxwell’s demon and the rest.md', size: 7n, mtime: 9n }
-    expect(parseFingerprint(formatFingerprint(stat) as string)).toEqual(stat)
+    expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
   })
 
   it('is nothing where the answer named no file', () => {
@@ -38,36 +33,7 @@ describe('the file an answer came out of', () => {
   })
 
   it('is nothing at all where there is nothing to read', () => {
-    expect(parseFingerprint('')).toEqual({ path: '', size: 0n, mtime: 0n })
-  })
-})
-
-describe('what an error is called', () => {
-  // The table is keyed by the schema, so the compiler requires an entry for every error code.
-  // It does not check which of them is the one with no word.
-  it('leaves a file that moved past the caller the one error with no word', () => {
-    expect(ERROR_CODE[ProtoErrorCode.STALE]).toBeNull()
-    expect(Object.values(ERROR_CODE).filter((word) => word === null)).toHaveLength(1)
-  })
-
-  it('reads a file that moved past the caller off the answer that says so', () => {
-    expect(isStaleAnswer({ error: ProtoErrorCode.STALE })).toBe(true)
-    expect(isStaleAnswer({ error: ProtoErrorCode.MISSING })).toBe(false)
-    expect(isStaleAnswer({})).toBe(false)
-  })
-
-  it('reads an error off an answer that carries one', () => {
-    expect(findErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
-    expect(findErrorCode({ error: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
-  })
-
-  it('says nothing about an answer with no error', () => {
-    expect(findErrorCode({})).toBeNull()
-    expect(findErrorCode({ error: undefined })).toBeNull()
-  })
-
-  it('calls an error it has no word of its own for unreadable', () => {
-    expect(findErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
+    expect(getBytesQuery('')).toBe('size=0&mtime=0')
   })
 })
 

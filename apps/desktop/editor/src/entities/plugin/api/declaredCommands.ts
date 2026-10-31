@@ -3,7 +3,7 @@
  * plugins' backends run. The application checks a run against the declaration
  * before it is sent to the plugin.
  */
-import { COMMAND_ERROR_CODE } from '@numen/plugin-sdk'
+import { COMMAND_ERROR_CODE } from '@numen/core-client'
 import { pluginCommands } from '@/shared/clients'
 
 interface WireCommand {

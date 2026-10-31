@@ -21,8 +21,7 @@
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
     "@ionic/vue": "^9.0.8",
-    "@numen/plugin-sdk": "*",
-    "@numen/protocol": "*",
+    "@numen/core-client": "*",
     "@numen/ui": "*",
     "vue": "^3.5.44",
     "vue-router": "^5.4.0"

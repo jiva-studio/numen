@@ -1,4 +1,4 @@
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { vaults, type VaultCore } from '../vault'
 import type {

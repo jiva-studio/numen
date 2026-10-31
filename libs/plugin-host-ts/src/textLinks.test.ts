@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { resolveTextLinks, type LinkClient } from './links'
+import { resolveTextLinks, type LinkClient } from './textLinks'
 
 const createClient = () => {
   const resolveAddresses = vi.fn<LinkClient['resolveAddresses']>(async () => ({

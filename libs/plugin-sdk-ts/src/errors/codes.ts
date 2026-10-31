@@ -23,18 +23,6 @@ const UNREACHABLE = 'vault unreachable'
 export const getErrorWords = (code: ErrorCode): string =>
   code === 'unreachable' ? UNREACHABLE : formatErrorCodeMessage(PROTO_BY_CODE[code])
 
-/** The message for each error code. */
-export const ERRORS: Record<ErrorCode, string> = {
-  ...(Object.fromEntries(
-    Object.entries(PROTO_BY_CODE).map(([code, proto]) => [code, formatErrorCodeMessage(proto)]),
-  ) as Record<Exclude<ErrorCode, 'unreachable'>, string>),
-  unreachable: UNREACHABLE,
-}
-
-/** The code the window words for a code given as text, and `unreadable` for one it has no words for. */
-export const getKnownErrorCode = (code: string): ErrorCode =>
-  code in ERRORS ? (code as ErrorCode) : 'unreadable'
-
 /** The message for a relationship operation that did not land. */
 export const getRelationErrorWords = (error: RelationError): string => {
   switch (error) {

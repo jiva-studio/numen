@@ -57,8 +57,3 @@ export interface VaultTexts {
     segments: readonly TextSegment[],
   ): Promise<Result<TextVersion, TextErrorCode>>
 }
-
-// joinTextSegments is a text as one string.
-export function joinTextSegments(segments: readonly TextSegment[]): string {
-  return segments.map((segment) => segment.text).join('')
-}

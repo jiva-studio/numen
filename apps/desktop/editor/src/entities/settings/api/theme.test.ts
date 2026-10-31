@@ -6,7 +6,7 @@
  * shape.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { Mode as Modes, Origin } from '@numen/protocol'
+import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -25,7 +25,7 @@ const { themes } = await import('./theme')
 const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
   applied: 'preset/Numen.css',
-  mode: Modes.SYSTEM,
+  mode: THEME_MODE.SYSTEM,
   interfaceScale: 1,
   textScale: 1,
   interfaceScaleBounds: { min: 0.8, max: 2 },
@@ -41,21 +41,21 @@ describe('every theme there is', () => {
           {
             name: 'preset/Numen.css',
             title: 'Numen',
-            origin: Origin.PRESET,
+            origin: THEME_ORIGIN.PRESET,
             isPinned: false,
             pluginId: '',
           },
           {
             name: 'own/Dusk.css',
             title: 'Dusk',
-            origin: Origin.MINE,
+            origin: THEME_ORIGIN.MINE,
             isPinned: true,
             pluginId: '',
           },
           {
             name: 'plugin:org.example.themes/night',
             title: 'Night',
-            origin: Origin.PLUGIN,
+            origin: THEME_ORIGIN.PLUGIN,
             isPinned: true,
             pluginId: 'org.example.themes',
           },
@@ -81,9 +81,9 @@ describe('every theme there is', () => {
 describe('which half of a colour pair is read', () => {
   it('is returned in the window’s own words', async () => {
     for (const [mode, word] of [
-      [Modes.LIGHT, 'light'],
-      [Modes.DARK, 'dark'],
-      [Modes.SYSTEM, 'system'],
+      [THEME_MODE.LIGHT, 'light'],
+      [THEME_MODE.DARK, 'dark'],
+      [THEME_MODE.SYSTEM, 'system'],
     ] as const) {
       request.listThemes.mockResolvedValue(createAnswer({ mode }))
       expect((await themes.getAppearance()).mode).toBe(word)
@@ -103,7 +103,7 @@ describe('which half of a colour pair is read', () => {
 
     expect(request.writeAppearance.mock.calls[0]?.[0]).toEqual({
       name: 'own/Dusk.css',
-      mode: Modes.DARK,
+      mode: THEME_MODE.DARK,
       interfaceScale: 1.25,
       textScale: 1.5,
     })

@@ -5,7 +5,7 @@
  */
 import { computed, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import type { UnavailableState } from './unavailable'
 import { describeUnavailable } from './unavailableView'
 

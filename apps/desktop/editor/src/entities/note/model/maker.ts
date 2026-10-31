@@ -4,12 +4,8 @@
  * The core numbers untitled names, files a related note beside the note it is related to and
  * writes the record of the relation. The window reports what the core answers.
  */
-import {
-  formatErrorMessage,
-  getRelationErrorWords,
-  type ConnectionRole,
-  type VaultRelations,
-} from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
+import { getRelationErrorWords, type ConnectionRole, type VaultRelations } from '@numen/plugin-sdk'
 import type { NewNote } from '../lib/note'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import type { MessageWriter } from '@/shared/notices/messages'

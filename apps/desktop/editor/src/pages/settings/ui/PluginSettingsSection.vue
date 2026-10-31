@@ -3,7 +3,7 @@
  * Dynamic settings section rendered for active plugins with declarative schemas.
  */
 import { computed } from 'vue'
-import { AGENT_SETTING_TYPE } from '@numen/plugin-sdk'
+import { AGENT_SETTING_TYPE } from '@numen/core-client'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import { AgentChoice } from './agent-choice'

@@ -12,7 +12,7 @@ import {
   DEFAULT_MODEL_PATH,
   getProgramModelPath,
   readAgentChoice,
-} from '@numen/plugin-sdk'
+} from '@numen/core-client'
 import type { CompletionChoice, Model, PluginInfo, SettingSource } from '@/entities/settings'
 import type { SelectChoice } from '@numen/ui'
 

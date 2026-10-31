@@ -5,7 +5,7 @@
  * step in the port is defined once. The window creates the client; this module
  * defines what its responses mean.
  */
-import type { AgentPort, AgentQuery, AgentStep } from '../agent'
+import type { AgentPort, AgentQuery, AgentStep } from '@numen/plugin-sdk'
 
 /** A run of text on the wire, by where it begins and where it ends. */
 interface WireRange {

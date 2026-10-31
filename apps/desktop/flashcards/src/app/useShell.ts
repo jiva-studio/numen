@@ -4,9 +4,14 @@
  * the chosen vault.
  */
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
-import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
+import {
+  createPluginLoader,
+  getPluginStyle,
+  type PluginLoaderDeps,
+  type LinkClient,
+} from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
-import { formatErrorMessage, type LinkClient } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'

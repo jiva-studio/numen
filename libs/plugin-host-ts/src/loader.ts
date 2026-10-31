@@ -4,7 +4,7 @@
  */
 import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable, PluginLifecycle } from '@numen/plugin-sdk'
-import type { Manifest } from './manifest'
+import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
 import {
   getLifecycleHooks,

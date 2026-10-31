@@ -1,13 +1,9 @@
 /**
  * Note domain methods for the window core.
  */
-import {
-  asFailure,
-  asValue,
-  findErrorCode,
-  isStaleAnswer,
-  resolveTextLinks,
-} from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/plugin-sdk'
+import { findErrorCode, isStaleAnswer } from '@numen/core-client'
+import { resolveTextLinks } from '@numen/plugin-host'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,

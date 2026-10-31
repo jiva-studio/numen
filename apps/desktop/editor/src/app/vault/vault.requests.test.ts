@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ErrorCode, Marker, Role, VaultsErrorCode } from '@numen/protocol'
+import { NOTE_ERROR_CODE, NOTE_MARKER, NOTE_ROLE, VAULTS_ERROR_CODE } from '@numen/core-client'
 import { core, vaults } from './index'
 import { WINDOW } from './clients'
 
@@ -56,7 +56,7 @@ describe('a note requested for', () => {
     expect(created).toEqual({ ok: true, value: { path: 'Notes/Heat.md' } })
     expect(requestLog.createNote.mock.calls.at(-1)?.[0].path).toBe('Notes')
 
-    requestLog.createNote.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    requestLog.createNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
     const outcome = await core.create({ title: 'Heat', folder: 'Notes' })
     expect(outcome).toEqual({ ok: false, error: 'alreadyExists' })
 
@@ -76,10 +76,10 @@ describe('a note requested for', () => {
       value: { path: 'B.md', title: 'B', hasFrontmatter: true, moved: null },
     })
 
-    requestLog.renameNote.mockResolvedValue({ error: ErrorCode.STALE })
+    requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.STALE })
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'changed' })
 
-    requestLog.renameNote.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
@@ -125,7 +125,7 @@ describe('a file requested for', () => {
     await core.remove('a.md', true)
     expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: true })
 
-    requestLog.removeFile.mockResolvedValue({ error: ErrorCode.MISSING })
+    requestLog.removeFile.mockResolvedValue({ error: NOTE_ERROR_CODE.MISSING })
     expect(await core.remove('a.md')).toEqual({ ok: false, error: 'missing' })
   })
 
@@ -140,7 +140,7 @@ describe('a file requested for', () => {
     await core.move('a.md', 'b.md')
     expect(requestLog.moveFile.mock.calls.at(-1)?.[0]).toEqual({ from: 'a.md', to: 'b.md' })
 
-    requestLog.moveFile.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    requestLog.moveFile.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
     expect(await core.move('a.md', 'b.md')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
@@ -194,7 +194,7 @@ describe('a vault requested for', () => {
   })
 
   it('fails in the words of the error', async () => {
-    requestLog.addVault.mockResolvedValue({ error: VaultsErrorCode.NAME_TAKEN })
+    requestLog.addVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.NAME_TAKEN })
     expect(await vaults.add('/v', 'Name')).toEqual({ ok: false, error: 'nameTaken' })
   })
 })
@@ -220,9 +220,9 @@ describe('a note followed', () => {
       connection: {
         first: 'a.md',
         second: 'b.md',
-        role: Role.PARENT,
-        firstSide: { label: 'under', note: 'why', marker: Marker.ARROW },
-        secondSide: { label: '', note: '', marker: Marker.UNSPECIFIED },
+        role: NOTE_ROLE.PARENT,
+        firstSide: { label: 'under', note: 'why', marker: NOTE_MARKER.ARROW },
+        secondSide: { label: '', note: '', marker: NOTE_MARKER.UNSPECIFIED },
       },
     })
 
@@ -263,8 +263,8 @@ describe('a note followed', () => {
       connection: {
         first: 'a.md',
         second: 'b.md',
-        role: Role.CHILD,
-        firstSide: { type: '', note: '', label: '', marker: Marker.ARROW },
+        role: NOTE_ROLE.CHILD,
+        firstSide: { type: '', note: '', label: '', marker: NOTE_MARKER.ARROW },
         secondSide: undefined,
       },
     })
@@ -283,7 +283,7 @@ describe('a note followed', () => {
     expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'cycle' })
     requestLog.saveConnection.mockResolvedValueOnce({ isInvalid: true })
     expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'invalid' })
-    requestLog.saveConnection.mockResolvedValueOnce({ error: ErrorCode.MISSING })
+    requestLog.saveConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.MISSING })
     expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'missing' })
   })
 
@@ -314,7 +314,7 @@ describe('a note followed', () => {
     expect(requestLog.joinNotes.mock.calls.at(-1)?.[0]).toEqual({
       from: 'a.md',
       to: 'b.md',
-      side: { role: Role.JUMP, type: '', note: '', label: 'see', marker: Marker.ARROW },
+      side: { role: NOTE_ROLE.JUMP, type: '', note: '', label: 'see', marker: NOTE_MARKER.ARROW },
     })
   })
 
@@ -326,10 +326,10 @@ describe('a note followed', () => {
     expect(made).toEqual({ ok: true, value: 'physics/Untitled note.md' })
     expect(requestLog.createRelatedNote.mock.calls.at(-1)?.[0]).toEqual({
       from: 'physics/a.md',
-      role: Role.CHILD,
+      role: NOTE_ROLE.CHILD,
       title: '',
       type: '',
-      marker: Marker.UNSPECIFIED,
+      marker: NOTE_MARKER.UNSPECIFIED,
     })
 
     requestLog.createRelatedNote.mockResolvedValue({ isNameExhausted: true })
@@ -344,12 +344,12 @@ describe('a note followed', () => {
       backlinks: [
         {
           from: { path: 'b.md', title: 'B' },
-          role: Role.PARENT,
-          roleFromHere: Role.CHILD,
+          role: NOTE_ROLE.PARENT,
+          roleFromHere: NOTE_ROLE.CHILD,
           type: '',
           note: '',
           label: 'under',
-          marker: Marker.ARROW,
+          marker: NOTE_MARKER.ARROW,
         },
       ],
     })
