@@ -16,7 +16,6 @@
     "noteTypes": [{ "type": "link" }],
     "frameOrigins": ["https://www.youtube-nocookie.com"]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "services": ["numen.importer"],
   "commands": [
@@ -64,15 +63,8 @@
       "noteTypes": ["link"]
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/tools-media-importer",
-    "serviceName": "numen.importer"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "backend": { "entrypoint": "bin/tools-media-importer" },
+  "frontend": {},
   "settings": [
     {
       "key": "yt_dlp",

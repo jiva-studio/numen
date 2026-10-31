@@ -8,7 +8,6 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
-    "fileTypes": [{ "tabKind": "reader:reader-epub", "extensions": ["epub"] }],
     "feature": "EPUB books",
     "category": "readers",
     "handles": [{ "purpose": "text-provider", "contentTypes": ["application/epub+zip"] }],
@@ -16,16 +15,8 @@
       { "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }
     ]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.epub"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/readers-epub",
-    "serviceName": "numen.epub"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "backend": { "entrypoint": "bin/readers-epub" },
+  "frontend": {}
 }

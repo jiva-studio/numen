@@ -26,10 +26,7 @@
       }
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/engines-embeddings"
-  },
+  "backend": { "entrypoint": "bin/engines-embeddings" },
   "settings": [
     {
       "key": "provider",

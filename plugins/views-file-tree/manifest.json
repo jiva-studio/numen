@@ -11,10 +11,6 @@
     "feature": "file tree",
     "category": "views"
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "frontend": {}
 }

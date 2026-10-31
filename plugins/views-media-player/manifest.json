@@ -4,18 +4,11 @@
   "version": "2026.10.5",
   "protocol": 1,
   "description": "Audio and video player with interactive transcripts and voice recording",
-  "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [
       { "kind": "recording", "title": "Record Audio", "icon": "mic" },
       { "kind": "reader:media-player", "title": "Audio Player", "icon": "audio-lines" }
-    ],
-    "fileTypes": [
-      {
-        "tabKind": "reader:media-player",
-        "extensions": ["mp3", "m4a", "wav", "ogg", "oga", "aac", "flac"]
-      }
     ],
     "feature": "audio playback and recording",
     "category": "views",
@@ -35,9 +28,5 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
-  "activationEvents": [],
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "frontend": {}
 }

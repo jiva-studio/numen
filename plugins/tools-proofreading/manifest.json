@@ -6,7 +6,6 @@
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
   "contributes": { "category": "tools", "handles": [{ "purpose": "text-provider" }] },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
   "secrets": [
     {
@@ -176,9 +175,6 @@
       "step": 0.05
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/tools-proofreading",
-    "serviceName": "numen.v1.TextProviderService"
-  }
+  "backend": { "entrypoint": "bin/tools-proofreading" },
+  "services": ["numen.v1.TextProviderService"]
 }

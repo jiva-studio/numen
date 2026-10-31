@@ -7,19 +7,14 @@ import (
 )
 
 type manifestFile struct {
-	ID               string   `json:"id"`
-	Capabilities     []string `json:"capabilities"`
-	Permissions      []string `json:"permissions"`
-	ActivationEvents []string `json:"activationEvents"`
-	Targets          []string `json:"targets"`
-	Services         []string `json:"services"`
-	Backend          struct {
-		ServiceName string `json:"serviceName"`
-	} `json:"backend"`
-	Frontend struct {
-		Entrypoint string `json:"entrypoint"`
-	} `json:"frontend"`
-	SettingsViews []struct {
+	ID               string    `json:"id"`
+	Capabilities     []string  `json:"capabilities"`
+	Permissions      []string  `json:"permissions"`
+	ActivationEvents []string  `json:"activationEvents"`
+	Targets          []string  `json:"targets"`
+	Services         []string  `json:"services"`
+	Frontend         *struct{} `json:"frontend"`
+	SettingsViews    []struct {
 		ID    string `json:"id"`
 		Title string `json:"title"`
 	} `json:"settingsViews"`
@@ -61,16 +56,16 @@ func TestManifestSubscribesToEveryEvent(t *testing.T) {
 // The window reaches the plugin through the service its manifest names.
 func TestManifestServesTheRelevanceService(t *testing.T) {
 	manifest := readManifest(t)
-	if !slices.Equal(manifest.Services, []string{"numen.relevance"}) || manifest.Backend.ServiceName != "" {
-		t.Errorf("services = %v and serviceName = %q, want numen.relevance only", manifest.Services, manifest.Backend.ServiceName)
+	if !slices.Equal(manifest.Services, []string{"numen.relevance"}) {
+		t.Errorf("services = %v, want numen.relevance only", manifest.Services)
 	}
 }
 
 // The settings page mounts the relevance panel, which is the whole of the plugin's settings.
 func TestManifestDeclaresTheFloorSettingsViewAndNoSetting(t *testing.T) {
 	manifest := readManifest(t)
-	if !slices.Contains(manifest.Targets, "desktop.editor") || manifest.Frontend.Entrypoint == "" {
-		t.Errorf("targets %v and frontend %q, want desktop.editor and an entrypoint", manifest.Targets, manifest.Frontend.Entrypoint)
+	if !slices.Contains(manifest.Targets, "desktop.editor") || manifest.Frontend == nil {
+		t.Errorf("targets %v and frontend %v, want desktop.editor and a frontend", manifest.Targets, manifest.Frontend)
 	}
 	if len(manifest.SettingsViews) != 1 || manifest.SettingsViews[0].ID != "floor" || manifest.SettingsViews[0].Title != "Search relevance" {
 		t.Fatalf("settingsViews = %+v, want the floor view titled Search relevance", manifest.SettingsViews)

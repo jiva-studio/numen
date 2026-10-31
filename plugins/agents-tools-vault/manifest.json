@@ -8,8 +8,5 @@
   "targets": ["desktop.editor"],
   "contributes": { "category": "agents" },
   "permissions": ["vault:read", "vault:write"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/agents-tools-vault"
-  }
+  "backend": { "entrypoint": "bin/agents-tools-vault" }
 }

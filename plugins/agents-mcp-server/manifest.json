@@ -9,11 +9,8 @@
   "contributes": { "category": "agents" },
   "activationEvents": ["*"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/agents-mcp-server",
-    "serviceName": "numen.v1.McpServerService"
-  },
+  "backend": { "entrypoint": "bin/agents-mcp-server" },
+  "services": ["numen.v1.McpServerService"],
   "settings": [
     {
       "key": "port",

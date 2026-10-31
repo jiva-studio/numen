@@ -32,9 +32,6 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 	var manifest struct {
 		Capabilities []string `json:"capabilities"`
 		Services     []string `json:"services"`
-		Backend      struct {
-			ServiceName string `json:"serviceName"`
-		} `json:"backend"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
@@ -42,8 +39,8 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 	if !slices.Contains(manifest.Capabilities, "embedding") {
 		t.Errorf("capabilities = %v, want embedding", manifest.Capabilities)
 	}
-	if manifest.Backend.ServiceName != "" || len(manifest.Services) != 0 {
-		t.Errorf("serves %q and %v to the windows, want nothing", manifest.Backend.ServiceName, manifest.Services)
+	if len(manifest.Services) != 0 {
+		t.Errorf("serves %v to the windows, want nothing", manifest.Services)
 	}
 }
 

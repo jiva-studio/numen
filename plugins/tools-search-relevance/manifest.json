@@ -9,13 +9,7 @@
   "activationEvents": ["*"],
   "permissions": ["index:read", "search:policy", "vault:read"],
   "services": ["numen.relevance"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/tools-search-relevance"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "backend": { "entrypoint": "bin/tools-search-relevance" },
+  "frontend": {},
   "settingsViews": [{ "id": "floor", "title": "Search relevance" }]
 }

@@ -27,7 +27,6 @@
       { "type": "preset" }
     ]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.flashcards"],
   "commands": [
@@ -66,13 +65,6 @@
       "replaces": ["review.day_start_time", "review.day_starts"]
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/views-flashcards-studio",
-    "serviceName": "numen.flashcards"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "backend": { "entrypoint": "bin/views-flashcards-studio" },
+  "frontend": {}
 }

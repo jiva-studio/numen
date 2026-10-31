@@ -15,7 +15,6 @@
       }
     ]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "commands": [
     {
@@ -127,11 +126,8 @@
       }
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/engines-ocr",
-    "serviceName": "numen.v1.TextProviderService"
-  },
+  "backend": { "entrypoint": "bin/engines-ocr" },
+  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",

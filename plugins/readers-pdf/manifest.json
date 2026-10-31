@@ -8,24 +8,15 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [{ "kind": "reader:reader-pdf", "title": "PDF Reader", "icon": "file-text" }],
-    "fileTypes": [{ "tabKind": "reader:reader-pdf", "extensions": ["pdf"] }],
     "feature": "PDF documents",
     "category": "readers",
     "handles": [{ "purpose": "text-provider", "contentTypes": ["application/pdf"] }],
     "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.pdf"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/readers-pdf",
-    "serviceName": "numen.pdf"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "backend": { "entrypoint": "bin/readers-pdf" },
+  "frontend": {},
   "settings": [
     {
       "key": "default_zoom",

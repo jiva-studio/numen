@@ -11,10 +11,6 @@
     "feature": "agent chat",
     "category": "views"
   },
-  "activationEvents": [],
   "permissions": ["vault:read"],
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "frontend": {}
 }
