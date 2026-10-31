@@ -4,6 +4,7 @@ NOTES    := libs/notes
 PLUGIN_CATALOG := libs/plugin-catalog
 UI       := libs/ui/core
 SHELL_LIB := libs/ui/shell
+CORE_CLIENT := libs/core-client
 PLUGIN_HOST := libs/plugin-host-ts
 PLUGIN_MANAGER := libs/plugin-manager
 PROTOCOL := libs/protocol
@@ -48,7 +49,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_notes_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_core_client_compile lib_shell_compile lib_plugin_host_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -264,6 +265,26 @@ lib_shell_lint: lib_ui_build ## lint the shell package
 .PHONY: lib_shell_knip
 lib_shell_knip: ## check dead code and unused dependencies of the shell with knip
 	cd $(SHELL_LIB) && npm run knip
+
+# ------------------------------ Lib: Core Client ------------------------------
+.PHONY: lib_core_client_typecheck
+lib_core_client_typecheck: ## typecheck the core-client package
+	cd $(CORE_CLIENT) && npm run typecheck
+
+.PHONY: lib_core_client_compile
+lib_core_client_compile: lib_core_client_typecheck
+
+.PHONY: lib_core_client_test
+lib_core_client_test: ## run core-client tests
+	cd $(CORE_CLIENT) && npm test
+
+.PHONY: lib_core_client_lint
+lib_core_client_lint: ## lint the core-client package
+	cd $(CORE_CLIENT) && npm run lint && npm run typecheck
+
+.PHONY: lib_core_client_knip
+lib_core_client_knip: ## check dead code and unused dependencies of the core client with knip
+	cd $(CORE_CLIENT) && npm run knip
 
 # ------------------------------ Lib: Plugin Host ------------------------------
 .PHONY: lib_plugin_host_typecheck
