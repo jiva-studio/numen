@@ -6,6 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
+import type { CatalogEntry } from '@numen/plugin-sdk'
 import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
 import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 
@@ -63,6 +64,8 @@ export interface Installation {
    */
   getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
+  /** The plugins the catalog lists, the ones that are not installed among them. */
+  readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
 }

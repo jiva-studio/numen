@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginRow from './PluginRow.vue'
-import { createPluginInfo } from '@/testing/installation'
+import { createManaged as createPluginInfo, createOffered } from './testing/managed'
 
 describe('PluginRow', () => {
   it('renders plugin name, version, and description', () => {
@@ -107,5 +107,17 @@ describe('PluginRow', () => {
 
     menu.vm.$emit('choose', 'toggle')
     expect(wrapper.emitted('toggle-enabled')).toStrictEqual([[false]])
+  })
+
+  it('badges a plugin that is not installed and offers no switch', async () => {
+    const wrapper = mount(PluginRow, {
+      props: { plugin: createOffered('test.offer', 'Offered Reader'), isEnabled: false },
+    })
+
+    expect(wrapper.find('.plugin-row__badge--available').text()).toBe('Not installed')
+
+    await wrapper.find('.plugin-row').trigger('contextmenu', { clientX: 1, clientY: 2 })
+    const menu = wrapper.findComponent({ name: 'Menu' })
+    expect(menu.props('items')).toStrictEqual([{ id: 'configure', text: 'Settings' }])
   })
 })

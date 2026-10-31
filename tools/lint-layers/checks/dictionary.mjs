@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { listPluginNames, parseManifest, MANIFEST_FILE } from "../../shared/manifests.mjs";
 import { REPO_ROOT, listShippedFiles, readGo, readSource } from "./helpers.mjs";
 
 const require = createRequire(import.meta.url);
@@ -16,17 +17,16 @@ const TOKEN = /^[A-Za-z][\w.:*-]*$/;
 const SEPARATORS = /[.:*\-_/\s]+/;
 const HASH = /^[0-9a-f]{32,}$/;
 
-/** The plugin directories that hold a manifest. */
+/** The manifest of each plugin that holds one. */
 export function listManifestFiles() {
-  const root = path.join(REPO_ROOT, "plugins");
-  return fs
-    .readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(root, entry.name, "manifest.json")))
-    .map((entry) => `plugins/${entry.name}/manifest.json`);
+  return listPluginNames(path.join(REPO_ROOT, "plugins")).map((name) => `plugins/${name}/${MANIFEST_FILE}`);
 }
 
-/** The manifest fields that hold presentation or configuration values, which name no plugin. */
-const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name"]);
+/**
+ * The manifest fields that hold presentation or configuration values, which name no plugin. A category
+ * groups the plugins of a list under a word several plugins share.
+ */
+const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name", "category"]);
 
 /** The manifest fields that name the windows a plugin runs in; the host defines them. */
 const HOST_KEYS = new Set(["targets"]);
@@ -83,7 +83,7 @@ export function loadManifestWords(manifestFiles = listManifestFiles(), readFile 
     words.get(word).add(plugin);
   };
   const hostWords = [];
-  const manifests = manifestFiles.map((file) => ({ plugin: file.split("/")[1], json: JSON.parse(readFile(file)) }));
+  const manifests = manifestFiles.map((file) => ({ plugin: file.split("/")[1], json: parseManifest(readFile(file), file).document }));
   const prefix = getIdPrefix(manifests.map(({ json }) => String(json.id)));
   const segmentOwners = new Map();
   for (const { plugin, json } of manifests) {

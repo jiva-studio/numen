@@ -11,7 +11,7 @@ import type {
   DropRegistration,
   FileSelectEvent,
   PluginContext,
-  PluginManifest,
+  Manifest,
   ReaderRegistration,
   SettingsViewRegistration,
   TabKindRegistration,
@@ -40,7 +40,7 @@ function trackSubscription(subscriptions: Disposable[], disposable: Disposable):
 
 interface PermissionTarget {
   readonly pluginId: string
-  readonly manifest?: PluginManifest | { permissions?: readonly string[] } | undefined
+  readonly manifest?: Manifest | { permissions?: readonly string[] } | undefined
 }
 
 function checkPermission(target: PermissionTarget, permission: string, operation: string): void {
@@ -254,7 +254,7 @@ const EDITOR_TARGET = 'desktop.editor'
 export function createPluginContext(
   pluginId: string,
   host: PluginContextHost,
-  manifest?: PluginManifest | { permissions?: readonly string[] },
+  manifest?: Manifest | { permissions?: readonly string[] },
 ): PluginContext {
   const subscriptions: Disposable[] = []
   const add = (d: Disposable) => trackSubscription(subscriptions, d)

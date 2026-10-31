@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { readPluginManifests } from "../../shared/manifests.mjs";
 import {
   MODULES_DIR,
   NOT_SHIPPED,
@@ -23,21 +24,7 @@ import {
 
 export function verifyPluginsStatic() {
   const pluginsDir = path.join(MODULES_DIR, "plugins");
-  const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
-  const pluginNames = entries
-    .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
-    .map((e) => e.name);
-
-  for (const plugin of pluginNames) {
-    const pDir = path.join(pluginsDir, plugin);
-    const manifestPath = path.join(pDir, "manifest.json");
-    if (fs.existsSync(manifestPath)) {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-      if (!manifest.id || !manifest.name || !manifest.version) {
-        throw new Error("Plugin " + plugin + " has invalid manifest.json (missing id/name/version)");
-      }
-    }
-  }
+  readPluginManifests(pluginsDir);
 
   if (fs.existsSync(path.join(pluginsDir, "shared"))) {
     throw new Error("plugins/shared exists: a plugin shares code only through the SDK");
@@ -313,14 +300,7 @@ function findCrossPluginKnowledge() {
     .readdirSync(pluginsDir, { withFileTypes: true })
     .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
     .map((e) => e.name);
-  const manifestIds = new Map();
-  for (const plugin of pluginNames) {
-    const mPath = path.join(pluginsDir, plugin, "manifest.json");
-    if (fs.existsSync(mPath)) {
-      const m = JSON.parse(fs.readFileSync(mPath, "utf8"));
-      if (m.id) manifestIds.set(m.id, plugin);
-    }
-  }
+  const manifestIds = new Map(readPluginManifests(pluginsDir).map(({ name, manifest }) => [manifest.id, name]));
   const found = [];
   const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
   for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {

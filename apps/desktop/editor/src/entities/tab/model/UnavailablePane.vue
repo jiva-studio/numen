@@ -1,10 +1,13 @@
 <script setup lang="ts">
 /**
- * Placeholder displayed when a tab's kind belongs to a disabled or missing plugin.
+ * Placeholder displayed when a tab's kind belongs to a disabled, stopped or missing plugin. The
+ * plugin's name, feature and state come from the catalog.
  */
-import { computed } from 'vue'
-import { formatUnavailableFeature, getUnavailablePluginFilter } from './unavailableText'
+import { computed, ref } from 'vue'
+import { runInBackground } from '@numen/ui'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { UnavailableState } from './unavailable'
+import { describeUnavailable } from './unavailableView'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -12,15 +15,24 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const featureName = computed(() => formatUnavailableFeature(props.state.kind))
+const isEnabling = ref(false)
+const problem = ref('')
+const view = computed(() => describeUnavailable(props.state.lookup.value, isEnabling.value))
 
 /* -------------------------------- Handlers -------------------------------- */
-function onOpenSettings(): void {
-  globalThis.dispatchEvent(
-    new CustomEvent('numen:open-settings', {
-      detail: { filter: getUnavailablePluginFilter(props.state.kind) },
-    }),
-  )
+function onAct(): void {
+  const { pluginId, action } = view.value
+  const { services } = props.state
+  if (action === 'enable' && pluginId !== undefined && services.enablePlugin) {
+    isEnabling.value = true
+    problem.value = ''
+    runInBackground(services.enablePlugin(pluginId), (error) => {
+      isEnabling.value = false
+      problem.value = formatErrorMessage(error)
+    })
+    return
+  }
+  services.openPlugin?.(pluginId)
 }
 </script>
 
@@ -28,12 +40,11 @@ function onOpenSettings(): void {
   <div class="tab-unavailable" role="status">
     <div class="tab-unavailable__content">
       <div class="tab-unavailable__icon" aria-hidden="true">&#9888;</div>
-      <h3 class="tab-unavailable__title">Plugin disabled</h3>
-      <p class="tab-unavailable__message">
-        The plugin for {{ featureName }} is disabled or missing.
-      </p>
-      <button type="button" class="tab-unavailable__button" @click="onOpenSettings">
-        Open Settings
+      <h3 class="tab-unavailable__title">{{ view.heading }}</h3>
+      <p class="tab-unavailable__message">{{ view.message }}</p>
+      <p v-if="problem" class="tab-unavailable__message" role="alert">{{ problem }}</p>
+      <button type="button" class="tab-unavailable__button" :disabled="isEnabling" @click="onAct">
+        {{ view.actionText }}
       </button>
     </div>
   </div>

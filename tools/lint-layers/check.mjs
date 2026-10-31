@@ -27,6 +27,7 @@ import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
 import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
 import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
+import { MANIFEST_VERIFIERS } from "./checks/manifests.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
 import { VOCABULARY_VERIFIERS } from "./checks/vocabulary.mjs";
@@ -34,6 +35,7 @@ import { VOCABULARY_VERIFIERS } from "./checks/vocabulary.mjs";
 const VERIFIERS = [
   ...CORE_VERIFIERS,
   ...LIBRARY_VERIFIERS,
+  ...MANIFEST_VERIFIERS,
   ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...VOCABULARY_VERIFIERS,

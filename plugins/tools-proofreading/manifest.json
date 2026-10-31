@@ -5,6 +5,7 @@
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
+  "contributes": { "category": "tools" },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
   "secrets": [

@@ -6,6 +6,7 @@
   "description": "Connects external AI apps to your open vault",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "contributes": { "category": "agents" },
   "activationEvents": ["*"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "lifecycle": {

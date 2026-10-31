@@ -6,6 +6,7 @@
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
   "targets": ["desktop.editor"],
+  "contributes": { "category": "engines" },
   "activationEvents": ["*"],
   "permissions": ["vault:read", "network:outbound"],
   "dependencies": [

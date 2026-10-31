@@ -1,6 +1,7 @@
 import { fn } from 'storybook/test'
 import { ref } from 'vue'
-import type { Model, PluginInfo } from '@/entities/settings'
+import { createMockPluginInfo } from '@numen/plugin-sdk/testing'
+import type { Model } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
@@ -29,24 +30,7 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
 })
 
 /** A plugin the installation lists, with what a test cares about put over the defaults. */
-export const createPluginInfo = (
-  id: string,
-  name: string,
-  overrides: Partial<PluginInfo> = {},
-): PluginInfo => ({
-  id,
-  name,
-  version: '1.0.0',
-  description: '',
-  isActive: false,
-  settings: [],
-  capabilities: [],
-  secrets: [],
-  storedSecrets: [],
-  consent: 'none',
-  hasFrontend: false,
-  ...overrides,
-})
+export const createPluginInfo = createMockPluginInfo
 
 /** A program a plugin lists, and the models it reports. */
 export interface ProgramFixture {

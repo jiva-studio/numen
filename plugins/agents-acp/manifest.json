@@ -6,6 +6,7 @@
   "description": "External AI assistants via the Agent Client Protocol",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": { "category": "agents" },
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,

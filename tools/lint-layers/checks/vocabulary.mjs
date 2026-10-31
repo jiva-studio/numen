@@ -4,7 +4,7 @@ import { findWordsInGo, findWordsInScript, listManifestFiles, loadPluginDictiona
 import { REPO_ROOT, failOnFindings, listShippedFiles, requireMatches } from "./helpers.mjs";
 
 /** The libraries and applications whose frontend sources know no plugin. */
-const FRONTEND_NAME_FREE_ROOTS = ["apps", "libs/ui/shell", "libs/plugin-host-ts", "libs/ui/core"];
+const FRONTEND_NAME_FREE_ROOTS = ["apps", "libs/ui/shell", "libs/plugin-host-ts", "libs/plugin-manager", "libs/ui/core"];
 
 /** The Go library whose sources know no plugin. */
 const GO_NAME_FREE_ROOTS = ["libs/notes"];
@@ -62,7 +62,6 @@ export const VOCABULARY_VERIFIERS = [
     id: "window-names-no-plugin-kind",
     scope: "apps",
     module: "editor",
-    isManual: true,
     name: "Applications, Shell, Plugin Host and UI Library Name No Plugin Word (words of the plugin manifests)",
     run: verifyWindowNamesNoPluginKind,
   },

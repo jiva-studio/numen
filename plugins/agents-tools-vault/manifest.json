@@ -6,6 +6,7 @@
   "description": "Library search, reading, and note editing tools for AI assistants",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "contributes": { "category": "agents" },
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,

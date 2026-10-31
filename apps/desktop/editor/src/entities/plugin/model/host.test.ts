@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
 import { registerPluginStyle } from '@numen/plugin-host'
 import { CONVERSATION } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/plugin-sdk/testing'
 import type { PluginHostDeps } from './types'
 
 describe('createPluginHost', () => {
@@ -241,21 +242,18 @@ describe('createPluginHost', () => {
   it('rejects manifest registration when context already exists', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
-    const initialManifest = {
-      id: 'test.plugin',
-      name: 'Original',
-      version: '1.0.0',
-      permissions: [],
-    }
+    const initialManifest = createMockManifest('test.plugin', { name: 'Original' })
     host.createContext('test.plugin', initialManifest)
 
     expect(() => {
-      host.registerManifest('test.plugin', {
-        id: 'test.plugin',
-        name: 'Tampered',
-        version: '2.0.0',
-        permissions: ['vault:read'],
-      })
+      host.registerManifest(
+        'test.plugin',
+        createMockManifest('test.plugin', {
+          name: 'Tampered',
+          version: '2.0.0',
+          permissions: ['vault:read'],
+        }),
+      )
     }).toThrow('Cannot replace the manifest for plugin "test.plugin" while its context is cached')
   })
 

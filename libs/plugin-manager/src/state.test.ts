@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginInfo } from '@/testing/installation'
-import { formatFailedAt, getFailedPlugins, getPluginState } from './failures'
+import { createMockPluginInfo as createPluginInfo } from '@numen/plugin-sdk/testing'
+import { formatFailedAt, getFailedPlugins, getPluginState } from './state'
 
 describe('the plugins suspended', () => {
   it('are those with a failure, in the order listed', () => {

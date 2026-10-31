@@ -1,17 +1,20 @@
 /**
- * Plugin state for the settings pages, and the failure time format.
+ * Plugin state for the plugin list and page, and the failure time format.
  */
-import type { PluginInfo } from '@/entities/settings'
+import type { PluginInfo } from '@numen/plugin-sdk'
 
 /** What a plugin's state badge shows. */
-export type PluginState = 'enabled' | 'disabled' | 'stopped'
+export type PluginState = 'enabled' | 'disabled' | 'stopped' | 'available'
 
 /** The plugins the host suspends, in the order they are listed. */
 export const getFailedPlugins = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
   plugins.filter((one) => one.failure !== undefined)
 
 /** The state of a plugin: a failure outranks the enabled setting. */
-export const getPluginState = (plugin: PluginInfo, isEnabled: boolean): PluginState => {
+export const getPluginState = (
+  plugin: PluginInfo,
+  isEnabled: boolean,
+): Exclude<PluginState, 'available'> => {
   if (plugin.failure !== undefined) return 'stopped'
   return isEnabled ? 'enabled' : 'disabled'
 }

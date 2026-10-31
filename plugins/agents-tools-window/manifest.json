@@ -6,6 +6,7 @@
   "description": "Workspace context and interactive edit previews for AI assistants",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "contributes": { "category": "agents" },
   "permissions": ["vault:read"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,

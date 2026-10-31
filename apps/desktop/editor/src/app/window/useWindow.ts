@@ -4,6 +4,7 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
@@ -176,7 +177,14 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
-  const windowTabs = useWindowTabs()
+  const windowTabs = useWindowTabs({
+    catalog: pluginCatalog,
+    enablePlugin: async (pluginId) => {
+      await settingsHolder.current?.rest.writeSetting(['plugins', pluginId, 'enabled'], true)
+    },
+    openPlugin: (pluginId) =>
+      globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
+  })
   const tabLinks = useTabLinks()
   const tabOpeners = fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })
   const runs = runSupport()
@@ -281,6 +289,7 @@ function initWindowServices(
     log: base.log,
     windowTabs: base.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
+    catalog: pluginCatalog,
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
   })
   settingsHolder.current = settings

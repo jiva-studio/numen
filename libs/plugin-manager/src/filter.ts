@@ -1,13 +1,14 @@
 /**
- * Extensible query parser and filter engine for the settings plugin list.
+ * Query parser and filter for the plugin list.
  *
- * Supports composable `@tag` and `key:value` qualifiers alongside free-text
- * terms (for example `@disabled`, `disabled:true`, `reader:markdown`,
- * `feature:files`, `category:views`, `capability:agent`, `id:notes`).
+ * Supports composable `@tag` and `key:value` qualifiers alongside free-text terms (for example
+ * `@disabled`, `disabled:true`, `reader:markdown`, `feature:files`, `category:views`,
+ * `capability:agent`, `id:notes`). The `feature:` and `category:` qualifiers read what the
+ * manifest declares under `contributes`.
  */
-import type { PluginInfo } from '@/entities/settings'
+import { OTHER_CATEGORY, isInstalled, type ManagedPlugin } from './plugins'
 
-export interface FilterQualifier {
+interface FilterQualifier {
   readonly key: string
   readonly value: string
 }
@@ -19,20 +20,16 @@ export interface ParsedPluginQuery {
 
 export interface PluginFilterContext {
   readonly isEnabled: (pluginId: string) => boolean
-  readonly getCategory: (plugin: PluginInfo) => string
-  readonly getCategoryLabel: (category: string) => string
 }
 
 export interface FlatPluginItem {
   readonly category: string
   readonly categoryLabel: string
-  readonly plugin: PluginInfo
+  readonly plugin: ManagedPlugin
 }
 
-const CATEGORY_ORDER = ['agents', 'editors', 'engines', 'readers', 'tools', 'views']
-
 type QualifierMatcher = (
-  plugin: PluginInfo,
+  plugin: ManagedPlugin,
   value: string,
   context: PluginFilterContext,
 ) => boolean
@@ -40,6 +37,7 @@ type QualifierMatcher = (
 const TAG_ALIASES: Readonly<Record<string, FilterQualifier>> = {
   '@disabled': { key: 'status', value: 'disabled' },
   '@enabled': { key: 'status', value: 'enabled' },
+  '@available': { key: 'status', value: 'available' },
 }
 
 const KEY_VALUE_ALIASES: Readonly<Record<string, Readonly<Record<string, FilterQualifier>>>> = {
@@ -62,54 +60,59 @@ function toSearchStems(value: string): readonly string[] {
   return singular !== clean ? [clean, singular] : [clean]
 }
 
-function matchesReader(plugin: PluginInfo, value: string): boolean {
-  if (!value) return (plugin.readers ?? []).length > 0
+/** The normalized category key of a plugin: what its manifest declares, or the catch-all. */
+export function getPluginCategory(plugin: ManagedPlugin): string {
+  return plugin.category === '' ? OTHER_CATEGORY : plugin.category
+}
+
+/** Formats a category key into its display label. */
+export function formatCategoryLabel(category: string): string {
+  return category.charAt(0).toUpperCase() + category.slice(1)
+}
+
+function matchesReader(plugin: ManagedPlugin, value: string): boolean {
+  const readers = plugin.info?.readers ?? []
+  if (!value) return readers.length > 0
   const stems = toSearchStems(value)
-  const hasReader = (plugin.readers ?? []).some((reader) => {
+  return readers.some((reader) => {
     const readerId = reader.id.toLowerCase()
     return (
       stems.some((stem) => readerId.includes(stem)) ||
       reader.extensions.some((ext) => stems.some((stem) => ext.toLowerCase().includes(stem)))
     )
   })
-  if (hasReader) return true
-  const id = plugin.id.toLowerCase()
-  return stems.some((stem) => id.includes(stem))
 }
 
-function matchesCapability(plugin: PluginInfo, value: string): boolean {
-  if (!value) return (plugin.capabilities ?? []).length > 0
+function matchesCapability(plugin: ManagedPlugin, value: string): boolean {
+  const capabilities = plugin.info?.capabilities ?? []
+  if (!value) return capabilities.length > 0
   const stems = toSearchStems(value)
-  return (plugin.capabilities ?? []).some((cap) =>
-    stems.some((stem) => cap.toLowerCase().includes(stem)),
+  return capabilities.some((cap) => stems.some((stem) => cap.toLowerCase().includes(stem)))
+}
+
+function matchesFeature(plugin: ManagedPlugin, value: string): boolean {
+  if (!value) return plugin.feature !== ''
+  const feature = plugin.feature.toLowerCase()
+  const kinds = plugin.tabKinds.map((kind) => kind.toLowerCase())
+  return toSearchStems(value).some(
+    (stem) => feature.includes(stem) || kinds.some((kind) => kind.includes(stem)),
   )
 }
 
-function matchesFeature(plugin: PluginInfo, value: string): boolean {
-  if (!value) return true
-  const stems = toSearchStems(value)
-  const id = plugin.id.toLowerCase()
-  const name = plugin.name.toLowerCase()
-  const description = (plugin.description ?? '').toLowerCase()
-  const caps = (plugin.capabilities ?? []).map((cap) => cap.toLowerCase())
-  return stems.some(
-    (term) =>
-      id.includes(term) ||
-      name.includes(term) ||
-      description.includes(term) ||
-      caps.some((cap) => cap.includes(term)) ||
-      matchesReader(plugin, term),
-  )
+function matchesStatus(plugin: ManagedPlugin, value: string, context: PluginFilterContext) {
+  if (value === 'available') return !isInstalled(plugin)
+  if (!isInstalled(plugin)) return false
+  return value === 'disabled' ? !context.isEnabled(plugin.id) : context.isEnabled(plugin.id)
+}
+
+function matchesCategory(plugin: ManagedPlugin, value: string): boolean {
+  const category = getPluginCategory(plugin)
+  return category.includes(value) || formatCategoryLabel(category).toLowerCase().includes(value)
 }
 
 const QUALIFIER_MATCHERS: Readonly<Record<string, QualifierMatcher>> = {
-  status: (plugin, value, context) =>
-    value === 'disabled' ? !context.isEnabled(plugin.id) : context.isEnabled(plugin.id),
-  category: (plugin, value, context) => {
-    const category = context.getCategory(plugin)
-    const label = context.getCategoryLabel(category).toLowerCase()
-    return category.includes(value) || label.includes(value)
-  },
+  status: matchesStatus,
+  category: (plugin, value) => matchesCategory(plugin, value),
   reader: (plugin, value) => matchesReader(plugin, value),
   capability: (plugin, value) => matchesCapability(plugin, value),
   feature: (plugin, value) => matchesFeature(plugin, value),
@@ -157,19 +160,13 @@ export function parsePluginQuery(rawQuery: string): ParsedPluginQuery {
   return { qualifiers, terms }
 }
 
-function matchesFreeText(
-  plugin: PluginInfo,
-  term: string,
-  context: PluginFilterContext,
-): boolean {
-  const category = context.getCategory(plugin)
-  const categoryLabel = context.getCategoryLabel(category).toLowerCase()
+function matchesFreeText(plugin: ManagedPlugin, term: string): boolean {
   return (
     plugin.name.toLowerCase().includes(term) ||
-    (plugin.description ?? '').toLowerCase().includes(term) ||
+    plugin.description.toLowerCase().includes(term) ||
     plugin.id.toLowerCase().includes(term) ||
-    category.includes(term) ||
-    categoryLabel.includes(term) ||
+    matchesCategory(plugin, term) ||
+    plugin.feature.toLowerCase().includes(term) ||
     matchesCapability(plugin, term) ||
     matchesReader(plugin, term)
   )
@@ -177,7 +174,7 @@ function matchesFreeText(
 
 /** Checks whether a plugin matches all qualifiers and free-text terms in the parsed query. */
 export function matchesPluginQuery(
-  plugin: PluginInfo,
+  plugin: ManagedPlugin,
   query: ParsedPluginQuery,
   context: PluginFilterContext,
 ): boolean {
@@ -187,7 +184,7 @@ export function matchesPluginQuery(
   })
   if (!matchesAllQualifiers) return false
 
-  return query.terms.every((term) => matchesFreeText(plugin, term, context))
+  return query.terms.every((term) => matchesFreeText(plugin, term))
 }
 
 /** Checks whether the System settings row should be shown for the parsed query. */
@@ -199,32 +196,19 @@ export function matchesSystemRow(query: ParsedPluginQuery): boolean {
   )
 }
 
-/** Resolves the normalized category key for a plugin. */
-export function getPluginCategory(plugin: PluginInfo): string {
-  if ('category' in plugin && typeof plugin.category === 'string' && plugin.category.length > 0) {
-    return plugin.category.toLowerCase()
+/** Orders categories by label with the catch-all last, then plugins by name. */
+function compareItems(a: FlatPluginItem, b: FlatPluginItem): number {
+  if (a.category !== b.category) {
+    if (a.category === OTHER_CATEGORY) return 1
+    if (b.category === OTHER_CATEGORY) return -1
+    return a.categoryLabel.localeCompare(b.categoryLabel)
   }
-  const parts = plugin.id.split('.')
-  if (parts.length >= 3 && parts[0] === 'md' && parts[1] === 'numen' && parts[2]) {
-    return parts[2].toLowerCase()
-  }
-  if (parts.length >= 2 && parts[0]) {
-    return parts[0].toLowerCase()
-  }
-  return 'other'
+  return a.plugin.name.localeCompare(b.plugin.name)
 }
 
-/** Formats a category key into its display label using localized category names. */
-export function formatCategoryLabel(
-  category: string,
-  labels: Readonly<Record<string, string>> = {},
-): string {
-  return labels[category] ?? category.charAt(0).toUpperCase() + category.slice(1)
-}
-
-/** Filters, categorizes, and sorts plugins for the settings plugin list. */
+/** Filters, categorizes, and sorts plugins for the plugin list. */
 export function getFilteredPluginItems(
-  plugins: readonly PluginInfo[],
+  plugins: readonly ManagedPlugin[],
   query: ParsedPluginQuery,
   context: PluginFilterContext,
 ): readonly FlatPluginItem[] {
@@ -234,22 +218,9 @@ export function getFilteredPluginItems(
       : plugins
 
   const items: FlatPluginItem[] = matching.map((plugin) => {
-    const category = context.getCategory(plugin)
-    return {
-      category,
-      categoryLabel: context.getCategoryLabel(category),
-      plugin,
-    }
+    const category = getPluginCategory(plugin)
+    return { category, categoryLabel: formatCategoryLabel(category), plugin }
   })
 
-  return items.sort((a, b) => {
-    const idxA = CATEGORY_ORDER.indexOf(a.category)
-    const idxB = CATEGORY_ORDER.indexOf(b.category)
-    if (idxA >= 0 && idxB >= 0 && idxA !== idxB) return idxA - idxB
-    if (idxA >= 0 && idxB < 0) return -1
-    if (idxB >= 0 && idxA < 0) return 1
-    const catComp = a.category.localeCompare(b.category)
-    if (catComp !== 0) return catComp
-    return a.plugin.name.localeCompare(b.plugin.name)
-  })
+  return items.sort(compareItems)
 }

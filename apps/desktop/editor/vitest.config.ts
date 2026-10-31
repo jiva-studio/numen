@@ -18,6 +18,12 @@ const alias = {
   '@numen/plugin-host': fileURLToPath(
     new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
   ),
+  '@numen/plugin-manager': fileURLToPath(
+    new URL('../../../libs/plugin-manager/src/index.ts', import.meta.url),
+  ),
+  '@numen/plugin-sdk/testing': fileURLToPath(
+    new URL('../../../libs/plugin-sdk-ts/src/testing/index.ts', import.meta.url),
+  ),
   '@numen/plugin-sdk': fileURLToPath(
     new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
   ),

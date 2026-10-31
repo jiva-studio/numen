@@ -113,7 +113,7 @@ describe('PluginDetail', () => {
     })
     const { wrapper, retryPlugin, recordedWrites } = createDetail(plugin)
 
-    const stoppedCard = wrapper.find('.plugin-detail__stopped')
+    const stoppedCard = wrapper.find('.plugin-stopped')
     expect(stoppedCard.exists()).toBe(true)
     expect(stoppedCard.text()).toContain('Timed out while starting')
     expect(stoppedCard.find('details summary').text()).toBe('Details')
@@ -141,7 +141,7 @@ describe('PluginDetail', () => {
     })
     const { wrapper, recordedWrites } = createDetail(plugin)
 
-    const rows = wrapper.findAllComponents(SettingRow)
+    const rows = wrapper.findAllComponents({ name: 'DetailRow' })
     const consentRow = rows.find((r) => r.props('at') === 'ai-consent-test.plugin')
     expect(consentRow).toBeDefined()
     expect(consentRow!.text()).toContain(words.consentAllowed)
@@ -358,7 +358,7 @@ describe('PluginDetail', () => {
   it('draws no stopped details disclosure when failure detail is empty', () => {
     const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
     const { wrapper } = createDetail(createPluginInfo('a', 'A', { failure }))
-    expect(wrapper.find('.plugin-detail__stopped details').exists()).toBe(false)
+    expect(wrapper.find('.plugin-stopped details').exists()).toBe(false)
   })
 })
 
@@ -678,12 +678,12 @@ describe('the data of a plugin', () => {
 
   it('deletes the data only after the person confirms', async () => {
     const { wrapper, deletePluginData } = await createDataDetail(3)
-    expect(wrapper.find('.plugin-detail__data').exists()).toBe(true)
+    expect(wrapper.find('.plugin-data__card').exists()).toBe(true)
     expect(wrapper.text()).toContain(words.pluginDataDetail(3))
 
     await findButton(wrapper, words.pluginDataDelete)!.trigger('click')
     expect(deletePluginData).not.toHaveBeenCalled()
-    expect(wrapper.find('.plugin-detail__asking').text()).toContain(
+    expect(wrapper.find('.plugin-data__asking').text()).toContain(
       words.pluginDataAsking('Transcriber', 3),
     )
 
@@ -700,7 +700,7 @@ describe('the data of a plugin', () => {
     await findButton(wrapper, words.pluginDataKeep)!.trigger('click')
 
     expect(deletePluginData).not.toHaveBeenCalled()
-    expect(wrapper.find('.plugin-detail__asking').exists()).toBe(false)
+    expect(wrapper.find('.plugin-data__asking').exists()).toBe(false)
   })
 
   it('shows why the data was not deleted', async () => {
@@ -710,7 +710,7 @@ describe('the data of a plugin', () => {
     await findButton(wrapper, words.pluginDataConfirm)!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('.plugin-detail__problem').text()).toBe('the vault is read-only')
+    expect(wrapper.find('.plugin-data__problem').text()).toBe('the vault is read-only')
     expect(findButton(wrapper, words.pluginDataDelete)).toBeDefined()
   })
 })

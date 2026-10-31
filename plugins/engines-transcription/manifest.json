@@ -5,6 +5,7 @@
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
+  "contributes": { "category": "engines" },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "texts": {},

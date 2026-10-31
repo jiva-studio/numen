@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/plugin-sdk/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
@@ -91,7 +92,7 @@ describe('createPluginLoader', () => {
   const frontendManifestFetch = (async () =>
     ({
       ok: true,
-      json: async () => ({ id: 'x', frontend: {} }),
+      text: async () => JSON.stringify({ id: 'x', frontend: {} }),
     }) as Response) as unknown as typeof fetch
 
   function createTestLoader(
@@ -219,14 +220,15 @@ describe('createPluginLoader', () => {
       manifestFetchedUrl = String(url)
       return {
         ok: true,
-        json: async () => ({
-          id: 'dynamic.sample',
-          name: 'Dynamic Sample',
-          frontend: {
-            entrypoint: 'dist/bundle.js',
-            styles: 'dist/bundle.css',
-          },
-        }),
+        text: async () =>
+          JSON.stringify({
+            id: 'dynamic.sample',
+            name: 'Dynamic Sample',
+            frontend: {
+              entrypoint: 'dist/bundle.js',
+              styles: 'dist/bundle.css',
+            },
+          }),
       } as Response
     })
 
@@ -314,7 +316,11 @@ describe('createPluginLoader catalog manifests', () => {
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
     } as unknown as LoaderHost
-    const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
+    const manifest = createMockManifest('cat.plugin', {
+      name: 'Cat',
+      version: '1',
+      permissions: ['vault:read'],
+    })
     const loader = registerModules(createPluginLoader({ host }), {
       'cat.plugin': async () => ({ activate: () => undefined }),
     })
@@ -502,7 +508,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       fetch: (async () =>
         ({
           ok: true,
-          json: async () => ({ id: 'dyn', frontend: {} }),
+          text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
@@ -524,7 +530,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       fetch: (async () =>
         ({
           ok: true,
-          json: async () => ({ id: 'dyn', frontend: {} }),
+          text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
@@ -544,7 +550,10 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = createPluginLoader({
       host,
       fetch: (async () =>
-        ({ ok: true, json: async () => ({ id: 'ocr' }) }) as Response) as unknown as typeof fetch,
+        ({
+          ok: true,
+          text: async () => JSON.stringify({ id: 'ocr' }),
+        }) as Response) as unknown as typeof fetch,
       dynamicImport,
     })
     await expect(loader.activatePlugin('ocr')).resolves.toBe(false)

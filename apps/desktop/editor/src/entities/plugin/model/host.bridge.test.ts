@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
+import { createMockManifest } from '@numen/plugin-sdk/testing'
 import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
 
@@ -13,7 +14,11 @@ function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
   }
 }
 
-const READ_WRITE = { id: 'p', name: 'P', version: '1', permissions: ['vault:read', 'vault:write'] }
+const READ_WRITE = createMockManifest('p', {
+  name: 'P',
+  version: '1',
+  permissions: ['vault:read', 'vault:write'],
+})
 
 describe('the plugin context events', () => {
   it('delivers a vault change emitted by one plugin to the listeners of every plugin', async () => {

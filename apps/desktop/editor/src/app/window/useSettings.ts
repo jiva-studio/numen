@@ -23,7 +23,8 @@ import {
   type PluginSettingOption,
   type SettingEdit,
 } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type PluginCatalog } from '@numen/plugin-sdk'
+import { useCatalogEntries } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
@@ -44,6 +45,8 @@ export interface SettingsDeps {
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
+  /** The catalog the plugin list reads; without it the list shows the installed plugins only. */
+  catalog?: PluginCatalog
 }
 
 function getPerformanceStepGroups(words: Words) {
@@ -164,6 +167,7 @@ interface SettingsTabConfigDeps {
   core: SettingsPort
   scheduleRefresh: () => void
   getSettingsViews?: Installation['getSettingsViews']
+  catalogEntries?: Installation['catalog']
   reportError: (error: unknown) => void
 }
 
@@ -177,10 +181,12 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     core,
     scheduleRefresh,
     getSettingsViews,
+    catalogEntries,
     reportError,
   } = deps
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
+    ...(catalogEntries ? { catalog: catalogEntries } : {}),
     themes: appearance.list,
     applied: appearance.applied,
     mode: appearance.mode,
@@ -272,6 +278,7 @@ export function useSettings({
   windowTabs,
   onSizeChanged,
   getSettingsViews,
+  catalog,
 }: SettingsDeps) {
   const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
@@ -314,6 +321,8 @@ export function useSettings({
     getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
+  const catalogEntries = catalog ? useCatalogEntries(catalog, rest.plugins, reportError) : undefined
+
   const configured = useSettingsTab(
     windowTabs.handle,
     createSettingsTabConfig({
@@ -325,6 +334,7 @@ export function useSettings({
       core,
       scheduleRefresh,
       ...(getSettingsViews ? { getSettingsViews } : {}),
+      ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
     }),
     reportError,

@@ -8,7 +8,7 @@ import { Button } from '@numen/ui'
 import type { SettingsTabState } from '../types'
 import { write } from '@/entities/settings'
 import type { PluginInfo } from '@/entities/settings'
-import { formatFailedAt, getFailedPlugins } from '../lib/failures'
+import { formatFailedAt, getFailedPlugins } from '@numen/plugin-manager'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */

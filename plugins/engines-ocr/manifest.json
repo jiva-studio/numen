@@ -6,6 +6,7 @@
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "contributes": { "category": "engines" },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "texts": {
