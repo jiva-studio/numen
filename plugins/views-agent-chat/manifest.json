@@ -6,6 +6,11 @@
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": {
+    "tabKinds": [{ "kind": "agent", "title": "Agent", "icon": "bot" }],
+    "feature": "agent chat",
+    "category": "views"
+  },
   "activationEvents": [],
   "permissions": ["vault:read"],
   "frontend": {

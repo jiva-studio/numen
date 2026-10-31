@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // GetPluginIDByToken returns the id of the running plugin the token was given
@@ -133,7 +133,7 @@ func (h *Host) getEnvironmentVars(ctx context.Context, pluginID string, processP
 }
 
 // RegisterPlugin adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
-func (h *Host) RegisterPlugin(p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) {
+func (h *Host) RegisterPlugin(p manifest.Discovered, sup *lifecycle.Supervisor) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.plugins[p.Manifest.ID] = p

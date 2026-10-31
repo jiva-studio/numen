@@ -3,7 +3,8 @@ package plugin
 import (
 	"context"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"path/filepath"
 	"reflect"
 )
@@ -14,8 +15,8 @@ func (h *Host) Discover() error {
 	h.discoverMu.Lock()
 	defer h.discoverMu.Unlock()
 
-	all, problems := manifestfile.DiscoverPlugins(h.dirs)
-	discovered := manifestfile.FilterPluginsByTarget(all, h.target)
+	all, problems := manifestjson.Discover(h.dirs)
+	discovered := manifest.FilterByTarget(all, h.target)
 
 	h.mu.Lock()
 	if h.isClosed {
@@ -41,7 +42,7 @@ func (h *Host) Discover() error {
 
 // registerDiscoveredLocked registers the discovered plugins and returns the ids to stop, which are the plugins
 // that left the disk and the running ones whose manifest changed.
-func (h *Host) registerDiscoveredLocked(discovered []manifestfile.DiscoveredPlugin) []string {
+func (h *Host) registerDiscoveredLocked(discovered []manifest.Discovered) []string {
 	present := make(map[string]bool, len(discovered))
 	var stale []string
 	for _, p := range discovered {
@@ -86,7 +87,7 @@ func (h *Host) isCoveredByProblemLocked(pluginID string) bool {
 	return false
 }
 
-func (h *Host) registerSupervisorLocked(p manifestfile.DiscoveredPlugin) {
+func (h *Host) registerSupervisorLocked(p manifest.Discovered) {
 	id := p.Manifest.ID
 	sup, exists := h.supervisors[id]
 	if !exists {

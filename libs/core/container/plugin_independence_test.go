@@ -1,7 +1,7 @@
 package container
 
 import (
-	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -15,8 +15,6 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 // numenRoot is what every module of this repository is named under.
@@ -441,11 +439,11 @@ func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {
 // getManifestIssues is every rule the manifest in data breaks, by the one
 // validator the host and the plugin command line share.
 func getManifestIssues(data []byte) []error {
-	var manifest pluginport.PluginManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
+	parsed, err := manifestjson.Decode(data)
+	if err != nil {
 		return []error{err}
 	}
-	return manifest.ListIssues()
+	return parsed.ListIssues()
 }
 
 // getManifestIssues defines the whole rule, so it is tested directly.

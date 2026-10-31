@@ -72,6 +72,7 @@ type Runtime[H, V any] struct {
 	ReadWholeVaultFn         func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error)
 	StartVaultFn             StartVaultFunc
 	PluginServicesFn         func() PluginServices
+	PluginCatalogFn          func() PluginCatalog
 	PluginCommandsFn         func() plugincommand.Commands
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
@@ -148,7 +149,15 @@ func (e Runtime[H, V]) StartVault(
 ) {
 	return e.StartVaultFn(ctx, v, rebuild, notified, handleError)
 }
-func (e Runtime[H, V]) GetPluginServices() PluginServices         { return e.PluginServicesFn() }
+func (e Runtime[H, V]) GetPluginServices() PluginServices { return e.PluginServicesFn() }
+
+// GetPluginCatalog is the catalog of plugins, and nil where the assembly names none.
+func (e Runtime[H, V]) GetPluginCatalog() PluginCatalog {
+	if e.PluginCatalogFn == nil {
+		return nil
+	}
+	return e.PluginCatalogFn()
+}
 func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
 func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {

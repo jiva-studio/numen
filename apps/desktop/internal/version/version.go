@@ -14,6 +14,11 @@ var (
 	commit  = "unknown"
 )
 
+// GetVersion returns the version this build was made from.
+func GetVersion() string {
+	return version
+}
+
 // GetVersionLine returns the line the binary prints when queried: the version,
 // the build number that distinguishes two builds of one version, and the commit
 // the source was built from.

@@ -15,9 +15,9 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const (
@@ -136,7 +136,7 @@ func (e *Endpoint) Complete(
 	ctx context.Context,
 	req *connect.Request[v1.HostServiceCompleteRequest],
 ) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	pluginID, err := e.authorize(req.Header().Get("Authorization"), manifestfile.PermissionAIComplete)
+	pluginID, err := e.authorize(req.Header().Get("Authorization"), manifest.PermissionAIComplete)
 	if err != nil {
 		return nil, err
 	}

@@ -28,11 +28,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const (
@@ -251,7 +251,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.SetLauncher(func(ctx context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		port, isServed := ports[p.Manifest.ID]
 		if !isServed {
 			return nil, nil, errors.New("this plugin cannot be started")

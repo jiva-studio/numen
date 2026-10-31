@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 	"net/http"
 )
 
@@ -9,7 +9,7 @@ import (
 // what makes the handler that serves its backend from the variables a launched process of it is
 // given.
 type builtInPlugin struct {
-	plugin manifestfile.DiscoveredPlugin
+	plugin manifest.Discovered
 	serve  func(vars map[string]string) (http.Handler, error)
 }
 

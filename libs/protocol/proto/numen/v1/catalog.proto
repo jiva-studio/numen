@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/manifest.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// CatalogService answers which plugins the application has, which it could have, and which plugin
+// provides a kind of tab.
+service CatalogService {
+  // ListCatalog lists the entries of every source, one for each plugin id.
+  rpc ListCatalog(ListCatalogRequest) returns (ListCatalogResponse);
+  // GetCatalogEntry returns the entry of one plugin.
+  rpc GetCatalogEntry(GetCatalogEntryRequest) returns (GetCatalogEntryResponse);
+  // FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
+  rpc FindCatalogEntryByTabKind(FindCatalogEntryByTabKindRequest) returns (FindCatalogEntryByTabKindResponse);
+}
+
+// CatalogState is the status of a plugin in the application.
+enum CatalogState {
+  // CATALOG_STATE_UNSPECIFIED is a state this client does not know.
+  CATALOG_STATE_UNSPECIFIED = 0;
+  // CATALOG_STATE_INSTALLED is a plugin on disk that is enabled.
+  CATALOG_STATE_INSTALLED = 1;
+  // CATALOG_STATE_DISABLED is a plugin on disk that is switched off.
+  CATALOG_STATE_DISABLED = 2;
+  // CATALOG_STATE_AVAILABLE is a plugin that is not on disk and that a source offers.
+  CATALOG_STATE_AVAILABLE = 3;
+}
+
+// CatalogIncompatibility is why the application cannot run a plugin.
+enum CatalogIncompatibility {
+  // CATALOG_INCOMPATIBILITY_UNSPECIFIED is a plugin the application can run.
+  CATALOG_INCOMPATIBILITY_UNSPECIFIED = 0;
+  CATALOG_INCOMPATIBILITY_TARGET = 1;
+  CATALOG_INCOMPATIBILITY_PROTOCOL = 2;
+  CATALOG_INCOMPATIBILITY_APP_TOO_OLD = 3;
+  CATALOG_INCOMPATIBILITY_APP_TOO_NEW = 4;
+}
+
+// CatalogEntry is one plugin as the catalog knows it.
+message CatalogEntry {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  string category = 5;
+  ManifestContributes contributes = 6;
+  // source names the source the entry comes from.
+  string source = 7;
+  CatalogState state = 8;
+  // incompatibility is why the application cannot run the plugin, and detail states the
+  // requirement it fails.
+  CatalogIncompatibility incompatibility = 9;
+  string incompatibility_detail = 10;
+}
+
+// CatalogSourceError is a source that could not be read in full.
+message CatalogSourceError {
+  string source = 1;
+  string message = 2;
+}
+
+message ListCatalogRequest {}
+
+message ListCatalogResponse {
+  repeated CatalogEntry entries = 1;
+  // source_errors are the sources that failed. The entries of the others are listed.
+  repeated CatalogSourceError source_errors = 2;
+}
+
+message GetCatalogEntryRequest {
+  string id = 1;
+}
+
+message GetCatalogEntryResponse {
+  // error is set when no entry is returned.
+  CatalogErrorCode error = 1;
+  CatalogEntry entry = 2;
+  repeated CatalogSourceError source_errors = 3;
+}
+
+message FindCatalogEntryByTabKindRequest {
+  string kind = 1;
+}
+
+message FindCatalogEntryByTabKindResponse {
+  // error is set when no entry is returned.
+  CatalogErrorCode error = 1;
+  CatalogEntry entry = 2;
+  repeated CatalogSourceError source_errors = 3;
+}
+
+// CatalogErrorCode is why a call was served without an entry.
+enum CatalogErrorCode {
+  // CATALOG_ERROR_CODE_UNSPECIFIED is a call that was served in full.
+  CATALOG_ERROR_CODE_UNSPECIFIED = 0;
+  // CATALOG_ERROR_CODE_NOT_FOUND is no plugin of the id, or none providing the kind of tab.
+  CATALOG_ERROR_CODE_NOT_FOUND = 1;
+}

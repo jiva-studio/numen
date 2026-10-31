@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 // createManifestedHost returns a host that treats each plugin as running with the
@@ -23,7 +23,7 @@ func createManifestedHost(t *testing.T, manifests map[string]string) *Host {
 	t.Helper()
 	plugins := map[string]runningPlugin{}
 	for token, text := range manifests {
-		manifest, err := manifestfile.ReadManifest(strings.NewReader(text))
+		manifest, err := manifestjson.Read(strings.NewReader(text))
 		if err != nil {
 			t.Fatal(err)
 		}

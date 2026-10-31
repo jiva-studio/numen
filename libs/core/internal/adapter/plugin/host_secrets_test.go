@@ -18,11 +18,11 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -147,10 +147,10 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 			t.Error(err)
 		}
 	})
-	host.plugins[secretPluginID] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
+	host.plugins[secretPluginID] = manifest.Discovered{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
 		Secrets: []pluginport.PluginSecret{{Name: "apiKey", Title: "API key"}},
-		Settings: []manifestfile.Setting{
+		Settings: []manifest.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
 	}}

@@ -44,6 +44,8 @@ type commandHost struct {
 
 func (h *commandHost) Discover() error { return nil }
 
+func (h *commandHost) IsPluginEnabled(id string) bool { return !h.disabled[id] }
+
 func (h *commandHost) GetPluginInfos() []pluginport.PluginInfo {
 	infos := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, one := range h.plugins {

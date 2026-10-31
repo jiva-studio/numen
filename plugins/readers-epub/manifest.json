@@ -6,6 +6,11 @@
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
+    "feature": "EPUB books",
+    "category": "readers"
+  },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.epub"],

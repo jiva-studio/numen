@@ -15,6 +15,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jiva-studio/numen/libs/notes v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
@@ -45,3 +46,5 @@ replace github.com/jiva-studio/numen/libs/core => ../../libs/core
 replace github.com/jiva-studio/numen/libs/protocol => ../../libs/protocol
 
 replace github.com/jiva-studio/numen/libs/notes => ../../libs/notes
+
+replace github.com/jiva-studio/numen/libs/plugin-catalog => ../../libs/plugin-catalog
