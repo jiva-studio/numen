@@ -12,39 +12,32 @@ import (
 
 var (
 	errNoConfig   = errors.New("a router needs the settings to read")
-	errNoChoices  = errors.New("a router needs the choices of the plugins")
 	errNoPrograms = errors.New("a router needs the programs to ask")
 	errNoMessage  = errors.New("the question holds no message to answer")
 )
 
-// Router answers a plugin's question with the agent the plugin's setting names,
-// else with the default of the settings.
+// Router answers a plugin's question with the default agent and model of the
+// settings.
 type Router struct {
 	config   func() Config
-	choices  completionport.CompletionChoices
 	programs agentport.CompletionPrograms
 	limits   *limits
 }
 
-// NewRouter returns a router reading the settings and the plugin's choice at
-// every question, so a choice edited in the settings applies to the next one.
-func NewRouter(config func() Config, choices completionport.CompletionChoices, programs agentport.CompletionPrograms) (*Router, error) {
+// NewRouter returns a router reading the settings at every question, so a default
+// edited in the settings applies to the next one.
+func NewRouter(config func() Config, programs agentport.CompletionPrograms) (*Router, error) {
 	if config == nil {
 		return nil, errNoConfig
-	}
-	if choices == nil {
-		return nil, errNoChoices
 	}
 	if programs == nil {
 		return nil, errNoPrograms
 	}
-	return &Router{config: config, choices: choices, programs: programs, limits: newLimits()}, nil
+	return &Router{config: config, programs: programs, limits: newLimits()}, nil
 }
 
-// Complete answers the question of the plugin with the id given. A plugin whose
-// setting names an agent is answered by that agent alone, with the model the
-// setting names; one naming none is answered by the default agent and model.
-// The question goes to the agent as a task that names no tool and no
+// Complete answers the question of the plugin with the id given, by the default
+// agent and model. The question goes to the agent as a task that names no tool and no
 // conversation. A model the program does not list is replaced by the one it answers with unasked,
 // else its first; a failure then states the replacement. A program that is not there fails with
 // port.ErrNoRoute. The wait for a place under the agent's limit, and the answer, end with the
@@ -55,7 +48,7 @@ func (r *Router) Complete(ctx context.Context, pluginID string, question complet
 		return "", err
 	}
 	defaults := r.config().Default
-	route := getRoute(r.choices.GetCompletionChoice(pluginID), defaults)
+	route := Route{Agent: defaults.Agent, Model: defaults.Model}
 	release, err := r.limits.acquire(ctx, route.Agent, defaults.GetLimit())
 	if err != nil {
 		return "", err
@@ -97,15 +90,6 @@ func getReplacementModel(program agentport.AgentProgram, selected string) (strin
 		}
 	}
 	return program.Models[0].Name, true
-}
-
-// getRoute is the agent and the model of the choice, or the default where the
-// choice names no agent.
-func getRoute(choice completionport.CompletionChoice, defaults Route) Route {
-	if choice.Agent == "" {
-		return Route{Agent: defaults.Agent, Model: defaults.Model}
-	}
-	return Route{Agent: choice.Agent, Model: choice.Model}
 }
 
 // newTask is the question as a task: the system messages are the instructions,

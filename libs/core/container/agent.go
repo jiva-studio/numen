@@ -61,23 +61,17 @@ func (c Config) completionAgentSettings() completion.AgentSettings {
 }
 
 // newCompletionRouter answers the questions plugins ask of a model with the
-// agent each plugin's setting names, else the default under ai.default in the
-// settings file, both read at every question, through the agent programs of the
-// host's plugins.
+// default under ai.default in the settings file, read at every question,
+// through the agent programs of the host's plugins.
 func (c Config) newCompletionRouter() (*completion.Router, error) {
 	provider := c.AgentProvider()
 	if provider == nil {
 		return nil, errNoCompletionProvider
 	}
-	var choices completionport.CompletionChoices
-	if host, isChoices := c.PluginHost.(completionport.CompletionChoices); isChoices {
-		choices = host
-	}
 	return completion.NewRouter(
 		func() completion.Config {
 			return completion.Config{Default: completion.Route(c.getSettingsOrDefaults().AI.Default)}
 		},
-		choices,
 		completion.NewPrograms(provider, c.completionAgentSettings),
 	)
 }

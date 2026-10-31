@@ -5,23 +5,6 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-// GetCompletionChoice returns the agent and the model stored by the user in the
-// plugin's setting of type agent. A plugin declaring no such setting, or one
-// never set, yields the empty choice.
-func (h *Host) GetCompletionChoice(pluginID string) completionport.CompletionChoice {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	p, ok := h.plugins[pluginID]
-	if !ok {
-		return completionport.CompletionChoice{}
-	}
-	key, ok := p.Manifest.GetAgentSettingKey()
-	if !ok {
-		return completionport.CompletionChoice{}
-	}
-	return completionport.ReadCompletionChoice(h.settings[pluginID][key])
-}
-
 // CheckCompletionConsent returns nil for a plugin the user allows to request
 // model completions, and port.ErrNoConsent for any other. A plugin with no
 // recorded answer is recorded as asking, so the window can put the question to the user.

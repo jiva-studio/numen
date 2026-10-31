@@ -146,9 +146,9 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 
 func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 	host := NewHost(testsupport.Machine, "desktop.editor")
-	manifest := pluginport.PluginManifest{ID: "org.example.samples", ContentTypes: []pluginport.PluginContentType{
+	manifest := pluginport.PluginManifest{ID: "org.example.samples", Contributes: pluginport.PluginContributes{ContentTypes: []pluginport.PluginContentType{
 		{Type: "application/x-example-sample", Globs: []string{"*.sample"}},
-	}}
+	}}}
 	host.plugins[manifest.ID] = pluginport.DiscoveredPlugin{Manifest: manifest}
 
 	if got := host.GetContentType("samples/Verbs.SAMPLE"); got != "application/x-example-sample" {

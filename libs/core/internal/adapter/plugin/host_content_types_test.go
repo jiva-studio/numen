@@ -23,7 +23,9 @@ func newReaderHost(manifests ...pluginport.PluginManifest) *Host {
 }
 
 func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{ID: pluginID, Readers: []pluginport.PluginReader{{ID: readerID, ContentTypes: types, Rank: rank}}}
+	return pluginport.PluginManifest{ID: pluginID, Contributes: pluginport.PluginContributes{
+		Readers: []pluginport.PluginReader{{ID: readerID, ContentTypes: types, Rank: rank}},
+	}}
 }
 
 func getReaders(host *Host) map[string][]pluginport.PluginReaderInfo {
@@ -76,9 +78,9 @@ func TestPluginInfosAssignAnExtensionToTheNarrowerType(t *testing.T) {
 }
 
 func TestListExtensionsIncludesPluginContentTypes(t *testing.T) {
-	brings := pluginport.PluginManifest{ID: "org.example.samples", ContentTypes: []pluginport.PluginContentType{
+	brings := pluginport.PluginManifest{ID: "org.example.samples", Contributes: pluginport.PluginContributes{ContentTypes: []pluginport.PluginContentType{
 		{Type: "application/x-example-sample", Globs: []string{"*.example", "*.md"}},
-	}}
+	}}}
 	host := newReaderHost(brings)
 
 	if got := host.ListExtensions("application/x-example-sample"); !slices.Equal(got, []string{"example", "md"}) {

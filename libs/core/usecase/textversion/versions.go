@@ -354,7 +354,3 @@ func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {
 func hasVersion(versions []domain.TextVersion, id domain.TextVersionID) bool {
 	return indexOf(versions, id) >= 0
 }
-
-func isKindAccepted(kinds []domain.TextKind, kind domain.TextKind) bool {
-	return slices.Contains(kinds, kind) || slices.Contains(kinds, "*")
-}

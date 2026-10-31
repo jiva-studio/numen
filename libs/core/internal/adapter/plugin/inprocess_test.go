@@ -36,7 +36,11 @@ const (
 func newBuiltInManifest(id string, runtimes ...string) []byte {
 	declared := ""
 	if len(runtimes) > 0 {
-		declared = fmt.Sprintf(`"runtimes": [%q],`, strings.Join(runtimes, `","`))
+		dependencies := make([]string, 0, len(runtimes))
+		for _, runtime := range runtimes {
+			dependencies = append(dependencies, fmt.Sprintf(`{"id": %q, "kind": "runtime"}`, runtime))
+		}
+		declared = fmt.Sprintf(`"dependencies": [%s],`, strings.Join(dependencies, ","))
 	}
 	return fmt.Appendf(nil, `{
 		"id": %q,

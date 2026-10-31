@@ -17,7 +17,7 @@ type TextCreation struct {
 	Path  string
 }
 
-// TextProvider is what a plugin whose `texts` names content types serves to the host. The plugin writes
+// TextProvider is what a plugin whose text provider handle names content types serves to the host. The plugin writes
 // each text into its folder with WriteText and records it through Texts.PutVersion; the host reads
 // the file itself.
 type TextProvider interface {

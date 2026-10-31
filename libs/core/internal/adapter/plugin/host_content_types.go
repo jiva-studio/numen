@@ -77,7 +77,7 @@ func (h *Host) getLookupLocked() contentTypeLookup {
 		})
 	}
 	for _, p := range lookup.plugins {
-		for _, declared := range p.Manifest.ContentTypes {
+		for _, declared := range p.Manifest.Contributes.ContentTypes {
 			for _, extension := range declared.ListExtensions() {
 				if _, ok := lookup.brought[extension]; !ok {
 					lookup.brought[extension] = declared.Type
@@ -181,19 +181,19 @@ func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 
 // listReaderInfosLocked is each reader of the plugin with the extensions of the files it opens.
 func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []pluginport.PluginReaderInfo {
-	if len(manifest.Readers) == 0 {
+	if len(manifest.Contributes.Readers) == 0 {
 		return nil
 	}
 	byReader := h.listOpenedExtensionsLocked(manifest.ID)
-	out := make([]pluginport.PluginReaderInfo, 0, len(manifest.Readers))
-	for _, reader := range manifest.Readers {
+	out := make([]pluginport.PluginReaderInfo, 0, len(manifest.Contributes.Readers))
+	for _, reader := range manifest.Contributes.Readers {
 		out = append(out, pluginport.PluginReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})
 	}
 	return out
 }
 
 // isOpeningFileLocked reports whether the event is a window opening a file whose type a reader or
-// the text input of the plugin takes, and the plugin has a backend to start.
+// a handle of the plugin takes, and the plugin has a backend to start.
 func (h *Host) isOpeningFileLocked(p manifest.Discovered, event string) bool {
 	extension, ok := strings.CutPrefix(event, eventFilePrefix)
 	if !ok || extension == "" {

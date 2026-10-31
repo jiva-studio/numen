@@ -35,16 +35,20 @@ func NewPlugins(host Host) Plugins {
 	return Plugins{host: host}
 }
 
-// GetTextPlugins is every enabled plugin that declares `texts`, in the order of their ids.
+// GetTextPlugins is every enabled plugin that declares a text provider handle, in the order of their ids.
 func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 	var out []textport.TextPlugin
 	for _, info := range p.host.GetPluginInfos() {
 		found, ok := p.host.GetPlugin(info.ID)
-		if !ok || found.Manifest.Texts == nil {
+		if !ok {
+			continue
+		}
+		handle, isDeclared := found.Manifest.GetHandle(pluginport.HandleTextProvider)
+		if !isDeclared {
 			continue
 		}
 		out = append(out, textport.TextPlugin{
-			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(found.Manifest.Texts.ContentTypes),
+			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(handle.ContentTypes),
 		})
 	}
 	return out
@@ -61,13 +65,13 @@ func (p Plugins) getFileInput(types []domain.ContentType) domain.FileInput {
 	return out
 }
 
-// OpenProvider is the text provider of an enabled plugin that names content types under `texts`.
+// OpenProvider is the text provider of an enabled plugin whose text provider handle names content types.
 func (p Plugins) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
 	found, ok := p.host.GetPlugin(pluginID)
 	if !ok {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
-	if found.Manifest.Texts == nil || len(found.Manifest.Texts.ContentTypes) == 0 {
+	if handle, isDeclared := found.Manifest.GetHandle(pluginport.HandleTextProvider); !isDeclared || len(handle.ContentTypes) == 0 {
 		return nil, fmt.Errorf("plugin %s makes no text of files on its own", pluginID)
 	}
 	return provider{service: bridge.Service[numenv1connect.TextProviderServiceClient]{
