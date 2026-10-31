@@ -197,6 +197,25 @@ export function verifyPluginsNoProtocolOrWire() {
  * Every tie in `plugins/` to the surrounding monorepo that prevents moving `plugins/<name>` into its
  * own repository.
  */
+/**
+ * Lists the findings of the `go.mod` of a plugin: a relative `replace`, and any line that names the
+ * notes library, whether as a requirement or as a replacement target.
+ */
+export function findPluginGoModViolations(file, text) {
+  const found = [];
+  text.split("\n").forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("//")) return;
+    if (/=>\s*\.\.\//.test(trimmed)) {
+      found.push({ file, line: idx + 1, symbol: `relative replace in go.mod: ${trimmed}` });
+    }
+    if (trimmed.includes("github.com/jiva-studio/numen/libs/notes")) {
+      found.push({ file, line: idx + 1, symbol: `libs/notes in go.mod: ${trimmed}` });
+    }
+  });
+  return found;
+}
+
 function findPluginStandaloneViolations() {
   const found = [];
   for (const shared of ["plugins/vite.shared.ts", "plugins/vite.styles.ts", "plugins/vitest.config.ts"]) {
@@ -225,16 +244,7 @@ function findPluginStandaloneViolations() {
     if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file)) continue;
     const text = fs.readFileSync(abs, "utf8");
     if (base === "go.mod") {
-      text.split("\n").forEach((line, idx) => {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("//")) return;
-        if (/=>\s*\.\.\//.test(trimmed)) {
-          found.push({ file, line: idx + 1, symbol: `relative replace in go.mod: ${trimmed}` });
-        }
-        if (trimmed.includes("github.com/jiva-studio/numen/libs/notes") && !/=>\s*\.\.\//.test(trimmed)) {
-          found.push({ file, line: idx + 1, symbol: `direct libs/notes requirement: ${trimmed}` });
-        }
-      });
+      found.push(...findPluginGoModViolations(file, text));
       continue;
     }
     if (file.endsWith(".go")) {

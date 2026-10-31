@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PACKAGE_DEPENDENCIES, findLibraryViolations, findPackageViolations, readLibraries, readPackages } from "./libraries.mjs";
+import { LIBRARY_DEPENDENCIES, PACKAGE_DEPENDENCIES, findLibraryViolations, findPackageViolations, readLibraries, readPackages } from "./libraries.mjs";
 
 const ROOT = "github.com/jiva-studio/numen/";
 
@@ -45,6 +45,28 @@ test("a library that reaches an application or a plugin is reported", () => {
   const found = findLibraryViolations(libraries, MATRIX);
   assert.equal(found.length, 2);
   assert.match(found[0].symbol, /outside libs/);
+});
+
+test("the plugin SDK family is not allowed to reach the notes library", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["plugin-sdk-go"], ["protocol"]);
+  const libraries = [
+    library("libs/notes"),
+    library("libs/protocol"),
+    library("libs/plugin-sdk-go"),
+    library("libs/plugin-sdk-go/host", ["libs/notes", "libs/notes/domain", "libs/protocol/gen/numen/v1"]),
+  ];
+  const found = findLibraryViolations(libraries, LIBRARY_DEPENDENCIES);
+  assert.equal(found.length, 2);
+  assert.match(found[0].symbol, /family plugin-sdk-go reaches notes/);
+});
+
+test("no go.mod of the plugin SDK requires the notes library", () => {
+  const libraries = readLibraries().filter((one) => one.dir.startsWith("libs/plugin-sdk-go"));
+  assert.ok(libraries.length >= 2);
+  for (const one of libraries) {
+    const notes = one.references.filter((reference) => reference.value.includes("/libs/notes"));
+    assert.deepEqual(notes, [], `${one.dir} reaches the notes library`);
+  }
 });
 
 test("the libraries of this repository are read, each with a module path", () => {
