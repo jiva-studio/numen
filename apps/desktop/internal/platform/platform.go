@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
 )
 
@@ -53,7 +54,7 @@ func GetConfigFor(target string) container.Config {
 	cfg := container.Config{
 		PluginHost:    newPluginHost(target, dirs...),
 		PluginDirs:    dirs,
-		PluginCatalog: getCatalogConfig(target),
+		PluginCatalog: getCatalogConfig(target, dirs),
 		KeyStore:      keychain.Store{},
 	}
 	// A machine with no data folder leaves the path empty, and the core fails to start.
@@ -63,10 +64,14 @@ func GetConfigFor(target string) container.Config {
 	return cfg
 }
 
+// devPluginsDirs are the plugin folders of a source checkout, relative to the working directory.
+var devPluginsDirs = []string{"modules/plugins", "plugins"}
+
 // getCatalogConfig is the catalog of plugins as this machine keeps it: installs go to the plugin folder
-// of the user, and the downloaded packages are kept in the cache folder every window shares.
-func getCatalogConfig(target string) catalog.Config {
-	config := catalog.Config{Target: target, AppVersion: version.GetVersion(), Sources: nil, InstallDir: "", CacheDir: ""}
+// of the user, and the downloaded packages are kept in the cache folder every window shares. The
+// plugins that ship with the application are offered from the plugin index found in the plugin folders.
+func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
+	config := catalog.Config{Target: target, AppVersion: version.GetVersion(), Sources: []catalog.Source{getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
 	if configDir, err := os.UserConfigDir(); err == nil {
 		config.InstallDir = filepath.Join(configDir, "numen", "plugins")
 	}
@@ -74,6 +79,20 @@ func getCatalogConfig(target string) catalog.Config {
 		config.CacheDir = cacheDir
 	}
 	return config
+}
+
+// getIndexSource is the source over the plugin index of the first plugin folder that holds one. A
+// development run without an index reads the manifests of the plugin folders of the checkout.
+func getIndexSource(pluginDirs []string) *indexsource.Source {
+	indexPaths := make([]string, 0, len(pluginDirs))
+	for _, dir := range pluginDirs {
+		indexPaths = append(indexPaths, filepath.Join(dir, indexsource.FileName))
+	}
+	var manifestDirs []string
+	if IsDev() {
+		manifestDirs = devPluginsDirs
+	}
+	return indexsource.New(indexPaths, manifestDirs)
 }
 
 func getPluginsDirs() []string {
@@ -109,8 +128,9 @@ func getPluginsDirs() []string {
 	}
 
 	if IsDev() {
-		addDir("modules/plugins")
-		addDir("plugins")
+		for _, dir := range devPluginsDirs {
+			addDir(dir)
+		}
 	}
 
 	configDir, err := os.UserConfigDir()

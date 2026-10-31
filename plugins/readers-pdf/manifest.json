@@ -1,13 +1,14 @@
 {
   "id": "md.numen.readers.pdf",
   "name": "PDF Reader",
-  "version": "2026.10.3",
+  "version": "2026.10.4",
   "protocol": 1,
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [{ "kind": "reader:reader-pdf", "title": "PDF Reader", "icon": "file-text" }],
+    "fileTypes": [{ "tabKind": "reader:reader-pdf", "extensions": ["pdf"] }],
     "feature": "PDF documents",
     "category": "readers"
   },

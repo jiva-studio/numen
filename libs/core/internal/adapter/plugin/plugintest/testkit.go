@@ -223,7 +223,7 @@ type LeaseHost struct {
 }
 
 func (h *LeaseHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, nil
 }
 
 func (h *LeaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
@@ -231,7 +231,7 @@ func (h *LeaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 }
 
 func (h *LeaseHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, true
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, true
 }
 
 func (h *LeaseHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {

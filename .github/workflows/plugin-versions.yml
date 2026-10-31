@@ -6,6 +6,7 @@ on:
     paths:
       - "plugins/**"
       - "tools/plugin-versions/**"
+      - "tools/build-plugin-index/**"
       - "tools/shared/**"
       - ".github/workflows/plugin-versions.yml"
   merge_group:
@@ -43,6 +44,9 @@ jobs:
 
       - name: Test the check
         run: node --test tools/plugin-versions/check.test.mjs
+
+      - name: Test the plugin index build
+        run: node --test tools/build-plugin-index/build.test.mjs
 
       - name: Check the versions of changed plugins
         env:
