@@ -13,7 +13,12 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { MANIFEST_FILE, listPluginNames, parseManifest } from '../shared/manifests.mjs'
+import {
+  MANIFEST_FILE,
+  listPluginNames,
+  parseManifest,
+  readManifestVersion,
+} from '../shared/manifests.mjs'
 import { readPackageVersion } from './package.mjs'
 
 const VERSION_PATTERN = /^(\d{4})\.([1-9]|1[0-2])\.([1-9]\d*)$/
@@ -64,7 +69,7 @@ const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
 const readBaseVersion = (base, dir) => {
   const source = `${base}:${dir}/${MANIFEST_FILE}`
   const shown = spawnSync('git', ['show', source], { encoding: 'utf8' })
-  return shown.status === 0 ? parseManifest(shown.stdout, source).manifest.version : null
+  return shown.status === 0 ? readManifestVersion(shown.stdout, source) : null
 }
 
 const main = () => {

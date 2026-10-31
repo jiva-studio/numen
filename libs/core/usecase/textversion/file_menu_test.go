@@ -90,12 +90,25 @@ var (
 	}}
 	proofreadCommand = pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
 		ID: "proofread", Title: "Proofread", Icon: "spell-check",
-		When: &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindPage, kindRecognition}},
+		When: liveOfKinds(string(kindPage), string(kindRecognition)),
 	}}
 	deleteProofreadingCommand = pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
-		ID: "delete-proofreading", Title: "Delete proofreading", When: &pluginport.PluginCommandWhen{HasOwnText: true},
+		ID: "delete-proofreading", Title: "Delete proofreading", When: ownedBy(proofreader),
 	}}
 )
+
+// liveOfKinds holds in the context of the live version when it is of one of the kinds.
+func liveOfKinds(kinds ...string) []pluginport.PluginContextCondition {
+	return []pluginport.PluginContextCondition{
+		{Key: textversion.ContextKeyLive, Is: []string{"true"}},
+		{Key: textversion.ContextKeyKind, Is: kinds},
+	}
+}
+
+// ownedBy holds in the context of a version the plugin made.
+func ownedBy(pluginID string) []pluginport.PluginContextCondition {
+	return []pluginport.PluginContextCondition{{Key: textversion.ContextKeyPlugin, Is: []string{pluginID}}}
+}
 
 func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.FileMenu, *commands) {
 	t.Helper()
@@ -131,7 +144,7 @@ func TestFileMenuListsCommandForDeclaredKind(t *testing.T) {
 func TestFileMenuOmitsCommandForUndeclaredKind(t *testing.T) {
 	s := newScene(t)
 	command := proofreadCommand
-	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindRecognition}}
+	command.Command.When = liveOfKinds(string(kindRecognition))
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
@@ -143,7 +156,7 @@ func TestFileMenuOmitsCommandForUndeclaredKind(t *testing.T) {
 func TestFileMenuAcceptsAnyKindWhereTheCommandNamesAll(t *testing.T) {
 	s := newScene(t)
 	command := proofreadCommand
-	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{"*"}}
+	command.Command.When = liveOfKinds(pluginport.ContextAnyValue)
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
@@ -172,7 +185,7 @@ func TestFileMenuListsDeletionForEachPluginVersion(t *testing.T) {
 func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
 	s := newScene(t)
 	command := deleteProofreadingCommand
-	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindPage, kindRecognition}, HasOwnText: true}
+	command.Command.When = append(liveOfKinds(string(kindPage), string(kindRecognition)), ownedBy(proofreader)...)
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 

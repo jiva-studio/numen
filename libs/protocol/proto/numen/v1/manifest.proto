@@ -8,9 +8,11 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 
 // Manifest is the schema of a plugin's manifest.json. The file is the proto3 JSON
 // form of this message: field names are the lowerCamelCase json_name of each field.
-// Keys the schema does not name are ignored. A message here only describes the
+// A key the schema does not name is reported as a warning by the reader. A message here only describes the
 // shape; the invariants between fields are checked by the manifest reader.
 message Manifest {
+  reserved 10, 18, 20, 21, 22, 23, 25;
+  reserved "runtimes", "note_types", "texts", "playback", "content_types", "readers", "frames";
   string id = 1;
   string name = 2;
   string version = 3;
@@ -22,7 +24,7 @@ message Manifest {
   repeated string targets = 7;
   repeated string activation_events = 8;
   repeated string permissions = 9;
-  repeated string runtimes = 10;
+  // dependencies are what the host provisions for the plugin: runtimes, models, binaries and datasets.
   repeated ManifestDependency dependencies = 11;
   ManifestLifecycle lifecycle = 12;
   ManifestBackend backend = 13;
@@ -30,14 +32,8 @@ message Manifest {
   repeated ManifestSetting settings = 15;
   repeated ManifestSecret secrets = 16;
   repeated string services = 17;
-  repeated ManifestNoteType note_types = 18;
   repeated ManifestCommand commands = 19;
-  ManifestTexts texts = 20;
-  ManifestPlayback playback = 21;
-  repeated ManifestContentType content_types = 22;
-  repeated ManifestReader readers = 23;
   repeated ManifestSettingsView settings_views = 24;
-  repeated string frames = 25;
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
   ManifestContributes contributes = 26;
@@ -60,6 +56,27 @@ message ManifestContributes {
   repeated ManifestFileType file_types = 6;
   // status_views are the components of the plugin's frontend the window draws in its status bar.
   repeated ManifestStatusView status_views = 4;
+  // handles are the capabilities the plugin takes part in for files and notes of some types.
+  repeated ManifestHandle handles = 7;
+  // content_types are the types of file the plugin brings that the content type table does not know.
+  repeated ManifestContentType content_types = 8;
+  // readers are the tabs of the plugin's frontend that open files, each by the id the frontend
+  // registers it under.
+  repeated ManifestReader readers = 9;
+  // note_types are the types of note the plugin gives meaning to, and how the index keeps the notes
+  // of each.
+  repeated ManifestNoteType note_types = 10;
+  // frame_origins are the https origins the plugin's pages frame.
+  repeated string frame_origins = 11;
+}
+
+// ManifestHandle declares that the plugin takes part in a capability for files of some content
+// types and notes of some note types. The purpose is the id of the capability; the part of the
+// application that defines the capability owns the id and gives the declaration its meaning.
+message ManifestHandle {
+  string purpose = 1;
+  repeated string content_types = 2;
+  repeated string note_types = 3;
 }
 
 // ManifestFileType is a type of file the plugin opens in a tab of one of its
@@ -126,7 +143,8 @@ message ManifestLifecycle {
   int32 idle_timeout_seconds = 1;
   bool keep_alive_while_visible = 2;
   uint64 memory_limit_bytes = 3;
-  uint64 memory_limit_mb = 4 [json_name = "memoryLimitMB"];
+  reserved 4;
+  reserved "memory_limit_mb";
 }
 
 message ManifestBackend {
@@ -175,7 +193,8 @@ message ManifestSetting {
   double min = 9;
   double max = 10;
   double step = 11;
-  string models_of = 12;
+  reserved 12;
+  reserved "models_of";
   repeated string replaces = 13;
   ManifestOptionsBy options_by = 14;
   ManifestCondition when = 15;
@@ -207,9 +226,11 @@ message ManifestCommandArgument {
   bool is_hidden_in_palette = 5 [json_name = "hiddenInPalette"];
 }
 
-message ManifestCommandWhen {
-  repeated string live_text_kinds = 1;
-  bool has_own_text = 2;
+// ManifestContextCondition holds while the context the window supplies has the key with one of the
+// values listed. The value `*` stands for any value of the key.
+message ManifestContextCondition {
+  string key = 1;
+  repeated string is = 2;
 }
 
 message ManifestCommand {
@@ -218,18 +239,11 @@ message ManifestCommand {
   string icon = 3;
   repeated string content_types = 4;
   repeated string note_types = 5;
-  ManifestCommandWhen when = 6;
+  // when are the conditions, all of which hold in the context the command is offered over. A
+  // command with conditions is offered over each context that meets them.
+  repeated ManifestContextCondition when = 6;
   repeated ManifestCommandArgument arguments = 7;
   bool is_hidden_in_palette = 8 [json_name = "hiddenInPalette"];
-}
-
-message ManifestTexts {
-  repeated string content_types = 1;
-}
-
-message ManifestPlayback {
-  repeated string content_types = 1;
-  repeated string note_types = 2;
 }
 
 message ManifestContentType {

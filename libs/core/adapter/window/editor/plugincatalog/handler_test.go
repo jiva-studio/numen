@@ -25,6 +25,7 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 		Source: "", State: state,
 		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0, AppVersion: manifest.AppVersionRange{Min: "", Max: ""}},
 		Incompatibility: nil,
+		Warnings:        nil,
 	}
 }
 

@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
+	"slices"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -16,8 +18,9 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// The wire reader ignores the keys the schema does not name.
-var wireReader = protojson.UnmarshalOptions{DiscardUnknown: true}
+// The wire reader takes the keys the schema names; a key it does not name is removed and reported
+// before the reader runs.
+var wireReader = protojson.UnmarshalOptions{}
 
 // Read decodes a manifest from JSON input and validates it.
 func Read(r io.Reader) (manifest.Manifest, error) {
@@ -37,7 +40,7 @@ func Read(r io.Reader) (manifest.Manifest, error) {
 
 // Decode decodes a manifest from JSON without validating the rules between its fields.
 func Decode(data []byte) (manifest.Manifest, error) {
-	canonical, err := canonicalize(data)
+	canonical, unknown, err := canonicalize(data)
 	if err != nil {
 		return manifest.Manifest{}, err
 	}
@@ -45,39 +48,43 @@ func Decode(data []byte) (manifest.Manifest, error) {
 	if err := wireReader.Unmarshal(canonical, &wire); err != nil {
 		return manifest.Manifest{}, err
 	}
-	return newManifest(&wire)
+	m, err := newManifest(&wire)
+	if err != nil {
+		return manifest.Manifest{}, err
+	}
+	for _, path := range unknown {
+		m.Warnings = append(m.Warnings, fmt.Sprintf("unknown key %q", path))
+	}
+	return m, nil
 }
 
 var errTrailingData = errors.New("unexpected data after the manifest")
 
 // canonicalize rewrites the JSON with each key once, the last occurrence winning, which is how
 // encoding/json reads a repeated key; the wire reader rejects a repeated key. Keys the schema does
-// not name by their JSON name are dropped.
-func canonicalize(data []byte) ([]byte, error) {
+// not name by their JSON name are dropped and returned as paths, in the order of their location.
+func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
 	var value any
 	if err := decoder.Decode(&value); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	pruneUnknown(value, (&v1.Manifest{}).ProtoReflect().Descriptor())
+	unknown = pruneUnknown(value, (&v1.Manifest{}).ProtoReflect().Descriptor(), "", nil)
 	var rest json.RawMessage
 	if err := decoder.Decode(&rest); !errors.Is(err, io.EOF) {
-		return nil, errTrailingData
+		return nil, nil, errTrailingData
 	}
-	return json.Marshal(value)
+	canonical, err = json.Marshal(value)
+	return canonical, unknown, err
 }
 
 func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
-	lifecycle, err := newLifecycle(wire.GetLifecycle())
-	if err != nil {
-		return manifest.Manifest{}, err
-	}
 	settings, err := newSettings(wire.GetSettings())
 	if err != nil {
 		return manifest.Manifest{}, err
 	}
-	noteTypes, err := newNoteTypes(wire.GetNoteTypes())
+	contributes, err := newContributes(wire.GetContributes())
 	if err != nil {
 		return manifest.Manifest{}, err
 	}
@@ -91,40 +98,26 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Targets:          wire.GetTargets(),
 		ActivationEvents: wire.GetActivationEvents(),
 		Permissions:      wire.GetPermissions(),
-		Runtimes:         wire.GetRuntimes(),
 		Dependencies:     newDependencies(wire.GetDependencies()),
-		Lifecycle:        lifecycle,
+		Lifecycle:        newLifecycle(wire.GetLifecycle()),
 		Backend:          newBackend(wire.GetBackend()),
 		Frontend:         newFrontend(wire.GetFrontend()),
 		Settings:         settings,
 		Secrets:          newSecrets(wire.GetSecrets()),
 		Services:         wire.GetServices(),
-		NoteTypes:        noteTypes,
 		Commands:         newCommands(wire.GetCommands()),
-		Texts:            newTextMaker(wire.GetTexts()),
-		Playback:         newPlayback(wire.GetPlayback()),
-		ContentTypes:     newDeclaredContentTypes(wire.GetContentTypes()),
-		Readers:          newReaders(wire.GetReaders()),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
-		Frames:           wire.GetFrames(),
-		Contributes:      newContributes(wire.GetContributes()),
+		Contributes:      contributes,
 		AppVersion:       manifest.AppVersionRange{Min: wire.GetAppVersion().GetMin(), Max: wire.GetAppVersion().GetMax()},
 	}, nil
 }
 
-func newLifecycle(wire *v1.ManifestLifecycle) (manifest.Lifecycle, error) {
-	limit := wire.GetMemoryLimitBytes()
-	if limit == 0 && wire.GetMemoryLimitMb() > 0 {
-		if wire.GetMemoryLimitMb() > math.MaxUint64/(1024*1024) {
-			return manifest.Lifecycle{}, errors.New("memory limit in megabytes exceeds maximum value")
-		}
-		limit = wire.GetMemoryLimitMb() * 1024 * 1024
-	}
+func newLifecycle(wire *v1.ManifestLifecycle) manifest.Lifecycle {
 	return manifest.Lifecycle{
 		IdleTimeoutSeconds:    int(wire.GetIdleTimeoutSeconds()),
 		KeepAliveWhileVisible: wire.GetKeepAliveWhileVisible(),
-		MemoryLimitBytes:      limit,
-	}, nil
+		MemoryLimitBytes:      wire.GetMemoryLimitBytes(),
+	}
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {
@@ -135,7 +128,7 @@ func newFrontend(wire *v1.ManifestFrontend) manifest.Frontend {
 	return manifest.Frontend{Entrypoint: wire.GetEntrypoint(), Styles: wire.GetStyles()}
 }
 
-func newContributes(wire *v1.ManifestContributes) manifest.Contributes {
+func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) {
 	var kinds []manifest.TabKind
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
@@ -152,7 +145,23 @@ func newContributes(wire *v1.ManifestContributes) manifest.Contributes {
 	for _, one := range wire.GetStatusViews() {
 		views = append(views, manifest.StatusView{ID: one.GetId()})
 	}
-	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory(), FileTypes: fileTypes, Themes: themes, StatusViews: views}
+	noteTypes, err := newNoteTypes(wire.GetNoteTypes())
+	if err != nil {
+		return manifest.Contributes{}, err
+	}
+	return manifest.Contributes{
+		TabKinds:     kinds,
+		Feature:      wire.GetFeature(),
+		Category:     wire.GetCategory(),
+		FileTypes:    fileTypes,
+		Themes:       themes,
+		StatusViews:  views,
+		Handles:      newHandles(wire.GetHandles()),
+		ContentTypes: newDeclaredContentTypes(wire.GetContentTypes()),
+		Readers:      newReaders(wire.GetReaders()),
+		NoteTypes:    noteTypes,
+		FrameOrigins: wire.GetFrameOrigins(),
+	}, nil
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {
@@ -223,7 +232,6 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Min:         one.GetMin(),
 			Max:         one.GetMax(),
 			Step:        one.GetStep(),
-			ModelsOf:    one.GetModelsOf(),
 			Replaces:    one.GetReplaces(),
 			OptionsBy:   optionsBy,
 			When:        newCondition(one.GetWhen()),
@@ -355,11 +363,15 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 	return out
 }
 
-func newCommandWhen(wire *v1.ManifestCommandWhen) *manifest.CommandWhen {
+func newCommandWhen(wire []*v1.ManifestContextCondition) []manifest.ContextCondition {
 	if wire == nil {
 		return nil
 	}
-	return &manifest.CommandWhen{LiveTextKinds: newTextKinds(wire.GetLiveTextKinds()), HasOwnText: wire.GetHasOwnText()}
+	out := make([]manifest.ContextCondition, 0, len(wire))
+	for _, one := range wire {
+		out = append(out, manifest.ContextCondition{Key: one.GetKey(), Is: one.GetIs()})
+	}
+	return out
 }
 
 func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandArgument {
@@ -379,18 +391,15 @@ func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandA
 	return out
 }
 
-func newTextMaker(wire *v1.ManifestTexts) *manifest.TextMaker {
+func newHandles(wire []*v1.ManifestHandle) []manifest.Handle {
 	if wire == nil {
 		return nil
 	}
-	return &manifest.TextMaker{ContentTypes: newContentTypes(wire.GetContentTypes())}
-}
-
-func newPlayback(wire *v1.ManifestPlayback) *manifest.Playback {
-	if wire == nil {
-		return nil
+	out := make([]manifest.Handle, 0, len(wire))
+	for _, one := range wire {
+		out = append(out, manifest.Handle{Purpose: one.GetPurpose(), ContentTypes: newContentTypes(one.GetContentTypes()), NoteTypes: one.GetNoteTypes()})
 	}
-	return &manifest.Playback{ContentTypes: newContentTypes(wire.GetContentTypes()), NoteTypes: wire.GetNoteTypes()}
+	return out
 }
 
 func newDeclaredContentTypes(wire []*v1.ManifestContentType) []manifest.DeclaredContentType {
@@ -427,48 +436,83 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 }
 
 // pruneUnknown removes from the decoded JSON value every key that the message does not name by its
-// JSON name, at every depth. Values of the well-known types are left as written.
-func pruneUnknown(value any, message protoreflect.MessageDescriptor) {
+// JSON name, at every depth, and returns the path of each key removed. Values of the well-known
+// types are left as written, except the options of a setting.
+func pruneUnknown(value any, message protoreflect.MessageDescriptor, path string, unknown []string) []string {
 	object, isObject := value.(map[string]any)
 	if !isObject {
-		return
+		return unknown
 	}
-	for key, child := range object {
+	for _, key := range slices.Sorted(maps.Keys(object)) {
 		field := message.Fields().ByJSONName(key)
 		if field == nil {
 			delete(object, key)
+			unknown = append(unknown, joinPath(path, key))
 			continue
 		}
-		pruneField(child, field)
+		unknown = pruneField(object[key], field, joinPath(path, key), unknown)
 	}
+	return unknown
 }
 
-func pruneField(value any, field protoreflect.FieldDescriptor) {
+func joinPath(path, key string) string {
+	if path == "" {
+		return key
+	}
+	return path + "." + key
+}
+
+func pruneField(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
 	switch {
 	case field.IsMap():
 		entries, isObject := value.(map[string]any)
-		if !isObject || field.MapValue().Message() == nil {
-			return
+		if !isObject {
+			return unknown
 		}
-		for _, entry := range entries {
-			pruneMessage(entry, field.MapValue().Message())
+		for _, name := range slices.Sorted(maps.Keys(entries)) {
+			unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
 		}
 	case field.IsList():
 		items, isList := value.([]any)
-		if !isList || field.Message() == nil {
-			return
+		if !isList {
+			return unknown
 		}
-		for _, item := range items {
-			pruneMessage(item, field.Message())
+		for index, item := range items {
+			unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
 		}
-	case field.Message() != nil:
-		pruneMessage(value, field.Message())
+	default:
+		return pruneEntry(value, field, path, unknown)
 	}
+	return unknown
 }
 
-func pruneMessage(value any, message protoreflect.MessageDescriptor) {
-	if message.ParentFile().Package() != "numen.v1" {
-		return
+// pruneEntry prunes one value of a field whose type is a message of the schema, or a list of the
+// options of a setting.
+func pruneEntry(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
+	message := field.Message()
+	if message == nil {
+		return unknown
 	}
-	pruneUnknown(value, message)
+	if message.FullName() == listValueName {
+		return pruneOptionList(value, path, unknown)
+	}
+	if message.ParentFile().Package() != "numen.v1" {
+		return unknown
+	}
+	return pruneUnknown(value, message, path, unknown)
+}
+
+const listValueName protoreflect.FullName = "google.protobuf.ListValue"
+
+// pruneOptionList prunes each option written as an object in a list of options.
+func pruneOptionList(value any, path string, unknown []string) []string {
+	items, isList := value.([]any)
+	if !isList {
+		return unknown
+	}
+	descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
+	for index, item := range items {
+		unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)
+	}
+	return unknown
 }

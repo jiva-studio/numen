@@ -1,14 +1,13 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.10.4",
+  "version": "2026.10.5",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
-  "contributes": { "category": "engines" },
+  "contributes": { "category": "engines", "handles": [{ "purpose": "text-provider" }] },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "texts": {},
   "commands": [
     {
       "id": "transcribe",
@@ -20,7 +19,7 @@
       "id": "delete-transcript",
       "title": "Delete transcript",
       "icon": "trash-2",
-      "when": { "hasOwnText": true }
+      "when": [{ "key": "version.plugin", "is": ["md.numen.engines.transcription"] }]
     }
   ],
   "dependencies": [

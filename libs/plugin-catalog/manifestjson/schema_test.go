@@ -2,6 +2,7 @@ package manifestjson_test
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -15,37 +16,36 @@ import (
 const everyFieldManifest = `{
 	"id": "org.example.full", "name": "Full", "version": "1.2.3", "protocol": 1, "description": "d",
 	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["*"],
-	"permissions": ["vault:read"], "runtimes": ["onnxruntime"],
+	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
-	"lifecycle": {"idleTimeoutSeconds": 5, "keepAliveWhileVisible": true, "memoryLimitBytes": 7, "memoryLimitMB": 3},
+	"lifecycle": {"idleTimeoutSeconds": 5, "keepAliveWhileVisible": true, "memoryLimitBytes": 7},
 	"backend": {"type": "process", "entrypoint": "bin/full", "serviceName": "numen.v1.Full"},
 	"frontend": {"entrypoint": "dist/index.js", "styles": "dist/styles.css"},
 	"settings": [
 		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "default": "a", "palette": true, "icon": "gauge",
 			"options": ["a", {"value": "b", "title": "B", "detail": "d", "dependencies": ["weights"]}],
-			"min": 1, "max": 2, "step": 1, "modelsOf": "x", "replaces": ["a.b"], "accept": [".txt"]},
+			"min": 1, "max": 2, "step": 1, "replaces": ["a.b"], "accept": [".txt"]},
 		{"key": "sub", "type": "enum", "title": "Sub", "optionsBy": {"setting": "mode", "options": {"a": ["x"], "b": ["y"]}},
 			"when": {"setting": "mode", "is": ["a"]}}
 	],
 	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
-	"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
 	"commands": [{"id": "run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],
-		"when": {"liveTextKinds": ["k"], "hasOwnText": true},
+		"when": [{"key": "version.kind", "is": ["k"]}],
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false, "hiddenInPalette": true},
 			{"name": "m", "title": "M", "type": "number", "required": true}],
 		"hiddenInPalette": true}],
-	"texts": {"contentTypes": ["audio/*"]},
-	"playback": {"contentTypes": ["video/*"], "noteTypes": ["link"]},
-	"contentTypes": [{"type": "application/x-example", "globs": ["*.example"]}],
-	"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 	"settingsViews": [{"id": "v", "title": "V", "after": "mode"}],
-	"frames": ["https://player.example"],
 	"contributes": {"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
 		"fileTypes": [{"tabKind": "full", "extensions": ["full"], "fileNames": ["full.config"]}],
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
-		"statusViews": [{"id": "gauge"}]},
+		"statusViews": [{"id": "gauge"}],
+		"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*"], "noteTypes": ["link"]}],
+		"contentTypes": [{"type": "application/x-example", "globs": ["*.example"]}],
+		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
+		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
+		"frameOrigins": ["https://player.example"]},
 	"appVersion": {"min": "2026.1.0", "max": "2027.1.0"}
 }`
 
@@ -179,9 +179,9 @@ func collectSetValues(value reflect.Value, set map[string]bool) {
 }
 
 // isUnmappedByDesign names the fields the reader does not read from the file: the folder of the plugin
-// is known to whoever discovers it, and a note type that keeps the default chunking is false by choice.
+// is known to whoever discovers it, the warnings are findings of the reader, and a note type that keeps the default chunking is false by choice.
 func isUnmappedByDesign(name string) bool {
-	return name == "DependencyRequirement.PluginDir" || name == "Discovered.Dir" || name == "NoteType.Chunks"
+	return name == "DependencyRequirement.PluginDir" || name == "Discovered.Dir" || name == "Manifest.Warnings" || name == "NoteType.Chunks"
 }
 
 func TestOnlyTheJSONNameOfAFieldIsRead(t *testing.T) {
@@ -220,8 +220,43 @@ func TestAnOptionOfNoValueShapeIsRefused(t *testing.T) {
 }
 
 func TestANumberOutsideTheRangeOfAFieldIsRefused(t *testing.T) {
-	_, err := manifestjson.Decode([]byte(`{"lifecycle":{"memoryLimitMB":18446744073709551615}}`))
+	_, err := manifestjson.Decode([]byte(`{"lifecycle":{"memoryLimitBytes":18446744073709551616}}`))
 	if err == nil {
 		t.Error("a limit that overflows was accepted")
+	}
+}
+
+func TestAKeyOfTheWrongTypeIsRefused(t *testing.T) {
+	if _, err := manifestjson.Decode([]byte(`{"id":"a.b","contributes":{"readers":"markdown"}}`)); err == nil {
+		t.Error("a string was accepted as a list of readers")
+	}
+}
+
+func TestKeysTheSchemaDoesNotNameAreReportedAsWarnings(t *testing.T) {
+	m, err := manifestjson.Decode([]byte(`{"id":"a.b","texts":{},"contributes":{"tabKinds":[{"kind":"k","title":"K","shape":1}],
+		"extra":true},"settings":[{"key":"s","type":"enum","title":"S","options":["a",{"value":"b","hint":"h"}],
+		"optionsBy":{"setting":"s","options":{"a":[{"value":"x","hint":"h"}]}}}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		`unknown key "contributes.extra"`,
+		`unknown key "contributes.tabKinds[0].shape"`,
+		`unknown key "settings[0].options[1].hint"`,
+		`unknown key "settings[0].optionsBy.options.a[0].hint"`,
+		`unknown key "texts"`,
+	}
+	if !slices.Equal(m.Warnings, want) {
+		t.Errorf("warnings = %q, want %q", m.Warnings, want)
+	}
+}
+
+func TestAManifestWithOnlyKnownKeysHasNoWarnings(t *testing.T) {
+	m, err := manifestjson.Decode([]byte(everyFieldManifest))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Warnings) != 0 {
+		t.Errorf("warnings = %q, want none", m.Warnings)
 	}
 }

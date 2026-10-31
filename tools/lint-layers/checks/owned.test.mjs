@@ -66,11 +66,10 @@ describe("the tokens a plugin owns", () => {
     assert.deepEqual(owned.find(({ token }) => token === "widget").owners, ["views-bbb"]);
   });
 
-  it("include a tab kind with and without its reader prefix, a note type, a command and a text kind", () => {
+  it("include a tab kind with and without its reader prefix, a note type, a command and a condition value", () => {
     const tokens = listContributedTokens({
-      contributes: { tabKinds: [{ kind: "reader:Epub" }] },
-      noteTypes: [{ type: "book" }],
-      commands: [{ id: "make-text", when: { liveTextKinds: ["transcript"] } }],
+      contributes: { tabKinds: [{ kind: "reader:Epub" }], noteTypes: [{ type: "book" }] },
+      commands: [{ id: "make-text", when: [{ key: "version.kind", is: ["transcript"] }] }],
     });
     assert.deepEqual(tokens, ["reader:epub", "epub", "book", "make-text", "transcript"]);
   });

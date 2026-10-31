@@ -39,7 +39,9 @@ func newONNXCatalog() *fakeCatalog {
 }
 
 func newRuntimeRequirements(dir string) []pluginport.DependencyRequirement {
-	return pluginport.PluginManifest{Runtimes: []string{pluginport.RuntimeONNX}}.GetDependencyRequirements(dir, nil)
+	return pluginport.PluginManifest{Dependencies: []pluginport.DependencyRequirement{
+		{ID: pluginport.RuntimeONNX, Kind: pluginport.DependencyKindRuntime},
+	}}.GetDependencyRequirements(dir, nil)
 }
 
 func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {

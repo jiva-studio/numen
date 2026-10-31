@@ -19,8 +19,10 @@ const frontendOnlyManifest = `{
 	"name": "Sketch",
 	"version": "1.0.0",
 	"targets": ["desktop.editor"],
-	"contentTypes": [{"type": "application/x-numen-sketch", "globs": ["*.sketch"]}],
-	"readers": [{"id": "sketch", "contentTypes": ["application/x-numen-sketch"], "rank": "default"}],
+	"contributes": {
+		"contentTypes": [{"type": "application/x-numen-sketch", "globs": ["*.sketch"]}],
+		"readers": [{"id": "sketch", "contentTypes": ["application/x-numen-sketch"], "rank": "default"}]
+	},
 	"settings": [{"key": "grid", "type": "boolean", "title": "Grid", "default": true}],
 	"frontend": {"entrypoint": "dist/index.js"}
 }`

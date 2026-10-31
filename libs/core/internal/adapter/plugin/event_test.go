@@ -221,5 +221,7 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 
 // readingType is a plugin that makes text of files of the type.
 func readingType(contentType domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{Texts: &pluginport.PluginTextMaker{ContentTypes: []domain.ContentType{contentType}}}
+	return pluginport.PluginManifest{Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
+		{Purpose: pluginport.HandleTextProvider, ContentTypes: []domain.ContentType{contentType}},
+	}}}
 }

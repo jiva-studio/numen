@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { describe, it, test } from "node:test";
 import { readGo, readScript } from "./helpers.mjs";
-import { findManifestParsers } from "./manifests.mjs";
+import { loadManifestWords } from "./dictionary.mjs";
+import { findManifestParsers, findPluginNamedSections, verifySchemaNamesNoPluginFunction } from "./manifests.mjs";
 
 const script = (file, text) => ({ file, source: readScript(text), text });
 const go = (file, text) => ({ file, source: readGo(text), text });
@@ -75,4 +76,58 @@ test("a Go file that names manifest.json and decodes YAML is clean", () => {
     go("libs/core/b_test.go", 'package a\n\nfunc f(raw []byte) {\n\tname := "manifest.json"\n\tyaml.Unmarshal(raw, &parsed)\n}\n'),
   ]);
   assert.deepEqual(found, []);
+});
+
+/** Manifests of two imaginary plugins: one owns the word "dubbing", both state "widgets". */
+const PLUGIN_MANIFESTS = {
+  "plugins/tools-dubbing/manifest.json": JSON.stringify({
+    id: "md.example.tools.dubbing",
+    name: "Dubbing",
+    version: "1.0.0",
+    contributes: { category: "widgets", tabKinds: [{ kind: "booth", title: "Booth" }] },
+  }),
+  "plugins/views-other/manifest.json": JSON.stringify({
+    id: "md.example.views.other",
+    name: "Other",
+    version: "1.0.0",
+    contributes: { category: "widgets" },
+  }),
+};
+
+const fixtureWords = () => loadManifestWords(Object.keys(PLUGIN_MANIFESTS), (file) => PLUGIN_MANIFESTS[file]);
+
+const section = (name) => ({ name, jsonName: name.replace(/_(\w)/g, (_, letter) => letter.toUpperCase()) });
+
+describe("a top-level section of the manifest schema", () => {
+  it("named after a word one plugin owns is reported with its location", () => {
+    const proto = "message Manifest {\n  string id = 1;\n  Dubbing dubbing = 2;\n}\n";
+    const found = findPluginNamedSections([section("id"), section("dubbing")], fixtureWords(), proto);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].line, 3);
+    assert.match(found[0].symbol, /"dubbing".*tools-dubbing/);
+  });
+
+  it("named after a tab kind one plugin owns is reported", () => {
+    const found = findPluginNamedSections([section("booth")], fixtureWords());
+    assert.equal(found.length, 1);
+    assert.match(found[0].symbol, /"booth"/);
+  });
+
+  it("is reported by a word of its name", () => {
+    const found = findPluginNamedSections([section("dubbing_tracks")], fixtureWords());
+    assert.equal(found.length, 1);
+    assert.match(found[0].symbol, /named after "dubbing"/);
+  });
+
+  it("named after a word two plugins state is not reported", () => {
+    assert.deepEqual(findPluginNamedSections([section("widgets")], fixtureWords()), []);
+  });
+
+  it("named after no word of a manifest is not reported", () => {
+    assert.deepEqual(findPluginNamedSections([section("permissions"), section("lifecycle")], fixtureWords()), []);
+  });
+});
+
+test("the schema of the repository names no plugin function in its top-level sections", () => {
+  verifySchemaNamesNoPluginFunction();
 });

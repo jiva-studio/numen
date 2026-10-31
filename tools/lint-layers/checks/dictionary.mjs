@@ -144,10 +144,10 @@ const compact = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
 const getExtension = (fileName) => (fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".") + 1) : "");
 
 /**
- * The words that name how a plugin is implemented, from its manifests: the runtimes it declares, the id
- * and the model file format of each dependency, and, for a plugin that runs a backend and declares
- * capabilities or dependencies, each segment of its id that no other plugin id has. A runtime or a model
- * format that several plugins declare is kept, because the plugins that use it share it.
+ * The words that name how a plugin is implemented, from its manifests: the id and the model file format
+ * of each dependency, runtimes included, and, for a plugin that runs a backend and declares capabilities
+ * or dependencies, each segment of its id that no other plugin id has. A dependency or a model format
+ * that several plugins declare is kept, because the plugins that use it share it.
  */
 export function loadImplementationWords(manifestFiles = listManifestFiles(), readFile = (file) => fs.readFileSync(path.join(REPO_ROOT, file), "utf8")) {
   const words = new Map();
@@ -170,7 +170,6 @@ export function loadImplementationWords(manifestFiles = listManifestFiles(), rea
     for (const segment of hasEngine ? String(json.id).split(".").slice(prefix) : []) {
       if (segmentOwners.get(segment).size === 1) add(segment.toLowerCase(), plugin);
     }
-    for (const runtime of json.runtimes ?? []) add(compact(String(runtime)), plugin);
     for (const dependency of json.dependencies ?? []) {
       add(compact(String(dependency.id ?? "")), plugin);
       if (dependency.kind === "model") add(compact(getExtension(String(dependency.metadata?.fileName ?? ""))), plugin);

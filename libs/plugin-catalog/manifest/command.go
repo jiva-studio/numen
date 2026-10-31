@@ -29,20 +29,27 @@ var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber, CommandArgumentBoolean}
 
 // CommandArgumentVersion names the argument the host gives a command that has a When condition: the
-// id of the text version that met the condition.
+// id of the context the command is offered over.
 const CommandArgumentVersion = "version-id"
 
-// CommandWhen is the state of a file's text versions in which a command
-// is offered over the file. Every condition a command names has to hold. A
-// command with a condition is offered by the menu of the file, and not by the
-// palette, which has no file context.
-type CommandWhen struct {
-	// LiveTextKinds are the kinds of text, as the plugin that made it names them, one of which the
-	// file's live version has; `*` is any kind. The command is offered over that version.
-	LiveTextKinds []domain.TextKind
-	// HasOwnText is set when the file has a version the plugin of the command made. The command is
-	// offered over each of them.
-	HasOwnText bool
+// ContextAnyValue is the value of a condition that any value of the key meets.
+const ContextAnyValue = "*"
+
+// Context is one subject a command can be offered over, described by named keys. The application
+// that offers the command supplies the keys and their values.
+type Context map[string]string
+
+// ContextCondition holds in a context that has the key with one of the values listed.
+type ContextCondition struct {
+	Key string
+	// Is are the values of the key that meet the condition; ContextAnyValue is any value.
+	Is []string
+}
+
+// IsMet reports whether the context has the key with one of the values of the condition.
+func (c ContextCondition) IsMet(context Context) bool {
+	value, isSet := context[c.Key]
+	return isSet && (slices.Contains(c.Is, ContextAnyValue) || slices.Contains(c.Is, value))
 }
 
 // Command is one command a manifest declares, which the plugin's backend runs.
@@ -55,9 +62,10 @@ type Command struct {
 	ContentTypes []domain.ContentType
 	// NoteTypes are the plugin's own note types of the notes the command runs over.
 	NoteTypes []string
-	// When is the condition under which the menu of a file offers the command. A command with one
-	// runs over any file, and names no content type and no note type.
-	When      *CommandWhen
+	// When are the conditions, all of which hold in one context, under which the menu of a file offers
+	// the command over that context. A command with conditions runs over any file, and names no
+	// content type and no note type. The palette has no file context and does not offer it.
+	When      []ContextCondition
 	Arguments []CommandArgument
 	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
 	// same thing another way. The command line still offers it.
@@ -77,13 +85,19 @@ type CommandArgument struct {
 
 // HasFiles reports whether the command runs over a file.
 func (c Command) HasFiles() bool {
-	return len(c.ContentTypes) > 0 || len(c.NoteTypes) > 0 || c.When != nil
+	return len(c.ContentTypes) > 0 || len(c.NoteTypes) > 0 || len(c.When) > 0
+}
+
+// CanRunIn reports whether every condition of the command holds in the context. A command with no
+// condition holds in every context.
+func (c Command) CanRunIn(context Context) bool {
+	return !slices.ContainsFunc(c.When, func(condition ContextCondition) bool { return !condition.IsMet(context) })
 }
 
 // CanRunOn reports whether the command runs over a file of the content type, or a note of the note
 // type.
 func (c Command) CanRunOn(contentType domain.ContentType, noteType domain.NoteType) bool {
-	return c.When != nil || isAnyMatching(c.ContentTypes, contentType) || slices.Contains(c.NoteTypes, string(noteType))
+	return len(c.When) > 0 || isAnyMatching(c.ContentTypes, contentType) || slices.Contains(c.NoteTypes, string(noteType))
 }
 
 // GetArgument returns the declaration of the argument of the name, and false where none is declared.
@@ -123,20 +137,24 @@ func (m Manifest) listCommandIssues() []error {
 }
 
 func listCommandWhenIssues(command Command) []error {
-	when := command.When
-	if when == nil {
+	if len(command.When) == 0 {
 		return nil
 	}
 	var issues []error
-	if len(when.LiveTextKinds) == 0 && !when.HasOwnText {
-		issues = append(issues, fmt.Errorf("%w: %q has a condition that names nothing", ErrInvalidCommand, command.ID))
-	}
 	if len(command.ContentTypes) > 0 || len(command.NoteTypes) > 0 {
 		issues = append(issues, fmt.Errorf("%w: %q has a condition and names a content type or a note type", ErrInvalidCommand, command.ID))
 	}
-	for _, kind := range when.LiveTextKinds {
-		if strings.TrimSpace(string(kind)) == "" {
-			issues = append(issues, fmt.Errorf("%w: %q names a kind with no name", ErrInvalidCommand, command.ID))
+	for _, condition := range command.When {
+		if strings.TrimSpace(condition.Key) == "" {
+			issues = append(issues, fmt.Errorf("%w: %q has a condition with no key", ErrInvalidCommand, command.ID))
+		}
+		if len(condition.Is) == 0 {
+			issues = append(issues, fmt.Errorf("%w: %q has a condition on %q that names no value", ErrInvalidCommand, command.ID, condition.Key))
+		}
+		for _, value := range condition.Is {
+			if strings.TrimSpace(value) == "" {
+				issues = append(issues, fmt.Errorf("%w: %q has a condition on %q with an empty value", ErrInvalidCommand, command.ID, condition.Key))
+			}
 		}
 	}
 	if _, isDeclared := command.GetArgument(CommandArgumentVersion); isDeclared {

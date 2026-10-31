@@ -1,7 +1,7 @@
 {
   "id": "md.numen.readers.epub",
   "name": "EPUB Book Reader",
-  "version": "2026.10.4",
+  "version": "2026.10.5",
   "protocol": 1,
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
@@ -10,15 +10,15 @@
     "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
     "fileTypes": [{ "tabKind": "reader:reader-epub", "extensions": ["epub"] }],
     "feature": "EPUB books",
-    "category": "readers"
+    "category": "readers",
+    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/epub+zip"] }],
+    "readers": [
+      { "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }
+    ]
   },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.epub"],
-  "readers": [{ "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }],
-  "texts": {
-    "contentTypes": ["application/epub+zip"]
-  },
   "lifecycle": {
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true,

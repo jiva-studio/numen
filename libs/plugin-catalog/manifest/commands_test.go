@@ -126,33 +126,67 @@ func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
 	}
 }
 
-func TestManifestDeclaresCommandWithVersionCondition(t *testing.T) {
+func TestManifestDeclaresCommandWithContextCondition(t *testing.T) {
 	parsed, err := manifestjson.Read(strings.NewReader(commandManifestHead + `[
-		{"id": "proofread", "title": "Proofread", "when": {"liveTextKinds": ["transcript", "recognition"]}},
-		{"id": "delete-proofreading", "title": "Delete proofreading", "when": {"hasOwnText": true}}
+		{"id": "proofread", "title": "Proofread", "when": [
+			{"key": "version.live", "is": ["true"]}, {"key": "version.kind", "is": ["transcript", "recognition"]}]},
+		{"id": "delete-proofreading", "title": "Delete proofreading", "when": [{"key": "version.plugin", "is": ["a.b"]}]}
 	]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	proofread, deletion := parsed.Commands[0], parsed.Commands[1]
-	if proofread.When == nil || !slices.Equal(proofread.When.LiveTextKinds, []domain.TextKind{"transcript", "recognition"}) || proofread.When.HasOwnText {
-		t.Errorf("the condition on the live kind came out as %+v", proofread.When)
+	wantProofread := []manifest.ContextCondition{
+		{Key: "version.live", Is: []string{"true"}}, {Key: "version.kind", Is: []string{"transcript", "recognition"}},
 	}
-	if deletion.When == nil || !deletion.When.HasOwnText || len(deletion.When.LiveTextKinds) != 0 {
-		t.Errorf("the condition on the own text came out as %+v", deletion.When)
+	if !slices.EqualFunc(proofread.When, wantProofread, func(a, b manifest.ContextCondition) bool { return a.Key == b.Key && slices.Equal(a.Is, b.Is) }) {
+		t.Errorf("the conditions on the live version came out as %+v", proofread.When)
+	}
+	if len(deletion.When) != 1 || deletion.When[0].Key != "version.plugin" {
+		t.Errorf("the condition on the plugin came out as %+v", deletion.When)
 	}
 	if !proofread.HasFiles() || !proofread.CanRunOn(domain.UnknownContentType, "") {
 		t.Error("a command with a condition does not run over any file")
 	}
 }
 
+func TestACommandRunsInTheContextsThatMeetEveryCondition(t *testing.T) {
+	command := manifest.Command{When: []manifest.ContextCondition{
+		{Key: "version.live", Is: []string{"true"}}, {Key: "version.kind", Is: []string{"page", "recognition"}},
+	}}
+	cases := map[string]struct {
+		context manifest.Context
+		want    bool
+	}{
+		"both hold":           {manifest.Context{"version.live": "true", "version.kind": "page"}, true},
+		"the kind fails":      {manifest.Context{"version.live": "true", "version.kind": "transcript"}, false},
+		"the liveness fails":  {manifest.Context{"version.live": "false", "version.kind": "page"}, false},
+		"a key is not set":    {manifest.Context{"version.live": "true"}, false},
+		"no context at all":   {nil, false},
+		"another key is moot": {manifest.Context{"version.live": "true", "version.kind": "page", "other": "x"}, true},
+	}
+	for name, one := range cases {
+		if got := command.CanRunIn(one.context); got != one.want {
+			t.Errorf("%s: CanRunIn = %v, want %v", name, got, one.want)
+		}
+	}
+	anyKind := manifest.Command{When: []manifest.ContextCondition{{Key: "version.kind", Is: []string{manifest.ContextAnyValue}}}}
+	if !anyKind.CanRunIn(manifest.Context{"version.kind": "whatever"}) || anyKind.CanRunIn(manifest.Context{}) {
+		t.Error("the any-value condition must hold for a key that is set, and fail for one that is not")
+	}
+	if !(manifest.Command{}).CanRunIn(nil) {
+		t.Error("a command with no condition holds in every context")
+	}
+}
+
 func TestACommandWithAnInvalidConditionIsRefused(t *testing.T) {
 	for name, command := range map[string]string{
-		"a condition that names nothing": `{"id":"a","title":"A","when":{}}`,
-		"a condition and a content type": `{"id":"a","title":"A","contentTypes":["audio/*"],"when":{"hasOwnText":true}}`,
-		"a kind with no name":            `{"id":"a","title":"A","when":{"liveTextKinds":[" "]}}`,
-		"the argument the host gives":    `{"id":"a","title":"A","when":{"hasOwnText":true},"arguments":[{"name":"version-id","title":"V","type":"string"}]}`,
+		"a condition that names no key":   `{"id":"a","title":"A","when":[{"is":["x"]}]}`,
+		"a condition that names no value": `{"id":"a","title":"A","when":[{"key":"k"}]}`,
+		"a condition and a content type":  `{"id":"a","title":"A","contentTypes":["audio/*"],"when":[{"key":"k","is":["x"]}]}`,
+		"a value with no name":            `{"id":"a","title":"A","when":[{"key":"k","is":[" "]}]}`,
+		"the argument the host gives":     `{"id":"a","title":"A","when":[{"key":"k","is":["x"]}],"arguments":[{"name":"version-id","title":"V","type":"string"}]}`,
 	} {
 		_, err := manifestjson.Read(strings.NewReader(commandManifestHead + `[` + command + `]}`))
 		if !errors.Is(err, manifest.ErrInvalidCommand) && !errors.Is(err, manifest.ErrInvalidCommandArgument) {

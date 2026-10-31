@@ -105,11 +105,11 @@ A printed line holds its words: on a page they stay where they were printed. Spe
 
 ## Who does it
 
-The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core knows nothing of proofreading. The plugin declares `texts` and puts the versions it makes through the host. The plugin declares the command `proofread` with the condition `when.liveTextKinds: ["*"]`, so the file's menu offers **Proofread** over the live version of any kind, and the host gives the command that version as its argument `version-id`.
+The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core knows nothing of proofreading. The plugin declares a `text-provider` handle under `contributes.handles` and puts the versions it makes through the host. The plugin declares the command `proofread` with the condition `when.liveTextKinds: ["*"]`, so the file's menu offers **Proofread** over the live version of any kind, and the host gives the command that version as its argument `version-id`.
 
 The plugin reads the live version through the host, numbers its parts from one, builds the batches, holds the two instructions, applies the gates to each reply, and gathers the replies of overlapping batches. The corrected lines take the places of the parts they answer for: a correction keeps its part's page and rectangles or its times, and a run of cues answered as one becomes one part spanning their times. The plugin keeps the corrected text in its folder of the vault's store, `.numen/md.numen.tools.proofreading/proofread-<hash>.json`, one file a version read, rewritten when that version is proofread again, and reports it to the host as a version whose input is the version it read.
 
-The plugin names no model: it asks the host for a completion, and the host answers from the plugin's own `agent` setting, else from `ai.default` in [Settings](settings.md). An agent that is not installed or cannot be reached fails the proofreading, and no version is made. Before the person lets the plugin ask a model, the proofreading fails the same way, with "AI access not allowed — allow it in Settings → AI". The plugin invents no text and holds no key.
+The plugin names no model: it asks the host for a completion, and the host answers from `ai.default` in [Settings](settings.md). An agent that is not installed or cannot be reached fails the proofreading, and no version is made. Before the person lets the plugin ask a model, the proofreading fails the same way, with "AI access not allowed — allow it in Settings → AI". The plugin invents no text and holds no key.
 
 A proofreading waits for its turn in the core's shared queue and shows its progress as a task, in lines. A failure stays shown as the task's error until the file is proofread again.
 
@@ -117,7 +117,7 @@ A proofreading waits for its turn in the core's shared queue and shows its progr
 
 The version shown, searched and handed to the next processor is the newest live one. A proofreading made from a recognition is live while the OCR plugin and the proofreading plugin are both enabled and the recognition is unchanged. With the OCR plugin off, both the recognition and the version made from it are dead, and the file falls back to the newest live version left — a PDF's own text layer, or a proofreading made from it. With the OCR plugin on again, the proofreading of the recognition is shown again.
 
-**Delete proofreading** in the file's menu is the plugin's command `delete-proofreading`, declared with `when.hasOwnText`: the plugin deletes the version it made and its file.
+**Delete proofreading** in the file's menu is the plugin's command `delete-proofreading`, declared with a `when` condition on `version.plugin`: the plugin deletes the version it made and its file.
 
 ## Settings
 

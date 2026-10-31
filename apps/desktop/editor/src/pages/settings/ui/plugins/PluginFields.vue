@@ -1,34 +1,17 @@
 <script setup lang="ts">
 /**
- * Declarative settings fields and secrets for a plugin: agent choices, switches,
+ * Declarative settings fields and secrets for a plugin: switches,
  * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
  * secret whose condition fails is not shown, and keeps its value.
  */
 import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
-import { AgentChoice } from '../agent-choice'
 import { PathField } from '../path-field'
 import { SecretField } from '../secret-field'
 import SettingsViews from './SettingsViews.vue'
 import type { SettingsTabState } from '../../types'
-import {
-  createSettingFields,
-  type CompletionChoice,
-  type PluginInfo,
-  type PluginSettingInfo,
-} from '@/entities/settings'
-import {
-  AGENT_SETTING_TYPE as AGENT_TYPE,
-  DEFAULT_AGENT_AT,
-  createAgentModelChoices,
-  createPluginAgentChoices,
-  createProgramModelChoices,
-  getProgramModelsAt,
-  findAgent,
-  getAgents,
-  readChoice,
-} from '../../lib/agents'
+import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
 import { createEnumFields } from '../../lib/enums'
 import { appendPathEntry, createTextDrafts, removePathEntry } from '../../model/drafts'
 import { WORDS as words } from '../../words'
@@ -42,8 +25,6 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
-const agents = computed(() => getAgents(installation.value))
-const defaultAgent = computed(() => fields.getString(DEFAULT_AGENT_AT))
 const {
   getEnumOptions,
   getEnumChoices,
@@ -89,26 +70,6 @@ function readSetting(key: string): unknown {
   return installation.value.getSetting(['plugins', props.plugin.id, key])
 }
 
-function getChoice(key: string): CompletionChoice {
-  return readChoice(readSetting(key))
-}
-
-function getAgentChoices(choice: CompletionChoice) {
-  const selection = { defaultAgent: defaultAgent.value, chosen: choice.agent }
-  return createPluginAgentChoices(agents.value, selection, words)
-}
-
-function getModelChoices(choice: CompletionChoice) {
-  if (choice.agent === '') return null
-  return createAgentModelChoices(findAgent(agents.value, choice.agent), choice.model, words)
-}
-
-function getProgramChoices(setting: PluginSettingInfo) {
-  if (!setting.modelsOf) return []
-  const models = installation.value.getModels(getProgramModelsAt(setting.modelsOf))
-  return createProgramModelChoices(models, getStringSetting(setting.key, setting.default))
-}
-
 function getBooleanSetting(key: string, fallback: unknown): boolean {
   const val = readSetting(key) ?? fallback
   return typeof val === 'boolean' ? val : Boolean(fallback)
@@ -140,21 +101,7 @@ function getStringSetting(key: string, fallback: unknown): string {
   />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
-    <AgentChoice
-      v-if="setting.type === AGENT_TYPE"
-      :at="`${props.plugin.id}-${setting.key}`"
-      :agent-name="setting.title"
-      :agent-detail="setting.description"
-      :model-name="words.pluginModel"
-      :model-detail="words.defaultModelDetail"
-      :agents="getAgentChoices(getChoice(setting.key))"
-      :models="getModelChoices(getChoice(setting.key))"
-      :choice="getChoice(setting.key)"
-      @choose="(choice) => onSettingChange(setting.key, choice)"
-    />
-
     <SettingRow
-      v-else
       v-slot="{ labelledBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
@@ -232,19 +179,6 @@ function getStringSetting(key: string, fallback: unknown): string {
         v-else-if="setting.type === 'string' && getEnumOptions(setting).length > 0"
         :model-value="getEnumValue(setting) || getStringSetting(setting.key, setting.default)"
         :choices="getEnumChoices(setting)"
-        :name="setting.title"
-        :aria-labelledby="labelledBy"
-        is-searchable
-        can-enter-custom
-        :search-name="words.searchModels"
-        class="settings__choice"
-        @update:model-value="(val) => onSettingChange(setting.key, val)"
-      />
-
-      <Select
-        v-else-if="getProgramChoices(setting).length > 0"
-        :model-value="getStringSetting(setting.key, setting.default)"
-        :choices="getProgramChoices(setting)"
         :name="setting.title"
         :aria-labelledby="labelledBy"
         is-searchable

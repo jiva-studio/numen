@@ -1,12 +1,10 @@
 /**
- * The agents a plugin can send model requests to, and their models, as lists
+ * The agents the default model requests can be sent to, and their models, as lists
  * the user selects from. An agent is a program listed by the plugins. The core
- * routes to the agent named by the plugin's setting, else to the default agent
- * of the settings, else to the program named by the agent section of the
- * settings.
+ * routes to the default agent of the settings, else to the program named by the
+ * agent section of the settings.
  */
 import {
-  AGENT_SETTING_TYPE,
   AGENT_USE_PATH,
   DEFAULT_AGENT_PATH,
   DEFAULT_MODEL_PATH,
@@ -16,7 +14,6 @@ import {
 import type { CompletionChoice, Model, PluginInfo, SettingSource } from '@/entities/settings'
 import type { SelectChoice } from '@numen/ui'
 
-export { AGENT_SETTING_TYPE }
 const USE_AT = AGENT_USE_PATH
 export const getProgramModelsAt = getProgramModelPath
 
@@ -43,7 +40,6 @@ export interface Agent {
 /** The user-facing strings of the agent settings. */
 export interface AgentWords {
   /** The row of a plugin's setting that leaves the agent to the default, with its name. */
-  readonly agentByDefault: (name: string) => string
   /** The row of the default that leaves it to the installation's agent, with its name. */
   readonly agentFirst: (name: string) => string
   /** That row where no agent answers. */
@@ -100,20 +96,6 @@ const getAgentRows = (
 }
 
 /**
- * The agents a plugin's setting can name: the default first, labelled with the
- * agent that currently serves it.
- */
-export const createPluginAgentChoices = (
-  agents: readonly Agent[],
-  { defaultAgent, chosen }: { readonly defaultAgent: string; readonly chosen: string },
-  words: AgentWords,
-): readonly SelectChoice[] => {
-  const answering = findAgent(agents, defaultAgent)
-  const name = answering?.name ?? (defaultAgent || words.agentNone)
-  return [{ id: '', text: words.agentByDefault(name) }, ...getAgentRows(agents, chosen, words)]
-}
-
-/**
  * The agents the default can name: the installation's agent first, labelled
  * with its name, which serves requests while the default names none.
  */
@@ -151,23 +133,3 @@ export const getPluginsWithSecrets = (plugins: readonly PluginInfo[]): readonly 
 /** The plugins that may ask a model, in the order they are listed. */
 export const getAskingPlugins = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
   plugins.filter((one) => one.consent !== 'none')
-
-/**
- * The models of a program as rows to select from, each addressed by name. A
- * value the program does not list is included as a row. A program that lists no
- * models yields no rows.
- */
-export const createProgramModelChoices = (
-  models: readonly Model[],
-  selected: string,
-): readonly SelectChoice[] => {
-  const rows = models
-    .filter((one) => one.name !== '')
-    .map((one) => ({
-      id: one.name,
-      text: one.title || one.name,
-      ...(one.title && one.title !== one.name ? { detail: one.name } : {}),
-    }))
-  if (rows.length === 0 || selected === '' || rows.some((one) => one.id === selected)) return rows
-  return [{ id: selected, text: selected }, ...rows]
-}

@@ -52,9 +52,9 @@ func (h *host) GetPluginInfos() []pluginport.PluginInfo {
 func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.ocr":
-		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", Texts: &pluginport.PluginTextMaker{
-			ContentTypes: []domain.ContentType{"application/pdf"},
-		}}}, true
+		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
+			{Purpose: pluginport.HandleTextProvider, ContentTypes: []domain.ContentType{"application/pdf"}},
+		}}}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
 	}

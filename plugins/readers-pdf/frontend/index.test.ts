@@ -24,10 +24,10 @@ describe('reader-pdf plugin frontend', () => {
     const manifest = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
     ) as {
-      readers: { id: string; contentTypes: string[]; rank: string }[]
+      contributes: { readers: { id: string; contentTypes: string[]; rank: string }[] }
     }
 
-    expect(manifest.readers).toEqual([
+    expect(manifest.contributes.readers).toEqual([
       { id: ctx.getRegisteredReaders()[0]?.id, contentTypes: ['application/pdf'], rank: 'default' },
     ])
   })

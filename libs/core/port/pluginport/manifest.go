@@ -10,14 +10,16 @@ type (
 	PluginBackend          = manifest.Backend
 	PluginCommand          = manifest.Command
 	PluginCommandArgument  = manifest.CommandArgument
-	PluginCommandWhen      = manifest.CommandWhen
+	PluginContextCondition = manifest.ContextCondition
+	PluginContext          = manifest.Context
+	PluginContributes      = manifest.Contributes
 	PluginContentType      = manifest.DeclaredContentType
 	PluginFrontend         = manifest.Frontend
 	PluginLifecycle        = manifest.Lifecycle
 	PluginManifest         = manifest.Manifest
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
-	PluginPlayback         = manifest.Playback
+	PluginHandle           = manifest.Handle
 	PluginReader           = manifest.Reader
 	PluginSecret           = manifest.Secret
 	PluginSettingsView     = manifest.SettingsView
@@ -25,7 +27,6 @@ type (
 	PluginSettingOption    = manifest.SettingOption
 	PluginSettingOptions   = manifest.SettingOptions
 	PluginSettingOptionsBy = manifest.OptionsBy
-	PluginTextMaker        = manifest.TextMaker
 )
 
 const (
@@ -36,11 +37,13 @@ const (
 	PermissionIndexRead       = manifest.PermissionIndexRead
 	PermissionSearchPolicy    = manifest.PermissionSearchPolicy
 	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
-	RuntimeONNX               = manifest.RuntimeONNX
+	RuntimeONNX               = "onnxruntime"
+	HandlePlaybackCopy        = "playback-copy"
+	HandleTextProvider        = "text-provider"
+	ContextAnyValue           = manifest.ContextAnyValue
 	PluginProtocolVersion     = manifest.ProtocolVersion
 	SettingStoredSecrets      = manifest.SettingStoredSecrets
 	SettingAIConsent          = manifest.SettingAIConsent
-	SettingTypeAgent          = manifest.SettingTypeAgent
 	SettingTypeString         = manifest.SettingTypeString
 	SettingTypeEnum           = manifest.SettingTypeEnum
 	SettingTypeFile           = manifest.SettingTypeFile
@@ -64,7 +67,6 @@ var (
 	ErrEmptyVersion           = manifest.ErrEmptyVersion
 	ErrEnumMissingOptions     = manifest.ErrEnumMissingOptions
 	ErrInvalidActivationEvent = manifest.ErrInvalidActivationEvent
-	ErrInvalidAgentSetting    = manifest.ErrInvalidAgentSetting
 	ErrInvalidBackend         = manifest.ErrInvalidBackend
 	ErrInvalidCapability      = manifest.ErrInvalidCapability
 	ErrInvalidCommand         = manifest.ErrInvalidCommand
@@ -74,19 +76,16 @@ var (
 	ErrInvalidFrontend        = manifest.ErrInvalidFrontend
 	ErrInvalidID              = manifest.ErrInvalidID
 	ErrInvalidLifecycle       = manifest.ErrInvalidLifecycle
-	ErrInvalidModelsOf        = manifest.ErrInvalidModelsOf
 	ErrInvalidNoteType        = manifest.ErrInvalidNoteType
 	ErrInvalidPermission      = manifest.ErrInvalidPermission
-	ErrInvalidPlayback        = manifest.ErrInvalidPlayback
+	ErrInvalidHandle          = manifest.ErrInvalidHandle
 	ErrInvalidReader          = manifest.ErrInvalidReader
-	ErrInvalidRuntime         = manifest.ErrInvalidRuntime
 	ErrInvalidSecret          = manifest.ErrInvalidSecret
 	ErrInvalidService         = manifest.ErrInvalidService
 	ErrInvalidSetting         = manifest.ErrInvalidSetting
 	ErrInvalidSettingKey      = manifest.ErrInvalidSettingKey
 	ErrInvalidSettingsView    = manifest.ErrInvalidSettingsView
 	ErrInvalidSettingType     = manifest.ErrInvalidSettingType
-	ErrInvalidTexts           = manifest.ErrInvalidTexts
 	ErrInvalidVersion         = manifest.ErrInvalidVersion
 	ErrNoBackend              = manifest.ErrNoBackend
 	ErrRangeInvalidBounds     = manifest.ErrRangeInvalidBounds

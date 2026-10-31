@@ -1,18 +1,18 @@
 {
   "id": "md.numen.tools.updater",
   "name": "Update Notifier",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "Tells when a newer build of Numen is published",
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
-    "statusViews": [{ "id": "update" }]
+    "statusViews": [{ "id": "update" }],
+    "handles": [{ "purpose": "text-provider" }]
   },
   "activationEvents": [],
   "permissions": ["network:outbound"],
   "services": ["numen.updater"],
-  "texts": {},
   "lifecycle": {
     "idleTimeoutSeconds": 60,
     "keepAliveWhileVisible": false,

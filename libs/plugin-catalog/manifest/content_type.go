@@ -3,6 +3,7 @@ package manifest
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -38,7 +39,7 @@ type Reader struct {
 // ListContentHandlers lists the handler of each type each reader of the plugin opens.
 func (m Manifest) ListContentHandlers() []domain.ContentHandler {
 	var out []domain.ContentHandler
-	for _, reader := range m.Readers {
+	for _, reader := range m.Contributes.Readers {
 		for _, one := range reader.ContentTypes {
 			out = append(out, domain.ContentHandler{PluginID: m.ID, ID: reader.ID, Type: one, Rank: reader.Rank})
 		}
@@ -46,15 +47,14 @@ func (m Manifest) ListContentHandlers() []domain.ContentHandler {
 	return out
 }
 
-// IsHandling reports whether a reader of the plugin, or the text it makes of files, takes a file of
-// the type.
+// IsHandling reports whether a reader of the plugin, or a handle of it, takes a file of the type.
 func (m Manifest) IsHandling(contentType domain.ContentType) bool {
-	for _, reader := range m.Readers {
+	for _, reader := range m.Contributes.Readers {
 		if isAnyMatching(reader.ContentTypes, contentType) {
 			return true
 		}
 	}
-	return m.Texts != nil && isAnyMatching(m.Texts.ContentTypes, contentType)
+	return slices.ContainsFunc(m.Contributes.Handles, func(h Handle) bool { return isAnyMatching(h.ContentTypes, contentType) })
 }
 
 func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) bool {
@@ -71,7 +71,7 @@ func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) b
 func (m Manifest) listContentTypeIssues() []error {
 	var issues []error
 	observed := map[domain.ContentType]bool{}
-	for _, declared := range m.ContentTypes {
+	for _, declared := range m.Contributes.ContentTypes {
 		if err := checkContentType(declared.Type); err != nil {
 			issues = append(issues, err)
 		}
@@ -98,11 +98,11 @@ func (m Manifest) listContentTypeIssues() []error {
 // plugin has a frontend to show it.
 func (m Manifest) listReaderIssues() []error {
 	var issues []error
-	if len(m.Readers) > 0 && !m.HasFrontend() {
+	if len(m.Contributes.Readers) > 0 && !m.HasFrontend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares readers and has no frontend to show them", ErrInvalidReader))
 	}
 	observed := map[string]bool{}
-	for _, reader := range m.Readers {
+	for _, reader := range m.Contributes.Readers {
 		switch {
 		case strings.TrimSpace(reader.ID) == "":
 			issues = append(issues, fmt.Errorf("%w: a reader has no id", ErrInvalidReader))

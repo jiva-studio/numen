@@ -1517,7 +1517,6 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			Min:         minPtr,
 			Max:         maxPtr,
 			Step:        stepPtr,
-			ModelsOf:    s.ModelsOf,
 			Replaces:    s.Replaces,
 			OptionsBy:   s.OptionsBy,
 			When:        s.When,

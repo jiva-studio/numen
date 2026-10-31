@@ -23,7 +23,7 @@ import type { Result } from './result'
 export type { Failure, Result } from './result'
 
 // ReaderRegistration registers a viewer component for files. The manifest declares, under
-// `readers` with the same id, the content types it opens. The component gets a ReaderTabState as
+// `contributes.readers` with the same id, the content types it opens. The component gets a ReaderTabState as
 // its `state` prop.
 export interface ReaderRegistration {
   id: string

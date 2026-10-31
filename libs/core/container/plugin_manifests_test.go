@@ -402,14 +402,10 @@ func isNamedIn(source, key string) bool {
 }
 
 // listUnreadSettings lists the settings a manifest declares that none of the
-// sources name. The setting that chooses an agent is read by the host, which
-// routes by it.
+// sources name.
 func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
-		if setting.Type == pluginport.SettingTypeAgent {
-			continue
-		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
 			unread = append(unread, setting.Key)
 		}
@@ -442,7 +438,7 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 
 func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	manifest := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
-		{Key: "language"}, {Key: "dpi"}, {Key: "agent", Type: pluginport.SettingTypeAgent},
+		{Key: "language"}, {Key: "dpi"},
 	}}
 	if got := listUnreadSettings(manifest, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
 		t.Errorf("settings that are read are found unread: %v", got)

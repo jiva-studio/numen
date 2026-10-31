@@ -11,6 +11,7 @@ import {
   PLUGINS_DIR,
   listPluginNames,
   parseManifest,
+  readManifestVersion,
   readPluginManifests,
 } from './manifests.mjs'
 
@@ -52,10 +53,43 @@ test('a manifest is read as the schema message and as the document', () => {
   assert.deepEqual(document, valid)
 })
 
-test('a key the schema does not name is ignored', () => {
-  const { manifest } = parseManifest(JSON.stringify({ ...valid, futureField: { nested: true } }))
+test('a key the schema does not name is left out of the message and warned about', () => {
+  const { manifest, warnings } = parseManifest(
+    JSON.stringify({ ...valid, futureField: { nested: true } }),
+  )
 
   assert.equal(manifest.name, 'Sample')
+  assert.deepEqual(warnings, ['unknown key "futureField"'])
+})
+
+test('a manifest of known keys has no warning', () => {
+  assert.deepEqual(parseManifest(JSON.stringify(valid)).warnings, [])
+})
+
+test('the unknown keys are found at every depth, in the options of a setting too', () => {
+  const { warnings } = parseManifest(
+    JSON.stringify({
+      ...valid,
+      contributes: { ...valid.contributes, tabKinds: [{ kind: 'sample', shape: 1 }], extra: true },
+      settings: [
+        {
+          key: 'mode',
+          modelsOf: 'x',
+          options: ['a', { value: 'b', hint: 'h' }],
+          optionsBy: { setting: 'mode', options: { a: [{ value: 'x', hint: 'h' }] } },
+        },
+      ],
+      dependencies: [{ id: 'weights', metadata: { anything: 'goes' } }],
+    }),
+  )
+
+  assert.deepEqual(warnings, [
+    'unknown key "contributes.extra"',
+    'unknown key "contributes.tabKinds[0].shape"',
+    'unknown key "settings[0].modelsOf"',
+    'unknown key "settings[0].options[1].hint"',
+    'unknown key "settings[0].optionsBy.options.a[0].hint"',
+  ])
 })
 
 test('a value of the wrong type is refused and the error names the source', () => {
@@ -86,6 +120,18 @@ test('text that is not JSON, and JSON that is not an object, are refused', () =>
 test('a manifest with no id, name or version is refused', () => {
   assert.throws(() => parseManifest(JSON.stringify({ id: 'a' })), /has no name, version/)
   assert.throws(() => parseManifest('{}'), /has no id, name, version/)
+})
+
+test('the version of a manifest of an older schema is read without the schema', () => {
+  const older = JSON.stringify({ ...valid, version: '2026.9.2', commands: [{ id: 'a', when: {} }] })
+
+  assert.equal(readManifestVersion(older), '2026.9.2')
+  assert.throws(() => parseManifest(older), ManifestError)
+})
+
+test('a manifest with no version, or that is not JSON, has no version to read', () => {
+  assert.throws(() => readManifestVersion('{}', 'plugins/a/manifest.json'), /has no version/)
+  assert.throws(() => readManifestVersion('{', 'plugins/a/manifest.json'), /is not JSON/)
 })
 
 test('the plugins of a folder are the directories that hold a manifest', () =>

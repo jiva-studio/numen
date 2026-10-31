@@ -124,7 +124,6 @@ describe('every setting', () => {
                   defaultJson: 'true',
                   palette: true,
                   options: [],
-                  modelsOf: 'prog',
                 },
                 {
                   key: 'language',
@@ -134,7 +133,6 @@ describe('every setting', () => {
                   defaultJson: '',
                   palette: false,
                   options: [],
-                  modelsOf: '',
                   optionsBy: {
                     setting: 'model',
                     options: {
@@ -178,7 +176,6 @@ describe('every setting', () => {
             optionsBy: undefined,
             when: undefined,
             accept: undefined,
-            modelsOf: 'prog',
             min: undefined,
             max: undefined,
             step: undefined,
@@ -197,7 +194,6 @@ describe('every setting', () => {
             },
             when: { setting: 'provider', is: ['local'] },
             accept: [],
-            modelsOf: '',
             min: undefined,
             max: undefined,
             step: undefined,

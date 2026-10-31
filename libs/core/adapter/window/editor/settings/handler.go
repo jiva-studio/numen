@@ -138,7 +138,6 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 				Min:         s.Min,
 				Max:         s.Max,
 				Step:        s.Step,
-				ModelsOf:    s.ModelsOf,
 				OptionsBy:   newWireOptionsBy(s.OptionsBy),
 				When:        newWireCondition(s.When),
 				Accept:      s.Accept,

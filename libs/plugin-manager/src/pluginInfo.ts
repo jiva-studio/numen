@@ -5,14 +5,7 @@
 
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =
-  | 'boolean'
-  | 'string'
-  | 'number'
-  | 'enum'
-  | 'range'
-  | 'agent'
-  | 'file'
-  | 'folder'
+  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'agent' | 'file' | 'folder'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
@@ -61,8 +54,6 @@ export interface PluginSettingInfo {
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined
-  /** The agent program whose models the setting offers; empty when the user types the value. */
-  readonly modelsOf?: string | undefined
 }
 
 /**

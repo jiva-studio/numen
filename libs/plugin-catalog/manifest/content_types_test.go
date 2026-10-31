@@ -15,11 +15,12 @@ const readerManifestHead = `{"id":"org.example.reader","name":"A","version":"1.0
 
 func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(readerManifestHead + `,
-		"contentTypes": [{"type": "application/x-example-sample", "globs": ["*.sample"]}],
-		"readers": [
-			{"id": "sample", "contentTypes": ["application/x-example-sample"], "rank": "default"},
-			{"id": "audio", "contentTypes": ["audio/*"], "rank": "alternate"}
-		]}`))
+		"contributes": {
+			"contentTypes": [{"type": "application/x-example-sample", "globs": ["*.sample"]}],
+			"readers": [
+				{"id": "sample", "contentTypes": ["application/x-example-sample"], "rank": "default"},
+				{"id": "audio", "contentTypes": ["audio/*"], "rank": "alternate"}
+			]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +31,7 @@ func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
 	if got := m.ListContentHandlers(); !slices.Equal(got, want) {
 		t.Errorf("ListContentHandlers = %+v; want %+v", got, want)
 	}
-	if got := m.ContentTypes[0].ListExtensions(); !slices.Equal(got, []string{"sample"}) {
+	if got := m.Contributes.ContentTypes[0].ListExtensions(); !slices.Equal(got, []string{"sample"}) {
 		t.Errorf("ListExtensions = %v; want [sample]", got)
 	}
 	if !m.IsHandling("audio/mpeg") || m.IsHandling("video/mp4") {
@@ -38,9 +39,9 @@ func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
 	}
 }
 
-func TestIsHandlingMatchesTheTypesOfTheTextsItMakes(t *testing.T) {
+func TestIsHandlingMatchesTheTypesOfTheHandlesOfThePlugin(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
-		"texts": {"contentTypes": ["audio/*", "video/*"]}}`))
+		"contributes": {"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*", "video/*"]}]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestReadManifestRejectsAnInvalidReaderOrContentType(t *testing.T) {
 		"a glob in capitals":       {`"contentTypes":[{"type":"application/x-a","globs":["*.SAMPLE"]}]`, domain.ErrInvalidContentType},
 	}
 	for name, one := range cases {
-		_, err := manifestjson.Read(strings.NewReader(readerManifestHead + "," + one.fields + "}"))
+		_, err := manifestjson.Read(strings.NewReader(readerManifestHead + `,"contributes":{` + one.fields + "}}"))
 		if !errors.Is(err, one.want) {
 			t.Errorf("%s: ReadManifest = %v; want %v", name, err, one.want)
 		}
@@ -74,7 +75,7 @@ func TestReadManifestRejectsAnInvalidReaderOrContentType(t *testing.T) {
 
 func TestReadManifestRejectsAReaderWithoutFrontend(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",
-		"readers":[{"id":"r","contentTypes":["application/pdf"],"rank":"default"}]}`))
+		"contributes":{"readers":[{"id":"r","contentTypes":["application/pdf"],"rank":"default"}]}}`))
 	if !errors.Is(err, manifest.ErrInvalidReader) {
 		t.Fatalf("ReadManifest = %v; want ErrInvalidReader", err)
 	}

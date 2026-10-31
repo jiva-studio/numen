@@ -129,7 +129,6 @@ export const settingsCore: SettingsPort = {
             min: s.min === 0 && s.max === 0 ? undefined : s.min,
             max: s.min === 0 && s.max === 0 ? undefined : s.max,
             step: s.step === 0 ? undefined : s.step,
-            modelsOf: s.modelsOf,
           }
         }),
       })),
