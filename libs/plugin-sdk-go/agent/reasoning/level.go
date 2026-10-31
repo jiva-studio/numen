@@ -3,8 +3,6 @@ package reasoning
 import (
 	"slices"
 	"strings"
-
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Level is one depth of reasoning.
@@ -15,9 +13,18 @@ type Level struct {
 	Title string
 }
 
-type ReasoningLevel = v1.ReasoningLevel
-
-type AgentModel = v1.AgentModel
+// Model is one model a program offers.
+type Model struct {
+	Name  string
+	Title string
+	// IsDefault is set where the program names the model it answers with unasked.
+	IsDefault bool
+	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
+	// the most. Empty where the model offers no choice.
+	ReasoningLevels []Level
+	// DefaultReasoning is the level the model works at unasked. Empty where it names none.
+	DefaultReasoning string
+}
 
 // order lists the level names from the least reasoning to the most.
 var order = []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
@@ -79,25 +86,13 @@ func GetDefault(levels []Level) string {
 	return levels[0].Name
 }
 
-// ToProto is the levels in the schema's words.
-func ToProto(levels []Level) []*ReasoningLevel {
-	if len(levels) == 0 {
-		return nil
-	}
-	out := make([]*ReasoningLevel, 0, len(levels))
-	for _, one := range levels {
-		out = append(out, &ReasoningLevel{Name: one.Name, Title: one.Title})
-	}
-	return out
-}
-
 // NewModel is a model offered with the levels. The default is empty where it is not one of them.
-func NewModel(name, title string, levels []Level, byDefault string) *AgentModel {
+func NewModel(name, title string, levels []Level, byDefault string) *Model {
 	if !Contains(levels, byDefault) {
 		byDefault = ""
 	}
-	return &AgentModel{
-		Name: name, Title: title, ReasoningLevels: ToProto(levels), DefaultReasoning: byDefault,
+	return &Model{
+		Name: name, Title: title, ReasoningLevels: levels, DefaultReasoning: byDefault,
 	}
 }
 

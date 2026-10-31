@@ -1,14 +1,12 @@
 package agentrun
 
-import "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
-
-// unimplemented answers every call of AgentService as not implemented.
+// unimplemented answers every call of the agent service as not implemented.
 type unimplemented struct {
-	numenv1connect.UnimplementedAgentServiceHandler
+	Unimplemented
 }
 
-// Service answers the calls of AgentService that every agent plugin answers the same way:
-// RegisterTool, ExtendSystemPrompt, GetAgentTools and FinishConversation. A plugin embeds it and
+// Service answers the calls of the agent service that every agent plugin answers the same way:
+// RegisterTool, ExtendSystemPrompt, GetTools and FinishConversation. A plugin embeds it and
 // answers the rest. The zero value is ready.
 type Service struct {
 	unimplemented

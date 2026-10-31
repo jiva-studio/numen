@@ -8,11 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // start runs a child that waits until it is killed, and the reader that waits for it.
@@ -166,9 +163,8 @@ func TestFinishConversationEndsTheConversation(t *testing.T) {
 	var registry agentrun.Registry
 	registry.SetSession("c-1", "s-1")
 
-	res, err := registry.FinishConversation(t.Context(), connect.NewRequest(&v1.FinishConversationRequest{Conversation: "c-1"}))
-	if err != nil || res == nil {
-		t.Fatalf("got %v, %v", res, err)
+	if err := registry.FinishConversation(t.Context(), "c-1"); err != nil {
+		t.Fatal(err)
 	}
 	if got := registry.GetSession("c-1"); got != "" {
 		t.Errorf("the session is %q, want none", got)

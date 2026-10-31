@@ -10,7 +10,7 @@ import (
 // stops it.
 type Work struct {
 	// Output is where the reader writes the responses. The reader closes it when it is done.
-	Output chan *AskAgentResponse
+	Output chan *Response
 
 	conversation string
 	stop         func() error
@@ -23,7 +23,7 @@ type Work struct {
 // the reader reads by calling stop once.
 func NewWork(conversation string, buffer int, stop func() error) *Work {
 	return &Work{
-		Output:       make(chan *AskAgentResponse, buffer),
+		Output:       make(chan *Response, buffer),
 		conversation: conversation,
 		stop:         stop,
 		stopped:      make(chan struct{}),
@@ -69,11 +69,9 @@ func stopAll(works []*Work) error {
 	return errors.Join(failures...)
 }
 
-// ForwardResponses sends the responses of the work to the stream until the work is done, and stops the work
-// when the stream or the call ends first.
-func ForwardResponses(ctx context.Context, work *Work, stream interface {
-	Send(*AskAgentResponse) error
-}) error {
+// ForwardResponses sends the responses of the work to send until the work is done, and stops the work
+// when send fails or the call ends first.
+func ForwardResponses(ctx context.Context, work *Work, send func(*Response) error) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -82,7 +80,7 @@ func ForwardResponses(ctx context.Context, work *Work, stream interface {
 			if !ok {
 				return nil
 			}
-			if err := stream.Send(resp); err != nil {
+			if err := send(resp); err != nil {
 				return joinStopError(err, work)
 			}
 		}

@@ -41,14 +41,14 @@ func QuoteShell(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
-// Serve serves the handler over HTTP for the length of the test and returns a client of it.
-func Serve(t *testing.T, handler agentrun.AgentServiceHandler) agentrun.AgentServiceClient {
+// Serve serves the agent over HTTP for the length of the test and returns a client of it.
+func Serve(t *testing.T, agent agentrun.Agent) *agentrun.Client {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewAgentServiceHandler(handler))
+	mux.Handle(agentrun.NewHandler(agent))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return agentrun.NewAgentServiceClient(http.DefaultClient, server.URL)
+	return agentrun.NewClient(http.DefaultClient, server.URL)
 }
 
 // RecordingProgram writes a program that records the folder it ran in and its arguments, one on a
@@ -73,9 +73,9 @@ func RecordingProgram(t *testing.T, name string) (string, func() (dir string, ar
 }
 
 // Ask sends the request and waits until the stream ends.
-func Ask(t *testing.T, client agentrun.AgentServiceClient, req *agentrun.AskAgentRequest) {
+func Ask(t *testing.T, client *agentrun.Client, req *agentrun.Request) {
 	t.Helper()
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(req))
+	stream, err := client.Ask(t.Context(), req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,14 +106,14 @@ func CheckLinkedHandler(t *testing.T, newHandler func(map[string]string) (http.H
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	client := agentrun.NewAgentServiceClient(web.Client(), web.URL)
+	client := agentrun.NewClient(web.Client(), web.URL)
 
-	req := connect.NewRequest(&agentrun.GetAgentStateRequest{})
-	req.Header().Set("Authorization", "Bearer linked-token")
-	if _, err := client.GetAgentState(t.Context(), req); err != nil {
+	client.Header.Set("Authorization", "Bearer linked-token")
+	if _, err := client.GetState(t.Context()); err != nil {
 		t.Fatalf("call with the token: %v", err)
 	}
-	_, err = client.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
+	client.Header.Del("Authorization")
+	_, err = client.GetState(t.Context())
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("call without the token = %v, want unauthenticated", err)
 	}
