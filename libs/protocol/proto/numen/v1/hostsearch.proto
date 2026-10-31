@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/embedding.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// HostSearchService is the search index and the search floor of a vault, as a
+// plugin reads and sets them. The host identifies the plugin by its token.
+// GetEmbeddingState, EmbedTexts, ListNoteTitles, ListSmallChunkVectors and
+// GetBestSimilarity need index:read; GetSearchFloor and SetSearchFloor need
+// search:policy.
+//
+// Numen-Vault works the vault of that identity; without it a call works the
+// vault the host is showing.
+//
+// The host keeps one effective floor for each pair of vault and recipe and
+// applies it to every search by meaning: a floor the query names outranks the
+// effective floor, which outranks the hint of the embedding model, which
+// outranks the default floor. A call that names a recipe other than the one of
+// the model in use is answered with RECIPE_MISMATCH.
+service HostSearchService {
+  // GetEmbeddingState is the model in use and how far the vault is embedded
+  // under it. The answer is computed from the index at each call, so a plugin
+  // that starts after the vectors exist reads the same state as one that was
+  // running when they were made.
+  rpc GetEmbeddingState(GetEmbeddingStateRequest) returns (GetEmbeddingStateResponse);
+
+  // EmbedTexts embeds texts with the model in use. At most 256 texts of at most
+  // 8192 bytes each are embedded in one call.
+  rpc EmbedTexts(EmbedTextsRequest) returns (EmbedTextsResponse);
+
+  // ListNoteTitles lists the titles of the notes of the vault. The order is a
+  // function of the content in the index, so one index yields one list. A limit
+  // of zero or above 1000 is 1000.
+  rpc ListNoteTitles(ListNoteTitlesRequest) returns (ListNoteTitlesResponse);
+
+  // ListSmallChunkVectors lists the small chunks of the vault that carry a
+  // vector under the recipe, in the order of their content hashes. A limit of
+  // zero or above 1000 is 1000.
+  rpc ListSmallChunkVectors(ListSmallChunkVectorsRequest) returns (ListSmallChunkVectorsResponse);
+
+  // GetBestSimilarity is the cosine similarity of the passage of the vault
+  // nearest a vector under the recipe, and zero when the vault has none.
+  rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
+
+  // GetSearchFloor is the floor a search by meaning applies to the vault under
+  // the recipe, and where it comes from.
+  rpc GetSearchFloor(GetSearchFloorRequest) returns (GetSearchFloorResponse);
+
+  // SetSearchFloor stores the effective floor of the vault under the recipe. A
+  // floor of zero removes the stored floor. Setting the floor that is stored
+  // changes nothing.
+  rpc SetSearchFloor(SetSearchFloorRequest) returns (SetSearchFloorResponse);
+}
+
+// HostSearchErrorCode is why a call on the search index was refused. The zero
+// value means it was not.
+enum HostSearchErrorCode {
+  HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;
+
+  // The host is showing no vault.
+  HOST_SEARCH_ERROR_CODE_NO_VAULT = 1;
+
+  // The installation has no embedding model.
+  HOST_SEARCH_ERROR_CODE_NO_MODEL = 2;
+
+  // The recipe is not the one of the model in use.
+  HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH = 3;
+
+  // The floor is not a cosine similarity above zero and at most one.
+  HOST_SEARCH_ERROR_CODE_INVALID_FLOOR = 4;
+
+  // The call names more texts, or longer ones, than one call embeds.
+  HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED = 5;
+
+  // The embedding model could not answer.
+  HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED = 6;
+}
+
+// SearchFloorSource is where the floor a search applies comes from.
+enum SearchFloorSource {
+  SEARCH_FLOOR_SOURCE_UNSPECIFIED = 0;
+
+  // A plugin stored the floor for the vault and the recipe.
+  SEARCH_FLOOR_SOURCE_STORED = 1;
+
+  // The starting floor the plugin of the embedding model reports.
+  SEARCH_FLOOR_SOURCE_MODEL_HINT = 2;
+
+  // No other source answered.
+  SEARCH_FLOOR_SOURCE_DEFAULT = 3;
+}
+
+message GetEmbeddingStateRequest {}
+
+message GetEmbeddingStateResponse {
+  HostSearchErrorCode error = 1;
+
+  // The recipe of the model in use. Every vector the host returns, and every
+  // floor it stores, is kept under it.
+  string recipe = 2;
+
+  // The name of the model in use.
+  string model = 3;
+
+  // The starting floor the plugin of the model reports, zero when it has none.
+  double floor_hint = 4;
+
+  // How many chunks of the vault can carry a vector, and how many of them do
+  // under the recipe.
+  int64 chunk_count = 5;
+  int64 embedded_count = 6;
+
+  // Whether the vault holds chunks and every one of them carries a vector.
+  bool is_ready = 7;
+}
+
+message EmbedTextsRequest {
+  repeated string texts = 1;
+}
+
+message EmbedTextsResponse {
+  HostSearchErrorCode error = 1;
+
+  // The recipe of the model that made the vectors.
+  string recipe = 2;
+
+  // One vector per text, in the order the texts arrived.
+  repeated FloatVector vectors = 3;
+}
+
+message ListNoteTitlesRequest {
+  int32 limit = 1;
+}
+
+message NoteTitle {
+  // The identity of the source of the note in the index.
+  int64 source_id = 1;
+
+  string title = 2;
+}
+
+message ListNoteTitlesResponse {
+  HostSearchErrorCode error = 1;
+  repeated NoteTitle titles = 2;
+}
+
+message ListSmallChunkVectorsRequest {
+  string recipe = 1;
+  int32 limit = 2;
+}
+
+message ChunkVector {
+  // The identity of the source the chunk belongs to.
+  int64 source_id = 1;
+
+  // The stored vector: one signed byte per dimension.
+  bytes embedding = 2;
+}
+
+message ListSmallChunkVectorsResponse {
+  HostSearchErrorCode error = 1;
+  repeated ChunkVector vectors = 2;
+}
+
+message GetBestSimilarityRequest {
+  string recipe = 1;
+  repeated float query = 2;
+}
+
+message GetBestSimilarityResponse {
+  HostSearchErrorCode error = 1;
+  double similarity = 2;
+}
+
+message GetSearchFloorRequest {
+  string recipe = 1;
+}
+
+message GetSearchFloorResponse {
+  HostSearchErrorCode error = 1;
+
+  // The floor a search applies when its query names none.
+  double floor = 2;
+
+  SearchFloorSource source = 3;
+
+  // The floor a plugin stored, zero when none is stored.
+  double stored_floor = 4;
+
+  // The starting floor of the model, zero when it has none.
+  double hint_floor = 5;
+
+  // The floor that applies when nothing else answers.
+  double default_floor = 6;
+}
+
+message SetSearchFloorRequest {
+  string recipe = 1;
+
+  // The floor in cosine similarity above zero and at most one, or zero to
+  // remove the stored floor.
+  double floor = 2;
+}
+
+message SetSearchFloorResponse {
+  HostSearchErrorCode error = 1;
+}
